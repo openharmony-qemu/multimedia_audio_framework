@@ -28,7 +28,6 @@ public:
     static uint8_t GetAppState(int32_t appPid);
     static bool IsMediaStream(AudioStreamType audioStreamType);
     static bool IsInterPhoneInterrupt(const AudioInterrupt &audioInterrupt);
-    static bool IsVoipInterrupt(const AudioInterrupt &audioInterrupt);
 };
 
 } // namespace AudioStandard

@@ -194,24 +194,6 @@ void AudioInterruptStrategy::UpdatePauseAudioFocusStrategy(const AudioInterrupt 
     }
 }
 
-void AudioInterruptStrategy::UpdateInterPhoneStrategy(const AudioInterrupt &currentInterrupt,
-    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
-{
-    if (AudioInterruptUtils::IsInterPhoneInterrupt(currentInterrupt) &&
-        AudioInterruptUtils::IsVoipInterrupt(incomingInterrupt)) {
-        focusEntry.actionOn = CURRENT;
-        focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-        AUDIO_INFO_LOG("currentStreamId:%{public}u, incomingStreamId:%{public}u, action:%{public}u",
-            currentInterrupt.streamId, incomingInterrupt.streamId, focusEntry.actionOn);
-    } else if (AudioInterruptUtils::IsInterPhoneInterrupt(incomingInterrupt) &&
-        AudioInterruptUtils::IsVoipInterrupt(currentInterrupt)) {
-        focusEntry.actionOn = INCOMING;
-        focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-        AUDIO_INFO_LOG("currentStreamId:%{public}u, incomingStreamId:%{public}u, action:%{public}u",
-            currentInterrupt.streamId, incomingInterrupt.streamId, focusEntry.actionOn);
-    }
-}
-
 void AudioInterruptStrategy::UpdateAIBaseFocusStrategy(const AudioInterrupt &currentInterrupt,
     const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
@@ -251,7 +233,6 @@ void AudioInterruptStrategy::UpdateAudioFocusStrategy(const AudioInterrupt &curr
     UpdateWindowFocusStrategy(currentPid, incomingPid, existStreamType, incomingStreamType, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
-    UpdateInterPhoneStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateAIBaseFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
 }
 

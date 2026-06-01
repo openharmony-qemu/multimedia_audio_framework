@@ -556,14 +556,5 @@ void AudioInterruptService::HandleMuteInterruptEvent(const AudioInterrupt &audio
         SetNonInterruptMute(audioInterrupt.streamId, muteFlag);
     }
 }
-
-void AudioInterruptService::MirrorInterPhoneInterrupt(AudioInterrupt &audioInterrupt)
-{
-    if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INTERPHONE) {
-        audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-        audioInterrupt.sourceType = SOURCE_TYPE_INTERPHONE;
-        AUDIO_INFO_LOG("Is Capturer InterPhone Interrupt");
-    }
-}
 }
 } // namespace OHOS
