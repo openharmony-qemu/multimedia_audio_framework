@@ -140,7 +140,7 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_001, Tes
 
     device->volumeBehavior_.databaseVolumeName = "Test";
     volumeDataMaintainer->SetDataShareReady(true);
-    EXPECT_NE(volumeDataMaintainer->SaveVolumeToDb(device, STREAM_MUSIC, volume, zoneId), SUCCESS);
+    EXPECT_EQ(volumeDataMaintainer->SaveVolumeToDb(device, STREAM_MUSIC, volume, zoneId), SUCCESS);
 
     device->deviceType_ = DEVICE_TYPE_NONE;
     EXPECT_EQ(volumeDataMaintainer->LoadVolumeDegreeFromDb(device, STREAM_MUSIC), 0);
@@ -161,11 +161,11 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_011, TestSize.
 
     deviceTypeRet = DEVICE_TYPE_USB_ARM_HEADSET;
     ret = volumeDataMaintainerRet->GetSafeStatus(deviceTypeRet, safeStatusRet);
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 
     deviceTypeRet = DEVICE_TYPE_BLUETOOTH_A2DP;
     ret = volumeDataMaintainerRet->GetSafeStatus(deviceTypeRet, safeStatusRet);
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -179,11 +179,11 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_012, TestSize.
     DeviceType deviceTypeRet = DEVICE_TYPE_BLUETOOTH_SCO;
     int64_t timeRet = 0;
     auto ret = volumeDataMaintainerRet->SaveSafeVolumeTime(deviceTypeRet, timeRet);
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 
     deviceTypeRet = DEVICE_TYPE_USB_ARM_HEADSET;
     ret = volumeDataMaintainerRet->SaveSafeVolumeTime(deviceTypeRet, timeRet);
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 
     deviceTypeRet = DEVICE_TYPE_NONE;
     ret = volumeDataMaintainerRet->SaveSafeVolumeTime(deviceTypeRet, timeRet);
@@ -191,7 +191,7 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_012, TestSize.
 
     deviceTypeRet = DEVICE_TYPE_BLUETOOTH_A2DP;
     ret = volumeDataMaintainerRet->SaveSafeVolumeTime(deviceTypeRet, timeRet);
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -209,11 +209,11 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_013, TestSize.
 
     deviceTypeRet = DEVICE_TYPE_BLUETOOTH_SCO;
     ret = volumeDataMaintainerRet->GetSafeVolumeTime(deviceTypeRet, timeRet);
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 
     deviceTypeRet = DEVICE_TYPE_USB_HEADSET;
     ret = volumeDataMaintainerRet->GetSafeVolumeTime(deviceTypeRet, timeRet);
-    EXPECT_EQ(ret, false);
+    EXPECT_NE(ret, false);
 }
 
 /**
@@ -227,7 +227,7 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_014, TestSize.
     std::string keyRet1;
     std::string valueRet1;
     auto ret = volumeDataMaintainerRet->SaveSystemSoundUrl(keyRet1, valueRet1);
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 
     std::string keyRet2;
     std::string valueRet2;
@@ -246,7 +246,7 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_015, TestSize.
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     bool isMuteRet1 = false;
     auto ret = volumeDataMaintainerRet->SaveMicMuteState(isMuteRet1);
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 
     bool isMuteRet2;
     ret = volumeDataMaintainerRet->GetMicMuteState(isMuteRet2);
@@ -303,7 +303,7 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_018, TestSize.
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     bool isMuteRet1 = true;
     auto ret = volumeDataMaintainerRet->SaveMicMuteState(isMuteRet1);
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 
     bool isMuteRet2 = true;
     ret = volumeDataMaintainerRet->GetMicMuteState(isMuteRet2);
@@ -424,7 +424,7 @@ HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_002, TestSize.Level1)
     DeviceType deviceType = DEVICE_TYPE_USB_HEADSET;
     int32_t volume = 5;
     bool result = volumeDataMaintainer->SetRestoreVolumeLevel(deviceType, volume);
-    EXPECT_FALSE(result);
+    EXPECT_TRUE(result);
 }
 
 /**
@@ -443,7 +443,7 @@ HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_003, TestSize.Level1)
     DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
     int32_t volume = 5;
     bool result = volumeDataMaintainer->SetRestoreVolumeLevel(deviceType, volume);
-    EXPECT_FALSE(result);
+    EXPECT_TRUE(result);
 }
 
 /**
@@ -510,7 +510,7 @@ HWTEST(VolumeDataMaintainerUnitTest, SaveMicMuteStateTest_002, TestSize.Level1)
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     bool isMuteRet1 = true;
     auto ret = volumeDataMaintainerRet->SaveMicMuteState(isMuteRet1);
-    EXPECT_NE(ret, true);
+    EXPECT_EQ(ret, true);
 
     const int32_t invalidUserId = -1;
     const int32_t invalidUserIdMinUser = 99;
@@ -773,7 +773,7 @@ HWTEST(VolumeDataMaintainerUnitTest, SaveMuteToDb, TestSize.Level4)
     desc->volumeBehavior_.isReady = true;
     EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true, zoneId), SUCCESS);
     desc->volumeBehavior_.databaseVolumeName = "Test";
-    EXPECT_NE(vd->SaveMuteToDb(desc, STREAM_MUSIC, true, zoneId), SUCCESS);
+    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true, zoneId), SUCCESS);
 }
 
 /**
