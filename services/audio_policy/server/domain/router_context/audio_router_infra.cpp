@@ -1016,13 +1016,13 @@ void AudioRouterInfra::ClearWirelessSelectDevice(const std::shared_ptr<AudioDevi
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     CHECK_AND_RETURN(IsWirelessDevice(device));
 
-    if (!IsSameWirelessDevice(device, systemSelectDevice_.mediaOutput_.device_)) {
+    if (NeedClearWirelessDevice(device, systemSelectDevice_.mediaOutput_.device_)) {
         systemSelectDevice_.mediaOutput_.device_ = nullptr;
         systemSelectDevice_.mediaOutput_.selectTime_ = 0;
     }
     for (auto& [uid, context] : appContexts_) {
         CHECK_AND_CONTINUE_LOG(context != nullptr, "null context found for uid: %{public}d", uid);
-        if (!IsSameWirelessDevice(device, context->appSelectDevice_.mediaOutput_.device_)) {
+        if (NeedClearWirelessDevice(device, context->appSelectDevice_.mediaOutput_.device_)) {
             context->appSelectDevice_.mediaOutput_.device_ = nullptr;
             context->appSelectDevice_.mediaOutput_.selectTime_ = 0;
             UpdateExclusiveUidNoLock(uid, SelectDeviceType::MEDIA_OUTPUT, 0);
@@ -1030,7 +1030,7 @@ void AudioRouterInfra::ClearWirelessSelectDevice(const std::shared_ptr<AudioDevi
         auto &streamSelectDevices = context->streamSelectDevices_;
         auto it = streamSelectDevices.begin();
         while (it != streamSelectDevices.end()) {
-            if (!IsSameWirelessDevice(device, it->second) && it->second!= nullptr &&
+            if (NeedClearWirelessDevice(device, it->second) && it->second != nullptr &&
                 it->second->deviceRole_ == OUTPUT_DEVICE) {
                 it = streamSelectDevices.erase(it);
             } else {
@@ -1051,11 +1051,10 @@ bool AudioRouterInfra::IsWirelessDevice(const std::shared_ptr<AudioDeviceSimpleD
            type == DEVICE_TYPE_NEARLINK_IN;
 }
 
-bool AudioRouterInfra::IsSameWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &left,
+bool AudioRouterInfra::NeedClearWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &left,
     const std::shared_ptr<AudioDeviceSimpleDescriptor> &right)
 {
-    CHECK_AND_RETURN_RET(IsWirelessDevice(left) && IsWirelessDevice(right), false);
-    return left->macAddress_ == right->macAddress_;
+    return IsWirelessDevice(left) && IsWirelessDevice(right) && (left->macAddress_ != right->macAddress_);
 }
 
 void AudioRouterInfra::UpdateExclusiveUidNoLock(int32_t uid, SelectDeviceType type, const uint32_t deviceTokenId)

@@ -423,7 +423,7 @@ void AudioAdapterManager::SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldTyp
 
 int32_t AudioAdapterManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("SetSystemVolumeLevel: appUid: %{public}d, volumeLevel:%{public}d",
+    AUDIO_INFO_LOG("appUid: %{public}d, volumeLevel: %{public}d",
         appUid, volumeLevel);
     volumeDataMaintainer_.SetAppVolume(appUid, volumeLevel);
     return SetAppVolumeDb(appUid, deviceType);
@@ -431,7 +431,7 @@ int32_t AudioAdapterManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLev
 
 int32_t AudioAdapterManager::SetAppVolumeMuted(int32_t appUid, bool muted)
 {
-    AUDIO_INFO_LOG("SetSystemVolumeLevel: appUid: %{public}d, muted:%{public}d",
+    AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d",
         appUid, muted);
     volumeDataMaintainer_.SetAppVolumeMuted(appUid, muted);
     return SetAppVolumeMutedDB(appUid, muted);

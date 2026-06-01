@@ -146,7 +146,7 @@ private:
     int64_t GetCurrentTimeMs() const;
     std::vector<SourceType> GetAppRunningSourceTypesNoLock(int32_t uid);
     bool IsWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
-    bool IsSameWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &left,
+    bool NeedClearWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &left,
         const std::shared_ptr<AudioDeviceSimpleDescriptor> &right);
     void UpdateExclusiveUidNoLock(int32_t uid, SelectDeviceType type, const uint32_t deviceTokenId);
     int32_t GetHighestInputPriorityAppNoLock();
