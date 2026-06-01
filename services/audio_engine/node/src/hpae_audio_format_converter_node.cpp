@@ -42,7 +42,7 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
 {
     int32_t enableNewRoute = 0;
     GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-    frameLenInMs_ = enableNewRoute == 1 ?
+    frameLenInMs_ = enableNewRoute != 1 ?
         static_cast<float>(nodeInfo.frameLen * MILLISECOND_PER_SECOND) / static_cast<float>(nodeInfo.samplingRate) :
         static_cast<float>(FRAME_LEN_20MS);
     converterOutput_.SetSplitStreamType(preNodeInfo.GetSplitStreamType());

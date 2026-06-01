@@ -269,7 +269,7 @@ int32_t AudioInjectorPolicy::AddCaptureInjectorInner()
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
         int32_t enableNewRoute = 0;
         GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-        if (voipType_ == NORMAL_VOIP || enableNewRoute == 1) {
+        if (voipType_ == NORMAL_VOIP || enableNewRoute != 1) {
             audioPolicyManager_.AddCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);
             isConnected_ = true;
@@ -296,7 +296,7 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
         int32_t enableNewRoute = 0;
         GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-        if (voipType_ == NORMAL_VOIP || enableNewRoute == 1) {
+        if (voipType_ == NORMAL_VOIP || enableNewRoute != 1) {
             audioPolicyManager_.RemoveCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);
             isConnected_ = false;

@@ -1617,7 +1617,7 @@ void AudioService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     IStreamManager::GetPlaybackManager(PLAYBACK).GetAllSinkInputs(sinkInputs);
     int32_t enableNewRoute = 0;
     GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-    CHECK_AND_RETURN(enableNewRoute == 1);
+    CHECK_AND_RETURN(enableNewRoute != 1);
     std::vector<SinkInput> directSinkInputs;
     IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK).GetAllSinkInputs(directSinkInputs);
     sinkInputs.insert(sinkInputs.end(), directSinkInputs.begin(), directSinkInputs.end());

@@ -1251,7 +1251,7 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
     int32_t enableNewRoute = 0;
     GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
     if (IsLowLatencyRoute(routeFlag) || IsDirectRoute(routeFlag)) {
-        return enableNewRoute == 1;
+        return enableNewRoute != 1;
     }
     if ((routeFlag & AUDIO_OUTPUT_FLAG_HWDECODING)) {
         return false;
