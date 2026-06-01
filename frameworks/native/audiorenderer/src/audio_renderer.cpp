@@ -671,9 +671,6 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     }
 
     audioInterrupt_.audioFocusType.streamType = audioStreamType;
-    if (rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
-        audioInterrupt_.audioFocusType.streamType = STREAM_INTERPHONE;
-    }
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.mode = SHARE_MODE;
@@ -1543,6 +1540,9 @@ void AudioRendererPrivate::HandleAudioInterruptInfo()
         audioInterrupt_.audioFocusType.streamType == STREAM_MOVIE ||
         audioInterrupt_.audioFocusType.streamType == STREAM_SPEECH) {
         audioInterrupt_.startTimeNs = ClockTime::GetCurNano();
+    }
+    if (audioInterrupt_.streamUsage == STREAM_USAGE_INTERPHONE) {
+        audioInterrupt_.audioFocusType.streamType = STREAM_INTERPHONE;
     }
 }
 
