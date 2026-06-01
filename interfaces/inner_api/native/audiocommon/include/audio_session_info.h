@@ -198,7 +198,7 @@ enum class AudioSessionBehaviorFlags {
     /**
      * Behavior validation mask.
      */
-    MASK_VALID_BEHAVIOR = 0x80000003,
+    MASK_VALID_BEHAVIOR = 0x80000002,
 };
 } // namespace AudioStandard
 } // namespace OHOS
