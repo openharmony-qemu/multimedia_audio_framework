@@ -1157,7 +1157,7 @@ int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
         return ERR_ILLEGAL_STATE;
     }
     capturerMode_ = captureMode;
-
+    CHECK_AND_RETURN_RET_LOG(capturerInfo_.isLoopback == false, SUCCESS, "loopback no need InitCallbackLoop");
     // init callbackLoop_
     InitCallbackLoop();
 
