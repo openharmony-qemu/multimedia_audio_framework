@@ -352,7 +352,7 @@ bool AudioStreamManagerImpl::IsFastPlaybackSupported(AudioStreamInfo streamInfo,
     }
 
     OHOS::AudioStandard::AudioStreamInfo nativeInfo = {};
-    int32_t intValue = streamInfo.samplingRate.get_value();
+    int32_t intValue = TaiheParamUtils::GetIntValueFromSamplingRateUnion(streamInfo.samplingRate);
     nativeInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
     nativeInfo.channels =
         static_cast<OHOS::AudioStandard::AudioChannel>(streamInfo.channels.get_value());
@@ -380,7 +380,7 @@ bool AudioStreamManagerImpl::IsFastRecordingSupported(AudioStreamInfo streamInfo
     }
 
     OHOS::AudioStandard::AudioStreamInfo nativeInfo = {};
-    int32_t intValue = streamInfo.samplingRate.get_value();
+    int32_t intValue = TaiheParamUtils::GetIntValueFromSamplingRateUnion(streamInfo.samplingRate);
     nativeInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
     nativeInfo.channels =
         static_cast<OHOS::AudioStandard::AudioChannel>(streamInfo.channels.get_value());
@@ -408,7 +408,7 @@ bool AudioStreamManagerImpl::IsMultichannelPlaybackSupported(AudioStreamInfo str
     }
 
     OHOS::AudioStandard::AudioStreamInfo nativeInfo = {};
-    int32_t intValue = streamInfo.samplingRate.get_value();
+    int32_t intValue = TaiheParamUtils::GetIntValueFromSamplingRateUnion(streamInfo.samplingRate);
     nativeInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
     nativeInfo.channels =
         static_cast<OHOS::AudioStandard::AudioChannel>(streamInfo.channels.get_value());
@@ -436,7 +436,7 @@ bool AudioStreamManagerImpl::IsDirectPlaybackSupported(AudioStreamInfo streamInf
     }
 
     OHOS::AudioStandard::AudioStreamInfo nativeInfo = {};
-    int32_t intValue = streamInfo.samplingRate.get_value();
+    int32_t intValue = TaiheParamUtils::GetIntValueFromSamplingRateUnion(streamInfo.samplingRate);
     nativeInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
     nativeInfo.channels =
         static_cast<OHOS::AudioStandard::AudioChannel>(streamInfo.channels.get_value());
@@ -464,7 +464,7 @@ bool AudioStreamManagerImpl::IsOffloadPlaybackSupported(AudioStreamInfo streamIn
     }
 
     OHOS::AudioStandard::AudioStreamInfo nativeInfo = {};
-    int32_t intValue = streamInfo.samplingRate.get_value();
+    int32_t intValue = TaiheParamUtils::GetIntValueFromSamplingRateUnion(streamInfo.samplingRate);
     nativeInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
     nativeInfo.channels =
         static_cast<OHOS::AudioStandard::AudioChannel>(streamInfo.channels.get_value());
