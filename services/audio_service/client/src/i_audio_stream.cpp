@@ -318,7 +318,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
         int32_t enableNewRoute = 0;
         GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
 
-        if (enableNewRoute == 1) {
+        if (enableNewRoute != 1) {
             HILOG_COMM_INFO("[GetPlaybackStream]Create renderer in client for fast playback stream with new route");
             return RendererInClient::GetInstance(eStreamType, appUid);
         } else {
@@ -348,7 +348,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
         int32_t enableNewRoute = 0;
         GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
 
-        if (enableNewRoute == 1) {
+        if (enableNewRoute != 1) {
             HILOG_COMM_INFO("[GetRecordStream]Create capturer in client for fast record stream with new route");
             return CapturerInClient::GetInstance(eStreamType, appUid);
         } else {

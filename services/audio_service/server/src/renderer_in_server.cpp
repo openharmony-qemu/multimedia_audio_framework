@@ -2037,7 +2037,7 @@ int32_t RendererInServer::GetLatency(uint64_t &latency)
     std::unique_lock<std::mutex> lock(statusLock_);
     int32_t enableNewRoute = 0;
     GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-    if (managerType_ == DIRECT_PLAYBACK && enableNewRoute == 0) {
+    if (managerType_ == DIRECT_PLAYBACK && enableNewRoute != 0) {
         latency = IStreamManager::GetPlaybackManager(managerType_).GetLatency();
         return SUCCESS;
     }

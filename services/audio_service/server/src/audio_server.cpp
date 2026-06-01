@@ -2573,7 +2573,7 @@ bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
 {
     int32_t enableNewRoute = 0;
     GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-    if (enableNewRoute == 1) {
+    if (enableNewRoute != 1) {
         return true;
     }
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
