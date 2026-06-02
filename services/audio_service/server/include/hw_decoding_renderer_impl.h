@@ -98,6 +98,7 @@ private:
     uint64_t writtenFrameCount_ = 0;
     std::mutex sinkLatencyFetcherMutex_;
     std::function<int32_t (uint32_t &)> sinkLatencyFetcher_;
+    IAudioSinkAttr attr_;
 
     // buffer values
     std::unique_ptr<uint8_t []> rawBuffer_ = nullptr;
