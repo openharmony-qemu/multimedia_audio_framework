@@ -4638,6 +4638,115 @@ HWTEST(RendererInClientPublicNewUnitTest, OnFirstFrameWriting_002, TestSize.Leve
 }
 
 /**
+ * @tc.name  : Test GetLatency low latency local calculation
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_LowLatency_001
+ * @tc.desc  : Test GetLatency returns local value 20 when IsLowLatencyRenderer.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetLatency_LowLatency_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->ipcStream_ = nullptr;
+
+    uint64_t latency = 0;
+    int32_t ret = rendererInClientInner->GetLatency(latency);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 20);
+}
+
+/**
+ * @tc.name  : Test GetLatency non-low latency uses IPC
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_NonLowLatency_001
+ * @tc.desc  : Test GetLatency uses ipcStream when not IsLowLatencyRenderer.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetLatency_NonLowLatency_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = 0;
+    rendererInClientInner->ipcStream_ = new IpcStreamMock();
+
+    uint64_t latency = 0;
+    int32_t ret = rendererInClientInner->GetLatency(latency);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 50);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag low latency engine flag
+ * @tc.type  : FUNC
+ * @tc.number: GetLatencyWithFlag_LowLatency_Engine_001
+ * @tc.desc  : Test GetLatencyWithFlag returns local engine latency for low latency.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetLatencyWithFlag_LowLatency_Engine_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->ipcStream_ = nullptr;
+
+    uint64_t latency = 0;
+    int32_t ret = rendererInClientInner->GetLatencyWithFlag(latency, LATENCY_FLAG_ENGINE);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 5ULL * AUDIO_US_PER_MS);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag low latency hardware flag
+ * @tc.type  : FUNC
+ * @tc.number: GetLatencyWithFlag_LowLatency_Hardware_001
+ * @tc.desc  : Test GetLatencyWithFlag returns local hardware latency for low latency.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetLatencyWithFlag_LowLatency_Hardware_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->ipcStream_ = nullptr;
+
+    uint64_t latency = 0;
+    int32_t ret = rendererInClientInner->GetLatencyWithFlag(latency, LATENCY_FLAG_HARDWARE);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 20ULL * AUDIO_US_PER_MS);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag low latency combined flags
+ * @tc.type  : FUNC
+ * @tc.number: GetLatencyWithFlag_LowLatency_Combined_001
+ * @tc.desc  : Test GetLatencyWithFlag returns local combined latency for low latency.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetLatencyWithFlag_LowLatency_Combined_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->ipcStream_ = nullptr;
+
+    uint64_t latency = 0;
+    int32_t ret = rendererInClientInner->GetLatencyWithFlag(latency,
+        static_cast<LatencyFlag>(LATENCY_FLAG_ENGINE | LATENCY_FLAG_HARDWARE));
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 25ULL * AUDIO_US_PER_MS);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag low latency no flag
+ * @tc.type  : FUNC
+ * @tc.number: GetLatencyWithFlag_LowLatency_NoFlag_001
+ * @tc.desc  : Test GetLatencyWithFlag returns 0 for low latency with no flag.
+ */
+HWTEST(RendererInClientPublicNewUnitTest, GetLatencyWithFlag_LowLatency_NoFlag_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->ipcStream_ = nullptr;
+
+    uint64_t latency = 999;
+    int32_t ret = rendererInClientInner->GetLatencyWithFlag(latency, static_cast<LatencyFlag>(0));
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 0);
+}
+
+/**
  * @tc.name  : Test NotifyRouteUpdate logging
  * @tc.type  : FUNC
  * @tc.number: NotifyRouteUpdate_001

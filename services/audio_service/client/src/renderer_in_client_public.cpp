@@ -516,14 +516,40 @@ int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
     return SUCCESS;
 }
 
+int32_t RendererInClientInner::GetFastLatency(uint64_t &latency)
+{
+    latency = 20; // 20ms for debug; Consistent with the historical version (FastAudioStream)
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::GetFastLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    latency = 0;
+    bool needHardware = (flag & LATENCY_FLAG_HARDWARE) != 0;
+    bool needEngine = (flag & LATENCY_FLAG_ENGINE) != 0;
+    if (needEngine) {
+        latency += 5ULL * AUDIO_US_PER_MS;
+    }
+    if (needHardware) {
+        latency += 20ULL * AUDIO_US_PER_MS;
+    }
+    return SUCCESS;
+}
+
 int32_t RendererInClientInner::GetLatency(uint64_t &latency)
 {
+    if (IsLowLatencyRenderer()) {
+        return GetFastLatency(latency);
+    }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     return ipcStream_->GetLatency(latency);
 }
 
 int32_t RendererInClientInner::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
 {
+    if (IsLowLatencyRenderer()) {
+        return GetFastLatencyWithFlag(latency, flag);
+    }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
     return ipcStream_->GetLatencyWithFlag(latency, flag);
 }
@@ -730,8 +756,8 @@ void RendererInClientInner::OnFirstFrameWriting()
     Trace trace("RendererInClientInner::OnFirstFrameWriting");
     AUDIO_DEBUG_LOG("In");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
-    if (IsFastStream() && ipcStream_ != nullptr) {
-        ipcStream_->GetLatency(latency);
+    if (IsLowLatencyRenderer()) {
+        GetLatency(latency);
     }
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> cb = nullptr;
