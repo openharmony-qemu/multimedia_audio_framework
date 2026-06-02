@@ -208,9 +208,13 @@ void HpaeOffloadRendererManager::DeleteInputSession()
     // the SE node from the chain (no bypass reconnect), so DestroyOffloadNodes
     // (called via RemoveNodeFromMap) will find a clean state.
     if (sessionEffectNode_ != nullptr) {
+        uint32_t sid = sessionEffectSessionId_;
+        HpaeSessionState state = curNode_ != nullptr ? curNode_->GetState() : HPAE_SESSION_NEW;
         sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
         sessionEffectNode_.reset();
         sessionEffectSessionId_ = 0;
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sid, state,
+            OPERATION_SESSION_EFFECT_DISABLED);
     }
 
     if (curNode_->GetState() == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
@@ -237,6 +241,8 @@ int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
             auto pendingIt = pendingSessionEffects_.find(sessionId);
             if (pendingIt != pendingSessionEffects_.end()) {
                 pendingSessionEffects_.erase(pendingIt);
+                TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(),
+                    OPERATION_SESSION_EFFECT_DISABLED);
             }
             RemoveNodeFromMap(sessionId);
         }
@@ -331,14 +337,7 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     }
     loudnessGainNode_->SetLoudnessGain(curNode_->GetLoudnessGain());
 
-    // Session Effect: check if curNode_ has pending SE
-    auto pendingIt = pendingSessionEffects_.find(curSessionId);
-    if (pendingIt != pendingSessionEffects_.end()) {
-        sessionEffectSessionId_ = curSessionId;
-        InsertSessionEffectNode(pendingIt->second.effectName,
-            pendingIt->second.instance, pendingIt->second.config);
-        pendingSessionEffects_.erase(pendingIt);
-    }
+    HandlePendingSessionEffect(curSessionId);
 
     converterForLoudness_->Connect(curNode_);
     converterForLoudness_->RegisterCallback(this);
@@ -348,6 +347,32 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
         sinkOutputNode_->RenderSinkStart();
     }
     return SUCCESS;
+}
+
+void HpaeOffloadRendererManager::HandlePendingSessionEffect(uint32_t sessionId)
+{
+    auto pendingIt = pendingSessionEffects_.find(sessionId);
+    if (pendingIt == pendingSessionEffects_.end()) {
+        return;
+    }
+
+    uint32_t previousSessionEffectSessionId = sessionEffectSessionId_;
+    bool hadSessionEffectNode = sessionEffectNode_ != nullptr;
+    sessionEffectSessionId_ = sessionId;
+    int32_t ret = InsertSessionEffectNode(pendingIt->second.effectName,
+        pendingIt->second.instance, pendingIt->second.config);
+    if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+        if (!hadSessionEffectNode && sessionEffectNode_ != nullptr) {
+            sessionEffectNode_->DropEffect();
+            sessionEffectNode_.reset();
+        }
+        sessionEffectSessionId_ = previousSessionEffectSessionId;
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
+            OPERATION_SESSION_EFFECT_DISABLED);
+        AUDIO_WARNING_LOG("ConnectInputSession: rollback pending SE for session %{public}u, ret=%{public}d",
+            sessionId, ret);
+    }
+    pendingSessionEffects_.erase(pendingIt);
 }
 
 int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
@@ -514,7 +539,14 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
         if (node->GetSessionId() == curNode_->GetSessionId()) {
             DeleteInputSession();
         } else {
-            RemoveNodeFromMap(node->GetSessionId());
+            uint32_t sessionId = node->GetSessionId();
+            auto pendingIt = pendingSessionEffects_.find(sessionId);
+            if (pendingIt != pendingSessionEffects_.end()) {
+                pendingSessionEffects_.erase(pendingIt);
+                TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(),
+                    OPERATION_SESSION_EFFECT_DISABLED);
+            }
+            RemoveNodeFromMap(sessionId);
         }
     }
 
@@ -574,6 +606,12 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
             DeleteInputSession();
             SetCurrentNode();
         } else {
+            auto pendingIt = pendingSessionEffects_.find(sessionId);
+            if (pendingIt != pendingSessionEffects_.end()) {
+                pendingSessionEffects_.erase(pendingIt);
+                TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(),
+                    OPERATION_SESSION_EFFECT_DISABLED);
+            }
             RemoveNodeFromMap(sessionId);
         }
         std::string name = sinkName;
@@ -1156,8 +1194,13 @@ int32_t HpaeOffloadRendererManager::InsertSessionEffectNode(const std::string &e
     HpaeNodeInfo nodeInfo = converterForLoudness_->GetNodeInfo();
     sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(nodeInfo);
     int32_t ret = sessionEffectNode_->CreateEffectWithInstance(effectName, instance, config);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ret,
-        "InsertSessionEffectNode: CreateEffectWithInstance failed, ret=%{public}d", ret);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("InsertSessionEffectNode: CreateEffectWithInstance failed, ret=%{public}d", ret);
+        sessionEffectNode_->DropEffect();
+        sessionEffectNode_.reset();
+        sessionEffectSessionId_ = 0;
+        return ret;
+    }
 
     // Insert between converterForLoudness_ and loudnessGainNode_
     loudnessGainNode_->DisConnect(converterForLoudness_);
@@ -1169,6 +1212,13 @@ int32_t HpaeOffloadRendererManager::InsertSessionEffectNode(const std::string &e
     // and restores 200ms + RunningLock. 0 = OFFLOAD_ACTIVE_FOREGROUND.
     if (sinkOutputNode_ != nullptr) {
         sinkOutputNode_->SetPolicyState(0);
+    }
+
+    // Flush HDI/DSP cache and internal buffer to prevent stale bypass data
+    // mixing with SE output during warmup, which causes pop noise.
+    if (sinkOutputNode_ != nullptr) {
+        sinkOutputNode_->RenderSinkFlush();
+        sinkOutputNode_->FlushStream();
     }
 
     AUDIO_INFO_LOG("InsertSessionEffectNode: SE node inserted for session %{public}u",
@@ -1194,10 +1244,20 @@ int32_t HpaeOffloadRendererManager::RemoveSessionEffectNode()
         converterForLoudness_->FlushBuffers();  // Clear residual SE output from processedBuffer_
     }
 
+    // Flush HDI/DSP cache and internal buffer to prevent stale SE-processed data
+    // mixing with bypass output after removal, which causes pop noise.
+    if (sinkOutputNode_ != nullptr) {
+        sinkOutputNode_->RenderSinkFlush();
+        sinkOutputNode_->FlushStream();
+    }
+
     sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
     sessionEffectNode_.reset();
     uint32_t sid = sessionEffectSessionId_;
+    HpaeSessionState state = (curNode_ != nullptr) ? curNode_->GetState() : HPAE_SESSION_NEW;
     sessionEffectSessionId_ = 0;
+    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sid, state,
+        OPERATION_SESSION_EFFECT_DISABLED);
 
     // RewindHistoryBuffer: return unconsumed data (Phase 2: latency=0, no-op)
     if (latency > 0 && curNode_ != nullptr) {
@@ -1229,13 +1289,22 @@ int32_t HpaeOffloadRendererManager::CreateSessionEffect(uint32_t sessionId,
             static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND),
             "CreateSessionEffect: curNode already has SE");
         sessionEffectSessionId_ = sessionId;
-        return InsertSessionEffectNode(effectName, instance, config);
+        int32_t ret = InsertSessionEffectNode(effectName, instance, config);
+        if (ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
+                OPERATION_SESSION_EFFECT_ENABLED);
+        }
+        return ret;
     }
     // Not curNode_ -> store pending
     CHECK_AND_RETURN_RET_LOG(pendingSessionEffects_.find(sessionId) == pendingSessionEffects_.end(),
         static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND),
         "CreateSessionEffect: session %{public}u already has pending SE", sessionId);
     pendingSessionEffects_[sessionId] = {effectName, instance, config};
+    auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+    HpaeSessionState state = (node != nullptr) ? node->GetState() : HPAE_SESSION_NEW;
+    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state,
+        OPERATION_SESSION_EFFECT_ENABLED);
     AUDIO_INFO_LOG("CreateSessionEffect: deferred for session %{public}u (not curNode)", sessionId);
     return 0;
 }
@@ -1255,7 +1324,11 @@ int32_t HpaeOffloadRendererManager::DestroySessionEffect(uint32_t sessionId)
     // Remove from pending if present
     auto it = pendingSessionEffects_.find(sessionId);
     if (it != pendingSessionEffects_.end()) {
+        auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+        HpaeSessionState state = (node != nullptr) ? node->GetState() : HPAE_SESSION_NEW;
         pendingSessionEffects_.erase(it);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state,
+            OPERATION_SESSION_EFFECT_DISABLED);
         AUDIO_INFO_LOG("DestroySessionEffect: removed pending SE for session %{public}u", sessionId);
         return 0;
     }

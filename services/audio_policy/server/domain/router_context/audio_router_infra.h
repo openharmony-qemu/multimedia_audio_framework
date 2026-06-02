@@ -35,6 +35,15 @@ enum ExcludeDeviceType {
     UNEXCLUDED = 1,
 };
 
+constexpr SelectDeviceType ALL_OUTPUT_TYPES = SelectDeviceType::SELECT_DEVICE_TYPE_NUM;
+
+struct StreamDefaultDeviceEntry {
+    int32_t uid = INVALID_UID;
+    uint32_t streamId = INVALID_STREAM_ID;
+    int64_t timestamp = 0;
+    SelectDeviceType type = SelectDeviceType::INVALID_TYPE;
+};
+
 class AudioRouterInfra {
 public:
     static AudioRouterInfra& GetInstance()
@@ -61,9 +70,8 @@ public:
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamSelectDevice(int32_t uid, uint32_t streamId);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId,
         SelectDeviceType type);
-    std::shared_ptr<AudioDeviceSimpleDescriptor> GetFirstRunningStreamDefaultDevice(
-        int32_t uid, SelectDeviceType type);
-    std::shared_ptr<AudioDeviceSimpleDescriptor> GetLatestStreamSelectDevice(SelectDeviceType type);
+    void RefreshStreamDefaultDevicePriority(int32_t uid, uint32_t streamId, SelectDeviceType type);
+    std::shared_ptr<AudioDeviceSimpleDescriptor> GetEffectiveDefaultOutputDevice(SelectDeviceType type);
     void ClearStreamSelectDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
     void ClearSystemSelectDevice(SelectDeviceType type,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
@@ -104,6 +112,7 @@ public:
     std::vector<StreamUsage> GetAppRunningStreamUsages(int32_t uid);
     SourceType GetStreamSourceType(int32_t uid, uint32_t streamId);
     StreamUsage GetStreamStreamUsage(int32_t uid, uint32_t streamId);
+    bool IsStreamRunning(int32_t uid, uint32_t streamId);
 
     void UpdateAppForegroundState(int32_t uid, bool isForeground);
     void OnAppDied(int32_t uid);
@@ -128,14 +137,16 @@ private:
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, const uint32_t deviceTokenId);
     void ClearAllAppSelectDevice(SelectDeviceType type,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
-    std::shared_ptr<AudioDeviceSimpleDescriptor> GetFirstRunningStreamDefaultDeviceNoLock(
-        int32_t uid, SelectDeviceType type);
+    void RemoveFromPriorityList(int32_t uid, uint32_t streamId, SelectDeviceType type);
+    void InsertStreamDefaultDeviceFront(const StreamDefaultDeviceEntry &entry);
+    // NOTE: AdjustOutputPriority manages outputPriorityList_ for app-level select device priority only.
+    // Default device priority now uses streamDefaultDevicePriority_ via RefreshStreamDefaultDevicePriority.
     void AdjustInputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
     void AdjustOutputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
     int64_t GetCurrentTimeMs() const;
     std::vector<SourceType> GetAppRunningSourceTypesNoLock(int32_t uid);
     bool IsWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
-    bool IsSameWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &left,
+    bool NeedClearWirelessDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &left,
         const std::shared_ptr<AudioDeviceSimpleDescriptor> &right);
     void UpdateExclusiveUidNoLock(int32_t uid, SelectDeviceType type, const uint32_t deviceTokenId);
     int32_t GetHighestInputPriorityAppNoLock();
@@ -169,6 +180,7 @@ private:
         CompareExcludedSimpleDevice> excludedDevices_;
     std::list<int32_t> inputPriorityList_;
     std::list<int32_t> outputPriorityList_;
+    std::list<StreamDefaultDeviceEntry> streamDefaultDevicePriority_;
     std::unordered_set<int32_t> exclusiveUids_[static_cast<size_t>(SelectDeviceType::SELECT_DEVICE_TYPE_NUM)];
     std::atomic<bool> isScoExcluded_ {false};
 };

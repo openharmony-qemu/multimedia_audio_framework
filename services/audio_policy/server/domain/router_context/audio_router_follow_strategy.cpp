@@ -71,16 +71,17 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
 
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
 
-    if (appSelectInfo.device_ != nullptr && systemSelectInfo.device_ != nullptr) {
+    if (AudioRouterSelectStrategy::HasValidSelectDevice(appSelectInfo) &&
+        AudioRouterSelectStrategy::HasValidSelectDevice(systemSelectInfo)) {
         if (appSelectInfo.selectTime_ > systemSelectInfo.selectTime_ || !isSystemSelectActive) {
             simpleDesc = appSelectInfo.device_;
         } else {
             simpleDesc = systemSelectInfo.device_;
             category = BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
         }
-    } else if (appSelectInfo.device_ != nullptr) {
+    } else if (AudioRouterSelectStrategy::HasValidSelectDevice(appSelectInfo)) {
         simpleDesc = appSelectInfo.device_;
-    } else if (systemSelectInfo.device_ != nullptr && isSystemSelectActive) {
+    } else if (AudioRouterSelectStrategy::HasValidSelectDevice(systemSelectInfo) && isSystemSelectActive) {
         simpleDesc = systemSelectInfo.device_;
         category = BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
     } else {
@@ -347,9 +348,11 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaDefaul
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
 
     if (streamId == INVALID_STREAM_ID ||
-        routerInfra.GetStreamStreamUsage(uid, streamId) != StreamUsage::STREAM_USAGE_INVALID) {
-        simpleDesc = routerInfra.GetLatestStreamSelectDevice(SelectDeviceType::MEDIA_OUTPUT);
+        routerInfra.IsStreamRunning(uid, streamId)) {
+        // Stream is running: use stream-level time-sequence priority (latest timestamp wins)
+        simpleDesc = routerInfra.GetEffectiveDefaultOutputDevice(SelectDeviceType::MEDIA_OUTPUT);
     } else {
+        // Stream is NOT running: return only this stream's default device
         simpleDesc = routerInfra.GetStreamDefaultDevice(uid, streamId, SelectDeviceType::MEDIA_OUTPUT);
     }
 
@@ -364,11 +367,12 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallDefault
     auto &routerInfra = AudioRouterInfra::GetInstance();
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
 
-    if (AudioSceneManager::GetInstance().IsInAudioCallScene()) {
-        auto callOwnerUid = AudioSceneManager::GetInstance().GetAudioSceneOwnerUid();
-        simpleDesc = routerInfra.GetFirstRunningStreamDefaultDevice(callOwnerUid,
-            SelectDeviceType::CALL_OUTPUT);
+    if (streamId == INVALID_STREAM_ID ||
+        routerInfra.IsStreamRunning(uid, streamId)) {
+        // Stream is running: use stream-level time-sequence priority (same mechanism as media)
+        simpleDesc = routerInfra.GetEffectiveDefaultOutputDevice(SelectDeviceType::CALL_OUTPUT);
     } else {
+        // Stream is NOT running: return only this stream's call default device
         simpleDesc = routerInfra.GetStreamDefaultDevice(uid, streamId, SelectDeviceType::CALL_OUTPUT);
     }
 

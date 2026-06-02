@@ -1206,6 +1206,7 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
     std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &argTransFlag, napi_value in)
 {
     int32_t intValue = {0};
+    bool boolValue = false;
     argTransFlag = true;
     bool hasDeviceRole = true;
     bool hasNetworkId  = true;
@@ -1253,11 +1254,10 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
     }
 
     selectedAudioDevice->macAddress_ = GetPropertyString(env, in, "address");
-
-    status = GetValueInt32(env, "id", intValue, in);
-    if (status == napi_ok) {
-        selectedAudioDevice->deviceId_ = intValue;
-    }
+    selectedAudioDevice->deviceId_ =
+        GetValueInt32(env, "id", intValue, in) == napi_ok ? intValue : 0;
+    selectedAudioDevice->highQualityRecordingSupported_ =
+        GetValueBoolean(env, "highQualityRecordingSupported", boolValue, in) == napi_ok ? true : false;
 
     return napi_ok;
 }

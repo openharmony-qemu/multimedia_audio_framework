@@ -96,6 +96,7 @@ private:
         const int32_t uid = -1);
     int32_t SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    int32_t ConnectVirtualDeviceIfNeeded(std::shared_ptr<AudioDeviceDescriptor> &device);
     int32_t FetchInputAndOutputDevice(const std::string &caller,
         const AudioStreamDeviceChangeReasonExt outputReason = AudioStreamDeviceChangeReason::UNKNOWN,
         const AudioStreamDeviceChangeReasonExt inputReason = AudioStreamDeviceChangeReason::UNKNOWN);

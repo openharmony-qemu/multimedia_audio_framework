@@ -62,6 +62,7 @@ public:
     void MuteDefaultSinkPort(std::string networkID, std::string sinkName);
     void UnmutePortAfterMuteDuration(int32_t muteDuration, const std::string &portName);
     void DoUnmutePort(int32_t muteDuration, const std::string &portName);
+    std::string GetClassNameByPortAndNetworkId(const std::string &portName, const std::string &networkId);
 
 private:
     AudioIOHandleMap() {}

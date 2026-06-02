@@ -249,10 +249,12 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
 
 void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duration, bool isSync, bool isSleepEnabled)
 {
-    if (sinkPortStrToClassStrMap_.count(portName) > 0) {
-        // Mute by render sink. (primary、a2dp、usb、dp、offload)
-        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName),
-            duration, true);
+    std::string networkId = AudioPolicyUtils::GetInstance().GetRemoteNetworkId(portName, OUTPUT_DEVICE);
+    std::string className = GetClassNameByPortAndNetworkId(portName, networkId);
+    if (!className.empty()) {
+        // Mute by render sink. (primary、a2dp、usb、dp、offload、remote)
+        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(className,
+            duration, true, networkId);
     } else {
         // Mute by pa.
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, true, isSync);
@@ -319,9 +321,11 @@ void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, const s
 
 void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &portName)
 {
-    if (sinkPortStrToClassStrMap_.count(portName) > 0) {
-        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(sinkPortStrToClassStrMap_.at(portName),
-            muteDuration, false);
+    std::string networkId = AudioPolicyUtils::GetInstance().GetRemoteNetworkId(portName, OUTPUT_DEVICE);
+    std::string className = GetClassNameByPortAndNetworkId(portName, networkId);
+    if (!className.empty()) {
+        AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(className,
+            muteDuration, false, networkId);
     } else {
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, false);
     }
@@ -351,6 +355,25 @@ int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeI
 
     AddIOHandleInfo(moduleInfo.name, ioHandle);
     return SUCCESS;
+}
+
+std::string AudioIOHandleMap::GetClassNameByPortAndNetworkId(const std::string &portName, const std::string &networkId)
+{
+    static const std::unordered_map<std::string, std::string> remoteSuffixMap = {
+        {REMOTE_SUFFIX, REMOTE_CLASS},
+        {REMOTE_OFFLOAD_SUFFIX, REMOTE_OFFLOAD_CLASS},
+        {REMOTE_MCH_SUFFIX, REMOTE_MCH_CLASS}
+    };
+    std::string className = "";
+    className = sinkPortStrToClassStrMap_.count(portName) ? sinkPortStrToClassStrMap_.at(portName) : className;
+    CHECK_AND_RETURN_RET_LOG(className.empty(), className, "className: %{public}s", className.c_str());
+
+    CHECK_AND_RETURN_RET(!networkId.empty(), className);
+    CHECK_AND_RETURN_RET_LOG(portName.find(networkId) != std::string::npos &&
+        portName.find("_out") != std::string::npos, className, "invalid portName");
+    std::string suffix = portName.substr(networkId.length() + 1);
+    className = remoteSuffixMap.count(suffix) ? remoteSuffixMap.at(suffix) : className;
+    return className;
 }
 }
 }

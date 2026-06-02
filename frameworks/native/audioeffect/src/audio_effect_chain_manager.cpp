@@ -41,7 +41,6 @@ constexpr float EPSILON = 1e-6f;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
 const std::string DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
 const std::string DEFAULT_PRESET_SCENE = "SCENE_MUSIC";
-constexpr int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024;
 
 const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
     {"voip_down", "settings.sound_ai_voip_down_selection"},
@@ -2398,7 +2397,13 @@ void AudioEffectChainManager::SetBypassSpatializationForStereo(bool bypass)
     CHECK_AND_RETURN(spatializationEnabled_ && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || deviceType_ == DEVICE_TYPE_NEARLINK));
     AudioSpatializationState spatializationState = {spatializationEnabled_, headTrackingEnabled_};
+    bool previousOffloadState = btOffloadEnabled_;
     UpdateSpatializationEnabled(spatializationState);
+    if (headTrackingEnabled_ && !bypassSpatializationForStereo_ && previousOffloadState != btOffloadEnabled_) {
+        AUDIO_INFO_LOG("btOffloadEnabled change from %{public}d to %{public}d, UpdateSensorState",
+            previousOffloadState, btOffloadEnabled_);
+        UpdateSensorState();
+    }
 }
 
 int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels,
@@ -2819,10 +2824,11 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
         return ERR_SAVE_HRTF_FAIL;
     }
 
-    const char *outPath = "data/hvs/arm/personalized_hrtf.bin";
+    const char *outPath = "/data/data/hvs/arm/personalized_hrtf.bin";
     char *dirCopy = strdup(outPath);
     CHECK_AND_RETURN_RET_LOG(dirCopy != nullptr, ERR_SAVE_HRTF_FAIL, "dirCopy is nullptr");
     char *p = dirCopy;
+    if (*p == '/') p++;
     while (*p) {
         if (*p == '/') {
             *p = '\0';

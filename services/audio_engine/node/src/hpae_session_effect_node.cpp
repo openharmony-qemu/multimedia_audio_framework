@@ -19,9 +19,11 @@
 
 #include "hpae_session_effect_node.h"
 #include "audio_engine_log.h"
+#include "hpae_node_common.h"
 #include <algorithm>
 #include <atomic>
 #include <cinttypes>
+#include <limits>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,7 +33,31 @@ namespace {
 static constexpr uint32_t FLUSH_PREHEAT_RATIO_NUMERATOR = 38; // 3.8s numerator
 static constexpr uint32_t FLUSH_PREHEAT_RATIO_DENOMINATOR = 30; // 3.0s denominator
 static constexpr uint32_t BACKOFF_MULTIPLIER = 2;
+static constexpr uint32_t PREHEAT_NO_DATA_TIMEOUT_MS = 100;
 static constexpr int32_t HALF_DIVISOR = 2;
+
+bool GetBytesPerFrame(size_t channels, size_t &bytesPerFrame)
+{
+    if (channels == 0 || channels > std::numeric_limits<size_t>::max() / sizeof(float)) {
+        return false;
+    }
+    bytesPerFrame = channels * sizeof(float);
+    return true;
+}
+
+bool GetPcmByteLen(size_t frameLen, size_t channels, size_t &byteLen)
+{
+    size_t sampleCount = 0;
+    if (channels == 0 || frameLen > std::numeric_limits<size_t>::max() / channels) {
+        return false;
+    }
+    sampleCount = frameLen * channels;
+    if (sampleCount > std::numeric_limits<size_t>::max() / sizeof(float)) {
+        return false;
+    }
+    byteLen = sampleCount * sizeof(float);
+    return true;
+}
 } // namespace
 
 uint32_t HpaeSessionEffectNode::ComputeSkipFrames()
@@ -60,7 +86,10 @@ static const char *StatusToString(HpaeSessionEffectNode::STATUS s)
     }
 }
 
-HpaeSessionEffectNode::HpaeSessionEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
+HpaeSessionEffectNode::HpaeSessionEffectNode(HpaeNodeInfo &nodeInfo)
+    : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
+      tailOutputBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate),
+      tailOutputData_(tailOutputBufferInfo_)
 {
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSessionEffectNode");
@@ -127,10 +156,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     }
 
     if (result != nullptr && !(effectInstance_ && processingStatus == STATUS::INTERCEPTING)) {
-        totalBytesOut_ += byteLen;
-        if (audioConfig_.inputCfg.channels > 0) {
-            stats_.framesOutput += static_cast<int64_t>(byteLen / (audioConfig_.inputCfg.channels * sizeof(float)));
-        }
+        AccountOutput(byteLen);
     }
     return result;
 }
@@ -168,10 +194,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessCloseCrossfade(const std::vector<Hp
         }
     }
     status_ = STATUS::IDLE;
-    totalBytesOut_ += byteLen;
-    if (audioConfig_.inputCfg.channels > 0) {
-        stats_.framesOutput += static_cast<int64_t>(byteLen / (audioConfig_.inputCfg.channels * sizeof(float)));
-    }
+    AccountOutput(byteLen);
     return inputs[0];
 }
 
@@ -186,14 +209,75 @@ uint64_t HpaeSessionEffectNode::GetLatency(uint32_t sessionId)
     if (totalBytesIn_ <= totalBytesOut_) {
         return 0;
     }
-    size_t diff = totalBytesIn_ - totalBytesOut_;
+    return BytesToLatencyUs(totalBytesIn_ - totalBytesOut_);
+}
+
+uint64_t HpaeSessionEffectNode::BytesToLatencyUs(size_t bytes) const
+{
     uint32_t channels = audioConfig_.inputCfg.channels;
     uint32_t sampleRate = audioConfig_.inputCfg.samplingRate;
-    if (channels == 0 || sampleRate == 0) {
+    size_t bytesPerFrame = 0;
+    if (sampleRate == 0 || !GetBytesPerFrame(channels, bytesPerFrame)) {
         return 0;
     }
-    uint64_t frames = diff / (channels * sizeof(float));
+    uint64_t frames = bytes / bytesPerFrame;
     return frames * 1000000ULL / sampleRate;
+}
+
+void HpaeSessionEffectNode::ResetAccounting()
+{
+    totalBytesIn_ = 0;
+    totalBytesOut_ = 0;
+    paddingBytesIn_ = 0;
+    stats_.Reset();
+}
+
+void HpaeSessionEffectNode::ResetTailPaddingState()
+{
+    activeNoDataStart_.reset();
+    activeTailPaddingFrames_ = 0;
+}
+
+void HpaeSessionEffectNode::ReconfigOutputBuffers(const AudioEffectConfig &config)
+{
+    uint32_t samplingRate = config.outputCfg.samplingRate != 0 ?
+        config.outputCfg.samplingRate : config.inputCfg.samplingRate;
+    uint32_t channels = config.outputCfg.channels != 0 ? config.outputCfg.channels : config.inputCfg.channels;
+    if (samplingRate == 0 || channels == 0) {
+        AUDIO_WARNING_LOG("ReconfigOutputBuffers skipped: samplingRate=%{public}u channels=%{public}u",
+            samplingRate, channels);
+        return;
+    }
+
+    uint32_t frameLen = static_cast<uint32_t>(CalculateFrameLenBySampleRate(samplingRate));
+    uint64_t channelLayout = config.outputCfg.channelLayout != 0 ?
+        config.outputCfg.channelLayout : config.inputCfg.channelLayout;
+    PcmBufferInfo pcmBufferInfo(channels, frameLen, samplingRate, channelLayout);
+
+    silenceData_.ReConfig(pcmBufferInfo);
+    silenceData_.Reset();
+    silenceData_.SetBufferValid(false);
+    silenceData_.SetBufferSilence(true);
+    silenceData_.SetSplitStreamType(GetNodeInfo().GetSplitStreamType());
+    silenceData_.SetAudioStreamType(GetNodeInfo().streamType);
+    silenceData_.SetAudioStreamUsage(GetNodeInfo().effectInfo.streamUsage);
+
+    tailOutputBufferInfo_ = pcmBufferInfo;
+    tailOutputData_.ReConfig(tailOutputBufferInfo_);
+
+    HpaeNodeInfo nodeInfo = GetNodeInfo();
+    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(samplingRate);
+    nodeInfo.channels = static_cast<AudioChannel>(channels);
+    nodeInfo.frameLen = frameLen;
+    nodeInfo.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
+    SetNodeInfo(nodeInfo);
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callBack = GetNodeStatusCallback().lock()) {
+        callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), GetNodeInfo());
+    }
+#endif
+    AUDIO_INFO_LOG("ReconfigOutputBuffers: samplingRate=%{public}u channels=%{public}u frameLen=%{public}u",
+        samplingRate, channels, frameLen);
 }
 
 int32_t HpaeSessionEffectNode::CreateEffectWithInstance(const std::string &effectName,
@@ -205,6 +289,7 @@ int32_t HpaeSessionEffectNode::CreateEffectWithInstance(const std::string &effec
     effectInstance_ = std::move(instance);
     effectName_ = effectName;
     audioConfig_ = config;
+    ReconfigOutputBuffers(config);
     AUDIO_INFO_LOG("create effect with instance %{public}s", effectName.c_str());
     return 0;
 }
@@ -219,9 +304,8 @@ int32_t HpaeSessionEffectNode::DropEffect()
         StatusToString(status_), GetSessionId());
     effectInstance_.reset();
     status_ = STATUS::IDLE;
-    totalBytesIn_ = 0;
-    totalBytesOut_ = 0;
-    stats_.Reset();
+    ResetAccounting();
+    ResetTailPaddingState();
     return 0;
 }
 
@@ -269,6 +353,7 @@ int32_t HpaeSessionEffectNode::StartEffect()
             } else {
                 prebufFilled_ = true;
             }
+            ResetTailPaddingState();
             AUDIO_INFO_LOG("StartEffect resume: WARMING_UP, restart preheat, prebuf=%{public}zu",
                 prebufTargetBytes_);
         } else {
@@ -301,6 +386,7 @@ int32_t HpaeSessionEffectNode::StartEffect()
     status_ = STATUS::WARMING_UP;
     stopRequested_ = false;
     prebufFilled_ = false;
+    ResetTailPaddingState();
     if (prebufTargetBytes_ > 0) {
         StartPreheatThread();
     } else {
@@ -322,6 +408,7 @@ int32_t HpaeSessionEffectNode::StopEffect()
     }
     auto oldStatus = status_;
     status_ = STATUS::IDLE;
+    ResetTailPaddingState();
     AUDIO_INFO_LOG("[SE::SessionEffectNode] %s→IDLE reason=StopEffect sessionId=%{public}u totalBytesIn=%{public}zu",
         StatusToString(oldStatus), GetSessionId(), totalBytesIn_);
     return 0;
@@ -351,9 +438,8 @@ int32_t HpaeSessionEffectNode::FlushEffect()
     if (!effectInstance_) return 0;
     int32_t ret = effectInstance_->Flush();
     pauseAccumulatedUs_ = 0;
-    totalBytesIn_ = 0;
-    totalBytesOut_ = 0;
-    stats_.Reset();
+    ResetAccounting();
+    ResetTailPaddingState();
 
     if (isPaused_) {
         // Paused: reset to IDLE, clear isPaused_ (Seek scenario → full restart on next Start)
@@ -387,6 +473,7 @@ int32_t HpaeSessionEffectNode::FlushEffect()
         status_ = STATUS::WARMING_UP;
         stopRequested_ = false;
         prebufFilled_ = false;
+        ResetTailPaddingState();
         warmupStartTime_ = std::chrono::steady_clock::now();
         if (prebufTargetBytes_ > 0) {
             StartPreheatThread();
@@ -435,7 +522,17 @@ void HpaeSessionEffectNode::DoProcess()
     }
     // Normal flow: pull upstream → SignalProcess (with timing)
     auto t0 = std::chrono::steady_clock::now();
-    HpaePluginNode::DoProcess();
+    HpaePcmBuffer *tempOut = nullptr;
+    std::vector<HpaePcmBuffer *> &preOutputs = inputStream_.ReadPreOutputData();
+    bool hasInput = !preOutputs.empty() && preOutputs[0] != nullptr;
+    if (hasInput) {
+        tempOut = enableProcess_ ? SignalProcess(preOutputs) : preOutputs[0];
+    } else if (!enableProcess_) {
+        tempOut = SignalProcess(preOutputs);
+    } else if (!hasInput && status_ == STATUS::ACTIVE) {
+        tempOut = ProcessActiveNoInput();
+    }
+    outputStream_.WriteDataToOutput(tempOut != nullptr ? tempOut : &silenceData_);
     auto dt = std::chrono::steady_clock::now() - t0;
     float ms = std::chrono::duration<float, std::milli>(dt).count();
     stats_.lastProcessMs = ms;
@@ -465,18 +562,32 @@ void HpaeSessionEffectNode::PreheatThreadFunc()
 {
     AUDIO_INFO_LOG("PreheatThread running, actively pulling upstream data");
     uint32_t backoffMs = 0;
-    static constexpr uint32_t MAX_BACKOFF_MS = 20;
+    bool noDataTimerActive = false;
+    std::chrono::steady_clock::time_point noDataStartTime;
 
     while (!stopRequested_) {
+        if (effectInstance_ == nullptr) {
+            AUDIO_WARNING_LOG("PreheatThread exiting: effectInstance is null");
+            break;
+        }
+
         std::vector<HpaePcmBuffer *> &upstreamData = inputStream_.ReadPreOutputData();
 
         bool hasData = !upstreamData.empty() && upstreamData[0] != nullptr;
         if (hasData) {
-            FeedInputFromBuffer(upstreamData[0]);
-            backoffMs = 0;
+            size_t fedBytes = FeedInputFromBuffer(upstreamData[0]);
+            if (fedBytes > 0) {
+                noDataTimerActive = false;
+                backoffMs = 0;
+            } else {
+                OnNoDataReceived(noDataTimerActive, noDataStartTime, backoffMs);
+            }
         } else {
-            backoffMs = backoffMs == 0 ? 1 : std::min(backoffMs * BACKOFF_MULTIPLIER, MAX_BACKOFF_MS);
-            std::this_thread::sleep_for(std::chrono::milliseconds(backoffMs));
+            OnNoDataReceived(noDataTimerActive, noDataStartTime, backoffMs);
+        }
+
+        if (stopRequested_) {
+            break;
         }
 
         size_t inputLevel = effectInstance_->GetInputLevel();
@@ -485,10 +596,49 @@ void HpaeSessionEffectNode::PreheatThreadFunc()
                 inputLevel, prebufTargetBytes_);
             break;
         }
+        if (noDataTimerActive && HandleNoDataTimeout(inputLevel)) {
+            break;
+        }
     }
 
     prebufFilled_.store(true);
     AUDIO_INFO_LOG("PreheatThread exiting, stopRequested=%{public}d", stopRequested_.load());
+}
+
+void HpaeSessionEffectNode::OnNoDataReceived(bool &noDataTimerActive,
+    std::chrono::steady_clock::time_point &noDataStartTime, uint32_t &backoffMs)
+{
+    static constexpr uint32_t MAX_BACKOFF_MS = 20;
+
+    if (!noDataTimerActive) {
+        noDataTimerActive = true;
+        noDataStartTime = std::chrono::steady_clock::now();
+        preheatNoDataStartTime_ = noDataStartTime;
+    }
+    backoffMs = backoffMs == 0 ? 1 : std::min(backoffMs * BACKOFF_MULTIPLIER, MAX_BACKOFF_MS);
+    std::this_thread::sleep_for(std::chrono::milliseconds(backoffMs));
+}
+
+bool HpaeSessionEffectNode::HandleNoDataTimeout(size_t inputLevel)
+{
+    auto noDataDuration = std::chrono::steady_clock::now() - preheatNoDataStartTime_;
+    if (noDataDuration < std::chrono::milliseconds(PREHEAT_NO_DATA_TIMEOUT_MS)) {
+        return false;
+    }
+    if (stopRequested_) {
+        return true;
+    }
+    if (inputLevel >= prebufTargetBytes_) {
+        return true;
+    }
+    size_t paddingBytes = prebufTargetBytes_;
+    paddingBytes -= inputLevel;
+    int32_t ret = FeedPaddingInput(paddingBytes);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("PreheatThread FeedPaddingInput failed: %{public}d", ret);
+    }
+    AUDIO_INFO_LOG("PreheatThread no-data timeout, padding=%{public}zu", paddingBytes);
+    return true;
 }
 
 void HpaeSessionEffectNode::StopPreheatThread()
@@ -518,10 +668,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<Hpae
         ApplyInterceptingFadeIn(inputBuf->GetPcmDataBuffer(),
             inputBuf->GetFrameLen() * audioConfig_.inputCfg.channels);
         status_ = STATUS::ACTIVE;
-        totalBytesOut_ += byteLen;
-        if (audioConfig_.inputCfg.channels > 0) {
-            stats_.framesOutput += static_cast<int64_t>(inputBuf->GetFrameLen());
-        }
+        AccountOutput(byteLen);
         return inputBuf;
     }
 
@@ -535,27 +682,103 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessActive(const std::vector<HpaePcmBuf
     size_t byteLen = inputBuf->GetFrameLen() * channels * sizeof(float);
 
     // Continue feeding upstream data to algorithm
-    FeedInputFromBuffer(inputBuf);
+    size_t fedBytes = FeedInputFromBuffer(inputBuf);
+    if (fedBytes > 0) {
+        ResetTailPaddingState();
+    }
 
     // Read algorithm output if available
     return ReadAlgoOutput(inputBuf, byteLen, channels);
 }
 
-void HpaeSessionEffectNode::FeedInputFromBuffer(HpaePcmBuffer *buf)
+HpaePcmBuffer *HpaeSessionEffectNode::ProcessActiveNoInput()
+{
+    if (!effectInstance_ || status_ != STATUS::ACTIVE) {
+        return &silenceData_;
+    }
+
+    size_t channels = tailOutputData_.GetChannelCount();
+    if (audioConfig_.inputCfg.channels != channels) {
+        AUDIO_WARNING_LOG("ProcessActiveNoInput channel mismatch: config=%{public}u buffer=%{public}zu",
+            audioConfig_.inputCfg.channels, channels);
+        return &silenceData_;
+    }
+    size_t byteLen = 0;
+    if (!GetPcmByteLen(tailOutputData_.GetFrameLen(), channels, byteLen)) {
+        return &silenceData_;
+    }
+
+    auto now = std::chrono::steady_clock::now();
+    if (!activeNoDataStart_.has_value()) {
+        activeNoDataStart_ = now;
+    } else {
+        auto noDataDuration = std::chrono::duration_cast<std::chrono::milliseconds>(now - *activeNoDataStart_);
+        if (noDataDuration >= std::chrono::milliseconds(ACTIVE_NO_DATA_PADDING_DELAY_MS) &&
+            activeTailPaddingFrames_ < ACTIVE_TAIL_PADDING_MAX_FRAMES) {
+            int32_t ret = FeedPaddingInput(byteLen);
+            activeTailPaddingFrames_++;
+            (void)ret;
+        }
+    }
+
+    tailOutputData_.Reset();
+    tailOutputData_.SetBufferValid(true);
+    tailOutputData_.SetBufferSilence(false);
+    HpaePcmBuffer *output = ReadAlgoOutput(&tailOutputData_, byteLen, channels);
+    if (output != &silenceData_) {
+        AccountOutput(byteLen);
+    }
+    return output;
+}
+
+size_t HpaeSessionEffectNode::FeedInputFromBuffer(HpaePcmBuffer *buf)
 {
     size_t channels = audioConfig_.inputCfg.channels;
-    size_t byteLen = buf->GetFrameLen() * channels * sizeof(float);
+    size_t byteLen = 0;
+    if (!GetPcmByteLen(buf->GetFrameLen(), channels, byteLen)) {
+        return 0;
+    }
     if (byteLen > 0) {
         int32_t ret = effectInstance_->FeedInput(
             reinterpret_cast<const uint8_t *>(buf->GetPcmDataBuffer()), byteLen);
         if (ret != 0) {
             AUDIO_WARNING_LOG("FeedInput failed: %{public}d", ret);
             stats_.processErrors++;
+            return 0;
         }
         totalBytesIn_ += byteLen;
-        if (audioConfig_.inputCfg.channels > 0) {
-            stats_.framesProcessed += static_cast<int64_t>(byteLen / (audioConfig_.inputCfg.channels * sizeof(float)));
+        size_t bytesPerFrame = 0;
+        if (GetBytesPerFrame(audioConfig_.inputCfg.channels, bytesPerFrame)) {
+            stats_.framesProcessed += static_cast<int64_t>(byteLen / bytesPerFrame);
         }
+        return byteLen;
+    }
+    return 0;
+}
+
+int32_t HpaeSessionEffectNode::FeedPaddingInput(size_t byteLen)
+{
+    if (!effectInstance_ || byteLen == 0) {
+        return 0;
+    }
+
+    std::vector<uint8_t> padding(byteLen, 0);
+    int32_t ret = effectInstance_->FeedInput(padding.data(), byteLen);
+    if (ret != 0) {
+        AUDIO_WARNING_LOG("FeedPaddingInput failed: %{public}d", ret);
+        stats_.processErrors++;
+        return ret;
+    }
+    paddingBytesIn_ += byteLen;
+    return 0;
+}
+
+void HpaeSessionEffectNode::AccountOutput(size_t byteLen)
+{
+    totalBytesOut_ += byteLen;
+    size_t bytesPerFrame = 0;
+    if (GetBytesPerFrame(audioConfig_.inputCfg.channels, bytesPerFrame)) {
+        stats_.framesOutput += static_cast<int64_t>(byteLen / bytesPerFrame);
     }
 }
 
@@ -590,10 +813,10 @@ void HpaeSessionEffectNode::CloseSessionEffectCore()
         }
     }
 
-    // Step 3: Clear algorithm caches (StopEffect is NOT called here intentionally;
+    // Step 3: Flush algorithm caches (StopEffect is NOT called here intentionally;
     // it will be called by DropEffect or destructor which follows this function)
     if (effectInstance_) {
-        effectInstance_->ClearBuffers();
+        effectInstance_->Flush();
     }
 
     // Step 4: Enter bypass mode

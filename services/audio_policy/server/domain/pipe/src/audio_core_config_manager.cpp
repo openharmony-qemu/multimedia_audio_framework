@@ -621,6 +621,15 @@ void AudioCoreConfigManager::CheckDynamicCapturerConfig(std::shared_ptr<AudioStr
             CHECK_AND_RETURN_LOG(StringConverter(config->second.rate, info->sampleRate_),
                 "convert invalid sampleRate_: %{public}s", config->second.rate.c_str());
             info->format_ = ParseFormat(config->second.format);
+            uint32_t channels = 0;
+            CHECK_AND_RETURN_LOG(StringConverter(config->second.channels, channels),
+                "convert invalid channels: %{public}s", config->second.channels.c_str());
+            uint64_t channelLayout = 0;
+            CHECK_AND_RETURN_LOG(StringConverter(config->second.channelLayout, channelLayout),
+                "convert invalid channelLayout: %{public}s", config->second.channelLayout.c_str());
+            CHECK_AND_RETURN(channelLayout != static_cast<uint64_t>(CH_LAYOUT_UNKNOWN));
+            info->channels_ = static_cast<AudioChannel>(channels);
+            info->channelLayout_ = static_cast<AudioChannelLayout>(channelLayout);
         }
     }
 }

@@ -394,9 +394,7 @@ int32_t HpaeInnerCapturerManager::Pause(uint32_t sessionId, bool isStandby)
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::PauseRendererStream");
             AUDIO_INFO_LOG("PauseCapRendererStream sessionId %{public}u, isStandby;%{public}d", sessionId, isStandby);
-            if (isStandby) {
-                DisConnectRendererInputSessionInner(sessionId);
-            } else if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
+            if (!SetSessionFade(sessionId, OPERATION_PAUSED, isStandby)) {
                 DisConnectRendererInputSessionInner(sessionId);
             }
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
@@ -1052,7 +1050,7 @@ void HpaeInnerCapturerManager::SetSpeed(uint32_t sessionId, float speed)
     SendRequestInner(request, __func__);
 }
 
-bool HpaeInnerCapturerManager::SetSessionFade(uint32_t sessionId, IOperation operation)
+bool HpaeInnerCapturerManager::SetSessionFade(uint32_t sessionId, IOperation operation, bool isStandby)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -1070,7 +1068,7 @@ bool HpaeInnerCapturerManager::SetSessionFade(uint32_t sessionId, IOperation ope
 
     std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
     sessionGainNode = rendererSceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
-    if (sessionGainNode == nullptr || !IsRunning()) {
+    if (sessionGainNode == nullptr || !IsRunning() || isStandby) {
         AUDIO_WARNING_LOG("session %{public}d do not have gain node!", sessionId);
         if (operation != OPERATION_STARTED) {
             HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;

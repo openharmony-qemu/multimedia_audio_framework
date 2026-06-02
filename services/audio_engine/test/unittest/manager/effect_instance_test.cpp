@@ -82,8 +82,8 @@ HWTEST_F(EffectInstanceTest, defaultState_isIdle, TestSize.Level0)
 // GetEffectName returns name after Init
 HWTEST_F(EffectInstanceTest, getEffectName_returnsInitName, TestSize.Level0)
 {
-    instance_->Init("ai_audio_enhance", config_);
-    EXPECT_EQ(instance_->GetEffectName(), "ai_audio_enhance");
+    instance_->Init("audio_aiss_enhance", config_);
+    EXPECT_EQ(instance_->GetEffectName(), "audio_aiss_enhance");
 }
 
 // GetAudioConfig returns config after Init

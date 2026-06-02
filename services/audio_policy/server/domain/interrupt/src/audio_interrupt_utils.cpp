@@ -60,16 +60,8 @@ bool AudioInterruptUtils::IsMediaStream(AudioStreamType audioStreamType)
 
 bool AudioInterruptUtils::IsInterPhoneInterrupt(const AudioInterrupt &audioInterrupt)
 {
-    return (audioInterrupt.streamUsage == STREAM_USAGE_INTERPHONE ||
-        audioInterrupt.sourceType == SOURCE_TYPE_INTERPHONE);
+    return (audioInterrupt.audioFocusType.streamType == STREAM_INTERPHONE ||
+        audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INTERPHONE);
 }
-
-bool AudioInterruptUtils::IsVoipInterrupt(const AudioInterrupt &audioInterrupt)
-{
-    return !IsInterPhoneInterrupt(audioInterrupt) &&
-        (audioInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION ||
-        audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

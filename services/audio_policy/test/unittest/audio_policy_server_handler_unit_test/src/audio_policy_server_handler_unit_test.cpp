@@ -629,7 +629,9 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandlePreferredOutputDeviceUpdated_001,
     int32_t clientPid = 1;
     std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
-    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+    AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED, 0);
+    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated(event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
 
@@ -1503,10 +1505,12 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandlePreferredOutputDeviceUpdated_Dedu
         CallbackChange::CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, true);
 
     // First call - should send callback and record device
-    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+    AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED, 0);
+    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated(event);
 
     // Second call with same device - should skip (deduplication)
-    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
+    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated(event);
 
     // Cleanup
     audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
@@ -1533,10 +1537,12 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandlePreferredOutputDeviceUpdated_Dedu
         CallbackChange::CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, true);
 
     // First call
-    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+    AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED, 0);
+    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated(event);
 
     // Second call - should process (different device scenario)
-    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
+    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated(event);
 
     // Cleanup
     audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
@@ -1590,7 +1596,9 @@ HWTEST(AudioPolicyServerHandlerUnitTest, RemoveAudioPolicyClientProxyMap_ClearTr
     // Setup tracking entries by calling the handler functions
     audioPolicyServerHandler_->SetClientCallbacksEnable(
         CallbackChange::CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, true);
-    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+    AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED, 0);
+    audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated(event);
 
     audioPolicyServerHandler_->SetClientCallbacksEnable(
         CallbackChange::CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE, true);

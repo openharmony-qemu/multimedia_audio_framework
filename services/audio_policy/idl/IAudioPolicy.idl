@@ -361,4 +361,6 @@ interface IAudioPolicy {
     void SetSystemVolumeChangeCallbackInfo([in] SystemVolumeFilter filter);
     void RemoveSystemVolumeChangeCallbackInfo([in] SystemVolumeFilter filter);
     void RemoveAllSystemVolumeChangeCallbackInfo();
+    void PauseAudioFocusForExtAudioZone();
+    void ResumeAudioFocusForExtAudioZone();
 }

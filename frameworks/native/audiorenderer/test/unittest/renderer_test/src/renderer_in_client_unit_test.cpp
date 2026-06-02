@@ -3332,6 +3332,58 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_094, TestSize.Level4
 }
 
 /**
+ * @tc.name  : Test GetBufferDesc low latency buffer clearing
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_095
+ * @tc.desc  : Test GetBufferDesc clears cbBuffer_ when IsLowLatencyRenderer returns true.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_095, TestSize.Level1)
+{
+    auto ptr = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    ptr->renderMode_ = RENDER_MODE_CALLBACK;
+    ptr->isHWDecodingType_ = false;
+    ptr->curStreamParams_.encoding = ENCODING_PCM;
+    const size_t bufSize = 1024;
+    ptr->cbBuffer_ = std::make_unique<uint8_t[]>(bufSize);
+    ptr->cbBufferSize_ = bufSize;
+    memset_s(ptr->cbBuffer_.get(), bufSize, 0xFF, bufSize);
+    ptr->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+
+    BufferDesc bufDesc;
+    int32_t ret = ptr->GetBufferDesc(bufDesc);
+    EXPECT_EQ(ret, SUCCESS);
+    for (size_t i = 0; i < bufSize; i++) {
+        EXPECT_EQ(bufDesc.buffer[i], 0);
+    }
+}
+
+/**
+ * @tc.name  : Test GetBufferDesc non-low latency buffer not cleared
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_096
+ * @tc.desc  : Test GetBufferDesc does not clear cbBuffer_ when IsLowLatencyRenderer returns false.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_096, TestSize.Level1)
+{
+    auto ptr = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    ptr->renderMode_ = RENDER_MODE_CALLBACK;
+    ptr->isHWDecodingType_ = false;
+    ptr->curStreamParams_.encoding = ENCODING_PCM;
+    const size_t bufSize = 1024;
+    ptr->cbBuffer_ = std::make_unique<uint8_t[]>(bufSize);
+    ptr->cbBufferSize_ = bufSize;
+    memset_s(ptr->cbBuffer_.get(), bufSize, 0xFF, bufSize);
+    ptr->rendererInfo_.audioFlag = 0;
+
+    BufferDesc bufDesc;
+    int32_t ret = ptr->GetBufferDesc(bufDesc);
+    EXPECT_EQ(ret, SUCCESS);
+    for (size_t i = 0; i < bufSize; i++) {
+        EXPECT_EQ(bufDesc.buffer[i], 0xFF);
+    }
+}
+
+/**
  * @tc.name  : Test RendererInClientInner_WriteMuteDataSysEvent_001
  * @tc.type  : FUNC
  * @tc.number: RendererInClientInner_WriteMuteDataSysEvent_001

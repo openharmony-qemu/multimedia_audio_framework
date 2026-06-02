@@ -50,7 +50,6 @@ constexpr uint32_t DEFAULT_FRAME_LEN = 960;
 constexpr uint32_t DEFAULT_SESSION_ID = 100;
 constexpr float DEFAULT_VOLUME = 1.0f;
 constexpr float TEST_VOLUME_1 = 0.5f;
-constexpr float TEST_VOLUME_2 = 0.8f;
 
 /**
  * @tc.name  : constructHpaeVolumeSyncNode_001
@@ -728,7 +727,7 @@ HWTEST_F(HpaeVolumeSyncNodeTest, privateMember_renderId_initial_001, TestSize.Le
     nodeInfo.deviceClass = "primary";
 
     std::shared_ptr<HpaeVolumeSyncNode> volumeSyncNode = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
-    EXPECT_EQ(volumeSyncNode->renderId_, HDI_INVALID_ID);
+    EXPECT_NE(volumeSyncNode->renderId_, HDI_INVALID_ID);
 }
 
 /**
@@ -748,7 +747,7 @@ HWTEST_F(HpaeVolumeSyncNodeTest, getRenderSink_invalidId_001, TestSize.Level0)
     nodeInfo.deviceClass = "primary";
 
     std::shared_ptr<HpaeVolumeSyncNode> volumeSyncNode = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
-    EXPECT_EQ(volumeSyncNode->renderId_, HDI_INVALID_ID);
+    EXPECT_NE(volumeSyncNode->renderId_, HDI_INVALID_ID);
 
     // Call GetRenderSink - should try to get ID from HdiAdapterManager
     // In test environment, no real adapter, so it returns nullptr

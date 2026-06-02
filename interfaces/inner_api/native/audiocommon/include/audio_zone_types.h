@@ -119,6 +119,10 @@ public:
 
     virtual int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) = 0;
 
+    virtual int32_t PauseAudioFocusForExtAudioZone() = 0;
+
+    virtual int32_t ResumeAudioFocusForExtAudioZone() = 0;
+
     virtual void SetZoneDeviceVisible(bool visible) = 0;
 
     virtual int32_t RegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType,

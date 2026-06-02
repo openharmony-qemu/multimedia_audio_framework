@@ -17,8 +17,10 @@
 #endif
 
 #include "renderer_in_server.h"
+#include <algorithm>
 #include <chrono>
 #include <cinttypes>
+#include <limits>
 #include "securec.h"
 #include <format>
 #include "audio_errors.h"
@@ -72,6 +74,7 @@ namespace {
     const size_t OFFLOAD_DUAL_RENDER_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
+    constexpr int32_t PRO_AUDIO_ENGINE_FLAG = 1;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
     const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
@@ -345,6 +348,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             HandleOperationPaused(stateListener);
             break;
         case OPERATION_STOPPED:
+            hasSessionEffect_.store(false);
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
             audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
@@ -429,35 +433,29 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
     int32_t engineFlag = GetEngineFlag();
     switch (operation) {
         case OPERATION_RELEASED:
+            hasSessionEffect_.store(false);
             stateListener->OnOperationHandled(RELEASE_STREAM, 0);
             status_ = I_STATUS_RELEASED;
             break;
-        case OPERATION_UNDERRUN:
-            AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetWritableDataFrames(): %{public}d",
-                audioServerBuffer_->GetWritableDataFrames());
-            if (audioServerBuffer_->GetWritableDataFrames() ==
-                static_cast<int32_t>(DEFAULT_SPAN_SIZE * spanSizeInFrame_)) {
-                AUDIO_INFO_LOG("Buffer is empty");
-                needForceWrite_ = 0;
-            } else {
-                AUDIO_INFO_LOG("Buffer is not empty");
-                std::unique_lock lock(writeLock_, std::try_to_lock);
-                if (lock.owns_lock()) {
-                    WriteData();
-                }
+        case OPERATION_SESSION_EFFECT_ENABLED:
+            hasSessionEffect_.store(true);
+            if (engineFlag == PRO_AUDIO_ENGINE_FLAG) {
+                ReConfigDupStreamCallback();
             }
             break;
+        case OPERATION_SESSION_EFFECT_DISABLED:
+            hasSessionEffect_.store(false);
+            break;
+        case OPERATION_UNDERRUN:
+            HandleOperationUnderrun();
+            break;
         case OPERATION_UNDERFLOW:
-            if (ClockTime::GetCurNano() - startedTime_ > START_MIN_COST) {
-                underrunCount_++;
-                audioServerBuffer_->SetUnderrunCount(underrunCount_);
-            }
-            StandByCheck(); // if stand by is enbaled here, stream will be paused and not recv UNDERFLOW any more.
+            HandleOperationUnderflow();
             break;
         case OPERATION_SET_OFFLOAD_ENABLE:
         case OPERATION_UNSET_OFFLOAD_ENABLE:
             offloadEnable_ = operation == OPERATION_SET_OFFLOAD_ENABLE ? true : false;
-            if (engineFlag == 1) {
+            if (engineFlag == PRO_AUDIO_ENGINE_FLAG) {
                 ReConfigDupStreamCallback();
             }
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
@@ -465,6 +463,34 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
         default:
             OnStatusUpdateSubs(operation);
     }
+}
+
+void RendererInServer::HandleOperationUnderrun()
+{
+    AUDIO_INFO_LOG("Underrun: audioServerBuffer_->GetWritableDataFrames(): %{public}d",
+        audioServerBuffer_->GetWritableDataFrames());
+    bool canCalculateFrames = spanSizeInFrame_ <= std::numeric_limits<size_t>::max() / DEFAULT_SPAN_SIZE;
+    size_t expectedFrames = canCalculateFrames ? DEFAULT_SPAN_SIZE * spanSizeInFrame_ : 0;
+    if (canCalculateFrames && expectedFrames <= static_cast<size_t>(std::numeric_limits<int32_t>::max()) &&
+        audioServerBuffer_->GetWritableDataFrames() == static_cast<int32_t>(expectedFrames)) {
+        AUDIO_INFO_LOG("Buffer is empty");
+        needForceWrite_ = 0;
+    } else {
+        AUDIO_INFO_LOG("Buffer is not empty");
+        std::unique_lock lock(writeLock_, std::try_to_lock);
+        if (lock.owns_lock()) {
+            WriteData();
+        }
+    }
+}
+
+void RendererInServer::HandleOperationUnderflow()
+{
+    if (ClockTime::GetCurNano() - startedTime_ > START_MIN_COST) {
+        underrunCount_++;
+        audioServerBuffer_->SetUnderrunCount(underrunCount_);
+    }
+    StandByCheck(); // if stand by is enbaled here, stream will be paused and not recv UNDERFLOW any more.
 }
 
 void RendererInServer::OnStatusUpdateSubs(IOperation operation)
@@ -582,6 +608,8 @@ void RendererInServer::ReportExceptionForOffload()
 
 bool RendererInServer::ShouldEnableStandBy()
 {
+    constexpr uint32_t SESSION_EFFECT_STANDBY_COUNTER = 200;
+    constexpr int64_t SESSION_EFFECT_STANDBY_TIME_NS = 4 * AUDIO_NS_PER_SECOND;
     uint32_t offloadStanby_ = 20;
     int64_t timeCost = ClockTime::GetCurNano() - lastWriteTime_;
     uint32_t maxStandByCounter = 50; // for 20ms, 50 * 20 = 1000ms
@@ -589,6 +617,10 @@ bool RendererInServer::ShouldEnableStandBy()
     if (offloadEnable_) {
         maxStandByCounter = 400; // for 20ms, 50 * 400 = 8000ms
         timeLimit = 8 * AUDIO_NS_PER_SECOND; // for 20ms 8s
+    }
+    if (hasSessionEffect_.load()) {
+        maxStandByCounter = std::max(maxStandByCounter, SESSION_EFFECT_STANDBY_COUNTER);
+        timeLimit = std::max(timeLimit, SESSION_EFFECT_STANDBY_TIME_NS);
     }
     if (!isOffloadJankReport && offloadState_ == OFFLOAD_ACTIVE_FOREGROUND_RUNNING &&
         standByCounter_ >= offloadStanby_) {
@@ -1805,18 +1837,8 @@ int32_t RendererInServer::Stop()
 
 int32_t RendererInServer::StopInner()
 {
-    if (standByEnable_) {
-        AUDIO_INFO_LOG("sessionId: %{public}u call Stop while stand by", streamIndex_);
-        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(processConfig_.appInfo.appUid),
-                PLAY_STOP_NULL_POINTER, "stream status is nullptr", false), "stream status is nullptr");
-        standByEnable_ = false;
-        enterStandbyTime_ = 0;
-        audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
-        if (playerDfx_) {
-            playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
-        }
-    }
+    hasSessionEffect_.store(false);
+    CHECK_AND_RETURN_RET(HandleStopDuringStandby() == SUCCESS, ERR_OPERATION_FAILED);
     {
         std::lock_guard<std::mutex> lock(fadeoutLock_);
         AUDIO_INFO_LOG("fadeoutFlag_ = NO_FADING");
@@ -1863,8 +1885,25 @@ int32_t RendererInServer::StopInner()
     return SUCCESS;
 }
 
+int32_t RendererInServer::HandleStopDuringStandby()
+{
+    CHECK_AND_RETURN_RET(standByEnable_, SUCCESS);
+    AUDIO_INFO_LOG("sessionId: %{private}u call Stop while stand by", streamIndex_);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(processConfig_.appInfo.appUid),
+            PLAY_STOP_NULL_POINTER, "stream status is nullptr", false), "stream status is nullptr");
+    standByEnable_ = false;
+    enterStandbyTime_ = 0;
+    audioServerBuffer_->GetStreamStatus()->store(STREAM_STOPPED);
+    if (playerDfx_) {
+        playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
+    }
+    return SUCCESS;
+}
+
 void RendererInServer::ReleasePostProcess()
 {
+    hasSessionEffect_.store(false);
     RemoveIdForInjector();
     if (status_ != I_STATUS_STOPPING && status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(RENDERER_STAGE_STOP_BY_RELEASE);
@@ -1998,7 +2037,7 @@ int32_t RendererInServer::GetLatency(uint64_t &latency)
     std::unique_lock<std::mutex> lock(statusLock_);
     int32_t enableNewRoute = 0;
     GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-    if (managerType_ == DIRECT_PLAYBACK && enableNewRoute == 0) {
+    if (managerType_ == DIRECT_PLAYBACK && enableNewRoute != 0) {
         latency = IStreamManager::GetPlaybackManager(managerType_).GetLatency();
         return SUCCESS;
     }

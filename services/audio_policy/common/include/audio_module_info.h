@@ -39,6 +39,8 @@ static const char* FILE_CLASS = "file_io";
 static const char* REMOTE_CLASS = "remote";
 static const char* OFFLOAD_CLASS = "offload";
 static const char* MCH_CLASS = "multichannel";
+static const char* REMOTE_OFFLOAD_CLASS = "remote_offload";
+static const char* REMOTE_MCH_CLASS = "remote_multichannel";
 static const char* INVALID_CLASS = "invalid";
 static const char* DIRECT_VOIP_CLASS = "primary_direct_voip";
 static const char* MMAP_VOIP_CLASS = "primary_mmap_voip";
@@ -90,6 +92,9 @@ static const char* ACCESSORY_SOURCE_PIPENAME = "accessory_input";
 static const char* PRIMARY_TYPEC_CLASS = "Built_in_typec";
 static const char* PRIMARY_WIRED_CLASS = "Built_in_wired";
 static const char* PRIMARY_BT_CLASS = "Built_in_bt";
+static const char* REMOTE_SUFFIX = "out";
+static const char* REMOTE_OFFLOAD_SUFFIX = "out_offload";
+static const char* REMOTE_MCH_SUFFIX = "out_multichannel";
 }
 
 static std::unordered_map<std::string, std::string> MODULENAME_TO_PIPENAME = {

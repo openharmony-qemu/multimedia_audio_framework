@@ -1541,6 +1541,9 @@ void AudioRendererPrivate::HandleAudioInterruptInfo()
         audioInterrupt_.audioFocusType.streamType == STREAM_SPEECH) {
         audioInterrupt_.startTimeNs = ClockTime::GetCurNano();
     }
+    if (audioInterrupt_.streamUsage == STREAM_USAGE_INTERPHONE) {
+        audioInterrupt_.audioFocusType.streamType = STREAM_INTERPHONE;
+    }
 }
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)

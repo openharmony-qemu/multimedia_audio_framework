@@ -158,6 +158,15 @@ std::string AudioPolicyUtils::GetRemoteModuleName(std::string networkId, DeviceR
     return networkId + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");
 }
 
+std::string AudioPolicyUtils::GetRemoteNetworkId(const std::string &sinkName, DeviceRole role)
+{
+    std::string networkId = "";
+    auto pos = role == DeviceRole::OUTPUT_DEVICE ? sinkName.find("_out") : sinkName.find("_in");
+    CHECK_AND_RETURN_RET(pos != std::string::npos, networkId);
+    networkId = sinkName.substr(0, pos);
+    return networkId;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailableDevicesInner(AudioDeviceUsage usage)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
@@ -247,7 +256,7 @@ bool AudioPolicyUtils::IsSelectedBySystemApp()
     std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
     bool ret = false;
     audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid, ret);
-    return callerUid == SYSTEM_APP_UID;
+    return callerUid == SYSTEM_UID;
 }
 
 void AudioPolicyUtils::SetPreferredRecordCaptureDeviceInCar(

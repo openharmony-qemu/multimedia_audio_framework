@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_device_common.h"
+#include <algorithm>
 #include "parameter.h"
 #include "parameters.h"
 #include "audio_inner_call.h"
@@ -58,12 +59,12 @@ static const int VOLUME_LEVEL_MID_SIZE = 12;
 static const int VOLUME_LEVEL_MAX_SIZE = 15;
 static const int32_t DISTRIBUTED_DEVICE = 1003;
 static const int DEFAULT_ADJUST_TIMES = 10;
+constexpr int32_t START_POS = 6;
+constexpr int32_t END_POS = 13;
+constexpr int32_t ADDRESS_STR_LEN = 17;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
-    const int32_t START_POS = 6;
-    const int32_t END_POS = 13;
-    const int32_t ADDRESS_STR_LEN = 17;
     if (addr.empty() || addr.length() != ADDRESS_STR_LEN) {
         return std::string("");
     }
@@ -110,22 +111,24 @@ static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
 }
 
 #ifdef EXCLUDE_INDIRECT_USB_INPUT_DEVICE
-static void ExcludeIndirectUsbArmInput(const AudioDeviceDescriptor &updatedDesc)
+static void ExcludeIndirectUsbArmInput(const shared_ptr<AudioDeviceDescriptor> &registeredDesc)
 {
-    CHECK_AND_RETURN(!updatedDesc.hasPair_ && updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET);
-    string key = string("is_root_hub#C") + GetField(updatedDesc.macAddress_, "card", ';') + "D0";
+    CHECK_AND_RETURN(registeredDesc != nullptr);
+    CHECK_AND_RETURN(!registeredDesc->hasPair_ && registeredDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET);
+    string key = string("is_root_hub#C") + GetField(registeredDesc->macAddress_, "card", ';') + "D0";
     auto val = AudioServerProxy::GetInstance().GetAudioParameterProxy(key);
     AUDIO_INFO_LOG("key=%{public}s, val=%{public}s", key.c_str(), val.c_str());
     CHECK_AND_RETURN(val == "true");
-    vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(updatedDesc)};
-    AudioRouterSelectStrategy::GetInstance().ExcludeDevices(descs, MEDIA_INPUT_DEVICES | CALL_INPUT_DEVICES);
+    vector<shared_ptr<AudioDeviceDescriptor>> descs{registeredDesc};
+    AudioRouterSelectStrategy::GetInstance().ExcludeDevices(descs, ALL_INPUT_DEVICES);
 }
 
-static void UnexcludeIndirectUsbArmInput(const AudioDeviceDescriptor &updatedDesc)
+static void UnexcludeIndirectUsbArmInput(const shared_ptr<AudioDeviceDescriptor> &registeredDesc)
 {
-    CHECK_AND_RETURN(!updatedDesc.hasPair_ && updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET);
-    vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(updatedDesc)};
-    AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(descs, MEDIA_INPUT_DEVICES | CALL_INPUT_DEVICES);
+    CHECK_AND_RETURN(registeredDesc != nullptr);
+    CHECK_AND_RETURN(!registeredDesc->hasPair_ && registeredDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET);
+    vector<shared_ptr<AudioDeviceDescriptor>> descs{registeredDesc};
+    AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(descs, ALL_INPUT_DEVICES);
 }
 #endif
 
@@ -157,13 +160,13 @@ bool AudioDeviceCommon::IsRingerOrAlarmerDualDevicesRange(const InternalDeviceTy
 }
 
 void AudioDeviceCommon::OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,
-    const AudioStreamDeviceChangeReason reason)
+    const AudioStreamDeviceChangeReason reason, int32_t forceUid)
 {
     Trace trace("AudioDeviceCommon::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
     AUDIO_INFO_LOG("Start");
 
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated(forceUid);
         audioPolicyServerHandler_->SendAudioSessionDeviceChange(reason);
     }
     if (deviceDescriptor.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -281,9 +284,6 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnecting(const AudioDeviceDe
     }
     if (IsInputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
         UpdateConnectedDevicesWhenConnectingForInputDevice(updatedDesc, descForCb);
-#ifdef EXCLUDE_INDIRECT_USB_INPUT_DEVICE
-        ExcludeIndirectUsbArmInput(updatedDesc);
-#endif
     }
 }
 
@@ -325,7 +325,14 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     if (IsInputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
         streamCollector_.ResetCapturerStreamDeviceInfo(updatedDesc);
 #ifdef EXCLUDE_INDIRECT_USB_INPUT_DEVICE
-        UnexcludeIndirectUsbArmInput(updatedDesc);
+        auto it = std::find_if(descForCb.begin(), descForCb.end(),
+            [](const shared_ptr<AudioDeviceDescriptor> &desc) {
+                return desc != nullptr && desc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET
+                    && desc->deviceRole_ == INPUT_DEVICE;
+            });
+        if (it != descForCb.end()) {
+            UnexcludeIndirectUsbArmInput(*it);
+        }
 #endif
     }
 
@@ -478,6 +485,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(
         strategy.ClearSystemSelectDevice(AUDIO_CALL_CAPTURE, nullptr);
         strategy.ClearSystemSelectDevice(AUDIO_RECORD_CAPTURE, nullptr);
     }
+#ifdef EXCLUDE_INDIRECT_USB_INPUT_DEVICE
+    ExcludeIndirectUsbArmInput(audioDescriptor);
+#endif
 }
 
 bool AudioDeviceCommon::IsFastFromA2dpToA2dp(const std::shared_ptr<AudioDeviceDescriptor> &desc,

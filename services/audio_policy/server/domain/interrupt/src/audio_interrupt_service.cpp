@@ -135,10 +135,10 @@ static const unordered_map<AudioStreamType, int32_t> DEFAULT_STREAM_PRIORITY = {
     {STREAM_MOVIE, 7},
     {STREAM_SPEECH, 7},
     {STREAM_GAME, 7},
-    {STREAM_DTMF, 8},
-    {STREAM_SYSTEM, 8},
-    {STREAM_SYSTEM_ENFORCED, 9},
     // Notification volume is not expected to be adjusted by volume keys.
+    {STREAM_DTMF, STREAM_DEFAULT_PRIORITY},
+    {STREAM_SYSTEM, STREAM_DEFAULT_PRIORITY},
+    {STREAM_SYSTEM_ENFORCED, STREAM_DEFAULT_PRIORITY},
     {STREAM_NOTIFICATION, STREAM_DEFAULT_PRIORITY},
 };
 
@@ -1295,19 +1295,17 @@ int32_t AudioInterruptService::ActivateAudioInterruptCoreProcedure(
     const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy, bool &updateScene)
 {
     bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
-    AudioInterrupt currAudioInterrupt = audioInterrupt;
-    MirrorInterPhoneInterrupt(currAudioInterrupt);
-    PrintLogsOfFocusStrategyBaseMusic(currAudioInterrupt); // Print logs for automatic detection tools.
+    PrintLogsOfFocusStrategyBaseMusic(audioInterrupt); // Print logs for automatic detection tools.
     if (isPreemptMode_) {
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
-        SendInterruptEventToIncomingStream(interruptEvent, currAudioInterrupt);
+        SendInterruptEventToIncomingStream(interruptEvent, audioInterrupt);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             isRecord ? RECORD_INTERRUPT_START_FOCUS_DENIED : INTERRUPT_START_FOCUS_DENIED,
             "isPreemptMode", false);
         return ERR_FOCUS_DENIED;
     }
 
-    if (currAudioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+    if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
         CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(hasSystemPermission, ERR_FOCUS_DENIED,
             HILOG_COMM_ERROR("[ActivateAudioInterruptCoreProcedure]VOICE_TRANSCRIPTION failed: no system permission"),
@@ -1316,7 +1314,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptCoreProcedure(
                 "VOICE_TRANSCRIPTION failed: no system permission", false));
     }
 
-    return ActivateAudioInterruptInternal(zoneId, currAudioInterrupt, isUpdatedAudioStrategy, updateScene);
+    return ActivateAudioInterruptInternal(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
 }
 
 int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zoneId,
@@ -1660,6 +1658,37 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
     UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    return SUCCESS;
+}
+
+int32_t AudioInterruptService::PauseAudioFocusForExtAudioZone()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    for (auto &[zoneId, audioInterruptZone] : zonesMap_) {
+        CHECK_AND_CONTINUE_LOG(zoneId != ZONEID_DEFAULT, "skip default audio zone");
+        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
+        for (auto iter = audioInterruptZone->audioFocusInfoList.begin();
+            iter != audioInterruptZone->audioFocusInfoList.end(); ++iter) {
+            CHECK_AND_CONTINUE(IsAudioStreamActive(iter->second));
+            bool removeFocusInfo = false;
+            SendInterruptEvent(iter->second, AudioFocuState::PAUSE, iter, removeFocusInfo);
+            AUDIO_INFO_LOG("[ZoneFocus]pause focus, zoneId:%{public}d, sessionId:%{public}u", zoneId,
+                iter->first.streamId);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioInterruptService::ResumeAudioFocusForExtAudioZone()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (const auto &[zoneId, audioInterruptZone] : zonesMap_) {
+        CHECK_AND_CONTINUE(zoneId != ZONEID_DEFAULT);
+        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
+        AUDIO_INFO_LOG("[ZoneFocus]resume audio focus list for zone %{public}d", zoneId);
+        ResumeAudioFocusList(zoneId, false);
+    }
     return SUCCESS;
 }
 

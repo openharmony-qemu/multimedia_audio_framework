@@ -4194,6 +4194,10 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedHRTFBinToArm_001, Test
     length = 0;
     ret = AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
     EXPECT_EQ(ret, ERR_SAVE_HRTF_FAIL);
+    length = MAX_HRTF_LENGTH + 1;
+    ret = AudioEffectChainManager::GetInstance()->UpdatePersonalizedHRTFBinToArm(fd, length);
+    EXPECT_EQ(ret, ERR_SAVE_HRTF_FAIL);
+
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -5513,6 +5517,225 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_Rende
         sceneType, DEVICE_TYPE_SPEAKER, 100);
     EXPECT_EQ(SUCCESS, result);
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultKey], 2);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetBypassSpatializationForStereo API
+* @tc.number : SetBypassSpatializationForStereo_001
+* @tc.desc   : Test SetBypassSpatializationForStereo with same value (no update needed).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+
+    // bypass == bypassSpatializationForStereo_(false), should early return without update
+    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(false);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_, false);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetBypassSpatializationForStereo API
+* @tc.number : SetBypassSpatializationForStereo_002
+* @tc.desc   : Test SetBypassSpatializationForStereo changes value, device is SPEAKER
+*              (not BT/NearLink), spatializationEnabled_ is false.
+*              Should update bypassSpatializationForStereo_ but skip UpdateSpatializationEnabled.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = false;
+
+    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_, true);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetBypassSpatializationForStereo API
+* @tc.number : SetBypassSpatializationForStereo_003
+* @tc.desc   : Test SetBypassSpatializationForStereo with BLUETOOTH_A2DP device,
+*              spatializationEnabled_ is false. Should update value but skip UpdateSpatializationEnabled.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = false;
+
+    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_, true);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetBypassSpatializationForStereo API
+* @tc.number : SetBypassSpatializationForStereo_004
+* @tc.desc   : Test SetBypassSpatializationForStereo with BLUETOOTH_A2DP device,
+*              spatializationEnabled_ is true. Should update value and trigger UpdateSpatializationEnabled.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_004, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->headTrackingEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = false;
+
+    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_, true);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetBypassSpatializationForStereo API
+* @tc.number : SetBypassSpatializationForStereo_005
+* @tc.desc   : Test SetBypassSpatializationForStereo with BLUETOOTH_SCO device,
+*              spatializationEnabled_ is true. Should update value and trigger UpdateSpatializationEnabled.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_005, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->headTrackingEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = false;
+
+    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_, true);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetBypassSpatializationForStereo API
+* @tc.number : SetBypassSpatializationForStereo_006
+* @tc.desc   : Test SetBypassSpatializationForStereo with NEARLINK device,
+*              spatializationEnabled_ is true. Should update value and trigger UpdateSpatializationEnabled.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_006, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_NEARLINK;
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->headTrackingEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = false;
+
+    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_, true);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetBypassSpatializationForStereo API
+* @tc.number : SetBypassSpatializationForStereo_007
+* @tc.desc   : Test SetBypassSpatializationForStereo with headTrackingEnabled_ true,
+*              btOffloadEnabled_ changes from true to false, should trigger UpdateSensorState.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_007, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->headTrackingEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = false;
+
+    // bypass=true, headTracking=true, previousOffloadState=true
+    // UpdateSpatializationEnabled may set btOffloadEnabled_=false (ARM processing path)
+    // bypassSpatializationForStereo_ is now true, so !bypass == false
+    // If btOffloadEnabled_ changed and headTracking enabled, UpdateSensorState will be called
+    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_, true);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetBypassSpatializationForStereo API
+* @tc.number : SetBypassSpatializationForStereo_008
+* @tc.desc   : Test SetBypassSpatializationForStereo toggling: false→true→false.
+*              Verify value updates correctly on each call.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_008, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = false;
+
+    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_, true);
+
+    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(false);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_, false);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetBypassSpatializationForStereo API
+* @tc.number : SetBypassSpatializationForStereo_009
+* @tc.desc   : Test SetBypassSpatializationForStereo with WIRED_HEADPHONES (non-BT/NearLink device),
+*              spatializationEnabled_ is true. Should update value but skip UpdateSpatializationEnabled
+*              due to device type check.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_009, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_WIRED_HEADPHONES;
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
+
+    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_, true);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetBypassSpatializationForStereo API
+* @tc.number : SetBypassSpatializationForStereo_010
+* @tc.desc   : Test SetBypassSpatializationForStereo with EARPIECE (non-BT/NearLink device),
+*              spatializationEnabled_ is true. Should update value but skip UpdateSpatializationEnabled.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_010, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_ = false;
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_EARPIECE;
+    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
+
+    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(true);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->bypassSpatializationForStereo_, true);
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }

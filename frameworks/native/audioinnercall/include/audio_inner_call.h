@@ -22,7 +22,7 @@ namespace OHOS {
 namespace AudioStandard {
 class IAudioServerInnerCall {
 public:
-    virtual int32_t SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs) = 0;
+    virtual int32_t SetSinkRenderEmpty(const std::string &deviceClass, int32_t durationUs) = 0;
 };
 class AudioInnerCall {
 public:

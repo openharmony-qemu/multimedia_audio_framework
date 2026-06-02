@@ -69,7 +69,7 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) : processConfig.streamInfo.customSampleRate;
     
     if (processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST &&
-        processConfig_.isInnerCapturer == false && deviceName != "FastDpRendererSink") {
+        processConfig_.isInnerCapturer == false && deviceName != "FastDpRendererSink" && isCallbackMode) {
         if (IsUltraFastStreamAndRoute(processConfig_.ultraFastFlag)) {
             spanSizeInFrame_ = static_cast<size_t>(FRAME_LEN_2_5MS_IN_MS * usedSampleRate_ / AUDIO_MS_PER_S);
             AUDIO_INFO_LOG("ultra fast for spanSizeInFrame_ to 2.5ms: %{public}zu", spanSizeInFrame_);

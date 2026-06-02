@@ -79,6 +79,10 @@ public:
 
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
 
+    int32_t PauseAudioFocusForExtAudioZone() override;
+
+    int32_t ResumeAudioFocusForExtAudioZone() override;
+
     void SetZoneDeviceVisible(bool visible) override;
 
     int32_t RegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType,
@@ -373,6 +377,24 @@ int32_t AudioZoneManagerInner::RemoveStreamIdFromAudioZone(int32_t zoneId, uint3
     int32_t result = AudioPolicyManager::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
         "RemoveStreamIdFromAudioZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::PauseAudioFocusForExtAudioZone()
+{
+    AUDIO_INFO_LOG("in");
+    int32_t result = AudioPolicyManager::GetInstance().PauseAudioFocusForExtAudioZone();
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "PauseAudioFocusForExtAudioZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::ResumeAudioFocusForExtAudioZone()
+{
+    AUDIO_INFO_LOG("in");
+    int32_t result = AudioPolicyManager::GetInstance().ResumeAudioFocusForExtAudioZone();
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "ResumeAudioFocusForExtAudioZone result:%{public}d", result);
     return result;
 }
 

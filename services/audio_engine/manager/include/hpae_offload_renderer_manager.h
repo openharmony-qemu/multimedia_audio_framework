@@ -159,6 +159,7 @@ private:
     std::unordered_map<uint32_t, PendingSessionEffect> pendingSessionEffects_;
 
     // Session Effect helpers (called on SignalProcessThread)
+    void HandlePendingSessionEffect(uint32_t sessionId);
     int32_t InsertSessionEffectNode(const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
     int32_t RemoveSessionEffectNode();

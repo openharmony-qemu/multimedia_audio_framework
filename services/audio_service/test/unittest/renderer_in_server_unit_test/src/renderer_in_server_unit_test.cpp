@@ -375,6 +375,50 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_001, TestSi
 /**
  * @tc.name  : Test OnStatusUpdateSub API
  * @tc.type  : FUNC
+ * @tc.number: RendererInServerOnStatusUpdateSub_008
+ * @tc.desc  : Test OnStatusUpdateSub toggles SessionEffect operation state.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_008, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    rendererInServer->OnStatusUpdateSub(OPERATION_SESSION_EFFECT_ENABLED);
+    EXPECT_TRUE(rendererInServer->hasSessionEffect_.load());
+    rendererInServer->OnStatusUpdateSub(OPERATION_SESSION_EFFECT_DISABLED);
+    EXPECT_FALSE(rendererInServer->hasSessionEffect_.load());
+}
+
+/**
+ * @tc.name  : Test OnStatusUpdateSub API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerOnStatusUpdateSub_009
+ * @tc.desc  : Test OnStatusUpdateSub clears SessionEffect operation state on release.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_009, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    rendererInServer->hasSessionEffect_.store(true);
+    rendererInServer->OnStatusUpdateSub(OPERATION_RELEASED);
+    EXPECT_FALSE(rendererInServer->hasSessionEffect_.load());
+    EXPECT_EQ(I_STATUS_RELEASED, rendererInServer->status_);
+}
+
+/**
+ * @tc.name  : Test OnStatusUpdateSub API
+ * @tc.type  : FUNC
  * @tc.number: RendererInServerOnStatusUpdateSub_002
  * @tc.desc  : Test OnStatusUpdateSub when operation is OPERATION_UNDERRUN and buffer is empty.
  */
@@ -3121,6 +3165,65 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStandByCheck_001, TestSize.Le
     rendererInServer->offloadEnable_ = false;
     ret = rendererInServer->ShouldEnableStandBy();
     EXPECT_EQ(false, ret);
+}
+
+/**
+ * @tc.name  : Test ShouldEnableStandBy API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerShouldEnableStandBy_001
+ * @tc.desc  : Test ShouldEnableStandBy applies SessionEffect thresholds for non-offload streams.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerShouldEnableStandBy_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_VOIP_DIRECT);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    rendererInServer->offloadEnable_ = false;
+    rendererInServer->hasSessionEffect_.store(false);
+    rendererInServer->standByCounter_ = 50;
+    rendererInServer->lastWriteTime_ = ClockTime::GetCurNano() - AUDIO_NS_PER_SECOND;
+    EXPECT_TRUE(rendererInServer->ShouldEnableStandBy());
+
+    rendererInServer->hasSessionEffect_.store(true);
+    rendererInServer->standByCounter_ = 50;
+    rendererInServer->lastWriteTime_ = ClockTime::GetCurNano() - AUDIO_NS_PER_SECOND;
+    EXPECT_FALSE(rendererInServer->ShouldEnableStandBy());
+
+    rendererInServer->standByCounter_ = 200;
+    rendererInServer->lastWriteTime_ = ClockTime::GetCurNano() - 4 * AUDIO_NS_PER_SECOND;
+    EXPECT_TRUE(rendererInServer->ShouldEnableStandBy());
+}
+
+/**
+ * @tc.name  : Test ShouldEnableStandBy API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerShouldEnableStandBy_002
+ * @tc.desc  : Test ShouldEnableStandBy keeps offload thresholds when SessionEffect is enabled.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerShouldEnableStandBy_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_VOIP_DIRECT);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    rendererInServer->offloadEnable_ = true;
+    rendererInServer->hasSessionEffect_.store(true);
+    rendererInServer->standByCounter_ = 200;
+    rendererInServer->lastWriteTime_ = ClockTime::GetCurNano() - 4 * AUDIO_NS_PER_SECOND;
+    EXPECT_FALSE(rendererInServer->ShouldEnableStandBy());
+
+    rendererInServer->standByCounter_ = 400;
+    rendererInServer->lastWriteTime_ = ClockTime::GetCurNano() - 8 * AUDIO_NS_PER_SECOND;
+    EXPECT_TRUE(rendererInServer->ShouldEnableStandBy());
 }
 
 /**

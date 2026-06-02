@@ -151,7 +151,8 @@ void AudioPolicyClientHolder::OnRendererStateChange(
         clientInfo.isSupportedDevice_ = CheckDeviceSupported(audioRendererChangeInfo->outputDeviceInfo.deviceType_);
         audioRendererChangeInfo->SetClientInfo(clientInfo);
     }
-    audioPolicyClient_->OnRendererStateChange(audioRendererChangeInfos);
+    ErrCode ret = audioPolicyClient_->OnRendererStateChange(audioRendererChangeInfos);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "[RendererCallbackDfx] ret:%{public}d", ret);
 }
 
 void AudioPolicyClientHolder::OnCapturerStateChange(

@@ -26,7 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-inline const std::string AUDIO_SYSTEM_VOLUME_CHANGE_BY_FILTER_CALLBACK_NAME = "systemVolumeChangeByFilter";
+inline const char *AUDIO_SYSTEM_VOLUME_CHANGE_BY_FILTER_CALLBACK_NAME = "systemVolumeChangeByFilter";
 
 class NapiAudioSystemVolumeChangeByFilterCallback : public SystemVolumeChangeByFilterCallback {
 public:
