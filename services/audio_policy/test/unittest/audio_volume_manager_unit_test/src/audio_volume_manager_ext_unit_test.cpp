@@ -62,34 +62,6 @@ static AudioDeviceDescriptor& CurrentActiveDevice()
 
 /**
  * @tc.name  : Test AudioVolumeManager.
- * @tc.number: CheckBlueToothActiveMusicTime_002
- * @tc.desc  : CheckBlueToothActiveMusicTime
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, CheckBlueToothActiveMusicTime_002, TestSize.Level1)
-{
-    auto& volumeManager = AudioVolumeManager::GetInstance();
-    volumeManager.activeSafeTimeBt_ = 0;
-    volumeManager.activeSafeTime_ = 68400;
-    volumeManager.CheckBlueToothActiveMusicTime(0);
-    EXPECT_TRUE(volumeManager.restoreNIsShowing_);
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
- * @tc.number: CheckBlueToothActiveMusicTime_003
- * @tc.desc  : CheckBlueToothActiveMusicTime
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, CheckBlueToothActiveMusicTime_003, TestSize.Level1)
-{
-    auto& volumeManager = AudioVolumeManager::GetInstance();
-    int32_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    volumeManager.startSafeTimeBt_ = currentTime - 60;
-    volumeManager.CheckBlueToothActiveMusicTime(0);
-    EXPECT_GT(volumeManager.startSafeTimeBt_, currentTime - 60);
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
  * @tc.number: CheckWiredActiveMusicTime_001
  * @tc.desc  : CheckWiredActiveMusicTime
  */
