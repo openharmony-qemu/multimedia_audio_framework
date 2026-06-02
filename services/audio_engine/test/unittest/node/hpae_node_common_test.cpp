@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include "audio_errors.h"
 #include "hpae_node_common.h"
+#include "audio_collaboration_manager.h"
 
 using namespace testing::ext;
 using namespace testing;
