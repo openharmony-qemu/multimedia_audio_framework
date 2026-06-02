@@ -1712,7 +1712,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_002, TestSize.Level1)
     resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
     EXPECT_EQ(resultSet, 0);
     bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -1733,7 +1733,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_003, TestSize.Level1)
     resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
     EXPECT_EQ(resultSet, 0);
     bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 /**

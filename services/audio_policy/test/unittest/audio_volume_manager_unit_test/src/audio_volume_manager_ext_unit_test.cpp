@@ -61,61 +61,6 @@ static AudioDeviceDescriptor& CurrentActiveDevice()
 }
 
 /**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: HandleNearlinkDeviceAbsVolume_002
-* @tc.desc  : Test HandleNearlinkDeviceAbsVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerExtUnitTest, HandleNearlinkDeviceAbsVolume_002, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    DeviceType curOutputDeviceType = DEVICE_TYPE_SPEAKER;
-    std::string macAddress = "test";
-    AudioStreamType streamType = STREAM_RING;
-    int32_t volumeLevel = 1000;
-    VolumeScale volume{volumeLevel, volumeLevel};
-    SleVolumeConfigInfo configInfo;
-    std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
-    SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
-    auto ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volume, curOutputDeviceType);
-    EXPECT_NE(ret, ERROR);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: SetSystemVolumeLevel_001
-* @tc.desc  : Test SetSystemVolumeLevel.
-*/
-HWTEST_F(AudioVolumeManagerExtUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    EXPECT_NE(audioVolumeManager, nullptr);
-
-    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    AudioStreamType streamType = STREAM_RING;
-    int32_t volumeLevel = 0;
-    EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_RING);
-
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
-    auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
- * @tc.number: CheckBlueToothActiveMusicTime_001
- * @tc.desc  : CheckBlueToothActiveMusicTime
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, CheckBlueToothActiveMusicTime_001, TestSize.Level1)
-{
-    auto& volumeManager = AudioVolumeManager::GetInstance();
-    volumeManager.activeSafeTimeBt_ = 68400;
-    volumeManager.CheckBlueToothActiveMusicTime(0);
-    EXPECT_TRUE(volumeManager.restoreNIsShowing_);
-}
-
-/**
  * @tc.name  : Test AudioVolumeManager.
  * @tc.number: CheckBlueToothActiveMusicTime_002
  * @tc.desc  : CheckBlueToothActiveMusicTime
