@@ -186,14 +186,6 @@ enum class AudioSessionBehaviorFlags {
     DEFAULT = 0x00000000,
 
     /**
-     * Non-privacy VoIP, allows being recorded.
-     * @syscap SystemCapability.Multimedia.Audio.Core
-     * @stagemodelonly
-     * @since 26 dynamic&static
-     */
-    VOIP_PRIVACY_TYPE_PUBLIC = 0x00000001,
-
-    /**
      * When the audio stream is interrupted by the system, perform forcible mute instead.
      * @syscap SystemCapability.Multimedia.Audio.Core
      * @stagemodelonly
@@ -206,7 +198,7 @@ enum class AudioSessionBehaviorFlags {
     /**
      * Behavior validation mask.
      */
-    MASK_VALID_BEHAVIOR = 0x80000003,
+    MASK_VALID_BEHAVIOR = 0x80000002,
 };
 } // namespace AudioStandard
 } // namespace OHOS
