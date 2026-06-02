@@ -798,10 +798,9 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
             activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
             state = audioA2dpOffloadManager_->GetA2dpOffloadFlag();
         }
-        AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag: %{public}d",
-            streamInfo.samplingRate, state);
-        if (!IsConfigurationUpdated(deviceType, streamInfo) ||
-            (activeSessionsSize > 0 && state == A2DP_OFFLOAD)) {
+        AUDIO_DEBUG_LOG("sampleRate: %{public}d, a2dpOffloadFlag: %{public}d, activeSessionsSize %{public}d",
+            streamInfo.samplingRate, state, activeSessionsSize);
+        if (!IsConfigurationUpdated(deviceType, streamInfo)) {
             AUDIO_DEBUG_LOG("Audio configuration same");
             return;
         }
