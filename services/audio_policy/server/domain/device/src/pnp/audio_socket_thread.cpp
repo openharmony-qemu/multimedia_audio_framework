@@ -299,7 +299,10 @@ int32_t AudioSocketThread::AudioHeadsetDetectDevice(const struct AudioPnpUevent 
         AUDIO_ERR_LOG("audioPnpUevent is null!");
         return HDF_ERR_INVALID_PARAM;
     }
-
+    if (audioPnpUevent->action == nullptr || audioPnpUevent->name == nullptr ||  audioPnpUevent->state == nullptr) {
+        AUDIO_ERR_LOG("audioPnpUevent members are null!");
+        return HDF_ERR_INVALID_PARAM;
+    }
     if (strncmp(audioPnpUevent->action, UEVENT_ACTION_CHANGE, strlen(UEVENT_ACTION_CHANGE)) == 0 &&
         strstr(audioPnpUevent->name, UEVENT_NAME_HEADSET) != NULL) {
         if (strncmp(audioPnpUevent->state, UEVENT_STATE_ANALOG_HS1, strlen(UEVENT_STATE_ANALOG_HS1)) == 0) {
@@ -314,6 +317,7 @@ int32_t AudioSocketThread::AudioHeadsetDetectDevice(const struct AudioPnpUevent 
             return ERROR;
         }
         AUDIO_INFO_LOG("headset uevent info recv: %{public}s", audioPnpUevent->name);
+        audioEvent.name = audioPnpUevent->name;
         UpdatePnpDeviceState(&audioEvent);
         return SUCCESS;
     }
@@ -890,15 +894,15 @@ int32_t AudioSocketThread::DetectHDMIState(AudioEvent *audioEvent)
 
         pFile = fopen(statePath.c_str(), "r");
         if (pFile == nullptr) {
-            AUDIO_DEBUG_LOG("open extcon state file failed: %{public}s", statePath.c_str());
+            AUDIO_WARNING_LOG("open extcon state file failed: %{public}s, %{public}d",
+                statePath.c_str(), errno);
             continue;
         }
 
         size_t length = fread(stateBuffer, 1, FILE_BUFFER_SIZE - 1, pFile);
         (void)fclose(pFile);
-
         if (length == 0) {
-            AUDIO_DEBUG_LOG("read extcon state file failed: %{public}s", statePath.c_str());
+            AUDIO_WARNING_LOG("read extcon state file failed: %{public}s", statePath.c_str());
             continue;
         }
 
