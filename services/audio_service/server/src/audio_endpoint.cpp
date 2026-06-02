@@ -590,7 +590,10 @@ bool AudioEndpointInner::ConfigOutputPoint(const AudioEndpointConfig &endpointCo
     }
 
     IAudioSinkAttr attr = InitSinkAttr(endpointConfig);
-    if (!sink->IsInited()) {
+    if (deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && deviceInfo_.a2dpOffloadFlag_ != A2DP_OFFLOAD) {
+        sink->Init(attr);
+        CHECK_AND_RETURN_RET_LOG(sink->IsInited(), false, "Init sink fail");
+    } else if (!sink->IsInited()) {
         AUDIO_INFO_LOG("need Init sink:%{public}u", fastRenderId_);
         sink->Init(attr);
         CHECK_AND_RETURN_RET_LOG(sink->IsInited(), false, "Init sink fail");
