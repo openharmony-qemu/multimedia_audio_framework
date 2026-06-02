@@ -622,6 +622,7 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
     bool forceFetch = false;
     int32_t clientUid = INVALID_UID;
     for (auto &changeInfo : audioRendererChangeInfos) {
+        
         if (changeInfo->sessionId != static_cast<int32_t>(sessionID)) {
             continue;
         }
