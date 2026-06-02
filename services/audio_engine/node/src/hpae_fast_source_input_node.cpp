@@ -434,6 +434,7 @@ bool HpaeFastSourceInputNode::GetDeviceHandleInfo(uint64_t &frames, int64_t &nan
     auto result = writeTimeModel_.UpdataFrameStamp(frames, nanoTime);
     if (result != CHECK_SUCCESS) {
         writeTimeModel_.ResetFrameStamp(frames, nanoTime);
+        needReSyncPosition_ = true;
     }
     if (srcAudioBuffer_ != nullptr) {
         srcAudioBuffer_->SetHandleInfo(frames, nanoTime);
