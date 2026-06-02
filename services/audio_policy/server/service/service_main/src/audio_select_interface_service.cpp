@@ -606,7 +606,7 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
     auto pipeManager = AudioPipeManager::GetPipeManager();
     CHECK_AND_RETURN_RET_LOG(pipeManager->GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
     CHECK_AND_RETURN_RET_LOG(pipeManager->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
-        "stream is not exist");
+        "sessionId is not exist");
 
     auto &audioSessionService = OHOS::Singleton<AudioSessionService>::GetInstance();
     if (!audioSessionService.IsStreamAllowedToSetDevice(sessionID)) {
@@ -625,7 +625,8 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
         clientUid = desc->GetRealUid();
         if (desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
             CHECK_AND_CONTINUE(!skipForce);
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                 std::make_shared<AudioDeviceDescriptor>(), desc->GetRealUid(), "SetDefaultOutputDevice");
