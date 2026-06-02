@@ -992,22 +992,22 @@ void HpaeManagerImpl::LoadCollaborationConfig()
     manager_->LoadCollaborationConfig();
 }
 
-int32_t HpaeManagerImpl::SetAissEnabled(uint32_t sessionId, bool enabled)
+int32_t HpaeManagerImpl::SetAissEnabledSync(uint32_t sessionId, bool enabled)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->SetAissEnabled(sessionId, enabled);
+    return manager_->SetAissEnabledSync(sessionId, enabled);
 }
 
-int32_t HpaeManagerImpl::SetVocalRatio(float ratio)
+int32_t HpaeManagerImpl::SetVocalRatioSync(float ratio)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->SetVocalRatio(ratio);
+    return manager_->SetVocalRatioSync(ratio);
 }
 
-int32_t HpaeManagerImpl::SetAissEnabledByUid(int32_t uid, bool enabled)
+int32_t HpaeManagerImpl::SetAissEnabledByUidSync(int32_t uid, bool enabled)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->SetAissEnabledByUid(uid, enabled);
+    return manager_->SetAissEnabledByUidSync(uid, enabled);
 }
 
 int32_t HpaeManagerImpl::SetAuxiliarySinkEnable(bool isEnabled)

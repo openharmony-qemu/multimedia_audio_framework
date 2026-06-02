@@ -165,9 +165,9 @@ public:
     virtual void SetSinkMuteForSwitchDevice(const std::string &deviceClass, bool mute) = 0;
 
     // Session effect control (AISS / vocal ratio)
-    virtual int32_t SetAissEnabled(uint32_t sessionId, bool enabled) = 0;
-    virtual int32_t SetVocalRatio(float ratio) = 0;
-    virtual int32_t SetAissEnabledByUid(int32_t uid, bool enabled) = 0;
+    virtual int32_t SetAissEnabledSync(uint32_t sessionId, bool enabled) = 0;
+    virtual int32_t SetVocalRatioSync(float ratio) = 0;
+    virtual int32_t SetAissEnabledByUidSync(int32_t uid, bool enabled) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
