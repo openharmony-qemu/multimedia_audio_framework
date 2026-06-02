@@ -616,25 +616,22 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
 
     AUDIO_INFO_LOG("[ADeviceEvent] device %{public}d for %{public}s stream %{public}u", deviceType,
         isRunning ? "running" : "not running", sessionID);
-    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    auto &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
-    streamCollector.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
     bool forceFetch = false;
     int32_t clientUid = INVALID_UID;
-    for (auto &changeInfo : audioRendererChangeInfos) {
-        if (changeInfo->sessionId != static_cast<int32_t>(sessionID)) {
-            continue;
-        }
-        if (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_INTERPHONE) {
+    for (auto &desc : descs) {
+        CHECK_AND_CONTINUE(desc != nullptr && desc->sessionId_ == sessionID);
+        clientUid = desc->GetRealUid();
+        if (desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
             CHECK_AND_CONTINUE(!skipForce);
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
+                std::make_shared<AudioDeviceDescriptor>(), desc->GetRealUid(), "SetDefaultOutputDevice");
             forceFetch = true;
         }
-        clientUid = changeInfo->clientUID;
     }
     if (clientUid == INVALID_UID) {
         return SUCCESS;
