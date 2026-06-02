@@ -2790,16 +2790,6 @@ bool AudioEffectChainManager::IsSpatializationEnabledForChains()
     return spatializationEnabled_ && (!bypassSpatializationForStereo_ || !IsDeviceTypeSupportingSpatialization());
 }
 
-bool AudioEffectChainManager::IsDownSamplingForSpatialization(const std::string &sceneType)
-{
-    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    CHECK_AND_RETURN_RET(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) != 0 &&
-        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, true);
-    auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-    return audioEffectChain->IsEffectChainFading() || !(spatializationEnabled_ && bypassSpatializationForStereo_ &&
-        IsDeviceTypeSupportingSpatialization());
-}
-
 void AudioEffectChainManager::SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
@@ -2890,17 +2880,6 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToHdi(const int32_t &f
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS || ret == ERR_DEVICE_UNAVAILABLE, ERR_SAVE_HRTF_FAIL,
         "set hdi personalizedSpatializationEnabled failed");
     return SUCCESS;
-}
-
-bool AudioEffectChainManager::IsDownSamplingForSpatialization(
-    const std::string &sceneType, DeviceType deviceType, uint32_t renderId)
-{
-    std::string sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneType, deviceType, renderId);
-    CHECK_AND_RETURN_RET(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) != 0 &&
-        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, true);
-    auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-    return audioEffectChain->IsEffectChainFading() || !(spatializationEnabled_ && bypassSpatializationForStereo_ &&
-        IsDeviceTypeSupportingSpatialization());
 }
 } // namespace AudioStandard
 } // namespace OHOS

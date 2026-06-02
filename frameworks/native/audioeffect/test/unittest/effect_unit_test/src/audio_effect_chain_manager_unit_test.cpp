@@ -4623,23 +4623,6 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainArm_RenderId_002, T
 }
 
 /**
-* @tc.name   : Test IsDownSamplingForSpatialization with renderId - no chain
-* @tc.number : IsDownSamplingForSpatialization_RenderId_001
-* @tc.desc   : Test IsDownSamplingForSpatialization with renderId returns true when chain not found.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, IsDownSamplingForSpatialization_RenderId_001, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-
-    bool result = AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(
-        "SCENE_MOVIE", DEVICE_TYPE_SPEAKER, 999);
-    EXPECT_EQ(result, true);
-
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
 * @tc.name   : Test GetOutputChannelInfo with renderId - chain not found
 * @tc.number : GetOutputChannelInfo_RenderId_001
 * @tc.desc   : Test GetOutputChannelInfo with renderId returns ERROR for non-existent chain.
@@ -5439,28 +5422,6 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainArm_RenderId_003, T
     bool result = AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(
         "SCENE_MUSIC", static_cast<AudioEffectMode>(9999), DEVICE_TYPE_SPEAKER, 100);
     EXPECT_EQ(result, false);
-
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test IsDownSamplingForSpatialization with renderId - chain exists
-* @tc.number : IsDownSamplingForSpatialization_RenderId_002
-* @tc.desc   : Test IsDownSamplingForSpatialization with renderId when chain exists.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, IsDownSamplingForSpatialization_RenderId_002, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-
-    string sceneType = "SCENE_MOVIE";
-    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
-        sceneType, DEVICE_TYPE_SPEAKER, 100);
-
-    bool result = AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(
-        sceneType, DEVICE_TYPE_SPEAKER, 100);
-    // Chain exists - returns fading || !(spatializationEnabled_ && bypassForStereo && deviceSupport)
-    EXPECT_TRUE(result == true || result == false);
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
