@@ -1057,6 +1057,9 @@ int32_t RendererInClientInner::GetBufferDesc(BufferDesc &bufDesc)
         return GetRawBuffer(bufDesc);
     }
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
+    if (IsLowLatencyRenderer()) {
+        memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_);
+    }
     bufDesc.buffer = cbBuffer_.get();
     bufDesc.bufLength = cbBufferSize_;
     bufDesc.dataLength = cbBufferSize_;
