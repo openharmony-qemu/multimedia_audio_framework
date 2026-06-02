@@ -429,7 +429,7 @@ void AudioSessionService::GenerateFakeStreamId(int32_t callerPid)
     auto session = sessionMap_.find(callerPid);
     if (session != sessionMap_.end()) {
         uint32_t fakeStreamId = session->second->GetFakeStreamId();
-        if (fakeStreamId = 0) {
+        if (fakeStreamId == 0) {
             fakeStreamId = AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
         }
         session->second->SaveFakeStreamId(fakeStreamId);
