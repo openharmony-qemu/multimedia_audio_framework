@@ -104,7 +104,6 @@
     *GetCollaborationLatency*;
     *SetBypassSpatializationForStereo*;
     *IsSpatializationEnabledForChains*;
-    *IsDownSamplingForSpatialization*;
     *UpdatePersonalizedHRTFBin*;
   local:
     *;

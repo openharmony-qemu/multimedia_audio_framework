@@ -166,7 +166,6 @@ public:
     void UpdateEarphoneProduct(int32_t earphoneProduct);
     void SetBypassSpatializationForStereo(bool bypass);
     bool IsSpatializationEnabledForChains();
-    bool IsDownSamplingForSpatialization(const std::string &sceneType);
     void SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer);
     void UpdatePersonalizedSpatializationEnabledToChains();
     void UpdatePersonalizedSpatializationEnabledToHdi();
@@ -178,8 +177,6 @@ public:
     ProcessClusterOperation CheckProcessClusterInstances(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);
     bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode,
-        DeviceType deviceType, uint32_t renderId);
-    bool IsDownSamplingForSpatialization(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);

@@ -147,9 +147,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     auto render = "render[" + std::to_string(renderId_) + "]";
     Trace trace("[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess " + rate + ch + len + render);
 
-    if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled() ||
-        (inputs[0]->GetSampleRate() > DEFUALT_EFFECT_RATE &&
-        !AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(sceneType_))) {
+    if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
         return inputs[0];
     }
     if (IsByPassEffectZeroVolume(inputs[0])) {
@@ -488,15 +486,7 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
 
 int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat)
 {
-    bool isDownSampling;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
-        isDownSampling = AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(
-            sceneType_, deviceType_, renderId_);
-    } else {
-        isDownSampling = AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(sceneType_);
-    }
-    basicFormat.rate = static_cast<uint32_t>(basicFormat.rate) > DEFUALT_EFFECT_RATE &&
-        !isDownSampling ? basicFormat.rate : static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
+    basicFormat.rate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
     uint64_t channelLayout = 0;
     int32_t ret;
     if (IS_DEVICE_ENHANCED_SUPPORTED) {
