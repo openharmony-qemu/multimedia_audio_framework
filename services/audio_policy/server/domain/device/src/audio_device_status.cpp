@@ -1562,10 +1562,9 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     FetchDeviceInfo info = {
         STREAM_USAGE_MEDIA, "ClearPreferredWhenCategoryUpdated_1", ROUTER_TYPE_USER_SELECT
     };
-    RouterType routerType = ROUTER_TYPE_NONE;
-    auto mediaFetched = AudioRouterCenter::GetAudioRouterCenter().FetchMediaOutputDevices(info, routerType);
+    auto mediaFetched = AudioRouterCenter::GetAudioRouterCenter().FetchMediaOutputDevices(info);
     if ((usage & MEDIA) == MEDIA &&
-        NeedClearPreferredWhenCategoryUpdated(*existed, {mediaFetched, routerType},
+        NeedClearPreferredWhenCategoryUpdated(*existed, {mediaFetched, info.routerType},
             *strategy.GetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID))) {
         strategy.ClearSystemSelectDevice(AUDIO_MEDIA_RENDER, nullptr);
     }
@@ -1585,18 +1584,19 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
 
 void AudioDeviceStatus::ClearPreferredDevices(AudioDeviceDescriptor &desc)
 {
-    auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    auto deviceDesc = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(
-        std::make_shared<AudioDeviceDescriptor>(desc));
+    ClearPreferredDeviceByType({AUDIO_RECORD_CAPTURE, AUDIO_CALL_CAPTURE}, desc, INPUT_DEVICE);
+    ClearPreferredDeviceByType({AUDIO_MEDIA_RENDER, AUDIO_CALL_RENDER}, desc, OUTPUT_DEVICE);
+}
+
+void AudioDeviceStatus::ClearPreferredDeviceByType(const std::vector<PreferredType> &types,
+    AudioDeviceDescriptor &desc, DeviceRole role)
+{
+    auto tmpDesc = std::make_shared<AudioDeviceDescriptor>(desc);
+    tmpDesc->deviceRole_ = role;
+    auto deviceDesc = audioDeviceManager_.GetExistedDevice(tmpDesc);
     CHECK_AND_RETURN(deviceDesc != nullptr && deviceDesc->deviceType_ != DEVICE_TYPE_NONE);
-    std::vector<PreferredType> types = {
-        AUDIO_MEDIA_RENDER,
-        AUDIO_RECORD_CAPTURE,
-        AUDIO_CALL_RENDER,
-        AUDIO_CALL_CAPTURE
-    };
     for (const auto &type : types) {
-        strategy.ClearAllSelectSelectDevice(type, deviceDesc);
+        audioRouterSelectStrategy_.ClearAllSelectSelectDevice(type, deviceDesc);
     }
 }
 

@@ -1033,14 +1033,13 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaOutputDevices_001, TestSize.Level1)
     info.bypassType = ROUTER_TYPE_NONE;
     info.caller = "test_caller";
 
-    RouterType routerType = ROUTER_TYPE_NONE;
-    auto result = audioRouterCenter.FetchMediaOutputDevices(info, routerType);
+    auto result = audioRouterCenter.FetchMediaOutputDevices(info);
 
     EXPECT_EQ(result.size(), 1);
     ASSERT_NE(result[0], nullptr);
     EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(result[0]->deviceId_, 100);
-    EXPECT_EQ(routerType, ROUTER_TYPE_DEFAULT);
+    EXPECT_EQ(info.routerType, ROUTER_TYPE_DEFAULT);
 }
 
 /**
@@ -1063,13 +1062,12 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaOutputDevices_002, TestSize.Level1)
     info.bypassType = ROUTER_TYPE_NONE;
     info.caller = "test_caller";
 
-    RouterType routerType = ROUTER_TYPE_NONE;
-    auto result = audioRouterCenter.FetchMediaOutputDevices(info, routerType);
+    auto result = audioRouterCenter.FetchMediaOutputDevices(info);
 
     EXPECT_EQ(result.size(), 1);
     ASSERT_NE(result[0], nullptr);
     EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_NONE);
-    EXPECT_EQ(routerType, ROUTER_TYPE_NONE);
+    EXPECT_EQ(info.routerType, ROUTER_TYPE_NONE);
 }
 
 /**
@@ -1090,8 +1088,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaOutputDevices_003, TestSize.Level1)
     info.bypassType = ROUTER_TYPE_NONE;
     info.caller = "test_caller";
 
-    RouterType routerType = ROUTER_TYPE_NONE;
-    auto result = audioRouterCenter.FetchMediaOutputDevices(info, routerType);
+    auto result = audioRouterCenter.FetchMediaOutputDevices(info);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_NE(result[0], nullptr);
@@ -1129,8 +1126,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaOutputDevices_004, TestSize.Level1)
     info.bypassType = ROUTER_TYPE_NONE;
     info.caller = "test_caller";
 
-    RouterType routerType = ROUTER_TYPE_NONE;
-    auto result = audioRouterCenter.FetchMediaOutputDevices(info, routerType);
+    auto result = audioRouterCenter.FetchMediaOutputDevices(info);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_NE(result[0], nullptr);
@@ -1160,13 +1156,12 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaOutputDevices_005, TestSize.Level1)
     info.bypassType = ROUTER_TYPE_STREAM_FILTER;
     info.caller = "test_caller";
 
-    RouterType routerType = ROUTER_TYPE_NONE;
-    auto result = audioRouterCenter.FetchMediaOutputDevices(info, routerType);
+    auto result = audioRouterCenter.FetchMediaOutputDevices(info);
 
     EXPECT_EQ(result.size(), 1);
     ASSERT_NE(result[0], nullptr);
     EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_NONE);
-    EXPECT_EQ(routerType, ROUTER_TYPE_NONE);
+    EXPECT_EQ(info.routerType, ROUTER_TYPE_NONE);
 }
 
 /**

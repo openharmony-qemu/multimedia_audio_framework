@@ -381,11 +381,10 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
     FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "updateConnectedDescWhenCon_1", ROUTER_TYPE_USER_SELECT };
-    RouterType routerType = ROUTER_TYPE_NONE;
-    auto mediaFetched = AudioRouterCenter::GetAudioRouterCenter().FetchMediaOutputDevices(info, routerType);
+    auto mediaFetched = AudioRouterCenter::GetAudioRouterCenter().FetchMediaOutputDevices(info);
     if (NeedClearPreferredMediaRenderer(
         strategy.GetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID),
-        audioDescriptor, {mediaFetched, routerType}, usage)) {
+        audioDescriptor, {mediaFetched, info.routerType}, usage)) {
         strategy.ClearSystemSelectDevice(AUDIO_MEDIA_RENDER, nullptr);
     }
     info = { STREAM_USAGE_VOICE_COMMUNICATION, "updateConnectedDescWhenCon_2", ROUTER_TYPE_USER_SELECT };

@@ -41,10 +41,9 @@ public:
         static AudioRouterCenter audioRouterCenter;
         return audioRouterCenter;
     }
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo info);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo &info);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
-    std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUID,
-        RouterType &routerType, const uint32_t sessionID = 0);
+    std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(FetchDeviceInfo &info);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
     bool isCallRenderRouter(StreamUsage streamUsage);
@@ -58,8 +57,7 @@ public:
     void ClearConflictHandlers();
     int32_t SetSplitModeReady();
     bool UpdateVehiclePriority(bool enable);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchMediaOutputDevices(FetchDeviceInfo &info,
-        RouterType &routerType);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchMediaOutputDevices(FetchDeviceInfo &info);
 private:
     AudioRouterCenter()
     {
@@ -173,7 +171,9 @@ private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> PreFetchOutputDevices(
         const FetchDeviceInfo &info);
 
-    void StartArbiterContext();
+    std::vector<StreamDeviceInfo> CollectOutputStreamDevices(const FetchDeviceInfo &deviceInfo);
+    std::vector<StreamDeviceInfo> CollectInputStreamDevices(const FetchDeviceInfo &deviceInfo);
+    void StartArbiterContext(const FetchDeviceInfo &deviceInfo);
     void StopArbiterContext();
     std::shared_ptr<WirelessConflictHandler> wirelessConflictHandler_;
     std::mutex routerMutex_;
