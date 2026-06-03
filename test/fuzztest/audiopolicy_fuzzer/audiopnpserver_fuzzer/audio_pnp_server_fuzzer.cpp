@@ -274,6 +274,18 @@ void AudioSocketThreadReadAndScanDpNameFuzzTest(FuzzedDataProvider& fdp)
     std::string name;
     audioSocketThread->ReadAndScanDpName(testPath, name);
 }
+
+void AudioPnpServerInitFuzzTest(FuzzedDataProvider& fdp)
+{
+    audioPnpServer_->StopPnpServer();
+    bool shouldInit = fdp.ConsumeBool();
+    if (shouldInit) {
+        audioPnpServer_->init();
+    }
+    audioPnpServer_->init();
+    audioPnpServer_->StopPnpServer();
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -288,6 +300,7 @@ void Test(FuzzedDataProvider& fdp)
 	AudioSocketThreadAudioMicBlockDeviceFuzzTest,
 	AudioSocketThreadUpdateDeviceStateFuzzTest,
 	AudioSocketThreadReadAndScanDpNameFuzzTest,
+	AudioPnpServerInitFuzzTest,
     });
     func(fdp);
 }

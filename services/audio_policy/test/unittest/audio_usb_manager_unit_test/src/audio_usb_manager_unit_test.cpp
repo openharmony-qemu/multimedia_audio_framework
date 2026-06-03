@@ -58,7 +58,7 @@ void AudioUsbManagerUnitTest::TearDown(void) {}
 /**
  * @tc.name  : Test AudioUsbManager.
  * @tc.number: AudioUsbManagerUnitTest_001.
- * @tc.desc  : Test Init.
+ * @tc.desc  : Test Init with both flags set.
  */
 HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_001, TestSize.Level1)
 {
@@ -67,11 +67,12 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_001, TestSize.Level1)
 
     auto observer = std::make_shared<TestDeviceStatusObserver>();
     audioUsbManager->initialized_ = false;
-    audioUsbManager->Init(observer);
+    audioUsbManager->flag_ = 0;
+    audioUsbManager->Init(observer, FLAG_USB_SVC_UP | FLAG_AUD_SVC_UP);
     EXPECT_EQ(audioUsbManager->initialized_, true);
 
     audioUsbManager->initialized_ = true;
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init(observer, FLAG_USB_SVC_UP);
     EXPECT_EQ(audioUsbManager->initialized_, true);
 }
 
@@ -135,7 +136,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_006, TestSize.Level1)
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     auto observer = std::make_shared<TestDeviceStatusObserver>();
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init(observer, FLAG_USB_SVC_UP | FLAG_AUD_SVC_UP);
     ASSERT_TRUE(observer != nullptr);
 
     UsbAudioDevice device;
@@ -158,7 +159,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_007, TestSize.Level1)
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     auto observer = std::make_shared<TestDeviceStatusObserver>();
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init(observer, FLAG_USB_SVC_UP | FLAG_AUD_SVC_UP);
     ASSERT_TRUE(observer != nullptr);
 
     UsbAudioDevice device;
@@ -181,7 +182,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_008, TestSize.Level1)
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     auto observer = std::make_shared<TestDeviceStatusObserver>();
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init(observer, FLAG_USB_SVC_UP | FLAG_AUD_SVC_UP);
     ASSERT_TRUE(observer != nullptr);
 
     UsbAudioDevice device;
@@ -360,7 +361,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_018, TestSize.Level1)
     ASSERT_TRUE(audioUsbManager != nullptr);
 
     auto observer = std::make_shared<TestDeviceStatusObserver>();
-    audioUsbManager->Init(observer);
+    audioUsbManager->Init(observer, FLAG_USB_SVC_UP | FLAG_AUD_SVC_UP);
     ASSERT_TRUE(observer != nullptr);
 
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlData;
@@ -445,6 +446,140 @@ HWTEST_F(AudioUsbManagerUnitTest, UpdateDeviceName_001, TestSize.Level1)
     man.initialized_ = true;
     man.Deinit();
     EXPECT_TRUE(man.audioDevices_.empty());
+}
+
+/**
+ * @tc.name  : Test AudioUsbManager.
+ * @tc.number: Init_FlagPartial_001.
+ * @tc.desc  : Test Init with only FLAG_USB_SVC_UP does not set initialized_.
+ */
+HWTEST_F(AudioUsbManagerUnitTest, Init_FlagPartial_001, TestSize.Level1)
+{
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
+    ASSERT_TRUE(audioUsbManager != nullptr);
+    audioUsbManager->initialized_ = false;
+    audioUsbManager->flag_ = 0;
+
+    auto observer = std::make_shared<TestDeviceStatusObserver>();
+    audioUsbManager->Init(observer, FLAG_USB_SVC_UP);
+    EXPECT_EQ(audioUsbManager->initialized_, false);
+    EXPECT_EQ(audioUsbManager->flag_ & FLAG_USB_SVC_UP, FLAG_USB_SVC_UP);
+}
+
+/**
+ * @tc.name  : Test AudioUsbManager.
+ * @tc.number: Init_FlagPartial_002.
+ * @tc.desc  : Test Init with only FLAG_AUD_SVC_UP does not set initialized_.
+ */
+HWTEST_F(AudioUsbManagerUnitTest, Init_FlagPartial_002, TestSize.Level1)
+{
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
+    ASSERT_TRUE(audioUsbManager != nullptr);
+    audioUsbManager->initialized_ = false;
+    audioUsbManager->flag_ = 0;
+
+    auto observer = std::make_shared<TestDeviceStatusObserver>();
+    audioUsbManager->Init(observer, FLAG_AUD_SVC_UP);
+    EXPECT_EQ(audioUsbManager->initialized_, false);
+    EXPECT_EQ(audioUsbManager->flag_ & FLAG_AUD_SVC_UP, FLAG_AUD_SVC_UP);
+}
+
+/**
+ * @tc.name  : Test AudioUsbManager.
+ * @tc.number: Init_FlagIncremental_001.
+ * @tc.desc  : Test Init with incremental flags sets initialized_.
+ */
+HWTEST_F(AudioUsbManagerUnitTest, Init_FlagIncremental_001, TestSize.Level1)
+{
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
+    ASSERT_TRUE(audioUsbManager != nullptr);
+    audioUsbManager->initialized_ = false;
+    audioUsbManager->flag_ = 0;
+
+    auto observer = std::make_shared<TestDeviceStatusObserver>();
+    audioUsbManager->Init(observer, FLAG_USB_SVC_UP);
+    EXPECT_EQ(audioUsbManager->initialized_, false);
+
+    audioUsbManager->Init(observer, FLAG_AUD_SVC_UP);
+    EXPECT_EQ(audioUsbManager->initialized_, true);
+    EXPECT_EQ(audioUsbManager->flag_, FLAG_USB_SVC_UP | FLAG_AUD_SVC_UP);
+}
+
+/**
+ * @tc.name  : Test AudioUsbManager.
+ * @tc.number: SubscribeEvent_FlagPartial_001.
+ * @tc.desc  : Test SubscribeEvent with only FLAG_CES_SVC_UP does not create subscriber.
+ */
+HWTEST_F(AudioUsbManagerUnitTest, SubscribeEvent_FlagPartial_001, TestSize.Level1)
+{
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
+    ASSERT_TRUE(audioUsbManager != nullptr);
+    audioUsbManager->eventSubscriber_ = nullptr;
+    audioUsbManager->flag_ = 0;
+
+    audioUsbManager->SubscribeEvent(FLAG_CES_SVC_UP);
+    EXPECT_EQ(audioUsbManager->eventSubscriber_, nullptr);
+    EXPECT_EQ(audioUsbManager->flag_ & FLAG_CES_SVC_UP, FLAG_CES_SVC_UP);
+}
+
+/**
+ * @tc.name  : Test AudioUsbManager.
+ * @tc.number: SubscribeEvent_FlagPartial_002.
+ * @tc.desc  : Test SubscribeEvent with only FLAG_AUD_SVC_UP does not create subscriber.
+ */
+HWTEST_F(AudioUsbManagerUnitTest, SubscribeEvent_FlagPartial_002, TestSize.Level1)
+{
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
+    ASSERT_TRUE(audioUsbManager != nullptr);
+    audioUsbManager->eventSubscriber_ = nullptr;
+    audioUsbManager->flag_ = 0;
+
+    audioUsbManager->SubscribeEvent(FLAG_AUD_SVC_UP);
+    EXPECT_EQ(audioUsbManager->eventSubscriber_, nullptr);
+    EXPECT_EQ(audioUsbManager->flag_ & FLAG_AUD_SVC_UP, FLAG_AUD_SVC_UP);
+}
+
+/**
+ * @tc.name  : Test AudioUsbManager.
+ * @tc.number: SubscribeEvent_FlagIncremental_001.
+ * @tc.desc  : Test SubscribeEvent with incremental flags creates subscriber.
+ */
+HWTEST_F(AudioUsbManagerUnitTest, SubscribeEvent_FlagIncremental_001, TestSize.Level1)
+{
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
+    ASSERT_TRUE(audioUsbManager != nullptr);
+    audioUsbManager->eventSubscriber_ = nullptr;
+    audioUsbManager->flag_ = 0;
+
+    audioUsbManager->SubscribeEvent(FLAG_CES_SVC_UP);
+    EXPECT_EQ(audioUsbManager->eventSubscriber_, nullptr);
+
+    audioUsbManager->SubscribeEvent(FLAG_AUD_SVC_UP);
+    EXPECT_NE(audioUsbManager->eventSubscriber_, nullptr);
+    EXPECT_EQ(audioUsbManager->flag_, FLAG_CES_SVC_UP | FLAG_AUD_SVC_UP);
+}
+
+/**
+ * @tc.name  : Test AudioUsbManager.
+ * @tc.number: FlagAccumulate_001.
+ * @tc.desc  : Test flag_ accumulates correctly via OR operation.
+ */
+HWTEST_F(AudioUsbManagerUnitTest, FlagAccumulate_001, TestSize.Level1)
+{
+    auto audioUsbManager = &AudioUsbManager::GetInstance();
+    ASSERT_TRUE(audioUsbManager != nullptr);
+    audioUsbManager->initialized_ = false;
+    audioUsbManager->flag_ = 0;
+
+    auto observer = std::make_shared<TestDeviceStatusObserver>();
+    audioUsbManager->Init(observer, FLAG_USB_SVC_UP);
+    EXPECT_EQ(audioUsbManager->flag_, FLAG_USB_SVC_UP);
+
+    audioUsbManager->SubscribeEvent(FLAG_CES_SVC_UP);
+    EXPECT_EQ(audioUsbManager->flag_, FLAG_USB_SVC_UP | FLAG_CES_SVC_UP);
+
+    audioUsbManager->Init(observer, FLAG_AUD_SVC_UP);
+    EXPECT_EQ(audioUsbManager->flag_, FLAG_USB_SVC_UP | FLAG_CES_SVC_UP | FLAG_AUD_SVC_UP);
 }
 } // namespace AudioStandard
 } // namespace OHOS

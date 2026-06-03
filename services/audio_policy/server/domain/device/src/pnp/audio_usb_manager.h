@@ -23,6 +23,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint8_t FLAG_USB_SVC_UP = 1;
+constexpr uint8_t FLAG_CES_SVC_UP = 2;
+constexpr uint8_t FLAG_AUD_SVC_UP = 4;
 
 using namespace std;
 
@@ -73,9 +76,9 @@ public:
     static map<UsbAddr, SoundCard> GetUsbSoundCardMap();
     static int32_t GetUsbAudioDevices(vector<UsbAudioDevice> &result);
 
-    void Init(std::shared_ptr<IDeviceStatusObserver> observer);
+    void Init(std::shared_ptr<IDeviceStatusObserver> observer, uint8_t flag);
     void Deinit();
-    void SubscribeEvent();
+    void SubscribeEvent(uint8_t flag);
     void NotifySoundCardChange(const std::string &cardNumStr, bool isAttach);
     void SetObserver(std::shared_ptr<IDeviceStatusObserver> observer);
 
@@ -97,6 +100,7 @@ private:
     map<UsbAddr, std::string> pendingMap_;
 
     bool initialized_{false};
+    uint8_t flag_{0};
     mutex mutex_;
 };
 

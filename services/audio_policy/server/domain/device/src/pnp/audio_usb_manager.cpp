@@ -193,10 +193,12 @@ AudioUsbManager &AudioUsbManager::GetInstance()
     return sManager;
 }
 
-void AudioUsbManager::Init(std::shared_ptr<IDeviceStatusObserver> observer)
+void AudioUsbManager::Init(std::shared_ptr<IDeviceStatusObserver> observer, uint8_t flag)
 {
     lock_guard<mutex> lock(mutex_);
-    if (!initialized_) {
+    flag_ |= flag;
+    constexpr uint8_t initFlag = FLAG_USB_SVC_UP | FLAG_AUD_SVC_UP;
+    if (!initialized_ && (flag_ & initFlag) == initFlag) {
 #ifdef DETECT_SOUNDBOX
         AUDIO_INFO_LOG("Entry. DETECT_SOUNDBOX=true");
 #else
@@ -245,13 +247,16 @@ void AudioUsbManager::RefreshUsbAudioDevices()
     }
 }
 
-void AudioUsbManager::SubscribeEvent()
+void AudioUsbManager::SubscribeEvent(uint8_t flag)
 {
-    AUDIO_INFO_LOG("Entry");
-    CHECK_AND_RETURN_LOG(eventSubscriber_ == nullptr, "feventSubscriber_ already exists");
-    eventSubscriber_ = SubscribeCommonEvent();
     lock_guard<mutex> lock(mutex_);
-    RefreshUsbAudioDevices();
+    flag_ |= flag;
+    constexpr uint8_t subscribeFlag = FLAG_CES_SVC_UP | FLAG_AUD_SVC_UP;
+    if (!eventSubscriber_ && (flag_ & subscribeFlag) == subscribeFlag) {
+        AUDIO_INFO_LOG("Entry");
+        eventSubscriber_ = SubscribeCommonEvent();
+        RefreshUsbAudioDevices();
+    }
 }
 
 void AudioUsbManager::NotifySoundCardChange(const std::string &cardNumStr, bool isAttach)
