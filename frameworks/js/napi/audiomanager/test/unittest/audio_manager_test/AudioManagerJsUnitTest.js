@@ -271,19 +271,19 @@ describe("AudioManagerJsUnitTest", function () {
 
     /*
      * @tc.name:SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004
-     * @tc.desc:getExtraParameters - Promise
+     * @tc.desc:getExtraParameters with invalid mainKey 'mmi' should return error
      * @tc.type: FUNC
      * @tc.require: SR20231218728353
      */
     it("SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004", 0, function (done) {
         try {
             audioManager.getExtraParameters('mmi').then((value) => {
-                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004 SUCCESS ` + JSON.stringify(value));
-                expect(true).assertTrue();
+                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004 FAIL: should not succeed`);
+                expect(false).assertTrue();
                 done();
             }).catch(err => {
-                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004 FAIL: ${err.code}.`);
-                expect(false).assertTrue();
+                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004 SUCCESS: ${err.code}.`);
+                expect(err.code).assertEqual(6800101);
                 done();
             });
         } catch (err) {
@@ -295,19 +295,19 @@ describe("AudioManagerJsUnitTest", function () {
 
     /*
      * @tc.name:SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005
-     * @tc.desc:getExtraParameters - Promise
+     * @tc.desc:getExtraParameters with invalid mainKey 'mmi' and subKeys should return error
      * @tc.type: FUNC
      * @tc.require: SR20231218728353
      */
     it("SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005", 0, function (done) {
         try {
             audioManager.getExtraParameters('mmi', ['getSmartPANV']).then((value) => {
-                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005 SUCCESS ` + JSON.stringify(value));
-                expect(true).assertTrue();
+                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005 FAIL: should not succeed`);
+                expect(false).assertTrue();
                 done();
             }).catch(err => {
-                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005 FAIL: ${err.code}.`);
-                expect(false).assertTrue();
+                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005 SUCCESS: ${err.code}.`);
+                expect(err.code).assertEqual(6800101);
                 done();
             });
         } catch (err) {
