@@ -24,7 +24,7 @@ namespace ANI::Audio {
 using namespace taihe;
 using namespace ohos::multimedia::audio;
 
-const std::string AUDIO_DEBUGGING_MGR_TAIHE_CLASS_NAME = "AudioDebuggingManager";
+inline const std::string AUDIO_DEBUGGING_MGR_TAIHE_CLASS_NAME = "AudioDebuggingManager";
 
 class AudioDebuggingManagerImpl {
 public:
@@ -41,6 +41,7 @@ public:
     void PrintSessionInfo(weak::AudioSessionManager session, int32_t fd);
 
 private:
+    // Non-owning pointer to singleton AudioDebugManager, do not delete
     OHOS::AudioStandard::AudioDebugManager *audioDebugMngr_;
 };
 }  // namespace ANI::Audio
