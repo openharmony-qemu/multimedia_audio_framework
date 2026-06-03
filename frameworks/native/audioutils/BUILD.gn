@@ -105,6 +105,10 @@ ohos_shared_library("audio_utils") {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
+  if (is_emulator) {
+    defines += [ "IS_EMULATOR" ]
+  }
+
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
