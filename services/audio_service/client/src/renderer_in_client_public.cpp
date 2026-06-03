@@ -757,7 +757,7 @@ void RendererInClientInner::OnFirstFrameWriting()
     AUDIO_DEBUG_LOG("In");
     uint64_t latency = AUDIO_FIRST_FRAME_LATENCY;
     if (IsLowLatencyRenderer()) {
-        GetLatency(latency);
+        GetFastLatency(latency);
     }
 
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> cb = nullptr;
