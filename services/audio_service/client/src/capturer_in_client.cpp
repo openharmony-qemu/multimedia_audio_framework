@@ -56,6 +56,7 @@
 #include "audio_safe_block_queue.h"
 #include "istandard_audio_service.h"
 #include "app_bundle_manager.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1019,6 +1020,7 @@ int32_t CapturerInClientInner::GetAudioDebugInfo(AudioDebugInfo &debugInfo)
         if (ret == SUCCESS) {
             FillCapturerClientOnlyInfo(debugInfo);
             FillCapturerDeviceInfo(debugInfo, sessionId);
+            StreamDfxManager::GetErrorInfosFromMedia(debugInfo.errorInfos);
             return SUCCESS;
         }
         AUDIO_WARNING_LOG("GetAudioDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
@@ -1033,8 +1035,10 @@ int32_t CapturerInClientInner::GetAudioDebugInfo(AudioDebugInfo &debugInfo)
 
     FillCapturerClientOnlyInfo(debugInfo);
     FillCapturerDeviceInfo(debugInfo, sessionId);
+    StreamDfxManager::GetErrorInfosFromMedia(debugInfo.errorInfos);
     return SUCCESS;
 }
+
 
 int32_t CapturerInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {

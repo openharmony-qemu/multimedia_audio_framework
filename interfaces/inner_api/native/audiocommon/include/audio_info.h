@@ -407,6 +407,13 @@ enum VkbMode {
     VKB_ALL_RING = 2
 };
 
+struct AudioFaultRecord {
+    int32_t uid = -1;
+    int32_t errorCode = 0;
+    std::string errorReason = "";
+    uint64_t timestamp = 0;
+};
+
 struct AdjustStreamVolumeInfo {
     float volume;
     uint32_t sessionId;

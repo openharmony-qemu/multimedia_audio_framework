@@ -143,7 +143,7 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("getCollaborativeManager", GetCollaborativeManager),
         DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserChoice", ReportPlaybackCaptureUserChoice),
         DECLARE_NAPI_FUNCTION("getDeviceEnhanceManager", GetDeviceEnhanceManager),
-        DECLARE_NAPI_FUNCTION("getDebugManager", GetDebugManager),
+        DECLARE_NAPI_FUNCTION("getDebuggingManager", GetDebuggingManager),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_MNGR_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH,
@@ -1685,20 +1685,20 @@ napi_value NapiAudioManager::GetDeviceEnhanceManager(napi_env env, napi_callback
 #endif
 }
 
-napi_value NapiAudioManager::GetDebugManager(napi_env env, napi_callback_info info)
+napi_value NapiAudioManager::GetDebuggingManager(napi_env env, napi_callback_info info)
 {
 #ifndef CROSS_PLATFORM
     size_t argc = 0;
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, nullptr, &jsThis, nullptr);
     if (status != napi_ok || argc != 0) {
-        NapiAudioError::ThrowError(env, "GetDebugManager invalid arguments", NAPI_ERR_INVALID_PARAM);
+        NapiAudioError::ThrowError(env, "GetDebuggingManager invalid arguments", NAPI_ERR_INVALID_PARAM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
     napi_value debugManagerObj = NapiAudioDebuggingManager::CreateDebuggingManagerWrapper(env);
     if (debugManagerObj == nullptr) {
-        NapiAudioError::ThrowError(env, "CreateDebugManager failed", NAPI_ERR_SYSTEM);
+        NapiAudioError::ThrowError(env, "CreateDebuggingManager failed", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 

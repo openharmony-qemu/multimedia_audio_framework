@@ -3864,14 +3864,15 @@ int32_t AudioPolicyServer::GetAudioDebugInfo(uint32_t sessionId,
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission() ||
         coreService_->IsStreamBelongToUid(callingUid, sessionId), ERR_PERMISSION_DENIED,
         "GetAudioDebugInfo denied, sessionId:%{public}u, callingUid:%{public}d", sessionId, callingUid);
-    auto audioDebugInfoValue = std::make_shared<AudioDebugInfo>();
-    int32_t ret = eventEntry_->GetAudioDebugInfoBySessionId(sessionId, *audioDebugInfoValue);
+    if (!audioDebugInfo) {
+        audioDebugInfo = std::make_shared<AudioDebugInfo>();
+    }
+    int32_t ret = eventEntry_->GetAudioDebugInfoBySessionId(sessionId, *audioDebugInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "GetPipeDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
     if (interruptService_ != nullptr) {
-        interruptService_->GetFocusDebugInfoByStreamId(sessionId, *audioDebugInfoValue);
+        interruptService_->GetFocusDebugInfoByStreamId(sessionId, *audioDebugInfo);
     }
-    audioDebugInfo = audioDebugInfoValue;
     return SUCCESS;
 }
 
