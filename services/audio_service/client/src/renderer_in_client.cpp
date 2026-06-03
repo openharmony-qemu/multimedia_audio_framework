@@ -1504,13 +1504,14 @@ void RendererInClientInner::CheckAndProcessPendingSpanSize()
     AUDIO_INFO_LOG("Process pending span size: %{public}u engineSize:%{public}" PRIu64 " routeFlag:0x%{public}x",
         spanSizeInFrame, engineSize, routeFlag);
 
-    // 直接更新参数，不需要调用 InitSharedBuffer（buffer 没变化）
+    // Directly update the parameters without calling InitSharedBuffer (the buffer remains unchanged)
     spanSizeInFrame_ = spanSizeInFrame;
     clientSpanSizeInByte_ = spanSizeInFrame_ * sizePerFrameInByte_;
     cacheSizeInFrame_ = engineSize;
 
-    // 更新 rendererFlags（根据 routeFlag）
+    // Update rendererFlags (based on routeFlag)
     if (routeFlag != 0) {
+        rendererInfo_.audioFlag = routeFlag;
         if (routeFlag & AUDIO_OUTPUT_FLAG_FAST) {
             if (routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
                 rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
