@@ -94,7 +94,8 @@ void AudioDebuggingManagerImpl::PrintCapturerInfo(weak::AudioCapturer capturer, 
 void AudioDebuggingManagerImpl::PrintLoopbackInfo(AudioLpback loopback, int32_t fd)
 {
     AUDIO_DEBUG_LOG("in, fd:%{public}d", fd);
-    AudioLoopbackImpl *taiheLoopback = reinterpret_cast<AudioLoopbackImpl *>(loopback->GetImplPtr());
+    AudioLoopback audioLoopback = loopback.GetTypeAudioLpback();
+    AudioLoopbackImpl *taiheLoopback = reinterpret_cast<AudioLoopbackImpl *>(audioLoopback.GetImplPtr());
     CHECK_AND_RETURN_LOG(taiheLoopback != nullptr, "loopback impl is nullptr");
     CHECK_AND_RETURN_LOG(taiheLoopback->loopback_ != nullptr, "loopback native object is nullptr");
     CHECK_AND_RETURN_LOG(audioDebugMngr_ != nullptr, "audioDebugMngr_ is nullptr");
