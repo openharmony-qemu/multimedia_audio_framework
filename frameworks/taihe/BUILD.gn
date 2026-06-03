@@ -59,6 +59,7 @@ taihe_shared_library("audio_taihe") {
     "audiomanager/callback",
     "audioloopback",
     "audioloopback/callback",
+    "../../interfaces/inner_api/native/audio_debug_manager/include",
   ]
 
   sources = get_target_outputs(":run_taihe")
@@ -97,6 +98,7 @@ taihe_shared_library("audio_taihe") {
     "audiomanager/callback/taihe_audio_system_volume_change_by_filter_callback.cpp",
     "audiomanager/callback/taihe_audio_volume_key_event.cpp",
     "audiomanager/taihe_audio_collaborative_manager.cpp",
+    "audiomanager/taihe_audio_debugging_manager.cpp",
     "audiomanager/taihe_audio_device_enhance_manager.cpp",
     "audiomanager/taihe_audio_effect_manager.cpp",
     "audiomanager/taihe_audio_manager.cpp",
@@ -130,6 +132,7 @@ taihe_shared_library("audio_taihe") {
     "../../services/audio_service:audio_policy_manager",
     "../../services/audio_service:audio_stream_client",
     "../native/audiocapturer:audio_capturer",
+    "../native/audio_debug_manager:audio_debug_manager",
     "../native/audioloopback:audio_loopback",
     "../native/audiorenderer:audio_renderer",
     "../native/audioutils:audio_utils",

@@ -58,6 +58,11 @@ AudioLoopbackImpl::AudioLoopbackImpl(std::shared_ptr<AudioLoopbackImpl> obj)
 
 AudioLoopbackImpl::~AudioLoopbackImpl() = default;
 
+int64_t AudioLoopbackImpl::GetImplPtr()
+{
+    return reinterpret_cast<uintptr_t>(this);
+}
+
 AudioLpback AudioLoopbackImpl::CreateAudioLoopbackWrapper(OHOS::AudioStandard::AudioLoopbackMode loopbackMode)
 {
     std::lock_guard<std::mutex> lock(createMutex_);

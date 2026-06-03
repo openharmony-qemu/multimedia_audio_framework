@@ -371,6 +371,7 @@ interface AudioManager {
   GetEffectManager(): AudioEffectManager;
   GetCollaborativeManager(): AudioCollaborativeManager;
   GetDeviceEnhanceManager(): AudioDeviceEnhanceManager;
+  GetDebuggingManager(): AudioDebuggingManager;
 
   @gen_promise("disableSafeMediaVolume")
   DisableSafeMediaVolumeSync(): void;
@@ -1474,6 +1475,8 @@ union AudioDevicePairOrNull {
 }
 
 interface AudioLoopback {
+  GetImplPtr(): i64;
+
   @gen_promise("getStatus")
   GetStatusSync(): AudioLoopbackStatus;
 
@@ -1538,4 +1541,12 @@ interface AudioDeviceEnhanceManager {
 
   @gen_promise("selectInputDeviceForAudioCapturer")
   SelectInputDeviceForAudioCapturerSync(capturer: AudioCapturer, deviceDescriptor: AudioDeviceDescriptor): void;
+}
+
+interface AudioDebuggingManager {
+  PrintAppInfo(fd: i32): void;
+  PrintRendererInfo(renderer: AudioRenderer, fd: i32): void;
+  PrintCapturerInfo(capturer: AudioCapturer, fd: i32): void;
+  PrintLoopbackInfo(loopback: AudioLpback, fd: i32): void;
+  PrintSessionInfo(session: AudioSessionManager, fd: i32): void;
 }
