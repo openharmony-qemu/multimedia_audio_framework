@@ -58,7 +58,7 @@ MemChunk::~MemChunk()
 {
     Trace trace("MemChunk::~MemChunk");
     if (bufferPointer_ != nullptr) {
-        delete bufferPointer_;
+        delete []bufferPointer_;
     }
     bufferPointer_ = nullptr;
 }

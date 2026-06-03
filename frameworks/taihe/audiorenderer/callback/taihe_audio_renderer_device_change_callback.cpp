@@ -59,7 +59,6 @@ void TaiheAudioRendererDeviceChangeCallback::AddCallbackReference(std::shared_pt
 void TaiheAudioRendererDeviceChangeCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    bool isEquals = false;
 
     if (callback == nullptr) {
         for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
@@ -80,12 +79,8 @@ void TaiheAudioRendererDeviceChangeCallback::RemoveCallbackReference(std::shared
             continue;
         }
         if (TaiheParamUtils::IsSameRef(callback, ((*it)->cb_))) {
-            isEquals = true;
-        }
-        if (isEquals == true) {
             AUDIO_INFO_LOG("found JS Callback, delete it!");
-            callbacks_.remove(*it);
-            (*it)->cb_ = nullptr;
+            it = callbacks_.erase(it);
             return;
         }
     }
