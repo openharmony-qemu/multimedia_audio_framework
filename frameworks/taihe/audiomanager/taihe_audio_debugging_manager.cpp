@@ -23,6 +23,7 @@
 #include "taihe_audio_loopback.h"
 #include "taihe_audio_session_manager.h"
 #include "audio_errors.h"
+#include "audio_log.h"
 
 namespace ANI::Audio {
 using namespace OHOS::HiviewDFX;
@@ -41,8 +42,10 @@ AudioDebuggingManagerImpl::~AudioDebuggingManagerImpl() = default;
 
 AudioDebuggingManager AudioDebuggingManagerImpl::CreateDebuggingManagerWrapper()
 {
+    AUDIO_DEBUG_LOG("in");
     auto *audioDebugMngr = &OHOS::AudioStandard::AudioDebugManager::GetInstance();
     if (audioDebugMngr == nullptr) {
+        AUDIO_ERR_LOG("Failed to get AudioDebugManager instance");
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Failed to get AudioDebugManager instance");
         return make_holder<AudioDebuggingManagerImpl, AudioDebuggingManager>(nullptr);
     }
@@ -51,84 +54,64 @@ AudioDebuggingManager AudioDebuggingManagerImpl::CreateDebuggingManagerWrapper()
 
 void AudioDebuggingManagerImpl::PrintAppInfo(int32_t fd)
 {
-    if (audioDebugMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioDebugMngr_ is nullptr");
-        return;
-    }
+    AUDIO_DEBUG_LOG("in, fd:%{public}d", fd);
+    CHECK_AND_RETURN_LOG(audioDebugMngr_ != nullptr, "audioDebugMngr_ is nullptr");
     int32_t result = audioDebugMngr_->PrintAppAudioDebugInfo(fd);
-    if (result != AUDIO_OK) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "PrintAppInfo failed");
-    }
+    CHECK_AND_RETURN_LOG(result == AUDIO_OK,
+        "PrintAppAudioDebugInfo failed, result:%{public}d", result);
 }
 
 void AudioDebuggingManagerImpl::PrintRendererInfo(weak::AudioRenderer renderer, int32_t fd)
 {
+    AUDIO_DEBUG_LOG("in, fd:%{public}d", fd);
     AudioRendererImpl *taiheRenderer = reinterpret_cast<AudioRendererImpl *>(renderer->GetImplPtr());
-    if (taiheRenderer == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "renderer impl is nullptr");
-        return;
-    }
-    if (taiheRenderer->audioRenderer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "renderer native object is nullptr");
-        return;
-    }
-    if (audioDebugMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioDebugMngr_ is nullptr");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(taiheRenderer != nullptr, "renderer impl is nullptr");
+    CHECK_AND_RETURN_LOG(taiheRenderer->audioRenderer_ != nullptr, "renderer native object is nullptr");
+    CHECK_AND_RETURN_LOG(audioDebugMngr_ != nullptr, "audioDebugMngr_ is nullptr");
     uint32_t rendererKey = taiheRenderer->audioRenderer_->GetRendererDebugKey();
+    AUDIO_DEBUG_LOG("rendererKey:%{public}u", rendererKey);
     int32_t result = audioDebugMngr_->PrintAudioRendererDebugInfo(rendererKey, fd);
-    if (result != AUDIO_OK) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "PrintRendererInfo failed");
-    }
+    CHECK_AND_RETURN_LOG(result == AUDIO_OK,
+        "PrintAudioRendererDebugInfo failed, rendererKey:%{public}u, result:%{public}d",
+        rendererKey, result);
 }
 
 void AudioDebuggingManagerImpl::PrintCapturerInfo(weak::AudioCapturer capturer, int32_t fd)
 {
+    AUDIO_DEBUG_LOG("in, fd:%{public}d", fd);
     AudioCapturerImpl *taiheCapturer = reinterpret_cast<AudioCapturerImpl *>(capturer->GetImplPtr());
-    if (taiheCapturer == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "capturer impl is nullptr");
-        return;
-    }
-    if (taiheCapturer->audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "capturer native object is nullptr");
-        return;
-    }
-    if (audioDebugMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioDebugMngr_ is nullptr");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(taiheCapturer != nullptr, "capturer impl is nullptr");
+    CHECK_AND_RETURN_LOG(taiheCapturer->audioCapturer_ != nullptr, "capturer native object is nullptr");
+    CHECK_AND_RETURN_LOG(audioDebugMngr_ != nullptr, "audioDebugMngr_ is nullptr");
     uint32_t capturerKey = taiheCapturer->audioCapturer_->GetCapturerDebugKey();
+    AUDIO_DEBUG_LOG("capturerKey:%{public}u", capturerKey);
     int32_t result = audioDebugMngr_->PrintAudioCapturerDebugInfo(capturerKey, fd);
-    if (result != AUDIO_OK) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "PrintCapturerInfo failed");
-    }
+    CHECK_AND_RETURN_LOG(result == AUDIO_OK,
+        "PrintAudioCapturerDebugInfo failed, capturerKey:%{public}u, result:%{public}d",
+        capturerKey, result);
 }
 
 void AudioDebuggingManagerImpl::PrintLoopbackInfo(weak::AudioLpback loopback, int32_t fd)
 {
+    AUDIO_DEBUG_LOG("in, fd:%{public}d", fd);
     AudioLoopbackImpl *taiheLoopback = reinterpret_cast<AudioLoopbackImpl *>(loopback->GetImplPtr());
-    if (taiheLoopback == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "loopback impl is nullptr");
-        return;
-    }
-    if (taiheLoopback->loopback_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "loopback native object is nullptr");
-        return;
-    }
-    if (audioDebugMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioDebugMngr_ is nullptr");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(taiheLoopback != nullptr, "loopback impl is nullptr");
+    CHECK_AND_RETURN_LOG(taiheLoopback->loopback_ != nullptr, "loopback native object is nullptr");
+    CHECK_AND_RETURN_LOG(audioDebugMngr_ != nullptr, "audioDebugMngr_ is nullptr");
     uint32_t loopbackKey = taiheLoopback->loopback_->GetDebugKey();
+    AUDIO_DEBUG_LOG("loopbackKey:%{public}u", loopbackKey);
     int32_t result = audioDebugMngr_->PrintAudioLoopbackDebugInfo(loopbackKey, fd);
-    if (result != AUDIO_OK) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "PrintLoopbackInfo failed");
-    }
+    CHECK_AND_RETURN_LOG(result == AUDIO_OK,
+        "PrintAudioLoopbackDebugInfo failed, loopbackKey:%{public}u, result:%{public}d",
+        loopbackKey, result);
 }
 
 void AudioDebuggingManagerImpl::PrintSessionInfo(weak::AudioSessionManager session, int32_t fd)
 {
-    TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED, "PrintSessionInfo is unsupported now");
+    AUDIO_DEBUG_LOG("in, fd:%{public}d", fd);
+    CHECK_AND_RETURN_LOG(audioDebugMngr_ != nullptr, "audioDebugMngr_ is nullptr");
+    int32_t result = audioDebugMngr_->PrintAudioSessionDebugInfo(fd);
+    CHECK_AND_RETURN_LOG(result == AUDIO_OK,
+        "PrintAudioSessionDebugInfo failed, result:%{public}d", result);
 }
 } // namespace ANI::Audio
