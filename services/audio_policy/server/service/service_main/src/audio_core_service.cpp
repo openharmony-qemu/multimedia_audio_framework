@@ -1046,7 +1046,7 @@ AudioFlag AudioCoreService::GetFlagForMmapStream(std::shared_ptr<AudioStreamDesc
     // During the recreate of fast stream, if current has ultra fast stream and current device does not support
     // ultra fast, set the flag to normal.
     CHECK_AND_RETURN_RET_LOG(!pipeManager_->HasUltraFastStreamRequest() ||
-        g_ultraFastDevicesSet.find(deviceType) != g_ultraFastDevicesSet.end() ||
+        pipeManager_->IsUltraFastSupportedDevice(deviceType) ||
         AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType) != PRIMARY_SPEAKER,
         AUDIO_OUTPUT_FLAG_NORMAL, "Ultra fast stream exists, set %{public}u to normal", streamDesc->GetSessionId());
     if (streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP ||

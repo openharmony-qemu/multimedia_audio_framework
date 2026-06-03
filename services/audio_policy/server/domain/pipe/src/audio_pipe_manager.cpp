@@ -1508,6 +1508,21 @@ StreamUsage AudioPipeManager::GetLastestRunningCallStreamUsage()
     return STREAM_USAGE_UNKNOWN;
 }
 
+bool AudioPipeManager::HasUltraFastPipe()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE(pipeInfo->GetUltraFastFlag());
+        return true;
+    }
+    return false;
+}
+
+bool AudioPipeManager::IsUltraFastSupportedDevice(DeviceType deviceType)
+{
+    return g_ultraFastDevicesSet.find(deviceType) != g_ultraFastDevicesSet.end();
+}
+
 bool AudioPipeManager::IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, false, "pipe is nullptr");

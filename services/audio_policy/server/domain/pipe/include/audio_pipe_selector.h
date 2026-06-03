@@ -161,6 +161,8 @@ private:
         std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
     bool GetIncomingStreamPriority(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
+    void AdjustFastRouteForUltraFastIfNeeded(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void AdjustFastRouteForUltraFastIfNeeded(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     bool IsMultiStreamPrimary(const std::string &pipeName);
     void UpdateActionForHdPlay(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
