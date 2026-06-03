@@ -107,7 +107,7 @@ public:
         return SUCCESS;
     }
 
-    int32_t GetDeviceProductId(const std::string &remoteAddr, const std::string &productId) override
+    int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) override
     {
         productId = "";
         return SUCCESS;
