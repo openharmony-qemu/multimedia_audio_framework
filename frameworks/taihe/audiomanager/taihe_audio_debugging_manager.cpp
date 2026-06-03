@@ -76,7 +76,7 @@ void AudioDebuggingManagerImpl::PrintRendererInfo(weak::AudioRenderer renderer, 
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioDebugMngr_ is nullptr");
         return;
     }
-    uintptr_t rendererKey = reinterpret_cast<uintptr_t>(taiheRenderer->audioRenderer_.get());
+    uint32_t rendererKey = taiheRenderer->audioRenderer_->GetRendererDebugKey();
     int32_t result = audioDebugMngr_->PrintAudioRendererDebugInfo(rendererKey, fd);
     if (result != AUDIO_OK) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "PrintRendererInfo failed");
@@ -98,7 +98,7 @@ void AudioDebuggingManagerImpl::PrintCapturerInfo(weak::AudioCapturer capturer, 
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioDebugMngr_ is nullptr");
         return;
     }
-    uintptr_t capturerKey = reinterpret_cast<uintptr_t>(taiheCapturer->audioCapturer_.get());
+    uint32_t capturerKey = taiheCapturer->audioCapturer_->GetCapturerDebugKey();
     int32_t result = audioDebugMngr_->PrintAudioCapturerDebugInfo(capturerKey, fd);
     if (result != AUDIO_OK) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "PrintCapturerInfo failed");
@@ -120,7 +120,7 @@ void AudioDebuggingManagerImpl::PrintLoopbackInfo(weak::AudioLpback loopback, in
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioDebugMngr_ is nullptr");
         return;
     }
-    uint32_t loopbackKey = reinterpret_cast<uint32_t>(taiheLoopback->loopback_.get());
+    uint32_t loopbackKey = taiheLoopback->loopback_->GetDebugKey();
     int32_t result = audioDebugMngr_->PrintAudioLoopbackDebugInfo(loopbackKey, fd);
     if (result != AUDIO_OK) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "PrintLoopbackInfo failed");
