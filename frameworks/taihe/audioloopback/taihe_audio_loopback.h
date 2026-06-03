@@ -33,8 +33,6 @@ public:
     explicit AudioLoopbackImpl(std::shared_ptr<AudioLoopbackImpl> obj);
     ~AudioLoopbackImpl();
 
-    int64_t GetImplPtr();
-
     static AudioLpback CreateAudioLoopbackWrapper(OHOS::AudioStandard::AudioLoopbackMode loopbackMode);
     static AudioLpback CreateGlobalAudioLoopbackWrapper(OHOS::AudioStandard::AudioLoopbackMode mode,
         OHOS::AudioStandard::LoopbackType type);

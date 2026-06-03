@@ -1475,8 +1475,6 @@ union AudioDevicePairOrNull {
 }
 
 interface AudioLoopback {
-  GetImplPtr(): i64;
-
   @gen_promise("getStatus")
   GetStatusSync(): AudioLoopbackStatus;
 
