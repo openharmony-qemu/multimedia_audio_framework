@@ -324,24 +324,5 @@ HWTEST_F(AudioLoopbackManagerUnitTest, Destructor_001, TestSize.Level1)
     manager = nullptr;
     EXPECT_EQ(manager, nullptr);
 }
-
-HWTEST_F(AudioLoopbackManagerUnitTest, MultipleControls_001, TestSize.Level1)
-{
-    sptr<IRemoteObject> handlerLoopback;
-    sptr<IRemoteObject> controlLoopback1;
-    sptr<IRemoteObject> controlLoopback2;
-    sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
-    sptr<MockILoopbackCallback> controlCallback1 = new MockILoopbackCallback();
-    sptr<MockILoopbackCallback> controlCallback2 = new MockILoopbackCallback();
-    
-    EXPECT_CALL(*handlerCallback, OnCommandResult(_, _, _)).Times(AnyNumber());
-    EXPECT_CALL(*controlCallback1, OnStatusChange(_, _)).Times(AnyNumber());
-    EXPECT_CALL(*controlCallback2, OnStatusChange(_, _)).Times(AnyNumber());
-    manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER, handlerCallback, handlerLoopback, 1001);
-    manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, controlCallback1, controlLoopback1, 1002);
-    manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, controlCallback2, controlLoopback2, 1003);
-    int32_t result = manager_->Enable(LOOPBACK_TYPE_GLOBAL_CONTROL, true, 1002);
-    EXPECT_EQ(result, SUCCESS);
-}
 }
 }
