@@ -280,7 +280,7 @@ void AudioAdapterManager::LoadVolumeValueMapFromDb()
         volumeDataMaintainer_.SaveLoadFlagToMap(desc, VolumeKeyType::LEVEL, false);
         volumeDataMaintainer_.SaveLoadFlagToMap(desc, VolumeKeyType::MUTE, false);
         UpdateVolumeWhenDeviceConnect(desc);
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(DEFAULT_ZONEID, desc->deviceType_)) {
             TriggerAudioZoneVolumeSync(DEFAULT_ZONEID, desc);
         }
@@ -3679,7 +3679,7 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_LOG(desc->deviceRole_ == OUTPUT_DEVICE, "%{public}s is not output", desc->GetName().c_str());
     CHECK_AND_RETURN_LOG(isDataShareReady_, "isDataShareReady_ is false, not init");
 
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     CHECK_AND_RETURN_LOG(AudioVolumeUtils::GetInstance().HasZoneVolumeConfiged(std::string(PRIMARY_ZONE_NAME)),
         "Zone volume config is not ready");
 #endif
@@ -4177,7 +4177,7 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
     SetSystemVolumeToEffect(device, volumeType);
 
     AdjustVolumeForSpecialDevice(device, volumeType, isMuted, volumeLevel, volumeDb);
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     ApplySystemVolumeProxy(zoneId, device, isMuted, volumeDb);
 #endif
     std::lock_guard<std::mutex> lock2(audioVolumeMutex_);

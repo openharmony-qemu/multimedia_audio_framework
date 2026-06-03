@@ -78,7 +78,7 @@ int32_t AudioVolumeUtils::GetDefaultVolumeLevel(std::shared_ptr<AudioDeviceDescr
     return defaultVolumeLevel;
 }
 
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
 void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {
@@ -183,7 +183,7 @@ int32_t AudioVolumeUtils::GetMaxVolumeLevel(DeviceType deviceType, AudioStreamTy
     return maxVolumeLevel;
 }
 
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
 void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(DeviceType deviceType,
     AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {
@@ -242,7 +242,7 @@ int32_t AudioVolumeUtils::GetMinVolumeLevel(DeviceType deviceType, AudioStreamTy
     return minVolumeLevel;
 }
 
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
 void AudioVolumeUtils::GetMinVolumeLevelFromConfig(DeviceType deviceType,
     AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {

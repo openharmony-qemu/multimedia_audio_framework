@@ -1101,7 +1101,7 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             clientCallbacksMap_[it->first][CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER]) {
             NotifySystemVolumeChangeByFilter(it->first, volumeChangeCb, eventContextObj->volumeEvent);
         }
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         CHECK_AND_CONTINUE(IsTargetZoneForVolumeKeyEvent(it->first, eventContextObj->zoneId));
 #endif
         CHECK_AND_CONTINUE(IsTargetDeviceForVolumeKeyEvent(it->first, eventContextObj->volumeEvent));

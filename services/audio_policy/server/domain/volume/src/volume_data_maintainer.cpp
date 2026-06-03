@@ -770,7 +770,7 @@ std::string VolumeDataMaintainer::GetVolumeValueMapKey(std::shared_ptr<AudioDevi
     if (device->deviceType_ == DEVICE_TYPE_SPEAKER && device->networkId_ != LOCAL_NETWORK_ID) {
         deviceGroupStr = "DMSDP"; // distributed speaker.
     }
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     return "zone_" + GetZoneKey(zoneId) + "_deviceGroup_" + deviceGroupStr;
 #else
     return "deviceGroup_" + deviceGroupStr;
@@ -942,7 +942,7 @@ IntValueInfo VolumeDataMaintainer::GetVolumeLevelInfo(std::shared_ptr<AudioDevic
     int32_t dftVolume = AudioVolumeUtils::GetInstance().GetDefaultVolumeLevel(device, streamType, zoneId);
     int32_t maxVolume = AudioVolumeUtils::GetInstance().GetMaxVolumeLevel(deviceType, streamType, zoneId);
     IntValueInfo info {
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         .key = GetVolumeKey(device, streamType) + GetZoneKey(zoneId),
 #else
         .key = GetVolumeKey(device, streamType),
@@ -959,7 +959,7 @@ IntValueInfo VolumeDataMaintainer::GetVolumeDegreeInfo(std::shared_ptr<AudioDevi
     AudioStreamType streamType, int32_t zoneId)
 {
     IntValueInfo degreeInfo {
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         .key = GetVolumeKey(device, streamType, VolumeKeyType::DEGREE) + GetZoneKey(zoneId),
 #else
         .key = GetVolumeKey(device, streamType, VolumeKeyType::DEGREE),
@@ -995,7 +995,7 @@ int32_t VolumeDataMaintainer::SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDes
             return SUCCESS;
         }
     }
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     std::string volumeKey = GetVolumeKey(device, volumeType) + GetZoneKey(zoneId);
     std::string volumeDegreeKey = GetVolumeKey(device, volumeType, VolumeKeyType::DEGREE)
         + GetZoneKey(zoneId);
@@ -1151,7 +1151,7 @@ void VolumeDataMaintainer::LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDe
     }
     for (auto stream : volumeList) {
         BoolValueInfo info {
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
             .key = GetMuteKey(device, stream) + GetZoneKey(zoneId),
 #else
             .key = GetMuteKey(device, stream),
@@ -1208,7 +1208,7 @@ int32_t VolumeDataMaintainer::SaveMuteToDb(std::shared_ptr<AudioDeviceDescriptor
             return SUCCESS;
         }
     }
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     std::string muteKey = GetMuteKey(device, volumeType) + GetZoneKey(zoneId);
 #else
     std::string muteKey = GetMuteKey(device, volumeType);
