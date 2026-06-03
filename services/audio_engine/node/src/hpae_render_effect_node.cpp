@@ -482,15 +482,7 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
 
 int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat)
 {
-bool isDownSampling;
-    if (Util::IsEnhancedRoutingSupported()) {
-        isDownSampling = AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(
-            sceneType_, deviceType_, renderId_);
-    } else {
-        isDownSampling = AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(sceneType_);
-    }
-    basicFormat.rate = static_cast<uint32_t>(basicFormat.rate) > DEFUALT_EFFECT_RATE &&
-        !isDownSampling ? basicFormat.rate : static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
+    basicFormat.rate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
     uint64_t channelLayout = 0;
     int32_t ret;
     if (Util::IsEnhancedRoutingSupported()) {

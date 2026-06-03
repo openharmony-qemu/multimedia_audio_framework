@@ -1077,6 +1077,18 @@ int32_t AudioCapturerPrivate::GetCapturerDebugInfo(AudioCapturerDebugInfo &debug
         }
     }
 
+    GetCapturerDebugStreamInfo(debugInfo, audioDebugInfo);
+    GetCapturerDebugCaptureInfo(debugInfo, audioDebugInfo);
+    GetCapturerDebugPipeInfo(debugInfo, audioDebugInfo);
+    GetCapturerDebugFocusInfo(debugInfo, audioDebugInfo);
+    GetCapturerDebugErrorInfo(debugInfo, audioDebugInfo);
+
+    return SUCCESS;
+}
+
+void AudioCapturerPrivate::GetCapturerDebugStreamInfo(AudioCapturerDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
     debugInfo.sessionId = audioDebugInfo.sessionId;
     debugInfo.samplingRate = static_cast<int32_t>(audioDebugInfo.streamParams.samplingRate);
     debugInfo.channels = static_cast<AudioChannel>(audioDebugInfo.streamParams.channels);
@@ -1085,16 +1097,52 @@ int32_t AudioCapturerPrivate::GetCapturerDebugInfo(AudioCapturerDebugInfo &debug
     debugInfo.channelLayout = static_cast<AudioChannelLayout>(audioDebugInfo.streamParams.channelLayout);
     debugInfo.sourceType = audioDebugInfo.capturerInfo->sourceType;
     debugInfo.capturerFlag = audioDebugInfo.capturerInfo->capturerFlags;
+    AUDIO_DEBUG_LOG("GetCapturerDebugStreamInfo: sessionId:%{public}u, samplingRate:%{public}d, "
+        "sourceType:%{public}d, capturerFlag:%{public}d",
+        debugInfo.sessionId, debugInfo.samplingRate,
+        static_cast<int32_t>(debugInfo.sourceType), debugInfo.capturerFlag);
+}
+
+void AudioCapturerPrivate::GetCapturerDebugCaptureInfo(AudioCapturerDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
     debugInfo.captureTimestamp = audioDebugInfo.captureTimestamp;
     debugInfo.bufferSize = audioDebugInfo.captureBufferSize;
     debugInfo.overflowCount = audioDebugInfo.captureOverflowCount;
     debugInfo.muteWhenInterrupted = audioDebugInfo.muteWhenInterrupted;
     debugInfo.pauseWhenInterrupted = audioDebugInfo.pauseWhenInterrupted;
     debugInfo.inputDeviceInfo = audioDebugInfo.inputDeviceInfo;
-    debugInfo.pipeRole = audioDebugInfo.pipeRole;
-    debugInfo.pipeStreamInfo = *audioDebugInfo.pipeStreamInfo;
+    AUDIO_DEBUG_LOG("GetCapturerDebugCaptureInfo: bufferSize:%{public}llu, overflowCount:%{public}u",
+        static_cast<unsigned long long>(debugInfo.bufferSize), debugInfo.overflowCount);
+}
 
-    return SUCCESS;
+void AudioCapturerPrivate::GetCapturerDebugPipeInfo(AudioCapturerDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
+    debugInfo.pipeRole = audioDebugInfo.pipeRole;
+    debugInfo.pipeInfo = *audioDebugInfo.pipeStreamInfo;
+    AUDIO_DEBUG_LOG("GetCapturerDebugPipeInfo: pipeRole:%{public}d, "
+        "pipeInfo.samplingRate:%{public}d, pipeInfo.channels:%{public}d",
+        static_cast<int32_t>(debugInfo.pipeRole),
+        static_cast<int32_t>(debugInfo.pipeInfo.samplingRate),
+        static_cast<int32_t>(debugInfo.pipeInfo.channels));
+}
+
+void AudioCapturerPrivate::GetCapturerDebugFocusInfo(AudioCapturerDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
+    debugInfo.focusState = audioDebugInfo.focusState;
+    debugInfo.focusHistory = audioDebugInfo.focusHistory;
+    AUDIO_DEBUG_LOG("GetCapturerDebugFocusInfo: focusState:%{public}d, focusHistory size:%{public}zu",
+        static_cast<int32_t>(debugInfo.focusState), debugInfo.focusHistory.size());
+}
+
+void AudioCapturerPrivate::GetCapturerDebugErrorInfo(AudioCapturerDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
+    debugInfo.errorInfos = audioDebugInfo.errorInfos;
+    AUDIO_DEBUG_LOG("GetCapturerDebugErrorInfo: errorInfos size:%{public}zu",
+        debugInfo.errorInfos.size());
 }
 
 FastStatus AudioCapturerPrivate::GetFastStatusInner()

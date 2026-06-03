@@ -72,6 +72,7 @@ public:
     virtual void UpdateCurrentInputDevice(int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices) = 0;
     virtual std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCurrentInputDevice(int32_t uid) = 0;
+    virtual void OnAppDied(int32_t uid);
 
     void ExcludeDevices(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
         AudioDeviceUsage usage);

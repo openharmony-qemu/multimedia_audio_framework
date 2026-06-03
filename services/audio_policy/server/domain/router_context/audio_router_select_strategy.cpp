@@ -576,5 +576,9 @@ void AudioRouterSelectStrategy::ClearAllSelectSelectDevice(PreferredType preferr
     }
 }
 
+void AudioRouterSelectStrategy::OnAppDied(int32_t uid)
+{
+    AudioRouterInfra::GetInstance().OnAppDied(uid);
+}
 }
 }

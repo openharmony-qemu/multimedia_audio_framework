@@ -1055,6 +1055,8 @@ string AudioPolicyUtils::EncUsbAddr(const string &src)
 void AudioPolicyUtils::FilterDevicesByTokenId(
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
+    CHECK_AND_RETURN_LOG(!PermissionUtil::VerifyIsAudio(), "called by audio, skip");
+
     uint32_t callingTokenId = IPCSkeleton::GetCallingTokenID();
     audioDeviceDescriptors.erase(
         std::remove_if(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(),

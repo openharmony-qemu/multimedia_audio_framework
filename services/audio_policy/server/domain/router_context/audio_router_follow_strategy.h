@@ -55,6 +55,8 @@ public:
     void UpdateCurrentInputDevice(int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices) override;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCurrentInputDevice(int32_t uid) override;
+
+    void OnAppDied(int32_t uid) override;
 private:
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetMediaInputDeviceWhenHasRunningStream(
         SourceType &effectiveSourceType, BluetoothAndNearlinkPreferredRecordCategory &category);
@@ -66,6 +68,9 @@ private:
     void ClearCallOutputDevice(int32_t uid, uint32_t streamId);
     void RefreshCallOutputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);
+
+    std::unordered_map<int32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> curExclusiveInputDevices_;
+    std::mutex curExclusiveInputDevicesMutex_;
 };
 
 }

@@ -1800,10 +1800,19 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
     return ret;
 }
 
+void AudioPolicyServer::FillDeviceTokenId(std::shared_ptr<AudioDeviceDescriptor> device)
+{
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is nullptr");
+    auto innerDevice = audioConnectedDevice_.GetConnectedDeviceByType(device->networkId_, device->deviceType_);
+    CHECK_AND_RETURN_LOG(innerDevice != nullptr, "innerDevice is nullptr");
+    device->deviceTokenId_ = innerDevice->deviceTokenId_;
+}
+
 int32_t AudioPolicyServer::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     auto callerTokenId = IPCSkeleton::GetCallingTokenID();
+    FillDeviceTokenId(audioDeviceDescriptor);
     auto deviceTokenId = audioDeviceDescriptor ? audioDeviceDescriptor->deviceTokenId_ : 0;
     CHECK_AND_RETURN_RET_LOG(deviceTokenId == 0 || deviceTokenId == callerTokenId, ERR_PERMISSION_DENIED,
         "invalid tokenId");
@@ -1888,6 +1897,7 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
     }
 
     deviceDescs = eventEntry_->GetDevices(deviceFlag);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
     AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
@@ -1948,6 +1958,7 @@ int32_t AudioPolicyServer::GetOutputDevice(const sptr<AudioRendererFilter> &audi
         return ERR_INVALID_OPERATION;
     }
     deviceDescs = audioPolicyService_.GetOutputDevice(audioRendererFilter);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
@@ -1973,6 +1984,7 @@ int32_t AudioPolicyServer::GetInputDevice(const sptr<AudioCapturerFilter> &audio
         return ERR_INVALID_OPERATION;
     }
     deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
@@ -2007,6 +2019,7 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     AudioRendererInfo newRendererInfo = rendererInfo;
     deviceDescs = eventEntry_->GetPreferredOutputDeviceDescriptors(newRendererInfo, IPCSkeleton::GetCallingUid(),
         LOCAL_NETWORK_ID);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
     bool hasBTPermission = false;
     if (!forceNoBTPermission) {
@@ -2042,6 +2055,7 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
 {
     AudioCapturerInfo captureInfo = captureInfoIn;
     deviceDescs = eventEntry_->GetPreferredInputDeviceDescriptors(captureInfo, IPCSkeleton::GetCallingUid());
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_MEMORY_ALLOC_FAILED, "nullptr");
         if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
@@ -3388,7 +3402,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
-    AudioRouterInfra::GetInstance().OnAppDied(uid);
+    AudioRouterSelectStrategy::GetInstance().OnAppDied(uid);
     {
         std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
         eventEntry_->RegisteredTrackerClientDied(uid, pid);
@@ -3415,7 +3429,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
     StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(pid);
-    AudioRouterInfra::GetInstance().OnAppDied(uid);
+    AudioRouterSelectStrategy::GetInstance().OnAppDied(uid);
     if (pid == lastMicMuteSettingPid_) {
         // The last app with the non-persistent microphone setting died, restore the default non-persistent value
         AUDIO_INFO_LOG("Cliet died and reset non-persist mute state");
@@ -3847,14 +3861,15 @@ int32_t AudioPolicyServer::GetAudioDebugInfo(uint32_t sessionId,
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission() ||
         coreService_->IsStreamBelongToUid(callingUid, sessionId), ERR_PERMISSION_DENIED,
         "GetAudioDebugInfo denied, sessionId:%{public}u, callingUid:%{public}d", sessionId, callingUid);
-    auto audioDebugInfoValue = std::make_shared<AudioDebugInfo>();
-    int32_t ret = eventEntry_->GetAudioDebugInfoBySessionId(sessionId, *audioDebugInfoValue);
+    if (!audioDebugInfo) {
+        audioDebugInfo = std::make_shared<AudioDebugInfo>();
+    }
+    int32_t ret = eventEntry_->GetAudioDebugInfoBySessionId(sessionId, *audioDebugInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "GetPipeDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
     if (interruptService_ != nullptr) {
-        interruptService_->GetFocusDebugInfoByStreamId(sessionId, *audioDebugInfoValue);
+        interruptService_->GetFocusDebugInfoByStreamId(sessionId, *audioDebugInfo);
     }
-    audioDebugInfo = audioDebugInfoValue;
     return SUCCESS;
 }
 
@@ -4016,6 +4031,7 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
     }
 
     descs = coreService_->GetAvailableDevices(usage);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(descs);
     AudioDeviceDescriptor::MapInputDeviceType(descs);
 
     if (!hasSystemPermission) {
@@ -4034,8 +4050,7 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
         deviceDevices.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
     }
 
-    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
-    if (!hasBTPermission) {
+    if (!PermissionUtil::VerifyBluetoothPermission()) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDevices);
         descs.clear();
         for (auto &dec : deviceDevices) {

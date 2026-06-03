@@ -17,6 +17,7 @@
 #include "audio_device_manager.h"
 #include "audio_policy_utils.h"
 #include "audio_router_infra.h"
+#include "audio_router_select_strategy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,7 +36,7 @@ void AudioRouterContextTestBase::TearDown(void)
     routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::CALL_INPUT);
     routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::CALL_OUTPUT);
     for (int i = TEST_APP_UID_10001; i < TEST_APP_UID_MAX; i++) {
-        routerInfra.OnAppDied(i);
+        AudioRouterSelectStrategy::GetInstance().OnAppDied(i);
     }
     routerInfra.SetRecognitionCaptureDevice(nullptr);
     routerInfra.UnexcludeAllDevice();

@@ -26,6 +26,7 @@
 #include "audio_info.h"
 #include "audio_effect.h"
 #include "audio_stream_descriptor.h"
+#include "audio_interrupt_info.h"
 #include "timestamp.h"
 #include "audio_device_descriptor.h"
 
@@ -75,8 +76,10 @@ struct AudioRendererDebugInfo {
     float systemVolume = 0.0f;
     float volume = 0.0f;
 
-    int32_t hintType = -1;
-    std::string historyHintType = "";
+    AudioFocuState focusState = ACTIVE;
+    std::vector<AudioFocusBehavior> focusHistory;
+    // debug info about fault
+    std::vector<AudioFaultRecord> errorInfos;
 };
 
 struct AudioCapturerDebugInfo {
@@ -95,8 +98,13 @@ struct AudioCapturerDebugInfo {
     bool pauseWhenInterrupted = false;
     AudioDeviceDescriptor inputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     AudioPipeRole pipeRole = PIPE_ROLE_INPUT;
-    AudioStreamInfo pipeStreamInfo = AudioStreamInfo(SAMPLE_RATE_8000, AudioEncodingType::ENCODING_PCM,
+    AudioStreamInfo pipeInfo = AudioStreamInfo(SAMPLE_RATE_8000, AudioEncodingType::ENCODING_PCM,
         AudioSampleFormat::INVALID_WIDTH, AudioChannel::CHANNEL_UNKNOW, AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+
+    AudioFocuState focusState = ACTIVE;
+    std::vector<AudioFocusBehavior> focusHistory;
+    // debug info about fault
+    std::vector<AudioFaultRecord> errorInfos;
 };
 
 struct AudioLoopbackDebugInfo {
@@ -262,6 +270,9 @@ struct AudioDebugInfo : public Parcelable {
     DeviceType loopbackOutputDeviceType = DEVICE_TYPE_NONE;
     DeviceType loopbackInputDeviceType = DEVICE_TYPE_NONE;
 
+    // debug info about error
+    std::vector<AudioFaultRecord> errorInfos;
+
     bool MarshallingStreamParams(Parcel &parcel) const
     {
         return parcel.WriteUint32(streamParams.samplingRate) &&
@@ -359,6 +370,22 @@ struct AudioDebugInfo : public Parcelable {
             inputDeviceInfo.Marshalling(parcel);
     }
 
+    bool MarshallingErrorInfos(Parcel &parcel) const
+    {
+        if (!parcel.WriteUint32(errorInfos.size())) {
+            return false;
+        }
+        for (const auto &record : errorInfos) {
+            if (!parcel.WriteInt32(record.uid) ||
+                !parcel.WriteInt32(record.errorCode) ||
+                !parcel.WriteString(record.errorReason) ||
+                !parcel.WriteUint64(record.timestamp)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteUint32(sessionId) &&
@@ -369,7 +396,8 @@ struct AudioDebugInfo : public Parcelable {
             MarshallingDeviceInfo(parcel) &&
             MarshallingVolumeInfo(parcel) &&
             MarshallingInterruptInfo(parcel) &&
-            MarshallingCapturerInfo(parcel);
+            MarshallingCapturerInfo(parcel) &&
+            MarshallingErrorInfos(parcel);
     }
 
     bool UnmarshallingStreamParams(Parcel &parcel)
@@ -482,6 +510,20 @@ struct AudioDebugInfo : public Parcelable {
         return true;
     }
 
+    bool UnmarshallingErrorInfos(Parcel &parcel)
+    {
+        uint32_t size = parcel.ReadUint32();
+        for (uint32_t i = 0; i < size; i++) {
+            AudioFaultRecord record;
+            record.uid = parcel.ReadInt32();
+            record.errorCode = parcel.ReadInt32();
+            record.errorReason = parcel.ReadString();
+            record.timestamp = parcel.ReadUint64();
+            errorInfos.push_back(record);
+        }
+        return true;
+    }
+
     static AudioDebugInfo *Unmarshalling(Parcel &parcel)
     {
         auto info = new(std::nothrow) AudioDebugInfo();
@@ -513,7 +555,8 @@ struct AudioDebugInfo : public Parcelable {
             !info->UnmarshallingDeviceInfo(parcel) ||
             !info->UnmarshallingVolumeInfo(parcel) ||
             !info->UnmarshallingInterruptInfo(parcel) ||
-            !info->UnmarshallingCapturerInfo(parcel)) {
+            !info->UnmarshallingCapturerInfo(parcel) ||
+            !info->UnmarshallingErrorInfos(parcel)) {
             delete info;
             return nullptr;
         }
