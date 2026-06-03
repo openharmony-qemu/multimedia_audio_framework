@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_sink_output_node.h"
+#include "hpae_session_effect_node.h"
 #include "audio_effect.h"
 
 using namespace OHOS;
@@ -1938,5 +1939,95 @@ HWTEST_F(HpaeProcessClusterTest, ProcessClusterFrameLen_CustomSampleRate, TestSi
     ASSERT_NE(cluster->mixerNode_, nullptr);
     EXPECT_EQ(cluster->mixerNode_->GetFrameLen(), 960u);
 }
+
+/**
+ * @tc.name  : Test HpaeProcessCluster Flush
+ * @tc.number: Flush_WithConverterNoSessionEffect_001
+ * @tc.desc  : Test Flush with converter node but no session effect node
+ */
+HWTEST_F(HpaeProcessClusterTest, Flush_WithConverterNoSessionEffect_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(cluster->CreateNodes(sinkInputNode), SUCCESS);
+    cluster->Connect(sinkInputNode);
+
+    EXPECT_NE(cluster->GetConverterNodeById(DEFAULT_SESSIONID_NUM_FIRST), nullptr);
+    EXPECT_EQ(cluster->HasSessionEffectNode(DEFAULT_SESSIONID_NUM_FIRST), false);
+
+    cluster->Flush(DEFAULT_SESSIONID_NUM_FIRST);
+    EXPECT_NE(cluster->GetConverterNodeById(DEFAULT_SESSIONID_NUM_FIRST), nullptr);
+}
+
+/**
+ * @tc.name  : Test HpaeProcessCluster Flush
+ * @tc.number: Flush_WithConverterAndSessionEffect_001
+ * @tc.desc  : Test Flush with converter node and session effect node
+ */
+HWTEST_F(HpaeProcessClusterTest, Flush_WithConverterAndSessionEffect_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(cluster->CreateNodes(sinkInputNode), SUCCESS);
+    cluster->Connect(sinkInputNode);
+
+    HpaeNodeInfo seNodeInfo = nodeInfo;
+    auto sessionEffectNode = std::make_shared<HpaeSessionEffectNode>(seNodeInfo);
+    cluster->idSessionEffectMap_[DEFAULT_SESSIONID_NUM_FIRST] = sessionEffectNode;
+
+    EXPECT_NE(cluster->GetConverterNodeById(DEFAULT_SESSIONID_NUM_FIRST), nullptr);
+    EXPECT_EQ(cluster->HasSessionEffectNode(DEFAULT_SESSIONID_NUM_FIRST), true);
+
+    cluster->Flush(DEFAULT_SESSIONID_NUM_FIRST);
+}
+
+/**
+ * @tc.name  : Test HpaeProcessCluster Flush
+ * @tc.number: Flush_WithNoConverter_001
+ * @tc.desc  : Test Flush with no converter node for given session id
+ */
+HWTEST_F(HpaeProcessClusterTest, Flush_WithNoConverter_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(cluster->CreateNodes(sinkInputNode), SUCCESS);
+    cluster->Connect(sinkInputNode);
+
+    EXPECT_NE(cluster->GetConverterNodeById(DEFAULT_SESSIONID_NUM_FIRST), nullptr);
+    EXPECT_EQ(cluster->GetConverterNodeById(NO_EXITS_SESSIONID_ID), nullptr);
+
+    cluster->Flush(NO_EXITS_SESSIONID_ID);
+}
+
 } // AudioStandard
 } // OHOS

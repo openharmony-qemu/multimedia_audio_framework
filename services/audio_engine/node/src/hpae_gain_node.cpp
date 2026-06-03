@@ -159,6 +159,7 @@ void HpaeGainNode::SetFadeState(IOperation operation)
     if (operation_ == OPERATION_STARTED) {
         if (fadeInState_ == false) {
             fadeInState_ = true;
+            fadeProcessedBytes_ = 0;
         } else {
             AUDIO_WARNING_LOG("fadeInState already set");
         }
@@ -176,7 +177,6 @@ void HpaeGainNode::SetFadeState(IOperation operation)
     AUDIO_DEBUG_LOG("fadeInState_[%{public}d], fadeOutState_[%{public}d]", fadeInState_, fadeOutState_);
 }
 
-
 void HpaeGainNode::DoFading(HpaePcmBuffer *input)
 {
     if (!input->IsValid() && fadeOutState_ == FadeOutState::DO_FADEOUT) {
@@ -187,45 +187,93 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         statusCallback->OnFadeDone(GetSessionId());
         return;
     }
-#ifndef CONFIG_FACTORY_VERSION
-    AudioRawFormat rawFormat;
-    rawFormat.format = SAMPLE_F32LE; // for now PCM in gain node is float32
-    rawFormat.channels = GetChannelCount();
-    uint32_t byteLength = 0;
-    uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
-    uint32_t index = GetFadeLength(byteLength, input);
-    int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
-#endif
     // do fade out
     if (fadeOutState_ == FadeOutState::DO_FADEOUT) {
-        auto ret = SUCCESS;
-#ifndef CONFIG_FACTORY_VERSION
-        AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
-#endif
-        fadeOutState_ = FadeOutState::DONE_FADEOUT;
-        AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
-        auto statusCallback = GetNodeStatusCallback().lock();
-        CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
-        statusCallback->OnFadeDone(GetSessionId()); // if operation is stop or pause, callback
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade out fail");
+        ApplyFadeOut(input, fadeOutState_, false);
         return;
     }
     // do fade in
     if (fadeInState_) {
-        if (!input->IsValid() || IsSilentData(input)) {
-            AUDIO_DEBUG_LOG("[%{public}d]: silent or invalid data no need to do fade in", GetSessionId());
-            SilenceData(input);
-            return;
-        }
-        auto ret = SUCCESS;
-#ifndef CONFIG_FACTORY_VERSION
-        AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        ret = ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
-#endif
-        fadeInState_ = false;
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
+        ApplyFadeIn(input, fadeInState_, fadeProcessedBytes_, totalFadeBytes_);
     }
+}
+
+void HpaeGainNode::ApplyFadeOut(HpaePcmBuffer *input, FadeOutState &fadeOutState, bool isCollFade)
+{
+#ifndef CONFIG_FACTORY_VERSION
+    AudioRawFormat rawFormat;
+    rawFormat.format = SAMPLE_F32LE;
+    rawFormat.channels = GetChannelCount();
+    uint32_t byteLength = 0;
+    uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
+    GetFadeLength(byteLength, input);
+    int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
+    auto ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
+#else
+    auto ret = SUCCESS;
+#endif
+    fadeOutState = FadeOutState::DONE_FADEOUT;
+    AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
+    auto statusCallback = GetNodeStatusCallback().lock();
+    CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
+    if (isCollFade) {
+        statusCallback->OnCollborationFadeDone(GetSessionId());
+    } else {
+        statusCallback->OnFadeDone(GetSessionId());
+    }
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade out fail");
+}
+
+void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
+    uint32_t &processedBytes, uint32_t &totalFadeBytes)
+{
+    if (!input->IsValid() || IsSilentData(input)) {
+        if (processedBytes > 0) {
+            AUDIO_DEBUG_LOG("[%{public}d]: silent or invalid data no need to do fade in", GetSessionId());
+            fadeInState = false;
+            processedBytes = 0;
+        }
+        SilenceData(input);
+        return;
+    }
+#ifndef CONFIG_FACTORY_VERSION
+    uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
+    AudioRawFormat rawFormat;
+    rawFormat.format = SAMPLE_F32LE;
+    rawFormat.channels = GetChannelCount();
+    if (GetNodeInfo().fadeType == FadeType::SHORT_FADE) {
+        uint32_t byteLen = static_cast<float>(GetSampleRate()) * SHORT_FADE_PERIOD *
+            rawFormat.channels * sizeof(float);
+        auto ret = ProcessVol(data, byteLen, rawFormat, FADE_LOW, FADE_HIGH);
+        fadeInState = false;
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
+        return;
+    }
+    if (processedBytes == 0) {
+        uint32_t byteLen = 0;
+        uint32_t byteOffset = GetFadeInLength(byteLen, input);
+        AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), byteOffset);
+        totalFadeBytes = input->GetFrameLen() * rawFormat.channels * sizeof(float);
+        CHECK_AND_RETURN_LOG(totalFadeBytes > 0, "totalFadeBytes is zero");
+        uint32_t avail = std::min(byteLen, totalFadeBytes);
+        float endGain = static_cast<float>(avail) / static_cast<float>(totalFadeBytes);
+        auto ret = ProcessVol(data + byteOffset, avail, rawFormat, FADE_LOW, endGain);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
+        processedBytes = avail;
+    } else {
+        uint32_t remain = totalFadeBytes - processedBytes;
+        uint32_t avail = std::min(static_cast<uint32_t>(input->DataSize()), remain);
+        float startGain = static_cast<float>(processedBytes) / static_cast<float>(totalFadeBytes);
+        float endGain = static_cast<float>(processedBytes + avail) / static_cast<float>(totalFadeBytes);
+        auto ret = ProcessVol(data, avail, rawFormat, startGain, endGain);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
+        processedBytes += avail;
+    }
+    if (processedBytes >= totalFadeBytes) {
+        fadeInState = false;
+        processedBytes = 0;
+    }
+#endif
 }
 
 void HpaeGainNode::SilenceData(HpaePcmBuffer *pcmBuffer)
@@ -375,6 +423,7 @@ void HpaeGainNode::SetCollFadeState(IOperation operation)
 {
     if (operation == OPERATION_STARTED) {
         collFadeInState_ = true;
+        collFadeProcessedBytes_ = 0;
         collFadeOutState_ = FadeOutState::NO_FADEOUT; // reset fadeOutState_
     } else if (operation == OPERATION_PAUSED) {
         collFadeOutState_ = FadeOutState::DO_FADEOUT;
@@ -383,44 +432,14 @@ void HpaeGainNode::SetCollFadeState(IOperation operation)
 
 void HpaeGainNode::DoCollFading(HpaePcmBuffer *input)
 {
-#ifndef CONFIG_FACTORY_VERSION
-    AudioRawFormat rawFormat;
-    rawFormat.format = SAMPLE_F32LE; // for now PCM in gain node is float32
-    rawFormat.channels = GetChannelCount();
-    uint32_t byteLength = 0;
-    uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
-    uint32_t index = GetFadeLength(byteLength, input);
-    int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
-#endif
     // do fade out
     if (collFadeOutState_ == FadeOutState::DO_FADEOUT) {
-        auto ret = SUCCESS;
-#ifndef CONFIG_FACTORY_VERSION
-        AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
-#endif
-        collFadeOutState_ = FadeOutState::DONE_FADEOUT;
-        AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
-        auto statusCallback = GetNodeStatusCallback().lock();
-        CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
-        statusCallback->OnCollborationFadeDone(GetSessionId()); // if operation is stop or pause, callback
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade out fail");
+        ApplyFadeOut(input, collFadeOutState_, true);
         return;
     }
-    // do fade in
-    if (collFadeInState_ == true) {
-        if (!input->IsValid() || IsSilentData(input)) {
-            AUDIO_DEBUG_LOG("[%{public}d]: silent or invalid data no need to do fade in", GetSessionId());
-            SilenceData(input);
-            return;
-        }
-        auto ret = SUCCESS;
-#ifndef CONFIG_FACTORY_VERSION
-        AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        ret = ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
-#endif
-        collFadeInState_ = false;
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
+    // do coll fade in
+    if (collFadeInState_) {
+        ApplyFadeIn(input, collFadeInState_, collFadeProcessedBytes_, collTotalFadeBytes_);
     }
 }
 }  // namespace HPAE

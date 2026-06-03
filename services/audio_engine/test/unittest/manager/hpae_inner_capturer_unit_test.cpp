@@ -1608,6 +1608,106 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Resume_FromIdle_001,
     EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_RUNNING);
 }
 
+/**
+ * @tc.name  : Test Flush renderer stream with non-null process cluster
+ * @tc.type  : FUNC
+ * @tc.number: Flush_RendererProcessClusterNotNull_001
+ * @tc.desc  : Test Flush renderer stream when processCluster is not null
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, Flush_RendererProcessClusterNotNull_001, TestSize.Level1)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(recordStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeInnerCapturerManager_->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->Pause(recordStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Pause(playStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    EXPECT_NE(hpaeInnerCapturerManager_->rendererSceneClusterMap_.find(HPAE_SCENE_EFFECT_NONE),
+        hpaeInnerCapturerManager_->rendererSceneClusterMap_.end());
+    EXPECT_EQ(hpaeInnerCapturerManager_->Flush(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+}
+
+/**
+ * @tc.name  : Test Flush renderer stream with null process cluster
+ * @tc.type  : FUNC
+ * @tc.number: Flush_RendererProcessClusterNull_001
+ * @tc.desc  : Test Flush renderer stream when processCluster is null after erase
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, Flush_RendererProcessClusterNull_001, TestSize.Level1)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(recordStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeInnerCapturerManager_->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->Pause(recordStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Pause(playStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    hpaeInnerCapturerManager_->rendererSceneClusterMap_.erase(HPAE_SCENE_EFFECT_NONE);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Flush(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+}
+
+/**
+ * @tc.name  : Test Flush renderer stream while session is RUNNING (covers RUNNING state guard)
+ * @tc.type  : FUNC
+ * @tc.number: Flush_RendererSessionRunning_001
+ * @tc.desc  : Test Flush on a renderer stream in RUNNING state triggers the flush code path.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, Flush_RendererSessionRunning_001, TestSize.Level1)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(recordStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeInnerCapturerManager_->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    // Session is now RUNNING — call Flush directly (no Pause) to exercise RUNNING state guard path
+    EXPECT_EQ(hpaeInnerCapturerManager_->Flush(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+}
 }  // namespace HPAE
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

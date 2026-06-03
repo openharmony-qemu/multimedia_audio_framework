@@ -56,6 +56,7 @@ private:
     InputPort<HpaePcmBuffer*> inputStream_;
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer silenceData_;
+    HpaePcmBuffer outputBuffer_;
 
     StreamManagerState state_ = STREAM_MANAGER_NEW;
     std::chrono::high_resolution_clock::time_point historyTime_;

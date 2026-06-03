@@ -33,6 +33,7 @@ constexpr uint32_t SAMPLE_RATE_11025 = 11025;
 constexpr uint32_t FRAME_LEN_40MS = 40;
 constexpr uint32_t FRAME_LEN_100MS = 100;
 constexpr uint32_t UNPROCESSED_BUFFER_CAPACITY_MULTIPLIER = 2;
+constexpr uint32_t PROCESSED_BUFFER_CAPACITY_MULTIPLIER = 2;
 constexpr uint32_t PROCESSED_BUFFER_COMPACTION_DIVISOR = 2;
 }
 HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo)
@@ -462,7 +463,8 @@ void HpaeAudioFormatConverterNode::InitDualBuffer()
     // processedBuffer_ and resamplerOutBuf_ store data at outCh per frame
     uint32_t maxOutFrames = static_cast<uint32_t>(
         static_cast<uint64_t>(resamplerInputThreshold_) * resampler_->GetOutRate() / resampler_->GetInRate());
-    size_t processedCapacity = static_cast<size_t>(maxOutFrames) * outCh;
+    size_t processedCapacity = static_cast<size_t>(maxOutFrames) *
+        PROCESSED_BUFFER_CAPACITY_MULTIPLIER * outCh;
     processedBuffer_.resize(processedCapacity, 0.0f);
     processedFrames_ = 0;
     processedReadPos_ = 0;
@@ -520,7 +522,9 @@ void HpaeAudioFormatConverterNode::AppendToUnprocessedBuffer(const float *data, 
     size_t samplesToAdd = static_cast<size_t>(frameLen) * channels;
     size_t requiredSize = static_cast<size_t>(unprocessedFrames_ + frameLen) * channels;
     if (unprocessedBuffer_.size() < requiredSize) {
-        unprocessedBuffer_.resize(requiredSize, 0.0f);
+        AUDIO_ERR_LOG("NodeId %{public}d: AppendToUnprocessedBuffer buffer overflow, "
+            "size=%{public}zu, required=%{public}zu", GetNodeId(), unprocessedBuffer_.size(), requiredSize);
+        return;
     }
     errno_t ret = memcpy_s(unprocessedBuffer_.data() + static_cast<size_t>(unprocessedFrames_) * channels,
         (unprocessedBuffer_.size() - static_cast<size_t>(unprocessedFrames_) * channels) * sizeof(float),
@@ -542,7 +546,10 @@ void HpaeAudioFormatConverterNode::AppendToProcessedBuffer(const float *data, ui
     size_t writeOffset = static_cast<size_t>(processedReadPos_ + processedFrames_) * channels;
     size_t samplesToAdd = static_cast<size_t>(frameLen) * channels;
     if (processedBuffer_.size() < writeOffset + samplesToAdd) {
-        processedBuffer_.resize(writeOffset + samplesToAdd, 0.0f);
+        AUDIO_ERR_LOG("NodeId %{public}d: AppendToProcessedBuffer buffer overflow, "
+            "size=%{public}zu, required=%{public}zu", GetNodeId(), processedBuffer_.size(),
+            writeOffset + samplesToAdd);
+        return;
     }
     errno_t ret = memcpy_s(processedBuffer_.data() + writeOffset,
         (processedBuffer_.size() - writeOffset) * sizeof(float),
@@ -575,12 +582,12 @@ void HpaeAudioFormatConverterNode::PullAheadUntilThresholdOrFailure(uint32_t inp
 
     uint32_t pullCount = 0;
 
-    AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead start, unprocessedFrames=%{public}u, threshold=%{public}u, "
+    AUDIO_INFO_LOG("NodeId %{public}d: PullAhead start, unprocessedFrames=%{public}u, threshold=%{public}u, "
         "credit=%{public}u", GetNodeId(), unprocessedFrames_, resamplerInputThreshold_, pullAheadCredit_);
 
     while (pullAheadCredit_ > 0 && unprocessedFrames_ < resamplerInputThreshold_) {
         if (!TryPullOneFrame()) {
-            AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead stopped, upstream underflow after %{public}u pulls",
+            AUDIO_INFO_LOG("NodeId %{public}d: PullAhead stopped, upstream underflow after %{public}u pulls",
                 GetNodeId(), pullCount);
             break;
         }
@@ -588,8 +595,9 @@ void HpaeAudioFormatConverterNode::PullAheadUntilThresholdOrFailure(uint32_t inp
     }
 
     if (pullCount > 0) {
-        AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead pulled %{public}u frames, unprocessedFrames=%{public}u, "
-            "credit=%{public}u", GetNodeId(), pullCount, unprocessedFrames_, pullAheadCredit_);
+        AUDIO_INFO_LOG("NodeId %{public}d: PullAhead pulled %{public}u extra frames, "
+            "unprocessedFrames=%{public}u, remaining credit=%{public}u",
+            GetNodeId(), pullCount, unprocessedFrames_, pullAheadCredit_);
     }
 }
 
@@ -809,7 +817,10 @@ void HpaeAudioFormatConverterNode::MoveUnprocessedToProcessed(uint32_t channels)
     size_t samples = static_cast<size_t>(unprocessedFrames_) * channels;
     size_t writeOffset = static_cast<size_t>(processedReadPos_ + processedFrames_) * channels;
     if (processedBuffer_.size() < writeOffset + samples) {
-        processedBuffer_.resize(writeOffset + samples, 0.0f);
+        AUDIO_ERR_LOG("NodeId %{public}d: MoveUnprocessedToProcessed buffer overflow, "
+            "size=%{public}zu, required=%{public}zu", GetNodeId(), processedBuffer_.size(),
+            writeOffset + samples);
+        return;
     }
     errno_t ret = memcpy_s(processedBuffer_.data() + writeOffset,
         (processedBuffer_.size() - writeOffset) * sizeof(float),

@@ -19,6 +19,8 @@
 #include <chrono>
 #include "audio_errors.h"
 #include "hpae_offload_renderer_manager.h"
+#include "hpae_offload_sinkoutput_node.h"
+#include "hpae_session_effect_node.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -906,6 +908,116 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, AddNodeToSink_001, TestSize.Lev
     EXPECT_EQ(ret, SUCCESS);
     manager_->HandleMsg();
     EXPECT_EQ(manager_->sinkInputNodeMap_.count(204), 1u);
+}
+
+/**
+ * @tc.name    : Pause_RunningState_TriggersFlushPipeline_001
+ * @tc.type    : FUNC
+ * @tc.number  : Pause_RunningState_TriggersFlushPipeline_001
+ * @tc.desc    : Verify Pause with RUNNING state and sinkOutputNode_ triggers flush pipeline path.
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Pause_RunningState_TriggersFlushPipeline_001, TestSize.Level0)
+{
+    // Inject sinkOutputNode_ to enable the RUNNING+sinkOutput flush path
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.frameLen = FRAME_SIZE;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    manager_->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
+
+    // testNode_ is RUNNING (from SetUp), sessionId matches curNode_
+    int32_t ret = manager_->Pause(TEST_SESSION_ID);
+    EXPECT_EQ(ret, SUCCESS);
+    manager_->HandleMsg();
+    // Verify node transitioned to PAUSED and flush pipeline path was exercised without crash
+    EXPECT_EQ(testNode_->GetState(), HPAE_SESSION_PAUSED);
+}
+
+/**
+ * @tc.name    : Pause_NonRunningState_SkipsFlushPipeline_001
+ * @tc.type    : FUNC
+ * @tc.number  : Pause_NonRunningState_SkipsFlushPipeline_001
+ * @tc.desc    : Verify Pause with non-RUNNING state skips flush pipeline path.
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Pause_NonRunningState_SkipsFlushPipeline_001, TestSize.Level0)
+{
+    // Set node to PREPARED state (non-RUNNING)
+    testNode_->SetState(HPAE_SESSION_PREPARED);
+    // Inject sinkOutputNode_ — should NOT trigger flush since state != RUNNING
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.frameLen = FRAME_SIZE;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    manager_->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
+
+    int32_t ret = manager_->Pause(TEST_SESSION_ID);
+    EXPECT_EQ(ret, SUCCESS);
+    manager_->HandleMsg();
+    EXPECT_EQ(testNode_->GetState(), HPAE_SESSION_PAUSED);
+}
+
+/**
+ * @tc.name    : Pause_NullSinkOutput_SkipsFlush_001
+ * @tc.type    : FUNC
+ * @tc.number  : Pause_NullSinkOutput_SkipsFlush_001
+ * @tc.desc    : Verify Pause with RUNNING state but null sinkOutputNode_ skips flush path.
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Pause_NullSinkOutput_SkipsFlush_001, TestSize.Level0)
+{
+    // testNode_ is RUNNING (from SetUp), sinkOutputNode_ remains null (default)
+    int32_t ret = manager_->Pause(TEST_SESSION_ID);
+    EXPECT_EQ(ret, SUCCESS);
+    manager_->HandleMsg();
+    EXPECT_EQ(testNode_->GetState(), HPAE_SESSION_PAUSED);
+}
+
+/**
+ * @tc.name    : FlushPipelineNodes_AllNodesNull_001
+ * @tc.type    : FUNC
+ * @tc.number  : FlushPipelineNodes_AllNodesNull_001
+ * @tc.desc    : Verify FlushPipelineNodes with all optional nodes null does not crash.
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, FlushPipelineNodes_AllNodesNull_001, TestSize.Level0)
+{
+    // All converters, session effect, and sinkOutputNode_ are null
+    // Call FlushPipelineNodes directly (no-crash verification)
+    manager_->FlushPipelineNodes(TEST_SESSION_ID);
+    // No crash expected
+}
+
+/**
+ * @tc.name    : FlushPipelineNodes_WithSessionEffect_Match_001
+ * @tc.type    : FUNC
+ * @tc.number  : FlushPipelineNodes_WithSessionEffect_Match_001
+ * @tc.desc    : Verify FlushPipelineNodes calls FlushEffect when sessionEffectSessionId_ matches.
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, FlushPipelineNodes_WithSessionEffect_Match_001, TestSize.Level0)
+{
+    // Create a bare HpaeSessionEffectNode (effectInstance_ is null, FlushEffect returns early safely)
+    HpaeNodeInfo seNodeInfo;
+    seNodeInfo.frameLen = FRAME_SIZE;
+    seNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    manager_->sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(seNodeInfo);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+
+    manager_->FlushPipelineNodes(TEST_SESSION_ID);
+    // FlushEffect called with matching sessionId, no crash
+}
+
+/**
+ * @tc.name    : FlushPipelineNodes_WithSessionEffect_Mismatch_001
+ * @tc.type    : FUNC
+ * @tc.number  : FlushPipelineNodes_WithSessionEffect_Mismatch_001
+ * @tc.desc    : Verify FlushPipelineNodes skips FlushEffect when sessionEffectSessionId_ does not match.
+ */
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, FlushPipelineNodes_WithSessionEffect_Mismatch_001, TestSize.Level0)
+{
+    HpaeNodeInfo seNodeInfo;
+    seNodeInfo.frameLen = FRAME_SIZE;
+    seNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    manager_->sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(seNodeInfo);
+    manager_->sessionEffectSessionId_ = 999; // Different from TEST_SESSION_ID
+
+    manager_->FlushPipelineNodes(TEST_SESSION_ID);
+    // FlushEffect NOT called due to sessionId mismatch, no crash
 }
 } // namespace HPAE
 } // namespace AudioStandard
