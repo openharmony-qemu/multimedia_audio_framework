@@ -37,7 +37,7 @@ public:
     void PrintAppInfo(int32_t fd);
     void PrintRendererInfo(weak::AudioRenderer renderer, int32_t fd);
     void PrintCapturerInfo(weak::AudioCapturer capturer, int32_t fd);
-    void PrintLoopbackInfo(weak::AudioLpback loopback, int32_t fd);
+    void PrintLoopbackInfo(AudioLpback loopback, int32_t fd);
     void PrintSessionInfo(weak::AudioSessionManager session, int32_t fd);
 
 private:

@@ -91,7 +91,7 @@ void AudioDebuggingManagerImpl::PrintCapturerInfo(weak::AudioCapturer capturer, 
         capturerKey, result);
 }
 
-void AudioDebuggingManagerImpl::PrintLoopbackInfo(weak::AudioLpback loopback, int32_t fd)
+void AudioDebuggingManagerImpl::PrintLoopbackInfo(AudioLpback loopback, int32_t fd)
 {
     AUDIO_DEBUG_LOG("in, fd:%{public}d", fd);
     AudioLoopbackImpl *taiheLoopback = reinterpret_cast<AudioLoopbackImpl *>(loopback->GetImplPtr());
