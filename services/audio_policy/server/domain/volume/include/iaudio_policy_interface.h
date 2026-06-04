@@ -278,6 +278,7 @@ public:
     virtual void RegisterDoNotDisturbStatus() = 0;
     virtual void RegisterDoNotDisturbStatusWhiteList() = 0;
     virtual void RegisterAppIndividualVolumeEnableObserver() = 0;
+    virtual void RegisterCloneStateObserver() = 0;
     virtual int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) = 0;
 
     virtual void SetSleVoiceStatusFlag(bool isSleVoiceStatus) = 0;
