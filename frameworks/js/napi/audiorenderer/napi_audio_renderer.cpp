@@ -2425,7 +2425,7 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
 #endif
 
     napiRenderer->audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
-    CHECK_AND_RETURN_LOG(napiRenderer->rendererWriteDataCallbackNapi_ != nullptr, "writeDataCbNapi_ is nullpur");
+    CHECK_AND_RETURN_LOG(napiRenderer->rendererWriteDataCallbackNapi_ != nullptr, "writeDataCbNapi_ is nullptr");
     int32_t ret = napiRenderer->audioRenderer_->SetRendererWriteCallback(napiRenderer->rendererWriteDataCallbackNapi_);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetRendererWriteCallback failed");
     std::shared_ptr<NapiRendererWriteDataCallback> cb =
