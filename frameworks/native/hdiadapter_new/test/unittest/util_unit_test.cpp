@@ -556,5 +556,46 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_015, TestSize.Level1)
     EXPECT_EQ(type, HDI_ID_TYPE_REMOTE_MULTICHANNEL);
 }
 
+/**
+* @tc.name   : Test IdHandler API
+* @tc.number : IdHandlerUnitTest_016
+* @tc.desc   : Test GetRenderIdByDeviceClassSub with deviceClass not matching primary_voice_call_assistant (if false)
+*/
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_016, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    // deviceClass != "primary_voice_call_assistant" -> if false, skip VOICE_CALL_ASSISTANT branch
+    // Falls to next else-if "primary_mmap" branch
+    uint32_t id = idHandler.GetRenderIdByDeviceClassSub("primary_mmap", "",
+        AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_NE(id, HDI_INVALID_ID);
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, HDI_ID_TYPE_FAST);
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, HDI_ID_INFO_DEFAULT);
+}
+
+/**
+* @tc.name   : Test IdHandler API
+* @tc.number : IdHandlerUnitTest_017
+* @tc.desc   : Test GetRenderIdByDeviceClassSub with deviceClass == primary_voice_call_assistant (if true)
+*/
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_017, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+
+    // deviceClass == "primary_voice_call_assistant" -> if true, returns VOICE_CALL_ASSISTANT id
+    uint32_t id = idHandler.GetRenderIdByDeviceClassSub("primary_voice_call_assistant", "",
+        AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_NE(id, HDI_INVALID_ID);
+    uint32_t base = idHandler.ParseBase(id);
+    EXPECT_EQ(base, HDI_ID_BASE_RENDER);
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, HDI_ID_TYPE_PRIMARY);
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, HDI_ID_INFO_VOICE_CALL_ASSISTANT);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

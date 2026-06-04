@@ -2009,6 +2009,20 @@ HWTEST_F(AudioCoreServiceUnitTest, SetFlagForSpecialStream_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreServiceUnit
+* @tc.number : IsStreamSupportIndependentPipe_001
+* @tc.desc   : Test IsStreamSupportIndependentPipe when streamUsage is VOICE_CALL_ASSISTANT
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportIndependentPipe_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_CALL_ASSISTANT;
+    bool result = GetServerPtr()->coreService_->IsStreamSupportIndependentPipe(streamDesc);
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : Test AudioCoreServiceUnit
 * @tc.number : IsStreamSupportIndependentPipe_002
 * @tc.desc   : Test IsStreamSupportIndependentPipe when streamUsage is not VOICE_CALL_ASSISTANT
 */
