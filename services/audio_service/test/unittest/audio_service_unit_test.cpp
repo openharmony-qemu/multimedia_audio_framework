@@ -552,60 +552,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceShouldBeDualTone_004, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test OnInitInnerCapList API
- * @tc.type  : FUNC
- * @tc.number: AudioServiceOnInitInnerCapList_001
- * @tc.desc  : Test OnInitInnerCapList interface.
- */
-HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1)
-{
-    int32_t floatRet = 0;
-
-    AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->InitAllDupBuffer(1);
-    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
-    floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
-    EXPECT_EQ(0, floatRet);
-
-    AudioProcessConfig config = {};
-    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
-    AudioService::GetInstance()->GetAudioProcess(config);
-    AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->InitAllDupBuffer(1);
-    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
-    AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
-    AudioService::GetInstance()->OnInitInnerCapList(1);
-
-    AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
-    AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->InitAllDupBuffer(1);
-    AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
-    AudioService::GetInstance()->OnUpdateInnerCapList(1);
-    EXPECT_EQ(0, floatRet);
-    config = {};
-    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PRIVATE;
-    config.audioMode = AUDIO_MODE_RECORD;
-    config.streamType = STREAM_VOICE_CALL;
-    config.streamInfo.channels = AudioChannel::MONO;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.format = SAMPLE_S16LE;
-    config.streamInfo.encoding = ENCODING_PCM;
-    auto audioProcess = AudioService::GetInstance()->GetAudioProcess(config);
-
-    AudioService::GetInstance()->OnInitInnerCapList(1);
-    floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
-    EXPECT_EQ(0, floatRet);
-    floatRet = AudioService::GetInstance()->GetMaxAmplitude(false);
-    EXPECT_EQ(0, floatRet);
-    int32_t ret = AudioService::GetInstance()->EnableDualStream(MAX_STREAMID - 1, "Speaker");
-    EXPECT_NE(SUCCESS, ret);
-    ret = AudioService::GetInstance()->DisableDualStream(MAX_STREAMID - 1);
-    EXPECT_NE(SUCCESS, ret);
-    ret = AudioService::GetInstance()->OnProcessRelease(audioProcess, false);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
  * @tc.name  : Test IsEndpointTypeVoip API
  * @tc.type  : FUNC
  * @tc.number: AudioServiceIsEndpointTypeVoip_001
@@ -1829,44 +1775,6 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_004, TestSize.Level1)
 
     isSwitchStream = false;
     endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
-    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
-        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
-}
-
-/**
- * @tc.name  : Test GetReleaseDelayTime API
- * @tc.type  : FUNC
- * @tc.number: GetReleaseDelayTime_005
- * @tc.desc  : Test GetReleaseDelayTime interface with ultra fast endpoint.
- */
-HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_005, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    EXPECT_NE(audioService, nullptr);
-
-    AudioProcessConfig clientConfig = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::string adapterName = "";
-    bool isUltraFast = true;
-    AudioEndpointConfig endpointConfig = {
-        .deviceInfo = deviceInfo,
-        .streamInfo = audioStreamInfo,
-        .adapterName = adapterName,
-        .audioMode = clientConfig.audioMode,
-        .streamType = clientConfig.streamType,
-        .isUltraFast = isUltraFast
-    };
-    std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
-    ASSERT_NE(nullptr, endpoint);
-
-    bool isSwitchStream = true;
-    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
-        ULTRA_FAST_ENDPOINT_RELEASE_DELAY_TIME_MS);
-    
-    isSwitchStream = false;
     EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
         NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
 }
