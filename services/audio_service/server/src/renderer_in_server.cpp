@@ -77,6 +77,7 @@ namespace {
     constexpr int32_t PRO_AUDIO_ENGINE_FLAG = 1;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
+    const int32_t DUP_SESSION_EFFECT_LEN = 4000; // 4000 -> 4000ms
     const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
     const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
@@ -89,6 +90,28 @@ namespace {
     static const int32_t THREE_DA_BYTES_PER_FRAME = 1;
     constexpr int32_t SILENT_TYPE_SILENT_SESSION = 0;
     constexpr int32_t SILENT_TYPE_MUTE_SESSION = 1;
+
+    size_t GetDupBufferLenMs(bool offloadEnable, bool hasSessionEffect)
+    {
+        if (offloadEnable) {
+            return DUP_OFFLOAD_LEN;
+        }
+        if (hasSessionEffect) {
+            return std::max(DUP_COMMON_LEN, DUP_SESSION_EFFECT_LEN);
+        }
+        return DUP_COMMON_LEN;
+    }
+
+    size_t CalculateDupTotalSizeInFrame(size_t spanSizeInFrame, size_t byteSizePerFrame, bool offloadEnable,
+        bool hasSessionEffect)
+    {
+        size_t dupTotalSizeInFrame = spanSizeInFrame *
+            (GetDupBufferLenMs(offloadEnable, hasSessionEffect) / DUP_DEFAULT_LEN);
+        if (byteSizePerFrame != 0 && dupTotalSizeInFrame > MAX_INNERCAP_BUFFER_SIZE / byteSizePerFrame) {
+            dupTotalSizeInFrame = MAX_INNERCAP_BUFFER_SIZE / byteSizePerFrame;
+        }
+        return dupTotalSizeInFrame;
+    }
 }
 
 void NotifyStandbyAction::Exec()
@@ -518,23 +541,15 @@ void RendererInServer::OnStatusUpdateSubs(IOperation operation)
 
 void RendererInServer::ReConfigDupStreamCallback()
 {
-    size_t dupTotalSizeInFrameTemp = 0;
+    size_t dupTotalSizeInFrameTemp = CalculateDupTotalSizeInFrame(dupSpanSizeInFrame_, dupByteSizePerFrame_,
+        offloadEnable_, hasSessionEffect_.load());
 
-    if (offloadEnable_ == true) {
-        dupTotalSizeInFrameTemp = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
-    } else {
-        dupTotalSizeInFrameTemp = dupSpanSizeInFrame_ * (DUP_COMMON_LEN / DUP_DEFAULT_LEN);
-    }
     AUDIO_INFO_LOG("dupTotalSizeInFrameTemp: %{public}zu, dupTotalSizeInFrame_: %{public}zu",
         dupTotalSizeInFrameTemp, dupTotalSizeInFrame_);
     if (dupTotalSizeInFrameTemp == dupTotalSizeInFrame_) {
         return;
     }
-    
-    if (dupTotalSizeInFrameTemp * dupByteSizePerFrame_ > MAX_INNERCAP_BUFFER_SIZE) {
-        dupTotalSizeInFrameTemp = MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrame_;
-        AUDIO_INFO_LOG("dupTotalSizeInFrameTemp change to: %{public}u", static_cast<uint32_t>(dupTotalSizeInFrameTemp));
-    }
+
     dupTotalSizeInFrame_ = dupTotalSizeInFrameTemp;
     std::lock_guard<std::mutex> lock(dupMutex_);
     for (auto it = innerCapIdToDupStreamCallbackMap_.begin(); it != innerCapIdToDupStreamCallbackMap_.end(); ++it) {
@@ -2969,22 +2984,15 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
 
     auto &capInfo = captureInfos_[innerCapId];
     capInfo.dupStream->GetSpanSizePerFrame(dupSpanSizeInFrame_);
-    if (offloadEnable_ == true) {
-        dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_OFFLOAD_LEN / DUP_DEFAULT_LEN);
-    } else {
-        dupTotalSizeInFrame_ = dupSpanSizeInFrame_ * (DUP_COMMON_LEN/DUP_DEFAULT_LEN);
-    }
-
     capInfo.dupStream->GetByteSizePerFrame(dupByteSizePerFrame_);
     if (dupSpanSizeInFrame_ == 0 || dupByteSizePerFrame_ == 0) {
         AUDIO_ERR_LOG("ERR_INVALID_PARAM");
         return ERR_INVALID_PARAM;
     }
+    dupTotalSizeInFrame_ = CalculateDupTotalSizeInFrame(dupSpanSizeInFrame_, dupByteSizePerFrame_,
+        offloadEnable_, hasSessionEffect_.load());
     dupSpanSizeInByte_ = dupSpanSizeInFrame_ * dupByteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(dupSpanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config dup buffer failed");
-    if (dupTotalSizeInFrame_ * dupByteSizePerFrame_ > MAX_INNERCAP_BUFFER_SIZE) {
-        dupTotalSizeInFrame_ = MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrame_;
-    }
     AUDIO_INFO_LOG("dupTotalSizeInFrame_: %{public}zu, dupSpanSizeInFrame_: %{public}zu,"
         "dupByteSizePerFrame_:%{public}zu dupSpanSizeInByte_: %{public}zu,",
         dupTotalSizeInFrame_, dupSpanSizeInFrame_, dupByteSizePerFrame_, dupSpanSizeInByte_);
