@@ -539,10 +539,10 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_014, TestSize.Level1)
 }
 
 /**
-* @tc.name   : Test IdHandler API
-* @tc.number : IdHandlerUnitTest_015
-* @tc.desc   : Test IdHandler GetRenderIdByDeviceClass with remote_multichannel
-*/
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_015
+ * @tc.desc   : Test IdHandler GetRenderIdByDeviceClass with remote_multichannel
+ */
 HWTEST_F(UtilUnitTest, IdHandlerUnitTest_015, TestSize.Level1)
 {
     IdHandler &idHandler = IdHandler::GetInstance();
