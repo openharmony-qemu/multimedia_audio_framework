@@ -985,7 +985,7 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
         param.type = AUDIO_IN_COMMUNICATION;
         param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP));
     } else if (halName_ == HDI_ID_INFO_VOICE_CALL_ASSISTANT) {
-        param.type = static_cast<int32_t>(AUDIO_TTS);
+        param.type = static_cast<AudioCategory>(AUDIO_TTS);
         param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE,
             HDI_RENDER_OFFSET_VOICE_CALL_ASSISTANT));
     }
