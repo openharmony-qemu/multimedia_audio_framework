@@ -95,9 +95,9 @@ void AudioDebuggingManagerImpl::PrintLoopbackInfo(AudioLpback loopback, int32_t 
 {
     AUDIO_DEBUG_LOG("in, fd:%{public}d", fd);
     CHECK_AND_RETURN_LOG(audioDebugMngr_ != nullptr, "audioDebugMngr_ is nullptr");
-    int32_t result = audioDebugMngr_->PrintAudioLoopbackDebugInfo(0, fd);
+    int32_t result = audioDebugMngr_->PrintAllAudioLoopbacksDebugInfo(fd);
     CHECK_AND_RETURN_LOG(result == AUDIO_OK,
-        "PrintAudioLoopbackDebugInfo failed, result:%{public}d", result);
+        "PrintAllAudioLoopbacksDebugInfo failed, result:%{public}d", result);
 }
 
 void AudioDebuggingManagerImpl::PrintSessionInfo(weak::AudioSessionManager session, int32_t fd)
