@@ -144,9 +144,6 @@ constexpr const char* SCENE_BOARD_PACKAGE_NAME = "com.ohos.sceneboard";
 constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
 constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
 
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
-
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
 std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
@@ -710,7 +707,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
-    } else if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    } else if (Util::IsEnhancedRoutingSupported()) {
         AudioRendererInfo newRendererInfo;
         auto deviceDescs = eventEntry_->GetPreferredOutputDeviceDescriptors(
             newRendererInfo, SYSTEM_UID, LOCAL_NETWORK_ID);

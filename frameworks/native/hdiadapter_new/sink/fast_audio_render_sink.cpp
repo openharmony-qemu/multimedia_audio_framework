@@ -99,6 +99,10 @@ void FastAudioRenderSink::DeInit(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN(deviceManager != nullptr);
+    if (Util::IsEnhancedRoutingSupported()) {
+        std::vector<DeviceType> noneDevices = {DEVICE_TYPE_NONE};
+        DoSetOutputRoute(noneDevices);
+    }
     deviceManager->DestroyRender(attr_.adapterName, hdiRenderId_);
     audioRender_ = nullptr;
     ReleaseMmapBuffer();

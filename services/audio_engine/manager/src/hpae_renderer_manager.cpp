@@ -30,7 +30,6 @@
 #include "hpae_remote_output_cluster.h"
 #include "hpae_message_queue_monitor.h"
 #include "hpae_stream_move_monitor.h"
-#include "parameters.h"
 #include "util/id_handler.h"
 #include "audio_pipe_types.h"
 
@@ -52,8 +51,6 @@ const std::string USB_SINK_NAME = "usb";
 constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
 constexpr size_t RENDERER_REQUEST_COUNT = CURRENT_REQUEST_COUNT;
 constexpr int32_t COLL_ALING_COUNT = 10; // 10 frames = 200 ms
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
 
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
@@ -94,7 +91,7 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         nodeInfo.deviceType = static_cast<int32_t>(GetCurrentSinkDeviceType());
         nodeInfo.renderId = renderId_;
     }
@@ -120,7 +117,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         nodeInfo.deviceType = static_cast<int32_t>(GetCurrentSinkDeviceType());
         nodeInfo.renderId = renderId_;
     }
@@ -243,7 +240,7 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
     Trace trace("HpaeRendererManager::CreateProcessCluster");
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
     int32_t processClusterDecision;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
             sceneType, static_cast<DeviceType>(nodeInfo.deviceType), nodeInfo.renderId);
     } else {
@@ -301,7 +298,7 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId) cons
     HpaeNodeInfo nodeInfo = it->second->GetNodeInfo();
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
     bool noArmEffect = false;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         noArmEffect = !AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(
             sceneType, nodeInfo.effectInfo.effectMode,
             static_cast<DeviceType>(nodeInfo.deviceType), nodeInfo.renderId);
@@ -364,13 +361,13 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
 {
     CHECK_AND_RETURN_LOG(node != nullptr, "sinkInputNode is nullptr");
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         nodeInfo.deviceType = static_cast<int32_t>(GetCurrentSinkDeviceType());
         nodeInfo.renderId = renderId_;
     }
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
     int32_t processClusterDecision;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
             sceneType, static_cast<DeviceType>(nodeInfo.deviceType), nodeInfo.renderId);
     } else {
@@ -1185,7 +1182,7 @@ void HpaeRendererManager::ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo,
     AUDIO_INFO_LOG("init device:%{public}s manager end", GetEncryptStr(sinkInfo.deviceName).c_str());
     for (const auto &it : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
-        if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        if (Util::IsEnhancedRoutingSupported()) {
             nodeInfo.deviceType = static_cast<int32_t>(GetCurrentSinkDeviceType());
             nodeInfo.renderId = renderId_;
         }
@@ -1223,7 +1220,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
         outputCluster_ = std::make_unique<HpaeOutputCluster>(nodeInfo);
     }
     outputCluster_->SetTimeoutStopThd(sinkInfo_.suspendTime);
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         outputCluster_->SetDeviceChangeCallback([this]() {
             RefreshProcessClusterByDevice();
         });

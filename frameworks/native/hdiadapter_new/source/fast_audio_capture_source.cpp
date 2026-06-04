@@ -66,6 +66,9 @@ void FastAudioCaptureSource::DeInit(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN(deviceManager != nullptr);
+    if (Util::IsEnhancedRoutingSupported()) {
+        DoSetInputRoute(DEVICE_TYPE_NONE);
+    }
     deviceManager->DestroyCapture(attr_.adapterName, hdiCaptureId_);
     audioCapture_ = nullptr;
 

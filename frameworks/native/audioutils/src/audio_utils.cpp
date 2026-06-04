@@ -267,6 +267,13 @@ std::vector<std::string> Util::SplitString(const std::string& str, char delimite
     return tokens;
 }
 
+bool Util::IsEnhancedRoutingSupported()
+{
+    static const bool isEnhancedRoutingSupported =
+        OHOS::system::GetBoolParameter("const.multimedia.audio.sys_multidevice_capability.enable", false);
+    return isEnhancedRoutingSupported;
+}
+
 WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
 {
     startTimeNs_ = ClockTime::GetCurNano();

@@ -21,7 +21,7 @@
 #include "audio_policy_service.h"
 #include "audio_zone_service.h"
 #include "audio_scene_manager.h"
-#include "parameters.h"
+#include "audio_utils.h"
 #ifdef FEATURE_DEVICE_MANAGER
 #include "dm_device_info.h"
 #endif
@@ -32,9 +32,6 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-static const bool IS_DEVICE_ENHANCED_SUPPORTED = OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 
 const string MEDIA_RENDER_ROUTERS = "MediaRenderRouters";
 const string CALL_RENDER_ROUTERS = "CallRenderRouters";
@@ -260,7 +257,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::MediaFollowRingStrateg
 
 bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
 {
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         return false;
     }
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
@@ -274,7 +271,7 @@ bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
 
 bool AudioRouterCenter::IsAlarmFollowRingStrategy(AudioScene audioScene, StreamUsage streamUsage)
 {
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         return false;
     }
     auto &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
@@ -429,7 +426,7 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
     bool isVoipStream = AudioStreamCollector::GetAudioStreamCollector().IsCallStreamUsage(callStreamUsage);
     AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, audioScene:%{public}d, isVoipStream:%{public}d.",
         info.streamUsage, audioScene, isVoipStream);
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType);
     } else if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
         (audioScene == AUDIO_SCENE_VOICE_RINGING && isVoipStream)) {
@@ -465,7 +462,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCapturerInputDevice(So
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
             return FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
         } else if (capturerConfigMap_[sourceType] == "CallCaptureRouters") {

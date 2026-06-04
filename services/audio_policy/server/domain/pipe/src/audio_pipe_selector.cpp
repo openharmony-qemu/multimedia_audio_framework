@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
-#include "parameters.h"
 #include "audio_errors.h"
 #include "audio_policy_interface.h"
 #include "audio_service_enum.h"
@@ -42,9 +41,6 @@ namespace {
 }
 
 static constexpr int32_t MAX_FAST_STREAM_COUNT = 6;
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-static const bool ENHANCE_ROUTING_SUPPORTED =
-    OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
     {AUDIO_OUTPUT_FLAG_NORMAL, PIPE_TYPE_OUT_NORMAL},
     {AUDIO_INPUT_FLAG_NORMAL, PIPE_TYPE_IN_NORMAL},
@@ -730,7 +726,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
         HandlePipeNotExist(newPipeInfoList, streamDesc);
     }
 
-    if (ENHANCE_ROUTING_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         auto pipePairs = DetermineInputPipeBaseConfig(newPipeInfoList);
         DetermineInputPipeEcAndMicRef(pipePairs);
     }
@@ -1054,7 +1050,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
         UpdatePipeAndStreamAction(newPipeInfo, streamDescToOldPipeInfo);
     }
 
-    if (ENHANCE_ROUTING_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         auto oldPipeMap = BuildOldPipeMap(oldPipeInfoList);
         UpdateInputPipeReloadAction(newPipeInfoList, oldPipeMap, oldPipeInfoList);
         SortCapturerPipesByExecOrder(oldPipeInfoList, newPipeInfoList);
