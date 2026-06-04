@@ -193,11 +193,67 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_007, TestSize.Level1)
 
 /**
  * @tc.name  : Test WirelessConflictHandler Detect no conflict when priority is higher.
+ * @tc.number: WirelessConflictHandler_008
+ * @tc.desc  : Test Detect when current stream has higher priority than existing,
+ *             should return false (no conflict).
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_008, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+    
+    std::vector<StreamDeviceInfo> outputDevices;
+    StreamDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MUSIC; // priority 1
+    info.routerType = ROUTER_TYPE_DEFAULT;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->macAddress_ = "00:11:22:33:44:55";
+    info.device = device;
+    outputDevices.push_back(info);
+    
+    handler.SetSelectedDevices(outputDevices, {});
+    
+    // Current is call (priority PRIORITY_CALL_OUTPUT),
+    // existing is music (priority PRIORITY_NORMAL_OUTPUT), no conflict
+    auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
+    currentDevice->macAddress_ = "00:11:22:33:44:66";
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler Detect no conflict when priority is higher.
  * @tc.number: WirelessConflictHandler_009
  * @tc.desc  : Test Detect when current stream has higher priority than existing,
  *             should return false (no conflict).
  */
 HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_009, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+    
+    std::vector<StreamDeviceInfo> outputDevices;
+    StreamDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MUSIC; // priority 1
+    info.routerType = ROUTER_TYPE_DEFAULT;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->macAddress_ = "00:11:22:33:44:55";
+    info.device = device;
+    outputDevices.push_back(info);
+    
+    handler.SetSelectedDevices(outputDevices, {});
+    
+    // Current is call (priority PRIORITY_CALL_OUTPUT),
+    // existing is music (priority PRIORITY_NORMAL_OUTPUT), no conflict
+    auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
+    currentDevice->macAddress_ = "00:11:22:33:44:66";
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler Detect no conflict when priority is higher.
+ * @tc.number: WirelessConflictHandler_010
+ * @tc.desc  : Test Detect when current stream has higher priority than existing,
+ *             should return false (no conflict).
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_010, TestSize.Level1)
 {
     WirelessConflictHandler handler;
     
@@ -321,6 +377,34 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_014, TestSize.Level1)
  * @tc.desc  : Test Detect returns conflict when current A2DP device meets selected SCO device.
  */
 HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_015, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+    
+    std::vector<StreamDeviceInfo> inputDevices;
+    StreamDeviceInfo inputInfo;
+    inputInfo.routerType = ROUTER_TYPE_USER_SELECT;
+    inputInfo.sourceType = SOURCE_TYPE_MIC;
+    auto inputDevice = std::make_shared<AudioDeviceDescriptor>();
+    inputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    inputDevice->macAddress_ = "00:11:22:33:44:55";
+    inputInfo.device = inputDevice;
+    inputDevices.push_back(inputInfo);
+    
+    handler.SetSelectedDevices({}, inputDevices);
+    
+    auto outputDevice = std::make_shared<AudioDeviceDescriptor>();
+    outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    outputDevice->macAddress_ = "00:11:22:33:44:55";
+    
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler detects A2DP and SCO conflict.
+ * @tc.number: WirelessConflictHandler_016
+ * @tc.desc  : Test Detect returns conflict when current A2DP device meets selected SCO device.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_016, TestSize.Level1)
 {
     WirelessConflictHandler handler;
     
