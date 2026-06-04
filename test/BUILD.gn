@@ -114,15 +114,15 @@ group("audio_unit_test") {
     "../services/audio_engine/test/unittest:hpae_message_queue_monitor_test",
     "../services/audio_engine/test/unittest:hpae_stream_move_monitor_test",
     "../services/audio_policy/test:audio_policy_unittest_packages",
-    "../services/audio_service/test/unittest:audio_balance_unit_test",
+    # "../services/audio_service/test/unittest:audio_balance_unit_test",  # UNAVAILABLE on 7.0 beta
     "../services/audio_service/test/unittest:audio_dump_pcm_unit_test",
     "../services/audio_service/test/unittest:audio_engine_manager_unit_test",
     "../services/audio_service/test/unittest:audio_spatial_channel_converter_unit_test",
     "../services/audio_service/test/unittest:audio_thread_task_unit_test",
-    "../services/audio_service/test/unittest:capturer_in_client_unit_test",
-    "../services/audio_service/test/unittest:capturer_in_server_unit_test",
+    # "../services/audio_service/test/unittest:capturer_in_client_unit_test",  # UNAVAILABLE on 7.0 beta
+    # "../services/audio_service/test/unittest:capturer_in_server_unit_test",  # UNAVAILABLE on 7.0 beta
     "../services/audio_service/test/unittest:format_converter_unit_test",
-    "../services/audio_service/test/unittest:futex_tool_unit_test",
+    # "../services/audio_service/test/unittest:futex_tool_unit_test",  # UNAVAILABLE on 7.0 beta
     "../services/audio_service/test/unittest:hpae_capturer_stream_impl_unit_test",
     "../services/audio_service/test/unittest:hpae_renderer_stream_impl_unit_test",
     "../services/audio_service/test/unittest:ipc_stream_in_server_unit_test",
@@ -135,7 +135,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:volume_tools_unit_test",
     "../services/audio_service/test/unittest/audio_param_parser_unit_test:audio_param_parser_unit_test",
     "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_hpae_dump_unit_test",
-    "../services/audio_service/test/unittest/audio_server_unit_test:audio_server_unit_test",
+    # "../services/audio_service/test/unittest/audio_server_unit_test:audio_server_unit_test",  # UNAVAILABLE on 7.0 beta
     "../services/audio_service/test/unittest/hw_decoding_stream_unit_test:hw_decoding_stream_unit_test",
     "../services/audio_service/test/unittest/pro_audio_stream_manager_unit_test:pro_audio_stream_manager_unit_test",
     "../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test:pro_renderer_stream_impl_unit_test",
@@ -162,7 +162,7 @@ group("audio_unit_test") {
     deps += [
       "../frameworks/native/opensles/test/unittest/audiocapturer_adapter_unit_test:audio_capturer_adapter_unit_test",
       "../frameworks/native/opensles/test/unittest/opensles_player_test:audio_opensles_player_unit_test",
-      "../frameworks/native/opensles/test/unittest/opensles_recorder_test:audio_opensles_recorder_unit_test",
+      # "../frameworks/native/opensles/test/unittest/opensles_recorder_test:audio_opensles_recorder_unit_test",  # UNAVAILABLE on 7.0 beta
     ]
   }
 
@@ -189,7 +189,7 @@ group("audio_unit_test") {
   if (audio_framework_feature_low_latency) {
     deps += [
       "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_renderer_unit_test",
-      "../services/audio_service/test/unittest:audio_service_unit_test",
+      # "../services/audio_service/test/unittest:audio_service_unit_test",  # UNAVAILABLE on 7.0 beta
       "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_second_unit_test",
       "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_unit_test",
       "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_third_unit_test",
