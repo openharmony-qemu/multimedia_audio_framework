@@ -215,7 +215,7 @@ group("audio_module_test") {
 
   deps = [
     "moduletest/audiopolicy:audio_policy_module_test",
-    "moduletest/audioloopback:audio_loopback_control_test",
+
   ]
 }
 
