@@ -306,9 +306,12 @@ void FetchInputDeviceFuzzTest(FuzzedDataProvider& fdp)
     SourceType sourceType = SourceTypeVec[sourceTypeCount];
     int32_t clientUID = GetData<int32_t>();
     uint32_t sessionID = GetData<uint32_t>();
-    RouterType routerType = ROUTER_TYPE_NONE;
     
-    AudioRouterCenter::GetAudioRouterCenter().FetchInputDevice(sourceType, clientUID, routerType, sessionID);
+    FetchDeviceInfo info;
+    info.sourceType = sourceType;
+    info.clientUID = clientUID;
+    info.streamId = sessionID;
+    AudioRouterCenter::GetAudioRouterCenter().FetchInputDevice(info);
 }
 
 void SetAudioDeviceRefinerCallbackFuzzTest(FuzzedDataProvider& fdp)
@@ -498,7 +501,8 @@ void AudioRouterCenterFetchCapturerFuzzTest(FuzzedDataProvider& fdp)
 void AudioRouterCenterArbiterFuzzTest(FuzzedDataProvider& fdp)
 {
     auto &center = AudioRouterCenter::GetAudioRouterCenter();
-    center.StartArbiterContext();
+    FetchDeviceInfo info = MakeFetchDeviceInfo(fdp);
+    center.StartArbiterContext(info);
     if (fdp.ConsumeBool()) {
         center.RegisterConflictHandlers(std::make_shared<WirelessConflictHandler>());
     }

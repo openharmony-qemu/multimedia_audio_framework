@@ -2346,6 +2346,7 @@ struct FetchDeviceInfo : public Parcelable {
     std::string bundleName = "";
     RouterType bypassType = ROUTER_TYPE_NONE;
     uint32_t streamId = INVALID_STREAM_ID;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
 
     FetchDeviceInfo(StreamUsage streamUsage, StreamUsage preStreamUsage, int32_t clientUID,
         RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)
@@ -2371,6 +2372,11 @@ struct FetchDeviceInfo : public Parcelable {
           caller(caller), bundleName(bundleName)
     {}
 
+    FetchDeviceInfo(SourceType sourceType, int32_t clientUID, uint32_t streamId,
+        std::string caller)
+        : clientUID(clientUID), caller(caller), streamId(streamId), sourceType(sourceType)
+    {}
+
     FetchDeviceInfo() = default;
 
     bool Marshalling(Parcel &parcel) const override
@@ -2384,7 +2390,8 @@ struct FetchDeviceInfo : public Parcelable {
             parcel.WriteString(caller) &&
             parcel.WriteString(bundleName) &&
             parcel.WriteInt32(static_cast<int32_t>(bypassType)) &&
-            parcel.WriteInt32(static_cast<int32_t>(streamId));
+            parcel.WriteInt32(static_cast<int32_t>(streamId)) &&
+            parcel.WriteInt32(static_cast<int32_t>(sourceType));
     }
 
     static FetchDeviceInfo *Unmarshalling(Parcel &parcel)
@@ -2404,6 +2411,7 @@ struct FetchDeviceInfo : public Parcelable {
         info->bundleName = parcel.ReadString();
         info->bypassType = static_cast<RouterType>(parcel.ReadInt32());
         info->streamId = static_cast<uint32_t>(parcel.ReadInt32());
+        info->sourceType = static_cast<SourceType>(parcel.ReadInt32());
 
         return info;
     }
@@ -2420,6 +2428,7 @@ struct FetchDeviceInfo : public Parcelable {
         bundleName = parcel.ReadString();
         bypassType = static_cast<RouterType>(parcel.ReadInt32());
         streamId = static_cast<uint32_t>(parcel.ReadInt32());
+        sourceType = static_cast<SourceType>(parcel.ReadInt32());
     }
 };
 
