@@ -770,7 +770,6 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetRendererErrorCallback(OH_AudioRen
     rendererCallbacks_.onErrorCallback = callback;
     userData_ = userData;
     return AUDIOSTREAM_SUCCESS;
-    return OH_AudioStream_Result();
 }
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetRendererFastStatusChangeCallback(

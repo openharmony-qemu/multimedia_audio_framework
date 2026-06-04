@@ -95,6 +95,7 @@ static const int64_t COLLABORATIVE_STATE_CHANGE_MUTE_SINK_PORT_US = 200000; // 2
 
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_SEC = 10;
+static const int32_t WAIT_MULTICHANNL_CLOSE_TIME_SEC = 5;
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 inline static const std::string EMPTY_ADDRESS{"00:00:00:00:00:00"};
 inline static const std::string NULL_ADDRESS{""};
@@ -249,6 +250,16 @@ void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInf
     offloadCloseCondition_[type].notify_all();
 }
 
+void AudioCoreService::UpdateMultiChannelState(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0);
+    CHECK_AND_RETURN(pipeInfo->isCollaborationEnable_ && pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER);
+    audioPolicyManager_.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    UpdateNearLinkCollaborativeState(true);
+    isMultiChannelOpened_.store(true);
+    multiChannelCloseCondition_.notify_all();
+}
+
 void AudioCoreService::CheckAndUpdateOffloadEnableForStream(
     OffloadAction action, std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t ioHandle)
 {
@@ -342,6 +353,7 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         UpdateOffloadState(pipeInfo);
+        UpdateMultiChannelState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
@@ -886,6 +898,7 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
         HILOG_COMM_INFO("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
         UpdateOffloadState(pipeInfo);
+        UpdateMultiChannelState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
@@ -1106,6 +1119,13 @@ void AudioCoreService::RemoveUnusedPipe()
                 DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_, type);
                 continue;
             }
+        } else if (pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER && pipeInfo->isCollaborationEnable_) {
+            if (!isRingDualToneOnPrimarySpeaker_) {
+                DelayReleaseMultiChannelPipe(pipeInfo->id_, pipeInfo->paIndex_);
+                continue;
+            }
+            pipeInfo->isCollaborationEnable_ = false;
+            UpdateNearLinkCollaborativeState(false);
         }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
@@ -1821,13 +1841,15 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
         AudioServerProxy::GetInstance().SetAudioSceneForPipeProxy(pipeId, pipeScene, false);
         AUDIO_INFO_LOG("Set AudioScene %{public}d for pipe %{public}u in multi-device mode", pipeScene, pipeId);
     }
-    
-    // for collaboration, the route should be updated
-    UpdateRouteForCollaboration(deviceType, pipeId);
     shouldUpdateDeviceDueToDualTone_ = false;
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
         !VolumeUtils::IsPCVolumeEnable()) {
         UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, pipeId);
+    } else if (AudioCollaborativeService::GetAudioCollaborativeService().GetRealCollaborativeState() &&
+        (streamDesc->isNearLinkCollaborationEnable_ || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        CheckCollaborativeStreamRunning())) {
+        // for collaboration, the route should be updated
+        UpdateRouteForCollaboration(deviceType, pipeId);
     } else {
         CHECK_AND_RETURN_LOG(streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID,
             "remote device no need to update route");
@@ -2383,6 +2405,12 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         return false;
     }
 
+    if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+        streamDesc->GetMainNewDeviceDesc()) &&
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage())) {
+        return false;
+    }
+
     // LowPower: Speaker, USB headset, a2dp offload, Nearlink
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
@@ -2638,6 +2666,34 @@ int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex,
 
     CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
     return GetEventEntry()->ReleaseOffloadPipe(id, paIndex, type);
+}
+
+void AudioCoreService::DelayReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_LOG(!isMultiChannelInRelease_.load(), "MultiChannel is releasing");
+    isMultiChannelInRelease_.store(true);
+    isMultiChannelOpened_.store(false);
+    auto unloadMultiChannelThreadFuc = [this, id, paIndex] { this->ReleaseMultiChannelPipe(id, paIndex); };
+    std::thread unloadMultiChannelThread(unloadMultiChannelThreadFuc);
+    unloadMultiChannelThread.detach();
+}
+
+int32_t AudioCoreService::ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex)
+{
+    HILOG_COMM_INFO("[ReleaseMultiChannelPipe]unload MultiChannel module");
+    std::unique_lock<std::mutex> lock(multiChannelCloseMutex_);
+    // Try to wait 10 seconds before unloading the module, because the audio driver takes some time to process
+    // the shutdown process..
+    multiChannelCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_MULTICHANNL_CLOSE_TIME_SEC), [this] () {
+        return isMultiChannelOpened_.load();
+    });
+
+    if (!isMultiChannelOpened_.load()) {
+        UpdateNearLinkCollaborativeState(false);
+    }
+    CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
+    return GetEventEntry()->ReleaseMultiChannelPipe(id, paIndex);
 }
 
 void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
@@ -3284,12 +3340,11 @@ void AudioCoreService::WriteCapturerConcurrentEvent(const std::unique_ptr<Concur
 
 void AudioCoreService::UpdateRouteForCollaboration(InternalDeviceType deviceType, uint32_t pipeId)
 {
-    if (AudioCollaborativeService::GetAudioCollaborativeService().GetRealCollaborativeState()) {
-        std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
-        activeDevices.push_back(make_pair(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
-        audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices, pipeId);
-        AUDIO_INFO_LOG("collaboration Update desc [%{public}d] with speaker", deviceType);
-    }
+    std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
+    activeDevices.push_back(make_pair(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG));
+    activeDevices.push_back(make_pair(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
+    audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices, pipeId);
+    AUDIO_INFO_LOG("collaboration Update desc [%{public}d] with speaker", deviceType);
 }
 
 int32_t AudioCoreService::SetSleVoiceStatusFlag(AudioScene audioScene)
@@ -3464,6 +3519,26 @@ void AudioCoreService::GetFlagForUltraFastStream(
     streamDesc->SetUltraFastRequested(true);
     streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
     AUDIO_INFO_LOG("[StaticCheck] Enable ultra fast mode for stream %{public}d", streamDesc->GetSessionId());
+}
+
+bool AudioCoreService::CheckCollaborativeStreamRunning()
+{
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, false, "pipeManager_ is nullptr");
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
+    for (auto &desc : outputStreamDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+        if (desc->isNearLinkCollaborationEnable_ && desc->streamStatus_ == STREAM_STATUS_STARTED) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void AudioCoreService::UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState)
+{
+    AudioServerProxy::GetInstance().SetAudioParameterProxy("nearLink_collaborative_state",
+        std::to_string(static_cast<int32_t>(nearLinkCollaborativeState)));
+    AUDIO_INFO_LOG("UpdateNearLinkCollaborativeState, value:%{public}d", nearLinkCollaborativeState);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -465,9 +465,9 @@ void EnableCollaborationWithMovieSceneFuzzTest()
     WaitForMsgProcessing(rendererManager);
     rendererManager->Start(streamInfo.sessionId);
     WaitForMsgProcessing(rendererManager);
-    rendererManager->UpdateCollaborativeState(true);
+    rendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
     WaitForMsgProcessing(rendererManager);
-    rendererManager->UpdateCollaborativeState(false);
+    rendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE);
     WaitForMsgProcessing(rendererManager);
     rendererManager->DeInit();
 }

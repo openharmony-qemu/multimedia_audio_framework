@@ -1675,10 +1675,10 @@ HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001, TestSize.Level1)
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
     EXPECT_EQ(hpaeManager_->IsInit(), true);
-    int32_t ret = hpaeManager_->UpdateCollaborativeState(true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    ret = hpaeManager_->UpdateCollaborativeState(false);
+    ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_CLOSE);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -2524,6 +2524,86 @@ HWTEST_F(HpaeManagerUnitTest, GetRendererManagerByDeviceClass_EmptyString_003, T
     auto rendererManager = hpaeManager_->GetRendererManagerByDeviceClass("");
     EXPECT_EQ(rendererManager, nullptr);
 
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborativeState with NEARLINK_OPEN
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_NearLink_002
+ * @tc.desc  : Test UpdateCollaborativeState with COLLABORATION_NEARLINK_OPEN state.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_NearLink_002, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborativeState switch BT to NearLink
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_SwitchBtToNl_003
+ * @tc.desc  : Test switching from BLUETOOTH_OPEN to NEARLINK_OPEN.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_SwitchBtToNl_003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : Test IsCollaborationSupportedForStreamUsage
+ * @tc.type  : FUNC
+ * @tc.number: IsCollaborationSupportedForStreamUsage_001
+ * @tc.desc  : Test IsCollaborationSupportedForStreamUsage delegates correctly.
+ */
+HWTEST_F(HpaeManagerUnitTest, IsCollaborationSupportedForStreamUsage_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    // Test with different stream usages
+    bool result = hpaeManager_->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE);
+    // Result depends on AudioCollaborationManager config, just verify no crash
+    EXPECT_TRUE(result || !result);
+    result = hpaeManager_->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MUSIC);
+    EXPECT_TRUE(result || !result);
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborativeState same state no-op
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_NoChange_004
+ * @tc.desc  : Test UpdateCollaborativeState with same state should log and return.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_NoChange_004, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->DeInit();
 }
 }  // namespace

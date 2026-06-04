@@ -51,7 +51,8 @@ public:
     int32_t UpdateCollaborativeProductId(const std::string &productId);
     bool IsCollaborativePlaybackOpenedOrReservedForDevice(
         const AudioDeviceDescriptor &selectedAudioDevice);
-    void UpdateCollaborativeStateToHdi(bool collaborativeState);
+    void UpdateCollaborativeStateToHdi(CollaborationState collaborativeState);
+    CollaborationState GetCollaborativeGlobalSwitchState();
 private:
     AudioCollaborativeService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
@@ -64,11 +65,12 @@ private:
     void LoadCollaborationConfig();
     bool isCollaborativePlaybackSupported_ = false;
     // same with current device in map
-    bool isCollaborativeStateEnabled_ = false;
+    CollaborationState isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     std::string curDeviceAddress_;
     std::mutex collaborativeServiceMutex_;
     std::map<std::string, CollaborativeState> addressToCollaborativeEnabledMap_;
     IAudioPolicyInterface& audioPolicyManager_;
+    DeviceType curDeviceType_ = DEVICE_TYPE_NONE;
 };
 } // OHOS
 } // AudioStandard

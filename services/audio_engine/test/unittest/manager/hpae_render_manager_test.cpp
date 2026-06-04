@@ -1359,7 +1359,7 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(true), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN), SUCCESS);
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = 1;
     streamInfo.effectInfo.effectScene = SCENE_MUSIC;
@@ -1390,7 +1390,7 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), ERR_INVALID_OPERATION);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(false), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
 
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
@@ -1425,13 +1425,13 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), SUCCESS);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(true), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN), SUCCESS);
     EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), SUCCESS);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
     EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId), SUCCESS);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(false), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), SUCCESS);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
@@ -4106,5 +4106,44 @@ HWTEST_F(HpaeRendererManagerTest, DeleteInputSessionWithoutSessionEffectDoesNotS
 
     EXPECT_EQ(hpaeRendererManager_->DeleteInputSession(sessionId), SUCCESS);
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborativeState with NEARLINK_OPEN on BT speaker
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_NearLink_003
+ * @tc.desc  : Test UpdateCollaborativeState with COLLABORATION_NEARLINK_OPEN on BT speaker (early return).
+ */
+HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_NearLink_003, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    // NEARLINK_OPEN on BT speaker device - should return SUCCESS (MCH check)
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborativeState state not changed
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_NoChange_004
+ * @tc.desc  : Test UpdateCollaborativeState with same state returns SUCCESS early.
+ */
+HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_NoChange_004, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    // State is COLLABORATION_CLOSE by default, set same state
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
 }
 }  // namespace

@@ -57,6 +57,7 @@ static const std::string BT_SINK_NAME = "Bt_Speaker";
 static const std::string USB_SINK_NAME = "Usb_arm_speaker";
 static const std::string DEFAULT_SPEAKER_SINK_NAME = "Speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
+static const std::string MCH_SINK_NAME = "MCH_Speaker";
 
 HpaeManagerThread::~HpaeManagerThread()
 {
@@ -396,6 +397,10 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
         rendererManager->SetSinkVirtualOutputNode(sinkVirtualOutputNodeMap_[sinkSourceIndex]);
     }
     rendererManager->Init(isReload);
+    if (audioModuleInfo.name == MCH_SINK_NAME) {
+        AUDIO_INFO_LOG("MCH_Speaker, UpdateCollaborativeState: %{public}d", isCollaborationEnabled_);
+        rendererManager->UpdateCollaborativeState(isCollaborationEnabled_);
+    }
     AUDIO_INFO_LOG("open sink name: %{public}s end sinkIndex is %{public}u",
         GetEncryptStr(audioModuleInfo.name).c_str(), sinkSourceIndex);
     return SUCCESS;
@@ -2712,12 +2717,28 @@ bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys
     return true;
 }
 
-int32_t HpaeManager::UpdateCollaborativeState(bool isCollaborationEnabled)
+int32_t HpaeManager::UpdateCollaborativeState(CollaborationState isCollaborationEnabled)
 {
     auto request = [this, isCollaborationEnabled]() {
-        std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(BT_SINK_NAME);
+        CHECK_AND_RETURN_LOG(isCollaborationEnabled_ != isCollaborationEnabled,
+            "isCollaborationEnabled:%{public}d no change", isCollaborationEnabled);
+        AUDIO_INFO_LOG("UpdateCollaborativeState: %{public}d change to %{public}d", isCollaborationEnabled_,
+            isCollaborationEnabled);
+        std::string curCollAbSinkName = "";
+        if (isCollaborationEnabled == COLLABORATION_BLUETOOTH_OPEN ||
+            (isCollaborationEnabled_ == COLLABORATION_BLUETOOTH_OPEN &&
+            isCollaborationEnabled == COLLABORATION_CLOSE)) {
+            curCollAbSinkName = BT_SINK_NAME;
+        } else if (isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN ||
+            (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN &&
+            isCollaborationEnabled == COLLABORATION_CLOSE)) {
+            curCollAbSinkName = MCH_SINK_NAME;
+        }
+        isCollaborationEnabled_ = isCollaborationEnabled;
+        HpaePolicyManager::GetInstance().UpdateCollaborativeState(isCollaborationEnabled);
+        std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(curCollAbSinkName);
         CHECK_AND_RETURN_LOG(rendererManager != nullptr,
-            "can not find sink[%{public}s] in rendererManagerMap_", BT_SINK_NAME.c_str());
+            "can not find sink[%{public}s] in rendererManagerMap_", curCollAbSinkName.c_str());
         rendererManager->UpdateCollaborativeState(isCollaborationEnabled);
     };
     SendRequest(request, __func__);
@@ -2943,6 +2964,11 @@ int32_t HpaeManager::UpdateCollaborativeProductId(const std::string &productId)
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+bool HpaeManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+{
+    return HpaePolicyManager::GetInstance().IsCollaborationSupportedForStreamUsage(streamUsage);
 }
 
 int32_t HpaeManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)

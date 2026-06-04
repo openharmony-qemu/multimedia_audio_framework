@@ -29,6 +29,12 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 using namespace HiviewDFX;
+
+static bool IsCollaborativePlaybackSupportedDeviceType(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_NEARLINK;
+}
+
 static __thread napi_ref g_collaborativeManagerConstructor = nullptr;
 NapiAudioCollaborativeManager::NapiAudioCollaborativeManager()
     : audioCollaborativeMngr_(nullptr), env_(nullptr) {}
@@ -220,10 +226,10 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackSupportedForDev
             NAPI_ERR_INPUT_INVALID,
             "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
             "invalid parameter");
-        if ((selectedAudioDevice->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
+        if (!IsCollaborativePlaybackSupportedDeviceType(selectedAudioDevice->deviceType_) ||
             (selectedAudioDevice->connectState_ != CONNECTED)) {
             NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
-                "invalid arguments, device is not A2DP or device is connected");
+                "invalid arguments, device is not A2DP, Nearlink, device is connected");
             return NapiParamUtils::GetUndefinedValue(env);
         }
         
@@ -269,7 +275,7 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackEnabledForDevic
             NAPI_ERR_INPUT_INVALID,
             "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
             "invalid parameter");
-        if ((selectedAudioDevice->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
+        if (!IsCollaborativePlaybackSupportedDeviceType(selectedAudioDevice->deviceType_) ||
             (selectedAudioDevice->connectState_ != CONNECTED)) {
             NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
                 "invalid arguments, device is not A2DP or device is connected");
@@ -346,7 +352,7 @@ napi_value NapiAudioCollaborativeManager::UpdateCollaborativeEnabled(napi_env en
             context->SignError(NAPI_ERR_UNAVAILABLE_ON_DEVICE);
             return;
         }
-        if ((context->deviceDescriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
+        if (!IsCollaborativePlaybackSupportedDeviceType(context->deviceDescriptor->deviceType_) ||
             (context->deviceDescriptor->connectState_ != CONNECTED)) {
             context->SignError(NAPI_ERR_INVALID_PARAM);
             return;

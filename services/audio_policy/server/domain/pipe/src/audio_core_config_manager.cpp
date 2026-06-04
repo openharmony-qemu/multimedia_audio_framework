@@ -1163,6 +1163,18 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoFor
 {
     auto tempStreamProp = info->streamPropInfos_.front();
 
+    // for collaboration playback need convert t0 4 channel.
+    if (desc->isNearLinkCollaborationEnable_) {
+        tempStreamProp->bufferSize_ = ((tempStreamProp->bufferSize_ * static_cast<uint32_t>(CHANNEL_4)) /
+            static_cast<uint32_t>(tempStreamProp->channels_));
+        tempStreamProp->channels_ = CHANNEL_4;
+        tempStreamProp->channelLayout_ = CH_LAYOUT_QUAD;
+        tempStreamProp->isCollaborationEnable_ = true;
+        AUDIO_INFO_LOG("GetStreamPropInfoForMultiChannel isCollaborationEnable_ true");
+        return tempStreamProp;
+    }
+    tempStreamProp->isCollaborationEnable_ = false;
+
     // for audiovivid, need convert to 5.1.2 channelLayout
     if (desc->streamInfo_.encoding == AudioEncodingType::ENCODING_AUDIOVIVID) {
         tempStreamProp->bufferSize_ = ((tempStreamProp->bufferSize_ * static_cast<uint32_t>(CHANNEL_8)) /

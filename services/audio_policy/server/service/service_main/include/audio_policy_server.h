@@ -200,7 +200,7 @@ public:
 
     int32_t UnexcludeOutputDevices(int32_t audioDevUsage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
-    
+
     int32_t CheckAndGetApiVersion(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs,
         bool hasSystemPermission);
 
@@ -645,7 +645,7 @@ public:
     int32_t SetInputDevice(int32_t deviceType, uint32_t sessionID, int32_t sourceType, bool isRunning) override;
 
     int32_t SetSplitModeReady() override;
-    
+
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
     int32_t IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t sessionId, int32_t streamUsageIn, bool &isAllowed,
@@ -710,7 +710,7 @@ public:
 
     int32_t SetCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled) override;
-    
+
     int32_t IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &enabled) override;
 
@@ -965,7 +965,7 @@ private:
     AudioRouterCenter &audioRouterCenter_;
     AudioPolicyDump &audioPolicyDump_;
 #ifdef USB_ENABLE
-    AudioUsbManager &usbManager_;
+    AudioUsbManager &audioUsbManager_;
 #endif
     AudioActiveDevice &audioActiveDevice_;
 
