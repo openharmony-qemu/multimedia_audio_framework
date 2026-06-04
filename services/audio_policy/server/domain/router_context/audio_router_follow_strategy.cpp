@@ -119,6 +119,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputD
     if (simpleDesc == nullptr) {
         auto appSelectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_INPUT, uid);
         simpleDesc = AudioRouterSelectStrategy::HasValidSelectDevice(appSelectInfo) ? appSelectInfo.device_ : nullptr;
+        auto device = ConvertSimpleToDevice(simpleDesc);
+        simpleDesc = device && device->deviceTokenId_ != 0 ? appSelectDevice : nullptr;
     }
 
     // If no stream-level selection, proceed with existing logic

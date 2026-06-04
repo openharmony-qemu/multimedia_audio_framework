@@ -1685,8 +1685,7 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
         if (audioScene == AUDIO_SCENE_DEFAULT && currentOutputDevice.IsRemoteDevice()) {
             OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::OVERRODE);
         }
-        OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN,
-            audioSceneManager_.GetAudioSceneOwnerUid());
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated(INVALID_UID, uid);
     }
 
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
