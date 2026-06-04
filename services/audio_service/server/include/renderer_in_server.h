@@ -266,6 +266,9 @@ private:
     void InitLatencyMeasurement();
     void DetectLatency(uint8_t *inputData, size_t requestDataLen);
     void PauseInner();
+    void UpdateFlushStatus();
+    void FlushInnerCapStreams();
+    void FlushDualToneStream();
     void ClearInnerCapBufferForInject();
     void InitDupBufferInner(int32_t innerCapId);
     int32_t OnWriteDataInternal(int8_t *inputData, size_t requestDataLen, bool wakeFutex);

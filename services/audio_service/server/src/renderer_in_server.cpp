@@ -1707,6 +1707,49 @@ int32_t RendererInServer::FlushOhAudioBuffer()
     return SUCCESS;
 }
 
+void RendererInServer::UpdateFlushStatus()
+{
+    if (status_ == I_STATUS_STARTED) {
+        status_ = I_STATUS_FLUSHING_WHEN_STARTED;
+    } else if (status_ == I_STATUS_PAUSED) {
+        status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
+    } else if (status_ == I_STATUS_STOPPED) {
+        status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
+    }
+}
+
+void RendererInServer::FlushInnerCapStreams()
+{
+    std::lock_guard<std::mutex> dupLock(dupMutex_);
+    for (auto &capInfo : captureInfos_) {
+        if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+            capInfo.second.dupStream->Flush();
+            if (offloadEnable_) {
+                renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = OFFLOAD_INNER_CAP_PREBUF;
+            } else if (isNonStandardSampleRate_) {
+                renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = NON_STANDARD_INNER_CAP_PREBUF;
+            } else {
+                renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = DEFAULT_INNER_CAP_PREBUF;
+            }
+            CHECK_AND_CONTINUE_LOG(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
+                innerCapIdToDupStreamCallbackMap_.end(),
+                "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", capInfo.first);
+            CHECK_AND_CONTINUE_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
+                "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", capInfo.first);
+            innerCapFirstWriteMap_[capInfo.first].store(0);
+        }
+    }
+}
+
+void RendererInServer::FlushDualToneStream()
+{
+    CHECK_AND_RETURN(isDualToneEnabled_);
+    std::lock_guard<std::mutex> dualLock(dualToneMutex_);
+    if (dualToneStream_ != nullptr) {
+        dualToneStream_->Flush();
+    }
+}
+
 int32_t RendererInServer::Flush()
 {
     AUDIO_PRERELEASE_LOGI("Flush.");
@@ -1714,52 +1757,22 @@ int32_t RendererInServer::Flush()
         "RendererInServer::Flush", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace(traceTag_ + " Flush");
-    std::unique_lock<std::mutex> lock(statusLock_);
-    if (status_ == I_STATUS_STARTED) {
-        status_ = I_STATUS_FLUSHING_WHEN_STARTED;
-    } else if (status_ == I_STATUS_PAUSED) {
-        status_ = I_STATUS_FLUSHING_WHEN_PAUSED;
-    } else if (status_ == I_STATUS_STOPPED) {
-        status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
-    } else {
-        return ERR_ILLEGAL_STATE;
+    {
+        std::unique_lock<std::mutex> lock(statusLock_);
+        CHECK_AND_RETURN_RET(status_ == I_STATUS_STARTED || status_ == I_STATUS_PAUSED ||
+            status_ == I_STATUS_STOPPED, ERR_ILLEGAL_STATE);
+        UpdateFlushStatus();
     }
 
     FlushOhAudioBuffer();
-
     flushedTime_ = ClockTime::GetCurNano();
     int ret = stream_->Flush();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(processConfig_.appInfo.appUid),
             PLAY_FLUSH_OPERATION_FAILED, "Flush stream failed", false),
         "Flush stream failed, reason: %{public}d", ret);
-    {
-        std::lock_guard<std::mutex> dupLock(dupMutex_);
-        for (auto &capInfo : captureInfos_) {
-            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-                capInfo.second.dupStream->Flush();
-                if (offloadEnable_) {
-                    renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = OFFLOAD_INNER_CAP_PREBUF;
-                } else if (isNonStandardSampleRate_) {
-                    renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = NON_STANDARD_INNER_CAP_PREBUF;
-                } else {
-                    renderEmptyCountForInnerCapToInnerCapIdMap_[capInfo.first] = DEFAULT_INNER_CAP_PREBUF;
-                }
-                CHECK_AND_CONTINUE_LOG(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
-                    innerCapIdToDupStreamCallbackMap_.end(),
-                    "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", capInfo.first);
-                CHECK_AND_CONTINUE_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
-                    "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", capInfo.first);
-                innerCapFirstWriteMap_[capInfo.first].store(0);
-            }
-        }
-    }
-    if (isDualToneEnabled_) {
-        std::lock_guard<std::mutex> dualLock(dualToneMutex_);
-        if (dualToneStream_ != nullptr) {
-            dualToneStream_->Flush();
-        }
-    }
+    FlushInnerCapStreams();
+    FlushDualToneStream();
     return SUCCESS;
 }
 

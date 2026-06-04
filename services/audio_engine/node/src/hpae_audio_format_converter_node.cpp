@@ -582,12 +582,12 @@ void HpaeAudioFormatConverterNode::PullAheadUntilThresholdOrFailure(uint32_t inp
 
     uint32_t pullCount = 0;
 
-    AUDIO_INFO_LOG("NodeId %{public}d: PullAhead start, unprocessedFrames=%{public}u, threshold=%{public}u, "
+    AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead start, unprocessedFrames=%{public}u, threshold=%{public}u, "
         "credit=%{public}u", GetNodeId(), unprocessedFrames_, resamplerInputThreshold_, pullAheadCredit_);
 
     while (pullAheadCredit_ > 0 && unprocessedFrames_ < resamplerInputThreshold_) {
         if (!TryPullOneFrame()) {
-            AUDIO_INFO_LOG("NodeId %{public}d: PullAhead stopped, upstream underflow after %{public}u pulls",
+            AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead stopped, upstream underflow after %{public}u pulls",
                 GetNodeId(), pullCount);
             break;
         }
@@ -595,7 +595,7 @@ void HpaeAudioFormatConverterNode::PullAheadUntilThresholdOrFailure(uint32_t inp
     }
 
     if (pullCount > 0) {
-        AUDIO_INFO_LOG("NodeId %{public}d: PullAhead pulled %{public}u extra frames, "
+        AUDIO_DEBUG_LOG("NodeId %{public}d: PullAhead pulled %{public}u extra frames, "
             "unprocessedFrames=%{public}u, remaining credit=%{public}u",
             GetNodeId(), pullCount, unprocessedFrames_, pullAheadCredit_);
     }
