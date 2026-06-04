@@ -58,6 +58,11 @@ bool GetPcmByteLen(size_t frameLen, size_t channels, size_t &byteLen)
     byteLen = sampleCount * sizeof(float);
     return true;
 }
+
+bool HasValidPcmInput(const std::vector<HpaePcmBuffer *> &inputs)
+{
+    return !inputs.empty() && inputs[0] != nullptr && inputs[0]->IsValid();
+}
 } // namespace
 
 uint32_t HpaeSessionEffectNode::ComputeSkipFrames()
@@ -525,11 +530,14 @@ void HpaeSessionEffectNode::DoProcess()
     HpaePcmBuffer *tempOut = nullptr;
     std::vector<HpaePcmBuffer *> &preOutputs = inputStream_.ReadPreOutputData();
     bool hasInput = !preOutputs.empty() && preOutputs[0] != nullptr;
-    if (hasInput) {
+    bool hasValidInput = HasValidPcmInput(preOutputs);
+    if (hasValidInput) {
         tempOut = enableProcess_ ? SignalProcess(preOutputs) : preOutputs[0];
+    } else if (hasInput && !enableProcess_) {
+        tempOut = preOutputs[0];
     } else if (!enableProcess_) {
         tempOut = SignalProcess(preOutputs);
-    } else if (!hasInput && status_ == STATUS::ACTIVE) {
+    } else if (status_ == STATUS::ACTIVE) {
         tempOut = ProcessActiveNoInput();
     }
     outputStream_.WriteDataToOutput(tempOut != nullptr ? tempOut : &silenceData_);
@@ -573,7 +581,7 @@ void HpaeSessionEffectNode::PreheatThreadFunc()
 
         std::vector<HpaePcmBuffer *> &upstreamData = inputStream_.ReadPreOutputData();
 
-        bool hasData = !upstreamData.empty() && upstreamData[0] != nullptr;
+        bool hasData = HasValidPcmInput(upstreamData);
         if (hasData) {
             size_t fedBytes = FeedInputFromBuffer(upstreamData[0]);
             if (fedBytes > 0) {
@@ -733,6 +741,10 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessActiveNoInput()
 
 size_t HpaeSessionEffectNode::FeedInputFromBuffer(HpaePcmBuffer *buf)
 {
+    if (buf == nullptr || !buf->IsValid() || effectInstance_ == nullptr) {
+        return 0;
+    }
+
     size_t channels = audioConfig_.inputCfg.channels;
     size_t byteLen = 0;
     if (!GetPcmByteLen(buf->GetFrameLen(), channels, byteLen)) {

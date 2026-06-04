@@ -535,7 +535,29 @@ HWTEST_F(SessionEffectNodeAlgoTest, process_successReturnsOutput, TestSize.Level
 // Upstream node: provides non-zero data when DoProcess pulls
 class MockUpstreamNode : public HpaePluginNode {
 public:
-    explicit MockUpstreamNode(HpaeNodeInfo& info) : HpaePluginNode(info) {}
+    explicit MockUpstreamNode(HpaeNodeInfo& info)
+        : HpaePluginNode(info),
+          pcmBufferInfo_(static_cast<uint32_t>(info.channels), info.frameLen,
+              static_cast<uint32_t>(info.samplingRate)),
+          outputBuffer_(pcmBufferInfo_)
+    {}
+
+    void SetOutputValid(bool valid)
+    {
+        outputValid_ = valid;
+    }
+
+    float *GetOutputDataForTest()
+    {
+        return outputBuffer_.GetPcmDataBuffer();
+    }
+
+    void DoProcess() override
+    {
+        FillOutputBuffer();
+        outputStream_.WriteDataToOutput(&outputBuffer_);
+    }
+
     HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*>& inputs) override
     {
         if (!inputs.empty() && inputs[0] != nullptr) {
@@ -548,6 +570,23 @@ public:
         return inputs.empty() ? nullptr : inputs[0];
     }
     uint64_t GetLatency(uint32_t) override { return 0; }
+
+private:
+    void FillOutputBuffer()
+    {
+        outputBuffer_.Reset();
+        float *data = outputBuffer_.GetPcmDataBuffer();
+        size_t sampleCount = outputBuffer_.GetFrameLen() * outputBuffer_.GetChannelCount();
+        for (size_t i = 0; i < sampleCount; i++) {
+            data[i] = outputValid_ ? 0.5f : 0.0f;
+        }
+        outputBuffer_.SetBufferValid(outputValid_);
+        outputBuffer_.SetBufferSilence(!outputValid_);
+    }
+
+    PcmBufferInfo pcmBufferInfo_;
+    HpaePcmBuffer outputBuffer_;
+    bool outputValid_ = true;
 };
 
 // --- State machine test fixture ---
@@ -728,6 +767,26 @@ HWTEST_F(SessionEffectNodeStateTest, activeWithInput_doesNotRunNoInputTailDrain,
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, byteLen)).WillOnce(testing::Return(0));
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_)).WillOnce(testing::Return(byteLen));
+
+    node_->DoProcess();
+
+    EXPECT_EQ(node_->GetPaddingBytesInForTest(), 0u);
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+}
+
+HWTEST_F(SessionEffectNodeStateTest, activeInvalidInput_usesNoInputPathWithoutFeeding, TestSize.Level0)
+{
+    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
+    upstreamNode_->SetOutputValid(false);
+
+    size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
+    auto *invalidInputData = reinterpret_cast<uint8_t *>(upstreamNode_->GetOutputDataForTest());
+    EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).Times(0);
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_))
+        .WillOnce(testing::Invoke([invalidInputData](uint8_t *buf, size_t len, uint32_t *) -> int32_t {
+            EXPECT_NE(buf, invalidInputData);
+            return static_cast<int32_t>(len);
+        }));
 
     node_->DoProcess();
 
@@ -1095,6 +1154,24 @@ HWTEST_F(SessionEffectNodeStateTest, preheatThreadWithDataButZeroChannelsBacksOf
 
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).Times(0);
     ON_CALL(*mockInst_, GetInputLevel()).WillByDefault(testing::Return(0));
+
+    isolatedNode->RunPreheatThreadForTest();
+
+    EXPECT_TRUE(isolatedNode->GetPrebufFilled());
+}
+
+HWTEST_F(SessionEffectNodeStateTest, preheatInvalidInput_doesNotFeedAlgorithm, TestSize.Level0)
+{
+    auto isolatedNode = std::make_shared<TestableSessionEffectNode>(nodeInfo_);
+    isolatedNode->CreateEffectWithInstance("test_effect", mockInst_, config_);
+    isolatedNode->Connect(upstreamNode_);
+    upstreamNode_->SetOutputValid(false);
+
+    const size_t inputByteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
+    isolatedNode->SetPrebufTargetBytesForTest(inputByteLen * 2);
+
+    EXPECT_CALL(*mockInst_, FeedInput(testing::_, inputByteLen)).Times(0);
+    ON_CALL(*mockInst_, GetInputLevel()).WillByDefault(testing::Return(inputByteLen * 2));
 
     isolatedNode->RunPreheatThreadForTest();
 
@@ -1748,6 +1825,23 @@ HWTEST_F(SessionEffectNodeStateTest, feedInputFromBuffer_zeroChannelsReturnsZero
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).Times(0);
     EXPECT_EQ(node_->FeedInputFromBuffer(&pcmBuf), 0u);
     EXPECT_EQ(node_->GetStatsForTest().framesProcessed, 0);
+}
+
+HWTEST_F(SessionEffectNodeStateTest, feedInputFromBuffer_invalidBufferReturnsZero, TestSize.Level0)
+{
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
+
+    PcmBufferInfo bufInfo;
+    bufInfo.ch = TEST_CHANNEL_COUNT;
+    bufInfo.frameLen = TEST_FRAME_LEN;
+    bufInfo.rate = TEST_SAMPLE_RATE;
+    HpaePcmBuffer pcmBuf(bufInfo);
+    pcmBuf.SetBufferValid(false);
+
+    EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).Times(0);
+
+    EXPECT_EQ(node_->FeedInputFromBuffer(&pcmBuf), 0u);
+    EXPECT_EQ(node_->GetTotalBytesIn(), 0u);
 }
 
 HWTEST_F(SessionEffectNodeStateTest, feedPaddingInput_returnsZeroWithoutInstanceOrByteLen, TestSize.Level0)
