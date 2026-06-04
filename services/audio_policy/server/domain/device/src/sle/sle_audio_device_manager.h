@@ -77,6 +77,7 @@ public:
     int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) override;
     int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t eventType) override;
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override;
+    int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) override;
 
     // Parameter Conversion Interface
     int32_t SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,

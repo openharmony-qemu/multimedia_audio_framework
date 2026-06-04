@@ -193,7 +193,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
       audioPolicyDump_(AudioPolicyDump::GetInstance()),
 #ifdef USB_ENABLE
-      usbManager_(AudioUsbManager::GetInstance()),
+      audioUsbManager_(AudioUsbManager::GetInstance()),
 #endif
       audioActiveDevice_(AudioActiveDevice::GetInstance()),
       sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance()),
@@ -392,7 +392,7 @@ void AudioPolicyServer::OnStop()
     audioPolicyService_.Deinit();
     coreService_->DeInit();
 #ifdef USB_ENABLE
-    usbManager_.Deinit();
+    audioUsbManager_.Deinit();
 #endif
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
@@ -436,7 +436,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
 #ifdef USB_ENABLE
         case USB_SYSTEM_ABILITY_ID:
-            usbManager_.Init(eventEntry_);
+            audioUsbManager_.Init(eventEntry_, FLAG_USB_SVC_UP);
             break;
 #endif
         default:
@@ -690,7 +690,7 @@ void AudioPolicyServer::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStream
         GetStreamInFocus(zoneId, tmpStreamType);
         streamType = static_cast<AudioStreamType>(tmpStreamType);
     }
-    
+
     CHECK_AND_RETURN(audioVolumeManager_.IsNeedForceControlVolumeType());
     auto forceControlVolumeType = audioVolumeManager_.GetForceControlVolumeType();
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) != forceControlVolumeType) {
@@ -1021,7 +1021,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.USER_STARTED");
     SubscribeCommonEvent("usual.event.dms.cast_plugged_changed");
 #ifdef USB_ENABLE
-    usbManager_.SubscribeEvent();
+    audioUsbManager_.SubscribeEvent(FLAG_CES_SVC_UP);
 #endif
     OHOS::Singleton<SafeVolumeEventSubscriber>::GetInstance().SubscribeSafeVolumeEvent();
     isAlreadyRegisterCommonEventListener_ = true;
@@ -1661,7 +1661,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal(AudioStreamTyp
     }
     return audioVolumeManager_.SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
 }
- 
+
 int32_t AudioPolicyServer::GetStreamMute(int32_t streamTypeIn, bool &mute)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
@@ -2111,13 +2111,13 @@ int32_t AudioPolicyServer::HandleRouteSelectorCallbackEnable(bool enable)
     auto clientHolder = audioPolicyServerHandler_->GetAudioPolicyClientHolder(clientId);
     CHECK_AND_RETURN_RET_LOG(clientHolder != nullptr, ERROR, "client not registered");
     CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_NULL_POINTER, "eventEntry_ is nullptr");
-    
+
     AudioPipeSelector::AudioRouteSelectorCallback callback =
         [clientHolder](const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo, int32_t &selectResult) -> int32_t {
             CHECK_AND_RETURN_RET_LOG(clientHolder != nullptr, ERR_OPERATION_FAILED, "clientHolder is nullptr");
             return clientHolder->OnAudioRouteSelectRefined(routeSelectInfo, selectResult);
         };
-    
+
     return enable ? eventEntry_->SetAudioRouteSelectorCallback(callback) :
         eventEntry_->UnsetAudioRouteSelectorCallback();
 }
@@ -2128,7 +2128,7 @@ int32_t AudioPolicyServer::SetClientCallbacksEnable(int32_t callbackchangeIn, bo
     if (callbackchange == CALLBACK_ROUTE_SELECTOR) {
         return HandleRouteSelectorCallbackEnable(enable);
     }
-    
+
     if (audioPolicyServerHandler_ != nullptr) {
         return audioPolicyServerHandler_->SetClientCallbacksEnable(callbackchange, enable);
     } else {
@@ -2802,7 +2802,7 @@ int32_t AudioPolicyServer::VerifyUidAndPid(const int32_t uid, const int32_t pid)
     auto callerPid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(pid == callerPid,
         ERR_UNKNOWN, "The callingPid is not equal to callerPid");
- 
+
     return SUCCESS;
 }
 
@@ -3340,7 +3340,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
             audioRendererChangeInfos.push_back(info);
         }
     }
-    
+
     return SUCCESS;
 }
 
@@ -5443,7 +5443,7 @@ int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t 
             silentControl);
         return SUCCESS;
     }
-    
+
     isAllowed = audioBackgroundManager_.IsAllowedPlayback(uid, pid, sessionId, streamUsage, silentControl);
     return SUCCESS;
 }
@@ -5814,7 +5814,7 @@ int32_t AudioPolicyServer::GetLoopbackSupportedDevicePairs(
 
     return SUCCESS;
 }
- 	 
+
 int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioDeviceDescriptor> &inputDevice,
     std::shared_ptr<AudioDeviceDescriptor> &outputDevice, int32_t &ret)
 {

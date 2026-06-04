@@ -44,6 +44,7 @@
 #include "audio_interrupt_service.h"
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
+#include "audio_collaborative_service.h"
 
 namespace {
     #include "v6_1/iaudio_manager.h"
@@ -832,6 +833,17 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
 {
     Trace trace("IsStreamSupportMultiChannel");
 
+    // MultiChannel:collaboration playback, nearlink
+    if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+        streamDesc->GetMainNewDeviceDesc()) && streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_NEARLINK &&
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage()) &&
+        !CheckRingAndVoipStreamRunning() && !isRingDualToneOnPrimarySpeaker_) {
+            streamDesc->isNearLinkCollaborationEnable_ = true;
+            JUDGE_AND_INFO_LOG(isCreateProcess_, "isNearLinkCollaborationEnable_ true");
+            return true;
+    }
+    streamDesc->isNearLinkCollaborationEnable_ = false;
+
     if (streamDesc->streamInfo_.encoding == ENCODING_AUDIOVIVID &&
         pipeManager_->PreferMultiChannelPipe(streamDesc)) {
         JUDGE_AND_INFO_LOG(isCreateProcess_, "AudioVivid encoding and MultiChannelPipe supported");
@@ -891,6 +903,11 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
         streamDesc->streamInfo_.encoding != ENCODING_AUDIOVIVID);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == false, false,
         HILOG_COMM_ERROR("[IsStreamSupportDirect]Spatialization enabled"));
+    ret = AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+        streamDesc->GetMainNewDeviceDesc()) &&
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage());
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == false, false,
+        HILOG_COMM_ERROR("[IsStreamSupportDirect]Collaborative enabled"));
     return true;
 }
 
@@ -1010,6 +1027,12 @@ void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioS
         case AUDIO_FLAG_MMAP:
             streamDesc->audioFlag_ = IsStreamSupportMmap(streamDesc) ?
                 GetFlagForMmapStream(streamDesc) : AUDIO_OUTPUT_FLAG_NORMAL;
+            if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_NORMAL &&
+                AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+                    streamDesc->GetMainNewDeviceDesc()) &&
+                audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage())) {
+                break;
+            }
             return;
         case AUDIO_FLAG_VOIP_FAST:
             streamDesc->audioFlag_ =

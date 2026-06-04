@@ -56,7 +56,7 @@ HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sink
         mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     }
     if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA") {
-        renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+        renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo, sinkInfo.isCollaborationEnabled);
         renderNoneEffectNode_ = nullptr;
     } else {
         renderEffectNode_ = nullptr;
@@ -604,6 +604,24 @@ std::shared_ptr<HpaeSessionEffectNode> HpaeProcessCluster::GetSessionEffectNode(
 std::shared_ptr<HpaeLoudnessGainNode> HpaeProcessCluster::GetLoudnessGainNode(uint32_t sessionId) const
 {
     return SafeGetMap(idLoudnessGainNodeMap_, sessionId);
+}
+
+void HpaeProcessCluster::SetCollaborationStateToMixNode(CollaborationState isCollaborationEnabled)
+{
+    if (mixerNode_ != nullptr) {
+        mixerNode_->SetCollaborationStateToMixNode(isCollaborationEnabled);
+    }
+
+    return;
+}
+
+void HpaeProcessCluster::SetDelayCountToEffectNode(int32_t delayCount)
+{
+    if (renderEffectNode_ != nullptr) {
+        renderEffectNode_->SetDelayCountToEffectNode(delayCount);
+    }
+
+    return;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

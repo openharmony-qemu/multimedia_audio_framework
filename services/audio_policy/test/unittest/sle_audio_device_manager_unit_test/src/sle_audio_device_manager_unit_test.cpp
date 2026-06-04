@@ -2372,5 +2372,42 @@ HWTEST(SleAudioDeviceManagerUnitTest, StartPlaying_SourceType_Loopback_001, Test
     int32_t ret = sleAudioDeviceManager_->StartPlaying(deviceDesc, sourceType, uid, isLoopback);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test GetDeviceProductId with null callback.
+ * @tc.number: GetDeviceProductId_001
+ * @tc.desc  : Test SleAudioDeviceManager::GetDeviceProductId returns ERR_INVALID_PARAM when callback is null.
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetDeviceProductId_001, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback = nullptr;
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+
+    std::string remoteAddr = "1234567890";
+    std::string productId;
+    int32_t ret = sleAudioDeviceManager_->GetDeviceProductId(remoteAddr, productId);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test GetDeviceProductId with valid callback.
+ * @tc.number: GetDeviceProductId_002
+ * @tc.desc  : Test SleAudioDeviceManager::GetDeviceProductId delegates to callback.
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetDeviceProductId_002, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+
+    std::string remoteAddr = "1234567890";
+    std::string productId;
+    int32_t ret = sleAudioDeviceManager_->GetDeviceProductId(remoteAddr, productId);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

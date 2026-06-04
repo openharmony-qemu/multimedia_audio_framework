@@ -56,7 +56,7 @@ public:
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEnhanceProperty(AudioEffectPropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
-    int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
     int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) override;
@@ -84,6 +84,7 @@ public:
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
+    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) override;
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) override;
     void LoadCollaborationConfig() override;
     virtual void OnGetCollaborativeUpdateCb(int32_t result) override;

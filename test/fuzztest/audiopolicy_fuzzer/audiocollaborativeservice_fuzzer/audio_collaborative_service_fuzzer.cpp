@@ -120,7 +120,7 @@ void AudioCollaborativeServiceUpdateCollaborativeStateRealFuzzTest(FuzzedDataPro
 {
     AudioCollaborativeService &audioCollaborativeService = AudioCollaborativeService::GetAudioCollaborativeService();
     audioCollaborativeService.isCollaborativePlaybackSupported_ = g_fuzzUtils.GetData<bool>();
-    audioCollaborativeService.isCollaborativeStateEnabled_ = g_fuzzUtils.GetData<bool>();
+    audioCollaborativeService.isCollaborativeStateEnabled_ = g_fuzzUtils.GetData<CollaborationState>();
     audioCollaborativeService.curDeviceAddress_ = "8C-32-23-23-6C-12";
     bool isEnabled = g_fuzzUtils.GetData<bool>();
     if (isEnabled) {

@@ -773,6 +773,10 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
     // Voice call does not support safe volume
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (volumeType == STREAM_MUSIC) {
+        float volumeDbTemp = audioPolicyManager_.CalculateVolumeDbNonlinear(STREAM_MUSIC,
+            DEVICE_TYPE_NEARLINK, sVolumeLevel);
+        audioPolicyManager_.SaveSystemVolumeForEffect(DEVICE_TYPE_NEARLINK, STREAM_MUSIC, sVolumeLevel);
+        audioPolicyManager_.SetSystemVolumeToEffect(STREAM_MUSIC, volumeDbTemp);
         if (volumeLevel > audioPolicyManager_.GetSafeVolumeLevel()) {
             if (internalCall) {
                 sVolumeLevel = DealWithSafeVolume(volumeLevel, true);

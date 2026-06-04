@@ -106,6 +106,12 @@ public:
         delayValue = 0;
         return SUCCESS;
     }
+
+    int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) override
+    {
+        productId = "";
+        return SUCCESS;
+    }
 };
 
 } // namespace AudioStandard

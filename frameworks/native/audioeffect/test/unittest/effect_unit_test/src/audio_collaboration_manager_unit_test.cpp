@@ -327,7 +327,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_004, Test
     EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
@@ -345,8 +345,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_005, Test
     EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
@@ -364,9 +363,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_006, Test
     EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(DoAll(SetArgReferee<1>("testProduct"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("type", _)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
@@ -384,40 +381,11 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_007, Test
     EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(DoAll(SetArgReferee<1>("testProduct"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("type", _)).WillOnce(DoAll(SetArgReferee<1>("10"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
     EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeEarphoneNameConfig_.empty());
-}
-
-/**
-* @tc.name   : Test LoadCollaborationConfigInner API
-* @tc.number : LoadCollaborationConfigInner_008
-* @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
-*/
-HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_008, TestSize.Level1)
-{
-    std::string prodcutId = "testProduct";
-    auto mockNode = std::make_shared<MockAudioXmlNode>();
-    auto mockSecondNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
-    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(DoAll(SetArgReferee<1>("testProduct"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("type", _)).WillOnce(DoAll(SetArgReferee<1>("10"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(DoAll(SetArgReferee<1>("test"), Return(SUCCESS)));
-    EXPECT_CALL(*mockSecondNode, MoveToChildren()).Times(1);
-    EXPECT_CALL(*mockSecondNode, IsNodeValid()).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, GetCopyNode()).Times(1).WillOnce(Return(mockSecondNode));
-    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
-
-    AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
-    EXPECT_EQ(AudioCollaborationManager::GetInstance()->collaborativeEarphoneProductConfig_[prodcutId], 10);
 }
 
 /**
@@ -458,5 +426,342 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfig_003, TestSize.
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfig();
     EXPECT_TRUE(true);
 }
+
+// ===== Tests for IsCollaborationSupportedForStreamUsage (no-arg / state-based) =====
+
+/**
+* @tc.name   : Test IsCollaborationSupportedForStreamUsage with COLLABORATION_CLOSE
+* @tc.number : IsCollaborationSupportedForStreamUsage_Close_001
+* @tc.desc   : When state is COLLABORATION_CLOSE, should return false for any stream usage.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, IsCollaborationSupportedForStreamUsage_Close_001, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
+    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MUSIC));
+    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MEDIA));
+}
+
+/**
+* @tc.name   : Test IsCollaborationSupportedForStreamUsage with COLLABORATION_BLUETOOTH_OPEN
+* @tc.number : IsCollaborationSupportedForStreamUsage_Bt_002
+* @tc.desc   : When state is COLLABORATION_BLUETOOTH_OPEN, check stream usage lookup with BT A2DP device config.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, IsCollaborationSupportedForStreamUsage_Bt_002, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    // Clear config and set up BT A2DP config with MOVIE stream usage
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_BLUETOOTH_A2DP].insert(STREAM_USAGE_MOVIE);
+    inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_BLUETOOTH_A2DP].insert(STREAM_USAGE_MUSIC);
+
+    inst->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_TRUE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
+    EXPECT_TRUE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MUSIC));
+    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_VOICE_COMMUNICATION));
+}
+
+/**
+* @tc.name   : Test IsCollaborationSupportedForStreamUsage with COLLABORATION_NEARLINK_OPEN
+* @tc.number : IsCollaborationSupportedForStreamUsage_Nl_003
+* @tc.desc   : When state is COLLABORATION_NEARLINK_OPEN, check stream usage lookup with NearLink device config.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, IsCollaborationSupportedForStreamUsage_Nl_003, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_NEARLINK].insert(STREAM_USAGE_MOVIE);
+
+    inst->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    EXPECT_TRUE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
+    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MUSIC));
+}
+
+/**
+* @tc.name   : Test IsCollaborationSupportedForStreamUsage with empty config
+* @tc.number : IsCollaborationSupportedForStreamUsage_EmptyCfg_004
+* @tc.desc   : When config is empty, should return false even with BLUETOOTH_OPEN state.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, IsCollaborationSupportedForStreamUsage_EmptyCfg_004, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    inst->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
+}
+
+// ===== Tests for UpdateCollaborativeState =====
+
+/**
+* @tc.name   : Test UpdateCollaborativeState sets state to BLUETOOTH_OPEN
+* @tc.number : UpdateCollaborativeState_Bt_001
+* @tc.desc   : Verify state transitions to COLLABORATION_BLUETOOTH_OPEN.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, UpdateCollaborativeState_Bt_001, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_EQ(inst->state_, COLLABORATION_BLUETOOTH_OPEN);
+}
+
+/**
+* @tc.name   : Test UpdateCollaborativeState sets state to NEARLINK_OPEN
+* @tc.number : UpdateCollaborativeState_Nl_002
+* @tc.desc   : Verify state transitions to COLLABORATION_NEARLINK_OPEN.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, UpdateCollaborativeState_Nl_002, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(inst->state_, COLLABORATION_NEARLINK_OPEN);
+}
+
+/**
+* @tc.name   : Test UpdateCollaborativeState sets state to CLOSE
+* @tc.number : UpdateCollaborativeState_Close_003
+* @tc.desc   : Verify state transitions back to COLLABORATION_CLOSE.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, UpdateCollaborativeState_Close_003, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_EQ(inst->state_, COLLABORATION_BLUETOOTH_OPEN);
+    inst->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    EXPECT_EQ(inst->state_, COLLABORATION_CLOSE);
+}
+
+// ===== Tests for LoadCollAbsSupportedStreamUsageInner =====
+
+/**
+* @tc.name   : Test LoadCollAbsSupportedStreamUsageInner with nullptr
+* @tc.number : LoadCollAbsSupportedStreamUsageInner_Null_001
+* @tc.desc   : Passing nullptr should not crash and config should remain empty.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_Null_001, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    inst->LoadCollAbsSupportedStreamUsageInner(nullptr);
+    EXPECT_TRUE(inst->collAbsSupportedStreamUsageConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollAbsSupportedStreamUsageInner missing deviceType prop
+* @tc.number : LoadCollAbsSupportedStreamUsageInner_NoDevType_002
+* @tc.desc   : Node without deviceType property should return early.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_NoDevType_002, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, GetProp("deviceType", _)).WillOnce(Return(-1));
+    inst->LoadCollAbsSupportedStreamUsageInner(mockNode);
+    EXPECT_TRUE(inst->collAbsSupportedStreamUsageConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollAbsSupportedStreamUsageInner invalid deviceType
+* @tc.number : LoadCollAbsSupportedStreamUsageInner_InvalidDevType_003
+* @tc.desc   : Node with unrecognized deviceType string should return early.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_InvalidDevType_003, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, GetProp("deviceType", _))
+        .WillOnce(DoAll(SetArgReferee<1>("INVALID_DEVICE"), Return(SUCCESS)));
+    inst->LoadCollAbsSupportedStreamUsageInner(mockNode);
+    EXPECT_TRUE(inst->collAbsSupportedStreamUsageConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollAbsSupportedStreamUsageInner with valid deviceType but no children
+* @tc.number : LoadCollAbsSupportedStreamUsageInner_NoChildren_004
+* @tc.desc   : Valid deviceType but node has no valid children.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_NoChildren_004, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, GetProp("deviceType", _))
+        .WillOnce(DoAll(SetArgReferee<1>("DEVICE_TYPE_BLUETOOTH_A2DP"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(false));
+    inst->LoadCollAbsSupportedStreamUsageInner(mockNode);
+    EXPECT_TRUE(inst->collAbsSupportedStreamUsageConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollAbsSupportedStreamUsageInner with non-element child
+* @tc.number : LoadCollAbsSupportedStreamUsageInner_NonElement_005
+* @tc.desc   : Child node is not an element node, should skip.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_NonElement_005, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, GetProp("deviceType", _))
+        .WillOnce(DoAll(SetArgReferee<1>("DEVICE_TYPE_NEARLINK"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
+    inst->LoadCollAbsSupportedStreamUsageInner(mockNode);
+    EXPECT_TRUE(inst->collAbsSupportedStreamUsageConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollAbsSupportedStreamUsageInner child not named streamUsage
+* @tc.number : LoadCollAbsSupportedStreamUsageInner_WrongName_006
+* @tc.desc   : Child node is element but not named streamUsage, should skip.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_WrongName_006, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, GetProp("deviceType", _))
+        .WillOnce(DoAll(SetArgReferee<1>("DEVICE_TYPE_NEARLINK"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, CompareName("streamUsage")).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
+    inst->LoadCollAbsSupportedStreamUsageInner(mockNode);
+    EXPECT_TRUE(inst->collAbsSupportedStreamUsageConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollAbsSupportedStreamUsageInner child missing name prop
+* @tc.number : LoadCollAbsSupportedStreamUsageInner_NoName_007
+* @tc.desc   : Child streamUsage node missing name property, should skip.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_NoName_007, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, GetProp("deviceType", _))
+        .WillOnce(DoAll(SetArgReferee<1>("DEVICE_TYPE_BLUETOOTH_A2DP"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, CompareName("streamUsage")).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
+    inst->LoadCollAbsSupportedStreamUsageInner(mockNode);
+    EXPECT_TRUE(inst->collAbsSupportedStreamUsageConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollAbsSupportedStreamUsageInner invalid streamUsage name
+* @tc.number : LoadCollAbsSupportedStreamUsageInner_InvalidUsage_008
+* @tc.desc   : Child streamUsage node with invalid name, should skip.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_InvalidUsage_008, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, GetProp("deviceType", _))
+        .WillOnce(DoAll(SetArgReferee<1>("DEVICE_TYPE_BLUETOOTH_A2DP"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, CompareName("streamUsage")).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, GetProp("name", _))
+        .WillOnce(DoAll(SetArgReferee<1>("INVALID_USAGE"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
+    inst->LoadCollAbsSupportedStreamUsageInner(mockNode);
+    EXPECT_TRUE(inst->collAbsSupportedStreamUsageConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollAbsSupportedStreamUsageInner valid config
+* @tc.number : LoadCollAbsSupportedStreamUsageInner_Valid_009
+* @tc.desc   : Valid deviceType and streamUsage, config should be populated.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_Valid_009, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, GetProp("deviceType", _))
+        .WillOnce(DoAll(SetArgReferee<1>("DEVICE_TYPE_NEARLINK"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, CompareName("streamUsage")).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, GetProp("name", _))
+        .WillOnce(DoAll(SetArgReferee<1>("STREAM_USAGE_MOVIE"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
+    inst->LoadCollAbsSupportedStreamUsageInner(mockNode);
+    EXPECT_FALSE(inst->collAbsSupportedStreamUsageConfig_.empty());
+    EXPECT_EQ(inst->collAbsSupportedStreamUsageConfig_.count(DEVICE_TYPE_NEARLINK), 1u);
+    EXPECT_EQ(inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_NEARLINK].count(STREAM_USAGE_MOVIE), 1u);
+}
+
+/**
+* @tc.name   : Test LoadCollAbsSupportedStreamUsageInner multiple streamUsages
+* @tc.number : LoadCollAbsSupportedStreamUsageInner_Multi_010
+* @tc.desc   : Multiple valid streamUsage entries for one deviceType.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_Multi_010, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, GetProp("deviceType", _))
+        .WillOnce(DoAll(SetArgReferee<1>("DEVICE_TYPE_BLUETOOTH_A2DP"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
+    // Three iterations: two valid, then exit
+    EXPECT_CALL(*mockNode, IsNodeValid())
+        .WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true)).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, CompareName("streamUsage")).WillOnce(Return(true)).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, GetProp("name", _))
+        .WillOnce(DoAll(SetArgReferee<1>("STREAM_USAGE_MOVIE"), Return(SUCCESS)))
+        .WillOnce(DoAll(SetArgReferee<1>("STREAM_USAGE_MUSIC"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(2);
+    inst->LoadCollAbsSupportedStreamUsageInner(mockNode);
+    EXPECT_EQ(inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_BLUETOOTH_A2DP].size(), 2u);
+}
+
+// ===== Tests for IsStreamUsageSupported (indirect via public API) =====
+
+/**
+* @tc.name   : Test IsStreamUsageSupported device not in config
+* @tc.number : IsStreamUsageSupported_NoDev_001
+* @tc.desc   : Device not present in config should return false.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, IsStreamUsageSupported_NoDev_001, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_BLUETOOTH_A2DP].insert(STREAM_USAGE_MOVIE);
+    inst->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    // NEARLINK device not in config
+    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
+}
+
+/**
+* @tc.name   : Test IsStreamUsageSupported stream not in config
+* @tc.number : IsStreamUsageSupported_NoUsage_002
+* @tc.desc   : Device present but specific stream usage not in config.
+*/
+HWTEST(AudioCollaborationManagerUnitTest, IsStreamUsageSupported_NoUsage_002, TestSize.Level1)
+{
+    auto *inst = AudioCollaborationManager::GetInstance();
+    inst->collAbsSupportedStreamUsageConfig_.clear();
+    inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_BLUETOOTH_A2DP].insert(STREAM_USAGE_MOVIE);
+    inst->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_GAME));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
