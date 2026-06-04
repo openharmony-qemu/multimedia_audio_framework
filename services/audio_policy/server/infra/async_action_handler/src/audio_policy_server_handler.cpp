@@ -1485,7 +1485,6 @@ void AudioPolicyServerHandler::HandleInterruptEventWithClientId(const AppExecFwk
 void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated(const AppExecFwk::InnerEvent::Pointer &event)
 {
     int32_t forceUid = INVALID_UID;
-    int32_t targetUid = INVALID_UID;
     if (event != nullptr) {
         std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
         if (eventContextObj != nullptr) {
