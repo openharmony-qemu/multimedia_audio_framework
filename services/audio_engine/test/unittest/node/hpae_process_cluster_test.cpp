@@ -2008,7 +2008,6 @@ HWTEST_F(HpaeProcessClusterTest, SetDelayCountToEffectNode_001, TestSize.Level0)
     SUCCEED();
 }
 
-
 /**
  * @tc.name  : Test HpaeProcessCluster Flush
  * @tc.number: Flush_WithConverterNoSessionEffect_001
