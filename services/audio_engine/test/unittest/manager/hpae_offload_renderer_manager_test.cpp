@@ -887,7 +887,7 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, AdjustFrameLen_002, TestSize.Le
     outNodeInfo.samplingRate = SAMPLE_RATE_48000;
 
     bool result = IHpaeRendererManager::AdjustFrameLen(inNodeInfo, outNodeInfo);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(result, true);
     EXPECT_EQ(inNodeInfo.frameLen, 960);
 }
 

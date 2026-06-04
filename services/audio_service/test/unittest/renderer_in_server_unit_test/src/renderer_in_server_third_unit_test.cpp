@@ -3103,11 +3103,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_SetPitch_005, TestSize.
  * @tc.name  : Construct_NonStandardSampleRate_001
  * @tc.type  : FUNC
  * @tc.number: Construct_NonStandardSampleRate_001
- * @tc.desc  : Test isNonStandardSampleRate_ is true with non-standard sample rate (44100).
+ * @tc.desc  : Test isNonStandardSampleRate_ is true with non-standard sample rate (11025).
  */
 HWTEST_F(RendererInServerThirdUnitTest, Construct_NonStandardSampleRate_001, TestSize.Level0)
 {
-    AudioStreamInfo nonStdStreamInfo(SAMPLE_RATE_44100, ENCODING_PCM, SAMPLE_S16LE, MONO,
+    AudioStreamInfo nonStdStreamInfo(SAMPLE_RATE_11025, ENCODING_PCM, SAMPLE_S16LE, MONO,
         AudioChannelLayout::CH_LAYOUT_MONO);
     InitAudioProcessConfig(nonStdStreamInfo, DEVICE_TYPE_USB_HEADSET);
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
@@ -3139,7 +3139,7 @@ HWTEST_F(RendererInServerThirdUnitTest, Construct_StandardSampleRate_001, TestSi
  */
 HWTEST_F(RendererInServerThirdUnitTest, HandleOperationStarted_NonStandardSkipReset_001, TestSize.Level1)
 {
-    AudioStreamInfo nonStdStreamInfo(SAMPLE_RATE_44100, ENCODING_PCM, SAMPLE_S16LE, MONO,
+    AudioStreamInfo nonStdStreamInfo(SAMPLE_RATE_11025, ENCODING_PCM, SAMPLE_S16LE, MONO,
         AudioChannelLayout::CH_LAYOUT_MONO);
     InitAudioProcessConfig(nonStdStreamInfo, DEVICE_TYPE_USB_HEADSET);
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);

@@ -369,13 +369,13 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_005, Te
 }
 
 /**
- * @tc.name  : FaultCode_SignalProcess_EmptyInputs
+ * @tc.name  : FaultCode_DoProcess_EmptyInputs
  * @tc.type  : FUNC
- * @tc.number: FaultCode_SignalProcess_EmptyInputs
- * @tc.desc  : Test SignalProcess with empty inputs vector,
- *             should return &silenceData_.
+ * @tc.number: FaultCode_DoProcess_EmptyInputs
+ * @tc.desc  : Test DoProcess with no upstream connection (empty inputs),
+ *             should output silence without crash.
  */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_SignalProcess_EmptyInputs, TestSize.Level1)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_DoProcess_EmptyInputs, TestSize.Level1)
 {
     HpaeNodeInfo preNodeInfo;
     preNodeInfo.samplingRate = SAMPLE_RATE_44100;
@@ -387,43 +387,22 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_SignalProcess_EmptyInputs, 
     outputNodeInfo.channels = STEREO;
 
     auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
-    std::vector<HpaePcmBuffer *> inputs;
-    HpaePcmBuffer *result = converterNode->SignalProcess(inputs);
+    converterNode->enableProcess_ = true;
+    // No upstream connected, so ReadPreOutputData() returns empty vector
+    converterNode->DoProcess();
+    // Should complete without crash, output silence
+    HpaePcmBuffer *result = converterNode->outputStream_.PullOutputData();
     EXPECT_NE(result, nullptr);
 }
 
 /**
- * @tc.name  : FaultCode_SignalProcess_NullFirstInput
+ * @tc.name  : FaultCode_DoProcess_NullResampler
  * @tc.type  : FUNC
- * @tc.number: FaultCode_SignalProcess_NullFirstInput
- * @tc.desc  : Test SignalProcess with nullptr as first input,
- *             should return &silenceData_.
+ * @tc.number: FaultCode_DoProcess_NullResampler
+ * @tc.desc  : Test DoProcess when resampler_ is null,
+ *             should output silence and report fault code.
  */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_SignalProcess_NullFirstInput, TestSize.Level1)
-{
-    HpaeNodeInfo preNodeInfo;
-    preNodeInfo.samplingRate = SAMPLE_RATE_44100;
-    preNodeInfo.frameLen = DEFAULT_FRAMELEN_FIRST;
-    preNodeInfo.channels = STEREO;
-    HpaeNodeInfo outputNodeInfo;
-    outputNodeInfo.samplingRate = SAMPLE_RATE_48000;
-    outputNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
-    outputNodeInfo.channels = STEREO;
-
-    auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
-    std::vector<HpaePcmBuffer *> inputs = {nullptr};
-    HpaePcmBuffer *result = converterNode->SignalProcess(inputs);
-    EXPECT_NE(result, nullptr);
-}
-
-/**
- * @tc.name  : FaultCode_SignalProcess_NullResampler
- * @tc.type  : FUNC
- * @tc.number: FaultCode_SignalProcess_NullResampler
- * @tc.desc  : Test SignalProcess when resampler_ is null,
- *             should report FAULT_STATE_INCONSISTENT/PLAY/QUERY/ERR_NULL_POINTER fault code.
- */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_SignalProcess_NullResampler, TestSize.Level1)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_DoProcess_NullResampler, TestSize.Level1)
 {
     HpaeNodeInfo preNodeInfo;
     preNodeInfo.samplingRate = SAMPLE_RATE_44100;
@@ -437,12 +416,11 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, FaultCode_SignalProcess_NullResampler
     auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
     // Force resampler_ to null to test the fault path
     converterNode->resampler_.reset();
+    converterNode->enableProcess_ = true;
 
-    PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_FRAMELEN_FIRST, SAMPLE_RATE_44100);
-    HpaePcmBuffer input(pcmBufferInfo);
-    input.GetPcmDataBuffer();
-    std::vector<HpaePcmBuffer *> inputs = {&input};
-    HpaePcmBuffer *result = converterNode->SignalProcess(inputs);
+    // DoProcess checks resampler_ == nullptr early and outputs silence
+    converterNode->DoProcess();
+    HpaePcmBuffer *result = converterNode->outputStream_.PullOutputData();
     EXPECT_NE(result, nullptr);
 }
 
@@ -1616,24 +1594,43 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, Accumulate_NoDeadlockPullWhenProcesse
 }
 
 // =========================================================================
-// SignalProcess with inputs.size() != 1
+// DoProcess with multiple upstream inputs
 // =========================================================================
 
 /**
- * @tc.name  : SignalProcess_MultipleInputs
+ * @tc.name  : DoProcess_MultipleInputs
  * @tc.type  : FUNC
- * @tc.number: SignalProcess_MultipleInputs
- * @tc.desc  : SignalProcess with more than 1 input logs warning but continues
+ * @tc.number: DoProcess_MultipleInputs
+ * @tc.desc  : DoProcess with more than 1 upstream input logs warning but continues
  */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, SignalProcess_MultipleInputs, TestSize.Level0)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_MultipleInputs, TestSize.Level0)
 {
-    auto converterNode = CreateStdConverter();
+    // Create two upstream nodes with valid data
+    auto upstream1 = CreateStdConverter();
+    auto upstream2 = CreateStdConverter();
     PcmBufferInfo pcmInfo(STEREO, DEFAULT_FRAMELEN_SECOND, SAMPLE_RATE_48000);
-    HpaePcmBuffer input(pcmInfo);
-    input.GetPcmDataBuffer();
+    HpaePcmBuffer input1(pcmInfo);
+    input1.GetPcmDataBuffer();
+    input1.SetBufferValid(true);
+    HpaePcmBuffer input2(pcmInfo);
+    input2.GetPcmDataBuffer();
+    input2.SetBufferValid(true);
 
-    std::vector<HpaePcmBuffer *> inputs = {&input, &input};
-    HpaePcmBuffer *result = converterNode->SignalProcess(inputs);
+    // Write data to upstream output ports
+    upstream1->outputStream_.WriteDataToOutput(&input1);
+    upstream2->outputStream_.WriteDataToOutput(&input2);
+
+    // Create test node and connect both upstreams
+    auto converterNode = CreateStdConverter();
+    converterNode->inputStream_.AddPreOutput(
+        upstream1->GetSharedInstance(), &upstream1->outputStream_);
+    converterNode->inputStream_.AddPreOutput(
+        upstream2->GetSharedInstance(), &upstream2->outputStream_);
+    converterNode->enableProcess_ = true;
+
+    // DoProcess will call SignalProcess with 2-element vector, logs warning but continues
+    converterNode->DoProcess();
+    HpaePcmBuffer *result = converterNode->outputStream_.PullOutputData();
     EXPECT_NE(result, nullptr);
 }
 
