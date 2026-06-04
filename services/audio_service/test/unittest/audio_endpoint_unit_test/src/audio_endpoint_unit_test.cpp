@@ -2299,7 +2299,7 @@ HWTEST_F(AudioEndpointUnitTest, IsEndpointUltraFast_001, TestSize.Level1)
         .isUltraFast = isUltraFast
     };
     std::shared_ptr<AudioEndpoint> audioEndpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
-    EXPECT_NE(nullptr, audioEndpoint);
+    ASSERT_NE(nullptr, audioEndpoint);
     EXPECT_FALSE(audioEndpoint->IsEndpointUltraFast());
 }
 
@@ -2327,7 +2327,7 @@ HWTEST_F(AudioEndpointUnitTest, IsEndpointUltraFast_002, TestSize.Level1)
         .isUltraFast = isUltraFast
     };
     std::shared_ptr<AudioEndpoint> audioEndpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
-    EXPECT_NE(nullptr, audioEndpoint);
+    ASSERT_NE(nullptr, audioEndpoint);
     EXPECT_TRUE(audioEndpoint->IsEndpointUltraFast());
 }
 } // namespace AudioStandard

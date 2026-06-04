@@ -427,6 +427,10 @@ bool TonePlayerImpl::CheckToneStopped()
     if (toneState_ == TONE_STOPPED) {
         return true;
     }
+    if (toneInfo_ == nullptr) {
+        AUDIO_ERR_LOG("CheckToneStopped: toneInfo_ is null");
+        return true;
+    }
     if (toneInfo_->segments[currSegment_].duration == 0 || totalSample_ > maxSample_ || toneState_ == TONE_STOPPING) {
         if (toneState_ == TONE_RUNNING) {
             toneState_ = TONE_STOPPING;

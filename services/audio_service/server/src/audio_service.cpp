@@ -200,6 +200,10 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
 
 int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord)
 {
+    if (endpoint == nullptr) {
+        AUDIO_ERR_LOG("GetReleaseDelayTime: endpoint is null, return default delay");
+        return NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS;
+    }
     if (isSwitchStream && endpoint->IsEndpointUltraFast()) {
         return ULTRA_FAST_ENDPOINT_RELEASE_DELAY_TIME_MS;
     }

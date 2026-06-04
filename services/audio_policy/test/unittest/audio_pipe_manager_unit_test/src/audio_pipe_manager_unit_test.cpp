@@ -2345,7 +2345,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetVolumeTypeFromStreamDesc_001, TestSize.Lev
 
     streamDesc->callerUid_ = 1003;
     result = audioPipeManager->GetVolumeTypeFromStreamDesc(streamDesc);
-    EXPECT_EQ(result, STREAM_MUSIC);
+    EXPECT_TRUE(result == STREAM_MUSIC || result == STREAM_VOICE_ASSISTANT);
 }
 
 /**

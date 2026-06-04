@@ -1860,7 +1860,7 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_005, TestSize.Level1)
         .isUltraFast = isUltraFast
     };
     std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
-    EXPECT_NE(nullptr, endpoint);
+    ASSERT_NE(nullptr, endpoint);
 
     bool isSwitchStream = true;
     EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
