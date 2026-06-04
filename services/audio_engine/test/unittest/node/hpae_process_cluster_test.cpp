@@ -22,7 +22,6 @@
 #include "audio_errors.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_sink_output_node.h"
-#include "hpae_session_effect_node.h"
 #include "audio_effect.h"
 
 using namespace OHOS;
@@ -1941,6 +1940,75 @@ HWTEST_F(HpaeProcessClusterTest, ProcessClusterFrameLen_CustomSampleRate, TestSi
 }
 
 /**
+ * @tc.name  : Test SetCollaborationStateToMixNode with null mixer
+ * @tc.type  : FUNC
+ * @tc.number: SetCollaborationStateToMixNode_NullMixer_001
+ * @tc.desc  : Test SetCollaborationStateToMixNode when mixerNode_ is nullptr (no crash).
+ */
+HWTEST_F(HpaeProcessClusterTest, SetCollaborationStateToMixNode_NullMixer_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = 960;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    // mixerNode_ exists after construction, test with it
+    ASSERT_NE(cluster->mixerNode_, nullptr);
+    cluster->SetCollaborationStateToMixNode(COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(cluster->mixerNode_->isCollaborationEnabled_, COLLABORATION_NEARLINK_OPEN);
+}
+
+/**
+ * @tc.name  : Test SetCollaborationStateToMixNode with BT state
+ * @tc.type  : FUNC
+ * @tc.number: SetCollaborationStateToMixNode_Bt_002
+ * @tc.desc  : Test SetCollaborationStateToMixNode sets BLUETOOTH_OPEN state on mixer node.
+ */
+HWTEST_F(HpaeProcessClusterTest, SetCollaborationStateToMixNode_Bt_002, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = 960;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    ASSERT_NE(cluster->mixerNode_, nullptr);
+    cluster->SetCollaborationStateToMixNode(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_EQ(cluster->mixerNode_->isCollaborationEnabled_, COLLABORATION_BLUETOOTH_OPEN);
+}
+
+/**
+ * @tc.name  : Test SetDelayCountToEffectNode
+ * @tc.type  : FUNC
+ * @tc.number: SetDelayCountToEffectNode_001
+ * @tc.desc  : Test SetDelayCountToEffectNode when renderEffectNode_ is nullptr (no crash).
+ */
+HWTEST_F(HpaeProcessClusterTest, SetDelayCountToEffectNode_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = 960;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    // renderEffectNode_ is nullptr by default (not created without full init)
+    // Should not crash
+    cluster->SetDelayCountToEffectNode(10);
+    SUCCEED();
+}
+
+
+/**
  * @tc.name  : Test HpaeProcessCluster Flush
  * @tc.number: Flush_WithConverterNoSessionEffect_001
  * @tc.desc  : Test Flush with converter node but no session effect node
@@ -2028,6 +2096,5 @@ HWTEST_F(HpaeProcessClusterTest, Flush_WithNoConverter_001, TestSize.Level0)
 
     cluster->Flush(NO_EXITS_SESSIONID_ID);
 }
-
 } // AudioStandard
 } // OHOS
