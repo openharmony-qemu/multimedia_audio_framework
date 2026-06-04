@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_sink_output_node.h"
+#include "hpae_session_effect_node.h"
 #include "audio_effect.h"
 
 using namespace OHOS;
