@@ -22,6 +22,9 @@
 #include "audio_utils.h"
 #include "audio_server_proxy.h"
 #include "audio_select_interface_service.h"
+#ifdef USB_ENABLE
+#include "audio_usb_manager.h"
+#endif
 
 #include <utility>
 
@@ -339,6 +342,10 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     NotifyServiceReady();
 #ifdef AUDIO_WIRED_DETECT
     AudioPnpServer::GetAudioPnpServer().init();
+#endif
+#ifdef USB_ENABLE
+    AudioUsbManager::GetInstance().Init(coreService_->eventEntry_, FLAG_AUD_SVC_UP);
+    AudioUsbManager::GetInstance().SubscribeEvent(FLAG_AUD_SVC_UP);
 #endif
 }
 

@@ -136,5 +136,49 @@ HWTEST_F(AudioPnpServerTest, StopPnpServer, TestSize.Level0)
     EXPECT_EQ(audioPnpServer_->socketThread_, nullptr);
     EXPECT_EQ(audioPnpServer_->inputThread_, nullptr);
 }
+
+/**
+ * @tc.name  : Init_NullThreadCheck
+ * @tc.number: AudioPnpServerTest_004
+ * @tc.desc  : Test init function creates threads when threads are null.
+ */
+HWTEST_F(AudioPnpServerTest, Init_NullThreadCheck, TestSize.Level0)
+{
+    EXPECT_NE(audioPnpServer_, nullptr);
+    audioPnpServer_->StopPnpServer();
+
+    EXPECT_EQ(audioPnpServer_->socketThread_, nullptr);
+    EXPECT_EQ(audioPnpServer_->inputThread_, nullptr);
+
+    audioPnpServer_->init();
+    EXPECT_NE(audioPnpServer_->socketThread_, nullptr);
+    EXPECT_NE(audioPnpServer_->inputThread_, nullptr);
+
+    audioPnpServer_->StopPnpServer();
+}
+
+/**
+ * @tc.name  : Init_ExistingThreadCheck
+ * @tc.number: AudioPnpServerTest_005
+ * @tc.desc  : Test init function does not recreate threads when threads already exist.
+ */
+HWTEST_F(AudioPnpServerTest, Init_ExistingThreadCheck, TestSize.Level0)
+{
+    EXPECT_NE(audioPnpServer_, nullptr);
+    audioPnpServer_->StopPnpServer();
+
+    audioPnpServer_->init();
+    EXPECT_NE(audioPnpServer_->socketThread_, nullptr);
+    EXPECT_NE(audioPnpServer_->inputThread_, nullptr);
+
+    auto socketThreadBefore = audioPnpServer_->socketThread_.get();
+    auto inputThreadBefore = audioPnpServer_->inputThread_.get();
+
+    audioPnpServer_->init();
+    EXPECT_EQ(audioPnpServer_->socketThread_.get(), socketThreadBefore);
+    EXPECT_EQ(audioPnpServer_->inputThread_.get(), inputThreadBefore);
+
+    audioPnpServer_->StopPnpServer();
+}
 } // namespace AudioStandard
 } // namespace OHOS
