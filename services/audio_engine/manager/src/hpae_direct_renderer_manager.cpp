@@ -437,6 +437,7 @@ int32_t HpaeDirectRendererManager::DisConnectInputSession(bool isStandby)
     }
     if (sinkOutputNode_ != nullptr) {
         sinkOutputNode_->DisConnect(converterForOutput_);
+        CHECK_AND_RETURN_RET(sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING, SUCCESS);
         StopDirectOutputNodeSync(isStandby);
     }
     return SUCCESS;
