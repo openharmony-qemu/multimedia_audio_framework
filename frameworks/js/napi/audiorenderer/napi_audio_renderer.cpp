@@ -2411,6 +2411,19 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
         std::chrono::microseconds(MAX_CBBUF_IN_USEC), sampleRate, bytesPerSample);
     napiRenderer->rendererWriteDataCallbackNapi_ = std::make_shared<NapiRendererWriteDataCallback>(
         env, napiRenderer, bufferSize);
+
+#ifndef IOS_PLATFORM
+    if ((!firstRegWriteCbCalled_.exchange(true, std::memory_order_relaxed)) &&
+        (getpid() == gettid())) {
+        AudioRendererInfo rendererInfo = {};
+        napiRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
+        napiRenderer->audioRenderer_->SetMainUseArk(true);
+        int32_t appUid = static_cast<int32_t>(getuid());
+        NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::playback,
+            rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::writeCb);
+    }
+#endif
+
     napiRenderer->audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
     CHECK_AND_RETURN_LOG(napiRenderer->rendererWriteDataCallbackNapi_ != nullptr, "writeDataCbNapi_ is nullpur");
     int32_t ret = napiRenderer->audioRenderer_->SetRendererWriteCallback(napiRenderer->rendererWriteDataCallbackNapi_);
