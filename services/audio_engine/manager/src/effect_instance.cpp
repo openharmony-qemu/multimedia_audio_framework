@@ -276,19 +276,8 @@ void EffectInstance::ClearBuffers()
     stats_.Reset();
 }
 
-int32_t EffectInstance::StartEffect()
-{
-    isEffectStarted_ = true;
-    if (!hasHandle_ || effectHandle_ == nullptr) {
-        return 0;
-    }
-    AudioEffectTransInfo cmd = {};
-    return (*effectHandle_)->command(effectHandle_, EFFECT_CMD_ENABLE, &cmd, nullptr);
-}
-
 int32_t EffectInstance::StopEffect()
 {
-    isEffectStarted_ = false;
     if (!hasHandle_ || effectHandle_ == nullptr) {
         return 0;
     }

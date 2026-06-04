@@ -30,8 +30,6 @@ namespace AudioStandard {
 namespace HPAE {
 
 namespace {
-static constexpr uint32_t FLUSH_PREHEAT_RATIO_NUMERATOR = 38; // 3.8s numerator
-static constexpr uint32_t FLUSH_PREHEAT_RATIO_DENOMINATOR = 30; // 3.0s denominator
 static constexpr uint32_t BACKOFF_MULTIPLIER = 2;
 static constexpr uint32_t PREHEAT_NO_DATA_TIMEOUT_MS = 100;
 static constexpr int32_t HALF_DIVISOR = 2;
@@ -125,8 +123,6 @@ HpaePcmBuffer *HpaeSessionEffectNode::SignalProcess(const std::vector<HpaePcmBuf
         return nullptr;
     }
 
-    size_t byteLen = inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount() * sizeof(float);
-
     // --- Phase 3C: Close SE crossfade ---
     if (closeCrossfadePending_) {
         return ProcessCloseCrossfade(inputs);
@@ -160,9 +156,6 @@ HpaePcmBuffer *HpaeSessionEffectNode::SignalProcess(const std::vector<HpaePcmBuf
         }
     }
 
-    if (result != nullptr && !(effectInstance_ && processingStatus == STATUS::INTERCEPTING)) {
-        AccountOutput(byteLen);
-    }
     return result;
 }
 
@@ -295,6 +288,7 @@ int32_t HpaeSessionEffectNode::CreateEffectWithInstance(const std::string &effec
     effectName_ = effectName;
     audioConfig_ = config;
     ReconfigOutputBuffers(config);
+    UpdatePrebufTargetBytes();
     AUDIO_INFO_LOG("create effect with instance %{public}s", effectName.c_str());
     return 0;
 }
@@ -309,6 +303,7 @@ int32_t HpaeSessionEffectNode::DropEffect()
         StatusToString(status_), GetSessionId());
     effectInstance_.reset();
     status_ = STATUS::IDLE;
+    prebufTargetBytes_ = 0;
     ResetAccounting();
     ResetTailPaddingState();
     return 0;
@@ -334,6 +329,43 @@ size_t HpaeSessionEffectNode::GetPrebufTargetBytes() const
     return prebufTargetBytes_;
 }
 
+void HpaeSessionEffectNode::UpdatePrebufTargetBytes()
+{
+    prebufTargetBytes_ = 0;
+    if (effectInstance_ == nullptr) {
+        return;
+    }
+
+    uint32_t preheatFrames = effectInstance_->GetPreheatFrames();
+    size_t frameLen = GetFrameLen();
+    size_t frameBytes = 0;
+    if (!GetPcmByteLen(frameLen, audioConfig_.inputCfg.channels, frameBytes)) {
+        AUDIO_WARNING_LOG("UpdatePrebufTargetBytes failed: frameLen=%{public}zu channels=%{public}u",
+            frameLen, audioConfig_.inputCfg.channels);
+        return;
+    }
+    if (frameBytes != 0 && preheatFrames > std::numeric_limits<size_t>::max() / frameBytes) {
+        AUDIO_WARNING_LOG("UpdatePrebufTargetBytes overflow: preheatFrames=%{public}u frameBytes=%{public}zu",
+            preheatFrames, frameBytes);
+        return;
+    }
+
+    prebufTargetBytes_ = static_cast<size_t>(preheatFrames) * frameBytes;
+    AUDIO_INFO_LOG("Prebuf target=%{public}zu preheatFrames=%{public}u",
+        prebufTargetBytes_, preheatFrames);
+}
+
+void HpaeSessionEffectNode::RestartPreheat()
+{
+    stopRequested_ = false;
+    prebufFilled_ = false;
+    if (prebufTargetBytes_ > 0) {
+        StartPreheatThread();
+    } else {
+        prebufFilled_ = true;
+    }
+}
+
 int32_t HpaeSessionEffectNode::StartEffect()
 {
     if (!effectInstance_) return 0;
@@ -346,18 +378,8 @@ int32_t HpaeSessionEffectNode::StartEffect()
             std::chrono::duration_cast<std::chrono::microseconds>(now - pauseStartTime_).count());
 
         if (status_ == STATUS::WARMING_UP) {
-            // Restart preheat thread — recompute prebuf in case config changed
-            uint32_t preheatFrames = effectInstance_->GetPreheatFrames();
-            size_t channels = audioConfig_.inputCfg.channels;
-            size_t frameBytes = GetFrameLen() * channels * sizeof(float);
-            prebufTargetBytes_ = static_cast<size_t>(preheatFrames) * frameBytes;
-            stopRequested_ = false;
-            prebufFilled_ = false;
-            if (prebufTargetBytes_ > 0) {
-                StartPreheatThread();
-            } else {
-                prebufFilled_ = true;
-            }
+            // Restart preheat thread with the target computed at effect creation.
+            RestartPreheat();
             ResetTailPaddingState();
             AUDIO_INFO_LOG("StartEffect resume: WARMING_UP, restart preheat, prebuf=%{public}zu",
                 prebufTargetBytes_);
@@ -368,20 +390,7 @@ int32_t HpaeSessionEffectNode::StartEffect()
         return 0;
     }
 
-    // --- Original first-start logic below (unchanged) ---
-    // Do NOT call effectInstance_->StartEffect() here!
-    // Delayed to WARMING_UP→INTERCEPTING transition (in DoProcess).
-    // This keeps isEffectStarted_=false during WARMING_UP, so FeedInput
-    // auto-trigger (which checks isEffectStarted_) won't fire.
-    // Preheat thread only accumulates data without triggering processing.
-
-    // Compute prebuf target from algorithm's input threshold
-    uint32_t preheatFrames = effectInstance_->GetPreheatFrames();
-    size_t channels = audioConfig_.inputCfg.channels;
-    size_t frameBytes = GetFrameLen() * channels * sizeof(float);
-    prebufTargetBytes_ = static_cast<size_t>(preheatFrames) * frameBytes;
-    AUDIO_INFO_LOG("StartEffect: prebufTargetBytes_=%{public}zu preheatFrames=%{public}u",
-        prebufTargetBytes_, preheatFrames);
+    AUDIO_INFO_LOG("StartEffect: prebufTargetBytes_=%{public}zu", prebufTargetBytes_);
 
     // Record warmup start timestamp for time-based skip calculation
     warmupStartTime_ = std::chrono::steady_clock::now();
@@ -389,14 +398,8 @@ int32_t HpaeSessionEffectNode::StartEffect()
 
     // Enter WARMING_UP and start preheat thread (skip if no preheat needed)
     status_ = STATUS::WARMING_UP;
-    stopRequested_ = false;
-    prebufFilled_ = false;
     ResetTailPaddingState();
-    if (prebufTargetBytes_ > 0) {
-        StartPreheatThread();
-    } else {
-        prebufFilled_ = true;
-    }
+    RestartPreheat();
 
     return 0;
 }
@@ -404,7 +407,7 @@ int32_t HpaeSessionEffectNode::StartEffect()
 int32_t HpaeSessionEffectNode::StopEffect()
 {
     if (effectInstance_) {
-        effectInstance_->StopEffect();  // DISABLE algorithm → FeedInput auto-trigger stops
+        effectInstance_->StopEffect();  // Keep DISABLE behavior unchanged.
     }
 
     // Stop preheat thread if running
@@ -454,37 +457,14 @@ int32_t HpaeSessionEffectNode::FlushEffect()
     } else if (status_ == STATUS::WARMING_UP) {
         // WARMING_UP: stop preheat thread first (avoid data race), then restart preheat
         StopPreheatThread();
-        uint32_t preheatFrames = effectInstance_->GetPreheatFrames();
-        size_t frameBytes = GetFrameLen() * audioConfig_.inputCfg.channels * sizeof(float);
-        size_t normalPrebuf = static_cast<size_t>(preheatFrames) * frameBytes;
-        prebufTargetBytes_ = normalPrebuf * FLUSH_PREHEAT_RATIO_NUMERATOR / FLUSH_PREHEAT_RATIO_DENOMINATOR;
-
-        stopRequested_ = false;
-        prebufFilled_ = false;
         warmupStartTime_ = std::chrono::steady_clock::now();
-        if (prebufTargetBytes_ > 0) {
-            StartPreheatThread();
-        } else {
-            prebufFilled_ = true;
-        }
+        RestartPreheat();
         AUDIO_INFO_LOG("FlushEffect: WARMING_UP restart preheat, prebufTarget=%{public}zu", prebufTargetBytes_);
     } else if (status_ == STATUS::INTERCEPTING || status_ == STATUS::ACTIVE) {
-        // Running: restart preheat with larger prebuf (3.8s)
-        uint32_t preheatFrames = effectInstance_->GetPreheatFrames();
-        size_t frameBytes = GetFrameLen() * audioConfig_.inputCfg.channels * sizeof(float);
-        size_t normalPrebuf = static_cast<size_t>(preheatFrames) * frameBytes;
-        prebufTargetBytes_ = normalPrebuf * FLUSH_PREHEAT_RATIO_NUMERATOR / FLUSH_PREHEAT_RATIO_DENOMINATOR;
-
         status_ = STATUS::WARMING_UP;
-        stopRequested_ = false;
-        prebufFilled_ = false;
         ResetTailPaddingState();
         warmupStartTime_ = std::chrono::steady_clock::now();
-        if (prebufTargetBytes_ > 0) {
-            StartPreheatThread();
-        } else {
-            prebufFilled_ = true;
-        }
+        RestartPreheat();
         AUDIO_INFO_LOG("FlushEffect: restart preheat, prebufTarget=%{public}zu", prebufTargetBytes_);
     }
     // IDLE + not paused: only reset counters (already done above)
@@ -512,12 +492,11 @@ void HpaeSessionEffectNode::DoProcess()
 
     if (status_ == STATUS::WARMING_UP) {
         if (prebufFilled_.load()) {
-            // Prebuf filled → send ENABLE to algorithm and transition to INTERCEPTING
+            // Prebuf filled -> transition to INTERCEPTING
             AUDIO_INFO_LOG("[SE::SessionEffectNode] WARMING_UP→INTERCEPTING reason=prebuffer filled "
                 "sessionId=%{public}u prebufBytes=%{public}zu",
                 GetSessionId(), prebufTargetBytes_);
             status_ = STATUS::INTERCEPTING;
-            effectInstance_->StartEffect();  // ENABLE algorithm → FeedInput auto-trigger now active
             // Fall through to normal DoProcess (pull upstream + SignalProcess)
         } else {
             // Disconnect: don't pull upstream, output silence directly
@@ -695,8 +674,11 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessActive(const std::vector<HpaePcmBuf
         ResetTailPaddingState();
     }
 
-    // Read algorithm output if available
-    return ReadAlgoOutput(inputBuf, byteLen, channels);
+    HpaePcmBuffer *output = ReadAlgoOutput(inputBuf, byteLen);
+    if (output == inputBuf) {
+        AccountOutput(byteLen);
+    }
+    return output;
 }
 
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessActiveNoInput()
@@ -732,7 +714,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessActiveNoInput()
     tailOutputData_.Reset();
     tailOutputData_.SetBufferValid(true);
     tailOutputData_.SetBufferSilence(false);
-    HpaePcmBuffer *output = ReadAlgoOutput(&tailOutputData_, byteLen, channels);
+    HpaePcmBuffer *output = ReadAlgoOutput(&tailOutputData_, byteLen);
     if (output != &silenceData_) {
         AccountOutput(byteLen);
     }
@@ -794,9 +776,8 @@ void HpaeSessionEffectNode::AccountOutput(size_t byteLen)
     }
 }
 
-HpaePcmBuffer *HpaeSessionEffectNode::ReadAlgoOutput(HpaePcmBuffer *inputBuf, size_t byteLen, size_t channels)
+HpaePcmBuffer *HpaeSessionEffectNode::ReadAlgoOutput(HpaePcmBuffer *inputBuf, size_t byteLen)
 {
-    (void)channels;
     int32_t ret = effectInstance_->ReadOutput(
         reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen);
     if (ret > 0) {

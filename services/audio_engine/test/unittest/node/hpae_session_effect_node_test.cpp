@@ -348,6 +348,7 @@ public:
     using HpaeSessionEffectNode::SetActiveNoDataStartForTest;
     using HpaeSessionEffectNode::ProcessActiveNoInputForTest;
     using HpaeSessionEffectNode::GetTotalBytesIn;
+    using HpaeSessionEffectNode::GetTotalBytesOut;
     void AccountOutputForTest(size_t byteLen)
     {
         AccountOutput(byteLen);
@@ -602,7 +603,6 @@ protected:
         mockInst_ = std::make_shared<testing::NiceMock<MockEffectInstance>>();
 
         // Default behaviors
-        ON_CALL(*mockInst_, StartEffect()).WillByDefault(testing::Return(0));
         ON_CALL(*mockInst_, StopEffect()).WillByDefault(testing::Return(0));
         ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(0));
         ON_CALL(*mockInst_, GetAudioConfig()).WillByDefault(testing::ReturnRef(config_));
@@ -629,7 +629,7 @@ protected:
         size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
         switch (state) {
             case HpaeSessionEffectNode::STATUS::WARMING_UP:
-                node_->StartEffect();  // -> mock: StartEffect, GetPreheatFrames
+                node_->StartEffect();
                 break;
             case HpaeSessionEffectNode::STATUS::INTERCEPTING:
                 node_->StartEffect();
@@ -670,9 +670,8 @@ HWTEST_F(SessionEffectNodeStateTest, warmingUp_returnsSilence, TestSize.Level0)
 
 HWTEST_F(SessionEffectNodeStateTest, startEffect_zeroPreheatMarksPrebufFilled, TestSize.Level0)
 {
-    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
-
     EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(0));
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
     EXPECT_EQ(node_->StartEffect(), 0);
 
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
@@ -682,10 +681,8 @@ HWTEST_F(SessionEffectNodeStateTest, startEffect_zeroPreheatMarksPrebufFilled, T
 
 HWTEST_F(SessionEffectNodeStateTest, doProcess_autoStartsFromIdleWhenInstanceBound, TestSize.Level0)
 {
-    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
-
     EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(0));
-    EXPECT_CALL(*mockInst_, StartEffect()).WillOnce(testing::Return(0));
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
 
     node_->DoProcess();
 
@@ -699,7 +696,6 @@ HWTEST_F(SessionEffectNodeStateTest, warmingUp_toIntercepting, TestSize.Level0)
     EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
 
     node_->SetPrebufFilledForTest(true);
-    EXPECT_CALL(*mockInst_, StartEffect()).WillOnce(testing::Return(0));
 
     node_->DoProcess();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
@@ -751,11 +747,13 @@ HWTEST_F(SessionEffectNodeStateTest, active_readsAlgoOutput, TestSize.Level0)
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
 
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
+    size_t beforeOut = node_->GetTotalBytesOut();
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_)).WillOnce(testing::Return(byteLen));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
 
     node_->DoProcess();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+    EXPECT_EQ(node_->GetTotalBytesOut(), beforeOut + byteLen);
 }
 
 HWTEST_F(SessionEffectNodeStateTest, activeWithInput_doesNotRunNoInputTailDrain, TestSize.Level0)
@@ -821,11 +819,13 @@ HWTEST_F(SessionEffectNodeStateTest, active_outputEmpty_returnsSilence, TestSize
 {
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
 
+    size_t beforeOut = node_->GetTotalBytesOut();
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, testing::_, testing::_)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
 
     node_->DoProcess();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+    EXPECT_EQ(node_->GetTotalBytesOut(), beforeOut);
 }
 
 // SE-A3: ACTIVE continuously feeds input
@@ -1005,7 +1005,6 @@ protected:
         node_ = std::make_shared<HpaeSessionEffectNode>(nodeInfo_);  // REAL node, not Testable
         mockInst_ = std::make_shared<testing::NiceMock<MockEffectInstance>>();
 
-        ON_CALL(*mockInst_, StartEffect()).WillByDefault(testing::Return(0));
         ON_CALL(*mockInst_, StopEffect()).WillByDefault(testing::Return(0));
         ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(0));
         ON_CALL(*mockInst_, GetAudioConfig()).WillByDefault(testing::ReturnRef(config_));
@@ -1034,10 +1033,9 @@ protected:
 // SE-W2: Preheat thread pulls upstream data and FeedInput
 HWTEST_F(SessionEffectNodeThreadTest, preheatThread_pullsAndFeeds, TestSize.Level0)
 {
-    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
-
     // prebufTarget = GetPreheatFrames() * frameBytes = 5 * 960 * 2 * 4 = 38400
     ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
     size_t prebufTarget = 5 * 960 * 2 * sizeof(float);
     int count = 0;
     ON_CALL(*mockInst_, GetInputLevel())
@@ -1059,9 +1057,8 @@ HWTEST_F(SessionEffectNodeThreadTest, preheatThread_pullsAndFeeds, TestSize.Leve
 // SE-W3: Prebuf filled -> thread exits -> DoProcess transitions to INTERCEPTING
 HWTEST_F(SessionEffectNodeThreadTest, preheatThread_exitAndTransition, TestSize.Level0)
 {
-    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
-
     ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
     size_t prebufTarget = 5 * 960 * 2 * sizeof(float);
 
     // Track mock calls via global atomics (thread-safe, no production code changes)
@@ -1091,7 +1088,6 @@ HWTEST_F(SessionEffectNodeThreadTest, preheatThread_exitAndTransition, TestSize.
 
     ASSERT_TRUE(node_->GetPrebufFilled());
 
-    EXPECT_CALL(*mockInst_, StartEffect()).WillOnce(testing::Return(0));
     node_->DoProcess();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
 }
@@ -1209,7 +1205,6 @@ HWTEST_F(SessionEffectNodeStateTest, warmup_skipStaleOutput, TestSize.Level0)
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 
     node_->SetPrebufFilledForTest(true);
-    EXPECT_CALL(*mockInst_, StartEffect()).WillOnce(testing::Return(0));
     node_->DoProcess();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
 
@@ -1249,7 +1244,6 @@ HWTEST_F(SessionEffectNodeStateTest, warmup_dropAndRecreate, TestSize.Level0)
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
 
     auto inst2 = std::make_shared<testing::NiceMock<MockEffectInstance>>();
-    ON_CALL(*inst2, StartEffect()).WillByDefault(testing::Return(0));
     ON_CALL(*inst2, GetPreheatFrames()).WillByDefault(testing::Return(5));
     ON_CALL(*inst2, GetAudioConfig()).WillByDefault(testing::ReturnRef(config_));
 
@@ -1300,19 +1294,20 @@ HWTEST_F(SessionEffectNodeStateTest, pause_duringActive, TestSize.Level0)
     EXPECT_TRUE(node_->IsPaused());
 }
 
-// SE-OP4: Resume from WARMING_UP paused — restart preheat with prebuf recomputation
+// SE-OP4: Resume from WARMING_UP paused — restart preheat with existing prebuf
 HWTEST_F(SessionEffectNodeStateTest, resume_fromWarmingUp, TestSize.Level0)
 {
+    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
     EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
     node_->PauseEffect();
     ASSERT_TRUE(node_->IsPaused());
 
-    // Resume: status_ is still WARMING_UP → restart preheat, recomputes prebuf
-    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(5));
+    // Resume: status_ is still WARMING_UP → restart preheat with the existing target
     node_->StartEffect();
 
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
     EXPECT_FALSE(node_->IsPaused());
+    EXPECT_EQ(node_->GetPrebufTargetBytes(), 5 * TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float));
 }
 
 HWTEST_F(SessionEffectNodeStateTest, resume_fromWarmingUpWithZeroPreheatMarksFilled, TestSize.Level0)
@@ -1321,7 +1316,6 @@ HWTEST_F(SessionEffectNodeStateTest, resume_fromWarmingUpWithZeroPreheatMarksFil
     node_->PauseEffect();
     ASSERT_TRUE(node_->IsPaused());
 
-    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(0));
     node_->StartEffect();
 
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
@@ -1372,31 +1366,34 @@ HWTEST_F(SessionEffectNodeStateTest, resume_fromActive, TestSize.Level0)
 
 // --- Phase 3B-2: Flush tests ---
 
-// SE-OP7: Flush during INTERCEPTING — restart preheat with 3.8s prebuf
+// SE-OP7: Flush during INTERCEPTING — restart preheat with normal prebuf
 HWTEST_F(SessionEffectNodeStateTest, flush_duringIntercepting, TestSize.Level0)
 {
     ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
     EnterState(HpaeSessionEffectNode::STATUS::INTERCEPTING);
 
+    size_t frameBytes = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
+    size_t expectedPrebuf = 5 * frameBytes;
     EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
-    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(5));
 
     node_->FlushEffect();
-    // Should restart preheat → WARMING_UP with 3.8s prebuf
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+    EXPECT_EQ(node_->GetPrebufTargetBytes(), expectedPrebuf);
 }
 
-// SE-OP8: Flush during ACTIVE — restart preheat with 3.8s prebuf
+// SE-OP8: Flush during ACTIVE — restart preheat with normal prebuf
 HWTEST_F(SessionEffectNodeStateTest, flush_duringActive, TestSize.Level0)
 {
     ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
 
+    size_t frameBytes = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
+    size_t expectedPrebuf = 5 * frameBytes;
     EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
-    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(5));
 
     node_->FlushEffect();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+    EXPECT_EQ(node_->GetPrebufTargetBytes(), expectedPrebuf);
 }
 
 HWTEST_F(SessionEffectNodeStateTest, flush_duringWarmingUpRestartsPreheat, TestSize.Level0)
@@ -1405,9 +1402,8 @@ HWTEST_F(SessionEffectNodeStateTest, flush_duringWarmingUpRestartsPreheat, TestS
     EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
 
     size_t frameBytes = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    size_t expectedPrebuf = 5 * frameBytes * 38 / 30;
+    size_t expectedPrebuf = 5 * frameBytes;
     EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
-    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(5));
 
     node_->FlushEffect();
 
@@ -1422,7 +1418,6 @@ HWTEST_F(SessionEffectNodeStateTest, flush_duringWarmingUpWithZeroPreheatMarksFi
     EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
 
     EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
-    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(0));
 
     node_->FlushEffect();
 
@@ -1679,8 +1674,7 @@ HWTEST_F(SessionEffectNodeStateTest, seek_duringWarmingUp, TestSize.Level0)
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
     EXPECT_FALSE(node_->IsPaused());
 
-    // Start: status_=IDLE → full start (first-start path)
-    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(5));
+    // Start: status_=IDLE → full start with existing preheat target
     node_->StartEffect();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
     EXPECT_FALSE(node_->IsPaused());
@@ -1699,8 +1693,7 @@ HWTEST_F(SessionEffectNodeStateTest, seek_duringIntercepting, TestSize.Level0)
     // Flush when paused: status_ reset to IDLE
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
 
-    // Start: full start → WARMING_UP
-    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(5));
+    // Start: full start → WARMING_UP with existing preheat target
     node_->StartEffect();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 }
@@ -1718,8 +1711,7 @@ HWTEST_F(SessionEffectNodeStateTest, seek_duringActive, TestSize.Level0)
     node_->FlushEffect();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
 
-    // Start: full start → WARMING_UP
-    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(5));
+    // Start: full start → WARMING_UP with existing preheat target
     node_->StartEffect();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 }
@@ -1881,7 +1873,6 @@ HWTEST_F(SessionEffectNodeStateTest, GetLatency_interceptingSilenceProgressMatch
 
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
     uint32_t capturedSkipFrames = 0;
-    EXPECT_CALL(*mockInst_, StartEffect()).WillOnce(testing::Return(0));
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::NotNull()))
         .WillOnce(testing::DoAll(
@@ -1928,7 +1919,6 @@ protected:
         node_ = std::make_shared<TestableSEWithSignalProcess>(nodeInfo_);
         mockInst_ = std::make_shared<testing::NiceMock<MockEffectInstance>>();
 
-        ON_CALL(*mockInst_, StartEffect()).WillByDefault(testing::Return(0));
         ON_CALL(*mockInst_, StopEffect()).WillByDefault(testing::Return(0));
         ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(0));
         ON_CALL(*mockInst_, FeedInput(testing::_, testing::_)).WillByDefault(testing::Return(0));
@@ -2180,7 +2170,6 @@ HWTEST_F(SessionEffectNodeStateTest, computeSkipFrames_nearZero, TestSize.Level0
 {
     EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
     node_->SetPrebufFilledForTest(true);
-    EXPECT_CALL(*mockInst_, StartEffect()).WillOnce(testing::Return(0));
     node_->DoProcess();
     ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
 
@@ -2199,7 +2188,6 @@ HWTEST_F(SessionEffectNodeStateTest, computeSkipFrames_growsWithTime, TestSize.L
     std::this_thread::sleep_for(std::chrono::milliseconds(25));
 
     node_->SetPrebufFilledForTest(true);
-    EXPECT_CALL(*mockInst_, StartEffect()).WillOnce(testing::Return(0));
     node_->DoProcess();
     ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
 
@@ -2239,11 +2227,9 @@ HWTEST_F(SessionEffectNodeStateTest, computeSkipFrames_flushResets, TestSize.Lev
     EnterState(HpaeSessionEffectNode::STATUS::INTERCEPTING);
 
     EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
-    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(0));
     node_->FlushEffect();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 
-    EXPECT_CALL(*mockInst_, StartEffect()).WillOnce(testing::Return(0));
     node_->DoProcess();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
 

@@ -1348,12 +1348,6 @@ void HpaeOffloadRendererManager::PostDestroySessionEffect(uint32_t sessionId)
     SendRequest(std::move(request), __func__);
 }
 
-bool HpaeOffloadRendererManager::HasSessionEffect(uint32_t sessionId) const
-{
-    return (sessionEffectSessionId_ == sessionId && sessionEffectNode_ != nullptr)
-        || pendingSessionEffects_.find(sessionId) != pendingSessionEffects_.end();
-}
-
 bool HpaeOffloadRendererManager::IsValidSession(uint32_t sessionId) const
 {
     return sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end();
