@@ -564,6 +564,17 @@ uint32_t AudioCoreConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescrip
 
     for (auto &pipeIt : deviceInfo->supportPipeMap_) {
         if ((desc->audioMode_ == static_cast<AudioMode>(pipeIt.second->role_)) && (desc->audioFlag_ & pipeIt.first)) {
+            if (pipeIt.first == (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP) &&
+                desc->GetSourceType() != SOURCE_TYPE_VOICE_COMMUNICATION) {
+                AUDIO_INFO_LOG("source type is not voice communication, can not use fast voip input flag");
+                continue;
+            }
+            if (pipeIt.first == (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP) &&
+                desc->GetRenderUsage() != STREAM_USAGE_VOICE_COMMUNICATION &&
+                desc->GetRenderUsage() != STREAM_USAGE_VIDEO_COMMUNICATION) {
+                AUDIO_INFO_LOG("stream usage is not voip, skip fast voip output flag");
+                continue;
+            }
             flag = pipeIt.first;
             break;
         }
