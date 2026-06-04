@@ -38,7 +38,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaI
 
     if (routerInfra.IsSystemUid(uid)) {
         auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_INPUT);
-        simpleDesc = systemSelectInfo.device_;
+        if (HasValidSelectDevice(systemSelectInfo)) {
+            simpleDesc = systemSelectInfo.device_;
+        }
     } else {
         auto selectResult = GetSelectDeviceByPriority(uid, streamId, SelectDeviceType::MEDIA_INPUT);
         simpleDesc = selectResult.device_;
@@ -193,7 +195,7 @@ AudioRouterIndependentStrategy::SelectDeviceResult AudioRouterIndependentStrateg
 
     if (ValidStreamId(streamId)) {
         auto streamSelectDevice = routerInfra.GetStreamSelectDevice(uid, streamId);
-        if (streamSelectDevice != nullptr) {
+        if (streamSelectDevice != nullptr && streamSelectDevice->deviceType_ != DEVICE_TYPE_NONE) {
             result.device_ = streamSelectDevice;
             result.source_ = SelectDeviceSource::STREAM;
         }
@@ -201,7 +203,7 @@ AudioRouterIndependentStrategy::SelectDeviceResult AudioRouterIndependentStrateg
 
     if (result.device_ == nullptr) {
         auto appSelectInfo = routerInfra.GetAppSelectDevice(type, uid);
-        if (appSelectInfo.device_ != nullptr) {
+        if (HasValidSelectDevice(appSelectInfo)) {
             result.device_ = appSelectInfo.device_;
             result.source_ = SelectDeviceSource::APP;
         }
@@ -209,7 +211,7 @@ AudioRouterIndependentStrategy::SelectDeviceResult AudioRouterIndependentStrateg
 
     if (result.device_ == nullptr) {
         auto systemSelectInfo = routerInfra.GetSystemSelectDevice(type);
-        if (systemSelectInfo.device_ != nullptr) {
+        if (HasValidSelectDevice(systemSelectInfo)) {
             result.device_ = systemSelectInfo.device_;
             result.source_ = SelectDeviceSource::SYSTEM;
         }
@@ -227,7 +229,9 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterIndependentStrategy::Get
 
     if (routerInfra.IsSystemUid(uid)) {
         auto systemSelectInfo = routerInfra.GetSystemSelectDevice(type);
-        simpleDesc = systemSelectInfo.device_;
+        if (HasValidSelectDevice(systemSelectInfo)) {
+            simpleDesc = systemSelectInfo.device_;
+        }
     } else {
         auto selectResult = GetSelectDeviceByPriority(uid, streamId, type);
         simpleDesc = selectResult.device_;
