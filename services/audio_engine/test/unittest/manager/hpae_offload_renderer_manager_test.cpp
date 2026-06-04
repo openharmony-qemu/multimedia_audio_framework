@@ -977,10 +977,18 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Pause_NullSinkOutput_SkipsFlush
  */
 HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, FlushPipelineNodes_AllNodesNull_001, TestSize.Level0)
 {
-    // All converters, session effect, and sinkOutputNode_ are null
-    // Call FlushPipelineNodes directly (no-crash verification)
+    // Verify all pipeline nodes are null (precondition)
+    EXPECT_EQ(manager_->converterForLoudness_, nullptr);
+    EXPECT_EQ(manager_->converterForOutput_, nullptr);
+    EXPECT_EQ(manager_->sinkOutputNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+
     manager_->FlushPipelineNodes(TEST_SESSION_ID);
-    // No crash expected
+
+    // Verify no crash and state unchanged
+    EXPECT_EQ(manager_->converterForLoudness_, nullptr);
+    EXPECT_EQ(manager_->converterForOutput_, nullptr);
+    EXPECT_EQ(manager_->sinkOutputNode_, nullptr);
 }
 
 /**
@@ -998,8 +1006,14 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, FlushPipelineNodes_WithSessionE
     manager_->sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(seNodeInfo);
     manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
 
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
+
     manager_->FlushPipelineNodes(TEST_SESSION_ID);
-    // FlushEffect called with matching sessionId, no crash
+
+    // FlushEffect called with matching sessionId, verify no crash and node still valid
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_FALSE(manager_->sessionEffectNode_->IsPaused());
 }
 
 /**
@@ -1016,8 +1030,14 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, FlushPipelineNodes_WithSessionE
     manager_->sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(seNodeInfo);
     manager_->sessionEffectSessionId_ = 999; // Different from TEST_SESSION_ID
 
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_NE(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
+
     manager_->FlushPipelineNodes(TEST_SESSION_ID);
-    // FlushEffect NOT called due to sessionId mismatch, no crash
+
+    // FlushEffect NOT called due to sessionId mismatch, verify state unchanged
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 999);
 }
 } // namespace HPAE
 } // namespace AudioStandard

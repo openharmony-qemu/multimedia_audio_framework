@@ -889,6 +889,9 @@ void HpaeAudioFormatConverterNode::FlushBuffers()
     processedFrames_ = 0;
     processedReadPos_ = 0;
     pullAheadCredit_ = pullAheadMaxCredit_;
+    if (resampler_ != nullptr) {
+        resampler_->Reset();
+    }
 }
 } // Hpae
 } // AudioStandard

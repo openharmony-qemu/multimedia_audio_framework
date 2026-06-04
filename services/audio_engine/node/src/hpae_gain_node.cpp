@@ -209,11 +209,12 @@ void HpaeGainNode::ApplyFadeOut(HpaePcmBuffer *input, FadeOutState &fadeOutState
     GetFadeLength(byteLength, input);
     int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
     auto ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
+    AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
 #else
     auto ret = SUCCESS;
+    AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
 #endif
     fadeOutState = FadeOutState::DONE_FADEOUT;
-    AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
     auto statusCallback = GetNodeStatusCallback().lock();
     CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
     if (isCollFade) {
@@ -252,7 +253,8 @@ void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
     if (processedBytes == 0) {
         uint32_t byteLen = 0;
         uint32_t byteOffset = GetFadeInLength(byteLen, input);
-        AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), byteOffset);
+        int32_t bufferAvg = GetSimpleBufferAvg(data, byteLen);
+        AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
         totalFadeBytes = input->GetFrameLen() * rawFormat.channels * sizeof(float);
         CHECK_AND_RETURN_LOG(totalFadeBytes > 0, "totalFadeBytes is zero");
         uint32_t avail = std::min(byteLen, totalFadeBytes);
@@ -261,6 +263,8 @@ void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
         processedBytes = avail;
     } else {
+        AUDIO_INFO_LOG("[%{public}d]: fade in continuation! processedBytes=%{public}u, "
+            "totalFadeBytes=%{public}u", GetSessionId(), processedBytes, totalFadeBytes);
         uint32_t remain = totalFadeBytes - processedBytes;
         uint32_t avail = std::min(static_cast<uint32_t>(input->DataSize()), remain);
         float startGain = static_cast<float>(processedBytes) / static_cast<float>(totalFadeBytes);
