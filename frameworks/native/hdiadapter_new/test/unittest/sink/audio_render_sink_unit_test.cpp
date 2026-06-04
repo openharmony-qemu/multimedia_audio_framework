@@ -44,17 +44,25 @@ public:
     void InitInterphoneSink();
     void DeInitInterphoneSink();
 
+
+
+
+
 protected:
     static uint32_t primaryId_;
     static uint32_t usbId_;
     static uint32_t directId_;
     static uint32_t voipId_;
     static uint32_t interphoneId_;
+
+
     static std::shared_ptr<IAudioRenderSink> primarySink_;
     static std::shared_ptr<IAudioRenderSink> usbSink_;
     static std::shared_ptr<IAudioRenderSink> directSink_;
     static std::shared_ptr<IAudioRenderSink> voipSink_;
     static std::shared_ptr<IAudioRenderSink> interphoneSink_;
+
+
     static IAudioSinkAttr attr_;
     static bool primarySinkInited_;
 };
@@ -64,11 +72,15 @@ uint32_t AudioRenderSinkUnitTest::usbId_ = HDI_INVALID_ID;
 uint32_t AudioRenderSinkUnitTest::directId_ = HDI_INVALID_ID;
 uint32_t AudioRenderSinkUnitTest::voipId_ = HDI_INVALID_ID;
 uint32_t AudioRenderSinkUnitTest::interphoneId_ = HDI_INVALID_ID;
+
+
 std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::primarySink_ = nullptr;
 std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::usbSink_ = nullptr;
 std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::directSink_ = nullptr;
 std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::voipSink_ = nullptr;
 std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::interphoneSink_ = nullptr;
+
+
 IAudioSinkAttr AudioRenderSinkUnitTest::attr_ = {};
 bool AudioRenderSinkUnitTest::primarySinkInited_ = false;
 
@@ -233,6 +245,9 @@ void AudioRenderSinkUnitTest::DeInitInterphoneSink()
     }
     interphoneSink_ = nullptr;
 }
+
+
+
 
 /**
  * @tc.name   : Test PrimarySink API
@@ -1209,7 +1224,6 @@ HWTEST_F(AudioRenderSinkUnitTest, GetCurrentOutputDevice_005, TestSize.Level1)
     DeInitDirectSink();
 }
 
-/**
 /**
 * @tc.name   : Test SetAudioScene API with phoneCallSceneType
 * @tc.number : SetAudioScene_TransferCall_001
