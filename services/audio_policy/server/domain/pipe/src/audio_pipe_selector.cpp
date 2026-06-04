@@ -450,6 +450,10 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     CHECK_AND_RETURN_RET(ScanPipeListForStreamDesc(pipeInfoList, streamDesc), {});
     AUDIO_INFO_LOG("Original Pipelist size: %{public}zu, stream routeFlag: 0x%{public}x to fetch",
         pipeInfoList.size(), streamDesc->routeFlag_);
+    
+    if (streamDesc->isNearLinkCollaborationEnable_ && (!(streamDesc->GetRoute() & AUDIO_OUTPUT_FLAG_MULTICHANNEL))) {
+        streamDesc->isNearLinkCollaborationEnable_ = false;
+    }
 
     std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList {};
     for (auto &curPipeInfo : pipeInfoList) {
@@ -529,6 +533,10 @@ void AudioPipeSelector::CheckFastStreamOverLimitToNormal(
     int32_t fastOutputNum = 0;
     int32_t fastInputNum = 0;
     for (auto &streamDesc : streamDescs) {
+        if (streamDesc->isNearLinkCollaborationEnable_ &&
+            (!(streamDesc->GetRoute() & AUDIO_OUTPUT_FLAG_MULTICHANNEL))) {
+            streamDesc->isNearLinkCollaborationEnable_ = false;
+        }
         if (streamDesc->GetRoute() == AUDIO_OUTPUT_FLAG_FAST && ++fastOutputNum > MAX_FAST_STREAM_COUNT) {
             AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
             streamDesc->ResetToNormalRoute(false);
@@ -712,6 +720,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
         GetStreamPropInfoWithBusSelector(streamDesc, streamPropInfo);
         if (newPipeIter != newPipeInfoList.end()) {
             MatchSpecialRemotePipe(streamPropInfo, *newPipeIter, streamDesc);
+            MatchCollaborativePipe(streamPropInfo, *newPipeIter, streamDesc);
             MatchUltraFastPipe(*newPipeIter, streamDesc);
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
@@ -1663,8 +1672,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
 
     info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
     info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
-    info.moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(
-        streamPropInfo->channelLayout_));
+    info.moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_));
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
 
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
@@ -1713,6 +1721,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.adapterName_ = adapterInfoPtr->adapterName;
     info.pipeRole_ = pipeInfoPtr->role_;
     info.name_ = pipeInfoPtr->name_;
+    info.isCollaborationEnable_ = streamPropInfo->isCollaborationEnable_;
     info.InitAudioStreamInfo();
 }
 
@@ -1848,6 +1857,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
 #endif
 
         MatchSpecialRemotePipe(streamPropInfo, pipeInfo, streamDesc);
+        MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
 
         if (((pipeInfo->GetRoute() & AUDIO_OUTPUT_FLAG_FAST) || (pipeInfo->GetRoute() & AUDIO_INPUT_FLAG_FAST)) &&
             pipeInfo->streamDescriptors_.size() == MAX_FAST_STREAM_COUNT) {
@@ -1997,6 +2007,19 @@ bool AudioPipeSelector::IsUpdateActionForDeviceLevelHdPlay(
     CHECK_AND_RETURN_RET_LOG(existingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL ||
         incomingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL, false, "device level, not update action");
     return true;
+}
+
+void AudioPipeSelector::MatchCollaborativePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+    std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    if (streamPropInfo->isCollaborationEnable_ == pipeInfo->isCollaborationEnable_) {
+        return;
+    }
+
+    AUDIO_INFO_LOG("MatchCollaborativePipe isCollaborationEnable_ old:%{public}d, new:%{public}d",
+        pipeInfo->isCollaborationEnable_, streamPropInfo->isCollaborationEnable_);
+    ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, *pipeInfo);
+    pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
 }
 } // namespace AudioStandard
 } // namespace OHOS

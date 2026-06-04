@@ -58,6 +58,8 @@ public:
 
     bool isRunning_ = false;
 
+    bool isCollaborationEnable_ = false;
+
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors_ = {};
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> streamDescMap_ = {};

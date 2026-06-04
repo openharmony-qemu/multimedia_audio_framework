@@ -730,6 +730,25 @@ int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint3
     return SUCCESS;
 }
 
+int32_t AudioCoreService::EventEntry::ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex)
+{
+    CHECK_AND_RETURN_RET_LOG(coreService_, ERR_INVALID_PARAM, "coreService_ is nullptr");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("After wait, isMultiChannelOpened_: %{public}d", coreService_->isMultiChannelOpened_.load());
+    if (coreService_->isMultiChannelOpened_.load()) {
+        coreService_->isMultiChannelInRelease_.store(false);
+        AUDIO_INFO_LOG("MultiChannel restart");
+        return ERROR;
+    }
+    AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
+    coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
+    CHECK_AND_RETURN_RET_LOG(coreService_->pipeManager_, ERROR, "pipeManager_ is nullptr");
+    coreService_->pipeManager_->RemoveAudioPipeInfo(id);
+    coreService_->audioIOHandleMap_.DelIOHandleInfo(MCH_PRIMARY_SPEAKER);
+    coreService_->isMultiChannelInRelease_.store(false);
+    return SUCCESS;
+}
+
 int32_t AudioCoreService::EventEntry::SetRendererTarget(RenderTarget target, RenderTarget lastTarget,
     uint32_t sessionId)
 {

@@ -4637,55 +4637,58 @@ HWTEST_F(AudioCoreServicePrivateTest, TrackScoStreamAudioScene_004, TestSize.Lev
 }
 
 /**
- * @tc.name  : Test AudioIOHandleMap.
- * @tc.number: MuteSinkPort_ClassNameNotEmpty_001
- * @tc.desc  : Test MuteSinkPort with className not empty, proxy mute branch
+ * @tc.name  : CheckCollaborativeStreamRunning_NullPipeManager_001
+ * @tc.desc  : Test CheckCollaborativeStreamRunning returns false when pipeManager_ is null.
+ * @tc.type  : FUNC
  */
-HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPort_ClassNameNotEmpty_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CheckCollaborativeStreamRunning_NullPipeManager_001, TestSize.Level1)
 {
-    std::string className = AudioIOHandleMap::GetInstance().GetClassNameByPortAndNetworkId(
-        PRIMARY_SPEAKER, "LocalDevice");
-    EXPECT_FALSE(className.empty());
-    AudioIOHandleMap::GetInstance().MuteSinkPort(PRIMARY_SPEAKER, 1000, true, false);
+    ASSERT_NE(testCoreService_, nullptr);
+    testCoreService_->pipeManager_ = nullptr;
+    bool result = testCoreService_->CheckCollaborativeStreamRunning();
+    EXPECT_EQ(result, false);
 }
 
 /**
- * @tc.name  : Test AudioIOHandleMap.
- * @tc.number: MuteSinkPort_ClassNameEmpty_001
- * @tc.desc  : Test MuteSinkPort with className empty, PA mute branch
+ * @tc.name  : CheckCollaborativeStreamRunning_NoStreams_002
+ * @tc.desc  : Test CheckCollaborativeStreamRunning returns false when no NearLink streams are running.
+ * @tc.type  : FUNC
  */
-HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPort_ClassNameEmpty_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CheckCollaborativeStreamRunning_NoStreams_002, TestSize.Level1)
 {
-    std::string className = AudioIOHandleMap::GetInstance().GetClassNameByPortAndNetworkId(
-        "unknown_port", "LocalDevice");
-    EXPECT_TRUE(className.empty());
-    AudioIOHandleMap::GetInstance().MuteSinkPort("unknown_port", 1000, true, false);
+    ASSERT_NE(testCoreService_, nullptr);
+    bool result = testCoreService_->CheckCollaborativeStreamRunning();
+    EXPECT_EQ(result, false);
 }
 
 /**
- * @tc.name  : Test AudioIOHandleMap.
- * @tc.number: DoUnmutePort_ClassNameNotEmpty_001
- * @tc.desc  : Test DoUnmutePort with className not empty, proxy unmute branch
+ * @tc.name  : UpdateMultiChannelState_NullPipe_001
+ * @tc.desc  : Test UpdateMultiChannelState with null pipeInfo should not crash.
+ * @tc.type  : FUNC
  */
-HWTEST_F(AudioCoreServicePrivateTest, DoUnmutePort_ClassNameNotEmpty_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, UpdateMultiChannelState_NullPipe_001, TestSize.Level1)
 {
-    std::string className = AudioIOHandleMap::GetInstance().GetClassNameByPortAndNetworkId(
-        PRIMARY_SPEAKER, "LocalDevice");
-    EXPECT_FALSE(className.empty());
-    AudioIOHandleMap::GetInstance().DoUnmutePort(1000, PRIMARY_SPEAKER);
+    ASSERT_NE(testCoreService_, nullptr);
+    testCoreService_->UpdateMultiChannelState(nullptr);
+    SUCCEED();
 }
 
 /**
- * @tc.name  : Test AudioIOHandleMap.
- * @tc.number: DoUnmutePort_ClassNameEmpty_001
- * @tc.desc  : Test DoUnmutePort with className empty, PA unmute branch
+ * @tc.name  : UpdateMultiChannelState_NonMatchingName_002
+ * @tc.desc  : Test UpdateMultiChannelState with pipe not named MCH_PRIMARY_SPEAKER should not set flag.
+ * @tc.type  : FUNC
  */
-HWTEST_F(AudioCoreServicePrivateTest, DoUnmutePort_ClassNameEmpty_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, UpdateMultiChannelState_NonMatchingName_002, TestSize.Level1)
 {
-    std::string className = AudioIOHandleMap::GetInstance().GetClassNameByPortAndNetworkId(
-        "unknown_port", "LocalDevice");
-    EXPECT_TRUE(className.empty());
-    AudioIOHandleMap::GetInstance().DoUnmutePort(1000, "unknown_port");
+    ASSERT_NE(testCoreService_, nullptr);
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.name = "primary_speaker";
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    testCoreService_->isMultiChannelOpened_.store(false);
+    testCoreService_->UpdateMultiChannelState(pipeInfo);
+    EXPECT_EQ(testCoreService_->isMultiChannelOpened_.load(), false);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

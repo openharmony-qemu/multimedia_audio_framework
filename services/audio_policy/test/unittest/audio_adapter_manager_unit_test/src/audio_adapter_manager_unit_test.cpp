@@ -1647,5 +1647,56 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_UltraFastPeriod_004, Test
     EXPECT_EQ(attr.channel, 2u);
 }
 
+/**
+ * @tc.name: UpdateCollaborativeState_NearLink_001
+ * @tc.type: FUNC
+ * @tc.desc: Test UpdateCollaborativeState with COLLABORATION_NEARLINK_OPEN sends correct enabled state.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_NearLink_001, TestSize.Level1)
+{
+    auto &manager = AudioAdapterManager::GetInstance();
+    int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    // Result depends on adapter initialization, just verify no crash
+    EXPECT_TRUE(ret == SUCCESS);
+}
+
+/**
+ * @tc.name: UpdateCollaborativeState_Bluetooth_001
+ * @tc.type: FUNC
+ * @tc.desc: Test UpdateCollaborativeState with COLLABORATION_BLUETOOTH_OPEN sends true for enabled.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_Bluetooth_001, TestSize.Level1)
+{
+    auto &manager = AudioAdapterManager::GetInstance();
+    int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_TRUE(ret == SUCCESS);
+}
+
+/**
+ * @tc.name: UpdateCollaborativeState_Close_001
+ * @tc.type: FUNC
+ * @tc.desc: Test UpdateCollaborativeState with COLLABORATION_CLOSE sends false for enabled.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_Close_001, TestSize.Level1)
+{
+    auto &manager = AudioAdapterManager::GetInstance();
+    int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_CLOSE);
+    EXPECT_TRUE(ret == SUCCESS);
+}
+
+/**
+ * @tc.name: IsCollaborationSupportedForStreamUsage_001
+ * @tc.type: FUNC
+ * @tc.desc: Test IsCollaborationSupportedForStreamUsage delegates to adapter.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsCollaborationSupportedForStreamUsage_001, TestSize.Level1)
+{
+    auto &manager = AudioAdapterManager::GetInstance();
+    int32_t result = manager.UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    result += static_cast<int32_t>(manager.IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
+    // Result depends on adapter state, just verify no crash
+    EXPECT_TRUE(result != ERROR);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

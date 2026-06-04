@@ -607,6 +607,14 @@ public:
      * @return int32_t
      */
     virtual int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) = 0;
+
+    /**
+     * @brief Get the product id of a remote device.
+     * @param device Address of the peer NearLink device.
+     * @param delayValue Render delay.
+     * @return int32_t
+     */
+    virtual int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) = 0;
 };
 
 struct AudioSpatialEnabledStateForDevice {

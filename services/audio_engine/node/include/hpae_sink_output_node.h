@@ -64,8 +64,7 @@ public:
     uint32_t GetRenderId() const;
     DeviceType GetCurrentActiveDevice() const;
     void CheckAndSetCollDelayForRenderFrameFailed();
-    void SetCollaborationState(bool collaborationState);
-
+    void SetCollaborationState(CollaborationState isCollaborationEnabled);
 private:
     void HandleRemoteTiming();
     void HandlePaPower(HpaePcmBuffer *pcmBuffer);
@@ -110,7 +109,7 @@ private:
     HighResolutionTimer intervalTimer_;
 #endif
     std::atomic<size_t> collRenderFrameFailedCount_ = 0;
-    std::atomic<bool> collaborationState_ = false;
+    std::atomic<CollaborationState> collaborationState_ = COLLABORATION_CLOSE;
 };
 
 }  // namespace HPAE

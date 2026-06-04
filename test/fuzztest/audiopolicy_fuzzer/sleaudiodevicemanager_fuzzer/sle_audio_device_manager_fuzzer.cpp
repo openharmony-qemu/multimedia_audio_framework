@@ -244,6 +244,12 @@ public:
         delayValue = 0;
         return 0;
     }
+
+    int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) override
+    {
+        delayValue = 0;
+        return 0;
+    }
 };
 
 void EnsureCallback(SleAudioDeviceManager &manager)

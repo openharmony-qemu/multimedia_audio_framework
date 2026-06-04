@@ -1217,6 +1217,167 @@ HWTEST_F(HpaeRenderEffectNodeTest, UpdateStreamUsageInner_MultiRenderId_005, Tes
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->maxSessionID_, 0u);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+
+/**
+ * @tc.name   : Test HpaeRenderEffectNode construction with NEARLINK_OPEN
+ * @tc.number : RenderEffectNode_NearLink_Create_001
+ * @tc.desc   : Test constructing HpaeRenderEffectNode with COLLABORATION_NEARLINK_OPEN state.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_Create_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    // Constructor with NearLink collaboration state
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    EXPECT_NE(node, nullptr);
+    EXPECT_EQ(node->isCollaborationEnabled_, COLLABORATION_NEARLINK_OPEN);
+}
+
+/**
+ * @tc.name   : Test HpaeRenderEffectNode construction with BLUETOOTH_OPEN
+ * @tc.number : RenderEffectNode_Bt_Create_002
+ * @tc.desc   : Test constructing HpaeRenderEffectNode with COLLABORATION_BLUETOOTH_OPEN state.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_Bt_Create_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_NE(node, nullptr);
+    EXPECT_EQ(node->isCollaborationEnabled_, COLLABORATION_BLUETOOTH_OPEN);
+}
+
+/**
+ * @tc.name   : Test HpaeRenderEffectNode construction with CLOSE (default)
+ * @tc.number : RenderEffectNode_Close_Create_003
+ * @tc.desc   : Test constructing HpaeRenderEffectNode with COLLABORATION_CLOSE state.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_Close_Create_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_CLOSE);
+    EXPECT_NE(node, nullptr);
+    EXPECT_EQ(node->isCollaborationEnabled_, COLLABORATION_CLOSE);
+}
+
+/**
+ * @tc.name   : Test HpaeRenderEffectNode NearLink tempEffectBuffer created
+ * @tc.number : RenderEffectNode_NearLink_TempBuffer_004
+ * @tc.desc   : Verify tempEffectBuffer_ is created for NEARLINK_OPEN collaborative scene.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_TempBuffer_004, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    EXPECT_NE(node, nullptr);
+    // For NearLink, tempEffectBuffer_ should be created
+    EXPECT_NE(node->tempEffectBuffer_, nullptr);
+}
+
+/**
+ * @tc.name   : Test HpaeRenderEffectNode BT collaborative outputs created
+ * @tc.number : RenderEffectNode_Bt_Outputs_005
+ * @tc.desc   : Verify directOutput_ and collaborativeOutput_ are created for BT collaborative scene.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_Bt_Outputs_005, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_NE(node, nullptr);
+    // For BT, directOutput_ and collaborativeOutput_ should be created
+    EXPECT_NE(node->directOutput_, nullptr);
+    EXPECT_NE(node->collaborativeOutput_, nullptr);
+}
+
+/**
+ * @tc.name   : Test SetDelayCountToEffectNode for NearLink
+ * @tc.number : SetDelayCountToEffectNode_NearLink_006
+ * @tc.desc   : Test SetDelayCountToEffectNode delegates to tempEffectBuffer_.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, SetDelayCountToEffectNode_NearLink_006, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    EXPECT_NE(node, nullptr);
+    // Should not crash
+    node->SetDelayCountToEffectNode(10);
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test SetDelayCountToEffectNode when tempEffectBuffer is null
+ * @tc.number : SetDelayCountToEffectNode_NullBuffer_007
+ * @tc.desc   : Test SetDelayCountToEffectNode with BT mode (tempEffectBuffer_ is null).
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, SetDelayCountToEffectNode_NullBuffer_007, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_NE(node, nullptr);
+    EXPECT_EQ(node->tempEffectBuffer_, nullptr);
+    // Should not crash when tempEffectBuffer_ is null
+    node->SetDelayCountToEffectNode(10);
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test HpaeRenderEffectNode default scene NearLink
+ * @tc.number : RenderEffectNode_NearLink_DefaultScene_008
+ * @tc.desc   : Test NEARLINK_OPEN with DEFAULT scene type (no collaborative outputs needed).
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_DefaultScene_008, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_DEFAULT;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    EXPECT_NE(node, nullptr);
+    EXPECT_EQ(node->isCollaborationEnabled_, COLLABORATION_NEARLINK_OPEN);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

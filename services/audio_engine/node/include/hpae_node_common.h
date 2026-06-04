@@ -43,7 +43,7 @@ AudioSampleFormat TransFormatFromStringToEnum(std::string format);
 void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
 std::string TransFormatFromEnumToString(AudioSampleFormat format);
 AudioPipeType ConvertDeviceClassToPipe(const std::string &deviceClass);
-void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled);
+void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled);
 void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo);
 int32_t CheckFramelen(const HpaeSinkInfo &sinkInfo);
 int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo);

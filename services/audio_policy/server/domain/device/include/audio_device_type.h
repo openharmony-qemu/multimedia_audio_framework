@@ -27,6 +27,8 @@ namespace AudioStandard {
 
 const std::unordered_map<DeviceType, std::string> &GetSupportedDeviceType();
 
+const std::unordered_map<std::string, DeviceType> &GetSupportedDeviceTypeMP();
+
 } // namespace AudioStandard
 } // namespace OHOS
 

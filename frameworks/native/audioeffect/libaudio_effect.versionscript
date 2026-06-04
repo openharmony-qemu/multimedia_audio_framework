@@ -105,6 +105,8 @@
     *SetBypassSpatializationForStereo*;
     *IsSpatializationEnabledForChains*;
     *UpdatePersonalizedHRTFBin*;
+    *IsCollaborationSupportedForStreamUsage*;
+    *UpdateCollaborativeState*;
   local:
     *;
 };

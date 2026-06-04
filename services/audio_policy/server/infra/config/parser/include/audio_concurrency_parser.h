@@ -35,6 +35,8 @@ enum ConcurrencyAction {
 
 class AudioConcurrencyParser {
 public:
+    static constexpr char CHIP_PROD_AUDIO_CONCURRENCY_CONFIG_FILE[] =
+        "/chip_prod/etc/audio/audio_concurrency_config.xml";
     static constexpr char AUDIO_CONCURRENCY_CONFIG_FILE[] = "/vendor/etc/audio/audio_concurrency_config.xml";
     AudioConcurrencyParser()
     {
