@@ -770,7 +770,7 @@ int32_t AudioSuitePipeline::ConnectNodesForRun(uint32_t srcNodeId, uint32_t dest
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
                            ERR_AUDIO_SUITE_UNSUPPORT_CONNECT),
-            "onnectNodes failed, pipeline running", true);
+            "ConnectNodes failed, pipeline running", true);
         AUDIO_ERR_LOG("ConnectNodes failed, pipeline running srcNode = %{public}d can not is used node.", srcNodeId);
         return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
     }
@@ -864,14 +864,17 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
 {
     if (outputNode_ == nullptr) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                           BusinessScenario::CONFIG, ERR_ILLEGAL_STATE),
+            static_cast<int32_t>(getuid()), EDIT_DISCONNECT_NODE_ERR_NOT_SUPPORTED,
             "DisConnectNodes failed, pipeline running, can not find output node.", true);
         AUDIO_ERR_LOG("DisConnectNodes failed, pipeline running, can not find output node.");
         return ERR_ILLEGAL_STATE;
     }
-
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        srcNode->GetNodeType() != NODE_TYPE_OUTPUT && destNode->GetNodeType() != NODE_TYPE_INPUT, ERR_NOT_SUPPORTED,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                                                            EDIT_DISCONNECT_NODE_ERR_NOT_SUPPORTED,
+                                                            "DisConnectNodes failed, node type error.", true),
+        "DisConnectNodes failed, node type error.");
     // destNodeId not in pipline running nodes
     if (!IsConnected(outputNode_->GetAudioNodeId(), destNodeId)) {
         return destNode->DisConnect(srcNode);
@@ -879,10 +882,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
 
     if (destNode->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                           BusinessScenario::CONFIG, ERR_NOT_SUPPORTED),
-            "destNode not midx node.", true);
+            static_cast<int32_t>(getuid()), EDIT_DISCONNECT_NODE_ERR_NOT_SUPPORTED, "destNode not midx node.", true);
         return ERR_NOT_SUPPORTED;
     }
 
@@ -897,9 +897,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
 
     if (reverseConnections_[destNodeId].size() <= 1) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                           BusinessScenario::CONFIG, ERR_NOT_SUPPORTED),
+            static_cast<int32_t>(getuid()), EDIT_DISCONNECT_NODE_ERR_NOT_SUPPORTED,
             "midx node only one connected", true);
         return ERR_NOT_SUPPORTED;
     }
@@ -1073,8 +1071,8 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
                                BusinessScenario::CONFIG, ERR_INVALID_PARAM),
-                "SetOptions failed, node id is invailed.", true);
-            AUDIO_ERR_LOG("SetOptions failed, node id is invailed.");
+                "SetOptions failed, node id is invaild.", true);
+            AUDIO_ERR_LOG("SetOptions failed, node id is invaild.");
             TriggerCallback(SET_OPTIONS, ERR_INVALID_PARAM);
             return;
         }
@@ -1084,10 +1082,8 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
         int32_t ret = node->SetOptions(name, value);
         if (ret != SUCCESS) {
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()),
-                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
-                               BusinessScenario::CONFIG, ret),
-                "The SetOptions node interface reports an error.", true);
+                static_cast<int32_t>(getuid()), EDIT_DISCONNECT_NODE_ERR_NOT_SUPPORTED,
+                "Node type does not match the parameters.", true);
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
             TriggerCallback(SET_OPTIONS, ret);
             return;

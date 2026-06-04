@@ -30,6 +30,7 @@ if (audio_framework_feature_audiosuite_support) {
 
     include_dirs = [
       "./tool",
+      "./manager/include",
       "../../client/manager/include",
       "../../client/converter/include",
       "../../client/node/include",
@@ -51,8 +52,9 @@ if (audio_framework_feature_audiosuite_support) {
     module_out_path = module_output_path
     sources = [
       "tool/audio_suite_unittest_tools.cpp",
-      "manager/audio_suite_engine_manager_test.cpp",
-      "manager/audio_suite_manager_params_template_test.cpp",
+      "manager/src/audio_suite_manager_dfx_test.cpp",
+      "manager/src/audio_suite_engine_manager_test.cpp",
+      "manager/src/audio_suite_manager_params_template_test.cpp",
     ]
 
     sanitize = {

@@ -895,6 +895,45 @@ constexpr int32_t AVSESSION_CONTROL_DESKTOPLYRIC_NOT_ENABLE_LOCAL_SET = BuildErr
 constexpr int32_t AVSESSION_CONTROL_DESKTOPLYRIC_NOT_ENABLE_LOCAL_GET = BuildErrorCode(
     ProblemCategory::FAULT_SESSION_LOCAL_GET, OperationType::AVSESSION,
     BusinessScenario::CONTROL, ERR_DESKTOPLYRIC_NOT_ENABLE);
+
+// FAULT_WRONG_AUDIO_EFFECT
+constexpr int32_t EDIT_REDESTROY_PIPELINE_FAILED = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RELEASE,
+    ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+constexpr int32_t EDIT_CONNECT_NODES_INVAILD = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
+constexpr int32_t EDIT_CONNECT_NODES_NOT_EXIST = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
+    ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+constexpr int32_t EDIT_SRPP_SETIONS_ERROR = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
+constexpr int32_t EDIT_SSRRP_SETIONS_ERROR = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
+constexpr int32_t EDIT_SSREP_SETIONS_ERROR = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
+constexpr int32_t EDIT_STAP_SETIONS_ERROR = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
+constexpr int32_t EDIT_SPVCO_SETIONS_ERROR = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
+constexpr int32_t EDIT_NODES_SETIONS_ERROR = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
+    ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+constexpr int32_t EDIT_SEQFBG_SETIONS_ERROR = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
+constexpr int32_t EDIT_SSRPP_SETIONS_ERROR = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
+constexpr int32_t EDIT_RENDER_FRAME_ERROR = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RENDER,
+    ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+constexpr int32_t EDIT_DISCONNECT_NODE_ERR_NOT_SUPPORTED = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_NOT_SUPPORTED);
+constexpr int32_t EDIT_ENVNODES_SETIONS_ERROR = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
+    ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+constexpr int32_t EDIT_SETPARAM_VALUE_UNKNOWN = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
+constexpr int32_t EDIT_VOIVE_CHANGE_NODE_UNKNOW_VALUE = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_ERRORS_H

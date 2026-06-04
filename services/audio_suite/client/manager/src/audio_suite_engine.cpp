@@ -644,8 +644,8 @@ int32_t AudioSuiteEngine::RenderFrame(uint32_t pipelineId,
                 static_cast<int32_t>(getuid()),
                 BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
                                BusinessScenario::RENDER, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST),
-                "engine RenderFrame failed, pipeline id is invailed.", true);
-            AUDIO_ERR_LOG("engine RenderFrame failed, pipeline id is invailed.");
+                "engine RenderFrame failed, pipeline id is invaild.", true);
+            AUDIO_ERR_LOG("engine RenderFrame failed, pipeline id is invaild.");
             managerCallback_.OnRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, pipelineId);
             return;
         }
@@ -695,6 +695,8 @@ int32_t AudioSuiteEngine::SetOptions(uint32_t nodeId, std::string name, std::str
     auto request = [this, nodeId, name, value]() {
         AUDIO_DEBUG_LOG("SetOptions enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()), EDIT_NODES_SETIONS_ERROR, "The node does not exist.", true);
             AUDIO_ERR_LOG("engine SetOptions node failed, node id=%{public}d is invailed.", nodeId);
             managerCallback_.OnSetOptions(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
@@ -731,6 +733,8 @@ int32_t AudioSuiteEngine::GetOptions(uint32_t nodeId, std::string name, std::str
     auto request = [this, nodeId, name, &value]() {
         AUDIO_DEBUG_LOG("GetOptions enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()), EDIT_NODES_SETIONS_ERROR, "The node does not exist.", true);
             AUDIO_ERR_LOG("engine GetOptions node failed, node id=%{public}d is invailed.", nodeId);
             managerCallback_.OnGetOptions(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;

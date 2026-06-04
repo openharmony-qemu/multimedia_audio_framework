@@ -24,6 +24,7 @@
 #include "audio_suite_log.h"
 #include "audio_suite_soundfield_algo_interface_impl.h"
 #include "audio_utils.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -147,6 +148,8 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::SetParameter(const std::string &p
         return SUCCESS;
     } else {
         AUDIO_ERR_LOG("SetParameter Unknown value %{public}s", paramValue.c_str());
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            EDIT_SETPARAM_VALUE_UNKNOWN, "The value of SetParameter is unknown.", true);
         return ERROR;
     }
 
