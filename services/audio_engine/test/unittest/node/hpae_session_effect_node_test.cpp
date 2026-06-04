@@ -553,6 +553,11 @@ public:
         return outputBuffer_.GetPcmDataBuffer();
     }
 
+    HpaePcmBuffer *GetOutputBufferForTest()
+    {
+        return &outputBuffer_;
+    }
+
     void DoProcess() override
     {
         FillOutputBuffer();
@@ -772,7 +777,7 @@ HWTEST_F(SessionEffectNodeStateTest, activeWithInput_doesNotRunNoInputTailDrain,
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
 }
 
-HWTEST_F(SessionEffectNodeStateTest, activeInvalidInput_usesNoInputPathWithoutFeeding, TestSize.Level0)
+HWTEST_F(SessionEffectNodeStateTest, activeInvalidInput_keepsPluginRoutingWithoutFeeding, TestSize.Level0)
 {
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
     upstreamNode_->SetOutputValid(false);
@@ -782,13 +787,17 @@ HWTEST_F(SessionEffectNodeStateTest, activeInvalidInput_usesNoInputPathWithoutFe
     EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).Times(0);
     EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_))
         .WillOnce(testing::Invoke([invalidInputData](uint8_t *buf, size_t len, uint32_t *) -> int32_t {
-            EXPECT_NE(buf, invalidInputData);
+            EXPECT_EQ(buf, invalidInputData);
             return static_cast<int32_t>(len);
         }));
 
     node_->DoProcess();
+    HpaePcmBuffer *output = node_->GetOutputPort()->PullOutputData();
 
     EXPECT_EQ(node_->GetPaddingBytesInForTest(), 0u);
+    EXPECT_EQ(output, upstreamNode_->GetOutputBufferForTest());
+    ASSERT_NE(output, nullptr);
+    EXPECT_TRUE(output->IsValid());
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
 }
 

@@ -509,14 +509,11 @@ void HpaeSessionEffectNode::DoProcess()
     HpaePcmBuffer *tempOut = nullptr;
     std::vector<HpaePcmBuffer *> &preOutputs = inputStream_.ReadPreOutputData();
     bool hasInput = !preOutputs.empty() && preOutputs[0] != nullptr;
-    bool hasValidInput = HasValidPcmInput(preOutputs);
-    if (hasValidInput) {
+    if (hasInput) {
         tempOut = enableProcess_ ? SignalProcess(preOutputs) : preOutputs[0];
-    } else if (hasInput && !enableProcess_) {
-        tempOut = preOutputs[0];
     } else if (!enableProcess_) {
         tempOut = SignalProcess(preOutputs);
-    } else if (status_ == STATUS::ACTIVE) {
+    } else if (!hasInput && status_ == STATUS::ACTIVE) {
         tempOut = ProcessActiveNoInput();
     }
     outputStream_.WriteDataToOutput(tempOut != nullptr ? tempOut : &silenceData_);
@@ -652,6 +649,8 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<Hpae
         reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen,
         &skipFrames);
     if (ret > 0) {
+        inputBuf->SetBufferValid(true);
+        inputBuf->SetBufferSilence(false);
         ApplyInterceptingFadeIn(inputBuf->GetPcmDataBuffer(),
             inputBuf->GetFrameLen() * audioConfig_.inputCfg.channels);
         status_ = STATUS::ACTIVE;
@@ -781,6 +780,8 @@ HpaePcmBuffer *HpaeSessionEffectNode::ReadAlgoOutput(HpaePcmBuffer *inputBuf, si
     int32_t ret = effectInstance_->ReadOutput(
         reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen);
     if (ret > 0) {
+        inputBuf->SetBufferValid(true);
+        inputBuf->SetBufferSilence(false);
         return inputBuf;
     }
     // No output → return silence
