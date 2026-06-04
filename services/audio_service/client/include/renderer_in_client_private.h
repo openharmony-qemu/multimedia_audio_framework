@@ -587,6 +587,8 @@ private:
     uint64_t lastFlushReadIndex_ = 0;
     uint64_t lastSpeedFlushReadIndex_ = 0;
 
+    bool isMainUseArk_ = false;
+
     enum LoudVolumeSupportType {
         LOUD_VOLUME_NOT_SUPPORT = 0,
         LOUD_VOLUME_SUPPORT,

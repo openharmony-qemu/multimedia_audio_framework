@@ -441,7 +441,7 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
         cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * sampleRate / AUDIO_US_PER_S) *
             sizePerFrameInByte_;
     }
-    if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT) {
+    if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT && isMainUseArk_) {
         AUDIO_INFO_LOG("Change duration for voip direct, %{public}" PRIu64 " to %{public}d",
             bufferDurationInUs, VOIP_DIRECT_BUFFER_DURATION_IN_US);
         bufferDurationInUs = VOIP_DIRECT_BUFFER_DURATION_IN_US;
@@ -1395,6 +1395,9 @@ void RendererInClientInner::UpdateUnderrunInfo(UnderrunInfoType underrunInfoKey,
 {
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream_ is nullptr");
     ipcStream_->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
+    if (underrunInfoKey == UNDERRUN_TYPE_ISUSEARK) {
+        isMainUseArk_ = !!underrunInfoVal;
+    }
 }
 
 int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)

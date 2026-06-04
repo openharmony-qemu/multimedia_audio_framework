@@ -2411,16 +2411,6 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
         std::chrono::microseconds(MAX_CBBUF_IN_USEC), sampleRate, bytesPerSample);
     napiRenderer->rendererWriteDataCallbackNapi_ = std::make_shared<NapiRendererWriteDataCallback>(
         env, napiRenderer, bufferSize);
-    napiRenderer->audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
-    CHECK_AND_RETURN_LOG(napiRenderer->rendererWriteDataCallbackNapi_ != nullptr, "writeDataCbNapi_ is nullpur");
-    int32_t ret = napiRenderer->audioRenderer_->SetRendererWriteCallback(napiRenderer->rendererWriteDataCallbackNapi_);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetRendererWriteCallback failed");
-    std::shared_ptr<NapiRendererWriteDataCallback> cb =
-        std::static_pointer_cast<NapiRendererWriteDataCallback>(napiRenderer->rendererWriteDataCallbackNapi_);
-    cb->AddCallbackReference(cbName, argv[PARAM1]);
-    if (!cb->GetWriteDTsfnFlag()) {
-        cb->CreateWriteDTsfn(env);
-    }
 
 #ifndef IOS_PLATFORM
     if ((!firstRegWriteCbCalled_.exchange(true, std::memory_order_relaxed)) &&
@@ -2433,6 +2423,17 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
             rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::writeCb);
     }
 #endif
+
+    napiRenderer->audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
+    CHECK_AND_RETURN_LOG(napiRenderer->rendererWriteDataCallbackNapi_ != nullptr, "writeDataCbNapi_ is nullptr");
+    int32_t ret = napiRenderer->audioRenderer_->SetRendererWriteCallback(napiRenderer->rendererWriteDataCallbackNapi_);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetRendererWriteCallback failed");
+    std::shared_ptr<NapiRendererWriteDataCallback> cb =
+        std::static_pointer_cast<NapiRendererWriteDataCallback>(napiRenderer->rendererWriteDataCallbackNapi_);
+    cb->AddCallbackReference(cbName, argv[PARAM1]);
+    if (!cb->GetWriteDTsfnFlag()) {
+        cb->CreateWriteDTsfn(env);
+    }
 
     AUDIO_INFO_LOG("Register Callback is successful");
 }
