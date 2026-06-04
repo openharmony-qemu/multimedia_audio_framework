@@ -212,7 +212,7 @@ void HpaeGainNode::ApplyFadeOut(HpaePcmBuffer *input, FadeOutState &fadeOutState
     AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
 #else
     auto ret = SUCCESS;
-    AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
+    AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
 #endif
     fadeOutState = FadeOutState::DONE_FADEOUT;
     auto statusCallback = GetNodeStatusCallback().lock();
@@ -263,8 +263,6 @@ void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
         processedBytes = avail;
     } else {
-        AUDIO_INFO_LOG("[%{public}d]: fade in continuation! processedBytes=%{public}u, "
-            "totalFadeBytes=%{public}u", GetSessionId(), processedBytes, totalFadeBytes);
         uint32_t remain = totalFadeBytes - processedBytes;
         uint32_t avail = std::min(static_cast<uint32_t>(input->DataSize()), remain);
         float startGain = static_cast<float>(processedBytes) / static_cast<float>(totalFadeBytes);
