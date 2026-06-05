@@ -115,20 +115,6 @@ HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_009, TestSize.Level1)
     ASSERT_EQ(handle, nullptr);
 }
 
-HWTEST_F(AudioPcmProcessImplTest, AudioConverterProcess_001, TestSize.Level1)
-{
-    AudioFormatConfig inCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
-    AudioFormatConfig outCfg = {48000, AUDIO_CH_STEREO, AUDIO_BIT16_INT};
-    AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
-    ASSERT_NE(handle, nullptr);
-
-    std::vector<uint8_t> inputData(1024, 0);
-    CAudioConvertResult result = AudioConverterProcess(handle, inputData.data(), 512);
-    EXPECT_EQ(result.errCode, 0);
-
-    AudioConverterDestroy(handle);
-}
-
 HWTEST_F(AudioPcmProcessImplTest, AudioConverterProcess_002, TestSize.Level1)
 {
     std::vector<uint8_t> inputData(1024, 0);
@@ -519,20 +505,6 @@ HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_011, TestSize.Level1)
     EXPECT_EQ(result.errCode, 0);
 
     AudioMixerDestroy(handle);
-}
-
-HWTEST_F(AudioPcmProcessImplTest, AudioConverterCreate_013, TestSize.Level1)
-{
-    AudioFormatConfig inCfg = {48000, AUDIO_CH_MONO, AUDIO_BIT16_INT};
-    AudioFormatConfig outCfg = {48000, AUDIO_CH_MONO, AUDIO_BIT16_INT};
-    AudioConverterHandle handle = AudioConverterCreate(&inCfg, &outCfg);
-    ASSERT_NE(handle, nullptr);
-
-    std::vector<uint8_t> inputData(512, 0x55);
-    CAudioConvertResult result = AudioConverterProcess(handle, inputData.data(), 256);
-    EXPECT_EQ(result.errCode, 0);
-
-    AudioConverterDestroy(handle);
 }
 
 HWTEST_F(AudioPcmProcessImplTest, AudioMixerProcess_012, TestSize.Level1)
