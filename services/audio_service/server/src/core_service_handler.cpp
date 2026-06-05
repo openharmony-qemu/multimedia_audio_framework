@@ -227,6 +227,5 @@ bool CoreServiceHandler::IsSupportIndependentPipe()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "IsSupportIndependentPipe failed, ret:%{public}d", ret);
     return support;
 }
-}
 } // namespace AudioStandard
 } // namespace OHOS
