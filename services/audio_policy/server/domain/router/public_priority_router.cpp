@@ -15,7 +15,6 @@
 #ifndef LOG_TAG
 #define LOG_TAG "PublicPriorityRouter"
 #endif
-
 #include "public_priority_router.h"
 using namespace std;
 
@@ -38,6 +37,7 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetMediaRenderDevice(Str
     } else {
         descs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
     }
+    AppendActiveScoDevice(descs, OUTPUT_DEVICE);
     RouterBase::ClearConflictDevice(descs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(audioDevUsage, descs, streamUsage);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
@@ -63,13 +63,16 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     vector<shared_ptr<AudioDeviceDescriptor>> curDescs;
     AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
+if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
         streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderBTCarDevices();
     } else {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
         audioDevUsage = MEDIA_OUTPUT_DEVICES;
     }
+
+    AppendActiveScoDevice(curDescs, OUTPUT_DEVICE);
+
     RouterBase::ClearConflictDevice(curDescs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs,
         streamUsage);
@@ -123,6 +126,7 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetRecordCaptureDevice(S
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePublicDevices();
+    AppendActiveScoDevice(descs, INPUT_DEVICE);
     RouterBase::ClearConflictDevice(descs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,

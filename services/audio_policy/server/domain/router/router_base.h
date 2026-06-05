@@ -23,6 +23,7 @@
 #include "audio_policy_utils.h"
 #include "audio_router_select_strategy.h"
 #include "conflict_handler.h"
+#include "audio_bluetooth_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -187,6 +188,19 @@ public:
             } else {
                 ++iter;
             }
+        }
+    }
+
+    void AppendActiveScoDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList, DeviceRole deviceRole)
+    {
+        if (!AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+            return;
+        }
+        std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
+        std::shared_ptr<AudioDeviceDescriptor> activeScoDevice =
+            AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, deviceRole);
+        if (activeScoDevice != nullptr && activeScoDevice->deviceType_ != DEVICE_TYPE_NONE) {
+            deviceList.push_back(activeScoDevice);
         }
     }
 
