@@ -122,13 +122,13 @@ protected:
     // Effect control
     void EnableEffect()
     {
-        hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true);
+        hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
         WaitForMsgProcessing();
     }
 
     void DisableEffect()
     {
-        hpaeManager_->SetAissEnabled(TEST_SESSION_ID, false);
+        hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, false);
         WaitForMsgProcessing();
     }
 

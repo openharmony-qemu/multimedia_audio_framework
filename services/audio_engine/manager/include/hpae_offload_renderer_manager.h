@@ -108,7 +108,6 @@ public:
     void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
     void PostDestroySessionEffect(uint32_t sessionId) override;
-    bool HasSessionEffect(uint32_t sessionId) const override;
     bool IsValidSession(uint32_t sessionId) const override;
     // Session Effect parameter routing
     int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;

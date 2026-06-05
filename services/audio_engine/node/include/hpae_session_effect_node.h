@@ -116,8 +116,10 @@ private:
     HpaePcmBuffer *ProcessIntercepting(const std::vector<HpaePcmBuffer *> &inputs);
     HpaePcmBuffer *ProcessActive(const std::vector<HpaePcmBuffer *> &inputs);
     HpaePcmBuffer *ProcessActiveNoInput();
-    HpaePcmBuffer *ReadAlgoOutput(HpaePcmBuffer *inputBuf, size_t byteLen, size_t channels);
+    HpaePcmBuffer *ReadAlgoOutput(HpaePcmBuffer *inputBuf, size_t byteLen);
     uint64_t BytesToLatencyUs(size_t bytes) const;
+    void UpdatePrebufTargetBytes();
+    void RestartPreheat();
     void ResetAccounting();
     void ResetTailPaddingState();
     void ReconfigOutputBuffers(const AudioEffectConfig &config);

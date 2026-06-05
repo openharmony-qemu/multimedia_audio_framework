@@ -426,13 +426,12 @@ HWTEST_F(HpaeOffloadSeTest, connectInputSession_pendingInsertFailure_rollsBackEn
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
-// OSE-5: HasSessionEffect returns true for both active and pending
-HWTEST_F(HpaeOffloadSeTest, hasSessionEffect_activeAndPending, TestSize.Level0)
+// OSE-5: active and pending SessionEffect state are tracked directly
+HWTEST_F(HpaeOffloadSeTest, sessionEffectState_activeAndPending, TestSize.Level0)
 {
-    // No SE initially
-    EXPECT_FALSE(manager_->HasSessionEffect(CUR_SESSION_ID));
-    EXPECT_FALSE(manager_->HasSessionEffect(OTHER_SESSION_ID));
-    EXPECT_FALSE(manager_->HasSessionEffect(INVALID_SESSION_ID));
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
 
     // Create active SE for curNode_
     auto instance1 = MakeTestEffectInstance();
@@ -442,9 +441,10 @@ HWTEST_F(HpaeOffloadSeTest, hasSessionEffect_activeAndPending, TestSize.Level0)
     auto instance2 = MakeTestEffectInstance();
     manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance2, config_);
 
-    EXPECT_TRUE(manager_->HasSessionEffect(CUR_SESSION_ID));
-    EXPECT_TRUE(manager_->HasSessionEffect(OTHER_SESSION_ID));
-    EXPECT_FALSE(manager_->HasSessionEffect(INVALID_SESSION_ID));
+    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, CUR_SESSION_ID);
+    EXPECT_EQ(manager_->pendingSessionEffects_.count(OTHER_SESSION_ID), 1u);
+    EXPECT_EQ(manager_->pendingSessionEffects_.count(INVALID_SESSION_ID), 0u);
 }
 
 // OSE-6: IsValidSession checks sinkInputNodeMap_
@@ -507,7 +507,7 @@ HWTEST_F(HpaeOffloadSeTest, pendingCreatedOnSetCurrentNode, TestSize.Level0)
     // SE now active for the new curNode_
     EXPECT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, OTHER_SESSION_ID);
-    EXPECT_TRUE(manager_->HasSessionEffect(OTHER_SESSION_ID));
+    EXPECT_EQ(manager_->pendingSessionEffects_.count(OTHER_SESSION_ID), 0u);
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 }
 

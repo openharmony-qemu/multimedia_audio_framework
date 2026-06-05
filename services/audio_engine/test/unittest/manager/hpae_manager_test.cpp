@@ -2369,18 +2369,18 @@ HWTEST_F(HpaeManagerUnitTest, sendRequestSyncSequentialCalls, TestSize.Level0)
 }
 
 /**
- * @brief SetAissEnabled returns error when sessionEffectManager_ is null (before Init)
+ * @brief SetAissEnabledSync returns error when sessionEffectManager_ is null (before Init)
  */
 HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_NullSessionEffectManager, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     // Do NOT Init — sessionEffectManager_ stays null
-    EXPECT_EQ(hpaeManager_->SetAissEnabled(12345, true), ERR_OPERATION_FAILED);
-    EXPECT_EQ(hpaeManager_->SetAissEnabled(12345, false), ERR_OPERATION_FAILED);
+    EXPECT_EQ(hpaeManager_->SetAissEnabledSync(12345, true), ERR_OPERATION_FAILED);
+    EXPECT_EQ(hpaeManager_->SetAissEnabledSync(12345, false), ERR_OPERATION_FAILED);
 }
 
 /**
- * @brief SetAissEnabled returns error when rendererManager not found for sessionId
+ * @brief SetAissEnabledSync returns error when rendererManager not found for sessionId
  */
 HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_NoRendererManager, TestSize.Level0)
 {
@@ -2389,7 +2389,7 @@ HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_NoRendererManager, TestSize.Level0)
     sleep(1);
     EXPECT_EQ(hpaeManager_->IsRunning(), true);
     // Session 99999 has no rendererManager — should return ERR_SESSION_NOT_FOUND
-    EXPECT_EQ(hpaeManager_->SetAissEnabled(99999, true),
+    EXPECT_EQ(hpaeManager_->SetAissEnabledSync(99999, true),
         static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
     hpaeManager_->DeInit();
 }
@@ -2419,7 +2419,7 @@ HWTEST_F(HpaeManagerUnitTest, PostSessionEffect_DefaultImplNoop, TestSize.Level0
 }
 
 /**
- * @brief SetAissEnabled enable/disable round-trip with audio port and stream.
+ * @brief SetAissEnabledSync enable/disable round-trip with audio port and stream.
  * Verifies the async Post* path does not crash on a full pipeline.
  */
 HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_EnableDisableRoundTrip, TestSize.Level1)
@@ -2444,14 +2444,14 @@ HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_EnableDisableRoundTrip, TestSize.Le
     WaitForMsgProcessing(hpaeManager_);
 
     // Enable AISS — should succeed (Bind + async PostCreateSessionEffect)
-    int32_t ret = hpaeManager_->SetAissEnabled(streamInfo.sessionId, true);
+    int32_t ret = hpaeManager_->SetAissEnabledSync(streamInfo.sessionId, true);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     // Give async PostCreateSessionEffect time to execute on SignalProcessThread
     usleep(100000); // 100ms
 
     // Disable AISS — should succeed (async PostDestroySessionEffect + Unbind)
-    ret = hpaeManager_->SetAissEnabled(streamInfo.sessionId, false);
+    ret = hpaeManager_->SetAissEnabledSync(streamInfo.sessionId, false);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     usleep(100000); // 100ms

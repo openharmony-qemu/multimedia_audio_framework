@@ -213,9 +213,9 @@ public:
     void HandleBypassSpatializationForStereo(bool bypass) override;
     int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) override;
 
-    int32_t SetAissEnabled(uint32_t sessionId, bool enabled) override;
-    int32_t SetVocalRatio(float ratio) override;
-    int32_t SetAissEnabledByUid(int32_t uid, bool enabled) override;
+    int32_t SetAissEnabledSync(uint32_t sessionId, bool enabled) override;
+    int32_t SetVocalRatioSync(float ratio) override;
+    int32_t SetAissEnabledByUidSync(int32_t uid, bool enabled) override;
     uint64_t PostDelayedTask(uint64_t delayMs, std::function<void()> task);
     void CancelDelayedTask(uint64_t taskId);
     HpaeDelayedTaskQueue &GetDelayedTaskQueue();

@@ -4037,6 +4037,23 @@ HWTEST_F(HpaeRendererManagerTest, CreateSessionEffect_EnsureHistoryBufferForAiss
     EXPECT_GE(sinkInputNode->historyBuffer_->GetFrames(), preheatFrames);
 }
 
+HWTEST_F(HpaeRendererManagerTest, CreateSessionEffect_nullInstanceRejected, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 794;
+    constexpr uint32_t testNodeId = 105;
+
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", nullptr, config),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_INVALID_PARAMETER));
+    EXPECT_FALSE(hpaeRendererManager_->HasSessionEffect(sessionId));
+}
+
 HWTEST_F(HpaeRendererManagerTest, SessionEffectStatusCallback, TestSize.Level0)
 {
     constexpr uint32_t sessionId = 790;
@@ -4064,6 +4081,27 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectStatusCallback, TestSize.Level0)
     EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+HWTEST_F(HpaeRendererManagerTest, HasSessionEffectUsesProcessorTypeWhenSessionSceneIsStale, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 793;
+    constexpr uint32_t testNodeId = 104;
+
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+    hpaeRendererManager_->sessionNodeMap_[sessionId].sceneType = HPAE_SCENE_MUSIC;
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+
+    EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_TRUE(hpaeRendererManager_->HasSessionEffect(sessionId));
 }
 
 HWTEST_F(HpaeRendererManagerTest, DeleteInputSessionWithSessionEffectSendsDisabledStatus, TestSize.Level0)

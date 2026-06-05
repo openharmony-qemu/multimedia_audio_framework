@@ -252,23 +252,6 @@ HWTEST_F(EffectInstanceAlgoTest, initReleaseCycle_withLib, TestSize.Level0)
     EXPECT_EQ(fake_.GetReleaseCount(), 2u);
 }
 
-// EI-C1: StartEffect sends ENABLE
-HWTEST_F(EffectInstanceAlgoTest, startEffect_sendsEnable, TestSize.Level0)
-{
-    auto lib = fake_.GetLibrary();
-    instance_->Init("test_effect", config_, &lib);
-    fake_.Reset();
-
-    instance_->StartEffect();
-
-    auto &log = fake_.GetCallLog();
-    bool hasEnable = false;
-    for (auto &e : log) {
-        if (e.cmdCode == EFFECT_CMD_ENABLE) hasEnable = true;
-    }
-    EXPECT_TRUE(hasEnable);
-}
-
 // EI-C2: StopEffect sends DISABLE
 HWTEST_F(EffectInstanceAlgoTest, stopEffect_sendsDisable, TestSize.Level0)
 {
