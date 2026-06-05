@@ -798,8 +798,6 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_050, TestSize.Level0)
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     nodeInfo.effectInfo.lastEffectScene = SCENE_MUSIC;
 
-    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_CLOSE);
     EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
