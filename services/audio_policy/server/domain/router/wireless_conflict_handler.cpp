@@ -124,7 +124,10 @@ bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor
     }
     
     CHECK_AND_RETURN_RET(cachedHighestPriorityDevice_ != nullptr, false);
-    if (!IsScoDevice(cachedHighestPriorityDevice_)) {
+    if (IsScoDevice(device) && !IsScoDevice(cachedHighestPriorityDevice_)) {
+        return true;
+    }
+    if (IsA2dpDevice(device) && IsScoDevice(cachedHighestPriorityDevice_)) {
         return true;
     }
     

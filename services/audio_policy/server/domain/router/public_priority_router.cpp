@@ -15,7 +15,9 @@
 #ifndef LOG_TAG
 #define LOG_TAG "PublicPriorityRouter"
 #endif
+
 #include "public_priority_router.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -63,7 +65,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     vector<shared_ptr<AudioDeviceDescriptor>> curDescs;
     AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
+    if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
         streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderBTCarDevices();
     } else {
