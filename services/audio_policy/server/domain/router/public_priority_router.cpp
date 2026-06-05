@@ -17,7 +17,6 @@
 #endif
 
 #include "public_priority_router.h"
-
 using namespace std;
 
 namespace OHOS {
