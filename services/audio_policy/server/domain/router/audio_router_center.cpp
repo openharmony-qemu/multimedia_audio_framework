@@ -722,7 +722,8 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectOutputStreamDevices(cons
         info.uid = desc->GetRealUid();
         info.sessionId = desc->sessionId_;
         info.streamUsage = desc->rendererInfo_.streamUsage;
-        info.isRunning = (desc->streamStatus_ == STREAM_STATUS_STARTED);
+        info.isRunning = (desc->streamStatus_ == STREAM_STATUS_STARTED &&
+            !pipeManager->IsFocusStandby(desc->sessionId_));
 
         FetchDeviceInfo fetchInfo(info.streamUsage, info.uid, "Arbiter");
         fetchInfo.bypassType = deviceInfo.bypassType;

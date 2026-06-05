@@ -76,7 +76,11 @@ int32_t AudioScoDeviceBehavior::HandleScoOutputDeviceFetched(const std::shared_p
         return ERROR;
     }
     if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
-        Bluetooth::AudioHfpManager::UpdateAudioScene(AudioSceneManager::GetInstance().GetAudioScene(true), true);
+        auto pipeManager = AudioPipeManager::GetPipeManager();
+        CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_NULL_POINTER, "pipeManager is nullptr");
+        if (!pipeManager->IsFocusStandby(streamDesc->sessionId_)) {
+            Bluetooth::AudioHfpManager::UpdateAudioScene(AudioSceneManager::GetInstance().GetAudioScene(true), true);
+        }
     }
 #endif
     AUDIO_INFO_LOG("out");

@@ -1803,5 +1803,25 @@ std::string AudioPipeManager::GetPausedFastPipeModuleNameInDelayedSwitch()
     }
     return "";
 }
+
+void AudioPipeManager::AddFocusStandby(uint32_t sessionId)
+{
+    std::unique_lock<std::shared_mutex> lock(focusStandbySetLock_);
+    focusStandbySet_.insert(sessionId);
+    AUDIO_DEBUG_LOG("Add standby session id: %{public}u", sessionId);
+}
+
+void AudioPipeManager::RemoveFocusStandby(uint32_t sessionId)
+{
+    std::unique_lock<std::shared_mutex> lock(focusStandbySetLock_);
+    focusStandbySet_.erase(sessionId);
+    AUDIO_DEBUG_LOG("Remove standby session id: %{public}u", sessionId);
+}
+
+bool AudioPipeManager::IsFocusStandby(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> lock(focusStandbySetLock_);
+    return focusStandbySet_.find(sessionId) != focusStandbySet_.end();
+}
 } // namespace AudioStandard
 } // namespace OHOS
