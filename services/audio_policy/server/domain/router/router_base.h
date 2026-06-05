@@ -193,7 +193,7 @@ public:
 
     void AppendActiveScoDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList, DeviceRole deviceRole)
     {
-        if (!AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+        if (!AudioDeviceManager::GetAudioDeviceManager().GetScoState() || handlers.size() == 0) {
             return;
         }
         std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
