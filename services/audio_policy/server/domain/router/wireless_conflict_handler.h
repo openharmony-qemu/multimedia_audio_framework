@@ -36,7 +36,6 @@ public:
     void SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
         const std::vector<StreamDeviceInfo> &inputDevices);
     void ClearSelectedDevices();
-    bool AllScoPairSelected();
 
 private:
     bool IsCallStreamUsage(StreamUsage streamUsage);
