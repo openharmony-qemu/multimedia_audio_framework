@@ -3023,6 +3023,43 @@ void AudioCoreService::OnAudioSceneChange(const AudioScene& audioScene)
     audioPolicyServerHandler_->SendAudioSceneChangeEvent(audioScene);
 }
 
+void AudioCoreService::HandleSceneChangePreferredDevice(AudioScene audioScene, AudioScene lastAudioScene, int32_t uid)
+{
+    SetSleVoiceStatusFlag(audioScene);
+    OnAudioSceneChange(audioScene);
+    auto currentOutputDevice = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
+    if (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT) {
+        OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN);
+    }
+    if (audioScene == AUDIO_SCENE_DEFAULT && currentOutputDevice.IsRemoteDevice()) {
+        OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::OVERRODE);
+    }
+    OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN,
+        audioSceneManager_.GetAudioSceneOwnerUid());
+}
+
+void AudioCoreService::HandleAudioSceneVolumeChange(AudioScene audioScene, AudioScene lastAudioScene, int32_t uid)
+{
+    if (audioScene == AUDIO_SCENE_PHONE_CALL) {
+        // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
+        audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
+    } else if (lastAudioScene == AUDIO_SCENE_PHONE_CALL && audioScene != AUDIO_SCENE_PHONE_CALL) {
+        audioVolumeManager_.SetVoiceRingtoneMute(false);
+    }
+    if (audioSceneManager_.IsCallEnded()) {
+        audioVolumeManager_.ClearLoudVolumeHoldMapForCall();
+        callTransferCreated_ = false;
+    }
+    if (audioSceneManager_.IsHangUpScene()) {
+        audioVolumeManager_.RefreshActiveDeviceVolume();
+    }
+    if (lastAudioScene == AUDIO_SCENE_RINGING && audioScene != AUDIO_SCENE_RINGING &&
+        audioVolumeManager_.IsAppRingMuted(uid)) {
+        audioVolumeManager_.SetAppRingMuted(uid, false); // unmute the STREAM_RING for the app.
+    }
+}
+
 bool AudioCoreService::HandleOutputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     AudioStreamDeviceChangeReasonExt reason)
 {

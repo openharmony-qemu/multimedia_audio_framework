@@ -52,7 +52,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
     auto &routerInfra = AudioRouterInfra::GetInstance();
     if (uid == INVALID_UID) {
         auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_INPUT);
-        return systemSelectInfo.device_;
+        return AudioRouterSelectStrategy::HasValidSelectDevice(systemSelectInfo) ? systemSelectInfo.device_ : nullptr;
     }
 
     category = routerInfra.GetPreferredInputCategory(uid);
@@ -117,9 +117,10 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputD
     }
 
     if (simpleDesc == nullptr) {
-        auto appSelectDevice = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_INPUT, uid).device_;
-        auto device = ConvertSimpleToDevice(appSelectDevice);
-        simpleDesc = device && device->deviceTokenId_ != 0 ? appSelectDevice : nullptr;
+        auto appSelectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_INPUT, uid);
+        auto device = ConvertSimpleToDevice(appSelectInfo.device_);
+        simpleDesc = AudioRouterSelectStrategy::HasValidSelectDevice(appSelectInfo) &&
+            device && device->deviceTokenId_ != 0 ? appSelectInfo.device_ : nullptr;
     }
 
     // If no stream-level selection, proceed with existing logic
@@ -204,6 +205,9 @@ void AudioRouterFollowStrategy::SetMediaOutputDevice(int32_t uid, uint32_t strea
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallInputDevice(int32_t uid, uint32_t streamId)
 {
     auto systemSelectInfo = AudioRouterInfra::GetInstance().GetSystemSelectDevice(SelectDeviceType::CALL_INPUT);
+    if (!AudioRouterSelectStrategy::HasValidSelectDevice(systemSelectInfo)) {
+        return std::make_shared<AudioDeviceDescriptor>();
+    }
     auto result = ConvertSimpleToDevice(systemSelectInfo.device_);
     CHECK_AND_RETURN_RET(result != nullptr, std::make_shared<AudioDeviceDescriptor>());
     return result;
@@ -244,11 +248,13 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetCallO
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
     auto appSelectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::CALL_OUTPUT, uid);
-    if (appSelectInfo.device_ != nullptr) {
+    if (AudioRouterSelectStrategy::HasValidSelectDevice(appSelectInfo)) {
         simpleDesc = appSelectInfo.device_;
     } else {
         auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::CALL_OUTPUT);
-        simpleDesc = systemSelectInfo.device_;
+        if (AudioRouterSelectStrategy::HasValidSelectDevice(systemSelectInfo)) {
+            simpleDesc = systemSelectInfo.device_;
+        }
     }
     return simpleDesc;
 }
