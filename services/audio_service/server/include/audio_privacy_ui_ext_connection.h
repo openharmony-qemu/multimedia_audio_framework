@@ -35,8 +35,8 @@ const uint32_t PARAM_SIZE = 4;
 const uint32_t ORDER_SIZE = 2;
 class AudioPrivacyUIExtConnection : public OHOS::AAFwk::AbilityConnectionStub {
 public:
-    explicit AudioPrivacyUIExtConnection(int32_t sessionId)
-        : sessionId_(sessionId)
+    explicit AudioPrivacyUIExtConnection(int32_t sessionId, uint32_t uid)
+        : sessionId_(sessionId), uid_(uid)
     {
         AUDIO_INFO_LOG("AudioPrivacyUIExtConnection created");
     }
@@ -70,6 +70,7 @@ public:
         param["ability.want.params.uiExtensionType"] = "sys/commonUI";
         param["sysDialogZOrder"] = ORDER_SIZE;
         param["sessionId"] = sessionId_;
+        param["uid"] = uid_;
 
         std::string paramStr = param.dump(-1, ' ', true);
         std::u16string paramStrU16(paramStr.begin(), paramStr.end());
@@ -86,6 +87,7 @@ public:
 
 private:
     int32_t sessionId_;
+    uint32_t uid_;
     OHOS::sptr<OHOS::IRemoteObject> outRemote_ = nullptr;
 };
 } // namespace AudioStandard

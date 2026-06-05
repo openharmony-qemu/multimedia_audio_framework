@@ -115,6 +115,7 @@ const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
 const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
 const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
 const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
+const char* MANAGE_AUDIO_CONFIG_PERMISSION = "ohos.permission.MANAGE_AUDIO_CONFIG";
 static constexpr char WAKEUP_TRACK_FILE_PATCH[] = "/dev/audio_wakeup_track";
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_SYSTEM,
@@ -3900,6 +3901,8 @@ bool AudioServer::AudioParameterValueCheck(const std::string &key, const std::st
 
 int32_t AudioServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice)
 {
+    bool ret = VerifyClientPermission(MANAGE_AUDIO_CONFIG_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "ReportPlaybackCaptureUserChoice failed: no permission.");
     CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
     return AudioService::GetInstance()->ReportPlaybackCaptureUserChoice(sessionId, choice);
 }
