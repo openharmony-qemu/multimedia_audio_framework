@@ -431,19 +431,22 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId, bool isStandby)
         CHECK_AND_RETURN_LOG(node, "Pause not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Pause sessionId %{public}u", sessionId);
         auto state = curNode_->GetState();
+        bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         node->SetState(HPAE_SESSION_PAUSED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_PAUSED);
         if (sessionId == curNode_->GetSessionId()) {
-            if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+            if (isSessionEffectActive) {
                 sessionEffectNode_->PauseEffect();
             }
             DisConnectInputSession();
             if (state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
                 sinkOutputNode_->StopStream();
-                uint64_t latency = 0;
-                OnRequestLatency(sessionId, latency);
-                OnRewindBuffer(sessionId, latency);
-                FlushPipelineNodes(sessionId);
+                if (!isSessionEffectActive) {
+                    uint64_t latency = 0;
+                    OnRequestLatency(sessionId, latency);
+                    OnRewindBuffer(sessionId, latency);
+                    FlushPipelineNodes(sessionId);
+                }
             }
         }
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
@@ -490,9 +493,6 @@ void HpaeOffloadRendererManager::FlushPipelineNodes(uint32_t sessionId)
     }
     if (sinkOutputNode_ != nullptr) {
         sinkOutputNode_->FlushStream();
-    }
-    if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
-        sessionEffectNode_->FlushEffect();
     }
 }
 
