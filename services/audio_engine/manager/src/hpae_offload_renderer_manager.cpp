@@ -439,14 +439,15 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId, bool isStandby)
                 sessionEffectNode_->PauseEffect();
             }
             DisConnectInputSession();
-            if (state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
+            bool isRunningWithSink = state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr;
+            if (isRunningWithSink) {
                 sinkOutputNode_->StopStream();
-                if (!isSessionEffectActive) {
-                    uint64_t latency = 0;
-                    OnRequestLatency(sessionId, latency);
-                    OnRewindBuffer(sessionId, latency);
-                    FlushPipelineNodes(sessionId);
-                }
+            }
+            if (isRunningWithSink && !isSessionEffectActive) {
+                uint64_t latency = 0;
+                OnRequestLatency(sessionId, latency);
+                OnRewindBuffer(sessionId, latency);
+                FlushPipelineNodes(sessionId);
             }
         }
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
