@@ -136,7 +136,8 @@ private:
     void StopOuputNode();
     void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state,
         uint32_t appUid = INVALID_UID);
-    
+    void FlushPipelineNodes(uint32_t sessionId);
+
     std::shared_ptr<HpaeSinkInputNode> curNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
     std::shared_ptr<HpaeAudioFormatConverterNode> converterForLoudness_ = nullptr;

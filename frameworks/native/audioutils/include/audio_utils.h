@@ -271,6 +271,13 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
     return std::find(array.begin(), array.end(), value) == array.end();
 }
 
+constexpr uint32_t STANDARD_SAMPLE_RATE_DIVISOR = 50;
+
+inline bool IsNonStandardSampleRate(uint32_t sampleRate)
+{
+    return sampleRate % STANDARD_SAMPLE_RATE_DIVISOR != 0;
+}
+
 template <typename T>
 bool StringConverter(const std::string &str, T &result);
 bool StringConverterFloat(const std::string &str, float &result);
