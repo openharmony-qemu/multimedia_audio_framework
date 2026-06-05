@@ -122,15 +122,17 @@ HWTEST_F(HpaePolicyManagerTest, FaultCode_NotifyAlgoToStopStream_EffectManagerNu
 }
 
 /**
- * @tc.name  : IsCollaborationSupportedForStreamUsage_001
+ * @tc.name  : IsStreamUsageSupported_001
  * @tc.type  : FUNC
- * @tc.desc  : Test IsCollaborationSupportedForStreamUsage delegates to AudioCollaborationManager.
+ * @tc.desc  : Test IsStreamUsageSupported delegates to AudioCollaborationManager.
  */
-HWTEST_F(HpaePolicyManagerTest, IsCollaborationSupportedForStreamUsage_001, TestSize.Level1)
+HWTEST_F(HpaePolicyManagerTest, IsStreamUsageSupported_001, TestSize.Level1)
 {
-    bool result = HpaePolicyManager::GetInstance().IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE);
-    // Result depends on AudioCollaborationManager state, just verify no crash
+    bool result = HpaePolicyManager::GetInstance().IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP,
+        STREAM_USAGE_MOVIE);
+    // Result depends on AudioCollaborationManager config, just verify no crash
     EXPECT_TRUE(result || !result);
-    result = HpaePolicyManager::GetInstance().IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MEDIA);
+    result = HpaePolicyManager::GetInstance().IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP,
+        STREAM_USAGE_MEDIA);
     EXPECT_TRUE(result || !result);
 }

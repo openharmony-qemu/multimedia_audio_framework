@@ -156,7 +156,7 @@ public:
     virtual int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) = 0;
     virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
-    virtual bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) = 0;
+    virtual bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) = 0;
     virtual int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) = 0;
     virtual void LoadCollaborationConfig() = 0;
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };

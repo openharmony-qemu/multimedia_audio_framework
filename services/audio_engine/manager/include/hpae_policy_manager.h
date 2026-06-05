@@ -76,11 +76,10 @@ public:
     void DeleteStreamVolumeToEffect(const std::string stringSessionID);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
     int32_t UpdateCollaborativeProductId(const std::string &productId);
-    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage);
+    bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage);
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length);
     void LoadCollaborationConfig();
     void SetBypassSpatializationForStereo(bool bypass);
-    int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled);
 private:
     HpaePolicyManager();
 };

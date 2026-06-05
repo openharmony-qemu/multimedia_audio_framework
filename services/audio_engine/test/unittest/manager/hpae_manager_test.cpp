@@ -2571,26 +2571,6 @@ HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_SwitchBtToNl_003, TestSiz
 }
 
 /**
- * @tc.name  : Test IsCollaborationSupportedForStreamUsage
- * @tc.type  : FUNC
- * @tc.number: IsCollaborationSupportedForStreamUsage_001
- * @tc.desc  : Test IsCollaborationSupportedForStreamUsage delegates correctly.
- */
-HWTEST_F(HpaeManagerUnitTest, IsCollaborationSupportedForStreamUsage_001, TestSize.Level1)
-{
-    EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->Init();
-    EXPECT_EQ(hpaeManager_->IsInit(), true);
-    // Test with different stream usages
-    bool result = hpaeManager_->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE);
-    // Result depends on AudioCollaborationManager config, just verify no crash
-    EXPECT_TRUE(result || !result);
-    result = hpaeManager_->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MUSIC);
-    EXPECT_TRUE(result || !result);
-    hpaeManager_->DeInit();
-}
-
-/**
  * @tc.name  : Test UpdateCollaborativeState same state no-op
  * @tc.type  : FUNC
  * @tc.number: UpdateCollaborativeState_NoChange_004

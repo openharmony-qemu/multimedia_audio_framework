@@ -835,7 +835,8 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     // MultiChannel:collaboration playback, nearlink
     if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->GetMainNewDeviceDesc()) && streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_NEARLINK &&
-        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage()) &&
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(
+        DEVICE_TYPE_NEARLINK, streamDesc->GetRenderUsage()) &&
         !CheckRingAndVoipStreamRunning() && !isRingDualToneOnPrimarySpeaker_) {
             streamDesc->isNearLinkCollaborationEnable_ = true;
             JUDGE_AND_INFO_LOG(isCreateProcess_, "isNearLinkCollaborationEnable_ true");
@@ -904,7 +905,8 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
         HILOG_COMM_ERROR("[IsStreamSupportDirect]Spatialization enabled"));
     ret = AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->GetMainNewDeviceDesc()) &&
-        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage());
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(
+            streamDesc->GetMainNewDeviceType(), streamDesc->GetRenderUsage());
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == false, false,
         HILOG_COMM_ERROR("[IsStreamSupportDirect]Collaborative enabled"));
     return true;
@@ -1029,7 +1031,8 @@ void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioS
             if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_NORMAL &&
                 AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
                     streamDesc->GetMainNewDeviceDesc()) &&
-                audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage())) {
+                audioPolicyManager_.IsCollaborationSupportedForStreamUsage(
+                    streamDesc->GetMainNewDeviceType(), streamDesc->GetRenderUsage())) {
                 break;
             }
             return;

@@ -344,7 +344,7 @@ public:
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
     float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
     int32_t UpdateCollaborativeProductId(const std::string &productId);
-    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage);
+    bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage);
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length);
     void LoadCollaborationConfig();
     void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);

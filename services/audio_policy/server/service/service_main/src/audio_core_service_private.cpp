@@ -2407,7 +2407,8 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
 
     if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->GetMainNewDeviceDesc()) &&
-        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage())) {
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(
+            streamDesc->GetMainNewDeviceType(), streamDesc->GetRenderUsage())) {
         return false;
     }
 

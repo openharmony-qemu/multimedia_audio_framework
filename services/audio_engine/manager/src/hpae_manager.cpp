@@ -2735,7 +2735,6 @@ int32_t HpaeManager::UpdateCollaborativeState(CollaborationState isCollaboration
             curCollAbSinkName = MCH_SINK_NAME;
         }
         isCollaborationEnabled_ = isCollaborationEnabled;
-        HpaePolicyManager::GetInstance().UpdateCollaborativeState(isCollaborationEnabled);
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(curCollAbSinkName);
         CHECK_AND_RETURN_LOG(rendererManager != nullptr,
             "can not find sink[%{public}s] in rendererManagerMap_", curCollAbSinkName.c_str());
@@ -2966,9 +2965,9 @@ int32_t HpaeManager::UpdateCollaborativeProductId(const std::string &productId)
     return SUCCESS;
 }
 
-bool HpaeManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+bool HpaeManager::IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage)
 {
-    return HpaePolicyManager::GetInstance().IsCollaborationSupportedForStreamUsage(streamUsage);
+    return HpaePolicyManager::GetInstance().IsCollaborationSupportedForStreamUsage(deviceType, streamUsage);
 }
 
 int32_t HpaeManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)

@@ -771,9 +771,9 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_049, TestSize.Level0)
     nodeInfo.sceneType = HPAE_SCENE_MOVIE;
 
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
-    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+    if (audioCollaborationManager->IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP,
+        nodeInfo.effectInfo.streamUsage)) {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
         EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
@@ -799,7 +799,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_050, TestSize.Level0)
     nodeInfo.effectInfo.lastEffectScene = SCENE_MUSIC;
 
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_CLOSE);
     EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MUSIC);
@@ -1000,9 +1000,10 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_064, TestSize.Level0)
     nodeInfo.effectInfo.lastEffectScene = SCENE_MUSIC;
     
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
-    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+    if (audioCollaborationManager->IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP,
+        nodeInfo.effectInfo.streamUsage)) {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
         EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MUSIC);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
@@ -1325,11 +1326,12 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
     nodeInfo.effectInfo.streamUsage = STREAM_USAGE_MOVIE;
     nodeInfo.sceneType = HPAE_SCENE_MOVIE;
     nodeInfo.effectInfo.lastEffectScene = SCENE_MOVIE;
-    
+
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
-    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+    if (audioCollaborationManager->IsStreamUsageSupported(DEVICE_TYPE_NEARLINK,
+        nodeInfo.effectInfo.streamUsage)) {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
         EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
@@ -1354,9 +1356,10 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
     nodeInfo.effectInfo.lastEffectScene = SCENE_MUSIC;
 
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
-    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+    if (audioCollaborationManager->IsStreamUsageSupported(DEVICE_TYPE_NEARLINK,
+        nodeInfo.effectInfo.streamUsage)) {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
         EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MUSIC);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
@@ -1381,7 +1384,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
     nodeInfo.effectInfo.lastEffectScene = SCENE_MOVIE;
 
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_CLOSE);
     EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
@@ -1402,9 +1405,10 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
     nodeInfo.effectInfo.lastEffectScene = SCENE_GAME;
 
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
-    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+    if (audioCollaborationManager->IsStreamUsageSupported(DEVICE_TYPE_NEARLINK,
+        nodeInfo.effectInfo.streamUsage)) {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
         EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_GAME);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
@@ -1429,10 +1433,11 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
     nodeInfo.effectInfo.lastEffectScene = SCENE_MOVIE;
 
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+
 
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
-    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+    if (audioCollaborationManager->IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP,
+        nodeInfo.effectInfo.streamUsage)) {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
         EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
@@ -1443,7 +1448,8 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
     }
     // Switch to NEARLINK - should remain collaborative
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
-    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+    if (audioCollaborationManager->IsStreamUsageSupported(DEVICE_TYPE_NEARLINK,
+        nodeInfo.effectInfo.streamUsage)) {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
         EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
@@ -1467,11 +1473,12 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
     nodeInfo.sceneType = HPAE_SCENE_MOVIE;
     nodeInfo.effectInfo.lastEffectScene = SCENE_MOVIE;
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    audioCollaborationManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+
 
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
     // SCENE_DEFAULT is not SCENE_MOVIE or SCENE_MUSIC, should not change
-    if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+    if (audioCollaborationManager->IsStreamUsageSupported(DEVICE_TYPE_NEARLINK,
+        nodeInfo.effectInfo.streamUsage)) {
         EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
         EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MOVIE);
         EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
