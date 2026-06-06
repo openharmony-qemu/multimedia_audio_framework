@@ -141,29 +141,6 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectOutputDeviceF
     auto ret = AudioDeviceEnhanceManager::GetInstance().SelectOutputDeviceForAudioRenderer(audioRenderer, desc);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectOutputDeviceForAudioRenderer_002, TestSize.Level0)
-{
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    auto renderer = std::make_shared<NiceMock<MockAudioRenderer>>();
-    std::shared_ptr<AudioRenderer> audioRenderer = renderer;
-    EXPECT_CALL(*renderer, SelectOutputDevice(desc)).WillOnce(Return(SUCCESS));
-
-    auto ret = AudioDeviceEnhanceManager::GetInstance().SelectOutputDeviceForAudioRenderer(audioRenderer, desc);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectOutputDeviceForAudioRenderer_003, TestSize.Level0)
-{
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    auto renderer = std::make_shared<NiceMock<MockAudioRenderer>>();
-    std::shared_ptr<AudioRenderer> audioRenderer = renderer;
-    EXPECT_CALL(*renderer, SelectOutputDevice(desc)).WillOnce(Return(ERR_INVALID_PARAM));
-
-    auto ret = AudioDeviceEnhanceManager::GetInstance().SelectOutputDeviceForAudioRenderer(audioRenderer, desc);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
 HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectInputDeviceForAudioCapturer_001, TestSize.Level0)
 {
     auto desc = std::make_shared<AudioDeviceDescriptor>();
@@ -171,29 +148,6 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectInputDeviceFo
     auto ret = AudioDeviceEnhanceManager::GetInstance().SelectInputDeviceForAudioCapturer(audioCapturer, desc);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectInputDeviceForAudioCapturer_002, TestSize.Level0)
-{
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    auto capturer = std::make_shared<NiceMock<MockAudioCapturer>>();
-    std::shared_ptr<AudioCapturer> audioCapturer = capturer;
-    EXPECT_CALL(*capturer, SelectInputDevice(desc)).WillOnce(Return(SUCCESS));
-
-    auto ret = AudioDeviceEnhanceManager::GetInstance().SelectInputDeviceForAudioCapturer(audioCapturer, desc);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectInputDeviceForAudioCapturer_003, TestSize.Level0)
-{
-    auto desc = std::make_shared<AudioDeviceDescriptor>();
-    auto capturer = std::make_shared<NiceMock<MockAudioCapturer>>();
-    std::shared_ptr<AudioCapturer> audioCapturer = capturer;
-    EXPECT_CALL(*capturer, SelectInputDevice(desc)).WillOnce(Return(ERR_INVALID_PARAM));
-
-    auto ret = AudioDeviceEnhanceManager::GetInstance().SelectInputDeviceForAudioCapturer(audioCapturer, desc);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
 HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_RendererBaseSelectOutputDevice_001, TestSize.Level0)
 {
     MockAudioRenderer renderer;

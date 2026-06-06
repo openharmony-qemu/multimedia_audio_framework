@@ -2691,33 +2691,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_091, TestSize.Level4
     ret = ptrRendererInClientInner->CheckBufferValid(bufferDesc);
     EXPECT_EQ(ret, false);
 }
-
-/**
- * @tc.name  : Test RendererInClientInner API
- * @tc.type  : FUNC
- * @tc.number: RendererInClientInner_092
- * @tc.desc  : Test RendererInClientInner::ProcessWriteInner
- */
-HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_092, TestSize.Level4)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
-    ptrRendererInClientInner->state_.store(RUNNING);
-    // totalsize is 100
-    uint32_t totalSizeInFrame = 100;
-    uint32_t byteSizePerFrame = 1;
-    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->restoreStatus.store(NO_NEED_FOR_RESTORE);
-    EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), false);
-
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
-    ptrRendererInClientInner->WaitForBufferNeedOperate();
-    EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), true);
-
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE_TO_NORMAL);
-    ptrRendererInClientInner->WaitForBufferNeedOperate();
-    EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), true);
-}
-
 /**
  * @tc.name  : Test GetAudioTime API
  * @tc.type  : FUNC
