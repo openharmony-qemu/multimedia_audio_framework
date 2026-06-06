@@ -1020,6 +1020,10 @@ void AudioRouterInfra::ClearWirelessSelectDevice(const std::shared_ptr<AudioDevi
         systemSelectDevice_.mediaOutput_.device_ = nullptr;
         systemSelectDevice_.mediaOutput_.selectTime_ = 0;
     }
+    if (NeedClearWirelessDevice(device, systemSelectDevice_.mediaInput_.device_)) {
+        systemSelectDevice_.mediaInput_.device_ = nullptr;
+        systemSelectDevice_.mediaInput_.selectTime_ = 0;
+    }
     for (auto& [uid, context] : appContexts_) {
         CHECK_AND_CONTINUE_LOG(context != nullptr, "null context found for uid: %{public}d", uid);
         if (NeedClearWirelessDevice(device, context->appSelectDevice_.mediaOutput_.device_)) {
@@ -1027,11 +1031,15 @@ void AudioRouterInfra::ClearWirelessSelectDevice(const std::shared_ptr<AudioDevi
             context->appSelectDevice_.mediaOutput_.selectTime_ = 0;
             UpdateExclusiveUidNoLock(uid, SelectDeviceType::MEDIA_OUTPUT, 0);
         }
+        if (NeedClearWirelessDevice(device, context->appSelectDevice_.mediaInput_.device_)) {
+            context->appSelectDevice_.mediaInput_.device_ = nullptr;
+            context->appSelectDevice_.mediaInput_.selectTime_ = 0;
+            UpdateExclusiveUidNoLock(uid, SelectDeviceType::MEDIA_INPUT, 0);
+        }
         auto &streamSelectDevices = context->streamSelectDevices_;
         auto it = streamSelectDevices.begin();
         while (it != streamSelectDevices.end()) {
-            if (NeedClearWirelessDevice(device, it->second) && it->second != nullptr &&
-                it->second->deviceRole_ == OUTPUT_DEVICE) {
+            if (NeedClearWirelessDevice(device, it->second)) {
                 it = streamSelectDevices.erase(it);
             } else {
                 ++it;
