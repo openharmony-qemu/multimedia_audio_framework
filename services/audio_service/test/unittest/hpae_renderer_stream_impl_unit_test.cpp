@@ -486,6 +486,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_006, TestSize.Level1)
     auto unit = CreateHpaeRendererStreamImpl();
     EXPECT_NE(unit, nullptr);
     unit->offloadEnable_ = false;
+    unit->deviceClass_ = "offload";
     auto ret = unit->OffloadSetVolume();
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     AddStreamVolume();
