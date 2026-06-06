@@ -195,6 +195,15 @@ SystemVolumeFilter AudioPolicyClientStubImpl::RemoveSystemVolumeChangeByFilterCa
         removedFilter = it->first;
         it = systemVolumeChangeByFilterCallbackList_.erase(it);
     }
+    bool hasCallbacksForFilter = std::any_of(
+        systemVolumeChangeByFilterCallbackList_.begin(),
+        systemVolumeChangeByFilterCallbackList_.end(),
+        [&removedFilter](const auto &pair) {
+            return pair.first.uid == removedFilter.uid;
+        });
+    if (hasCallbacksForFilter) {
+        removedFilter.uid = -1;
+    }
     return removedFilter;
 }
 
@@ -202,6 +211,20 @@ size_t AudioPolicyClientStubImpl::GetSystemVolumeChangeByFilterCallbackSize() co
 {
     std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeByFilterMutex_);
     return systemVolumeChangeByFilterCallbackList_.size();
+}
+
+std::vector<SystemVolumeFilter> AudioPolicyClientStubImpl::GetRegisteredSystemVolumeFilters() const
+{
+    std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeByFilterMutex_);
+    std::set<int32_t> uniqueUids;
+    std::vector<SystemVolumeFilter> filters;
+    for (const auto &[filter, weakCb] : systemVolumeChangeByFilterCallbackList_) {
+        if (uniqueUids.find(filter.uid) == uniqueUids.end()) {
+            uniqueUids.insert(filter.uid);
+            filters.push_back(filter);
+        }
+    }
+    return filters;
 }
 
 int32_t AudioPolicyClientStubImpl::OnSystemVolumeChange(const VolumeEvent &volumeEvent)

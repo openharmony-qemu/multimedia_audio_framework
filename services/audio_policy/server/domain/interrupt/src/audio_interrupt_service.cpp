@@ -1713,6 +1713,25 @@ int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
     return STREAM_DEFAULT_PRIORITY;
 }
 
+AudioVolumeType AudioInterruptService::GetHighestPriorityVolumeTypeFromStreams(
+    const std::vector<AudioRendererInfo> &rendererInfos)
+{
+    AudioStreamType targetStreamType = STREAM_MUSIC;
+    int32_t highestPriority = STREAM_DEFAULT_PRIORITY;
+
+    for (const auto &rendererInfo : rendererInfos) {
+        AudioStreamType streamType = streamCollector_.GetStreamTypeFromUsageContent(
+            rendererInfo.streamUsage, rendererInfo.contentType);
+        int32_t priority = GetStreamTypePriority(streamType);
+        if (priority < highestPriority) {
+            highestPriority = priority;
+            targetStreamType = streamType;
+        }
+    }
+
+    return VolumeUtils::GetVolumeTypeFromStreamType(targetStreamType);
+}
+
 int32_t AudioInterruptService::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType)
 {
     std::lock_guard<std::mutex> lock(mutex_);

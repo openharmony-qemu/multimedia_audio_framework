@@ -103,7 +103,7 @@ public:
         return 0;
     }
 
-    ErrCode OnQueryIsPcSettingsOrSceneBoard(const std::string &bundleName, bool &ret) override
+    ErrCode OnQueryUseSystemPreferredDeviceForVolume(const std::string &bundleName, bool &ret) override
     {
         return 0;
     }

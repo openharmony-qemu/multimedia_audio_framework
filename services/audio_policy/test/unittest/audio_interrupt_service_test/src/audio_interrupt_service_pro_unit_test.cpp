@@ -124,6 +124,89 @@ HWTEST(AudioInterruptServiceProUnitTest, AudioInterruptService_005, TestSize.Lev
 }
 
 /**
+ * @tc.name  : GetHighestPriorityVolumeTypeFromStreams_HigherPriorityStream
+ * @tc.number: GetHighestPriorityVolumeTypeFromStreams_001
+ * @tc.desc  : Test GetHighestPriorityVolumeTypeFromStreams returns voice call volume type for
+ * voice communication stream
+ */
+HWTEST(AudioInterruptServiceProUnitTest, GetHighestPriorityVolumeTypeFromStreams_HigherPriorityStream, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    std::vector<AudioRendererInfo> rendererInfos;
+    AudioRendererInfo voiceInfo;
+    voiceInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    voiceInfo.contentType = CONTENT_TYPE_SPEECH;
+    rendererInfos.push_back(voiceInfo);
+
+    auto volumeType = audioInterruptService->GetHighestPriorityVolumeTypeFromStreams(rendererInfos);
+    EXPECT_EQ(volumeType, STREAM_VOICE_CALL);
+}
+
+/**
+ * @tc.name  : GetHighestPriorityVolumeTypeFromStreams_LowerPriorityStream
+ * @tc.number: GetHighestPriorityVolumeTypeFromStreams_002
+ * @tc.desc  : Test GetHighestPriorityVolumeTypeFromStreams returns music volume type for
+ * notification stream (priority 100)
+ */
+HWTEST(AudioInterruptServiceProUnitTest, GetHighestPriorityVolumeTypeFromStreams_LowerPriorityStream, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    std::vector<AudioRendererInfo> rendererInfos;
+    AudioRendererInfo notificationInfo;
+    notificationInfo.streamUsage = STREAM_USAGE_NOTIFICATION;
+    notificationInfo.contentType = CONTENT_TYPE_PROMPT;
+    rendererInfos.push_back(notificationInfo);
+
+    auto volumeType = audioInterruptService->GetHighestPriorityVolumeTypeFromStreams(rendererInfos);
+    EXPECT_EQ(volumeType, STREAM_MUSIC);
+}
+
+/**
+ * @tc.name  : GetHighestPriorityVolumeTypeFromStreams_EmptyInput
+ * @tc.number: GetHighestPriorityVolumeTypeFromStreams_003
+ * @tc.desc  : Test GetHighestPriorityVolumeTypeFromStreams returns default music volume type for empty input
+ */
+HWTEST(AudioInterruptServiceProUnitTest, GetHighestPriorityVolumeTypeFromStreams_EmptyInput, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    std::vector<AudioRendererInfo> rendererInfos;
+
+    auto volumeType = audioInterruptService->GetHighestPriorityVolumeTypeFromStreams(rendererInfos);
+    EXPECT_EQ(volumeType, STREAM_MUSIC);
+}
+
+/**
+ * @tc.name  : GetHighestPriorityVolumeTypeFromStreams_MultipleStreams
+ * @tc.number: GetHighestPriorityVolumeTypeFromStreams_004
+ * @tc.desc  : Test GetHighestPriorityVolumeTypeFromStreams returns highest priority when multiple streams present
+ */
+HWTEST(AudioInterruptServiceProUnitTest, GetHighestPriorityVolumeTypeFromStreams_MultipleStreams, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    std::vector<AudioRendererInfo> rendererInfos;
+    AudioRendererInfo musicInfo;
+    musicInfo.streamUsage = STREAM_USAGE_MEDIA;
+    musicInfo.contentType = CONTENT_TYPE_MUSIC;
+    rendererInfos.push_back(musicInfo);
+
+    AudioRendererInfo voiceInfo;
+    voiceInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    voiceInfo.contentType = CONTENT_TYPE_SPEECH;
+    rendererInfos.push_back(voiceInfo);
+
+    auto volumeType = audioInterruptService->GetHighestPriorityVolumeTypeFromStreams(rendererInfos);
+    EXPECT_EQ(volumeType, STREAM_VOICE_CALL);
+}
+
+/**
  * @tc.name  : Test AudioInterruptService
  * @tc.number: AudioInterruptService_006
  * @tc.desc  : Test GetStreamInFocusInternal

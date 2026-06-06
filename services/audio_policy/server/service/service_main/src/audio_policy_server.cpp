@@ -713,7 +713,9 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
             newRendererInfo, SYSTEM_UID, LOCAL_NETWORK_ID);
         CHECK_AND_RETURN_RET_LOG(!deviceDescs.empty(), ERROR, "deviceDescs is empty");
         std::shared_ptr<AudioDeviceDescriptor> preferredDeviceDesc = deviceDescs.front();
-        eventEntry_->GetHighestPriorityVolumeTypeForDevice(preferredDeviceDesc, streamInFocus);
+        std::vector<AudioRendererInfo> rendererInfos;
+        eventEntry_->GetActiveStreamRendererInfosForDevice(preferredDeviceDesc, rendererInfos);
+        streamInFocus = interruptService_->GetHighestPriorityVolumeTypeFromStreams(rendererInfos);
     } else {
         GetActiveAudioInterruptZone(zoneId, streamInFocus);
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus);

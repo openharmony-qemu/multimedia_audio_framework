@@ -234,12 +234,12 @@ bool AudioPolicyUtils::IsSelectedByMediaController()
     return ret;
 }
 
-bool AudioPolicyUtils::IsPcSettingsOrSceneBoard(const std::string &bundleName)
+bool AudioPolicyUtils::ShouldUseSystemPreferredDeviceForVolume(const std::string &bundleName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback_ != nullptr, false, "callback is nullptr");
     bool ret = false;
-    audioClientInfoMgrCallback_->OnQueryIsPcSettingsOrSceneBoard(bundleName, ret);
+    audioClientInfoMgrCallback_->OnQueryUseSystemPreferredDeviceForVolume(bundleName, ret);
     return ret;
 }
 

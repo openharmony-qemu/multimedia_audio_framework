@@ -1001,12 +1001,12 @@ bool AudioPolicyServerHandler::IsForceGetDevByVolumeType(int32_t uid)
     return ret;
 }
 
-bool AudioPolicyServerHandler::IsPcSettingsOrSceneBoard(int32_t uid)
+bool AudioPolicyServerHandler::ShouldUseSystemPreferredDeviceForVolume(int32_t uid)
 {
     std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
     CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback_ != nullptr, false, "callback is nullptr");
     bool ret = false;
-    audioClientInfoMgrCallback_->OnQueryIsPcSettingsOrSceneBoard(bundleName, ret);
+    audioClientInfoMgrCallback_->OnQueryUseSystemPreferredDeviceForVolume(bundleName, ret);
     return ret;
 }
 
@@ -1041,10 +1041,9 @@ bool AudioPolicyServerHandler::IsTargetDeviceForVolumeKeyEvent(int32_t pid, cons
     CHECK_AND_RETURN_RET(volumeEvent.deviceType != DEVICE_TYPE_NONE, true);
 
     int32_t uid = pidUidMap_.count(pid) > 0 ? pidUidMap_[pid] : -1;
-    bool isForceVerify = IsForceGetDevByVolumeType(uid);
-    CHECK_AND_RETURN_RET(!isForceVerify, true);
-    if (Util::IsEnhancedRoutingSupported()) {
-        uid = SYSTEM_UID;
+    if (!Util::IsEnhancedRoutingSupported()) {
+        bool isForceVerify = IsForceGetDevByVolumeType(uid);
+        CHECK_AND_RETURN_RET(!isForceVerify, true);
     }
     auto deviceDesc = AudioActiveDevice::GetInstance().GetActiveDeviceForVolume(uid);
     CHECK_AND_RETURN_RET(deviceDesc != nullptr, true);
@@ -1122,13 +1121,11 @@ void AudioPolicyServerHandler::NotifySystemVolumeChangeByFilter(int32_t clientId
     std::lock_guard<std::mutex> filterLock(clientSystemVolumeFilterMapMutex_);
     auto filterIt = clientSystemVolumeFilterMap_.find(clientId);
     if (filterIt != clientSystemVolumeFilterMap_.end()) {
-        auto systemPreferDeviceDesc = AudioActiveDevice::GetInstance().GetActiveDeviceForVolume(SYSTEM_UID);
-        CHECK_AND_RETURN_LOG(systemPreferDeviceDesc != nullptr, "systemPreferDeviceDesc is nullptr");
         for (const auto &filter : filterIt->second) {
             auto appPreferDeviceDesc = AudioActiveDevice::GetInstance().GetActiveDeviceForVolume(filter.uid);
             CHECK_AND_CONTINUE_LOG(appPreferDeviceDesc != nullptr, "appPreferDeviceDesc is nullptr");
-            bool isSameDevice = systemPreferDeviceDesc->deviceType_ == appPreferDeviceDesc->deviceType_ &&
-                systemPreferDeviceDesc->networkId_ == appPreferDeviceDesc->networkId_;
+            bool isSameDevice = volumeEvent.deviceType == appPreferDeviceDesc->deviceType_ &&
+                volumeEvent.networkId == appPreferDeviceDesc->networkId_;
             CHECK_AND_CONTINUE(isSameDevice);
             audioPolicyClient->OnSystemVolumeChangeByFilter(filter, volumeEvent);
         }

@@ -131,6 +131,8 @@ public:
 
     int32_t SetAudioFocusInfoCallback(const int32_t zoneId, const sptr<IRemoteObject> &object);
     int32_t GetStreamTypePriority(AudioStreamType streamType);
+    AudioVolumeType GetHighestPriorityVolumeTypeFromStreams(
+        const std::vector<AudioRendererInfo> &rendererInfos);
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);

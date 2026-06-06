@@ -252,8 +252,9 @@ public:
         void OnVehiclePriorityChanged(bool enable);
         // Trigger reload for VoIP priority change due to mute callback
         void TriggerVoipPriorityReload(uint32_t sessionId, bool lowered);
-        int32_t GetHighestPriorityVolumeTypeForDevice(
-            const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioVolumeType &volumeType);
+        int32_t GetActiveStreamRendererInfosForDevice(
+            const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+            std::vector<AudioRendererInfo> &rendererInfos);
 
     private:
         int32_t HandleSetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
@@ -517,8 +518,9 @@ public:
         const AudioStreamDeviceChangeReason reason, int32_t forceUid = INVALID_UID);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
-    int32_t GetHighestPriorityVolumeTypeForDevice(
-        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioVolumeType &volumeType);
+    int32_t GetActiveStreamRendererInfosForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        std::vector<AudioRendererInfo> &rendererInfos);
 
 private:
     void UpdateEnhanceEffectState(SourceType source);
@@ -845,7 +847,6 @@ private:
     void OnVehiclePriorityChanged(bool enable);
     void NotifyServiceReady();
     void NotifyRequiredPipesReady();
-    int32_t GetStreamTypePriority(AudioStreamType streamType);
     bool CheckCollaborativeStreamRunning();
     void UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState);
 

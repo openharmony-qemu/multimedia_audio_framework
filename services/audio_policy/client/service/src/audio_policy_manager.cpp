@@ -258,6 +258,19 @@ int32_t AudioPolicyManager::SetCallbackStreamInfo(const CallbackChange &callback
     return ret;
 }
 
+void AudioPolicyManager::RecoverSystemVolumeChangeByFilterCallback(const sptr<IAudioPolicy> &gsp)
+{
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER].mutex);
+    if (callbackChangeInfos_[CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER].isEnable) {
+        std::vector<SystemVolumeFilter> systemVolumeFilters =
+            audioPolicyClientStubCB_->GetRegisteredSystemVolumeFilters();
+        for (const auto &filter : systemVolumeFilters) {
+            AUDIO_INFO_LOG("recover filter for uid=%{public}d", filter.uid);
+            gsp->SetSystemVolumeChangeCallbackInfo(filter);
+        }
+    }
+}
+
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
 {
     GetInstance().ResetClientTrackerStubMap();
