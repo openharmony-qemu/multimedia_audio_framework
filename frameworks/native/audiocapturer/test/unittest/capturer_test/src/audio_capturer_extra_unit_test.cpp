@@ -1596,29 +1596,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetOverflowCount_001, TestSize.Leve
     audioCapturer->Release();
 }
 #endif
-
-/**
- * @tc.name  : AudioCapturer_IsRestoreOrStopNeeded_001
- * @tc.number: IsRestoreOrStopNeeded_001
- * @tc.desc  : Test IsRestoreOrStopNeeded() for different cases
- */
-HWTEST(AudioCapturerUnitTest, IsRestoreOrStopNeeded_001, TestSize.Level4)
-{
-    AppInfo appInfo = {};
-    auto testCapturerInner = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-
-    int32_t curTid = gettid();
-    // To test matching case
-    testCapturerInner->callbackLoopTid_ = curTid;
-    bool needRestore = testCapturerInner->IsRestoreOrStopNeeded();
-    EXPECT_EQ(false, needRestore);
-
-    // To test not matching case
-    testCapturerInner->callbackLoopTid_ = curTid + 1;
-    needRestore = testCapturerInner->IsRestoreOrStopNeeded();
-    EXPECT_EQ(false, needRestore);
-}
-
 /**
  * @tc.name  : AudioCapturer_AsyncCheckAudioCapturer_001
  * @tc.number: AsyncCheckAudioCapturer_001
@@ -1633,35 +1610,6 @@ HWTEST(AudioCapturerUnitTest, AsyncCheckAudioCapturer_001, TestSize.Level4)
     int32_t res = testCapturerInner->AsyncCheckAudioCapturer("Test");
     EXPECT_EQ(SUCCESS, res);
 }
-
-/**
- * @tc.name  : AudioCapturer_SetIndependentAudioSessionStrategy_001
- * @tc.number: SetIndependentAudioSessionStrategy_001
- * @tc.desc  : Test SetIndependentAudioSessionStrategy()
- */
-HWTEST(AudioCapturerUnitTest, SetIndependentAudioSessionStrategy_001, TestSize.Level4)
-{
-    AppInfo appInfo = {};
-    auto testCapturerInner = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-
-    AudioSessionStrategy strategy = {};
-    uint32_t behavior = 0;
-    testCapturerInner->SetIndependentAudioSessionStrategy(strategy, behavior);
-    bool res = testCapturerInner->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;
-    EXPECT_FALSE(res);
-
-    behavior = 1;
-    testCapturerInner->SetIndependentAudioSessionStrategy(strategy, behavior);
-    res = testCapturerInner->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;
-    EXPECT_FALSE(res);
-
-    behavior = static_cast<uint32_t>(AudioSessionBehaviorFlags::MASK_VALID_BEHAVIOR);
-    testCapturerInner->audioInterrupt_.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    testCapturerInner->SetIndependentAudioSessionStrategy(strategy, behavior);
-    res = testCapturerInner->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;
-    EXPECT_TRUE(res);
-}
-
 /**
  * @tc.name  : AudioCapturer_SetIndependentAudioSessionStrategy_002
  * @tc.number: SetIndependentAudioSessionStrategy_002

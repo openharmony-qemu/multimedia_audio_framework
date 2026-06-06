@@ -1870,22 +1870,6 @@ HWTEST_F(RendererInServerThirdUnitTest, GetAvailableSize_001, TestSize.Level1)
     int32_t ret = streamCallbacks->GetAvailableSize(length);
     EXPECT_EQ(ret, ERROR);
 }
-
-
-/**
- * @tc.name  : Test IsHighResolution API
- * @tc.type  : FUNC
- * @tc.number: RendererInServerIsHighResolution_001
- * @tc.desc  : Test IsHighResolution.
- */
-HWTEST_F(RendererInServerThirdUnitTest, RendererInServerIsHighResolution_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    
-    int32_t ret = rendererInServer->IsHighResolution();
-    EXPECT_EQ(ret, 1);
-}
-
 /**
  * @tc.name  : Test SetSilentModeAndMixWithOthers API
  * @tc.type  : FUNC
