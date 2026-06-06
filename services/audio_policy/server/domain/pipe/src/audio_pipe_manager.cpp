@@ -1553,7 +1553,7 @@ bool AudioPipeManager::CheckRemoteNoRunningCondition(std::shared_ptr<AudioPipeIn
             break;
         }
     }
-    CHECK_AND_RETURN_RET(IsOnlyAppLevelHdPlaySupported(remoteOffloadPipe) && !pipeInfo->HasStream(), false);
+    CHECK_AND_RETURN_RET(IsOnlyAppLevelHdPlaySupported(remoteOffloadPipe) && !pipeInfo->HasRunningStream(), false);
     return true;
 }
 
