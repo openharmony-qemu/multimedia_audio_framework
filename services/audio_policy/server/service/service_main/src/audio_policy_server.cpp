@@ -1387,6 +1387,8 @@ int32_t AudioPolicyServer::GetLowPowerVolume(int32_t streamId, float &outVolume)
 
 int32_t AudioPolicyServer::GetSingleStreamVolume(int32_t streamId, float &outVolume)
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     outVolume = streamCollector_.GetSingleStreamVolume(streamId);
     return SUCCESS;
 }
@@ -5497,6 +5499,8 @@ int32_t AudioPolicyServer::NotifyProcessBackgroundState(int32_t uid, int32_t pid
 
 int32_t AudioPolicyServer::SetVirtualCall(bool isVirtual)
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     auto callerUid = IPCSkeleton::GetCallingUid();
     AUDIO_INFO_LOG("Set VirtualCall is %{public}d", isVirtual);
     return audioDeviceCommon_.SetVirtualCall(callerUid, isVirtual);
@@ -5504,6 +5508,8 @@ int32_t AudioPolicyServer::SetVirtualCall(bool isVirtual)
 
 int32_t AudioPolicyServer::GetVirtualCall(bool &isVirtual)
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     auto callerUid = IPCSkeleton::GetCallingUid();
     isVirtual = audioDeviceCommon_.GetVirtualCall(callerUid);
     return SUCCESS;
