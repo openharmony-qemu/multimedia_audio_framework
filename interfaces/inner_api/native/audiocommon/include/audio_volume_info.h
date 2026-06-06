@@ -69,6 +69,7 @@ struct VolumeScale {
     }
 
     VolumeScale Refresh();
+    VolumeScale ResetVolumeDegree();
     VolumeScale Update(const VolumeScale &volume);
     VolumeScale Adjust(const VolumeScale &volume);
     bool IsVolumeDegreeValid(int32_t min, int32_t max);

@@ -237,7 +237,7 @@ private:
     void SetSafeVolumeCallback(AudioStreamType streamType, bool updateUi = true);
     void SetDeviceSafeVolumeStatus();
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support, int32_t volume);
-    int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel,
+    VolumeScale SelectDealSafeVolume(AudioStreamType streamType, VolumeScale volume,
         DeviceType deviceType = DEVICE_TYPE_NONE);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     void SetRestoreVolumeLevel(DeviceType deviceType, int32_t curDeviceVolume);
