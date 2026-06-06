@@ -1087,7 +1087,7 @@ void UpdateSessionConnectionStateFuzzTest()
     std::unique_ptr<ConcurrentCaptureDfxResult> DfxResult;
     audioCoreService->WriteCapturerConcurrentMsg(audioStreamDescriptor, DfxResult);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs;
-    audioCoreService->FetchOutputDevicesForDescs(audioStreamDescriptor, outputDescs);
+    audioCoreService->FetchOutputDevicesForDescs(outputDescs);
     uint32_t sessionId = GetData<uint32_t>();
     audioCoreService->PlayBackToInjection(sessionId);
     audioCoreService->InjectionToPlayBack(sessionId);
