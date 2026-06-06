@@ -86,22 +86,6 @@ bool WirelessConflictHandler::IsWirelessDevice(const std::shared_ptr<AudioDevice
     return IsScoDevice(device) || IsA2dpDevice(device) || IsNearlinkDevice(device);
 }
 
-bool WirelessConflictHandler::AllScoPairSelected()
-{
-    bool allScoPair = true;
-    for (auto &info : outputStreamDevices_) {
-        if (IsScoDevice(info.device) && info.routerType != ROUTER_TYPE_PAIR_DEVICE) {
-            allScoPair = false;
-        }
-    }
-    for (auto &info : inputStreamDevices_) {
-        if (IsScoDevice(info.device) && info.routerType != ROUTER_TYPE_PAIR_DEVICE) {
-            allScoPair = false;
-        }
-    }
-    return allScoPair;
-}
-
 void WirelessConflictHandler::FindHighestPriorityDevice()
 {
     cachedHighestPriority_ = 0;
@@ -139,10 +123,10 @@ bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor
         return false;
     }
     
-    if (IsScoDevice(device) && routerType == ROUTER_TYPE_PAIR_DEVICE && AllScoPairSelected()) {
+    CHECK_AND_RETURN_RET(cachedHighestPriorityDevice_ != nullptr, false);
+    if (IsScoDevice(device) && !IsScoDevice(cachedHighestPriorityDevice_)) {
         return true;
     }
-    CHECK_AND_RETURN_RET(cachedHighestPriorityDevice_ != nullptr, false);
     if (IsA2dpDevice(device) && IsScoDevice(cachedHighestPriorityDevice_)) {
         return true;
     }
