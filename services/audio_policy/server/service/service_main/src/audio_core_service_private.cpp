@@ -438,7 +438,6 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STARTED);
     } else {
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STOPPED);
-        CheckScoState(streamDesc);
     }
     FetchDeviceInfo info = { streamUsage, "CheckModemScene" };
     descs = audioRouterCenter_.FetchOutputDevices(info);
@@ -3447,14 +3446,14 @@ void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDevice
 #endif
 }
 
-void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+void AudioCoreService::FetchOutputDevicesForDescs(
     const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs)
 {
     for (auto &desc : outputDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         FetchDeviceInfo info = { desc->rendererInfo_.streamUsage, GetRealUid(desc),
-            streamDesc->rendererInfo_.privacyType, "StartClient", streamDesc->bundleName_ };
-        info.streamId = streamDesc->sessionId_;
+            desc->rendererInfo_.privacyType, "StartClient", desc->bundleName_ };
+        info.streamId = desc->sessionId_;
         auto newDescs = audioRouterCenter_.FetchOutputDevices(info);
         pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
     }
