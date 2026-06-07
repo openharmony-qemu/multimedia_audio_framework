@@ -619,6 +619,9 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
 
 int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isScoSelected)
 {
+    if (scene_.load() == scene && isScoSelected_.load() == isScoSelected) {
+        return SUCCESS;
+    }
     bool update = false;
     if (scene_.load() != scene) {
         AUDIO_INFO_LOG("update audio scene from %{public}d to %{public}d with recordscene",
@@ -651,7 +654,7 @@ bool AudioHfpManager::IsRecognitionStatus()
 int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
     auto scene = scene_.load();
-    CHECK_AND_RETURN_RET_LOG(scene == AUDIO_SCENE_DEFAULT || isVirtual, ERROR, "only support no call");
+    CHECK_AND_RETURN_RET_LOG(scene == AUDIO_SCENE_DEFAULT, ERROR, "only support no call");
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
         if (isVirtual) {

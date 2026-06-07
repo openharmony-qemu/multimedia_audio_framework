@@ -42,6 +42,7 @@
 #define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t UID_CALL_MANAGER_SA = 1001;
 
 constexpr int32_t ANCO_SERVICE_BROKER_UID = 5557;
 
@@ -69,7 +70,9 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
             AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevices, CALL_OUTPUT_DEVICES);
         }
 #ifdef BLUETOOTH_ENABLE
+        Bluetooth::AudioHfpManager::SetVirtualCall(UID_CALL_MANAGER_SA, true);
         Bluetooth::AudioHfpManager::UpdateAudioScene(newScene, false);
+        Bluetooth::AudioHfpManager::DisconnectSco();
         AudioRouterSelectStrategy::GetInstance().SetScoExcluded(false);
 #endif
     }
