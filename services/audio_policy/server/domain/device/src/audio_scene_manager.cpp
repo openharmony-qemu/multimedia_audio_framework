@@ -42,7 +42,7 @@
 #define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
-constexpr int32_t UID_CALL_MANAGER_SA = 1001;
+constexpr int32_t UID_CALL_MANAGER_SA = 5523;
 
 constexpr int32_t ANCO_SERVICE_BROKER_UID = 5557;
 
