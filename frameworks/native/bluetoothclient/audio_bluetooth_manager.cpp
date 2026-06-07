@@ -653,7 +653,7 @@ int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
             if (virtualCalls_.count(uid) > 0) {
                 virtualCalls_.erase(uid);
             }
-            if (uid == UID_CALL_MANAGER_SA) {
+            if (uid == UID_CALL_MANAGER_SA || uid == 0) {
                 virtualCalls_.clear();
             }
         } else {
