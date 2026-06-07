@@ -622,19 +622,11 @@ int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isScoSelected)
     if (scene_.load() == scene && isScoSelected_.load() == isScoSelected) {
         return SUCCESS;
     }
-    bool update = false;
-    if (scene_.load() != scene) {
-        AUDIO_INFO_LOG("update audio scene from %{public}d to %{public}d with recordscene",
-            scene_.load(), scene);
-        update = true;
-    }
-    if (isScoSelected_.load() != isScoSelected) {
-        AUDIO_INFO_LOG("%{public}s scoSelected", isScoSelected ? "is" : "not");
-        update = true;
-    }
+    AUDIO_INFO_LOG("scene %{public}d to %{public}d, isScoSelected %{public}d to %{public}d",
+        scene_.load(), scene, isScoSelected_.load(), isScoSelected);
     scene_.store(scene);
     isScoSelected_.store(isScoSelected);
-    return update ? TryUpdateScoCategory() : SUCCESS;
+    return TryUpdateScoCategory();
 }
 
 int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag)

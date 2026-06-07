@@ -72,7 +72,6 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::SetVirtualCall(UID_CALL_MANAGER_SA, true);
         Bluetooth::AudioHfpManager::UpdateAudioScene(newScene, false);
-        Bluetooth::AudioHfpManager::DisconnectSco();
         AudioRouterSelectStrategy::GetInstance().SetScoExcluded(false);
 #endif
     }
