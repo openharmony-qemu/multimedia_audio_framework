@@ -4148,6 +4148,13 @@ int32_t AudioPolicyManager::OffAudioSeparationEffectEnabledChange()
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::GetAppBackGroundState(int32_t pid, bool &isBack)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->GetAppBackGroundState(pid, isBack);
+}
+
 int32_t AudioPolicyManager::EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::EnableSystemRecordController show[%{public}d]", show);
@@ -4213,7 +4220,6 @@ int32_t AudioPolicyManager::UnsetRecordControllerEnabledChangeCallback(
     }
     return SUCCESS;
 }
-
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

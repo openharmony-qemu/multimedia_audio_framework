@@ -847,6 +847,7 @@ public:
     int32_t OnAudioSeparationEffectEnabledChange(
         const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback);
     int32_t OffAudioSeparationEffectEnabledChange();
+    int32_t GetAppBackGroundState(int32_t pid, bool &isBack);
 
 private:
     AudioPolicyManager() {}

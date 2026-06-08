@@ -365,6 +365,7 @@ interface IAudioPolicy {
     void RemoveAllSystemVolumeChangeCallbackInfo();
     void PauseAudioFocusForExtAudioZone([in] List<int> zoneIds);
     void ResumeAudioFocusForExtAudioZone([in] List<int> zoneIds);
+    void GetAppBackGroundState([in] int pid, [out] boolean isBack);
     void EnableSystemRecordController([in] boolean show, [in] SystemRecordControllerConfig config,
         [in] IRemoteObject object);
     void GetSystemVolumeDegreeWithDevice([in] int volumeType, [in] int deviceType,
