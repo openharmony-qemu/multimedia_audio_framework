@@ -898,14 +898,14 @@ int32_t HpaeManagerImpl::UpdateCollaborativeState(CollaborationState isCollabora
     return manager_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
-bool HpaeManagerImpl::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+bool HpaeManagerImpl::IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage)
 {
     CHECK_AND_RETURN_RET(manager_,
         (StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
             BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
         "manager is nullptr", false), false));
-    return manager_->IsCollaborationSupportedForStreamUsage(streamUsage);
+    return manager_->IsCollaborationSupportedForStreamUsage(deviceType, streamUsage);
 }
 
 void HpaeManagerImpl::AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume)

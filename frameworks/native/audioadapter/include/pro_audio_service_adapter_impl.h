@@ -84,7 +84,7 @@ public:
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
-    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) override;
+    bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) override;
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) override;
     void LoadCollaborationConfig() override;
     virtual void OnGetCollaborativeUpdateCb(int32_t result) override;

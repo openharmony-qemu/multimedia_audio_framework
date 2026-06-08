@@ -661,10 +661,10 @@ void ProAudioServiceAdapterImpl::OnUpdatePersonalizedHRTFBinCb(int32_t result)
     callbackCV_.notify_all();
 }
 
-bool ProAudioServiceAdapterImpl::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+bool ProAudioServiceAdapterImpl::IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage)
 {
     lock_guard<mutex> lock(lock_);
-    return IHpaeManager::GetHpaeManager().IsCollaborationSupportedForStreamUsage(streamUsage);
+    return IHpaeManager::GetHpaeManager().IsCollaborationSupportedForStreamUsage(deviceType, streamUsage);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

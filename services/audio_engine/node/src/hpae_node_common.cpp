@@ -206,13 +206,26 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
     }
 }
 
+DeviceType GetDeviceType(CollaborationState isCollaborationEnabled)
+{
+    switch (isCollaborationEnabled) {
+        case COLLABORATION_BLUETOOTH_OPEN:
+            return DEVICE_TYPE_BLUETOOTH_A2DP;
+        case COLLABORATION_NEARLINK_OPEN:
+            return DEVICE_TYPE_NEARLINK;
+        default:
+            return DEVICE_TYPE_INVALID;
+    }
+}
+
 void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled)
 {
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
     if (isCollaborationEnabled == COLLABORATION_BLUETOOTH_OPEN ||
         isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN) {
-        if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+        if (audioCollaborationManager->IsStreamUsageSupported(GetDeviceType(isCollaborationEnabled),
+            nodeInfo.effectInfo.streamUsage)) {
             nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
             nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
             nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;

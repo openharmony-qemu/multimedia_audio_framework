@@ -335,7 +335,7 @@ public:
     virtual void RemoveAudioPipeVolume(uint32_t IoHandle) = 0;
     virtual void UpdateVolumeForAllPipes() = 0;
     virtual void UpdateTypeVolumeForAllPipes(AudioVolumeType volumeType) = 0;
-    virtual bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) = 0;
+    virtual bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
