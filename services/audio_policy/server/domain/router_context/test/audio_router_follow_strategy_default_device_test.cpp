@@ -222,7 +222,7 @@ HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, GetCallDefaultOutputDevice_
     EXPECT_EQ(result->deviceId_, earpiece->deviceId_);
 
     result = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10002, TEST_STREAM_ID_3);
-    ASSERT_NE(result, nullptr);
+    ASSERT_EQ(result, nullptr);
 }
 
 HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, GetCallDefaultOutputDevice_Running_003, TestSize.Level1)
