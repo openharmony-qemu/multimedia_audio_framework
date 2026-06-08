@@ -1224,6 +1224,8 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             return PIPE_TYPE_OUT_CELLULAR_CALL;
         } else if (flag & AUDIO_OUTPUT_FLAG_INTERPHONE) {
             return PIPE_TYPE_OUT_INTERPHONE;
+        } else if (flag & AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT) {
+            return PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT;
         } else {
             return PIPE_TYPE_OUT_NORMAL;
         }
@@ -1501,6 +1503,12 @@ static void FillSpecialPipeInfoExtOther(AudioPipeInfo &info, std::shared_ptr<Ada
         info.moduleInfo_.fileName = info.GetUltraFastFlag() ? "usb_arm_ultra_fast_dump_file" : "usb_arm_fast_dump_file";
         info.moduleInfo_.name = info.GetUltraFastFlag() ? "UltraFastUsbArmRendererSink" : "FastUsbArmRendererSink";
         info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.role = "sink";
+    } else if (pipeInfoPtr->name_ == "tts_out") {
+        info.moduleInfo_.className = "primary_voice_call_assistant";
+        info.moduleInfo_.fileName = "tts_dump_file";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.name = "tts";
         info.moduleInfo_.role = "sink";
     } else if (pipeInfoPtr->name_ == "dp_fast_output") {
         info.moduleInfo_.className = "dp_fast";

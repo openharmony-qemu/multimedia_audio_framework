@@ -217,7 +217,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreatePrimaryRenderSink(con
     const std::string &info)
 {
     if (info == HDI_ID_INFO_DIRECT || info == HDI_ID_INFO_VOIP || info == HDI_ID_INFO_DP ||
-        info == HDI_ID_INFO_USB) {
+        info == HDI_ID_INFO_USB || info == HDI_ID_INFO_VOICE_CALL_ASSISTANT) {
         return std::make_shared<AudioRenderSink>(renderId, info);
     }
     if (IsMultiStreamInfo(info)) {
