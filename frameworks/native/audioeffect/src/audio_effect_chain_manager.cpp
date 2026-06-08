@@ -27,7 +27,6 @@
 #include "audio_device_type.h"
 #include "audio_effect_map.h"
 #include "audio_effect_hdi_param.h"
-#include "parameters.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -46,8 +45,6 @@ const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY 
     {"voip_down", "settings.sound_ai_voip_down_selection"},
 };
 const std::vector<std::string> AUDIO_PERSISTENCE_SCENE {"SCENE_VOIP_DOWN"};
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
 
 // LCOV_EXCL_START
@@ -673,7 +670,7 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
             "sessionID:%{public}s, sceneMode is EFFECT_NONE, no send volume", (*sessionId).c_str());
         std::string sceneTypeTemp = sessionIDToEffectInfoMap_[*sessionId].sceneType;
         std::string sceneTypeAndDeviceKey;
-        if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        if (Util::IsEnhancedRoutingSupported()) {
             sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneTypeTemp,
                 sessionIDToEffectInfoMap_[*sessionId].deviceType,
                 sessionIDToEffectInfoMap_[*sessionId].renderId);
@@ -1146,7 +1143,7 @@ uint32_t AudioEffectChainManager::GetLatency(const std::string &sessionId)
     }
 
     std::string sceneTypeAndDeviceKey;
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         auto &info = sessionIDToEffectInfoMap_[sessionId];
         sceneTypeAndDeviceKey = GenerateEffectChainKey(info.sceneType, info.deviceType, info.renderId);
     } else {
@@ -1397,7 +1394,7 @@ void AudioEffectChainManager::UpdateDefaultAudioEffectInner()
         maxDefaultSessionID, maxDefaultSessionIDToSceneType_.c_str(),
         maxSessionID_, maxSessionIDToSceneType_.c_str());
 
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         UpdateDefaultAudioEffectByRenderId();
         return;
     }
@@ -1471,7 +1468,7 @@ void AudioEffectChainManager::UpdateStreamUsage()
 void AudioEffectChainManager::UpdateStreamUsageInner()
 {
     Trace trace("AudioEffectChainManager::UpdateStreamUsageInner");
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         UpdateStreamUsageByRenderId();
         UpdateCurrSceneTypeAndStreamUsageForDsp();
         return;
@@ -2397,7 +2394,13 @@ void AudioEffectChainManager::SetBypassSpatializationForStereo(bool bypass)
     CHECK_AND_RETURN(spatializationEnabled_ && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || deviceType_ == DEVICE_TYPE_NEARLINK));
     AudioSpatializationState spatializationState = {spatializationEnabled_, headTrackingEnabled_};
+    bool previousOffloadState = btOffloadEnabled_;
     UpdateSpatializationEnabled(spatializationState);
+    if (headTrackingEnabled_ && !bypassSpatializationForStereo_ && previousOffloadState != btOffloadEnabled_) {
+        AUDIO_INFO_LOG("btOffloadEnabled change from %{public}d to %{public}d, UpdateSensorState",
+            previousOffloadState, btOffloadEnabled_);
+        UpdateSensorState();
+    }
 }
 
 int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels,
@@ -2439,7 +2442,7 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string 
             }
             auto &info = sessionIDToEffectInfoMap_[sid];
             std::string pairKey;
-            if (IS_DEVICE_ENHANCED_SUPPORTED) {
+            if (Util::IsEnhancedRoutingSupported()) {
                 pairKey = GenerateEffectChainKey(scenePair.first, info.deviceType, info.renderId);
             } else {
                 pairKey = scenePair.first + "_&_" + GetDeviceTypeName();
@@ -2492,7 +2495,7 @@ int32_t AudioEffectChainManager::InitEffectBufferInner(const std::string &sessio
     if (IsEffectChainStop(sceneTypeTemp, sessionID)) {
         AUDIO_INFO_LOG("sessionID: %{public}s sceneType: %{public}s: make init effect buffer",
             sessionID.c_str(), sceneTypeTemp.c_str());
-        if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        if (Util::IsEnhancedRoutingSupported()) {
             return InitAudioEffectChainDynamicInner(sceneTypeTemp, sessionDeviceType, sessionRenderId);
         }
         return InitAudioEffectChainDynamicInner(sceneTypeTemp);
@@ -2504,7 +2507,7 @@ int32_t AudioEffectChainManager::InitEffectBufferInner(const std::string &sessio
 bool AudioEffectChainManager::IsEffectChainStop(const std::string &sceneType, const std::string &sessionID)
 {
     std::string sceneTypeAndDeviceKey;
-    if (sessionIDToEffectInfoMap_.count(sessionID) && IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (sessionIDToEffectInfoMap_.count(sessionID) && Util::IsEnhancedRoutingSupported()) {
         auto &info = sessionIDToEffectInfoMap_[sessionID];
         sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneType, info.deviceType, info.renderId);
     } else {
@@ -2519,7 +2522,7 @@ bool AudioEffectChainManager::IsEffectChainStop(const std::string &sceneType, co
         }
         std::string sceneTypeTemp = it->second.sceneType;
         std::string sceneTypeAndDeviceKeyTemp;
-        if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        if (Util::IsEnhancedRoutingSupported()) {
             sceneTypeAndDeviceKeyTemp = GenerateEffectChainKey(
                 sceneTypeTemp, it->second.deviceType, it->second.renderId);
         } else {
@@ -2783,16 +2786,6 @@ bool AudioEffectChainManager::IsSpatializationEnabledForChains()
     return spatializationEnabled_ && (!bypassSpatializationForStereo_ || !IsDeviceTypeSupportingSpatialization());
 }
 
-bool AudioEffectChainManager::IsDownSamplingForSpatialization(const std::string &sceneType)
-{
-    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    CHECK_AND_RETURN_RET(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) != 0 &&
-        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, true);
-    auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-    return audioEffectChain->IsEffectChainFading() || !(spatializationEnabled_ && bypassSpatializationForStereo_ &&
-        IsDeviceTypeSupportingSpatialization());
-}
-
 void AudioEffectChainManager::SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
@@ -2813,15 +2806,16 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBin(const int32_t &fd, co
 
 int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &fd, const long &length)
 {
-    if (fd < 0 || length == 0) {
-        AUDIO_INFO_LOG("fd < 0 or length == 0, UpdatePersonalizedHRTFBinToArm failed");
+    if (fd < 0 || length <= 0 || length > MAX_HRTF_LENGTH) {
+        AUDIO_INFO_LOG("fd < 0 or length invalid, UpdatePersonalizedHRTFBinToArm failed");
         return ERR_SAVE_HRTF_FAIL;
     }
 
-    const char *outPath = "data/hvs/arm/personalized_hrtf.bin";
+    const char *outPath = "/data/data/hvs/arm/personalized_hrtf.bin";
     char *dirCopy = strdup(outPath);
     CHECK_AND_RETURN_RET_LOG(dirCopy != nullptr, ERR_SAVE_HRTF_FAIL, "dirCopy is nullptr");
     char *p = dirCopy;
+    if (*p == '/') p++;
     while (*p) {
         if (*p == '/') {
             *p = '\0';
@@ -2834,12 +2828,13 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
 
     int32_t outFd = open(outPath, O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_OPEN_MODE);
     CHECK_AND_RETURN_RET_LOG(outFd >= 0, ERR_SAVE_HRTF_FAIL, "outFd < 0");
-    size_t remaining = length;
+    ssize_t remaining = length;
     std::vector<char> buffer(length);
-    size_t n;
+    ssize_t n;
 
     while (remaining > 0) {
-        size_t toRead = (remaining < sizeof(buffer)) ? remaining : sizeof(buffer);
+        size_t toRead = (static_cast<size_t>(remaining) < sizeof(buffer)) ?
+            static_cast<size_t>(remaining) : sizeof(buffer);
         n = read(fd, buffer.data(), toRead);
         if (n <= 0) {
             close(outFd);
@@ -2851,7 +2846,7 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
             return ERR_SAVE_HRTF_FAIL;
         }
 
-        size_t written = write(outFd, buffer.data(), n);
+        ssize_t written = write(outFd, buffer.data(), n);
         if (written != n) {
             close(outFd);
             unlink(outPath);
@@ -2878,20 +2873,10 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToHdi(const int32_t &f
         "copy length failed");
 
     CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, ERROR, "audioEffectHdiParam_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_->UpdateHdiState(effectHdiInput_,
-        DEVICE_TYPE_BLUETOOTH_A2DP) == SUCCESS, ERR_SAVE_HRTF_FAIL, "set hdi personalizedSpatializationEnabled failed");
+    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS || ret == ERR_DEVICE_UNAVAILABLE, ERR_SAVE_HRTF_FAIL,
+        "set hdi personalizedSpatializationEnabled failed");
     return SUCCESS;
-}
-
-bool AudioEffectChainManager::IsDownSamplingForSpatialization(
-    const std::string &sceneType, DeviceType deviceType, uint32_t renderId)
-{
-    std::string sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneType, deviceType, renderId);
-    CHECK_AND_RETURN_RET(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) != 0 &&
-        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, true);
-    auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-    return audioEffectChain->IsEffectChainFading() || !(spatializationEnabled_ && bypassSpatializationForStereo_ &&
-        IsDeviceTypeSupportingSpatialization());
 }
 } // namespace AudioStandard
 } // namespace OHOS

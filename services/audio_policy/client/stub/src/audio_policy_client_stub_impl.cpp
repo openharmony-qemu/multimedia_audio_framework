@@ -27,12 +27,28 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t RSS_UID = 1096;
+constexpr int32_t AVSESSION_UID = 6700;
 constexpr int32_t ALL_APPS_UID = -1;
 static const int32_t FOCUS_INFO_VALID_SIZE = 128;
 static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 static const int32_t PREFERRED_DEVICE_VALID_SIZE = 128;
 static const int32_t STATE_VALID_SIZE = 1024;
 static const int32_t MIC_BLOCKED_VALID_SIZE = 128;
+
+static bool IsRendererCallbackDfxUid()
+{
+    int32_t uid = static_cast<int32_t>(getuid());
+    return uid == RSS_UID || uid == AVSESSION_UID;
+}
+
+static void LogRendererCallbackDfx(const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks,
+    size_t infosSize)
+{
+    CHECK_AND_RETURN(IsRendererCallbackDfxUid());
+    AUDIO_INFO_LOG("[RendererCallbackDfx] uid:%{public}d cbSize:%{public}zu infoSize:%{public}zu "
+        "callbackIds:%{public}s", static_cast<int32_t>(getuid()), callbacks.size(), infosSize,
+        BuildAudioCallbackIdList(callbacks).c_str());
+}
 
 int32_t AudioPolicyClientStubImpl::AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
 {
@@ -152,6 +168,42 @@ size_t AudioPolicyClientStubImpl::GetSystemVolumeChangeCallbackSize() const
     return systemVolumeChangeCallbackList_.size();
 }
 
+int32_t AudioPolicyClientStubImpl::AddSystemVolumeChangeByFilterCallback(
+    const SystemVolumeFilter &filter, const std::shared_ptr<SystemVolumeChangeByFilterCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeByFilterMutex_);
+    systemVolumeChangeByFilterCallbackList_.push_back({filter, cb});
+    return SUCCESS;
+}
+
+SystemVolumeFilter AudioPolicyClientStubImpl::RemoveSystemVolumeChangeByFilterCallback(
+    const std::shared_ptr<SystemVolumeChangeByFilterCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeByFilterMutex_);
+    SystemVolumeFilter removedFilter;
+    removedFilter.uid = -1;
+    if (cb == nullptr) {
+        systemVolumeChangeByFilterCallbackList_.clear();
+        return removedFilter;
+    }
+    auto it = systemVolumeChangeByFilterCallbackList_.begin();
+    while (it != systemVolumeChangeByFilterCallbackList_.end()) {
+        if (it->second.lock() != cb) {
+            it++;
+            continue;
+        }
+        removedFilter = it->first;
+        it = systemVolumeChangeByFilterCallbackList_.erase(it);
+    }
+    return removedFilter;
+}
+
+size_t AudioPolicyClientStubImpl::GetSystemVolumeChangeByFilterCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeByFilterMutex_);
+    return systemVolumeChangeByFilterCallbackList_.size();
+}
+
 int32_t AudioPolicyClientStubImpl::OnSystemVolumeChange(const VolumeEvent &volumeEvent)
 {
     std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeMutex_);
@@ -159,6 +211,23 @@ int32_t AudioPolicyClientStubImpl::OnSystemVolumeChange(const VolumeEvent &volum
         std::shared_ptr<SystemVolumeChangeCallback> systemVolumeChangeCallback = (*it).lock();
         if (systemVolumeChangeCallback != nullptr) {
             systemVolumeChangeCallback->OnSystemVolumeChange(volumeEvent);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::OnSystemVolumeChangeByFilter(
+    const SystemVolumeFilter &filter, const VolumeEvent &volumeEvent)
+{
+    std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeByFilterMutex_);
+    for (auto it = systemVolumeChangeByFilterCallbackList_.begin();
+        it != systemVolumeChangeByFilterCallbackList_.end(); ++it) {
+        if (it->first.uid != filter.uid) {
+            continue;
+        }
+        std::shared_ptr<SystemVolumeChangeByFilterCallback> systemVolumeChangeByFilterCallback = it->second.lock();
+        if (systemVolumeChangeByFilterCallback != nullptr) {
+            systemVolumeChangeByFilterCallback->OnSystemVolumeChangeByFilter(volumeEvent);
         }
     }
     return SUCCESS;
@@ -1279,10 +1348,7 @@ int32_t AudioPolicyClientStubImpl::OnRendererStateChange(
     size_t cBSize = callbacks.size();
     size_t infosSize = audioRendererChangeInfos.size();
     AUDIO_DEBUG_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
-
-    if (getuid() == RSS_UID) {
-        AUDIO_INFO_LOG("cbSize: %{public}zu infoSize: %{public}zu", cBSize, infosSize);
-    }
+    LogRendererCallbackDfx(callbacks, infosSize);
 
     Trace trace("AudioPolicyClientStubImpl::OnRendererStateChange");
     for (auto &cb : callbacks) {
@@ -1429,14 +1495,10 @@ int32_t AudioPolicyClientStubImpl::OnHeadTrackingDeviceChange(const std::unorder
 }
 
 int32_t AudioPolicyClientStubImpl::AddSpatializationEnabledChangeCallback(
-    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb, bool isFromBluetooth)
+    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     spatializationEnabledChangeCallbackList_.push_back(cb);
-    if (isFromBluetooth) {
-        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::AddSpatializationEnabledChangeCallback isFromBluetooth");
-        spatializationEnabledChangeCallbackList_ForBT.push_back(cb);
-    }
     return SUCCESS;
 }
 
@@ -1444,7 +1506,6 @@ int32_t AudioPolicyClientStubImpl::RemoveSpatializationEnabledChangeCallback()
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     spatializationEnabledChangeCallbackList_.clear();
-    spatializationEnabledChangeCallbackList_ForBT.clear();
     return SUCCESS;
 }
 
@@ -1507,13 +1568,10 @@ int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForCurrentDevice
 }
 
 int32_t AudioPolicyClientStubImpl::AddHeadTrackingEnabledChangeCallback(
-    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb, bool isFromNearlink)
+    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     headTrackingEnabledChangeCallbackList_.push_back(cb);
-    if (isFromNearlink) {
-        headTrackingEnabledChangeCallbackListFromNearlink_.push_back(cb);
-    }
     return SUCCESS;
 }
 
@@ -1521,7 +1579,6 @@ int32_t AudioPolicyClientStubImpl::RemoveHeadTrackingEnabledChangeCallback()
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     headTrackingEnabledChangeCallbackList_.clear();
-    headTrackingEnabledChangeCallbackListFromNearlink_.clear();
     return SUCCESS;
 }
 
@@ -1559,30 +1616,6 @@ int32_t AudioPolicyClientStubImpl::OnAdaptiveSpatialRenderingEnabledChangeForAny
     for (const auto &callback : adaptiveSpatialRenderingEnabledChangeCallbackList_) {
         CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
-    }
-    return SUCCESS;
-}
-
-int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForBTDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, bool enabled, bool headTrackingEnabled)
-{
-    {
-        std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
-        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForBTDevice %{public}d",
-            int(spatializationEnabledChangeCallbackList_ForBT.size()));
-        for (const auto &callback : spatializationEnabledChangeCallbackList_ForBT) {
-            CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
-            callback->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
-        }
-    }
-    {
-        std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
-        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForBTDevice %{public}d",
-            int(headTrackingEnabledChangeCallbackListFromNearlink_.size()));
-        for (const auto &callback : headTrackingEnabledChangeCallbackListFromNearlink_) {
-            CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
-            callback->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, headTrackingEnabled);
-        }
     }
     return SUCCESS;
 }

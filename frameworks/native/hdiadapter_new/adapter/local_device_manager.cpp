@@ -323,8 +323,7 @@ void *LocalDeviceManager::CreateRender(const std::string &adapterName, void *par
         UnloadAdapter(adapterName);
         return nullptr;
     }
-    AUDIO_INFO_LOG("create render success, hdiRenderId: %{public}u, desc: %{public}s", hdiRenderId,
-        localDeviceDesc->desc);
+    AUDIO_INFO_LOG("create render success, hdiRenderId: %{public}u", hdiRenderId);
 
     wrapper->hdiRenderIds_.insert(hdiRenderId);
     return render;

@@ -82,8 +82,8 @@ HWTEST_F(EffectInstanceTest, defaultState_isIdle, TestSize.Level0)
 // GetEffectName returns name after Init
 HWTEST_F(EffectInstanceTest, getEffectName_returnsInitName, TestSize.Level0)
 {
-    instance_->Init("ai_audio_enhance", config_);
-    EXPECT_EQ(instance_->GetEffectName(), "ai_audio_enhance");
+    instance_->Init("audio_aiss_enhance", config_);
+    EXPECT_EQ(instance_->GetEffectName(), "audio_aiss_enhance");
 }
 
 // GetAudioConfig returns config after Init
@@ -250,23 +250,6 @@ HWTEST_F(EffectInstanceAlgoTest, initReleaseCycle_withLib, TestSize.Level0)
     EXPECT_EQ(instance_->GetEffectName(), "effect_b");
     instance_->Release();
     EXPECT_EQ(fake_.GetReleaseCount(), 2u);
-}
-
-// EI-C1: StartEffect sends ENABLE
-HWTEST_F(EffectInstanceAlgoTest, startEffect_sendsEnable, TestSize.Level0)
-{
-    auto lib = fake_.GetLibrary();
-    instance_->Init("test_effect", config_, &lib);
-    fake_.Reset();
-
-    instance_->StartEffect();
-
-    auto &log = fake_.GetCallLog();
-    bool hasEnable = false;
-    for (auto &e : log) {
-        if (e.cmdCode == EFFECT_CMD_ENABLE) hasEnable = true;
-    }
-    EXPECT_TRUE(hasEnable);
 }
 
 // EI-C2: StopEffect sends DISABLE

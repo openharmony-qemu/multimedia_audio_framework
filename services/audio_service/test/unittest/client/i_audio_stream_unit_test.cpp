@@ -39,16 +39,6 @@ public:
     void TearDown();
 };
 
-const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
-    SAMPLE_RATE_48000,
-};
-
-const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
-    SAMPLE_S16LE,
-    SAMPLE_S32LE,
-    SAMPLE_F32LE
-};
-
 /**
  * @tc.name  : Test GetByteSizePerFrame API
  * @tc.type  : FUNC
@@ -89,34 +79,6 @@ HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_003, TestSize.Level1)
     size_t result = 0;
     int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test IsStreamSupported API
- * @tc.type  : FUNC
- * @tc.number: IsStreamSupported_001
- * @tc.desc  : Test IsStreamSupported interface.
- */
-HWTEST(IAudioStreamUnitTest, IsStreamSupported_001, TestSize.Level1)
-{
-    int32_t streamFlags = 0;
-    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2};
-    bool result = IAudioStream::IsStreamSupported(streamFlags, params);
-    EXPECT_TRUE(result);
-}
-
-/**
- * @tc.name  : Test IsStreamSupported API
- * @tc.type  : FUNC
- * @tc.number: IsStreamSupported_002
- * @tc.desc  : Test IsStreamSupported interface.
- */
-HWTEST(IAudioStreamUnitTest, IsStreamSupported_002, TestSize.Level1)
-{
-    int32_t streamFlags = STREAM_FLAG_FAST;
-    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2};
-    bool result = IAudioStream::IsStreamSupported(streamFlags, params);
-    EXPECT_FALSE(result);
 }
 
 /**
@@ -199,34 +161,6 @@ HWTEST(IAudioStreamUnitTest, IsRecordChannelRelatedInfoValid_001, TestSize.Level
     audioChannel = 2;
     channelLayout = 3;
     EXPECT_TRUE(IAudioStream::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
-}
-
-/**
- * @tc.name  : Test IsStreamSupported API
- * @tc.type  : FUNC
- * @tc.number: IsStreamSupported_003
- * @tc.desc  : Test IsStreamSupported interface.
- */
-HWTEST(IAudioStreamUnitTest, IsStreamSupported_003, TestSize.Level1)
-{
-    int32_t streamFlags = STREAM_FLAG_FAST;
-    AudioStreamParams params;
-    params.samplingRate = SAMPLE_RATE_11025;
-    params.encoding = ENCODING_PCM;
-    params.format = SAMPLE_S16LE;
-    params.channels = 0;
-    bool result = IAudioStream::IsStreamSupported(streamFlags, params);
-    EXPECT_FALSE(result);
-
-    params.samplingRate = SAMPLE_RATE_48000;
-    params.format = SAMPLE_S16LE;
-    params.channels = STEREO;
-    result = IAudioStream::IsStreamSupported(streamFlags, params);
-    EXPECT_TRUE(result);
-
-    streamFlags = AUDIO_FLAG_VOIP_DIRECT;
-    result = IAudioStream::IsStreamSupported(2, params);
-    EXPECT_TRUE(result);
 }
 
 /**

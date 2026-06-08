@@ -229,7 +229,7 @@ public:
      *
      * @return int32_t the result, only supports proaudio for now.
      */
-    virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) NOT_SUPPORT_RET
+    virtual int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) NOT_SUPPORT_RET
 
     /**
      * @brief Set spatialization spatializationState
@@ -284,6 +284,13 @@ public:
      * @return {@link true} if support, {@link false} otherwise
      */
     virtual void LoadCollaborationConfig() = 0;
+
+    /**
+     * @brief IsCollaboration Supported For StreamUsage
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) NOT_SUPPORT_RET
 
     virtual ~AudioServiceAdapter();
 };

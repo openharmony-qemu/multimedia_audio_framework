@@ -1499,6 +1499,16 @@ AudioStreamType AudioStreamCollector::GetVolumeTypeFromContentUsage(ContentType 
     return VolumeUtils::GetVolumeTypeFromStreamType(streamType);
 }
 
+AudioStreamType AudioStreamCollector::GetStreamTypeFromUsageContent(StreamUsage streamUsage, ContentType contentType)
+{
+    AudioStreamType streamType = STREAM_MUSIC;
+    auto pos = streamTypeMap_.find(make_pair(contentType, streamUsage));
+    if (pos != streamTypeMap_.end()) {
+        streamType = pos->second;
+    }
+    return streamType;
+}
+
 AudioStreamType AudioStreamCollector::GetStreamTypeFromSourceType(SourceType sourceType)
 {
     switch (sourceType) {
@@ -1881,7 +1891,9 @@ bool AudioStreamCollector::HasRunningCapturerStreamByUid(int32_t uid)
     // judge stream state is running
     bool hasStream = std::any_of(audioCapturerChangeInfos_.begin(), audioCapturerChangeInfos_.end(),
         [uid](const auto &changeInfo) {
-            if (changeInfo->capturerState == CAPTURER_RUNNING) {
+            bool needSelectDevice = AudioRouterCenter::GetAudioRouterCenter().
+                IsConfigRouterStrategy(changeInfo->capturerInfo.sourceType);
+            if (changeInfo->capturerState == CAPTURER_RUNNING && needSelectDevice) {
                 AUDIO_INFO_LOG("Running Capturer stream : %{public}d with uid %{public}d",
                     changeInfo->sessionId, uid);
                 if (uid == INVALID_UID) {

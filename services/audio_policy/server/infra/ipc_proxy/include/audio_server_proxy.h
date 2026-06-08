@@ -63,13 +63,14 @@ public:
     int32_t CheckRemoteDeviceStateProxy(std::string networkId, DeviceRole deviceRole, bool isStartDevice);
     void SetAudioParameterProxy(const std::string &key, const std::string &value);
     bool NotifyStreamVolumeChangedProxy(AudioStreamType streamType, float volume);
-    void OffloadSetVolumeProxy(float volume, uint32_t renderId, const std::string &networkId);
+    void OffloadSetVolumeProxy(float volume, uint32_t renderId);
     void SetVoiceVolumeProxy(float volume);
     void UnsetOffloadModeProxy(uint32_t sessionId);
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);
     void CheckHibernateStateProxy(bool hibernate);
     void RestoreSessionProxy(const uint32_t &sessionID, RestoreInfo RestoreInfo);
-    void SetSinkMuteForSwitchDeviceProxy(const std::string &devceClass, int32_t durationUs, bool mute);
+    void SetSinkMuteForSwitchDeviceProxy(const std::string &deviceClass, int32_t durationUs, bool mute,
+        const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t SetMicrophoneMuteProxy(bool isMute);
     void SuspendRenderSinkProxy(const std::string &sinkName);
     void RestoreRenderSinkProxy(const std::string &sinkName);

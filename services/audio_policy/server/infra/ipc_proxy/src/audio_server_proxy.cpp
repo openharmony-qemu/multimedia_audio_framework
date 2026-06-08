@@ -240,12 +240,12 @@ bool AudioServerProxy::NotifyStreamVolumeChangedProxy(AudioStreamType streamType
     return true;
 }
 
-void AudioServerProxy::OffloadSetVolumeProxy(float volume, uint32_t renderId, const std::string &networkId)
+void AudioServerProxy::OffloadSetVolumeProxy(float volume, uint32_t renderId)
 {
     const sptr <IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->OffloadSetVolume(volume, renderId, networkId);
+    gsp->OffloadSetVolume(volume, renderId);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
@@ -306,12 +306,13 @@ int32_t AudioServerProxy::SetMicrophoneMuteProxy(bool isMute)
     return ret;
 }
 
-void AudioServerProxy::SetSinkMuteForSwitchDeviceProxy(const std::string &devceClass, int32_t durationUs, bool mute)
+void AudioServerProxy::SetSinkMuteForSwitchDeviceProxy(const std::string &deviceClass, int32_t durationUs, bool mute,
+    const std::string &networkId)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetSinkMuteForSwitchDevice(devceClass, durationUs, mute);
+    gsp->SetSinkMuteForSwitchDevice(deviceClass, durationUs, mute, networkId);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 

@@ -1035,10 +1035,10 @@ HWTEST_F(AudioServerUnitTest, IsNormalIpcStream_NewRoute_001, TestSize.Level1)
     AudioProcessConfig config;
     config.audioMode = AUDIO_MODE_PLAYBACK;
     config.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    SetSysPara("persist.multimedia.enable_new_route", 1);
+    SetSysPara("persist.multimedia.audio.enable_new_route", 1);
     bool ret = audioServer->IsNormalIpcStream(config);
     EXPECT_TRUE(ret);
-    SetSysPara("persist.multimedia.enable_new_route", 0);
+    SetSysPara("persist.multimedia.audio.enable_new_route", 0);
 }
 
 /**
@@ -1362,7 +1362,7 @@ HWTEST_F(AudioServerUnitTest, OffloadSetVolume_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     uint32_t renderId = 1314;
-    int32_t ret = audioServer->OffloadSetVolume(0.5f, renderId, "default");
+    int32_t ret = audioServer->OffloadSetVolume(0.5f, renderId);
     EXPECT_EQ(ret, ERROR);
 }
 

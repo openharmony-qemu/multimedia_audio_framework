@@ -142,8 +142,8 @@ void AudioVolumeManagerSaveSpecifiedDeviceVolumeFuzzTest(FuzzedDataProvider& fdp
     AudioStreamType streamType = PickValue(fdp, g_testAudioStreamTypes);
     int32_t volumeLevel = randIntValue;
     DeviceType deviceType = PickValue(fdp, g_testDeviceTypes);
-    audioAdapterManager->GetMinVolumeLevel(streamType);
-    audioAdapterManager->GetMaxVolumeLevel(streamType);
+    audioAdapterManager->GetMinVolumeLevel(streamType, deviceType);
+    audioAdapterManager->GetMaxVolumeLevel(streamType, deviceType);
     audioAdapterManager->SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
 }
 
@@ -171,14 +171,6 @@ void AudioVolumeManagerKvDataFuzzTest(FuzzedDataProvider& fdp)
     AudioStreamType streamType = PickValue(fdp, g_testAudioStreamTypes);
     audioAdapterManager->GetMuteKeyForKvStore(deviceType, streamType);
     audioAdapterManager->GetVolumeKeyForKvStore(deviceType, streamType);
-}
-
-void AudioVolumeManagerHandleStreamMuteStatusFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioStreamType streamType = PickValue(fdp, g_testAudioStreamTypes);
-    bool mute = fdp.ConsumeBool();
-    DeviceType deviceType = PickValue(fdp, g_testDeviceTypes);
-    AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, deviceType);
 }
 
 void AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest(FuzzedDataProvider& fdp)
@@ -642,7 +634,6 @@ void Test(FuzzedDataProvider& fdp)
     auto func = fdp.PickValueInArray({
     AudioVolumeManagerIsAppVolumeMuteFuzzTest,
     AudioVolumeManagerSaveSpecifiedDeviceVolumeFuzzTest,
-    AudioVolumeManagerHandleStreamMuteStatusFuzzTest,
     AudioVolumeManagerKvDataFuzzTest,
     AudioVolumeManagerSaveNotificationVolumeToLocalFuzzTest,
     AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest,

@@ -59,6 +59,7 @@ const uint32_t BASE_TEN = 10;
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t MAX_UINT_VOLUME_NUM = 10000;
 const uint32_t MAX_UINT_DSP_VOLUME = 65535;
+constexpr int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024;
 
 struct SessionEffectInfo {
     std::string sceneMode;
@@ -165,7 +166,6 @@ public:
     void UpdateEarphoneProduct(int32_t earphoneProduct);
     void SetBypassSpatializationForStereo(bool bypass);
     bool IsSpatializationEnabledForChains();
-    bool IsDownSamplingForSpatialization(const std::string &sceneType);
     void SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer);
     void UpdatePersonalizedSpatializationEnabledToChains();
     void UpdatePersonalizedSpatializationEnabledToHdi();
@@ -177,8 +177,6 @@ public:
     ProcessClusterOperation CheckProcessClusterInstances(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);
     bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode,
-        DeviceType deviceType, uint32_t renderId);
-    bool IsDownSamplingForSpatialization(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);

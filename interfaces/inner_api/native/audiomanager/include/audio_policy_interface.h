@@ -16,8 +16,11 @@
 #ifndef ST_AUDIO_POLICY_INTERFACE_H
 #define ST_AUDIO_POLICY_INTERFACE_H
 
+#include <atomic>
+#include <cstdint>
 #include <list>
 #include <mutex>
+#include <string>
 
 #include "audio_device_descriptor.h"
 #include "audio_device_info.h"
@@ -143,6 +146,7 @@ public:
     virtual bool OnCheckMediaControllerBundle(const std::string &bundleName) = 0;
     virtual bool OnQueryIsForceGetZoneDevice(const std::string &bundleName) = 0;
     virtual bool OnQueryIsForceGetDevByVolumeType(const std::string &bundleName) = 0;
+    virtual bool OnQueryIsPcSettingsOrSceneBoard(const std::string &bundleName) = 0;
 };
 
 class AudioVKBInfoMgrCallback {
@@ -256,6 +260,19 @@ public:
     virtual void OnSystemVolumeChange(VolumeEvent volumeEvent) = 0;
 };
 
+class SystemVolumeChangeByFilterCallback {
+public:
+    virtual ~SystemVolumeChangeByFilterCallback() = default;
+    /**
+     * @brief SystemVolumeChangeByFilterCallback will be executed when system volume changed with filter
+     *
+     * @param volumeEvent the volume event info.
+     * @param filter the filter used for this callback.
+     * @since 20
+     */
+    virtual void OnSystemVolumeChangeByFilter(const VolumeEvent &volumeEvent) = 0;
+};
+
 class AudioCapturerStateChangeCallback {
 public:
     virtual ~AudioCapturerStateChangeCallback() = default;
@@ -269,7 +286,44 @@ public:
     std::mutex cbMutex_;
 };
 
-class AudioRendererStateChangeCallback {
+template<typename CallbackType>
+class AudioCallbackIdGenerator {
+public:
+    AudioCallbackIdGenerator() : callbackId_(GenerateCallbackId()) {}
+    AudioCallbackIdGenerator(const AudioCallbackIdGenerator &) = delete;
+    AudioCallbackIdGenerator &operator=(const AudioCallbackIdGenerator &) = delete;
+    ~AudioCallbackIdGenerator() = default;
+
+    uint64_t GetCallbackId() const
+    {
+        return callbackId_;
+    }
+
+private:
+    static uint64_t GenerateCallbackId()
+    {
+        static std::atomic<uint64_t> nextCallbackId { 1 };
+        return nextCallbackId.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    const uint64_t callbackId_;
+};
+
+template<typename T>
+inline std::string BuildAudioCallbackIdList(const std::vector<std::shared_ptr<T>> &callbacks)
+{
+    std::string ids = "[";
+    for (size_t i = 0; i < callbacks.size(); ++i) {
+        if (i != 0) {
+            ids += ",";
+        }
+        ids += std::to_string(callbacks[i] == nullptr ? 0 : callbacks[i]->GetCallbackId());
+    }
+    ids += "]";
+    return ids;
+}
+
+class AudioRendererStateChangeCallback : public AudioCallbackIdGenerator<AudioRendererStateChangeCallback> {
 public:
     virtual ~AudioRendererStateChangeCallback() = default;
     /**
@@ -553,6 +607,14 @@ public:
      * @return int32_t
      */
     virtual int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) = 0;
+
+    /**
+     * @brief Get the product id of a remote device.
+     * @param device Address of the peer NearLink device.
+     * @param delayValue Render delay.
+     * @return int32_t
+     */
+    virtual int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) = 0;
 };
 
 struct AudioSpatialEnabledStateForDevice {

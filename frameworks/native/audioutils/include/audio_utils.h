@@ -92,6 +92,10 @@ public:
 
     static size_t CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
         uint32_t sampleRate, uint32_t bytesPerSample);
+    
+    static std::vector<std::string> SplitString(const std::string& str, char delimiter);
+
+    static bool IsEnhancedRoutingSupported();
 };
 
 class AudioTypeUtils {
@@ -267,6 +271,13 @@ inline bool NotContain(const std::vector<V> &array, const V &value)
     return std::find(array.begin(), array.end(), value) == array.end();
 }
 
+constexpr uint32_t STANDARD_SAMPLE_RATE_DIVISOR = 50;
+
+inline bool IsNonStandardSampleRate(uint32_t sampleRate)
+{
+    return sampleRate % STANDARD_SAMPLE_RATE_DIVISOR != 0;
+}
+
 template <typename T>
 bool StringConverter(const std::string &str, T &result);
 bool StringConverterFloat(const std::string &str, float &result);
@@ -285,7 +296,7 @@ class DumpFileUtil {
 public:
     static constexpr char DUMP_SERVER_PARA[] = "sys.audio.dump.writeserver.enable";
     static constexpr char DUMP_CLIENT_PARA[] = "sys.audio.dump.writeclient.enable";
-    static constexpr uint32_t PARAM_VALUE_LENTH = 150;
+    static constexpr uint32_t PARAM_VALUE_LENTH = 256;
     static constexpr char BETA_VERSION[] = "beta";
     static void WriteDumpFile(FILE *dumpFile, void *buffer, size_t bufferSize);
     static void CloseDumpFile(FILE **dumpFile);

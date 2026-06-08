@@ -64,7 +64,7 @@ interface IStandardAudioService {
     void SetWakeupSourceCallback([in] IRemoteObject object);
     void UpdateSpatializationState([in] AudioSpatializationState spatializationState);
     void UpdateSpatialDeviceType([in] int spatialDeviceType);
-    void OffloadSetVolume([in] float volume, [in] unsigned int renderId, [in] String networkId);
+    void OffloadSetVolume([in] float volume, [in] unsigned int renderId);
     void NotifyStreamVolumeChanged([in] int streamType, [in] float volume);
     void SetSpatializationSceneType([in] int spatializationSceneType);
     void GetMaxAmplitude([in] boolean isOutputDevice, [in] String deviceClass, [in] int sourceType, [out] float maxAmplitude);
@@ -90,7 +90,7 @@ interface IStandardAudioService {
     void RestoreRenderSink([in] String sinkName);
     void LoadHdiEffectModel();
     void UpdateEffectBtOffloadSupported([in] boolean isSupported);
-    void SetSinkMuteForSwitchDevice([in] String devceClass, [in] int durationUs, [in] boolean mute);
+    void SetSinkMuteForSwitchDevice([in] String deviceClass, [in] int durationUs, [in] boolean mute, [in] String networkId);
     void SetRotationToEffect([in] unsigned int rotate);
     void UpdateSessionConnectionState([in] int sessionID, [in] int state);
     void SetNonInterruptMute([in] unsigned int sessionId, [in] boolean muteFlag);

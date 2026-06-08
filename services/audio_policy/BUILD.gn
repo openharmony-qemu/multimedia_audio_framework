@@ -243,7 +243,6 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/volume/src/audio_adapter_manager_handler.cpp",
     "server/domain/volume/src/volume_data_maintainer.cpp",
     "server/domain/volume/src/audio_volume_utils.cpp",
-    "server/domain/router/app_select_router.cpp",
     "server/domain/router/audio_router_center.cpp",
     "server/domain/router/cockpit_phone_router.cpp",
     "server/domain/router/default_router.cpp",
@@ -320,8 +319,8 @@ audio_ohos_library("audio_policy_service") {
     sources += [ "server/domain/pipe/src/audio_bus_selector.cpp" ]
   }
 
-  if (audio_framework_feature_multi_zone) {
-    defines += [ "FEATURE_AUDIO_ZONE" ]
+  if (audio_framework_feature_multi_zone_volume) {
+    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
   }
 
   if (audio_framework_feature_wired_audio) {
@@ -946,8 +945,8 @@ ohos_shared_library("audio_manager_client") {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
-  if (audio_framework_feature_multi_zone) {
-    defines += [ "FEATURE_AUDIO_ZONE" ]
+  if (audio_framework_feature_multi_zone_volume) {
+    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
   }
 
   cflags = [ "-Os" ]
@@ -985,6 +984,7 @@ ohos_shared_library("audio_policy_common") {
   public_configs = [ ":audio_policy_common_public_config" ]
 
   external_deps = [
+    "ability_base:configuration",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",

@@ -79,6 +79,13 @@ int32_t AudioSelectInterfaceService::SetDeviceActive(DeviceType deviceType, bool
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
     }
+
+    // Force trigger callback to bypass currentOutputDevice change check
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_OPERATION_FAILED, "coreService is null");
+    coreService->OnPreferredOutputDeviceUpdated(
+        AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(uid),
+        AudioStreamDeviceChangeReason::OVERRODE, static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
     return SUCCESS;
 }
 
@@ -192,11 +199,9 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(selectedDesc[0]->macAddress_);
     }
 
-    // If the selected device is virtual device, connect it.
     if (AudioDeviceManager::GetAudioDeviceManager().IsVirtualConnectedDevice(selectedDesc[0])) {
-        int32_t ret = AudioRecoveryDevice::GetInstance().ConnectVirtualDevice(selectedDesc[0]);
-        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            IPCSkeleton::GetCallingUid(), ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "ConnectVirtualDevice fail", false));
+        CHECK_AND_RETURN_RET_LOG(ConnectVirtualDeviceIfNeeded(selectedDesc[0]) == SUCCESS,
+            ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "ConnectVirtualDeviceIfNeeded fail");
         return SUCCESS;
     }
 
@@ -207,7 +212,17 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
     coreService->OnPreferredOutputDeviceUpdated(AudioRouterSelectStrategy::GetInstance()
-        .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE);
+        .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE,
+        static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
+    return SUCCESS;
+}
+
+int32_t AudioSelectInterfaceService::ConnectVirtualDeviceIfNeeded(
+    std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    int32_t ret = AudioRecoveryDevice::GetInstance().ConnectVirtualDevice(device);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+        IPCSkeleton::GetCallingUid(), ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "ConnectVirtualDevice fail", false));
     return SUCCESS;
 }
 
@@ -253,6 +268,9 @@ int32_t AudioSelectInterfaceService::SelectOutputDeviceForFastInner(sptr<AudioRe
         CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
     coreService->FetchOutputDeviceAndRoute("SelectOutputDeviceForFastInner",
         AudioStreamDeviceChangeReason::OVERRODE);
+    coreService->OnPreferredOutputDeviceUpdated(AudioRouterSelectStrategy::GetInstance()
+        .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE,
+        static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
     return SUCCESS;
 }
 
@@ -598,25 +616,22 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
 
     AUDIO_INFO_LOG("[ADeviceEvent] device %{public}d for %{public}s stream %{public}u", deviceType,
         isRunning ? "running" : "not running", sessionID);
-    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    auto &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
-    streamCollector.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
     bool forceFetch = false;
     int32_t clientUid = INVALID_UID;
-    for (auto &changeInfo : audioRendererChangeInfos) {
-        if (changeInfo->sessionId != static_cast<int32_t>(sessionID)) {
-            continue;
-        }
-        if (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_INTERPHONE) {
+    for (auto &desc : descs) {
+        CHECK_AND_CONTINUE(desc != nullptr && desc->sessionId_ == sessionID);
+        clientUid = desc->GetRealUid();
+        if (desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
             CHECK_AND_CONTINUE(!skipForce);
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
+                std::make_shared<AudioDeviceDescriptor>(), desc->GetRealUid(), "SetDefaultOutputDevice");
             forceFetch = true;
         }
-        clientUid = changeInfo->clientUID;
     }
     if (clientUid == INVALID_UID) {
         return SUCCESS;
@@ -688,6 +703,13 @@ void AudioSelectInterfaceService::OnForcedDeviceSelected(DeviceType devType, con
             SelectOutputDevice(filter, {devDesc}, 0, isNeedNotifyBt);
         }
     }
+
+    // Force trigger callback, same as OnForcedDeviceSelected in audio_device_status.cpp
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_LOG(coreService != nullptr, "coreService is null");
+    coreService->OnPreferredOutputDeviceUpdated(
+        AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(filter->uid),
+        AudioStreamDeviceChangeReason::OVERRODE, static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
 }
 
 void AudioSelectInterfaceService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,

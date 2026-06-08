@@ -151,7 +151,8 @@ void AudioPolicyClientHolder::OnRendererStateChange(
         clientInfo.isSupportedDevice_ = CheckDeviceSupported(audioRendererChangeInfo->outputDeviceInfo.deviceType_);
         audioRendererChangeInfo->SetClientInfo(clientInfo);
     }
-    audioPolicyClient_->OnRendererStateChange(audioRendererChangeInfos);
+    ErrCode ret = audioPolicyClient_->OnRendererStateChange(audioRendererChangeInfos);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "[RendererCallbackDfx] ret:%{public}d", ret);
 }
 
 void AudioPolicyClientHolder::OnCapturerStateChange(
@@ -292,6 +293,13 @@ void AudioPolicyClientHolder::OnSystemVolumeChange(VolumeEvent volumeEvent)
     audioPolicyClient_->OnSystemVolumeChange(volumeEvent);
 }
 
+void AudioPolicyClientHolder::OnSystemVolumeChangeByFilter(
+    const SystemVolumeFilter &filter, const VolumeEvent &volumeEvent)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    audioPolicyClient_->OnSystemVolumeChangeByFilter(filter, volumeEvent);
+}
+
 void AudioPolicyClientHolder::OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
@@ -361,24 +369,6 @@ void AudioPolicyClientHolder::OnPersonalizedSpatializationEnabledChangeForAnyDev
     } else {
         AUDIO_INFO_LOG("OnPersonalizedSpatializationEnabledChangeForAnyDevice no permission");
         audioPolicyClient_->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, false);
-    }
-}
-
-void AudioPolicyClientHolder::OnSpatializationEnabledChangeForBTDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled,
-    const bool &headTrackingEnabled)
-{
-    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
-    CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "deviceDescriptor is nullptr.");
-    if (hasSystemPermission_) {
-        AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDescriptor->deviceType_);
-        deviceDescriptor->SetClientInfo(clientInfo);
-        AUDIO_INFO_LOG("OnSpatializationEnabledChangeForBTDevice %{public}d %{public}d", enabled, headTrackingEnabled);
-        audioPolicyClient_->OnSpatializationEnabledChangeForBTDevice(deviceDescriptor, enabled, headTrackingEnabled);
-    } else {
-        AUDIO_INFO_LOG("OnSpatializationEnabledChangeForBTDevice 0 0");
-        audioPolicyClient_->OnSpatializationEnabledChangeForBTDevice(deviceDescriptor, false, false);
     }
 }
 

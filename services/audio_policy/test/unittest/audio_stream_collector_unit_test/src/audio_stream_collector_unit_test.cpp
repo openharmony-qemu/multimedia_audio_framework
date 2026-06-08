@@ -2369,5 +2369,31 @@ HWTEST_F(AudioStreamCollectorUnitTest, CreateStreamMap_Transfer_001, TestSize.Le
     EXPECT_NE(it, streamMap.end());
     EXPECT_EQ(it->second, STREAM_VOICE_RING);
 }
+
+/**
+ * @tc.name  : GetStreamTypeFromUsageContent_FoundInMap
+ * @tc.number: GetStreamTypeFromUsageContent_001
+ * @tc.desc  : Test if branch true when (contentType, streamUsage) found in streamTypeMap_
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, GetStreamTypeFromUsageContent_FoundInMap, TestSize.Level1)
+{
+    AudioStreamCollector &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
+    auto result = streamCollector.GetStreamTypeFromUsageContent(STREAM_USAGE_VOICE_COMMUNICATION,
+        CONTENT_TYPE_SPEECH);
+    EXPECT_EQ(result, STREAM_VOICE_COMMUNICATION);
+}
+
+/**
+ * @tc.name  : GetStreamTypeFromUsageContent_NotFoundInMap
+ * @tc.number: GetStreamTypeFromUsageContent_002
+ * @tc.desc  : Test if branch false when (contentType, streamUsage) not found in streamTypeMap_
+ */
+HWTEST_F(AudioStreamCollectorUnitTest, GetStreamTypeFromUsageContent_NotFoundInMap, TestSize.Level1)
+{
+    AudioStreamCollector &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
+    auto result = streamCollector.GetStreamTypeFromUsageContent(STREAM_USAGE_MEDIA,
+        CONTENT_TYPE_SPEECH);
+    EXPECT_EQ(result, STREAM_MUSIC);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -69,7 +69,7 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_001, TestS
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_002, TestSize.Level0)
 {
     audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_ = true;
-    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = true;
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_BLUETOOTH_OPEN;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice1 = std::make_shared<AudioDeviceDescriptor>();
     audioDevice1->macAddress_ = testAddr1;
     AudioCoreService::GetCoreService()->Init();
@@ -130,11 +130,11 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_004, TestS
     ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(AudioDevice2, false);
     EXPECT_EQ(ret, SUCCESS);
     audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice2);
-    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, false);
+    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, COLLABORATION_CLOSE);
     audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice1);
-    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, true);
+    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, COLLABORATION_BLUETOOTH_OPEN);
     audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice3);
-    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, false);
+    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, COLLABORATION_CLOSE);
 }
 
 /**
@@ -183,22 +183,22 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_006, TestS
     audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_ = true;
     // current device is not in addressToCollaborativeEnabledMap_ but collaborative state is true
     audioCollaborativeServicePtr_->curDeviceAddress_ = testAddr1;
-    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = true;
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_BLUETOOTH_OPEN;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), ERR_OPERATION_FAILED);
 
     // current device is not in addressToCollaborativeEnabledMap_ but collaborative state is false
-    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = false;
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), SUCCESS);
     
     // current device address is in addressToCollaborativeEnabledMap_ and collaborative state should be changed
-    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = false;
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_[TEST_MAC_ADDR] = COLLABORATIVE_OPENED;
     audioCollaborativeServicePtr_->curDeviceAddress_ = TEST_MAC_ADDR;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), ERR_OPERATION_FAILED);
     EXPECT_EQ(audioCollaborativeServicePtr_->GetRealCollaborativeState(), true);
 
     // current device address is in addressToCollaborativeEnabledMap_ and collaborative state should not be changed
-    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = true;
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_BLUETOOTH_OPEN;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), SUCCESS);
 }
 
@@ -259,6 +259,64 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_010, TestS
     AudioDevice->macAddress_ = testAddr1;
     bool isSupported = audioCollaborativeService_.IsCollaborativePlaybackSupportedForDevice(AudioDevice);
     EXPECT_EQ(isSupported, false);
+}
+
+/**
+* @tc.name  : Test GetCollaborativeGlobalSwitchState returns COLLABORATION_CLOSE by default
+* @tc.number: AudioCollaborativeService_011
+* @tc.desc  : Test GetCollaborativeGlobalSwitchState default state.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_011, TestSize.Level0)
+{
+    CollaborationState state = audioCollaborativeService_.GetCollaborativeGlobalSwitchState();
+    EXPECT_EQ(state, COLLABORATION_CLOSE);
+}
+
+/**
+* @tc.name  : Test GetCollaborativeGlobalSwitchState after state change
+* @tc.number: AudioCollaborativeService_012
+* @tc.desc  : Test GetCollaborativeGlobalSwitchState returns updated state.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_012, TestSize.Level0)
+{
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_BLUETOOTH_OPEN;
+    CollaborationState state = audioCollaborativeService_.GetCollaborativeGlobalSwitchState();
+    EXPECT_EQ(state, COLLABORATION_BLUETOOTH_OPEN);
+}
+
+/**
+* @tc.name  : Test GetCollaborativeGlobalSwitchState with NearLink state
+* @tc.number: AudioCollaborativeService_013
+* @tc.desc  : Test GetCollaborativeGlobalSwitchState returns NEARLINK_OPEN.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_013, TestSize.Level0)
+{
+    audioCollaborativeService_.isCollaborativeStateEnabled_ = COLLABORATION_NEARLINK_OPEN;
+    CollaborationState state = audioCollaborativeService_.GetCollaborativeGlobalSwitchState();
+    EXPECT_EQ(state, COLLABORATION_NEARLINK_OPEN);
+}
+
+/**
+* @tc.name  : Test UpdateCollaborativeStateToHdi with NearLink
+* @tc.number: AudioCollaborativeService_014
+* @tc.desc  : Test UpdateCollaborativeStateToHdi does not crash with NearLink state.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_014, TestSize.Level0)
+{
+    // Should not crash
+    audioCollaborativeService_.UpdateCollaborativeStateToHdi(COLLABORATION_NEARLINK_OPEN);
+    SUCCEED();
+}
+
+/**
+* @tc.name  : Test UpdateCollaborativeStateToHdi with Close
+* @tc.number: AudioCollaborativeService_015
+* @tc.desc  : Test UpdateCollaborativeStateToHdi does not crash with CLOSE state.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_015, TestSize.Level0)
+{
+    audioCollaborativeService_.UpdateCollaborativeStateToHdi(COLLABORATION_CLOSE);
+    SUCCEED();
 }
 } // AudioStandard
 } // OHOS

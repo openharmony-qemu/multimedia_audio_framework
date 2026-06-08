@@ -35,7 +35,9 @@ const char *PARAM_FWK_EC_ENABLE = "const.multimedia.audio.fwk_ec.enable";
 #ifdef SUPPORT_OLD_ENGINE
 const char *PARAM_ENGINE_FLAG = "const.multimedia.audio.proaudioEnable";
 #endif
+#ifndef IS_EMULATOR
 const char *PARAM_HAS_EARPIECE = "const.multimedia.audio.has_earpiece";
+#endif
 
 bool GetInt32ParameterValue(const char *key, int32_t &value)
 {
@@ -85,9 +87,14 @@ int32_t GetEngineFlag()
 
 bool GetHasEarpieceParam()
 {
+#ifndef IS_EMULATOR
     bool ret = system::GetBoolParameter(PARAM_HAS_EARPIECE, false);
     AUDIO_INFO_LOG("get params[%{public}s]: %{public}s", PARAM_HAS_EARPIECE, ret ? "true" : "false");
     return ret;
+#else
+    AUDIO_INFO_LOG("Emulator not support Earpiece_Out");
+    return false;
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS

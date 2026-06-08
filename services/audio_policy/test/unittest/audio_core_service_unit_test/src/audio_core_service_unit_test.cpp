@@ -1857,6 +1857,9 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdatePlaybackStreamFlag_008, TestSize.Level1
     streamDesc->rendererInfo_.forceToNormal = false;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
+    streamDesc->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.format = SAMPLE_S16LE;
+    streamDesc->streamInfo_.channels = STEREO;
 
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
@@ -2321,7 +2324,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_003, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2355,9 +2358,9 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_004, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
     audioVolume->streamVolume_.emplace(anotherSessionId, std::make_shared<StreamVolume>(
-        anotherSessionId, streamType, streamUsage, anotherAppUid, pid, false, 1, false));
+        anotherSessionId, streamType, streamUsage, anotherAppUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2388,7 +2391,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_005, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2419,7 +2422,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_006, TestSize.Level1)
     auto audioVolume = AudioVolume::GetInstance();
     ASSERT_NE(nullptr, audioVolume);
     audioVolume->streamVolume_.emplace(sessionId, std::make_shared<StreamVolume>(
-        sessionId, streamType, streamUsage, appUid, pid, false, 1, false));
+        sessionId, streamType, streamUsage, appUid, pid, false, 1, VKB_INVALID));
 
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_NE(nullptr, audioCoreService);
@@ -2469,7 +2472,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(nullptr);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(nullptr, 0);
 
     EXPECT_EQ(audioCoreService->shouldUpdateDeviceDueToDualTone_, false);
 
@@ -2497,7 +2500,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_MIC;
     streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, 0);
 
     EXPECT_EQ(audioCoreService->shouldUpdateDeviceDueToDualTone_, true);
     EXPECT_EQ(audioCoreService->enableDualHalToneState_, false);
@@ -2526,7 +2529,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
     streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, 0);
 
     EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), true);
 
@@ -2557,7 +2560,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
 
-    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, 0);
 
     EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
 

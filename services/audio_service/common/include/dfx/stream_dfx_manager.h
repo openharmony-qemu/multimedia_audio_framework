@@ -20,6 +20,7 @@
 #include "audio_errors.h"
 #include <unordered_map>
 #include <mutex>
+#include <vector>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,6 +35,7 @@ public:
     static StreamDfxManager& GetInstance();
     void CheckStreamOccupancy(uint32_t sessionId, const AudioProcessConfig &processConfig, bool isStart);
     void SendAudioErrorEvent(int32_t uid, int32_t errorCode, const std::string &erroDesc, bool isClient);
+    static void GetErrorInfosFromMedia(std::vector<AudioFaultRecord> &errorInfos);
 
 private:
     StreamDfxManager() = default;

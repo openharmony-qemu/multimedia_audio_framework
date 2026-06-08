@@ -217,10 +217,11 @@ void AudioVolumeManagerIsWiredHeadSetFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioVolumeManagerIsBlueToothFuzzTest(FuzzedDataProvider& fdp)
 {
-    DeviceType deviceType = PickValue(fdp, g_testDeviceTypes);
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = PickValue(fdp, g_testDeviceTypes);
 
-    audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
+    audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceDesc);
 }
 
 void AudioVolumeManagerCheckMixActiveMusicTimeFuzzTest(FuzzedDataProvider& fdp)

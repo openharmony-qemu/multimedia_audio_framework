@@ -756,44 +756,6 @@ HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_003, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     source_->DeInit();
 }
-
-/**
- * @tc.name   : Test CaptureFrame API
- * @tc.number : CaptureFrame_001
- * @tc.desc   : Test camcorder capture frame interleave raw and mic-in channels
- */
-HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrame_001, TestSize.Level1)
-{
-    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
-    ASSERT_NE(source_, nullptr);
-    IAudioSourceAttr attr = {};
-    attr.adapterName = "primary";
-    attr.sampleRate = SAMPLE_RATE_48000;
-    attr.channel = STEREO;
-    attr.format = SAMPLE_S16LE;
-    attr.channelLayout = CH_LAYOUT_STEREO;
-    attr.deviceType = DEVICE_TYPE_MIC;
-    attr.openMicSpeaker = 1;
-    attr.sourceType = SOURCE_TYPE_CAMCORDER;
-    attr.channelMicIn = CHANNEL_4;
-    source_->Init(attr);
-    ASSERT_NE(source_->audioCapture_, nullptr);
-    source_->audioCapture_->CaptureFrame = AudioCaptureCaptureFrameCamcorder;
-    source_->started_.store(true);
-
-    std::vector<int8_t> buffer(24, 0); // two 6-channel S16LE frames
-    uint64_t replyBytes = 0;
-    int32_t ret = source_->CaptureFrame(reinterpret_cast<char *>(buffer.data()), buffer.size(), replyBytes);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(replyBytes, buffer.size());
-    std::vector<int8_t> expect {
-        21, 22, 23, 24, 1, 2, 3, 4, 5, 6, 7, 8,
-        25, 26, 27, 28, 9, 10, 11, 12, 13, 14, 15, 16
-    };
-    EXPECT_EQ(buffer, expect);
-    source_->DeInit();
-}
-
 /**
  * @tc.name   : Test CamcorderMetadataCallbackEntry API
  * @tc.number : CamcorderMetadataCallbackEntry_001
@@ -1516,30 +1478,6 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetMultiDeviceUniqueId_004, TestSize.Level1
     captureSource->attr_.sourceType = SOURCE_TYPE_WAKEUP;
     uint32_t id = captureSource->GetMultiDeviceUniqueId();
     EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_WAKEUP * UNIQUE_ID_INTERVAL);
-}
-
-/**
- * @tc.name   : Test GetAudiocapturerPortPin API
- * @tc.number : GetAudiocapturerPortPin_001
- * @tc.desc   : Test port pin mapping for supported input devices
- */
-HWTEST_F(AudioCaptureSourceUnitTest, GetAudiocapturerPortPin_001, TestSize.Level1)
-{
-    auto captureSource = std::make_shared<AudioCaptureSource>(1);
-    captureSource->attr_.deviceType = DEVICE_TYPE_MIC;
-    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_MIC);
-
-    captureSource->attr_.deviceType = DEVICE_TYPE_USB_HEADSET;
-    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_USB_EXT);
-
-    captureSource->attr_.deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_BLUETOOTH_SCO_HEADSET);
-
-    captureSource->attr_.deviceType = DEVICE_TYPE_NEARLINK_IN;
-    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_NEARLINK);
-
-    captureSource->attr_.deviceType = DEVICE_TYPE_INVALID;
-    EXPECT_EQ(captureSource->GetAudiocapturerPortPin(), PIN_IN_MIC);
 }
 
 /**

@@ -39,10 +39,12 @@ class LoudVolumeManager {
 public:
     explicit LoudVolumeManager();
     virtual ~LoudVolumeManager();
-    bool ReloadLoudVolumeMode(const AudioStreamType streamInFocus, SetLoudVolMode setVolMode);
+    bool ReloadLoudVolumeMode(const AudioStreamType streamInFocus, SetLoudVolMode setVolMode,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     bool ReloadLoudVolumeModeSwitch(LoudVolumeHoldType funcHoldType, SetLoudVolMode setVolMode);
     bool ClearLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType);
-    bool CheckLoudVolumeMode(const int32_t volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
+    bool CheckLoudVolumeMode(const int32_t volLevel, const int32_t keyType, const AudioStreamType &streamInFocus,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
 private:
     void SetLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType, bool state);
     bool GetLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType, bool &state);
@@ -50,7 +52,7 @@ private:
     bool FindLoudVolStreamTypeEnable(AudioStreamType streamType, LoudVolumeHoldType &funcHoldType);
     void SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
     void PublishLoudVolumeNotification(int32_t notificationId);
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType) const;
 private:
     AudioActiveDevice &audioActiveDevice_;
     IAudioPolicyInterface& audioPolicyManager_;

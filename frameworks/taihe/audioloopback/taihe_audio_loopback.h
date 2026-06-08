@@ -33,6 +33,8 @@ public:
     explicit AudioLoopbackImpl(std::shared_ptr<AudioLoopbackImpl> obj);
     ~AudioLoopbackImpl();
 
+    int64_t GetImplPtr();
+
     static AudioLpback CreateAudioLoopbackWrapper(OHOS::AudioStandard::AudioLoopbackMode loopbackMode);
     static AudioLpback CreateGlobalAudioLoopbackWrapper(OHOS::AudioStandard::AudioLoopbackMode mode,
         OHOS::AudioStandard::LoopbackType type);
@@ -52,6 +54,7 @@ public:
 
     friend AudioLpback CreateAudioLoopbackSync(AudioLoopbackMode mode);
     friend AudioLpback CreateGlobalAudioLoopbackSync(AudioLoopbackMode mode, bool isController);
+    friend class AudioDebuggingManagerImpl;
 
 private:
     static void RegisterLoopbackCallback(std::shared_ptr<uintptr_t> &callback,

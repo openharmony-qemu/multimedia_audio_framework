@@ -45,6 +45,7 @@ int32_t AudioDeviceEnhanceManager::SelectOutputDevice(const std::shared_ptr<Audi
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = { desc };
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_OPERATION_FAILED, "create renderer filter failed");
+    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().IsEnhancedRoutingSupported(), SUCCESS, "not support");
     int32_t uid = static_cast<int32_t>(getuid());
     audioRendererFilter->uid = uid;
     
@@ -60,6 +61,7 @@ int32_t AudioDeviceEnhanceManager::SelectInputDevice(const std::shared_ptr<Audio
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = { desc };
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERR_OPERATION_FAILED, "create capturer filter failed");
+    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().IsEnhancedRoutingSupported(), SUCCESS, "not support");
     int32_t uid = static_cast<int32_t>(getuid());
     audioCapturerFilter->uid = uid;
     audioCapturerFilter->audioDeviceSelectMode = SELECT_STRATEGY_INDEPENDENT;
@@ -74,6 +76,7 @@ int32_t AudioDeviceEnhanceManager::SelectOutputDeviceForAudioRenderer(
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "device descriptor is nullptr");
     CHECK_AND_RETURN_RET_LOG(IsOutputDevice(desc->deviceType_, desc->deviceRole_), ERR_INVALID_PARAM,
         "invalid output device type");
+    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().IsEnhancedRoutingSupported(), SUCCESS, "not support");
     return renderer->SelectOutputDevice(desc);
 }
 
@@ -85,6 +88,7 @@ int32_t AudioDeviceEnhanceManager::SelectInputDeviceForAudioCapturer(
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "device descriptor is nullptr");
     CHECK_AND_RETURN_RET_LOG(IsInputDevice(desc->deviceType_, desc->deviceRole_), ERR_INVALID_PARAM,
         "invalid input device type");
+    CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().IsEnhancedRoutingSupported(), SUCCESS, "not support");
     return capturer->SelectInputDevice(desc);
 }
 

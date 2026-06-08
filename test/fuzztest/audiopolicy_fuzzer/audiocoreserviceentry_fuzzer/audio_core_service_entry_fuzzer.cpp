@@ -577,7 +577,6 @@ void AudioCoreServiceEventEntrySelectInputDeviceFuzzTest(FuzzedDataProvider& fdp
     audioCapturerFilter->uid = fdp.ConsumeIntegralInRange<int32_t>(MIN_TEST_UID, MAX_TEST_UID);
     audioCapturerFilter->capturerInfo.sourceType = PickValue(fdp, SourceTypeVec);
     audioCapturerFilter->capturerInfo.capturerFlags = static_cast<int32_t>(PickValue(fdp, AudioFlagVec));
-    audioCoreService->Init();
     eventEntry->SelectInputDevice(audioCapturerFilter, selectedDesc);
 }
 
@@ -648,7 +647,6 @@ void AudioCoreServiceEventEntryTriggerFetchDeviceFuzzTest(FuzzedDataProvider& fd
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum =
         ConsumeEnum<AudioStreamDeviceChangeReasonExt::ExtEnum>(fdp);
     AudioStreamDeviceChangeReasonExt reason(extEnum);
-    audioCoreService->Init();
     eventEntry->TriggerFetchDevice(reason);
 }
 
@@ -657,7 +655,6 @@ void AudioCoreServiceEventEntryExcludeOutputDevicesFuzzTest(FuzzedDataProvider& 
     AudioDeviceUsage audioDevUsage = PickValue(fdp, AudioDeviceUsageVec);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
     audioDeviceDescriptors.push_back(MakeDeviceDescriptor(fdp, OUTPUT_DEVICE));
-    audioCoreService->Init();
     eventEntry->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
@@ -672,7 +669,6 @@ void AudioCoreServiceEventEntryUnexcludeOutputDevicesFuzzTest(FuzzedDataProvider
     AudioDeviceUsage audioDevUsage = PickValue(fdp, AudioDeviceUsageVec);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
     audioDeviceDescriptors.push_back(MakeDeviceDescriptor(fdp, OUTPUT_DEVICE));
-    audioCoreService->Init();
     eventEntry->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
@@ -740,6 +736,7 @@ void Test(FuzzedDataProvider& fdp)
 void Init()
 {
     audioCoreService = std::make_shared<AudioCoreService>();
+    audioCoreService->Init();
     eventEntry = std::make_shared<AudioCoreService::EventEntry>(
         audioCoreService, audioCoreService->readyConditionNotifier_);
     audioCoreService->pipeManager_->SetRequiredPipesReadyCallback([]() {

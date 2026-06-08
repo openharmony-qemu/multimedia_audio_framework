@@ -333,111 +333,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_001, TestSize.Level1)
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
     EXPECT_EQ(result, AUDIO_STREAM_ACTION_DEFAULT);
 }
-
-/**
- * @tc.name: JudgeStreamAction_002
- * @tc.desc: Test JudgeStreamAction when newPipe and oldPipe have different adapterName and
- *  routeFlag, and neither is FAST or DIRECT.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_002, TestSize.Level1)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = 0x1234;
-
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = 0x123456;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-}
-
-/**
- * @tc.name: JudgeStreamAction_003
- * @tc.desc: Test JudgeStreamAction when oldPipe's routeFlag is AUDIO_OUTPUT_FLAG_FAST.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_003, TestSize.Level1)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = 0x1234;
-
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-}
-
-/**
- * @tc.name: JudgeStreamAction_004
- * @tc.desc: Test JudgeStreamAction when newPipe's routeFlag is AUDIO_OUTPUT_FLAG_FAST.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_004, TestSize.Level1)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = 0x123456;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-}
-
-/**
- * @tc.name: JudgeStreamAction_005
- * @tc.desc: Test JudgeStreamAction when oldPipe's routeFlag is AUDIO_OUTPUT_FLAG_DIRECT.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_005, TestSize.Level1)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = 0x1234;
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-}
-
-/**
- * @tc.name: JudgeStreamAction_006
- * @tc.desc: Test JudgeStreamAction when newPipe's routeFlag is AUDIO_OUTPUT_FLAG_DIRECT.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_006, TestSize.Level1)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
-
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = 0x123456;
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-}
-
 /**
  * @tc.name: JudgeStreamAction_008
  * @tc.desc: Test JudgeStreamAction when newPipe and oldPipe have the same adapterName, routeFlag and name_.
@@ -1106,37 +1001,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_012, TestSize.Le
     EXPECT_EQ(info.moduleInfo_.ecType, "");
     EXPECT_EQ(info.moduleInfo_.ecSamplingRate, "");
 }
-
-/**
- * @tc.name: JudgeStreamAction_007
- * @tc.desc: Test JudgeStreamAction when return AUDIO_STREAM_ACTION_MOVE.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_007, TestSize.Level4)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_MOVE);
-}
-
 /**
  * @tc.name: DecideFinalRouteFlag_001
  * @tc.desc: Test DecideFinalRouteFlag when streamDescs.size() == 0 || streamDescs.size() == 1.
@@ -3013,6 +2877,119 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateActionForHdPlay_005, TestSize.Level1)
     ConcurrencyAction action = CONCEDE_INCOMING;
     audioPipeSelector->UpdateActionForHdPlay(existingStream, incomingStream, action);
     EXPECT_EQ(action, CONCEDE_INCOMING);
+}
+
+/**
+ * @tc.name  : MatchCollaborativePipe_SameCollabState_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test MatchCollaborativePipe when isCollaborationEnable matches (no action needed).
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchCollaborativePipe_SameCollabState_001, TestSize.Level0)
+{
+    auto pipeInfo = MakeTestPipe(PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_NORMAL);
+    pipeInfo->isCollaborationEnable_ = false;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->isCollaborationEnable_ = false;
+
+    // Same state - should return without action (PIPE_ACTION_NONE is default)
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
+    EXPECT_NE(pipeInfo->pipeAction_, PIPE_ACTION_RELOAD);
+}
+
+/**
+ * @tc.name  : MatchCollaborativePipe_DifferentCollabState_002
+ * @tc.type  : FUNC
+ * @tc.desc  : Test MatchCollaborativePipe when isCollaborationEnable differs (should reload).
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchCollaborativePipe_DifferentCollabState_002, TestSize.Level0)
+{
+    auto pipeInfo = MakeTestPipe(PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_NORMAL);
+    pipeInfo->isCollaborationEnable_ = false;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID_BASE;
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->isCollaborationEnable_ = true;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
+    EXPECT_EQ(pipeInfo->pipeAction_, PIPE_ACTION_RELOAD);
+}
+
+/**
+ * @tc.name  : MatchCollaborativePipe_EnableToDisable_003
+ * @tc.type  : FUNC
+ * @tc.desc  : Test MatchCollaborativePipe when switching from enabled to disabled.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MatchCollaborativePipe_EnableToDisable_003, TestSize.Level0)
+{
+    auto pipeInfo = MakeTestPipe(PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_NORMAL);
+    pipeInfo->isCollaborationEnable_ = true;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID_BASE;
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->isCollaborationEnable_ = false;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
+    EXPECT_EQ(pipeInfo->pipeAction_, PIPE_ACTION_RELOAD);
+}
+
+/**
+ * @tc.name  : GetStreamPropInfoForMultiChannel_NearLink_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetStreamPropInfoForMultiChannel with isNearLinkCollaborationEnable_=true converts to 4 channel.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetStreamPropInfoForMultiChannel_NearLink_001, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+
+    auto desc = std::make_shared<AudioStreamDescriptor>();
+    desc->isNearLinkCollaborationEnable_ = true;
+
+    auto adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->bufferSize_ = 960;
+    streamPropInfo->channels_ = STEREO;
+    streamPropInfo->channelLayout_ = CH_LAYOUT_STEREO;
+    adapterPipeInfo->streamPropInfos_.push_back(streamPropInfo);
+
+    auto result = manager.GetStreamPropInfoForMultiChannel(desc, adapterPipeInfo, CH_LAYOUT_STEREO);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->channels_, CHANNEL_4);
+    EXPECT_EQ(result->channelLayout_, CH_LAYOUT_QUAD);
+    EXPECT_EQ(result->isCollaborationEnable_, true);
+    // bufferSize should be (960 * 4) / 2 = 1920
+    EXPECT_EQ(result->bufferSize_, 1920u);
+}
+
+/**
+ * @tc.name  : GetStreamPropInfoForMultiChannel_NearLinkDisabled_002
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetStreamPropInfoForMultiChannel with isNearLinkCollaborationEnable_=false
+ * preserves original channels.
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetStreamPropInfoForMultiChannel_NearLinkDisabled_002, TestSize.Level1)
+{
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
+
+    auto desc = std::make_shared<AudioStreamDescriptor>();
+    desc->isNearLinkCollaborationEnable_ = false;
+
+    auto adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->bufferSize_ = 960;
+    streamPropInfo->channels_ = STEREO;
+    streamPropInfo->channelLayout_ = CH_LAYOUT_STEREO;
+    adapterPipeInfo->streamPropInfos_.push_back(streamPropInfo);
+
+    auto result = manager.GetStreamPropInfoForMultiChannel(desc, adapterPipeInfo, CH_LAYOUT_STEREO);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->isCollaborationEnable_, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

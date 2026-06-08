@@ -108,7 +108,6 @@ public:
     void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
     void PostDestroySessionEffect(uint32_t sessionId) override;
-    bool HasSessionEffect(uint32_t sessionId) const override;
     bool IsValidSession(uint32_t sessionId) const override;
     // Session Effect parameter routing
     int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
@@ -137,7 +136,8 @@ private:
     void StopOuputNode();
     void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state,
         uint32_t appUid = INVALID_UID);
-    
+    void FlushPipelineNodes(uint32_t sessionId);
+
     std::shared_ptr<HpaeSinkInputNode> curNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
     std::shared_ptr<HpaeAudioFormatConverterNode> converterForLoudness_ = nullptr;
@@ -159,6 +159,7 @@ private:
     std::unordered_map<uint32_t, PendingSessionEffect> pendingSessionEffects_;
 
     // Session Effect helpers (called on SignalProcessThread)
+    void HandlePendingSessionEffect(uint32_t sessionId);
     int32_t InsertSessionEffectNode(const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
     int32_t RemoveSessionEffectNode();

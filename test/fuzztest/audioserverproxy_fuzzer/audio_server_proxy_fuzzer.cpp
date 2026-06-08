@@ -130,8 +130,7 @@ void AudioServerProxyOffloadSetVolumeProxyFuzzTest()
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
     float volume = GetData<float>();
     uint32_t renderId = GetData<uint32_t>();
-    std::string networkId = "testNetworkId";
-    audioServerProxy.OffloadSetVolumeProxy(volume, renderId, networkId);
+    audioServerProxy.OffloadSetVolumeProxy(volume, renderId);
 }
 
 void AudioServerProxyUnsetOffloadModeProxyFuzzTest()
@@ -160,10 +159,10 @@ void AudioServerProxyCheckHibernateStateProxyFuzzTest()
 void AudioServerProxySetSinkMuteForSwitchDeviceProxyFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
-    std::string devceClass = "testDeviceClass";
+    std::string deviceClass = "testDeviceClass";
     int32_t durationUs = GetData<int32_t>();
     bool mute = GetData<bool>();
-    audioServerProxy.SetSinkMuteForSwitchDeviceProxy(devceClass, durationUs, mute);
+    audioServerProxy.SetSinkMuteForSwitchDeviceProxy(deviceClass, durationUs, mute);
 }
 
 void AudioServerProxySuspendRenderSinkProxyFuzzTest()

@@ -202,7 +202,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, AddCaptureInjector_001, TestSize.Level1)
 HWTEST_F(AudioInjectorPolicyUnitTest, AddCaptureInjectorInner_001, TestSize.Level1)
 {
     auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
-    SetSysPara("persist.multimedia.enable_new_route", 1);
+    SetSysPara("persist.multimedia.audio.enable_new_route", 1);
 
     audioInjectorPolicy.rendererStreamMap_.clear();
     audioInjectorPolicy.isConnected_ = false;
@@ -217,7 +217,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, AddCaptureInjectorInner_001, TestSize.Leve
     audioInjectorPolicy.isConnected_ = false;
     audioInjectorPolicy.capturePortIdx_ = HDI_INVALID_ID;
     audioInjectorPolicy.voipType_ = NO_VOIP;
-    SetSysPara("persist.multimedia.enable_new_route", 0);
+    SetSysPara("persist.multimedia.audio.enable_new_route", 0);
 }
 
 /**
@@ -299,7 +299,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_004, TestSize.Level1
 HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjectorInner_001, TestSize.Level1)
 {
     auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
-    SetSysPara("persist.multimedia.enable_new_route", 1);
+    SetSysPara("persist.multimedia.audio.enable_new_route", 1);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     audioInjectorPolicy.rendererStreamMap_.clear();
@@ -316,7 +316,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjectorInner_001, TestSize.L
     EXPECT_EQ(NO_VOIP, audioInjectorPolicy.voipType_);
 
     audioInjectorPolicy.rendererStreamMap_.clear();
-    SetSysPara("persist.multimedia.enable_new_route", 0);
+    SetSysPara("persist.multimedia.audio.enable_new_route", 0);
 }
 
 /**
@@ -328,7 +328,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjectorInner_001, TestSize.L
 HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjectorInner_002, TestSize.Level1)
 {
     auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
-    SetSysPara("persist.multimedia.enable_new_route", 0);
+    SetSysPara("persist.multimedia.audio.enable_new_route", 0);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     audioInjectorPolicy.rendererStreamMap_.clear();

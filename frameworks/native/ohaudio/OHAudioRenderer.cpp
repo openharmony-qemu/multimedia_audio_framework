@@ -31,7 +31,7 @@ static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static OHOS::AudioStandard::OHAudioRenderer *convertRenderer(OH_AudioRenderer *renderer)
 {
-    return (OHOS::AudioStandard::OHAudioRenderer*) renderer;
+    return reinterpret_cast<OHOS::AudioStandard::OHAudioRenderer*>(renderer);
 }
 
 static OH_AudioStream_Result ConvertError(int32_t err)
@@ -917,11 +917,13 @@ void OHAudioRenderer::SetRendererFastStatusChangeCallback(OH_AudioRenderer_OnFas
 
 void OHAudioRenderer::SetPreferredFrameSize(int32_t frameSize)
 {
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "renderer client is nullptr");
     audioRenderer_->SetPreferredFrameSize(frameSize);
 }
 
 bool OHAudioRenderer::IsFastRenderer()
 {
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
     return audioRenderer_->IsFastRenderer();
 }
 

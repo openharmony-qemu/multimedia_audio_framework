@@ -14,7 +14,9 @@
  */
 
 #include "audio_device_common_unit_test.h"
+#include <algorithm>
 #include "audio_router_select_strategy.h"
+#include "audio_device_manager.h"
 
 using namespace testing::ext;
 
@@ -791,10 +793,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_001, TestSiz
     };
     std::shared_ptr<AudioDeviceDescriptor> updated { desc };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
-    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_USER_SELECT}, MEDIA));
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 
     preferred = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, OUTPUT_DEVICE);
-    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 }
 
 /**
@@ -814,11 +820,13 @@ HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_002, TestSiz
     };
     std::shared_ptr<AudioDeviceDescriptor> updated { desc };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
-    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 
     updated = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     updated->networkId_ = REMOTE_NETWORK_ID;
-    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 }
 
 /**
@@ -838,11 +846,13 @@ HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_003, TestSiz
     };
     std::shared_ptr<AudioDeviceDescriptor> updated { desc };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
-    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 
     fetched.emplace(fetched.begin(),
         std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE));
-    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 }
 
 /**
@@ -862,9 +872,11 @@ HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_004, TestSiz
     };
     std::shared_ptr<AudioDeviceDescriptor> updated { desc };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched { desc };
-    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, MEDIA));
+    EXPECT_TRUE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, MEDIA));
 
-    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, VOICE));
+    EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(
+        preferred, updated, {fetched, ROUTER_TYPE_NONE}, VOICE));
 }
 
 /**
@@ -907,6 +919,105 @@ HWTEST_F(AudioDeviceCommonUnitTest, NeedUpdatePreferredDevice_001, TestSize.Leve
     wiredDesc.connectState_ = CONNECTED;
     EXPECT_TRUE(audioDeviceCommon.NeedUpdatePreferredDevice(wiredDesc));
 #endif
+}
+
+HWTEST_F(AudioDeviceCommonUnitTest, ExcludeIndirectUsbArmInput_RegisteredDeviceIdMatch_001, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    updatedDesc.macAddress_ = "card=2;device=0";
+    updatedDesc.connectState_ = CONNECTED;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForInputDevice(updatedDesc, descForCb);
+
+    ASSERT_FALSE(descForCb.empty());
+    auto registeredDesc = descForCb.back();
+    EXPECT_EQ(DEVICE_TYPE_USB_ARM_HEADSET, registeredDesc->deviceType_);
+    EXPECT_EQ(INPUT_DEVICE, registeredDesc->deviceRole_);
+    EXPECT_NE(updatedDesc.deviceId_, registeredDesc->deviceId_);
+
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> excludeDescs{registeredDesc};
+    strategy.ExcludeDevices(excludeDescs, ALL_INPUT_DEVICES);
+    EXPECT_TRUE(strategy.IsDeviceExcluded(registeredDesc, MEDIA_INPUT_DEVICES));
+    EXPECT_TRUE(strategy.IsDeviceExcluded(registeredDesc, CALL_INPUT_DEVICES));
+    strategy.UnexcludeDevices(excludeDescs, ALL_INPUT_DEVICES);
+    EXPECT_FALSE(strategy.IsDeviceExcluded(registeredDesc, MEDIA_INPUT_DEVICES));
+}
+
+HWTEST_F(AudioDeviceCommonUnitTest, ExcludeIndirectUsbArmInput_OldDeviceIdNotMatch_001, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    updatedDesc.macAddress_ = "card=3;device=0";
+    updatedDesc.connectState_ = CONNECTED;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForInputDevice(updatedDesc, descForCb);
+
+    ASSERT_FALSE(descForCb.empty());
+    auto registeredDesc = descForCb.back();
+
+    auto oldDesc = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
+    EXPECT_NE(oldDesc->deviceId_, registeredDesc->deviceId_);
+
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDescs{oldDesc};
+    strategy.ExcludeDevices(oldDescs, MEDIA_INPUT_DEVICES);
+    EXPECT_FALSE(strategy.IsDeviceExcluded(registeredDesc, MEDIA_INPUT_DEVICES));
+}
+
+HWTEST_F(AudioDeviceCommonUnitTest, ExcludeIndirectUsbArmInput_DisconnectUnexclude_001, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    updatedDesc.deviceRole_ = INPUT_DEVICE;
+    updatedDesc.macAddress_ = "card=4;device=0";
+    updatedDesc.connectState_ = CONNECTED;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForInputDevice(updatedDesc, descForCb);
+    ASSERT_FALSE(descForCb.empty());
+    auto registeredDesc = descForCb.back();
+
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> excludeDescs{registeredDesc};
+    strategy.ExcludeDevices(excludeDescs, ALL_INPUT_DEVICES);
+    EXPECT_TRUE(strategy.IsDeviceExcluded(registeredDesc, MEDIA_INPUT_DEVICES));
+
+    AudioDeviceDescriptor disconnectDesc;
+    disconnectDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    disconnectDesc.deviceRole_ = INPUT_DEVICE;
+    disconnectDesc.macAddress_ = "card=4;device=0";
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> disconnectCb;
+    AudioDeviceManager::GetAudioDeviceManager().GetAllConnectedDeviceByType(
+        disconnectDesc.networkId_, disconnectDesc.deviceType_,
+        disconnectDesc.macAddress_, disconnectDesc.deviceRole_, disconnectCb);
+
+    ASSERT_FALSE(disconnectCb.empty());
+    auto it = std::find_if(disconnectCb.begin(), disconnectCb.end(),
+        [](const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+            return desc != nullptr && desc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET
+                && desc->deviceRole_ == INPUT_DEVICE;
+        });
+    ASSERT_NE(it, disconnectCb.end());
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> unexcludeDescs{*it};
+    strategy.UnexcludeDevices(unexcludeDescs, ALL_INPUT_DEVICES);
+    EXPECT_FALSE(strategy.IsDeviceExcluded(registeredDesc, MEDIA_INPUT_DEVICES));
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -600,7 +600,7 @@ OHOS::AudioStandard::AudioVolumeType TaiheAudioEnum::GetNativeAudioVolumeType(in
             result = OHOS::AudioStandard::STREAM_RING;
             break;
         case AudioJsVolumeType::NAVIGATION:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
             result = OHOS::AudioStandard::STREAM_NAVIGATION;
 #else
             result = OHOS::AudioStandard::STREAM_MUSIC;
@@ -801,7 +801,7 @@ AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeType(OHOS::AudioStandard::AudioS
             result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::MEDIA);
             break;
         case OHOS::AudioStandard::AudioStreamType::STREAM_NAVIGATION:
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
             result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::NAVIGATION);
 #else
             result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::MEDIA);

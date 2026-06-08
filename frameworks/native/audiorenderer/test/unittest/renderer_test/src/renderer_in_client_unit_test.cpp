@@ -2691,33 +2691,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_091, TestSize.Level4
     ret = ptrRendererInClientInner->CheckBufferValid(bufferDesc);
     EXPECT_EQ(ret, false);
 }
-
-/**
- * @tc.name  : Test RendererInClientInner API
- * @tc.type  : FUNC
- * @tc.number: RendererInClientInner_092
- * @tc.desc  : Test RendererInClientInner::ProcessWriteInner
- */
-HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_092, TestSize.Level4)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
-    ptrRendererInClientInner->state_.store(RUNNING);
-    // totalsize is 100
-    uint32_t totalSizeInFrame = 100;
-    uint32_t byteSizePerFrame = 1;
-    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->restoreStatus.store(NO_NEED_FOR_RESTORE);
-    EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), false);
-
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
-    ptrRendererInClientInner->WaitForBufferNeedOperate();
-    EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), true);
-
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE_TO_NORMAL);
-    ptrRendererInClientInner->WaitForBufferNeedOperate();
-    EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), true);
-}
-
 /**
  * @tc.name  : Test GetAudioTime API
  * @tc.type  : FUNC
@@ -3329,6 +3302,58 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_094, TestSize.Level4
 
     ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
     EXPECT_EQ(ptrRendererInClientInner->curStreamParams_.channelLayout, AudioChannelLayout::CH_LAYOUT_5POINT1POINT2);
+}
+
+/**
+ * @tc.name  : Test GetBufferDesc low latency buffer clearing
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_095
+ * @tc.desc  : Test GetBufferDesc clears cbBuffer_ when IsLowLatencyRenderer returns true.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_095, TestSize.Level1)
+{
+    auto ptr = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    ptr->renderMode_ = RENDER_MODE_CALLBACK;
+    ptr->isHWDecodingType_ = false;
+    ptr->curStreamParams_.encoding = ENCODING_PCM;
+    const size_t bufSize = 1024;
+    ptr->cbBuffer_ = std::make_unique<uint8_t[]>(bufSize);
+    ptr->cbBufferSize_ = bufSize;
+    memset_s(ptr->cbBuffer_.get(), bufSize, 0xFF, bufSize);
+    ptr->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+
+    BufferDesc bufDesc;
+    int32_t ret = ptr->GetBufferDesc(bufDesc);
+    EXPECT_EQ(ret, SUCCESS);
+    for (size_t i = 0; i < bufSize; i++) {
+        EXPECT_EQ(bufDesc.buffer[i], 0);
+    }
+}
+
+/**
+ * @tc.name  : Test GetBufferDesc non-low latency buffer not cleared
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_096
+ * @tc.desc  : Test GetBufferDesc does not clear cbBuffer_ when IsLowLatencyRenderer returns false.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_096, TestSize.Level1)
+{
+    auto ptr = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    ptr->renderMode_ = RENDER_MODE_CALLBACK;
+    ptr->isHWDecodingType_ = false;
+    ptr->curStreamParams_.encoding = ENCODING_PCM;
+    const size_t bufSize = 1024;
+    ptr->cbBuffer_ = std::make_unique<uint8_t[]>(bufSize);
+    ptr->cbBufferSize_ = bufSize;
+    memset_s(ptr->cbBuffer_.get(), bufSize, 0xFF, bufSize);
+    ptr->rendererInfo_.audioFlag = 0;
+
+    BufferDesc bufDesc;
+    int32_t ret = ptr->GetBufferDesc(bufDesc);
+    EXPECT_EQ(ret, SUCCESS);
+    for (size_t i = 0; i < bufSize; i++) {
+        EXPECT_EQ(bufDesc.buffer[i], 0xFF);
+    }
 }
 
 /**

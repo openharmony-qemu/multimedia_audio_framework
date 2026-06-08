@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
-#include "parameters.h"
 #include "audio_errors.h"
 #include "audio_policy_interface.h"
 #include "audio_service_enum.h"
@@ -37,10 +36,11 @@
 namespace OHOS {
 namespace AudioStandard {
 
+namespace {
+    constexpr uint32_t MS_PER_S = 1000;
+}
+
 static constexpr int32_t MAX_FAST_STREAM_COUNT = 6;
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-static const bool ENHANCE_ROUTING_SUPPORTED =
-    OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
     {AUDIO_OUTPUT_FLAG_NORMAL, PIPE_TYPE_OUT_NORMAL},
     {AUDIO_INPUT_FLAG_NORMAL, PIPE_TYPE_IN_NORMAL},
@@ -446,6 +446,10 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     CHECK_AND_RETURN_RET(ScanPipeListForStreamDesc(pipeInfoList, streamDesc), {});
     AUDIO_INFO_LOG("Original Pipelist size: %{public}zu, stream routeFlag: 0x%{public}x to fetch",
         pipeInfoList.size(), streamDesc->routeFlag_);
+    
+    if (streamDesc->isNearLinkCollaborationEnable_ && (!(streamDesc->GetRoute() & AUDIO_OUTPUT_FLAG_MULTICHANNEL))) {
+        streamDesc->isNearLinkCollaborationEnable_ = false;
+    }
 
     std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList {};
     for (auto &curPipeInfo : pipeInfoList) {
@@ -525,6 +529,10 @@ void AudioPipeSelector::CheckFastStreamOverLimitToNormal(
     int32_t fastOutputNum = 0;
     int32_t fastInputNum = 0;
     for (auto &streamDesc : streamDescs) {
+        if (streamDesc->isNearLinkCollaborationEnable_ &&
+            (!(streamDesc->GetRoute() & AUDIO_OUTPUT_FLAG_MULTICHANNEL))) {
+            streamDesc->isNearLinkCollaborationEnable_ = false;
+        }
         if (streamDesc->GetRoute() == AUDIO_OUTPUT_FLAG_FAST && ++fastOutputNum > MAX_FAST_STREAM_COUNT) {
             AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
             streamDesc->ResetToNormalRoute(false);
@@ -708,6 +716,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
         GetStreamPropInfoWithBusSelector(streamDesc, streamPropInfo);
         if (newPipeIter != newPipeInfoList.end()) {
             MatchSpecialRemotePipe(streamPropInfo, *newPipeIter, streamDesc);
+            MatchCollaborativePipe(streamPropInfo, *newPipeIter, streamDesc);
             MatchUltraFastPipe(*newPipeIter, streamDesc);
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
@@ -717,7 +726,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
         HandlePipeNotExist(newPipeInfoList, streamDesc);
     }
 
-    if (ENHANCE_ROUTING_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         auto pipePairs = DetermineInputPipeBaseConfig(newPipeInfoList);
         DetermineInputPipeEcAndMicRef(pipePairs);
     }
@@ -1041,7 +1050,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
         UpdatePipeAndStreamAction(newPipeInfo, streamDescToOldPipeInfo);
     }
 
-    if (ENHANCE_ROUTING_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         auto oldPipeMap = BuildOldPipeMap(oldPipeInfoList);
         UpdateInputPipeReloadAction(newPipeInfoList, oldPipeMap, oldPipeInfoList);
         SortCapturerPipesByExecOrder(oldPipeInfoList, newPipeInfoList);
@@ -1481,6 +1490,24 @@ static bool IsMultiStreamCaptureInfo(const std::string &pipeName)
         pipeName == "primary_bt_nearlink_in";
 }
 
+static void FillSpecialPipeInfoExtOther(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> pipeInfoPtr,
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
+{
+    if (pipeInfoPtr->name_ == "fast_usb_arm_output") {
+        info.moduleInfo_.className = info.GetUltraFastFlag() ? "usb_arm_ultra_fast" : "usb_arm_fast";
+        info.moduleInfo_.fileName = info.GetUltraFastFlag() ? "usb_arm_ultra_fast_dump_file" : "usb_arm_fast_dump_file";
+        info.moduleInfo_.name = info.GetUltraFastFlag() ? "UltraFastUsbArmRendererSink" : "FastUsbArmRendererSink";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.role = "sink";
+    } else if (pipeInfoPtr->name_ == "dp_fast_output") {
+        info.moduleInfo_.className = "dp_fast";
+        info.moduleInfo_.fileName = "dp_fast_dump_file";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
+        info.moduleInfo_.name = "FastDpRendererSink";
+        info.moduleInfo_.role = "sink";
+    }
+}
+
 static void FillSpecialPipeInfoExt(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> pipeInfoPtr,
     std::shared_ptr<AudioStreamDescriptor> streamDesc, std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
 {
@@ -1506,21 +1533,17 @@ static void FillSpecialPipeInfoExt(AudioPipeInfo &info, std::shared_ptr<AdapterP
     } else if (pipeInfoPtr->name_ == "direct_output") {
         info.moduleInfo_.className = "primary_direct";
         info.moduleInfo_.fileName = "direct_dump_file";
-        info.moduleInfo_.lib = "libmodule-hdi=-sink.z.so";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
         info.moduleInfo_.name = "direct";
         info.moduleInfo_.role = "sink";
     } else if (pipeInfoPtr->name_ == "voip_direct_output") {
         info.moduleInfo_.className = "primary_direct_voip";
         info.moduleInfo_.fileName = "direct_dump_file";
-        info.moduleInfo_.lib = "libmodule-hdi=-sink.z.so";
+        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
         info.moduleInfo_.name = "voip";
         info.moduleInfo_.role = "sink";
-    } else if (pipeInfoPtr->name_ == "fast_usb_arm_output") {
-        info.moduleInfo_.className = info.GetUltraFastFlag() ? "usb_arm_ultra_fast" : "usb_arm_fast";
-        info.moduleInfo_.fileName = info.GetUltraFastFlag() ? "usb_arm_ultra_fast_dump_file" : "usb_arm_fast_dump_file";
-        info.moduleInfo_.name = info.GetUltraFastFlag() ? "UltraFastUsbArmRendererSink" : "FastUsbArmRendererSink";
-        info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
-        info.moduleInfo_.role = "sink";
+    } else {
+        FillSpecialPipeInfoExtOther(info, pipeInfoPtr, streamDesc, streamPropInfo);
     }
 
     if (IsMultiStreamPrimary(pipeInfoPtr->name_)) {
@@ -1603,7 +1626,7 @@ void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDe
     moduleInfo.hdPlayBackMode = std::to_string(static_cast<int32_t>(deviceDesc->hdPlaybackMode_));
     if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
         CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().empty(), "audio streamInfo empty");
-        const DeviceStreamInfo deviceAudioStreamInfo = deviceDesc->GetAudioStreamInfo().back();
+        DeviceStreamInfo deviceAudioStreamInfo = deviceDesc->GetAudioStreamInfo().back();
 
         CHECK_AND_RETURN_LOG(!deviceAudioStreamInfo.samplingRate.empty(), "samplingRate set empty");
         moduleInfo.rate = to_string(*(deviceAudioStreamInfo.samplingRate.begin()));
@@ -1612,6 +1635,25 @@ void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDe
         CHECK_AND_RETURN_LOG(it != AudioDefinitionPolicyUtils::enumToFormatStr.end(),
             "Not found %{public}u in enumToFormatStr", static_cast<uint32_t>(deviceAudioStreamInfo.format));
         moduleInfo.format = it->second;
+
+        AudioChannelLayout halChannelLayout = deviceAudioStreamInfo.GetMainChannelLayout();
+        std::string halChannels = std::to_string(ConvertLayoutToAudioChannel(halChannelLayout));
+        if (halChannelLayout != CH_LAYOUT_UNKNOWN) {
+            moduleInfo.channels = halChannels;
+            moduleInfo.channelLayout = std::to_string(halChannelLayout);
+        }
+
+        uint32_t buffCalcMs = 20;
+        uint32_t rateValue = 0;
+        uint32_t channelValue = 0;
+        CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.rate, rateValue),
+            "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
+        CHECK_AND_RETURN_LOG(StringConverter(moduleInfo.channels, channelValue),
+            "convert invalid moduleInfo.channels: %{public}s", moduleInfo.channels.c_str());
+
+        uint32_t bufferSize = rateValue * channelValue * AudioPolicyUtils::GetInstance().PcmFormatToBytes(
+            AudioDefinitionPolicyUtils::formatStrToEnum[moduleInfo.format]) * buffCalcMs / MS_PER_S;
+        moduleInfo.bufferSize = std::to_string(bufferSize);
     }
 }
 
@@ -1626,8 +1668,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
 
     info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
     info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
-    info.moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(
-        streamPropInfo->channelLayout_));
+    info.moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_));
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
 
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
@@ -1676,6 +1717,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.adapterName_ = adapterInfoPtr->adapterName;
     info.pipeRole_ = pipeInfoPtr->role_;
     info.name_ = pipeInfoPtr->name_;
+    info.isCollaborationEnable_ = streamPropInfo->isCollaborationEnable_;
     info.InitAudioStreamInfo();
 }
 
@@ -1811,6 +1853,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
 #endif
 
         MatchSpecialRemotePipe(streamPropInfo, pipeInfo, streamDesc);
+        MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
 
         if (((pipeInfo->GetRoute() & AUDIO_OUTPUT_FLAG_FAST) || (pipeInfo->GetRoute() & AUDIO_INPUT_FLAG_FAST)) &&
             pipeInfo->streamDescriptors_.size() == MAX_FAST_STREAM_COUNT) {
@@ -1881,6 +1924,10 @@ void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStream
     info.moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_));
     info.moduleInfo_.channelLayout = std::to_string(streamPropInfo->channelLayout_);
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
+
+    if (!streamDesc->newDeviceDescs_.empty()) {
+        UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
+    }
 
     AUDIO_INFO_LOG("Pipe name: %{public}s, channels: %{public}s, channelLayout: %{public}s",
         pipeInfoPtr->name_.c_str(), info.moduleInfo_.channels.c_str(), info.moduleInfo_.channelLayout.c_str());
@@ -1956,6 +2003,19 @@ bool AudioPipeSelector::IsUpdateActionForDeviceLevelHdPlay(
     CHECK_AND_RETURN_RET_LOG(existingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL ||
         incomingHdPlayMode != HdPlaybackMode::DEVICE_LEVEL, false, "device level, not update action");
     return true;
+}
+
+void AudioPipeSelector::MatchCollaborativePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+    std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    if (streamPropInfo->isCollaborationEnable_ == pipeInfo->isCollaborationEnable_) {
+        return;
+    }
+
+    AUDIO_INFO_LOG("MatchCollaborativePipe isCollaborationEnable_ old:%{public}d, new:%{public}d",
+        pipeInfo->isCollaborationEnable_, streamPropInfo->isCollaborationEnable_);
+    ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, *pipeInfo);
+    pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -3208,38 +3208,6 @@ HWTEST(AudioUtilsUnitTest, ChangeDumpFileState_004, TestSize.Level1)
     EXPECT_NE(tempFile, nullptr);
     DumpFileUtil::CloseDumpFile(&tempFile);
 }
-
-/**
-* @tc.name  : Test ChangeDumpFileState  API
-* @tc.type  : FUNC
-* @tc.number: ChangeDumpFileState_005
-* @tc.desc  : Test explicit dump file type unchanged and reopen branches
-*/
-HWTEST(AudioUtilsUnitTest, ChangeDumpFileState_005, TestSize.Level1)
-{
-    std::string para = DumpFileUtil::DUMP_CLIENT_PARA;
-    std::string fileName = "dump_metadata_unit_test.bin";
-
-    const char *writeValue = "w";
-    SetParameter(para.c_str(), writeValue);
-    DumpFileUtil::g_lastPara[para] = "w";
-    FILE *tempFile = std::tmpfile();
-    ASSERT_NE(tempFile, nullptr);
-    FILE *originFile = tempFile;
-    DumpFileUtil::ChangeDumpFileState(para, &tempFile, fileName, OTHER_NATIVE_SERVICE);
-    EXPECT_EQ(tempFile, originFile);
-    DumpFileUtil::CloseDumpFile(&tempFile);
-
-    const char *invalidValue = "x";
-    SetParameter(para.c_str(), invalidValue);
-    DumpFileUtil::g_lastPara[para] = "a";
-    tempFile = std::tmpfile();
-    ASSERT_NE(tempFile, nullptr);
-    DumpFileUtil::ChangeDumpFileState(para, &tempFile, fileName, OTHER_NATIVE_SERVICE);
-    EXPECT_EQ(tempFile, nullptr);
-    EXPECT_EQ(DumpFileUtil::g_lastPara[para], invalidValue);
-}
-
 /**
 * @tc.name  : Test GetMetadataServerDumpFileName API
 * @tc.type  : FUNC

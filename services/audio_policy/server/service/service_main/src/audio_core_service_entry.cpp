@@ -22,6 +22,9 @@
 #include "audio_utils.h"
 #include "audio_server_proxy.h"
 #include "audio_select_interface_service.h"
+#ifdef USB_ENABLE
+#include "audio_usb_manager.h"
+#endif
 
 #include <utility>
 
@@ -339,6 +342,10 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     NotifyServiceReady();
 #ifdef AUDIO_WIRED_DETECT
     AudioPnpServer::GetAudioPnpServer().init();
+#endif
+#ifdef USB_ENABLE
+    AudioUsbManager::GetInstance().Init(coreService_->eventEntry_, FLAG_AUD_SVC_UP);
+    AudioUsbManager::GetInstance().SubscribeEvent(FLAG_AUD_SVC_UP);
 #endif
 }
 
@@ -723,6 +730,25 @@ int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint3
     return SUCCESS;
 }
 
+int32_t AudioCoreService::EventEntry::ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex)
+{
+    CHECK_AND_RETURN_RET_LOG(coreService_, ERR_INVALID_PARAM, "coreService_ is nullptr");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("After wait, isMultiChannelOpened_: %{public}d", coreService_->isMultiChannelOpened_.load());
+    if (coreService_->isMultiChannelOpened_.load()) {
+        coreService_->isMultiChannelInRelease_.store(false);
+        AUDIO_INFO_LOG("MultiChannel restart");
+        return ERROR;
+    }
+    AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
+    coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
+    CHECK_AND_RETURN_RET_LOG(coreService_->pipeManager_, ERROR, "pipeManager_ is nullptr");
+    coreService_->pipeManager_->RemoveAudioPipeInfo(id);
+    coreService_->audioIOHandleMap_.DelIOHandleInfo(MCH_PRIMARY_SPEAKER);
+    coreService_->isMultiChannelInRelease_.store(false);
+    return SUCCESS;
+}
+
 int32_t AudioCoreService::EventEntry::SetRendererTarget(RenderTarget target, RenderTarget lastTarget,
     uint32_t sessionId)
 {
@@ -882,5 +908,12 @@ void AudioCoreService::EventEntry::TriggerVoipPriorityReload(uint32_t sessionId,
     coreService_->NotifyVoipPriorityLoweredByMute(sessionId, lowered);
 }
 
+int32_t AudioCoreService::EventEntry::GetHighestPriorityVolumeTypeForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioVolumeType &volumeType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+    return coreService_->GetHighestPriorityVolumeTypeForDevice(deviceDesc, volumeType);
+}
 }
 }

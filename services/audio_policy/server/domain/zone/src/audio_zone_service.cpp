@@ -843,6 +843,18 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, const std::
     return ret;
 }
 
+int32_t AudioZoneService::PauseAudioFocusForExtAudioZone()
+{
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
+    return interruptService_->PauseAudioFocusForExtAudioZone();
+}
+
+int32_t AudioZoneService::ResumeAudioFocusForExtAudioZone()
+{
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
+    return interruptService_->ResumeAudioFocusForExtAudioZone();
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZoneService::FetchOutputDevices(int32_t zoneId,
     StreamUsage streamUsage, int32_t clientUid, RouterType bypassType)
 {

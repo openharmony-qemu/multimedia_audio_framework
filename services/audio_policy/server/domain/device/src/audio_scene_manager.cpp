@@ -26,7 +26,7 @@
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "audio_router_select_strategy.h"
-
+#include "audio_pipe_manager.h"
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
 
@@ -69,8 +69,7 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
             AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevices, CALL_OUTPUT_DEVICES);
         }
 #ifdef BLUETOOTH_ENABLE
-        Bluetooth::AudioHfpManager::UpdateAudioScene(newScene);
-        Bluetooth::AudioHfpManager::DisconnectSco();
+        Bluetooth::AudioHfpManager::UpdateAudioScene(newScene, false);
         AudioRouterSelectStrategy::GetInstance().SetScoExcluded(false);
 #endif
     }

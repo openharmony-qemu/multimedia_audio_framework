@@ -60,15 +60,16 @@ static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static const std::string DEVICE_CLASS_A2DP = "a2dp";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
-HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode,
-    size_t preBufSizeInBytes) : preBufSizeInBytes_(preBufSizeInBytes)
+HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble,
+    const std::string &deviceName, bool isCallbackMode, size_t preBufSizeInBytes)
+    : preBufSizeInBytes_(preBufSizeInBytes)
 {
     processConfig_ = processConfig;
     usedSampleRate_ = processConfig.streamInfo.customSampleRate == 0 ?
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) : processConfig.streamInfo.customSampleRate;
     
     if (processConfig_.rendererInfo.audioFlag == AUDIO_OUTPUT_FLAG_FAST &&
-        processConfig_.isInnerCapturer == false) {
+        processConfig_.isInnerCapturer == false && deviceName != "FastDpRendererSink" && isCallbackMode) {
         if (IsUltraFastStreamAndRoute(processConfig_.ultraFastFlag)) {
             spanSizeInFrame_ = static_cast<size_t>(FRAME_LEN_2_5MS_IN_MS * usedSampleRate_ / AUDIO_MS_PER_S);
             AUDIO_INFO_LOG("ultra fast for spanSizeInFrame_ to 2.5ms: %{public}zu", spanSizeInFrame_);

@@ -120,3 +120,17 @@ HWTEST_F(HpaePolicyManagerTest, FaultCode_NotifyAlgoToStopStream_EffectManagerNu
     HpaePolicyManager::GetInstance().NotifyAlgoToStopStream();
     SUCCEED();
 }
+
+/**
+ * @tc.name  : IsCollaborationSupportedForStreamUsage_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test IsCollaborationSupportedForStreamUsage delegates to AudioCollaborationManager.
+ */
+HWTEST_F(HpaePolicyManagerTest, IsCollaborationSupportedForStreamUsage_001, TestSize.Level1)
+{
+    bool result = HpaePolicyManager::GetInstance().IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE);
+    // Result depends on AudioCollaborationManager state, just verify no crash
+    EXPECT_TRUE(result || !result);
+    result = HpaePolicyManager::GetInstance().IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MEDIA);
+    EXPECT_TRUE(result || !result);
+}

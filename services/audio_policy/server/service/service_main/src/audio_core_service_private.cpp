@@ -37,7 +37,6 @@
 #include "ipc_skeleton.h"
 #include "audio_volume.h"
 #include "audio_bundle_manager.h"
-#include "parameters.h"
 #include "sco_audio_scene_manager.h"
 #include "stream_dfx_manager.h"
 
@@ -45,8 +44,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 static const int32_t MEDIA_SERVICE_UID = 1013;
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-static const bool IS_DEVICE_ENHANCED_SUPPORTED = OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 const int32_t DATA_LINK_CONNECTED = 11;
 const uint32_t FIRST_SESSIONID = 100000;
 const uid_t MCU_UID = 7500;
@@ -57,6 +54,22 @@ constexpr int32_t DUAL_CONNECTION_FAILURE = 201;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t REFETCH_DEVICE = 4;
 const int32_t DEFAULT_UID = -1;
+
+// Supported audio parameters for fast audio stream
+const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
+    SAMPLE_RATE_48000,
+};
+
+const std::vector<AudioChannel> AUDIO_FAST_STREAM_SUPPORTED_CHANNELS {
+    MONO,
+    STEREO,
+};
+
+const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
+    SAMPLE_S16LE,
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
+};
 
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
@@ -82,6 +95,7 @@ static const int64_t COLLABORATIVE_STATE_CHANGE_MUTE_SINK_PORT_US = 200000; // 2
 
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_SEC = 10;
+static const int32_t WAIT_MULTICHANNL_CLOSE_TIME_SEC = 5;
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 inline static const std::string EMPTY_ADDRESS{"00:00:00:00:00:00"};
 inline static const std::string NULL_ADDRESS{""};
@@ -207,7 +221,8 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
 
         // update current output device
-        if (needUpdateActiveDevice) {
+        if (needUpdateActiveDevice && streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+            !pipeManager_->IsFocusStandby(streamDesc->sessionId_)) {
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
                 reason);
             needUpdateActiveDevice = !isUpdateActiveDevice;
@@ -234,6 +249,16 @@ void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInf
     OffloadType type = pipeInfo->moduleInfo_.className == "remote_offload" ? REMOTE_OFFLOAD : LOCAL_OFFLOAD;
     isOffloadOpened_[type].store(true);
     offloadCloseCondition_[type].notify_all();
+}
+
+void AudioCoreService::UpdateMultiChannelState(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0);
+    CHECK_AND_RETURN(pipeInfo->isCollaborationEnable_ && pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER);
+    audioPolicyManager_.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    UpdateNearLinkCollaborativeState(true);
+    isMultiChannelOpened_.store(true);
+    multiChannelCloseCondition_.notify_all();
 }
 
 void AudioCoreService::CheckAndUpdateOffloadEnableForStream(
@@ -272,9 +297,6 @@ void AudioCoreService::NotifyRouteUpdate(const std::vector<std::shared_ptr<Audio
 void AudioCoreService::DecidedAudioFlagForStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu input streams", streamDescs.size());
-    if (streamDescs.size() == 0) {
-        return;
-    }
     bool needSetAllFastStreamNormal = false;
     for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
         UpdatePlaybackStreamFlag(streamDesc, false);
@@ -297,6 +319,9 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
     AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu output streams", streamDescs.size());
+    if (streamDescs.size() == 0) {
+        return SUCCESS;
+    }
     DecidedAudioFlagForStreams(streamDescs);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
 
@@ -329,6 +354,7 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         UpdateOffloadState(pipeInfo);
+        UpdateMultiChannelState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
@@ -821,6 +847,34 @@ bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, con
     }
 }
 
+
+bool AudioCoreService::IsStreamSupportMmap(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    const auto &streamInfo = streamDesc->streamInfo_;
+    // check audio sample rate
+    const AudioSamplingRate samplingRate = streamInfo.samplingRate;
+    auto rateItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.begin(),
+        AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), samplingRate);
+    CHECK_AND_RETURN_RET_LOG(rateItem != AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES.end(), false,
+        "Sampling rate %{public}d does not meet the requirements", samplingRate);
+
+    // check audio channel
+    const AudioChannel channels = streamInfo.channels;
+    auto channelItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.begin(),
+        AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), channels);
+    CHECK_AND_RETURN_RET_LOG(channelItem != AUDIO_FAST_STREAM_SUPPORTED_CHANNELS.end(), false,
+        "Audio channel %{public}d does not meet the requirements", channels);
+
+    // check audio sample format
+    const AudioSampleFormat format = streamInfo.format;
+    auto formatItem = std::find(AUDIO_FAST_STREAM_SUPPORTED_FORMATS.begin(),
+        AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), format);
+    CHECK_AND_RETURN_RET_LOG(formatItem != AUDIO_FAST_STREAM_SUPPORTED_FORMATS.end(), false,
+        "Audio sample format %{public}u does not meet the requirements", format);
+
+    return true;
+}
+
 int32_t AudioCoreService::FetchDeviceAndRoute(std::string caller, const AudioStreamDeviceChangeReasonExt reason)
 {
     int32_t ret = FetchOutputDeviceAndRoute(caller + "FetchDeviceAndRoute", reason);
@@ -844,6 +898,7 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
         HILOG_COMM_INFO("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
         UpdateOffloadState(pipeInfo);
+        UpdateMultiChannelState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
@@ -879,7 +934,8 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
                 break;
             case AUDIO_STREAM_ACTION_MOVE:
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc, pipeInfo->id_);
-                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED ||
+                    pipeManager_->IsFocusStandby(desc->sessionId_)) {
                     MoveStreamSink(desc, pipeInfo, reason);
                 } else {
                     MoveToNewOutputDevice(desc, pipeInfo, reason);
@@ -913,7 +969,8 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc, pipeInfo->id_);
-                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED ||
+                    pipeManager_->IsFocusStandby(desc->sessionId_)) {
                     MoveStreamSink(desc, pipeInfo, reason);
                 } else {
                     MoveToNewOutputDevice(desc, pipeInfo, reason);
@@ -982,7 +1039,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
                 if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
                     MoveStreamSource(desc, sourceOutputs);
                 } else {
-                    MoveToNewInputDevice(desc, sourceOutputs);
+                    MoveToNewInputDevice(desc, sourceOutputs, pipeInfo);
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
@@ -1020,7 +1077,7 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
                 if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
                     MoveStreamSource(desc, sourceOutputs);
                 } else {
-                    MoveToNewInputDevice(desc, sourceOutputs);
+                    MoveToNewInputDevice(desc, sourceOutputs, pipeInfo);
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
@@ -1064,6 +1121,13 @@ void AudioCoreService::RemoveUnusedPipe()
                 DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_, type);
                 continue;
             }
+        } else if (pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER && pipeInfo->isCollaborationEnable_) {
+            if (!isRingDualToneOnPrimarySpeaker_) {
+                DelayReleaseMultiChannelPipe(pipeInfo->id_, pipeInfo->paIndex_);
+                continue;
+            }
+            pipeInfo->isCollaborationEnable_ = false;
+            UpdateNearLinkCollaborativeState(false);
         }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
@@ -1530,7 +1594,8 @@ void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> s
 }
 
 void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-    const std::vector<SourceOutput>& sourceOutputs)
+    const std::vector<SourceOutput>& sourceOutputs,
+    std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
     Trace trace("AudioCoreService::MoveToNewInputDevice");
     std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_, sourceOutputs);
@@ -1560,7 +1625,7 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
     if (pipeManager_->GetUpdateRouteSupport() &&
         streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID) {
         audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_.front()->deviceType_,
-            DeviceFlag::INPUT_DEVICES_FLAG, pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_),
+            DeviceFlag::INPUT_DEVICES_FLAG, pipeInfo->id_,
             streamDesc->newDeviceDescs_.front()->networkId_);
     }
 
@@ -1699,16 +1764,15 @@ std::vector<SourceOutput> AudioCoreService::GetSourceOutputs()
 }
 
 void AudioCoreService::UpdateRingerOrAlarmerDualDeviceOutputRouter(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
         streamDesc->newDeviceDescs_.front() != nullptr, "streamDesc is nullptr");
     StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     InternalDeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
-    if (!SelectRingerOrAlarmDevices(streamDesc)) {
+    if (!SelectRingerOrAlarmDevices(streamDesc, pipeId)) {
         audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG,
-            pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_),
-            streamDesc->newDeviceDescs_.front()->networkId_);
+            pipeId, streamDesc->newDeviceDescs_.front()->networkId_);
     }
     if (streamUsage == STREAM_USAGE_ALARM) {
         shouldUpdateDeviceDueToDualTone_ = true;
@@ -1721,9 +1785,9 @@ void AudioCoreService::UpdateRingerOrAlarmerDualDeviceOutputRouter(
         audioPolicyManager_.SetDeviceNoMuteForRinger(streamDesc->newDeviceDescs_.front());
         audioVolumeManager_.SetRingerModeMute(false);
         if (audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(STREAM_RING) <
-            audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
-            audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING,
-                audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
+            audioVolumeManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
+            audioVolumeManager_.SetDoubleRingVolumeDb(STREAM_RING,
+                audioVolumeManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
         }
     } else {
         audioPolicyManager_.ClearDeviceNoMuteForRinger();
@@ -1774,18 +1838,20 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
     AUDIO_DEBUG_LOG("[PipeExecInfo] Update route streamUsage:%{public}d, devicetype:[%{public}s]",
         streamUsage, streamDesc->GetNewDevicesTypeString().c_str());
 
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         AudioScene pipeScene = CalculatePipeAudioScene(pipeId);
         AudioServerProxy::GetInstance().SetAudioSceneForPipeProxy(pipeId, pipeScene, false);
         AUDIO_INFO_LOG("Set AudioScene %{public}d for pipe %{public}u in multi-device mode", pipeScene, pipeId);
     }
-    
-    // for collaboration, the route should be updated
-    UpdateRouteForCollaboration(deviceType, streamDesc->sessionId_);
     shouldUpdateDeviceDueToDualTone_ = false;
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
         !VolumeUtils::IsPCVolumeEnable()) {
-        UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+        UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, pipeId);
+    } else if (AudioCollaborativeService::GetAudioCollaborativeService().GetRealCollaborativeState() &&
+        (streamDesc->isNearLinkCollaborationEnable_ || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        CheckCollaborativeStreamRunning())) {
+        // for collaboration, the route should be updated
+        UpdateRouteForCollaboration(deviceType, pipeId);
     } else {
         CHECK_AND_RETURN_LOG(streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID,
             "remote device no need to update route");
@@ -1861,13 +1927,13 @@ AudioScene AudioCoreService::CalculatePipeAudioScene(uint32_t pipeId)
 }
 
 void AudioCoreService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,
-    const AudioStreamDeviceChangeReason reason)
+    const AudioStreamDeviceChangeReason reason, int32_t forceUid)
 {
     AUDIO_INFO_LOG("In");
     Trace trace("AudioCoreService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
 
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated(forceUid);
         audioPolicyServerHandler_->SendAudioSessionDeviceChange(reason);
     }
     if (deviceDescriptor.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -1948,7 +2014,8 @@ bool AudioCoreService::GetRingerOrAlarmerDualDevices(std::shared_ptr<AudioStream
     return allDevicesInDualDevicesRange;
 }
 
-bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    const uint32_t pipeId)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0 &&
         streamDesc->newDeviceDescs_.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, false,
@@ -1984,8 +2051,7 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
             ClearRingMuteWhenCallStart(pre, isRingDualToneOnPrimarySpeaker_, streamDesc);
-            audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices,
-                pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_));
+            audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices, pipeId);
         }
         return true;
     }
@@ -2341,6 +2407,12 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         return false;
     }
 
+    if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+        streamDesc->GetMainNewDeviceDesc()) &&
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage())) {
+        return false;
+    }
+
     // LowPower: Speaker, USB headset, a2dp offload, Nearlink
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
@@ -2362,8 +2434,7 @@ bool AudioCoreService::IsOffloadAllowedForUid(uint32_t uid) const
 int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStreamDeviceChangeReasonExt reason)
 {
     FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "HandleFetchOutputWhenNoRunningStream" };
-    vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
-        audioRouterCenter_.FetchOutputDevices(info);
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), ERROR, "descs is empty");
     AudioDeviceDescriptor tmpOutputDeviceDesc = audioRouterSelectStrategy_.Get1stCurrentOutputDevice();
     if (descs.front()->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(descs.front(), tmpOutputDeviceDesc)) {
@@ -2393,11 +2464,16 @@ int32_t AudioCoreService::HandleFetchInputWhenNoRunningStream()
 {
     std::shared_ptr<AudioDeviceDescriptor> desc;
     AudioDeviceDescriptor tempDesc = audioRouterSelectStrategy_.Get1stCurrentInputDevice(SYSTEM_UID);
-    RouterType routerType = ROUTER_TYPE_NONE;
     if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && Bluetooth::AudioHfpManager::IsRecognitionStatus()) {
-        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_RECOGNITION, -1, routerType);
+        FetchDeviceInfo info;
+        info.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+        info.clientUID = -1;
+        desc = audioRouterCenter_.FetchInputDevice(info);
     } else {
-        desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1, routerType);
+        FetchDeviceInfo info;
+        info.sourceType = SOURCE_TYPE_MIC;
+        info.clientUID = -1;
+        desc = audioRouterCenter_.FetchInputDevice(info);
     }
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is nullptr");
 
@@ -2596,6 +2672,34 @@ int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex,
 
     CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
     return GetEventEntry()->ReleaseOffloadPipe(id, paIndex, type);
+}
+
+void AudioCoreService::DelayReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_LOG(!isMultiChannelInRelease_.load(), "MultiChannel is releasing");
+    isMultiChannelInRelease_.store(true);
+    isMultiChannelOpened_.store(false);
+    auto unloadMultiChannelThreadFuc = [this, id, paIndex] { this->ReleaseMultiChannelPipe(id, paIndex); };
+    std::thread unloadMultiChannelThread(unloadMultiChannelThreadFuc);
+    unloadMultiChannelThread.detach();
+}
+
+int32_t AudioCoreService::ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex)
+{
+    HILOG_COMM_INFO("[ReleaseMultiChannelPipe]unload MultiChannel module");
+    std::unique_lock<std::mutex> lock(multiChannelCloseMutex_);
+    // Try to wait 10 seconds before unloading the module, because the audio driver takes some time to process
+    // the shutdown process..
+    multiChannelCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_MULTICHANNL_CLOSE_TIME_SEC), [this] () {
+        return isMultiChannelOpened_.load();
+    });
+
+    if (!isMultiChannelOpened_.load()) {
+        UpdateNearLinkCollaborativeState(false);
+    }
+    CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
+    return GetEventEntry()->ReleaseMultiChannelPipe(id, paIndex);
 }
 
 void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
@@ -2921,10 +3025,48 @@ void AudioCoreService::OnAudioSceneChange(const AudioScene& audioScene)
     audioPolicyServerHandler_->SendAudioSceneChangeEvent(audioScene);
 }
 
+void AudioCoreService::HandleSceneChangePreferredDevice(AudioScene audioScene, AudioScene lastAudioScene, int32_t uid)
+{
+    SetSleVoiceStatusFlag(audioScene);
+    OnAudioSceneChange(audioScene);
+    auto currentOutputDevice = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
+    if (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT) {
+        OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN);
+    }
+    if (audioScene == AUDIO_SCENE_DEFAULT && currentOutputDevice.IsRemoteDevice()) {
+        OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::OVERRODE);
+    }
+    OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN,
+        audioSceneManager_.GetAudioSceneOwnerUid());
+}
+
+void AudioCoreService::HandleAudioSceneVolumeChange(AudioScene audioScene, AudioScene lastAudioScene, int32_t uid)
+{
+    if (audioScene == AUDIO_SCENE_PHONE_CALL) {
+        // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
+        audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
+    } else if (lastAudioScene == AUDIO_SCENE_PHONE_CALL && audioScene != AUDIO_SCENE_PHONE_CALL) {
+        audioVolumeManager_.SetVoiceRingtoneMute(false);
+    }
+    if (audioSceneManager_.IsCallEnded()) {
+        audioVolumeManager_.ClearLoudVolumeHoldMapForCall();
+        callTransferCreated_ = false;
+    }
+    if (audioSceneManager_.IsHangUpScene()) {
+        audioVolumeManager_.RefreshActiveDeviceVolume();
+    }
+    if (lastAudioScene == AUDIO_SCENE_RINGING && audioScene != AUDIO_SCENE_RINGING &&
+        audioVolumeManager_.IsAppRingMuted(uid)) {
+        audioVolumeManager_.SetAppRingMuted(uid, false); // unmute the STREAM_RING for the app.
+    }
+}
+
 bool AudioCoreService::HandleOutputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
+    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED ||
+        pipeManager_->IsFocusStandby(streamDesc->sessionId_)) {
         return true;
     }
     if (HandleDeviceChangeForFetchOutputDevice(streamDesc, reason) == ERR_NEED_NOT_SWITCH_DEVICE &&
@@ -3240,14 +3382,13 @@ void AudioCoreService::WriteCapturerConcurrentEvent(const std::unique_ptr<Concur
     }
 }
 
-void AudioCoreService::UpdateRouteForCollaboration(InternalDeviceType deviceType, uint32_t sessionId)
+void AudioCoreService::UpdateRouteForCollaboration(InternalDeviceType deviceType, uint32_t pipeId)
 {
-    if (AudioCollaborativeService::GetAudioCollaborativeService().GetRealCollaborativeState()) {
-        std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
-        activeDevices.push_back(make_pair(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
-        audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices, pipeManager_->QueryPipeIdBySessionId(sessionId));
-        AUDIO_INFO_LOG("collaboration Update desc [%{public}d] with speaker", deviceType);
-    }
+    std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
+    activeDevices.push_back(make_pair(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG));
+    activeDevices.push_back(make_pair(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
+    audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices, pipeId);
+    AUDIO_INFO_LOG("collaboration Update desc [%{public}d] with speaker", deviceType);
 }
 
 int32_t AudioCoreService::SetSleVoiceStatusFlag(AudioScene audioScene)
@@ -3305,14 +3446,14 @@ void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDevice
 #endif
 }
 
-void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+void AudioCoreService::FetchOutputDevicesForDescs(
     const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs)
 {
     for (auto &desc : outputDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         FetchDeviceInfo info = { desc->rendererInfo_.streamUsage, GetRealUid(desc),
-            streamDesc->rendererInfo_.privacyType, "StartClient", streamDesc->bundleName_ };
-        info.streamId = streamDesc->sessionId_;
+            desc->rendererInfo_.privacyType, "StartClient", desc->bundleName_ };
+        info.streamId = desc->sessionId_;
         auto newDescs = audioRouterCenter_.FetchOutputDevices(info);
         pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
     }
@@ -3422,6 +3563,26 @@ void AudioCoreService::GetFlagForUltraFastStream(
     streamDesc->SetUltraFastRequested(true);
     streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
     AUDIO_INFO_LOG("[StaticCheck] Enable ultra fast mode for stream %{public}d", streamDesc->GetSessionId());
+}
+
+bool AudioCoreService::CheckCollaborativeStreamRunning()
+{
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, false, "pipeManager_ is nullptr");
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
+    for (auto &desc : outputStreamDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+        if (desc->isNearLinkCollaborationEnable_ && desc->streamStatus_ == STREAM_STATUS_STARTED) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void AudioCoreService::UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState)
+{
+    AudioServerProxy::GetInstance().SetAudioParameterProxy("nearLink_collaborative_state",
+        std::to_string(static_cast<int32_t>(nearLinkCollaborativeState)));
+    AUDIO_INFO_LOG("UpdateNearLinkCollaborativeState, value:%{public}d", nearLinkCollaborativeState);
 }
 } // namespace AudioStandard
 } // namespace OHOS

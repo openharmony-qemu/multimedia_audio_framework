@@ -24,7 +24,7 @@
 #include "audio_definition_adapter_info.h"
 #include "audio_definition_policy_utils.h"
 #include "audio_policy_utils.h"
-#include "parameters.h"
+#include "audio_utils.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
@@ -40,8 +40,6 @@ const int32_t MEDIA_SERVICE_UID = 1013;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 const uint32_t DEFAULT_PIPE_ID = 0;
 static const char *REQUIRED_PIPE_KEY_SEPARATOR = "#";
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 }
 AudioPipeManager::AudioPipeManager()
     : audioConfigManager_(AudioCoreConfigManager::GetInstance()),
@@ -747,7 +745,7 @@ uint32_t AudioPipeManager::QueryPipeIdBySessionId(uint32_t sessionId)
             }
         }
     }
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         // For multi devices scenario, if sessionId is not found,
         // return invalid id to avoid primary speaker with wrong device.
         return HDI_INVALID_ID;
@@ -1624,6 +1622,7 @@ void AudioPipeManager::ProcessPipeForVolumeInfo(std::vector<PipeDeviceVolumeGrou
     
     for (auto &streamDesc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
+        CHECK_AND_CONTINUE(streamDesc->streamStatus_ == STREAM_STATUS_STARTED);
         CHECK_AND_CONTINUE(!streamDesc->newDeviceDescs_.empty());
 
         auto firstDevice = streamDesc->newDeviceDescs_.front();
@@ -1715,6 +1714,7 @@ std::vector<PipeDeviceVolumeGroup> AudioPipeManager::GetPipeDeviceVolumeInfoForD
         for (auto &streamDesc : pipeInfo->streamDescriptors_) {
             CHECK_AND_CONTINUE(streamDesc != nullptr);
             AUDIO_INFO_LOG("sessionId:%{public}u", streamDesc->sessionId_);
+            CHECK_AND_CONTINUE(streamDesc->streamStatus_ == STREAM_STATUS_STARTED);
             CHECK_AND_CONTINUE(!streamDesc->newDeviceDescs_.empty());
 
             auto firstDevice = streamDesc->newDeviceDescs_.front();
@@ -1802,6 +1802,26 @@ std::string AudioPipeManager::GetPausedFastPipeModuleNameInDelayedSwitch()
         }
     }
     return "";
+}
+
+void AudioPipeManager::AddFocusStandby(uint32_t sessionId)
+{
+    std::unique_lock<std::shared_mutex> lock(focusStandbySetLock_);
+    focusStandbySet_.insert(sessionId);
+    AUDIO_DEBUG_LOG("Add standby session id: %{public}u", sessionId);
+}
+
+void AudioPipeManager::RemoveFocusStandby(uint32_t sessionId)
+{
+    std::unique_lock<std::shared_mutex> lock(focusStandbySetLock_);
+    focusStandbySet_.erase(sessionId);
+    AUDIO_DEBUG_LOG("Remove standby session id: %{public}u", sessionId);
+}
+
+bool AudioPipeManager::IsFocusStandby(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> lock(focusStandbySetLock_);
+    return focusStandbySet_.find(sessionId) != focusStandbySet_.end();
 }
 } // namespace AudioStandard
 } // namespace OHOS

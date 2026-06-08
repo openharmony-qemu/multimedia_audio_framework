@@ -18,6 +18,7 @@
 
 #include "hpae_plugin_node.h"
 #include "i_effect_instance.h"
+#include <optional>
 #include <string>
 #include <memory>
 #include <vector>
@@ -34,6 +35,8 @@ class HpaeSessionEffectNode : public HpaePluginNode {
 public:
     enum class STATUS { IDLE, WARMING_UP, INTERCEPTING, ACTIVE, STOPPING };
     static constexpr uint32_t CROSSFADE_DURATION_MS = 10; // 48kHz: 480 samples
+    static constexpr uint32_t ACTIVE_NO_DATA_PADDING_DELAY_MS = 1000;
+    static constexpr uint32_t ACTIVE_TAIL_PADDING_MAX_FRAMES = 200;
 
     explicit HpaeSessionEffectNode(HpaeNodeInfo &nodeInfo);
     ~HpaeSessionEffectNode() override;
@@ -74,6 +77,8 @@ protected:
     virtual void StartPreheatThread();
     void SetPrebufFilledForTest(bool filled) { prebufFilled_.store(filled); }
     bool GetPrebufFilled() const { return prebufFilled_.load(); }
+    void RunPreheatThreadForTest() { PreheatThreadFunc(); }
+    void SetPrebufTargetBytesForTest(size_t bytes) { prebufTargetBytes_ = bytes; }
     void SetStatusForTest(STATUS s) { status_ = s; }
     void ResetTimestampsForTest()
     {
@@ -85,8 +90,14 @@ protected:
     bool IsPaused() const { return isPaused_; }
     size_t GetTotalBytesIn() const { return totalBytesIn_; }
     size_t GetTotalBytesOut() const { return totalBytesOut_; }
+    size_t GetPaddingBytesInForTest() const { return paddingBytesIn_; }
     const SeProcessStats &GetStatsForTest() const { return stats_; }
     void SetStatsReportThresholdForTest(int64_t threshold) { statsReportThreshold_ = threshold; }
+    void SetActiveNoDataStartForTest(std::chrono::steady_clock::time_point start) { activeNoDataStart_ = start; }
+    HpaePcmBuffer *ProcessActiveNoInputForTest() { return ProcessActiveNoInput(); }
+    size_t FeedInputFromBuffer(HpaePcmBuffer *buf);
+    int32_t FeedPaddingInput(size_t byteLen);
+    void AccountOutput(size_t byteLen);
 
 private:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
@@ -98,11 +109,20 @@ private:
     AudioEffectConfig audioConfig_;
 
     void PreheatThreadFunc();
+    void OnNoDataReceived(bool &noDataTimerActive,
+        std::chrono::steady_clock::time_point &noDataStartTime, uint32_t &backoffMs);
+    bool HandleNoDataTimeout(size_t inputLevel);
     void StopPreheatThread();
     HpaePcmBuffer *ProcessIntercepting(const std::vector<HpaePcmBuffer *> &inputs);
     HpaePcmBuffer *ProcessActive(const std::vector<HpaePcmBuffer *> &inputs);
-    void FeedInputFromBuffer(HpaePcmBuffer *buf);
-    HpaePcmBuffer *ReadAlgoOutput(HpaePcmBuffer *inputBuf, size_t byteLen, size_t channels);
+    HpaePcmBuffer *ProcessActiveNoInput();
+    HpaePcmBuffer *ReadAlgoOutput(HpaePcmBuffer *inputBuf, size_t byteLen);
+    uint64_t BytesToLatencyUs(size_t bytes) const;
+    void UpdatePrebufTargetBytes();
+    void RestartPreheat();
+    void ResetAccounting();
+    void ResetTailPaddingState();
+    void ReconfigOutputBuffers(const AudioEffectConfig &config);
 
     HpaePcmBuffer *ProcessCloseCrossfade(const std::vector<HpaePcmBuffer *> &inputs);
 
@@ -125,9 +145,15 @@ private:
     std::chrono::steady_clock::time_point warmupStartTime_;
     uint64_t pauseAccumulatedUs_ = 0;
     std::chrono::steady_clock::time_point pauseStartTime_;
+    std::chrono::steady_clock::time_point preheatNoDataStartTime_;
     // --- Phase 3C: Latency tracking ---
     size_t totalBytesIn_ = 0;
     size_t totalBytesOut_ = 0;
+    size_t paddingBytesIn_ = 0;
+    std::optional<std::chrono::steady_clock::time_point> activeNoDataStart_;
+    uint32_t activeTailPaddingFrames_ = 0;
+    PcmBufferInfo tailOutputBufferInfo_;
+    HpaePcmBuffer tailOutputData_;
     size_t prebufTargetBytes_ = 0;
     SeProcessStats stats_;
     int64_t statsReportThreshold_ = 48000; // 1s@48kHz

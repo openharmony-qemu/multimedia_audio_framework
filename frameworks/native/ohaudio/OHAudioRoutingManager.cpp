@@ -67,7 +67,7 @@ using OHOS::AudioStandard::SourceType;
 
 static OHOS::AudioStandard::OHAudioRoutingManager *convertManager(OH_AudioRoutingManager* manager)
 {
-    return (OHAudioRoutingManager*) manager;
+    return reinterpret_cast<OHAudioRoutingManager*>(manager);
 }
 
 OH_AudioCommon_Result OH_AudioManager_GetAudioRoutingManager(OH_AudioRoutingManager **audioRoutingManager)
@@ -264,7 +264,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
     }
     for (uint32_t index = 0; index < audioDeviceDescriptorArray->size; index++) {
         OHAudioDeviceDescriptor* ohAudioDeviceDescriptor =
-            (OHAudioDeviceDescriptor*)audioDeviceDescriptorArray->descriptors[index];
+            reinterpret_cast<OHAudioDeviceDescriptor*>(audioDeviceDescriptorArray->descriptors[index]);
         delete ohAudioDeviceDescriptor;
         audioDeviceDescriptorArray->descriptors[index] = nullptr;
     }
@@ -309,7 +309,8 @@ void DestroyAudioDeviceDescriptor(OH_AudioDeviceDescriptorArray *array)
 {
     if (array) {
         for (uint32_t index = 0; index < array->size; index++) {
-            OHAudioDeviceDescriptor* ohAudioDeviceDescriptor = (OHAudioDeviceDescriptor*)array->descriptors[index];
+            OHAudioDeviceDescriptor* ohAudioDeviceDescriptor =
+                reinterpret_cast<OHAudioDeviceDescriptor*>(array->descriptors[index]);
             delete ohAudioDeviceDescriptor;
             array->descriptors[index] = nullptr;
         }

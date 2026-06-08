@@ -16,20 +16,22 @@
 #define AUDIO_A2DP_DEVICE_UNIT_TEST_H
 #include "gtest/gtest.h"
 #include "audio_a2dp_device.h"
+#include "audio_a2dp_device_behavior.h"
+#include "audio_active_device.h"
+#include "audio_iohandle_map.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 class AudioA2dpDeviceUnitTest : public testing::Test {
 public:
-    // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
-    // TearDownTestCase: Called after all test case
     static void TearDownTestCase(void);
-    // SetUp: Called before each test cases
     void SetUp(void);
-    // TearDown: Called after each test cases
     void TearDown(void);
+
+    AudioA2dpDeviceBehavior a2dpDeviceBehavior_;
+    std::string savedActiveBtMac_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

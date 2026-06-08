@@ -58,7 +58,6 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_002, TestSize.Level1)
     WirelessConflictHandler handler;
     
     EXPECT_TRUE(handler.IsForcedRouterType(ROUTER_TYPE_USER_SELECT));
-    EXPECT_TRUE(handler.IsForcedRouterType(ROUTER_TYPE_APP_SELECT));
     EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_DEFAULT));
     EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_PAIR_DEVICE));
     EXPECT_FALSE(handler.IsForcedRouterType(ROUTER_TYPE_NONE));
@@ -83,8 +82,6 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_003, TestSize.Level1)
     // Forced input: priority PRIORITY_FORCED_INPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
         SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, false), PRIORITY_FORCED_INPUT);
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
-        SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, false), PRIORITY_FORCED_INPUT);
     
     // Normal input: priority PRIORITY_NORMAL_INPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_UNKNOWN,
@@ -93,8 +90,6 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_003, TestSize.Level1)
     // Forced output: priority PRIORITY_FORCED_OUTPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,
         SOURCE_TYPE_INVALID, ROUTER_TYPE_USER_SELECT, true), PRIORITY_FORCED_OUTPUT);
-    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,
-        SOURCE_TYPE_INVALID, ROUTER_TYPE_APP_SELECT, true), PRIORITY_FORCED_OUTPUT);
     
     // Normal output: priority PRIORITY_NORMAL_OUTPUT
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_MUSIC,
@@ -163,6 +158,10 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_006, TestSize.Level1)
     
     // Clear selected devices
     handler.ClearSelectedDevices();
+    auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
+    currentDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    currentDevice->macAddress_ = "00:11:22:33:44:57";
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -193,6 +192,34 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_007, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test WirelessConflictHandler Detect conflict with different device.
+ * @tc.number: WirelessConflictHandler_008
+ * @tc.desc  : Test Detect when current device has different mac from highest priority device,
+ *             and current priority is lower, should return true (conflict).
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_008, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+    
+    std::vector<StreamDeviceInfo> outputDevices;
+    StreamDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION; // priority PRIORITY_CALL_OUTPUT
+    info.routerType = ROUTER_TYPE_DEFAULT;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->macAddress_ = "00:11:22:33:44:55";
+    info.device = device;
+    outputDevices.push_back(info);
+    
+    handler.SetSelectedDevices(outputDevices, {});
+    
+    // Different mac address, current is music (priority PRIORITY_NORMAL_OUTPUT),
+    // call is priority PRIORITY_CALL_OUTPUT
+    auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
+    currentDevice->macAddress_ = "00:11:22:33:44:66";
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT));
+}
+
+/**
  * @tc.name  : Test WirelessConflictHandler Detect no conflict when priority is higher.
  * @tc.number: WirelessConflictHandler_009
  * @tc.desc  : Test Detect when current stream has higher priority than existing,
@@ -215,6 +242,33 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_009, TestSize.Level1)
     
     // Current is call (priority PRIORITY_CALL_OUTPUT),
     // existing is music (priority PRIORITY_NORMAL_OUTPUT), no conflict
+    auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
+    currentDevice->macAddress_ = "00:11:22:33:44:66";
+    EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler Detect with input stream.
+ * @tc.number: WirelessConflictHandler_010
+ * @tc.desc  : Test Detect with input stream devices.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_010, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+    
+    std::vector<StreamDeviceInfo> inputDevices;
+    StreamDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_MIC; // priority PRIORITY_NORMAL_INPUT for input
+    info.routerType = ROUTER_TYPE_USER_SELECT; // priority PRIORITY_FORCED_INPUT for forced input
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->macAddress_ = "00:11:22:33:44:55";
+    info.device = device;
+    inputDevices.push_back(info);
+    
+    handler.SetSelectedDevices({}, inputDevices);
+    
+    // Different mac, current is normal input (priority PRIORITY_NORMAL_INPUT),
+    // existing is forced input (priority PRIORITY_FORCED_INPUT)
     auto currentDevice = std::make_shared<AudioDeviceDescriptor>();
     currentDevice->macAddress_ = "00:11:22:33:44:66";
     EXPECT_FALSE(handler.Detect(currentDevice, ROUTER_TYPE_DEFAULT));
@@ -317,9 +371,9 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_014, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test WirelessConflictHandler no conflict with same wireless device pair.
+ * @tc.name  : Test WirelessConflictHandler detects A2DP and SCO conflict.
  * @tc.number: WirelessConflictHandler_015
- * @tc.desc  : Test Detect when output and input have same macAddress (same device pair).
+ * @tc.desc  : Test Detect returns conflict when current A2DP device meets selected SCO device.
  */
 HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_015, TestSize.Level1)
 {
@@ -341,7 +395,35 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_015, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:55";
     
-    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler input conflict with different output wireless device.
+ * @tc.number: WirelessConflictHandler_016
+ * @tc.desc  : Test Detect when input tries to select different wireless device from output.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_016, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+    
+    std::vector<StreamDeviceInfo> outputDevices;
+    StreamDeviceInfo outputInfo;
+    outputInfo.routerType = ROUTER_TYPE_USER_SELECT;
+    outputInfo.streamUsage = STREAM_USAGE_MUSIC;
+    auto outputDevice = std::make_shared<AudioDeviceDescriptor>();
+    outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    outputDevice->macAddress_ = "00:11:22:33:44:55";
+    outputInfo.device = outputDevice;
+    outputDevices.push_back(outputInfo);
+    
+    handler.SetSelectedDevices(outputDevices, {});
+    
+    auto inputDevice = std::make_shared<AudioDeviceDescriptor>();
+    inputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    inputDevice->macAddress_ = "00:11:22:33:44:66";
+    
+    EXPECT_TRUE(handler.Detect(inputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -401,6 +483,64 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_020, TestSize.Level1)
         SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
     EXPECT_EQ(handler.GetPriority(STREAM_USAGE_VOICE_TRANSFER_RINGTONE,
         SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler IsA2dpDevice.
+ * @tc.number: WirelessConflictHandler_021
+ * @tc.desc  : Test IsA2dpDevice with A2DP output/input and non-A2DP devices.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_021, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+
+    auto a2dpDevice = std::make_shared<AudioDeviceDescriptor>();
+    a2dpDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    EXPECT_TRUE(handler.IsA2dpDevice(a2dpDevice));
+
+    auto a2dpInDevice = std::make_shared<AudioDeviceDescriptor>();
+    a2dpInDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    EXPECT_TRUE(handler.IsA2dpDevice(a2dpInDevice));
+
+    auto scoDevice = std::make_shared<AudioDeviceDescriptor>();
+    scoDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    EXPECT_FALSE(handler.IsA2dpDevice(scoDevice));
+
+    auto nearlinkDevice = std::make_shared<AudioDeviceDescriptor>();
+    nearlinkDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
+    EXPECT_FALSE(handler.IsA2dpDevice(nearlinkDevice));
+
+    EXPECT_FALSE(handler.IsA2dpDevice(nullptr));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler Detect A2DP device conflict.
+ * @tc.number: WirelessConflictHandler_022
+ * @tc.desc  : Test Detect returns conflict for different A2DP pair and no conflict for same mac.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_022, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+
+    std::vector<StreamDeviceInfo> inputDevices;
+    StreamDeviceInfo inputInfo;
+    inputInfo.routerType = ROUTER_TYPE_USER_SELECT;
+    inputInfo.sourceType = SOURCE_TYPE_MIC;
+    auto inputDevice = std::make_shared<AudioDeviceDescriptor>();
+    inputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    inputDevice->macAddress_ = "00:11:22:33:44:55";
+    inputInfo.device = inputDevice;
+    inputDevices.push_back(inputInfo);
+
+    handler.SetSelectedDevices({}, inputDevices);
+
+    auto outputDevice = std::make_shared<AudioDeviceDescriptor>();
+    outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    outputDevice->macAddress_ = "00:11:22:33:44:66";
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+
+    outputDevice->macAddress_ = "00:11:22:33:44:55";
+    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 } // namespace AudioStandard

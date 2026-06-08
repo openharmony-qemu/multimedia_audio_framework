@@ -489,9 +489,10 @@ std::shared_ptr<AudioRendererPrivate> AudioRenderer::CreateAndInitRendererObject
         "Failed to create renderer object");
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
+    VkbMode vkbMode = audioRenderer->GetVirtualKeyboardMode(rendererFlags);
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_ALL_RING ? AUDIO_FLAG_NORMAL : rendererFlags;
     if (rendererFlags == AUDIO_FLAG_PCM_OFFLOAD) {
         bool isSupportInnerCaptureOffload = AudioPolicyManager::GetInstance().IsSupportInnerCaptureOffload();
         AUDIO_INFO_LOG("isSupportInnerCaptureOffload: %{public}d", isSupportInnerCaptureOffload);
@@ -503,9 +504,9 @@ std::shared_ptr<AudioRendererPrivate> AudioRenderer::CreateAndInitRendererObject
         rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
         rendererOptions.rendererInfo.isOffloadAllowed ? "T" : "F", rendererFlags, appInfo.appUid,
         rendererOptions.rendererInfo.toneFlag ? "T" : "F");
-    AUDIO_INFO_LOG("isVKB: %{public}s", isVirtualKeyboard ? "T" : "F");
+    AUDIO_INFO_LOG("vkbMode: %{public}d", vkbMode);
 
-    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
+    audioRenderer->rendererInfo_.isVirtualKeyboard = vkbMode;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
@@ -580,9 +581,10 @@ bool AudioRenderer::InitStaticRendererInfo(std::shared_ptr<AudioRendererPrivate>
     audioRenderer->staticSharedMemory_ = sharedMemory;
     audioRenderer->staticBufferInfo_.bufferSize_ = sharedMemory ? sharedMemory->GetSize() : 0;
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
+    VkbMode vkbMode = audioRenderer->GetVirtualKeyboardMode(rendererFlags);
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_ALL_RING ? AUDIO_FLAG_MMAP : rendererFlags;
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRenderer->IsRendererFlagsSupportStatic(rendererFlags),
         false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -593,9 +595,9 @@ bool AudioRenderer::InitStaticRendererInfo(std::shared_ptr<AudioRendererPrivate>
         "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d, toneFlag: %{public}s",
         rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
         "F", rendererFlags, appInfo.appUid, rendererOptions.rendererInfo.toneFlag ? "T" : "F");
-    AUDIO_INFO_LOG("isVKB: %{public}s", isVirtualKeyboard ? "T" : "F");
+    AUDIO_INFO_LOG("vkbMode: %{public}d", vkbMode);
 
-    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
+    audioRenderer->rendererInfo_.isVirtualKeyboard = vkbMode;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
@@ -1492,7 +1494,7 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
     HILOG_COMM_INFO("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
         "volume: %{public}f, interruptMode: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.streamType, GetVolumeInner(), audioInterrupt_.mode);
-    AUDIO_INFO_LOG("isVKB: %{public}s", rendererInfo_.isVirtualKeyboard ? "T" : "F");
+    AUDIO_INFO_LOG("vkbMode: %{public}d", rendererInfo_.isVirtualKeyboard);
     bool silentControl = false;
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(
         IsAllowedStartBackground(sessionID_, audioInterrupt_.streamUsage, silentControl),
@@ -1538,6 +1540,9 @@ void AudioRendererPrivate::HandleAudioInterruptInfo()
         audioInterrupt_.audioFocusType.streamType == STREAM_MOVIE ||
         audioInterrupt_.audioFocusType.streamType == STREAM_SPEECH) {
         audioInterrupt_.startTimeNs = ClockTime::GetCurNano();
+    }
+    if (audioInterrupt_.streamUsage == STREAM_USAGE_INTERPHONE) {
+        audioInterrupt_.audioFocusType.streamType = STREAM_INTERPHONE;
     }
 }
 
@@ -3296,6 +3301,7 @@ float AudioRendererPrivate::GetSpeed()
     return speed_.value_or(1.0f);
 }
 
+
 int32_t AudioRendererPrivate::GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const
 {
     AUDIO_DEBUG_LOG("GetRendererDebugInfo enter");
@@ -3310,6 +3316,19 @@ int32_t AudioRendererPrivate::GetRendererDebugInfo(AudioRendererDebugInfo &debug
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioDebugInfo failed");
 
     debugInfo = AudioRendererDebugInfo();
+    GetRendererDebugStreamInfo(debugInfo, audioDebugInfo);
+    GetRendererDebugPipeInfo(debugInfo, audioDebugInfo);
+    GetRendererDebugDeviceInfo(debugInfo, audioDebugInfo);
+    GetRendererDebugVolumeInfo(debugInfo, audioDebugInfo);
+    GetRendererDebugFocusInfo(debugInfo, audioDebugInfo);
+    GetRendererDebugErrorInfo(debugInfo, audioDebugInfo);
+
+    return SUCCESS;
+}
+
+void AudioRendererPrivate::GetRendererDebugStreamInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
     debugInfo.sessionId = audioDebugInfo.sessionId;
     debugInfo.samplingRate = static_cast<int32_t>(audioDebugInfo.streamParams.samplingRate);
     debugInfo.channels = static_cast<AudioChannel>(audioDebugInfo.streamParams.channels);
@@ -3320,7 +3339,15 @@ int32_t AudioRendererPrivate::GetRendererDebugInfo(AudioRendererDebugInfo &debug
     debugInfo.speed = audioDebugInfo.speed;
     debugInfo.pitch = audioDebugInfo.pitch;
     debugInfo.effectMode = audioDebugInfo.effectMode;
+    AUDIO_DEBUG_LOG("GetRendererDebugStreamInfo: sessionId:%{public}u, samplingRate:%{public}d, "
+        "streamUsage:%{public}d, rendererFlags:%{public}d, speed:%{public}f, pitch:%{public}f",
+        debugInfo.sessionId, debugInfo.samplingRate, debugInfo.streamUsage,
+        debugInfo.rendererFlags, debugInfo.speed, debugInfo.pitch);
+}
 
+void AudioRendererPrivate::GetRendererDebugPipeInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
     debugInfo.pipeId = audioDebugInfo.pipeId;
     debugInfo.paIndex = audioDebugInfo.paIndex;
     debugInfo.pipeRole = audioDebugInfo.pipeRole;
@@ -3333,17 +3360,50 @@ int32_t AudioRendererPrivate::GetRendererDebugInfo(AudioRendererDebugInfo &debug
     debugInfo.pipeChannels = audioDebugInfo.pipeChannels;
     debugInfo.pipeChannelLayout = audioDebugInfo.pipeChannelLayout;
     debugInfo.pipeDeviceType = audioDebugInfo.pipeDeviceType;
+    AUDIO_DEBUG_LOG("GetRendererDebugPipeInfo: pipeId:%{public}u, pipeRole:%{public}d, "
+        "pipeName:%{public}s, routeFlag:%{public}u",
+        debugInfo.pipeId, static_cast<int32_t>(debugInfo.pipeRole),
+        debugInfo.pipeName.c_str(), debugInfo.routeFlag);
+}
 
+void AudioRendererPrivate::GetRendererDebugDeviceInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
     debugInfo.mainDeviceType = audioDebugInfo.mainDeviceType;
     debugInfo.networkId = audioDebugInfo.networkId;
     debugInfo.macAddress = audioDebugInfo.macAddress;
+    AUDIO_DEBUG_LOG("GetRendererDebugDeviceInfo: mainDeviceType:%{public}d, networkId:%{public}s",
+        static_cast<int32_t>(debugInfo.mainDeviceType), debugInfo.networkId.c_str());
+}
 
+void AudioRendererPrivate::GetRendererDebugVolumeInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
     debugInfo.volumeType = audioDebugInfo.volumeType;
     debugInfo.streamVolume = audioDebugInfo.streamVolume;
     debugInfo.systemVolume = audioDebugInfo.systemVolume;
     debugInfo.volume = audioDebugInfo.volume;
+    AUDIO_DEBUG_LOG("GetRendererDebugVolumeInfo: volumeType:%{public}d, "
+        "streamVolume:%{public}f, systemVolume:%{public}f, volume:%{public}f",
+        static_cast<int32_t>(debugInfo.volumeType),
+        debugInfo.streamVolume, debugInfo.systemVolume, debugInfo.volume);
+}
 
-    return SUCCESS;
+void AudioRendererPrivate::GetRendererDebugFocusInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
+    debugInfo.focusState = audioDebugInfo.focusState;
+    debugInfo.focusHistory = audioDebugInfo.focusHistory;
+    AUDIO_DEBUG_LOG("GetRendererDebugFocusInfo: focusState:%{public}d, focusHistory size:%{public}zu",
+        static_cast<int32_t>(debugInfo.focusState), debugInfo.focusHistory.size());
+}
+
+void AudioRendererPrivate::GetRendererDebugErrorInfo(AudioRendererDebugInfo &debugInfo,
+    const AudioDebugInfo &audioDebugInfo) const
+{
+    debugInfo.errorInfos = audioDebugInfo.errorInfos;
+    AUDIO_DEBUG_LOG("GetRendererDebugErrorInfo: errorInfos size:%{public}zu",
+        debugInfo.errorInfos.size());
 }
 
 bool AudioRendererPrivate::IsOffloadEnable()
@@ -3578,15 +3638,18 @@ void AudioRendererPrivate::SetInterruptEventCallbackType(InterruptEventCallbackT
     audioInterrupt_.callbackType = callbackType;
 }
 
-bool AudioRendererPrivate::IsVirtualKeyboard(const int32_t flags)
+VkbMode AudioRendererPrivate::GetVirtualKeyboardMode(const int32_t flags)
 {
     bool isBundleNameValid = false;
     int32_t ret = AudioPolicyManager::GetInstance().CheckVKBInfo(GetBundleNameByUid(), isBundleNameValid);
-    bool isVirtualKeyboard = (flags == AUDIO_FLAG_VKB_NORMAL || flags == AUDIO_FLAG_VKB_FAST)
-        && isBundleNameValid;
-    AUDIO_INFO_LOG("Check VKB ret:%{public}d, flags:%{public}d, isVKB:%{public}s", ret, flags,
-        isVirtualKeyboard ? "T" : "F");
-    return isVirtualKeyboard;
+    if (flags == AUDIO_FLAG_VKB_ALL_RING && isBundleNameValid) {
+        AUDIO_INFO_LOG("Check VKB ret:%{public}d, flags:%{public}d, vkbMode:%{public}d", ret, flags, VKB_ALL_RING);
+        return VKB_ALL_RING;
+    }
+    VkbMode mode = (flags == AUDIO_FLAG_VKB_NORMAL || flags == AUDIO_FLAG_VKB_FAST)
+        && isBundleNameValid ? VKB_ONLY_RING : VKB_INVALID;
+    AUDIO_INFO_LOG("Check VKB ret:%{public}d, flags:%{public}d, vkbMode:%{public}d", ret, flags, mode);
+    return mode;
 }
 
 int32_t AudioRendererPrivate::CheckAudioRenderer(std::string callingFunc)

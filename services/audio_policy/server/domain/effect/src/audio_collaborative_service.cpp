@@ -30,7 +30,13 @@ static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_COLLABORATIV
 const int ADDRESS_STR_LEN = 17;
 const int START_POS = 6;
 const int END_POS = 13;
+const int SLE_FLAG = 1;
 static constexpr int32_t SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE_TIMEOUT = 15;
+
+static bool IsCollaborativePlaybackSupportedDeviceType(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_NEARLINK;
+}
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -73,20 +79,38 @@ bool AudioCollaborativeService::IsCollaborativePlaybackSupportedForDevice(
     if (!isCollaborativePlaybackSupported_ || selectedAudioDevice == nullptr) {
         return false;
     }
-#ifdef BLUETOOTH_ENABLE
-    std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
-    Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(selectedAudioDevice->macAddress_);
+
     std::string productId;
-    device.GetDeviceProductId(productId);
-    int ret = audioPolicyManager_.UpdateCollaborativeProductId(productId);
+    int ret = -1;
+    std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
+    if (selectedAudioDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+#ifdef BLUETOOTH_ENABLE
+        Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(selectedAudioDevice->macAddress_);
+        ret = device.GetDeviceProductId(productId);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("DEVICE_TYPE_BLUETOOTH_A2DP GetDeviceProductId fail:%{public}d", ret);
+            return false;
+        }
+#endif
+    } else if (selectedAudioDevice->deviceType_ == DEVICE_TYPE_NEARLINK) {
+        ret = SleAudioDeviceManager::GetInstance().GetDeviceProductId(selectedAudioDevice->macAddress_, productId);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("DEVICE_TYPE_NEARLINK GetDeviceProductId fail:%{public}d", ret);
+            return false;
+        }
+        productId += "SLE";
+    } else {
+        AUDIO_INFO_LOG("Not support deviceType:%{public}d", selectedAudioDevice->deviceType_);
+        return false;
+    }
+
+    ret = audioPolicyManager_.UpdateCollaborativeProductId(productId);
     if (ret != SUCCESS) {
-        AUDIO_INFO_LOG("IsCollaborativePlaybackSupportedForDevice false productId: %{public}s update ret=%{public}d",
-            productId.c_str(), ret);
+        AUDIO_INFO_LOG("Not support deviceType:%{public}d productId: %{public}s update ret=%{public}d",
+            selectedAudioDevice->deviceType_, productId.c_str(), ret);
         return false;
     }
     return true;
-#endif
-    return false;
 }
 
 void AudioCollaborativeService::UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice)
@@ -97,19 +121,24 @@ void AudioCollaborativeService::UpdateCurrentDevice(const AudioDeviceDescriptor 
     
     if (selectedAudioDevice.macAddress_ != curDeviceAddress_) {
         curDeviceAddress_ = selectedAudioDevice.macAddress_;
-        AUDIO_INFO_LOG("Update current device macAddress %{public}s for AudioCollaborativeSerivce",
+        AUDIO_INFO_LOG("Update current device macAddress %{public}s for AudioCollaborativeService",
             GetEncryptAddr(curDeviceAddress_).c_str());
     }
-    // current device is not A2DP but already in map and opened. May change from A2DP to SCO
+
+    // Update current device type
+    curDeviceType_ = selectedAudioDevice.deviceType_;
+    // current device is not collaborative playback devcie type but already in map and opened.
+    // May change from A2DP/NearLink to other type.
     // collaborative closed when SCO but reserved, will recover to opened later
-    if ((selectedAudioDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) &&
+    if ((!IsCollaborativePlaybackSupportedDeviceType(selectedAudioDevice.deviceType_)) &&
         addressToCollaborativeEnabledMap_.find(curDeviceAddress_) != addressToCollaborativeEnabledMap_.end() &&
         addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_OPENED) {
         addressToCollaborativeEnabledMap_[curDeviceAddress_] = COLLABORATIVE_RESERVED;
         WriteCollaborativeStateSysEvents(curDeviceAddress_, addressToCollaborativeEnabledMap_[curDeviceAddress_]);
     }
-    // current device is A2DP and is reserved state, which comes back from other type like SCO, should be opened
-    if ((selectedAudioDevice.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) &&
+    // current device is collaborative playback devcie type and reserved state.
+    // which comes back from other type. shoud be opened.
+    if ((!IsCollaborativePlaybackSupportedDeviceType(selectedAudioDevice.deviceType_)) &&
         addressToCollaborativeEnabledMap_.find(curDeviceAddress_) != addressToCollaborativeEnabledMap_.end() &&
         addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_RESERVED) {
         addressToCollaborativeEnabledMap_[curDeviceAddress_] = COLLABORATIVE_OPENED;
@@ -168,23 +197,37 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
         return ERROR;
     }
     if (addressToCollaborativeEnabledMap_.find(curDeviceAddress_) == addressToCollaborativeEnabledMap_.end()) {
-        if (isCollaborativeStateEnabled_) {
-            isCollaborativeStateEnabled_ = false;
+        if (isCollaborativeStateEnabled_ == COLLABORATION_BLUETOOTH_OPEN ||
+            isCollaborativeStateEnabled_ == COLLABORATION_NEARLINK_OPEN) {
+            isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
             HILOG_COMM_INFO("[UpdateCollaborativeStateReal]current device %{public}s is not in "
                 "addressToCollaborativeEnabledMap_, close collaborative service",
                 GetEncryptAddr(curDeviceAddress_).c_str());
             UpdateCollaborativeStateToHdi(isCollaborativeStateEnabled_);
-            return audioPolicyManager_.UpdateCollaborativeState(isCollaborativeStateEnabled_);
+            return audioPolicyManager_.UpdateCollaborativeState(COLLABORATION_CLOSE);
         }
         return SUCCESS;
     }
-    bool isCurrentCollaborativeEnabled = (addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_OPENED);
-    if (isCollaborativeStateEnabled_ != isCurrentCollaborativeEnabled) {
-        isCollaborativeStateEnabled_ = isCurrentCollaborativeEnabled;
+
+    bool isCurrentCollaborativeEnabledTemp =
+        (addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_OPENED);
+    CollaborationState isCurrentCollaborativeEnabledState;
+    if (isCurrentCollaborativeEnabledTemp && curDeviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        isCurrentCollaborativeEnabledState = COLLABORATION_BLUETOOTH_OPEN;
+    } else if (isCurrentCollaborativeEnabledTemp && curDeviceType_ == DEVICE_TYPE_NEARLINK) {
+        isCurrentCollaborativeEnabledState = COLLABORATION_NEARLINK_OPEN;
+    } else {
+        isCurrentCollaborativeEnabledState = COLLABORATION_CLOSE;
+    }
+
+    if (isCollaborativeStateEnabled_ != isCurrentCollaborativeEnabledState) {
+        isCollaborativeStateEnabled_ = isCurrentCollaborativeEnabledState;
         HILOG_COMM_INFO("[UpdateCollaborativeStateReal]current collaborative enabled state changed to %{public}d "
             "for Mac address %{public}s", isCollaborativeStateEnabled_, GetEncryptAddr(curDeviceAddress_).c_str());
         UpdateCollaborativeStateToHdi(isCollaborativeStateEnabled_);
-        return audioPolicyManager_.UpdateCollaborativeState(isCollaborativeStateEnabled_); // send to HpaeManager
+        CollaborationState isCollaborationEnabled = isCollaborativeStateEnabled_ ?
+            COLLABORATION_BLUETOOTH_OPEN : COLLABORATION_CLOSE;
+        return audioPolicyManager_.UpdateCollaborativeState(isCollaborationEnabled);
     }
     AUDIO_INFO_LOG("No need to real collaborative state: %{public}d", isCollaborativeStateEnabled_);
     return SUCCESS;
@@ -244,14 +287,22 @@ bool AudioCollaborativeService::IsCollaborativePlaybackOpenedOrReservedForDevice
     return it->second == COLLABORATIVE_OPENED || it->second == COLLABORATIVE_RESERVED;
 }
 
-void AudioCollaborativeService::UpdateCollaborativeStateToHdi(bool collaborativeState)
+void AudioCollaborativeService::UpdateCollaborativeStateToHdi(CollaborationState collaborativeState)
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
-    std::string keyValue = std::string("collaborative_state=") + (collaborativeState ? "true" : "false");
+    std::string keyValue = std::string("collaborative_state=") +
+        std::to_string(static_cast<int32_t>(collaborativeState));
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", keyValue);
     AUDIO_INFO_LOG("UpdateCollaborativeStateToHdi, value: %{public}s", keyValue.c_str());
+}
+
+CollaborationState AudioCollaborativeService::GetCollaborativeGlobalSwitchState()
+{
+    std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
+    AUDIO_INFO_LOG("GetCollaborativeGlobalSwitchState :%{public}d", isCollaborativeStateEnabled_);
+    return isCollaborativeStateEnabled_;
 }
 } // AudioStandard
 } // OHOS

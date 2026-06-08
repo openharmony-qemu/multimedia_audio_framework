@@ -928,20 +928,28 @@ void AudioEffectService::UpdateVoipByAppMuteHintLocked(bool enable, uint32_t tri
 bool AudioEffectService::IsAudioSeparationEffectSupported()
 {
     AUDIO_INFO_LOG("IsAudioSeparationEffectSupported called");
-    return true;
+    return std::any_of(availableEffects_.begin(), availableEffects_.end(),
+        [](const Effect &effect) { return effect.name == "audio_aiss_enhance"; });
 }
 
 int32_t AudioEffectService::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
 {
     AUDIO_INFO_LOG("SetAudioSeparationEffectEnabled: enabled=%{public}d, uid=%{public}d, streamId=%{public}" PRId64,
         enabled, uid, streamId);
-    return AUDIO_OK;
+    CHECK_AND_RETURN_RET_LOG(uid > 0, ERR_INVALID_PARAM, "SetAudioSeparationEffectEnabled: invalid uid");
+
+    CHECK_AND_RETURN_RET(streamId == -1, HPAE::IHpaeManager::GetHpaeManager().SetAissEnabledSync(streamId, enabled));
+    return HPAE::IHpaeManager::GetHpaeManager().SetAissEnabledByUidSync(uid, enabled);
 }
 
 int32_t AudioEffectService::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
 {
     AUDIO_INFO_LOG("SetAudioSeparationEffectVolume: type=%{public}d, volume=%{public}f", type, volume);
-    return AUDIO_OK;
+    CHECK_AND_RETURN_RET_LOG(type == AudioSeparationVolumeType::VOLUME_TYPE_VOCAL, ERR_INVALID_PARAM,
+        "SetAudioSeparationEffectVolume: invalid type");
+    CHECK_AND_RETURN_RET_LOG(volume >= 0.0 && volume <= 1.0, ERR_INVALID_PARAM,
+        "SetAudioSeparationEffectVolume: invalid volume");
+    return HPAE::IHpaeManager::GetHpaeManager().SetVocalRatioSync(static_cast<float>(volume));
 }
 } // namespace AudioStandard
 } // namespace OHOS

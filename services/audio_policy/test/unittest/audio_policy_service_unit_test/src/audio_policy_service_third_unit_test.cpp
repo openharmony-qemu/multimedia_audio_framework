@@ -1735,7 +1735,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, IsCurrentActiveDeviceA2dp_001, TestSiz
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    auto ret = server->audioPolicyManager_.GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP;
+    auto ret = server->audioActiveDevice_.GetDeviceForVolume()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
     EXPECT_EQ(ret, false);
 }
 

@@ -41,8 +41,6 @@ public:
 private:
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 
-    void UpdateInterPhoneStrategy(const AudioInterrupt &currentInterrupt,
-        const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdatePauseAudioFocusStrategy(const AudioInterrupt &currentInterrupt,

@@ -564,6 +564,17 @@ uint32_t AudioCoreConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescrip
 
     for (auto &pipeIt : deviceInfo->supportPipeMap_) {
         if ((desc->audioMode_ == static_cast<AudioMode>(pipeIt.second->role_)) && (desc->audioFlag_ & pipeIt.first)) {
+            if (pipeIt.first == (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP) &&
+                desc->GetSourceType() != SOURCE_TYPE_VOICE_COMMUNICATION) {
+                AUDIO_INFO_LOG("source type is not voice communication, can not use fast voip input flag");
+                continue;
+            }
+            if (pipeIt.first == (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP) &&
+                desc->GetRenderUsage() != STREAM_USAGE_VOICE_COMMUNICATION &&
+                desc->GetRenderUsage() != STREAM_USAGE_VIDEO_COMMUNICATION) {
+                AUDIO_INFO_LOG("stream usage is not voip, skip fast voip output flag");
+                continue;
+            }
             flag = pipeIt.first;
             break;
         }
@@ -621,6 +632,15 @@ void AudioCoreConfigManager::CheckDynamicCapturerConfig(std::shared_ptr<AudioStr
             CHECK_AND_RETURN_LOG(StringConverter(config->second.rate, info->sampleRate_),
                 "convert invalid sampleRate_: %{public}s", config->second.rate.c_str());
             info->format_ = ParseFormat(config->second.format);
+            uint32_t channels = 0;
+            CHECK_AND_RETURN_LOG(StringConverter(config->second.channels, channels),
+                "convert invalid channels: %{public}s", config->second.channels.c_str());
+            uint64_t channelLayout = 0;
+            CHECK_AND_RETURN_LOG(StringConverter(config->second.channelLayout, channelLayout),
+                "convert invalid channelLayout: %{public}s", config->second.channelLayout.c_str());
+            CHECK_AND_RETURN(channelLayout != static_cast<uint64_t>(CH_LAYOUT_UNKNOWN));
+            info->channels_ = static_cast<AudioChannel>(channels);
+            info->channelLayout_ = static_cast<AudioChannelLayout>(channelLayout);
         }
     }
 }
@@ -1153,6 +1173,18 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoFor
     AudioChannelLayout channelLayout)
 {
     auto tempStreamProp = info->streamPropInfos_.front();
+
+    // for collaboration playback need convert t0 4 channel.
+    if (desc->isNearLinkCollaborationEnable_) {
+        tempStreamProp->bufferSize_ = ((tempStreamProp->bufferSize_ * static_cast<uint32_t>(CHANNEL_4)) /
+            static_cast<uint32_t>(tempStreamProp->channels_));
+        tempStreamProp->channels_ = CHANNEL_4;
+        tempStreamProp->channelLayout_ = CH_LAYOUT_QUAD;
+        tempStreamProp->isCollaborationEnable_ = true;
+        AUDIO_INFO_LOG("GetStreamPropInfoForMultiChannel isCollaborationEnable_ true");
+        return tempStreamProp;
+    }
+    tempStreamProp->isCollaborationEnable_ = false;
 
     // for audiovivid, need convert to 5.1.2 channelLayout
     if (desc->streamInfo_.encoding == AudioEncodingType::ENCODING_AUDIOVIVID) {

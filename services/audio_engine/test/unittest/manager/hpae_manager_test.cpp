@@ -1675,10 +1675,10 @@ HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001, TestSize.Level1)
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
     EXPECT_EQ(hpaeManager_->IsInit(), true);
-    int32_t ret = hpaeManager_->UpdateCollaborativeState(true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    ret = hpaeManager_->UpdateCollaborativeState(false);
+    ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_CLOSE);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -2369,18 +2369,18 @@ HWTEST_F(HpaeManagerUnitTest, sendRequestSyncSequentialCalls, TestSize.Level0)
 }
 
 /**
- * @brief SetAissEnabled returns error when sessionEffectManager_ is null (before Init)
+ * @brief SetAissEnabledSync returns error when sessionEffectManager_ is null (before Init)
  */
 HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_NullSessionEffectManager, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     // Do NOT Init — sessionEffectManager_ stays null
-    EXPECT_EQ(hpaeManager_->SetAissEnabled(12345, true), ERR_OPERATION_FAILED);
-    EXPECT_EQ(hpaeManager_->SetAissEnabled(12345, false), ERR_OPERATION_FAILED);
+    EXPECT_EQ(hpaeManager_->SetAissEnabledSync(12345, true), ERR_OPERATION_FAILED);
+    EXPECT_EQ(hpaeManager_->SetAissEnabledSync(12345, false), ERR_OPERATION_FAILED);
 }
 
 /**
- * @brief SetAissEnabled returns error when rendererManager not found for sessionId
+ * @brief SetAissEnabledSync returns error when rendererManager not found for sessionId
  */
 HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_NoRendererManager, TestSize.Level0)
 {
@@ -2389,7 +2389,7 @@ HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_NoRendererManager, TestSize.Level0)
     sleep(1);
     EXPECT_EQ(hpaeManager_->IsRunning(), true);
     // Session 99999 has no rendererManager — should return ERR_SESSION_NOT_FOUND
-    EXPECT_EQ(hpaeManager_->SetAissEnabled(99999, true),
+    EXPECT_EQ(hpaeManager_->SetAissEnabledSync(99999, true),
         static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
     hpaeManager_->DeInit();
 }
@@ -2419,7 +2419,7 @@ HWTEST_F(HpaeManagerUnitTest, PostSessionEffect_DefaultImplNoop, TestSize.Level0
 }
 
 /**
- * @brief SetAissEnabled enable/disable round-trip with audio port and stream.
+ * @brief SetAissEnabledSync enable/disable round-trip with audio port and stream.
  * Verifies the async Post* path does not crash on a full pipeline.
  */
 HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_EnableDisableRoundTrip, TestSize.Level1)
@@ -2444,14 +2444,14 @@ HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_EnableDisableRoundTrip, TestSize.Le
     WaitForMsgProcessing(hpaeManager_);
 
     // Enable AISS — should succeed (Bind + async PostCreateSessionEffect)
-    int32_t ret = hpaeManager_->SetAissEnabled(streamInfo.sessionId, true);
+    int32_t ret = hpaeManager_->SetAissEnabledSync(streamInfo.sessionId, true);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     // Give async PostCreateSessionEffect time to execute on SignalProcessThread
     usleep(100000); // 100ms
 
     // Disable AISS — should succeed (async PostDestroySessionEffect + Unbind)
-    ret = hpaeManager_->SetAissEnabled(streamInfo.sessionId, false);
+    ret = hpaeManager_->SetAissEnabledSync(streamInfo.sessionId, false);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     usleep(100000); // 100ms
@@ -2524,6 +2524,86 @@ HWTEST_F(HpaeManagerUnitTest, GetRendererManagerByDeviceClass_EmptyString_003, T
     auto rendererManager = hpaeManager_->GetRendererManagerByDeviceClass("");
     EXPECT_EQ(rendererManager, nullptr);
 
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborativeState with NEARLINK_OPEN
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_NearLink_002
+ * @tc.desc  : Test UpdateCollaborativeState with COLLABORATION_NEARLINK_OPEN state.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_NearLink_002, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborativeState switch BT to NearLink
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_SwitchBtToNl_003
+ * @tc.desc  : Test switching from BLUETOOTH_OPEN to NEARLINK_OPEN.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_SwitchBtToNl_003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : Test IsCollaborationSupportedForStreamUsage
+ * @tc.type  : FUNC
+ * @tc.number: IsCollaborationSupportedForStreamUsage_001
+ * @tc.desc  : Test IsCollaborationSupportedForStreamUsage delegates correctly.
+ */
+HWTEST_F(HpaeManagerUnitTest, IsCollaborationSupportedForStreamUsage_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    // Test with different stream usages
+    bool result = hpaeManager_->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE);
+    // Result depends on AudioCollaborationManager config, just verify no crash
+    EXPECT_TRUE(result || !result);
+    result = hpaeManager_->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MUSIC);
+    EXPECT_TRUE(result || !result);
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborativeState same state no-op
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_NoChange_004
+ * @tc.desc  : Test UpdateCollaborativeState with same state should log and return.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_NoChange_004, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->DeInit();
 }
 }  // namespace

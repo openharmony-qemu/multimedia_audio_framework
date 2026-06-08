@@ -152,6 +152,12 @@ public:
     int32_t SetPitch(float pitch) override;
     void SetRegisterInterruptCallbackFlag(const bool interruptCallbackFlag) override;
     int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const override;
+    void GetRendererDebugStreamInfo(AudioRendererDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
+    void GetRendererDebugPipeInfo(AudioRendererDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
+    void GetRendererDebugDeviceInfo(AudioRendererDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
+    void GetRendererDebugVolumeInfo(AudioRendererDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
+    void GetRendererDebugFocusInfo(AudioRendererDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
+    void GetRendererDebugErrorInfo(AudioRendererDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
     uint32_t GetRendererDebugKey() const override { return debugKey_; }
     uint32_t debugKey_ = INVALID_DEBUGKEY;
     bool IsFastRenderer() override;
@@ -180,7 +186,7 @@ public:
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
     bool ResetStaticPlayPosition() override;
 
-    bool IsVirtualKeyboard(const int32_t flags);
+    VkbMode GetVirtualKeyboardMode(const int32_t flags);
     void HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
     int32_t SetStaticBufferCallback(std::shared_ptr<StaticBufferEventCallback> callback);
     bool IsRendererFlagsSupportStatic(const int32_t rendererFlags);

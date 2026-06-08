@@ -356,6 +356,11 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_016, TestSize.
     fakeAudioInterrupt = audioSessionService_.GenerateFakeAudioInterrupt(callerPid);
     EXPECT_EQ(fakeAudioInterrupt.streamId, 1);
 
+    audioSessionService_.GenerateFakeStreamId(callerPid);
+    fakeAudioInterrupt = audioSessionService_.GenerateFakeAudioInterrupt(callerPid);
+    bool ret = fakeAudioInterrupt.streamId == 1;
+    EXPECT_TRUE(ret);
+
     callerPid = 2;
     audioSessionService_.GenerateFakeStreamId(callerPid);
     fakeAudioInterrupt = audioSessionService_.GenerateFakeAudioInterrupt(callerPid);

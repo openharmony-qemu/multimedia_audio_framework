@@ -149,8 +149,8 @@ bool LoudVolumeManager::ReloadLoudVolumeModeSwitch(LoudVolumeHoldType funcHoldTy
     return true;
 }
 
-bool LoudVolumeManager::ReloadLoudVolumeMode(
-    const AudioStreamType streamInFocus, SetLoudVolMode setVolMode)
+bool LoudVolumeManager::ReloadLoudVolumeMode(const AudioStreamType streamInFocus,
+    SetLoudVolMode setVolMode, const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT) {
         return false;
@@ -160,19 +160,18 @@ bool LoudVolumeManager::ReloadLoudVolumeMode(
         AUDIO_INFO_LOG("streamType = %{public}d, skip operation loud volume mode.", streamInFocus);
         return false;
     }
-    if (!FindLoudVolStreamTypeEnable(streamInFocus, funcHoldType) ||
-        audioActiveDevice_.GetCurrentOutputDeviceNetworkId() != LOCAL_NETWORK_ID ||
-        audioActiveDevice_.GetCurrentOutputDeviceType() != DeviceType::DEVICE_TYPE_SPEAKER) {
+    if (!FindLoudVolStreamTypeEnable(streamInFocus, funcHoldType) || (device != nullptr &&
+        (device->networkId_ != LOCAL_NETWORK_ID || device->deviceType_ != DeviceType::DEVICE_TYPE_SPEAKER))) {
         AUDIO_INFO_LOG("streamType = %{public}d, or deviceType = %{public}d not support loud volume mode.",
-            streamInFocus, audioActiveDevice_.GetCurrentOutputDeviceType());
+            streamInFocus, device->deviceType_);
         return false;
     }
 
     return ReloadLoudVolumeModeSwitch(funcHoldType, setVolMode);
 }
 
-bool LoudVolumeManager::CheckLoudVolumeMode(const int32_t volLevel,
-    const int32_t keyType, const AudioStreamType &streamInFocus)
+bool LoudVolumeManager::CheckLoudVolumeMode(const int32_t volLevel, const int32_t keyType,
+    const AudioStreamType &streamInFocus, const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
     LoudVolumeHoldType funcHoldType = LOUD_VOLUME_MODE_INVALID;
     if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT ||
@@ -191,7 +190,8 @@ bool LoudVolumeManager::CheckLoudVolumeMode(const int32_t volLevel,
     gettimeofday(&tv, &tz);
     int64_t mSec = static_cast<int64_t>(tv.tv_sec * 1000 + tv.tv_usec / AUDIO_MS_PER_SECOND);
 
-    int32_t volumeLevelMax = GetMaxVolumeLevel(streamInFocus);
+    DeviceType deviceType = deviceDesc != nullptr ? deviceDesc->deviceType_ : DEVICE_TYPE_SPEAKER;
+    int32_t volumeLevelMax = GetMaxVolumeLevel(streamInFocus, deviceType);
     int32_t volumeLevelInInt = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? volLevel + 1 : volLevel - 1;
     if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && (volumeLevelInInt >= volumeLevelMax)) {
         if (GetLoudVolumeHoldMap(funcHoldType, isHolding)) {
@@ -200,7 +200,7 @@ bool LoudVolumeManager::CheckLoudVolumeMode(const int32_t volLevel,
         }
         if (triggerTime == MAX_TRIGGER_TIMES && mSec - upTriggerTimeMSec < MAX_LOUD_VOLUME_MSEC) {
             triggerTime = ENABLE_TRIGGER_TIMES;
-            bool ret = ReloadLoudVolumeMode(streamInFocus, LOUD_VOLUME_SWITCH_ON);
+            bool ret = ReloadLoudVolumeMode(streamInFocus, LOUD_VOLUME_SWITCH_ON, deviceDesc);
             CHECK_AND_RETURN_RET_LOG(ret != false, false, "set LoudVolume on error");
             LoudVolumeMonitor();
             return true;
@@ -213,7 +213,7 @@ bool LoudVolumeManager::CheckLoudVolumeMode(const int32_t volLevel,
     } else if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN && GetLoudVolumeHoldMap(funcHoldType, isHolding)) {
         upTriggerTimeMSec = mSec;
         triggerTime = ENABLE_TRIGGER_TIMES;
-        bool ret = ReloadLoudVolumeMode(streamInFocus, LOUD_VOLUME_SWITCH_OFF);
+        bool ret = ReloadLoudVolumeMode(streamInFocus, LOUD_VOLUME_SWITCH_OFF, deviceDesc);
         CHECK_AND_RETURN_RET_LOG(ret != false, false, "set LoudVolume off error");
         return true;
     } else {

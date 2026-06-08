@@ -61,6 +61,7 @@ public:
     AudioClientInfoMgrCallbackFuzzTest() {}
     bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) override { return false; }
     bool OnQueryIsForceGetDevByVolumeType(const std::string &bundleName) override { return false; }
+    bool OnQueryIsPcSettingsOrSceneBoard(const std::string &bundleName) override { return false; }
     bool OnCheckMediaControllerBundle(const std::string &bundleName) override { return false; }
     bool OnQueryIsForceGetZoneDevice(const std::string &bundleName) override { return false; }
 };
@@ -366,6 +367,23 @@ void OnQueryIsForceGetDevByVolumeTypeFuzzTest(FuzzedDataProvider& fdp)
     policyListenerStub->OnQueryIsForceGetDevByVolumeType(bundleName, ret);
 }
 
+void OnQueryIsPcSettingsOrSceneBoardFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
+    CHECK_AND_RETURN(policyListenerStub != nullptr);
+    std::string bundleName = "bundleName";
+    bool ret = fdp.ConsumeBool();
+
+    policyListenerStub->audioClientInfoMgrCallback_.reset();
+    policyListenerStub->OnQueryIsPcSettingsOrSceneBoard(bundleName, ret);
+
+    policyListenerStub->audioClientInfoMgrCallback_ = std::make_shared<AudioClientInfoMgrCallbackFuzzTest>();
+    if (policyListenerStub->audioClientInfoMgrCallback_.lock() == nullptr) {
+        return;
+    }
+    policyListenerStub->OnQueryIsPcSettingsOrSceneBoard(bundleName, ret);
+}
+
 void SetAudioVKBInfoMgrCallbackFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
@@ -406,6 +424,7 @@ void Test(FuzzedDataProvider& fdp)
     OnQueryIsForceGetZoneDeviceFuzzTest,
     OnCheckVKBInfoFuzzTest,
     OnQueryIsForceGetDevByVolumeTypeFuzzTest,
+    OnQueryIsPcSettingsOrSceneBoardFuzzTest,
     SetAudioVKBInfoMgrCallbackFuzzTest,
     });
     func(fdp);

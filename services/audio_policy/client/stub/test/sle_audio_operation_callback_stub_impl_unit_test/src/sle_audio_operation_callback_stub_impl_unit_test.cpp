@@ -255,5 +255,40 @@ HWTEST(SleAudioOperationCallbackStubImplUnitTest, CallbackStubUnitTest_011, Test
     EXPECT_NE(-1, ret);
     delete audioSleCb;
 }
+
+/**
+* @tc.name  : Test SleAudioOperationCallbackStubImplUnitTest.
+* @tc.number: CallbackStubUnitTest_012
+* @tc.desc  : Test GetDeviceProductId with null callback
+*/
+HWTEST(SleAudioOperationCallbackStubImplUnitTest, CallbackStubUnitTest_012, TestSize.Level4)
+{
+    auto audioSleCb = new (std::nothrow) SleAudioOperationCallbackStubImpl();
+    EXPECT_NE(audioSleCb, nullptr);
+    std::string remoteAddr = "test_addr";
+    std::string productId;
+    // callback is null by default, should return ERROR
+    auto ret = audioSleCb->GetDeviceProductId(remoteAddr, productId);
+    EXPECT_EQ(ERROR, ret);
+    delete audioSleCb;
+}
+
+/**
+* @tc.name  : Test SleAudioOperationCallbackStubImplUnitTest.
+* @tc.number: CallbackStubUnitTest_013
+* @tc.desc  : Test GetDeviceProductId with weak callback set to nullptr
+*/
+HWTEST(SleAudioOperationCallbackStubImplUnitTest, CallbackStubUnitTest_013, TestSize.Level4)
+{
+    auto audioSleCb = new (std::nothrow) SleAudioOperationCallbackStubImpl();
+    EXPECT_NE(audioSleCb, nullptr);
+    std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback;
+    audioSleCb->sleAudioOperationCallback_ = sleAudioOperationCallback;
+    std::string remoteAddr = "test_addr";
+    std::string productId;
+    auto ret = audioSleCb->GetDeviceProductId(remoteAddr, productId);
+    EXPECT_NE(SUCCESS, ret);
+    delete audioSleCb;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -114,6 +114,9 @@ std::shared_ptr<HpaeFastCapturerManager> CreateInitializedManager(
     HpaeSourceInfo sourceInfo = CreateFastSourceInfo();
     auto manager = std::make_shared<HpaeFastCapturerManager>(sourceInfo);
     manager->sourceInputNode_ = CreateFastSourceInputNode(sourceInfo, mockSource);
+    HpaeNodeInfo nodeInfo = CreateSourceNodeInfo(sourceInfo);
+    manager->mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
+    manager->mixerNode_->Connect(manager->sourceInputNode_);
     manager->isInit_.store(true);
     return manager;
 }
@@ -407,7 +410,7 @@ HWTEST_F(HpaeFastCapturerManagerTest, ConnectDisconnectConditionBranches, TestSi
 
     HpaeStreamInfo secondStreamInfo = CreateFastStreamInfo(FAST_SESSION_ID_SECOND, FAST_APP_UID_SECOND);
     EXPECT_EQ(manager->CreateOutputSession(secondStreamInfo), SUCCESS);
-    manager->sourceInputNode_ = nullptr;
+    manager->mixerNode_ = nullptr;
     EXPECT_NE(manager->ConnectOutputSession(secondStreamInfo.sessionId), SUCCESS);
     EXPECT_NE(manager->DisConnectOutputSession(secondStreamInfo.sessionId), SUCCESS);
 }

@@ -30,9 +30,12 @@ static constexpr uint32_t TEST_FRAME_LEN = 960;
 } // namespace
 
 static constexpr uint32_t TEST_SESSION_ID = 42;
+static constexpr uint32_t INNER_CAPTURE_SESSION_ID = 84;
+static constexpr uint32_t REMOTE_CAST_SESSION_ID = 85;
 static constexpr uint32_t UNKNOWN_SESSION_ID = 999;
 static constexpr int32_t TEST_UID = 1000;
 static constexpr int32_t OTHER_UID = 2000;
+static constexpr const char *AISS_EFFECT_NAME = "audio_aiss_enhance";
 
 static HpaeSinkInfo GetTestSinkInfo()
 {
@@ -76,6 +79,19 @@ protected:
     std::shared_ptr<HpaeManager> hpaeManager_;
     std::shared_ptr<HpaeRendererManager> rendererManager_;
 
+    HpaeStreamInfo MakeStereoMusicStream(uint32_t sessionId, SourceType sourceType = SOURCE_TYPE_INVALID)
+    {
+        HpaeStreamInfo streamInfo;
+        streamInfo.sessionId = sessionId;
+        streamInfo.streamType = STREAM_MUSIC;
+        streamInfo.uid = TEST_UID;
+        streamInfo.channels = STEREO;
+        streamInfo.channelLayout = CH_LAYOUT_STEREO;
+        streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+        streamInfo.sourceType = sourceType;
+        return streamInfo;
+    }
+
     void WaitForMsgProcessing()
     {
         static constexpr int32_t pollIntervalMs = 20;
@@ -93,161 +109,193 @@ protected:
     }
 };
 
-// --- SetAissEnabled ---
+// --- SetAissEnabledSync ---
 
-// API-1: SetAissEnabled(true) succeeds when session exists
+// API-1: SetAissEnabledSync(true) succeeds when session exists
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_success, TestSize.Level0)
 {
-    int32_t ret = hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true);
+    int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// API-2: SetAissEnabled(true) returns ERR_SESSION_NOT_FOUND when session doesn't exist
+// API-2: SetAissEnabledSync(true) returns ERR_SESSION_NOT_FOUND when session doesn't exist
 // 前置条件: Init() 已完成 → sessionEffectManager_ 不为 null
 // 前置条件: UNKNOWN_SESSION_ID 不在 rendererIdSinkNameMap_ 中
 // Design ref: se-state-management.md §3.1, se-test-plan.md §6 API-2
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_sessionNotFound, TestSize.Level0)
 {
-    int32_t ret = hpaeManager_->SetAissEnabled(UNKNOWN_SESSION_ID, true);
+    int32_t ret = hpaeManager_->SetAissEnabledSync(UNKNOWN_SESSION_ID, true);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
 }
 
-// API-3: SetAissEnabled(true) is idempotent when already bound
+// API-3: SetAissEnabledSync(true) is idempotent when already bound
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_alreadyBound, TestSize.Level0)
 {
-    int32_t ret = hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true);
+    int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true);
+    ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// API-4: SetAissEnabled(false) succeeds when session is bound
+// API-4: SetAissEnabledSync(false) succeeds when session is bound
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_false_success, TestSize.Level0)
 {
-    ASSERT_EQ(hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true), SUCCESS);
 
-    int32_t ret = hpaeManager_->SetAissEnabled(TEST_SESSION_ID, false);
+    int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, false);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// API-5: SetAissEnabled(false) returns ERR_EFFECT_NOT_BOUND when not bound
+// API-5: SetAissEnabledSync(false) returns ERR_EFFECT_NOT_BOUND when not bound
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_false_notBound, TestSize.Level0)
 {
-    int32_t ret = hpaeManager_->SetAissEnabled(TEST_SESSION_ID, false);
+    int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, false);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
 }
 
-// API-6: SetAissEnabled(true) routes to HpaeRendererManager for Primary path
+// API-6: SetAissEnabledSync(true) routes to HpaeRendererManager for Primary path
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_primaryPath, TestSize.Level0)
 {
     // Default fixture already has HpaeRendererManager → Primary path
-    int32_t ret = hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true);
+    int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// API-7: SetAissEnabled(true) routes to HpaeOffloadRendererManager for Offload path
+// API-7: SetAissEnabledSync(true) routes to HpaeOffloadRendererManager for Offload path
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_offloadPath, TestSize.Level0)
 {
     HpaeSinkInfo sinkInfo = GetTestSinkInfo();
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     hpaeManager_->rendererManagerMap_["file_io"] = offloadManager;
 
-    int32_t ret = hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true);
+    int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// --- SetVocalRatio ---
+HWTEST_F(HpaeManagerSeTest, SetAissEnabled_innerPlaybackCaptureRejected, TestSize.Level0)
+{
+    HpaeStreamInfo streamInfo = MakeStereoMusicStream(INNER_CAPTURE_SESSION_ID, SOURCE_TYPE_PLAYBACK_CAPTURE);
+    hpaeManager_->rendererIdStreamInfoMap_[INNER_CAPTURE_SESSION_ID] = {streamInfo, HPAE_SESSION_RUNNING};
+    hpaeManager_->rendererIdSinkNameMap_[INNER_CAPTURE_SESSION_ID] = "file_io";
 
-// API-8: SetVocalRatio succeeds with valid ratio and bound session
+    int32_t ret = hpaeManager_->SetAissEnabledSync(INNER_CAPTURE_SESSION_ID, true);
+
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED));
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
+}
+
+HWTEST_F(HpaeManagerSeTest, SetAissEnabled_nonMusicStreamRejected, TestSize.Level0)
+{
+    HpaeStreamInfo streamInfo = MakeStereoMusicStream(TEST_SESSION_ID);
+    streamInfo.streamType = STREAM_VOICE_CALL;
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_RUNNING};
+
+    int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
+
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED));
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
+}
+
+HWTEST_F(HpaeManagerSeTest, BindAndCreateAiss_missingStreamInfoRejected, TestSize.Level0)
+{
+    hpaeManager_->rendererIdStreamInfoMap_.erase(TEST_SESSION_ID);
+
+    int32_t ret = hpaeManager_->BindAndCreateAiss(TEST_SESSION_ID);
+
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED));
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
+}
+
+// --- SetVocalRatioSync ---
+
+// API-8: SetVocalRatioSync succeeds with valid ratio and bound session
 HWTEST_F(HpaeManagerSeTest, SetVocalRatio_success, TestSize.Level0)
 {
-    ASSERT_EQ(hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true), SUCCESS);
 
-    int32_t ret = hpaeManager_->SetVocalRatio(0.5f);
+    int32_t ret = hpaeManager_->SetVocalRatioSync(0.5f);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// API-9: SetVocalRatio returns ERR_INVALID_PARAMETER for out-of-range ratio
+// API-9: SetVocalRatioSync returns ERR_INVALID_PARAMETER for out-of-range ratio
 // Design ref: se-state-management.md §3.1, se-test-plan.md §6 API-9
 HWTEST_F(HpaeManagerSeTest, SetVocalRatio_invalidRange, TestSize.Level0)
 {
-    int32_t ret = hpaeManager_->SetVocalRatio(-0.1f);
+    int32_t ret = hpaeManager_->SetVocalRatioSync(-0.1f);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_INVALID_PARAMETER));
 
-    ret = hpaeManager_->SetVocalRatio(1.5f);
+    ret = hpaeManager_->SetVocalRatioSync(1.5f);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_INVALID_PARAMETER));
 }
 
-// API-10: SetVocalRatio returns ERR_EFFECT_NOT_BOUND when not bound
+// API-10: SetVocalRatioSync returns ERR_EFFECT_NOT_BOUND when not bound
 HWTEST_F(HpaeManagerSeTest, SetVocalRatio_notBound, TestSize.Level0)
 {
-    int32_t ret = hpaeManager_->SetVocalRatio(0.5f);
+    int32_t ret = hpaeManager_->SetVocalRatioSync(0.5f);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
 }
 
-// API-11: SetVocalRatio succeeds via UID binding path
+// API-11: SetVocalRatioSync succeeds via UID binding path
 HWTEST_F(HpaeManagerSeTest, SetVocalRatio_uidPath_success, TestSize.Level0)
 {
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = TEST_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.uid = TEST_UID;
+    streamInfo.channels = STEREO;
+    streamInfo.channelLayout = CH_LAYOUT_STEREO;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_RUNNING};
 
-    ASSERT_EQ(hpaeManager_->SetAissEnabledByUid(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
 
-    int32_t ret = hpaeManager_->SetVocalRatio(0.5f);
+    int32_t ret = hpaeManager_->SetVocalRatioSync(0.5f);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// --- SetAissEnabledByUid ---
+// --- SetAissEnabledByUidSync ---
 
-// UID-1: SetAissEnabledByUid(true) succeeds and stays pending (no running stream)
+// UID-1: SetAissEnabledByUidSync(true) succeeds and stays pending (no running stream)
 HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_true_pending, TestSize.Level0)
 {
-    int32_t ret = hpaeManager_->SetAissEnabledByUid(TEST_UID, true);
+    int32_t ret = hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// UID-2: SetAissEnabledByUid(true) returns error on duplicate uid
+// UID-2: SetAissEnabledByUidSync(true) returns error on duplicate uid
 HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_true_duplicateUid, TestSize.Level0)
 {
-    ASSERT_EQ(hpaeManager_->SetAissEnabledByUid(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
 
-    int32_t ret = hpaeManager_->SetAissEnabledByUid(TEST_UID, true);
+    int32_t ret = hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true);
     EXPECT_NE(ret, SUCCESS);
 }
 
-// UID-3: SetAissEnabledByUid(false) returns error when no binding exists
+// UID-3: SetAissEnabledByUidSync(false) returns error when no binding exists
 HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_false_notBound, TestSize.Level0)
 {
-    int32_t ret = hpaeManager_->SetAissEnabledByUid(TEST_UID, false);
+    int32_t ret = hpaeManager_->SetAissEnabledByUidSync(TEST_UID, false);
     EXPECT_NE(ret, SUCCESS);
 }
 
-// UID-4: SetAissEnabledByUid(false) succeeds after setting binding
+// UID-4: SetAissEnabledByUidSync(false) succeeds after setting binding
 HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_false_success, TestSize.Level0)
 {
-    ASSERT_EQ(hpaeManager_->SetAissEnabledByUid(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
 
-    int32_t ret = hpaeManager_->SetAissEnabledByUid(TEST_UID, false);
+    int32_t ret = hpaeManager_->SetAissEnabledByUidSync(TEST_UID, false);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// UID-5: SetAissEnabledByUid(true) binds to existing running music stream
+// UID-5: SetAissEnabledByUidSync(true) binds to existing running music stream
 HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_true_bindRunningStream, TestSize.Level0)
 {
     // Inject a running music stream for TEST_UID
-    HpaeStreamInfo streamInfo;
-    streamInfo.sessionId = TEST_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.uid = TEST_UID;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    HpaeStreamInfo streamInfo = MakeStereoMusicStream(TEST_SESSION_ID);
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_RUNNING};
 
-    int32_t ret = hpaeManager_->SetAissEnabledByUid(TEST_UID, true);
+    int32_t ret = hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
 }
@@ -256,14 +304,10 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_true_bindRunningStream, TestSize
 HWTEST_F(HpaeManagerSeTest, Start_autoBindOnUidMatch, TestSize.Level0)
 {
     // Set pending binding
-    ASSERT_EQ(hpaeManager_->SetAissEnabledByUid(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
 
     // Create a stream with matching uid and music type
-    HpaeStreamInfo streamInfo;
-    streamInfo.sessionId = TEST_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.uid = TEST_UID;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    HpaeStreamInfo streamInfo = MakeStereoMusicStream(TEST_SESSION_ID);
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_NEW};
 
     // Start the stream
@@ -275,7 +319,7 @@ HWTEST_F(HpaeManagerSeTest, Start_autoBindOnUidMatch, TestSize.Level0)
 }
 HWTEST_F(HpaeManagerSeTest, Start_noBindOnUidMismatch, TestSize.Level0)
 {
-    ASSERT_EQ(hpaeManager_->SetAissEnabledByUid(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
 
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = TEST_SESSION_ID;
@@ -293,7 +337,7 @@ HWTEST_F(HpaeManagerSeTest, Start_noBindOnUidMismatch, TestSize.Level0)
 // UID-8: Start does not bind non-music stream even if uid matches
 HWTEST_F(HpaeManagerSeTest, Start_noBindOnNonMusicStream, TestSize.Level0)
 {
-    ASSERT_EQ(hpaeManager_->SetAissEnabledByUid(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
 
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = TEST_SESSION_ID;
@@ -307,16 +351,57 @@ HWTEST_F(HpaeManagerSeTest, Start_noBindOnNonMusicStream, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
 }
 
+HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_skipsInnerPlaybackCaptureAndBindsRealMusic, TestSize.Level0)
+{
+    HpaeStreamInfo realStream = MakeStereoMusicStream(TEST_SESSION_ID);
+    HpaeStreamInfo innerStream = MakeStereoMusicStream(INNER_CAPTURE_SESSION_ID, SOURCE_TYPE_PLAYBACK_CAPTURE);
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {realStream, HPAE_SESSION_RUNNING};
+    hpaeManager_->rendererIdStreamInfoMap_[INNER_CAPTURE_SESSION_ID] = {innerStream, HPAE_SESSION_RUNNING};
+    hpaeManager_->rendererIdSinkNameMap_[INNER_CAPTURE_SESSION_ID] = "file_io";
+
+    int32_t ret = hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+}
+
+HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_skipsRemoteCastAndKeepsPending, TestSize.Level0)
+{
+    HpaeStreamInfo remoteCastStream = MakeStereoMusicStream(REMOTE_CAST_SESSION_ID, SOURCE_TYPE_REMOTE_CAST);
+    hpaeManager_->rendererIdStreamInfoMap_[REMOTE_CAST_SESSION_ID] = {remoteCastStream, HPAE_SESSION_RUNNING};
+    hpaeManager_->rendererIdSinkNameMap_[REMOTE_CAST_SESSION_ID] = "file_io";
+
+    int32_t ret = hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
+}
+
+HWTEST_F(HpaeManagerSeTest, Start_innerPlaybackCaptureDoesNotReplaceBoundMusic, TestSize.Level0)
+{
+    HpaeStreamInfo realStream = MakeStereoMusicStream(TEST_SESSION_ID);
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {realStream, HPAE_SESSION_RUNNING};
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+
+    HpaeStreamInfo innerStream = MakeStereoMusicStream(INNER_CAPTURE_SESSION_ID, SOURCE_TYPE_PLAYBACK_CAPTURE);
+    hpaeManager_->rendererIdStreamInfoMap_[INNER_CAPTURE_SESSION_ID] = {innerStream, HPAE_SESSION_NEW};
+    hpaeManager_->rendererIdSinkNameMap_[INNER_CAPTURE_SESSION_ID] = "file_io";
+
+    hpaeManager_->Start(HPAE_STREAM_CLASS_TYPE_PLAY, INNER_CAPTURE_SESSION_ID);
+    WaitForMsgProcessing();
+
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+}
+
 // UID-9: DestroyStream resets boundSessionId to pending, keeps uid binding
 HWTEST_F(HpaeManagerSeTest, DestroyStream_resetsToPending, TestSize.Level0)
 {
-    ASSERT_EQ(hpaeManager_->SetAissEnabledByUid(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
 
-    HpaeStreamInfo streamInfo;
-    streamInfo.sessionId = TEST_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.uid = TEST_UID;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    HpaeStreamInfo streamInfo = MakeStereoMusicStream(TEST_SESSION_ID);
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_RUNNING};
 
     hpaeManager_->Start(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID);
@@ -343,7 +428,7 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabled_multiChannelRejected, TestSize.Level0
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_RUNNING};
 
-    int32_t ret = hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true);
+    int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED));
 }
 
@@ -360,12 +445,12 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabled_stereoAccepted, TestSize.Level0)
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_RUNNING};
 
-    int32_t ret = hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true);
+    int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// CH-3: EnableAissByUid rejects multi-channel stream
-HWTEST_F(HpaeManagerSeTest, EnableAissByUid_multiChannelRejected, TestSize.Level0)
+// CH-3: UID binding stays pending when the current running music stream is multi-channel
+HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_multiChannelKeepsPending, TestSize.Level0)
 {
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = TEST_SESSION_ID;
@@ -376,8 +461,11 @@ HWTEST_F(HpaeManagerSeTest, EnableAissByUid_multiChannelRejected, TestSize.Level
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_RUNNING};
 
-    int32_t ret = hpaeManager_->SetAissEnabledByUid(TEST_UID, true);
-    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED));
+    int32_t ret = hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
 }
 
 // --- E2E Tests: Init + DeactivateThread + HandleRequests pattern ---
@@ -403,7 +491,7 @@ protected:
 
     void TearDown() override
     {
-        hpaeManager_->SetAissEnabled(TEST_SESSION_ID, false);
+        hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, false);
         hpaeManager_->rendererManagerMap_.erase("file_io");
         hpaeManager_->rendererIdSinkNameMap_.erase(TEST_SESSION_ID);
         hpaeManager_.reset();
@@ -464,7 +552,7 @@ HWTEST_F(HpaeManagerSeE2eTest, Flush_triggersSessionEffectFlush_E2E, TestSize.Le
     ProcessRmMessages();
 
     // Bind SE (PostCreateSessionEffect needs sessionNodeMap_ entry)
-    ASSERT_EQ(hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true), SUCCESS);
     ProcessRmMessages();
 
     // Verify SE exists before flush
@@ -504,7 +592,7 @@ HWTEST_F(HpaeManagerSeE2eTest, PauseStandby_triggersSessionEffectPause_E2E, Test
     ProcessRmMessages();
 
     // Bind SE (PostCreateSessionEffect needs sessionNodeMap_ entry)
-    ASSERT_EQ(hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true), SUCCESS);
     ProcessRmMessages();
 
     ASSERT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
@@ -523,9 +611,9 @@ HWTEST_F(HpaeManagerSeE2eTest, PauseStandby_triggersSessionEffectPause_E2E, Test
 HWTEST_F(HpaeManagerSeE2eTest, MoveStream_recreatesSessionEffect_E2E, TestSize.Level0)
 {
     // 1. Bind SE to session (tracked in SessionEffectManager)
-    ASSERT_EQ(hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true), SUCCESS);
 
-    auto boundId = hpaeManager_->sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
+    auto boundId = hpaeManager_->sessionEffectManager_->GetBoundSessionId("audio_aiss_enhance");
     EXPECT_EQ(boundId, TEST_SESSION_ID);
 
     // 2. Create target RM with session + cluster
@@ -562,14 +650,14 @@ HWTEST_F(HpaeManagerSeE2eTest, MoveStream_recreatesSessionEffect_E2E, TestSize.L
     config.outputCfg = config.inputCfg;
     std::shared_ptr<EffectInstance> instance;
     hpaeManager_->sessionEffectManager_->BindSessionEffect(
-        TEST_SESSION_ID, "ai_audio_enhance", config, instance);
+        TEST_SESSION_ID, "audio_aiss_enhance", config, instance);
     ASSERT_NE(instance, nullptr);
     // Call CreateSessionEffect directly (bypass queue — queue path tested by Flush/Pause)
-    int32_t ret = rm2->CreateSessionEffect(TEST_SESSION_ID, "ai_audio_enhance", instance, config);
+    int32_t ret = rm2->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance", instance, config);
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
     // Verify: binding tracked, SE exists on target RM
-    boundId = hpaeManager_->sessionEffectManager_->GetBoundSessionId("ai_audio_enhance");
+    boundId = hpaeManager_->sessionEffectManager_->GetBoundSessionId("audio_aiss_enhance");
     EXPECT_EQ(boundId, TEST_SESSION_ID);
     EXPECT_TRUE(rm2->HasSessionEffect(TEST_SESSION_ID));
 
@@ -611,7 +699,7 @@ static bool SetupStreamWithSE(std::shared_ptr<HpaeManager> hpaeManager_,
     rendererManager_->Start(TEST_SESSION_ID);
     rendererManager_->hpaeNoLockQueue_.HandleRequests();
 
-    if (hpaeManager_->SetAissEnabled(TEST_SESSION_ID, true) != SUCCESS) { return false; }
+    if (hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true) != SUCCESS) { return false; }
     rendererManager_->hpaeNoLockQueue_.HandleRequests();
     return rendererManager_->HasSessionEffect(TEST_SESSION_ID);
 }

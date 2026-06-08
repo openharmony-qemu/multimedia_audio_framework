@@ -73,7 +73,9 @@ void AudioUsbManagerInitFuzzTest(FuzzedDataProvider& fdp)
 
     auto observer = std::make_shared<FuzzTestDeviceStatusObserver>();
     audioUsbManager.initialized_ = fdp.ConsumeBool();
-    audioUsbManager.Init(observer);
+    audioUsbManager.flag_ = fdp.ConsumeIntegral<uint8_t>();
+    uint8_t flag = fdp.ConsumeIntegral<uint8_t>();
+    audioUsbManager.Init(observer, flag);
 }
 
 void AudioUsbManagerDeinitFuzzTest(FuzzedDataProvider& fdp)
@@ -92,7 +94,9 @@ void AudioUsbManagerSubscribeEventFuzzTest(FuzzedDataProvider& fdp)
 
     audioUsbManager.initialized_ = fdp.ConsumeBool();
     audioUsbManager.eventSubscriber_ = nullptr;
-    audioUsbManager.SubscribeEvent();
+    audioUsbManager.flag_ = fdp.ConsumeIntegral<uint8_t>();
+    uint8_t flag = fdp.ConsumeIntegral<uint8_t>();
+    audioUsbManager.SubscribeEvent(flag);
 }
 
 void AudioUsbManagerGetUsbSoundCardMapFuzzTest(FuzzedDataProvider& fdp)
@@ -126,7 +130,8 @@ void AudioUsbManagerHandleAudioDeviceEventFuzzTest(FuzzedDataProvider& fdp)
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
     auto observer = std::make_shared<FuzzTestDeviceStatusObserver>();
-    audioUsbManager.Init(observer);
+    uint8_t flag = fdp.ConsumeIntegral<uint8_t>();
+    audioUsbManager.Init(observer, flag);
 
     UsbAudioDevice device;
     device.usbAddr_.busNum_ = fdp.ConsumeIntegral<uint8_t>();
@@ -146,7 +151,8 @@ void AudioUsbManagerNotifyDeviceFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(audioUsbManager != nullptr);
 
     auto observer = std::make_shared<FuzzTestDeviceStatusObserver>();
-    audioUsbManager->Init(observer);
+    uint8_t flag = fdp.ConsumeIntegral<uint8_t>();
+    audioUsbManager->Init(observer, flag);
     CHECK_AND_RETURN(observer != nullptr);
 
     UsbAudioDevice device;

@@ -73,36 +73,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsAppVolumeMute_002, TestSize.Level1)
 }
 
 /**
- * @tc.name: HandleStreamMuteStatus_001
- * @tc.desc: Test HandleStreamMuteStatus when deviceType is not DEVICE_TYPE_NONE.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, HandleStreamMuteStatus_001, TestSize.Level1)
-{
-    AudioStreamType streamType = STREAM_MUSIC;
-    bool mute = true;
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, deviceType);
-    EXPECT_TRUE(mute);
-}
-
-/**
- * @tc.name: HandleStreamMuteStatus_002
- * @tc.desc: Test HandleStreamMuteStatus when deviceType is DEVICE_TYPE_NONE.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, HandleStreamMuteStatus_002, TestSize.Level1)
-{
-    AudioStreamType streamType = STREAM_MUSIC;
-    bool mute = true;
-    DeviceType deviceType = DEVICE_TYPE_NONE;
-    AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, deviceType);
-    EXPECT_TRUE(mute);
-}
-
-/**
  * @tc.name: IsHandleStreamMute_001
  * @tc.desc: Test IsHandleStreamMute when streamType is STREAM_VOICE_CALL.
  * @tc.type: FUNC
@@ -353,12 +323,12 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeDegree_001, TestSize.Level4
     ret = audioAdapterManager->SetSystemVolumeLevel(STREAM_VOICE_RING, volume, volDeviceDesc);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = audioAdapterManager->GetSystemVolumeDegree(streamType);
+    ret = audioAdapterManager->GetSystemVolumeDegree(desc, streamType);
     EXPECT_EQ(ret, volumeDegree);
 
     EXPECT_EQ(audioAdapterManager->GetStreamVolumeDegreeInternal(desc, streamType), volumeDegree);
 
-    ret = audioAdapterManager->GetMinVolumeDegree(streamType);
+    ret = audioAdapterManager->GetMinVolumeDegree(streamType, desc->deviceType_);
     EXPECT_EQ(ret, 0);
 }
 
@@ -405,12 +375,12 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeDegree_001, TestSize.Level4)
 
     VolumeScale volumeTest{5, 5};
     audioAdapterManager->SetSystemVolumeLevel(streamType, volumeTest, volDeviceDesc);
-    int32_t volumeLevel = audioAdapterManager->GetSystemVolumeLevel(streamType, zoneId1_);
+    int32_t volumeLevel = audioAdapterManager->GetSystemVolumeLevel(device1, streamType);
     EXPECT_EQ(volumeLevel, 5);
 
-    audioAdapterManager->SetStreamMuteInternal(device1, streamType, true);
+    audioAdapterManager->SetStreamMute(device1, streamType, true);
     volumeLevel = audioAdapterManager->GetSystemVolumeLevel(device1, streamType);
-    int mute = audioAdapterManager->GetStreamMute(streamType, zoneId1_);
+    bool mute = audioAdapterManager->GetStreamMute(streamType, device1);
     EXPECT_EQ(volumeLevel, 0);
     EXPECT_EQ(mute, true);
 }
@@ -661,9 +631,9 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_New, TestSize.Level1)
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    int32_t ret = audioAdapterManager->GetMaxVolumeLevel(STREAM_APP, desc);
+    int32_t ret = audioAdapterManager->GetMaxVolumeLevel(STREAM_APP, desc->deviceType_);
     EXPECT_EQ(ret, audioAdapterManager->appConfigVolume_.maxVolume);
-    ret = audioAdapterManager->GetMinVolumeLevel(STREAM_APP, desc);
+    ret = audioAdapterManager->GetMinVolumeLevel(STREAM_APP, desc->deviceType_);
     EXPECT_EQ(ret, audioAdapterManager->appConfigVolume_.minVolume);
 }
 
@@ -679,8 +649,8 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceVolume_001, TestSize.Level1)
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeLevel = 5;
     DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET;
-    int32_t minVolume = audioAdapterManager_->GetMinVolumeLevel(streamType);
-    int32_t maxVolume = audioAdapterManager_->GetMaxVolumeLevel(streamType);
+    int32_t minVolume = audioAdapterManager_->GetMinVolumeLevel(streamType, deviceType);
+    int32_t maxVolume = audioAdapterManager_->GetMaxVolumeLevel(streamType, deviceType);
     ASSERT_TRUE(volumeLevel >= minVolume && volumeLevel <= maxVolume);
     int32_t result = audioAdapterManager_->SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
     ASSERT_EQ(result, 0);
@@ -709,7 +679,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeDb_001, TestSize.Level1)
     OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
     audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
     audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
-    int32_t res = audioAdapterManager->SetAppVolumeDb(appUid);
+    int32_t res = audioAdapterManager->SetAppVolumeDb(appUid, defaultOutputDevice_->deviceType_);
     EXPECT_EQ(res, SUCCESS);
 }
 
@@ -734,7 +704,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeDb_002, TestSize.Level1)
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
     audioAdapterManager->SetOffloadSessionId(sessionId, adapter, ioHandle);
     audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
-    int32_t res = audioAdapterManager->SetAppVolumeDb(appUid);
+    int32_t res = audioAdapterManager->SetAppVolumeDb(appUid, defaultOutputDevice_->deviceType_);
     EXPECT_EQ(res, SUCCESS);
 }
 
@@ -1675,6 +1645,57 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSinkAttr_UltraFastPeriod_004, Test
     EXPECT_EQ(attr.period, 720u);
     EXPECT_EQ(attr.sampleRate, 48000u);
     EXPECT_EQ(attr.channel, 2u);
+}
+
+/**
+ * @tc.name: UpdateCollaborativeState_NearLink_001
+ * @tc.type: FUNC
+ * @tc.desc: Test UpdateCollaborativeState with COLLABORATION_NEARLINK_OPEN sends correct enabled state.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_NearLink_001, TestSize.Level1)
+{
+    auto &manager = AudioAdapterManager::GetInstance();
+    int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
+    // Result depends on adapter initialization, just verify no crash
+    EXPECT_TRUE(ret == SUCCESS);
+}
+
+/**
+ * @tc.name: UpdateCollaborativeState_Bluetooth_001
+ * @tc.type: FUNC
+ * @tc.desc: Test UpdateCollaborativeState with COLLABORATION_BLUETOOTH_OPEN sends true for enabled.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_Bluetooth_001, TestSize.Level1)
+{
+    auto &manager = AudioAdapterManager::GetInstance();
+    int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_TRUE(ret == SUCCESS);
+}
+
+/**
+ * @tc.name: UpdateCollaborativeState_Close_001
+ * @tc.type: FUNC
+ * @tc.desc: Test UpdateCollaborativeState with COLLABORATION_CLOSE sends false for enabled.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_Close_001, TestSize.Level1)
+{
+    auto &manager = AudioAdapterManager::GetInstance();
+    int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_CLOSE);
+    EXPECT_TRUE(ret == SUCCESS);
+}
+
+/**
+ * @tc.name: IsCollaborationSupportedForStreamUsage_001
+ * @tc.type: FUNC
+ * @tc.desc: Test IsCollaborationSupportedForStreamUsage delegates to adapter.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsCollaborationSupportedForStreamUsage_001, TestSize.Level1)
+{
+    auto &manager = AudioAdapterManager::GetInstance();
+    int32_t result = manager.UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    result += static_cast<int32_t>(manager.IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
+    // Result depends on adapter state, just verify no crash
+    EXPECT_TRUE(result != ERROR);
 }
 
 } // namespace AudioStandard

@@ -366,6 +366,31 @@ void RemoteAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     AUDIO_INFO_LOG("not support");
 }
 
+int32_t RemoteAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
+{
+    std::lock_guard<std::mutex> lock(switchDeviceMutex_);
+    AUDIO_INFO_LOG("set remote mute %{public}d", mute);
+
+    if (mute) {
+        muteCount_++;
+        if (switchDeviceMute_) {
+            AUDIO_INFO_LOG("remote already muted");
+            return SUCCESS;
+        }
+        switchDeviceMute_ = true;
+    } else {
+        muteCount_--;
+        if (muteCount_ > 0) {
+            AUDIO_WARNING_LOG("remote not all unmuted");
+            return SUCCESS;
+        }
+        switchDeviceMute_ = false;
+        muteCount_ = 0;
+    }
+
+    return SUCCESS;
+}
+
 int32_t RemoteAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,
     int32_t phoneCallSceneType)
 {
@@ -771,6 +796,12 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
         AUDIO_WARNING_LOG("not start, invalid state");
     }
 
+    if (switchDeviceMute_) {
+        Trace trace("RemoteAudioRenderSink::RenderFrame::switch");
+        if (memset_s(reinterpret_cast<void *>(&data), static_cast<size_t>(len), 0, static_cast<size_t>(len)) != EOK) {
+            AUDIO_WARNING_LOG("call memset_s fail");
+        }
+    }
     CheckLatencySignal(reinterpret_cast<uint8_t *>(&data), len);
 
     std::vector<int8_t> bufferVec(len);

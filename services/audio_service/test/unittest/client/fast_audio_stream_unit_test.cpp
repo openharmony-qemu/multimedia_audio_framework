@@ -896,14 +896,14 @@ HWTEST_F(FastSystemStreamUnitTest, InitializeAudioProcessConfig_002, TestSize.Le
     std::shared_ptr<FastAudioStream> fastAudioStream;
     fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     AudioRendererInfo rendererInfo;
-    rendererInfo.isVirtualKeyboard = true;
+    rendererInfo.isVirtualKeyboard = VKB_ONLY_RING;
     fastAudioStream->SetRendererInfo(rendererInfo);
 
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest InitializeAudioProcessConfig_002 start");
     AudioProcessConfig config;
     AudioStreamParams info;
     auto result = fastAudioStream->InitializeAudioProcessConfig(config, info);
-    EXPECT_TRUE(config.rendererInfo.isVirtualKeyboard);
+    EXPECT_EQ(config.rendererInfo.isVirtualKeyboard, VKB_ONLY_RING);
     EXPECT_NE(result, ERR_INVALID_OPERATION);
 }
 

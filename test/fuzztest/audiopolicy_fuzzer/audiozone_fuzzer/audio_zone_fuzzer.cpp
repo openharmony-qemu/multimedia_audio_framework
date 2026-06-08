@@ -104,7 +104,6 @@ const vector<RouterType> g_testRouterTypes = {
     ROUTER_TYPE_PUBLIC_PRIORITY,
     ROUTER_TYPE_PAIR_DEVICE,
     ROUTER_TYPE_USER_SELECT,
-    ROUTER_TYPE_APP_SELECT,
 };
 
 const vector<DeviceType> g_testDeviceTypes = {
@@ -220,8 +219,7 @@ void AudioZoneBindKeyGetSupportKeysFuzzTest(FuzzedDataProvider& fdp)
     int32_t uid = fdp.ConsumeIntegral<int32_t>();
     StreamUsage usage = PickValue(fdp, g_testStreamUsages);
     AudioZoneBindKey audioZoneBindKey(uid, deviceTag);
-    AudioZoneBindKey audioZoneBindKey_1(uid, deviceTag);
-    audioZoneBindKey.GetSupportKeys(audioZoneBindKey_1);
+    audioZoneBindKey.GetSupportKeys(audioZoneBindKey);
     audioZoneBindKey.GetSupportKeys(uid, deviceTag, streamId, usage);
 }
 

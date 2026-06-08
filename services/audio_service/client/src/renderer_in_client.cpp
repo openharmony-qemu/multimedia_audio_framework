@@ -79,7 +79,7 @@ static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
-static const int32_t WECHAT_BUFFER_DURATION_IN_US = 120000;
+static const int32_t VOIP_DIRECT_BUFFER_DURATION_IN_US = 120000;
 static const int64_t ONWRITEDATA_TIMEOUT_NS = 40000000;
 } // namespace
 
@@ -441,11 +441,10 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
         cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * sampleRate / AUDIO_US_PER_S) *
             sizePerFrameInByte_;
     }
-    if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT &&
-        AppBundleManager::GetSelfBundleName() == "com.tencent.wechat") {
+    if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT && isMainUseArk_) {
         AUDIO_INFO_LOG("Change duration for voip direct, %{public}" PRIu64 " to %{public}d",
-            bufferDurationInUs, WECHAT_BUFFER_DURATION_IN_US);
-        bufferDurationInUs = WECHAT_BUFFER_DURATION_IN_US;
+            bufferDurationInUs, VOIP_DIRECT_BUFFER_DURATION_IN_US);
+        bufferDurationInUs = VOIP_DIRECT_BUFFER_DURATION_IN_US;
     }
     uint64_t durationInFrame = bufferDurationInUs * sampleRate / AUDIO_US_PER_S;
     SetCacheSize(durationInFrame);
@@ -644,6 +643,9 @@ bool RendererInClientInner::CheckBufferNeedWrite()
 
 bool RendererInClientInner::IsRestoreNeeded()
 {
+    if (writeCb_ == nullptr) {
+        return true;
+    }
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer null");
 
     RestoreStatus restoreStatus = clientBuffer_->GetRestoreStatus();
@@ -1393,6 +1395,9 @@ void RendererInClientInner::UpdateUnderrunInfo(UnderrunInfoType underrunInfoKey,
 {
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream_ is nullptr");
     ipcStream_->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
+    if (underrunInfoKey == UNDERRUN_TYPE_ISUSEARK) {
+        isMainUseArk_ = !!underrunInfoVal;
+    }
 }
 
 int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
@@ -1502,13 +1507,14 @@ void RendererInClientInner::CheckAndProcessPendingSpanSize()
     AUDIO_INFO_LOG("Process pending span size: %{public}u engineSize:%{public}" PRIu64 " routeFlag:0x%{public}x",
         spanSizeInFrame, engineSize, routeFlag);
 
-    // 直接更新参数，不需要调用 InitSharedBuffer（buffer 没变化）
+    // Directly update the parameters without calling InitSharedBuffer (the buffer remains unchanged)
     spanSizeInFrame_ = spanSizeInFrame;
     clientSpanSizeInByte_ = spanSizeInFrame_ * sizePerFrameInByte_;
     cacheSizeInFrame_ = engineSize;
 
-    // 更新 rendererFlags（根据 routeFlag）
+    // Update rendererFlags (based on routeFlag)
     if (routeFlag != 0) {
+        rendererInfo_.audioFlag = routeFlag;
         if (routeFlag & AUDIO_OUTPUT_FLAG_FAST) {
             if (routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
                 rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;

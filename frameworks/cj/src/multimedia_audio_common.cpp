@@ -30,7 +30,7 @@ enum class AudioCJVolumeType {
     SYSTEM = 6,
     VOICE_ASSISTANT = 9,
     ULTRASONIC = 10,
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     NAVIGATION = 12,
 #endif
     VOLUMETYPE_MAX,
@@ -67,7 +67,7 @@ AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType)
         case AudioCJVolumeType::SYSTEM:
             result = STREAM_SYSTEM;
             break;
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
         case AudioCJVolumeType::NAVIGATION:
             result = STREAM_NAVIGATION;
             break;

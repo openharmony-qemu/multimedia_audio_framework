@@ -40,6 +40,8 @@ static const char* FILE_CLASS = "file_io";
 static const char* REMOTE_CLASS = "remote";
 static const char* OFFLOAD_CLASS = "offload";
 static const char* MCH_CLASS = "multichannel";
+static const char* REMOTE_OFFLOAD_CLASS = "remote_offload";
+static const char* REMOTE_MCH_CLASS = "remote_multichannel";
 static const char* INVALID_CLASS = "invalid";
 static const char* DIRECT_VOIP_CLASS = "primary_direct_voip";
 static const char* MMAP_VOIP_CLASS = "primary_mmap_voip";
@@ -84,10 +86,27 @@ static const char* PRIMARY_RAW_AI_MIC = "Built_in_raw_ai";
 static const char* PRIMARY_INTERPHON_MIC = "Built_in_interphone";
 static const char* PRIMARY_CAMCORDER = "Built_in_camcorder";
 static const char* PRIMARY_SPEAKER_PIPENAME = "primary_output";
+static const char* USB_SPEAKER_PIPENAME = "usb_arm_output";
+static const char* USB_MIC_PIPENAME = "usb_arm_input";
+static const char* DP_SINK_PIPENAME = "dp_output";
+static const char* PRIMARY_WAKEUP_MIC_PIPENAME = "wakeup_input";
+static const char* ACCESSORY_SOURCE_PIPENAME = "accessory_input";
 static const char* PRIMARY_TYPEC_CLASS = "Built_in_typec";
 static const char* PRIMARY_WIRED_CLASS = "Built_in_wired";
 static const char* PRIMARY_BT_CLASS = "Built_in_bt";
+static const char* REMOTE_SUFFIX = "out";
+static const char* REMOTE_OFFLOAD_SUFFIX = "out_offload";
+static const char* REMOTE_MCH_SUFFIX = "out_multichannel";
 }
+
+static std::unordered_map<std::string, std::string> MODULENAME_TO_PIPENAME = {
+    {PRIMARY_SPEAKER, PRIMARY_SPEAKER_PIPENAME},
+    {USB_SPEAKER, USB_SPEAKER_PIPENAME},
+    {DP_SINK, DP_SINK_PIPENAME},
+    {USB_MIC, USB_MIC_PIPENAME},
+    {PRIMARY_WAKEUP_MIC, PRIMARY_WAKEUP_MIC_PIPENAME},
+    {ACCESSORY_SOURCE, ACCESSORY_SOURCE_PIPENAME},
+};
 
 enum NodeName {
     DEVICE_CLASS,

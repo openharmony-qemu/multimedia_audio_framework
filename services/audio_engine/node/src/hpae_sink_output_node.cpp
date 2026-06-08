@@ -425,6 +425,7 @@ int32_t HpaeSinkOutputNode::RenderSinkResume(void)
 int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 {
     CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERROR, "audioRendererSink_ not init");
     renderFrameTimes_ = 0;
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
@@ -571,7 +572,7 @@ void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
     if (GetDeviceClass() != "primary") {
         return;
     }
-    CHECK_AND_RETURN(collaborationState_ == false);
+    CHECK_AND_RETURN(collaborationState_ == COLLABORATION_CLOSE);
     if (pcmBuffer->IsSilence() && streamRunningNum_ > 0) {
         if (!isDisplayPaPowerState_) {
             AUDIO_INFO_LOG("Timing begins, will close speaker after [%{public}" PRId64 "]s", WAIT_CLOSE_PA_TIME);
@@ -707,10 +708,10 @@ void HpaeSinkOutputNode::CheckAndSetCollDelayForRenderFrameFailed()
     }
 }
 
-void HpaeSinkOutputNode::SetCollaborationState(bool collaborationState)
+void HpaeSinkOutputNode::SetCollaborationState(CollaborationState isCollaborationEnabled)
 {
-    collaborationState_ = collaborationState;
-    AUDIO_INFO_LOG("collaborationState: %{public}d", collaborationState);
+    collaborationState_ = isCollaborationEnabled;
+    AUDIO_INFO_LOG("isCollaborationEnabled: %{public}d", isCollaborationEnabled);
 }
 
 uint32_t HpaeSinkOutputNode::GetRenderId() const

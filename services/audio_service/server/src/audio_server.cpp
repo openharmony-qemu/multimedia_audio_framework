@@ -115,6 +115,7 @@ const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
 const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
 const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
 const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
+const char* MANAGE_AUDIO_CONFIG_PERMISSION = "ohos.permission.MANAGE_AUDIO_CONFIG";
 static constexpr char WAKEUP_TRACK_FILE_PATCH[] = "/dev/audio_wakeup_track";
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_SYSTEM,
@@ -170,8 +171,6 @@ static const std::set<int32_t> GENERATE_SESSIONID_UID_SET = {
     AAM_CONN_SVC_UID
 };
 const int32_t RSS_THRESHOLD = 2;
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 // using pass-in appInfo for uids:
 constexpr int32_t UID_MEDIA_SA = 1013;
 enum PermissionStatus {
@@ -833,6 +832,7 @@ bool DataTransferStateChangeCallbackInnerImpl::IsNeedNotifyStandbyState(
         info.streamUsage == STREAM_USAGE_INTERPHONE ||
         info.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE ||
         info.streamUsage == STREAM_USAGE_RINGTONE ||
+        info.streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
         info.streamUsage == STREAM_USAGE_NOTIFICATION;
 }
 
@@ -1329,7 +1329,7 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
         parmKey = AudioParamKey::MMI;
     } else if (key == "perf_info") {
         parmKey = AudioParamKey::PERF_INFO;
-    } else if (key == "mute_call" || key == "game_record_recognition") {
+    } else if (key == "mute_call" || key == "game_record_recognition" || key == "nearLink_collaborative_state") {
         valueNew = key + "=" + value;
     } else if (key == "LOUD_VOLUMN_MODE") {
         parmKey = AudioParamKey::NONE;
@@ -1709,7 +1709,7 @@ int32_t AudioServer::SetVoiceVolume(float volume)
     return ERROR;
 }
 
-int32_t AudioServer::OffloadSetVolume(float volume, uint32_t renderId, const std::string &networkId)
+int32_t AudioServer::OffloadSetVolume(float volume, uint32_t renderId)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
@@ -1831,7 +1831,7 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
         SetAudioBalanceStatus();
     }
 
-    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (Util::IsEnhancedRoutingSupported()) {
         return SetIORoutesForSpecificPipe(type, flag, deviceTypes, pipeId, networkId);
     } else {
         int32_t ret = networkId == LOCAL_NETWORK_ID ? SetIORoutes(type, flag, deviceTypes) :
@@ -2572,8 +2572,8 @@ int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &co
 bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
 {
     int32_t enableNewRoute = 0;
-    GetSysPara("persist.multimedia.enable_new_route", enableNewRoute);
-    if (enableNewRoute == 1) {
+    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
+    if (enableNewRoute != 1) {
         return true;
     }
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
@@ -3204,7 +3204,7 @@ int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId, const s
 }
 // LCOV_EXCL_STOP
 
-int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs)
+int32_t AudioServer::SetSinkRenderEmpty(const std::string &deviceClass, int32_t durationUs)
 {
     if (durationUs <= 0) {
         return SUCCESS;
@@ -3216,7 +3216,8 @@ int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t d
 }
 
 // LCOV_EXCL_START
-int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute)
+int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &deviceClass, int32_t durationUs, bool mute,
+    const std::string &networkId)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "refused for %{public}d",
@@ -3226,12 +3227,13 @@ int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, i
         return SUCCESS;
     }
 
-    bool isMmap = devceClass == A2DP_FAST_CLASS || devceClass == MMAP_CLASS;
+    bool isMmap = deviceClass == A2DP_FAST_CLASS || deviceClass == MMAP_CLASS;
     if (isMmap) {
-        AudioService::GetInstance()->SetEndpointMuteForSwitchDevice(devceClass, mute);
+        AudioService::GetInstance()->SetEndpointMuteForSwitchDevice(deviceClass, mute);
     }
 
-    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(devceClass);
+    std::string info = networkId == LOCAL_NETWORK_ID ? HDI_ID_INFO_DEFAULT : networkId;
+    uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "has no valid sink");
     return sink->SetSinkMuteForSwitchDevice(mute);
@@ -3900,6 +3902,8 @@ bool AudioServer::AudioParameterValueCheck(const std::string &key, const std::st
 
 int32_t AudioServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice)
 {
+    bool ret = VerifyClientPermission(MANAGE_AUDIO_CONFIG_PERMISSION);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "ReportPlaybackCaptureUserChoice failed: no permission.");
     CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
     return AudioService::GetInstance()->ReportPlaybackCaptureUserChoice(sessionId, choice);
 }

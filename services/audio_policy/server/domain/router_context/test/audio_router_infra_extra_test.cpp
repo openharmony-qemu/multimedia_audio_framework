@@ -397,43 +397,6 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearAllSelectSele
 }
 
 /**
- * @tc.name  : Test GetLatestStreamSelectDevice skips exclusive uids (NEW BRANCH)
- * @tc.type  : FUNC
- * @tc.number: AudioRouterInfraExtraTest_GetLatestStreamSelectDevice_001
- * @tc.desc  : Test GetLatestStreamSelectDevice skips exclusive uids correctly.
- */
-HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_GetLatestStreamSelectDevice_001, TestSize.Level1)
-{
-    auto &routerInfra = AudioRouterInfra::GetInstance();
-
-    auto device1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
-    device1->deviceTokenId_ = 12345;
-    auto simpleDesc1 = std::make_shared<AudioDeviceSimpleDescriptor>(
-        device1->deviceType_, device1->deviceRole_,
-        device1->deviceId_, device1->networkId_, device1->macAddress_);
-
-    auto device2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
-    auto simpleDesc2 = std::make_shared<AudioDeviceSimpleDescriptor>(
-        device2->deviceType_, device2->deviceRole_,
-        device2->deviceId_, device2->networkId_, device2->macAddress_);
-
-    routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1,
-        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
-    routerInfra.UpdateStreamDefaultDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1,
-        SelectDeviceType::MEDIA_OUTPUT, simpleDesc1);
-    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_OUTPUT, TEST_APP_UID_10001, simpleDesc1, 12345);
-
-    routerInfra.UpdateOutputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2,
-        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
-    routerInfra.UpdateStreamDefaultDevice(TEST_APP_UID_10002, TEST_STREAM_ID_2,
-        SelectDeviceType::MEDIA_OUTPUT, simpleDesc2);
-
-    auto result = routerInfra.GetLatestStreamSelectDevice(SelectDeviceType::MEDIA_OUTPUT);
-    EXPECT_NE(result, nullptr);
-    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
-}
-
-/**
  * @tc.name  : Test exclusive uid tracking for CALL_INPUT/CALL_OUTPUT (NEW BRANCH)
  * @tc.type  : FUNC
  * @tc.number: AudioRouterInfraExtraTest_CallExclusive_001
@@ -500,6 +463,328 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_RefreshSelectDevic
     int32_t outputHighestUid = routerInfra.GetHighestOutputPriorityApp();
     EXPECT_EQ(inputHighestUid, INVALID_UID);
     EXPECT_EQ(outputHighestUid, INVALID_UID);
+}
+
+/**
+ * @tc.name  : Test IsUidWithExclusiveDevice
+ * @tc.type  : FUNC
+ * @tc.number: IsUidWithExclusiveDevice_001
+ * @tc.desc  : IsUidWithExclusiveDevice_001
+ */
+HWTEST_F(AudioRouterInfraExtraTest, IsUidWithExclusiveDevice_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+    auto exclusiveDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    exclusiveDevice->deviceTokenId_ = 12345;
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        exclusiveDevice->deviceType_, exclusiveDevice->deviceRole_,
+        exclusiveDevice->deviceId_, exclusiveDevice->networkId_, exclusiveDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDesc, 12345);
+    EXPECT_TRUE(routerInfra.IsUidWithExclusiveDevice(uid, SelectDeviceType::MEDIA_INPUT));
+
+    EXPECT_FALSE(routerInfra.IsUidWithExclusiveDevice(uid, SelectDeviceType::CALL_INPUT));
+
+    routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::MEDIA_INPUT);
+    EXPECT_FALSE(routerInfra.IsUidWithExclusiveDevice(uid, SelectDeviceType::MEDIA_INPUT));
+}
+
+/**
+ * @tc.name  : Test ClearWirelessSelectDevice clears system mediaInput with different mac
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_ClearWirelessSelectDevice_SystemInput_001
+ * @tc.desc  : Test ClearWirelessSelectDevice clears systemSelectDevice_.mediaInput_ when mac differs.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearWirelessSelectDevice_SystemInput_001,
+    TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    auto btDeviceA = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE);
+    btDeviceA->macAddress_ = "AA:BB:CC:DD:EE:01";
+    auto simpleDescA = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btDeviceA->deviceType_, btDeviceA->deviceRole_,
+        btDeviceA->deviceId_, btDeviceA->networkId_, btDeviceA->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, SYSTEM_UID, simpleDescA);
+
+    auto btDeviceB = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btDeviceB->macAddress_ = "AA:BB:CC:DD:EE:02";
+    auto simpleDescB = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btDeviceB->deviceType_, btDeviceB->deviceRole_,
+        btDeviceB->deviceId_, btDeviceB->networkId_, btDeviceB->macAddress_);
+
+    routerInfra.ClearWirelessSelectDevice(simpleDescB);
+
+    auto selectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_INPUT);
+    EXPECT_EQ(selectInfo.device_, nullptr);
+    EXPECT_EQ(selectInfo.selectTime_, 0);
+}
+
+/**
+ * @tc.name  : Test ClearWirelessSelectDevice keeps system mediaInput with same mac
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_ClearWirelessSelectDevice_SystemInput_002
+ * @tc.desc  : Test ClearWirelessSelectDevice keeps systemSelectDevice_.mediaInput_ when mac is same.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearWirelessSelectDevice_SystemInput_002,
+    TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    auto btDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE);
+    btDevice->macAddress_ = "AA:BB:CC:DD:EE:01";
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btDevice->deviceType_, btDevice->deviceRole_,
+        btDevice->deviceId_, btDevice->networkId_, btDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, SYSTEM_UID, simpleDesc);
+
+    auto btDeviceSame = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btDeviceSame->macAddress_ = "AA:BB:CC:DD:EE:01";
+    auto simpleDescSame = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btDeviceSame->deviceType_, btDeviceSame->deviceRole_,
+        btDeviceSame->deviceId_, btDeviceSame->networkId_, btDeviceSame->macAddress_);
+
+    routerInfra.ClearWirelessSelectDevice(simpleDescSame);
+
+    auto selectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_INPUT);
+    EXPECT_NE(selectInfo.device_, nullptr);
+}
+
+/**
+ * @tc.name  : Test ClearWirelessSelectDevice clears app mediaInput and exclusive uid
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_ClearWirelessSelectDevice_AppInput_001
+ * @tc.desc  : Test ClearWirelessSelectDevice clears appSelectDevice_.mediaInput_ and exclusive uid.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearWirelessSelectDevice_AppInput_001,
+    TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+    uint32_t deviceTokenId = 12345;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+
+    auto btInputDeviceA = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE);
+    btInputDeviceA->macAddress_ = "AA:BB:CC:DD:EE:01";
+    btInputDeviceA->deviceTokenId_ = deviceTokenId;
+    auto simpleDescA = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btInputDeviceA->deviceType_, btInputDeviceA->deviceRole_,
+        btInputDeviceA->deviceId_, btInputDeviceA->networkId_, btInputDeviceA->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDescA, deviceTokenId);
+    EXPECT_TRUE(routerInfra.IsUidWithExclusiveDevice(uid, SelectDeviceType::MEDIA_INPUT));
+
+    auto btOutputDeviceB = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btOutputDeviceB->macAddress_ = "AA:BB:CC:DD:EE:02";
+    auto simpleDescB = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btOutputDeviceB->deviceType_, btOutputDeviceB->deviceRole_,
+        btOutputDeviceB->deviceId_, btOutputDeviceB->networkId_, btOutputDeviceB->macAddress_);
+
+    routerInfra.ClearWirelessSelectDevice(simpleDescB);
+
+    auto selectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_INPUT, uid);
+    EXPECT_EQ(selectInfo.device_, nullptr);
+    EXPECT_EQ(selectInfo.selectTime_, 0);
+    EXPECT_FALSE(routerInfra.IsUidWithExclusiveDevice(uid, SelectDeviceType::MEDIA_INPUT));
+}
+
+/**
+ * @tc.name  : Test ClearWirelessSelectDevice keeps app mediaInput with same mac
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_ClearWirelessSelectDevice_AppInput_002
+ * @tc.desc  : Test ClearWirelessSelectDevice keeps appSelectDevice_.mediaInput_ when mac is same.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearWirelessSelectDevice_AppInput_002,
+    TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+    uint32_t deviceTokenId = 12345;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+
+    auto btInputDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE);
+    btInputDevice->macAddress_ = "AA:BB:CC:DD:EE:01";
+    btInputDevice->deviceTokenId_ = deviceTokenId;
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btInputDevice->deviceType_, btInputDevice->deviceRole_,
+        btInputDevice->deviceId_, btInputDevice->networkId_, btInputDevice->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDesc, deviceTokenId);
+
+    auto btDeviceSame = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btDeviceSame->macAddress_ = "AA:BB:CC:DD:EE:01";
+    auto simpleDescSame = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btDeviceSame->deviceType_, btDeviceSame->deviceRole_,
+        btDeviceSame->deviceId_, btDeviceSame->networkId_, btDeviceSame->macAddress_);
+
+    routerInfra.ClearWirelessSelectDevice(simpleDescSame);
+
+    auto selectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_INPUT, uid);
+    EXPECT_NE(selectInfo.device_, nullptr);
+    EXPECT_TRUE(routerInfra.IsUidWithExclusiveDevice(uid, SelectDeviceType::MEDIA_INPUT));
+}
+
+/**
+ * @tc.name  : Test ClearWirelessSelectDevice clears stream input select device
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_ClearWirelessSelectDevice_StreamInput_001
+ * @tc.desc  : Test ClearWirelessSelectDevice clears streamSelectDevices_ for input wireless device.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearWirelessSelectDevice_StreamInput_001,
+    TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+
+    auto btInputDeviceA = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE);
+    btInputDeviceA->macAddress_ = "AA:BB:CC:DD:EE:01";
+    auto simpleDescA = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btInputDeviceA->deviceType_, btInputDeviceA->deviceRole_,
+        btInputDeviceA->deviceId_, btInputDeviceA->networkId_, btInputDeviceA->macAddress_);
+
+    routerInfra.UpdateStreamSelectDevice(uid, TEST_STREAM_ID_1, simpleDescA);
+    EXPECT_NE(routerInfra.GetStreamSelectDevice(uid, TEST_STREAM_ID_1), nullptr);
+
+    auto btOutputDeviceB = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btOutputDeviceB->macAddress_ = "AA:BB:CC:DD:EE:02";
+    auto simpleDescB = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btOutputDeviceB->deviceType_, btOutputDeviceB->deviceRole_,
+        btOutputDeviceB->deviceId_, btOutputDeviceB->networkId_, btOutputDeviceB->macAddress_);
+
+    routerInfra.ClearWirelessSelectDevice(simpleDescB);
+
+    EXPECT_EQ(routerInfra.GetStreamSelectDevice(uid, TEST_STREAM_ID_1), nullptr);
+}
+
+/**
+ * @tc.name  : Test ClearWirelessSelectDevice clears both stream input and output devices
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_ClearWirelessSelectDevice_StreamBoth_001
+ * @tc.desc  : Test ClearWirelessSelectDevice clears both input and output stream devices with different mac.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearWirelessSelectDevice_StreamBoth_001,
+    TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+    routerInfra.UpdateOutputStreamState(uid, TEST_STREAM_ID_2, STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
+
+    auto btInputDeviceA = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE);
+    btInputDeviceA->macAddress_ = "AA:BB:CC:DD:EE:01";
+    auto inputSimpleDescA = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btInputDeviceA->deviceType_, btInputDeviceA->deviceRole_,
+        btInputDeviceA->deviceId_, btInputDeviceA->networkId_, btInputDeviceA->macAddress_);
+
+    auto btOutputDeviceA = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btOutputDeviceA->macAddress_ = "AA:BB:CC:DD:EE:01";
+    auto outputSimpleDescA = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btOutputDeviceA->deviceType_, btOutputDeviceA->deviceRole_,
+        btOutputDeviceA->deviceId_, btOutputDeviceA->networkId_, btOutputDeviceA->macAddress_);
+
+    routerInfra.UpdateStreamSelectDevice(uid, TEST_STREAM_ID_1, inputSimpleDescA);
+    routerInfra.UpdateStreamSelectDevice(uid, TEST_STREAM_ID_2, outputSimpleDescA);
+    EXPECT_NE(routerInfra.GetStreamSelectDevice(uid, TEST_STREAM_ID_1), nullptr);
+    EXPECT_NE(routerInfra.GetStreamSelectDevice(uid, TEST_STREAM_ID_2), nullptr);
+
+    auto btDeviceB = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btDeviceB->macAddress_ = "AA:BB:CC:DD:EE:02";
+    auto simpleDescB = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btDeviceB->deviceType_, btDeviceB->deviceRole_,
+        btDeviceB->deviceId_, btDeviceB->networkId_, btDeviceB->macAddress_);
+
+    routerInfra.ClearWirelessSelectDevice(simpleDescB);
+
+    EXPECT_EQ(routerInfra.GetStreamSelectDevice(uid, TEST_STREAM_ID_1), nullptr);
+    EXPECT_EQ(routerInfra.GetStreamSelectDevice(uid, TEST_STREAM_ID_2), nullptr);
+}
+
+/**
+ * @tc.name  : Test ClearWirelessSelectDevice does not clear non-wireless input device
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_ClearWirelessSelectDevice_NonWireless_001
+ * @tc.desc  : Test ClearWirelessSelectDevice does not clear wired input device.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearWirelessSelectDevice_NonWireless_001,
+    TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+    uint32_t deviceTokenId = 12345;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+
+    auto wiredMic = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    wiredMic->macAddress_ = "wired_mic_01";
+    wiredMic->deviceTokenId_ = deviceTokenId;
+    auto wiredSimpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        wiredMic->deviceType_, wiredMic->deviceRole_,
+        wiredMic->deviceId_, wiredMic->networkId_, wiredMic->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, wiredSimpleDesc, deviceTokenId);
+
+    auto btDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btDevice->macAddress_ = "AA:BB:CC:DD:EE:02";
+    auto btSimpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btDevice->deviceType_, btDevice->deviceRole_,
+        btDevice->deviceId_, btDevice->networkId_, btDevice->macAddress_);
+
+    routerInfra.ClearWirelessSelectDevice(btSimpleDesc);
+
+    auto selectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_INPUT, uid);
+    EXPECT_NE(selectInfo.device_, nullptr);
+}
+
+/**
+ * @tc.name  : Test ClearWirelessSelectDevice clears all three levels (system/app/stream) for input
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_ClearWirelessSelectDevice_AllLevelsInput_001
+ * @tc.desc  : Test ClearWirelessSelectDevice clears system, app and stream input devices with different mac.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearWirelessSelectDevice_AllLevelsInput_001,
+    TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+    uint32_t deviceTokenId = 12345;
+
+    routerInfra.UpdateInputStreamState(uid, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, CapturerState::CAPTURER_RUNNING);
+
+    auto btInputDeviceA = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE);
+    btInputDeviceA->macAddress_ = "AA:BB:CC:DD:EE:01";
+    auto simpleDescA = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btInputDeviceA->deviceType_, btInputDeviceA->deviceRole_,
+        btInputDeviceA->deviceId_, btInputDeviceA->networkId_, btInputDeviceA->macAddress_);
+
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, SYSTEM_UID, simpleDescA);
+    routerInfra.RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDescA, deviceTokenId);
+    routerInfra.UpdateStreamSelectDevice(uid, TEST_STREAM_ID_1, simpleDescA);
+
+    auto btOutputDeviceB = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    btOutputDeviceB->macAddress_ = "AA:BB:CC:DD:EE:02";
+    auto simpleDescB = std::make_shared<AudioDeviceSimpleDescriptor>(
+        btOutputDeviceB->deviceType_, btOutputDeviceB->deviceRole_,
+        btOutputDeviceB->deviceId_, btOutputDeviceB->networkId_, btOutputDeviceB->macAddress_);
+
+    routerInfra.ClearWirelessSelectDevice(simpleDescB);
+
+    auto sysSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_INPUT);
+    EXPECT_EQ(sysSelectInfo.device_, nullptr);
+
+    auto appSelectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_INPUT, uid);
+    EXPECT_EQ(appSelectInfo.device_, nullptr);
+    EXPECT_FALSE(routerInfra.IsUidWithExclusiveDevice(uid, SelectDeviceType::MEDIA_INPUT));
+
+    EXPECT_EQ(routerInfra.GetStreamSelectDevice(uid, TEST_STREAM_ID_1), nullptr);
 }
 
 }

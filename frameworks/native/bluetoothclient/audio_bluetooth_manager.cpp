@@ -619,25 +619,19 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
 
 int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isScoSelected)
 {
+    bool update = false;
     if (scene_.load() != scene) {
         AUDIO_INFO_LOG("update audio scene from %{public}d to %{public}d with recordscene",
             scene_.load(), scene);
+        update = true;
     }
     if (isScoSelected_.load() != isScoSelected) {
         AUDIO_INFO_LOG("%{public}s scoSelected", isScoSelected ? "is" : "not");
+        update = true;
     }
     scene_.store(scene);
     isScoSelected_.store(isScoSelected);
-    return TryUpdateScoCategory();
-}
-
-int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene)
-{
-    if (scene_.load() != scene) {
-        AUDIO_INFO_LOG("update audio scene from %{public}d to %{public}d", scene_.load(), scene);
-    }
-    scene_.store(scene);
-    return TryUpdateScoCategory();
+    return update ? TryUpdateScoCategory() : SUCCESS;
 }
 
 int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag)
@@ -773,7 +767,7 @@ void AudioHfpManager::WriteScoOprFaultEvent()
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SCO_STATE_AUDIO",
         HiviewDFX::HiSysEvent::EventType::FAULT,
         "PKG_NAME", "",
-        "SCO_ADDRESS", BluetoothScoManager::GetInstance().GetAudioScoDevice().GetDeviceAddr(),
+        "SCO_ADDRESS", GetEncryptAddr(BluetoothScoManager::GetInstance().GetAudioScoDevice().GetDeviceAddr()),
         "SCENE", static_cast<uint8_t>(scene_.load()),
         "SCO_MODE", static_cast<uint8_t>(BluetoothScoManager::GetInstance().GetAudioScoCategory()),
         "AUDIO_SCO_STATE", static_cast<uint8_t>(BluetoothScoManager::GetInstance().GetAudioScoState()),

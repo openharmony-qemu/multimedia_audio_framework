@@ -110,6 +110,11 @@ public:
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
     FastStatus GetFastStatus() override;
     int32_t GetCapturerDebugInfo(AudioCapturerDebugInfo &debugInfo) const override;
+    void GetCapturerDebugStreamInfo(AudioCapturerDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
+    void GetCapturerDebugCaptureInfo(AudioCapturerDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
+    void GetCapturerDebugPipeInfo(AudioCapturerDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
+    void GetCapturerDebugFocusInfo(AudioCapturerDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
+    void GetCapturerDebugErrorInfo(AudioCapturerDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
     uint32_t GetCapturerDebugKey() const override { return debugKey_; }
     uint32_t debugKey_ = INVALID_DEBUGKEY;
 

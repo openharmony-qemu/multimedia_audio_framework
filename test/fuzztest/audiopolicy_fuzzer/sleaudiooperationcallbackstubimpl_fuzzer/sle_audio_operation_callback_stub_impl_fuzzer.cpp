@@ -119,6 +119,7 @@ public:
         uint32_t streamType) override { return 0; };
     int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t eventType) override { return 0; };
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override { return 0; };
+    int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) override { return 0; };
 };
 
 void GetSleAudioDeviceListFuzzTest(FuzzedDataProvider& fdp)

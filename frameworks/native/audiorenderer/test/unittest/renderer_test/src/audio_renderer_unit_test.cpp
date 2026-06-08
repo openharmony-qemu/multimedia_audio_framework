@@ -457,7 +457,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_016, TestSize.Level1)
     AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     EXPECT_EQ(AUDIO_FLAG_NORMAL, rendererInfo.rendererFlags);
-    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+    EXPECT_EQ(VKB_INVALID, rendererInfo.isVirtualKeyboard);
 
     audioRenderer->Release();
 }
@@ -489,7 +489,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_017, TestSize.Level1)
     AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     EXPECT_NE(AUDIO_FLAG_VKB_FAST, rendererInfo.rendererFlags);
-    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+    EXPECT_EQ(VKB_INVALID, rendererInfo.isVirtualKeyboard);
 
     audioRenderer->Release();
 }
@@ -521,11 +521,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_018, TestSize.Level1)
     AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     EXPECT_NE(AUDIO_FLAG_VKB_FAST, rendererInfo.rendererFlags);
-    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+    EXPECT_EQ(VKB_INVALID, rendererInfo.isVirtualKeyboard);
 
     audioRenderer->Release();
 }
-
 /**
  * @tc.name  : Test CheckMaxRendererInstances API
  * @tc.number: Audio_Renderer_CheckMaxRendererInstances_001
@@ -4702,29 +4701,6 @@ HWTEST(AudioRendererUnitTest, NotifyForcedEvent_001, TestSize.Level1)
     EXPECT_FALSE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_384001));
     EXPECT_FALSE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_16001));
 }
-
-/**
- * @tc.name  : AudioRenderer_IsRestoreOrStopNeeded_001
- * @tc.number: IsRestoreOrStopNeeded_001
- * @tc.desc  : Test IsRestoreOrStopNeeded() for different cases
- */
-HWTEST(AudioRendererUnitTest, IsRestoreOrStopNeeded_001, TestSize.Level4)
-{
-    AppInfo appInfo = {};
-    auto testRendererInner = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo);
-
-    int32_t curTid = gettid();
-    // To test matching case
-    testRendererInner->callbackLoopTid_ = curTid;
-    bool needRestore = testRendererInner->IsRestoreOrStopNeeded();
-    EXPECT_EQ(false, needRestore);
-
-    // To test not matching case
-    testRendererInner->callbackLoopTid_ = curTid + 1;
-    needRestore = testRendererInner->IsRestoreOrStopNeeded();
-    EXPECT_EQ(false, needRestore);
-}
-
 /**
  * @tc.name  : AudioRenderer_AsyncCheckAudioRenderer_001
  * @tc.number: AsyncCheckAudioRenderer_001

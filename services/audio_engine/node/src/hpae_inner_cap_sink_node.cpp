@@ -69,7 +69,7 @@ void HpaeInnerCapSinkNode::DoProcess()
 {
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeInnerCapSinkNode::DoProcess " + GetTraceInfo());
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
-    if (outputVec.empty() || isMute_ == true) {
+    if (outputVec.empty() || outputVec[0] == nullptr || isMute_ == true) {
         outputStream_.WriteDataToOutput(&silenceData_);
 #ifdef ENABLE_HOOK_PCM
         if (outputPcmDumper_) {
@@ -86,6 +86,7 @@ void HpaeInnerCapSinkNode::DoProcess()
         }
 #endif
     // no need convert
+        outputVec[0]->SetBufferValid(true);
         outputStream_.WriteDataToOutput(outputVec[0]);
     }
     // sleep

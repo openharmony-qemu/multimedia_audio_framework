@@ -75,11 +75,15 @@ bool AudioPnpServer::init(void)
     AUDIO_INFO_LOG("Init");
     g_socketRunThread = true;
     g_inputRunThread = true;
-
-    socketThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadWithSocket(); });
-    pthread_setname_np(socketThread_->native_handle(), "OS_SocketEvent");
-    inputThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadInput(); });
-    pthread_setname_np(inputThread_->native_handle(), "OS_InputEvent");
+    lock_guard lg(pnpMutex_);
+    if (!socketThread_) {
+        socketThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadWithSocket(); });
+        pthread_setname_np(socketThread_->native_handle(), "OS_SocketEvent");
+    }
+    if (!inputThread_) {
+        inputThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadInput(); });
+        pthread_setname_np(inputThread_->native_handle(), "OS_InputEvent");
+    }
     return true;
 }
 

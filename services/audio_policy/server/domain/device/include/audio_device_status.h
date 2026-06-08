@@ -137,13 +137,16 @@ private:
     void OnPreferredDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor, DeviceType activeInputDevice);
     void ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor &desc);
     bool NeedClearPreferredWhenCategoryUpdated(const AudioDeviceDescriptor &updated,
-        const AudioDeviceDescriptor &fetched, const AudioDeviceDescriptor &preferred);
+        const std::pair<std::vector<std::shared_ptr<AudioDeviceDescriptor>>, RouterType> &fetched,
+        const AudioDeviceDescriptor &preferred);
     void UpdateDeviceList(AudioDeviceDescriptor &updatedDesc, bool isConnected,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
         AudioStreamDeviceChangeReasonExt &reason);
     int32_t UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &updatedDesc);
     void CheckForA2dpSuspend(AudioDeviceDescriptor &desc);
     void ClearPreferredDevices(AudioDeviceDescriptor &desc);
+    void ClearPreferredDeviceByType(const std::vector<PreferredType> &types,
+        AudioDeviceDescriptor &desc, DeviceRole role);
     bool IsConfigurationUpdated(DeviceType deviceType, const AudioStreamInfo &streamInfo);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectDeviceMapInit();
     void ClearActiveHfpDevice(AudioDeviceDescriptor &desc,

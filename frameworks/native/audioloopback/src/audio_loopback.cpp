@@ -101,12 +101,7 @@ std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackM
         return nullptr;
     }
 
-    auto wrapper = std::make_shared<AudioLoopbackWrapper>(mode, type, appInfo);
-    if (wrapper == nullptr) {
-        AUDIO_ERR_LOG("create AudioLoopbackWrapper failed");
-        result = ERR_UNKNOWN;
-        return nullptr;
-    }
+    static auto wrapper = std::make_shared<AudioLoopbackWrapper>(mode, type, appInfo);
 
     result = wrapper->Init();
     if (result != SUCCESS) {
@@ -462,7 +457,7 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
             ERROR_CAPTURE_CREATE_FAST_STREAM_FAIL));
         return;
     }
-
+    audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
     audioCapturer_->SetCapturerReadCallback(shared_from_this());
     InitializeCallbacks();
     capturerFastStatus_ = FASTSTATUS_FAST;

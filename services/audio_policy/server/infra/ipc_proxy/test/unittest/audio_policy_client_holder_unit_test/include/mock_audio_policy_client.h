@@ -99,6 +99,8 @@ public:
                 (const StreamVolumeEvent& streamVolumeEvent), (override));
     MOCK_METHOD(ErrCode, OnSystemVolumeChange,
                 (const VolumeEvent& volumeEvent), (override));
+    MOCK_METHOD(ErrCode, OnSystemVolumeChangeByFilter,
+                (const SystemVolumeFilter& filter, const VolumeEvent& volumeEvent), (override));
     MOCK_METHOD(ErrCode, OnAudioSessionStateChanged,
                 (int32_t stateChangeHint), (override));
     MOCK_METHOD(ErrCode, OnAudioSessionCurrentDeviceChanged,
@@ -114,9 +116,6 @@ public:
         int32_t uid, const std::string &caller), (override));
     MOCK_METHOD(ErrCode, OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice,
             (const std::shared_ptr<AudioDeviceDescriptor>& deviceDescriptor, bool enabled), (override));
-    MOCK_METHOD(ErrCode, OnSpatializationEnabledChangeForBTDevice,
-        (const std::shared_ptr<AudioDeviceDescriptor>& deviceDescriptor, bool enabled, bool headTrackingEnabled),
-        (override));
     MOCK_METHOD(ErrCode, OnSpatialAudioSourceTypeChange, (int32_t mode), (override));
     MOCK_METHOD(ErrCode, OnAudioSeparationEffectEnabledChange, (bool enabled), (override));
     MOCK_METHOD(ErrCode, OnAudioRouteSelectRefined,

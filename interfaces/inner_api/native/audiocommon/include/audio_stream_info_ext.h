@@ -171,9 +171,14 @@ enum AudioStreamType {
     STREAM_EMERGENCY = 30,
 
     /**
+     * Indicates audio streams for interphone.
+     */
+    STREAM_INTERPHONE = 31,
+
+    /**
      * Indicates the max value of audio stream type (except STREAM_ALL).
      */
-    STREAM_TYPE_MAX = STREAM_EMERGENCY,
+    STREAM_TYPE_MAX = STREAM_INTERPHONE,
 
     /**
      * Indicates audio streams used for only one volume bar of a device.

@@ -28,14 +28,10 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "audio_stream_enum.h"
-#include "parameters.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
-namespace {
-    constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enbale";
-    const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
-}
 
 OffloadAudioRenderSink::~OffloadAudioRenderSink()
 {
@@ -841,7 +837,7 @@ int32_t OffloadAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outp
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() == 1, ERR_INVALID_PARAM, "invalid device");
     currentActiveDevice_ = outputDevices[0];
-    if (!IS_DEVICE_ENHANCED_SUPPORTED) {
+    if (!Util::IsEnhancedRoutingSupported()) {
         return SUCCESS;
     }
     ChangePipeDevice(outputDevices);

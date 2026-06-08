@@ -51,6 +51,7 @@ public:
     void WriteDeviceChangeExceptionEvent(const AudioStreamDeviceChangeReason reason,
         DeviceType deviceType, DeviceRole deviceRole, int32_t errorMsg, const std::string &errorDesc);
     std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
+    std::string GetRemoteNetworkId(const std::string &sinkName, DeviceRole role);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
     void SetBtConnecting(bool flag);
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -101,6 +102,7 @@ public:
     bool IsDeclaredByApp(const std::string &bundleName, DeviceType deviceType);
     bool IsSupportedDevice(const std::string &bundleName, DeviceType deviceType, bool hasSystemPermission);
     void FilterDevicesByTokenId(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    bool IsPcSettingsOrSceneBoard(const std::string &bundleName);
 
     bool IsWirelessDevice(DeviceType deviceType);
     static bool CheckInterphone(StreamUsage usage, const shared_ptr<AudioDeviceDescriptor> &desc);

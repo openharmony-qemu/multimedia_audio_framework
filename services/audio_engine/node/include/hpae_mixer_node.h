@@ -37,6 +37,7 @@ public:
     void DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
         HpaeNodeInfo &nodeInfo) override;
     uint64_t GetLatency(uint32_t sessionId = 0) override;
+    void SetCollaborationStateToMixNode(CollaborationState isCollaborationEnabled);
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:
@@ -51,6 +52,7 @@ private:
     uint32_t waitFrames_ = 0;
     FILE *dumpMix_ = nullptr;
     std::string dumpMixName_ = "";
+    CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
 };
 
 }  // namespace HPAE

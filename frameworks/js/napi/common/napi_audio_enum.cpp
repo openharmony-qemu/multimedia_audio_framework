@@ -34,10 +34,10 @@ using OHOS::HiviewDFX::HiLogLabel;
 
 namespace OHOS {
 namespace AudioStandard {
-#ifdef FEATURE_AUDIO_ZONE
-static constexpr bool K_FEATURE_AUDIO_ZONE = true;
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+static constexpr bool K_FEATURE_AUDIO_ZONE_VOLUME = true;
 #else
-static constexpr bool K_FEATURE_AUDIO_ZONE = false;
+static constexpr bool K_FEATURE_AUDIO_ZONE_VOLUME = false;
 #endif
 constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
 napi_ref NapiAudioEnum::sConstructor_ = nullptr;
@@ -317,16 +317,16 @@ const std::map<std::string, int32_t> NapiAudioEnum::interruptRequestResultTypeMa
     {"INTERRUPT_REQUEST_REJECT", INTERRUPT_REQUEST_REJECT},
 };
 
-const std::map<std::string, int32_t> NapiAudioEnum::playCaptureStartStateMap = {
-    {"SUCCESS", 0},
-    {"FAILED", 1},
-    {"NOT_AUTHORIZED", 2},
+const std::map<std::string, int32_t> NapiAudioEnum::playbackCaptureStartStateMap = {
+    {"STATE_SUCCESS", 0},
+    {"STATE_FAILED", 1},
+    {"STATE_NOT_AUTHORIZED", 2},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::playbackCaptureModeMap = {
-    {"DEFAULT", 0x0},
-    {"MEDIA", 0x1},
-    {"EXCLUDING_SELF", 0x8000},
+    {"MODE_DEFAULT", 0x0},
+    {"MODE_MEDIA", 0x1},
+    {"MODE_EXCLUDING_SELF", 0x8000},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceFlagMap = {
@@ -767,9 +767,9 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, interruptRequestTypeMap)),
         DECLARE_NAPI_PROPERTY("InterruptRequestResultType",
             CreateEnumObject(env, interruptRequestResultTypeMap)),
-        DECLARE_NAPI_PROPERTY("PlayCaptureStartState",
-            CreateEnumObject(env, playCaptureStartStateMap)),
-        DECLARE_NAPI_PROPERTY("PlaybackCaptureMode",
+        DECLARE_NAPI_PROPERTY("PlaybackCaptureStartState",
+            CreateEnumObject(env, playbackCaptureStartStateMap)),
+        DECLARE_NAPI_PROPERTY("AudioPlaybackCaptureMode",
             CreateEnumObject(env, playbackCaptureModeMap)),
         DECLARE_NAPI_PROPERTY("ToneType", CreateEnumObject(env, toneTypeMap)),
         DECLARE_NAPI_PROPERTY("DeviceUsage", CreateEnumObject(env, audioDeviceUsageMap)),
@@ -1445,7 +1445,7 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             result = NapiAudioEnum::MEDIA;
             break;
         case AudioStreamType::STREAM_NAVIGATION:
-            result = (K_FEATURE_AUDIO_ZONE ? NapiAudioEnum::NAVIGATION : NapiAudioEnum::MEDIA);
+            result = (K_FEATURE_AUDIO_ZONE_VOLUME ? NapiAudioEnum::NAVIGATION : NapiAudioEnum::MEDIA);
             break;
         case AudioStreamType::STREAM_ALARM:
             result = NapiAudioEnum::ALARM;
@@ -1812,7 +1812,7 @@ AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
             result = STREAM_NOTIFICATION;
             break;
         case NapiAudioEnum::NAVIGATION:
-            result = (K_FEATURE_AUDIO_ZONE ? STREAM_NAVIGATION : STREAM_MUSIC);
+            result = (K_FEATURE_AUDIO_ZONE_VOLUME ? STREAM_NAVIGATION : STREAM_MUSIC);
             break;
         case NapiAudioEnum::ALL:
             result = STREAM_ALL;

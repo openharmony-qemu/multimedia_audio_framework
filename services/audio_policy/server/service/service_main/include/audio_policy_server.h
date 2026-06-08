@@ -200,7 +200,7 @@ public:
 
     int32_t UnexcludeOutputDevices(int32_t audioDevUsage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
-    
+
     int32_t CheckAndGetApiVersion(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs,
         bool hasSystemPermission);
 
@@ -414,6 +414,10 @@ public:
 
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid = INVALID_UID) override;
 
+    int32_t SetSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter) override;
+    int32_t RemoveSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter) override;
+    int32_t RemoveAllSystemVolumeChangeCallbackInfo() override;
+
     int32_t GetAudioFocusInfoList(std::vector<std::map<AudioInterrupt, int32_t>> &focusInfoList,
         int32_t zoneId) override;
 
@@ -579,6 +583,10 @@ public:
 
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
 
+    int32_t PauseAudioFocusForExtAudioZone() override;
+
+    int32_t ResumeAudioFocusForExtAudioZone() override;
+
     int32_t SetZoneDeviceVisible(bool visible) override;
 
     int32_t GetAudioInterruptForZone(int32_t zoneId,
@@ -637,7 +645,7 @@ public:
     int32_t SetInputDevice(int32_t deviceType, uint32_t sessionID, int32_t sourceType, bool isRunning) override;
 
     int32_t SetSplitModeReady() override;
-    
+
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
     int32_t IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t sessionId, int32_t streamUsageIn, bool &isAllowed,
@@ -702,7 +710,7 @@ public:
 
     int32_t SetCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled) override;
-    
+
     int32_t IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &enabled) override;
 
@@ -932,6 +940,7 @@ private:
     bool IsScreenOnAdjustVolume();
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
     int32_t VerifyUidAndPid(const int32_t uid, const int32_t pid);
+    void FillDeviceTokenId(std::shared_ptr<AudioDeviceDescriptor> device);
 
     AudioEffectService &audioEffectService_;
     AudioStateManager &audioStateManager_;
@@ -956,7 +965,7 @@ private:
     AudioRouterCenter &audioRouterCenter_;
     AudioPolicyDump &audioPolicyDump_;
 #ifdef USB_ENABLE
-    AudioUsbManager &usbManager_;
+    AudioUsbManager &audioUsbManager_;
 #endif
     AudioActiveDevice &audioActiveDevice_;
 

@@ -84,33 +84,34 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
 #ifdef BLUETOOTH_ENABLE
     std::string lastActiveA2dpDevice = AudioActiveDevice::GetInstance().GetActiveBtDeviceMac();
     AudioActiveDevice::GetInstance().SetActiveBtDeviceMac(deviceDesc->macAddress_);
-
-    if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDesc->macAddress_ &&
-        AudioIOHandleMap::GetInstance().CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
+    auto isActivated = Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDesc->macAddress_;
+    if (isActivated) {
         AUDIO_INFO_LOG("[%{public}s] [%{public}s] already active",
             AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->macAddress_).c_str(),
             deviceDesc->deviceName_.c_str());
+    } else {
+        Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(deviceDesc->macAddress_);
+        std::string productId;
+        device.GetDeviceProductId(productId);
+        result = AudioCollaborativeService::GetAudioCollaborativeService().UpdateCollaborativeProductId(productId);
+        if (result != SUCCESS) {
+            AUDIO_INFO_LOG("productId: %{public}s", productId.c_str());
+        }
+
+        result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDesc->macAddress_);
+        if (result != SUCCESS) {
+            AudioActiveDevice::GetInstance().SetActiveBtDeviceMac(lastActiveA2dpDevice);
+            AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
+                AudioPolicyUtils::GetInstance().GetEncryptAddr(
+                    AudioActiveDevice::GetInstance().GetActiveBtDeviceMac()).c_str(),
+                AudioPolicyUtils::GetInstance().GetEncryptAddr(lastActiveA2dpDevice).c_str());
+            return result;
+        }
+    }
+
+    if (isActivated && AudioIOHandleMap::GetInstance().CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
         return SUCCESS;
     }
-
-    Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(deviceDesc->macAddress_);
-    std::string productId;
-    device.GetDeviceProductId(productId);
-    result = AudioCollaborativeService::GetAudioCollaborativeService().UpdateCollaborativeProductId(productId);
-    if (result != SUCCESS) {
-        AUDIO_INFO_LOG("productId: %{public}s", productId.c_str());
-    }
-
-    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDesc->macAddress_);
-    if (result != SUCCESS) {
-        AudioActiveDevice::GetInstance().SetActiveBtDeviceMac(lastActiveA2dpDevice);
-        AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
-            AudioPolicyUtils::GetInstance().GetEncryptAddr(
-                AudioActiveDevice::GetInstance().GetActiveBtDeviceMac()).c_str(),
-            AudioPolicyUtils::GetInstance().GetEncryptAddr(lastActiveA2dpDevice).c_str());
-        return result;
-    }
-
     AudioStreamInfo audioStreamInfo = {};
     AudioActiveDevice::GetInstance().GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo);
     std::string networkId  = AudioActiveDevice::GetInstance().GetCurrentOutputDeviceNetworkId();

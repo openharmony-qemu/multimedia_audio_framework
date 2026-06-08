@@ -371,7 +371,11 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_013, TestSize.Level1)
     IAudioSinkAttr attr;
     attr.adapterName = "primary";
     attr.deviceType = DEVICE_TYPE_SPEAKER;
+    attr.sampleRate = 48000;
+    attr.channel = 2;
+    attr.format = SAMPLE_S16LE;
     attr.isLoopback = false;
+    attr.period = 960;
 
     int32_t ret = fastAudioRenderSink->Init(attr);
     if (ret == SUCCESS) {

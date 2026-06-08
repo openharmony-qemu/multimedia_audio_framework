@@ -52,8 +52,6 @@ static constexpr uint32_t AUDIO_INPUT_INTERPHONE_TYPE = 1 << 16;
 AudioInputType hdiAudioInterphoneInputType = static_cast<AudioInputType>(AUDIO_INPUT_INTERPHONE_TYPE);
 
 static constexpr uint32_t MAX_CAMCORDER_METADATA_SIZE = 1024 * 1024;
-constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
-const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHANNEL = {
     {AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
     {AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
@@ -258,6 +256,9 @@ void AudioCaptureSource::DeInit(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN(deviceManager != nullptr);
+    if (Util::IsEnhancedRoutingSupported()) {
+        DoSetInputRoute(DEVICE_TYPE_NONE);
+    }
     captureInited_ = false;
     deviceManager->DestroyCapture(adapterNameCase_, hdiCaptureId_);
     audioCapture_ = nullptr;
@@ -1250,7 +1251,7 @@ AudioPortPin AudioCaptureSource::GetAudiocapturerPortPin(void) const noexcept
 
 void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
-    deviceDesc.pins = IS_DEVICE_ENHANCED_SUPPORTED ? GetAudiocapturerPortPin() : PIN_IN_MIC;
+    deviceDesc.pins = Util::IsEnhancedRoutingSupported() ? GetAudiocapturerPortPin() : PIN_IN_MIC;
     address_ = attr_.macAddress.c_str();
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;

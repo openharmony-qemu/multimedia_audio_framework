@@ -143,7 +143,6 @@ const std::string NEARLINK_LIST = "audio_nearlink_list";
 constexpr const char* SCENE_BOARD_PACKAGE_NAME = "com.ohos.sceneboard";
 constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
 constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
-static const int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024; // HRTF size
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -191,7 +190,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
       audioPolicyDump_(AudioPolicyDump::GetInstance()),
 #ifdef USB_ENABLE
-      usbManager_(AudioUsbManager::GetInstance()),
+      audioUsbManager_(AudioUsbManager::GetInstance()),
 #endif
       audioActiveDevice_(AudioActiveDevice::GetInstance()),
       sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance()),
@@ -390,7 +389,7 @@ void AudioPolicyServer::OnStop()
     audioPolicyService_.Deinit();
     coreService_->DeInit();
 #ifdef USB_ENABLE
-    usbManager_.Deinit();
+    audioUsbManager_.Deinit();
 #endif
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
@@ -434,7 +433,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
 #ifdef USB_ENABLE
         case USB_SYSTEM_ABILITY_ID:
-            usbManager_.Init(eventEntry_);
+            audioUsbManager_.Init(eventEntry_, FLAG_USB_SVC_UP);
             break;
 #endif
         default:
@@ -538,23 +537,17 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
 int32_t AudioPolicyServer::ReloadLoudVolumeMode(
     int32_t streamInFocus, int32_t setVolMode, bool &ret)
 {
+    ret = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT) {
-        ret = false;
         return AUDIO_INVALID_PARAM;
     }
-    if (loudVolumeManager_ == nullptr) {
-        AUDIO_INFO_LOG("loudVolumeManager_ is nullptr!");
-        ret = false;
-        return AUDIO_INVALID_PARAM;
-    }
-    if (loudVolumeManager_->ReloadLoudVolumeMode(static_cast<AudioStreamType>(streamInFocus),
+    if (audioVolumeManager_.ReloadLoudVolumeMode(static_cast<AudioStreamType>(streamInFocus),
         static_cast<SetLoudVolMode>(setVolMode)) == true) {
             ret = true;
             return AUDIO_OK;
         }
 #endif
-        ret = false;
         return AUDIO_INVALID_PARAM;
 }
 
@@ -694,7 +687,7 @@ void AudioPolicyServer::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStream
         GetStreamInFocus(zoneId, tmpStreamType);
         streamType = static_cast<AudioStreamType>(tmpStreamType);
     }
-    
+
     CHECK_AND_RETURN(audioVolumeManager_.IsNeedForceControlVolumeType());
     auto forceControlVolumeType = audioVolumeManager_.GetForceControlVolumeType();
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) != forceControlVolumeType) {
@@ -714,6 +707,13 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
+    } else if (Util::IsEnhancedRoutingSupported()) {
+        AudioRendererInfo newRendererInfo;
+        auto deviceDescs = eventEntry_->GetPreferredOutputDeviceDescriptors(
+            newRendererInfo, SYSTEM_UID, LOCAL_NETWORK_ID);
+        CHECK_AND_RETURN_RET_LOG(!deviceDescs.empty(), ERROR, "deviceDescs is empty");
+        std::shared_ptr<AudioDeviceDescriptor> preferredDeviceDesc = deviceDescs.front();
+        eventEntry_->GetHighestPriorityVolumeTypeForDevice(preferredDeviceDesc, streamInFocus);
     } else {
         GetActiveAudioInterruptZone(zoneId, streamInFocus);
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus);
@@ -761,7 +761,7 @@ int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInF
     if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT) {
         if (loudVolumeManager_ == nullptr) {
             AUDIO_ERR_LOG("loudVolumeManager_ is nullptr!");
-        } else if (loudVolumeManager_->CheckLoudVolumeMode(volumeLevelInInt, keyType, streamInFocus)) {
+        } else if (audioVolumeManager_.CheckLoudVolumeMode(volumeLevelInInt, keyType, streamInFocus)) {
             audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(streamInFocus, true);
             AUDIO_INFO_LOG("device %{public}d, stream %{public}d, loud volume mode operation",
                 audioActiveDevice_.GetCurrentOutputDeviceType(), streamInFocus);
@@ -1018,7 +1018,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.USER_STARTED");
     SubscribeCommonEvent("usual.event.dms.cast_plugged_changed");
 #ifdef USB_ENABLE
-    usbManager_.SubscribeEvent();
+    audioUsbManager_.SubscribeEvent(FLAG_CES_SVC_UP);
 #endif
     OHOS::Singleton<SafeVolumeEventSubscriber>::GetInstance().SubscribeSafeVolumeEvent();
     isAlreadyRegisterCommonEventListener_ = true;
@@ -1276,7 +1276,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t vo
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     bool flag = volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI;
     int32_t zoneId = 0;
-#ifndef FEATURE_AUDIO_ZONE
+#ifndef FEATURE_AUDIO_ZONE_VOLUME
     if (uid != 0) {
         zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid, OUTPUT_DEVICE);
         VolumeUpdateOption info = { flag };
@@ -1354,7 +1354,7 @@ int32_t AudioPolicyServer::GetSystemVolumeLevel(int32_t streamType, int32_t uid,
 {
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(
         uid != 0 ? uid : IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
 #else
@@ -1387,6 +1387,8 @@ int32_t AudioPolicyServer::GetLowPowerVolume(int32_t streamId, float &outVolume)
 
 int32_t AudioPolicyServer::GetSingleStreamVolume(int32_t streamId, float &outVolume)
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     outVolume = streamCollector_.GetSingleStreamVolume(streamId);
     return SUCCESS;
 }
@@ -1658,7 +1660,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal(AudioStreamTyp
     }
     return audioVolumeManager_.SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
 }
- 
+
 int32_t AudioPolicyServer::GetStreamMute(int32_t streamTypeIn, bool &mute)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
@@ -1700,11 +1702,17 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
         desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     }
     if (desc.deviceType_ == DEVICE_TYPE_WIRED_HEADSET && desc.deviceRole_ == INPUT_DEVICE) {
-        desc.deviceType_ = DEVICE_TYPE_WIRED_MICIN;
+        auto item = audioDeviceManager_.FindConnectedDeviceById(desc.deviceId_);
+        if (item) {
+            desc.deviceType_ = item->deviceType_;
+        }
     }
-    desc.deviceType_ =
-        (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.highQualityRecordingSupported_) ?
-        DEVICE_TYPE_BLUETOOTH_A2DP_IN : desc.deviceType_;
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.highQualityRecordingSupported_) {
+        auto a2dpin = std::make_shared<AudioDeviceDescriptor>(desc);
+        a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+        auto descPtr = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(a2dpin);
+        desc = descPtr && descPtr->deviceType_ != DEVICE_TYPE_NONE ? (*descPtr) : desc;
+    }
 }
 
 // LCOV_EXCL_START
@@ -1794,10 +1802,19 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
     return ret;
 }
 
+void AudioPolicyServer::FillDeviceTokenId(std::shared_ptr<AudioDeviceDescriptor> device)
+{
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is nullptr");
+    auto innerDevice = audioConnectedDevice_.GetConnectedDeviceByType(device->networkId_, device->deviceType_);
+    CHECK_AND_RETURN_LOG(innerDevice != nullptr, "innerDevice is nullptr");
+    device->deviceTokenId_ = innerDevice->deviceTokenId_;
+}
+
 int32_t AudioPolicyServer::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     auto callerTokenId = IPCSkeleton::GetCallingTokenID();
+    FillDeviceTokenId(audioDeviceDescriptor);
     auto deviceTokenId = audioDeviceDescriptor ? audioDeviceDescriptor->deviceTokenId_ : 0;
     CHECK_AND_RETURN_RET_LOG(deviceTokenId == 0 || deviceTokenId == callerTokenId, ERR_PERMISSION_DENIED,
         "invalid tokenId");
@@ -1882,6 +1899,7 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
     }
 
     deviceDescs = eventEntry_->GetDevices(deviceFlag);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
     AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
@@ -1942,6 +1960,7 @@ int32_t AudioPolicyServer::GetOutputDevice(const sptr<AudioRendererFilter> &audi
         return ERR_INVALID_OPERATION;
     }
     deviceDescs = audioPolicyService_.GetOutputDevice(audioRendererFilter);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
@@ -1967,6 +1986,7 @@ int32_t AudioPolicyServer::GetInputDevice(const sptr<AudioCapturerFilter> &audio
         return ERR_INVALID_OPERATION;
     }
     deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
@@ -2001,6 +2021,7 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     AudioRendererInfo newRendererInfo = rendererInfo;
     deviceDescs = eventEntry_->GetPreferredOutputDeviceDescriptors(newRendererInfo, IPCSkeleton::GetCallingUid(),
         LOCAL_NETWORK_ID);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
     bool hasBTPermission = false;
     if (!forceNoBTPermission) {
@@ -2036,6 +2057,19 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
 {
     AudioCapturerInfo captureInfo = captureInfoIn;
     deviceDescs = eventEntry_->GetPreferredInputDeviceDescriptors(captureInfo, IPCSkeleton::GetCallingUid());
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
+    for (auto &desc : deviceDescs) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+            auto sco = std::make_shared<AudioDeviceDescriptor>(desc);
+            sco->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+            auto descPtr = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(sco);
+            desc = descPtr && descPtr->deviceType_ != DEVICE_TYPE_NONE ?
+                std::make_shared<AudioDeviceDescriptor>(descPtr) : desc;
+            desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+            desc->highQualityRecordingSupported_ = true;
+        }
+    }
     bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
@@ -2076,13 +2110,13 @@ int32_t AudioPolicyServer::HandleRouteSelectorCallbackEnable(bool enable)
     auto clientHolder = audioPolicyServerHandler_->GetAudioPolicyClientHolder(clientId);
     CHECK_AND_RETURN_RET_LOG(clientHolder != nullptr, ERROR, "client not registered");
     CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_NULL_POINTER, "eventEntry_ is nullptr");
-    
+
     AudioPipeSelector::AudioRouteSelectorCallback callback =
         [clientHolder](const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo, int32_t &selectResult) -> int32_t {
             CHECK_AND_RETURN_RET_LOG(clientHolder != nullptr, ERR_OPERATION_FAILED, "clientHolder is nullptr");
             return clientHolder->OnAudioRouteSelectRefined(routeSelectInfo, selectResult);
         };
-    
+
     return enable ? eventEntry_->SetAudioRouteSelectorCallback(callback) :
         eventEntry_->UnsetAudioRouteSelectorCallback();
 }
@@ -2093,7 +2127,7 @@ int32_t AudioPolicyServer::SetClientCallbacksEnable(int32_t callbackchangeIn, bo
     if (callbackchange == CALLBACK_ROUTE_SELECTOR) {
         return HandleRouteSelectorCallbackEnable(enable);
     }
-    
+
     if (audioPolicyServerHandler_ != nullptr) {
         return audioPolicyServerHandler_->SetClientCallbacksEnable(callbackchange, enable);
     } else {
@@ -2115,6 +2149,39 @@ int32_t AudioPolicyServer::SetCallbackCapturerInfo(const AudioCapturerInfo &capt
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SetCallbackCapturerInfo(capturerInfo, uid);
     }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter)
+{
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_NULL_POINTER,
+        "audioPolicyServerHandler_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioPolicyServerHandler_->SetSystemVolumeChangeCallbackInfo(clientPid, filter);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::RemoveSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter)
+{
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_NULL_POINTER,
+        "audioPolicyServerHandler_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioPolicyServerHandler_->RemoveSystemVolumeChangeCallbackInfo(clientPid, filter);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::RemoveAllSystemVolumeChangeCallbackInfo()
+{
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_NULL_POINTER,
+        "audioPolicyServerHandler_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    int32_t clientPid = IPCSkeleton::GetCallingPid();
+    audioPolicyServerHandler_->RemoveAllSystemVolumeChangeCallbackInfo(clientPid);
     return SUCCESS;
 }
 
@@ -2734,7 +2801,7 @@ int32_t AudioPolicyServer::VerifyUidAndPid(const int32_t uid, const int32_t pid)
     auto callerPid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(pid == callerPid,
         ERR_UNKNOWN, "The callingPid is not equal to callerPid");
- 
+
     return SUCCESS;
 }
 
@@ -3272,7 +3339,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
             audioRendererChangeInfos.push_back(info);
         }
     }
-    
+
     return SUCCESS;
 }
 
@@ -3337,7 +3404,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
-    AudioRouterInfra::GetInstance().OnAppDied(uid);
+    AudioRouterSelectStrategy::GetInstance().OnAppDied(uid);
     {
         std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
         eventEntry_->RegisteredTrackerClientDied(uid, pid);
@@ -3364,7 +3431,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
     StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(pid);
-    AudioRouterInfra::GetInstance().OnAppDied(uid);
+    AudioRouterSelectStrategy::GetInstance().OnAppDied(uid);
     if (pid == lastMicMuteSettingPid_) {
         // The last app with the non-persistent microphone setting died, restore the default non-persistent value
         AUDIO_INFO_LOG("Cliet died and reset non-persist mute state");
@@ -3796,14 +3863,15 @@ int32_t AudioPolicyServer::GetAudioDebugInfo(uint32_t sessionId,
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission() ||
         coreService_->IsStreamBelongToUid(callingUid, sessionId), ERR_PERMISSION_DENIED,
         "GetAudioDebugInfo denied, sessionId:%{public}u, callingUid:%{public}d", sessionId, callingUid);
-    auto audioDebugInfoValue = std::make_shared<AudioDebugInfo>();
-    int32_t ret = eventEntry_->GetAudioDebugInfoBySessionId(sessionId, *audioDebugInfoValue);
+    if (!audioDebugInfo) {
+        audioDebugInfo = std::make_shared<AudioDebugInfo>();
+    }
+    int32_t ret = eventEntry_->GetAudioDebugInfoBySessionId(sessionId, *audioDebugInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "GetPipeDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
     if (interruptService_ != nullptr) {
-        interruptService_->GetFocusDebugInfoByStreamId(sessionId, *audioDebugInfoValue);
+        interruptService_->GetFocusDebugInfoByStreamId(sessionId, *audioDebugInfo);
     }
-    audioDebugInfo = audioDebugInfoValue;
     return SUCCESS;
 }
 
@@ -3965,6 +4033,7 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
     }
 
     descs = coreService_->GetAvailableDevices(usage);
+    AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(descs);
     AudioDeviceDescriptor::MapInputDeviceType(descs);
 
     if (!hasSystemPermission) {
@@ -3983,8 +4052,7 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
         deviceDevices.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
     }
 
-    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
-    if (!hasBTPermission) {
+    if (!PermissionUtil::VerifyBluetoothPermission()) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDevices);
         descs.clear();
         for (auto &dec : deviceDevices) {
@@ -4352,9 +4420,6 @@ int32_t AudioPolicyServer::SetPersonalizedSpatializationEnabled(
 
 int32_t AudioPolicyServer::DownloadPersonalizedHRTF(int32_t fd, int64_t length)
 {
-    CHECK_AND_RETURN_RET_LOG(fd >= 0, ERR_INVALID_PARAM, "invalid fd: %{public}d", fd);
-    CHECK_AND_RETURN_RET_LOG(length > 0 && length<= MAX_HRTF_LENGTH,
-        ERR_INVALID_PARAM, "invalid length: %{public}" PRId64, length);
     if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
         AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
         return ERR_PERMISSION_DENIED;
@@ -4696,6 +4761,20 @@ int32_t AudioPolicyServer::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t 
     return AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);
 }
 
+int32_t AudioPolicyServer::PauseAudioFocusForExtAudioZone()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioZoneService::GetInstance().PauseAudioFocusForExtAudioZone();
+}
+
+int32_t AudioPolicyServer::ResumeAudioFocusForExtAudioZone()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
+    return AudioZoneService::GetInstance().ResumeAudioFocusForExtAudioZone();
+}
+
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
@@ -4705,7 +4784,7 @@ int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
 
 int32_t AudioPolicyServer::EnableSystemVolumeProxy(int32_t zoneId, int32_t deviceType, bool enable)
 {
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
 #else
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
@@ -5363,7 +5442,7 @@ int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t 
             silentControl);
         return SUCCESS;
     }
-    
+
     isAllowed = audioBackgroundManager_.IsAllowedPlayback(uid, pid, sessionId, streamUsage, silentControl);
     return SUCCESS;
 }
@@ -5420,6 +5499,8 @@ int32_t AudioPolicyServer::NotifyProcessBackgroundState(int32_t uid, int32_t pid
 
 int32_t AudioPolicyServer::SetVirtualCall(bool isVirtual)
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     auto callerUid = IPCSkeleton::GetCallingUid();
     AUDIO_INFO_LOG("Set VirtualCall is %{public}d", isVirtual);
     return audioDeviceCommon_.SetVirtualCall(callerUid, isVirtual);
@@ -5427,6 +5508,8 @@ int32_t AudioPolicyServer::SetVirtualCall(bool isVirtual)
 
 int32_t AudioPolicyServer::GetVirtualCall(bool &isVirtual)
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     auto callerUid = IPCSkeleton::GetCallingUid();
     isVirtual = audioDeviceCommon_.GetVirtualCall(callerUid);
     return SUCCESS;
@@ -5734,7 +5817,7 @@ int32_t AudioPolicyServer::GetLoopbackSupportedDevicePairs(
 
     return SUCCESS;
 }
- 	 
+
 int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioDeviceDescriptor> &inputDevice,
     std::shared_ptr<AudioDeviceDescriptor> &outputDevice, int32_t &ret)
 {

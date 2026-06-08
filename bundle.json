@@ -52,7 +52,7 @@
           "audio_framework_feature_multi_bus",
           "audio_framework_feature_source_period_size",
           "audio_framework_feature_input_independent_routing_rule",
-          "audio_framework_feature_multi_zone"
+          "audio_framework_feature_multi_zone_volume"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
@@ -116,7 +116,8 @@
             "frame_aware_sched",
             "window_manager",
             "call_manager",
-            "icu"
+            "icu",
+            "json"
           ],
           "third_party": []
         },
@@ -138,7 +139,8 @@
               "//foundation/multimedia/audio_framework/services/audio_service:audio_service_packages",
               "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_packages",
               "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite_packages",
-              "//foundation/multimedia/audio_framework/frameworks/native/audioclock:audio_clock"
+              "//foundation/multimedia/audio_framework/frameworks/native/audioclock:audio_clock",
+              "//foundation/multimedia/audio_framework/tools/ohos-audioManager:ohos-audioManager"
             ]
           },
           "inner_kits": [

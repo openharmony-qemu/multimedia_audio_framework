@@ -34,6 +34,7 @@
 #include "callback_handler.h"
 #include "audio_speed.h"
 #include "audio_pitch_processor.h"
+#include "audio_debug_info.h"
 #include "audio_spatial_channel_converter.h"
 #include "audio_spatialization_types.h"
 #include "audio_safe_block_queue.h"
@@ -585,6 +586,8 @@ private:
 
     uint64_t lastFlushReadIndex_ = 0;
     uint64_t lastSpeedFlushReadIndex_ = 0;
+
+    bool isMainUseArk_ = false;
 
     enum LoudVolumeSupportType {
         LOUD_VOLUME_NOT_SUPPORT = 0,

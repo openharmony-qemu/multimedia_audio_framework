@@ -122,6 +122,8 @@ public:
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const std::string &deviceTag,
         const AudioFocusList &interrupts);
+    int32_t PauseAudioFocusForExtAudioZone();
+    int32_t ResumeAudioFocusForExtAudioZone();
     int32_t GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,
         AudioFocusList &focusInfoList);
@@ -421,7 +423,6 @@ private:
     void AudioSessionStateChangeCallbackEvent(const int32_t zoneId, const int32_t callerPid,
         const InterruptErrorCode interruptErrorCode);
     int32_t FindAudioInterruptByPid(const int32_t zoneId, const int32_t callerPid, AudioInterrupt &audioInterrupt);
-    void MirrorInterPhoneInterrupt(AudioInterrupt &audioInterrupt);
     void RecordFocusHistory(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         const InterruptEventInternal &interruptEvent);
     void AddFocusHistory(uint32_t streamId, const AudioFocusBehavior &focusBehavior);

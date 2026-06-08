@@ -444,7 +444,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
             string("address=") + updatedDesc.GetMacAddress() + " role=" + to_string(updatedDesc.getRole());
         std::string audioParameter =
             AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, condition);
-        updatedDesc.ParseAudioParameters(audioParameter);
+        updatedDesc.UpdateDeviceInfoByAudioParameters(audioParameter);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
         int32_t result = HandleAccessoryDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
         CheckAndWriteDeviceChangeExceptionEvent(result == SUCCESS,
@@ -798,10 +798,9 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
             activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
             state = audioA2dpOffloadManager_->GetA2dpOffloadFlag();
         }
-        AUDIO_DEBUG_LOG("streamInfo.sampleRate: %{public}d, a2dpOffloadFlag: %{public}d",
-            streamInfo.samplingRate, state);
-        if (!IsConfigurationUpdated(deviceType, streamInfo) ||
-            (activeSessionsSize > 0 && state == A2DP_OFFLOAD)) {
+        AUDIO_DEBUG_LOG("sampleRate: %{public}d, a2dpOffloadFlag: %{public}d, activeSessionsSize %{public}d",
+            streamInfo.samplingRate, state, activeSessionsSize);
+        if (!IsConfigurationUpdated(deviceType, streamInfo)) {
             AUDIO_DEBUG_LOG("Audio configuration same");
             return;
         }
@@ -1562,11 +1561,9 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     FetchDeviceInfo info = {
         STREAM_USAGE_MEDIA, "ClearPreferredWhenCategoryUpdated_1", ROUTER_TYPE_USER_SELECT
     };
-    auto mediaFetched = *AudioRouterCenter::GetAudioRouterCenter()
-        .FetchOutputDevices(info)
-        .front();
+    auto mediaFetched = AudioRouterCenter::GetAudioRouterCenter().FetchMediaOutputDevices(info);
     if ((usage & MEDIA) == MEDIA &&
-        NeedClearPreferredWhenCategoryUpdated(*existed, mediaFetched,
+        NeedClearPreferredWhenCategoryUpdated(*existed, {mediaFetched, info.routerType},
             *strategy.GetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID))) {
         strategy.ClearSystemSelectDevice(AUDIO_MEDIA_RENDER, nullptr);
     }
@@ -1574,11 +1571,9 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     info = {
         STREAM_USAGE_VOICE_COMMUNICATION, "ClearPreferredWhenCategoryUpdated_2", ROUTER_TYPE_USER_SELECT
     };
-    auto callFetched = *AudioRouterCenter::GetAudioRouterCenter()
-        .FetchOutputDevices(info)
-        .front();
+    auto callFetched = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
     if ((usage & VOICE) == VOICE &&
-        NeedClearPreferredWhenCategoryUpdated(*existed, callFetched,
+        NeedClearPreferredWhenCategoryUpdated(*existed, {callFetched, ROUTER_TYPE_NONE},
             *strategy.GetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID))) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ClearPreferredWhenCategoryUpdated");
@@ -1588,25 +1583,30 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
 
 void AudioDeviceStatus::ClearPreferredDevices(AudioDeviceDescriptor &desc)
 {
-    auto &strategy = AudioRouterSelectStrategy::GetInstance();
-    auto deviceDesc = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(
-        std::make_shared<AudioDeviceDescriptor>(desc));
+    ClearPreferredDeviceByType({AUDIO_RECORD_CAPTURE, AUDIO_CALL_CAPTURE}, desc, INPUT_DEVICE);
+    ClearPreferredDeviceByType({AUDIO_MEDIA_RENDER, AUDIO_CALL_RENDER}, desc, OUTPUT_DEVICE);
+}
+
+void AudioDeviceStatus::ClearPreferredDeviceByType(const std::vector<PreferredType> &types,
+    AudioDeviceDescriptor &desc, DeviceRole role)
+{
+    auto tmpDesc = std::make_shared<AudioDeviceDescriptor>(desc);
+    tmpDesc->deviceRole_ = role;
+    auto deviceDesc = audioDeviceManager_.GetExistedDevice(tmpDesc);
     CHECK_AND_RETURN(deviceDesc != nullptr && deviceDesc->deviceType_ != DEVICE_TYPE_NONE);
-    std::vector<PreferredType> types = {
-        AUDIO_MEDIA_RENDER,
-        AUDIO_RECORD_CAPTURE,
-        AUDIO_CALL_RENDER,
-        AUDIO_CALL_CAPTURE
-    };
     for (const auto &type : types) {
-        strategy.ClearAllSelectSelectDevice(type, deviceDesc);
+        audioRouterSelectStrategy_.ClearAllSelectSelectDevice(type, deviceDesc);
     }
 }
 
 bool AudioDeviceStatus::NeedClearPreferredWhenCategoryUpdated(const AudioDeviceDescriptor &updated,
-    const AudioDeviceDescriptor &fetched, const AudioDeviceDescriptor &preferred)
+    const std::pair<std::vector<std::shared_ptr<AudioDeviceDescriptor>>, RouterType> &fetched,
+    const AudioDeviceDescriptor &preferred)
 {
-    if (!updated.IsSameDeviceDesc(fetched)) {
+    CHECK_AND_RETURN_RET(fetched.second != ROUTER_TYPE_USER_SELECT, false);
+    CHECK_AND_RETURN_RET(!fetched.first.empty(), false);
+    auto &frontDesc = fetched.first.front();
+    if (!updated.IsSameDeviceDescPtr(frontDesc) && !updated.IsSameBtDeviceDescPtr(frontDesc)) {
         return false;
     }
 

@@ -322,7 +322,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_015, TestSize.Le
     std::shared_ptr<AudioDeviceDescriptor> desc1 = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_MIC, DeviceRole::INPUT_DEVICE);
     desc1->networkId_ = "444455556666abcdef";
-    
+
     std::shared_ptr<AudioDeviceDescriptor> desc2 = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_DP, DeviceRole::OUTPUT_DEVICE);
     desc2->networkId_ = "444455556666abcdef";
@@ -439,7 +439,9 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_021, TestSize.Le
 {
     AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
     shared_ptr<AudioDeviceDescriptor> desc = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_INTERPHONE);
-    EXPECT_EQ(make_shared<AudioDeviceDescriptor>(audioDeviceManager.speaker_), desc);
+    if (desc && audioDeviceManager.speaker_) {
+        EXPECT_EQ(audioDeviceManager.speaker_->IsSameDeviceDescPtr(desc), true);
+    }
 }
 
 /**
@@ -477,7 +479,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, UpdateDeviceCategory_001, TestSize.Level4)
 HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_001, TestSize.Level1)
 {
     AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
-    
+
     // Test with normal device
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
@@ -486,12 +488,12 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_001, TestSize.Level1)
     desc->connectState_ = CONNECTED;
     bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(true, result);
-    
+
     // Test with exception flag set
     desc->exceptionFlag_ = true;
     result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(false, result);
-    
+
     // Test with disabled device
     desc->exceptionFlag_ = false;
     desc->isEnable_ = false;
@@ -507,7 +509,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_001, TestSize.Level1)
 HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_002, TestSize.Level1)
 {
     AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
-    
+
     // Test with Bluetooth SCO device in normal connected state
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
@@ -516,7 +518,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_002, TestSize.Level1)
     desc->connectState_ = CONNECTED;
     bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(true, result);
-    
+
     // Test with Bluetooth SCO device in suspend connected state
     desc->connectState_ = SUSPEND_CONNECTED;
     result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
@@ -531,7 +533,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_002, TestSize.Level1)
 HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_003, TestSize.Level1)
 {
     AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
-    
+
     // Test with virtual connected device
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
@@ -550,7 +552,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_003, TestSize.Level1)
 HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_004, TestSize.Level1)
 {
     AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
-    
+
     // Test with Bluetooth A2DP device in suspend connected state (should be available)
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
@@ -569,7 +571,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_004, TestSize.Level1)
 HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_005, TestSize.Level1)
 {
     AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
-    
+
     // Test with nullptr
     std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
     bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);

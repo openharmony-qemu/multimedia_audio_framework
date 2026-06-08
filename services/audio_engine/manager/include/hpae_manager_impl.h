@@ -137,7 +137,7 @@ public:
     bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params) override;
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
-    int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) override;
     void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
     void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
@@ -152,11 +152,12 @@ public:
     int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
 
-    int32_t SetAissEnabled(uint32_t sessionId, bool enabled) override;
-    int32_t SetVocalRatio(float ratio) override;
-    int32_t SetAissEnabledByUid(int32_t uid, bool enabled) override;
+    int32_t SetAissEnabledSync(uint32_t sessionId, bool enabled) override;
+    int32_t SetVocalRatioSync(float ratio) override;
+    int32_t SetAissEnabledByUidSync(int32_t uid, bool enabled) override;
 
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
+    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) override;
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) override;
     void LoadCollaborationConfig() override;
     

@@ -56,6 +56,7 @@
 #include "audio_safe_block_queue.h"
 #include "istandard_audio_service.h"
 #include "app_bundle_manager.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1019,6 +1020,7 @@ int32_t CapturerInClientInner::GetAudioDebugInfo(AudioDebugInfo &debugInfo)
         if (ret == SUCCESS) {
             FillCapturerClientOnlyInfo(debugInfo);
             FillCapturerDeviceInfo(debugInfo, sessionId);
+            StreamDfxManager::GetErrorInfosFromMedia(debugInfo.errorInfos);
             return SUCCESS;
         }
         AUDIO_WARNING_LOG("GetAudioDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
@@ -1033,8 +1035,10 @@ int32_t CapturerInClientInner::GetAudioDebugInfo(AudioDebugInfo &debugInfo)
 
     FillCapturerClientOnlyInfo(debugInfo);
     FillCapturerDeviceInfo(debugInfo, sessionId);
+    StreamDfxManager::GetErrorInfosFromMedia(debugInfo.errorInfos);
     return SUCCESS;
 }
+
 
 int32_t CapturerInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {
@@ -1157,7 +1161,7 @@ int32_t CapturerInClientInner::SetCaptureMode(AudioCaptureMode captureMode)
         return ERR_ILLEGAL_STATE;
     }
     capturerMode_ = captureMode;
-
+    CHECK_AND_RETURN_RET_LOG(capturerInfo_.isLoopback == false, SUCCESS, "loopback no need InitCallbackLoop");
     // init callbackLoop_
     InitCallbackLoop();
 
@@ -2323,6 +2327,12 @@ void CapturerInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus CapturerInClientInner::CheckRestoreStatus()
 {
+    bool restoreFlag = (GetFastStatus() == FASTSTATUS_FAST) && (readCb_ == nullptr);
+    if (restoreFlag) {
+        AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
+        capturerMode_ = CAPTURE_MODE_NORMAL;
+        return NEED_RESTORE_TO_NORMAL;
+    }
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(clientBuffer_ != nullptr, RESTORE_ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_QUERY_ILLEGAL_STATE, "Client OHAudioBuffer is nullptr", true), "Client OHAudioBuffer is nullptr");
@@ -2401,6 +2411,9 @@ int32_t CapturerInClientInner::GetLatencyWithFlag(uint64_t &latency, LatencyFlag
 
 bool CapturerInClientInner::IsRestoreNeeded()
 {
+    if (readCb_ == nullptr) {
+        return true;
+    }
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(clientBuffer_ != nullptr, false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_QUERY_ILLEGAL_STATE, "buffer null", true), "buffer null");

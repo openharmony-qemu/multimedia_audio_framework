@@ -48,6 +48,11 @@ struct DeviceStreamInfo {
         return channels;
     }
 
+    AudioChannelLayout GetMainChannelLayout()
+    {
+        return !channelLayout.empty() ? *channelLayout.begin() : CH_LAYOUT_UNKNOWN;
+    }
+
     // warning: force set default channelLayout by channel
     void SetChannels(const std::set<AudioChannel> &channels)
     {

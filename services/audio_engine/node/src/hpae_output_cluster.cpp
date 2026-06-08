@@ -283,10 +283,10 @@ int32_t HpaeOutputCluster::SetAuxiliarySinkEnable(bool isEnabled)
     return hpaeSinkOutputNode_->SetAuxiliarySinkEnable(isEnabled);
 }
 
-void HpaeOutputCluster::SetCollaborationState(bool collaborationState)
+void HpaeOutputCluster::SetCollaborationState(CollaborationState isCollaborationEnabled)
 {
     CHECK_AND_RETURN_LOG(hpaeSinkOutputNode_ != nullptr, "sinkOutputNode is null");
-    hpaeSinkOutputNode_->SetCollaborationState(collaborationState);
+    hpaeSinkOutputNode_->SetCollaborationState(isCollaborationEnabled);
 }
 
 uint32_t HpaeOutputCluster::GetRenderId() const

@@ -293,4 +293,64 @@ HWTEST_F(HpaeMixerNodeTest, testCheckUpdateInfoForDisConnect, TestSize.Level1)
     HpaePcmBuffer* output = hpaeMixerNode->SignalProcess(inputs);
     EXPECT_NE(output, nullptr);
 }
+
+/**
+ * @tc.name  : Test SetCollaborationStateToMixNode with COLLABORATION_BLUETOOTH_OPEN
+ * @tc.type  : FUNC
+ * @tc.number: SetCollaborationStateToMixNode_Bt_001
+ * @tc.desc  : Test SetCollaborationStateToMixNode sets BT collaboration state.
+ */
+HWTEST_F(HpaeMixerNodeTest, SetCollaborationStateToMixNode_Bt_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    EXPECT_EQ(hpaeMixerNode->isCollaborationEnabled_, COLLABORATION_CLOSE);
+    hpaeMixerNode->SetCollaborationStateToMixNode(COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_EQ(hpaeMixerNode->isCollaborationEnabled_, COLLABORATION_BLUETOOTH_OPEN);
+}
+
+/**
+ * @tc.name  : Test SetCollaborationStateToMixNode with COLLABORATION_NEARLINK_OPEN
+ * @tc.type  : FUNC
+ * @tc.number: SetCollaborationStateToMixNode_Nl_002
+ * @tc.desc  : Test SetCollaborationStateToMixNode sets NearLink collaboration state.
+ */
+HWTEST_F(HpaeMixerNodeTest, SetCollaborationStateToMixNode_Nl_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    hpaeMixerNode->SetCollaborationStateToMixNode(COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(hpaeMixerNode->isCollaborationEnabled_, COLLABORATION_NEARLINK_OPEN);
+}
+
+/**
+ * @tc.name  : Test SetCollaborationStateToMixNode with COLLABORATION_CLOSE
+ * @tc.type  : FUNC
+ * @tc.number: SetCollaborationStateToMixNode_Close_003
+ * @tc.desc  : Test SetCollaborationStateToMixNode resets to CLOSE state.
+ */
+HWTEST_F(HpaeMixerNodeTest, SetCollaborationStateToMixNode_Close_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    hpaeMixerNode->SetCollaborationStateToMixNode(COLLABORATION_NEARLINK_OPEN);
+    EXPECT_EQ(hpaeMixerNode->isCollaborationEnabled_, COLLABORATION_NEARLINK_OPEN);
+    hpaeMixerNode->SetCollaborationStateToMixNode(COLLABORATION_CLOSE);
+    EXPECT_EQ(hpaeMixerNode->isCollaborationEnabled_, COLLABORATION_CLOSE);
+}
 } // namespace

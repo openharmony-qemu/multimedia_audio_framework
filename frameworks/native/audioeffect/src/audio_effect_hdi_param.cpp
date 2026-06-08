@@ -123,7 +123,7 @@ int32_t AudioEffectHdiParam::UpdateHdiState(int8_t *effectHdiInput, DeviceType d
     IEffectControl *hdiControl = DeviceTypeToHdiControlMap_[deviceType];
     if (hdiControl == nullptr) {
         AUDIO_WARNING_LOG("hdiControl is nullptr.");
-        return ERROR;
+        return ERR_DEVICE_UNAVAILABLE;
     }
     int32_t ret = SetHdiCommand(hdiControl, effectHdiInput);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "hdi send command failed");

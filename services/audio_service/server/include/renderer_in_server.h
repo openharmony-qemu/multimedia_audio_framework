@@ -207,6 +207,8 @@ public:
 private:
     void OnStatusUpdateSub(IOperation operation);
     void OnStatusUpdateSubs(IOperation operation);
+    void HandleOperationUnderrun();
+    void HandleOperationUnderflow();
     bool IsHighResolution() const noexcept;
     void WriteMuteDataSysEvent(BufferDesc &bufferDesc);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
@@ -223,6 +225,7 @@ private:
     int32_t ValidateAndSetupBufferForStart();
     void UpdateStartTimeInfo();
     int32_t StopInner();
+    int32_t HandleStopDuringStandby();
     int32_t Standby(bool isStandbyOn);
     int64_t GetLastAudioDuration();
     void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
@@ -263,6 +266,9 @@ private:
     void InitLatencyMeasurement();
     void DetectLatency(uint8_t *inputData, size_t requestDataLen);
     void PauseInner();
+    void UpdateFlushStatus();
+    void FlushInnerCapStreams();
+    void FlushDualToneStream();
     void ClearInnerCapBufferForInject();
     void InitDupBufferInner(int32_t innerCapId);
     int32_t OnWriteDataInternal(int8_t *inputData, size_t requestDataLen, bool wakeFutex);
@@ -295,6 +301,7 @@ private:
     std::atomic<IStatus> status_ = I_STATUS_IDLE;
     std::atomic<bool> voipNoPrivacyFlag_ = false;
     bool offloadEnable_ = false;
+    std::atomic<bool> hasSessionEffect_ = false;
     std::atomic<bool> standByEnable_ = false;
     std::atomic<bool> muteFlag_ = false;
 
@@ -399,6 +406,7 @@ private:
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::unordered_map<int32_t, std::atomic<size_t>> innerCapFirstWriteMap_;
+    bool isNonStandardSampleRate_ = false;
     bool isWriteFirst_ = false;
     bool isOffloadJankReport = false;
     std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;

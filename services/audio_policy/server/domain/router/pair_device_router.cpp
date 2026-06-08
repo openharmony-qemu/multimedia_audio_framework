@@ -30,17 +30,6 @@ namespace AudioStandard {
 shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
     const uint32_t sessionID)
 {
-    if (AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
-        std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
-        shared_ptr<AudioDeviceDescriptor> activeScoDevice =
-            AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::OUTPUT_DEVICE);
-        CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr &&
-            !AudioRouterSelectStrategy::GetInstance().IsDeviceExcluded(activeScoDevice, ALL_MEDIA_DEVICES) &&
-            activeScoDevice->connectState_ != SUSPEND_CONNECTED && !activeScoDevice->exceptionFlag_,
-            make_shared<AudioDeviceDescriptor>(), "activeScoDevice is nullptr");
-        AUDIO_WARNING_LOG("Has sco device, pair route");
-        return activeScoDevice;
-    }
     return make_shared<AudioDeviceDescriptor>();
 }
 
@@ -131,17 +120,6 @@ vector<shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::DecideRingRenderDevi
 shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
     const uint32_t sessionID)
 {
-    if (AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
-        std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
-        shared_ptr<AudioDeviceDescriptor> activeScoDevice =
-            AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::INPUT_DEVICE);
-        CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr &&
-            !AudioRouterSelectStrategy::GetInstance().IsDeviceExcluded(activeScoDevice, ALL_MEDIA_DEVICES) &&
-            activeScoDevice->connectState_ != SUSPEND_CONNECTED && !activeScoDevice->exceptionFlag_,
-            make_shared<AudioDeviceDescriptor>(), "activeScoDevice is nullptr");
-        AUDIO_WARNING_LOG("Has sco device, pair route");
-        return activeScoDevice;
-    }
     return make_shared<AudioDeviceDescriptor>();
 }
 

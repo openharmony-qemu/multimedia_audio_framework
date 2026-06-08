@@ -254,6 +254,26 @@ size_t Util::CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds durati
     return sampleCount * bytesPerSample;
 }
 
+std::vector<std::string> Util::SplitString(const std::string& str, char delimiter)
+{
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream iss(str);
+    
+    while (std::getline(iss, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    
+    return tokens;
+}
+
+bool Util::IsEnhancedRoutingSupported()
+{
+    static const bool isEnhancedRoutingSupported =
+        OHOS::system::GetBoolParameter("const.multimedia.audio.sys_multidevice_capability.enable", false);
+    return isEnhancedRoutingSupported;
+}
+
 WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
 {
     startTimeNs_ = ClockTime::GetCurNano();
@@ -1983,7 +2003,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_MOVIE, STREAM_MUSIC},
     {STREAM_GAME, STREAM_MUSIC},
     {STREAM_SPEECH, STREAM_MUSIC},
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     {STREAM_NAVIGATION, STREAM_NAVIGATION},
 #else
     {STREAM_NAVIGATION, STREAM_MUSIC},
@@ -2054,7 +2074,7 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
         STREAM_USAGE_NOTIFICATION,
         STREAM_USAGE_ENFORCED_TONE,
         STREAM_USAGE_DTMF}},
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     {STREAM_MUSIC, {
         STREAM_USAGE_UNKNOWN,
         STREAM_USAGE_MUSIC,
@@ -2276,7 +2296,7 @@ std::map<AudioVolumeType, std::vector<StreamUsage>> VolumeUtils::streamToStreamU
     {STREAM_EMERGENCY, {STREAM_USAGE_EMERGENCY}},
 #endif
 
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     {STREAM_NAVIGATION, {STREAM_USAGE_NAVIGATION}},
 #endif
 };

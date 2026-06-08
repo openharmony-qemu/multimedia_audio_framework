@@ -61,7 +61,7 @@ public:
     void Init(std::shared_ptr<AudioPolicyServerHandler> handler);
     void DeInit();
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,
-        const AudioStreamDeviceChangeReason reason);
+        const AudioStreamDeviceChangeReason reason, int32_t forceUid = INVALID_UID);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
         std::string &networkId, AudioSamplingRate &samplingRate, bool isFirstCreate = true);
@@ -139,7 +139,8 @@ private:
     void ClearRingMuteWhenCallStart(bool pre, bool after);
     bool NeedClearPreferredMediaRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
         const std::shared_ptr<AudioDeviceDescriptor> &updated,
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &fetched, const DeviceUsage usage) const;
+        const std::pair<std::vector<std::shared_ptr<AudioDeviceDescriptor>>, RouterType> &fetched,
+        const DeviceUsage usage) const;
     bool NeedUpdatePreferredDevice(const AudioDeviceDescriptor &desc);
 
     // fetchOutput

@@ -99,7 +99,7 @@ public:
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
-    int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) override;
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
@@ -146,7 +146,7 @@ private:
     void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int32_t processClusterDecision);
     void DereferenceInputCluster(uint32_t sessionId);
-    bool SetSessionFade(uint32_t sessionId, IOperation operation);
+    bool SetSessionFade(uint32_t sessionId, IOperation operation, bool isStandby = false);
     void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
     int32_t InitManager(bool isReload = false, bool isNeedCallBack = true);
@@ -206,7 +206,7 @@ private:
     std::vector<int32_t> appsUid_;
     std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_ = nullptr;
     std::shared_ptr<HpaeCoBufferNode> defaultCoBufferNode_ = nullptr;
-    bool isCollaborationEnabled_ = false;
+    CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
     int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
     std::unordered_map<uint32_t, bool> isNeedInitEffectBufferFlagMap_;
 

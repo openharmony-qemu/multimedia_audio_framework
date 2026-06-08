@@ -101,7 +101,7 @@ static void AddStreamVolume()
     param.pid = CAPTURER_FLAG;
     param.isSystemApp = false;
     param.mode = AudioMode::AUDIO_MODE_PLAYBACK;
-    param.isVKB = false;
+    param.isVKB = VKB_INVALID;
     AudioVolume::GetInstance()->AddStreamVolume(param);
 }
 
@@ -132,8 +132,9 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_001, TestSi
     AudioProcessConfig processConfig = GetInnerCapConfig();
     processConfig.streamInfo.samplingRate = SAMPLE_RATE_11025;
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
-
-    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    std::string deviceName = "temp";
+ 
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName, false);
     EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_11025);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
@@ -158,8 +159,9 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_002, TestSi
     AudioProcessConfig processConfig = GetInnerCapConfig();
     processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16010;
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
-
-    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    std::string deviceName = "temp";
+ 
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName, false);
     EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_16010);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
@@ -184,8 +186,9 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_003, TestSi
     AudioProcessConfig processConfig = GetInnerCapConfig();
     processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16050;
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
-
-    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    std::string deviceName = "temp";
+ 
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName, false);
     EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_16050);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
@@ -209,8 +212,9 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_004, TestSi
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
     processConfig.streamInfo.channels = CHANNEL_UNKNOW;
-
-    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    std::string deviceName = "temp";
+ 
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName, false);
     EXPECT_EQ(rendererStreamImpl.usedSampleRate_, processConfig.streamInfo.samplingRate);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
@@ -232,8 +236,9 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_005, TestSi
     AudioProcessConfig processConfig = GetInnerCapConfig();
     processConfig.streamInfo.customSampleRate = SAMPLE_RATE_11025;
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
-
-    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    std::string deviceName = "temp";
+ 
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName, false);
     EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_11025);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
@@ -481,6 +486,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_006, TestSize.Level1)
     auto unit = CreateHpaeRendererStreamImpl();
     EXPECT_NE(unit, nullptr);
     unit->offloadEnable_ = false;
+    unit->deviceClass_ = "offload";
     auto ret = unit->OffloadSetVolume();
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     AddStreamVolume();
@@ -1006,7 +1012,9 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_034, TestSize.Level1)
 HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1); // callback mode
+    std::string deviceName = "temp";
+
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 1); // callback mode
  
     AudioCallBackStreamInfo info = {
         .needData = true
@@ -1044,12 +1052,13 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_036, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     auto mockWriteCallback = std::make_shared<MockWriteCallback>();
+    std::string deviceName = "temp";
 
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 0);
     unit->writeCallback_ = mockWriteCallback;
     EXPECT_EQ(unit->OnQueryUnderrun(), false); // not callback mode, return false
 
-    unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1);
+    unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 1);
     EXPECT_EQ(unit->OnQueryUnderrun(), false); // writecallback null, return false
 
     unit->writeCallback_ = mockWriteCallback;
@@ -1070,7 +1079,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_036, TestSize.Level1)
 HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_037, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1); // callback mode
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 1); // callback mode
  
     std::vector<int8_t> buffer(2048);
     AudioCallBackStreamInfo info = {
@@ -1201,7 +1211,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_041, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
     constexpr size_t preBufSize = 8;
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0, preBufSize); // write mode
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 0, preBufSize); // write mode
     EXPECT_NE(unit, nullptr);
 
     unit->ringBuffer_ = AudioRingCache::Create(preBufSize * 2);
@@ -1225,7 +1236,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_042, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
     constexpr size_t preBufSize = 8;
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0, preBufSize); // write mode
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 0, preBufSize); // write mode
     EXPECT_NE(unit, nullptr);
 
     unit->ringBuffer_ = AudioRingCache::Create(preBufSize * 2);
@@ -1248,7 +1260,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_042, TestSize.Level1)
 HWTEST_F(HpaeRendererStreamUnitTest, SetOffloadMode_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 0);
     EXPECT_NE(unit, nullptr);
 
     // Create a mock status callback
@@ -1276,7 +1289,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, SetOffloadMode_001, TestSize.Level1)
 HWTEST_F(HpaeRendererStreamUnitTest, SetOffloadMode_002, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 0);
     EXPECT_NE(unit, nullptr);
 
     // Set statusCallback to empty weak_ptr
@@ -1300,7 +1314,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_FAST_SpanSize_001, TestSize.Le
     processConfig.isInnerCapturer = false;
     processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
     
-    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true);
+    std::string deviceName = "temp";
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName);
     size_t expectedSpanSize = 5 * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, expectedSpanSize);
 }
@@ -1317,7 +1332,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_VOIP_FAST_DelayedWake_001, Tes
     processConfig.rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_VOIP_FAST;
     processConfig.isInnerCapturer = false;
     
-    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true);
+    std::string deviceName = "temp";
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName);
     EXPECT_TRUE(rendererStreamImpl.delayedWake_);
 }
 
@@ -1333,7 +1349,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_ULTRA_FAST_DelayedWake_001, Te
     processConfig.rendererInfo.ultraFastFlag = 3;
     processConfig.isInnerCapturer = false;
     
-    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true);
+    std::string deviceName = "temp";
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName);
     EXPECT_TRUE(rendererStreamImpl.delayedWake_);
 }
 
@@ -1349,7 +1366,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_Inner_NoDelayedWake_001, TestS
     processConfig.rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
     processConfig.isInnerCapturer = true;
     
-    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true);
+    std::string deviceName = "temp";
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName);
     EXPECT_FALSE(rendererStreamImpl.delayedWake_);
 }
 
@@ -1362,7 +1380,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_Inner_NoDelayedWake_001, TestS
 HWTEST_F(HpaeRendererStreamUnitTest, GetRouteFlag_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 0);
     EXPECT_NE(unit, nullptr);
     
     unit->routeFlag_.store(123);
@@ -1379,7 +1398,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, GetRouteFlag_001, TestSize.Level1)
 HWTEST_F(HpaeRendererStreamUnitTest, TriggerClientWake_002, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 0);
     EXPECT_NE(unit, nullptr);
     
     unit->writeCallback_.reset();
@@ -1396,7 +1416,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, TriggerClientWake_002, TestSize.Level1)
 HWTEST_F(HpaeRendererStreamUnitTest, OnStatusUpdate_UpdateSpanSize_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 0);
     EXPECT_NE(unit, nullptr);
     
     unit->OnStatusUpdate(OPERATION_UPDATE_SPANSIZE, 0);
@@ -1412,7 +1433,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, OnStatusUpdate_UpdateSpanSize_001, TestSize
 HWTEST_F(HpaeRendererStreamUnitTest, UpdateSpanSize_Unchanged_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 0);
     EXPECT_NE(unit, nullptr);
     
     uint32_t currentSpanSize = unit->spanSizeInFrame_;
@@ -1429,7 +1451,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, UpdateSpanSize_Unchanged_001, TestSize.Leve
 HWTEST_F(HpaeRendererStreamUnitTest, UpdateSpanSize_Changed_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 0);
     EXPECT_NE(unit, nullptr);
     
     uint32_t newSpanSize = 960; // 20ms at 48000Hz
@@ -1447,7 +1470,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, UpdateSpanSize_Changed_001, TestSize.Level1
 HWTEST_F(HpaeRendererStreamUnitTest, UpdateSpanSize_Zero_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 0);
     EXPECT_NE(unit, nullptr);
     
     int32_t ret = unit->UpdateSpanSize(0);

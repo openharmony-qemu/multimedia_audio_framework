@@ -1403,7 +1403,7 @@ int32_t CapturerInServer::StartPrivacyConfirmDialog(uint32_t sessionId)
     want.SetElementName(bundleName, abilityName);
     auto connectionHolder = std::make_shared<sptr<AudioPrivacyUIExtConnection>>();
     *connectionHolder = sptr<AudioPrivacyUIExtConnection>(
-        new (std::nothrow) AudioPrivacyUIExtConnection(sessionId)
+        new (std::nothrow) AudioPrivacyUIExtConnection(sessionId, IPCSkeleton::GetCallingUid())
     );
 
     if (*connectionHolder == nullptr) {

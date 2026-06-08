@@ -233,6 +233,7 @@ public:
         std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
         int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
         int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
+        int32_t ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex);
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
         int32_t StartInjection(uint32_t sessionId) override;
         void RemoveIdForInjector(uint32_t streamId) override;
@@ -251,6 +252,8 @@ public:
         void OnVehiclePriorityChanged(bool enable);
         // Trigger reload for VoIP priority change due to mute callback
         void TriggerVoipPriorityReload(uint32_t sessionId, bool lowered);
+        int32_t GetHighestPriorityVolumeTypeForDevice(
+            const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioVolumeType &volumeType);
 
     private:
         int32_t HandleSetAudioRouteSelectorCallback(const AudioPipeSelector::AudioRouteSelectorCallback &callback);
@@ -511,9 +514,11 @@ public:
     void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
 
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor,
-        const AudioStreamDeviceChangeReason reason);
+        const AudioStreamDeviceChangeReason reason, int32_t forceUid = INVALID_UID);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    int32_t GetHighestPriorityVolumeTypeForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioVolumeType &volumeType);
 
 private:
     void UpdateEnhanceEffectState(SourceType source);
@@ -542,6 +547,7 @@ private:
     std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
 
     bool IsHigherPrioritySourceType(SourceType newSource, SourceType currentSource);
+    void HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t GetPipeBaseDebugInfo(const std::shared_ptr<AudioPipeInfo> &pipe, AudioDebugInfo &debugInfo);
     int32_t GetStreamDebugInfo(uint32_t sessionId, const std::shared_ptr<AudioPipeInfo> &pipe,
@@ -574,6 +580,8 @@ private:
     std::string ParsePreferredInputDeviceHistory(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceInfo);
     int32_t SetSleVoiceStatusFlag(AudioScene audioScene);
+    void HandleSceneChangePreferredDevice(AudioScene audioScene, AudioScene lastAudioScene, int32_t uid);
+    void HandleAudioSceneVolumeChange(AudioScene audioScene, AudioScene lastAudioScene, int32_t uid);
 #ifdef BLUETOOTH_ENABLE
     void RegisterBluetoothDeathCallback();
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
@@ -605,7 +613,8 @@ private:
     void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const std::vector<SourceOutput>& sourceOutputs);
     void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        const std::vector<SourceOutput>& sourceOutputs);
+        const std::vector<SourceOutput>& sourceOutputs,
+        std::shared_ptr<AudioPipeInfo> pipeInfo);
     int32_t MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
         std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor, uint32_t routeFlag = AUDIO_FLAG_NONE);
     int32_t MoveToRemoteInputDevice(
@@ -614,7 +623,7 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     bool GetRingerOrAlarmerDualDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices);
-    bool SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId);
     void UpdateDualToneState(const bool &enable, const int32_t &sessionId, const std::string &dupSinkName = "Speaker");
     int32_t MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
         std::shared_ptr<AudioPipeInfo> pipeInfo, std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor);
@@ -640,6 +649,7 @@ private:
     bool RecordIsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsHWDecoding(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsStreamSupportMmap(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     AudioFlag SelectRemoteAudioFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     AudioFlag GetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
@@ -650,7 +660,8 @@ private:
         const std::vector<SourceOutput>& sourceOutputs);
     std::vector<SourceOutput> GetSourceOutputs();
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId);
-    void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const uint32_t pipeId);
     void UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
@@ -686,6 +697,8 @@ private:
     void HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &pipeInfo);
     void DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
     int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
+    void DelayReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex);
+    int32_t ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     bool HandleMuteBeforeDeviceSwitch(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -731,11 +744,11 @@ private:
     void CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDescriptor> desc);
     void UpdateSpecialRemoteModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void UpdateMultiChannelState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void FetchOutputDevicesForDescs(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs);
+    void FetchOutputDevicesForDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs);
     void DeactivateBluetoothDevice(bool isRunning);
     bool DeactivateA2dpAfterExclude(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &excludeDeviceDescs,
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs);
@@ -750,7 +763,7 @@ private:
     bool WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
     // for collaboration
-    void UpdateRouteForCollaboration(InternalDeviceType deviceType, uint32_t sessionId);
+    void UpdateRouteForCollaboration(InternalDeviceType deviceType, uint32_t pipeId);
     void CheckAndUpdateHearingAidCall(const DeviceType deviceType);
     int32_t CheckModuleForHearingAid(uint32_t &paIndex);
     void CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type);
@@ -831,6 +844,9 @@ private:
     void OnVehiclePriorityChanged(bool enable);
     void NotifyServiceReady();
     void NotifyRequiredPipesReady();
+    int32_t GetStreamTypePriority(AudioStreamType streamType);
+    bool CheckCollaborativeStreamRunning();
+    void UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -913,6 +929,14 @@ private:
     std::condition_variable offloadCloseCondition_[OFFLOAD_TYPE_NUM];
     std::mutex offloadCloseMutex_;
     std::unordered_set<uint32_t> offloadAllowedUids_;
+
+    // MultiChannel delay release
+    // isMultiChannelOpened_ check whether multichannel is need open
+    std::atomic<bool> isMultiChannelOpened_ = false;
+    // isMultiChannelInRelease_ check whether delayRelease thread is running
+    std::atomic<bool> isMultiChannelInRelease_ = false;
+    std::condition_variable multiChannelCloseCondition_;
+    std::mutex multiChannelCloseMutex_;
 
     // route update callback
     std::unordered_map<uint32_t, RouteUpdateCallbackInfo> routeUpdateCallback_;
