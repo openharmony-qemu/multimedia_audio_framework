@@ -1381,8 +1381,6 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
     nodeInfo.sceneType = HPAE_SCENE_MOVIE;
     nodeInfo.effectInfo.lastEffectScene = SCENE_MOVIE;
 
-    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_NEARLINK_OPEN);
     TransNodeInfoForCollaboration(nodeInfo, COLLABORATION_CLOSE);
     EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_MOVIE);
