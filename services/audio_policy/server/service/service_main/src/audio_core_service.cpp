@@ -835,9 +835,8 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     // MultiChannel:collaboration playback, nearlink
     if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->GetMainNewDeviceDesc()) && streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_NEARLINK &&
-        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(
-        DEVICE_TYPE_NEARLINK, streamDesc->GetRenderUsage()) &&
-        !CheckRingAndVoipStreamRunning() && !isRingDualToneOnPrimarySpeaker_) {
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(DEVICE_TYPE_NEARLINK,
+            streamDesc->GetRenderUsage()) && !CheckRingAndVoipStreamRunning() && !isRingDualToneOnPrimarySpeaker_) {
             streamDesc->isNearLinkCollaborationEnable_ = true;
             JUDGE_AND_INFO_LOG(isCreateProcess_, "isNearLinkCollaborationEnable_ true");
             return true;

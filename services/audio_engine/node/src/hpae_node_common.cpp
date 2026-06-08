@@ -208,7 +208,7 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
 
 DeviceType GetDeviceType(CollaborationState isCollaborationEnabled)
 {
-    switch(isCollaborationEnabled) {
+    switch (isCollaborationEnabled) {
         case COLLABORATION_BLUETOOTH_OPEN:
             return DEVICE_TYPE_BLUETOOTH_A2DP;
         case COLLABORATION_NEARLINK_OPEN:

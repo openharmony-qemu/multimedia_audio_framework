@@ -2375,17 +2375,15 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
     }
     int32_t realUid = GetRealUid(streamDesc);
     CHECK_AND_RETURN_RET(CheckOffloadPipeUidAllowed(streamDesc, realUid), false);
+    StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     if (streamDesc->streamInfo_.channels > STEREO &&
-        (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
-         streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
+        (streamUsage != STREAM_USAGE_MOVIE || streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
         JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because channels.");
         return false;
     }
 
-    if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC &&
-        streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_AUDIOBOOK &&
-        (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
-         streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
+    if (streamUsage != STREAM_USAGE_MUSIC && streamUsage != STREAM_USAGE_AUDIOBOOK &&
+        (streamUsage != STREAM_USAGE_MOVIE || streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
         JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because streamUsage.");
         return false;
     }
