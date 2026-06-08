@@ -157,7 +157,7 @@ public:
     int32_t SetAissEnabledByUidSync(int32_t uid, bool enabled) override;
 
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
-    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) override;
+    bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) override;
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) override;
     void LoadCollaborationConfig() override;
     

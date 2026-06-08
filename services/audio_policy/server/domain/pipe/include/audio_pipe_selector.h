@@ -103,6 +103,7 @@ private:
 #endif
     void UpdatePipeAndStreamAction(std::shared_ptr<AudioPipeInfo> &newPipeInfo,
         const std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> &streamDescToOldPipeInfo);
+    void LogStreamsInfo(const std::vector<std::pair<uint32_t, uint32_t>> &sessionList);
     std::unordered_map<uint32_t, std::shared_ptr<AudioPipeInfo>> BuildOldPipeMap(
         const std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList) const;
     void UpdateInputPipeReloadAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,

@@ -2593,6 +2593,12 @@ HWTEST(AudioRendererUnitTest, DecideStreamClassAndUpdateRendererInfo_002, TestSi
     flag = AUDIO_OUTPUT_FLAG_HWDECODING;
     streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
+
+    flag = AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT;
+    streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
+    EXPECT_EQ(audioRendererPrivate->rendererInfo_.rendererFlags, AUDIO_FLAG_NORMAL);
+    EXPECT_EQ(audioRendererPrivate->rendererInfo_.pipeType, PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT);
 }
 
 /**

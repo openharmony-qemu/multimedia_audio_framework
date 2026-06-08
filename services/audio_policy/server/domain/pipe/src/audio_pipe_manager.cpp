@@ -165,6 +165,11 @@ bool AudioPipeManager::IsSupportInnerCaptureOffload()
     return audioConfigManager_.IsSupportInnerCaptureOffload();
 }
 
+bool AudioPipeManager::IsSupportIndependentPipe()
+{
+    return audioConfigManager_.IsSupportIndependentPipe();
+}
+
 int32_t AudioPipeManager::GetMaxRendererInstances()
 {
     return audioConfigManager_.GetMaxRendererInstances();
@@ -475,6 +480,7 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_INPUT_FLAG_RAW_AI) ||
         (routeFlag & AUDIO_INPUT_FLAG_INTERPHONE) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT) ||
         (routeFlag & AUDIO_INPUT_FLAG_CAMCORDER)) {
         AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
         return true;

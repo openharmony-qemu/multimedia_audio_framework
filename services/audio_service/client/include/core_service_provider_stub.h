@@ -53,6 +53,7 @@ public:
     int32_t NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus) override;
     int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId, int32_t &ret) override;
     int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId, int32_t &ret) override;
+    int32_t IsSupportIndependentPipe(bool &support) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };

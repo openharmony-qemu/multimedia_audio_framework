@@ -245,6 +245,7 @@ public:
         void NotifySessionStandbyStatus(uint32_t sessionId, bool standbyStatus) override;
         int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId) override;
         int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId) override;
+        bool IsSupportIndependentPipe() override;
         void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
         void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
         void ReloadSourceForEffect(const AudioEffectPropertyArray oldPropertyArray,
@@ -286,6 +287,7 @@ public:
     void SetEcEnableState(bool ecEnableState);
     AudioSampleFormat GetFastFormat() const;
     bool IsSupportInnerCaptureOffload();
+    bool IsSupportIndependentPipe();
     bool GetEnhancedRoutingSupported();
     int32_t GetMaxRendererInstances();
     void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
@@ -674,6 +676,7 @@ private:
     bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsStreamSupportOutputInterPhone(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsStreamSupportIndependentPipe(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsDeviceSwitching(const AudioStreamDeviceChangeReasonExt reason);
 
     void AddSessionId(const uint32_t sessionId);

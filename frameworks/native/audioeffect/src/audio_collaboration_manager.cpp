@@ -302,18 +302,6 @@ void AudioCollaborationManager::LoadCollAbsSupportedStreamUsageInner(const std::
     }
 }
 
-bool AudioCollaborationManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
-{
-    switch (state_.load()) {
-        case COLLABORATION_BLUETOOTH_OPEN:
-            return IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP, streamUsage);
-        case COLLABORATION_NEARLINK_OPEN:
-            return IsStreamUsageSupported(DEVICE_TYPE_NEARLINK, streamUsage);
-        default:
-            return false;
-    }
-}
-
 bool AudioCollaborationManager::IsStreamUsageSupported(DeviceType deviceType, StreamUsage streamUsage)
 {
     auto devIt = collAbsSupportedStreamUsageConfig_.find(deviceType);
@@ -321,11 +309,6 @@ bool AudioCollaborationManager::IsStreamUsageSupported(DeviceType deviceType, St
         return false;
     }
     return devIt->second.find(streamUsage) != devIt->second.end();
-}
-
-void AudioCollaborationManager::UpdateCollaborativeState(CollaborationState state)
-{
-    state_.store(state);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

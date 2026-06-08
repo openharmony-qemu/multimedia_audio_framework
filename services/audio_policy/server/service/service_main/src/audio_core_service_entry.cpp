@@ -877,6 +877,13 @@ void AudioCoreService::EventEntry::ReEvaluateVoipPrivacyMuteForCapturers(const s
     coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
 }
 
+bool AudioCoreService::EventEntry::IsSupportIndependentPipe()
+{
+    std::shared_lock<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, false, "coreService_ is nullptr");
+    return coreService_->IsSupportIndependentPipe();
+}
+
 void AudioCoreService::EventEntry::HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor>
     &selectedAudioDevice)
 {

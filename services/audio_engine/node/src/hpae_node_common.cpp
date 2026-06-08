@@ -128,6 +128,7 @@ static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
     {"multichannel", PIPE_TYPE_OUT_MULTICHANNEL},
     {"voip", PIPE_TYPE_OUT_DIRECT_NORMAL},
     {"direct", PIPE_TYPE_OUT_DIRECT_NORMAL},
+    {"primary_voice_call_assistant", PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT},
 };
 
 static std::map<HpaeSessionState, RendererState> g_hapeToRendererStateMap = {
@@ -206,13 +207,26 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
     }
 }
 
+DeviceType GetDeviceType(CollaborationState isCollaborationEnabled)
+{
+    switch (isCollaborationEnabled) {
+        case COLLABORATION_BLUETOOTH_OPEN:
+            return DEVICE_TYPE_BLUETOOTH_A2DP;
+        case COLLABORATION_NEARLINK_OPEN:
+            return DEVICE_TYPE_NEARLINK;
+        default:
+            return DEVICE_TYPE_INVALID;
+    }
+}
+
 void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled)
 {
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
     if (isCollaborationEnabled == COLLABORATION_BLUETOOTH_OPEN ||
         isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN) {
-        if (audioCollaborationManager->IsCollaborationSupportedForStreamUsage(nodeInfo.effectInfo.streamUsage)) {
+        if (audioCollaborationManager->IsStreamUsageSupported(GetDeviceType(isCollaborationEnabled),
+            nodeInfo.effectInfo.streamUsage)) {
             nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
             nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
             nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;

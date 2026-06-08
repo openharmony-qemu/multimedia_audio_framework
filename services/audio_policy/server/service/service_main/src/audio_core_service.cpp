@@ -512,6 +512,11 @@ bool AudioCoreService::IsSupportInnerCaptureOffload()
     return pipeManager_->IsSupportInnerCaptureOffload();
 }
 
+bool AudioCoreService::IsSupportIndependentPipe()
+{
+    return pipeManager_->IsSupportIndependentPipe();
+}
+
 bool AudioCoreService::GetEnhancedRoutingSupported()
 {
     return AudioSelectInterfaceService::GetInstance().GetEnhancedRoutingSupported();
@@ -835,8 +840,8 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     // MultiChannel:collaboration playback, nearlink
     if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->GetMainNewDeviceDesc()) && streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_NEARLINK &&
-        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage()) &&
-        !CheckRingAndVoipStreamRunning() && !isRingDualToneOnPrimarySpeaker_) {
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(DEVICE_TYPE_NEARLINK,
+            streamDesc->GetRenderUsage()) && !CheckRingAndVoipStreamRunning() && !isRingDualToneOnPrimarySpeaker_) {
             streamDesc->isNearLinkCollaborationEnable_ = true;
             JUDGE_AND_INFO_LOG(isCreateProcess_, "isNearLinkCollaborationEnable_ true");
             return true;
@@ -904,7 +909,8 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
         HILOG_COMM_ERROR("[IsStreamSupportDirect]Spatialization enabled"));
     ret = AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->GetMainNewDeviceDesc()) &&
-        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage());
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(
+            streamDesc->GetMainNewDeviceType(), streamDesc->GetRenderUsage());
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == false, false,
         HILOG_COMM_ERROR("[IsStreamSupportDirect]Collaborative enabled"));
     return true;
@@ -914,6 +920,15 @@ bool AudioCoreService::IsStreamSupportOutputInterPhone(std::shared_ptr<AudioStre
 {
     Trace trace("IsStreamSupportOutputInterPhone");
     if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
+        return true;
+    }
+    return false;
+}
+
+bool AudioCoreService::IsStreamSupportIndependentPipe(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    Trace trace("IsStreamSupportIndependentPipe");
+    if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT) {
         return true;
     }
     return false;
@@ -1029,7 +1044,8 @@ void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioS
             if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_NORMAL &&
                 AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
                     streamDesc->GetMainNewDeviceDesc()) &&
-                audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage())) {
+                audioPolicyManager_.IsCollaborationSupportedForStreamUsage(
+                    streamDesc->GetMainNewDeviceType(), streamDesc->GetRenderUsage())) {
                 break;
             }
             return;
@@ -1095,6 +1111,9 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
     }
     if (IsStreamSupportOutputInterPhone(streamDesc)) {
         return AUDIO_OUTPUT_FLAG_INTERPHONE;
+    }
+    if (IsStreamSupportIndependentPipe(streamDesc)) {
+        return AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT;
     }
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }
