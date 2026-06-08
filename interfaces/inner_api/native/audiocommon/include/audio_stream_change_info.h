@@ -106,15 +106,7 @@ public:
         streamInfo.UnmarshallingSelf(parcel);
     }
 
-    static AudioRendererChangeInfo *Unmarshalling(Parcel &parcel)
-    {
-        auto info = new(std::nothrow) AudioRendererChangeInfo();
-        if (info == nullptr) {
-            return nullptr;
-        }
-        info->UnmarshallingSelf(parcel);
-        return info;
-    }
+    static AudioRendererChangeInfo *Unmarshalling(Parcel &parcel);
 };
 
 class AudioCapturerChangeInfo : public Parcelable {
