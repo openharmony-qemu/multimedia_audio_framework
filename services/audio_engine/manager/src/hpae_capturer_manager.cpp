@@ -922,8 +922,12 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     if (sourceInfo_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE) {
         sourceInputClusterMap_[mainMicType_]->SetSourceInputNodeType(HPAE_SOURCE_OFFLOAD);
     }
+    std::string deviceNetId = sourceInfo_.deviceNetId;
+    if (sourceInfo_.deviceClass == "primary_extra_capturer") {
+        deviceNetId = sourceInfo_.deviceName;
+    }
     int32_t ret = sourceInputClusterMap_[mainMicType_]->GetCapturerSourceInstance(
-        sourceInfo_.deviceClass, sourceInfo_.deviceNetId, sourceInfo_.sourceType,
+        sourceInfo_.deviceClass, deviceNetId, sourceInfo_.sourceType,
         sourceInfo_.sourceName, sourceInfo_.busAddress);
     captureId_ = sourceInputClusterMap_[mainMicType_]->GetCaptureId();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
