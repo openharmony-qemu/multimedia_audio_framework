@@ -1459,13 +1459,7 @@ void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInf
 void RendererInClientInner::CheckFrozenStateInStaticMode()
 {
     if (rendererInfo_.isStatic && clientBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT)) {
-        if (clientBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY) {
-            Trace trace2(traceTag_ + "call start to exit stand-by");
-            CHECK_AND_CALL_FUNC_RETURN(ipcStream_ != nullptr,
-                HILOG_COMM_ERROR("[CheckFrozenStateInStaticMode]ipcStream is not inited!"));
-            int32_t ret = ipcStream_->Start();
-            AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
-        }
+        CHECK_AND_RETURN_LOG(CallStartWhenInStandby() == SUCCESS, "CallStartWhenInStandby failed");
     }
 }
 
