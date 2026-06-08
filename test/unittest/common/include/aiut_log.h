@@ -26,17 +26,9 @@ namespace AIUT {
 inline const char* GetFileName(const char* file)
 {
     const char* slash = strrchr(file, '/');
-    const char* backslash = strrchr(file, '\\');
-    if (slash && backslash) {
-        return (slash > backslash) ? slash + 1 : backslash + 1;
-    }
-    if (slash) {
-        return slash + 1;
-    }
-    if (backslash) {
-        return backslash + 1;
-    }
-    return file;
+    const char* bs = strrchr(file, '\\');
+    const char* sep = (slash && bs) ? (slash > bs ? slash : bs) : (slash ? slash : bs);
+    return sep ? sep + 1 : file;
 }
 
 // Get current GTest test case name automatically
@@ -44,6 +36,19 @@ inline const char* GetTestName()
 {
     auto* info = ::testing::UnitTest::GetInstance()->current_test_info();
     return info ? info->name() : "Unknown";
+}
+
+// Get current GTest failure count for change detection
+inline int AiutGetFailureCount()
+{
+    return ::testing::UnitTest::GetInstance()
+        ->current_test_info()->result()->total_part_count();
+}
+
+// Check if a new failure just occurred since prevFailCount
+inline bool AiutDidNewlyFail(int prevFailCount)
+{
+    return AiutGetFailureCount() > prevFailCount;
 }
 
 } // namespace AIUT
@@ -103,17 +108,12 @@ inline const char* GetTestName()
  * When assertion PASSES, no extra output (only GTest internal tracking).
  */
 
-// Internal helper: check if a new failure just occurred
-#define AIUT_DID_NEWLY_FAIL_(prev_fail_count) \
-    (::testing::UnitTest::GetInstance()->current_test_info()->result()->total_part_count() > (prev_fail_count))
-
 // ---- EXPECT_EQ with INFO log on failure ----
 #define AIUT_EXPECT_EQ_INFO_LOG(val1, val2, fmt, ...) \
     do { \
-        int aiut_prev_count_ = ::testing::UnitTest::GetInstance() \
-            ->current_test_info()->result()->total_part_count(); \
+        int aiut_prev_count_ = AIUT::AiutGetFailureCount(); \
         EXPECT_EQ(val1, val2); \
-        if (AIUT_DID_NEWLY_FAIL_(aiut_prev_count_)) { \
+        if (AIUT::AiutDidNewlyFail(aiut_prev_count_)) { \
             printf("[AIUT EXPECT FAIL][%s][%s:%d] EXPECT_EQ(" #val1 ", " #val2 ") | " fmt "\n", \
                 AIUT::GetTestName(), AIUT::GetFileName(__FILE__), __LINE__, ##__VA_ARGS__); \
         } \
@@ -122,10 +122,9 @@ inline const char* GetTestName()
 // ---- EXPECT_NE with INFO log on failure ----
 #define AIUT_EXPECT_NE_INFO_LOG(val1, val2, fmt, ...) \
     do { \
-        int aiut_prev_count_ = ::testing::UnitTest::GetInstance() \
-            ->current_test_info()->result()->total_part_count(); \
+        int aiut_prev_count_ = AIUT::AiutGetFailureCount(); \
         EXPECT_NE(val1, val2); \
-        if (AIUT_DID_NEWLY_FAIL_(aiut_prev_count_)) { \
+        if (AIUT::AiutDidNewlyFail(aiut_prev_count_)) { \
             printf("[AIUT EXPECT FAIL][%s][%s:%d] EXPECT_NE(" #val1 ", " #val2 ") | " fmt "\n", \
                 AIUT::GetTestName(), AIUT::GetFileName(__FILE__), __LINE__, ##__VA_ARGS__); \
         } \
@@ -134,10 +133,9 @@ inline const char* GetTestName()
 // ---- EXPECT_TRUE with INFO log on failure ----
 #define AIUT_EXPECT_TRUE_INFO_LOG(expr, fmt, ...) \
     do { \
-        int aiut_prev_count_ = ::testing::UnitTest::GetInstance() \
-            ->current_test_info()->result()->total_part_count(); \
+        int aiut_prev_count_ = AIUT::AiutGetFailureCount(); \
         EXPECT_TRUE(expr); \
-        if (AIUT_DID_NEWLY_FAIL_(aiut_prev_count_)) { \
+        if (AIUT::AiutDidNewlyFail(aiut_prev_count_)) { \
             printf("[AIUT EXPECT FAIL][%s][%s:%d] EXPECT_TRUE(" #expr ") | " fmt "\n", \
                 AIUT::GetTestName(), AIUT::GetFileName(__FILE__), __LINE__, ##__VA_ARGS__); \
         } \
@@ -146,10 +144,9 @@ inline const char* GetTestName()
 // ---- ASSERT_EQ with INFO log on failure ----
 #define AIUT_ASSERT_EQ_INFO_LOG(val1, val2, fmt, ...) \
     do { \
-        int aiut_prev_count_ = ::testing::UnitTest::GetInstance() \
-            ->current_test_info()->result()->total_part_count(); \
+        int aiut_prev_count_ = AIUT::AiutGetFailureCount(); \
         ASSERT_EQ(val1, val2); \
-        if (AIUT_DID_NEWLY_FAIL_(aiut_prev_count_)) { \
+        if (AIUT::AiutDidNewlyFail(aiut_prev_count_)) { \
             printf("[AIUT ASSERT FAIL][%s][%s:%d] ASSERT_EQ(" #val1 ", " #val2 ") | " fmt "\n", \
                 AIUT::GetTestName(), AIUT::GetFileName(__FILE__), __LINE__, ##__VA_ARGS__); \
         } \
@@ -158,10 +155,9 @@ inline const char* GetTestName()
 // ---- ASSERT_NE with INFO log on failure ----
 #define AIUT_ASSERT_NE_INFO_LOG(val1, val2, fmt, ...) \
     do { \
-        int aiut_prev_count_ = ::testing::UnitTest::GetInstance() \
-            ->current_test_info()->result()->total_part_count(); \
+        int aiut_prev_count_ = AIUT::AiutGetFailureCount(); \
         ASSERT_NE(val1, val2); \
-        if (AIUT_DID_NEWLY_FAIL_(aiut_prev_count_)) { \
+        if (AIUT::AiutDidNewlyFail(aiut_prev_count_)) { \
             printf("[AIUT ASSERT FAIL][%s][%s:%d] ASSERT_NE(" #val1 ", " #val2 ") | " fmt "\n", \
                 AIUT::GetTestName(), AIUT::GetFileName(__FILE__), __LINE__, ##__VA_ARGS__); \
         } \
@@ -170,10 +166,9 @@ inline const char* GetTestName()
 // ---- ASSERT_TRUE with INFO log on failure ----
 #define AIUT_ASSERT_TRUE_INFO_LOG(expr, fmt, ...) \
     do { \
-        int aiut_prev_count_ = ::testing::UnitTest::GetInstance() \
-            ->current_test_info()->result()->total_part_count(); \
+        int aiut_prev_count_ = AIUT::AiutGetFailureCount(); \
         ASSERT_TRUE(expr); \
-        if (AIUT_DID_NEWLY_FAIL_(aiut_prev_count_)) { \
+        if (AIUT::AiutDidNewlyFail(aiut_prev_count_)) { \
             printf("[AIUT ASSERT FAIL][%s][%s:%d] ASSERT_TRUE(" #expr ") | " fmt "\n", \
                 AIUT::GetTestName(), AIUT::GetFileName(__FILE__), __LINE__, ##__VA_ARGS__); \
         } \

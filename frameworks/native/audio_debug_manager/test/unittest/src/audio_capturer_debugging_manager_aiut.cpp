@@ -30,6 +30,8 @@ namespace {
 constexpr int32_t TEST_APP_UID = 1234;
 constexpr size_t TEST_BUF_SIZE = 8192;
 constexpr uint32_t TEST_SESSION_ID = 200;
+constexpr uint32_t TEST_CAPTURER_SAMPLING_RATE = 16000;
+constexpr size_t TEST_CAPTURER_BUFFER_SIZE = 4096;
 }
 
 class TestCapturerDebugCallback : public AudioCapturerDebugCallback {
@@ -47,14 +49,14 @@ AudioCapturerDebugInfo CreateTestCapturerDebugInfo()
 {
     AudioCapturerDebugInfo info;
     info.sessionId = TEST_SESSION_ID + 1;
-    info.samplingRate = 16000;
+    info.samplingRate = TEST_CAPTURER_SAMPLING_RATE;
     info.channels = AudioChannel::CHANNEL_1;
     info.format = AudioSampleFormat::SAMPLE_S16LE;
     info.encoding = AudioEncodingType::ENCODING_PCM;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     info.sourceType = SOURCE_TYPE_MIC;
     info.capturerFlag = AUDIO_FLAG_NORMAL;
-    info.bufferSize = 4096;
+    info.bufferSize = TEST_CAPTURER_BUFFER_SIZE;
     info.overflowCount = 0;
     info.muteWhenInterrupted = false;
     info.pauseWhenInterrupted = false;
@@ -164,7 +166,8 @@ HWTEST_F(AudioCapturerDebuggingManagerAiut, AudioDebugManager_PrintCapturer_Inva
 /**
 * @tc.name  : Test PrintAudioCapturerDebugInfo API with pipe fd
 * @tc.number: AudioDebugManager_PrintCapturer_WithPipe
-* @tc.desc  : Test PrintAudioCapturerDebugInfo interface. Returns SUCCESS and output contains capturer debug info fields.
+* @tc.desc  : Test PrintAudioCapturerDebugInfo interface.
+*             Returns SUCCESS and output contains capturer debug info fields.
 */
 HWTEST_F(AudioCapturerDebuggingManagerAiut, AudioDebugManager_PrintCapturer_WithPipe, TestSize.Level0)
 {
@@ -220,7 +223,8 @@ HWTEST_F(AudioCapturerDebuggingManagerAiut, AudioDebugManager_PrintCapturer_Nega
 /**
 * @tc.name  : Test PrintAudioCapturerDebugInfo API when callback returns error
 * @tc.number: AudioDebugManager_PrintCapturer_CallbackError
-* @tc.desc  : Test PrintAudioCapturerDebugInfo interface. Returns ERR_ILLEGAL_STATE when callback GetCapturerDebugInfo fails.
+* @tc.desc  : Test PrintAudioCapturerDebugInfo interface.
+*             Returns ERR_ILLEGAL_STATE when callback GetCapturerDebugInfo fails.
 */
 HWTEST_F(AudioCapturerDebuggingManagerAiut, AudioDebugManager_PrintCapturer_CallbackError, TestSize.Level1)
 {
@@ -291,7 +295,8 @@ HWTEST_F(AudioCapturerDebuggingManagerAiut, AudioDebugManager_PrintAllCapturers_
 /**
 * @tc.name  : Test CapturerDebugInfo contains muteWhenInterrupted and pauseWhenInterrupted fields
 * @tc.number: AudioDebugManager_CapturerDebugInfo_MuteWhenInterrupted
-* @tc.desc  : Test PrintAudioCapturerDebugInfo interface. Output contains true values for muteWhenInterrupted and pauseWhenInterrupted.
+* @tc.desc  : Test PrintAudioCapturerDebugInfo interface.
+*             Output contains true values for muteWhenInterrupted and pauseWhenInterrupted.
 */
 HWTEST_F(AudioCapturerDebuggingManagerAiut, AudioDebugManager_CapturerDebugInfo_MuteWhenInterrupted, TestSize.Level1)
 {
@@ -364,7 +369,8 @@ HWTEST_F(AudioCapturerDebuggingManagerAiut, AudioDebugManager_CapturerDebugInfo_
 /**
 * @tc.name  : Test re-registering a capturer after unregister
 * @tc.number: AudioDebugManager_Capturer_ReRegister
-* @tc.desc  : Test RegisterAudioCapturer interface. Successfully re-registers after unregistering, with a new unique key.
+* @tc.desc  : Test RegisterAudioCapturer interface.
+*             Successfully re-registers after unregistering, with a new unique key.
 */
 HWTEST_F(AudioCapturerDebuggingManagerAiut, AudioDebugManager_Capturer_ReRegister, TestSize.Level1)
 {
@@ -390,7 +396,8 @@ HWTEST_F(AudioCapturerDebuggingManagerAiut, AudioDebugManager_Capturer_ReRegiste
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintCapturerInfo API with null manager
 * @tc.number: OH_PrintCapturerInfo_NullManager
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintCapturerInfo interface. Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when manager is null.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintCapturerInfo interface.
+*             Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when manager is null.
 */
 HWTEST_F(AudioCapturerDebuggingManagerAiut, OH_PrintCapturerInfo_NullManager, TestSize.Level0)
 {
@@ -402,7 +409,8 @@ HWTEST_F(AudioCapturerDebuggingManagerAiut, OH_PrintCapturerInfo_NullManager, Te
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintCapturerInfo API with null capturer
 * @tc.number: OH_PrintCapturerInfo_NullCapturer
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintCapturerInfo interface. Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when capturer is null.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintCapturerInfo interface.
+*             Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when capturer is null.
 */
 HWTEST_F(AudioCapturerDebuggingManagerAiut, OH_PrintCapturerInfo_NullCapturer, TestSize.Level0)
 {
@@ -418,7 +426,8 @@ HWTEST_F(AudioCapturerDebuggingManagerAiut, OH_PrintCapturerInfo_NullCapturer, T
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintCapturerInfo API with invalid capturer
 * @tc.number: OH_PrintCapturerInfo_InvalidCapturer
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintCapturerInfo interface. Returns ERROR_ILLEGAL_STATE or ERROR_SYSTEM with invalid capturer pointer.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintCapturerInfo interface.
+*             Returns ERROR_ILLEGAL_STATE or ERROR_SYSTEM with invalid capturer pointer.
 */
 HWTEST_F(AudioCapturerDebuggingManagerAiut, OH_PrintCapturerInfo_InvalidCapturer, TestSize.Level1)
 {
@@ -437,7 +446,8 @@ HWTEST_F(AudioCapturerDebuggingManagerAiut, OH_PrintCapturerInfo_InvalidCapturer
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintCapturerInfo API with both null params
 * @tc.number: OH_PrintCapturerInfo_BothNull
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintCapturerInfo interface. Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when both params are null.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintCapturerInfo interface.
+*             Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when both params are null.
 */
 HWTEST_F(AudioCapturerDebuggingManagerAiut, OH_PrintCapturerInfo_BothNull, TestSize.Level0)
 {
@@ -451,7 +461,8 @@ HWTEST_F(AudioCapturerDebuggingManagerAiut, OH_PrintCapturerInfo_BothNull, TestS
 /**
 * @tc.name  : Test Taihe PrintCapturerInfo API gets key and prints
 * @tc.number: Taihe_PrintCapturerInfo_GetKeyAndPrint
-* @tc.desc  : Test PrintAudioCapturerDebugInfo interface. Returns SUCCESS and output contains audioCapturer info via key lookup.
+* @tc.desc  : Test PrintAudioCapturerDebugInfo interface.
+*             Returns SUCCESS and output contains audioCapturer info via key lookup.
 */
 HWTEST_F(AudioCapturerDebuggingManagerAiut, Taihe_PrintCapturerInfo_GetKeyAndPrint, TestSize.Level0)
 {
@@ -486,7 +497,8 @@ HWTEST_F(AudioCapturerDebuggingManagerAiut, Taihe_PrintCapturerInfo_GetKeyAndPri
 /**
 * @tc.name  : Test NAPI printCapturerInfo API gets key and prints
 * @tc.number: Napi_PrintCapturerInfo_GetKeyAndPrint
-* @tc.desc  : Test PrintAudioCapturerDebugInfo interface. Returns SUCCESS and output contains audioCapturer info via key lookup.
+* @tc.desc  : Test PrintAudioCapturerDebugInfo interface.
+*             Returns SUCCESS and output contains audioCapturer info via key lookup.
 */
 HWTEST_F(AudioCapturerDebuggingManagerAiut, Napi_PrintCapturerInfo_GetKeyAndPrint, TestSize.Level0)
 {

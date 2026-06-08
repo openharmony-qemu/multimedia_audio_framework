@@ -143,7 +143,8 @@ HWTEST_F(AudioLoopbackDebuggingManagerAiut, AudioDebugManager_PrintLoopback_Inva
 /**
 * @tc.name  : Test PrintAudioLoopbackDebugInfo API with pipe fd
 * @tc.number: AudioDebugManager_PrintLoopback_WithPipe
-* @tc.desc  : Test PrintAudioLoopbackDebugInfo interface. Returns SUCCESS and output contains loopback debug info fields.
+* @tc.desc  : Test PrintAudioLoopbackDebugInfo interface.
+*             Returns SUCCESS and output contains loopback debug info fields.
 */
 HWTEST_F(AudioLoopbackDebuggingManagerAiut, AudioDebugManager_PrintLoopback_WithPipe, TestSize.Level0)
 {
@@ -399,7 +400,8 @@ HWTEST_F(AudioLoopbackDebuggingManagerAiut, Taihe_PrintLoopbackInfo_TagValidatio
 /**
 * @tc.name  : Test NAPI printLoopbackInfo API gets key and prints
 * @tc.number: Napi_PrintLoopbackInfo_GetKeyAndPrint
-* @tc.desc  : Test PrintAudioLoopbackDebugInfo interface. Returns SUCCESS and output contains audioLoopback info via key lookup.
+* @tc.desc  : Test PrintAudioLoopbackDebugInfo interface.
+*             Returns SUCCESS and output contains audioLoopback info via key lookup.
 */
 HWTEST_F(AudioLoopbackDebuggingManagerAiut, Napi_PrintLoopbackInfo_GetKeyAndPrint, TestSize.Level0)
 {

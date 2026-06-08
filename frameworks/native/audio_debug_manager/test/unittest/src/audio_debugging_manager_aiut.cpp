@@ -30,6 +30,10 @@ namespace {
 constexpr int32_t TEST_APP_UID = 1234;
 constexpr size_t TEST_BUF_SIZE = 8192;
 constexpr uint32_t TEST_SAMPLING_RATE = 44100;
+constexpr uint32_t TEST_CAPTURER_SAMPLING_RATE = 16000;
+constexpr size_t TEST_CAPTURER_BUFFER_SIZE = 4096;
+constexpr int32_t TEST_PID = 1000;
+constexpr uint32_t TEST_STREAM_DEBUG_ID = 300;
 constexpr float TEST_VOLUME = 0.5f;
 constexpr float TEST_SPEED = 1.5f;
 constexpr float TEST_PITCH = 1.0f;
@@ -113,14 +117,14 @@ AudioCapturerDebugInfo CreateTestCapturerDebugInfo()
 {
     AudioCapturerDebugInfo info;
     info.sessionId = TEST_SESSION_ID + 1;
-    info.samplingRate = 16000;
+    info.samplingRate = TEST_CAPTURER_SAMPLING_RATE;
     info.channels = AudioChannel::CHANNEL_1;
     info.format = AudioSampleFormat::SAMPLE_S16LE;
     info.encoding = AudioEncodingType::ENCODING_PCM;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     info.sourceType = SOURCE_TYPE_MIC;
     info.capturerFlag = AUDIO_FLAG_NORMAL;
-    info.bufferSize = 4096;
+    info.bufferSize = TEST_CAPTURER_BUFFER_SIZE;
     info.overflowCount = 0;
     info.muteWhenInterrupted = false;
     info.pauseWhenInterrupted = false;
@@ -137,11 +141,11 @@ AudioSessionDebugInfo CreateTestSessionDebugInfo()
     info.defaultDeviceType = DEVICE_TYPE_SPEAKER;
     info.state = AudioSessionState::SESSION_ACTIVE;
     info.fakeFocusState = AudioFocuState::ACTIVE;
-    info.pid = 1000;
+    info.pid = TEST_PID;
     info.uid = TEST_APP_UID;
 
     AudioStreamDebugInfo streamInfo;
-    streamInfo.streamId = 300;
+    streamInfo.streamId = TEST_STREAM_DEBUG_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.focusState = AudioFocuState::ACTIVE;
     info.streamInfos.push_back(streamInfo);
@@ -192,7 +196,8 @@ HWTEST_F(AudioDebuggingManagerAiut, AudioDebugManager_GetInstance_Singleton, Tes
     AIUT_INFO_LOG("entry");
     auto &instance1 = AudioDebugManager::GetInstance();
     auto &instance2 = AudioDebugManager::GetInstance();
-    AIUT_EXPECT_EQ_INFO_LOG(&instance1, &instance2, "Singleton instances differ, addr1=%p, addr2=%p", &instance1, &instance2);
+    AIUT_EXPECT_EQ_INFO_LOG(&instance1, &instance2,
+        "Singleton instances differ, addr1=%p, addr2=%p", &instance1, &instance2);
 }
 
 // ==================== PrintAppAudioDebugInfo Tests ====================
@@ -200,7 +205,8 @@ HWTEST_F(AudioDebuggingManagerAiut, AudioDebugManager_GetInstance_Singleton, Tes
 /**
 * @tc.name  : Test PrintAppAudioDebugInfo API with no registered callbacks
 * @tc.number: AudioDebugManager_PrintAppDebugInfo_Empty
-* @tc.desc  : Test PrintAppAudioDebugInfo interface. Returns SUCCESS or ERR_OPERATION_FAILED when no callbacks registered.
+* @tc.desc  : Test PrintAppAudioDebugInfo interface.
+*             Returns SUCCESS or ERR_OPERATION_FAILED when no callbacks registered.
 */
 HWTEST_F(AudioDebuggingManagerAiut, AudioDebugManager_PrintAppDebugInfo_Empty, TestSize.Level0)
 {
@@ -217,7 +223,8 @@ HWTEST_F(AudioDebuggingManagerAiut, AudioDebugManager_PrintAppDebugInfo_Empty, T
 /**
 * @tc.name  : Test PrintAppAudioDebugInfo API with all callback types registered
 * @tc.number: AudioDebugManager_PrintAppDebugInfo_WithAllCallbacks
-* @tc.desc  : Test PrintAppAudioDebugInfo interface. Returns SUCCESS and output contains renderer, capturer, loopback, session info.
+* @tc.desc  : Test PrintAppAudioDebugInfo interface.
+*             Returns SUCCESS and output contains renderer, capturer, loopback, session info.
 */
 HWTEST_F(AudioDebuggingManagerAiut, AudioDebugManager_PrintAppDebugInfo_WithAllCallbacks, TestSize.Level1)
 {
@@ -333,7 +340,8 @@ HWTEST_F(AudioDebuggingManagerAiut, AudioDebugManager_DebugKey_IncrementalAcross
 /**
 * @tc.name  : Test OH_AudioManager_GetAudioDebuggingManager API with null param
 * @tc.number: OH_GetAudioDebuggingManager_NullParam
-* @tc.desc  : Test OH_AudioManager_GetAudioDebuggingManager interface. Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when param is null.
+* @tc.desc  : Test OH_AudioManager_GetAudioDebuggingManager interface.
+*             Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when param is null.
 */
 HWTEST_F(AudioDebuggingManagerAiut, OH_GetAudioDebuggingManager_NullParam, TestSize.Level0)
 {
@@ -345,7 +353,8 @@ HWTEST_F(AudioDebuggingManagerAiut, OH_GetAudioDebuggingManager_NullParam, TestS
 /**
 * @tc.name  : Test OH_AudioManager_GetAudioDebuggingManager API with valid param
 * @tc.number: OH_GetAudioDebuggingManager_Success
-* @tc.desc  : Test OH_AudioManager_GetAudioDebuggingManager interface. Returns AUDIOCOMMON_RESULT_SUCCESS and valid manager pointer.
+* @tc.desc  : Test OH_AudioManager_GetAudioDebuggingManager interface.
+*             Returns AUDIOCOMMON_RESULT_SUCCESS and valid manager pointer.
 */
 HWTEST_F(AudioDebuggingManagerAiut, OH_GetAudioDebuggingManager_Success, TestSize.Level0)
 {
@@ -359,7 +368,8 @@ HWTEST_F(AudioDebuggingManagerAiut, OH_GetAudioDebuggingManager_Success, TestSiz
 /**
 * @tc.name  : Test OH_AudioManager_GetAudioDebuggingManager API returns singleton
 * @tc.number: OH_GetAudioDebuggingManager_Singleton
-* @tc.desc  : Test OH_AudioManager_GetAudioDebuggingManager interface. Returns the same manager instance on multiple calls.
+* @tc.desc  : Test OH_AudioManager_GetAudioDebuggingManager interface.
+*             Returns the same manager instance on multiple calls.
 */
 HWTEST_F(AudioDebuggingManagerAiut, OH_GetAudioDebuggingManager_Singleton, TestSize.Level1)
 {
@@ -378,7 +388,8 @@ HWTEST_F(AudioDebuggingManagerAiut, OH_GetAudioDebuggingManager_Singleton, TestS
 /**
 * @tc.name  : Test OH_AudioManager_GetAudioDebuggingManager API overwrites existing output
 * @tc.number: OH_GetAudioDebuggingManager_OutputOverwrite
-* @tc.desc  : Test OH_AudioManager_GetAudioDebuggingManager interface. Overwrites pre-existing manager pointer value with valid instance.
+* @tc.desc  : Test OH_AudioManager_GetAudioDebuggingManager interface.
+*             Overwrites pre-existing manager pointer value with valid instance.
 */
 HWTEST_F(AudioDebuggingManagerAiut, OH_GetAudioDebuggingManager_OutputOverwrite, TestSize.Level1)
 {
@@ -395,7 +406,8 @@ HWTEST_F(AudioDebuggingManagerAiut, OH_GetAudioDebuggingManager_OutputOverwrite,
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintAppInfo API with null manager
 * @tc.number: OH_PrintAppInfo_NullManager
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintAppInfo interface. Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when manager is null.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintAppInfo interface.
+*             Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when manager is null.
 */
 HWTEST_F(AudioDebuggingManagerAiut, OH_PrintAppInfo_NullManager, TestSize.Level0)
 {
@@ -476,7 +488,8 @@ HWTEST_F(AudioDebuggingManagerAiut, Taihe_CreateDebuggingManagerWrapper_Singleto
 /**
 * @tc.name  : Test Taihe PrintAppInfo API with all callback types registered
 * @tc.number: Taihe_PrintAppInfo_WithAllCallbacks
-* @tc.desc  : Test PrintAppAudioDebugInfo interface. Output contains renderer, capturer, loopback, session info when all callbacks registered.
+* @tc.desc  : Test PrintAppAudioDebugInfo interface.
+*             Output contains renderer, capturer, loopback, session info when all callbacks registered.
 */
 HWTEST_F(AudioDebuggingManagerAiut, Taihe_PrintAppInfo_WithAllCallbacks, TestSize.Level1)
 {

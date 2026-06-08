@@ -25,6 +25,7 @@ audio_session_output_path = "audio_framework/audio_framework_focus"
 _aiut_include_dirs = [
   "./include",
   "../../include",
+  "../../../../../test/unittest/common/include",
   "../../../../../interfaces/inner_api/native/audiocommon/include",
   "../../../../../interfaces/inner_api/native/audio_debug_manager/include",
   "../../../../../interfaces/kits/c/audio_manager",

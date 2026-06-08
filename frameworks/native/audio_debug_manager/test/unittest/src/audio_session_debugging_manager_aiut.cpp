@@ -29,6 +29,8 @@ namespace AudioStandard {
 namespace {
 constexpr int32_t TEST_APP_UID = 1234;
 constexpr size_t TEST_BUF_SIZE = 8192;
+constexpr int32_t TEST_PID = 1000;
+constexpr uint32_t TEST_STREAM_DEBUG_ID = 300;
 }
 
 class TestSessionDebugCallback : public AudioSessionDebugCallback {
@@ -50,11 +52,11 @@ AudioSessionDebugInfo CreateTestSessionDebugInfo()
     info.defaultDeviceType = DEVICE_TYPE_SPEAKER;
     info.state = AudioSessionState::SESSION_ACTIVE;
     info.fakeFocusState = AudioFocuState::ACTIVE;
-    info.pid = 1000;
+    info.pid = TEST_PID;
     info.uid = TEST_APP_UID;
 
     AudioStreamDebugInfo streamInfo;
-    streamInfo.streamId = 300;
+    streamInfo.streamId = TEST_STREAM_DEBUG_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.focusState = AudioFocuState::ACTIVE;
     info.streamInfos.push_back(streamInfo);
@@ -195,7 +197,8 @@ HWTEST_F(AudioSessionDebuggingManagerAiut, AudioDebugManager_PrintSession_Negati
 /**
 * @tc.name  : Test PrintAudioSessionDebugInfo API when callback returns error
 * @tc.number: AudioDebugManager_PrintSession_CallbackError
-* @tc.desc  : Test PrintAudioSessionDebugInfo interface. Returns ERR_ILLEGAL_STATE when callback GetSessionDebugInfo fails.
+* @tc.desc  : Test PrintAudioSessionDebugInfo interface.
+*             Returns ERR_ILLEGAL_STATE when callback GetSessionDebugInfo fails.
 */
 HWTEST_F(AudioSessionDebuggingManagerAiut, AudioDebugManager_PrintSession_CallbackError, TestSize.Level1)
 {
@@ -240,7 +243,8 @@ HWTEST_F(AudioSessionDebuggingManagerAiut, AudioDebugManager_PrintSession_WithSc
 /**
 * @tc.name  : Test PrintAudioSessionDebugInfo API with invalid scene
 * @tc.number: AudioDebugManager_PrintSession_InvalidScene
-* @tc.desc  : Test PrintAudioSessionDebugInfo interface. Returns SUCCESS and output contains audioSession even with INVALID scene.
+* @tc.desc  : Test PrintAudioSessionDebugInfo interface.
+*             Returns SUCCESS and output contains audioSession even with INVALID scene.
 */
 HWTEST_F(AudioSessionDebuggingManagerAiut, AudioDebugManager_PrintSession_InvalidScene, TestSize.Level1)
 {
@@ -304,7 +308,8 @@ HWTEST_F(AudioSessionDebuggingManagerAiut, AudioDebugManager_SessionDebugInfo_Mu
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintSessionInfo API with null manager
 * @tc.number: OH_PrintSessionInfo_NullManager
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintSessionInfo interface. Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when manager is null.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintSessionInfo interface.
+*             Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when manager is null.
 */
 HWTEST_F(AudioSessionDebuggingManagerAiut, OH_PrintSessionInfo_NullManager, TestSize.Level0)
 {
@@ -316,7 +321,8 @@ HWTEST_F(AudioSessionDebuggingManagerAiut, OH_PrintSessionInfo_NullManager, Test
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintSessionInfo API with null session
 * @tc.number: OH_PrintSessionInfo_NullSession
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintSessionInfo interface. Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when session is null.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintSessionInfo interface.
+*             Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when session is null.
 */
 HWTEST_F(AudioSessionDebuggingManagerAiut, OH_PrintSessionInfo_NullSession, TestSize.Level0)
 {
@@ -332,7 +338,8 @@ HWTEST_F(AudioSessionDebuggingManagerAiut, OH_PrintSessionInfo_NullSession, Test
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintSessionInfo API with invalid session
 * @tc.number: OH_PrintSessionInfo_InvalidSession
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintSessionInfo interface. Returns ERROR_INVALID_PARAM or ERROR_SYSTEM with invalid session pointer.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintSessionInfo interface.
+*             Returns ERROR_INVALID_PARAM or ERROR_SYSTEM with invalid session pointer.
 */
 HWTEST_F(AudioSessionDebuggingManagerAiut, OH_PrintSessionInfo_InvalidSession, TestSize.Level1)
 {
@@ -351,7 +358,8 @@ HWTEST_F(AudioSessionDebuggingManagerAiut, OH_PrintSessionInfo_InvalidSession, T
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintSessionInfo API with both null params
 * @tc.number: OH_PrintSessionInfo_BothNull
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintSessionInfo interface. Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when both params are null.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintSessionInfo interface.
+*             Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when both params are null.
 */
 HWTEST_F(AudioSessionDebuggingManagerAiut, OH_PrintSessionInfo_BothNull, TestSize.Level0)
 {
@@ -365,7 +373,8 @@ HWTEST_F(AudioSessionDebuggingManagerAiut, OH_PrintSessionInfo_BothNull, TestSiz
 /**
 * @tc.name  : Test Taihe PrintSessionInfo API delegates to native
 * @tc.number: Taihe_PrintSessionInfo_DelegatesToNative
-* @tc.desc  : Test PrintAudioSessionDebugInfo interface. Returns SUCCESS and output contains audioSession info when delegated from Taihe.
+* @tc.desc  : Test PrintAudioSessionDebugInfo interface.
+*             Returns SUCCESS and output contains audioSession info when delegated from Taihe.
 */
 HWTEST_F(AudioSessionDebuggingManagerAiut, Taihe_PrintSessionInfo_DelegatesToNative, TestSize.Level0)
 {
@@ -396,7 +405,8 @@ HWTEST_F(AudioSessionDebuggingManagerAiut, Taihe_PrintSessionInfo_DelegatesToNat
 /**
 * @tc.name  : Test NAPI printSessionInfo API delegates to native
 * @tc.number: Napi_PrintSessionInfo_DelegatesToNative
-* @tc.desc  : Test PrintAudioSessionDebugInfo interface. Returns SUCCESS and output contains audioSession info when delegated from NAPI.
+* @tc.desc  : Test PrintAudioSessionDebugInfo interface.
+*             Returns SUCCESS and output contains audioSession info when delegated from NAPI.
 */
 HWTEST_F(AudioSessionDebuggingManagerAiut, Napi_PrintSessionInfo_DelegatesToNative, TestSize.Level0)
 {
@@ -425,7 +435,8 @@ HWTEST_F(AudioSessionDebuggingManagerAiut, Napi_PrintSessionInfo_DelegatesToNati
 /**
 * @tc.name  : Test NAPI printSessionInfo API without callback
 * @tc.number: Napi_PrintSessionInfo_NoCallback
-* @tc.desc  : Test PrintAudioSessionDebugInfo interface. Returns SUCCESS or ERR_ILLEGAL_STATE without session callback, does not crash.
+* @tc.desc  : Test PrintAudioSessionDebugInfo interface.
+*             Returns SUCCESS or ERR_ILLEGAL_STATE without session callback, does not crash.
 */
 HWTEST_F(AudioSessionDebuggingManagerAiut, Napi_PrintSessionInfo_NoCallback, TestSize.Level1)
 {

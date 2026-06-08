@@ -220,7 +220,8 @@ HWTEST_F(AudioRendererDebuggingManagerAiut, AudioDebugManager_PrintRenderer_Inva
 /**
 * @tc.name  : Test PrintAudioRendererDebugInfo API with pipe fd
 * @tc.number: AudioDebugManager_PrintRenderer_WithPipe
-* @tc.desc  : Test PrintAudioRendererDebugInfo interface. Returns SUCCESS and output contains renderer debug info fields.
+* @tc.desc  : Test PrintAudioRendererDebugInfo interface.
+*             Returns SUCCESS and output contains renderer debug info fields.
 */
 HWTEST_F(AudioRendererDebuggingManagerAiut, AudioDebugManager_PrintRenderer_WithPipe, TestSize.Level0)
 {
@@ -279,7 +280,8 @@ HWTEST_F(AudioRendererDebuggingManagerAiut, AudioDebugManager_PrintRenderer_Nega
 /**
 * @tc.name  : Test PrintAudioRendererDebugInfo API when callback returns error
 * @tc.number: AudioDebugManager_PrintRenderer_CallbackError
-* @tc.desc  : Test PrintAudioRendererDebugInfo interface. Returns ERR_ILLEGAL_STATE when callback GetRendererDebugInfo fails.
+* @tc.desc  : Test PrintAudioRendererDebugInfo interface.
+*             Returns ERR_ILLEGAL_STATE when callback GetRendererDebugInfo fails.
 */
 HWTEST_F(AudioRendererDebuggingManagerAiut, AudioDebugManager_PrintRenderer_CallbackError, TestSize.Level1)
 {
@@ -496,7 +498,8 @@ HWTEST_F(AudioRendererDebuggingManagerAiut, AudioDebugManager_RendererDebugInfo_
 /**
 * @tc.name  : Test re-registering a renderer after unregister
 * @tc.number: AudioDebugManager_Renderer_ReRegister
-* @tc.desc  : Test RegisterAudioRenderer interface. Successfully re-registers after unregistering, with a new unique key.
+* @tc.desc  : Test RegisterAudioRenderer interface.
+*             Successfully re-registers after unregistering, with a new unique key.
 */
 HWTEST_F(AudioRendererDebuggingManagerAiut, AudioDebugManager_Renderer_ReRegister, TestSize.Level1)
 {
@@ -523,7 +526,8 @@ HWTEST_F(AudioRendererDebuggingManagerAiut, AudioDebugManager_Renderer_ReRegiste
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintRendererInfo API with null manager
 * @tc.number: OH_PrintRendererInfo_NullManager
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintRendererInfo interface. Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when manager is null.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintRendererInfo interface.
+*             Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when manager is null.
 */
 HWTEST_F(AudioRendererDebuggingManagerAiut, OH_PrintRendererInfo_NullManager, TestSize.Level0)
 {
@@ -535,7 +539,8 @@ HWTEST_F(AudioRendererDebuggingManagerAiut, OH_PrintRendererInfo_NullManager, Te
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintRendererInfo API with null renderer
 * @tc.number: OH_PrintRendererInfo_NullRenderer
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintRendererInfo interface. Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when renderer is null.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintRendererInfo interface.
+*             Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when renderer is null.
 */
 HWTEST_F(AudioRendererDebuggingManagerAiut, OH_PrintRendererInfo_NullRenderer, TestSize.Level0)
 {
@@ -551,7 +556,8 @@ HWTEST_F(AudioRendererDebuggingManagerAiut, OH_PrintRendererInfo_NullRenderer, T
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintRendererInfo API with invalid renderer
 * @tc.number: OH_PrintRendererInfo_InvalidRenderer
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintRendererInfo interface. Returns ERROR_ILLEGAL_STATE or ERROR_SYSTEM with invalid renderer pointer.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintRendererInfo interface.
+*             Returns ERROR_ILLEGAL_STATE or ERROR_SYSTEM with invalid renderer pointer.
 */
 HWTEST_F(AudioRendererDebuggingManagerAiut, OH_PrintRendererInfo_InvalidRenderer, TestSize.Level1)
 {
@@ -570,7 +576,8 @@ HWTEST_F(AudioRendererDebuggingManagerAiut, OH_PrintRendererInfo_InvalidRenderer
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintRendererInfo API with both null params
 * @tc.number: OH_PrintRendererInfo_BothNull
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintRendererInfo interface. Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when both params are null.
+* @tc.desc  : Test OH_AudioDebuggingManager_PrintRendererInfo interface.
+*             Returns AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM when both params are null.
 */
 HWTEST_F(AudioRendererDebuggingManagerAiut, OH_PrintRendererInfo_BothNull, TestSize.Level0)
 {
@@ -621,7 +628,8 @@ HWTEST_F(AudioRendererDebuggingManagerAiut, Taihe_PrintRendererInfo_GetKeyAndPri
 /**
 * @tc.name  : Test NAPI printRendererInfo API gets key and prints
 * @tc.number: Napi_PrintRendererInfo_GetKeyAndPrint
-* @tc.desc  : Test PrintAudioRendererDebugInfo interface. Returns SUCCESS and output contains audioRenderer info via key lookup.
+* @tc.desc  : Test PrintAudioRendererDebugInfo interface.
+*             Returns SUCCESS and output contains audioRenderer info via key lookup.
 */
 HWTEST_F(AudioRendererDebuggingManagerAiut, Napi_PrintRendererInfo_GetKeyAndPrint, TestSize.Level0)
 {
