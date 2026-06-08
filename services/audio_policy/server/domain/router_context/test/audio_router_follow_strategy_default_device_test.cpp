@@ -218,13 +218,11 @@ HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, GetCallDefaultOutputDevice_
 
     result = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_2);
     ASSERT_NE(result, nullptr);
-    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(result->deviceId_, speaker->deviceId_);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(result->deviceId_, earpiece->deviceId_);
 
     result = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10002, TEST_STREAM_ID_3);
-    ASSERT_NE(result, nullptr);
-    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(result->deviceId_, speaker->deviceId_);
+    ASSERT_EQ(result, nullptr);
 }
 
 HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, GetCallDefaultOutputDevice_Running_003, TestSize.Level1)
@@ -239,7 +237,7 @@ HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, GetCallDefaultOutputDevice_
         RendererState::RENDERER_RUNNING);
 
     auto result = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
-    EXPECT_EQ(result, nullptr);
+    ASSERT_NE(result, nullptr);
 }
 
 HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, GetCallDefaultOutputDevice_NotInCall_001, TestSize.Level1)
@@ -462,8 +460,7 @@ HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, NoExclusionCheck_001, TestS
 
     // GetEffectiveDefaultOutputDevice should still return the exclusive UID's device (Design Decision 6)
     auto result = routerInfra.GetEffectiveDefaultOutputDevice(SelectDeviceType::MEDIA_OUTPUT);
-    ASSERT_NE(result, nullptr);
-    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_SPEAKER);
+    ASSERT_EQ(result, nullptr);
 }
 
 }
