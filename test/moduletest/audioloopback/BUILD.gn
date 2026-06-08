@@ -14,7 +14,7 @@
 import("//build/test.gni")
 import("../../../config.gni")
 
-module_output_path = "audio_framework/audio_loopback"
+module_output_path = "audio_framework_engine"
 
 group("moduletest") {
   testonly = true
