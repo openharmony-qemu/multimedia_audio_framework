@@ -591,7 +591,8 @@ HWTEST_F(AudioRendererDebuggingManagerAiut, OH_PrintRendererInfo_BothNull, TestS
 /**
 * @tc.name  : Test Taihe PrintRendererInfo API gets key and prints
 * @tc.number: Taihe_PrintRendererInfo_GetKeyAndPrint
-* @tc.desc  : Test PrintAudioRendererDebugInfo interface. Returns SUCCESS and output contains audioRenderer info via key lookup.
+* @tc.desc  : Test PrintAudioRendererDebugInfo interface.
+*             Returns SUCCESS and output contains audioRenderer info via key lookup.
 */
 HWTEST_F(AudioRendererDebuggingManagerAiut, Taihe_PrintRendererInfo_GetKeyAndPrint, TestSize.Level0)
 {

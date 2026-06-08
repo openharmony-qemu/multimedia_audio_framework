@@ -25,10 +25,16 @@ namespace AIUT {
 // Extract filename from full path (handles both '/' and '\\' separators)
 inline const char* GetFileName(const char* file)
 {
-    const char* slash = strrchr(file, '/');
-    const char* bs = strrchr(file, '\\');
-    const char* sep = (slash && bs) ? (slash > bs ? slash : bs) : (slash ? slash : bs);
-    return sep ? sep + 1 : file;
+    if (file == nullptr) {
+        return "";
+    }
+    const char* result = file;
+    for (const char* p = file; *p != '\0'; ++p) {
+        if (*p == '/' || *p == '\\') {
+            result = p + 1;
+        }
+    }
+    return result;
 }
 
 // Get current GTest test case name automatically

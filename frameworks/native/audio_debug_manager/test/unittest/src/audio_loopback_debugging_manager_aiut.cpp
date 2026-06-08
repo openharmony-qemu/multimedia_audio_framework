@@ -328,7 +328,8 @@ HWTEST_F(AudioLoopbackDebuggingManagerAiut, AudioDebugManager_LoopbackDebugInfo_
 /**
 * @tc.name  : Test Taihe PrintLoopbackInfo API gets key and prints
 * @tc.number: Taihe_PrintLoopbackInfo_GetKeyAndPrint
-* @tc.desc  : Test PrintAudioLoopbackDebugInfo interface. Returns SUCCESS and output contains audioLoopback info via key lookup.
+* @tc.desc  : Test PrintAudioLoopbackDebugInfo interface.
+*             Returns SUCCESS and output contains audioLoopback info via key lookup.
 */
 HWTEST_F(AudioLoopbackDebuggingManagerAiut, Taihe_PrintLoopbackInfo_GetKeyAndPrint, TestSize.Level0)
 {
