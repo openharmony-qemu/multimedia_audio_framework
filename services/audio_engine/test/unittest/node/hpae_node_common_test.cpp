@@ -1487,6 +1487,39 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_TransNodeInfoForCollaboration_Ne
     }
 }
 
+/**
+ * @tc.name: GetDeviceType_Bluetooth_001
+ * @tc.type: FUNC
+ * @tc.number: GetDeviceType_Bluetooth_001
+ * @tc.desc: Test GetDeviceType returns DEVICE_TYPE_BLUETOOTH_A2DP for COLLABORATION_BLUETOOTH_OPEN.
+ */
+HWTEST_F(HpaeNodeCommonTest, GetDeviceType_Bluetooth_001, TestSize.Level1)
+{
+    EXPECT_EQ(GetDeviceType(COLLABORATION_BLUETOOTH_OPEN), DEVICE_TYPE_BLUETOOTH_A2DP);
+}
+
+/**
+ * @tc.name: GetDeviceType_NearLink_002
+ * @tc.type: FUNC
+ * @tc.number: GetDeviceType_NearLink_002
+ * @tc.desc: Test GetDeviceType returns DEVICE_TYPE_NEARLINK for COLLABORATION_NEARLINK_OPEN.
+ */
+HWTEST_F(HpaeNodeCommonTest, GetDeviceType_NearLink_002, TestSize.Level1)
+{
+    EXPECT_EQ(GetDeviceType(COLLABORATION_NEARLINK_OPEN), DEVICE_TYPE_NEARLINK);
+}
+
+/**
+ * @tc.name: GetDeviceType_Close_003
+ * @tc.type: FUNC
+ * @tc.number: GetDeviceType_Close_003
+ * @tc.desc: Test GetDeviceType returns DEVICE_TYPE_INVALID for COLLABORATION_CLOSE.
+ */
+HWTEST_F(HpaeNodeCommonTest, GetDeviceType_Close_003, TestSize.Level1)
+{
+    EXPECT_EQ(GetDeviceType(COLLABORATION_CLOSE), DEVICE_TYPE_INVALID);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
