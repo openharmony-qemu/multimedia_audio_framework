@@ -970,16 +970,27 @@ void AudioPipeSelector::HandleEmptyInputPipeReload(std::vector<std::shared_ptr<A
     }
 }
 
+void AudioPipeSelector::LogStreamsInfo(const std::vector<std::pair<uint32_t, uint32_t>> &sessionList)
+{
+    CHECK_AND_RETURN(!sessionList.empty());
+    std::stringstream logstream;
+    for (const auto &sessionPair : sessionList) {
+        logstream << sessionPair.first << ":" << sessionPair.second << ", ";
+    }
+    std::string result = logstream.str();
+    AUDIO_INFO_LOG("    |-[PipeFetchInfo] Id %{public}s", result.c_str());
+}
+
 void AudioPipeSelector::UpdatePipeAndStreamAction(std::shared_ptr<AudioPipeInfo> &newPipeInfo,
     const std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> &streamDescToOldPipeInfo)
 {
     CHECK_AND_RETURN(newPipeInfo != nullptr);
     newPipeInfo->pipeAction_ = (newPipeInfo->pipeAction_ != PIPE_ACTION_NEW &&
         newPipeInfo->pipeAction_ != PIPE_ACTION_RELOAD) ? PIPE_ACTION_UPDATE : newPipeInfo->pipeAction_;
-    AUDIO_INFO_LOG("[PipeFetchInfo] Name %{public}s, PipeAction: %{public}d",
-        newPipeInfo->name_.c_str(), newPipeInfo->pipeAction_);
+    AUDIO_INFO_LOG("[PipeFetchInfo] Id %{public}u, Name %{public}s, PipeAction: %{public}d",
+        newPipeInfo->id_, newPipeInfo->name_.c_str(), newPipeInfo->pipeAction_);
 
-    std::vector<uint64_t> sessionIdForLog {};
+    std::vector<std::pair<uint32_t, uint32_t>> sessionIdForLog {};
     for (auto &streamDesc : newPipeInfo->streamDescriptors_) {
         if (streamDescToOldPipeInfo.find(streamDesc->sessionId_) == streamDescToOldPipeInfo.end()) {
             HILOG_COMM_WARN("[PipeFetchInfo] cannot find %{public}d in OldPipeList!", streamDesc->sessionId_);
@@ -988,23 +999,15 @@ void AudioPipeSelector::UpdatePipeAndStreamAction(std::shared_ptr<AudioPipeInfo>
         streamDesc->SetAction(JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo.at(streamDesc->GetSessionId())));
         streamDesc->SetOldRoute(streamDescToOldPipeInfo.at(streamDesc->GetSessionId())->GetRoute());
         if (streamDescToOldPipeInfo.at(streamDesc->GetSessionId())->GetRoute() == newPipeInfo->GetRoute()) {
-            sessionIdForLog.push_back(streamDesc->GetSessionId());
+            sessionIdForLog.push_back({streamDesc->GetSessionId(), streamDesc->GetStatus()});
             continue;
         }
-        AUDIO_INFO_LOG("    |-[PipeFetchInfo] Id %{public}u, RouteFlag %{public}d -> %{public}d, sAction %{public}d",
-            streamDesc->GetSessionId(), streamDescToOldPipeInfo.at(streamDesc->GetSessionId())->GetRoute(),
+        AUDIO_INFO_LOG("    |-[PipeFetchInfo] Id %{public}u:%{public}u, RouteFlag %{public}d -> %{public}d, "
+            "sAction %{public}d", streamDesc->GetSessionId(), streamDesc->GetStatus(),
+            streamDescToOldPipeInfo.at(streamDesc->GetSessionId())->GetRoute(),
             newPipeInfo->GetRoute(), streamDesc->GetAction());
     }
-    if (!sessionIdForLog.empty()) {
-        std::stringstream logstream;
-        for (auto sessionid : sessionIdForLog) {
-            logstream << sessionid;
-            logstream << ", ";
-        }
-        std::string result = logstream.str();
-        result.pop_back();
-        AUDIO_INFO_LOG("    |-[PipeFetchInfo] Id %{public}s", result.c_str());
-    }
+    LogStreamsInfo(sessionIdForLog);
     if (newPipeInfo->streamDescriptors_.empty()) {
         AUDIO_INFO_LOG("    |-[PipeFetchInfo] Empty");
     }
