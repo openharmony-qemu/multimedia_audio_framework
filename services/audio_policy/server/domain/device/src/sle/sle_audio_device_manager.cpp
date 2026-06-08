@@ -153,11 +153,12 @@ int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &remoteAddr,
     return ret;
 }
 
-bool SleAudioDeviceManager::IsAudioLoopbackSupported(const std::string &remoteAddr)
+bool SleAudioDeviceManager::IsAudioLoopbackSupported(const std::string &remoteAddr) const
 {
-    (void)remoteAddr;
-    // in plan: use callback_ to get result
-    return true;
+    CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, false, "callback is nullptr");
+    bool ret = false;
+    callback_->IsAudioLoopbackSupported(remoteAddr, ret);
+    return ret;
 }
 
 int32_t SleAudioDeviceManager::SendUserSelection(const std::string &device,
@@ -203,8 +204,7 @@ bool SleAudioDeviceManager::IsGameApp(int32_t uid)
 uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, int32_t uid, bool isLoopback)
 {
     if (isLoopback && streamUsage == STREAM_USAGE_MUSIC) {
-        // in plan: change to target type.
-        return SLE_AUDIO_STREAM_GAME;
+        return SLE_AUDIO_STREAM_SING;
     }
     bool isGameApp = IsGameApp(uid);
     if (IsSupportedByGameFastPath(isGameApp, streamUsage)) {

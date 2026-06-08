@@ -646,6 +646,7 @@ AudioLoopbackPrivate::RendererCallbackImpl::RendererCallbackImpl(AudioLoopbackPr
 void AudioLoopbackPrivate::RendererCallbackImpl::OnStateChange(
     const RendererState state, const StateChangeCmdType __attribute__((unused)) cmdType)
 {
+    AUDIO_INFO_LOG("RendererCallback state change to %{public}d", state);
     parent_.rendererState_ = state;
     parent_.UpdateStatus();
 }
@@ -653,12 +654,14 @@ void AudioLoopbackPrivate::RendererCallbackImpl::OnStateChange(
 void AudioLoopbackPrivate::RendererCallbackImpl::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason __attribute__((unused)) reason)
 {
+    AUDIO_INFO_LOG("RendererCallback device change to %{public}d", deviceInfo.deviceType_);
     parent_.isRendererUsb_ = parent_.activeOutputDevice_ == deviceInfo.deviceType_;
     parent_.UpdateStatus();
 }
 
 void AudioLoopbackPrivate::RendererCallbackImpl::OnFastStatusChange(FastStatus status)
 {
+    AUDIO_INFO_LOG("RendererCallback fast status change to %{public}d", status);
     parent_.rendererFastStatus_ = status;
     parent_.UpdateStatus();
     if (status != FASTSTATUS_FAST) {
@@ -672,18 +675,21 @@ AudioLoopbackPrivate::CapturerCallbackImpl::CapturerCallbackImpl(AudioLoopbackPr
 
 void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const CapturerState state)
 {
+    AUDIO_INFO_LOG("CapturerCallback state change to %{public}d", state);
     parent_.capturerState_ = state;
     parent_.UpdateStatus();
 }
 
 void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
 {
+    AUDIO_INFO_LOG("CapturerCallback device change to %{public}d", deviceInfo.deviceType_);
     parent_.isCapturerUsb_ = parent_.activeInputDevice_ == AudioPolicyManager::GetInstance().GetActiveInputDevice();
     parent_.UpdateStatus();
 }
 
 void AudioLoopbackPrivate::CapturerCallbackImpl::OnFastStatusChange(FastStatus status)
 {
+    AUDIO_INFO_LOG("CapturerCallback fast status change to %{public}d", status);
     parent_.capturerFastStatus_ = status;
     parent_.UpdateStatus();
     if (status != FASTSTATUS_FAST) {
@@ -724,7 +730,8 @@ void AudioLoopbackPrivate::UpdateStatus()
     const bool isFastValid = (rendererFastStatus_.load() == FASTSTATUS_FAST) &&
         (capturerFastStatus_.load() == FASTSTATUS_FAST);
     newState = (isDeviceValid && isStateRunning && isFastValid) ? LOOPBACK_STATE_RUNNING : LOOPBACK_STATE_DESTROYED;
-
+    AUDIO_INFO_LOG("isDeviceValid:%{public}s isStateRunning:%{public}s isFastValid:%{public}s",
+        (isDeviceValid ? "true" : "false"), (isStateRunning ? "true" : "false"), (isFastValid ? "true" : "false"));
     if (newState == LOOPBACK_STATE_RUNNING) {
         newState = EnableLoopback() ? LOOPBACK_STATE_RUNNING : LOOPBACK_STATE_DESTROYED;
     }

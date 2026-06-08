@@ -30,4 +30,5 @@ interface IStandardSleAudioOperationCallback {
     void SendUserSelection([in] String device, [in] unsigned int sleStreamType, [in] int eventType, [out] int ret);
     void GetRenderPosition([in] String device, [out] unsigned int delayValue);
     void GetDeviceProductId([in] String remoteAddr, [out] String productId);
+    void IsAudioLoopbackSupported([in] String remoteAddr, [out] boolean ret);
 }

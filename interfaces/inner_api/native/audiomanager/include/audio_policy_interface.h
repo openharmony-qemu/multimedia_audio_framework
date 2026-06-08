@@ -615,6 +615,8 @@ public:
      * @return int32_t
      */
     virtual int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) = 0;
+
+    virtual bool IsAudioLoopbackSupported(const std::string &remoteAddr) const = 0;
 };
 
 struct AudioSpatialEnabledStateForDevice {

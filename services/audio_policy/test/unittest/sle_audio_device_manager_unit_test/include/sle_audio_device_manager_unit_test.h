@@ -112,6 +112,12 @@ public:
         productId = "";
         return SUCCESS;
     }
+
+    int32_t IsAudioLoopbackSupported(const std::string &remoteAddr, bool &ret) override
+    {
+        ret = !remoteAddr.empty();
+        return SUCCESS;
+    }
 };
 
 } // namespace AudioStandard
