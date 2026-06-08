@@ -143,7 +143,7 @@ void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioE
         "deviceType %{public}d needn't create effect", sourceInfo_.deviceType);
     // remote device effect remove
     CHECK_AND_RETURN_LOG(sourceInfo_.deviceNetId != LOCAL_NETWORK_ID,
-        "deviceNetId %{public}d needn't create effect", sourceInfo_.deviceNetId);
+        "deviceNetId %{public}s needn't create effect", sourceInfo_.deviceNetId.c_str());
 
     // todo: algorithm instance count control
     HpaeNodeInfo clusterNodeInfo;
