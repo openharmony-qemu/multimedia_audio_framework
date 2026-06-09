@@ -791,12 +791,20 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
             BluetoothScoManager::GetInstance().UpdateScoState(scoState, device, reason);
             HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
         }
+        if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
+            AudioHfpManager::ClearScoSelected();
+        }
     }
 }
 
 ScoCategory AudioHfpManager::GetScoCategory()
 {
     return JudgeScoCategory();
+}
+
+void AudioHfpManager::ClearScoSelected()
+{
+    isScoSelected_.store(false);
 }
 
 void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)

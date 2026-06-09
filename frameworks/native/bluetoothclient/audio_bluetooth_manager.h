@@ -149,6 +149,7 @@ public:
     static bool IsAudioScoStateConnect();
     static std::string GetAudioScoDeviceMac();
     static ScoCategory GetScoCategory();
+    static void ClearScoSelected();
 
 private:
     static ScoCategory JudgeScoCategory();
