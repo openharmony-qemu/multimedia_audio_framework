@@ -826,9 +826,6 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
 
         if ((srcNode->GetNodeType() == NODE_TYPE_OUTPUT) || (destNode->GetNodeType() == NODE_TYPE_INPUT)) {
             AUDIO_ERR_LOG("DisConnectNodes failed, node type error.");
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODE_DISCONNECT_ILLEGAL,
-                "DisConnectNodes failed, node type error.", true);
             TriggerCallback(DISCONNECT_NODES, ERR_NOT_SUPPORTED);
             return;
         }
@@ -867,7 +864,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
 {
     if (outputNode_ == nullptr) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_DO_NOT_MATCH,
+            static_cast<int32_t>(getuid()), ERR_NODE_INVALID_PARAMETER,
             "DisConnectNodes failed, pipeline running, can not find output node.", true);
         AUDIO_ERR_LOG("DisConnectNodes failed, pipeline running, can not find output node.");
         return ERR_ILLEGAL_STATE;
@@ -879,7 +876,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
 
     if (destNode->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_DO_NOT_MATCH, "destNode not midx node.", true);
+            static_cast<int32_t>(getuid()), EDIT_NODE_DISCONNECT_NOT_SUPPORTED, "destNode not midx node.", true);
         return ERR_NOT_SUPPORTED;
     }
 
@@ -894,7 +891,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
 
     if (reverseConnections_[destNodeId].size() <= 1) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_DO_NOT_MATCH,
+            static_cast<int32_t>(getuid()), EDIT_NODE_DISCONNECT_NOT_SUPPORTED,
             "midx node only one connected", true);
         return ERR_NOT_SUPPORTED;
     }
@@ -1079,7 +1076,7 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
         int32_t ret = node->SetOptions(name, value);
         if (ret != SUCCESS) {
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_DO_NOT_MATCH,
+                static_cast<int32_t>(getuid()), ERR_NODE_INVALID_PARAMETER,
                 "Node type does not match the parameters.", true);
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
             TriggerCallback(SET_OPTIONS, ret);
