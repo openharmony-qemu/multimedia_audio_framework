@@ -781,7 +781,7 @@ int32_t HpaeOffloadRendererManager::InitSinkInner(bool isReload)
     attr.filePath = sinkInfo_.filePath.c_str();
     int32_t ret = sinkOutputNode_->RenderSinkInit(attr);
     sinkOutputNode_->RegisterOffloadCallback(this);
-    isInit_.store(true);
+    isInit_.store(ret == SUCCESS);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
     AUDIO_INFO_LOG("inited");
     return SUCCESS;
