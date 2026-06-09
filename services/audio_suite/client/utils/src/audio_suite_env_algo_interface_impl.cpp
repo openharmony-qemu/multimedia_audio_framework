@@ -129,7 +129,7 @@ int32_t StringToEnvMode(const std::string &modStr, iMedia_Env_PARA &para)
         default:
             AUDIO_ERR_LOG("Unknown EnvMode %{public}d", modeInt);
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                EDIT_ENVNODES_SETIONS_ERROR, "Environment node passed invalid enum value", true);
+                EDIT_NODE_PARAMETERS_INVALID, "Environment node passed invalid enum value", true);
             return ERROR;
     }
     return SUCCESS;
