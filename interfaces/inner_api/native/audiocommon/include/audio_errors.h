@@ -676,7 +676,6 @@ constexpr int32_t INTERRUPT_QUERY_NULL_POINTER = BuildErrorCode(
 constexpr int32_t INTERRUPT_FOCUS_EVENT_OPERATION_FAILED = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::FOCUS_EVENT, ERR_OPERATION_FAILED);
 
-
 // RECORD_INTERRUPT Error Codes (RECORD type for AudioInterrupt recording)
 constexpr int32_t RECORD_INTERRUPT_CALLBACK_INVALID_PARAM = BuildErrorCode(
     ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_INVALID_PARAM);
@@ -788,114 +787,6 @@ constexpr int32_t ERR_VOLUME_CALLBACK_REGISTER_FAILED = BuildErrorCode(ProblemCa
     OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_REGISTER_FAILED);
 constexpr int32_t ERR_VOLUME_CALLBACK_UNREGISTER_FAILED = BuildErrorCode(ProblemCategory::FAULT_VOLUME_ABNORMAL,
     OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_UNREGISTER_FAILED);
-
-// SESSION Error Codes (PLAY type for AudioSession)
-constexpr int32_t SESSION_CALLBACK_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_INVALID_PARAM);
-constexpr int32_t SESSION_CALLBACK_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_NULL_POINTER);
-constexpr int32_t SESSION_CALLBACK_REGISTER_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_REGISTER_FAILED);
-constexpr int32_t SESSION_CALLBACK_UNREGISTER_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_UNREGISTER_FAILED);
-constexpr int32_t SESSION_START_ILLEGAL_STATE = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_ILLEGAL_STATE);
-constexpr int32_t SESSION_START_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_OPERATION_FAILED);
-constexpr int32_t SESSION_START_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_INVALID_PARAM);
-constexpr int32_t SESSION_START_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_NULL_POINTER);
-constexpr int32_t SESSION_STOP_ILLEGAL_STATE = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_ILLEGAL_STATE);
-constexpr int32_t SESSION_STOP_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_OPERATION_FAILED);
-constexpr int32_t SESSION_STOP_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_INVALID_PARAM);
-constexpr int32_t SESSION_STOP_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_NULL_POINTER);
-constexpr int32_t SESSION_CONFIG_ILLEGAL_STATE = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFIG, ERR_ILLEGAL_STATE);
-constexpr int32_t SESSION_CONFIG_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFIG, ERR_OPERATION_FAILED);
-constexpr int32_t SESSION_CONFIG_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
-constexpr int32_t SESSION_CONFIG_NOT_SUPPORTED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFIG, ERR_NOT_SUPPORTED);
-constexpr int32_t SESSION_CONFIG_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFIG, ERR_NULL_POINTER);
-constexpr int32_t SESSION_QUERY_ILLEGAL_STATE = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_ILLEGAL_STATE);
-constexpr int32_t SESSION_QUERY_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
-constexpr int32_t SESSION_QUERY_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_NULL_POINTER);
-constexpr int32_t SESSION_FOCUS_EVENT_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::FOCUS_EVENT, ERR_OPERATION_FAILED);
-constexpr int32_t SESSION_FOCUS_EVENT_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::FOCUS_EVENT, ERR_NULL_POINTER);
- 
-// INTERRUPT Error Codes (PLAY type for AudioInterrupt playback)
-constexpr int32_t INTERRUPT_CALLBACK_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_INVALID_PARAM);
-constexpr int32_t INTERRUPT_CALLBACK_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_NULL_POINTER);
-constexpr int32_t INTERRUPT_CALLBACK_UNREGISTER_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CALLBACK, ERR_CALLBACK_UNREGISTER_FAILED);
-constexpr int32_t INTERRUPT_START_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_OPERATION_FAILED);
-constexpr int32_t INTERRUPT_START_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_INVALID_PARAM);
-constexpr int32_t INTERRUPT_START_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_NULL_POINTER);
-constexpr int32_t INTERRUPT_START_FOCUS_DENIED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::START, ERR_FOCUS_DENIED);
-constexpr int32_t INTERRUPT_STOP_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_NULL_POINTER);
-constexpr int32_t INTERRUPT_STOP_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::STOP, ERR_INVALID_PARAM);
-constexpr int32_t INTERRUPT_CONFIG_ILLEGAL_STATE = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFIG, ERR_ILLEGAL_STATE);
-constexpr int32_t INTERRUPT_CONFIG_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFIG, ERR_OPERATION_FAILED);
-constexpr int32_t INTERRUPT_CONFIG_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
-constexpr int32_t INTERRUPT_QUERY_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::QUERY, ERR_NULL_POINTER);
-constexpr int32_t INTERRUPT_FOCUS_EVENT_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::PLAY, BusinessScenario::FOCUS_EVENT, ERR_OPERATION_FAILED);
- 
-// RECORD_INTERRUPT Error Codes (RECORD type for AudioInterrupt recording)
-constexpr int32_t RECORD_INTERRUPT_CALLBACK_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_INVALID_PARAM);
-constexpr int32_t RECORD_INTERRUPT_CALLBACK_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CALLBACK, ERR_NULL_POINTER);
-constexpr int32_t RECORD_INTERRUPT_START_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::START, ERR_OPERATION_FAILED);
-constexpr int32_t RECORD_INTERRUPT_START_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::START, ERR_INVALID_PARAM);
-constexpr int32_t RECORD_INTERRUPT_START_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::START, ERR_NULL_POINTER);
-constexpr int32_t RECORD_INTERRUPT_START_FOCUS_DENIED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::START, ERR_FOCUS_DENIED);
-constexpr int32_t RECORD_INTERRUPT_STOP_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::STOP, ERR_OPERATION_FAILED);
-constexpr int32_t RECORD_INTERRUPT_STOP_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::STOP, ERR_NULL_POINTER);
-constexpr int32_t RECORD_INTERRUPT_STOP_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::STOP, ERR_INVALID_PARAM);
-constexpr int32_t RECORD_INTERRUPT_CONFIG_ILLEGAL_STATE = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CONFIG, ERR_ILLEGAL_STATE);
-constexpr int32_t RECORD_INTERRUPT_CONFIG_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CONFIG, ERR_OPERATION_FAILED);
-constexpr int32_t RECORD_INTERRUPT_CONFIG_INVALID_PARAM = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
-constexpr int32_t RECORD_INTERRUPT_CONFIG_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::CONFIG, ERR_NULL_POINTER);
-constexpr int32_t RECORD_INTERRUPT_QUERY_OPERATION_FAILED = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::QUERY, ERR_OPERATION_FAILED);
-constexpr int32_t RECORD_INTERRUPT_QUERY_NULL_POINTER = BuildErrorCode(
-    ProblemCategory::FAULT_AUTO_STOP, OperationType::RECORD, BusinessScenario::QUERY, ERR_NULL_POINTER);
 	
 // AVSESSION_CONTROL Error Codes
 constexpr int32_t AVSESSION_CONTROL_NO_MEMORY_LOCAL_SET = BuildErrorCode(ProblemCategory::FAULT_SESSION_LOCAL_SET,
