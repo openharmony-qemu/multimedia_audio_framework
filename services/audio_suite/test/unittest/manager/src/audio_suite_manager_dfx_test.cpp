@@ -45,11 +45,6 @@ static constexpr uint32_t TEST_EQUALIZER_NODE_ID = 2;
 static constexpr uint32_t TEST_TEMPOPITCH_NODE_ID = 2;
 static constexpr uint32_t TEST_AUDIOMIXER_NODE_ID = 4;
 static constexpr uint32_t TEST_PIPELINE_ID = 100;
-// Additional test node IDs for disconnect tests
-static constexpr uint32_t TEST_SRC_NODE_ID_1 = 1;
-static constexpr uint32_t TEST_DEST_NODE_ID_1 = 2;
-static constexpr uint32_t TEST_SRC_NODE_ID_2 = 4;
-static constexpr uint32_t TEST_DEST_NODE_ID_2 = 5;
 // Invalid node ID for testing non-existent nodes
 static constexpr uint32_t TEST_INVALID_NODE_ID = 999;
 
@@ -718,26 +713,40 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetSpaceRenderPositionParamsInvalidPar
 
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesForRunNodeTypeErrorTest, TestSize.Level0)
 {
-    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
-    audioSuitePipeline.Init();
-    EXPECT_EQ(audioSuitePipeline.IsInit(), true);
+    AudioSuiteManager manager;
+    manager.Init();
 
-    uint32_t srcNodeId = TEST_SRC_NODE_ID_1;
-    uint32_t destNodeId = TEST_DEST_NODE_ID_1;
-    std::shared_ptr<AudioNode> srcNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
-    std::shared_ptr<AudioNode> destNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
-    AudioFormat audioFormat;
-    audioSuitePipeline.outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
-    audioSuitePipeline.outputNode_->audioNodeInfo_.nodeId = TEST_OUTPUT_NODE_ID;
-    int32_t result = audioSuitePipeline.DisConnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode);
+    uint32_t pipelineId = INVALID_PIPELINE_ID;
+    manager.CreatePipeline(pipelineId, PIPELINE_EDIT_MODE);
+
+    uint32_t inputNodeId = INVALID_NODE_ID;
+    uint32_t mixerNodeId = INVALID_NODE_ID;
+    uint32_t outputNodeId = INVALID_NODE_ID;
+
+    AudioNodeBuilder inputBuilder;
+    inputBuilder.nodeType = NODE_TYPE_INPUT;
+    manager.CreateNode(pipelineId, inputBuilder, inputNodeId);
+
+    AudioNodeBuilder mixerBuilder;
+    mixerBuilder.nodeType = NODE_TYPE_AUDIO_MIXER;
+    manager.CreateNode(pipelineId, mixerBuilder, mixerNodeId);
+
+    AudioNodeBuilder outputBuilder;
+    outputBuilder.nodeType = NODE_TYPE_OUTPUT;
+    manager.CreateNode(pipelineId, outputBuilder, outputNodeId);
+
+    manager.ConnectNodes(inputNodeId, mixerNodeId);
+    manager.ConnectNodes(mixerNodeId, outputNodeId);
+
+    // Test 1: Try to disconnect OUTPUT node as source (should fail)
+    int32_t result = manager.DisConnectNodes(outputNodeId, mixerNodeId);
     EXPECT_EQ(result, ERR_NOT_SUPPORTED);
 
-    srcNodeId = TEST_SRC_NODE_ID_2;
-    destNodeId = TEST_DEST_NODE_ID_2;
-    srcNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
-    destNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    result = audioSuitePipeline.DisConnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode);
+    // Test 2: Try to disconnect INPUT node as destination (should fail)
+    result = manager.DisConnectNodes(mixerNodeId, inputNodeId);
     EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+
+    manager.DeInit();
 }
 
 // Test SetOptions when node does not exist, expect ERR_INVALID_PARAM error report.
