@@ -172,6 +172,8 @@ public:
 
     bool HasStream();
 
+    bool HasRunningStream();
+
     bool IsPipeMatch(const std::string adapterName, const uint32_t targetFlag);
 
 private:
