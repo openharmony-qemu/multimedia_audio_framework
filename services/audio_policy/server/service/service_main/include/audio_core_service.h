@@ -148,6 +148,7 @@ public:
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
         void OnCheckActiveMusicTime(const std::string &reason) override;
         int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) override;
+        void OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable) override;
         void ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason);
         void UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled, const std::string &reason);
         void UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled, const std::string &reason);
@@ -391,6 +392,7 @@ public:
     void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
         const std::string &caller = "");
     void OnConnectFailed(AudioDeviceDescriptor &desc);
+    void OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable);
 
     // Functions related to assignment operations - device related
     int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);

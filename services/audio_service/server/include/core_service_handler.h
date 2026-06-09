@@ -23,6 +23,7 @@
 
 #include "icore_service_provider_ipc.h"
 #include "audio_service_enum.h"
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -62,6 +63,7 @@ public:
     int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId);
     int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId);
     bool IsSupportIndependentPipe();
+    void NotifyDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable);
 private:
     CoreServiceHandler();
     sptr<ICoreServiceProviderIpc> iCoreServiceProvider_ = nullptr;

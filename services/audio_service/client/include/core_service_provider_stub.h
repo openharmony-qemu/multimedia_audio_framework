@@ -54,6 +54,7 @@ public:
     int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId, int32_t &ret) override;
     int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId, int32_t &ret) override;
     int32_t IsSupportIndependentPipe(bool &support) override;
+    int32_t NotifyDeviceStateChange(const std::string &networkId, int32_t role, bool isAvailable) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };

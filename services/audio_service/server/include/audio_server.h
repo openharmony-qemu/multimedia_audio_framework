@@ -100,7 +100,8 @@ private:
 };
 class AudioServer : public SystemAbility, public StandardAudioServiceStub,
     public IAudioSinkCallback, IAudioSourceCallback,
-    public IAudioServerInnerCall, public DataTransferStateChangeCallbackForMonitor {
+    public IAudioServerInnerCall, public DataTransferStateChangeCallbackForMonitor,
+    public IDeviceManagerCallback {
     DECLARE_SYSTEM_ABILITY(AudioServer);
 public:
     DISALLOW_COPY_AND_MOVE(AudioServer);
@@ -317,6 +318,7 @@ public:
     int32_t UnRegistAdapterManagerCallback(const std::string& networkId) override;
     void OnAdapterParamChange(std::string networkId, const AudioParamKey key,
         std::string condition, std::string value) override;
+    void OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable) override;
     int32_t GetRemoteAudioParameter(const std::string& networkId, int32_t key,
         const std::string& condition, std::string& value) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
@@ -384,7 +386,22 @@ private:
         std::shared_ptr<AudioInputPipeInfo> changedPipeInfo_;
     };
 
+    class DeviceStateChangeCallbackAction : public AsyncActionHandler::AsyncAction {
+    public:
+        explicit DeviceStateChangeCallbackAction(const std::string &networkId, DeviceRole role, bool isAvailable)
+            : networkId_(networkId), role_(role), isAvailable_(isAvailable)
+        {}
+
+        void Exec() override;
+
+    private:
+        std::string networkId_;
+        DeviceRole role_;
+        bool isAvailable_;
+    };
+
 private:
+    void InitHdiEventCallback();
 #ifdef HAS_FEATURE_INNERCAPTURER
     bool HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
         const AudioPlaybackCaptureConfig &filterConfig);
@@ -511,7 +528,7 @@ private:
     void RegisterResSchedSys();
     void HapReportWakeupEvent(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs);
-    int32_t TrySetAudioEffectParameterToRemote(const std::vector<std::pair<std::string, std::string>> &newPair);
+    int32_t TrySetAudioEffectParameterToRemote(std::vector<std::pair<std::string, std::string>> &newPair);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;

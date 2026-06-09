@@ -349,6 +349,12 @@ void RemoteDeviceManager::UnRegistAdapterManagerCallback(const std::string &adap
     adapterParamCallbacks_.erase(adapterName);
 }
 
+void RemoteDeviceManager::RegistHdiEventCallback(std::shared_ptr<IDeviceManagerCallback> callback)
+{
+    AUDIO_INFO_LOG("RegistHdiEventCallback");
+    hdiEventCallback_ = callback;
+}
+
 void RemoteDeviceManager::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
 {
     AUDIO_INFO_LOG("in");
@@ -645,6 +651,8 @@ int32_t RemoteDeviceManager::HandleStateChangeEvent(const std::string &adapterNa
         ret = HandleRenderParamEvent(adapterName, key, condition, value);
     } else if (contentDesStr[devTypeValPos] == DAUDIO_DEV_TYPE_MIC) {
         AUDIO_INFO_LOG("ERR_EVENT is DAUDIO_DEV_TYPE_MIC");
+        ret = HandleDeviceStateChangeEvent(adapterName, key, value, INPUT_DEVICE);
+        CHECK_AND_RETURN_RET(ret != SUCCESS, ret);
         ret = HandleCaptureParamEvent(adapterName, key, condition, value);
     } else {
         AUDIO_ERR_LOG("not support device type, contentDes: %{public}s", contentDesStr.c_str());
@@ -798,6 +806,21 @@ void RemoteDeviceManager::SetDmDeviceType(uint16_t dmDeviceType, DeviceType devi
 void RemoteDeviceManager::SetAudioScene(const AudioScene scene)
 {
     AUDIO_INFO_LOG("not support");
+}
+
+int32_t RemoteDeviceManager::HandleDeviceStateChangeEvent(const std::string &adapterName, const AudioParamKey key,
+    const char *value, DeviceRole role)
+{
+    std::string valueStr = (value != nullptr) ? std::string(value) : "";
+    CHECK_AND_RETURN_RET(key == AudioParamKey::PARAM_KEY_STATE && valueStr == REMOTE_DEVICE_ERR_VALUE,
+        ERR_INVALID_PARAM);
+
+    AUDIO_INFO_LOG("device state change reported, adapterName: %{public}s, value: %{public}s",
+        GetEncryptStr(adapterName).c_str(), valueStr.c_str());
+
+    CHECK_AND_RETURN_RET_LOG(hdiEventCallback_ != nullptr, SUCCESS, "hdiEventCallback_ is nullptr");
+    hdiEventCallback_->OnDeviceStateChange(adapterName, role, false);
+    return SUCCESS;
 }
 
 int32_t RemoteDeviceManager::HandleAdapterParamChangeEvent(const std::string &adapterName, const AudioParamKey key,

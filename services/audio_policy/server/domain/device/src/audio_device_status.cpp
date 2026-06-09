@@ -1522,6 +1522,22 @@ void AudioDeviceStatus::ClearActiveHfpDevice(AudioDeviceDescriptor &desc,
 }
 #endif
 
+void AudioDeviceStatus::HandleDeviceStateChange(std::shared_ptr<AudioDeviceDescriptor> desc, bool isAvailable)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr && desc->networkId_ != LOCAL_NETWORK_ID, "not valid remote desc");
+    AUDIO_INFO_LOG("networkId: %{public}s, deviceRole: %{public}d, isAvailable: %{public}d",
+        GetEncryptStr(desc->networkId_).c_str(), desc->deviceRole_, isAvailable);
+
+    desc->exceptionFlag_ = !isAvailable;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    audioDeviceManager_.UpdateDevicesListInfo(
+        std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE, reason);
+    reason = isAvailable ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE
+        : AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("HandleDeviceStateChange", reason);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("HandleDeviceStateChange", reason);
+}
+
 void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
 {

@@ -846,6 +846,13 @@ int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bo
     return ret;
 }
 
+void AudioCoreService::EventEntry::OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->OnDeviceStateChange(networkId, role, isAvailable);
+}
+
 void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled,
     const std::string &reason)
 {

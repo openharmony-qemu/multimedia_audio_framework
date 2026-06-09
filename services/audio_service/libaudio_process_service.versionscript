@@ -94,6 +94,7 @@
     *SetAncoRecordingConfigChanged*;
     *OnMetaData*;
     *IsValidNetworkIdForSendEffectParam*;
+    *NotifyDeviceStateChange*;
   local:
     *;
 };

@@ -227,5 +227,11 @@ bool CoreServiceHandler::IsSupportIndependentPipe()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "IsSupportIndependentPipe failed, ret:%{public}d", ret);
     return support;
 }
+
+void CoreServiceHandler::NotifyDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable)
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr");
+    iCoreServiceProvider_->NotifyDeviceStateChange(networkId, static_cast<int32_t>(role), isAvailable);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -194,5 +194,13 @@ int32_t CoreServiceProviderWrapper::IsSupportIndependentPipe(bool &support)
     support = coreServiceWorker_->IsSupportIndependentPipe();
     return SUCCESS;
 }
+
+int32_t CoreServiceProviderWrapper::NotifyDeviceStateChange(const std::string &networkId, int32_t role,
+    bool isAvailable)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    coreServiceWorker_->OnDeviceStateChange(networkId, static_cast<DeviceRole>(role), isAvailable);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -111,6 +111,7 @@ public:
     void UnRegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId) override;
     void UnRegistAdapterManagerCallback(const std::string &adapterName) override;
     void RegistCallback(uint32_t type, IAudioSinkCallback *callback) override;
+    void RegistHdiEventCallback(std::shared_ptr<IDeviceManagerCallback> callback) override;
 
     void *CreateRender(const std::string &adapterName, void *param, void *deviceDesc, uint32_t &hdiRenderId) override;
     void DestroyRender(const std::string &adapterName, uint32_t hdiRenderId) override;
@@ -143,6 +144,8 @@ private:
     void DestroyAllChannels(const std::string &adapterName);
     int32_t HandleAdapterParamChangeEvent(const std::string &adapterName, const AudioParamKey key,
         const char *condition, const char *value);
+    int32_t HandleDeviceStateChangeEvent(const std::string &adapterName, const AudioParamKey key, const char *value,
+        DeviceRole role);
     void CacheAudioParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value);
     void ResendCachedAudioParameter(const std::string &adapterName);
@@ -157,6 +160,7 @@ private:
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
     static constexpr char ROUTE_ENABLE = '1';
     static constexpr char ROUTE_DISABLE = '0';
+    static constexpr std::string_view REMOTE_DEVICE_ERR_VALUE = "0";
 
     sptr<RemoteIAudioManager> audioManager_ = nullptr;
     std::mutex managerMtx_;
@@ -165,6 +169,7 @@ private:
     std::unordered_set<std::string> adaptersLoaded_;
     std::unordered_map<std::string, IAudioAdapterCallback*> adapterParamCallbacks_;
     std::mutex adapterParamCallbackMtx_;
+    std::shared_ptr<IDeviceManagerCallback> hdiEventCallback_;
     SinkCallbackWrapper callback_ = {};
     std::unordered_map<std::string, RemoteParameter> audioParamCache_;
     std::mutex audioParamCacheMtx_;
