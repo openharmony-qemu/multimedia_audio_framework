@@ -912,7 +912,7 @@ constexpr int32_t ERR_NODE_PARAM_SET_NODE_NOT_FOUND = BuildErrorCode(
 constexpr int32_t ERR_RENDER_PIPELINE_NOT_FOUND = BuildErrorCode(
     ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RENDER,
     ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
-constexpr int32_t ERR_NODE_INVALID_PARAMETER = BuildErrorCode(
+constexpr int32_t ERR_PIPELINE_STATE_INVALID = BuildErrorCode(
     ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_ILLEGAL_STATE);
 constexpr int32_t EDIT_NODE_PARAMETERS_INVALID = BuildErrorCode(
     ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
