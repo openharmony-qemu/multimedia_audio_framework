@@ -897,7 +897,7 @@ constexpr int32_t AVSESSION_CONTROL_DESKTOPLYRIC_NOT_ENABLE_LOCAL_GET = BuildErr
     BusinessScenario::CONTROL, ERR_DESKTOPLYRIC_NOT_ENABLE);
 
 // FAULT_WRONG_AUDIO_EFFECT
-constexpr int32_t EDIT_REDESTROY_PIPELINE_FAILED = BuildErrorCode(
+constexpr int32_t ERR_DESTROY_PIPELINE_NOT_FOUND = BuildErrorCode(
     ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RELEASE,
     ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
 constexpr int32_t EDIT_CONNECT_NODES_INVAILD = BuildErrorCode(
@@ -906,19 +906,17 @@ constexpr int32_t EDIT_CONNECT_NODES_INVAILD = BuildErrorCode(
 constexpr int32_t EDIT_CONNECT_NODES_NOT_EXIST = BuildErrorCode(
     ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
     ERR_AUDIO_SUITE_NODE_NOT_EXIST);
-constexpr int32_t EDIT_SRPP_SETIONS_ERROR = BuildErrorCode(
-    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
-constexpr int32_t EDIT_NODES_SETIONS_ERROR = BuildErrorCode(
+constexpr int32_t ERR_NODE_PARAM_SET_NODE_NOT_FOUND = BuildErrorCode(
     ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
     ERR_AUDIO_SUITE_NODE_NOT_EXIST);
-constexpr int32_t EDIT_RENDER_FRAME_ERROR = BuildErrorCode(
+constexpr int32_t ERR_RENDER_PIPELINE_NOT_FOUND = BuildErrorCode(
     ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RENDER,
     ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
-constexpr int32_t EDIT_NODE_PARAMETERS_DO_NOT_MATCH = BuildErrorCode(
+constexpr int32_t ERR_NODE_INVALID_PARAMETER = BuildErrorCode(
     ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_ILLEGAL_STATE);
 constexpr int32_t EDIT_NODE_PARAMETERS_INVALID = BuildErrorCode(
     ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
-constexpr int32_t EDIT_NODE_DISCONNECT_ILLEGAL = BuildErrorCode(
+constexpr int32_t EDIT_NODE_DISCONNECT_NOT_SUPPORTED = BuildErrorCode(
     ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_NOT_SUPPORTED);
 }  // namespace AudioStandard
 }  // namespace OHOS
