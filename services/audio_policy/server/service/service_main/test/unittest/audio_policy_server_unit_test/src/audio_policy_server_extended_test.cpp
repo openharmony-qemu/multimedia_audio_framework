@@ -489,11 +489,11 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_GetLoopbackPreferredDevice
 }
 
 /**
- * @tc.name  : GetHighestPriorityVolumeTypeForDevice_HigherPriorityStream
- * @tc.number: GetHighestPriorityVolumeTypeForDevice_001
- * @tc.desc  : Test if branch true when priority < highestPriority with voice communication stream
+ * @tc.name  : GetActiveStreamRendererInfosForDevice_HigherPriorityStream
+ * @tc.number: GetActiveStreamRendererInfosForDevice_001
+ * @tc.desc  : Test GetActiveStreamRendererInfosForDevice with voice communication stream on matching device
  */
-HWTEST_F(AudioPolicyServerUnitTest, GetHighestPriorityVolumeTypeForDevice_HigherPriorityStream, TestSize.Level1)
+HWTEST_F(AudioPolicyServerUnitTest, GetActiveStreamRendererInfosForDevice_HigherPriorityStream, TestSize.Level1)
 {
     audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
     audioPolicyServer_->coreService_->Init();
@@ -518,20 +518,21 @@ HWTEST_F(AudioPolicyServerUnitTest, GetHighestPriorityVolumeTypeForDevice_Higher
 
     audioPolicyServer_->coreService_->pipeManager_->curPipeList_.push_back(pipeInfo);
 
-    AudioVolumeType volumeType = STREAM_DEFAULT;
-    auto ret = audioPolicyServer_->coreService_->GetHighestPriorityVolumeTypeForDevice(deviceDesc, volumeType);
+    std::vector<AudioRendererInfo> rendererInfos;
+    auto ret = audioPolicyServer_->coreService_->GetActiveStreamRendererInfosForDevice(deviceDesc, rendererInfos);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(volumeType, STREAM_VOICE_CALL);
+    EXPECT_EQ(rendererInfos.size(), 1);
+    EXPECT_EQ(rendererInfos[0].streamUsage, STREAM_USAGE_VOICE_COMMUNICATION);
 
     audioPolicyServer_->coreService_->pipeManager_->curPipeList_.pop_back();
 }
 
 /**
- * @tc.name  : GetHighestPriorityVolumeTypeForDevice_LowerPriorityStream
- * @tc.number: GetHighestPriorityVolumeTypeForDevice_002
- * @tc.desc  : Test if branch false when priority >= highestPriority with notification stream
+ * @tc.name  : GetActiveStreamRendererInfosForDevice_LowerPriorityStream
+ * @tc.number: GetActiveStreamRendererInfosForDevice_002
+ * @tc.desc  : Test GetActiveStreamRendererInfosForDevice with notification stream on matching device
  */
-HWTEST_F(AudioPolicyServerUnitTest, GetHighestPriorityVolumeTypeForDevice_LowerPriorityStream, TestSize.Level1)
+HWTEST_F(AudioPolicyServerUnitTest, GetActiveStreamRendererInfosForDevice_LowerPriorityStream, TestSize.Level1)
 {
     audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
     audioPolicyServer_->coreService_->Init();
@@ -556,40 +557,66 @@ HWTEST_F(AudioPolicyServerUnitTest, GetHighestPriorityVolumeTypeForDevice_LowerP
 
     audioPolicyServer_->coreService_->pipeManager_->curPipeList_.push_back(pipeInfo);
 
-    AudioVolumeType volumeType = STREAM_DEFAULT;
-    auto ret = audioPolicyServer_->coreService_->GetHighestPriorityVolumeTypeForDevice(deviceDesc, volumeType);
+    std::vector<AudioRendererInfo> rendererInfos;
+    auto ret = audioPolicyServer_->coreService_->GetActiveStreamRendererInfosForDevice(deviceDesc, rendererInfos);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(volumeType, STREAM_MUSIC);
+    EXPECT_EQ(rendererInfos.size(), 1);
+    EXPECT_EQ(rendererInfos[0].streamUsage, STREAM_USAGE_NOTIFICATION);
 
     audioPolicyServer_->coreService_->pipeManager_->curPipeList_.pop_back();
 }
 
 /**
- * @tc.name  : GetStreamTypePriority_FoundInMap
- * @tc.number: GetStreamTypePriority_001
- * @tc.desc  : Test if branch true when streamType is found in priority map
+ * @tc.name  : GetActiveStreamRendererInfosForDevice_NoMatchingStream
+ * @tc.number: GetActiveStreamRendererInfosForDevice_003
+ * @tc.desc  : Test GetActiveStreamRendererInfosForDevice returns empty when no stream matches device
  */
-HWTEST_F(AudioPolicyServerUnitTest, GetStreamTypePriority_FoundInMap, TestSize.Level1)
+HWTEST_F(AudioPolicyServerUnitTest, GetActiveStreamRendererInfosForDevice_NoMatchingStream, TestSize.Level1)
 {
     audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
     audioPolicyServer_->coreService_->Init();
 
-    auto ret = audioPolicyServer_->coreService_->GetStreamTypePriority(STREAM_VOICE_CALL);
-    EXPECT_EQ(ret, 0);
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+
+    auto streamDevice = std::make_shared<AudioDeviceDescriptor>();
+    streamDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDevice->networkId_ = LOCAL_NETWORK_ID;
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = AudioStreamStatus::STREAM_STATUS_STARTED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    streamDesc->rendererInfo_.contentType = CONTENT_TYPE_SPEECH;
+    streamDesc->AddNewDevice(streamDevice);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+
+    audioPolicyServer_->coreService_->pipeManager_->curPipeList_.push_back(pipeInfo);
+
+    std::vector<AudioRendererInfo> rendererInfos;
+    auto ret = audioPolicyServer_->coreService_->GetActiveStreamRendererInfosForDevice(deviceDesc, rendererInfos);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(rendererInfos.empty());
+
+    audioPolicyServer_->coreService_->pipeManager_->curPipeList_.pop_back();
 }
 
 /**
- * @tc.name  : GetStreamTypePriority_NotFoundInMap
- * @tc.number: GetStreamTypePriority_002
- * @tc.desc  : Test if branch false when streamType is not found in priority map
+ * @tc.name  : GetActiveStreamRendererInfosForDevice_NullDeviceDesc
+ * @tc.number: GetActiveStreamRendererInfosForDevice_004
+ * @tc.desc  : Test GetActiveStreamRendererInfosForDevice returns error when deviceDesc is nullptr
  */
-HWTEST_F(AudioPolicyServerUnitTest, GetStreamTypePriority_NotFoundInMap, TestSize.Level1)
+HWTEST_F(AudioPolicyServerUnitTest, GetActiveStreamRendererInfosForDevice_NullDeviceDesc, TestSize.Level1)
 {
     audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
     audioPolicyServer_->coreService_->Init();
 
-    auto ret = audioPolicyServer_->coreService_->GetStreamTypePriority(STREAM_DEFAULT);
-    EXPECT_EQ(ret, 100);
+    std::vector<AudioRendererInfo> rendererInfos;
+    auto ret = audioPolicyServer_->coreService_->GetActiveStreamRendererInfosForDevice(nullptr, rendererInfos);
+    EXPECT_EQ(ret, ERR_NULL_POINTER);
 }
 } // AudioStandard
 } // OHOS

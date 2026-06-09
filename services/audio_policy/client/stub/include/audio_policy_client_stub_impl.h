@@ -48,6 +48,7 @@ public:
     SystemVolumeFilter RemoveSystemVolumeChangeByFilterCallback(
         const std::shared_ptr<SystemVolumeChangeByFilterCallback> &cb);
     size_t GetSystemVolumeChangeByFilterCallbackSize() const;
+    std::vector<SystemVolumeFilter> GetRegisteredSystemVolumeFilters() const;
     size_t GetStreamVolumeChangeCallbackSize() const;
     std::set<StreamUsage> GetStreamVolumeChangeCallbackStreamUsages() const;
     int32_t AddStreamVolumeChangeCallback(const std::set<StreamUsage> &streamUsages,

@@ -146,7 +146,7 @@ public:
     virtual bool OnCheckMediaControllerBundle(const std::string &bundleName) = 0;
     virtual bool OnQueryIsForceGetZoneDevice(const std::string &bundleName) = 0;
     virtual bool OnQueryIsForceGetDevByVolumeType(const std::string &bundleName) = 0;
-    virtual bool OnQueryIsPcSettingsOrSceneBoard(const std::string &bundleName) = 0;
+    virtual bool OnQueryUseSystemPreferredDeviceForVolume(const std::string &bundleName) = 0;
 };
 
 class AudioVKBInfoMgrCallback {
