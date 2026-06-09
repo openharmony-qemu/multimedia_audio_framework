@@ -864,7 +864,7 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
 {
     if (outputNode_ == nullptr) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), ERR_NODE_INVALID_PARAMETER,
+            static_cast<int32_t>(getuid()), ERR_PIPELINE_STATE_INVALID,
             "DisConnectNodes failed, pipeline running, can not find output node.", true);
         AUDIO_ERR_LOG("DisConnectNodes failed, pipeline running, can not find output node.");
         return ERR_ILLEGAL_STATE;
@@ -1076,7 +1076,7 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
         int32_t ret = node->SetOptions(name, value);
         if (ret != SUCCESS) {
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), ERR_NODE_INVALID_PARAMETER,
+                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
                 "Node type does not match the parameters.", true);
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
             TriggerCallback(SET_OPTIONS, ret);
