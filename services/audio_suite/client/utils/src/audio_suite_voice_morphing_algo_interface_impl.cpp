@@ -164,7 +164,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::SetParameter(
         typeIt = generalVoiceChangeTypeMap.find(paramValue);
     } else {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_DO_NOT_MATCH,
+            static_cast<int32_t>(getuid()), ERR_NODE_INVALID_PARAMETER,
             "VoiceBeautifier/GeneralVoiceChange node passed invalid enum value", true);
         AUDIO_ERR_LOG("SetOptions UNKNOWN TYPE");
         return ERROR;
