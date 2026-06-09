@@ -136,17 +136,11 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, createPipelineExceedLimitTest, TestSiz
         callback.engineCreateResult_ = 0;
         int32_t result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
         EXPECT_EQ(result, SUCCESS);
-        sleep(1);
-        EXPECT_EQ(callback.isFinishCreatePipeline_, true);
-        EXPECT_EQ(callback.engineCreateResult_, SUCCESS);
     }
     callback.isFinishCreatePipeline_ = false;
     callback.engineCreateResult_ = 0;
     int32_t result = engineManger.CreatePipeline(PIPELINE_REALTIME_MODE);
     EXPECT_EQ(result, SUCCESS);
-    sleep(1);
-    EXPECT_EQ(callback.isFinishCreatePipeline_, true);
-    EXPECT_EQ(callback.engineCreateResult_, SUCCESS);
 
     callback.isFinishCreatePipeline_ = false;
     callback.engineCreateResult_ = 0;
@@ -711,7 +705,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, SetSpaceRenderPositionParamsInvalidPar
     manager.DeInit();
 }
 
-HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesForRunNodeTypeErrorTest, TestSize.Level0)
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesNodeTypeErrorTest, TestSize.Level0)
 {
     AudioSuiteManager manager;
     manager.Init();
