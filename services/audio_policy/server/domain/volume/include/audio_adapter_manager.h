@@ -309,6 +309,8 @@ public:
     void MdmMuteSwitchCallback(bool isMute);
     void RegisterAppIndividualVolumeEnableObserver();
     void HandleAppIndividualVolumeSettingChanged();
+    void RegisterCloneStateObserver();
+    void HandleCloneStateChanged();
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
     void SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state);
@@ -616,6 +618,7 @@ private:
     std::shared_ptr<RemoteVolumeCallback> remoteVolumeCallback_ = nullptr;
     std::mutex deviceConnectMutex_;
     std::mutex offloadSessionMutex_;
+    int32_t cloneState_ = 0;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

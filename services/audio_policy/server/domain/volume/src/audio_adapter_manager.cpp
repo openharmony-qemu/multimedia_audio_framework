@@ -45,6 +45,9 @@ namespace AudioStandard {
 static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
 static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
 constexpr const char *APP_INDIVIDUAL_VOLUME_ENABLE = "app_individual_volume_enable";
+constexpr const char *CLONE_STATE_TIME = "clone_state_time";
+constexpr const int32_t CLONE_STATE_CLONING = 1;
+constexpr const int32_t CLONE_STATE_NOT_CLONED = 2;
 mutex g_deviceVolumeBehaviorListenerMutex;
 
 static const std::vector<DeviceType> VOLUME_GROUP_TYPE_LIST = {
@@ -3596,6 +3599,39 @@ void AudioAdapterManager::HandleAppIndividualVolumeSettingChanged()
     CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume is nullptr");
     audioVolume->HandleAppIndividualVolumeSettingChanged(appIndividualVolumeEnabled);
     SendOffloadVolume();
+}
+
+void AudioAdapterManager::RegisterCloneStateObserver()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc cloneStateChanged = [&](const std::string &key) {
+        HandleCloneStateChanged();
+    };
+    sptr observer = settingProvider.CreateObserver(CLONE_STATE_TIME, cloneStateChanged);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    CHECK_AND_RETURN_LOG(ret == ERR_OK, "Register CloneState fail");
+    AUDIO_INFO_LOG("Register CloneState success");
+}
+
+void AudioAdapterManager::HandleCloneStateChanged()
+{
+    AUDIO_INFO_LOG("enter");
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    std::string cloneStateTimeStr;
+    int32_t newCloneState = 0;
+    int32_t ret = settingProvider.GetStringValue(CLONE_STATE_TIME, cloneStateTimeStr, "secure");
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "GetStringValue failed");
+    size_t pos = cloneStateTimeStr.find("\"state\":");
+    if (pos != std::string::npos) {
+        size_t start = pos + strlen("\"state\":");
+        size_t end = cloneStateTimeStr.find_first_of(",}", start);
+        newCloneState = FormatUtils::StringToInt32(cloneStateTimeStr.substr(start, end - start), 0);
+    }
+    if (newCloneState == CLONE_STATE_NOT_CLONED && cloneState_ == CLONE_STATE_CLONING) {
+        RestoreSystemAppVolumeLevel();
+        RestoreSystemAppVolumeMuteStatus();
+    }
+    cloneState_ = newCloneState;
 }
 
 void AudioAdapterManager::SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType,
