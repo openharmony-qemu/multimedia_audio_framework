@@ -869,11 +869,12 @@ int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *au
 
 int32_t OHAudioSuiteEngine::ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode)
 {
+    CHECK_AND_RETURN_RET_LOG(srcNode != nullptr, ERR_INVALID_PARAM, "ConnectNodes failed, srcNode is nullptr.");
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
-        srcNode != nullptr, ERR_INVALID_PARAM,
+        IsNodeExists(srcNode), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()), EDIT_CONNECT_NODES_INVAILD,
-                                                            "ConnectNodes failed, node id is invaild.", true),
-        "ConnectNodes failed, srcNode is nullptr.");
+                                                            "OHAudioSuiteEngine::The sec node does not exist.", true),
+        "OHAudioSuiteEngine::The sec node does not exist.");
     CHECK_AND_RETURN_RET_LOG(destNode != nullptr, ERR_INVALID_PARAM, "ConnectNodes failed, srcNode is nullptr.");
     CHECK_AND_RETURN_RET_LOG(IsNodeExists(destNode), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
                              "OHAudioSuiteEngine::The dest node does not exist.");
@@ -1079,14 +1080,14 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderRotationParams(
             value.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
             ERR_INVALID_PARAM,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_SSRRP_SETIONS_ERROR,
+                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
                 "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f.", true),
             "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f.");
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
             value.surroundTime >= SPACE_RENDER_MIN_TIME && value.surroundTime <= SPACE_RENDER_MAX_TIME,
             ERR_INVALID_PARAM,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_SSRRP_SETIONS_ERROR,
+                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
                 "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f.", true),
             "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f.");
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
@@ -1094,7 +1095,7 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderRotationParams(
             value.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW,
             ERR_INVALID_PARAM,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_SSRRP_SETIONS_ERROR,
+                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
                 "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1.", true),
             "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1.");
         AudioSpaceRenderRotationParams rotationParams;
@@ -1135,13 +1136,13 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderExtensionParams(
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
             value.extRadius >= SPACE_RENDER_MIN_EXPAND_RADIUS && value.extRadius <= SPACE_RENDER_MAX_EXPAND_RADIUS,
             ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_SSREP_SETIONS_ERROR,
+                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
                 "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f", true),
             "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f");
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
             value.extAngle > SPACE_RENDER_MIN_EXPAND_ANGLE && value.extAngle < SPACE_RENDER_MAX_EXPAND_ANGLE,
             ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_SSREP_SETIONS_ERROR,
+                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
                 "SetSpaceRenderExtensionParams failed, Angle must be in the (0, 360)", true),
             "SetSpaceRenderExtensionParams failed, Angle must be in the (0, 360).");
         AudioSpaceRenderExtensionParams extensionParams;
@@ -1175,7 +1176,7 @@ int32_t OHAudioSuiteEngine::SetTempoAndPitch(OHAudioNode* node, float speed, flo
         (speed >= SPEED_RATE_MIN && speed <= SPEED_RATE_MAX) && (pitch >= PITCH_RATE_MIN && pitch <= PITCH_RATE_MAX),
         ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_STAP_SETIONS_ERROR,
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetTempoAndPitch failed, speed must be in the 0.5~10.0 and pitch must be in the 0.1~5.0.", true),
         "SetTempoAndPitch failed, speed must be in the 0.5~10.0 and pitch must be in the 0.1~5.0.");
     struct TempoAndPitch {
@@ -1218,7 +1219,7 @@ int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(
             option.pitch == AUDIO_VOICE_MORPHING_PITCH_DEFAULT,
         ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_SPVCO_SETIONS_ERROR,
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetPureVoiceChangeOption failed, pitch must be in the 0.3f~3.0f or 0.0f.", true),
         "SetPureVoiceChangeOption failed, pitch must be in the 0.3f~3.0f or 0.0f.");
     auto setter = [](uint32_t nodeId, OH_AudioSuite_PureVoiceChangeOption value) {
