@@ -560,7 +560,7 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
             (gains.gains[idx] >= EQ_FREQUENCY_BAND_GAINS_MIN) && (gains.gains[idx] <= EQ_FREQUENCY_BAND_GAINS_MAX),
             ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_DO_NOT_MATCH,
+                static_cast<int32_t>(getuid()), ERR_NODE_INVALID_PARAMETER,
                 "SetEqualizerFrequencyBandGains failed, input value not in -10, 10.", true),
             "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", gains.gains[idx]);
     }
@@ -931,7 +931,7 @@ int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
     auto it = pipelineLockMap_.find(pipelineId);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
                                        StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                                           static_cast<int32_t>(getuid()), EDIT_RENDER_FRAME_ERROR,
+                                           static_cast<int32_t>(getuid()), ERR_RENDER_PIPELINE_NOT_FOUND,
                                            "manager RenderFrame failed, pipeline id is invailed.", true),
                                        "pipeline lock not exist");
     std::mutex *pipelineLock = it->second.get();
@@ -969,7 +969,7 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
     auto it = pipelineLockMap_.find(pipelineId);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
                                        StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                                           static_cast<int32_t>(getuid()), EDIT_RENDER_FRAME_ERROR,
+                                           static_cast<int32_t>(getuid()), ERR_RENDER_PIPELINE_NOT_FOUND,
                                            "manager RenderFrame failed, pipeline id is invailed.", true),
                                        "pipeline lock not exist");
     std::mutex *pipelineLock = it->second.get();
