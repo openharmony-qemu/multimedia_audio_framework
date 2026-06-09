@@ -379,8 +379,12 @@ void AudioInterruptZoneManager::TryActiveAudioFocusForZone(int32_t zoneId, Audio
         for (auto itActive : activeFocusList) {
             AUDIO_INFO_LOG("[RemoteFocus]active focus: %{public}d deviceTag: %{public}s for zone %{public}d",
                 itActive.first.streamId, itActive.first.deviceTag.c_str(), zoneId);
-            bool updateScene = false;
-            service_->ActivateAudioInterruptInternal(zoneId, itActive.first, false, updateScene);
+            if (itActive.second == ACTIVE || itActive.second == DUCK) {
+                bool updateScene = false;
+                service_->ActivateAudioInterruptInternal(zoneId, itActive.first, false, updateScene);
+            } else {
+                MoveAudioInterruptToZone(itActive.first, itActive.second, zoneId);
+            }
         }
     }
     AUDIO_DEBUG_LOG("focus list size is %{public}zu for zone %{public}d after active",
