@@ -1524,7 +1524,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_011, TestSize.
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_NODE_NOT_EXIST);
 
     ret = OH_AudioSuiteEngine_DestroyNode(outputNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
