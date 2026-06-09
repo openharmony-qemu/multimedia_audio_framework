@@ -560,7 +560,7 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
             (gains.gains[idx] >= EQ_FREQUENCY_BAND_GAINS_MIN) && (gains.gains[idx] <= EQ_FREQUENCY_BAND_GAINS_MAX),
             ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_SEQFBG_SETIONS_ERROR,
+                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_DO_NOT_MATCH,
                 "SetEqualizerFrequencyBandGains failed, input value not in -10, 10.", true),
             "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", gains.gains[idx]);
     }
@@ -597,7 +597,7 @@ int32_t AudioSuiteManager::SetSpaceRenderPositionParams(uint32_t nodeId, AudioSp
             (position.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE) &&
             (position.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE),
         ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_SSRPP_SETIONS_ERROR,
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f", true),
         "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
     return SetParamsTemplate(nodeId, "AudioSpaceRenderPositionParams", position);
@@ -618,7 +618,7 @@ int32_t AudioSuiteManager::SetSpaceRenderRotationParams(uint32_t nodeId, AudioSp
             (rotation.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE),
         ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_SSRRP_SETIONS_ERROR,
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f", true),
         "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
 
@@ -626,7 +626,7 @@ int32_t AudioSuiteManager::SetSpaceRenderRotationParams(uint32_t nodeId, AudioSp
         ((rotation.surroundTime >= SPACE_RENDER_MIN_TIME) && (rotation.surroundTime <= SPACE_RENDER_MAX_TIME)),
         ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_SSRRP_SETIONS_ERROR,
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f", true),
         "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f");
 
@@ -635,7 +635,7 @@ int32_t AudioSuiteManager::SetSpaceRenderRotationParams(uint32_t nodeId, AudioSp
          rotation.surroundDirection == AudioSurroundDirection::SPACE_RENDER_CW),
         ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_SSRRP_SETIONS_ERROR,
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1", true),
         "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1");
 
@@ -652,14 +652,14 @@ int32_t AudioSuiteManager::SetSpaceRenderExtensionParams(uint32_t nodeId, AudioS
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         extension.extRadius >= SPACE_RENDER_MIN_EXPAND_RADIUS && extension.extRadius <= SPACE_RENDER_MAX_EXPAND_RADIUS,
         ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_SSREP_SETIONS_ERROR,
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f", true),
         "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f");
 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         extension.extAngle > SPACE_RENDER_MIN_EXPAND_ANGLE && extension.extAngle < SPACE_RENDER_MAX_EXPAND_ANGLE,
         ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_SSREP_SETIONS_ERROR,
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetSpaceRenderExtensionParams failed, Angle must be in the (0, 360)", true),
         "SetSpaceRenderExtensionParams failed, Angle must be in the (0, 360)");
     return SetParamsTemplate(nodeId, "AudioSpaceRenderExtensionParams", extension);
@@ -678,7 +678,7 @@ int32_t AudioSuiteManager::SetTempoAndPitch(uint32_t nodeId, float speed, float 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
         (speed >= SPEED_RATE_MIN && speed <= SPEED_RATE_MAX) && (pitch >= PITCH_RATE_MIN && pitch <= PITCH_RATE_MAX),
         ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_STAP_SETIONS_ERROR,
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetTempoAndPitch failed, speed must be in the 0.5~10.0 and pitch must be in the 0.1~5.0.", true),
         "SetTempoAndPitch failed, speed %{public}f must be in the 0.5~10.0 and pitch %{public}f must be in the "
         "0.1~5.0.", speed, pitch);
@@ -702,7 +702,7 @@ int32_t AudioSuiteManager::SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVo
         (option.pitch >= AUDIO_VOICE_MORPHING_PITCH_MIN && option.pitch <= AUDIO_VOICE_MORPHING_PITCH_MAX) ||
             option.pitch == AUDIO_VOICE_MORPHING_PITCH_DEFAULT,
         ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), EDIT_SPVCO_SETIONS_ERROR,
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
             "SetPureVoiceChangeOption failed, pitch must be in the 0.3f~3.0f or 0.0f.", true),
         "SetPureVoiceChangeOption failed, pitch %{public}f must be in the 0.3f~3.0f or 0.0f.", option.pitch);
     return SetParamsTemplate(nodeId, "AudioPureVoiceChangeOption", option);
