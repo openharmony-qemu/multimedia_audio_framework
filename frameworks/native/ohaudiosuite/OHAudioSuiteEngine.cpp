@@ -645,7 +645,7 @@ int32_t OHAudioSuiteEngine::DestroyPipeline(OHAudioSuitePipeline *audioPipeline)
         "DestroyPipeline failed, audioPipeline is nullptr.");
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(IsPipelineExists(audioPipeline), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
                                        StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                                           static_cast<int32_t>(getuid()), EDIT_REDESTROY_PIPELINE_FAILED,
+                                           static_cast<int32_t>(getuid()), ERR_DESTROY_PIPELINE_NOT_FOUND,
                                            "OHAudioSuiteEngine::The pipeline does not exist.", true),
                                        "OHAudioSuiteEngine::The pipeline does not exist.");
     uint32_t pipelineId = audioPipeline->GetPipelineId();
@@ -1040,7 +1040,7 @@ int32_t OHAudioSuiteEngine::SetSpaceRenderPositionParams(
                 value.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
             ERR_INVALID_PARAM,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_SRPP_SETIONS_ERROR,
+                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
                 "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f", true),
             "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
         AudioSpaceRenderPositionParams positionParams;
