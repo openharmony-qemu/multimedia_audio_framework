@@ -117,7 +117,8 @@
             "call_manager",
             "icu",
             "json",
-            "ets_frontend"
+            "ets_frontend",
+            "taihe_ffi_gen"
           ],
           "third_party": []
         },
