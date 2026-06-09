@@ -560,7 +560,7 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
         CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
             (gains.gains[idx] >= EQ_FREQUENCY_BAND_GAINS_MIN) && (gains.gains[idx] <= EQ_FREQUENCY_BAND_GAINS_MAX),
             ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), ERR_NODE_INVALID_PARAMETER,
+                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
                 "SetEqualizerFrequencyBandGains failed, input value not in -10, 10.", true),
             "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", gains.gains[idx]);
     }
