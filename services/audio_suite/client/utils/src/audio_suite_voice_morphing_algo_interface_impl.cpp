@@ -23,7 +23,7 @@
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_voice_morphing_algo_interface_impl.h"
-#include "stream_dfx_manager.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
@@ -163,9 +163,6 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::SetParameter(
         typeMap = &generalVoiceChangeTypeMap;
         typeIt = generalVoiceChangeTypeMap.find(paramValue);
     } else {
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(
-            static_cast<int32_t>(getuid()), ERR_NODE_INVALID_PARAMETER,
-            "VoiceBeautifier/GeneralVoiceChange node passed invalid enum value", true);
         AUDIO_ERR_LOG("SetOptions UNKNOWN TYPE");
         return ERROR;
     }
