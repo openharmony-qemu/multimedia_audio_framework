@@ -541,9 +541,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int
     if (Util::IsEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced(appUid);
     }
-    if (appUid == SYSTEM_UID) {
-        return GetDeviceForVolume();
-    }
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
@@ -565,8 +562,16 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolumeEnha
     if (appUid == INVALID_UID) {
         appUid = callingUid;
     }
-    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(appUid);
-    if (AudioPolicyUtils::GetInstance().IsPcSettingsOrSceneBoard(bundleName)) {
+
+    bool useSystemPreferredDevice = false;
+    if (appUid == SYSTEM_UID) {
+        useSystemPreferredDevice = true;
+    } else {
+        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(appUid);
+        useSystemPreferredDevice = AudioPolicyUtils::GetInstance().ShouldUseSystemPreferredDeviceForVolume(bundleName);
+    }
+
+    if (useSystemPreferredDevice) {
         FetchDeviceInfo info = {STREAM_USAGE_MUSIC, SYSTEM_UID, "GetDeviceForVolumeEnhanced"};
         auto devices = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
         CHECK_AND_RETURN_RET_LOG(!devices.empty(), nullptr, "No output devices found");
@@ -578,7 +583,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolumeEnha
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> tmp;
     for (auto desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
-        CHECK_AND_CONTINUE(GetRealUid(desc) == callingUid);
+        CHECK_AND_CONTINUE(GetRealUid(desc) == appUid);
         CHECK_AND_CONTINUE(!desc->newDeviceDescs_.empty());
         tmp.push_back(desc->newDeviceDescs_.front());
     }
@@ -588,17 +593,17 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolumeEnha
         return tmp.front();
     }
 
-    FetchDeviceInfo info = {STREAM_USAGE_MUSIC, callingUid, "GetDeviceForVolumeEnhanced"};
-    return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
+    FetchDeviceInfo info = {STREAM_USAGE_MUSIC, appUid, "GetDeviceForVolumeEnhanced"};
+    auto devices = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
+    CHECK_AND_RETURN_RET_LOG(!devices.empty(), GetDeviceForVolumeEnhanced(SYSTEM_UID),
+        "no uid %{public}d in active", appUid);
+    return devices.front();
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetActiveDeviceForVolume(int32_t appUid)
 {
     if (Util::IsEnhancedRoutingSupported()) {
         return GetDeviceForVolumeEnhanced(appUid);
-    }
-    if (appUid == SYSTEM_UID) {
-        return GetDeviceForVolume();
     }
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =

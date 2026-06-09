@@ -877,6 +877,13 @@ void AudioCoreService::EventEntry::ReEvaluateVoipPrivacyMuteForCapturers(const s
     coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
 }
 
+bool AudioCoreService::EventEntry::IsSupportIndependentPipe()
+{
+    std::shared_lock<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, false, "coreService_ is nullptr");
+    return coreService_->IsSupportIndependentPipe();
+}
+
 void AudioCoreService::EventEntry::HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor>
     &selectedAudioDevice)
 {
@@ -908,12 +915,13 @@ void AudioCoreService::EventEntry::TriggerVoipPriorityReload(uint32_t sessionId,
     coreService_->NotifyVoipPriorityLoweredByMute(sessionId, lowered);
 }
 
-int32_t AudioCoreService::EventEntry::GetHighestPriorityVolumeTypeForDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioVolumeType &volumeType)
+int32_t AudioCoreService::EventEntry::GetActiveStreamRendererInfosForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    std::vector<AudioRendererInfo> &rendererInfos)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
-    return coreService_->GetHighestPriorityVolumeTypeForDevice(deviceDesc, volumeType);
+    return coreService_->GetActiveStreamRendererInfosForDevice(deviceDesc, rendererInfos);
 }
 }
 }

@@ -173,6 +173,15 @@ bool AudioPipeInfo::HasStream()
     return !streamDescriptors_.empty();
 }
 
+bool AudioPipeInfo::HasRunningStream()
+{
+    auto it = std::find_if(streamDescriptors_.begin(), streamDescriptors_.end(),
+        [](const std::shared_ptr<AudioStreamDescriptor> &stream) {
+            return stream != nullptr && stream->IsRunning();
+        });
+    return it != streamDescriptors_.end();
+}
+
 bool AudioPipeInfo::IsPipeMatch(const std::string adapterName, const uint32_t targetFlag)
 {
     return adapterName_ == adapterName && (routeFlag_ & targetFlag);

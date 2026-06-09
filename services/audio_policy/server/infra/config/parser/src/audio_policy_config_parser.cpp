@@ -582,6 +582,9 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
             } else if (configInfo.name_ == "anahsShowType") {
                 AUDIO_INFO_LOG("anahs pc support: %{public}s", configInfo.value_.c_str());
                 HandleUpdateAnahsSupportParsed(configInfo.value_);
+            } else if (configInfo.name_ == "ttsOutSupport") {
+                AUDIO_INFO_LOG("independent pipe support: %{public}s", configInfo.value_.c_str());
+                configManager_.OnIsSupportIndependentPipe(configInfo.value_ == "true");
             }
         }
         curNode->MoveToNext();

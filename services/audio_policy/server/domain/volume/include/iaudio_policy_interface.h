@@ -278,6 +278,7 @@ public:
     virtual void RegisterDoNotDisturbStatus() = 0;
     virtual void RegisterDoNotDisturbStatusWhiteList() = 0;
     virtual void RegisterAppIndividualVolumeEnableObserver() = 0;
+    virtual void RegisterCloneStateObserver() = 0;
     virtual int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) = 0;
 
     virtual void SetSleVoiceStatusFlag(bool isSleVoiceStatus) = 0;
@@ -335,7 +336,7 @@ public:
     virtual void RemoveAudioPipeVolume(uint32_t IoHandle) = 0;
     virtual void UpdateVolumeForAllPipes() = 0;
     virtual void UpdateTypeVolumeForAllPipes(AudioVolumeType volumeType) = 0;
-    virtual bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) = 0;
+    virtual bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

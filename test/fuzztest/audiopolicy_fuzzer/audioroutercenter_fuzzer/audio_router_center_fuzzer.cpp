@@ -398,7 +398,6 @@ void WirelessConflictHandlerDetectFuzzTest(FuzzedDataProvider& fdp)
     }
     RouterType routerType = RouterTypeVec[fdp.ConsumeIntegralInRange<size_t>(0, RouterTypeVec.size() - 1)];
     handler.Detect(device, routerType);
-    handler.AllScoPairSelected();
     handler.FindHighestPriorityDevice();
     handler.ClearSelectedDevices();
     handler.Detect(device, routerType);
@@ -423,7 +422,6 @@ void WirelessConflictHandlerScoPairFuzzTest(FuzzedDataProvider& fdp)
     auto device = MakeWirelessDevice(fdp);
     device->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     device->macAddress_ = macAddress;
-    handler.AllScoPairSelected();
     handler.Detect(device, ROUTER_TYPE_PAIR_DEVICE);
 }
 

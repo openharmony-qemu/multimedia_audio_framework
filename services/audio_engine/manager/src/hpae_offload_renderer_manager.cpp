@@ -431,15 +431,23 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId, bool isStandby)
         CHECK_AND_RETURN_LOG(node, "Pause not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Pause sessionId %{public}u", sessionId);
         auto state = curNode_->GetState();
+        bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         node->SetState(HPAE_SESSION_PAUSED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_PAUSED);
         if (sessionId == curNode_->GetSessionId()) {
-            if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+            if (isSessionEffectActive) {
                 sessionEffectNode_->PauseEffect();
             }
             DisConnectInputSession();
-            if (state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
+            bool isRunningWithSink = state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr;
+            if (isRunningWithSink) {
                 sinkOutputNode_->StopStream();
+            }
+            if (isRunningWithSink && !isSessionEffectActive) {
+                uint64_t latency = 0;
+                OnRequestLatency(sessionId, latency);
+                OnRewindBuffer(sessionId, latency);
+                FlushPipelineNodes(sessionId);
             }
         }
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
@@ -474,6 +482,19 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeOffloadRendererManager::FlushPipelineNodes(uint32_t sessionId)
+{
+    if (converterForLoudness_ != nullptr) {
+        converterForLoudness_->FlushBuffers();
+    }
+    if (converterForOutput_ != nullptr) {
+        converterForOutput_->FlushBuffers();
+    }
+    if (sinkOutputNode_ != nullptr) {
+        sinkOutputNode_->FlushStream();
+    }
 }
 
 int32_t HpaeOffloadRendererManager::Drain(uint32_t sessionId)
@@ -1346,12 +1367,6 @@ void HpaeOffloadRendererManager::PostDestroySessionEffect(uint32_t sessionId)
         DestroySessionEffect(sessionId);
     };
     SendRequest(std::move(request), __func__);
-}
-
-bool HpaeOffloadRendererManager::HasSessionEffect(uint32_t sessionId) const
-{
-    return (sessionEffectSessionId_ == sessionId && sessionEffectNode_ != nullptr)
-        || pendingSessionEffects_.find(sessionId) != pendingSessionEffects_.end();
 }
 
 bool HpaeOffloadRendererManager::IsValidSession(uint32_t sessionId) const

@@ -109,12 +109,18 @@ int32_t RemoteDeviceManager::SetAudioParameter(const std::string &adapterName, c
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_NULL_POINTER,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(wrapper != nullptr, ERR_NULL_POINTER,
+        CacheAudioParameter(adapterName, key, condition, value),
+        "adapter %{public}s is nullptr, cache params", GetEncryptStr(adapterName).c_str());
+
+    std::lock_guard<std::mutex> lock(wrapper->adapterMtx_);
+    sptr<RemoteIAudioAdapter> wrapperAdapter = wrapper->adapter_;
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(wrapperAdapter != nullptr, ERR_NULL_POINTER,
         CacheAudioParameter(adapterName, key, condition, value),
         "adapter %{public}s is nullptr, cache params", GetEncryptStr(adapterName).c_str());
 
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
-    int32_t ret = wrapper->adapter_->SetExtraParams(hdiKey, condition, value);
+    int32_t ret = wrapperAdapter->SetExtraParams(hdiKey, condition, value);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "set param fail, error code: %{public}d", ret);
     return ret;
 #else
@@ -130,11 +136,16 @@ std::string RemoteDeviceManager::GetAudioParameter(const std::string &adapterNam
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s", key, condition.c_str());
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "", "adapter %{public}s is nullptr",
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, "", "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
+
+    std::lock_guard<std::mutex> lock(wrapper->adapterMtx_);
+    sptr<RemoteIAudioAdapter> wrapperAdapter = wrapper->adapter_;
+    CHECK_AND_RETURN_RET_LOG(wrapperAdapter != nullptr, "", "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     std::string value;
-    int32_t ret = wrapper->adapter_->GetExtraParams(hdiKey, condition.c_str(), value);
+    int32_t ret = wrapperAdapter->GetExtraParams(hdiKey, condition.c_str(), value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "get param fail, error code: %{public}d", ret);
     AUDIO_INFO_LOG("value: %{public}s", value.c_str());
     return value;
@@ -210,9 +221,14 @@ int32_t RemoteDeviceManager::SetInputRoute(const std::string &adapterName, Devic
     route.sinks.push_back(sink);
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_INVALID_HANDLE,
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, ERR_INVALID_HANDLE,
         "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
-    ret = wrapper->adapter_->UpdateAudioRoute(route, wrapper->routeHandle_);
+
+    std::lock_guard<std::mutex> lock(wrapper->adapterMtx_);
+    sptr<RemoteIAudioAdapter> wrapperAdapter = wrapper->adapter_;
+    CHECK_AND_RETURN_RET_LOG(wrapperAdapter != nullptr, ERR_INVALID_HANDLE,
+        "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
+    ret = wrapperAdapter->UpdateAudioRoute(route, wrapper->routeHandle_);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "update route fail");
     return SUCCESS;
@@ -221,10 +237,15 @@ int32_t RemoteDeviceManager::SetInputRoute(const std::string &adapterName, Devic
 void RemoteDeviceManager::ReleaseOutputRoute(const std::string &adapterName)
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
+
+    std::lock_guard<std::mutex> lock(wrapper->adapterMtx_);
+    sptr<RemoteIAudioAdapter> wrapperAdapter = wrapper->adapter_;
+    CHECK_AND_RETURN_LOG(wrapperAdapter != nullptr, "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
     CHECK_AND_RETURN(wrapper->routeHandle_ != -1);
-    wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
+    wrapperAdapter->ReleaseAudioRoute(wrapper->routeHandle_);
     wrapper->routeHandle_ = -1;
 }
 

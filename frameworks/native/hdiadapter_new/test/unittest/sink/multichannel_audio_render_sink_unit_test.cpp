@@ -781,20 +781,5 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_041, Test
     DeviceType device = multichannelAudioRenderSink->GetCurrentOutputDevice();
     EXPECT_EQ(device, DEVICE_TYPE_WIRED_HEADSET);
 }
-
-/**
- * @tc.name   : Test MultichannelSink SetAudioScene API with phoneCallSceneType
- * @tc.number : MultichannelSinkUnitTest_042
- * @tc.desc   : Test SetAudioScene with phoneCallSceneType parameter
- */
-HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_042, TestSize.Level1)
-{
-    auto multichannelAudioRenderSink = std::make_shared<MultichannelAudioRenderSink>(HDI_ID_INFO_DP);
-    ASSERT_NE(multichannelAudioRenderSink, nullptr);
-
-    int32_t ret = multichannelAudioRenderSink->SetAudioScene(
-        AUDIO_SCENE_DEFAULT, false, SCENE_TYPE_INVALID);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
-}
 } // namespace AudioStandard
 } // namespace OHOS

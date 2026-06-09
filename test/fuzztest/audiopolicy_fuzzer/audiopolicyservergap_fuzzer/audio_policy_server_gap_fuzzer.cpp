@@ -213,14 +213,12 @@ void AudioPolicyServerDebugSpatialGapFuzzTest(FuzzedDataProvider &fdp)
     std::string path;
     bool retBool = false;
     int32_t retInt = {};
-    BootAnimationInfo bootAnimationInfo = { fdp.ConsumeIntegral<int64_t>() };
     std::vector<AudioZoneMix> audioMixes;
 
     server->GetSystemSoundPath(fdp.ConsumeIntegral<int32_t>(), path);
     server->IsAdaptiveSpatialRenderingEnabled(fdp.ConsumeRandomLengthString(MAX_STRING_LEN), retBool);
     server->GetCurrentSpatialAudioSourceType(retInt);
     server->UpdateSafeVolumeByStrMode();
-    server->RecordBootAnimationClientStateTime(bootAnimationInfo);
     server->SetCustomAudioMix(fdp.ConsumeRandomLengthString(MAX_STRING_LEN), audioMixes);
 }
 

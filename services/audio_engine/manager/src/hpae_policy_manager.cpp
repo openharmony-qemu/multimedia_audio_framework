@@ -253,24 +253,11 @@ int32_t HpaePolicyManager::UpdateCollaborativeProductId(const std::string &produ
     return audioCollaborationManager->UpdateCollaborativeProductId(productId);
 }
 
-int32_t HpaePolicyManager::UpdateCollaborativeState(CollaborationState isCollaborationEnabled)
-{
-    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCollaborationManager != nullptr, ERR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
-        BusinessScenario::QUERY, ERR_SERVICE_UNAVAILABLE),
-            "null audioCollaborationManager", false),
-        "null audioCollaborationManager");
-    audioCollaborationManager->UpdateCollaborativeState(isCollaborationEnabled);
-    return SUCCESS;
-}
-
-bool HpaePolicyManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+bool HpaePolicyManager::IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage)
 {
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
     CHECK_AND_RETURN_RET(audioCollaborationManager != nullptr, false);
-    return audioCollaborationManager->IsCollaborationSupportedForStreamUsage(streamUsage);
+    return audioCollaborationManager->IsStreamUsageSupported(deviceType, streamUsage);
 }
 
 void HpaePolicyManager::LoadCollaborationConfig()

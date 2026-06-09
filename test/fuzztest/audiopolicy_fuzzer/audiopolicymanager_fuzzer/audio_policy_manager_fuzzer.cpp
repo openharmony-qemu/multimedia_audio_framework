@@ -750,6 +750,8 @@ void AudioPolicyManagerSetDeviceInfoUpdateCallbackFuzzTest(FuzzedDataProvider& f
 {
     AudioPolicyManager audioPolicyManager;
     int32_t clientId = GetData<int32_t>();
+    audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    audioPolicyManager.isAudioPolicyClientRegisted_.store(true);
     const std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> callback =
         std::make_shared<AudioManagerDeviceInfoUpdateCallbackFuzzTest>();
     audioPolicyManager.SetDeviceInfoUpdateCallback(clientId, callback);

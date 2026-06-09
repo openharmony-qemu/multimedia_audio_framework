@@ -39,6 +39,7 @@ namespace AudioStandard {
 namespace {
 const int64_t RENDER_FRAME_LIMIT = 50; // 50ms
 const int64_t RENDER_FRAME_REPORT_LIMIT = 100000000; // 100ms
+static constexpr uint32_t AUDIO_TTS = 11;
 static constexpr uint32_t AUDIO_D2D = 12;
 
 const std::unordered_map<std::string, HdiRenderOffset> HALNAME_TO_HDI_OFFSET = {
@@ -51,6 +52,7 @@ const std::unordered_map<std::string, HdiRenderOffset> HALNAME_TO_HDI_OFFSET = {
     {HDI_ID_INFO_PRIMARY_EXTRA_WIRED, HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRED},
     {HDI_ID_INFO_PRIMARY_EXTRA_WIRELESS, HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRELESS},
     {HDI_ID_INFO_PRIMARY_EXTRA_HDMI, HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI},
+    {HDI_ID_INFO_VOICE_CALL_ASSISTANT, HDI_RENDER_OFFSET_VOICE_CALL_ASSISTANT},
 };
 }
 
@@ -982,6 +984,10 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     } else if (halName_ == HDI_ID_INFO_VOIP) {
         param.type = AUDIO_IN_COMMUNICATION;
         param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP));
+    } else if (halName_ == HDI_ID_INFO_VOICE_CALL_ASSISTANT) {
+        param.type = static_cast<AudioCategory>(AUDIO_TTS);
+        param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE,
+            HDI_RENDER_OFFSET_VOICE_CALL_ASSISTANT));
     }
     param.format = ConvertToHdiFormat(attr_.format);
     param.frameSize = PcmFormatToBit(attr_.format) * param.channelCount / PCM_8_BIT;
@@ -1009,6 +1015,8 @@ void AudioRenderSink::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, Audi
         sceneDesc.scene.id = AUDIO_DIRECT;
     } else if (halName_ == HDI_ID_INFO_VOIP) {
         sceneDesc.scene.id = AUDIO_IN_COMMUNICATION;
+    } else if (halName_ == HDI_ID_INFO_VOICE_CALL_ASSISTANT) {
+        sceneDesc.scene.id = AUDIO_TTS;
     }
 
     AudioPortPin port = GetAudioPortPin();
@@ -1097,6 +1105,8 @@ int32_t AudioRenderSink::InitRender(void)
         } else if (halName_ == HDI_ID_INFO_VOIP) {
             // voip hal do not need to SetOutputRoute when create render, will SetOutputRoute when start stream
             AUDIO_INFO_LOG("voip hal do not need to SetOutputRoute when create render");
+        } else if (halName_ == HDI_ID_INFO_VOICE_CALL_ASSISTANT) {
+            AUDIO_INFO_LOG("voice call assistant hal do not need to SetOutputRoute when create render");
         } else {
             DeviceType type = static_cast<DeviceType>(attr_.deviceType);
             if (type == DEVICE_TYPE_INVALID) {

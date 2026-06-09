@@ -43,8 +43,7 @@ public:
     virtual size_t GetInputLevel() const = 0;
     virtual void ClearBuffers() = 0;
 
-    // Effect control (Phase 3A-1: sends ENABLE/DISABLE to algorithm)
-    virtual int32_t StartEffect() = 0;
+    // Effect control
     virtual int32_t StopEffect() = 0;
 
     // Control

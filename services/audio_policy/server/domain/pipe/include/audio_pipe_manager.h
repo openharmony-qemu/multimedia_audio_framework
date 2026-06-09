@@ -68,6 +68,7 @@ public:
     void SetEcEnableState(bool ecEnableState);
     AudioSampleFormat GetFastFormat() const;
     bool IsSupportInnerCaptureOffload();
+    bool IsSupportIndependentPipe();
     bool NeedUidCheckForOffloadPipe(const std::shared_ptr<AudioStreamDescriptor> &desc);
     int32_t GetMaxRendererInstances();
     void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
@@ -192,6 +193,10 @@ public:
     bool HasPausedFastPipeInDelayedSwitch();
     std::string GetPausedFastPipeModuleNameInDelayedSwitch();
 
+    void AddFocusStandby(uint32_t sessionId);
+    void RemoveFocusStandby(uint32_t sessionId);
+    bool IsFocusStandby(uint32_t sessionId);
+
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
     bool IsNormalRecordPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
@@ -222,6 +227,8 @@ private:
     std::shared_mutex pipeListLock_;
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> switchStreamMap_{};
     mutable std::shared_mutex switchStreamMapLock_;
+    std::set<uint32_t> focusStandbySet_;
+    mutable std::shared_mutex focusStandbySetLock_;
     AudioCoreConfigManager& audioConfigManager_;
     AudioConcurrencyManager &audioConcurrencyManager_;
     bool requiredPipesInited_ = false;

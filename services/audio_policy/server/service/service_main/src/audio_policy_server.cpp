@@ -713,7 +713,9 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
             newRendererInfo, SYSTEM_UID, LOCAL_NETWORK_ID);
         CHECK_AND_RETURN_RET_LOG(!deviceDescs.empty(), ERROR, "deviceDescs is empty");
         std::shared_ptr<AudioDeviceDescriptor> preferredDeviceDesc = deviceDescs.front();
-        eventEntry_->GetHighestPriorityVolumeTypeForDevice(preferredDeviceDesc, streamInFocus);
+        std::vector<AudioRendererInfo> rendererInfos;
+        eventEntry_->GetActiveStreamRendererInfosForDevice(preferredDeviceDesc, rendererInfos);
+        streamInFocus = interruptService_->GetHighestPriorityVolumeTypeFromStreams(rendererInfos);
     } else {
         GetActiveAudioInterruptZone(zoneId, streamInFocus);
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus);
@@ -1387,6 +1389,8 @@ int32_t AudioPolicyServer::GetLowPowerVolume(int32_t streamId, float &outVolume)
 
 int32_t AudioPolicyServer::GetSingleStreamVolume(int32_t streamId, float &outVolume)
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     outVolume = streamCollector_.GetSingleStreamVolume(streamId);
     return SUCCESS;
 }
@@ -5497,6 +5501,8 @@ int32_t AudioPolicyServer::NotifyProcessBackgroundState(int32_t uid, int32_t pid
 
 int32_t AudioPolicyServer::SetVirtualCall(bool isVirtual)
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     auto callerUid = IPCSkeleton::GetCallingUid();
     AUDIO_INFO_LOG("Set VirtualCall is %{public}d", isVirtual);
     return audioDeviceCommon_.SetVirtualCall(callerUid, isVirtual);
@@ -5504,6 +5510,8 @@ int32_t AudioPolicyServer::SetVirtualCall(bool isVirtual)
 
 int32_t AudioPolicyServer::GetVirtualCall(bool &isVirtual)
 {
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     auto callerUid = IPCSkeleton::GetCallingUid();
     isVirtual = audioDeviceCommon_.GetVirtualCall(callerUid);
     return SUCCESS;

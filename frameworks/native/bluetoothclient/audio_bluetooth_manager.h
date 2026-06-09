@@ -142,7 +142,6 @@ public:
     static int32_t Connect(const std::string &macAddress);
 
     static int32_t UpdateAudioScene(AudioStandard::AudioScene scene, bool isScoSelected);
-    static int32_t UpdateAudioScene(AudioStandard::AudioScene scene);
     static int32_t HandleScoWithRecongnition(bool handleFlag);
     static bool IsRecognitionStatus();
     static int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
@@ -150,6 +149,7 @@ public:
     static bool IsAudioScoStateConnect();
     static std::string GetAudioScoDeviceMac();
     static ScoCategory GetScoCategory();
+    static void ClearScoSelected();
 
 private:
     static ScoCategory JudgeScoCategory();

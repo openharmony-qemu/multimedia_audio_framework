@@ -28,6 +28,7 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetMediaRenderDevice(St
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPrivacyDevices();
+    AppendActiveScoDevice(descs, OUTPUT_DEVICE);
     RouterBase::ClearConflictDevice(descs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_OUTPUT_DEVICES, descs);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
@@ -108,6 +109,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
         audioDevUsage = MEDIA_OUTPUT_DEVICES;
     }
 
+    AppendActiveScoDevice(curDescs, OUTPUT_DEVICE);
+
     RouterBase::ClearConflictDevice(curDescs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs);
     if (!latestConnDesc.get() || latestConnDesc->getType() == DEVICE_TYPE_NONE) {
@@ -159,6 +162,7 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
     }
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
+    AppendActiveScoDevice(descs, INPUT_DEVICE);
     // a2dp_in exclusion for SOURCE_TYPE_VOICE_TRANSCRIPTION and SOURCE_TYPE_VOICE_RECOGNITION
     if (isScoSupportSource) {
         auto isA2dpInputDevice = [](const std::shared_ptr<AudioDeviceDescriptor> &desc) {

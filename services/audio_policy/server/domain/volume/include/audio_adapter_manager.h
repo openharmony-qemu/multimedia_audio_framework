@@ -309,6 +309,8 @@ public:
     void MdmMuteSwitchCallback(bool isMute);
     void RegisterAppIndividualVolumeEnableObserver();
     void HandleAppIndividualVolumeSettingChanged();
+    void RegisterCloneStateObserver();
+    void HandleCloneStateChanged();
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
     void SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state);
@@ -344,7 +346,7 @@ public:
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
     float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
     int32_t UpdateCollaborativeProductId(const std::string &productId);
-    bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage);
+    bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage);
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length);
     void LoadCollaborationConfig();
     void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
@@ -616,6 +618,7 @@ private:
     std::shared_ptr<RemoteVolumeCallback> remoteVolumeCallback_ = nullptr;
     std::mutex deviceConnectMutex_;
     std::mutex offloadSessionMutex_;
+    int32_t cloneState_ = 0;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

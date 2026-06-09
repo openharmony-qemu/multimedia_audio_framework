@@ -272,6 +272,10 @@ int32_t AudioCacheMgrInner::DumpAllMemBlock()
 
     std::lock_guard<std::mutex> processsLock(g_Mutex);
 
+    int64_t startTime = 0;
+    int64_t endTime = 0;
+    GetCachedDurationInternal(startTime, endTime);
+
     std::vector<std::pair<std::string, std::string>> paramStart;
     paramStart.push_back({"BETA", "true"});
     Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(paramStart);
@@ -292,9 +296,29 @@ int32_t AudioCacheMgrInner::DumpAllMemBlock()
     std::vector<std::pair<std::string, std::string>> paramEnd;
     paramEnd.push_back({"BETA", "false"});
     Media::MediaMonitor::MediaMonitorManager::GetInstance().SetMediaParameters(paramEnd);
+    AUDIO_INFO_LOG("DumpAllMemBlock finished. startTime:%{public}s, endTime:%{public}s.",
+        ClockTime::NanoTimeToString(startTime).c_str(), ClockTime::NanoTimeToString(endTime).c_str());
 
     isDumpingData_.store(false);
     return SUCCESS;
+}
+
+void AudioCacheMgrInner::GetCachedDurationInternal(int64_t &startTime, int64_t &endTime)
+{
+    if (memChunkDeque_.size() == 0) {
+        startTime = ClockTime::GetRealNano();
+        endTime = startTime;
+        AUDIO_WARNING_LOG("GetCachedDurationInternal while memChunkDeque_ is empty!");
+        return;
+    }
+
+    int64_t temp;
+    if (memChunkDeque_.front() != nullptr) {
+        memChunkDeque_.front()->GetMemChunkDuration(startTime, temp);
+    }
+    if (memChunkDeque_.back() != nullptr) {
+        memChunkDeque_.back()->GetMemChunkDuration(temp, endTime);
+    }
 }
 
 void AudioCacheMgrInner::GetCachedDuration(int64_t &startTime, int64_t &endTime)
@@ -306,21 +330,7 @@ void AudioCacheMgrInner::GetCachedDuration(int64_t &startTime, int64_t &endTime)
         return;
     }
     std::lock_guard<std::mutex> processLock(g_Mutex);
-    // init but no data in memchunk
-    if (memChunkDeque_.size() == 0) {
-        startTime = ClockTime::GetRealNano();
-        endTime = startTime;
-        AUDIO_WARNING_LOG("GetCachedDuration while memChunkDeque_ is empty!");
-        return;
-    }
-
-    int64_t temp;
-    if (memChunkDeque_.front() != nullptr) {
-        memChunkDeque_.front()->GetMemChunkDuration(startTime, temp);
-    }
-    if (memChunkDeque_.back() != nullptr) {
-        memChunkDeque_.back()->GetMemChunkDuration(temp, endTime);
-    }
+    GetCachedDurationInternal(startTime, endTime);
     AUDIO_INFO_LOG("startTime:%{public}s, endTime:%{public}s.",
         ClockTime::NanoTimeToString(startTime).c_str(), ClockTime::NanoTimeToString(endTime).c_str());
 }

@@ -619,24 +619,13 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
 
 int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isScoSelected)
 {
-    if (scene_.load() != scene) {
-        AUDIO_INFO_LOG("update audio scene from %{public}d to %{public}d with recordscene",
-            scene_.load(), scene);
+    if (scene_.load() == scene && isScoSelected_.load() == isScoSelected) {
+        return SUCCESS;
     }
-    if (isScoSelected_.load() != isScoSelected) {
-        AUDIO_INFO_LOG("%{public}s scoSelected", isScoSelected ? "is" : "not");
-    }
+    AUDIO_INFO_LOG("scene %{public}d to %{public}d, isScoSelected %{public}d to %{public}d",
+        scene_.load(), scene, isScoSelected_.load(), isScoSelected);
     scene_.store(scene);
     isScoSelected_.store(isScoSelected);
-    return TryUpdateScoCategory();
-}
-
-int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene)
-{
-    if (scene_.load() != scene) {
-        AUDIO_INFO_LOG("update audio scene from %{public}d to %{public}d", scene_.load(), scene);
-    }
-    scene_.store(scene);
     return TryUpdateScoCategory();
 }
 
@@ -657,14 +646,14 @@ bool AudioHfpManager::IsRecognitionStatus()
 int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
     auto scene = scene_.load();
-    CHECK_AND_RETURN_RET_LOG(scene == AUDIO_SCENE_DEFAULT || isVirtual, ERROR, "only support no call");
+    CHECK_AND_RETURN_RET_LOG(scene == AUDIO_SCENE_DEFAULT || uid == 0, ERROR, "only support no call");
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
         if (isVirtual) {
             if (virtualCalls_.count(uid) > 0) {
                 virtualCalls_.erase(uid);
             }
-            if (uid == UID_CALL_MANAGER_SA) {
+            if (uid == UID_CALL_MANAGER_SA || uid == 0) {
                 virtualCalls_.clear();
             }
         } else {
@@ -802,12 +791,20 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
             BluetoothScoManager::GetInstance().UpdateScoState(scoState, device, reason);
             HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
         }
+        if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
+            AudioHfpManager::ClearScoSelected();
+        }
     }
 }
 
 ScoCategory AudioHfpManager::GetScoCategory()
 {
     return JudgeScoCategory();
+}
+
+void AudioHfpManager::ClearScoSelected()
+{
+    isScoSelected_.store(false);
 }
 
 void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)

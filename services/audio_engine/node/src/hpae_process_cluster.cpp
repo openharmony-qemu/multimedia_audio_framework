@@ -302,6 +302,18 @@ int32_t HpaeProcessCluster::DestroyNodes(uint32_t sessionId)
     return SUCCESS;
 }
 
+void HpaeProcessCluster::Flush(uint32_t sessionId)
+{
+    AUDIO_INFO_LOG("Flush sessionId %{public}u", sessionId);
+    auto converter = SafeGetMap(idConverterMap_, sessionId);
+    if (converter != nullptr) {
+        converter->FlushBuffers();
+    }
+    if (HasSessionEffectNode(sessionId)) {
+        SessionEffectFlush(sessionId);
+    }
+}
+
 void HpaeProcessCluster::InitEffectBuffer(const uint32_t sessionId)
 {
     CHECK_AND_RETURN_LOG(renderEffectNode_ != nullptr, "renderEffectNode is nullptr");

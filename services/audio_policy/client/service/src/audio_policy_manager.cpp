@@ -258,6 +258,19 @@ int32_t AudioPolicyManager::SetCallbackStreamInfo(const CallbackChange &callback
     return ret;
 }
 
+void AudioPolicyManager::RecoverSystemVolumeChangeByFilterCallback(const sptr<IAudioPolicy> &gsp)
+{
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER].mutex);
+    if (callbackChangeInfos_[CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER].isEnable) {
+        std::vector<SystemVolumeFilter> systemVolumeFilters =
+            audioPolicyClientStubCB_->GetRegisteredSystemVolumeFilters();
+        for (const auto &filter : systemVolumeFilters) {
+            AUDIO_INFO_LOG("recover filter for uid=%{public}d", filter.uid);
+            gsp->SetSystemVolumeChangeCallbackInfo(filter);
+        }
+    }
+}
+
 void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
 {
     GetInstance().ResetClientTrackerStubMap();
@@ -569,10 +582,11 @@ float AudioPolicyManager::GetLowPowerVolume(int32_t streamId)
 
 float AudioPolicyManager::GetSingleStreamVolume(int32_t streamId)
 {
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-
     float outVolume = -1;
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, outVolume, "No system permission");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, outVolume, "audio policy manager proxy is NULL.");
     gsp->GetSingleStreamVolume(streamId, outVolume);
     return outVolume;
 }
@@ -3313,6 +3327,8 @@ int32_t AudioPolicyManager::SetVoiceRingtoneMute(bool isMute)
 
 int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
 {
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->SetVirtualCall(isVirtual);
@@ -3320,8 +3336,10 @@ int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
 
 bool AudioPolicyManager::GetVirtualCall()
 {
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     bool isVirtualCall = true;
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, isVirtualCall, "No system permission");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, isVirtualCall, "audio policy manager proxy is NULL.");
     gsp->GetVirtualCall(isVirtualCall);
     return isVirtualCall;

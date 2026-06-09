@@ -91,6 +91,7 @@ private:
     void SafeSendCallBackEvent(uint32_t eventCode, int64_t data, int64_t delayTime);
     void ReleaseOverTimeMemBlock();
     void PrintCurMemoryCondition();
+    void GetCachedDurationInternal(int64_t &startTime, int64_t &endTime);
 private:
     std::atomic<bool> isDumpingData_ = {false};
     std::atomic<bool> isInited_ = {false};

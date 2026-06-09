@@ -67,7 +67,6 @@ static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
 static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
-static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
 static const std::string PIPE_PRIMARY_INPUT_VOICE_RECOGNITION = "primary_input_voice_recognition";
 static constexpr uint32_t ONLY_SUPPORT_MMAP = 2;
 static const std::string PIPE_PRIMARY_INPUT_CAMCORDER = "primary_input_camcorder";
@@ -512,6 +511,11 @@ bool AudioCoreService::IsSupportInnerCaptureOffload()
     return pipeManager_->IsSupportInnerCaptureOffload();
 }
 
+bool AudioCoreService::IsSupportIndependentPipe()
+{
+    return pipeManager_->IsSupportIndependentPipe();
+}
+
 bool AudioCoreService::GetEnhancedRoutingSupported()
 {
     return AudioSelectInterfaceService::GetInstance().GetEnhancedRoutingSupported();
@@ -835,8 +839,8 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     // MultiChannel:collaboration playback, nearlink
     if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->GetMainNewDeviceDesc()) && streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_NEARLINK &&
-        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage()) &&
-        !CheckRingAndVoipStreamRunning() && !isRingDualToneOnPrimarySpeaker_) {
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(DEVICE_TYPE_NEARLINK,
+            streamDesc->GetRenderUsage()) && !CheckRingAndVoipStreamRunning() && !isRingDualToneOnPrimarySpeaker_) {
             streamDesc->isNearLinkCollaborationEnable_ = true;
             JUDGE_AND_INFO_LOG(isCreateProcess_, "isNearLinkCollaborationEnable_ true");
             return true;
@@ -904,7 +908,8 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
         HILOG_COMM_ERROR("[IsStreamSupportDirect]Spatialization enabled"));
     ret = AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->GetMainNewDeviceDesc()) &&
-        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage());
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(
+            streamDesc->GetMainNewDeviceType(), streamDesc->GetRenderUsage());
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == false, false,
         HILOG_COMM_ERROR("[IsStreamSupportDirect]Collaborative enabled"));
     return true;
@@ -914,6 +919,15 @@ bool AudioCoreService::IsStreamSupportOutputInterPhone(std::shared_ptr<AudioStre
 {
     Trace trace("IsStreamSupportOutputInterPhone");
     if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
+        return true;
+    }
+    return false;
+}
+
+bool AudioCoreService::IsStreamSupportIndependentPipe(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    Trace trace("IsStreamSupportIndependentPipe");
+    if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT) {
         return true;
     }
     return false;
@@ -1029,7 +1043,8 @@ void AudioCoreService::HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioS
             if (streamDesc->audioFlag_ == AUDIO_OUTPUT_FLAG_NORMAL &&
                 AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
                     streamDesc->GetMainNewDeviceDesc()) &&
-                audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage())) {
+                audioPolicyManager_.IsCollaborationSupportedForStreamUsage(
+                    streamDesc->GetMainNewDeviceType(), streamDesc->GetRenderUsage())) {
                 break;
             }
             return;
@@ -1095,6 +1110,9 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
     }
     if (IsStreamSupportOutputInterPhone(streamDesc)) {
         return AUDIO_OUTPUT_FLAG_INTERPHONE;
+    }
+    if (IsStreamSupportIndependentPipe(streamDesc)) {
+        return AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT;
     }
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }
@@ -1208,19 +1226,18 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
     bool isScoDevice = !streamDesc->newDeviceDescs_.empty() &&
         streamDesc->newDeviceDescs_[0] != nullptr &&
         streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
-    if (isScoDevice && Util::IsEnhancedRoutingSupported()) {
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> descs = pipeManager_->GetAllOutputStreamDescs();
+    FetchOutputDevicesForDescs(descs);
+    bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
+    bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
+    bool isScoSelected = hasScoPlay || hasScoRecord;
+    if (Util::IsEnhancedRoutingSupported()) {
         TrackScoStreamAudioScene(streamDesc, true);
-        bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
-        bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
-        bool isScoSelected = hasScoPlay || hasScoRecord;
         if (isScoSelected) {
             AudioScene highestScene = ScoAudioSceneManager::GetInstance().GetHighestPriorityAudioScene();
             Bluetooth::AudioHfpManager::UpdateAudioScene(highestScene, true);
         }
-    } else if (isScoDevice) {
-        bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
-        bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
-        bool isScoSelected = hasScoPlay || hasScoRecord;
+    } else {
         Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isScoSelected);
     }
 
@@ -1547,12 +1564,24 @@ void AudioCoreService::NotifyStandbyStatus(uint32_t sessionId, bool standbyStatu
 
 int32_t AudioCoreService::NotifyStreamStandby(int32_t pid, uint32_t streamId)
 {
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is nullptr");
+    pipeManager_->AddFocusStandby(streamId);
+    AUDIO_INFO_LOG("NotifyStreamStandby pid:%{public}d streamId:%{public}u", pid, streamId);
+    FetchOutputDeviceAndRoute("NotifyStreamStandby");
+    FetchInputDeviceAndRoute("NotifyStreamStandby");
+
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
     return interruptService_->NotifyStreamStandby(pid, streamId);
 }
 
 int32_t AudioCoreService::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId)
 {
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is nullptr");
+    pipeManager_->RemoveFocusStandby(streamId);
+    AUDIO_INFO_LOG("NotifyStreamStandbyResume pid:%{public}d streamId:%{public}u", pid, streamId);
+    FetchOutputDeviceAndRoute("NotifyStreamStandbyResume");
+    FetchInputDeviceAndRoute("NotifyStreamStandbyResume");
+
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
     return interruptService_->NotifyStreamStandbyResume(pid, streamId);
 }
@@ -1674,35 +1703,9 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     }
 
     if (!isSameScene) {
-        SetSleVoiceStatusFlag(audioScene);
-        OnAudioSceneChange(audioScene);
-        auto currentOutputDevice = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
-        if (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
-            lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT) {
-            OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN);
-        }
-        if (audioScene == AUDIO_SCENE_DEFAULT && currentOutputDevice.IsRemoteDevice()) {
-            OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::OVERRODE);
-        }
+        HandleSceneChangePreferredDevice(audioScene, lastAudioScene, uid);
     }
-
-    if (audioScene == AUDIO_SCENE_PHONE_CALL) {
-        // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
-        audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
-    } else if (lastAudioScene == AUDIO_SCENE_PHONE_CALL && audioScene != AUDIO_SCENE_PHONE_CALL) {
-        audioVolumeManager_.SetVoiceRingtoneMute(false);
-    }
-    if (audioSceneManager_.IsCallEnded()) {
-        audioVolumeManager_.ClearLoudVolumeHoldMapForCall();
-        callTransferCreated_ = false;
-    }
-    if (audioSceneManager_.IsHangUpScene()) {
-        audioVolumeManager_.RefreshActiveDeviceVolume();
-    }
-    if (lastAudioScene == AUDIO_SCENE_RINGING && audioScene != AUDIO_SCENE_RINGING &&
-        audioVolumeManager_.IsAppRingMuted(uid)) {
-        audioVolumeManager_.SetAppRingMuted(uid, false); // unmute the STREAM_RING for the app.
-    }
+    HandleAudioSceneVolumeChange(audioScene, lastAudioScene, uid);
     ReloadSourceForDeviceChange(audioRouterSelectStrategy_.Get1stCurrentInputDevice(uid),
         audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid), "SetAudioScene");
     return SUCCESS;
@@ -2447,7 +2450,8 @@ int32_t AudioCoreService::SetRingerMode(AudioRingerMode ringMode)
 bool AudioCoreService::IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs)
 {
     for (auto streamDesc : outputStreamDescs) {
-        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+            !pipeManager_->IsFocusStandby(streamDesc->sessionId_)) {
             return false;
         }
     }
@@ -4692,16 +4696,14 @@ void AudioCoreService::NotifyRequiredPipesReady()
     readyConditionNotifier_.NotifySuccess(REQUIRED_PIPE_READY_MASK);
 }
 
-int32_t AudioCoreService::GetHighestPriorityVolumeTypeForDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioVolumeType &volumeType)
+int32_t AudioCoreService::GetActiveStreamRendererInfosForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    std::vector<AudioRendererInfo> &rendererInfos)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_POINTER, "deviceDesc is nullptr");
     CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "pipeManager_ is nullptr");
 
     auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
-    AudioStreamType targetStreamType = STREAM_MUSIC;
-    int32_t highestPriority = STREAM_DEFAULT_PRIORITY;
-
     for (const auto &streamDesc : outputStreamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
         CHECK_AND_CONTINUE(streamDesc->streamStatus_ == AudioStreamStatus::STREAM_STATUS_STARTED);
@@ -4710,49 +4712,11 @@ int32_t AudioCoreService::GetHighestPriorityVolumeTypeForDevice(
         auto streamDevice = streamDesc->GetNewDeviceDescs().front();
         CHECK_AND_CONTINUE(streamDevice != nullptr);
         if (streamDevice->IsSameDeviceDesc(*deviceDesc)) {
-            AudioStreamType streamType = streamCollector_.GetStreamTypeFromUsageContent(
-                streamDesc->rendererInfo_.streamUsage, streamDesc->rendererInfo_.contentType);
-            int32_t priority = GetStreamTypePriority(streamType);
-            if (priority < highestPriority) {
-                highestPriority = priority;
-                targetStreamType = streamType;
-            }
+            rendererInfos.push_back(streamDesc->rendererInfo_);
         }
     }
-
-    volumeType = VolumeUtils::GetVolumeTypeFromStreamType(targetStreamType);
     return SUCCESS;
 }
 
-int32_t AudioCoreService::GetStreamTypePriority(AudioStreamType streamType)
-{
-    static const std::unordered_map<AudioStreamType, int32_t> STREAM_PRIORITY_MAP = {
-        {STREAM_VOICE_CALL, 0},
-        {STREAM_VOICE_CALL_ASSISTANT, 0},
-        {STREAM_VOICE_COMMUNICATION, 0},
-        {STREAM_VOICE_MESSAGE, 1},
-        {STREAM_VOICE_ASSISTANT, 3},
-        {STREAM_RING, 4},
-        {STREAM_VOICE_RING, 4},
-        {STREAM_ALARM, 5},
-        {STREAM_ANNOUNCEMENT, 5},
-        {STREAM_EMERGENCY, 5},
-        {STREAM_NAVIGATION, 6},
-        {STREAM_MUSIC, 7},
-        {STREAM_MOVIE, 7},
-        {STREAM_SPEECH, 7},
-        {STREAM_GAME, 7},
-        {STREAM_DTMF, 8},
-        {STREAM_SYSTEM, 8},
-        {STREAM_SYSTEM_ENFORCED, 9},
-        {STREAM_NOTIFICATION, 100}
-    };
-
-    auto it = STREAM_PRIORITY_MAP.find(streamType);
-    if (it != STREAM_PRIORITY_MAP.end()) {
-        return it->second;
-    }
-    return STREAM_DEFAULT_PRIORITY;
-}
 } // namespace AudioStandard
 } // namespace OHOS

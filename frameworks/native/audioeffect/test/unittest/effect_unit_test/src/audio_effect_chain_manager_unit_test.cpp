@@ -4544,6 +4544,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_00
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
 
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
     int32_t result = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
         "SCENE_MUSIC", DEVICE_TYPE_SPEAKER, 100);
     EXPECT_EQ(result, CREATE_NEW_PROCESSCLUSTER);
@@ -4566,6 +4567,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_00
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
         sceneType, DEVICE_TYPE_SPEAKER, 100);
 
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
     int32_t result = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
         sceneType, DEVICE_TYPE_SPEAKER, 100);
     EXPECT_EQ(result, NO_NEED_TO_CREATE_PROCESSCLUSTER);
@@ -4774,6 +4776,9 @@ HWTEST(AudioEffectChainManagerUnitTest, MultiRenderId_Independent_002, TestSize.
 */
 HWTEST(AudioEffectChainManagerUnitTest, MultiRenderId_Cleanup_001, TestSize.Level1)
 {
+    // Clear stale entries left by previous tests (ResetInfo doesn't clear this map)
+    AudioEffectChainManager::GetInstance()->renderIdToEffectChainKeysMap_.clear();
+
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
 
@@ -5300,6 +5305,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_00
         sceneType, DEVICE_TYPE_SPEAKER, 100);
 
     // Insert null chain with positive count to trigger null warning branch
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = nullptr;
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[key] = 1;
 
@@ -5339,6 +5345,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_00
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = defaultChain;
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[key] = 1;
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
 
     int32_t result = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
         sceneType, DEVICE_TYPE_SPEAKER, 100);
@@ -5360,6 +5367,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_00
     // Set maxEffectChainCount_ to minimum and no special effects to force CREATE_DEFAULT path
     AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 1;
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
 
     int32_t result = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
         "SCENE_MUSIC", DEVICE_TYPE_SPEAKER, 100);
@@ -5381,6 +5389,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_RenderId_00
     // Set maxEffectChainCount_ to minimum, default exists
     AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 1;
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
 
     int32_t result = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(
         "SCENE_MUSIC", DEVICE_TYPE_SPEAKER, 100);

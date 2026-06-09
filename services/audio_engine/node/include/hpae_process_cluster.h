@@ -58,6 +58,7 @@ public:
     int32_t CreateNodes(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode);
     int32_t DestroyNodes(uint32_t sessionId);
     int32_t CheckNodes(uint32_t sessionId);
+    void Flush(uint32_t sessionId);
 
     // Session Effect management
     int32_t CreateSessionEffectNode(uint32_t sessionId, const std::string &effectName,

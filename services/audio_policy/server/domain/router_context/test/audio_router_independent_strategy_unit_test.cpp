@@ -911,5 +911,100 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(stream1Result->deviceId_, sco->deviceId_);
 }
 
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, MediaInput_008, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+
+    AudioRouterIndependentStrategy strategy;
+
+    strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, mic);
+
+    auto systemResult = strategy.GetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(systemResult->deviceId_, mic->deviceId_);
+
+    strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID,
+        std::make_shared<AudioDeviceDescriptor>());
+
+    systemResult = strategy.GetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_NONE);
+}
+
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, MediaInput_009, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+
+    AudioRouterIndependentStrategy strategy;
+
+    strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
+    strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID,
+        std::make_shared<AudioDeviceDescriptor>());
+
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
+    ASSERT_NE(app10001Result, nullptr);
+    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
+
+    auto app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
+    ASSERT_NE(app10002Result, nullptr);
+    EXPECT_EQ(app10002Result->deviceType_, DEVICE_TYPE_NONE);
+}
+
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, CallInput_008, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+
+    AudioRouterIndependentStrategy strategy;
+
+    strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, mic);
+
+    auto systemResult = strategy.GetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(systemResult->deviceId_, mic->deviceId_);
+
+    strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID,
+        std::make_shared<AudioDeviceDescriptor>());
+
+    systemResult = strategy.GetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_NONE);
+}
+
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, CallOutput_009, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+
+    AudioRouterIndependentStrategy strategy;
+
+    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, speaker);
+
+    auto systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(systemResult->deviceId_, speaker->deviceId_);
+
+    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID,
+        std::make_shared<AudioDeviceDescriptor>());
+
+    systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_NONE);
+}
+
 }
 }

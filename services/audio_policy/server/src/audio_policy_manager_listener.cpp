@@ -93,11 +93,11 @@ bool AudioPolicyManagerListenerCallback::OnQueryIsForceGetDevByVolumeType(const 
     return ret;
 }
 
-bool AudioPolicyManagerListenerCallback::OnQueryIsPcSettingsOrSceneBoard(const std::string &bundleName)
+bool AudioPolicyManagerListenerCallback::OnQueryUseSystemPreferredDeviceForVolume(const std::string &bundleName)
 {
     CHECK_AND_RETURN_RET_LOG(listener_ != nullptr, false, "listener_ is nullptr");
     bool ret = false;
-    listener_->OnQueryIsPcSettingsOrSceneBoard(bundleName, ret);
+    listener_->OnQueryUseSystemPreferredDeviceForVolume(bundleName, ret);
     return ret;
 }
 } // namespace AudioStandard

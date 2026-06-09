@@ -62,7 +62,6 @@ public:
     int32_t ReadOutput(uint8_t *buf, size_t len, uint32_t *skipCount = nullptr) override;
     size_t GetInputLevel() const override;
     void ClearBuffers() override;
-    int32_t StartEffect() override;
     int32_t StopEffect() override;
     int32_t TriggerProcess() override;
     int32_t Flush() override;
@@ -85,7 +84,6 @@ private:
     bool hasHandle_ = false;
     uint32_t preheatFrames_ = 0;
     bool preheatFramesCached_ = false;
-    bool isEffectStarted_ = false;
     size_t fedBytes_ = 0;
     SeProcessStats stats_;
     int64_t statsReportThreshold_ = 48000;

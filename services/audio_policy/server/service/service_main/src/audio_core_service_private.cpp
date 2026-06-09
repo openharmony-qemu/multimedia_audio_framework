@@ -221,7 +221,8 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
 
         // update current output device
-        if (needUpdateActiveDevice) {
+        if (needUpdateActiveDevice && streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+            !pipeManager_->IsFocusStandby(streamDesc->sessionId_)) {
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
                 reason);
             needUpdateActiveDevice = !isUpdateActiveDevice;
@@ -437,7 +438,6 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STARTED);
     } else {
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STOPPED);
-        CheckScoState(streamDesc);
     }
     FetchDeviceInfo info = { streamUsage, "CheckModemScene" };
     descs = audioRouterCenter_.FetchOutputDevices(info);
@@ -934,7 +934,8 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
                 break;
             case AUDIO_STREAM_ACTION_MOVE:
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc, pipeInfo->id_);
-                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED ||
+                    pipeManager_->IsFocusStandby(desc->sessionId_)) {
                     MoveStreamSink(desc, pipeInfo, reason);
                 } else {
                     MoveToNewOutputDevice(desc, pipeInfo, reason);
@@ -968,7 +969,8 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc, pipeInfo->id_);
-                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
+                if (desc->streamStatus_ != STREAM_STATUS_STARTED ||
+                    pipeManager_->IsFocusStandby(desc->sessionId_)) {
                     MoveStreamSink(desc, pipeInfo, reason);
                 } else {
                     MoveToNewOutputDevice(desc, pipeInfo, reason);
@@ -2375,17 +2377,15 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
     }
     int32_t realUid = GetRealUid(streamDesc);
     CHECK_AND_RETURN_RET(CheckOffloadPipeUidAllowed(streamDesc, realUid), false);
+    StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     if (streamDesc->streamInfo_.channels > STEREO &&
-        (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
-         streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
+        (streamUsage != STREAM_USAGE_MOVIE || streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
         JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because channels.");
         return false;
     }
 
-    if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC &&
-        streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_AUDIOBOOK &&
-        (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
-         streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
+    if (streamUsage != STREAM_USAGE_MUSIC && streamUsage != STREAM_USAGE_AUDIOBOOK &&
+        (streamUsage != STREAM_USAGE_MOVIE || streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
         JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because streamUsage.");
         return false;
     }
@@ -2407,7 +2407,8 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
 
     if (AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
         streamDesc->GetMainNewDeviceDesc()) &&
-        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(streamDesc->GetRenderUsage())) {
+        audioPolicyManager_.IsCollaborationSupportedForStreamUsage(
+            streamDesc->GetMainNewDeviceType(), streamDesc->GetRenderUsage())) {
         return false;
     }
 
@@ -3023,10 +3024,48 @@ void AudioCoreService::OnAudioSceneChange(const AudioScene& audioScene)
     audioPolicyServerHandler_->SendAudioSceneChangeEvent(audioScene);
 }
 
+void AudioCoreService::HandleSceneChangePreferredDevice(AudioScene audioScene, AudioScene lastAudioScene, int32_t uid)
+{
+    SetSleVoiceStatusFlag(audioScene);
+    OnAudioSceneChange(audioScene);
+    auto currentOutputDevice = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
+    if (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT) {
+        OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN);
+    }
+    if (audioScene == AUDIO_SCENE_DEFAULT && currentOutputDevice.IsRemoteDevice()) {
+        OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::OVERRODE);
+    }
+    OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN,
+        audioSceneManager_.GetAudioSceneOwnerUid());
+}
+
+void AudioCoreService::HandleAudioSceneVolumeChange(AudioScene audioScene, AudioScene lastAudioScene, int32_t uid)
+{
+    if (audioScene == AUDIO_SCENE_PHONE_CALL) {
+        // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
+        audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
+    } else if (lastAudioScene == AUDIO_SCENE_PHONE_CALL && audioScene != AUDIO_SCENE_PHONE_CALL) {
+        audioVolumeManager_.SetVoiceRingtoneMute(false);
+    }
+    if (audioSceneManager_.IsCallEnded()) {
+        audioVolumeManager_.ClearLoudVolumeHoldMapForCall();
+        callTransferCreated_ = false;
+    }
+    if (audioSceneManager_.IsHangUpScene()) {
+        audioVolumeManager_.RefreshActiveDeviceVolume();
+    }
+    if (lastAudioScene == AUDIO_SCENE_RINGING && audioScene != AUDIO_SCENE_RINGING &&
+        audioVolumeManager_.IsAppRingMuted(uid)) {
+        audioVolumeManager_.SetAppRingMuted(uid, false); // unmute the STREAM_RING for the app.
+    }
+}
+
 bool AudioCoreService::HandleOutputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
+    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED ||
+        pipeManager_->IsFocusStandby(streamDesc->sessionId_)) {
         return true;
     }
     if (HandleDeviceChangeForFetchOutputDevice(streamDesc, reason) == ERR_NEED_NOT_SWITCH_DEVICE &&
@@ -3406,14 +3445,14 @@ void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDevice
 #endif
 }
 
-void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+void AudioCoreService::FetchOutputDevicesForDescs(
     const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs)
 {
     for (auto &desc : outputDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         FetchDeviceInfo info = { desc->rendererInfo_.streamUsage, GetRealUid(desc),
-            streamDesc->rendererInfo_.privacyType, "StartClient", streamDesc->bundleName_ };
-        info.streamId = streamDesc->sessionId_;
+            desc->rendererInfo_.privacyType, "StartClient", desc->bundleName_ };
+        info.streamId = desc->sessionId_;
         auto newDescs = audioRouterCenter_.FetchOutputDevices(info);
         pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
     }

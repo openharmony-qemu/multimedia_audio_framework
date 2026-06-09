@@ -963,5 +963,45 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, NonExclusiveInputDevice_001, TestSiz
     auto result = strategy.GetCurrentInputDevice(TEST_APP_UID_10001);
     EXPECT_EQ(result.size(), 1);
 }
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, CallInputDeviceTypeNone_001, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, mic);
+
+    auto result = strategy.GetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(result->deviceId_, mic->deviceId_);
+
+    strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID,
+        std::make_shared<AudioDeviceDescriptor>());
+
+    result = strategy.GetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, MediaInputInvalidUidDeviceTypeNone_001, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID,
+        std::make_shared<AudioDeviceDescriptor>());
+
+    auto invalidUidResult = strategy.GetMediaInputDevice(INVALID_UID, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
+    ASSERT_NE(invalidUidResult, nullptr);
+    EXPECT_EQ(invalidUidResult->deviceType_, DEVICE_TYPE_NONE);
+}
 }
 }

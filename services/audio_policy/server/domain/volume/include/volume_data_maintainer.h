@@ -188,7 +188,7 @@ private:
     static std::string GetDeviceGroupTypeKey(DeviceType deviceType);
     static std::string GetVolumeValueKey(AudioVolumeType volumeType, VolumeKeyType keyType = VolumeKeyType::LEVEL);
     static DeviceGroupType GetDeviceGroupTypeByDeviceType(DeviceType deviceType);
-    static std::string GetVolumeValueMapKey(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId = 0);
+    std::string GetVolumeValueMapKey(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId = 0);
 
     void LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId);
     void LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId);

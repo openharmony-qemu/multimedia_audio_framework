@@ -804,6 +804,7 @@ void AudioPolicyService::RegisterDataObserver()
     audioPolicyManager_.RegisterDoNotDisturbStatus();
     audioPolicyManager_.RegisterDoNotDisturbStatusWhiteList();
     audioPolicyManager_.RegisterAppIndividualVolumeEnableObserver();
+    audioPolicyManager_.RegisterCloneStateObserver();
 }
 
 int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)

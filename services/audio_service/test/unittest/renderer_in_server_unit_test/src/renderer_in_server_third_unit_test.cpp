@@ -14,6 +14,7 @@
  */
 
 #include "renderer_in_server_third_unit_test.h"
+#include "pro_renderer_stream_impl.h"
 
 using namespace testing::ext;
 
@@ -26,6 +27,7 @@ const uint64_t TEST_TIMESTAMP = 111111;
 const float IN_VOLUME_RANGE = 0.5f;
 const uint32_t TEST_BUFLENGTH = 10;
 const int32_t TEST_DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
+const int32_t TEST_DUP_SESSION_EFFECT_LEN = 4000; // 4000 -> 4000ms
 const int32_t TEST_DUP_COMMON_LEN = 440; // 400 -> 440ms
 const int32_t TEST_DUP_DEFAULT_LEN = 20; // 20 -> 20ms
 static const size_t TEST_MAX_INNERCAP_BUFFER_SIZE = 16 * 1024 * 1024;
@@ -1868,22 +1870,6 @@ HWTEST_F(RendererInServerThirdUnitTest, GetAvailableSize_001, TestSize.Level1)
     int32_t ret = streamCallbacks->GetAvailableSize(length);
     EXPECT_EQ(ret, ERROR);
 }
-
-
-/**
- * @tc.name  : Test IsHighResolution API
- * @tc.type  : FUNC
- * @tc.number: RendererInServerIsHighResolution_001
- * @tc.desc  : Test IsHighResolution.
- */
-HWTEST_F(RendererInServerThirdUnitTest, RendererInServerIsHighResolution_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    
-    int32_t ret = rendererInServer->IsHighResolution();
-    EXPECT_EQ(ret, 1);
-}
-
 /**
  * @tc.name  : Test SetSilentModeAndMixWithOthers API
  * @tc.type  : FUNC
@@ -2913,6 +2899,45 @@ HWTEST_F(RendererInServerThirdUnitTest, ReConfigDupStreamCallback_001, TestSize.
 }
 
 /**
+ * @tc.name  : Test OnStatusUpdateSub API
+ * @tc.type  : FUNC
+ * @tc.number: SessionEffectReConfigDupStreamCallback_001
+ * @tc.desc  : Test SessionEffect enabled state expands non-offload duplicate buffer for inner capture.
+ */
+HWTEST_F(RendererInServerThirdUnitTest, SessionEffectReConfigDupStreamCallback_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(SUCCESS, ret);
+
+    int32_t innerCapId = 1;
+    uint32_t dupStreamIndex = 1;
+    size_t dupTotalSizeInFrameTest = 1;
+    size_t dupSpanSizeInFrameTest = 1;
+    size_t dupByteSizePerFrameTest = 1;
+    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId] =
+        std::make_shared<StreamCallbacks>(dupStreamIndex, rendererInServer);
+    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() =
+        AudioRingCache::Create(dupTotalSizeInFrameTest * dupByteSizePerFrameTest);
+    rendererInServer->offloadEnable_ = false;
+    rendererInServer->dupTotalSizeInFrame_ = dupTotalSizeInFrameTest;
+    rendererInServer->dupSpanSizeInFrame_ = dupSpanSizeInFrameTest;
+    rendererInServer->dupByteSizePerFrame_ = dupByteSizePerFrameTest;
+
+    rendererInServer->OnStatusUpdateSub(OPERATION_SESSION_EFFECT_ENABLED);
+
+    EXPECT_TRUE(rendererInServer->hasSessionEffect_.load());
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
+        (TEST_DUP_SESSION_EFFECT_LEN / TEST_DUP_DEFAULT_LEN));
+}
+
+/**
  * @tc.name  : Test AudioStaticBufferProcessor API
  * @tc.type  : FUNC
  * @tc.number: AudioStaticBufferProcessor_ProcessBufferPitch_001
@@ -3096,6 +3121,108 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_SetPitch_005, TestSize.
     
     int32_t ret = rendererInServer->SetPitch(PITCH_DEFAULT);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : Construct_NonStandardSampleRate_001
+ * @tc.type  : FUNC
+ * @tc.number: Construct_NonStandardSampleRate_001
+ * @tc.desc  : Test isNonStandardSampleRate_ is true with non-standard sample rate (11025).
+ */
+HWTEST_F(RendererInServerThirdUnitTest, Construct_NonStandardSampleRate_001, TestSize.Level0)
+{
+    AudioStreamInfo nonStdStreamInfo(SAMPLE_RATE_11025, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(nonStdStreamInfo, DEVICE_TYPE_USB_HEADSET);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    EXPECT_EQ(rendererInServer->isNonStandardSampleRate_, true);
+}
+
+/**
+ * @tc.name  : Construct_StandardSampleRate_001
+ * @tc.type  : FUNC
+ * @tc.number: Construct_StandardSampleRate_001
+ * @tc.desc  : Test isNonStandardSampleRate_ is false with standard sample rate (48000).
+ */
+HWTEST_F(RendererInServerThirdUnitTest, Construct_StandardSampleRate_001, TestSize.Level0)
+{
+    AudioStreamInfo stdStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(stdStreamInfo, DEVICE_TYPE_USB_HEADSET);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    EXPECT_EQ(rendererInServer->isNonStandardSampleRate_, false);
+}
+
+/**
+ * @tc.name  : HandleOperationStarted_NonStandardSkipReset_001
+ * @tc.type  : FUNC
+ * @tc.number: HandleOperationStarted_NonStandardSkipReset_001
+ * @tc.desc  : Test HandleOperationStarted with non-standard rate skips innerCapFirstWriteMap_ reset.
+ */
+HWTEST_F(RendererInServerThirdUnitTest, HandleOperationStarted_NonStandardSkipReset_001, TestSize.Level1)
+{
+    AudioStreamInfo nonStdStreamInfo(SAMPLE_RATE_11025, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(nonStdStreamInfo, DEVICE_TYPE_USB_HEADSET);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    ASSERT_EQ(rendererInServer->isNonStandardSampleRate_, true);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+
+    // Set up inner capture infrastructure
+    const int32_t innerCapId = 1;
+    rendererInServer->captureInfos_[innerCapId].isInnerCapEnabled.store(true);
+    rendererInServer->captureInfos_[innerCapId].dupStream =
+        std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto callback = std::make_shared<StreamCallbacks>(rendererInServer->streamIndex_, rendererInServer);
+    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId] = callback;
+    rendererInServer->innerCapFirstWriteMap_[innerCapId].store(42);
+
+    rendererInServer->HandleOperationStarted();
+
+    // Non-standard rate: innerCapFirstWriteMap_ should NOT be reset to 0
+    EXPECT_EQ(rendererInServer->innerCapFirstWriteMap_[innerCapId].load(), 42u);
+}
+
+/**
+ * @tc.name  : HandleOperationStarted_StandardReset_001
+ * @tc.type  : FUNC
+ * @tc.number: HandleOperationStarted_StandardReset_001
+ * @tc.desc  : Test HandleOperationStarted with standard rate resets innerCapFirstWriteMap_ to 0.
+ */
+HWTEST_F(RendererInServerThirdUnitTest, HandleOperationStarted_StandardReset_001, TestSize.Level1)
+{
+    AudioStreamInfo stdStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(stdStreamInfo, DEVICE_TYPE_USB_HEADSET);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    ASSERT_EQ(rendererInServer->isNonStandardSampleRate_, false);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+
+    // Set up inner capture infrastructure
+    const int32_t innerCapId = 1;
+    rendererInServer->captureInfos_[innerCapId].isInnerCapEnabled.store(true);
+    rendererInServer->captureInfos_[innerCapId].dupStream =
+        std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto callback = std::make_shared<StreamCallbacks>(rendererInServer->streamIndex_, rendererInServer);
+    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId] = callback;
+    rendererInServer->innerCapFirstWriteMap_[innerCapId].store(42);
+
+    rendererInServer->HandleOperationStarted();
+
+    // Standard rate: innerCapFirstWriteMap_ should be reset to 0
+    EXPECT_EQ(rendererInServer->innerCapFirstWriteMap_[innerCapId].load(), 0u);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -371,6 +371,7 @@ interface AudioManager {
   GetEffectManager(): AudioEffectManager;
   GetCollaborativeManager(): AudioCollaborativeManager;
   GetDeviceEnhanceManager(): AudioDeviceEnhanceManager;
+  GetDebuggingManager(): AudioDebuggingManager;
 
   @gen_promise("disableSafeMediaVolume")
   DisableSafeMediaVolumeSync(): void;
@@ -1015,23 +1016,23 @@ struct AudioCapturerInfo {
   capturerFlags: i32;
 }
 
-enum PlaybackCaptureMode: i32 {
-  DEFAULT = 0,
-  MEDIA = 1,
-  EXCLUDING_SELF = 32768,
+enum AudioPlaybackCaptureMode: i32 {
+  MODE_DEFAULT = 0,
+  MODE_MEDIA = 1,
+  MODE_EXCLUDING_SELF = 32768,
 }
 
 struct AudioCapturerOptions {
   streamInfo: AudioStreamInfo;
   capturerInfo: AudioCapturerInfo;
   preferredInputDevice: Optional<AudioDeviceDescriptor>;
-  playbackCaptureMode: Optional<PlaybackCaptureMode>;
+  playbackCaptureMode: Optional<AudioPlaybackCaptureMode>;
 }
 
-enum PlayCaptureStartState: i32 {
-  SUCCESS = 0,
-  FAILED = 1,
-  NOT_AUTHORIZED = 2,
+enum PlaybackCaptureStartState: i32 {
+  STATE_SUCCESS = 0,
+  STATE_FAILED = 1,
+  STATE_NOT_AUTHORIZED = 2,
 }
 
 interface AudioCapturer {
@@ -1083,8 +1084,7 @@ interface AudioCapturer {
   @gen_promise("setMuteHint")
   SetMuteHintSync(mute: bool): void;
 
-  @gen_promise("requestPlaybackCaptureStart")
-  RequestPlaybackCaptureStartSync(): PlayCaptureStartState;
+  RequestPlaybackCaptureStart(callback: (data: PlaybackCaptureStartState) => void): void;
 
   GetCurrentInputDevices(): Array<AudioDeviceDescriptor>;
 
@@ -1474,6 +1474,8 @@ union AudioDevicePairOrNull {
 }
 
 interface AudioLoopback {
+  GetImplPtr(): i64;
+
   @gen_promise("getStatus")
   GetStatusSync(): AudioLoopbackStatus;
 
@@ -1538,4 +1540,12 @@ interface AudioDeviceEnhanceManager {
 
   @gen_promise("selectInputDeviceForAudioCapturer")
   SelectInputDeviceForAudioCapturerSync(capturer: AudioCapturer, deviceDescriptor: AudioDeviceDescriptor): void;
+}
+
+interface AudioDebuggingManager {
+  PrintAppInfo(fd: i32): void;
+  PrintRendererInfo(renderer: AudioRenderer, fd: i32): void;
+  PrintCapturerInfo(capturer: AudioCapturer, fd: i32): void;
+  PrintLoopbackInfo(loopback: AudioLpback, fd: i32): void;
+  PrintSessionInfo(session: AudioSessionManager, fd: i32): void;
 }

@@ -60,6 +60,7 @@ public:
     void OnHasEarpiece();
     void OnMultSupMode(bool supportMultSupMode);
     void OnSupportUltraFast(bool supportUltraFast);
+    void OnIsSupportIndependentPipe(bool isSupportIndependentPipe);
 
     void SetEcEnableState(bool ecEnableState);
     
@@ -78,6 +79,7 @@ public:
     int32_t GetMaxCapturersInstances();
     int32_t GetMaxFastRenderersInstances();
     bool IsSupportInnerCaptureOffload();
+    bool IsSupportIndependentPipe();
     int32_t GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
         const AudioSamplingRate &samplingRate);
     bool GetNormalVoipFlag();
@@ -187,6 +189,7 @@ private:
     bool normalVoipFlag_ = false;
     bool supportMultSupMode_ = false;
     bool supportUltraFast_ = false;
+    bool isSupportIndependentPipe_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;
     AudioDeviceManager &audioDeviceManager_;

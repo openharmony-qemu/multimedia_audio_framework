@@ -141,6 +141,9 @@ void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioE
     // DEVICE_TYPE_ACCESSORY effect move to HAL
     CHECK_AND_RETURN_LOG(sourceInfo_.deviceType != DEVICE_TYPE_ACCESSORY,
         "deviceType %{public}d needn't create effect", sourceInfo_.deviceType);
+    // remote device effect remove
+    CHECK_AND_RETURN_LOG(!(sourceInfo_.deviceType == DEVICE_TYPE_MIC &&
+        sourceInfo_.deviceNetId != LOCAL_NETWORK_ID), "remote needn't create effect");
 
     // todo: algorithm instance count control
     HpaeNodeInfo clusterNodeInfo;
@@ -922,8 +925,12 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     if (sourceInfo_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE) {
         sourceInputClusterMap_[mainMicType_]->SetSourceInputNodeType(HPAE_SOURCE_OFFLOAD);
     }
+    std::string deviceNetId = sourceInfo_.deviceNetId;
+    if (sourceInfo_.deviceClass == "primary_extra_capturer") {
+        deviceNetId = sourceInfo_.deviceName;
+    }
     int32_t ret = sourceInputClusterMap_[mainMicType_]->GetCapturerSourceInstance(
-        sourceInfo_.deviceClass, sourceInfo_.deviceNetId, sourceInfo_.sourceType,
+        sourceInfo_.deviceClass, deviceNetId, sourceInfo_.sourceType,
         sourceInfo_.sourceName, sourceInfo_.busAddress);
     captureId_ = sourceInputClusterMap_[mainMicType_]->GetCaptureId();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,

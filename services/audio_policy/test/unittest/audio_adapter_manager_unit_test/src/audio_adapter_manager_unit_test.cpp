@@ -1684,19 +1684,5 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_Close_001, TestSi
     EXPECT_TRUE(ret == SUCCESS);
 }
 
-/**
- * @tc.name: IsCollaborationSupportedForStreamUsage_001
- * @tc.type: FUNC
- * @tc.desc: Test IsCollaborationSupportedForStreamUsage delegates to adapter.
- */
-HWTEST_F(AudioAdapterManagerUnitTest, IsCollaborationSupportedForStreamUsage_001, TestSize.Level1)
-{
-    auto &manager = AudioAdapterManager::GetInstance();
-    int32_t result = manager.UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
-    result += static_cast<int32_t>(manager.IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
-    // Result depends on adapter state, just verify no crash
-    EXPECT_TRUE(result != ERROR);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

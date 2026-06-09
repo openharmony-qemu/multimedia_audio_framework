@@ -290,6 +290,20 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_015, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetPipeType_016
+ * @tc.desc: Test GetPipeType when audioMode is AUDIO_MODE_PLAYBACK and flag contains
+ *  AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_016, TestSize.Level1)
+{
+    uint32_t flag = AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT;
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
+    EXPECT_EQ(result, PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT);
+}
+
+/**
  * @tc.name: GetAdapterNameByStreamDesc_001
  * @tc.desc: Test GetAdapterNameByStreamDesc when streamDesc is not nullptr and pipeInfoPtr
  *  and adapterInfoPtr are not nullptr.
@@ -333,111 +347,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_001, TestSize.Level1)
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
     EXPECT_EQ(result, AUDIO_STREAM_ACTION_DEFAULT);
 }
-
-/**
- * @tc.name: JudgeStreamAction_002
- * @tc.desc: Test JudgeStreamAction when newPipe and oldPipe have different adapterName and
- *  routeFlag, and neither is FAST or DIRECT.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_002, TestSize.Level1)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = 0x1234;
-
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = 0x123456;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-}
-
-/**
- * @tc.name: JudgeStreamAction_003
- * @tc.desc: Test JudgeStreamAction when oldPipe's routeFlag is AUDIO_OUTPUT_FLAG_FAST.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_003, TestSize.Level1)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = 0x1234;
-
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-}
-
-/**
- * @tc.name: JudgeStreamAction_004
- * @tc.desc: Test JudgeStreamAction when newPipe's routeFlag is AUDIO_OUTPUT_FLAG_FAST.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_004, TestSize.Level1)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = 0x123456;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-}
-
-/**
- * @tc.name: JudgeStreamAction_005
- * @tc.desc: Test JudgeStreamAction when oldPipe's routeFlag is AUDIO_OUTPUT_FLAG_DIRECT.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_005, TestSize.Level1)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = 0x1234;
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-}
-
-/**
- * @tc.name: JudgeStreamAction_006
- * @tc.desc: Test JudgeStreamAction when newPipe's routeFlag is AUDIO_OUTPUT_FLAG_DIRECT.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_006, TestSize.Level1)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
-
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = 0x123456;
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-}
-
 /**
  * @tc.name: JudgeStreamAction_008
  * @tc.desc: Test JudgeStreamAction when newPipe and oldPipe have the same adapterName, routeFlag and name_.
@@ -1106,37 +1015,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_012, TestSize.Le
     EXPECT_EQ(info.moduleInfo_.ecType, "");
     EXPECT_EQ(info.moduleInfo_.ecSamplingRate, "");
 }
-
-/**
- * @tc.name: JudgeStreamAction_007
- * @tc.desc: Test JudgeStreamAction when return AUDIO_STREAM_ACTION_MOVE.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_007, TestSize.Level4)
-{
-    std::shared_ptr<AudioPipeInfo> newPipe = std::make_shared<AudioPipeInfo>();
-    newPipe->adapterName_ = "new_adapter";
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
-    oldPipe->adapterName_ = "old_adapter";
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_RECREATE);
-
-    newPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    oldPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
-    EXPECT_EQ(result, AUDIO_STREAM_ACTION_MOVE);
-}
-
 /**
  * @tc.name: DecideFinalRouteFlag_001
  * @tc.desc: Test DecideFinalRouteFlag when streamDescs.size() == 0 || streamDescs.size() == 1.

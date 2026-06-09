@@ -165,6 +165,11 @@ bool AudioPipeManager::IsSupportInnerCaptureOffload()
     return audioConfigManager_.IsSupportInnerCaptureOffload();
 }
 
+bool AudioPipeManager::IsSupportIndependentPipe()
+{
+    return audioConfigManager_.IsSupportIndependentPipe();
+}
+
 int32_t AudioPipeManager::GetMaxRendererInstances()
 {
     return audioConfigManager_.GetMaxRendererInstances();
@@ -475,6 +480,7 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_INPUT_FLAG_RAW_AI) ||
         (routeFlag & AUDIO_INPUT_FLAG_INTERPHONE) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT) ||
         (routeFlag & AUDIO_INPUT_FLAG_CAMCORDER)) {
         AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
         return true;
@@ -1553,7 +1559,7 @@ bool AudioPipeManager::CheckRemoteNoRunningCondition(std::shared_ptr<AudioPipeIn
             break;
         }
     }
-    CHECK_AND_RETURN_RET(IsOnlyAppLevelHdPlaySupported(remoteOffloadPipe) && !pipeInfo->HasStream(), false);
+    CHECK_AND_RETURN_RET(IsOnlyAppLevelHdPlaySupported(remoteOffloadPipe) && !pipeInfo->HasRunningStream(), false);
     return true;
 }
 
@@ -1802,6 +1808,26 @@ std::string AudioPipeManager::GetPausedFastPipeModuleNameInDelayedSwitch()
         }
     }
     return "";
+}
+
+void AudioPipeManager::AddFocusStandby(uint32_t sessionId)
+{
+    std::unique_lock<std::shared_mutex> lock(focusStandbySetLock_);
+    focusStandbySet_.insert(sessionId);
+    AUDIO_DEBUG_LOG("Add standby session id: %{public}u", sessionId);
+}
+
+void AudioPipeManager::RemoveFocusStandby(uint32_t sessionId)
+{
+    std::unique_lock<std::shared_mutex> lock(focusStandbySetLock_);
+    focusStandbySet_.erase(sessionId);
+    AUDIO_DEBUG_LOG("Remove standby session id: %{public}u", sessionId);
+}
+
+bool AudioPipeManager::IsFocusStandby(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> lock(focusStandbySetLock_);
+    return focusStandbySet_.find(sessionId) != focusStandbySet_.end();
 }
 } // namespace AudioStandard
 } // namespace OHOS

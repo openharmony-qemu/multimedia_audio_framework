@@ -66,9 +66,17 @@ napi_value NapiAudioError::ThrowErrorAndReturn(napi_env env, int32_t errCode)
     return nullptr;
 }
 
+// Deprecated: error code returned as string type,
+// use ThrowErrorAndReturn(env, napiMessage, napiCode) which returns number type instead
 napi_value NapiAudioError::ThrowErrorAndReturn(napi_env env, int32_t errCode, const std::string &errMessage)
 {
     ThrowError(env, errCode, errMessage);
+    return nullptr;
+}
+
+napi_value NapiAudioError::ThrowErrorAndReturn(napi_env env, const char *napiMessage, int32_t napiCode)
+{
+    ThrowError(env, napiMessage, napiCode);
     return nullptr;
 }
 

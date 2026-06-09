@@ -367,6 +367,12 @@ int32_t HpaeInnerCapturerManager::Start(uint32_t sessionId)
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::StartRendererStream");
             AUDIO_INFO_LOG("StartCapRendererStream sessionId %{public}u", sessionId);
             sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
+            sinkInputNodeMap_[sessionId]->Flush();
+            HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
+            auto processCluster = SafeGetMap(rendererSceneClusterMap_, sceneType);
+            if (processCluster != nullptr) {
+                processCluster->Flush(sessionId);
+            }
             ConnectRendererInputSessionInner(sessionId);
             SetSessionStateForRenderer(sessionId, HPAE_SESSION_RUNNING);
             SetSessionFade(sessionId, OPERATION_STARTED);
@@ -421,7 +427,15 @@ int32_t HpaeInnerCapturerManager::Flush(uint32_t sessionId)
             AUDIO_INFO_LOG("FlushCapRendererStream sessionId %{public}u", sessionId);
             CHECK_AND_RETURN_LOG(rendererSessionNodeMap_.find(sessionId) != rendererSessionNodeMap_.end(),
                 "Flush not find sessionId %{public}u", sessionId);
+            // Skip flush for non-running sessions, flush will be performed in Start
+            CHECK_AND_RETURN_LOG(rendererSessionNodeMap_[sessionId].state == HPAE_SESSION_RUNNING,
+                "Flush skipped, session not running, sessionId %{public}u", sessionId);
             sinkInputNodeMap_[sessionId]->Flush();
+            HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
+            auto processCluster = SafeGetMap(rendererSceneClusterMap_, sceneType);
+            if (processCluster != nullptr) {
+                processCluster->Flush(sessionId);
+            }
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::FlushCapturerStream");
             AUDIO_INFO_LOG("FlushCapCapturerStream sessionId %{public}u", sessionId);

@@ -404,6 +404,33 @@ HWTEST_F(HpaeInnerCapSinkNodeTest, DoProcess_004, TestSize.Level0)
     // DoProcess in RUNNING state with no upstream should output silence without crash
     node_->DoProcess();
 }
+
+/**
+ * @tc.name  : DoProcess_005
+ * @tc.type  : FUNC
+ * @tc.number: DoProcess_005
+ * @tc.desc  : Test DoProcess sets output buffer valid=true when valid upstream data is provided.
+ */
+HWTEST_F(HpaeInnerCapSinkNodeTest, DoProcess_005, TestSize.Level0)
+{
+    // Create upstream SinkInputNode with data injection
+    HpaeNodeInfo upstreamInfo = GetTestNodeInfo();
+    auto upstreamNode = std::make_shared<HpaeSinkInputNode>(upstreamInfo);
+    auto writeCb = std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, 100);
+    upstreamNode->RegisterWriteCallback(writeCb);
+    node_->Connect(upstreamNode);
+    ASSERT_EQ(node_->GetPreOutNum(), static_cast<size_t>(1));
+
+    // DoProcess should pull upstream data and set buffer valid
+    node_->DoProcess();
+
+    // Verify output buffer is marked valid
+    OutputPort<HpaePcmBuffer*> *port = node_->GetOutputPort();
+    ASSERT_NE(port, nullptr);
+    HpaePcmBuffer *outputData = port->PullOutputData();
+    ASSERT_NE(outputData, nullptr);
+    EXPECT_EQ(outputData->IsValid(), true);
+}
 }
 }
 }

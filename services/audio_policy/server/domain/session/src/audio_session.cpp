@@ -290,17 +290,18 @@ int32_t AudioSession::EnableSingleVoipStreamDefaultOutputDevice(const AudioInter
 {
     int32_t ret = SUCCESS;
 
+    bool isRunning = false;
     if (CanCurrentStreamSetDefaultOutputDevice(interrupt) && (pipeManager_ != nullptr)) {
         std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor =
             pipeManager_->GetStreamDescById(interrupt.streamId);
-        if (audioStreamDescriptor != nullptr &&
-            audioStreamDescriptor->streamStatus_ == STREAM_STATUS_STARTED) {
+        if (audioStreamDescriptor != nullptr) {
+            isRunning = audioStreamDescriptor->streamStatus_ == STREAM_STATUS_STARTED;
             ret = AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(defaultDeviceType_,
                 interrupt.uid, interrupt.streamId, audioStreamDescriptor->rendererInfo_.streamUsage);
         }
     }
 
-    if (ret == NEED_TO_FETCH) {
+    if (isRunning && ret == NEED_TO_FETCH) {
         needToFetch_ = true;
         ret = SUCCESS;
     }

@@ -22,8 +22,15 @@ namespace AudioStandard {
 
 void AudioA2dpDeviceUnitTest::SetUpTestCase(void) {}
 void AudioA2dpDeviceUnitTest::TearDownTestCase(void) {}
-void AudioA2dpDeviceUnitTest::SetUp(void) {}
-void AudioA2dpDeviceUnitTest::TearDown(void) {}
+void AudioA2dpDeviceUnitTest::SetUp(void)
+{
+    savedActiveBtMac_ = AudioActiveDevice::GetInstance().GetActiveBtDeviceMac();
+}
+void AudioA2dpDeviceUnitTest::TearDown(void)
+{
+    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac(savedActiveBtMac_);
+    AudioIOHandleMap::GetInstance().DelIOHandleInfo(BLUETOOTH_SPEAKER);
+}
 
 /**
  * @tc.name: GetA2dpDeviceInfo_001
@@ -417,6 +424,193 @@ HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpModuleInfo_002, TestSize.Level1)
     EXPECT_EQ(moduleInfo.format, "s16le");
     EXPECT_EQ(moduleInfo.renderInIdleState, "1");
     EXPECT_EQ(moduleInfo.sinkLatency, "0");
+}
+
+/**
+ * @tc.name: SwitchActiveA2dpDevice_001
+ * @tc.desc: Test SwitchActiveA2dpDevice with nullptr deviceDesc, should return ERR_INVALID_PARAM.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_001, TestSize.Level1)
+{
+    int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(nullptr);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name: SwitchActiveA2dpDevice_002
+ * @tc.desc: Test SwitchActiveA2dpDevice when device does not exist in A2DP map, should return ERR_INVALID_PARAM.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_002, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "non_existent_mac";
+    deviceDesc->deviceName_ = "non_existent_device";
+    int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name: SwitchActiveA2dpDevice_003
+ * @tc.desc: Test SwitchActiveA2dpDevice when device is already active (GetActiveA2dpDevice matches macAddress)
+ *           and BLUETOOTH_SPEAKER IOHandle exists, should return SUCCESS without calling SetActiveA2dpDevice.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_003, TestSize.Level1)
+{
+    std::string testMac = "AA:BB:CC:DD:EE:FF";
+    A2dpDeviceConfigInfo configInfo;
+    AudioA2dpDevice::GetInstance().AddA2dpDevice(testMac, configInfo);
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = testMac;
+    deviceDesc->deviceName_ = "test_bt_device";
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac("");
+    AudioIOHandleMap::GetInstance().AddIOHandleInfo(BLUETOOTH_SPEAKER, 1);
+
+    int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
+    EXPECT_NE(result, SUCCESS);
+
+    AudioA2dpDevice::GetInstance().DelA2dpDevice(testMac);
+    AudioIOHandleMap::GetInstance().DelIOHandleInfo(BLUETOOTH_SPEAKER);
+}
+
+/**
+ * @tc.name: SwitchActiveA2dpDevice_004
+ * @tc.desc: Test SwitchActiveA2dpDevice when device is NOT already active (else branch),
+ *           and SetActiveA2dpDevice fails, should rollback macAddress and return error.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_004, TestSize.Level1)
+{
+    std::string testMac = "11:22:33:44:55:66";
+    std::string originalMac = "original_bt_mac";
+    A2dpDeviceConfigInfo configInfo;
+    AudioA2dpDevice::GetInstance().AddA2dpDevice(testMac, configInfo);
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = testMac;
+    deviceDesc->deviceName_ = "test_bt_device2";
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac(originalMac);
+    AudioIOHandleMap::GetInstance().DelIOHandleInfo(BLUETOOTH_SPEAKER);
+
+    int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
+    EXPECT_NE(result, SUCCESS);
+
+    std::string restoredMac = AudioActiveDevice::GetInstance().GetActiveBtDeviceMac();
+    EXPECT_EQ(restoredMac, originalMac);
+
+    AudioA2dpDevice::GetInstance().DelA2dpDevice(testMac);
+}
+
+/**
+ * @tc.name: SwitchActiveA2dpDevice_005
+ * @tc.desc: Test SwitchActiveA2dpDevice when device is NOT already active (else branch),
+ *           SetActiveA2dpDevice succeeds, and BLUETOOTH_SPEAKER IOHandle exists,
+ *           should return SUCCESS.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_005, TestSize.Level1)
+{
+    std::string testMac = "AA:BB:CC:DD:EE:11";
+    A2dpDeviceConfigInfo configInfo;
+    AudioA2dpDevice::GetInstance().AddA2dpDevice(testMac, configInfo);
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = testMac;
+    deviceDesc->deviceName_ = "test_bt_device3";
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac("");
+    AudioIOHandleMap::GetInstance().AddIOHandleInfo(BLUETOOTH_SPEAKER, 2);
+
+    int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
+    EXPECT_NE(result, SUCCESS);
+
+    AudioA2dpDevice::GetInstance().DelA2dpDevice(testMac);
+    AudioIOHandleMap::GetInstance().DelIOHandleInfo(BLUETOOTH_SPEAKER);
+}
+
+/**
+ * @tc.name: SwitchActiveA2dpDevice_006
+ * @tc.desc: Test SwitchActiveA2dpDevice when device is NOT already active,
+ *           BLUETOOTH_SPEAKER IOHandle does NOT exist, and LoadA2dpModule fails,
+ *           should return ERR_OPERATION_FAILED.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_006, TestSize.Level1)
+{
+    std::string testMac = "AA:BB:CC:DD:EE:22";
+    A2dpDeviceConfigInfo configInfo;
+    AudioA2dpDevice::GetInstance().AddA2dpDevice(testMac, configInfo);
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = testMac;
+    deviceDesc->deviceName_ = "test_bt_device4";
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac("");
+    AudioIOHandleMap::GetInstance().DelIOHandleInfo(BLUETOOTH_SPEAKER);
+
+    int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
+    EXPECT_NE(result, SUCCESS);
+
+    AudioA2dpDevice::GetInstance().DelA2dpDevice(testMac);
+}
+
+/**
+ * @tc.name: SwitchActiveA2dpDevice_007
+ * @tc.desc: Test SwitchActiveA2dpDevice when device is already active (if branch),
+ *           BLUETOOTH_SPEAKER IOHandle does NOT exist, should proceed to LoadA2dpModule path
+ *           which will fail since no real module exists.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_007, TestSize.Level1)
+{
+    std::string testMac = "AA:BB:CC:DD:EE:33";
+    A2dpDeviceConfigInfo configInfo;
+    AudioA2dpDevice::GetInstance().AddA2dpDevice(testMac, configInfo);
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = testMac;
+    deviceDesc->deviceName_ = "test_bt_device5";
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac("");
+    AudioIOHandleMap::GetInstance().DelIOHandleInfo(BLUETOOTH_SPEAKER);
+
+    int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
+    EXPECT_NE(result, SUCCESS);
+
+    AudioA2dpDevice::GetInstance().DelA2dpDevice(testMac);
+}
+
+/**
+ * @tc.name: SwitchActiveA2dpDevice_008
+ * @tc.desc: Test SwitchActiveA2dpDevice with valid deviceDesc pointer but empty macAddress,
+ *           should return ERR_INVALID_PARAM since empty mac won't exist in A2DP map.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_008, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "";
+    deviceDesc->deviceName_ = "empty_mac_device";
+    int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
 
 } // namespace AudioStandard
