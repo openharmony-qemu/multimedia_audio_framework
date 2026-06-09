@@ -696,7 +696,7 @@ int32_t AudioSuiteEngine::SetOptions(uint32_t nodeId, std::string name, std::str
         AUDIO_DEBUG_LOG("SetOptions enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODES_SETIONS_ERROR, "The node does not exist.", true);
+                static_cast<int32_t>(getuid()), ERR_NODE_PARAM_SET_NODE_NOT_FOUND, "The node does not exist.", true);
             AUDIO_ERR_LOG("engine SetOptions node failed, node id=%{public}d is invailed.", nodeId);
             managerCallback_.OnSetOptions(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
@@ -734,7 +734,7 @@ int32_t AudioSuiteEngine::GetOptions(uint32_t nodeId, std::string name, std::str
         AUDIO_DEBUG_LOG("GetOptions enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODES_SETIONS_ERROR, "The node does not exist.", true);
+                static_cast<int32_t>(getuid()), ERR_NODE_PARAM_SET_NODE_NOT_FOUND, "The node does not exist.", true);
             AUDIO_ERR_LOG("engine GetOptions node failed, node id=%{public}d is invailed.", nodeId);
             managerCallback_.OnGetOptions(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
