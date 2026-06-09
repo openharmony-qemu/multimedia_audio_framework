@@ -1039,6 +1039,69 @@ int32_t AudioPolicyClientStubImpl::OnMicStateUpdated(const MicStateChangeEvent &
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::AddRecordControllerEnabledChangeCallback(
+    const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(recordControllerEnabledChangeMutex_);
+    CHECK_AND_RETURN_RET_LOG(cb != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    auto it = std::find(recordControllerEnabledChangeCallbackList_.begin(),
+        recordControllerEnabledChangeCallbackList_.end(), cb);
+    if (it != recordControllerEnabledChangeCallbackList_.end()) {
+        AUDIO_DEBUG_LOG("Callback already registered");
+        return SUCCESS;
+    }
+    recordControllerEnabledChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveRecordControllerEnabledChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(recordControllerEnabledChangeMutex_);
+    recordControllerEnabledChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveRecordControllerEnabledChangeCallback(
+    const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(recordControllerEnabledChangeMutex_);
+    CHECK_AND_RETURN_RET_LOG(cb != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    auto it = std::find(recordControllerEnabledChangeCallbackList_.begin(),
+        recordControllerEnabledChangeCallbackList_.end(), cb);
+    if (it != recordControllerEnabledChangeCallbackList_.end()) {
+        recordControllerEnabledChangeCallbackList_.erase(it);
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetRecordControllerEnabledChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(recordControllerEnabledChangeMutex_);
+    return recordControllerEnabledChangeCallbackList_.size();
+}
+
+bool AudioPolicyClientStubImpl::HasRecordControllerEnabledChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(recordControllerEnabledChangeMutex_);
+    if (recordControllerEnabledChangeCallbackList_.empty()) {
+        AUDIO_INFO_LOG("RecordControllerEnabledChangeCallback list is empty.");
+        return false;
+    }
+    return true;
+}
+
+int32_t AudioPolicyClientStubImpl::OnRecordControllerEnabledChange(
+    const SystemRecordControllerChangeInfo &changeInfo)
+{
+    std::lock_guard<std::mutex> lockCbMap(recordControllerEnabledChangeMutex_);
+    for (auto it = recordControllerEnabledChangeCallbackList_.begin();
+        it != recordControllerEnabledChangeCallbackList_.end(); ++it) {
+        CHECK_AND_CONTINUE_LOG(*it != nullptr, "callback is nullptr");
+        (*it)->OnRecordControllerEnabledChange(changeInfo);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyClientStubImpl::AddPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
     int32_t uid, const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb)
 {

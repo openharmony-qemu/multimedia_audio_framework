@@ -386,6 +386,7 @@ enum CallbackChange : int32_t {
     CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE,
     CALLBACK_ROUTE_SELECTOR,
     CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
+    CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -472,6 +473,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_PERSONALIZE_SPATIALIZATION_ENABLED_CHANGE,
     CALLBACK_ROUTE_SELECTOR,
     CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
+    CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -959,6 +961,56 @@ struct MicStateChangeEvent : public Parcelable {
         }
         event->mute = parcel.ReadBool();
         return event;
+    }
+};
+
+struct SystemRecordControllerConfig : public Parcelable {
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(sourceType));
+    }
+
+    static SystemRecordControllerConfig *Unmarshalling(Parcel &parcel)
+    {
+        auto config = new(std::nothrow) SystemRecordControllerConfig();
+        if (config == nullptr) {
+            return nullptr;
+        }
+        config->sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        return config;
+    }
+};
+
+struct SystemRecordControllerChangeInfo : public Parcelable {
+    bool enabled = false;
+    int32_t uid = -1;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+
+    bool operator==(const SystemRecordControllerChangeInfo &other) const
+    {
+        return enabled == other.enabled && uid == other.uid && sourceType == other.sourceType;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        bool ret = parcel.WriteBool(enabled);
+        ret = ret && parcel.WriteInt32(uid);
+        ret = ret && parcel.WriteInt32(static_cast<int32_t>(sourceType));
+        return ret;
+    }
+
+    static SystemRecordControllerChangeInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new(std::nothrow) SystemRecordControllerChangeInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->enabled = parcel.ReadBool();
+        info->uid = parcel.ReadInt32();
+        info->sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        return info;
     }
 };
 

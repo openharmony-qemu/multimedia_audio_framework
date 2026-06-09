@@ -397,6 +397,19 @@ bool AudioPolicyServerHandler::SendMicStateWithClientIdCallback(const MicStateCh
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendRecordControllerEnabledChangeCallback(
+    const SystemRecordControllerChangeInfo &changeInfo)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->recordControllerChangeInfo = changeInfo;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::RECORD_CONTROLLER_ENABLED_CHANGE_EVENT, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send RECORD_CONTROLLER_ENABLED_CHANGE_EVENT event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -1360,6 +1373,26 @@ void AudioPolicyServerHandler::HandleMicStateUpdatedEventWithClientId(const AppE
             clientCallbacksMap_[it->first].count(CALLBACK_SET_MIC_STATE_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_MIC_STATE_CHANGE]) {
             micStateChangeListenerCb->OnMicStateUpdated(eventContextObj->micStateChangeEvent);
+        }
+    }
+}
+
+void AudioPolicyServerHandler::HandleRecordControllerEnabledChangeEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientHolder> cb = it->second;
+        if (cb == nullptr) {
+            AUDIO_ERR_LOG("callback is nullptr for client %{public}d", it->first);
+            continue;
+        }
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE]) {
+            cb->OnRecordControllerEnabledChange(eventContextObj->recordControllerChangeInfo);
         }
     }
 }
@@ -2331,6 +2364,9 @@ void AudioPolicyServerHandler::HandleOtherServiceSecondEvent(const uint32_t &eve
             break;
         case EventAudioServerCmd::PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE:
             HandlePersonalizedSpatializationEnabledChangeForAnyDeviceEvent(event);
+            break;
+        case EventAudioServerCmd::RECORD_CONTROLLER_ENABLED_CHANGE_EVENT:
+            HandleRecordControllerEnabledChangeEvent(event);
             break;
         case EventAudioServerCmd::AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE:
             HandleAudioSeparationEffectEnabledChangeEvent(event);

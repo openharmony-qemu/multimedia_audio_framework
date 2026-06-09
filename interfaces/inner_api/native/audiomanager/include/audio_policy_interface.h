@@ -626,6 +626,12 @@ struct AudioPersonalizedSpatialEnabledChangeForAnyDevice {
     bool enabled;
 };
 
+class SystemRecordControllerEnabledChangeCallback {
+public:
+    virtual ~SystemRecordControllerEnabledChangeCallback() = default;
+    virtual void OnRecordControllerEnabledChange(const SystemRecordControllerChangeInfo &changeInfo) = 0;
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_INTERFACE_H

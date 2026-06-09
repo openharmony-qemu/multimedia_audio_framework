@@ -58,6 +58,7 @@
 #include "audio_router_infra.h"
 #include "audio_device_info.h"
 #include "stream_dfx_manager.h"
+#include "audio_record_controller.h"
 #include <unistd.h>
 #include "ipc_skeleton.h"
 
@@ -6186,6 +6187,13 @@ int32_t AudioPolicyServer::DestroyLoopback(int32_t type, int32_t &ret)
     int32_t pid = IPCSkeleton::GetCallingPid();
     ret = loopbackManager_->DestroyLoopback(static_cast<LoopbackType>(type), pid);
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config)
+{
+    int32_t uid = IPCSkeleton::GetCallingUid();
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    return AudioRecordController::GetInstance().EnableSystemRecordController(show, config, uid, pid);
 }
 } // namespace AudioStandard
 } // namespace OHOS

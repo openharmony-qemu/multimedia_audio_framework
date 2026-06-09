@@ -24,6 +24,7 @@
 
 #include "audio_workgroup_client_manager.h"
 #include "audio_capturer_types.h"
+#include "audio_record_control_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1613,6 +1614,12 @@ public:
      * @since 26
      */
     int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo);
+
+    int32_t EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config);
+    int32_t SetRecordControllerEnabledChangeCallback(
+        const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &callback);
+    int32_t UnsetRecordControllerEnabledChangeCallback(
+        const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &callback);
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();

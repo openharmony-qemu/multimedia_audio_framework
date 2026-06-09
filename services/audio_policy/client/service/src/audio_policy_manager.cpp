@@ -3955,7 +3955,7 @@ int32_t AudioPolicyManager::NotifyStreamSilentChange(uint32_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
- 
+
     gsp->NotifyStreamSilentChange(streamId);
     return SUCCESS;
 }
@@ -4059,6 +4059,70 @@ int32_t AudioPolicyManager::OffAudioSeparationEffectEnabledChange()
     CHECK_AND_RETURN_RET(callbackSize == 0, SUCCESS);
     callbackChangeInfos_[CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE].isEnable = false;
     SetClientCallbacksEnable(CALLBACK_AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE, false);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::EnableSystemRecordController show[%{public}d]", show);
+    if (config.sourceType != SOURCE_TYPE_MIC && config.sourceType != SOURCE_TYPE_CAMCORDER &&
+        config.sourceType != SOURCE_TYPE_LIVE) {
+        AUDIO_ERR_LOG("EnableSystemRecordController: invalid sourceType[%{public}d]", config.sourceType);
+        return ERR_INVALID_PARAM;
+    }
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    int32_t ret = gsp->EnableSystemRecordController(show, config);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "EnableSystemRecordController failed");
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::SetRecordControllerEnabledChangeCallback(
+    const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::SetRecordControllerEnabledChangeCallback");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(
+        callbackChangeInfos_[CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddRecordControllerEnabledChangeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetRecordControllerEnabledChangeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE, true);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetRecordControllerEnabledChangeCallback(
+    const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &callback)
+{
+    std::lock_guard<std::mutex> lockCbMap(
+        callbackChangeInfos_[CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE].mutex);
+    CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, ERR_INVALID_OPERATION,
+        "audioPolicyClientStubCB is nullptr");
+    if (audioPolicyClientStubCB_ != nullptr) {
+        if (callback != nullptr) {
+            audioPolicyClientStubCB_->RemoveRecordControllerEnabledChangeCallback(callback);
+        } else {
+            audioPolicyClientStubCB_->RemoveRecordControllerEnabledChangeCallback();
+        }
+        if (audioPolicyClientStubCB_->GetRecordControllerEnabledChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SET_RECORD_CONTROLLER_ENABLED_CHANGE, false);
+        }
+    }
     return SUCCESS;
 }
 

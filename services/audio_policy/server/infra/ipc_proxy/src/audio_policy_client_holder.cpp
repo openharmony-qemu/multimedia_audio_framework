@@ -115,6 +115,13 @@ void AudioPolicyClientHolder::OnMicStateUpdated(const MicStateChangeEvent &micSt
     audioPolicyClient_->OnMicStateUpdated(micStateChangeEvent);
 }
 
+void AudioPolicyClientHolder::OnRecordControllerEnabledChange(
+    const SystemRecordControllerChangeInfo &changeInfo)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    audioPolicyClient_->OnRecordControllerEnabledChange(changeInfo);
+}
+
 void AudioPolicyClientHolder::OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo, int32_t uid,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
