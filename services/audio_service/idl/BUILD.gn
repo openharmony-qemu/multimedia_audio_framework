@@ -182,6 +182,7 @@ ohos_shared_library("audio_framework_interface") {
     ":audio_policy_idl_interface",
     ":audio_service_idl_callback",
     ":audio_service_idl_interface",
+    "${audio_framework_root}/frameworks/native/audiodefinitions:audio_definitions",
     "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
   ]
 
@@ -304,6 +305,7 @@ ohos_shared_library("audio_policy_client_idl_interface") {
   deps = [
     ":audio_policy_idl_callback",
     ":audio_policy_idl_interface",
+    "${audio_framework_root}/frameworks/native/audiodefinitions:audio_definitions",
     "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
   ]
 
