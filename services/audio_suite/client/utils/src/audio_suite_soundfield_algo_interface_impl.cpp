@@ -129,7 +129,7 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::SetParameter(const std::string &p
 
     CHECK_AND_RETURN_RET_LOG(
         algoRunBuf_ != nullptr && algoScratchBuf_ != nullptr, ERROR, "Invalid run buffer, need init first");
-
+    
     // convert from SoundFieldType to iMedia_Surround_PARA
     int32_t valueInt = 0;
     CHECK_AND_RETURN_RET_LOG(StringConverter(paramValue, valueInt), ERROR, "convert invalid string");
@@ -149,7 +149,7 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::SetParameter(const std::string &p
     } else {
         AUDIO_ERR_LOG("SetParameter Unknown value %{public}s", paramValue.c_str());
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            ERR_NODE_INVALID_PARAMETER, "The value of SetParameter is unknown.", true);
+            EDIT_NODE_PARAMETERS_INVALID, "The value of SetParameter is unknown.", true);
         return ERROR;
     }
 
