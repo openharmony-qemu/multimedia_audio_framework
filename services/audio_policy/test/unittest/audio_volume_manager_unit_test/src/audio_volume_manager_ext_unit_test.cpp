@@ -453,11 +453,11 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_001, TestSize.Level
 {
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     AudioStreamType streamType = STREAM_VOICE_CALL;
-    int32_t volumeLevel = 5;
+    VolumeScale volume = VolumeScale(5, -1, 15);
     DeviceType deviceType = DEVICE_TYPE_NEARLINK;
 
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-    EXPECT_NE(ret, -2);
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_NE(ret.VolumeLevel(), -2);
 }
 
 /**
@@ -469,10 +469,10 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_002, TestSize.Level
 {
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     AudioStreamType streamType = STREAM_VOICE_CALL;
-    int32_t volumeLevel = 5;
+    VolumeScale volume = VolumeScale(5, -1, 15);
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
 
-    audioVolumeManager.SelectDealSafeVolume(streamType, volumeLevel, deviceType);
+    audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
     EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, false);
 }
 
@@ -485,11 +485,11 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_003, TestSize.Level
 {
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     AudioStreamType streamType = STREAM_VOICE_CALL;
-    int32_t volumeLevel = 5;
+    VolumeScale volume = VolumeScale(5, -1, 15);
     DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
 
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-    EXPECT_LT(-10, ret);
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
 }
 
 /**
@@ -501,11 +501,11 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_004, TestSize.Level
 {
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     AudioStreamType streamType = STREAM_VOICE_CALL;
-    int32_t volumeLevel = 5;
+    VolumeScale volume = VolumeScale(5, -1, 15);
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
 
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-    EXPECT_LT(-10, ret);
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
 }
 
 /**
