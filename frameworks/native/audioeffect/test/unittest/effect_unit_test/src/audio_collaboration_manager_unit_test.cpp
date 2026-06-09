@@ -427,108 +427,50 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfig_003, TestSize.
     EXPECT_TRUE(true);
 }
 
-// ===== Tests for IsCollaborationSupportedForStreamUsage (no-arg / state-based) =====
+// ===== Tests for IsStreamUsageSupported =====
 
 /**
-* @tc.name   : Test IsCollaborationSupportedForStreamUsage with COLLABORATION_CLOSE
-* @tc.number : IsCollaborationSupportedForStreamUsage_Close_001
-* @tc.desc   : When state is COLLABORATION_CLOSE, should return false for any stream usage.
+* @tc.name   : Test IsStreamUsageSupported with BT A2DP device
+* @tc.number : IsStreamUsageSupported_BtA2dp_001
+* @tc.desc   : When BT A2DP config has MOVIE and MUSIC, should return true for those and false for others.
 */
-HWTEST(AudioCollaborationManagerUnitTest, IsCollaborationSupportedForStreamUsage_Close_001, TestSize.Level1)
+HWTEST(AudioCollaborationManagerUnitTest, IsStreamUsageSupported_BtA2dp_001, TestSize.Level1)
 {
     auto *inst = AudioCollaborationManager::GetInstance();
-    inst->UpdateCollaborativeState(COLLABORATION_CLOSE);
-    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
-    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MUSIC));
-    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MEDIA));
-}
-
-/**
-* @tc.name   : Test IsCollaborationSupportedForStreamUsage with COLLABORATION_BLUETOOTH_OPEN
-* @tc.number : IsCollaborationSupportedForStreamUsage_Bt_002
-* @tc.desc   : When state is COLLABORATION_BLUETOOTH_OPEN, check stream usage lookup with BT A2DP device config.
-*/
-HWTEST(AudioCollaborationManagerUnitTest, IsCollaborationSupportedForStreamUsage_Bt_002, TestSize.Level1)
-{
-    auto *inst = AudioCollaborationManager::GetInstance();
-    // Clear config and set up BT A2DP config with MOVIE stream usage
     inst->collAbsSupportedStreamUsageConfig_.clear();
     inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_BLUETOOTH_A2DP].insert(STREAM_USAGE_MOVIE);
     inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_BLUETOOTH_A2DP].insert(STREAM_USAGE_MUSIC);
 
-    inst->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
-    EXPECT_TRUE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
-    EXPECT_TRUE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MUSIC));
-    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_VOICE_COMMUNICATION));
+    EXPECT_TRUE(inst->IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_USAGE_MOVIE));
+    EXPECT_TRUE(inst->IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_USAGE_MUSIC));
+    EXPECT_FALSE(inst->IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_USAGE_VOICE_COMMUNICATION));
 }
 
 /**
-* @tc.name   : Test IsCollaborationSupportedForStreamUsage with COLLABORATION_NEARLINK_OPEN
-* @tc.number : IsCollaborationSupportedForStreamUsage_Nl_003
-* @tc.desc   : When state is COLLABORATION_NEARLINK_OPEN, check stream usage lookup with NearLink device config.
+* @tc.name   : Test IsStreamUsageSupported with NearLink device
+* @tc.number : IsStreamUsageSupported_Nl_002
+* @tc.desc   : When NearLink config has MOVIE only, should return true for MOVIE and false for MUSIC.
 */
-HWTEST(AudioCollaborationManagerUnitTest, IsCollaborationSupportedForStreamUsage_Nl_003, TestSize.Level1)
+HWTEST(AudioCollaborationManagerUnitTest, IsStreamUsageSupported_Nl_002, TestSize.Level1)
 {
     auto *inst = AudioCollaborationManager::GetInstance();
     inst->collAbsSupportedStreamUsageConfig_.clear();
     inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_NEARLINK].insert(STREAM_USAGE_MOVIE);
 
-    inst->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
-    EXPECT_TRUE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
-    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MUSIC));
+    EXPECT_TRUE(inst->IsStreamUsageSupported(DEVICE_TYPE_NEARLINK, STREAM_USAGE_MOVIE));
+    EXPECT_FALSE(inst->IsStreamUsageSupported(DEVICE_TYPE_NEARLINK, STREAM_USAGE_MUSIC));
 }
 
 /**
-* @tc.name   : Test IsCollaborationSupportedForStreamUsage with empty config
-* @tc.number : IsCollaborationSupportedForStreamUsage_EmptyCfg_004
-* @tc.desc   : When config is empty, should return false even with BLUETOOTH_OPEN state.
+* @tc.name   : Test IsStreamUsageSupported with empty config
+* @tc.number : IsStreamUsageSupported_EmptyCfg_003
+* @tc.desc   : When config is empty, should return false.
 */
-HWTEST(AudioCollaborationManagerUnitTest, IsCollaborationSupportedForStreamUsage_EmptyCfg_004, TestSize.Level1)
+HWTEST(AudioCollaborationManagerUnitTest, IsStreamUsageSupported_EmptyCfg_003, TestSize.Level1)
 {
     auto *inst = AudioCollaborationManager::GetInstance();
     inst->collAbsSupportedStreamUsageConfig_.clear();
-    inst->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
-    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
-}
-
-// ===== Tests for UpdateCollaborativeState =====
-
-/**
-* @tc.name   : Test UpdateCollaborativeState sets state to BLUETOOTH_OPEN
-* @tc.number : UpdateCollaborativeState_Bt_001
-* @tc.desc   : Verify state transitions to COLLABORATION_BLUETOOTH_OPEN.
-*/
-HWTEST(AudioCollaborationManagerUnitTest, UpdateCollaborativeState_Bt_001, TestSize.Level1)
-{
-    auto *inst = AudioCollaborationManager::GetInstance();
-    inst->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
-    EXPECT_EQ(inst->state_, COLLABORATION_BLUETOOTH_OPEN);
-}
-
-/**
-* @tc.name   : Test UpdateCollaborativeState sets state to NEARLINK_OPEN
-* @tc.number : UpdateCollaborativeState_Nl_002
-* @tc.desc   : Verify state transitions to COLLABORATION_NEARLINK_OPEN.
-*/
-HWTEST(AudioCollaborationManagerUnitTest, UpdateCollaborativeState_Nl_002, TestSize.Level1)
-{
-    auto *inst = AudioCollaborationManager::GetInstance();
-    inst->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
-    EXPECT_EQ(inst->state_, COLLABORATION_NEARLINK_OPEN);
-}
-
-/**
-* @tc.name   : Test UpdateCollaborativeState sets state to CLOSE
-* @tc.number : UpdateCollaborativeState_Close_003
-* @tc.desc   : Verify state transitions back to COLLABORATION_CLOSE.
-*/
-HWTEST(AudioCollaborationManagerUnitTest, UpdateCollaborativeState_Close_003, TestSize.Level1)
-{
-    auto *inst = AudioCollaborationManager::GetInstance();
-    inst->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
-    EXPECT_EQ(inst->state_, COLLABORATION_BLUETOOTH_OPEN);
-    inst->UpdateCollaborativeState(COLLABORATION_CLOSE);
-    EXPECT_EQ(inst->state_, COLLABORATION_CLOSE);
+    EXPECT_FALSE(inst->IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_USAGE_MOVIE));
 }
 
 // ===== Tests for LoadCollAbsSupportedStreamUsageInner =====
@@ -732,7 +674,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollAbsSupportedStreamUsageInner_M
     EXPECT_EQ(inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_BLUETOOTH_A2DP].size(), 2u);
 }
 
-// ===== Tests for IsStreamUsageSupported (indirect via public API) =====
+// ===== Tests for IsStreamUsageSupported (device not configured) =====
 
 /**
 * @tc.name   : Test IsStreamUsageSupported device not in config
@@ -744,9 +686,8 @@ HWTEST(AudioCollaborationManagerUnitTest, IsStreamUsageSupported_NoDev_001, Test
     auto *inst = AudioCollaborationManager::GetInstance();
     inst->collAbsSupportedStreamUsageConfig_.clear();
     inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_BLUETOOTH_A2DP].insert(STREAM_USAGE_MOVIE);
-    inst->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     // NEARLINK device not in config
-    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_MOVIE));
+    EXPECT_FALSE(inst->IsStreamUsageSupported(DEVICE_TYPE_NEARLINK, STREAM_USAGE_MOVIE));
 }
 
 /**
@@ -759,8 +700,7 @@ HWTEST(AudioCollaborationManagerUnitTest, IsStreamUsageSupported_NoUsage_002, Te
     auto *inst = AudioCollaborationManager::GetInstance();
     inst->collAbsSupportedStreamUsageConfig_.clear();
     inst->collAbsSupportedStreamUsageConfig_[DEVICE_TYPE_BLUETOOTH_A2DP].insert(STREAM_USAGE_MOVIE);
-    inst->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
-    EXPECT_FALSE(inst->IsCollaborationSupportedForStreamUsage(STREAM_USAGE_GAME));
+    EXPECT_FALSE(inst->IsStreamUsageSupported(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_USAGE_GAME));
 }
 
 } // namespace AudioStandard

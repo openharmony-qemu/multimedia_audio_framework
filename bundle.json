@@ -117,7 +117,8 @@
             "window_manager",
             "call_manager",
             "icu",
-            "json"
+            "json",
+            "ets_frontend"
           ],
           "third_party": []
         },

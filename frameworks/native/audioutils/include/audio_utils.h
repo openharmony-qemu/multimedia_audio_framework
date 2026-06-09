@@ -673,7 +673,8 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_PRIMARY_EXTRA_WIRELESS = 20, // include bt_sco, a2dp_offload and nearlink
     HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI = 21,
     HDI_RENDER_OFFSET_REMOTE_MULTICHANNEL = 22,
-    HDI_RENDER_OFFSET_HDMI = 23
+    HDI_RENDER_OFFSET_VOICE_CALL_ASSISTANT = 23,
+    HDI_RENDER_OFFSET_HDMI = 24
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);

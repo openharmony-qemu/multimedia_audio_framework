@@ -1068,6 +1068,9 @@ IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRender
     } else if (flag & AUDIO_OUTPUT_FLAG_INTERPHONE) {
         rendererInfo_.rendererFlags = AUDIO_FLAG_INTERPHONE_VOIP;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_INTERPHONE;
+    } else if (flag & AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT;
     } else {
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;

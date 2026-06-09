@@ -69,3 +69,8 @@ ohos_shared_library("audio_debug_manager") {
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
+
+group("audio_debug_manager_test") {
+  testonly = true
+  deps = [ "./test/unittest:audio_debug_manager_aiut" ]
+}

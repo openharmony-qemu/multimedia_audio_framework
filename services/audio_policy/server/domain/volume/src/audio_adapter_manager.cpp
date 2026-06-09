@@ -3889,10 +3889,10 @@ int32_t AudioAdapterManager::UpdateCollaborativeProductId(const std::string &pro
     return audioServiceAdapter_->UpdateCollaborativeProductId(productId);
 }
 
-bool AudioAdapterManager::IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage)
+bool AudioAdapterManager::IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");
-    return audioServiceAdapter_->IsCollaborationSupportedForStreamUsage(streamUsage);
+    return audioServiceAdapter_->IsCollaborationSupportedForStreamUsage(deviceType, streamUsage);
 }
 
 void AudioAdapterManager::LoadCollaborationConfig()

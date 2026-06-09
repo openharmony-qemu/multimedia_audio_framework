@@ -286,11 +286,11 @@ public:
     virtual void LoadCollaborationConfig() = 0;
 
     /**
-     * @brief IsCollaboration Supported For StreamUsage
+     * @brief IsStreamUsage Supported for given DeviceType
      *
      * @return {@link true} if support, {@link false} otherwise
      */
-    virtual bool IsCollaborationSupportedForStreamUsage(StreamUsage streamUsage) NOT_SUPPORT_RET
+    virtual bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) NOT_SUPPORT_RET
 
     virtual ~AudioServiceAdapter();
 };

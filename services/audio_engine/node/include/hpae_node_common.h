@@ -51,6 +51,7 @@ int32_t CheckSourceInfoFramelen(const HpaeSourceInfo &sourceInfo);
 void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo);
 RendererState ConvertHpaeToRendererState(HpaeSessionState state);
 CapturerState ConvertHpaeToCapturerState(HpaeSessionState state);
+DeviceType GetDeviceType(CollaborationState isCollaborationEnabled);
 
 // for hidumper device / stream info trans, param should be HpaeSinkInfo / HpaeSourceInfo / HpaeStreamInfo
 template <typename T>

@@ -214,8 +214,8 @@ int32_t LocalDeviceManager::SetOutputRoute(const std::string &adapterName, const
         sinks[i] = {};
         int32_t ret = SetOutputPortPin(devices[i], sinks[i]);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-        AUDIO_INFO_LOG("output[%{public}zu], device: %{public}d, pin: 0x%{public}X", i, devices[i],
-            sinks[i].ext.device.type);
+        AUDIO_INFO_LOG("output[%{public}zu], device: %{public}d, pin: 0x%{public}X, streamId: %{public}d",
+            i, devices[i], sinks[i].ext.device.type, streamId);
         sinks[i].portId = static_cast<int32_t>(GetPortId(adapterName, PORT_OUT));
         sinks[i].role = AUDIO_PORT_SINK_ROLE;
         sinks[i].type = AUDIO_PORT_DEVICE_TYPE;
