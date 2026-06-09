@@ -342,6 +342,7 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
     bool CheckCallbackTokenId(
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors, uint32_t callbackTokenId);
+    void CheckVolumeKeyEventForRSS(int32_t pid, VolumeEvent &volumeEvent);
 
     // Helper functions for reducing nesting depth in HandlePreferredOutput/InputDeviceUpdated
     void ProcessPreferredOutputDeviceForClient(int32_t clientPid,
