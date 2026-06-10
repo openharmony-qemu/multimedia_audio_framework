@@ -1710,10 +1710,10 @@ int64_t AudioEndpointInner::GetPredictNextReadTime(uint64_t posInFrame)
         updateThreadCV_.notify_all();
     }
     uint64_t readFrame = 0;
-    int64_t readtime = 0;
-    if (readTimeModel_.GetFrameStamp(readFrame, readtime)) {
+    int64_t readTime = 0;
+    if (readTimeModel_.GetFrameStamp(readFrame, readTime)) {
         if (readFrame != posInFrame_) {
-            CheckPosTimeRes res = readTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_);
+            CheckPosTimeRes res = readTimeModel_.UpdateFrameStamp(posInFrame_, timeInNano_);
             if (res == CHECK_FAILED) {
                 updateThreadCV_.notify_all();
             } else if (res == NEED_MODIFY) {
@@ -1735,10 +1735,10 @@ int64_t AudioEndpointInner::GetPredictNextWriteTime(uint64_t posInFrame)
         updateThreadCV_.notify_all();
     }
     uint64_t writeFrame = 0;
-    int64_t writetime = 0;
-    if (writeTimeModel_.GetFrameStamp(writeFrame, writetime)) {
+    int64_t writeTime = 0;
+    if (writeTimeModel_.GetFrameStamp(writeFrame, writeTime)) {
         if (writeFrame != posInFrame_) {
-            CheckPosTimeRes res = writeTimeModel_.UpdataFrameStamp(posInFrame_, timeInNano_);
+            CheckPosTimeRes res = writeTimeModel_.UpdateFrameStamp(posInFrame_, timeInNano_);
             if (res == CHECK_FAILED) {
                 updateThreadCV_.notify_all();
             } else if (res == NEED_MODIFY) {

@@ -35,7 +35,9 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 constexpr int32_t VOLUME_SHIFT_NUMBER = 16;
-constexpr uint32_t WAIT_GET_POS_TIMEOUT_MS = 200;
+constexpr uint32_t WAIT_GET_POS_TIMEOUT_MS = 1000;
+constexpr uint32_t TIMESTAMP_SYNC_CNT_AT_START = 20; // sync timestamp for the first N spans
+constexpr uint32_t TIMESTAMP_SYNC_CNT_INTERVAL = 40; // sync timestamp every N spans
 }
 
 HpaeFastSourceInputNode::HpaeFastSourceInputNode(HpaeNodeInfo &nodeInfo)
@@ -382,12 +384,14 @@ void HpaeFastSourceInputNode::AsyncGetPosTime()
     CHECK_AND_RETURN(!updatePosTimeThread_.joinable());
     updatePosTimeThread_ = std::thread([this]() {
         while (!stopUpdateThread_.load()) {
+            std::unique_lock<std::mutex> lock(updateThreadLock_);
+            updateThreadCV_.wait_for(lock, std::chrono::milliseconds(WAIT_GET_POS_TIMEOUT_MS));
+            if (stopUpdateThread_.load()) {
+                break;
+            }
             uint64_t frames = 0;
             int64_t nanoTime = 0;
             (void)GetDeviceHandleInfo(frames, nanoTime);
-            std::unique_lock<std::mutex> lock(updateThreadLock_);
-            updateThreadCV_.wait_for(lock, std::chrono::milliseconds(WAIT_GET_POS_TIMEOUT_MS),
-                [this]() { return stopUpdateThread_.load(); });
         }
     });
 }
@@ -407,7 +411,6 @@ bool HpaeFastSourceInputNode::ResetReadPosition()
     int64_t handleTime = 0;
     CHECK_AND_RETURN_RET_LOG(GetDeviceHandleInfo(handlePos, handleTime), false, "GetDeviceHandleInfo failed");
     curReadPos_ = handlePos;
-    srcAudioBuffer_->SetHandleInfo(handlePos, handleTime);
     writeTimeModel_.ResetFrameStamp(handlePos, handleTime);
     InitAudiobuffer(false);
     CHECK_AND_RETURN_RET_LOG(srcAudioBuffer_->ResetCurReadWritePos(handlePos, handlePos, false) == SUCCESS,
@@ -431,14 +434,6 @@ bool HpaeFastSourceInputNode::GetDeviceHandleInfo(uint64_t &frames, int64_t &nan
     nanoTime = timeSec * AUDIO_NS_PER_SECOND + timeNanoSec;
     Trace infoTrace("HpaeFastSourceInputNode::GetDeviceHandleInfo frames=>" + std::to_string(frames) + " " +
         std::to_string(nanoTime) + " at " + std::to_string(ClockTime::GetCurNano()));
-    auto result = writeTimeModel_.UpdataFrameStamp(frames, nanoTime);
-    if (result != CHECK_SUCCESS) {
-        writeTimeModel_.ResetFrameStamp(frames, nanoTime);
-        needReSyncPosition_ = true;
-    }
-    if (srcAudioBuffer_ != nullptr) {
-        srcAudioBuffer_->SetHandleInfo(frames, nanoTime);
-    }
     posInFrame_.store(frames);
     timeInNano_.store(nanoTime);
     return true;
@@ -466,12 +461,26 @@ bool HpaeFastSourceInputNode::PrepareNextLoop(int64_t &wakeUpTime)
 
 int64_t HpaeFastSourceInputNode::GetPredictNextWriteTime(uint64_t posInFrame)
 {
-    int64_t nextHdiWriteTime = writeTimeModel_.GetTimeOfPos(posInFrame);
-    if (nextHdiWriteTime <= 0) {
-        int64_t defaultSleepTime = spanDuration_ > ONE_MILLISECOND_DURATION_NS ?
-            spanDuration_ : ONE_MILLISECOND_DURATION_NS;
-        return ClockTime::GetCurNano() + defaultSleepTime;
+    Trace trace("HpaeFastSourceInputNode::GetPredictNextWriteTime");
+    uint64_t handleSpanCnt = posInFrame / srcSpanSizeInframe_;
+    uint32_t startPeriodCnt = TIMESTAMP_SYNC_CNT_AT_START;
+    uint32_t oneBigPeriodCnt = TIMESTAMP_SYNC_CNT_INTERVAL;
+    if (handleSpanCnt < startPeriodCnt || handleSpanCnt % oneBigPeriodCnt == 0) {
+        updateThreadCV_.notify_all();
     }
+    uint64_t writeFrame = 0;
+    int64_t writeTime = 0;
+    if (writeTimeModel_.GetFrameStamp(writeFrame, writeTime)) {
+        if (writeFrame != posInFrame_) {
+            CheckPosTimeRes res = writeTimeModel_.UpdateFrameStamp(posInFrame_, timeInNano_);
+            if (res == CHECK_FAILED) {
+                updateThreadCV_.notify_all();
+            } else if (res == NEED_MODIFY) {
+                needReSyncPosition_ = true;
+            }
+        }
+    }
+    int64_t nextHdiWriteTime = writeTimeModel_.GetTimeOfPos(posInFrame);
     return nextHdiWriteTime;
 }
 

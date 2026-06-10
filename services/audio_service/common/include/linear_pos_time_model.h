@@ -30,7 +30,7 @@ public:
 
     void ResetFrameStamp(uint64_t frame, int64_t nanoTime);
 
-    CheckPosTimeRes UpdataFrameStamp(uint64_t frame, int64_t nanoTime);
+    CheckPosTimeRes UpdateFrameStamp(uint64_t frame, int64_t nanoTime);
 
     bool GetFrameStamp(uint64_t &frame, int64_t &nanoTime);
 

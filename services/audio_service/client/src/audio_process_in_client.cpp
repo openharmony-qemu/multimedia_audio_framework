@@ -1541,7 +1541,7 @@ void AudioProcessInClientInner::UpdateHandleInfo(bool isAysnc, bool resetReadWri
 
     audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
 
-    CheckPosTimeRes res = handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
+    CheckPosTimeRes res = handleTimeModel_.UpdateFrameStamp(serverHandlePos, serverHandleTime);
     if (res == CHECK_FAILED) {
         handleTimeModel_.ResetFrameStamp(serverHandlePos, serverHandleTime);
     }
