@@ -147,6 +147,17 @@ inline bool AiutDidNewlyFail(int prevFailCount)
         } \
     } while (0)
 
+// ---- EXPECT_FALSE with INFO log on failure ----
+#define AIUT_EXPECT_FALSE_INFO_LOG(expr, fmt, ...) \
+    do { \
+        int aiut_prev_count_ = AIUT::AiutGetFailureCount(); \
+        EXPECT_FALSE(expr); \
+        if (AIUT::AiutDidNewlyFail(aiut_prev_count_)) { \
+            printf("[AIUT EXPECT FAIL][%s][%s:%d] EXPECT_FALSE(" #expr ") | " fmt "\n", \
+                AIUT::GetTestName(), AIUT::GetFileName(__FILE__), __LINE__, ##__VA_ARGS__); \
+        } \
+    } while (0)
+
 // ---- ASSERT_EQ with INFO log on failure ----
 #define AIUT_ASSERT_EQ_INFO_LOG(val1, val2, fmt, ...) \
     do { \
