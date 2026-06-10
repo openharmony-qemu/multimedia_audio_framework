@@ -12,15 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef SHARED_AUDIO_RENDERER_WRAPPER_AIUT_H
-#define SHARED_AUDIO_RENDERER_WRAPPER_AIUT_H
+#ifndef AUDIO_RENDERER_AIUT_H
+#define AUDIO_RENDERER_AIUT_H
 
 #include "gtest/gtest.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class SharedAudioRendererWrapperAiut : public testing::Test {
+class AudioRendererStaticAiut : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp(void);
+    void TearDown(void);
+};
+
+class AudioRendererFastAiut : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -31,4 +39,4 @@ public:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // SHARED_AUDIO_RENDERER_WRAPPER_AIUT_H
+#endif // AUDIO_RENDERER_AIUT_H

@@ -38,12 +38,9 @@ HWTEST_F(AudioRendererDeviceAiut, OutputDeviceCallback_SaveCallback_001, TestSiz
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     auto callbackImpl = renderer->outputDeviceChangeCallback_;
-    if (callbackImpl == nullptr) {
-        // May not be initialized yet without InitOutputDeviceChangeCallback
-        AIUT_INFO_LOG("outputDeviceChangeCallback_ is null, skip test");
-        return;
-    }
+    AIUT_ASSERT_NE_INFO_LOG(callbackImpl, nullptr, "outputDeviceChangeCallback_ should not be null");
 
     class TestOutputDeviceChangeCallback : public AudioRendererOutputDeviceChangeCallback {
     public:
@@ -51,6 +48,7 @@ HWTEST_F(AudioRendererDeviceAiut, OutputDeviceCallback_SaveCallback_001, TestSiz
             const AudioStreamDeviceChangeReasonExt reason) override {}
     };
     auto testCallback = std::make_shared<TestOutputDeviceChangeCallback>();
+    AIUT_ASSERT_NE_INFO_LOG(testCallback, nullptr, "testCallback is null");
     callbackImpl->SaveCallback(testCallback);
 }
 
@@ -63,11 +61,9 @@ HWTEST_F(AudioRendererDeviceAiut, OutputDeviceCallback_RemoveCallback_001, TestS
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     auto callbackImpl = renderer->outputDeviceChangeCallback_;
-    if (callbackImpl == nullptr) {
-        AIUT_INFO_LOG("outputDeviceChangeCallback_ is null, skip test");
-        return;
-    }
+    AIUT_ASSERT_NE_INFO_LOG(callbackImpl, nullptr, "outputDeviceChangeCallback_ should not be null");
 
     callbackImpl->RemoveCallback();
 }
@@ -81,11 +77,9 @@ HWTEST_F(AudioRendererDeviceAiut, OutputDeviceCallback_SetAudioRendererObj_001, 
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     auto callbackImpl = renderer->outputDeviceChangeCallback_;
-    if (callbackImpl == nullptr) {
-        AIUT_INFO_LOG("outputDeviceChangeCallback_ is null, skip test");
-        return;
-    }
+    AIUT_ASSERT_NE_INFO_LOG(callbackImpl, nullptr, "outputDeviceChangeCallback_ should not be null");
 
     callbackImpl->SetAudioRendererObj(renderer);
 }
@@ -99,11 +93,9 @@ HWTEST_F(AudioRendererDeviceAiut, OutputDeviceCallback_UnsetAudioRendererObj_001
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     auto callbackImpl = renderer->outputDeviceChangeCallback_;
-    if (callbackImpl == nullptr) {
-        AIUT_INFO_LOG("outputDeviceChangeCallback_ is null, skip test");
-        return;
-    }
+    AIUT_ASSERT_NE_INFO_LOG(callbackImpl, nullptr, "outputDeviceChangeCallback_ should not be null");
 
     callbackImpl->SetAudioRendererObj(renderer);
     callbackImpl->UnsetAudioRendererObj();

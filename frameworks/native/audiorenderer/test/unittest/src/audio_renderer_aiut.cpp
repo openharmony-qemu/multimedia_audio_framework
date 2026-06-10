@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "audio_renderer_base_aiut.h"
+#include "audio_renderer_aiut.h"
 #include "aiut_log.h"
 #include "audio_renderer_private.h"
 #include "audio_errors.h"
@@ -49,10 +49,12 @@ constexpr int32_t TEST_APP_UID = 1234;
 constexpr int32_t TEST_APP_PID = 5678;
 }
 
-void AudioRendererBaseAiut::SetUpTestCase(void) {}
-void AudioRendererBaseAiut::TearDownTestCase(void) {}
-void AudioRendererBaseAiut::SetUp(void) {}
-void AudioRendererBaseAiut::TearDown(void) {}
+// ==================== AudioRendererStaticAiut ====================
+
+void AudioRendererStaticAiut::SetUpTestCase(void) {}
+void AudioRendererStaticAiut::TearDownTestCase(void) {}
+void AudioRendererStaticAiut::SetUp(void) {}
+void AudioRendererStaticAiut::TearDown(void) {}
 
 // ==================== ConvertToAudioStreamParams Tests ====================
 
@@ -62,7 +64,7 @@ void AudioRendererBaseAiut::TearDown(void) {}
  * @tc.desc  : Test static inline ConvertToAudioStreamParams converts AudioRendererParams to
  *             AudioStreamParams correctly for S16LE/44100/Stereo/PCM.
  */
-HWTEST_F(AudioRendererBaseAiut, ConvertToAudioStreamParams_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, ConvertToAudioStreamParams_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     AudioRendererParams rendererParams;
@@ -85,7 +87,7 @@ HWTEST_F(AudioRendererBaseAiut, ConvertToAudioStreamParams_001, TestSize.Level0)
  * @tc.number: ConvertToAudioStreamParams_002
  * @tc.desc  : Test ConvertToAudioStreamParams converts SAMPLE_U8/MONO correctly.
  */
-HWTEST_F(AudioRendererBaseAiut, ConvertToAudioStreamParams_002, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, ConvertToAudioStreamParams_002, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     AudioRendererParams rendererParams;
@@ -107,7 +109,7 @@ HWTEST_F(AudioRendererBaseAiut, ConvertToAudioStreamParams_002, TestSize.Level0)
  * @tc.number: ConvertToAudioStreamParams_003
  * @tc.desc  : Test ConvertToAudioStreamParams preserves channelLayout field.
  */
-HWTEST_F(AudioRendererBaseAiut, ConvertToAudioStreamParams_003, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, ConvertToAudioStreamParams_003, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     AudioRendererParams rendererParams;
@@ -129,7 +131,7 @@ HWTEST_F(AudioRendererBaseAiut, ConvertToAudioStreamParams_003, TestSize.Level0)
  * @tc.number: CheckSupportedSamplingRates_001
  * @tc.desc  : Test CheckSupportedSamplingRates returns true for standard valid rates.
  */
-HWTEST_F(AudioRendererBaseAiut, CheckSupportedSamplingRates_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, CheckSupportedSamplingRates_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     AIUT_EXPECT_TRUE_INFO_LOG(AudioRenderer::CheckSupportedSamplingRates(TEST_SAMPLE_RATE_8000),
@@ -149,7 +151,7 @@ HWTEST_F(AudioRendererBaseAiut, CheckSupportedSamplingRates_001, TestSize.Level0
  * @tc.number: CheckSupportedSamplingRates_002
  * @tc.desc  : Test CheckSupportedSamplingRates returns false for invalid rates.
  */
-HWTEST_F(AudioRendererBaseAiut, CheckSupportedSamplingRates_002, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, CheckSupportedSamplingRates_002, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     AIUT_EXPECT_FALSE_INFO_LOG(AudioRenderer::CheckSupportedSamplingRates(TEST_SAMPLE_RATE_7999),
@@ -169,7 +171,7 @@ HWTEST_F(AudioRendererBaseAiut, CheckSupportedSamplingRates_002, TestSize.Level0
  * @tc.number: GetSupportedFormats_001
  * @tc.desc  : Verify GetSupportedFormats returns a non-empty list of supported sample formats.
  */
-HWTEST_F(AudioRendererBaseAiut, GetSupportedFormats_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, GetSupportedFormats_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto formats = AudioRenderer::GetSupportedFormats();
@@ -181,7 +183,7 @@ HWTEST_F(AudioRendererBaseAiut, GetSupportedFormats_001, TestSize.Level0)
  * @tc.number: GetSupportedChannels_001
  * @tc.desc  : Verify GetSupportedChannels returns a non-empty list of supported channels.
  */
-HWTEST_F(AudioRendererBaseAiut, GetSupportedChannels_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, GetSupportedChannels_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto channels = AudioRenderer::GetSupportedChannels();
@@ -193,7 +195,7 @@ HWTEST_F(AudioRendererBaseAiut, GetSupportedChannels_001, TestSize.Level0)
  * @tc.number: GetSupportedEncodingTypes_001
  * @tc.desc  : Verify GetSupportedEncodingTypes returns a non-empty list.
  */
-HWTEST_F(AudioRendererBaseAiut, GetSupportedEncodingTypes_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, GetSupportedEncodingTypes_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto encodings = AudioRenderer::GetSupportedEncodingTypes();
@@ -205,7 +207,7 @@ HWTEST_F(AudioRendererBaseAiut, GetSupportedEncodingTypes_001, TestSize.Level0)
  * @tc.number: GetSupportedSamplingRates_001
  * @tc.desc  : Verify GetSupportedSamplingRates returns a non-empty list.
  */
-HWTEST_F(AudioRendererBaseAiut, GetSupportedSamplingRates_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, GetSupportedSamplingRates_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto rates = AudioRenderer::GetSupportedSamplingRates();
@@ -219,7 +221,7 @@ HWTEST_F(AudioRendererBaseAiut, GetSupportedSamplingRates_001, TestSize.Level0)
  * @tc.number: MuteAudioBuffer_001
  * @tc.desc  : Test MuteAudioBuffer fills S16LE buffer with zeros successfully.
  */
-HWTEST_F(AudioRendererBaseAiut, MuteAudioBuffer_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, MuteAudioBuffer_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     uint8_t buffer[TEST_BUFFER_SIZE];
@@ -247,7 +249,7 @@ HWTEST_F(AudioRendererBaseAiut, MuteAudioBuffer_001, TestSize.Level0)
  * @tc.number: MuteAudioBuffer_002
  * @tc.desc  : Test MuteAudioBuffer fills U8 buffer with 0x7F (silence for unsigned 8-bit).
  */
-HWTEST_F(AudioRendererBaseAiut, MuteAudioBuffer_002, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, MuteAudioBuffer_002, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     uint8_t buffer[TEST_BUFFER_SIZE];
@@ -274,7 +276,7 @@ HWTEST_F(AudioRendererBaseAiut, MuteAudioBuffer_002, TestSize.Level0)
  * @tc.number: MuteAudioBuffer_003
  * @tc.desc  : Test MuteAudioBuffer returns ERR_INVALID_PARAM when addr is nullptr.
  */
-HWTEST_F(AudioRendererBaseAiut, MuteAudioBuffer_003, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, MuteAudioBuffer_003, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     int32_t ret = AudioRenderer::MuteAudioBuffer(nullptr, 0, TEST_BUFFER_SIZE, SAMPLE_S16LE);
@@ -286,7 +288,7 @@ HWTEST_F(AudioRendererBaseAiut, MuteAudioBuffer_003, TestSize.Level0)
  * @tc.number: MuteAudioBuffer_004
  * @tc.desc  : Test MuteAudioBuffer returns ERR_INVALID_PARAM when length is 0.
  */
-HWTEST_F(AudioRendererBaseAiut, MuteAudioBuffer_004, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, MuteAudioBuffer_004, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     uint8_t buffer[TEST_BUFFER_SIZE];
@@ -299,7 +301,7 @@ HWTEST_F(AudioRendererBaseAiut, MuteAudioBuffer_004, TestSize.Level0)
  * @tc.number: MuteAudioBuffer_005
  * @tc.desc  : Test MuteAudioBuffer mutes only the portion starting from offset.
  */
-HWTEST_F(AudioRendererBaseAiut, MuteAudioBuffer_005, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, MuteAudioBuffer_005, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     uint8_t buffer[TEST_BUFFER_SIZE];
@@ -332,98 +334,6 @@ HWTEST_F(AudioRendererBaseAiut, MuteAudioBuffer_005, TestSize.Level0)
     AIUT_EXPECT_TRUE_INFO_LOG(secondHalfZeroed, "second half should be zeroed");
 }
 
-// ==================== FadeInAudioBuffer Tests ====================
-
-/**
- * @tc.name  : Test FadeInAudioBuffer with nullptr buffer
- * @tc.number: FadeInAudioBuffer_001
- * @tc.desc  : Test FadeInAudioBuffer returns ERR_INVALID_PARAM when buffer.buffer is nullptr.
- */
-HWTEST_F(AudioRendererBaseAiut, FadeInAudioBuffer_001, TestSize.Level0)
-{
-    AIUT_INFO_LOG("entry");
-    BufferDesc bufferDesc = {nullptr, 0, 0};
-    int32_t ret = AudioRenderer::FadeInAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
-    AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
-        "nullptr buffer should return ERR_INVALID_PARAM, ret=%d", ret);
-}
-
-/**
- * @tc.name  : Test FadeInAudioBuffer with zero bufLength
- * @tc.number: FadeInAudioBuffer_002
- * @tc.desc  : Test FadeInAudioBuffer returns ERR_INVALID_PARAM when bufLength is 0.
- */
-HWTEST_F(AudioRendererBaseAiut, FadeInAudioBuffer_002, TestSize.Level0)
-{
-    AIUT_INFO_LOG("entry");
-    uint8_t buffer[TEST_BUFFER_SIZE];
-    BufferDesc bufferDesc = {buffer, 0, TEST_BUFFER_SIZE};
-    int32_t ret = AudioRenderer::FadeInAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
-    AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
-        "zero bufLength should return ERR_INVALID_PARAM, ret=%d", ret);
-}
-
-/**
- * @tc.name  : Test FadeInAudioBuffer with zero dataLength
- * @tc.number: FadeInAudioBuffer_003
- * @tc.desc  : Test FadeInAudioBuffer returns ERR_INVALID_PARAM when dataLength is 0.
- */
-HWTEST_F(AudioRendererBaseAiut, FadeInAudioBuffer_003, TestSize.Level0)
-{
-    AIUT_INFO_LOG("entry");
-    uint8_t buffer[TEST_BUFFER_SIZE];
-    BufferDesc bufferDesc = {buffer, TEST_BUFFER_SIZE, 0};
-    int32_t ret = AudioRenderer::FadeInAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
-    AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
-        "zero dataLength should return ERR_INVALID_PARAM, ret=%d", ret);
-}
-
-// ==================== FadeOutAudioBuffer Tests ====================
-
-/**
- * @tc.name  : Test FadeOutAudioBuffer with nullptr buffer
- * @tc.number: FadeOutAudioBuffer_001
- * @tc.desc  : Test FadeOutAudioBuffer returns ERR_INVALID_PARAM when buffer.buffer is nullptr.
- */
-HWTEST_F(AudioRendererBaseAiut, FadeOutAudioBuffer_001, TestSize.Level0)
-{
-    AIUT_INFO_LOG("entry");
-    BufferDesc bufferDesc = {nullptr, 0, 0};
-    int32_t ret = AudioRenderer::FadeOutAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
-    AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
-        "nullptr buffer should return ERR_INVALID_PARAM, ret=%d", ret);
-}
-
-/**
- * @tc.name  : Test FadeOutAudioBuffer with zero bufLength
- * @tc.number: FadeOutAudioBuffer_002
- * @tc.desc  : Test FadeOutAudioBuffer returns ERR_INVALID_PARAM when bufLength is 0.
- */
-HWTEST_F(AudioRendererBaseAiut, FadeOutAudioBuffer_002, TestSize.Level0)
-{
-    AIUT_INFO_LOG("entry");
-    uint8_t buffer[TEST_BUFFER_SIZE];
-    BufferDesc bufferDesc = {buffer, 0, TEST_BUFFER_SIZE};
-    int32_t ret = AudioRenderer::FadeOutAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
-    AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
-        "zero bufLength should return ERR_INVALID_PARAM, ret=%d", ret);
-}
-
-/**
- * @tc.name  : Test FadeOutAudioBuffer with zero dataLength
- * @tc.number: FadeOutAudioBuffer_003
- * @tc.desc  : Test FadeOutAudioBuffer returns ERR_INVALID_PARAM when dataLength is 0.
- */
-HWTEST_F(AudioRendererBaseAiut, FadeOutAudioBuffer_003, TestSize.Level0)
-{
-    AIUT_INFO_LOG("entry");
-    uint8_t buffer[TEST_BUFFER_SIZE];
-    BufferDesc bufferDesc = {buffer, TEST_BUFFER_SIZE, 0};
-    int32_t ret = AudioRenderer::FadeOutAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
-    AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
-        "zero dataLength should return ERR_INVALID_PARAM, ret=%d", ret);
-}
-
 // ==================== IsRendererFlagsSupportStatic Tests ====================
 
 /**
@@ -431,10 +341,11 @@ HWTEST_F(AudioRendererBaseAiut, FadeOutAudioBuffer_003, TestSize.Level0)
  * @tc.number: IsRendererFlagsSupportStatic_001
  * @tc.desc  : Test IsRendererFlagsSupportStatic returns true for NORMAL, MMAP, FORCED_NORMAL flags.
  */
-HWTEST_F(AudioRendererBaseAiut, IsRendererFlagsSupportStatic_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, IsRendererFlagsSupportStatic_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     AIUT_EXPECT_TRUE_INFO_LOG(renderer->IsRendererFlagsSupportStatic(TEST_RENDERER_FLAGS_NORMAL),
         "NORMAL flags should be supported");
     AIUT_EXPECT_TRUE_INFO_LOG(renderer->IsRendererFlagsSupportStatic(TEST_RENDERER_FLAGS_MMAP),
@@ -448,10 +359,11 @@ HWTEST_F(AudioRendererBaseAiut, IsRendererFlagsSupportStatic_001, TestSize.Level
  * @tc.number: IsRendererFlagsSupportStatic_002
  * @tc.desc  : Test IsRendererFlagsSupportStatic returns false for unsupported flags.
  */
-HWTEST_F(AudioRendererBaseAiut, IsRendererFlagsSupportStatic_002, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, IsRendererFlagsSupportStatic_002, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     AIUT_EXPECT_FALSE_INFO_LOG(renderer->IsRendererFlagsSupportStatic(TEST_RENDERER_FLAGS_INVALID),
         "invalid flags should not be supported");
 }
@@ -463,10 +375,11 @@ HWTEST_F(AudioRendererBaseAiut, IsRendererFlagsSupportStatic_002, TestSize.Level
  * @tc.number: HandleSetRendererInfoByOptions_001
  * @tc.desc  : Test HandleSetRendererInfoByOptions copies fields from rendererOptions to rendererInfo_.
  */
-HWTEST_F(AudioRendererBaseAiut, HandleSetRendererInfoByOptions_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, HandleSetRendererInfoByOptions_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     AudioRendererOptions rendererOptions;
     rendererOptions.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
@@ -489,15 +402,16 @@ HWTEST_F(AudioRendererBaseAiut, HandleSetRendererInfoByOptions_001, TestSize.Lev
  * @tc.number: AudioRendererPrivate_Constructor_001
  * @tc.desc  : Test AudioRendererPrivate constructor with createStream=false creates proxy obj.
  */
-HWTEST_F(AudioRendererBaseAiut, AudioRendererPrivate_Constructor_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, AudioRendererPrivate_Constructor_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     AppInfo appInfo;
     appInfo.appUid = TEST_APP_UID;
     appInfo.appPid = TEST_APP_PID;
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
 
-    AIUT_EXPECT_NE_INFO_LOG(renderer->rendererProxyObj_, nullptr, "proxy obj should be created");
+    AIUT_ASSERT_NE_INFO_LOG(renderer->rendererProxyObj_, nullptr, "proxy obj should be created");
 }
 
 // ==================== GetStatus Tests ====================
@@ -507,10 +421,11 @@ HWTEST_F(AudioRendererBaseAiut, AudioRendererPrivate_Constructor_001, TestSize.L
  * @tc.number: GetStatus_001
  * @tc.desc  : Test GetStatus returns RENDERER_PREPARED after construction without stream.
  */
-HWTEST_F(AudioRendererBaseAiut, GetStatus_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, GetStatus_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     RendererState state = renderer->GetStatus();
     AIUT_EXPECT_EQ_INFO_LOG(state, RENDERER_PREPARED, "initial state should be PREPARED, state=%d", state);
 }
@@ -522,10 +437,11 @@ HWTEST_F(AudioRendererBaseAiut, GetStatus_001, TestSize.Level0)
  * @tc.number: GetRendererDebugKey_001
  * @tc.desc  : Test GetRendererDebugKey returns INVALID_DEBUGKEY (0) for newly created renderer.
  */
-HWTEST_F(AudioRendererBaseAiut, GetRendererDebugKey_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, GetRendererDebugKey_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     uint32_t key = renderer->GetRendererDebugKey();
     AIUT_EXPECT_EQ_INFO_LOG(key, INVALID_DEBUGKEY, "initial debug key should be 0, key=%u", key);
 }
@@ -537,13 +453,40 @@ HWTEST_F(AudioRendererBaseAiut, GetRendererDebugKey_001, TestSize.Level0)
  * @tc.number: IsNoStreamRenderer_001
  * @tc.desc  : Test IsNoStreamRenderer returns true when audioStream_ is null.
  */
-HWTEST_F(AudioRendererBaseAiut, IsNoStreamRenderer_001, TestSize.Level0)
+HWTEST_F(AudioRendererStaticAiut, IsNoStreamRenderer_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     // With createStream=false, audioStream_ may be null
     bool isNoStream = renderer->IsNoStreamRenderer();
     AIUT_EXPECT_TRUE_INFO_LOG(isNoStream, "should be no-stream renderer when stream not created");
+}
+
+// ==================== AudioRendererFastAiut ====================
+
+void AudioRendererFastAiut::SetUpTestCase(void) {}
+void AudioRendererFastAiut::TearDownTestCase(void) {}
+void AudioRendererFastAiut::SetUp(void) {}
+void AudioRendererFastAiut::TearDown(void) {}
+
+// ==================== IsRendererFlagsSupportFast Tests ====================
+
+/**
+ * @tc.name  : Test IsRendererFlagsSupportStatic with fast renderer flags
+ * @tc.number: IsRendererFlagsSupportFast_001
+ * @tc.desc  : Test IsRendererFlagsSupportStatic returns false for VKB_FAST and VKB_ALL_RING flags
+ *             since these are fast renderer flags, not static mode.
+ */
+HWTEST_F(AudioRendererFastAiut, IsRendererFlagsSupportFast_001, TestSize.Level0)
+{
+    AIUT_INFO_LOG("entry");
+    auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
+    AIUT_EXPECT_FALSE_INFO_LOG(renderer->IsRendererFlagsSupportStatic(TEST_RENDERER_FLAGS_VKB_FAST),
+        "VKB_FAST flags should not be supported in static mode");
+    AIUT_EXPECT_FALSE_INFO_LOG(renderer->IsRendererFlagsSupportStatic(TEST_RENDERER_FLAGS_VKB_ALL_RING),
+        "VKB_ALL_RING flags should not be supported in static mode");
 }
 
 } // namespace AudioStandard

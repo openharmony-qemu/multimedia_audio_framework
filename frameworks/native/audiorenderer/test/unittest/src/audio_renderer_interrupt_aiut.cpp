@@ -63,6 +63,7 @@ HWTEST_F(AudioRendererInterruptAiut, AudioRendererPrivate_Interrupt_Constructor_
     appInfo.appUid = TEST_APP_UID;
     appInfo.appPid = TEST_APP_PID;
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
 
     AIUT_EXPECT_EQ_INFO_LOG(renderer->audioInterrupt_.audioFocusType.streamType, STREAM_MUSIC,
         "streamType mismatch");
@@ -79,6 +80,7 @@ HWTEST_F(AudioRendererInterruptAiut, SetParallelPlayFlag_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     int32_t ret = renderer->SetParallelPlayFlag(true);
     AIUT_EXPECT_EQ_INFO_LOG(ret, SUCCESS, "SetParallelPlayFlag(true) should succeed, ret=%d", ret);
     AIUT_EXPECT_EQ_INFO_LOG(renderer->audioInterrupt_.sessionStrategy.concurrencyMode,
@@ -94,6 +96,7 @@ HWTEST_F(AudioRendererInterruptAiut, SetParallelPlayFlag_002, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     // First set to true
     renderer->SetParallelPlayFlag(true);
     // Then set to false - should restore original
@@ -112,6 +115,7 @@ HWTEST_F(AudioRendererInterruptAiut, SetInterruptMode_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     renderer->SetInterruptMode(SHARE_MODE);
     AIUT_EXPECT_EQ_INFO_LOG(renderer->audioInterrupt_.mode, SHARE_MODE, "mode should be SHARE_MODE");
 }
@@ -125,6 +129,7 @@ HWTEST_F(AudioRendererInterruptAiut, SetInterruptMode_002, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     renderer->SetInterruptMode(INDEPENDENT_MODE);
     AIUT_EXPECT_EQ_INFO_LOG(renderer->audioInterrupt_.mode, INDEPENDENT_MODE,
         "mode should be INDEPENDENT_MODE");
@@ -142,6 +147,7 @@ HWTEST_F(AudioRendererInterruptAiut, InterruptCallback_Construct_001, TestSize.L
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     AIUT_ASSERT_NE_INFO_LOG(renderer->audioInterruptCallback_, nullptr,
         "interrupt callback should exist after construction");
 }
@@ -155,11 +161,12 @@ HWTEST_F(AudioRendererInterruptAiut, InterruptCallback_SaveCallback_001, TestSiz
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     auto callback = std::make_shared<TestRendererCallbackForInterrupt>();
 
-    if (renderer->audioInterruptCallback_ != nullptr) {
-        renderer->audioInterruptCallback_->SaveCallback(callback);
-    }
+    AIUT_ASSERT_NE_INFO_LOG(renderer->audioInterruptCallback_, nullptr,
+        "audioInterruptCallback_ should not be null");
+    renderer->audioInterruptCallback_->SaveCallback(callback);
 }
 
 // ==================== AudioStreamCallbackRenderer Tests ====================
@@ -173,8 +180,15 @@ HWTEST_F(AudioRendererInterruptAiut, StreamCallback_Construct_001, TestSize.Leve
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     auto streamCallback = std::make_shared<AudioStreamCallbackRenderer>(renderer);
-    AIUT_ASSERT_NE_INFO_LOG(streamCallback, nullptr, "stream callback should be created");
+    AIUT_ASSERT_NE_INFO_LOG(streamCallback, nullptr, "streamCallback is null");
+    // Call SaveCallback to verify streamCallback is functional after construction
+    auto callback = std::make_shared<TestRendererCallbackForInterrupt>();
+    streamCallback->SaveCallback(callback);
+    // Verify renderer is still in valid state after stream callback operations
+    AIUT_EXPECT_EQ_INFO_LOG(renderer->GetStatus(), RENDERER_PREPARED,
+        "renderer should remain PREPARED after StreamCallback construction, state=%d", renderer->GetStatus());
 }
 
 /**
@@ -186,10 +200,16 @@ HWTEST_F(AudioRendererInterruptAiut, StreamCallback_SaveCallback_001, TestSize.L
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     auto streamCallback = std::make_shared<AudioStreamCallbackRenderer>(renderer);
+    AIUT_ASSERT_NE_INFO_LOG(streamCallback, nullptr, "streamCallback is null");
 
     auto callback = std::make_shared<TestRendererCallbackForInterrupt>();
+
     streamCallback->SaveCallback(callback);
+    // Verify renderer is still in valid state after SaveCallback
+    AIUT_EXPECT_EQ_INFO_LOG(renderer->GetStatus(), RENDERER_PREPARED,
+        "renderer should remain PREPARED after StreamCallback SaveCallback, state=%d", renderer->GetStatus());
 }
 
 // ==================== RendererPolicyServiceDiedCallback Tests ====================
@@ -203,7 +223,14 @@ HWTEST_F(AudioRendererInterruptAiut, PolicyServiceDiedCallback_Construct_001, Te
 {
     AIUT_INFO_LOG("entry");
     auto callback = std::make_shared<RendererPolicyServiceDiedCallback>();
-    AIUT_ASSERT_NE_INFO_LOG(callback, nullptr, "RendererPolicyServiceDiedCallback should be created");
+    AIUT_ASSERT_NE_INFO_LOG(callback, nullptr, "callback is null");
+    // Verify callback can be used by setting a renderer on it
+    auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
+    callback->SetAudioRendererObj(renderer);
+    AIUT_EXPECT_EQ_INFO_LOG(renderer->GetStatus(), RENDERER_PREPARED,
+        "renderer should remain PREPARED after PolicyServiceDiedCallback operations, state=%d",
+        renderer->GetStatus());
 }
 
 /**
@@ -215,8 +242,13 @@ HWTEST_F(AudioRendererInterruptAiut, PolicyServiceDiedCallback_SetAudioRendererO
 {
     AIUT_INFO_LOG("entry");
     auto callback = std::make_shared<RendererPolicyServiceDiedCallback>();
+    AIUT_ASSERT_NE_INFO_LOG(callback, nullptr, "callback is null");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     callback->SetAudioRendererObj(renderer);
+    // Verify renderer is still in valid state after SetAudioRendererObj
+    AIUT_EXPECT_EQ_INFO_LOG(renderer->GetStatus(), RENDERER_PREPARED,
+        "renderer should remain PREPARED after SetAudioRendererObj, state=%d", renderer->GetStatus());
 }
 
 /**
@@ -228,11 +260,19 @@ HWTEST_F(AudioRendererInterruptAiut, PolicyServiceDiedCallback_SetAudioInterrupt
 {
     AIUT_INFO_LOG("entry");
     auto callback = std::make_shared<RendererPolicyServiceDiedCallback>();
+    AIUT_ASSERT_NE_INFO_LOG(callback, nullptr, "callback is null");
     AudioInterrupt interrupt;
     interrupt.streamId = TEST_STREAM_ID;
     interrupt.pid = TEST_CLIENT_UID;
     interrupt.mode = SHARE_MODE;
     callback->SetAudioInterrupt(interrupt);
+    // Verify callback can still accept renderer after SetAudioInterrupt
+    auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
+    callback->SetAudioRendererObj(renderer);
+    AIUT_EXPECT_EQ_INFO_LOG(renderer->GetStatus(), RENDERER_PREPARED,
+        "renderer should remain PREPARED after SetAudioInterrupt + SetAudioRendererObj, state=%d",
+        renderer->GetStatus());
 }
 
 // ==================== RegisterRendererPolicyServiceDiedCallback Tests ====================
@@ -246,11 +286,11 @@ HWTEST_F(AudioRendererInterruptAiut, RegisterRendererPolicyServiceDiedCallback_0
 {
     AIUT_INFO_LOG("entry");
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     auto callback = std::make_shared<RendererPolicyServiceDiedCallback>();
-    auto mockStream = renderer->audioStream_;
-    if (mockStream != nullptr) {
-        renderer->RegisterRendererPolicyServiceDiedCallback(mockStream);
-    }
+    AIUT_ASSERT_NE_INFO_LOG(callback, nullptr, "callback is null");
+    AIUT_ASSERT_NE_INFO_LOG(renderer->audioStream_, nullptr, "audioStream_ should not be null");
+    renderer->RegisterRendererPolicyServiceDiedCallback(renderer->audioStream_);
 }
 
 // ==================== SharedAudioRendererWrapper Interrupt Delegation Tests ====================
@@ -264,8 +304,12 @@ HWTEST_F(AudioRendererInterruptAiut, SharedAudioRendererWrapper_SetInterruptMode
 {
     AIUT_INFO_LOG("entry");
     auto innerRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(innerRenderer, nullptr, "innerRenderer is null");
     auto wrapper = std::make_shared<SharedAudioRendererWrapper>(innerRenderer);
+    AIUT_ASSERT_NE_INFO_LOG(wrapper, nullptr, "wrapper is null");
     wrapper->SetInterruptMode(INDEPENDENT_MODE);
+    AIUT_EXPECT_EQ_INFO_LOG(innerRenderer->audioInterrupt_.mode, INDEPENDENT_MODE,
+        "mode should be INDEPENDENT_MODE via wrapper");
 }
 
 /**
@@ -278,8 +322,14 @@ HWTEST_F(AudioRendererInterruptAiut, SharedAudioRendererWrapper_SetRegisterInter
 {
     AIUT_INFO_LOG("entry");
     auto innerRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(innerRenderer, nullptr, "innerRenderer is null");
     auto wrapper = std::make_shared<SharedAudioRendererWrapper>(innerRenderer);
+    AIUT_ASSERT_NE_INFO_LOG(wrapper, nullptr, "wrapper is null");
     wrapper->SetRegisterInterruptCallbackFlag(true);
+    // Verify wrapper state remains valid after setting interrupt callback flag
+    AIUT_EXPECT_EQ_INFO_LOG(wrapper->GetStatus(), RENDERER_PREPARED,
+        "wrapper should remain PREPARED after SetRegisterInterruptCallbackFlag, state=%d",
+        wrapper->GetStatus());
 }
 
 /**
@@ -291,7 +341,9 @@ HWTEST_F(AudioRendererInterruptAiut, SharedAudioRendererWrapper_SetParallelPlayF
 {
     AIUT_INFO_LOG("entry");
     auto innerRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
+    AIUT_ASSERT_NE_INFO_LOG(innerRenderer, nullptr, "innerRenderer is null");
     auto wrapper = std::make_shared<SharedAudioRendererWrapper>(innerRenderer);
+    AIUT_ASSERT_NE_INFO_LOG(wrapper, nullptr, "wrapper is null");
     int32_t ret = wrapper->SetParallelPlayFlag(true);
     AIUT_EXPECT_EQ_INFO_LOG(ret, SUCCESS, "SetParallelPlayFlag should succeed, ret=%d", ret);
 }

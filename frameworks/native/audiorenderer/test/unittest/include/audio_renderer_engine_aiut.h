@@ -12,15 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_RENDERER_PROXY_OBJ_AIUT_H
-#define AUDIO_RENDERER_PROXY_OBJ_AIUT_H
+#ifndef AUDIO_RENDERER_ENGINE_AIUT_H
+#define AUDIO_RENDERER_ENGINE_AIUT_H
 
 #include "gtest/gtest.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioRendererProxyObjAiut : public testing::Test {
+class AudioRendererEngineAiut : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -31,4 +31,4 @@ public:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_RENDERER_PROXY_OBJ_AIUT_H
+#endif // AUDIO_RENDERER_ENGINE_AIUT_H

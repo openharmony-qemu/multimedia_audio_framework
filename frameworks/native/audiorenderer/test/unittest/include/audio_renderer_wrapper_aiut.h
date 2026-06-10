@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_RENDERER_CALLBACK_AIUT_H
-#define AUDIO_RENDERER_CALLBACK_AIUT_H
+#ifndef AUDIO_RENDERER_WRAPPER_AIUT_H
+#define AUDIO_RENDERER_WRAPPER_AIUT_H
 
 #include "gtest/gtest.h"
 
@@ -28,7 +28,23 @@ public:
     void TearDown(void);
 };
 
+class AudioRendererProxyObjAiut : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp(void);
+    void TearDown(void);
+};
+
+class SharedAudioRendererWrapperAiut : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp(void);
+    void TearDown(void);
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_RENDERER_CALLBACK_AIUT_H
+#endif // AUDIO_RENDERER_WRAPPER_AIUT_H
