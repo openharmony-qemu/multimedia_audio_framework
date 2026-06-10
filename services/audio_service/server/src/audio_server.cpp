@@ -885,6 +885,7 @@ void AudioServer::OnStartExpansion()
     RegisterAudioCapturerSourceCallback();
     RegisterAudioRendererSinkCallback();
     ParseAudioParameter();
+    InitHdiEventCallback();
 }
 
 void AudioServer::RecordBootStateTime(AudioServerBootState state, int64_t curTime)
@@ -1091,16 +1092,18 @@ void AudioServer::HapReportWakeupEvent(const std::string &key,
     }
 }
 
-int32_t AudioServer::TrySetAudioEffectParameterToRemote(const std::vector<std::pair<std::string, std::string>> &newPair)
+int32_t AudioServer::TrySetAudioEffectParameterToRemote(std::vector<std::pair<std::string, std::string>> &newPair)
 {
     std::string networkId = LOCAL_NETWORK_ID;
     std::string value = "";
-    for (const auto &item : newPair) {
-        if (item.first == NETWORK_ID_KEY) {
-            networkId = item.second;
+    for (auto it = newPair.begin(); it != newPair.end();) {
+        if (it->first == NETWORK_ID_KEY) {
+            networkId = it->second;
+            it = newPair.erase(it);
         } else {
-            std::string itemValue = (value == "" ? "" : ";") + item.first + "=" + item.second;
+            std::string itemValue = (value == "" ? "" : ";") + it->first + "=" + it->second;
             value += itemValue;
+            ++it;
         }
     }
     CHECK_AND_RETURN_RET(networkId != LOCAL_NETWORK_ID &&
@@ -3838,6 +3841,15 @@ int32_t AudioServer::RegistAdapterManagerCallback(const sptr<IRemoteObject>& obj
     return SUCCESS;
 }
 
+void AudioServer::InitHdiEventCallback()
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "device manager is nullptr");
+    deviceManager->RegistHdiEventCallback(
+        std::shared_ptr<IDeviceManagerCallback>(this, [](IDeviceManagerCallback*) {}));
+}
+
 int32_t AudioServer::UnRegistAdapterManagerCallback(const std::string& networkId)
 {
     bool result = PermissionUtil::VerifySystemPermission();
@@ -3864,6 +3876,18 @@ void AudioServer::OnAdapterParamChange(std::string networkId, const AudioParamKe
     }
     CHECK_AND_RETURN_LOG(callback != nullptr, "audioAdapterCb_  is nullptr");
     callback->OnAudioParameterChange(networkId, key, condition, value);
+}
+
+void AudioServer::OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable)
+{
+    AUDIO_INFO_LOG("networkId: %{public}s, role: %{public}d, isAvailable: %{public}d", GetEncryptStr(networkId).c_str(),
+        static_cast<int32_t>(role), isAvailable);
+    CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "async handler not inited");
+    auto action = std::make_shared<DeviceStateChangeCallbackAction>(networkId, role, isAvailable);
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    desc.priority = AsyncActionHandler::ActionPriority::IMMEDIATE;
+    asyncHandler_->PostAsyncAction(desc);
 }
 
 int32_t AudioServer::GetRemoteAudioParameter(const std::string& networkId, int32_t key,

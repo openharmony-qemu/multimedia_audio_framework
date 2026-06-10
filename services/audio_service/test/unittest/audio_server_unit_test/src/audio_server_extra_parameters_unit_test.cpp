@@ -361,5 +361,45 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_012, TestSize.Level1
     EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
     EXPECT_TRUE(result.empty());
 }
+
+/**
+ * @tc.name  : TrySetAudioEffectParameterToRemote
+ * @tc.type  : FUNC
+ * @tc.number: TrySetAudioEffectParameterToRemote_001
+ * @tc.desc  : TrySetAudioEffectParameterToRemote
+ */
+HWTEST_F(AudioServerUnitTest, TrySetAudioEffectParameterToRemote_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::vector<std::pair<std::string, std::string>> newPair;
+    newPair.push_back({"NETWORK_ID", "remote_network_id"});
+    newPair.push_back({"effect_key", "effect_value"});
+
+    int32_t ret = audioServer->TrySetAudioEffectParameterToRemote(newPair);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    bool hasNetworkIdKey = false;
+    for (auto &item : newPair) {
+        if (item.first == "NETWORK_ID") { hasNetworkIdKey = true; }
+    }
+    EXPECT_FALSE(hasNetworkIdKey);
+}
+
+/**
+ * @tc.name  : TrySetAudioEffectParameterToRemote
+ * @tc.type  : FUNC
+ * @tc.number: TrySetAudioEffectParameterToRemote_002
+ * @tc.desc  : TrySetAudioEffectParameterToRemote
+ */
+HWTEST_F(AudioServerUnitTest, TrySetAudioEffectParameterToRemote_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::vector<std::pair<std::string, std::string>> newPair;
+    newPair.push_back({"effect_key1", "effect_value1"});
+    newPair.push_back({"effect_key2", "effect_value2"});
+
+    int32_t ret = audioServer->TrySetAudioEffectParameterToRemote(newPair);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(newPair.size(), 2);
+}
 } // namespace AudioStandard
 } // namespace OHOS

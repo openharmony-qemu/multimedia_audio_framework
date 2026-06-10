@@ -77,7 +77,8 @@ public:
     int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
     int32_t GetPreferredUid(int32_t uid);
     bool GetEnhancedRoutingSupported() const;
-    void SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    void SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        DeviceUsage deviceUsage = ALL_USAGE);
 
 private:
     int32_t ExcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,

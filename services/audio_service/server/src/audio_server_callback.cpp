@@ -19,6 +19,7 @@
 #include "audio_server.h"
 
 #include "manager/hdi_adapter_manager.h"
+#include "core_service_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -70,6 +71,11 @@ void AudioServer::OutputChangeCallbackAction::Exec()
 void AudioServer::InputChangeCallbackAction::Exec()
 {
     owner_->DispatchInputPipeChangeEvent(changeType_, changedPipeInfo_);
+}
+
+void AudioServer::DeviceStateChangeCallbackAction::Exec()
+{
+    CoreServiceHandler::GetInstance().NotifyDeviceStateChange(networkId_, role_, isAvailable_);
 }
 
 int32_t AudioServer::RegisterCallbackHandle(const sptr<IRemoteObject> &object)

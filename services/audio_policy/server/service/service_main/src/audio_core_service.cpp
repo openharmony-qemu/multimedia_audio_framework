@@ -1922,6 +1922,23 @@ void AudioCoreService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const De
     audioDeviceStatus_.OnDeviceInfoUpdated(desc, command);
 }
 
+void AudioCoreService::OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable)
+{
+    CHECK_AND_RETURN(networkId != LOCAL_NETWORK_ID);
+    AUDIO_INFO_LOG("networkId: %{public}s, role: %{public}d, isAvailable: %{public}d",
+        GetEncryptStr(networkId).c_str(), static_cast<int32_t>(role), isAvailable);
+
+    auto connectedDevices = audioConnectedDevice_.GetCopy();
+    for (auto &desc : connectedDevices) {
+        CHECK_AND_CONTINUE(desc && desc->networkId_ == networkId && desc->deviceRole_ == role);
+        CHECK_AND_CONTINUE_LOG(desc->exceptionFlag_ == isAvailable, "device no need to handle, role: %{public}d",
+            desc->deviceRole_);
+        AUDIO_INFO_LOG("role: %{public}d", desc->deviceRole_);
+
+        audioDeviceStatus_.HandleDeviceStateChange(desc, isAvailable);
+    }
+}
+
 uint32_t AudioCoreService::GetPaIndexByPortName(const std::string &portName)
 {
     return audioDeviceStatus_.GetPaIndexByPortName(portName);

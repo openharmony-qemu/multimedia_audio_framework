@@ -31,6 +31,7 @@ class IDeviceManagerCallback {
 public:
     virtual void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key,
         const std::string &condition, const std::string &value) {}
+    virtual void OnDeviceStateChange(const std::string &adapterName, DeviceRole role, bool isAvailable) {}
 };
 
 class IDeviceManager {
@@ -69,6 +70,8 @@ public:
     virtual void RegistCallback(uint32_t type, IAudioSinkCallback *callback) {}
 
     virtual void UnRegistAdapterManagerCallback(const std::string &adapterName) {}
+
+    virtual void RegistHdiEventCallback(std::shared_ptr<IDeviceManagerCallback> callback) {}
 
     virtual void *CreateRender(const std::string &adapterName, void *param, void *deviceDesc,
         uint32_t &hdiRenderId) = 0;

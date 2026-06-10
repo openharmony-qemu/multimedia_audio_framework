@@ -240,12 +240,13 @@ void AudioSelectInterfaceService::SelectOutputDeviceLog(sptr<AudioRendererFilter
             ERR_PLAY_DEVICE_SWITCH_INVALID_PARAM, "SelectOutputDevice: DeviceCheck no success", false));
 }
 
-void AudioSelectInterfaceService::SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+void AudioSelectInterfaceService::SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    DeviceUsage deviceUsage)
 {
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     deviceDesc->isEnable_ = true;
     AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(deviceDesc, ENABLE_UPDATE, reason);
-    deviceDesc->deviceUsage_ = ALL_USAGE;
+    deviceDesc->deviceUsage_ = deviceUsage;
     AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(deviceDesc, USAGE_UPDATE, reason);
     deviceDesc->exceptionFlag_ = false;
     AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE, reason);
@@ -444,6 +445,7 @@ int32_t AudioSelectInterfaceService::RefreshVirtualDevice(shared_ptr<AudioDevice
 int32_t AudioSelectInterfaceService::SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
     int32_t uid)
 {
+    SetDeviceEnableAndUsage(deviceDesc, deviceDesc->deviceUsage_);
     AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(uid, INVALID_STREAM_ID, deviceDesc);
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
