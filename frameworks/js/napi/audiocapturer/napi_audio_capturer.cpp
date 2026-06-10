@@ -1264,32 +1264,39 @@ napi_value NapiAudioCapturer::RequestPlaybackCaptureStart(napi_env env, napi_cal
     napi_value self = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &self, nullptr);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && self != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "napi_get_cb_info failed");
+        NapiAudioError::ThrowErrorAndReturn(env, "napi_get_cb_info failed", NAPI_ERR_INPUT_INVALID),
+        "napi_get_cb_info failed");
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "invalid arguments count");
+        NapiAudioError::ThrowErrorAndReturn(env, "invalid arguments count", NAPI_ERR_INPUT_INVALID),
+        "invalid arguments count");
 
     napi_valuetype type = napi_undefined;
     status = napi_typeof(env, argv[PARAM0], &type);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && type == napi_function,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID), "callback must be a function");
+        NapiAudioError::ThrowErrorAndReturn(env, "callback must be a function", NAPI_ERR_INPUT_INVALID),
+        "callback must be a function");
 
     NapiAudioCapturer *napiAudioCapturer = nullptr;
     status = napi_unwrap(env, self, reinterpret_cast<void **>(&napiAudioCapturer));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && napiAudioCapturer != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "napi_unwrap failed");
+        NapiAudioError::ThrowErrorAndReturn(env, "napi_unwrap failed", NAPI_ERR_SYSTEM), "napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "audioCapturer_ is nullptr");
+        NapiAudioError::ThrowErrorAndReturn(env, "audioCapturer_ is nullptr", NAPI_ERR_SYSTEM),
+        "audioCapturer_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->sourceType_ == SOURCE_TYPE_PLAYBACK_CAPTURE &&
         napiAudioCapturer->isModernInnerCapturer_,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
+        NapiAudioError::ThrowErrorAndReturn(env,
+            "not a playback capture stream created by playbackCaptureMode", NAPI_ERR_ILLEGAL_STATE),
         "not a playback capture stream created by playbackCaptureMode");
 
     PlaybackCaptureStartAsyncContext *context = nullptr;
     int32_t ret = CreatePlaybackCaptureStartContext(env, self, argv[PARAM0], napiAudioCapturer, &context);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, ret), "create context failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
+        NapiAudioError::ThrowErrorAndReturn(env, "create context failed", ret), "create context failed");
     ret = EnqueuePlaybackCaptureStartWork(env, context);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-        (ReleasePlaybackCaptureStartAsyncContext(env, context), NapiAudioError::ThrowErrorAndReturn(env, ret)),
+        (ReleasePlaybackCaptureStartAsyncContext(env, context),
+            NapiAudioError::ThrowErrorAndReturn(env, "queue async work failed", ret)),
         "queue async work failed");
     return NapiParamUtils::GetUndefinedValue(env);
 }
