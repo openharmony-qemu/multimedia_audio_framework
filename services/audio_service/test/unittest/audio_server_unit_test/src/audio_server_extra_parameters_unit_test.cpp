@@ -376,7 +376,7 @@ HWTEST_F(AudioServerUnitTest, TrySetAudioEffectParameterToRemote_001, TestSize.L
     newPair.push_back({"effect_key", "effect_value"});
 
     int32_t ret = audioServer->TrySetAudioEffectParameterToRemote(newPair);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
     bool hasNetworkIdKey = false;
     for (auto &item : newPair) {
         if (item.first == "NETWORK_ID") { hasNetworkIdKey = true; }
@@ -398,7 +398,7 @@ HWTEST_F(AudioServerUnitTest, TrySetAudioEffectParameterToRemote_002, TestSize.L
     newPair.push_back({"effect_key2", "effect_value2"});
 
     int32_t ret = audioServer->TrySetAudioEffectParameterToRemote(newPair);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
     EXPECT_EQ(newPair.size(), 2);
 }
 } // namespace AudioStandard
