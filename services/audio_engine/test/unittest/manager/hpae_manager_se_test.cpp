@@ -92,6 +92,12 @@ protected:
         return streamInfo;
     }
 
+    void InjectStereoMusicStream(HpaeSessionState state = HPAE_SESSION_RUNNING)
+    {
+        HpaeStreamInfo streamInfo = MakeStereoMusicStream(TEST_SESSION_ID);
+        hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, state};
+    }
+
     void WaitForMsgProcessing()
     {
         static constexpr int32_t pollIntervalMs = 20;
@@ -114,6 +120,8 @@ protected:
 // API-1: SetAissEnabledSync(true) succeeds when session exists
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_success, TestSize.Level0)
 {
+    InjectStereoMusicStream();
+
     int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -131,6 +139,8 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_sessionNotFound, TestSize.Level0
 // API-3: SetAissEnabledSync(true) is idempotent when already bound
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_alreadyBound, TestSize.Level0)
 {
+    InjectStereoMusicStream();
+
     int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
 
@@ -141,6 +151,7 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_alreadyBound, TestSize.Level0)
 // API-4: SetAissEnabledSync(false) succeeds when session is bound
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_false_success, TestSize.Level0)
 {
+    InjectStereoMusicStream();
     ASSERT_EQ(hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true), SUCCESS);
 
     int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, false);
@@ -158,6 +169,8 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabled_false_notBound, TestSize.Level0)
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_primaryPath, TestSize.Level0)
 {
     // Default fixture already has HpaeRendererManager → Primary path
+    InjectStereoMusicStream();
+
     int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -168,6 +181,7 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_offloadPath, TestSize.Level0)
     HpaeSinkInfo sinkInfo = GetTestSinkInfo();
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     hpaeManager_->rendererManagerMap_["file_io"] = offloadManager;
+    InjectStereoMusicStream();
 
     int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
@@ -212,6 +226,7 @@ HWTEST_F(HpaeManagerSeTest, BindAndCreateAiss_missingStreamInfoRejected, TestSiz
 // API-8: SetVocalRatioSync succeeds with valid ratio and bound session
 HWTEST_F(HpaeManagerSeTest, SetVocalRatio_success, TestSize.Level0)
 {
+    InjectStereoMusicStream();
     ASSERT_EQ(hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true), SUCCESS);
 
     int32_t ret = hpaeManager_->SetVocalRatioSync(0.5f);
@@ -521,6 +536,20 @@ protected:
         rendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] = cluster;
     }
 
+    void InjectStereoMusicStream(HpaeSessionState state = HPAE_SESSION_RUNNING)
+    {
+        HpaeStreamInfo streamInfo;
+        streamInfo.sessionId = TEST_SESSION_ID;
+        streamInfo.streamType = STREAM_MUSIC;
+        streamInfo.uid = TEST_UID;
+        streamInfo.frameLen = TEST_FRAME_LEN;
+        streamInfo.samplingRate = SAMPLE_RATE_48000;
+        streamInfo.channels = STEREO;
+        streamInfo.channelLayout = CH_LAYOUT_STEREO;
+        streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+        hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, state};
+    }
+
     std::shared_ptr<HpaeManager> hpaeManager_;
     std::shared_ptr<HpaeRendererManager> rendererManager_;
 };
@@ -611,6 +640,7 @@ HWTEST_F(HpaeManagerSeE2eTest, PauseStandby_triggersSessionEffectPause_E2E, Test
 HWTEST_F(HpaeManagerSeE2eTest, MoveStream_recreatesSessionEffect_E2E, TestSize.Level0)
 {
     // 1. Bind SE to session (tracked in SessionEffectManager)
+    InjectStereoMusicStream();
     ASSERT_EQ(hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true), SUCCESS);
 
     auto boundId = hpaeManager_->sessionEffectManager_->GetBoundSessionId("audio_aiss_enhance");
