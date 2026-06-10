@@ -2391,7 +2391,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetStreamTypeFromUsageContent_FoundInMap,
 HWTEST_F(AudioStreamCollectorUnitTest, GetStreamTypeFromUsageContent_NotFoundInMap, TestSize.Level1)
 {
     AudioStreamCollector &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
-    auto result = streamCollector.GetStreamTypeFromUsageContent(STREAM_USAGE_MEDIA,
+    auto result = streamCollector.GetStreamTypeFromUsageContent(STREAM_USAGE_DTMF,
         CONTENT_TYPE_SPEECH);
     EXPECT_EQ(result, STREAM_MUSIC);
 }
