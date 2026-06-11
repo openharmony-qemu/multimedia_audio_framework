@@ -23,6 +23,7 @@
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_voice_morphing_algo_interface_impl.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
