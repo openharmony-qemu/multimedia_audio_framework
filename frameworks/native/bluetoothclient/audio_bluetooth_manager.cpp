@@ -785,15 +785,15 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
     // SCO_DISCONNECTED = 3, SCO_CONNECTING = 4, SCO_DISCONNECTING = 5, SCO_CONNECTED = 6
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
+        if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
+            AudioHfpManager::ClearScoSelected();
+        }
         if (scoState == HfpScoConnectState::SCO_CONNECTED && reason == HFP_AG_SCO_REMOTE_USER_SET_UP) {
             AudioHfpManager::UpdateActiveHfpDevice(device);
         } else {
             bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
             BluetoothScoManager::GetInstance().UpdateScoState(scoState, device, reason);
             HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
-        }
-        if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
-            AudioHfpManager::ClearScoSelected();
         }
     }
 }
