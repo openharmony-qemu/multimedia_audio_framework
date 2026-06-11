@@ -49,7 +49,8 @@ public:
     int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
     float GetMaxAmplitude(void) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false,
+        int32_t phoneCallSceneType = SCENE_TYPE_INVALID) override;
 
     int32_t UpdateActiveDevice(DeviceType inputDevice) override;
 
@@ -70,6 +71,7 @@ private:
     void InitAudioSampleAttr(struct AudioSampleAttributes &param);
     void InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc);
     void InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, AudioScene audioScene);
+    int32_t SetPhoneCallSceneType(int32_t type);
     int32_t CreateCapture(void);
     int32_t DoSetInputRoute(DeviceType inputDevice);
 

@@ -284,7 +284,8 @@ float RemoteFastAudioCaptureSource::GetMaxAmplitude(void)
     return 0;
 }
 
-int32_t RemoteFastAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
+int32_t RemoteFastAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,
+    int32_t phoneCallSceneType)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");

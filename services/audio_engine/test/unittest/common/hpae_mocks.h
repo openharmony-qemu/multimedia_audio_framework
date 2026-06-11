@@ -171,7 +171,8 @@ public:
     MOCK_METHOD(int32_t, GetPresentationPosition, (uint64_t &frames, int64_t &timeSec,
         int64_t &timeNanoSec), (override));
     MOCK_METHOD(float, GetMaxAmplitude, (), (override));
-    MOCK_METHOD(int32_t, SetAudioScene, (AudioScene audioScene, bool scoExcludeFlag), (override));
+    MOCK_METHOD(int32_t, SetAudioScene,
+        (AudioScene audioScene, bool scoExcludeFlag, int32_t phoneCallSceneType), (override));
     MOCK_METHOD(int32_t, UpdateActiveDevice, (DeviceType inputDevice), (override));
     MOCK_METHOD(int32_t, UpdateAppsUid, (const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE],
         const size_t size), (override));

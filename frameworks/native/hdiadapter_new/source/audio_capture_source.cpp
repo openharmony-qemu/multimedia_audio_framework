@@ -766,25 +766,41 @@ float AudioCaptureSource::GetMaxAmplitude(void)
     return maxAmplitude_;
 }
 
-int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
+int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,
+    int32_t phoneCallSceneType)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
-    AUDIO_INFO_LOG("scene: %{public}d, current scene : %{public}d, scoExcludeFlag: %{public}d",
-        audioScene, currentAudioScene_, scoExcludeFlag);
+    AUDIO_INFO_LOG("scene: %{public}d, current scene : %{public}d, scoExcludeFlag: %{public}d,"
+        " phoneCallSceneType: %{public}d", audioScene, currentAudioScene_, scoExcludeFlag, phoneCallSceneType);
+
+    bool isConnect = (audioScene == AUDIO_SCENE_PHONE_CALL && currentAudioScene_ != AUDIO_SCENE_PHONE_CALL);
+    bool isDisconnect = (audioScene == AUDIO_SCENE_DEFAULT && currentAudioScene_ == AUDIO_SCENE_PHONE_CALL);
+
+    int32_t ret = SUCCESS;
+    if (isConnect && phoneCallSceneType != SCENE_TYPE_INVALID) {
+        ret = SetPhoneCallSceneType(phoneCallSceneType);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    }
 
     if (!scoExcludeFlag && (audioScene != currentAudioScene_ || currentScoExcludeFlag_)) {
         struct AudioSceneDescriptor sceneDesc;
         InitSceneDesc(sceneDesc, audioScene);
 
         CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
-        int32_t ret = audioCapture_->SelectScene(audioCapture_, &sceneDesc);
+        ret = audioCapture_->SelectScene(audioCapture_, &sceneDesc);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
     }
     currentScoExcludeFlag_ = scoExcludeFlag;
     if (audioScene != currentAudioScene_) {
         currentAudioScene_ = audioScene;
     }
+
+    if (isDisconnect) {
+        ret = SetPhoneCallSceneType(SCENE_TYPE_MODEM);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    }
+
     return SUCCESS;
 }
 
@@ -1011,6 +1027,18 @@ AudioSampleFormat AudioCaptureSource::ParseAudioFormat(const std::string &format
     } else {
         return SAMPLE_S16LE;
     }
+}
+
+int32_t AudioCaptureSource::SetPhoneCallSceneType(int32_t type)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERR_INVALID_HANDLE, "deviceManager is nullptr");
+
+    int32_t ret = deviceManager->SetPhoneCallSceneType(adapterNameCase_, type);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "SetPhoneCallSceneType failed, ret=%{public}d", ret);
+    return SUCCESS;
 }
 
 AudioCategory AudioCaptureSource::GetAudioCategory(AudioScene audioScene)
