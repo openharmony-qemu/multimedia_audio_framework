@@ -4038,7 +4038,6 @@ public:
     int32_t SetAudioEffectMode(int32_t effectMode) override { return SUCCESS; }
     int32_t GetAudioEffectMode(int32_t &effectMode) override { return SUCCESS; }
     int32_t SetPrivacyType(int32_t privacyType) override { return SUCCESS; }
-    int32_t SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag) override { return SUCCESS; }
     int32_t GetPrivacyType(int32_t &privacyType) override { return SUCCESS; }
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return SUCCESS; }
     int32_t SetTarget(int32_t target, int32_t &ret) override { return SUCCESS; }
