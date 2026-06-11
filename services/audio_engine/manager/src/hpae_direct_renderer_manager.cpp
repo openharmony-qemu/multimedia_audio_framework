@@ -743,7 +743,7 @@ int32_t HpaeDirectRendererManager::InitSinkInner(bool isReload, bool isCallback)
     AUDIO_INFO_LOG("inited");
     if (isCallback) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
-        isInit_.store(true);
+        isInit_.store(ret == SUCCESS);
     } else {
         return ret;
     }
