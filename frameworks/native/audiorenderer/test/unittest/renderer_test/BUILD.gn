@@ -316,3 +316,59 @@ ohos_unittest("renderer_in_client_unit_test") {
   resource_config_file =
       "../../../../../../test/resource/audio_renderer/ohos_test.xml"
 }
+
+ohos_unittest("audio_renderer_firstFrame_mock_test") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../../src",
+    "../../../../audiodefinitions/include",
+    "../../../../audiorenderer/include",
+    "../../../../audiostream/include",
+    "../../../../common/include",
+    "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audiocapturer/include",
+    "../../../../../../interfaces/inner_api/native/audio_debug_manager/include",
+    "../../../../../../services/audio_policy/client/include",
+    "../../../../../../services/audio_service/common/include/dfx",
+    "../../../../../audio_utils/include",
+    "../../../../audioschedule/include",
+  ]
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  sources = [ "src/audio_renderer_firstFrame_mock_test.cpp" ]
+
+  deps = [
+    "../../../../../../services/audio_policy:audio_policy_client",
+    "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
+    "../../../../../../services/audio_service:audio_common",
+    "../../../../audiodefinitions:audio_definitions",
+    "../../../../audiorenderer:audio_renderer",
+    "../../../../audioutils:audio_utils",
+    "../../../../audioschedule:audio_schedule",
+    "../../../../audio_debug_manager:audio_debug_manager",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "samgr:samgr_proxy",
+  ]
+
+  resource_config_file =
+      "../../../../../../test/resource/audio_renderer/ohos_test.xml"
+}
