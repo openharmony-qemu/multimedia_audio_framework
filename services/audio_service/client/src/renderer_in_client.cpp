@@ -878,7 +878,7 @@ void RendererInClientInner::FirstFrameProcess()
 
 void RendererInClientInner::NotifyStreamSilentChange()
 {
-    CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && volumeDataCount_ > 0);
+    CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && GetVolume() > 0.0f && volumeDataCount_ > 0);
     int64_t stamp = ClockTime::GetCurNano();
     Trace trace("RendererInClientInner::NotifyStreamSilentChange " + std::to_string(sessionId_));
     AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);

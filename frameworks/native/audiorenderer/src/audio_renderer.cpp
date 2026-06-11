@@ -1896,6 +1896,7 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume, bool setVo
     State currentState = audioStream_->GetState();
     bool isMute = audioStream_->GetMute();
     bool noNeedActive = setVolume && (audioStream_->GetVolume() > 0) && (volume > 0);
+    audioStream_->ResetNotifyStreamSilentChangeFlag();
     if (currentState == NEW || currentState == PREPARED) {
         AUDIO_INFO_LOG("set volume before RUNNING,  volume=%{public}f", volume);
         isStillZeroStreamVolume_ = (volume == 0);

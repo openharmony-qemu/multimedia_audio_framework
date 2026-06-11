@@ -256,6 +256,7 @@ public:
     void SetBundleName(std::string &name) override;
 
     bool ResetStaticPlayPosition() override;
+    int32_t ResetNotifyStreamSilentChangeFlag() override;
 
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);

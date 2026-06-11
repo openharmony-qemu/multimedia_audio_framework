@@ -1568,5 +1568,11 @@ bool FastAudioStream::ResetStaticPlayPosition()
     return true;
 }
 
+int32_t FastAudioStream::ResetNotifyStreamSilentChangeFlag()
+{
+    AUDIO_WARNING_LOG("Not support");
+    return ERR_NOT_SUPPORTED;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

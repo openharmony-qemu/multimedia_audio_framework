@@ -403,6 +403,8 @@ public:
 
     virtual const std::string GetBundleName() = 0;
     virtual void SetBundleName(std::string &name) = 0;
+
+    virtual int32_t ResetNotifyStreamSilentChangeFlag() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
