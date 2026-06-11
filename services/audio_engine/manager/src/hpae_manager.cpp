@@ -3058,11 +3058,7 @@ void HpaeManager::TryBindSessionEffectOnStart(uint32_t sessionId)
         return;
     }
     if (boundSessionId_ != 0 && boundSessionId_ != sessionId) {
-        auto oldRendererManager = GetRendererManagerById(boundSessionId_);
-        if (oldRendererManager != nullptr) {
-            oldRendererManager->PostDestroySessionEffect(boundSessionId_);
-        }
-        sessionEffectManager_->UnbindSessionEffect(boundSessionId_);
+        ClearAissSession(boundSessionId_);
     }
     int32_t aissRet = BindAndCreateAiss(sessionId);
     if (aissRet == SUCCESS) {
@@ -3096,18 +3092,27 @@ int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId)
     return SUCCESS;
 }
 
-void HpaeManager::CleanupOldAissSession(uint32_t newSessionId)
+// Clear the session effect binding and reset boundSessionId_ when it points to the cleared session.
+void HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding)
 {
-    uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
-    if (oldSessionId == 0 || oldSessionId == newSessionId) {
+    if (sessionId == 0 || sessionEffectManager_ == nullptr) {
         return;
     }
-    auto oldRendererManager = GetRendererManagerById(oldSessionId);
-    if (oldRendererManager == nullptr) {
-        return;
+    bool isBoundUidSession = boundSessionId_ == sessionId;
+
+    auto rendererManager = GetRendererManagerById(sessionId);
+    if (rendererManager != nullptr) {
+        rendererManager->PostDestroySessionEffect(sessionId);
     }
-    oldRendererManager->PostDestroySessionEffect(oldSessionId);
-    AUDIO_INFO_LOG("SetAissEnabledSync: posted DestroySessionEffect for old session %{public}u", oldSessionId);
+
+    sessionEffectManager_->UnbindSessionEffect(sessionId);
+    if (isBoundUidSession) {
+        boundSessionId_ = 0;
+    }
+    if (clearUidBinding && isBoundUidSession) {
+        boundUid_ = -1;
+    }
+    AUDIO_INFO_LOG("ClearAissSession: cleared AISS session %{public}u", sessionId);
 }
 
 uint32_t HpaeManager::FindRunningMusicSession(int32_t uid)
@@ -3129,8 +3134,30 @@ uint32_t HpaeManager::FindRunningMusicSession(int32_t uid)
 
 int32_t HpaeManager::EnableAissByUid(int32_t uid)
 {
-    CHECK_AND_RETURN_RET_LOG(boundUid_ == -1, ERR_OPERATION_FAILED,
-        "EnableAissByUid: uid %{public}d already bound", uid);
+    CHECK_AND_RETURN_RET_LOG(sessionEffectManager_ != nullptr, ERR_OPERATION_FAILED,
+        "EnableAissByUid: sessionEffectManager_ is null");
+
+    int32_t oldUid = boundUid_;
+    if (boundUid_ == uid && boundSessionId_ != 0) {
+        return SUCCESS;
+    }
+
+    if (boundUid_ != -1 && boundUid_ != uid) {
+        uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
+        if (oldSessionId == 0) {
+            oldSessionId = boundSessionId_;
+            if (oldSessionId != 0) {
+                AUDIO_INFO_LOG(
+                    "EnableAissByUid: no bound AISS session for old uid %{public}d, fallback to session %{public}u",
+                    oldUid, oldSessionId);
+            }
+        }
+        if (oldSessionId != 0) {
+            ClearAissSession(oldSessionId, true);
+        }
+        boundUid_ = -1;
+        boundSessionId_ = 0;
+    }
 
     boundUid_ = uid;
     boundSessionId_ = 0;
@@ -3149,10 +3176,16 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
     }
     if (ret == SUCCESS) {
         boundSessionId_ = targetSessionId;
+        return SUCCESS;
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
-        "EnableAissByUid: BindAndCreateAiss failed for session %{public}u", targetSessionId);
-    return SUCCESS;
+
+    boundUid_ = -1;
+    boundSessionId_ = 0;
+    AUDIO_ERR_LOG(
+        "EnableAissByUid: BindAndCreateAiss failed for uid %{public}d (old uid %{public}d), "
+        "session %{public}u, ret %{public}d",
+        uid, oldUid, targetSessionId, ret);
+    return ret;
 }
 
 int32_t HpaeManager::DisableAissByUid(int32_t uid)
@@ -3160,13 +3193,7 @@ int32_t HpaeManager::DisableAissByUid(int32_t uid)
     CHECK_AND_RETURN_RET_LOG(boundUid_ == uid, ERR_OPERATION_FAILED,
         "DisableAissByUid: uid %{public}d not bound (current: %{public}d)", uid, boundUid_);
 
-    if (boundSessionId_ != 0) {
-        auto rendererManager = GetRendererManagerById(boundSessionId_);
-        if (rendererManager != nullptr) {
-            rendererManager->PostDestroySessionEffect(boundSessionId_);
-        }
-        sessionEffectManager_->UnbindSessionEffect(boundSessionId_);
-    }
+    ClearAissSession(boundSessionId_, true);
     boundUid_ = -1;
     boundSessionId_ = 0;
     return SUCCESS;
@@ -3189,17 +3216,18 @@ int32_t HpaeManager::SetAissEnabledSync(uint32_t sessionId, bool enabled)
         }
 
         if (enabled) {
-            CleanupOldAissSession(sessionId);
+            uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
+            if (oldSessionId != 0 && oldSessionId != sessionId) {
+                ClearAissSession(oldSessionId, true);
+            }
 
             int32_t ret = BindAndCreateAiss(sessionId);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
                 "SetAissEnabledSync: BindAndCreateAiss failed for session %{public}u", sessionId);
             return SUCCESS;
-        } else {
-            rendererManager->PostDestroySessionEffect(sessionId);
-            sessionEffectManager_->UnbindSessionEffect(sessionId);
-            return SUCCESS;
         }
+        ClearAissSession(sessionId, true);
+        return SUCCESS;
     };
     return SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
 }
