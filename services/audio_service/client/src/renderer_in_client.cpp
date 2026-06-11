@@ -144,6 +144,7 @@ void RendererInClientInner::RegisterTracker(const std::shared_ptr<AudioClientTra
         registerTrackerInfo.rendererInfo = rendererInfo_;
         registerTrackerInfo.capturerInfo = capturerInfo_;
         registerTrackerInfo.channelCount = curStreamParams_.channels;
+        registerTrackerInfo.backMute = backMute_;
 
         audioStreamTracker_->RegisterTracker(registerTrackerInfo, proxyObj);
         streamTrackerRegistered_ = true;
