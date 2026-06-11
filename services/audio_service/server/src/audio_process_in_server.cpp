@@ -100,7 +100,6 @@ void AudioProcessInServer::RemoveStreamInfo()
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
-    voipNoPrivacyFlag_.store(processConfig_.rendererInfo.voipNoPrivacyFlag);
     if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
         sessionId_ = CoreServiceHandler::GetInstance().GenerateSessionId();
     } else {
@@ -1409,21 +1408,10 @@ int32_t AudioProcessInServer::SetRebuildFlag()
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag)
-{
-    voipNoPrivacyFlag_.store(voipNoPrivacyFlag);
-    return SUCCESS;
-}
-
 int32_t AudioProcessInServer::GetServerKeepRunning(bool &keepRunning)
 {
     keepRunning = keepRunning_;
     return SUCCESS;
-}
-
-bool AudioProcessInServer::GetVoipNoPrivacyFlag() const
-{
-    return voipNoPrivacyFlag_.load();
 }
 
 int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams)

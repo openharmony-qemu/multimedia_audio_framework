@@ -156,7 +156,6 @@ interface IStandardAudioService {
     void UnRegistAdapterManagerCallback([in] String networkId);
     void GetRemoteAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);
     [oneway] void RequestUserPrivacyAuthority([in] unsigned int sessionId);
-    void CheckInnerCapVoIP([in] unsigned int sessionId);
     void SetAudioSceneForPipe([in] unsigned int pipeId, [in] int audioScene, [in] boolean scoExcludeFlag);
     void CreateCallTransferProxy();
 }

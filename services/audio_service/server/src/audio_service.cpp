@@ -80,17 +80,6 @@ static inline const std::unordered_set<AudioStreamType> workgroupSupportStreamTy
     STREAM_VOICE_COMMUNICATION,
 };
 const size_t MAX_FG_LIST_SIZE = 10;
-
-bool IsVoipDownlinkUsage(StreamUsage usage)
-{
-    return usage == STREAM_USAGE_VOICE_COMMUNICATION || usage == STREAM_USAGE_VIDEO_COMMUNICATION;
-}
-
-bool IsVoipDownlinkConfig(const AudioProcessConfig &config)
-{
-    return config.audioMode == AUDIO_MODE_PLAYBACK &&
-        (config.streamType == STREAM_VOICE_COMMUNICATION || IsVoipDownlinkUsage(config.rendererInfo.streamUsage));
-}
 }
 
 AudioService *AudioService::GetInstance()
@@ -625,30 +614,6 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, st
 bool AudioService::CheckShouldCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId)
 {
     InnerCapFilterPolicy filterPolicy = GetInnerCapFilterPolicy(innerCapId);
-    auto configIt = workingConfigs_.find(innerCapId);
-    if (configIt != workingConfigs_.end() && configIt->second.isModernInnerCapturer &&
-        IsVoipDownlinkConfig(rendererConfig)) {
-        bool voipNoPrivacyFlag = false;
-        auto rendererInServer = allRendererMap_.count(rendererConfig.originalSessionId) > 0 ?
-            allRendererMap_[rendererConfig.originalSessionId].lock() : nullptr;
-        if (rendererInServer != nullptr) {
-            voipNoPrivacyFlag = rendererInServer->GetVoipNoPrivacyFlag();
-        }
-#ifdef SUPPORT_LOW_LATENCY
-        if (!voipNoPrivacyFlag) {
-            auto processInServer = allProcessInServer_.count(rendererConfig.originalSessionId) > 0 ?
-                allProcessInServer_[rendererConfig.originalSessionId].promote() : nullptr;
-            if (processInServer != nullptr) {
-                voipNoPrivacyFlag = processInServer->GetVoipNoPrivacyFlag();
-            }
-        }
-#endif
-        if (!voipNoPrivacyFlag) {
-            AUDIO_INFO_LOG("Skip modern inner-cap for voip stream without no-privacy flag,"
-                " sessionId:%{public}u capId:%{public}d", rendererConfig.originalSessionId, innerCapId);
-            return false;
-        }
-    }
     bool res = false;
     switch (filterPolicy) {
         case POLICY_INVALID:
@@ -2080,26 +2045,6 @@ int32_t AudioService::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool c
             RECORD_QUERY_ILLEGAL_STATE, "sessionid not in allCapturerMap", false),
         "sessionid not in allCapturerMap");
     return capturerInServer->ReportPlaybackCaptureUserChoice(sessionId, choice);
-}
-
-void AudioService::CheckInnerCapVoIP(uint32_t sessionId)
-{
-    auto rendererInServer = GetRendererBySessionID(sessionId);
-    if (rendererInServer != nullptr) {
-        CheckInnerCapForRenderer(sessionId, rendererInServer);
-        return;
-    }
-#ifdef SUPPORT_LOW_LATENCY
-    {
-        std::lock_guard<std::mutex> lock(processListMutex_);
-        for (auto &[audioProcessInServer, audioEndpoint]: linkedPairedList_) {
-            if (audioProcessInServer && audioEndpoint && audioProcessInServer->GetSessionId() == sessionId) {
-                CheckInnerCapForProcess(audioProcessInServer, audioEndpoint);
-                return;
-            }
-        }
-    }
-#endif
 }
 
 void AudioService::SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList)

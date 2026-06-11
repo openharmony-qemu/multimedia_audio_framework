@@ -3932,13 +3932,6 @@ int32_t AudioServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool ch
     return AudioService::GetInstance()->ReportPlaybackCaptureUserChoice(sessionId, choice);
 }
 
-int32_t AudioServer::CheckInnerCapVoIP(uint32_t sessionId)
-{
-    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
-    AudioService::GetInstance()->CheckInnerCapVoIP(sessionId);
-    return SUCCESS;
-}
-
 int32_t AudioServer::ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo)
 {
     int32_t fd = open(WAKEUP_TRACK_FILE_PATCH, O_RDWR | O_NONBLOCK, 0);
