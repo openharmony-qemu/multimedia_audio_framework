@@ -689,12 +689,13 @@ bool AudioHfpManager::IsAudioScoStateConnect()
 
 ScoCategory AudioHfpManager::JudgeScoCategory()
 {
-    bool isInbardingEnabled = false;
-    BluetoothHfpInterface::GetInstance().IsInbandRingingEnabled(isInbardingEnabled);
+    bool isInbandRingEnabled = false;
+    BluetoothHfpInterface::GetInstance().IsInbandRingingEnabled(isInbandRingEnabled);
 
     auto scene = scene_.load();
-    if ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) && !isInbardingEnabled) {
-        AUDIO_WARNING_LOG("The inbarding switch is off, ignore the ring scene.");
+    if ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) && !isInbandRingEnabled) {
+        AUDIO_WARNING_LOG("The inbandRing switch is off, ignore the ring scene.");
+        isScoSelected_.store(false);
         return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
     }
 

@@ -608,6 +608,25 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
     return streamDescs;
 }
 
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutputStreamDescsIncludingModem()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto &it : curPipeList_) {
+        if (it == nullptr || it->pipeRole_ != PIPE_ROLE_OUTPUT) {
+            continue;
+        }
+        streamDescs.insert(streamDescs.end(), it->streamDescriptors_.begin(), it->streamDescriptors_.end());
+    }
+    for (auto &it : modemCommunicationIdMap_) {
+        if (it.second == nullptr) {
+            continue;
+        }
+        streamDescs.push_back(it.second);
+    }
+    return streamDescs;
+}
+
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutputStreamDescsInfo()
 {
     Trace trace("AudioPipeManager::GetAllOutputStreamDescsInfo");
@@ -652,15 +671,25 @@ bool AudioPipeManager::HasRunningScoOutputStream()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto &it : curPipeList_) {
-        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
-        CHECK_AND_CONTINUE_LOG(it->pipeRole_ == PIPE_ROLE_OUTPUT, "not output pipe");
+        if (it == nullptr || it->pipeRole_ != PIPE_ROLE_OUTPUT) {
+            continue;
+        }
         for (auto &desc : it->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            CHECK_AND_CONTINUE_LOG(desc->streamStatus_ == STREAM_STATUS_STARTED, "stream not started");
-            CHECK_AND_CONTINUE_LOG(!desc->newDeviceDescs_.empty(), "newDeviceDescs is empty");
+            if (desc == nullptr || desc->streamStatus_ != STREAM_STATUS_STARTED || desc->newDeviceDescs_.empty()) {
+                continue;
+            }
             if (desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
                 return true;
             }
+        }
+    }
+    for (auto &entry : modemCommunicationIdMap_) {
+        if (entry.second == nullptr || entry.second->streamStatus_ != STREAM_STATUS_STARTED ||
+            entry.second->newDeviceDescs_.empty()) {
+            continue;
+        }
+        if (entry.second->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            return true;
         }
     }
     return false;
