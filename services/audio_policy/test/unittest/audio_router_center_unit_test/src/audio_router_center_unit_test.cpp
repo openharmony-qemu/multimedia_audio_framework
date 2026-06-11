@@ -1431,5 +1431,421 @@ HWTEST(AudioRouterCenterUnitTest, PreFetchOutputDevices_005, TestSize.Level1)
 
     EXPECT_EQ(result.size(), 0);
 }
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_001
+ * @tc.desc  : Test FetchInputDevice with SOURCE_TYPE_MIC and recordCaptureRouter returning valid device.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_001, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_MIC;
+    validDesc->deviceId_ = 1;
+    center.recordCaptureRouters_.clear();
+    center.recordCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, validDesc));
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_MIC;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_MIC);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_002
+ * @tc.desc  : Test FetchInputDevice with SOURCE_TYPE_VOICE_COMMUNICATION under default audio scene.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_002, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_MIC;
+    validDesc->deviceId_ = 2;
+    center.recordCaptureRouters_.clear();
+    center.recordCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, validDesc));
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_MIC);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_003
+ * @tc.desc  : Test FetchInputDevice with SOURCE_TYPE_VOICE_MESSAGE under default audio scene.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_003, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_MIC;
+    validDesc->deviceId_ = 3;
+    center.voiceMessageRouters_.clear();
+    center.voiceMessageRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, validDesc));
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_VOICE_MESSAGE;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_MIC);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_004
+ * @tc.desc  : Test FetchInputDevice with SOURCE_TYPE_INVALID (not configured router strategy).
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_004, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_INVALID;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_005
+ * @tc.desc  : Test FetchInputDevice with audioDeviceRefinerCb_ callback invoked.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_005, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_MIC;
+    validDesc->deviceId_ = 5;
+    center.recordCaptureRouters_.clear();
+    center.recordCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, validDesc));
+
+    MockStandardAudioRoutingManagerListener mockCallback;
+    center.audioDeviceRefinerCb_ = &mockCallback;
+
+    EXPECT_CALL(mockCallback, OnAudioInputDeviceRefined(_, _, _, _, _))
+        .Times(1);
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_MIC;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_006
+ * @tc.desc  : Test FetchInputDevice when recordCaptureRouter returns nullptr.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_006, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    center.recordCaptureRouters_.clear();
+    center.recordCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, nullptr));
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_MIC;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_007
+ * @tc.desc  : Test FetchInputDevice when recordCaptureRouter returns DEVICE_TYPE_NONE descriptor.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_007, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto noneDesc = std::make_shared<AudioDeviceDescriptor>();
+    noneDesc->deviceType_ = DEVICE_TYPE_NONE;
+    center.recordCaptureRouters_.clear();
+    center.recordCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, noneDesc));
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_MIC;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_008
+ * @tc.desc  : Test FetchInputDevice with SOURCE_TYPE_VOICE_COMMUNICATION under PHONE_CALL scene (callCaptureRouter).
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_008, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto callDesc = std::make_shared<AudioDeviceDescriptor>();
+    callDesc->deviceType_ = DEVICE_TYPE_MIC;
+    callDesc->deviceId_ = 8;
+    center.callCaptureRouters_.clear();
+    center.callCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, callDesc, nullptr));
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_MIC);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_009
+ * @tc.desc  : Test FetchInputDevice when callCaptureRouter returns nullptr under PHONE_CALL scene.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_009, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    center.callCaptureRouters_.clear();
+    center.callCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, nullptr));
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_010
+ * @tc.desc  : Test FetchInputDevice with audioDeviceRefinerCb_ refining the device.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_010, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_MIC;
+    validDesc->deviceId_ = 10;
+    center.recordCaptureRouters_.clear();
+    center.recordCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, validDesc));
+
+    MockStandardAudioRoutingManagerListener mockCallback;
+    center.audioDeviceRefinerCb_ = &mockCallback;
+
+    auto refinedDesc = std::make_shared<AudioDeviceDescriptor>();
+    refinedDesc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    refinedDesc->deviceId_ = 20;
+
+    EXPECT_CALL(mockCallback, OnAudioInputDeviceRefined(_, _, _, _, _))
+        .Times(1)
+        .WillOnce(Invoke([&](std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+            int32_t routerType, int32_t sourceType, int32_t clientUid, int32_t audioPipeType) -> int32_t {
+            descs.clear();
+            descs.push_back(refinedDesc);
+            return 0;
+        }));
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_MIC;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_WIRED_HEADSET);
+    EXPECT_EQ(result->deviceId_, 20);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_011
+ * @tc.desc  : Test FetchInputDevice with SOURCE_TYPE_MIC under PHONE_CALL scene (falls to callCaptureRouter).
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_011, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto callDesc = std::make_shared<AudioDeviceDescriptor>();
+    callDesc->deviceType_ = DEVICE_TYPE_MIC;
+    callDesc->deviceId_ = 11;
+    center.callCaptureRouters_.clear();
+    center.callCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, callDesc, nullptr));
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_MIC;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_MIC);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_012
+ * @tc.desc  : Test FetchInputDevice routerType is set correctly.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_012, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_MIC;
+    validDesc->deviceId_ = 12;
+    center.recordCaptureRouters_.clear();
+    center.recordCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, validDesc));
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_MIC;
+    info.clientUID = 1000;
+    info.streamId = 0;
+    info.routerType = ROUTER_TYPE_NONE;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(info.routerType, ROUTER_TYPE_DEFAULT);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_013
+ * @tc.desc  : Test FetchInputDevice with multiple routers, first returns DEVICE_TYPE_NONE, second returns valid.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_013, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto noneDesc = std::make_shared<AudioDeviceDescriptor>();
+    noneDesc->deviceType_ = DEVICE_TYPE_NONE;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_MIC;
+    validDesc->deviceId_ = 13;
+    center.recordCaptureRouters_.clear();
+    center.recordCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_STREAM_FILTER, nullptr, nullptr, nullptr, noneDesc));
+    center.recordCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, validDesc));
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_MIC;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(info.routerType, ROUTER_TYPE_DEFAULT);
+}
+
+/**
+ * @tc.name  : Test FetchInputDevice.
+ * @tc.number: FetchInputDevice_014
+ * @tc.desc  : Test FetchInputDevice with SOURCE_TYPE_VOICE_MESSAGE under PHONE_CALL scene (falls to callCaptureRouter).
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchInputDevice_014, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto callDesc = std::make_shared<AudioDeviceDescriptor>();
+    callDesc->deviceType_ = DEVICE_TYPE_MIC;
+    callDesc->deviceId_ = 14;
+    center.callCaptureRouters_.clear();
+    center.callCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, callDesc, nullptr));
+    center.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager::GetInstance().audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    AudioSceneManager::GetInstance().lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.sourceType = SOURCE_TYPE_VOICE_MESSAGE;
+    info.clientUID = 1000;
+    info.streamId = 0;
+
+    auto result = center.FetchInputDevice(info);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_MIC);
+}
 } // namespace AudioStandard
 } // namespace OHOS

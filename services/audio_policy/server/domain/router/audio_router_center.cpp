@@ -292,8 +292,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     bak.preStreamUsage = streamUsage;
     bak.audioPipeType = PIPE_TYPE_OUT_NORMAL;
 
-    if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
-        renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
+    if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS || renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         bool hasSystemPermission = (clientUID == BOOT_ANIMATION_UID || PermissionUtil::VerifySystemPermission());
         AudioPolicyDump::GetInstance().RecordBootStateTime(BootAnimationState::VERIFY_PERMISSION_IN_START, clientUID,
             ClockTime::GetCurMilli());
@@ -303,8 +302,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
             bak.streamUsage = AudioPipeManager::GetPipeManager()->GetLastestRunningCallStreamUsage();
             bak.streamUsage = (bak.streamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
                 bak.streamUsage;
-            AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
-                bak.streamUsage);
+            AUDIO_INFO_LOG("replace usage %{public}d to %{public}d", streamUsage, bak.streamUsage);
             desc = FetchCallRenderDevice(bak.streamUsage, clientUID, routerType, bak.bypassType,
                 GetBypassWithSco(audioScene));
         } else if (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) {
@@ -451,10 +449,10 @@ bool AudioRouterCenter::IsConfigRouterStrategy(SourceType sourceType)
     return false;
 }
 
-shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputZoneDevice(SourceType sourceType,int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputZoneDevice(SourceType sourceType, int32_t clientUID)
 {
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID, INPUT_DEVICE);
-    CHECK_AND_RETURN_RET(zoneId == 0, nullptr);
+    CHECK_AND_RETURN_RET(zoneId != 0, nullptr);
     AUDIO_INFO_LOG("FetchInputDevice zoneId %{public}d", zoneId);
         
     return AudioZoneService::GetInstance().FetchInputDevice(zoneId, sourceType, clientUID);
