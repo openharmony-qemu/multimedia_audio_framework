@@ -49,13 +49,25 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetMediaRenderDevice(Str
 shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetCallRenderDevice(StreamUsage streamUsage,
     int32_t clientUID, const uint32_t sessionID)
 {
-    return make_shared<AudioDeviceDescriptor>();
+    vector<shared_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
+    RouterBase::ClearConflictDevice(descs, GetRouterType());
+    shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_OUTPUT_DEVICES, descs);
+    AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
+        clientUID, desc->deviceType_);
+    return desc;
 }
 
 shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetCallCaptureDevice(SourceType sourceType,
     int32_t clientUID, const uint32_t sessionID)
 {
-    return make_shared<AudioDeviceDescriptor>();
+    vector<shared_ptr<AudioDeviceDescriptor>> descs =
+        AudioDeviceManager::GetAudioDeviceManager().GetCommCapturePublicDevices();
+    RouterBase::ClearConflictDevice(descs, GetRouterType());
+    shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_INPUT_DEVICES, descs);
+    AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
+        clientUID, desc->deviceType_);
+    return desc;
 }
 
 vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRenderDevices(StreamUsage streamUsage,
