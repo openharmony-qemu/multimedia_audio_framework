@@ -108,6 +108,7 @@ public:
     void ClearPipeStreams(std::shared_ptr<AudioPipeInfo> pipeInfo);
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsIncludingModem();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsInfo();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByIoHandle(AudioIOHandle id);
