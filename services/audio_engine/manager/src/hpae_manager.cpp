@@ -359,6 +359,7 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
         sinkVirtualOutputNodeMap_[sinkInfo.sinkId]->ReloadNode(nodeInfo);
     }
     rendererManagerMap_[audioModuleInfo.name]->ReloadRenderManager(sinkInfo, isReload);
+    RecreateAissForReloadedRenderer(audioModuleInfo.name);
     return SUCCESS;
 }
 
@@ -2850,7 +2851,9 @@ void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const Audio
         HpaeNodeInfo nodeInfo;
         TransSinkInfoToNodeInfo(sinkInfo, rendererManager, nodeInfo);
         sinkOutputNode->ReloadNode(nodeInfo);
+        const std::string sinkName = sinkIdSinkNameMap_[sinkPortIndex];
         rendererManager->ReloadRenderManager(sinkInfo, false);
+        RecreateAissForReloadedRenderer(sinkName);
     };
     SendRequest(request, __func__);
 }
@@ -3089,6 +3092,56 @@ bool IsAissStreamSupported(const HpaeStreamInfo &streamInfo, uint32_t sessionId,
     return true;
 }
 }  // namespace
+
+void HpaeManager::RecreateAissForReloadedRenderer(const std::string &sinkName)
+{
+    CHECK_AND_RETURN_LOG(sessionEffectManager_ != nullptr,
+        "RecreateAissForReloadedRenderer: sessionEffectManager is null");
+    uint32_t boundSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
+    CHECK_AND_RETURN_LOG(boundSessionId != 0,
+        "RecreateAissForReloadedRenderer: no bound AISS session for sink %{public}s",
+        GetEncryptStr(sinkName).c_str());
+
+    auto sinkIt = rendererIdSinkNameMap_.find(boundSessionId);
+    CHECK_AND_RETURN_LOG(sinkIt != rendererIdSinkNameMap_.end(),
+        "RecreateAissForReloadedRenderer: sink mapping missing for session %{public}u", boundSessionId);
+    CHECK_AND_RETURN_LOG(sinkIt->second == sinkName,
+        "RecreateAissForReloadedRenderer: skip session %{public}u on sink %{public}s, reloaded sink %{public}s",
+        boundSessionId, GetEncryptStr(sinkIt->second).c_str(), GetEncryptStr(sinkName).c_str());
+
+    auto streamIt = rendererIdStreamInfoMap_.find(boundSessionId);
+    CHECK_AND_RETURN_LOG(streamIt != rendererIdStreamInfoMap_.end(),
+        "RecreateAissForReloadedRenderer: stream info missing for session %{public}u", boundSessionId);
+    CHECK_AND_RETURN_LOG(IsAissStreamSupported(streamIt->second.streamInfo, boundSessionId, __func__),
+        "RecreateAissForReloadedRenderer: stream not supported for session %{public}u", boundSessionId);
+
+    auto rendererManager = GetRendererManagerByName(sinkName);
+    CHECK_AND_RETURN_LOG(rendererManager != nullptr,
+        "RecreateAissForReloadedRenderer: renderer manager missing for sink %{public}s",
+        GetEncryptStr(sinkName).c_str());
+
+    AudioEffectConfig audioConfig = MakeAissAudioConfig();
+    std::shared_ptr<EffectInstance> instance;
+    int32_t ret = sessionEffectManager_->BindSessionEffect(
+        boundSessionId, AUDIO_AISS_ENHANCE_EFFECT_NAME, audioConfig, instance);
+    if (ret != SUCCESS || instance == nullptr) {
+        if (ret == SUCCESS) {
+            sessionEffectManager_->UnbindSessionEffect(boundSessionId);
+        }
+        AUDIO_WARNING_LOG("RecreateAissForReloadedRenderer: BindSessionEffect failed for session %{public}u, "
+            "ret %{public}d, instanceNull=%{public}d", boundSessionId, ret, instance == nullptr);
+        return;
+    }
+    // Reload reuses the active effect instance; flush stale PCM/cache state before attaching it to a fresh node.
+    int32_t flushRet = instance->Flush();
+    if (flushRet != SUCCESS) {
+        // EffectInstance::Flush has already cleared framework buffers; keep AISS restored if library flush fails.
+        AUDIO_WARNING_LOG("RecreateAissForReloadedRenderer: Flush failed for session %{public}u, ret %{public}d",
+            boundSessionId, flushRet);
+    }
+    rendererManager->PostCreateSessionEffect(
+        boundSessionId, AUDIO_AISS_ENHANCE_EFFECT_NAME, instance, audioConfig);
+}
 
 void HpaeManager::TryBindSessionEffectOnStart(uint32_t sessionId)
 {

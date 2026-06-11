@@ -25,6 +25,12 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+
+enum class SessionEffectCleanupMode {
+    DROP_AND_DISABLE,
+    DETACH_FOR_RELOAD,
+};
+
 class HpaeProcessCluster : public OutputNode<HpaePcmBuffer*>, public InputNode<HpaePcmBuffer*>,
     public INodeFormatInfoCallback {
 public:
@@ -56,7 +62,8 @@ public:
     void InitEffectBuffer(const uint32_t sessionId);
     uint64_t GetLatency(uint32_t sessionId);
     int32_t CreateNodes(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode);
-    int32_t DestroyNodes(uint32_t sessionId);
+    int32_t DestroyNodes(uint32_t sessionId,
+        SessionEffectCleanupMode mode = SessionEffectCleanupMode::DROP_AND_DISABLE);
     int32_t CheckNodes(uint32_t sessionId);
     void Flush(uint32_t sessionId);
 

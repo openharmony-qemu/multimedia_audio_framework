@@ -711,6 +711,7 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
         AUDIO_INFO_LOG("reload offload");
         if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
             DisConnectInputSession();
+            DetachSessionEffectNodeForReload();
             if (sinkOutputNode_ != nullptr) {
                 sinkOutputNode_->StopStream();
             }
@@ -1304,6 +1305,22 @@ int32_t HpaeOffloadRendererManager::RemoveSessionEffectNode()
     return 0;
 }
 
+void HpaeOffloadRendererManager::DetachSessionEffectNodeForReload()
+{
+    if (!pendingSessionEffects_.empty()) {
+        AUDIO_INFO_LOG("DetachSessionEffectNodeForReload: clear %{public}zu pending SE entries",
+            pendingSessionEffects_.size());
+        pendingSessionEffects_.clear();
+    }
+    if (sessionEffectNode_ != nullptr) {
+        // Reload runs on SignalProcessThread after DisConnectInputSession has removed this node
+        // from the processing chain, so DetachEffectForReload only resets local runtime state.
+        sessionEffectNode_->DetachEffectForReload();
+        sessionEffectNode_.reset();
+    }
+    sessionEffectSessionId_ = 0;
+}
+
 int32_t HpaeOffloadRendererManager::CreateSessionEffect(uint32_t sessionId,
     const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
     const AudioEffectConfig &config)
@@ -1313,11 +1330,26 @@ int32_t HpaeOffloadRendererManager::CreateSessionEffect(uint32_t sessionId,
         CHECK_AND_RETURN_RET_LOG(sessionEffectNode_ == nullptr,
             static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND),
             "CreateSessionEffect: curNode already has SE");
+        if (converterForLoudness_ == nullptr || loudnessGainNode_ == nullptr) {
+            CHECK_AND_RETURN_RET_LOG(pendingSessionEffects_.find(sessionId) == pendingSessionEffects_.end(),
+                static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND),
+                "CreateSessionEffect: session %{public}u already has pending SE", sessionId);
+            pendingSessionEffects_[sessionId] = {effectName, instance, config};
+            // The callback reports that logical binding was accepted; physical insertion is
+            // replayed when the offload chain is ready.
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
+                OPERATION_SESSION_EFFECT_ENABLED);
+            AUDIO_INFO_LOG("CreateSessionEffect: deferred for current session %{public}u (chain not created)",
+                sessionId);
+            return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
+        }
         sessionEffectSessionId_ = sessionId;
         int32_t ret = InsertSessionEffectNode(effectName, instance, config);
         if (ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
             TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
                 OPERATION_SESSION_EFFECT_ENABLED);
+        } else {
+            sessionEffectSessionId_ = 0;
         }
         return ret;
     }

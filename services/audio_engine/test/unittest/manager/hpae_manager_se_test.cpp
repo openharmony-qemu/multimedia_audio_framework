@@ -5,8 +5,12 @@
  */
 
 #include "gtest/gtest.h"
+#include <algorithm>
+#include <any>
 #include <memory>
 #include <string>
+#include <tuple>
+#include <vector>
 
 #include "hpae_manager.h"
 #include "hpae_renderer_manager.h"
@@ -14,6 +18,8 @@
 #include "hpae_process_cluster.h"
 #include "hpae_session_effect_node.h"
 #include "hpae_sink_input_node.h"
+#include "hpae_sink_virtual_output_node.h"
+#include "hpae_node_common.h"
 #include "hpae_define.h"
 #include "i_hpae_manager.h"
 #include "hpae_mocks.h"
@@ -27,6 +33,51 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 static constexpr uint32_t TEST_FRAME_LEN = 960;
+
+struct StatusEvent {
+    HpaeStreamClassType streamClassType;
+    uint32_t sessionId;
+    HpaeSessionState state;
+    IOperation operation;
+};
+
+class ManagerStatusCallbackRecorder final : public ISendMsgCallback {
+public:
+    void Invoke(HpaeMsgCode cmdID, const std::any &args) override
+    {
+        Record(cmdID, args);
+    }
+
+    void InvokeSync(HpaeMsgCode cmdID, const std::any &args) override
+    {
+        Record(cmdID, args);
+    }
+
+    size_t Count(uint32_t sessionId, IOperation operation) const
+    {
+        return static_cast<size_t>(std::count_if(events_.begin(), events_.end(),
+            [sessionId, operation](const StatusEvent &event) {
+                return event.sessionId == sessionId && event.operation == operation;
+            }));
+    }
+
+private:
+    void Record(HpaeMsgCode cmdID, const std::any &args)
+    {
+        if (cmdID != UPDATE_STATUS) {
+            return;
+        }
+        auto statusArgs = std::any_cast<std::tuple<HpaeStreamClassType, uint32_t,
+            HpaeSessionState, IOperation>>(&args);
+        if (statusArgs == nullptr) {
+            return;
+        }
+        events_.push_back({std::get<0>(*statusArgs), std::get<1>(*statusArgs),
+            std::get<2>(*statusArgs), std::get<3>(*statusArgs)});
+    }
+
+    std::vector<StatusEvent> events_;
+};
 } // namespace
 
 static constexpr uint32_t TEST_SESSION_ID = 42;
@@ -60,6 +111,27 @@ static AudioEffectConfig MakeTestAudioEffectConfig()
     config.inputCfg.channels = STEREO;
     config.outputCfg = config.inputCfg;
     return config;
+}
+
+static AudioModuleInfo GetReloadAudioModuleInfo(const std::string &name = "file_io")
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.lib = "libmodule-hdi-sink.z.so";
+    moduleInfo.channels = "2";
+    moduleInfo.rate = "48000";
+    moduleInfo.name = name;
+    moduleInfo.adapterName = "file_io";
+    moduleInfo.className = "file_io";
+    moduleInfo.bufferSize = "7680";
+    moduleInfo.format = "s32le";
+    moduleInfo.fixedLatency = "1";
+    moduleInfo.offloadEnable = "0";
+    moduleInfo.networkId = "LocalDevice";
+    moduleInfo.fileName = "/data/local/tmp/test_se_reload_renderer.pcm";
+    moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_SPEAKER));
+    moduleInfo.channelLayout = std::to_string(static_cast<uint64_t>(CH_LAYOUT_STEREO));
+    moduleInfo.routeFlag = 0;
+    return moduleInfo;
 }
 
 class HpaeManagerSeTest : public ::testing::Test {
@@ -658,6 +730,9 @@ protected:
         hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, false);
         hpaeManager_->rendererManagerMap_.erase("file_io");
         hpaeManager_->rendererIdSinkNameMap_.erase(TEST_SESSION_ID);
+        hpaeManager_->sinkNameSinkIdMap_.erase("file_io");
+        hpaeManager_->sinkIdSinkNameMap_.erase(0);
+        hpaeManager_->sinkVirtualOutputNodeMap_.erase(0);
         hpaeManager_.reset();
         rendererManager_.reset();
     }
@@ -666,6 +741,22 @@ protected:
     void ProcessRmMessages()
     {
         rendererManager_->hpaeNoLockQueue_.HandleRequests();
+    }
+
+    void WaitForManagerMessages()
+    {
+        static constexpr int32_t pollIntervalMs = 20;
+        static constexpr int32_t maxPollCount = 10;
+        static constexpr int32_t finalWaitMs = 40;
+        int waitCount = 0;
+        while (hpaeManager_->IsMsgProcessing()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(pollIntervalMs));
+            waitCount++;
+            if (waitCount >= maxPollCount) {
+                break;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(finalWaitMs));
     }
 
     // AudioEffectChainManager not init'd in test → CreateProcessCluster skips cluster creation.
@@ -702,6 +793,11 @@ protected:
     std::shared_ptr<HpaeManager> hpaeManager_;
     std::shared_ptr<HpaeRendererManager> rendererManager_;
 };
+
+static bool SetupStreamWithSE(std::shared_ptr<HpaeManager> hpaeManager_,
+    std::shared_ptr<HpaeRendererManager> rendererManager_);
+static bool SetupOffloadStreamWithSE(std::shared_ptr<HpaeManager> hpaeManager_,
+    std::shared_ptr<HpaeOffloadRendererManager> offloadManager_);
 
 // --- E2E: Flush ---
 
@@ -846,6 +942,88 @@ HWTEST_F(HpaeManagerSeE2eTest, MoveStream_recreatesSessionEffect_E2E, TestSize.L
     hpaeManager_->rendererManagerMap_.erase("file_io_2");
 }
 
+// HM-RELOAD-E2E: ReloadRenderManager rebuilds the physical SE node from logical binding
+HWTEST_F(HpaeManagerSeE2eTest, ReloadRenderManager_recreatesSessionEffect_E2E, TestSize.Level0)
+{
+    ASSERT_TRUE(SetupStreamWithSE(hpaeManager_, rendererManager_));
+    ASSERT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+
+    hpaeManager_->sinkNameSinkIdMap_["file_io"] = 0;
+    hpaeManager_->sinkIdSinkNameMap_[0] = "file_io";
+    AudioModuleInfo moduleInfo = GetReloadAudioModuleInfo();
+
+    int32_t ret = hpaeManager_->ReloadRenderManager(moduleInfo, true);
+    EXPECT_EQ(ret, SUCCESS);
+    ProcessRmMessages();
+    ProcessRmMessages();
+
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+    EXPECT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+}
+
+// HM-RELOAD-OFFLOAD: HpaeManager replay also restores SE on HpaeOffloadRendererManager
+HWTEST_F(HpaeManagerSeE2eTest, ReloadRenderManager_recreatesOffloadSessionEffect_E2E, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetTestSinkInfo();
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    auto callback = std::make_shared<ManagerStatusCallbackRecorder>();
+    offloadManager->RegisterSendMsgCallback(callback);
+    ASSERT_EQ(offloadManager->Init(), SUCCESS);
+    offloadManager->DeactivateThread();
+    hpaeManager_->rendererManagerMap_["file_io"] = offloadManager;
+    hpaeManager_->rendererIdSinkNameMap_[TEST_SESSION_ID] = "file_io";
+
+    ASSERT_TRUE(SetupOffloadStreamWithSE(hpaeManager_, offloadManager));
+    auto oldNode = offloadManager->sessionEffectNode_;
+    ASSERT_NE(oldNode, nullptr);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    hpaeManager_->sinkNameSinkIdMap_["file_io"] = 0;
+    hpaeManager_->sinkIdSinkNameMap_[0] = "file_io";
+    AudioModuleInfo moduleInfo = GetReloadAudioModuleInfo();
+
+    int32_t ret = hpaeManager_->ReloadRenderManager(moduleInfo, true);
+    EXPECT_EQ(ret, SUCCESS);
+    offloadManager->hpaeNoLockQueue_.HandleRequests();
+    offloadManager->hpaeNoLockQueue_.HandleRequests();
+
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+    EXPECT_NE(offloadManager->sessionEffectNode_, nullptr);
+    EXPECT_NE(offloadManager->sessionEffectNode_, oldNode);
+    EXPECT_EQ(offloadManager->sessionEffectSessionId_, TEST_SESSION_ID);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
+}
+
+// HM-RELOAD-DIRECT: UpdateAudioPortInfo direct reload path also rebuilds the physical SE node
+HWTEST_F(HpaeManagerSeE2eTest, UpdateAudioPortInfo_recreatesSessionEffect_E2E, TestSize.Level0)
+{
+    auto callback = std::make_shared<ManagerStatusCallbackRecorder>();
+    rendererManager_->RegisterSendMsgCallback(callback);
+    ASSERT_TRUE(SetupStreamWithSE(hpaeManager_, rendererManager_));
+    ASSERT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    HpaeNodeInfo nodeInfo;
+    TransSinkInfoToNodeInfo(rendererManager_->sinkInfo_, rendererManager_, nodeInfo);
+    hpaeManager_->sinkNameSinkIdMap_["file_io"] = 0;
+    hpaeManager_->sinkIdSinkNameMap_[0] = "file_io";
+    hpaeManager_->sinkVirtualOutputNodeMap_[0] = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo);
+
+    AudioModuleInfo moduleInfo = GetReloadAudioModuleInfo();
+    moduleInfo.rate = "44100";
+    hpaeManager_->UpdateAudioPortInfo(0, moduleInfo);
+    WaitForManagerMessages();
+    ProcessRmMessages();
+    ProcessRmMessages();
+
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+    EXPECT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
+}
+
 // --- E2E: Pause→Start (SessionEffectStart recovery) ---
 
 // Helper: common setup for T10-T12. Returns false on failure.
@@ -881,6 +1059,32 @@ static bool SetupStreamWithSE(std::shared_ptr<HpaeManager> hpaeManager_,
     if (hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true) != SUCCESS) { return false; }
     rendererManager_->hpaeNoLockQueue_.HandleRequests();
     return rendererManager_->HasSessionEffect(TEST_SESSION_ID);
+}
+
+static bool SetupOffloadStreamWithSE(std::shared_ptr<HpaeManager> hpaeManager_,
+    std::shared_ptr<HpaeOffloadRendererManager> offloadManager_)
+{
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = TEST_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.uid = TEST_UID;
+    streamInfo.frameLen = TEST_FRAME_LEN;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.channels = STEREO;
+    streamInfo.channelLayout = CH_LAYOUT_STEREO;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_NEW};
+
+    if (offloadManager_->CreateStream(streamInfo) != SUCCESS) { return false; }
+    offloadManager_->hpaeNoLockQueue_.HandleRequests();
+    if (offloadManager_->Start(TEST_SESSION_ID) != SUCCESS) { return false; }
+    offloadManager_->hpaeNoLockQueue_.HandleRequests();
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_RUNNING;
+
+    if (hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true) != SUCCESS) { return false; }
+    offloadManager_->hpaeNoLockQueue_.HandleRequests();
+    return offloadManager_->sessionEffectNode_ != nullptr &&
+        offloadManager_->sessionEffectSessionId_ == TEST_SESSION_ID;
 }
 
 // T10: RendererManager Pause(standby)→Start resumes SE
