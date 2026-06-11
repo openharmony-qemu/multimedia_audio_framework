@@ -324,10 +324,14 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
     int32_t notificationId;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     int32_t ret;
+    auto& deviceMap = audioVolumeManager.audioActiveDevice_.volumeTypeDeviceMap_;
+
+    auto btDevice = std::make_shared<AudioDeviceDescriptor>();
+    btDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    btDevice->deviceCategory_ = CATEGORY_DEFAULT;
+    deviceMap[STREAM_MUSIC] = {btDevice};
 
     notificationId = RESTORE_VOLUME_NOTIFICATION_ID;
-    CurrentActiveDevice().deviceCategory_ = CATEGORY_DEFAULT;
-    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_GE(ret, 0);
 
@@ -339,7 +343,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_GE(ret, 0);
 
-    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    auto wiredDevice = std::make_shared<AudioDeviceDescriptor>();
+    wiredDevice->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    deviceMap[STREAM_MUSIC] = {wiredDevice};
+
     notificationId = RESTORE_VOLUME_NOTIFICATION_ID;
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_GE(ret, 0);
@@ -352,9 +359,14 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_GE(ret, 0);
 
-    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_NONE;
+    auto noneDevice = std::make_shared<AudioDeviceDescriptor>();
+    noneDevice->deviceType_ = DEVICE_TYPE_NONE;
+    deviceMap[STREAM_MUSIC] = {noneDevice};
+
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_NE(ret, 0);
+
+    deviceMap.erase(STREAM_MUSIC);
 }
 
 /**

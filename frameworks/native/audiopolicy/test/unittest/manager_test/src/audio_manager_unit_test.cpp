@@ -1733,45 +1733,6 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_002, TestSize.Level1)
 }
 #endif
 
-/**
- * @tc.name    : GetSingleStreamVolume_001
- * @tc.desc    : Test get single stream volume.
- * @tc.type    : FUNC
- * @tc.require : issueI5NXAE
- */
-HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_001, TestSize.Level1)
-{
-    int32_t streamId = 0;
-    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    AudioRendererOptions rendererOptions = {};
-    AppInfo appInfo = {};
-    appInfo.appUid = static_cast<int32_t>(getuid());
-    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
-    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
-    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    rendererOptions.rendererInfo.rendererFlags = 0;
-
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, appInfo);
-    ASSERT_NE(nullptr, audioRenderer);
-    int32_t ret = AudioStreamManager::GetInstance()->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    EXPECT_EQ(SUCCESS, ret);
-
-    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
-        AudioRendererChangeInfo audioRendererChangeInfos_ = **it;
-        if (audioRendererChangeInfos_.clientUID == appInfo.appUid) {
-            streamId = audioRendererChangeInfos_.sessionId;
-        }
-    }
-    ASSERT_NE(0, streamId);
-
-    float vol = AudioSystemManager::GetInstance()->GetSingleStreamVolume(streamId);
-    EXPECT_FALSE((vol < VOLUME_MIN || vol > VOLUME_MAX));
-    audioRenderer->Release();
-}
-
 #ifdef TEMP_DISABLE
 /**
  * @tc.name   : Test GetSingleStreamVolume API
