@@ -1075,9 +1075,6 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
         CHECK_AND_RETURN_LOG(node != nullptr, "SetOptions failed, node is nullptr.");
         int32_t ret = node->SetOptions(name, value);
         if (ret != SUCCESS) {
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(
-                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
-                "Node type does not match the parameters.", true);
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
             TriggerCallback(SET_OPTIONS, ret);
             return;
