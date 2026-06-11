@@ -301,6 +301,8 @@ private:
     void SetCacheSize(uint32_t cacheSizeInFrame);
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     bool IsLowLatencyRenderer() const;
+    int32_t GetFastLatency(uint64_t &latency);
+    int32_t GetFastLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
     uint64_t GetDefaultCallbackBufferDurationInUs() const;
     int32_t GetBufferWaitTimeoutInMs() const;
     void CallClientHandle();
