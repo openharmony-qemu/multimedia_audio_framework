@@ -169,8 +169,10 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::SetParameter(
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(typeIt != typeMap->end(), ERROR,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        EDIT_NODE_PARAMETERS_INVALID, "SetOptions UNKNOWN TYPE", true), "SetOptions UNKNOWN TYPE");
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetVoiceBeautifierType/SetGeneralVoiceChangeType not match the parameters.", true),
+        "SetOptions UNKNOWN TYPE");
 
     int32_t ret = vmAlgoApi_.setParam(handle_.data(), typeIt->second);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VMP_EOK, ERROR, "Algo setParam failed with %{public}d", ret);
