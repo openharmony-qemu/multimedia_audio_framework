@@ -306,7 +306,13 @@ int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &device, Aud
     CHECK_AND_RETURN_RET_LOG(it != deviceVolumeConfigInfo_.end(), ERR_INVALID_PARAM, "device not found");
 
     int32_t ret = SUCCESS;
-    if (streamType == STREAM_MUSIC) {
+    if (VolumeUtils::IsPCVolumeEnable()) {
+        int32_t musicRet = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), SLE_AUDIO_STREAM_MUSIC);
+        JUDGE_AND_ERR_LOG(musicRet != SUCCESS, "set music volume failed");
+        int32_t voiceCallRet = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), SLE_AUDIO_STREAM_VOICE_CALL);
+        JUDGE_AND_ERR_LOG(voiceCallRet != SUCCESS, "set voice call volume failed");
+        ret = (musicRet != SUCCESS) ? musicRet : voiceCallRet;
+    } else if (streamType == STREAM_MUSIC) {
         ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), SLE_AUDIO_STREAM_MUSIC);
     } else {
         ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), SLE_AUDIO_STREAM_VOICE_CALL);
@@ -554,7 +560,8 @@ int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volume
     } else if (volumeType == STREAM_VOICE_CALL) {
         return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeLevel;
     }
-    return 0;
+    return deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.isMute ? 0 :
+        deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.volumeLevel;
 }
 
 bool SleAudioDeviceManager::GetMuteStatusByVolumeType(AudioVolumeType volumeType,
