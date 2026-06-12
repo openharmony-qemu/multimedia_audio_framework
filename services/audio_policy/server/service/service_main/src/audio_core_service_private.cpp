@@ -2051,7 +2051,9 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
             ClearRingMuteWhenCallStart(pre, isRingDualToneOnPrimarySpeaker_, streamDesc);
-            audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices, pipeId);
+            if (streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID) {
+                audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices, pipeId);
+            }
         }
         return true;
     }
