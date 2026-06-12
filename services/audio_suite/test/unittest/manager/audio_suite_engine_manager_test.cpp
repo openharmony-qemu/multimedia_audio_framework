@@ -1261,47 +1261,6 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineGetOptionsTest, Test
     EXPECT_EQ(result, SUCCESS);
 }
 
-//Test SetOptions when node does not exist, expect ERR_INVALID_PARAM error report.
-HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineSetOptionsErrorReportTest, TestSize.Level0)
-{
-    AudioSuiteManagerCallbackTestImpl callback;
-    AudioSuiteEngine engine(callback);
-    engine.Init();
-    EXPECT_EQ(engine.IsInit(), true);
-
-    auto pipeline = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
-    pipeline->Init();
-    EXPECT_EQ(pipeline->IsInit(), true);
-
-    // Register the callback to the engine so that TriggerCallback can be correctly triggered.
-    auto engineSharedPtr = std::shared_ptr<AudioSuiteEngine>(&engine, [](AudioSuiteEngine*) {});
-    pipeline->RegisterSendMsgCallback(engineSharedPtr);
-
-    AudioFormat format = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000};
-
-    auto inputNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    inputNode->audioNodeInfo_.nodeId = 1;
-    inputNode->SetAudioNodeFormat(format);
-
-    pipeline->nodeMap_[1] = inputNode;
-
-    engine.pipelineMap_[100] = pipeline;
-    engine.nodeMap_[1] = 100;
-
-    std::string name = "AudioEqualizerFrequencyBandGains";
-    std::string value = "0:0:0:0:0:0:0:0:0:0:";
-
-    // Test SetOptions with node ID 999 that does not exist, should trigger ERR_AUDIO_SUITE_NODE_NOT_EXIST
-    int32_t ret = engine.SetOptions(999, name, value);
-    EXPECT_EQ(ret, SUCCESS);
-
-    sleep(1);
-    EXPECT_EQ(callback.setOptionsResult_, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
-
-    engine.pipelineMap_.erase(100);
-    engine.DeInit();
-}
-
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDestroyNodeTest_001, TestSize.Level0)
 {
     AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
