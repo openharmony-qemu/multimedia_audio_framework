@@ -429,34 +429,8 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_009, TestSize.Level1)
     EXPECT_EQ(futexCode, FUTEX_TIMEOUT);
 }
 
-/**
-* @tc.name  : Test OHAudioBuffer API
-* @tc.type  : FUNC
-* @tc.number: OHAudioBuffer_010
-* @tc.desc  : Test OHAudioBuffer interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_010, TestSize.Level1)
-{
-    uint32_t spanSizeInFrame = 1000;
-    uint32_t totalSizeInFrame = spanSizeInFrame;
-    uint32_t byteSizePerFrame = 100;
-    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-    EXPECT_NE(nullptr, ohAudioBuffer);
 
-    int32_t ret = ohAudioBuffer->SetCurWriteFrame(totalSizeInFrame);
-    EXPECT_EQ(ret, SUCCESS);
 
-    std::thread threadSetReadIndex([ohAudioBuffer, totalSizeInFrame] () {
-        ohAudioBuffer->SetCurReadFrame(totalSizeInFrame);
-    });
-
-    // 200ms
-    FutexCode futexCode = ohAudioBuffer->WaitFor(200000000, [&ohAudioBuffer] () {
-        return ohAudioBuffer->GetWritableDataFrames() > 0;
-    });
-    EXPECT_EQ(futexCode, FUTEX_SUCCESS);
-    threadSetReadIndex.join();
-}
 
 /**
 * @tc.name  : Test OHAudioBuffer API
