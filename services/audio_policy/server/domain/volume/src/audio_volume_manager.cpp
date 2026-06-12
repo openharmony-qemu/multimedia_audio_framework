@@ -592,7 +592,7 @@ int32_t AudioVolumeManager::SetSystemVolumeExternal(AudioStreamType streamType,
 
     if (deviceType == DEVICE_TYPE_NEARLINK &&
         (volumeType == STREAM_MUSIC || volumeType == STREAM_VOICE_CALL)) {
-        result = HandleNearlinkDeviceAbsVolume(streamType, volume, deviceType);
+        result = HandleNearlinkDeviceAbsVolume(volumeType, volume, deviceType);
     }
     return result;
 }
