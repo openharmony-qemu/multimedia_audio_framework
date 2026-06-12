@@ -38,7 +38,7 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetMediaRenderDevice(Str
     } else {
         descs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
     }
-    AppendActiveScoDevice(descs, OUTPUT_DEVICE);
+    AppendActiveScoDevice(descs);
     RouterBase::ClearConflictDevice(descs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(audioDevUsage, descs, streamUsage);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
@@ -84,7 +84,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
         audioDevUsage = MEDIA_OUTPUT_DEVICES;
     }
 
-    AppendActiveScoDevice(curDescs, OUTPUT_DEVICE);
+    AppendActiveScoDevice(curDescs);
 
     RouterBase::ClearConflictDevice(curDescs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs,
@@ -139,7 +139,6 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetRecordCaptureDevice(S
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePublicDevices();
-    AppendActiveScoDevice(descs, INPUT_DEVICE);
     RouterBase::ClearConflictDevice(descs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,

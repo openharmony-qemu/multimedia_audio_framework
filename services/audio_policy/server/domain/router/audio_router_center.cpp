@@ -281,6 +281,9 @@ bool AudioRouterCenter::IsAlarmFollowRingStrategy(AudioScene audioScene, StreamU
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesInner(FetchDeviceInfo &info)
 {
+    auto earlyResult = PreFetchOutputDevices(info);
+    CHECK_AND_RETURN_RET(earlyResult.empty(), earlyResult);
+
     StreamUsage streamUsage = info.streamUsage;
     int32_t clientUID = info.clientUID;
     RouterType routerType = ROUTER_TYPE_NONE;
@@ -289,8 +292,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     bak.preStreamUsage = streamUsage;
     bak.audioPipeType = PIPE_TYPE_OUT_NORMAL;
 
-    if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
-        renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
+    if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS || renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         bool hasSystemPermission = (clientUID == BOOT_ANIMATION_UID || PermissionUtil::VerifySystemPermission());
         AudioPolicyDump::GetInstance().RecordBootStateTime(BootAnimationState::VERIFY_PERMISSION_IN_START, clientUID,
             ClockTime::GetCurMilli());
@@ -300,8 +302,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
             bak.streamUsage = AudioPipeManager::GetPipeManager()->GetLastestRunningCallStreamUsage();
             bak.streamUsage = (bak.streamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
                 bak.streamUsage;
-            AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
-                bak.streamUsage);
+            AUDIO_INFO_LOG("replace usage %{public}d to %{public}d", streamUsage, bak.streamUsage);
             desc = FetchCallRenderDevice(bak.streamUsage, clientUID, routerType, bak.bypassType,
                 GetBypassWithSco(audioScene));
         } else if (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) {
@@ -336,13 +337,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 {
     std::lock_guard<std::mutex> lock(routerMutex_);
     StartArbiterContext(info);
-
-    auto earlyResult = PreFetchOutputDevices(info);
-    if (!earlyResult.empty()) {
-        StopArbiterContext();
-        return earlyResult;
-    }
-
     auto descs = FetchOutputDevicesInner(info);
     StopArbiterContext();
     return descs;
@@ -455,9 +449,20 @@ bool AudioRouterCenter::IsConfigRouterStrategy(SourceType sourceType)
     return false;
 }
 
+shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputZoneDevice(SourceType sourceType, int32_t clientUID)
+{
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID, INPUT_DEVICE);
+    CHECK_AND_RETURN_RET(zoneId != 0, nullptr);
+    AUDIO_INFO_LOG("FetchInputDevice zoneId %{public}d", zoneId);
+        
+    return AudioZoneService::GetInstance().FetchInputDevice(zoneId, sourceType, clientUID);
+}
+
 shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCapturerInputDevice(SourceType sourceType,
     int32_t clientUID, RouterType &routerType, const uint32_t sessionID)
 {
+    auto zoneDesc = FetchInputZoneDevice(sourceType, clientUID);
+    CHECK_AND_RETURN_RET(zoneDesc == nullptr, zoneDesc);
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
     if (Util::IsEnhancedRoutingSupported()) {
@@ -498,31 +503,25 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDevice(FetchDevic
 
     SourceType sourceType = info.sourceType;
     int32_t clientUID = info.clientUID;
-    uint32_t sessionID = info.streamId;
-
-    shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
-    RouterType innerRouterType = ROUTER_TYPE_NONE;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID, INPUT_DEVICE);
-    if (zoneId != 0) {
-        AUDIO_INFO_LOG("FetchInputDevice zoneId %{public}d", zoneId);
-        StopArbiterContext();
-        shared_ptr<AudioDeviceDescriptor> zoneDesc =
-            AudioZoneService::GetInstance().FetchInputDevice(zoneId, sourceType, clientUID);
-        CHECK_AND_RETURN_RET(zoneDesc == nullptr, zoneDesc);
-    }
     if (sourceType == SOURCE_TYPE_ULTRASONIC &&
         AudioStreamCollector::GetAudioStreamCollector().GetRunningSourceTypeNoUltrasonic() == SOURCE_TYPE_INVALID) {
-        AUDIO_INFO_LOG("Source ULTRASONIC always choose mic");
+        auto zoneDesc = FetchInputZoneDevice(sourceType, clientUID);
         StopArbiterContext();
+        CHECK_AND_RETURN_RET(zoneDesc == nullptr, zoneDesc);
+        AUDIO_INFO_LOG("Source ULTRASONIC always choose mic");
         return AudioDeviceManager::GetAudioDeviceManager().GetCaptureDefaultDevice();
     }
-    if (IsConfigRouterStrategy(sourceType)) {
-        desc = FetchCapturerInputDevice(sourceType, clientUID, innerRouterType, sessionID);
-    } else {
-        AUDIO_INFO_LOG("sourceType %{public}d didn't config router strategy, skipped", sourceType);
+
+    if (!IsConfigRouterStrategy(sourceType)) {
+        auto zoneDesc = FetchInputZoneDevice(sourceType, clientUID);
         StopArbiterContext();
-        return desc;
+        CHECK_AND_RETURN_RET(zoneDesc == nullptr, zoneDesc);
+        AUDIO_INFO_LOG("sourceType %{public}d didn't config router strategy, skipped", sourceType);
+        return make_shared<AudioDeviceDescriptor>();
     }
+
+    RouterType innerRouterType = ROUTER_TYPE_NONE;
+    auto desc = FetchCapturerInputDevice(sourceType, clientUID, innerRouterType, info.streamId);
     info.routerType = innerRouterType;
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     descs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
