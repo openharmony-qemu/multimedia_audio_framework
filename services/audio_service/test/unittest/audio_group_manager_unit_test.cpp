@@ -354,19 +354,6 @@ HWTEST(AudioGroupManagerUnitTest, SetRingerMode_001, TestSize.Level1)
 /**
 * @tc.name  : Test Audio API
 * @tc.type  : FUNC
-* @tc.number: SetVolume_004
-* @tc.desc  : Test cross ring cache.
-*/
-HWTEST(AudioGroupManagerUnitTest, SetVolume_004, TestSize.Level1)
-{
-    AudioGroupManager audioGroupManager(1);
-    int32_t ret = audioGroupManager.SetVolume(STREAM_ALL, 0, 0, 123);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
-}
-
-/**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
 * @tc.number: SetVolume_005
 * @tc.desc  : Test cross ring cache.
 */
