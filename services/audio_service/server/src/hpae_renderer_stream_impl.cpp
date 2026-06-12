@@ -654,8 +654,8 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
     if (needLog) {
         bool checkResult = ClockTime::CheckTimeInterval(lastLogTimestampArr_[ON_DEVICE_CLASS_CHANGE],
             PRINT_TIMESTAMP_INTERVAL_NS);
-        AUDIO_LIMIT_INFO_LOG(checkResult, "lastFramePosition: %{public}" PRIu64 ", lastHdiFramePosition: %{public}" PRIu64,
-            lastFramePosition_, lastHdiFramePosition_);
+        AUDIO_LIMIT_INFO_LOG(checkResult, "lastFramePosition: %{public}" PRIu64
+            ", lastHdiFramePosition: %{public}" PRIu64, lastFramePosition_, lastHdiFramePosition_);
     }
 }
 
