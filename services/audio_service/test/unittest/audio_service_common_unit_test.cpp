@@ -429,9 +429,6 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_009, TestSize.Level1)
     EXPECT_EQ(futexCode, FUTEX_TIMEOUT);
 }
 
-
-
-
 /**
 * @tc.name  : Test OHAudioBuffer API
 * @tc.type  : FUNC

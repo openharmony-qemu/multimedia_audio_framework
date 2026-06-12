@@ -501,9 +501,6 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetTransactionId_001, TestSize.Level1)
     EXPECT_EQ(0, ret);
 }
 
-
-
-
 #ifdef TEMP_DISABLE
 
 /**

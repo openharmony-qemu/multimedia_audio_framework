@@ -351,9 +351,6 @@ HWTEST(AudioGroupManagerUnitTest, SetRingerMode_001, TestSize.Level1)
     EXPECT_NE(result, modeError);
 }
 
-
-
-
 /**
 * @tc.name  : Test Audio API
 * @tc.type  : FUNC
