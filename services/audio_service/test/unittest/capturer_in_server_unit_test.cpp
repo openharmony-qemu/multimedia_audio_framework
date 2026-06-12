@@ -844,56 +844,6 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_024A.
- * @tc.desc  : Test UpdatePlaybackCaptureConfig auto appends voip usages in modern mode.
- */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024A, TestSize.Level1)
-{
-    AudioProcessConfig processConfig;
-    std::weak_ptr<IStreamListener> streamListener;
-    AudioPlaybackCaptureConfig config;
-    config.isModernInnerCapturer = true;
-    processConfig.innerCapMode = MODERN_INNER_CAP;
-    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    int32_t result = capturerInServer_->UpdatePlaybackCaptureConfig(config);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_NE(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
-        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VOICE_COMMUNICATION),
-        capturerInServer_->filterConfig_.filterOptions.usages.end());
-    EXPECT_NE(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
-        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VIDEO_COMMUNICATION),
-        capturerInServer_->filterConfig_.filterOptions.usages.end());
-}
-
-/**
- * @tc.name  : Test CapturerInServer.
- * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_024B.
- * @tc.desc  : Test UpdatePlaybackCaptureConfig keeps usages untouched when modern flag is false.
- */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024B, TestSize.Level1)
-{
-    AudioProcessConfig processConfig;
-    std::weak_ptr<IStreamListener> streamListener;
-    AudioPlaybackCaptureConfig config;
-    config.isModernInnerCapturer = false;
-    processConfig.innerCapMode = MODERN_INNER_CAP;
-    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    int32_t result = capturerInServer_->UpdatePlaybackCaptureConfig(config);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
-        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VOICE_COMMUNICATION),
-        capturerInServer_->filterConfig_.filterOptions.usages.end());
-    EXPECT_EQ(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
-        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VIDEO_COMMUNICATION),
-        capturerInServer_->filterConfig_.filterOptions.usages.end());
-}
-
-/**
- * @tc.name  : Test CapturerInServer.
- * @tc.type  : FUNC
  * @tc.number: CapturerInServerUnitTest_024C.
  * @tc.desc  : Test UpdatePlaybackCaptureConfig rejects private playback capture without permission.
  */

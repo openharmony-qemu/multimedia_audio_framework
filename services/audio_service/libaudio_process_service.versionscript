@@ -89,7 +89,6 @@
     *SetEndpointMuteForSwitchDevice*;
     *RequestUserPrivacyAuthority*;
     *ReportPlaybackCaptureUserChoice*;
-    *CheckInnerCapVoIP*;
     *ReportWakeupEvent*;
     *SetAncoRecordingConfigChanged*;
     *OnMetaData*;

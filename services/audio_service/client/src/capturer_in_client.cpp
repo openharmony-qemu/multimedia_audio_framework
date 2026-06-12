@@ -229,11 +229,6 @@ void CapturerInClientInner::GetRendererInfo(AudioRendererInfo &rendererInfo)
     AUDIO_WARNING_LOG("GetRendererInfo is not supported");
 }
 
-void CapturerInClientInner::CheckInnerCapVoIP()
-{
-    AUDIO_WARNING_LOG("CheckInnerCapVoIP is not supported");
-}
-
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
