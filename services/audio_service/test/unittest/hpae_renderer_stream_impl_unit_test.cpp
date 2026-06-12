@@ -902,6 +902,196 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test OnDeviceClassChange no change and no hdiFramePosition.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_030a
+ * @tc.desc  : Verify lastFramePosition_ and lastHdiFramePosition_ stay unchanged when device class is the same
+ *             and hdiFramePosition is 0 (needLog=false path).
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030a, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+
+    unit->deviceClass_ = "primary";
+    unit->lastFramePosition_ = 5000;
+    unit->lastHdiFramePosition_ = 3000;
+
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "primary",
+        .framePosition = 9999,
+        .hdiFramePosition = 0
+    };
+    unit->OnDeviceClassChange(info);
+    EXPECT_EQ(unit->lastFramePosition_, 5000);
+    EXPECT_EQ(unit->lastHdiFramePosition_, 3000);
+}
+
+/**
+ * @tc.name  : Test OnDeviceClassChange normal to remote_offload forward.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_030b
+ * @tc.desc  : Verify lastHdiFramePosition_ accumulates duration when switching to remote_offload with
+ *             newFramePosition > lastFramePosition_.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030b, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+
+    unit->deviceClass_ = "primary";
+    unit->lastFramePosition_ = 1000;
+    unit->lastHdiFramePosition_ = 2000;
+
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 6000,
+        .hdiFramePosition = 0
+    };
+    unit->OnDeviceClassChange(info);
+    uint64_t expectedHdi = 2000 + (6000 - 1000);
+    EXPECT_EQ(unit->lastHdiFramePosition_, expectedHdi);
+    EXPECT_EQ(unit->lastFramePosition_, 6000);
+}
+
+/**
+ * @tc.name  : Test OnDeviceClassChange normal to remote_offload backward.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_030c
+ * @tc.desc  : Verify lastHdiFramePosition_ subtracts duration when switching to remote_offload with
+ *             newFramePosition < lastFramePosition_ (backward position).
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030c, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+
+    unit->deviceClass_ = "primary";
+    unit->lastFramePosition_ = 8000;
+    unit->lastHdiFramePosition_ = 5000;
+
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 3000,
+        .hdiFramePosition = 0
+    };
+    unit->OnDeviceClassChange(info);
+    uint64_t duration = 8000 - 3000;
+    uint64_t expectedHdi = 5000 - duration;
+    EXPECT_EQ(unit->lastHdiFramePosition_, expectedHdi);
+    EXPECT_EQ(unit->lastFramePosition_, 3000);
+}
+
+/**
+ * @tc.name  : Test OnDeviceClassChange normal to remote_offload backward underflow.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_030d
+ * @tc.desc  : Verify lastHdiFramePosition_ clamps to 0 when duration exceeds lastHdiFramePosition_.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030d, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+
+    unit->deviceClass_ = "primary";
+    unit->lastFramePosition_ = 10000;
+    unit->lastHdiFramePosition_ = 1000;
+
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 2000,
+        .hdiFramePosition = 0
+    };
+    unit->OnDeviceClassChange(info);
+    EXPECT_EQ(unit->lastHdiFramePosition_, 0);
+    EXPECT_EQ(unit->lastFramePosition_, 2000);
+}
+
+/**
+ * @tc.name  : Test OnDeviceClassChange remote_offload to normal.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_030e
+ * @tc.desc  : Verify lastHdiFramePosition_ unchanged when switching from remote_offload to non-offload.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030e, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+
+    unit->deviceClass_ = "remote_offload";
+    unit->lastFramePosition_ = 4000;
+    unit->lastHdiFramePosition_ = 7000;
+
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "offload",
+        .framePosition = 9000,
+        .hdiFramePosition = 0
+    };
+    unit->OnDeviceClassChange(info);
+    EXPECT_EQ(unit->lastHdiFramePosition_, 7000);
+    EXPECT_EQ(unit->lastFramePosition_, 9000);
+}
+
+/**
+ * @tc.name  : Test OnDeviceClassChange hdiFramePosition accumulation.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_030f
+ * @tc.desc  : Verify lastHdiFramePosition_ accumulates hdiFramePosition and rewindTime converted from
+ *             microseconds to samples.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030f, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+
+    unit->deviceClass_ = "primary";
+    unit->lastFramePosition_ = 0;
+    unit->lastHdiFramePosition_ = 0;
+    uint32_t sampleRate = unit->usedSampleRate_;
+
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "primary",
+        .framePosition = 0,
+        .hdiFramePosition = 1000000, // 1 second in us
+        .rewindTime = 500000         // 0.5 second in us
+    };
+    unit->OnDeviceClassChange(info);
+    uint64_t expectedHdi = static_cast<uint64_t>(1000000) * sampleRate / AUDIO_US_PER_S +
+        static_cast<uint64_t>(500000) * sampleRate / AUDIO_US_PER_S;
+    EXPECT_EQ(unit->lastHdiFramePosition_, expectedHdi);
+    EXPECT_EQ(unit->lastFramePosition_, 0);
+}
+
+/**
+ * @tc.name  : Test OnDeviceClassChange device switch with hdiFramePosition.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_030g
+ * @tc.desc  : Verify both device class switch and hdiFramePosition accumulation are applied together.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030g, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+
+    unit->deviceClass_ = "remote_offload";
+    unit->lastFramePosition_ = 1000;
+    unit->lastHdiFramePosition_ = 2000;
+    uint32_t sampleRate = unit->usedSampleRate_;
+
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "offload",
+        .framePosition = 5000,
+        .hdiFramePosition = 500000
+    };
+    unit->OnDeviceClassChange(info);
+    // remote_offload -> non-offload: no duration accumulation, only framePosition replace
+    // hdiFramePosition accumulation
+    uint64_t expectedHdi = 2000 + static_cast<uint64_t>(500000) * sampleRate / AUDIO_US_PER_S;
+    EXPECT_EQ(unit->lastHdiFramePosition_, expectedHdi);
+    EXPECT_EQ(unit->lastFramePosition_, 5000);
+}
+
+/**
  * @tc.name  : Test WriteDataFromRingBuffer.
  * @tc.type  : FUNC
  * @tc.number: HpaeRenderer_031
