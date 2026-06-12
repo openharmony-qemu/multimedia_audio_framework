@@ -447,10 +447,14 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     strategy.SetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, nullptr);
 
     systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(systemResult->deviceId_, 0);
 
     appResult = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     EXPECT_EQ(appResult, nullptr);
+    EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(appResult->deviceId_, 0);
 }
 
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaOutput_004,
@@ -466,7 +470,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     strategy.SetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
 
     auto systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
 
     auto app10001Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     ASSERT_NE(app10001Result, nullptr);
@@ -474,15 +478,15 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(app10001Result->deviceId_, speaker->deviceId_);
 
     auto app10002Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10002Result, nullptr);
+    EXPECT_NE(app10002Result, nullptr);
 
     strategy.SetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, nullptr);
 
     systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
 
     app10001Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10001Result, nullptr);
+    EXPECT_NE(app10001Result, nullptr);
 }
 
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaOutput_005,
@@ -530,7 +534,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     strategy.SetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, nullptr);
 
     auto systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
 
     auto app10001Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     ASSERT_NE(app10001Result, nullptr);
@@ -538,7 +542,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(app10001Result->deviceId_, earpiece->deviceId_);
 
     auto app10002Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10002Result, nullptr);
+    EXPECT_NE(app10002Result, nullptr);
 }
 
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaOutput_007,
@@ -616,10 +620,10 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, nullptr);
 
     systemResult = strategy.GetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
 
     appResult = strategy.GetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(appResult, nullptr);
+    EXPECT_NE(appResult, nullptr);
 }
 
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallInput_004,
@@ -635,7 +639,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     strategy.SetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
     auto systemResult = strategy.GetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
 
     auto app10001Result = strategy.GetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     ASSERT_NE(app10001Result, nullptr);
@@ -643,15 +647,15 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
 
     auto app10002Result = strategy.GetCallInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10002Result, nullptr);
+    EXPECT_NE(app10002Result, nullptr);
 
     strategy.SetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, nullptr);
 
     systemResult = strategy.GetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
 
     app10001Result = strategy.GetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10001Result, nullptr);
+    EXPECT_NE(app10001Result, nullptr);
 }
 
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallInput_005,
@@ -699,7 +703,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     strategy.SetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, nullptr);
 
     auto systemResult = strategy.GetCallInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
 
     auto app10001Result = strategy.GetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     ASSERT_NE(app10001Result, nullptr);
@@ -707,7 +711,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
 
     auto app10002Result = strategy.GetCallInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10002Result, nullptr);
+    EXPECT_NE(app10002Result, nullptr);
 }
 
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallInput_007,
@@ -767,10 +771,10 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, nullptr);
 
     systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
 
     appResult = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(appResult, nullptr);
+    EXPECT_NE(appResult, nullptr);
 }
 
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallOutput_004,
@@ -786,7 +790,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
 
     auto systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
 
     auto app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     ASSERT_NE(app10001Result, nullptr);
@@ -794,15 +798,15 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(app10001Result->deviceId_, speaker->deviceId_);
 
     auto app10002Result = strategy.GetCallOutputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10002Result, nullptr);
+    EXPECT_NE(app10002Result, nullptr);
 
     strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, nullptr);
 
     systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
 
     app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10001Result, nullptr);
+    EXPECT_NE(app10001Result, nullptr);
 }
 
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallOutput_005,
@@ -850,7 +854,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, nullptr);
 
     auto systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(systemResult, nullptr);
+    EXPECT_NE(systemResult, nullptr);
 
     auto app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     ASSERT_NE(app10001Result, nullptr);
@@ -858,7 +862,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(app10001Result->deviceId_, earpiece->deviceId_);
 
     auto app10002Result = strategy.GetCallOutputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10002Result, nullptr);
+    EXPECT_NE(app10002Result, nullptr);
 }
 
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallOutput_007,

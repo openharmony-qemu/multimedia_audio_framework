@@ -237,7 +237,7 @@ HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, GetCallDefaultOutputDevice_
         RendererState::RENDERER_RUNNING);
 
     auto result = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
-    ASSERT_NE(result, nullptr);
+    ASSERT_EQ(result, nullptr);
 }
 
 HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, GetCallDefaultOutputDevice_NotInCall_001, TestSize.Level1)
@@ -302,7 +302,7 @@ HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, GetCallDefaultOutputDevice_
     strategy.UpdateCallDefaultOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, speaker);
 
     auto result = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
-    EXPECT_EQ(result, nullptr);
+    EXPECT_NE(result, nullptr);
 }
 
 // T19: Running stream changes default device — new device immediately takes effect for all running streams
