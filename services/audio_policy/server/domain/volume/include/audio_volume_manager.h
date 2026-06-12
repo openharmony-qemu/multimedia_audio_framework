@@ -162,6 +162,7 @@ public:
 #endif
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, VolumeScale &volume,
         bool internalCall = false);
+    int32_t GetVolumeForHiplayDevice(AudioStreamType streamType);
 
     int32_t ClearLoudVolumeHoldMapForCall();
 

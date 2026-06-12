@@ -109,6 +109,7 @@ public:
        SourceType sourceType, int32_t clientUid);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAllOutputDevices(int32_t zoneId);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetZoneDevices();
 
     const std::string GetZoneStringDescriptor(int32_t zoneId);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);

@@ -111,6 +111,8 @@ public:
 
     bool HasVolumeControllableDeviceInZone();
 
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices();
+
 private:
     int32_t zoneId_ = -1;
     std::string name_ = "";

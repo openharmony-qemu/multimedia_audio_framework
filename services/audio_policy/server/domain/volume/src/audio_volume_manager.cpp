@@ -66,6 +66,8 @@ private:
 static const int64_t MAX_LEGACY_HIGH_VOLUME_CHECK_TIME_S = 24 * 60 * 60; // 24h
 const int32_t DUAL_TONE_RING_VOLUME = 0;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
+constexpr const char *HIPLAY_DEVICE = "hiplay";
+constexpr int32_t RSS_UID = 1096;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -327,6 +329,14 @@ int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType, int
     Trace trace("AudioVolumeManager::GetSystemVolumeLevel device" + std::to_string(deviceDesc->deviceType_) + " stream "
         + std::to_string(streamType) + " volume " + std::to_string(volume));
     return volume;
+}
+
+int32_t AudioVolumeManager::GetVolumeForHiplayDevice(AudioStreamType streamType)
+{
+    auto zoneDescs = AudioZoneService::GetInstance().GetZoneDevices();
+    CHECK_AND_RETURN_RET(!zoneDescs.empty() && zoneDescs[0] != nullptr &&
+        zoneDescs[0]->model_ == HIPLAY_DEVICE, 0);
+    return audioPolicyManager_.GetSystemVolumeLevel(zoneDescs[0], streamType, DEFAULT_ZONE_ID);
 }
 
 int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
@@ -2104,8 +2114,10 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelInterface(AudioStreamType stream
     if (streamType == STREAM_ALL) {
         streamType = STREAM_MUSIC;
     }
-    int32_t volumeLevel =  GetSystemVolumeLevel(streamType, zoneId);
+    int32_t volumeLevel = GetSystemVolumeLevel(streamType, zoneId);
     AUDIO_DEBUG_LOG("GetVolume streamType[%{public}d],volumeLevel[%{public}d]", streamType, volumeLevel);
+    CHECK_AND_RETURN_RET(volumeLevel != 0 || IPCSkeleton::GetCallingUid() != RSS_UID,
+        GetVolumeForHiplayDevice(streamType));
     return volumeLevel;
 }
 

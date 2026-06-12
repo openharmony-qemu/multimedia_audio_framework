@@ -613,6 +613,17 @@ bool AudioZone::HasVolumeControllableDeviceInZone()
     return false;
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZone::GetDevices()
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    for (const auto &it : devices_) {
+        CHECK_AND_CONTINUE(it.first != nullptr && it.second);
+        descs.push_back(it.first);
+    }
+    return descs;
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioZone::GetDeviceDescriptor(DeviceType type, std::string networkId)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);

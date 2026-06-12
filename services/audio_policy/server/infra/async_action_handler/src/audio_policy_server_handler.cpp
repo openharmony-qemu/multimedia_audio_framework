@@ -1001,6 +1001,14 @@ bool AudioPolicyServerHandler::IsForceGetDevByVolumeType(int32_t uid)
     return ret;
 }
 
+void AudioPolicyServerHandler::CheckVolumeKeyEventForRSS(int32_t pid, VolumeEvent &volumeEvent)
+{
+    CHECK_AND_RETURN(volumeEvent.volume == 0);
+    int32_t uid = pidUidMap_.count(pid) > 0 ? pidUidMap_[pid] : -1;
+    CHECK_AND_RETURN(uid == RSS_UID);
+    volumeEvent.volume = AudioVolumeManager::GetInstance().GetVolumeForHiplayDevice(volumeEvent.volumeType);
+}
+
 bool AudioPolicyServerHandler::ShouldUseSystemPreferredDeviceForVolume(int32_t uid)
 {
     std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
@@ -1078,7 +1086,9 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
             continue;
         }
-        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(eventContextObj->volumeEvent.volumeType);
+        VolumeEvent callbackVolumeEvent = eventContextObj->volumeEvent;
+        CheckVolumeKeyEventForRSS(it->first, callbackVolumeEvent);
+        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(callbackVolumeEvent.volumeType);
         if ((volumeType == STREAM_SYSTEM || volumeType == STREAM_ULTRASONIC) &&
             !volumeChangeCb->hasSystemPermission_) {
             AUDIO_DEBUG_LOG("volumeChangeCb: Non system applications do not send system callbacks");
@@ -1086,32 +1096,29 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
         }
         AUDIO_PRERELEASE_LOGI("Trigger volumeChangeCb clientPid : %{public}d, volumeType : %{public}d," \
             " volume : %{public}d, updateUi : %{public}d, previousVolume : %{public}d, deviceType : %{public}d",
-            it->first,
-            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType),
-            eventContextObj->volumeEvent.volume,
-            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
-            eventContextObj->volumeEvent.previousVolume,
-            static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
+            it->first, static_cast<int32_t>(callbackVolumeEvent.volumeType), callbackVolumeEvent.volume,
+            static_cast<int32_t>(callbackVolumeEvent.updateUi), callbackVolumeEvent.previousVolume,
+            static_cast<int32_t>(callbackVolumeEvent.deviceType));
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER]) {
-            NotifySystemVolumeChangeByFilter(it->first, volumeChangeCb, eventContextObj->volumeEvent);
+            NotifySystemVolumeChangeByFilter(it->first, volumeChangeCb, callbackVolumeEvent);
         }
 #ifdef FEATURE_AUDIO_ZONE_VOLUME
         CHECK_AND_CONTINUE(IsTargetZoneForVolumeKeyEvent(it->first, eventContextObj->zoneId));
 #endif
-        CHECK_AND_CONTINUE(IsTargetDeviceForVolumeKeyEvent(it->first, eventContextObj->volumeEvent));
+        CHECK_AND_CONTINUE(IsTargetDeviceForVolumeKeyEvent(it->first, callbackVolumeEvent));
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_KEY_EVENT]) {
-            volumeChangeCb->OnVolumeKeyEvent(eventContextObj->volumeEvent);
+            volumeChangeCb->OnVolumeKeyEvent(callbackVolumeEvent);
         }
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SYSTEM_VOLUME_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SYSTEM_VOLUME_CHANGE]) {
-            volumeChangeCb->OnSystemVolumeChange(eventContextObj->volumeEvent);
+            volumeChangeCb->OnSystemVolumeChange(callbackVolumeEvent);
         }
-        HandleVolumeChangeCallback(it->first, volumeChangeCb, eventContextObj->volumeEvent);
+        HandleVolumeChangeCallback(it->first, volumeChangeCb, callbackVolumeEvent);
     }
 }
 
