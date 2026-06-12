@@ -919,8 +919,8 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
     uint32_t paIndex = 0;
     uint32_t id = OpenNewAudioPortAndRoute(pipeInfo, paIndex);
     CHECK_AND_RETURN_LOG(id != HDI_INVALID_ID, "Invalid id: %{public}u", id);
-    CHECK_AND_RETURN_LOG(paIndex != OPEN_PORT_FAILURE, "Invalid paIndex: %{public}u", paIndex);
     pipeInfo->id_ = id;
+    CHECK_AND_RETURN_LOG(paIndex != OPEN_PORT_FAILURE, "Invalid paIndex: %{public}u", paIndex);
     pipeInfo->paIndex_ = paIndex;
 
     for (auto &desc : pipeInfo->streamDescriptors_) {
@@ -2247,6 +2247,9 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
                 pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
         }
     }
+
+    CHECK_AND_RETURN_RET_LOG(id != HDI_INVALID_ID, OPEN_PORT_FAILURE,
+        "OpenAudioPort failed ioHandle[%{public}u]", id);
     audioIOHandleMap_.AddIOHandleInfo(pipeInfo->moduleInfo_.name, id);
     HILOG_COMM_INFO("[PipeExecInfo] Get HDI id: %{public}u, paIndex %{public}u", id, paIndex);
     return id;
