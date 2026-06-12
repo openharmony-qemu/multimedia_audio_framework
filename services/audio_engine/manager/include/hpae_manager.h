@@ -231,7 +231,7 @@ private:
     uint32_t FindRunningMusicSession(int32_t uid);
     int32_t EnableAissByUid(int32_t uid);
     int32_t DisableAissByUid(int32_t uid);
-    void CleanupOldAissSession(uint32_t newSessionId);
+    void ClearAissSession(uint32_t sessionId, bool clearUidBinding = false);
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);
     template <typename... Args>

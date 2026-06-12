@@ -30,6 +30,7 @@ static constexpr uint32_t TEST_FRAME_LEN = 960;
 } // namespace
 
 static constexpr uint32_t TEST_SESSION_ID = 42;
+static constexpr uint32_t OTHER_SESSION_ID = 43;
 static constexpr uint32_t INNER_CAPTURE_SESSION_ID = 84;
 static constexpr uint32_t REMOTE_CAST_SESSION_ID = 85;
 static constexpr uint32_t UNKNOWN_SESSION_ID = 999;
@@ -148,6 +149,42 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_alreadyBound, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_switchSessionClearsOldBinding, TestSize.Level0)
+{
+    InjectStereoMusicStream();
+    ASSERT_EQ(hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+
+    HpaeStreamInfo newStream = MakeStereoMusicStream(OTHER_SESSION_ID);
+    hpaeManager_->rendererIdSinkNameMap_[OTHER_SESSION_ID] = "file_io";
+    hpaeManager_->rendererIdStreamInfoMap_[OTHER_SESSION_ID] = {newStream, HPAE_SESSION_RUNNING};
+
+    int32_t ret = hpaeManager_->SetAissEnabledSync(OTHER_SESSION_ID, true);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), OTHER_SESSION_ID);
+}
+
+HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_switchSessionClearsUidBindingForOldSession, TestSize.Level0)
+{
+    HpaeStreamInfo oldStream = MakeStereoMusicStream(TEST_SESSION_ID);
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {oldStream, HPAE_SESSION_RUNNING};
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    ASSERT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+
+    HpaeStreamInfo newStream = MakeStereoMusicStream(OTHER_SESSION_ID);
+    hpaeManager_->rendererIdSinkNameMap_[OTHER_SESSION_ID] = "file_io";
+    hpaeManager_->rendererIdStreamInfoMap_[OTHER_SESSION_ID] = {newStream, HPAE_SESSION_RUNNING};
+
+    int32_t ret = hpaeManager_->SetAissEnabledSync(OTHER_SESSION_ID, true);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), OTHER_SESSION_ID);
+}
+
 // API-4: SetAissEnabledSync(false) succeeds when session is bound
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_false_success, TestSize.Level0)
 {
@@ -156,6 +193,22 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabled_false_success, TestSize.Level0)
 
     int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, false);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(HpaeManagerSeTest, SetAissEnabled_false_clearsUidBindingForSameSession, TestSize.Level0)
+{
+    HpaeStreamInfo streamInfo = MakeStereoMusicStream(TEST_SESSION_ID);
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_RUNNING};
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    ASSERT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+
+    int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, false);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
 }
 
 // API-5: SetAissEnabledSync(false) returns ERR_EFFECT_NOT_BOUND when not bound
@@ -278,13 +331,15 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_true_pending, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
 }
 
-// UID-2: SetAissEnabledByUidSync(true) returns error on duplicate uid
-HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_true_duplicateUid, TestSize.Level0)
+// UID-2: SetAissEnabledByUidSync(true) is idempotent for the same uid
+HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_true_sameUidIdempotent, TestSize.Level0)
 {
     ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
 
     int32_t ret = hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
 }
 
 // UID-3: SetAissEnabledByUidSync(false) returns error when no binding exists
@@ -313,6 +368,70 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_true_bindRunningStream, TestSize
     int32_t ret = hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+}
+
+HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_switchUidBindsNewRunningStream, TestSize.Level0)
+{
+    HpaeStreamInfo oldStream = MakeStereoMusicStream(TEST_SESSION_ID);
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {oldStream, HPAE_SESSION_RUNNING};
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    ASSERT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+    ASSERT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+
+    HpaeStreamInfo newStream = MakeStereoMusicStream(OTHER_SESSION_ID);
+    newStream.uid = OTHER_UID;
+    hpaeManager_->rendererIdSinkNameMap_[OTHER_SESSION_ID] = "file_io";
+    hpaeManager_->rendererIdStreamInfoMap_[OTHER_SESSION_ID] = {newStream, HPAE_SESSION_RUNNING};
+
+    int32_t ret = hpaeManager_->SetAissEnabledByUidSync(OTHER_UID, true);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(hpaeManager_->boundUid_, OTHER_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, OTHER_SESSION_ID);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), OTHER_SESSION_ID);
+}
+
+HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_switchUidKeepsNewUidPendingWithoutRunningStream, TestSize.Level0)
+{
+    HpaeStreamInfo oldStream = MakeStereoMusicStream(TEST_SESSION_ID);
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {oldStream, HPAE_SESSION_RUNNING};
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+
+    int32_t ret = hpaeManager_->SetAissEnabledByUidSync(OTHER_UID, true);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(hpaeManager_->boundUid_, OTHER_UID);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
+}
+
+HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_switchUidHardFailureClearsNewStateWithoutRollback, TestSize.Level0)
+{
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->boundUid_, TEST_UID);
+    ASSERT_EQ(hpaeManager_->boundSessionId_, 0u);
+
+    HpaeStreamInfo newStream = MakeStereoMusicStream(OTHER_SESSION_ID);
+    newStream.uid = OTHER_UID;
+    hpaeManager_->rendererIdSinkNameMap_[OTHER_SESSION_ID] = "file_io";
+    hpaeManager_->rendererIdStreamInfoMap_[OTHER_SESSION_ID] = {newStream, HPAE_SESSION_RUNNING};
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    std::shared_ptr<EffectInstance> otherEffect;
+    ASSERT_EQ(hpaeManager_->sessionEffectManager_->BindSessionEffect(
+        OTHER_SESSION_ID, "test_effect", config, otherEffect), SUCCESS);
+
+    int32_t ret = hpaeManager_->SetAissEnabledByUidSync(OTHER_UID, true);
+
+    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
 }
 
 // UID-6: Start auto-binds session effect when uid matches pending binding
