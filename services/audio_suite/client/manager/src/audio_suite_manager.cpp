@@ -38,6 +38,23 @@ namespace AudioSuite {
 
 namespace {
 static const int32_t OPERATION_TIMEOUT_IN_MS = 10000;  // 10s
+static constexpr int32_t EQ_FREQUENCY_BAND_GAINS_MIN = -10;
+static constexpr int32_t EQ_FREQUENCY_BAND_GAINS_MAX = 10;
+static constexpr float SPACE_RENDER_MIN_CART_POINT_DISTANCE = -5.0f;
+static constexpr float SPACE_RENDER_MAX_CART_POINT_DISTANCE = 5.0f;
+static constexpr float SPACE_RENDER_MIN_TIME = 2.0f;
+static constexpr float SPACE_RENDER_MAX_TIME = 40.0f;
+static constexpr float SPACE_RENDER_MIN_EXPAND_RADIUS = 1.0f;
+static constexpr float SPACE_RENDER_MAX_EXPAND_RADIUS = 5.0f;
+static constexpr int32_t SPACE_RENDER_MIN_EXPAND_ANGLE = 0;
+static constexpr int32_t SPACE_RENDER_MAX_EXPAND_ANGLE = 360;
+static constexpr float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
+static constexpr float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
+static constexpr float AUDIO_VOICE_MORPHING_PITCH_DEFAULT = 0.0f;
+static constexpr float SPEED_RATE_MIN = 0.5f;
+static constexpr float SPEED_RATE_MAX = 10.0f;
+static constexpr float PITCH_RATE_MIN = 0.1f;
+static constexpr float PITCH_RATE_MAX = 5.0f;
 enum ErrorScene : uint32_t {
     PIPELINE_SCENE = 0,
     NODE_SCENE = 1,
@@ -539,6 +556,14 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
+    for (size_t idx = 0; idx < sizeof(gains.gains) / sizeof(gains.gains[0]); idx++) {
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+            (gains.gains[idx] >= EQ_FREQUENCY_BAND_GAINS_MIN) && (gains.gains[idx] <= EQ_FREQUENCY_BAND_GAINS_MAX),
+            ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+                "SetEqualizerFrequencyBandGains failed, input value not in -10, 10.", true),
+            "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", gains.gains[idx]);
+    }
     std::string name = "AudioEqualizerFrequencyBandGains";
     std::string value = "";
     for (size_t idx = 0; idx < sizeof(gains.gains) / sizeof(gains.gains[0]); idx++) {
@@ -565,6 +590,16 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
 
 int32_t AudioSuiteManager::SetSpaceRenderPositionParams(uint32_t nodeId, AudioSpaceRenderPositionParams position)
 {
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        (position.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE) && (position.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE) &&
+            (position.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE) &&
+            (position.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE) &&
+            (position.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE) &&
+            (position.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE),
+        ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f", true),
+        "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
     return SetParamsTemplate(nodeId, "AudioSpaceRenderPositionParams", position);
 }
 
@@ -575,6 +610,35 @@ int32_t AudioSuiteManager::GetSpaceRenderPositionParams(uint32_t nodeId, AudioSp
 
 int32_t AudioSuiteManager::SetSpaceRenderRotationParams(uint32_t nodeId, AudioSpaceRenderRotationParams rotation)
 {
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        (rotation.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE) && (rotation.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE) &&
+            (rotation.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE) &&
+            (rotation.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE) &&
+            (rotation.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE) &&
+            (rotation.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE),
+        ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f", true),
+        "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
+
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        ((rotation.surroundTime >= SPACE_RENDER_MIN_TIME) && (rotation.surroundTime <= SPACE_RENDER_MAX_TIME)),
+        ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f", true),
+        "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f");
+
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        (rotation.surroundDirection == AudioSurroundDirection::SPACE_RENDER_CCW ||
+         rotation.surroundDirection == AudioSurroundDirection::SPACE_RENDER_CW),
+        ERR_INVALID_PARAM,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1", true),
+        "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1");
+
     return SetParamsTemplate(nodeId, "AudioSpaceRenderRotationParams", rotation);
 }
 
@@ -585,6 +649,19 @@ int32_t AudioSuiteManager::GetSpaceRenderRotationParams(uint32_t nodeId, AudioSp
 
 int32_t AudioSuiteManager::SetSpaceRenderExtensionParams(uint32_t nodeId, AudioSpaceRenderExtensionParams extension)
 {
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        extension.extRadius >= SPACE_RENDER_MIN_EXPAND_RADIUS && extension.extRadius <= SPACE_RENDER_MAX_EXPAND_RADIUS,
+        ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f", true),
+        "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f");
+
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        extension.extAngle > SPACE_RENDER_MIN_EXPAND_ANGLE && extension.extAngle < SPACE_RENDER_MAX_EXPAND_ANGLE,
+        ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetSpaceRenderExtensionParams failed, Angle must be in the (0, 360)", true),
+        "SetSpaceRenderExtensionParams failed, Angle must be in the (0, 360)");
     return SetParamsTemplate(nodeId, "AudioSpaceRenderExtensionParams", extension);
 }
 
@@ -598,6 +675,13 @@ int32_t AudioSuiteManager::SetTempoAndPitch(uint32_t nodeId, float speed, float 
     TempoPitchParams params;
     params.speed = speed;
     params.pitch = pitch;
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        (speed >= SPEED_RATE_MIN && speed <= SPEED_RATE_MAX) && (pitch >= PITCH_RATE_MIN && pitch <= PITCH_RATE_MAX),
+        ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetTempoAndPitch failed, speed must be in the 0.5~10.0 and pitch must be in the 0.1~5.0.", true),
+        "SetTempoAndPitch failed, speed %{public}f must be in the 0.5~10.0 and pitch %{public}f must be in the "
+        "0.1~5.0.", speed, pitch);
     return SetParamsTemplate(nodeId, "speedAndPitch", params);
 }
 
@@ -614,6 +698,13 @@ int32_t AudioSuiteManager::GetTempoAndPitch(uint32_t nodeId, float &speed, float
 
 int32_t AudioSuiteManager::SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVoiceChangeOption option)
 {
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(
+        (option.pitch >= AUDIO_VOICE_MORPHING_PITCH_MIN && option.pitch <= AUDIO_VOICE_MORPHING_PITCH_MAX) ||
+            option.pitch == AUDIO_VOICE_MORPHING_PITCH_DEFAULT,
+        ERR_INVALID_PARAM, StreamDfxManager::GetInstance().SendAudioErrorEvent(
+            static_cast<int32_t>(getuid()), EDIT_NODE_PARAMETERS_INVALID,
+            "SetPureVoiceChangeOption failed, pitch must be in the 0.3f~3.0f or 0.0f.", true),
+        "SetPureVoiceChangeOption failed, pitch %{public}f must be in the 0.3f~3.0f or 0.0f.", option.pitch);
     return SetParamsTemplate(nodeId, "AudioPureVoiceChangeOption", option);
 }
 
@@ -838,8 +929,11 @@ int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
         ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
 
     auto it = pipelineLockMap_.find(pipelineId);
-    CHECK_AND_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
-                             "pipeline lock not exist");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                                       StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                                           static_cast<int32_t>(getuid()), ERR_RENDER_PIPELINE_NOT_FOUND,
+                                           "manager RenderFrame failed, pipeline id is invailed.", true),
+                                       "pipeline lock not exist");
     std::mutex *pipelineLock = it->second.get();
     CHECK_AND_RETURN_RET_LOG(pipelineLock != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
                              "pipeline lock is null");
@@ -873,8 +967,11 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
         ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
     auto it = pipelineLockMap_.find(pipelineId);
-    CHECK_AND_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
-                             "pipeline lock not exist");
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                                       StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                                           static_cast<int32_t>(getuid()), ERR_RENDER_PIPELINE_NOT_FOUND,
+                                           "manager RenderFrame failed, pipeline id is invailed.", true),
+                                       "pipeline lock not exist");
     std::mutex *pipelineLock = it->second.get();
     CHECK_AND_RETURN_RET_LOG(pipelineLock != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
                              "pipeline lock is null");

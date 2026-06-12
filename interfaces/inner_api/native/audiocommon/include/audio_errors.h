@@ -895,6 +895,29 @@ constexpr int32_t AVSESSION_CONTROL_DESKTOPLYRIC_NOT_ENABLE_LOCAL_SET = BuildErr
 constexpr int32_t AVSESSION_CONTROL_DESKTOPLYRIC_NOT_ENABLE_LOCAL_GET = BuildErrorCode(
     ProblemCategory::FAULT_SESSION_LOCAL_GET, OperationType::AVSESSION,
     BusinessScenario::CONTROL, ERR_DESKTOPLYRIC_NOT_ENABLE);
+
+// FAULT_WRONG_AUDIO_EFFECT
+constexpr int32_t ERR_DESTROY_PIPELINE_NOT_FOUND = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RELEASE,
+    ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+constexpr int32_t EDIT_CONNECT_NODES_INVAILD = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
+    ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+constexpr int32_t EDIT_CONNECT_NODES_NOT_EXIST = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
+    ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+constexpr int32_t ERR_NODE_PARAM_SET_NODE_NOT_FOUND = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG,
+    ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+constexpr int32_t ERR_RENDER_PIPELINE_NOT_FOUND = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RENDER,
+    ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+constexpr int32_t ERR_PIPELINE_STATE_INVALID = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_ILLEGAL_STATE);
+constexpr int32_t EDIT_NODE_PARAMETERS_INVALID = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_INVALID_PARAM);
+constexpr int32_t EDIT_NODE_DISCONNECT_NOT_SUPPORTED = BuildErrorCode(
+    ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CONFIG, ERR_NOT_SUPPORTED);
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_ERRORS_H

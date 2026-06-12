@@ -27,6 +27,7 @@
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_env_algo_interface_impl.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -127,6 +128,8 @@ int32_t StringToEnvMode(const std::string &modStr, iMedia_Env_PARA &para)
             break;
         default:
             AUDIO_ERR_LOG("Unknown EnvMode %{public}d", modeInt);
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                EDIT_NODE_PARAMETERS_INVALID, "Environment node passed invalid enum value", true);
             return ERROR;
     }
     return SUCCESS;
