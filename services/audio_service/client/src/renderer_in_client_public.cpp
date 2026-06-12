@@ -1612,7 +1612,7 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize, bool isRecr
         "playing audiovivid, frameSize is always 1024.");
     size_t maxCbBufferSize =
         static_cast<size_t>(MAX_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
-    size_t minSize = static_cast<size_t>(isRecreate ? MIN_FAST_CBBUF_IN_USEC : MIN_CBBUF_IN_USEC);
+    size_t minSize = static_cast<size_t>(IsFastStream() ? DEFAULT_FAST_CBBUF_IN_USEC : MIN_CBBUF_IN_USEC);
     size_t minCbBufferSize =
         static_cast<size_t>(minSize * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     size_t preferredCbBufferSize = static_cast<size_t>(frameSize) * sizePerFrameInByte_;
