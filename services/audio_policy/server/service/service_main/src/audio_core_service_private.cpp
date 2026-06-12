@@ -253,7 +253,8 @@ void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInf
 
 void AudioCoreService::UpdateMultiChannelState(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
-    CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0);
+    CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0 &&
+        pipeInfo->streamDescriptors_[0] != nullptr);
     CHECK_AND_RETURN(pipeInfo->isCollaborationEnable_ && pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER);
     audioPolicyManager_.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(pipeInfo->streamDescriptors_[0]->GetMainNewDeviceType());
