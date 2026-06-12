@@ -470,6 +470,10 @@ public:
     int32_t SetRingerMode(AudioRingerMode ringMode);
     int32_t FetchOutputDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> PreviewOutputDeviceSelection(
+        const std::string &caller);
+    std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> PreviewInputDeviceSelection(
+        const std::string &caller);
     bool HandleA2dpSuspendWhenLoad();
     void HandleA2dpRestore();
     int32_t FetchInputDeviceAndRoute(std::string caller,

@@ -2512,6 +2512,70 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     return ret;
 }
 
+std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> AudioCoreService::PreviewOutputDeviceSelection(
+    const std::string &caller)
+{
+    std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> previewResults;
+
+    CHECK_AND_RETURN_RET_LOG(Util::IsEnhancedRoutingSupported(), previewResults,
+        "Enhanced routing not supported, return empty");
+
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, previewResults,
+        "PreviewOutputDeviceSelection: pipeManager_ is nullptr");
+
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
+    if (outputStreamDescs.empty()) {
+        return previewResults;
+    }
+
+    AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
+    for (auto &streamDesc : outputStreamDescs) {
+        CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "PreviewOutputDeviceSelection: streamDesc is nullptr");
+
+        StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
+
+        FetchDeviceInfo info = { streamUsage, GetRealUid(streamDesc), streamDesc->GetRenderPrivacyType(),
+            caller + "_Preview", streamDesc->bundleName_ };
+        info.streamId = streamDesc->sessionId_;
+        auto devices = audioRouterCenter_.FetchOutputDevices(info);
+
+        previewResults[streamDesc->sessionId_] = devices;
+    }
+
+    return previewResults;
+}
+
+std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::PreviewInputDeviceSelection(
+    const std::string &caller)
+{
+    std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> previewResults;
+
+    CHECK_AND_RETURN_RET_LOG(Util::IsEnhancedRoutingSupported(), previewResults,
+        "Enhanced routing not supported, return empty");
+
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, previewResults, "pipeManager_ is nullptr");
+
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
+    if (inputStreamDescs.empty()) {
+        return previewResults;
+    }
+
+    for (auto &streamDesc : inputStreamDescs) {
+        CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "PreviewInputDeviceSelection: streamDesc is nullptr");
+        FetchDeviceInfo info;
+        info.sourceType = streamDesc->capturerInfo_.sourceType;
+        info.clientUID = GetRealUid(streamDesc);
+        info.streamId = streamDesc->sessionId_;
+        auto inputDevice = audioRouterCenter_.FetchInputDevice(info);
+        CHECK_AND_CONTINUE_LOG(inputDevice != nullptr,
+            "PreviewInputDeviceSelection: FetchInputDevice nullptr for session %{public}u",
+            streamDesc->sessionId_);
+        previewResults[streamDesc->sessionId_] = inputDevice;
+    }
+
+    return previewResults;
+}
+
 bool AudioCoreService::HandleA2dpSuspendWhenLoad()
 {
     if (a2dpNeedSuspend_.load(std::memory_order_acquire)) {
