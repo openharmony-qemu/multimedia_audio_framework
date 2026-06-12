@@ -159,7 +159,7 @@ int32_t AudioSuiteHoaRenderAlgoInterfaceImpl::Apply(
     AudioHvsDynamicData data;
     data.dataIn = dataIn;
     data.dataOut = dataOut;
-    data.samplingRate = nodeParameter_.inSampleRate;
+    data.samplingRate = static_cast<int32_t>(nodeParameter_.inSampleRate);
     data.stereoDownmix = 0;
     data.dataAmbOrder = dataAmbOrder;
     data.renderAmbOrder = dataAmbOrder;
