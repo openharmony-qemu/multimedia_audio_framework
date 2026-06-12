@@ -53,7 +53,6 @@ public:
 
     // Control
     int32_t StartEffect();
-    int32_t StopEffect();
     int32_t FlushEffect();
     int32_t SetParameter(int32_t type, float value);
 

@@ -404,24 +404,6 @@ int32_t HpaeSessionEffectNode::StartEffect()
     return 0;
 }
 
-int32_t HpaeSessionEffectNode::StopEffect()
-{
-    if (effectInstance_) {
-        effectInstance_->StopEffect();  // Keep DISABLE behavior unchanged.
-    }
-
-    // Stop preheat thread if running
-    if (status_ == STATUS::WARMING_UP) {
-        StopPreheatThread();
-    }
-    auto oldStatus = status_;
-    status_ = STATUS::IDLE;
-    ResetTailPaddingState();
-    AUDIO_INFO_LOG("[SE::SessionEffectNode] %s→IDLE reason=StopEffect sessionId=%{public}u totalBytesIn=%{public}zu",
-        StatusToString(oldStatus), GetSessionId(), totalBytesIn_);
-    return 0;
-}
-
 int32_t HpaeSessionEffectNode::PauseEffect()
 {
     if (!effectInstance_) return 0;

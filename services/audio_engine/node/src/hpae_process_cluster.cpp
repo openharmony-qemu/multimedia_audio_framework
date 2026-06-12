@@ -551,15 +551,6 @@ int32_t HpaeProcessCluster::SessionEffectStart(uint32_t sessionId)
     return node->StartEffect();
 }
 
-int32_t HpaeProcessCluster::SessionEffectStop(uint32_t sessionId)
-{
-    auto node = SafeGetMap(idSessionEffectMap_, sessionId);
-    if (node == nullptr) {
-        return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
-    }
-    return node->StopEffect();
-}
-
 int32_t HpaeProcessCluster::SessionEffectFlush(uint32_t sessionId)
 {
     auto node = SafeGetMap(idSessionEffectMap_, sessionId);

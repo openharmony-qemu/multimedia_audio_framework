@@ -135,8 +135,8 @@ HWTEST_F(HpaeProcessClusterSeTest, DoProcess_callsSignalProcess, TestSize.Level0
     EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
 }
 
-// PC-5: SessionEffect start/stop control works
-HWTEST_F(HpaeProcessClusterSeTest, SessionEffectStart_stop, TestSize.Level0)
+// PC-5: SessionEffect start/pause control works
+HWTEST_F(HpaeProcessClusterSeTest, SessionEffectStart_pause, TestSize.Level0)
 {
     FakeAudioEffectLibEntry fake;
     fake.SetPreheatFrames(0);
@@ -148,8 +148,11 @@ HWTEST_F(HpaeProcessClusterSeTest, SessionEffectStart_stop, TestSize.Level0)
     cluster_->SessionEffectStart(TEST_SESSION_ID);
     EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
 
-    cluster_->SessionEffectStop(TEST_SESSION_ID);
-    EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));  // still exists after stop
+    EXPECT_EQ(cluster_->SessionEffectPause(TEST_SESSION_ID), 0);
+    auto node = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(node, nullptr);
+    EXPECT_TRUE(node->IsPaused());
+    EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));  // still exists after pause
 }
 
 // Stream data callback: fills PCM buffer with a constant float value.

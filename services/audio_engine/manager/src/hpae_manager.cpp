@@ -1632,38 +1632,66 @@ void HpaeManager::DestroyCapture(uint32_t sessionId)
 bool HpaeManager::SetMovingStreamState(HpaeStreamClassType streamType, uint32_t sessionId,
     HpaeSessionState status, HpaeSessionState state, IOperation operation)
 {
-    if (movingIds_.find(sessionId) == movingIds_.end()) {
+    auto movingIt = movingIds_.find(sessionId);
+    if (movingIt == movingIds_.end()) {
         return false;
     }
     AUDIO_INFO_LOG("sessionId:%{public}u is moving", sessionId);
     if (operation != OPERATION_FLUSHED && operation != OPERATION_DRAINED) {
-        movingIds_[sessionId] = status;
-        if (streamType == HPAE_STREAM_CLASS_TYPE_PLAY) {
-            rendererIdStreamInfoMap_[sessionId].state = state;
-        } else {
-            capturerIdStreamInfoMap_[sessionId].state = state;
-        }
+        movingIt->second = status;
     }
     if (streamType == HPAE_STREAM_CLASS_TYPE_PLAY) {
-        UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, operation, sessionId);
-        if (operation == OPERATION_RELEASED) {
-            sinkInputs_.erase(sessionId);
-            idPreferSinkNameMap_.erase(sessionId);
+        return SetMovingPlayStreamState(sessionId, state, operation);
+    }
+    return SetMovingCaptureStreamState(sessionId, state, operation);
+}
+
+bool HpaeManager::SetMovingPlayStreamState(uint32_t sessionId, HpaeSessionState state, IOperation operation)
+{
+    auto rendererInfoIt = rendererIdStreamInfoMap_.find(sessionId);
+    if (rendererInfoIt == rendererIdStreamInfoMap_.end()) {
+        AUDIO_WARNING_LOG("moving play stream info not found, sessionId:%{public}u", sessionId);
+        return false;
+    }
+    if (operation != OPERATION_FLUSHED && operation != OPERATION_DRAINED) {
+        rendererInfoIt->second.state = state;
+    }
+    UpdateStatus(rendererInfoIt->second.statusCallback, operation, sessionId);
+    if (operation == OPERATION_RELEASED) {
+        if (sessionEffectManager_) {
+            sessionEffectManager_->OnSessionDestroyed(sessionId);
         }
-    } else {
-        UpdateStatus(capturerIdStreamInfoMap_[sessionId].statusCallback, operation, sessionId);
-        if (operation == OPERATION_RELEASED) {
-            sourceOutputs_.erase(sessionId);
-            if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->HandleSourceAudioStreamRemoved(sessionId);
-            }
-        } else if (operation == OPERATION_STARTED) {
-            if (capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType == SOURCE_TYPE_LIVE &&
-                (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
-                const std::string combinedParam = "live_effect_enable=" + effectLiveState_;
-                HpaePolicyManager::GetInstance().SetAudioParameter("primary",
-                    AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
-            }
+        if (boundSessionId_ == sessionId) {
+            boundSessionId_ = 0;
+        }
+        sinkInputs_.erase(sessionId);
+        idPreferSinkNameMap_.erase(sessionId);
+    }
+    return true;
+}
+
+bool HpaeManager::SetMovingCaptureStreamState(uint32_t sessionId, HpaeSessionState state, IOperation operation)
+{
+    auto capturerInfoIt = capturerIdStreamInfoMap_.find(sessionId);
+    if (capturerInfoIt == capturerIdStreamInfoMap_.end()) {
+        AUDIO_WARNING_LOG("moving capturer stream info not found, sessionId:%{public}u", sessionId);
+        return false;
+    }
+    if (operation != OPERATION_FLUSHED && operation != OPERATION_DRAINED) {
+        capturerInfoIt->second.state = state;
+    }
+    UpdateStatus(capturerInfoIt->second.statusCallback, operation, sessionId);
+    if (operation == OPERATION_RELEASED) {
+        sourceOutputs_.erase(sessionId);
+        if (auto serviceCallback = serviceCallback_.lock()) {
+            serviceCallback->HandleSourceAudioStreamRemoved(sessionId);
+        }
+    } else if (operation == OPERATION_STARTED) {
+        if (capturerInfoIt->second.streamInfo.sourceType == SOURCE_TYPE_LIVE &&
+            (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
+            const std::string combinedParam = "live_effect_enable=" + effectLiveState_;
+            HpaePolicyManager::GetInstance().SetAudioParameter("primary",
+                AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
         }
     }
     return true;

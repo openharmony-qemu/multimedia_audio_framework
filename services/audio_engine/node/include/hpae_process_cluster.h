@@ -66,7 +66,6 @@ public:
     int32_t DestroySessionEffectNode(uint32_t sessionId, uint64_t &outLatency);
     bool HasSessionEffectNode(uint32_t sessionId) const;
     int32_t SessionEffectStart(uint32_t sessionId);
-    int32_t SessionEffectStop(uint32_t sessionId);
     int32_t SessionEffectFlush(uint32_t sessionId);
     int32_t SessionEffectPause(uint32_t sessionId);
     void SessionEffectPrepareMoveStream(uint32_t sessionId);

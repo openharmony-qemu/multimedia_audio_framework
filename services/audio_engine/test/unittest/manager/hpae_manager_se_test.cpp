@@ -53,6 +53,15 @@ static HpaeSinkInfo GetTestSinkInfo()
     return sinkInfo;
 }
 
+static AudioEffectConfig MakeTestAudioEffectConfig()
+{
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    return config;
+}
+
 class HpaeManagerSeTest : public ::testing::Test {
 protected:
     void SetUp() override
@@ -226,6 +235,27 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabled_true_primaryPath, TestSize.Level0)
 
     int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(HpaeManagerSeTest, destroyMovingPlayStream_notifiesSessionEffectDestroyed, TestSize.Level0)
+{
+    InjectStereoMusicStream();
+
+    std::shared_ptr<EffectInstance> instance;
+    ASSERT_EQ(hpaeManager_->sessionEffectManager_->BindSessionEffect(TEST_SESSION_ID, AISS_EFFECT_NAME,
+        MakeTestAudioEffectConfig(), instance), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_NE(instance, nullptr);
+    EXPECT_EQ(instance->GetState(), EffectInstance::EffectState::ACTIVE);
+
+    hpaeManager_->movingIds_[TEST_SESSION_ID] = HPAE_SESSION_RUNNING;
+    EXPECT_EQ(hpaeManager_->DestroyStream(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing();
+
+    auto pending = hpaeManager_->sessionEffectManager_->GetPendingEffectInstance(AISS_EFFECT_NAME);
+    ASSERT_NE(pending, nullptr);
+    EXPECT_EQ(pending, instance);
+    EXPECT_EQ(instance->GetState(), EffectInstance::EffectState::PENDING_RELEASE);
+    EXPECT_EQ(instance->GetBoundSessionId(), 0u);
 }
 
 // API-7: SetAissEnabledSync(true) routes to HpaeOffloadRendererManager for Offload path
@@ -900,6 +930,90 @@ HWTEST_F(HpaeManagerSeE2eTest, PauseStart_fadePath_resumesSE, TestSize.Level0)
     EXPECT_TRUE(seNode->IsPaused());
 
     // Start
+    rendererManager_->Start(TEST_SESSION_ID);
+    ProcessRmMessages();
+
+    EXPECT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+    EXPECT_FALSE(seNode->IsPaused());
+}
+
+HWTEST_F(HpaeManagerSeE2eTest, Stop_directPath_pausesSessionEffect, TestSize.Level0)
+{
+    ASSERT_TRUE(SetupStreamWithSE(hpaeManager_, rendererManager_));
+
+    rendererManager_->Stop(TEST_SESSION_ID);
+    ProcessRmMessages();
+
+    HpaeProcessorType sceneType = rendererManager_->GetProcessorType(TEST_SESSION_ID);
+    auto cluster = rendererManager_->sceneClusterMap_[sceneType];
+    ASSERT_NE(cluster, nullptr);
+    auto seNode = cluster->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(seNode, nullptr);
+    EXPECT_TRUE(seNode->IsPaused());
+    EXPECT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+}
+
+HWTEST_F(HpaeManagerSeE2eTest, StopStart_directPath_resumesSessionEffect, TestSize.Level0)
+{
+    ASSERT_TRUE(SetupStreamWithSE(hpaeManager_, rendererManager_));
+
+    rendererManager_->Stop(TEST_SESSION_ID);
+    ProcessRmMessages();
+
+    HpaeProcessorType sceneType = rendererManager_->GetProcessorType(TEST_SESSION_ID);
+    auto cluster = rendererManager_->sceneClusterMap_[sceneType];
+    ASSERT_NE(cluster, nullptr);
+    auto seNode = cluster->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(seNode, nullptr);
+    ASSERT_TRUE(seNode->IsPaused());
+
+    rendererManager_->Start(TEST_SESSION_ID);
+    ProcessRmMessages();
+
+    EXPECT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+    EXPECT_FALSE(seNode->IsPaused());
+}
+
+HWTEST_F(HpaeManagerSeE2eTest, Stop_fadeDonePath_pausesSessionEffect, TestSize.Level0)
+{
+    ASSERT_TRUE(SetupStreamWithSE(hpaeManager_, rendererManager_));
+
+    auto sinkInput = rendererManager_->sinkInputNodeMap_[TEST_SESSION_ID];
+    ASSERT_NE(sinkInput, nullptr);
+    sinkInput->SetState(HPAE_SESSION_STOPPING);
+    rendererManager_->SetSessionState(TEST_SESSION_ID, HPAE_SESSION_STOPPING);
+
+    rendererManager_->OnFadeDone(TEST_SESSION_ID);
+    ProcessRmMessages();
+
+    HpaeProcessorType sceneType = rendererManager_->GetProcessorType(TEST_SESSION_ID);
+    auto cluster = rendererManager_->sceneClusterMap_[sceneType];
+    ASSERT_NE(cluster, nullptr);
+    auto seNode = cluster->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(seNode, nullptr);
+    EXPECT_TRUE(seNode->IsPaused());
+    EXPECT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
+}
+
+HWTEST_F(HpaeManagerSeE2eTest, StopStart_fadeDonePath_resumesSessionEffect, TestSize.Level0)
+{
+    ASSERT_TRUE(SetupStreamWithSE(hpaeManager_, rendererManager_));
+
+    auto sinkInput = rendererManager_->sinkInputNodeMap_[TEST_SESSION_ID];
+    ASSERT_NE(sinkInput, nullptr);
+    sinkInput->SetState(HPAE_SESSION_STOPPING);
+    rendererManager_->SetSessionState(TEST_SESSION_ID, HPAE_SESSION_STOPPING);
+
+    rendererManager_->OnFadeDone(TEST_SESSION_ID);
+    ProcessRmMessages();
+
+    HpaeProcessorType sceneType = rendererManager_->GetProcessorType(TEST_SESSION_ID);
+    auto cluster = rendererManager_->sceneClusterMap_[sceneType];
+    ASSERT_NE(cluster, nullptr);
+    auto seNode = cluster->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(seNode, nullptr);
+    ASSERT_TRUE(seNode->IsPaused());
+
     rendererManager_->Start(TEST_SESSION_ID);
     ProcessRmMessages();
 

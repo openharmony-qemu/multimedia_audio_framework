@@ -522,9 +522,13 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(node, "Stop not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Stop sessionId %{public}u", sessionId);
         auto state = curNode_->GetState();
+        bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         node->SetState(HPAE_SESSION_STOPPED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_STOPPED);
         if (sessionId == curNode_->GetSessionId()) {
+            if (isSessionEffectActive) {
+                sessionEffectNode_->PauseEffect();
+            }
             DisConnectInputSession();
             if (state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
                 sinkOutputNode_->StopStream();

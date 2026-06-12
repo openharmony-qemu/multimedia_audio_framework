@@ -1049,6 +1049,9 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
             "Stop not find sessionId %{public}u", sessionId);
         HpaeProcessorType sceneType = GetProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
+            if (HasSessionEffect(sessionId) && SafeGetMap(sceneClusterMap_, sceneType)) {
+                sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
+            }
             DisConnectInputSession(sessionId);
         }
         UpdateClusterStreamInfo(sceneType);
@@ -1586,7 +1589,7 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId)
         AUDIO_INFO_LOG("Fade done, call back at RendererManager");
         IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ?
             OPERATION_STOPPED : OPERATION_PAUSED;
-        if (operation == OPERATION_PAUSED && HasSessionEffect(sessionId)) {
+        if ((operation == OPERATION_PAUSED || operation == OPERATION_STOPPED) && HasSessionEffect(sessionId)) {
             HpaeProcessorType sceneType = GetProcessorType(sessionId);
             if (SafeGetMap(sceneClusterMap_, sceneType)) {
                 sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
