@@ -261,7 +261,6 @@ void HpaeGainNode::EnsureVolumeAvailable()
         uint32_t rendererId = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
         audioVolume->GetStreamAndPipeVolume(GetSessionId(), GetStreamType(), rendererId,
             streamVolume_, pipeVolume_);
-        AUDIO_INFO_LOG("streamVolume_ or pipeVolume_ is null, retry get, sessionId:%{public}d", GetSessionId());
     }
 }
 

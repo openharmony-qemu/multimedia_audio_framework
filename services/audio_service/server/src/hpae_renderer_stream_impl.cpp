@@ -623,6 +623,7 @@ void HpaeRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCal
 
 void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &callBackStreamInfo)
 {
+    bool needLog = false;
     // only handle DEVICE_CLASS_REMOTE_OFFLOAD -> other class or other class -> DEVICE_CLASS_REMOTE_OFFLOAD
     if ((deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD ||
         callBackStreamInfo.deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD) &&
@@ -638,6 +639,7 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
         }
         // Device type switch, replace lastFramePosition_
         lastFramePosition_ = callBackStreamInfo.framePosition;
+        needLog = true;
     }
 
     // If hdiFramePosition has a value, it indicates that the remote offload device has performed a flush.
@@ -647,11 +649,14 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
             // from time (us) to sample
             callBackStreamInfo.hdiFramePosition * usedSampleRate_ / AUDIO_US_PER_S +
             callBackStreamInfo.rewindTime * usedSampleRate_ / AUDIO_US_PER_S;
+        needLog = true;
     }
-    bool checkResult = ClockTime::CheckTimeInterval(lastLogTimestampArr_[ON_DEVICE_CLASS_CHANGE],
-        PRINT_TIMESTAMP_INTERVAL_NS);
-    AUDIO_LIMIT_INFO_LOG(checkResult, "lastFramePosition: %{public}" PRIu64 ", lastHdiFramePosition: %{public}" PRIu64,
-        lastFramePosition_, lastHdiFramePosition_);
+    if (needLog) {
+        bool checkResult = ClockTime::CheckTimeInterval(lastLogTimestampArr_[ON_DEVICE_CLASS_CHANGE],
+            PRINT_TIMESTAMP_INTERVAL_NS);
+        AUDIO_LIMIT_INFO_LOG(checkResult, "lastFramePosition: %{public}" PRIu64 ", lastHdiFramePosition: %{public}" PRIu64,
+            lastFramePosition_, lastHdiFramePosition_);
+    }
 }
 
 void HpaeRendererStreamImpl::ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo)
