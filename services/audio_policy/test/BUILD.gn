@@ -87,6 +87,7 @@ group("audio_policy_unittest_packages") {
     ":audio_usr_select_manager_unit_test",
     ":audio_volume_manager_unit_test",
     ":audio_volume_manager_ext_unit_test",
+    ":audio_loud_volume_manager_unit_test",
     ":audio_volume_utils_unit_test",
     ":audio_zone_service_unit_test",
     ":audio_zone_unit_test",
@@ -4111,6 +4112,50 @@ ohos_unittest("audio_volume_manager_unit_test") {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
     external_deps += [ "input:libmmi-client" ]
   }
+}
+
+ohos_unittest("audio_loud_volume_manager_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "../../audio_policy/server/domain/volume/include",
+    "./unittest/audio_loud_volume_manager_unit_test/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  defines = [
+    "FEATURE_MULTIMODALINPUT_INPUT",
+  ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "input:libmmi-client",
+    "ipc:ipc_single",
+    "os_account:os_account_innerkits",
+  ]
+
+  sources = [
+    "./unittest/audio_loud_volume_manager_unit_test/src/audio_loud_volume_manager_unit_test.cpp",
+  ]
+
+  deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../audio_policy:audio_policy_service_static",
+  ]
 }
 
 ohos_unittest("audio_volume_manager_ext_unit_test") {
