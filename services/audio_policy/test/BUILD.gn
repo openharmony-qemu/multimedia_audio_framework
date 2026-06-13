@@ -2363,7 +2363,7 @@ ohos_unittest("audio_spatialization_service_unit_test") {
 }
 
 ohos_unittest("audio_collaborative_service_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_engine/audio_effect"
   include_dirs = [
     "./unittest/audio_spatialization_service_unit_test/include",
     "../../audio_policy/server/include/service/spatialization",
