@@ -62,37 +62,39 @@ static uint32_t PackSpatializationState(AudioSpatializationState state)
 HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_001, TestSize.Level1)
 {
     AudioSpatializationService service;
-    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor selectedAudioDevice;
      // Test case 1: Update with a new device
-    std::string newMacAddress = "00:11:22:33:44:55";
-    service.UpdateCurrentDevice(newMacAddress);
-    EXPECT_EQ(service.GetCurrentDeviceAddress(), newMacAddress);
+    selectedAudioDevice.macAddress_ = "00:11:22:33:44:55";
+    service.UpdateCurrentDevice(selectedAudioDevice);
+    EXPECT_EQ(service.GetCurrentDeviceAddress(), selectedAudioDevice.macAddress_);
 
     // Test case 2: Update with the same device (no change expected)
-    service.UpdateCurrentDevice(newMacAddress);
-    EXPECT_EQ(service.GetCurrentDeviceAddress(), newMacAddress);
+    service.UpdateCurrentDevice(selectedAudioDevice);
+    EXPECT_EQ(service.GetCurrentDeviceAddress(), selectedAudioDevice.macAddress_);
 
     // Test case 3: Update with an empty address (should not change the current device)
+    selectedAudioDevice.macAddress_ = "";
     std::string originalAddress = service.GetCurrentDeviceAddress();
-    service.UpdateCurrentDevice("");
+    service.UpdateCurrentDevice(selectedAudioDevice);
     EXPECT_NE(service.GetCurrentDeviceAddress(), originalAddress);
 
     // Test case 4: Update with a new device that has spatial capabilities
     std::string spatialDeviceAddress = "AA:BB:CC:DD:EE:FF";
-    selectedAudioDevice->macAddress_ = spatialDeviceAddress;
+    selectedAudioDevice.macAddress_ = spatialDeviceAddress;
     service.addressToSpatialDeviceStateMap_[service.GetSha256EncryptAddress(spatialDeviceAddress)] = {
         spatialDeviceAddress,  // address
         true,                  // isSpatializationSupported
         false,                 // isHeadTrackingSupported
         AudioSpatialDeviceType::EARPHONE_TYPE_HEADPHONE  // spatialDeviceType
     };
-    service.UpdateCurrentDevice(spatialDeviceAddress);
+    service.UpdateCurrentDevice(selectedAudioDevice);
     EXPECT_EQ(service.GetCurrentDeviceAddress(), spatialDeviceAddress);
     EXPECT_EQ(service.currSpatialDeviceType_, AudioSpatialDeviceType::EARPHONE_TYPE_HEADPHONE);
 
     // Test case 5: Update with a device that doesn't have spatial capabilities
     std::string nonSpatialDeviceAddress = "11:22:33:44:55:66";
-    service.UpdateCurrentDevice(nonSpatialDeviceAddress);
+    selectedAudioDevice.macAddress_ = nonSpatialDeviceAddress;
+    service.UpdateCurrentDevice(selectedAudioDevice);
     EXPECT_EQ(service.GetCurrentDeviceAddress(), nonSpatialDeviceAddress);
     EXPECT_EQ(service.currSpatialDeviceType_, EARPHONE_TYPE_NONE);
 }
@@ -333,30 +335,33 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_010, Tes
 HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_011, TestSize.Level1)
 {
     AudioSpatializationService spatializationService;
-    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor selectedAudioDevice;
      // Test empty addresses
-    spatializationService.UpdateCurrentDevice("");
-    EXPECT_EQ(spatializationService.currentDeviceAddress_, "");
+    selectedAudioDevice.macAddress_ = "";
+    spatializationService.UpdateCurrentDevice(selectedAudioDevice);
+    EXPECT_EQ(spatializationService.currentDevice_.macAddress_, "");
     EXPECT_NE(spatializationService.currSpatialDeviceType_, EARPHONE_TYPE_NONE);
 
     // Test the new device address
     std::string newAddress = "00:11:22:33:44:55";
-    spatializationService.UpdateCurrentDevice(newAddress);
-    EXPECT_EQ(spatializationService.currentDeviceAddress_, newAddress);
+    selectedAudioDevice.macAddress_ = newAddress;
+    spatializationService.UpdateCurrentDevice(selectedAudioDevice);
+    EXPECT_EQ(spatializationService.currentDevice_.macAddress_, newAddress);
 
     // Test the same device address
-    spatializationService.UpdateCurrentDevice(newAddress);
-    EXPECT_EQ(spatializationService.currentDeviceAddress_, newAddress);
+    spatializationService.UpdateCurrentDevice(selectedAudioDevice);
+    EXPECT_EQ(spatializationService.currentDevice_.macAddress_, newAddress);
 
     // Test device type updates
     std::string encryptedAddress = spatializationService.GetSha256EncryptAddress(newAddress);
     spatializationService.addressToSpatialDeviceStateMap_[encryptedAddress].spatialDeviceType = EARPHONE_TYPE_INEAR;
-    spatializationService.UpdateCurrentDevice(newAddress);
+    spatializationService.UpdateCurrentDevice(selectedAudioDevice);
     EXPECT_NE(spatializationService.currSpatialDeviceType_, EARPHONE_TYPE_INEAR);
 
     // Test for unknown device types
     std::string unknownAddress = "AA:BB:CC:DD:EE:FF";
-    spatializationService.UpdateCurrentDevice(unknownAddress);
+    selectedAudioDevice.macAddress_ = unknownAddress;
+    spatializationService.UpdateCurrentDevice(selectedAudioDevice);
     EXPECT_EQ(spatializationService.currSpatialDeviceType_, EARPHONE_TYPE_NONE);
 }
 
@@ -794,7 +799,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_035, Tes
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
     const std::string macAddress = "1234";
-    ptrAudioSpatializationService->currentDeviceAddress_ = "1234";
+    ptrAudioSpatializationService->currentDevice_.macAddress_ = "1234";
     ptrAudioSpatializationService->isHeadTrackingDataRequested_ = true;
 
     auto result = ptrAudioSpatializationService->IsHeadTrackingDataRequested(macAddress);
@@ -813,7 +818,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_036, Tes
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
     const std::string macAddress = "1234";
-    ptrAudioSpatializationService->currentDeviceAddress_ = "abc";
+    ptrAudioSpatializationService->currentDevice_.macAddress_ = "abc";
     ptrAudioSpatializationService->isHeadTrackingDataRequested_ = true;
 
     auto result = ptrAudioSpatializationService->IsHeadTrackingDataRequested(macAddress);
@@ -856,16 +861,11 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_038, Tes
     ptrAudioSpatializationService->spatializationEnabledReal_ = true;
     ptrAudioSpatializationService->headTrackingEnabledReal_ = true;
     ptrAudioSpatializationService->adaptiveSpatialRenderingEnabledReal_ = true;
-    ptrAudioSpatializationService->personalizedSpatializationEnabledReal_ = true;
 
     auto result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
     EXPECT_EQ(result, SUCCESS);
 
     ptrAudioSpatializationService->adaptiveSpatialRenderingEnabledReal_ = false;
-    result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
-    EXPECT_EQ(result, SUCCESS);
-
-    ptrAudioSpatializationService->personalizedSpatializationEnabledReal_ = false;
     result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -908,16 +908,11 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_040, Tes
     ptrAudioSpatializationService->spatializationEnabledReal_ = false;
     ptrAudioSpatializationService->headTrackingEnabledReal_ = false;
     ptrAudioSpatializationService->adaptiveSpatialRenderingEnabledReal_ = false;
-    ptrAudioSpatializationService->personalizedSpatializationEnabledReal_ = false;
 
     auto result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
     EXPECT_EQ(result, SUCCESS);
 
     ptrAudioSpatializationService->adaptiveSpatialRenderingEnabledReal_ = true;
-    result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
-    EXPECT_EQ(result, SUCCESS);
-
-    ptrAudioSpatializationService->personalizedSpatializationEnabledReal_ = true;
     result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -983,7 +978,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_044, Tes
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
-    ptrAudioSpatializationService->currentDeviceAddress_ = "test_address";
+    ptrAudioSpatializationService->currentDevice_.macAddress_ = "test_address";
     auto result = ptrAudioSpatializationService->IsSpatializationEnabledForCurrentDevice();
     EXPECT_EQ(result, false);
 }

@@ -17,6 +17,7 @@
 #define HPAE_POLICY_MANAGER_H
 
 #include "audio_effect.h"
+#include <functional>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -48,6 +49,7 @@ public:
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
     void InitHdiState();
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
+    void SetPersonalizedSpatializationStateResultCallback(std::function<void(int32_t)> callback);
     void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value);
 
     // interfaces for capture effect
@@ -76,6 +78,7 @@ public:
     void DeleteStreamVolumeToEffect(const std::string stringSessionID);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
     int32_t UpdateCollaborativeProductId(const std::string &productId);
+    int32_t UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled);
     bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage);
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length);
     void LoadCollaborationConfig();

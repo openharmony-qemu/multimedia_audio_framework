@@ -102,6 +102,11 @@ public:
         updatePersonalizedHRTFBinResult_ = result;
     }
 
+    void OnUpdatePersonalizedSpatializationStateCb(int32_t result) override
+    {
+        updatePersonalizedSpatializationStateResult_ = result;
+    }
+
     void HandleSourceAudioStreamRemoved(uint32_t sessionId) override {}
 
     int32_t GetPortId() const noexcept
@@ -194,6 +199,7 @@ private:
     int32_t getCollaborativeUpdateResult_ = -1;
     int32_t updateSpatializationStateResult_ = -1;
     int32_t updatePersonalizedHRTFBinResult_ = -1;
+    int32_t updatePersonalizedSpatializationStateResult_ = -1;
     std::vector<OHOS::AudioStandard::SinkInput> sinkInputs_;
     std::vector<OHOS::AudioStandard::SourceOutput> sourceOutputs_;
     std::vector<OHOS::AudioStandard::SinkInfo> sinks_;

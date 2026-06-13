@@ -194,7 +194,8 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
 {
     AudioEffectConfig tmpIoBufferConfig = ioBufferConfig_;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
-    AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
+    int32_t replyDatas[2] = {replyData, 0};
+    AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyDatas};
     std::vector<uint8_t> paramBuffer((sizeof(AudioEffectParam) + MAX_PARAM_CAPACITY * sizeof(int32_t)), 0);
     // Set param
     AudioEffectParam *effectParam = reinterpret_cast<AudioEffectParam*>(paramBuffer.data());
@@ -216,8 +217,10 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         data[PERSONALIZED_SPATIALIZATION_ENABLED]);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
+    replyData = replyDatas[0];
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
         sceneType_.c_str(), effectMode_.c_str());
+    personalizedSpatialUpdateState_ += replyDatas[1];
 
     cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
     ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
@@ -454,6 +457,11 @@ uint32_t AudioEffectChain::GetLatency()
     return latency_;
 }
 
+int32_t AudioEffectChain::GetPersonalizedSpatialUpdateState()
+{
+    return personalizedSpatialUpdateState_;
+}
+
 void AudioEffectChain::DumpEffectProcessData(std::string fileName, void *buffer, size_t len)
 {
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
@@ -671,6 +679,7 @@ int32_t AudioEffectChain::UpdateEffectParamInner()
 {
     Trace trace("AudioEffectChain::UpdateEffectParamInner");
     latency_ = 0;
+    personalizedSpatialUpdateState_ = 0;
     for (AudioEffectHandle handle : standByEffectHandles_) {
         int32_t replyData;
         int32_t ret = SetEffectParamToHandle(handle, replyData);

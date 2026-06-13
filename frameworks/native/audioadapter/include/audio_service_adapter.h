@@ -265,6 +265,13 @@ public:
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) NOT_SUPPORT_RET
 
     /**
+     * @brief update personalized SpatializationState
+     *
+     * @return {@link SUCCESS} if support, {@link ERROR} otherwise
+     */
+    virtual int32_t UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled) = 0;
+
+    /**
      * @brief update Collaborative ProductId
      *
      * @return {@link true} if support, {@link false} otherwise

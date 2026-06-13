@@ -52,6 +52,8 @@ public:
 
     void OnUpdatePersonalizedHRTFBinCb(int32_t result) override;
 
+    void OnUpdatePersonalizedSpatializationStateCb(int32_t result) override;
+
     void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
  
     int32_t GetPortId() const noexcept;
@@ -99,6 +101,7 @@ private:
     int32_t getCollaborativeUpdateResult_ = -1;
     int32_t updateSpatializationStateResult_ = -1;
     int32_t updatePersonalizedHRTFBinResult_ = -1;
+    int32_t updatePersonalizedSpatializationStateResult_ = -1;
     std::vector<SinkInput> sinkInputs_;
     std::vector<SourceOutput> sourceOutputs_;
     std::vector<SinkInfo> sinks_;

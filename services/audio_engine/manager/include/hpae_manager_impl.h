@@ -115,6 +115,8 @@ public:
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
     void InitHdiState() override;
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
+    void SetPersonalizedSpatializationStateResultCallback(
+        std::function<void(int32_t)> callback) override;
     void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value) override;
     void HandleBypassSpatializationForStereo(bool bypass) override;
     // interfaces for capture effect
@@ -157,6 +159,7 @@ public:
     int32_t SetAissEnabledByUidSync(int32_t uid, bool enabled) override;
 
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
+    void UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled) override;
     bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) override;
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) override;
     void LoadCollaborationConfig() override;

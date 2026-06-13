@@ -110,6 +110,11 @@ void HpaePolicyManager::UpdateEffectBtOffloadSupported(const bool &isSupported)
     AudioEffectChainManager::GetInstance()->UpdateEffectBtOffloadSupported(isSupported);
 }
 
+void HpaePolicyManager::SetPersonalizedSpatializationStateResultCallback(std::function<void(int32_t)> callback)
+{
+    AudioEffectChainManager::GetInstance()->SetPersonalizedSpatializationStateResultCallback(std::move(callback));
+}
+
 void HpaePolicyManager::UpdateParamExtra(const std::string &mainkey, const std::string &subkey,
     const std::string &value)
 {
@@ -251,6 +256,18 @@ int32_t HpaePolicyManager::UpdateCollaborativeProductId(const std::string &produ
             "null audioCollaborationManager", false),
         "null audioCollaborationManager");
     return audioCollaborationManager->UpdateCollaborativeProductId(productId);
+}
+
+int32_t HpaePolicyManager::UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+        BusinessScenario::QUERY, ERR_SERVICE_UNAVAILABLE),
+            "null audioEffectChainManager", false),
+        "null audioEffectChainManager");
+    return audioEffectChainManager->UpdatePersonalizedSpatializationState(personalizedSpatializationEnabled);
 }
 
 bool HpaePolicyManager::IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage)

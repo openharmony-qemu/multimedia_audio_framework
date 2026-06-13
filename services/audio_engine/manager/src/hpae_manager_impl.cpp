@@ -745,6 +745,12 @@ void HpaeManagerImpl::UpdateEffectBtOffloadSupported(const bool &isSupported)
     manager_->UpdateEffectBtOffloadSupported(isSupported);
 }
 
+void HpaeManagerImpl::SetPersonalizedSpatializationStateResultCallback(std::function<void(int32_t)> callback)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->SetPersonalizedSpatializationStateResultCallback(std::move(callback));
+}
+
 void HpaeManagerImpl::UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
@@ -962,6 +968,12 @@ int32_t HpaeManagerImpl::PeekAudioData(
             "manager is nullptr", false),
         "manager is nullptr");
     return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
+}
+
+void HpaeManagerImpl::UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled)
+{
+    CHECK_AND_RETURN_LOG(manager_ != nullptr, "manager is nullptr");
+    manager_->UpdatePersonalizedSpatializationState(personalizedSpatializationEnabled);
 }
 
 int32_t HpaeManagerImpl::UpdateCollaborativeProductId(const std::string &productId)

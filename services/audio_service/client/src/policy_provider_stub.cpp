@@ -164,5 +164,11 @@ int32_t PolicyProviderWrapper::IsValidNetworkIdForSendEffectParam(const std::str
     ret = policyWorker_->IsValidNetworkIdForSendEffectParam(networkId);
     return SUCCESS;
 }
+
+int32_t PolicyProviderWrapper::NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->NotifyUpdatePersonalizedSpatializationStateResult(ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

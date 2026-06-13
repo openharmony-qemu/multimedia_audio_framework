@@ -900,6 +900,10 @@ void AudioServer::InitAudioEngine()
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         HPAE::IHpaeManager::GetHpaeManager().Init();
+        HPAE::IHpaeManager::GetHpaeManager().SetPersonalizedSpatializationStateResultCallback(
+            [](int32_t ret) {
+                PolicyHandler::GetInstance().NotifyUpdatePersonalizedSpatializationStateResult(ret);
+            });
         AUDIO_INFO_LOG("IHpaeManager Init\n");
     } else {
 #ifdef PA
@@ -914,6 +918,10 @@ void AudioServer::InitAudioEngine()
     }
 #else
     HPAE::IHpaeManager::GetHpaeManager().Init();
+    HPAE::IHpaeManager::GetHpaeManager().SetPersonalizedSpatializationStateResultCallback(
+        [](int32_t ret) {
+            PolicyHandler::GetInstance().NotifyUpdatePersonalizedSpatializationStateResult(ret);
+        });
     AUDIO_INFO_LOG("IHpaeManager Init\n");
 #endif // SUPPORT_OLD_ENGINE
     RecordBootStateTime(AudioServerBootState::INIT_PREEAUDIO, ClockTime::GetCurMilli());

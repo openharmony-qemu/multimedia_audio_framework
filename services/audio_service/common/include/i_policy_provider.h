@@ -138,7 +138,9 @@ public:
     virtual int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) = 0;
 
     virtual bool IsValidNetworkIdForSendEffectParam(const std::string &networkId) = 0;
-    
+
+    virtual int32_t NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret) = 0;
+
     virtual ~IPolicyProvider() = default;
 
     static bool GetVolumeIndex(AudioVolumeType streamType, DeviceGroup deviceGroup, size_t &index)
