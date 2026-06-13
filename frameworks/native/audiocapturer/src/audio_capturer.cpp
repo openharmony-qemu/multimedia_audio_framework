@@ -1234,9 +1234,9 @@ void AudioCapturerPrivate::InitLatencyMeasurement(const AudioStreamParams &audio
     signalDetectAgent_->formatByteSize_ = GetFormatByteSize(audioStreamParams.format);
 }
 
-int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
+int32_t AudioCapturerPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
 {
-    if (audioInterrupt_.streamId != 0) {
+    if (audioInterrupt_.streamId != 0 && !isRestoreAudio) {
         AUDIO_INFO_LOG("old session already has interrupt, need to reset");
         (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
         (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.streamId);
@@ -2918,9 +2918,11 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
 
 void AudioCapturerPrivate::HandleAudioInterruptWhenServerDied()
 {
+    int32_t ret = InitAudioInterruptCallback(true);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init audio interrupt callback failed when restoring from server died");
     if (GetStatusInner() == CAPTURER_RUNNING) {
         AudioInterrupt audioInterrupt = audioInterrupt_;
-        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
+        ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
         if (ret != SUCCESS) {
             StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
                 RECORD_DEVICE_SWITCH_OPERATION_FAILED, "Activate audio interrupt failed", true);

@@ -181,7 +181,7 @@ private:
     int32_t AsyncCheckAudioCapturer(std::string callingFunc);
     int32_t CheckAudioCapturer(std::string callingFunc);
     int32_t CheckAndStopAudioCapturer(std::string callingFunc);
-    int32_t InitAudioInterruptCallback();
+    int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
     IAudioStream::StreamClass DecideStreamClassAndUpdateCapturerInfo(uint32_t flag);
     int32_t InitInputDeviceChangeCallback();
