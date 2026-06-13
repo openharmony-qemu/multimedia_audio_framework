@@ -136,7 +136,7 @@ private:
     PipelineWorkMode pipelineWorkMode_;
     std::atomic<bool> isInit_ = false;
     AudioEdiPipelineCfg pipelineCfg_;
-    std::vector<uint32_t> nodeCounts_;
+    std::unordered_map<AudioNodeType, uint32_t> nodeCounts_;
     AudioSuitePipelineState pipelineState_ = PIPELINE_STOPPED;
 
     std::shared_ptr<AudioOutputNode> outputNode_ = nullptr;

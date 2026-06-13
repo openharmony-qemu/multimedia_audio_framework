@@ -69,7 +69,7 @@ const std::unordered_map<AudioNodeType,
 };
 
 AudioSuitePipeline::AudioSuitePipeline(PipelineWorkMode mode)
-    : pipelineWorkMode_(mode), nodeCounts_(NODE_TYPE_TEMPO_PITCH + 1, 0), pipelineNoLockQueue_(CURRENT_REQUEST_COUNT)
+    : pipelineWorkMode_(mode), nodeCounts_(), pipelineNoLockQueue_(CURRENT_REQUEST_COUNT)
 {
     std::lock_guard<std::mutex> lock(allocateIdLock);
     id_ = ++allocateId;
@@ -355,7 +355,7 @@ int32_t AudioSuitePipeline::CreateNode(AudioNodeBuilder builder)
         node->SetAudioNodeWorkMode(pipelineWorkMode_);
 
         nodeMap_[node->GetAudioNodeId()] = node;
-        nodeCounts_[static_cast<std::size_t>(builder.nodeType)]++;
+        nodeCounts_[builder.nodeType]++;
         AUDIO_INFO_LOG("CreateNode finish");
         TriggerCallback(CREATE_NODE, SUCCESS, node->GetAudioNodeId(), id_);
     };
@@ -366,14 +366,14 @@ int32_t AudioSuitePipeline::CreateNode(AudioNodeBuilder builder)
 
 int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
 {
-    if (nodeCounts_[static_cast<std::size_t>(builder.nodeType)] >= GetMaxNodeNumsForType(builder.nodeType)) {
+    if (nodeCounts_[builder.nodeType] >= GetMaxNodeNumsForType(builder.nodeType)) {
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::CREATE,
                            ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS),
             "The number of nodes created exceeds the system limit", true);
         AUDIO_ERR_LOG("node create node failed, current type node max num is %{public}u.",
-            nodeCounts_[static_cast<std::size_t>(builder.nodeType)]);
+            nodeCounts_[builder.nodeType]);
         return ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS;
     }
 
@@ -477,7 +477,9 @@ int32_t AudioSuitePipeline::DestroyNode(uint32_t nodeId)
         }
 
         AUDIO_INFO_LOG("DestroyNode success. nodeId = %{public}d.", nodeId);
-        nodeCounts_[static_cast<std::size_t>(node->GetNodeType())]--;
+        if (nodeCounts_[node->GetNodeType()] > 0) {
+            nodeCounts_[node->GetNodeType()]--;
+        }
         TriggerCallback(DESTROY_NODE, SUCCESS, id_);
     };
 

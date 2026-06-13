@@ -253,7 +253,7 @@ HWTEST_F(AudioSuiteManagerParamsTemplateUnitTest, SetRotationParamsTemplate_Succ
     params.x = 1.0f;
     params.y = 2.0f;
     params.z = 3.0f;
-    params.surroundTime = 100;
+    params.surroundTime = 2;
     params.surroundDirection = AudioSurroundDirection::SPACE_RENDER_CW;
 
     EXPECT_CALL(*mockEngine, SetOptions(_, _, _))
