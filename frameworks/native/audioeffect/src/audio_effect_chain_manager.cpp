@@ -40,6 +40,7 @@ constexpr float EPSILON = 1e-6f;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
 const std::string DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
 const std::string DEFAULT_PRESET_SCENE = "SCENE_MUSIC";
+const std::string PERSONALIZED_HRTF_BIN_PATH = "/data/data/hvs/arm/personalized_hrtf.bin";
 
 const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
     {"voip_down", "settings.sound_ai_voip_down_selection"},
@@ -1821,7 +1822,21 @@ void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSuppo
     UpdateSpatializationStateInner(offState);
     btOffloadSupported_ = isSupported;
     UpdateSpatializationStateInner(oldState);
+    int32_t ret = UpdatePersonalizedSpatializationStateInner(personalizedSpatializationEnabled_);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("UpdatePersonalizedSpatializationStateInner failed: %{public}d", ret);
+        if (personalizedSpatializationStateResultCallback_ != nullptr) {
+            personalizedSpatializationStateResultCallback_(ret);
+        }
+    }
     return;
+}
+
+void AudioEffectChainManager::SetPersonalizedSpatializationStateResultCallback(
+    std::function<void(int32_t result)> callback)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    personalizedSpatializationStateResultCallback_ = callback;
 }
 
 int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
@@ -2345,21 +2360,17 @@ int32_t AudioEffectChainManager::UpdateSpatializationStateInner(AudioSpatializat
         UpdateSensorState();
     }
 
-    if (personalizedSpatializationEnabled_ != spatializationState.personalizedSpatializationEnabled) {
-        personalizedSpatializationEnabled_ = spatializationState.personalizedSpatializationEnabled;
-        UpdatePersonalizedSpatializationEnabledToChains();
-        UpdatePersonalizedSpatializationEnabledToHdi();
-    }
-
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     EffectVolumeUpdateInner(audioEffectVolume);
     return SUCCESS;
 }
 
-void AudioEffectChainManager::UpdatePersonalizedSpatializationEnabledToChains()
+int32_t AudioEffectChainManager::UpdatePersonalizedSpatializationEnabledToChains()
 {
     std::set<std::shared_ptr<AudioEffectChain>> audioEffectChainSetTemp;
+    CHECK_AND_RETURN_RET_LOG(access(PERSONALIZED_HRTF_BIN_PATH.c_str(), F_OK) == 0,
+        ERROR, "personalized hrtf file not exist");
     for (const auto& [key, audioEffectChain] : sceneTypeToEffectChainMap_) {
         CHECK_AND_CONTINUE_LOG(audioEffectChain != nullptr, "audioEffectChain is null");
         CHECK_AND_CONTINUE_LOG(audioEffectChainSetTemp.find(audioEffectChain) == audioEffectChainSetTemp.end(),
@@ -2370,18 +2381,22 @@ void AudioEffectChainManager::UpdatePersonalizedSpatializationEnabledToChains()
         AUDIO_INFO_LOG("sceneType: %{public}s, SetPersonalizedSpatializationEnabled: %{public}d",
             key.c_str(), personalizedSpatializationEnabled_);
         int32_t ret = audioEffectChain->UpdateEffectParam();
+        int32_t flag = audioEffectChain->GetPersonalizedSpatialUpdateState();
+        CHECK_AND_RETURN_RET_LOG(flag == SUCCESS, ERROR, "update personalized spatialization state failed");
         CHECK_AND_CONTINUE_LOG(ret == 0, "SetPersonalizedSpatializationEnabled failed, ret: %{public}d", ret);
     }
+    return SUCCESS;
 }
 
-void AudioEffectChainManager::UpdatePersonalizedSpatializationEnabledToHdi()
+int32_t AudioEffectChainManager::UpdatePersonalizedSpatializationEnabledToHdi()
 {
     effectHdiInput_[0] = HDI_PERSONALIZED_SPATIALIZATION_ENABLED;
     effectHdiInput_[1] = static_cast<int8_t>(personalizedSpatializationEnabled_);
     AUDIO_INFO_LOG("set hdi personalizedSpatializationEnabled: %{public}d", effectHdiInput_[1]);
-    CHECK_AND_RETURN_LOG(audioEffectHdiParam_ != nullptr, "audioEffectHdiParam_ is nullptr");
-    CHECK_AND_RETURN_LOG(audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS,
+    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, ERROR, "audioEffectHdiParam_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) == SUCCESS, ERROR,
         "set hdi personalizedSpatializationEnabled failed");
+    return SUCCESS;
 }
 
 void AudioEffectChainManager::SetBypassSpatializationForStereo(bool bypass)
@@ -2799,7 +2814,10 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBin(const int32_t &fd, co
     int32_t ret = UpdatePersonalizedHRTFBinToArm(fd, length);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_SAVE_HRTF_FAIL, "update personalizedHRTFBinToArm failed");
     lseek(fd, 0, SEEK_SET);
-    ret += UpdatePersonalizedHRTFBinToHdi(fd, length);
+    int32_t retHdi = UpdatePersonalizedHRTFBinToHdi(fd, length);
+    if (retHdi != ERR_DEVICE_UNAVAILABLE) {
+        ret += retHdi;
+    }
     AUDIO_INFO_LOG("UpdatePersonalizedHRTFBin ret: %{public}d", ret);
     return ret;
 }
@@ -2811,7 +2829,7 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToArm(const int32_t &f
         return ERR_SAVE_HRTF_FAIL;
     }
 
-    const char *outPath = "/data/data/hvs/arm/personalized_hrtf.bin";
+    const char *outPath = PERSONALIZED_HRTF_BIN_PATH.c_str();
     char *dirCopy = strdup(outPath);
     CHECK_AND_RETURN_RET_LOG(dirCopy != nullptr, ERR_SAVE_HRTF_FAIL, "dirCopy is nullptr");
     char *p = dirCopy;
@@ -2877,6 +2895,35 @@ int32_t AudioEffectChainManager::UpdatePersonalizedHRTFBinToHdi(const int32_t &f
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS || ret == ERR_DEVICE_UNAVAILABLE, ERR_SAVE_HRTF_FAIL,
         "set hdi personalizedSpatializationEnabled failed");
     return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    return UpdatePersonalizedSpatializationStateInner(personalizedSpatializationEnabled);
+}
+
+int32_t AudioEffectChainManager::UpdatePersonalizedSpatializationStateInner(
+    const bool personalizedSpatializationEnabled)
+{
+    int32_t ret = SUCCESS;
+    AUDIO_INFO_LOG("UpdatePersonalizedSpatializationState: %{public}d change to %{public}d",
+        personalizedSpatializationEnabled_, personalizedSpatializationEnabled);
+    personalizedSpatializationEnabled_ = personalizedSpatializationEnabled;
+    if (btOffloadSupported_ == false) {
+        ret = UpdatePersonalizedSpatializationEnabledToChains();
+    } else {
+        if (btOffloadEnabled_ == false) {
+            ret = UpdatePersonalizedSpatializationEnabledToChains();
+        } else {
+            ret = UpdatePersonalizedSpatializationEnabledToHdi();
+        }
+    }
+    if (ret != SUCCESS && personalizedSpatializationEnabled == true) {
+        personalizedSpatializationEnabled_ = false;
+        AUDIO_ERR_LOG("UpdatePersonalizedSpatializationState failed");
+    }
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

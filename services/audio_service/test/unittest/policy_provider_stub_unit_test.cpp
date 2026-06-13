@@ -58,6 +58,8 @@ public:
 
     bool IsValidNetworkIdForSendEffectParam(const std::string &networkId) override;
 
+    int32_t NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret) override { return SUCCESS; }
+
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
 

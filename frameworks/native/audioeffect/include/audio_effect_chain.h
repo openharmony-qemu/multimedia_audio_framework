@@ -63,6 +63,7 @@ public:
     void InitEffectChain();
     void SetHeadTrackingDisabled();
     uint32_t GetLatency();
+    int32_t GetPersonalizedSpatialUpdateState();
     int32_t UpdateEffectParam();
     void ResetIoBufferConfig();
     void SetFinalVolume(const float volume);
@@ -102,6 +103,7 @@ private:
     std::string sceneType_ = "";
     std::string effectMode_ = "";
     uint32_t latency_ = 0;
+    int32_t personalizedSpatialUpdateState_ = 0;
     uint32_t extraEffectChainType_ = 0;
     uint32_t foldState_ = 0;
     uint32_t lidState_ = 0;

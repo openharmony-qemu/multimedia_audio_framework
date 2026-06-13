@@ -84,12 +84,14 @@ public:
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
+    int32_t UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled) override;
     bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) override;
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) override;
     void LoadCollaborationConfig() override;
     virtual void OnGetCollaborativeUpdateCb(int32_t result) override;
     virtual void OnUpdatePersonalizedHRTFBinCb(int32_t result) override;
     virtual void OnUpdateSpatializationStateCb(int32_t result) override;
+    virtual void OnUpdatePersonalizedSpatializationStateCb(int32_t result) override;
 
 private:
     std::mutex lock_;
@@ -122,6 +124,8 @@ private:
     bool isFinishUpdateSpatializationState_ = false;
     bool isFinishPersonalizedHRTFBinUpdate_ = false;
     int32_t personalizedHRTFBinUpdateResult_ = -1;
+    int32_t personalizedSpatializationStateUpdateResult_ = -1;
+    bool isFinishUpdatePersonalizedSpatializationState_ = false;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -40,4 +40,5 @@ interface IPolicyProviderIpc {
     void UnloadModernOffloadCapSource();
     void ClearAudioFocusBySessionID([in] int sessionID);
     void IsValidNetworkIdForSendEffectParam([in] String networkId, [out] boolean ret);
+    void NotifyUpdatePersonalizedSpatializationStateResult([in] int ret);
 }

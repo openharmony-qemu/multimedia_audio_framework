@@ -244,6 +244,7 @@ public:
     AudioScene GetAudioSceneFromAllZones();
     int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute);
     bool IsValidNetworkIdForSendEffectParam(const std::string &networkId);
+    int32_t NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

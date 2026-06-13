@@ -605,6 +605,23 @@ void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortInd
     AUDIO_INFO_LOG("Injector::UpdateAudioPortInfo finish.");
 }
 
+int32_t ProAudioServiceAdapterImpl::UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled)
+{
+    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    IHpaeManager::GetHpaeManager().UpdatePersonalizedSpatializationState(personalizedSpatializationEnabled);
+    personalizedSpatializationStateUpdateResult_ = ERROR;
+    isFinishUpdatePersonalizedSpatializationState_ = false;
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishUpdatePersonalizedSpatializationState_;
+    });
+    if (!stopWaiting) {
+        AUDIO_WARNING_LOG("wait for notify timeout");
+        return ERROR;
+    }
+    return personalizedSpatializationStateUpdateResult_;
+}
+
 int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeProductId(const std::string &productId)
 {
     lock_guard<mutex> lock(lock_);
@@ -658,6 +675,15 @@ void ProAudioServiceAdapterImpl::OnUpdatePersonalizedHRTFBinCb(int32_t result)
     AUDIO_INFO_LOG("Result: %{public}d", result);
     isFinishPersonalizedHRTFBinUpdate_ = true;
     personalizedHRTFBinUpdateResult_ = result;
+    callbackCV_.notify_all();
+}
+
+void ProAudioServiceAdapterImpl::OnUpdatePersonalizedSpatializationStateCb(int32_t result)
+{
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    AUDIO_INFO_LOG("Result: %{public}d", result);
+    isFinishUpdatePersonalizedSpatializationState_ = true;
+    personalizedSpatializationStateUpdateResult_ = result;
     callbackCV_.notify_all();
 }
 

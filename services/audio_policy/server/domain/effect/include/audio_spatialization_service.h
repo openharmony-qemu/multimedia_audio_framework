@@ -89,7 +89,7 @@ public:
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object);
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
-    void UpdateCurrentDevice(const std::string macAddress);
+    void UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice);
     AudioSpatializationSceneType GetSpatializationSceneType();
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
     bool IsHeadTrackingDataRequested(const std::string &macAddress);
@@ -99,6 +99,8 @@ public:
     void UpdateSpatializationSupported(const std::string encryptedAddress);
     int32_t GetCurrentSpatialAudioSourceType();
     void SetSpatialAudioSourceType(SpatialAudioSourceType mode);
+    void NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret);
+    int32_t UpdatePersonalizedSpatializationState(bool enable);
 private:
     AudioSpatializationService()
         :audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
@@ -137,7 +139,7 @@ private:
     int32_t InitNewSpatialInfo();
     std::map<std::string, std::string> addressToDeviceSpatialInfoMap_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
-    std::string currentDeviceAddress_ = "";
+    AudioDeviceDescriptor currentDevice_;
     std::string preSettingSpatialAddress_ = "NO_PREVIOUS_SET_DEVICE";
     bool isSpatializationSupported_ = false;
     bool isHeadTrackingSupported_ = false;
@@ -146,7 +148,6 @@ private:
     bool headTrackingEnabledReal_ = false;
     bool isHeadTrackingDataRequested_ = false;
     bool adaptiveSpatialRenderingEnabledReal_ = false;
-    bool personalizedSpatializationEnabledReal_ = false;
     AudioSpatializationState spatializationStateFlag_ = {};
     std::unordered_map<std::string, AudioSpatializationState> addressToSpatialEnabledMap_;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;

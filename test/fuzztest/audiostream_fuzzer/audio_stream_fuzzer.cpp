@@ -108,6 +108,8 @@ public:
 
     bool IsValidNetworkIdForSendEffectParam(const std::string &networkId) override;
 
+    int32_t NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret) override { return SUCCESS; }
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
 

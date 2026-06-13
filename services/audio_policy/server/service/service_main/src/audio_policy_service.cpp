@@ -1261,5 +1261,13 @@ bool AudioPolicyService::IsValidNetworkIdForSendEffectParam(const std::string &n
     }
     return false;
 }
+
+int32_t AudioPolicyService::NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret)
+{
+    AUDIO_INFO_LOG("NotifyUpdatePersonalizedSpatializationStateResult: %{public}d", ret);
+    AudioSpatializationService::GetAudioSpatializationService()
+        .NotifyUpdatePersonalizedSpatializationStateResult(ret);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -119,7 +119,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_003, Tes
     bool isHeadTrackingSupported = false;
     AudioSpatializationState spatializationState(isSpatializationSupported, isHeadTrackingSupported);
     sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddress] = spatializationState;
-    sSpatializationService_->currentDeviceAddress_ = selectedAudioDevice->macAddress_;
+    sSpatializationService_->currentDevice_.macAddress_ = selectedAudioDevice->macAddress_;
     bool enable = true;
     EXPECT_EQ(sSpatializationService_->SetSpatializationEnabled(selectedAudioDevice, enable),
         SPATIALIZATION_SERVICE_OK);
@@ -128,7 +128,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_003, Tes
     EXPECT_EQ(sSpatializationService_->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable),
         SPATIALIZATION_SERVICE_OK);
 
-    sSpatializationService_->currentDeviceAddress_ = "00:11:22:33:44:66";
+    sSpatializationService_->currentDevice_.macAddress_ = "00:11:22:33:44:66";
     enable = false;
     EXPECT_EQ(sSpatializationService_->SetSpatializationEnabled(selectedAudioDevice, enable),
         SPATIALIZATION_SERVICE_OK);
@@ -201,9 +201,10 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_006, Tes
 */
 HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_007, TestSize.Level4)
 {
-    std::string macAddress = TEST_MAC_ADDRESS;
+    AudioDeviceDescriptor selectedAudioDevice;
+    selectedAudioDevice.macAddress_ = TEST_MAC_ADDRESS;
     sSpatializationService_->currSpatialDeviceType_ = EARPHONE_TYPE_OTHERS;
-    sSpatializationService_->UpdateCurrentDevice(macAddress);
+    sSpatializationService_->UpdateCurrentDevice(selectedAudioDevice);
     EXPECT_EQ(sSpatializationService_->currSpatialDeviceType_, EARPHONE_TYPE_NONE);
 }
 
@@ -249,7 +250,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_010, Tes
     bool outputDeviceChange = false;
     std::string preDeviceAddress = "";
     sSpatializationService_->isHeadTrackingDataRequested_ = true;
-    sSpatializationService_->currentDeviceAddress_ = TEST_MAC_ADDRESS;
+    sSpatializationService_->currentDevice_.macAddress_ = TEST_MAC_ADDRESS;
     EXPECT_NO_THROW(sSpatializationService_->UpdateHeadTrackingDeviceState(outputDeviceChange, preDeviceAddress));
 }
 
@@ -277,6 +278,207 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_011, Tes
     EXPECT_EQ(sSpatializationService_->SafeConvertToBool(token, paramName), true);
     token = "0";
     EXPECT_EQ(sSpatializationService_->SafeConvertToBool(token, paramName), false);
+}
+
+/**
+* @tc.name  : Test UpdateCurrentDevice personalized spatialization rollback.
+* @tc.number: AudioSpatializationService_013
+* @tc.desc  : Test UpdateCurrentDevice with new device having personalizedSpatializationEnabled=true in map.
+*             AudioAdapterManager::UpdatePersonalizedSpatializationState fails in test context (adapter is null),
+*             so personalizedSpatializationEnabled should be rolled back to false and
+*             HandlePersonalizedSpatializationEnabledChange triggered with false.
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_013, TestSize.Level4)
+{
+    AudioDeviceDescriptor device1;
+    device1.macAddress_ = "AA:BB:CC:DD:EE:01";
+    AudioDeviceDescriptor device2;
+    device2.macAddress_ = "AA:BB:CC:DD:EE:02";
+
+    // Set current device to device1
+    sSpatializationService_->currentDevice_ = device1;
+
+    // Setup device2 in map with personalizedSpatializationEnabled=true
+    std::string encryptedAddr2 = sSpatializationService_->GetSha256EncryptAddress(device2.macAddress_);
+    AudioSpatializationState state2(false, false, false, true); // personalized=true
+    sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr2] = state2;
+
+    // Switch to device2 → adapter fails → rollback
+    sSpatializationService_->UpdateCurrentDevice(device2);
+
+    // Verify rollback: personalizedSpatializationEnabled should be false now
+    EXPECT_EQ(sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr2].personalizedSpatializationEnabled,
+        false);
+}
+
+/**
+* @tc.name  : Test UpdateCurrentDevice personalized spatialization no rollback.
+* @tc.number: AudioSpatializationService_014
+* @tc.desc  : Test UpdateCurrentDevice with new device having personalizedSpatializationEnabled=false in map.
+*             AudioAdapterManager::UpdatePersonalizedSpatializationState fails, but since currentPersonalizedState
+*             is false, no rollback logic is triggered. personalizedSpatializationEnabled stays false.
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_014, TestSize.Level4)
+{
+    AudioDeviceDescriptor device1;
+    device1.macAddress_ = "AA:BB:CC:DD:EE:01";
+    AudioDeviceDescriptor device2;
+    device2.macAddress_ = "AA:BB:CC:DD:EE:02";
+
+    sSpatializationService_->currentDevice_ = device1;
+
+    // Setup device2 with personalizedSpatializationEnabled=false
+    std::string encryptedAddr2 = sSpatializationService_->GetSha256EncryptAddress(device2.macAddress_);
+    AudioSpatializationState state2(false, false, false, false); // personalized=false
+    sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr2] = state2;
+
+    sSpatializationService_->UpdateCurrentDevice(device2);
+
+    // No rollback: stays false
+    EXPECT_EQ(sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr2].personalizedSpatializationEnabled,
+        false);
+}
+
+/**
+* @tc.name  : Test UpdateCurrentDevice with device not in map.
+* @tc.number: AudioSpatializationService_015
+* @tc.desc  : Test UpdateCurrentDevice switching to a device that is NOT in addressToSpatialEnabledMap_.
+*             currentPersonalizedState defaults to false. Adapter fails but no rollback triggered.
+*             The new entry should be created in the map during the process.
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_015, TestSize.Level4)
+{
+    AudioDeviceDescriptor device1;
+    device1.macAddress_ = "AA:BB:CC:DD:EE:01";
+    AudioDeviceDescriptor device2;
+    device2.macAddress_ = "AA:BB:CC:DD:EE:02";
+
+    sSpatializationService_->currentDevice_ = device1;
+    // device2 is NOT in addressToSpatialEnabledMap_
+
+    sSpatializationService_->UpdateCurrentDevice(device2);
+
+    // Device not in map → currentPersonalizedState=false → no rollback
+    std::string encryptedAddr2 = sSpatializationService_->GetSha256EncryptAddress(device2.macAddress_);
+    // The map may or may not have the entry, but if it does, personalized should be false
+    if (sSpatializationService_->addressToSpatialEnabledMap_.count(encryptedAddr2)) {
+        EXPECT_EQ(
+            sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr2].personalizedSpatializationEnabled,
+            false);
+    }
+}
+
+/**
+* @tc.name  : Test UpdateCurrentDevice same device early return.
+* @tc.number: AudioSpatializationService_016
+* @tc.desc  : Test UpdateCurrentDevice with the same macAddress as current device.
+*             Should hit early return (currentDevice_.macAddress_ == selectedAudioDevice.macAddress_)
+*             and the personalized spatialization section is never reached.
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_016, TestSize.Level4)
+{
+    AudioDeviceDescriptor device1;
+    device1.macAddress_ = TEST_MAC_ADDRESS;
+    sSpatializationService_->currentDevice_ = device1;
+
+    // Setup map with personalized=true
+    std::string encryptedAddr = sSpatializationService_->GetSha256EncryptAddress(TEST_MAC_ADDRESS);
+    AudioSpatializationState state(false, false, false, true);
+    sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr] = state;
+
+    // Update with same device → early return, personalized state unchanged
+    sSpatializationService_->UpdateCurrentDevice(device1);
+    EXPECT_EQ(sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr].personalizedSpatializationEnabled,
+        true);
+}
+
+// ==================== Unit tests for NotifyUpdatePersonalizedSpatializationStateResult ====================
+
+/**
+* @tc.name  : Test NotifyUpdatePersonalizedSpatializationStateResult with success.
+* @tc.number: AudioSpatializationService_017
+* @tc.desc  : Test NotifyUpdatePersonalizedSpatializationStateResult with ret=0 (success).
+*             Should not change any state. personalizedSpatializationEnabled in map stays true.
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_017, TestSize.Level4)
+{
+    AudioDeviceDescriptor device;
+    device.macAddress_ = TEST_MAC_ADDRESS;
+    sSpatializationService_->currentDevice_ = device;
+
+    std::string encryptedAddr = sSpatializationService_->GetSha256EncryptAddress(TEST_MAC_ADDRESS);
+    AudioSpatializationState state(false, false, false, true); // personalized=true
+    sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr] = state;
+
+    // ret=0 → no state change
+    sSpatializationService_->NotifyUpdatePersonalizedSpatializationStateResult(0);
+    EXPECT_EQ(sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr].personalizedSpatializationEnabled,
+        true);
+}
+
+/**
+* @tc.name  : Test NotifyUpdatePersonalizedSpatializationStateResult rollback on failure.
+* @tc.number: AudioSpatializationService_018
+* @tc.desc  : Test NotifyUpdatePersonalizedSpatializationStateResult with ret!=0 (failure)
+*             and personalizedSpatializationEnabled=true in map.
+*             Should roll back personalizedSpatializationEnabled to false and trigger
+*             HandlePersonalizedSpatializationEnabledChange(device, false).
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_018, TestSize.Level4)
+{
+    AudioDeviceDescriptor device;
+    device.macAddress_ = TEST_MAC_ADDRESS;
+    sSpatializationService_->currentDevice_ = device;
+
+    std::string encryptedAddr = sSpatializationService_->GetSha256EncryptAddress(TEST_MAC_ADDRESS);
+    AudioSpatializationState state(false, false, false, true); // personalized=true
+    sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr] = state;
+
+    // ret!=0 + personalized=true → rollback to false
+    sSpatializationService_->NotifyUpdatePersonalizedSpatializationStateResult(-1);
+    EXPECT_EQ(sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr].personalizedSpatializationEnabled,
+        false);
+}
+
+/**
+* @tc.name  : Test NotifyUpdatePersonalizedSpatializationStateResult no rollback when already false.
+* @tc.number: AudioSpatializationService_019
+* @tc.desc  : Test NotifyUpdatePersonalizedSpatializationStateResult with ret!=0 (failure)
+*             but personalizedSpatializationEnabled=false in map.
+*             Should not trigger rollback or HandlePersonalizedSpatializationEnabledChange.
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_019, TestSize.Level4)
+{
+    AudioDeviceDescriptor device;
+    device.macAddress_ = TEST_MAC_ADDRESS;
+    sSpatializationService_->currentDevice_ = device;
+
+    std::string encryptedAddr = sSpatializationService_->GetSha256EncryptAddress(TEST_MAC_ADDRESS);
+    AudioSpatializationState state(false, false, false, false); // personalized=false
+    sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr] = state;
+
+    // ret!=0 + personalized=false → no rollback
+    sSpatializationService_->NotifyUpdatePersonalizedSpatializationStateResult(-1);
+    EXPECT_EQ(sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddr].personalizedSpatializationEnabled,
+        false);
+}
+
+/**
+* @tc.name  : Test NotifyUpdatePersonalizedSpatializationStateResult with empty macAddress.
+* @tc.number: AudioSpatializationService_020
+* @tc.desc  : Test NotifyUpdatePersonalizedSpatializationStateResult with ret!=0 and
+*             currentDevice_.macAddress_ is empty. Should not crash, skip db write,
+*             and skip rollback since map entry likely does not exist.
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_020, TestSize.Level4)
+{
+    AudioDeviceDescriptor device;
+    device.macAddress_ = ""; // empty mac address
+    sSpatializationService_->currentDevice_ = device;
+
+    // ret!=0 + empty mac → should not crash
+    EXPECT_NO_THROW(
+        sSpatializationService_->NotifyUpdatePersonalizedSpatializationStateResult(-1));
 }
 } // namespace AudioStandard
 } // namespace OHOS

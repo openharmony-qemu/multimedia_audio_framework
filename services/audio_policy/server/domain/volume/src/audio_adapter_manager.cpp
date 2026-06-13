@@ -3919,6 +3919,12 @@ int32_t AudioAdapterManager::UpdateCollaborativeProductId(const std::string &pro
     return audioServiceAdapter_->UpdateCollaborativeProductId(productId);
 }
 
+int32_t AudioAdapterManager::UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
+    return audioServiceAdapter_->UpdatePersonalizedSpatializationState(personalizedSpatializationEnabled);
+}
+
 bool AudioAdapterManager::IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");

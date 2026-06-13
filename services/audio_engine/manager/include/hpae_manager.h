@@ -172,6 +172,8 @@ public:
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
     void InitHdiState() override;
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
+    void SetPersonalizedSpatializationStateResultCallback(
+        std::function<void(int32_t)> callback) override;
     void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value) override;
     // interfaces for capture effect
     void InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
@@ -207,6 +209,7 @@ public:
     int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
+    void UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled) override;
     bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) override;
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) override;
     void LoadCollaborationConfig() override;

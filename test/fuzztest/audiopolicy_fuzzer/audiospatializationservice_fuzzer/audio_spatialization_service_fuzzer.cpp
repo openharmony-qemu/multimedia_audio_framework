@@ -172,11 +172,14 @@ std::shared_ptr<AudioDeviceDescriptor> MakeDeviceDescriptor(FuzzedDataProvider& 
 void UpdateCurrentDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioSpatializationService service;
-    std::string newMacAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
-    service.UpdateCurrentDevice(newMacAddress);
-    service.UpdateCurrentDevice(newMacAddress);
-    service.UpdateCurrentDevice("");
+    AudioDeviceDescriptor selectedAudioDevice;
+    selectedAudioDevice.macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    service.UpdateCurrentDevice(selectedAudioDevice);
+    service.UpdateCurrentDevice(selectedAudioDevice);
+    selectedAudioDevice.macAddress_ = "";
+    service.UpdateCurrentDevice(selectedAudioDevice);
     std::string spatialDeviceAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    selectedAudioDevice.macAddress_ = spatialDeviceAddress;
     AudioSpatialDeviceType audioSpatialDeviceType = PickValue(fdp, g_testSpatialDeviceTypes);
     service.addressToSpatialDeviceStateMap_[service.GetSha256EncryptAddress(spatialDeviceAddress)] = {
         spatialDeviceAddress,
@@ -184,9 +187,9 @@ void UpdateCurrentDeviceFuzzTest(FuzzedDataProvider& fdp)
         fdp.ConsumeBool(),
         audioSpatialDeviceType
     };
-    service.UpdateCurrentDevice(spatialDeviceAddress);
-    std::string nonSpatialDeviceAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
-    service.UpdateCurrentDevice(nonSpatialDeviceAddress);
+    service.UpdateCurrentDevice(selectedAudioDevice);
+    selectedAudioDevice.macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    service.UpdateCurrentDevice(selectedAudioDevice);
 }
 
 void RemoveOldestDeviceFuzzTest(FuzzedDataProvider& fdp)
@@ -321,7 +324,7 @@ void AudioSpatializationServiceIsSpatializationEnabledForCurrentDeviceFuzzTest(F
         return;
     }
 
-    ptrAudioSpatializationService->currentDeviceAddress_ = ConsumeString(fdp, "test_address");
+    ptrAudioSpatializationService->currentDevice_.macAddress_ = ConsumeString(fdp, "test_address");
     ptrAudioSpatializationService->IsSpatializationEnabledForCurrentDevice();
 }
 
@@ -533,7 +536,7 @@ void AudioSpatializationServiceIsHeadTrackingDataRequestedFuzzTest(FuzzedDataPro
         return;
     }
     std::string macAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
-    ptrAudioSpatializationService->currentDeviceAddress_ = macAddress;
+    ptrAudioSpatializationService->currentDevice_.macAddress_ = macAddress;
     ptrAudioSpatializationService->isHeadTrackingDataRequested_ = fdp.ConsumeBool();
     ptrAudioSpatializationService->IsHeadTrackingDataRequested(macAddress);
 }
@@ -571,7 +574,7 @@ void AudioSpatializationServiceGetCurrentDeviceAddressFuzzTest(FuzzedDataProvide
     if (ptrAudioSpatializationService == nullptr) {
         return;
     }
-    ptrAudioSpatializationService->currentDeviceAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    ptrAudioSpatializationService->currentDevice_.macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
     ptrAudioSpatializationService->GetCurrentDeviceAddress();
 }
 
@@ -714,7 +717,7 @@ void AudioSpatializationServiceIsHeadTrackingDataRequestedDifferentDeviceFuzzTes
         return;
     }
     std::string macAddress = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
-    ptrAudioSpatializationService->currentDeviceAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
+    ptrAudioSpatializationService->currentDevice_.macAddress_ = ConsumeString(fdp, DEFAULT_MAC_ADDRESS);
     ptrAudioSpatializationService->isHeadTrackingDataRequested_ = fdp.ConsumeBool();
     ptrAudioSpatializationService->IsHeadTrackingDataRequested(macAddress);
 }

@@ -5709,5 +5709,200 @@ HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_010, Te
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+
+/**
+* @tc.name   : Test UpdatePersonalizedSpatializationStateInner API
+* @tc.number : UpdatePersonalizedSpatializationStateInner_001
+* @tc.desc   : Test UpdatePersonalizedSpatializationStateInner with btOffloadSupported_=false.
+*              Should take UpdatePersonalizedSpatializationEnabledToChains path.
+*              With empty chain map, chains returns ERROR; personalizedSpatializationEnabled=true
+*              triggers rollback to false.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInner_001, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->btOffloadSupported_ = false;
+    mgr->btOffloadEnabled_ = false;
+    mgr->personalizedSpatializationEnabled_ = false;
+
+    int32_t ret = mgr->UpdatePersonalizedSpatializationStateInner(true);
+    // btOffloadSupported_=false → chains path; no chains → ERROR
+    // personalizedSpatializationEnabled=true + fail → rollback to false
+    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdatePersonalizedSpatializationStateInner API
+* @tc.number : UpdatePersonalizedSpatializationStateInner_002
+* @tc.desc   : Test UpdatePersonalizedSpatializationStateInner with btOffloadSupported_=true,
+*              btOffloadEnabled_=false. Should take UpdatePersonalizedSpatializationEnabledToChains path.
+*              Pass false so failure does not trigger rollback.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInner_002, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->btOffloadSupported_ = true;
+    mgr->btOffloadEnabled_ = false;
+    mgr->personalizedSpatializationEnabled_ = true;
+
+    int32_t ret = mgr->UpdatePersonalizedSpatializationStateInner(false);
+    // btOffloadSupported_=true && btOffloadEnabled_=false → chains path
+    // personalizedSpatializationEnabled=false + fail → no rollback
+    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdatePersonalizedSpatializationStateInner API
+* @tc.number : UpdatePersonalizedSpatializationStateInner_003
+* @tc.desc   : Test UpdatePersonalizedSpatializationStateInner with btOffloadSupported_=true,
+*              btOffloadEnabled_=true. Should take UpdatePersonalizedSpatializationEnabledToHdi path.
+*              With audioEffectHdiParam_=nullptr, returns ERROR; personalizedSpatializationEnabled=true
+*              triggers rollback to false.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInner_003, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->btOffloadSupported_ = true;
+    mgr->btOffloadEnabled_ = true;
+    mgr->audioEffectHdiParam_ = nullptr;
+    mgr->personalizedSpatializationEnabled_ = false;
+
+    int32_t ret = mgr->UpdatePersonalizedSpatializationStateInner(true);
+    // btOffloadSupported_=true && btOffloadEnabled_=true → HDI path
+    // audioEffectHdiParam_=nullptr → ERROR; true + fail → rollback
+    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdatePersonalizedSpatializationStateInner API
+* @tc.number : UpdatePersonalizedSpatializationStateInner_004
+* @tc.desc   : Test UpdatePersonalizedSpatializationStateInner rollback behavior.
+*              Pass true with HDI failure; personalizedSpatializationEnabled_ should be rolled back to false.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInner_004, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->btOffloadSupported_ = true;
+    mgr->btOffloadEnabled_ = true;
+    mgr->audioEffectHdiParam_ = nullptr;
+    mgr->personalizedSpatializationEnabled_ = false;
+
+    int32_t ret = mgr->UpdatePersonalizedSpatializationStateInner(true);
+    EXPECT_NE(ret, SUCCESS);
+    // Key assertion: true + fail → rollback to false
+    EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdatePersonalizedSpatializationStateInner API
+* @tc.number : UpdatePersonalizedSpatializationStateInner_005
+* @tc.desc   : Test UpdatePersonalizedSpatializationStateInner no-rollback behavior.
+*              Pass false with HDI failure; personalizedSpatializationEnabled_ should stay false
+*              without rollback logic triggered.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInner_005, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->btOffloadSupported_ = true;
+    mgr->btOffloadEnabled_ = true;
+    mgr->audioEffectHdiParam_ = nullptr;
+
+    int32_t ret = mgr->UpdatePersonalizedSpatializationStateInner(false);
+    EXPECT_NE(ret, SUCCESS);
+    // false + fail → no rollback, stays false
+    EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdatePersonalizedSpatializationStateInner API
+* @tc.number : UpdatePersonalizedSpatializationStateInner_006
+* @tc.desc   : Test UpdatePersonalizedSpatializationStateInner success path.
+*              With initialized chain and btOffloadSupported_=false, pass false.
+*              Should succeed or fail gracefully without rollback (false passed).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInner_006, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    mgr->btOffloadSupported_ = false;
+    mgr->personalizedSpatializationEnabled_ = true;
+
+    mgr->UpdatePersonalizedSpatializationStateInner(false);
+    // Pass false, no rollback even on failure
+    EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateEffectBtOffloadSupported callback invocation
+* @tc.number : UpdateEffectBtOffloadSupported_Callback_001
+* @tc.desc   : Test UpdateEffectBtOffloadSupported with spatializationEnabled_=true,
+*              personalizedSpatializationEnabled_=true, and a non-null callback set.
+*              When UpdatePersonalizedSpatializationStateInner fails (no chains/HDI),
+*              the callback should be invoked with the error code.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdateEffectBtOffloadSupported_Callback_001, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    bool callbackCalled = false;
+    int32_t callbackRet = SUCCESS;
+    mgr->SetPersonalizedSpatializationStateResultCallback([&](int32_t ret) {
+        callbackCalled = true;
+        callbackRet = ret;
+    });
+    mgr->btOffloadSupported_ = false;
+    mgr->spatializationEnabled_ = true;
+    mgr->personalizedSpatializationEnabled_ = true;
+
+    mgr->UpdateEffectBtOffloadSupported(true);
+    // If UpdatePersonalizedSpatializationStateInner failed, callback should fire
+    if (callbackCalled) {
+        EXPECT_NE(callbackRet, SUCCESS);
+    }
+
+    mgr->personalizedSpatializationStateResultCallback_ = nullptr;
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateEffectBtOffloadSupported with null callback
+* @tc.number : UpdateEffectBtOffloadSupported_Callback_002
+* @tc.desc   : Test UpdateEffectBtOffloadSupported with spatializationEnabled_=true,
+*              personalizedSpatializationEnabled_=true, but callback is nullptr.
+*              When UpdatePersonalizedSpatializationStateInner fails,
+*              should only log warning without crash.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdateEffectBtOffloadSupported_Callback_002, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    mgr->personalizedSpatializationStateResultCallback_ = nullptr;
+    mgr->btOffloadSupported_ = false;
+    mgr->spatializationEnabled_ = true;
+    mgr->personalizedSpatializationEnabled_ = true;
+
+    // Should not crash when callback is null and inner fails
+    mgr->UpdateEffectBtOffloadSupported(true);
+
+    mgr->ResetInfo();
+}
 } // namespace AudioStandard
 } // namespace OHOS

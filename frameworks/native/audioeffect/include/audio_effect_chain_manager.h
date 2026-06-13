@@ -22,6 +22,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstddef>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -148,6 +149,7 @@ public:
     void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value);
     void InitHdiState();
     void UpdateEffectBtOffloadSupported(const bool &isSupported);
+    void SetPersonalizedSpatializationStateResultCallback(std::function<void(int32_t result)> callback);
     int32_t UpdateSceneTypeList(const std::string &sceneType, SceneTypeOperation operation);
     uint32_t GetSceneTypeToChainCount(const std::string &sceneType);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
@@ -167,8 +169,8 @@ public:
     void SetBypassSpatializationForStereo(bool bypass);
     bool IsSpatializationEnabledForChains();
     void SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer);
-    void UpdatePersonalizedSpatializationEnabledToChains();
-    void UpdatePersonalizedSpatializationEnabledToHdi();
+    int32_t UpdatePersonalizedSpatializationEnabledToChains();
+    int32_t UpdatePersonalizedSpatializationEnabledToHdi();
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length);
     int32_t UpdatePersonalizedHRTFBinToArm(const int32_t &fd, const long &length);
     int32_t UpdatePersonalizedHRTFBinToHdi(const int32_t &fd, const long &length);
@@ -178,6 +180,9 @@ public:
         DeviceType deviceType, uint32_t renderId);
     bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode,
         DeviceType deviceType, uint32_t renderId);
+    int32_t UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled);
+    int32_t UpdatePersonalizedSpatializationStateInner(const bool personalizedSpatializationEnabled);
+
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode,
@@ -315,6 +320,7 @@ private:
     bool bypassSpatializationForStereo_ = false;
     bool isNeedInitEffectBuffer_ = true;
     bool personalizedSpatializationEnabled_ = false;
+    std::function<void(int32_t result)> personalizedSpatializationStateResultCallback_ = nullptr;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

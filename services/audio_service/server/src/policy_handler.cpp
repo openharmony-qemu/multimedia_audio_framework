@@ -276,5 +276,11 @@ bool PolicyHandler::IsValidNetworkIdForSendEffectParam(const std::string &networ
     iPolicyProvider_->IsValidNetworkIdForSendEffectParam(networkId, ret);
     return ret;
 }
+
+void PolicyHandler::NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret)
+{
+    CHECK_AND_RETURN_LOG(iPolicyProvider_ != nullptr, "iPolicyProvider_ is nullptr!");
+    iPolicyProvider_->NotifyUpdatePersonalizedSpatializationStateResult(ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

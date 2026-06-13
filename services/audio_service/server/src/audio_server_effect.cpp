@@ -24,6 +24,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "i_hpae_manager.h"
 #include "audio_utils.h"
+#include "policy_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {

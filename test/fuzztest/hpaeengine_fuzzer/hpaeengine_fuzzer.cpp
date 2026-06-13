@@ -373,6 +373,13 @@ void OnUpdatePersonalizedHRTFBinCbFuzzTest()
     impl_->OnUpdatePersonalizedHRTFBinCb(result);
 }
 
+void OnUpdatePersonalizedSpatializationStateCbFuzzTest()
+{
+    SetUp();
+    int32_t result = GetData<int32_t>();
+    impl_->OnUpdatePersonalizedSpatializationStateCb(result);
+}
+
 void OpenCloseAudioPortFuzzTest()
 {
     SetUp();

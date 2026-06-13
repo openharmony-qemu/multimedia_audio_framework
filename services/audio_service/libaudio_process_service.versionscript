@@ -94,6 +94,7 @@
     *OnMetaData*;
     *IsValidNetworkIdForSendEffectParam*;
     *NotifyDeviceStateChange*;
+    *NotifyUpdatePersonalizedSpatializationStateResult*;
   local:
     *;
 };

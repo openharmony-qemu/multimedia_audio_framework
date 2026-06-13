@@ -2479,6 +2479,14 @@ void HpaeManager::UpdateEffectBtOffloadSupported(const bool &isSupported)
     SendRequest(request, __func__);
 }
 
+void HpaeManager::SetPersonalizedSpatializationStateResultCallback(std::function<void(int32_t)> callback)
+{
+    auto request = [callback = std::move(callback)]() {
+        HpaePolicyManager::GetInstance().SetPersonalizedSpatializationStateResultCallback(std::move(callback));
+    };
+    SendRequest(request, __func__);
+}
+
 void HpaeManager::UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value)
 {
     auto request = [mainkey, subkey, value]() {
@@ -2951,6 +2959,18 @@ std::vector<uint32_t> HpaeManager::GetAllCaptureSession(const std::string &name)
         }
     }
     return sessionIds;
+}
+
+void HpaeManager::UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled)
+{
+    auto request = [this, personalizedSpatializationEnabled]() {
+        int32_t result = HpaePolicyManager::GetInstance().
+            UpdatePersonalizedSpatializationState(personalizedSpatializationEnabled);
+        auto serviceCallback = serviceCallback_.lock();
+        CHECK_AND_RETURN_LOG(serviceCallback != nullptr, "serviceCallback is nullptr");
+        serviceCallback->OnUpdatePersonalizedSpatializationStateCb(result);
+    };
+    SendRequest(request, __func__);
 }
 
 int32_t HpaeManager::UpdateCollaborativeProductId(const std::string &productId)

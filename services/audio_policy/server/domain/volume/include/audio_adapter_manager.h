@@ -348,6 +348,7 @@ public:
     int32_t UpdateCollaborativeProductId(const std::string &productId);
     bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage);
     int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length);
+    int32_t UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled);
     void LoadCollaborationConfig();
     void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
     void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress);

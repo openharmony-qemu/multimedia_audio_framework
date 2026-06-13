@@ -105,6 +105,8 @@
     *SetBypassSpatializationForStereo*;
     *IsSpatializationEnabledForChains*;
     *UpdatePersonalizedHRTFBin*;
+    *UpdatePersonalizedSpatializationState*;
+    *SetPersonalizedSpatializationStateResultCallback*;
     *IsStreamUsageSupported*;
   local:
     *;
