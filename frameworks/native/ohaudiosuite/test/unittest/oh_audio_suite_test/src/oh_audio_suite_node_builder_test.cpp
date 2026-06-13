@@ -1042,6 +1042,51 @@ HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_017, TestSi
 }
 
 /**
+ * @tc.name  : Test OH_AudioSuiteEngine_CreateNode.
+ * @tc.number: OH_AudioSuiteEngine_CreateNode_018
+ * @tc.desc  : Test HOA node num more than limit.
+ */
+HWTEST_F(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteEngine_CreateNode_018, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNodeBuilder *builder = nullptr;
+    ret = OH_AudioSuiteNodeBuilder_Create(&builder);
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, EFFECT_NODE_TYPE_HOA_SPACE_RENDER);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *audioNode[MAX_EFFECT_NODE_NUM] = {nullptr};
+    for (uint32_t num = 0; num < MAX_EFFECT_NODE_NUM; num++) {
+        ret = OH_AudioSuiteEngine_CreateNode(pipeline, builder, &audioNode[num]);
+        EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    }
+
+    OH_AudioNode *node = nullptr;
+    ret = OH_AudioSuiteEngine_CreateNode(pipeline, builder, &node);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_CREATED_EXCEED_SYSTEM_LIMITS);
+
+    for (uint32_t num = 0; num < MAX_EFFECT_NODE_NUM; num++) {
+        ret = OH_AudioSuiteEngine_DestroyNode(audioNode[num]);
+        EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    }
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
  * @tc.name  : Test OH_AudioSuiteEngine_DestroyNode.
  * @tc.number: OH_AudioSuiteEngine_DestroyNode_001
  * @tc.desc  : Test nullptr.

@@ -173,7 +173,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, createNodeExceedLimitTest, TestSize.Le
     for (uint32_t num = 0; num < audioSuitePipeline.pipelineCfg_.maxInputNodeNum_; num++) {
         int32_t result = audioSuitePipeline.CreateNodeCheckParme(builder);
         EXPECT_EQ(result, SUCCESS);
-        audioSuitePipeline.nodeCounts_[static_cast<std::size_t>(builder.nodeType)]++;
+        audioSuitePipeline.nodeCounts_[builder.nodeType]++;
     }
 
     int32_t result = audioSuitePipeline.CreateNodeCheckParme(builder);

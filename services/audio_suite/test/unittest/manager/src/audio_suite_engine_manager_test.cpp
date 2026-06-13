@@ -487,17 +487,17 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCreateNodeTest, Test
     audioNodeBuilder.nodeType = NODE_TYPE_INPUT;
     audioSuitePipeline.pipelineWorkMode_ = PIPELINE_EDIT_MODE;
 
-    audioSuitePipeline.nodeCounts_[static_cast<std::size_t>(audioNodeBuilder.nodeType)] =
+    audioSuitePipeline.nodeCounts_[audioNodeBuilder.nodeType] =
         audioSuitePipeline.GetMaxNodeNumsForType(audioNodeBuilder.nodeType) - 2;
     int32_t result = audioSuitePipeline.CreateNode(audioNodeBuilder);
 
-    audioSuitePipeline.nodeCounts_[static_cast<std::size_t>(audioNodeBuilder.nodeType)] =
+    audioSuitePipeline.nodeCounts_[audioNodeBuilder.nodeType] =
         audioSuitePipeline.GetMaxNodeNumsForType(audioNodeBuilder.nodeType) + 2;
     result = audioSuitePipeline.CreateNode(audioNodeBuilder);
 
     audioNodeBuilder.nodeType = NODE_TYPE_SOUND_FIELD;
     audioSuitePipeline.pipelineWorkMode_ = PIPELINE_REALTIME_MODE;
-    audioSuitePipeline.nodeCounts_[static_cast<std::size_t>(audioNodeBuilder.nodeType)] =
+    audioSuitePipeline.nodeCounts_[audioNodeBuilder.nodeType] =
         audioSuitePipeline.GetMaxNodeNumsForType(audioNodeBuilder.nodeType) - 2;
     result = audioSuitePipeline.CreateNode(audioNodeBuilder);
     EXPECT_EQ(result, SUCCESS);
@@ -1610,6 +1610,18 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, PrintInfoPipelineWithEffectNodesTest, 
 
     engine.pipelineMap_.erase(100);
     engine.DeInit();
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, createHoaNodeTest, TestSize.Level0)
+{
+    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
+    audioSuitePipeline.Init();
+    EXPECT_EQ(audioSuitePipeline.IsInit(), true);
+
+    std::shared_ptr<AudioNode> node = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_HOA_RENDER);
+    audioSuitePipeline.nodeMap_[1] = node;
+    int32_t result = audioSuitePipeline.DestroyNode(1);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 HWTEST_F(AudioSuiteEngineManagerUnitTest, PrintInfoMultipleConnectionsTest, TestSize.Level0)
