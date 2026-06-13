@@ -173,8 +173,8 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetPipelineState(
  * When finishedFlag is true, the application should no longer call this interface.
  *
  * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline
- * @param audioData Audio data pointer, where user should read.
- * @param requestFrameSize Size of audio data user specified.
+ * @param audioData Audio data pointer, where user should read, unit is byte.
+ * @param requestFrameSize Size of audio data user specified, unit is byte.
  * @param responseSize Size of audio data the system really write.
  * @param finishedFlag This flag is used to indicate user whether all data processing has been completed.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
@@ -206,7 +206,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_RenderFrame(OH_AudioSuitePipeline* audi
  * @param audioDataArray Audio data array pointer, where user should read,
  * The size of each one-dimensional array should be consistent.
  * @param responseSize Size of audio data the system really write,
- * The system ensures that the data size filled for each one-dimensional array is consistent.
+ * The system ensures that the data size filled for each one-dimensional array is consistent, unit is byte.
  * @param finishedFlag This flag is used to indicate user whether all data processing has been completed.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is nullptr or not valid value.
@@ -311,7 +311,7 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetFormat(OH_AudioNodeBuilder* bui
  * @param audioNode AudioNode where this callback occurs.
  * @param userData User data which is passed by user.
  * @param audioData Audio data pointer, where user should fill in audio data.
- * @param audioDataSize Size of audio data that user should fill in.
+ * @param audioDataSize Size of audio data that user should fill in, unit is byte.
  * @param finished This boolean value indicates that all data
  * of the application has been consumed since last execute {@link OH_AudioSuiteEngine_StartPipeline}.
  * @return Length of the valid data that has written into audioData buffer.

@@ -27,8 +27,8 @@ namespace AudioSuite {
 namespace {
 static constexpr AudioChannelLayout HOA_ALGO_IN_CHANNEL_LAYOUT = CH_LAYOUT_HOA_ORDER1_ACN_N3D;
 static constexpr AudioChannelLayout HOA_ALGO_OUT_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
-static constexpr int32_t ALGO_PROCESS_FRAME_LEN = 256;
-static constexpr int32_t HOA_CHANNELS_MAXNUM = 16;
+static constexpr uint32_t ALGO_PROCESS_FRAME_LEN = 256;
+static constexpr uint32_t HOA_CHANNELS_MAXNUM = 16;
 }  // namespace
 
 AudioSuiteHoaRenderNode::AudioSuiteHoaRenderNode()
@@ -129,10 +129,10 @@ int32_t AudioSuiteHoaRenderNode::InitHoaCacheLength(uint32_t needDataLength)
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "outputBuffer_ allocation failed.");
 
     // init algoCache
-    int32_t chunkInSize = ALGO_PROCESS_FRAME_LEN * HOA_CHANNELS_MAXNUM * sizeof(int32_t);
+    uint32_t chunkInSize = ALGO_PROCESS_FRAME_LEN * HOA_CHANNELS_MAXNUM * sizeof(int32_t);
     algoInputBuffer_.resize(chunkInSize);
     
-    int32_t chunkOutSize = ALGO_PROCESS_FRAME_LEN * nodeParameter_.outChannels * sizeof(int32_t);
+    uint32_t chunkOutSize = ALGO_PROCESS_FRAME_LEN * nodeParameter_.outChannels * sizeof(int32_t);
     algoOutputBuffer_.resize(chunkOutSize);
 
     algoOutput_.clear();
@@ -186,7 +186,7 @@ int32_t AudioSuiteHoaRenderNode::GetProcessedToBuffer()
         if (buffer->GetIsFinished()) {
             upstreamFinished_ = true;
         }
-        int32_t inSize = buffer->GetDataSize();
+        uint32_t inSize = buffer->GetDataSize();
         if (inSize > 0) {
             int32_t ret;
             if (GetNodeBypassStatus()) {
@@ -235,7 +235,7 @@ int32_t AudioSuiteHoaRenderNode::ProcessAlgoChunks()
     }
 
     if (upstreamFinished_ && inputBuffer_.GetSize() > 0 && inputBuffer_.GetSize() < chunkInSize) {
-        int32_t padSize = chunkInSize - inputBuffer_.GetSize();
+        uint32_t padSize = chunkInSize - inputBuffer_.GetSize();
         std::vector<uint8_t> zeros(padSize, 0);
         inputBuffer_.PushData(zeros.data(), padSize);
 

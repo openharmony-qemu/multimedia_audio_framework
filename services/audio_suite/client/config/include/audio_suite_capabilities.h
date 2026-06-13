@@ -83,13 +83,13 @@ public:
             dlclose(handle_);
         }
     }
-    
+
     DlHandleGuard(const DlHandleGuard&) = delete;
     DlHandleGuard& operator=(const DlHandleGuard&) = delete;
-    
-    void* get() const { return handle_; }
-    operator bool() const { return handle_ != nullptr; }
-    
+
+    void* get() const { return handle_; };
+    operator bool() const { return handle_ != nullptr; };
+
 private:
     void* handle_;
 };

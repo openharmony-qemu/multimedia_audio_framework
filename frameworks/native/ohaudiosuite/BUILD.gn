@@ -42,8 +42,6 @@ ohos_shared_library("ohaudiosuite") {
     "../../../interfaces/kits/c/common/",
     "../../../interfaces/kits/c/audio_suite/",
     "../../../services/audio_suite/client/utils/include",
-    "../../../services/audio_suite/client/converter/include",
-    "../../../services/audio_engine/plugin/resample/include",
     "../../../services/audio_service/common/include/dfx",
   ]
 
@@ -54,10 +52,6 @@ ohos_shared_library("ohaudiosuite") {
       "./OHAudioSuiteEngine.cpp",
       "./OHAudioSuiteNodeBuilder.cpp",
       "./OHAudioSuiteFormatConverter.cpp",
-      "../../../services/audio_suite/client/utils/src/audio_suite_format_conversion.cpp",
-      "../../../services/audio_suite/client/utils/src/audio_suite_pcm_buffer.cpp",
-      "../../../services/audio_suite/client/converter/src/audio_format_converter_impl.cpp",
-      "../../../services/audio_suite/client/converter/src/audio_suite_raw_format_conversion.cpp",
     ]
 
   deps = [
