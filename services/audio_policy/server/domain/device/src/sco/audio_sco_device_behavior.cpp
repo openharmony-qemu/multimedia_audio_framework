@@ -79,6 +79,7 @@ int32_t AudioScoDeviceBehavior::HandleScoOutputDeviceFetched(const std::shared_p
         auto pipeManager = AudioPipeManager::GetPipeManager();
         CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_NULL_POINTER, "pipeManager is nullptr");
         if (!pipeManager->IsFocusStandby(streamDesc->sessionId_)) {
+            Bluetooth::AudioHfpManager::ClearScoSelected();
             Bluetooth::AudioHfpManager::UpdateAudioScene(AudioSceneManager::GetInstance().GetAudioScene(true), true);
         }
     }
@@ -111,6 +112,7 @@ int32_t AudioScoDeviceBehavior::BluetoothScoInputFetch(const std::shared_ptr<Aud
         (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType) || hasRunningRecognitionCapturerStream)) {
         ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_, desc->isVrSupported_);
     } else {
+        Bluetooth::AudioHfpManager::ClearScoSelected();
         ret = Bluetooth::AudioHfpManager::UpdateAudioScene(AudioSceneManager::GetInstance().GetAudioScene(true), true);
     }
     if (ret != SUCCESS) {
