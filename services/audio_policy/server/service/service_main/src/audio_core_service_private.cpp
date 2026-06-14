@@ -408,17 +408,6 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     return SUCCESS;
 }
 
-int32_t AudioCoreService::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
-    ConnectState connectState, bool isVrSupported)
-{
-    HILOG_COMM_INFO("[ScoInputDeviceFetchedForRecongnition]handleflag %{public}d, address %{public}s, "
-        "connectState %{public}d", handleFlag, GetEncryptAddr(address).c_str(), connectState);
-    if (handleFlag && (connectState != DEACTIVE_CONNECTED || !isVrSupported)) {
-        return SUCCESS;
-    }
-    return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag);
-}
-
 void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -2999,6 +2988,7 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "Stream desc is nullptr");
 
     auto result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
+    CheckScoState(streamDesc);
     if (result == REFETCH_DEVICE) {
         FetchOutputDeviceAndRoute("ActivateOutputDevice", reason);
         FetchInputDeviceAndRoute("ActivateOutputDevice", reason);

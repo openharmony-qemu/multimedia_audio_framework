@@ -150,5 +150,10 @@ void WirelessConflictHandler::ClearSelectedDevices()
     cachedHighestPriorityDevice_ = nullptr;
 }
 
+std::shared_ptr<AudioDeviceDescriptor> WirelessConflictHandler::GetHighestPriorityDevice()
+{
+    return cachedHighestPriorityDevice_;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -607,15 +607,6 @@ std::vector<SourceOutput> AudioDeviceCommon::FilterSourceOutputs(int32_t session
     return targetSourceOutputs;
 }
 
-int32_t AudioDeviceCommon::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
-    ConnectState connectState, bool isVrSupported)
-{
-    if (handleFlag && (connectState != DEACTIVE_CONNECTED || !isVrSupported)) {
-        return SUCCESS;
-    }
-    return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag);
-}
-
 void AudioDeviceCommon::NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc)
 {
     bool isDistOld = IsDistributedOutput(audioRouterSelectStrategy_.Get1stCurrentOutputDevice());
@@ -804,16 +795,6 @@ std::vector<SourceOutput> AudioDeviceCommon::GetSourceOutputs()
         }
     }
     return sourceOutputs;
-}
-
-void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
-{
-    bool hasRunningRecognitionCapturerStream = pipeManager_->HasRunningRecognitionCapturerStream();
-    if (hasRunningRecognitionCapturerStream) {
-        return;
-    }
-    audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
-    Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
 }
 
 int32_t AudioDeviceCommon::RingToneVoiceControl(const InternalDeviceType &deviceType)

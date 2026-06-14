@@ -1221,32 +1221,19 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
 
 void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
-
-    bool isScoDevice = !streamDesc->newDeviceDescs_.empty() &&
-        streamDesc->newDeviceDescs_[0] != nullptr &&
-        streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> descs = pipeManager_->GetAllOutputStreamDescs();
-    FetchOutputDevicesForDescs(descs);
     bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
     bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
     bool isScoSelected = hasScoPlay || hasScoRecord;
-    if (Util::IsEnhancedRoutingSupported()) {
-        TrackScoStreamAudioScene(streamDesc, true);
-        if (isScoSelected) {
-            AudioScene highestScene = ScoAudioSceneManager::GetInstance().GetHighestPriorityAudioScene();
-            Bluetooth::AudioHfpManager::UpdateAudioScene(highestScene, true);
-        }
-    } else {
-        Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isScoSelected);
-    }
+    bool hasRecognition = pipeManager_->HasRunningRecognitionCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
+    Bluetooth::AudioHfpManager::UpdateAudioScene(
+        audioSceneManager_.GetAudioScene(true), hasRecognition, isScoSelected);
 
-    if (streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    if (streamDesc->audioMode_ == AUDIO_MODE_RECORD && streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
         auto sourceType = streamDesc->capturerInfo_.sourceType;
         auto sessionId = streamDesc->sessionId_;
         if (Util::IsScoSupportSource(sourceType)) {
             audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
-            Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
         }
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionId);
     }
@@ -2180,7 +2167,6 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
     }
     FetchOutputDeviceAndRoute("RegisteredTrackerClientDied");
     FetchInputDeviceAndRoute("RegisteredTrackerClientDied");
-    audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
 }
 
 bool AudioCoreService::ConnectServiceAdapter()

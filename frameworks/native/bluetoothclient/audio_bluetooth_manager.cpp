@@ -617,21 +617,13 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
     return SUCCESS;
 }
 
-int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isScoSelected)
+int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isRecognitionScene, bool isScoSelected)
 {
-    AUDIO_INFO_LOG("scene %{public}d to %{public}d, isScoSelected %{public}d to %{public}d",
-        scene_.load(), scene, isScoSelected_.load(), isScoSelected);
+    AUDIO_INFO_LOG("scene %{public}d to %{public}d, isRecognitionScene %{public}d to %{public}d, "
+        "isScoSelected %{public}d to %{public}d", scene_.load(), scene, isScoSelected_.load(), isScoSelected);
     scene_.store(scene);
     isScoSelected_.store(isScoSelected);
-    return TryUpdateScoCategory();
-}
-
-int32_t AudioHfpManager::HandleScoWithRecongnition(bool handleFlag)
-{
-    if (isRecognitionScene_.load() != handleFlag) {
-        AUDIO_INFO_LOG("%{public}s recognition scene", handleFlag ? "is" : "not");
-    }
-    isRecognitionScene_.store(handleFlag);
+    isRecognitionScene_.store(isRecognitionScene);
     return TryUpdateScoCategory();
 }
 
@@ -692,7 +684,6 @@ ScoCategory AudioHfpManager::JudgeScoCategory()
     auto scene = scene_.load();
     if ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) && !isInbandRingEnabled) {
         AUDIO_WARNING_LOG("The inbandRing switch is off, ignore the ring scene.");
-        isScoSelected_.store(false);
         return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
     }
 
@@ -702,7 +693,12 @@ ScoCategory AudioHfpManager::JudgeScoCategory()
         return !IsVirtualCall() ? ScoCategory::SCO_CALLULAR : ScoCategory::SCO_VIRTUAL;
     }
 
-    return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
+    if (isRecognitionScene_.load()) {
+        return ScoCategory::SCO_RECOGNITION;
+    } else if (isScoSelected_.load()) {
+        return ScoCategory::SCO_VIRTUAL;
+    }
+    return ScoCategory::SCO_DEFAULT;
 }
 
 int32_t AudioHfpManager::TryUpdateScoCategory()
@@ -722,7 +718,7 @@ int32_t AudioHfpManager::TryUpdateScoCategoryNoLock()
     }
 
     auto category = JudgeScoCategory();
-    if (category == ScoCategory::SCO_DEFAULT && !isScoSelected_.load()) {
+    if (category == ScoCategory::SCO_DEFAULT) {
         return DisconnectScoWrapper();
     }
 
@@ -782,9 +778,6 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
     // SCO_DISCONNECTED = 3, SCO_CONNECTING = 4, SCO_DISCONNECTING = 5, SCO_CONNECTED = 6
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
-        if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
-            AudioHfpManager::ClearScoSelected();
-        }
         if (scoState == HfpScoConnectState::SCO_CONNECTED && reason == HFP_AG_SCO_REMOTE_USER_SET_UP) {
             AudioHfpManager::UpdateActiveHfpDevice(device);
         } else {
@@ -798,11 +791,6 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
 ScoCategory AudioHfpManager::GetScoCategory()
 {
     return JudgeScoCategory();
-}
-
-void AudioHfpManager::ClearScoSelected()
-{
-    isScoSelected_.store(false);
 }
 
 void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
