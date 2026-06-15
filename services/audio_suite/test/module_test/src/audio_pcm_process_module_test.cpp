@@ -111,7 +111,7 @@ CommandLineArgs ParseCommandLine(int argc, char* argv[])
 
 bool ParseFileName(const std::string& fileName, AudioFormatConfig& config)
 {
-    std::regex pattern("(\\d+)_(\\d+)ch_(\\d+)bit\\.pcm");
+    std::regex pattern("(\\d+)_(\\d+)ch_(\\d+)bit(.*)?\\.pcm");
     std::smatch match;
 
     if (!std::regex_search(fileName, match, pattern)) {
@@ -170,7 +170,7 @@ bool OpenInputFile(InputFileInfo& info)
         std::cerr << "File too large" << std::endl;
         return false;
     }
-    info.sampleSize = GetSampleSize(info.config.bitDepth);
+    info.sampleSize = GetSampleSize(info.config.bitDepth) * static_cast<uint32_t>(info.config.channel);
     return true;
 }
 
@@ -266,7 +266,6 @@ int PrepareMixStreams(const std::vector<std::vector<uint8_t>>& inBuffers, size_t
         if (inBuffers[i].size() >= minSize && inBuffers[i].size() > 0) {
             streams[validCount].data = inBuffers[i].data();
             streams[validCount].sampleCount = minSize / sampleSize;
-            streams[validCount].volume = 1.0f / inputCount;
             validCount++;
         }
     }
@@ -283,8 +282,7 @@ int ProcessSingleMixChunk(MixContext& ctx, const std::vector<InputFileInfo>& inp
         return -1;
     }
 
-    size_t writeSize = result.outSamplerCount * inputs[0].sampleSize;
-    if (!WriteChunk(ctx.outFile, result.outData, writeSize, ctx.isFirstChunk, outputPath)) {
+    if (!WriteChunk(ctx.outFile, result.outData, ctx.chunkBytes, ctx.isFirstChunk, outputPath)) {
         AudioMixerDestroy(ctx.handle);
         return -1;
     }
@@ -322,7 +320,7 @@ int DoFormatConversion(InputFileInfo& input, const AudioFormatConfig& outputConf
             return 1;
         }
 
-        uint32_t outSampleSize = GetSampleSize(outputConfig.bitDepth);
+        uint32_t outSampleSize = GetSampleSize(outputConfig.bitDepth) * outputConfig.channel;
         if (!WriteChunk(outFile, result.outData, result.outSampleCount * outSampleSize, isFirstChunk, outputPath)) {
             AudioConverterDestroy(handle);
             return 1;
