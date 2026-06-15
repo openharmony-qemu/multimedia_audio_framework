@@ -32,6 +32,7 @@
 #include "audio_server_proxy.h"
 #include "audio_core_service.h"
 #include "audio_utils_c.h"
+#include "audio_microphone_descriptor.h"
 #include "sle_audio_device_manager.h"
 #include "audio_zone_service.h"
 #include "audio_collaborative_service.h"
@@ -445,6 +446,9 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
         std::string audioParameter =
             AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE, condition);
         updatedDesc.UpdateDeviceInfoByAudioParameters(audioParameter);
+        bool isMute = AudioMicrophoneDescriptor::GetInstance().IsMicrophoneMute();
+        AUDIO_INFO_LOG("Restore microphone mute state after USB adapter loaded, isMute: %{public}d", isMute);
+        AudioServerProxy::GetInstance().SetMicrophoneMuteProxy(isMute);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
         int32_t result = HandleAccessoryDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
         CheckAndWriteDeviceChangeExceptionEvent(result == SUCCESS,
