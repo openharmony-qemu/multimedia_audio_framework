@@ -59,7 +59,8 @@ public:
     int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
     float GetMaxAmplitude(void) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false,
+        int32_t phoneCallSceneType = SCENE_TYPE_INVALID) override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
