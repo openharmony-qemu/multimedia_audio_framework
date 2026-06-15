@@ -753,9 +753,7 @@ private:
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void FetchDevicesForDescs(
-        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs,
-        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputDescs);
+    void FetchDevicesForDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void DeactivateBluetoothDevice(bool isRunning);
     bool DeactivateA2dpAfterExclude(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &excludeDeviceDescs,
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs);

@@ -3440,31 +3440,29 @@ void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDevice
 #endif
 }
 
-void AudioCoreService::FetchDevicesForDescs(
-    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs,
-    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputDescs)
+void AudioCoreService::FetchDevicesForDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inStreamDescs)
 {
-    for (auto &desc : outputDescs) {
+    for (auto &desc : outStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         FetchDeviceInfo info = { desc->rendererInfo_.streamUsage, GetRealUid(desc),
-            desc->rendererInfo_.privacyType, "StartClient", desc->bundleName_ };
+            desc->rendererInfo_.privacyType, "Arbiter", desc->bundleName_ };
         info.streamId = desc->sessionId_;
         auto newDescs = audioRouterCenter_.FetchOutputDevices(info);
         pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
     }
-    for (auto &desc : inputDescs) {
+    for (auto &desc : outStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         FetchDeviceInfo info;
         info.sourceType = desc->capturerInfo_.sourceType;
         info.clientUID = GetRealUid(desc);
         info.streamId = desc->sessionId_;
-        info.caller = "StartClient";
+        info.caller = "Arbiter";
         auto newDesc = audioRouterCenter_.FetchInputDevice(info);
         if (newDesc != nullptr) {
             pipeManager_->UpdateNewDeviceDesc(desc, {newDesc});
         }
     }
-    audioActiveDevice_.UpdateStreamDeviceMap("FetchDevicesForDescs");
 }
 
 bool AudioCoreService::HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene)
