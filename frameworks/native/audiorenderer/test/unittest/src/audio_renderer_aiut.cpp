@@ -24,7 +24,6 @@ namespace AudioStandard {
 
 namespace {
 constexpr size_t TEST_BUFFER_SIZE = 4096;
-constexpr size_t TEST_META_BUFFER_SIZE = 19824;
 constexpr uint32_t TEST_SAMPLE_RATE_44100 = 44100;
 constexpr uint32_t TEST_SAMPLE_RATE_48000 = 48000;
 constexpr uint32_t TEST_SAMPLE_RATE_8000 = 8000;
@@ -35,16 +34,9 @@ constexpr uint32_t TEST_SAMPLE_RATE_16010 = 16010;
 constexpr int32_t TEST_RENDERER_FLAGS_NORMAL = 0;
 constexpr int32_t TEST_RENDERER_FLAGS_MMAP = 1;
 constexpr int32_t TEST_RENDERER_FLAGS_FORCED_NORMAL = 4;
-constexpr int32_t TEST_RENDERER_FLAGS_VKB_NORMAL = 16;
 constexpr int32_t TEST_RENDERER_FLAGS_VKB_FAST = 32;
 constexpr int32_t TEST_RENDERER_FLAGS_VKB_ALL_RING = 48;
 constexpr int32_t TEST_RENDERER_FLAGS_INVALID = 999;
-constexpr float TEST_VOLUME_HALF = 0.5f;
-constexpr float TEST_SPEED_NORMAL = 1.0f;
-constexpr float TEST_SPEED_MIN = 0.25f;
-constexpr float TEST_PITCH_NORMAL = 1.0f;
-constexpr float TEST_PITCH_MIN = 0.25f;
-constexpr float TEST_PITCH_MAX = 4.0f;
 constexpr int32_t TEST_APP_UID = 1234;
 constexpr int32_t TEST_APP_PID = 5678;
 }
@@ -70,15 +62,15 @@ HWTEST_F(AudioRendererStaticAiut, ConvertToAudioStreamParams_001, TestSize.Level
     AudioRendererParams rendererParams;
     rendererParams.sampleFormat = SAMPLE_S16LE;
     rendererParams.sampleRate = SAMPLE_RATE_44100;
-    rendererParams.channelCount = CHANNEL_2;
+    rendererParams.channelCount = STEREO;
     rendererParams.encodingType = ENCODING_PCM;
-    rendererParams.channelLayout = CHANNEL_LAYOUT_STEREO;
+    rendererParams.channelLayout = CH_LAYOUT_STEREO;
 
     AudioStreamParams streamParams = AudioRendererPrivate::ConvertToAudioStreamParams(rendererParams);
 
     AIUT_EXPECT_EQ_INFO_LOG(streamParams.format, SAMPLE_S16LE, "format mismatch");
     AIUT_EXPECT_EQ_INFO_LOG(streamParams.samplingRate, SAMPLE_RATE_44100, "samplingRate mismatch");
-    AIUT_EXPECT_EQ_INFO_LOG(streamParams.channels, CHANNEL_2, "channels mismatch");
+    AIUT_EXPECT_EQ_INFO_LOG(streamParams.channels, STEREO, "channels mismatch");
     AIUT_EXPECT_EQ_INFO_LOG(streamParams.encoding, ENCODING_PCM, "encoding mismatch");
 }
 
@@ -93,14 +85,14 @@ HWTEST_F(AudioRendererStaticAiut, ConvertToAudioStreamParams_002, TestSize.Level
     AudioRendererParams rendererParams;
     rendererParams.sampleFormat = SAMPLE_U8;
     rendererParams.sampleRate = SAMPLE_RATE_8000;
-    rendererParams.channelCount = CHANNEL_1;
+    rendererParams.channelCount = MONO;
     rendererParams.encodingType = ENCODING_PCM;
 
     AudioStreamParams streamParams = AudioRendererPrivate::ConvertToAudioStreamParams(rendererParams);
 
     AIUT_EXPECT_EQ_INFO_LOG(streamParams.format, SAMPLE_U8, "format mismatch");
     AIUT_EXPECT_EQ_INFO_LOG(streamParams.samplingRate, SAMPLE_RATE_8000, "samplingRate mismatch");
-    AIUT_EXPECT_EQ_INFO_LOG(streamParams.channels, CHANNEL_1, "channels mismatch");
+    AIUT_EXPECT_EQ_INFO_LOG(streamParams.channels, MONO, "channels mismatch");
     AIUT_EXPECT_EQ_INFO_LOG(streamParams.encoding, ENCODING_PCM, "encoding mismatch");
 }
 
@@ -115,13 +107,13 @@ HWTEST_F(AudioRendererStaticAiut, ConvertToAudioStreamParams_003, TestSize.Level
     AudioRendererParams rendererParams;
     rendererParams.sampleFormat = SAMPLE_S32LE;
     rendererParams.sampleRate = SAMPLE_RATE_48000;
-    rendererParams.channelCount = CHANNEL_2;
+    rendererParams.channelCount = STEREO;
     rendererParams.encodingType = ENCODING_PCM;
-    rendererParams.channelLayout = CHANNEL_LAYOUT_STEREO;
+    rendererParams.channelLayout = CH_LAYOUT_STEREO;
 
     AudioStreamParams streamParams = AudioRendererPrivate::ConvertToAudioStreamParams(rendererParams);
 
-    AIUT_EXPECT_EQ_INFO_LOG(streamParams.channelLayout, CHANNEL_LAYOUT_STEREO, "channelLayout mismatch");
+    AIUT_EXPECT_EQ_INFO_LOG(streamParams.channelLayout, CH_LAYOUT_STEREO, "channelLayout mismatch");
 }
 
 // ==================== CheckSupportedSamplingRates Tests ====================
@@ -384,7 +376,7 @@ HWTEST_F(AudioRendererStaticAiut, HandleSetRendererInfoByOptions_001, TestSize.L
     rendererOptions.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
     rendererOptions.rendererInfo.rendererFlags = TEST_RENDERER_FLAGS_NORMAL;
-    rendererOptions.streamInfo.samplingRate = TEST_SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.samplingRate = static_cast<AudioSamplingRate>(TEST_SAMPLE_RATE_44100);
     AppInfo appInfo;
 
     renderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);

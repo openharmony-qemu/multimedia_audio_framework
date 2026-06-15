@@ -53,7 +53,7 @@ AudioRendererDebugInfo CreateTestRendererDebugInfo()
     AudioRendererDebugInfo info;
     info.sessionId = TEST_SESSION_ID;
     info.samplingRate = TEST_SAMPLING_RATE;
-    info.channels = AudioChannel::CHANNEL_2;
+    info.channels = AudioChannel::STEREO;
     info.format = AudioSampleFormat::SAMPLE_S16LE;
     info.encoding = AudioEncodingType::ENCODING_PCM;
     info.streamUsage = STREAM_USAGE_MUSIC;

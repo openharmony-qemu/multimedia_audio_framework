@@ -17,6 +17,7 @@
 #include "aiut_log.h"
 #include "audio_renderer_private.h"
 #include "audio_errors.h"
+#include "shared_audio_renderer_wrapper.h"
 
 using namespace testing::ext;
 namespace OHOS {
@@ -166,7 +167,9 @@ HWTEST_F(AudioRendererInterruptAiut, InterruptCallback_SaveCallback_001, TestSiz
 
     AIUT_ASSERT_NE_INFO_LOG(renderer->audioInterruptCallback_, nullptr,
         "audioInterruptCallback_ should not be null");
-    renderer->audioInterruptCallback_->SaveCallback(callback);
+    auto interruptCb = std::static_pointer_cast<AudioRendererInterruptCallbackImpl>(
+        renderer->audioInterruptCallback_);
+    interruptCb->SaveCallback(callback);
 }
 
 // ==================== AudioStreamCallbackRenderer Tests ====================

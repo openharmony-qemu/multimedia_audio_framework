@@ -26,6 +26,9 @@ group("unit_test_group") {
     ":audio_utils_pro_unit_test",
     ":audio_utils_unit_test",
     ":audio_sink_latency_fetcher_test",
+    ":audio_utils_container_aiut",
+    ":audio_utils_dfx_aiut",
+    ":audio_utils_misc_aiut",
   ]
 }
 
@@ -239,5 +242,90 @@ ohos_unittest("audio_bundle_manager_test") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "googletest:gtest",
+  ]
+}
+
+# ==================== AIUT Test Targets ====================
+
+_aiut_include_dirs = [
+  "./include",
+  "../../include",
+  "../../../../../test/unittest/common/include",
+  "../../../../../interfaces/inner_api/native/audiocommon/include/",
+]
+
+_aiut_cflags = [
+  "-Wall",
+  "-Werror",
+  "-Wno-macro-redefined",
+  "-fno-access-control",
+]
+
+_aiut_deps = [
+  "../../../audioutils:audio_utils",
+]
+
+_aiut_external_deps = [
+  "c_utils:utils",
+  "googletest:gmock",
+  "googletest:gtest",
+  "hilog:libhilog",
+  "init:libbegetutil",
+  "ipc:ipc_single",
+]
+
+if (sonic_enable == true) {
+  _aiut_cflags += [ "-DSONIC_ENABLE" ]
+}
+
+if (sonic_enable == true) {
+  _aiut_external_deps += [ "sonic:sonic" ]
+}
+
+ohos_unittest("audio_utils_container_aiut") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = _aiut_include_dirs
+  cflags = _aiut_cflags
+  cflags_cc = [ "-std=c++20" ]
+  sources = [
+    "src/audio_utils_container_aiut.cpp",
+  ]
+  deps = _aiut_deps
+  external_deps = _aiut_external_deps
+}
+
+ohos_unittest("audio_utils_dfx_aiut") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = _aiut_include_dirs
+  cflags = _aiut_cflags
+  cflags_cc = [ "-std=c++20" ]
+  sources = [
+    "src/audio_utils_dfx_aiut.cpp",
+  ]
+  deps = _aiut_deps
+  external_deps = _aiut_external_deps
+}
+
+ohos_unittest("audio_utils_misc_aiut") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = _aiut_include_dirs
+  cflags = _aiut_cflags
+  cflags_cc = [ "-std=c++20" ]
+  sources = [
+    "src/audio_utils_misc_aiut.cpp",
+  ]
+  deps = _aiut_deps
+  external_deps = _aiut_external_deps
+}
+
+group("audio_utils_aiut") {
+  testonly = true
+  deps = [
+    ":audio_utils_container_aiut",
+    ":audio_utils_dfx_aiut",
+    ":audio_utils_misc_aiut",
   ]
 }
