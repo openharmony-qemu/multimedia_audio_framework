@@ -1076,8 +1076,8 @@ void UpdateSessionConnectionStateFuzzTest()
     audioCoreService->ReleaseOffloadPipe(id, paIndex, offloadType);
     audioCoreService->HandleMuteBeforeDeviceSwitch(streamDescs, reason);
     audioCoreService->CheckAndSleepBeforeVoiceCallDeviceSet(reason);
-    audioCoreService->HandlePrimaryMediaMuteForDualRing(audioStreamDescriptor);
-    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(audioStreamDescriptor);
+    audioCoreService->HandlePrimaryNonDualOutputStreamMuteForDualRing(audioStreamDescriptor);
+    audioCoreService->CheckAndSleepBeforeRingDeviceSet(audioStreamDescriptor);
     audioCoreService->ResetOriginalFlagForRemote(audioStreamDescriptor);
     std::string caller = "caller";
     audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, caller);

@@ -166,6 +166,7 @@ public:
     bool HasRunningNormalCapturerStream(DeviceType type);
     bool HasRunningScoOutputStream();
     bool IsOnPrimaryAdapter(uint32_t sessionId);
+    bool HasActiveStreamOnPrimary(uint32_t inPastMs);
     void AddSingleSwitchStream(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void RemoveSwitchStream(uint32_t sessionId);
     bool IsSwitchStreamExist(uint32_t sessionId);
