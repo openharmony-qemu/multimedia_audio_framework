@@ -292,8 +292,6 @@ void AudioRouterFollowStrategy::UpdateCurrentOutputDevice(int32_t uid,
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterFollowStrategy::GetCurrentOutputDevice(int32_t uid)
 {
     auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
-    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid,
-        !simpleDescs.empty() && simpleDescs[0] ? simpleDescs[0]->deviceId_ : 0);
     return ConvertSimpleToDevice(simpleDescs);
 }
 
@@ -326,8 +324,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterFollowStrategy::G
         AUDIO_WARNING_LOG("uid=%{public}d, no exclusive input device", uid);
     }
     auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentInputDevice(SYSTEM_UID);
-    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid,
-        !simpleDescs.empty() && simpleDescs[0] ? simpleDescs[0]->deviceId_ : 0);
     return ConvertSimpleToDevice(simpleDescs);
 }
 
