@@ -193,13 +193,15 @@ public:
 
     void AppendActiveScoDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList)
     {
-        if (!AudioDeviceManager::GetAudioDeviceManager().GetScoState() || (handlers.size() == 0)) {
-            return;
-        }
-        std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
-        std::shared_ptr<AudioDeviceDescriptor> activeScoDevice =
-            AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, OUTPUT_DEVICE);
-        if (activeScoDevice != nullptr && activeScoDevice->deviceType_ != DEVICE_TYPE_NONE) {
+        CHECK_AND_RETURN(handlers.size() != 0);
+        for (auto &handler : handlers) {
+            CHECK_AND_CONTINUE(handler != nullptr);
+            std::shared_ptr<AudioDeviceDescriptor> highestPriorityDevice = handler->GetHighestPriorityDevice();
+            CHECK_AND_CONTINUE(highestPriorityDevice != nullptr);
+            std::shared_ptr<AudioDeviceDescriptor> activeScoDevice =
+                AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(highestPriorityDevice->macAddress_,
+                    OUTPUT_DEVICE);
+            CHECK_AND_CONTINUE(activeScoDevice != nullptr && activeScoDevice->deviceType_ != DEVICE_TYPE_NONE);
             deviceList.push_back(activeScoDevice);
         }
     }

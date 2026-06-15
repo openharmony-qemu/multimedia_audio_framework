@@ -128,7 +128,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_002, TestSize.Level1)
         .WillOnce(Return(SUCCESS));
     
     EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(HFP_DEVICE_MAC1), SUCCESS);
-    AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_VOICE_RINGING, false);
+    AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_VOICE_RINGING, false, false);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
     EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_CALLULAR), true);
 }
@@ -153,7 +153,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_003, TestSize.Level1)
         }));
     
     EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(HFP_DEVICE_MAC2), SUCCESS);
-    AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_PHONE_CHAT, false);
+    AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_PHONE_CHAT, false, false);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
     EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
 }
@@ -175,10 +175,10 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_004, TestSize.Level1)
         }));
     AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice(HFP_DEVICE_MAC2);
 
-    AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT, true);
+    AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT, false, true);
     EXPECT_EQ(AudioHfpManager::IsAudioScoStateConnect(), true);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_DEFAULT), true);
+    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
 }
 
 /**
@@ -198,7 +198,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_005, TestSize.Level1)
         }));
     AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice(HFP_DEVICE_MAC2);
 
-    AudioHfpManager::HandleScoWithRecongnition(true);
+    AudioHfpManager::UpdateAudioScene(AUDIO_SCENE_DEFAULT, true, false);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
     EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_RECOGNITION), true);
 }

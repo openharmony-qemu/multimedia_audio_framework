@@ -38,6 +38,7 @@ class ConflictHandler {
 public:
     virtual ~ConflictHandler() = default;
     virtual bool Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType) = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetHighestPriorityDevice() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
