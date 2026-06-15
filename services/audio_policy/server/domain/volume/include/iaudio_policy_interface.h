@@ -225,6 +225,8 @@ public:
 
     virtual int32_t GetSafeVolumeLevel() const = 0;
 
+    virtual int32_t GetSafeVolumeDegree() const = 0;
+
     virtual int32_t GetSafeVolumeTimeout() const = 0;
 
     virtual void SafeVolumeDump(std::string &dumpString) = 0;

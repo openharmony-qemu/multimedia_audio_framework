@@ -134,28 +134,8 @@ bool AudioAdapterManager::Init()
     // init volume before kvstore start by local prop for bootanimation
     InitBootAnimationVolume();
     AudioVolume::GetInstance()->SetDefaultAppVolume(appConfigVolume_.defaultVolume);
-    std::string defaultSafeVolume = std::to_string(GetMaxVolumeLevel(STREAM_MUSIC, DEVICE_TYPE_SPEAKER));
-    AUDIO_INFO_LOG("defaultSafeVolume %{public}s", defaultSafeVolume.c_str());
-    char currentSafeVolumeValue[4] = {0};
-    ret = GetParameter("const.audio.safe_media_volume", defaultSafeVolume.c_str(),
-        currentSafeVolumeValue, sizeof(currentSafeVolumeValue));
-    if (ret > 0) {
-        safeVolume_ = atoi(currentSafeVolumeValue);
-        AUDIO_INFO_LOG("Get currentSafeVolumeValue success %{public}d", safeVolume_);
-    } else {
-        safeVolume_ = GetMaxVolumeLevel(STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
-        AUDIO_ERR_LOG("Get currentSafeVolumeValue failed %{public}d", ret);
-    }
 
-    char safeVolumeTimeout[6] = {0};
-    ret = GetParameter("persist.multimedia.audio.safevolume.timeout", "1140",
-        safeVolumeTimeout, sizeof(safeVolumeTimeout));
-    if (ret > 0) {
-        safeVolumeTimeout_ = atoi(safeVolumeTimeout);
-        AUDIO_INFO_LOG("Get safeVolumeTimeout success %{public}d", safeVolumeTimeout_);
-    } else {
-        AUDIO_ERR_LOG("Get safeVolumeTimeout failed %{public}d", ret);
-    }
+    InitSafeVolumeParams();
 
     isVolumeUnadjustable_ = system::GetBoolParameter("const.multimedia.audio.fixedvolume", false);
     AUDIO_INFO_LOG("Get fixdvolume parameter success %{public}d", isVolumeUnadjustable_);
@@ -192,6 +172,35 @@ void AudioAdapterManager::InitBootAnimationVolume()
             typeForBootAnimation, GetStreamVolumeInternal(desc, typeForBootAnimation));
     } else {
         AUDIO_ERR_LOG("Init: Get volume parameter failed %{public}d", ret);
+    }
+}
+
+void AudioAdapterManager::InitSafeVolumeParams()
+{
+    int32_t maxVolumeLevel = GetMaxVolumeLevel(STREAM_MUSIC, DEVICE_TYPE_WIRED_HEADSET);
+    std::string defaultSafeVolume = std::to_string(maxVolumeLevel);
+    AUDIO_INFO_LOG("defaultSafeVolume %{public}s", defaultSafeVolume.c_str());
+    char currentSafeVolumeValue[4] = {0};
+    int32_t ret = GetParameter("const.audio.safe_media_volume", defaultSafeVolume.c_str(),
+        currentSafeVolumeValue, sizeof(currentSafeVolumeValue));
+    if (ret > 0) {
+        safeVolume_ = atoi(currentSafeVolumeValue);
+        AUDIO_INFO_LOG("Get currentSafeVolumeValue success %{public}d", safeVolume_);
+    } else {
+        safeVolume_ = maxVolumeLevel;
+        AUDIO_ERR_LOG("Get currentSafeVolumeValue failed %{public}d", ret);
+    }
+
+    safeVolumeDegree_ = VolumeUtils::VolumeLevelToDegree(safeVolume_, maxVolumeLevel);
+
+    char safeVolumeTimeout[6] = {0};
+    ret = GetParameter("persist.multimedia.audio.safevolume.timeout", "1140",
+        safeVolumeTimeout, sizeof(safeVolumeTimeout));
+    if (ret > 0) {
+        safeVolumeTimeout_ = atoi(safeVolumeTimeout);
+        AUDIO_INFO_LOG("Get safeVolumeTimeout success %{public}d", safeVolumeTimeout_);
+    } else {
+        AUDIO_ERR_LOG("Get safeVolumeTimeout failed %{public}d", ret);
     }
 }
 
@@ -3388,6 +3397,11 @@ int32_t AudioAdapterManager::DoRestoreData()
 int32_t AudioAdapterManager::GetSafeVolumeLevel() const
 {
     return safeVolume_;
+}
+
+int32_t AudioAdapterManager::GetSafeVolumeDegree() const
+{
+    return safeVolumeDegree_;
 }
 
 int32_t AudioAdapterManager::GetSafeVolumeTimeout() const

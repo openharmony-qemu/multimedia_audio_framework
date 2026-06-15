@@ -261,6 +261,8 @@ public:
 
     int32_t GetSafeVolumeLevel() const;
 
+    int32_t GetSafeVolumeDegree() const;
+
     int32_t GetSafeVolumeTimeout() const;
 
     int32_t GetCurActivateCount(void) const;
@@ -430,6 +432,7 @@ private:
     std::string GetMuteKeyForDeviceType(DeviceType deviceType, std::string &type);
     void InitSystemSoundUriMap();
     void InitBootAnimationVolume();
+    void InitSafeVolumeParams();
     void UpdateVolumeMapIndex();
     void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
         std::vector<VolumePoint> &volumePoints);
@@ -553,6 +556,7 @@ private:
     LowerVolumeInfoMap lowerVolumeInfos_;
     std::atomic<AudioRingerMode> ringerMode_ = RINGER_MODE_NORMAL;
     int32_t safeVolume_ = 0;
+    int32_t safeVolumeDegree_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
     SafeStatus safeStatusBt_ = SAFE_ACTIVE;
     SafeStatus safeStatusSle_ = SAFE_ACTIVE;

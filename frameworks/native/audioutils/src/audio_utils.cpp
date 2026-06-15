@@ -2424,6 +2424,13 @@ VolumeScale VolumeScale::Refresh()
     return *this;
 }
 
+VolumeScale VolumeScale::ResetVolumeDegree()
+{
+    AUDIO_INFO_LOG("Reset the volume degree to the baseline value of the volume level %{public}d", volumeLevel_);
+    volumeDegree_ = VolumeUtils::VolumeLevelToDegree(volumeLevel_, maxVolumeLevel_);
+    return *this;
+}
+
 VolumeScale VolumeScale::Adjust(const VolumeScale &volume)
 {
     if (volume.volumeLevel_ == volumeLevel_) {

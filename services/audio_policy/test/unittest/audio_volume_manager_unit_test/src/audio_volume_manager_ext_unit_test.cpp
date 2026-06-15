@@ -453,11 +453,11 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_001, TestSize.Level
 {
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     AudioStreamType streamType = STREAM_VOICE_CALL;
-    int32_t volumeLevel = 5;
+    VolumeScale volume = VolumeScale(5, -1, 15);
     DeviceType deviceType = DEVICE_TYPE_NEARLINK;
 
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-    EXPECT_NE(ret, -2);
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_NE(ret.VolumeLevel(), -2);
 }
 
 /**
@@ -469,10 +469,10 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_002, TestSize.Level
 {
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     AudioStreamType streamType = STREAM_VOICE_CALL;
-    int32_t volumeLevel = 5;
+    VolumeScale volume = VolumeScale(5, -1, 15);
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
 
-    audioVolumeManager.SelectDealSafeVolume(streamType, volumeLevel, deviceType);
+    audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
     EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, false);
 }
 
@@ -485,11 +485,11 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_003, TestSize.Level
 {
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     AudioStreamType streamType = STREAM_VOICE_CALL;
-    int32_t volumeLevel = 5;
+    VolumeScale volume = VolumeScale(5, -1, 15);
     DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
 
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-    EXPECT_LT(-10, ret);
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
 }
 
 /**
@@ -501,11 +501,234 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_004, TestSize.Level
 {
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     AudioStreamType streamType = STREAM_VOICE_CALL;
-    int32_t volumeLevel = 5;
+    VolumeScale volume = VolumeScale(5, -1, 15);
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
 
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-    EXPECT_LT(-10, ret);
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_005
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT_SOUNDBOX category.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_005, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().deviceCategory_ = BT_SOUNDBOX;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_EQ(ret.VolumeLevel(), volume.VolumeLevel());
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_006
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT_CAR category.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_006, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    CurrentActiveDevice().deviceCategory_ = BT_CAR;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_EQ(ret.VolumeLevel(), volume.VolumeLevel());
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_007
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT isBtFirstBoot true.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_007, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioVolumeManager.isBtFirstBoot_ = true;
+    CurrentActiveDevice().deviceCategory_ = BT_HEADPHONE;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
+    EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, false);
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_008
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT isBtFirstBoot false.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_008, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioVolumeManager.isBtFirstBoot_ = false;
+    CurrentActiveDevice().deviceCategory_ = BT_HEADPHONE;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
+    EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, false);
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_009
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT_SCO isBtFirstBoot true.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_009, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioVolumeManager.isBtFirstBoot_ = true;
+    CurrentActiveDevice().deviceCategory_ = BT_HEADPHONE;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
+    EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, false);
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_010
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and WIRED_HEADSET.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_010, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_011
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and WIRED_HEADPHONES.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_011, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_WIRED_HEADPHONES;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_012
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and USB_HEADSET.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_012, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_USB_HEADSET;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_013
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and USB_ARM_HEADSET.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_013, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_014
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and NEARLINK.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_014, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    audioVolumeManager.isSleFirstBoot_ = true;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
+    EXPECT_EQ(audioVolumeManager.isSleFirstBoot_, false);
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_015
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and unsupported device type SPEAKER.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_015, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_016
+ * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and DEVICE_TYPE_NONE.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_016, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeScale volume = VolumeScale(15, -1, 15);
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: SelectDealSafeVolume_017
+ * @tc.desc  : Test SelectDealSafeVolume.
+ */
+HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_017, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t safeVolumeLevel = audioVolumeManager.audioPolicyManager_.GetSafeVolumeLevel();
+    int32_t safeVolumeDegree = audioVolumeManager.audioPolicyManager_.GetSafeVolumeDegree();
+    VolumeScale volume = VolumeScale(safeVolumeLevel, safeVolumeDegree + 1, 15);
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+
+    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
+    EXPECT_LT(-10, ret.VolumeLevel());
 }
 
 /**
