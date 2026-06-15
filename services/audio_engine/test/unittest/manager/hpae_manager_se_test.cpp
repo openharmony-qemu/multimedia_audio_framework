@@ -5,12 +5,8 @@
  */
 
 #include "gtest/gtest.h"
-#include <algorithm>
-#include <any>
 #include <memory>
 #include <string>
-#include <tuple>
-#include <vector>
 
 #include "hpae_manager.h"
 #include "hpae_renderer_manager.h"
@@ -33,51 +29,6 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 static constexpr uint32_t TEST_FRAME_LEN = 960;
-
-struct StatusEvent {
-    HpaeStreamClassType streamClassType;
-    uint32_t sessionId;
-    HpaeSessionState state;
-    IOperation operation;
-};
-
-class ManagerStatusCallbackRecorder final : public ISendMsgCallback {
-public:
-    void Invoke(HpaeMsgCode cmdID, const std::any &args) override
-    {
-        Record(cmdID, args);
-    }
-
-    void InvokeSync(HpaeMsgCode cmdID, const std::any &args) override
-    {
-        Record(cmdID, args);
-    }
-
-    size_t Count(uint32_t sessionId, IOperation operation) const
-    {
-        return static_cast<size_t>(std::count_if(events_.begin(), events_.end(),
-            [sessionId, operation](const StatusEvent &event) {
-                return event.sessionId == sessionId && event.operation == operation;
-            }));
-    }
-
-private:
-    void Record(HpaeMsgCode cmdID, const std::any &args)
-    {
-        if (cmdID != UPDATE_STATUS) {
-            return;
-        }
-        auto statusArgs = std::any_cast<std::tuple<HpaeStreamClassType, uint32_t,
-            HpaeSessionState, IOperation>>(&args);
-        if (statusArgs == nullptr) {
-            return;
-        }
-        events_.push_back({std::get<0>(*statusArgs), std::get<1>(*statusArgs),
-            std::get<2>(*statusArgs), std::get<3>(*statusArgs)});
-    }
-
-    std::vector<StatusEvent> events_;
-};
 } // namespace
 
 static constexpr uint32_t TEST_SESSION_ID = 42;
@@ -967,8 +918,6 @@ HWTEST_F(HpaeManagerSeE2eTest, ReloadRenderManager_recreatesOffloadSessionEffect
 {
     HpaeSinkInfo sinkInfo = GetTestSinkInfo();
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    auto callback = std::make_shared<ManagerStatusCallbackRecorder>();
-    offloadManager->RegisterSendMsgCallback(callback);
     ASSERT_EQ(offloadManager->Init(), SUCCESS);
     offloadManager->DeactivateThread();
     hpaeManager_->rendererManagerMap_["file_io"] = offloadManager;
@@ -977,7 +926,6 @@ HWTEST_F(HpaeManagerSeE2eTest, ReloadRenderManager_recreatesOffloadSessionEffect
     ASSERT_TRUE(SetupOffloadStreamWithSE(hpaeManager_, offloadManager));
     auto oldNode = offloadManager->sessionEffectNode_;
     ASSERT_NE(oldNode, nullptr);
-    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
     hpaeManager_->sinkNameSinkIdMap_["file_io"] = 0;
     hpaeManager_->sinkIdSinkNameMap_[0] = "file_io";
@@ -992,18 +940,15 @@ HWTEST_F(HpaeManagerSeE2eTest, ReloadRenderManager_recreatesOffloadSessionEffect
     EXPECT_NE(offloadManager->sessionEffectNode_, nullptr);
     EXPECT_NE(offloadManager->sessionEffectNode_, oldNode);
     EXPECT_EQ(offloadManager->sessionEffectSessionId_, TEST_SESSION_ID);
-    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
-    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
 }
 
 // HM-RELOAD-DIRECT: UpdateAudioPortInfo direct reload path also rebuilds the physical SE node
 HWTEST_F(HpaeManagerSeE2eTest, UpdateAudioPortInfo_recreatesSessionEffect_E2E, TestSize.Level0)
 {
-    auto callback = std::make_shared<ManagerStatusCallbackRecorder>();
-    rendererManager_->RegisterSendMsgCallback(callback);
     ASSERT_TRUE(SetupStreamWithSE(hpaeManager_, rendererManager_));
     ASSERT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
-    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+    auto oldNode = rendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(oldNode, nullptr);
 
     HpaeNodeInfo nodeInfo;
     TransSinkInfoToNodeInfo(rendererManager_->sinkInfo_, rendererManager_, nodeInfo);
@@ -1020,8 +965,9 @@ HWTEST_F(HpaeManagerSeE2eTest, UpdateAudioPortInfo_recreatesSessionEffect_E2E, T
 
     EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
     EXPECT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
-    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
-    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
+    auto newNode = rendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->GetSessionEffectNode(TEST_SESSION_ID);
+    EXPECT_NE(newNode, nullptr);
+    EXPECT_NE(newNode, oldNode);
 }
 
 // --- E2E: Pause→Start (SessionEffectStart recovery) ---

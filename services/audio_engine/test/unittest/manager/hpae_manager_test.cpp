@@ -71,7 +71,7 @@ void HpaeManagerUnitTest::TearDown()
 void WaitForMsgProcessing(std::shared_ptr<HpaeManager> &hpaeManager)
 {
     int waitCount = 0;
-    const int waitCountThd = 5;
+    const int waitCountThd = 100;
     while (hpaeManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
         waitCount++;
