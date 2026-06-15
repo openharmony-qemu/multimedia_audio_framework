@@ -45,7 +45,7 @@ HWTEST_F(AudioRendererDeviceAiut, OutputDeviceCallback_SaveCallback_001, TestSiz
     class TestOutputDeviceChangeCallback : public AudioRendererOutputDeviceChangeCallback {
     public:
         void OnOutputDeviceChange(const AudioDeviceDescriptor &desc,
-            const AudioStreamDeviceChangeReasonExt reason) override {}
+            const AudioStreamDeviceChangeReason reason) override {}
     };
     auto testCallback = std::make_shared<TestOutputDeviceChangeCallback>();
     AIUT_ASSERT_NE_INFO_LOG(testCallback, nullptr, "testCallback is null");

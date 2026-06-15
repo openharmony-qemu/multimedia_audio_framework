@@ -264,3 +264,11 @@ ohos_unittest("hdiadapter_unit_test") {
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }
+
+# AIUT targets are defined in test/aiut/ subdirectories
+group("hdiadapter_aiut") {
+  testonly = true
+  deps = [
+    "test/aiut:hdiadapter_aiut",
+  ]
+}
