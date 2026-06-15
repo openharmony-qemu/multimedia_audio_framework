@@ -213,6 +213,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
+    isBTSupportWearDetectionEnable_ = false;
     modemCallSupported_ = true;
     highQualityRecordingSupported_ = false;
     dmDeviceInfo_ = "";
@@ -252,6 +253,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
+    isBTSupportWearDetectionEnable_ = false;
     modemCallSupported_ = true;
     highQualityRecordingSupported_ = false;
     dmDeviceInfo_ = "";
@@ -294,6 +296,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     hasPair_ = deviceDescriptor.hasPair_;
     spatializationSupported_ = deviceDescriptor.spatializationSupported_;
     isVrSupported_ = deviceDescriptor.isVrSupported_;
+    isBTSupportWearDetectionEnable_ = deviceDescriptor.isBTSupportWearDetectionEnable_;
     clientInfo_ = deviceDescriptor.clientInfo_;
     modemCallSupported_ = deviceDescriptor.modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor.highQualityRecordingSupported_;
@@ -341,6 +344,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     hasPair_ = deviceDescriptor->hasPair_;
     spatializationSupported_ = deviceDescriptor->spatializationSupported_;
     isVrSupported_ = deviceDescriptor->isVrSupported_;
+    isBTSupportWearDetectionEnable_ = deviceDescriptor->isBTSupportWearDetectionEnable_;
     clientInfo_ = deviceDescriptor->clientInfo_;
     modemCallSupported_ = deviceDescriptor->modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor->highQualityRecordingSupported_;
@@ -491,6 +495,12 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
     std::list<AudioStreamInfo> capabilities = capabilities_.empty() ?
         std::list<AudioStreamInfo>{DEFAULT_AUDIO_STREAM_INFO} : capabilities_;
 
+    return  MarshallingInnerdata(parcel, devType, capabilities);
+}
+
+bool AudioDeviceDescriptor::MarshallingInnerdata(Parcel &parcel, int32_t devType,
+    const std::list<AudioStreamInfo> &capabilities) const
+{
     return  parcel.WriteInt32(devType) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceRole_)) &&
         parcel.WriteInt32(deviceId_) &&
@@ -519,6 +529,7 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
         parcel.WriteBool(spatializationSupported_) &&
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) && parcel.WriteInt32(isVrSupported_) &&
+        parcel.WriteBool(isBTSupportWearDetectionEnable_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) && parcel.WriteBool(modemCallSupported_) &&
         parcel.WriteBool(highQualityRecordingSupported_) && parcel.WriteString(dmDeviceInfo_) &&
         parcel.WriteInt32(hdPlaybackMode_) && parcel.WriteBool(isSupportRemoteMultichannel_) &&
@@ -587,6 +598,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) &&
         parcel.WriteInt32(isVrSupported_) &&
+        parcel.WriteBool(isBTSupportWearDetectionEnable_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) &&
         parcel.WriteBool(modemCallSupported_) &&
         parcel.WriteBool(highQualityRecordingSupported_) &&
@@ -628,6 +640,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     hasPair_ = parcel.ReadBool();
     routerType_ = static_cast<RouterType>(parcel.ReadInt32());
     isVrSupported_ = parcel.ReadInt32();
+    isBTSupportWearDetectionEnable_ = parcel.ReadBool();
     deviceUsage_ = static_cast<DeviceUsage>(parcel.ReadInt32());
     modemCallSupported_ = parcel.ReadBool();
     highQualityRecordingSupported_ = parcel.ReadBool();
