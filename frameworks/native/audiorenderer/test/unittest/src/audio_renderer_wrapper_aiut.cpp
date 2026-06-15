@@ -25,20 +25,10 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace {
-constexpr uint32_t TEST_SESSION_ID = 100;
-constexpr int32_t TEST_CLIENT_UID = 1234;
-constexpr int32_t TEST_STREAM_ID = 200;
-constexpr int32_t TEST_APP_UID = 1234;
-constexpr int32_t TEST_APP_PID = 5678;
-constexpr float TEST_LOW_POWER_VOLUME = 0.5f;
 constexpr int32_t TEST_OFFLOAD_STATE = 1;
 constexpr bool TEST_IS_APP_BACK = false;
-constexpr uint32_t TEST_SAMPLE_RATE = 44100;
-constexpr float TEST_VOLUME = 0.5f;
-constexpr float TEST_LOUDNESS_GAIN = 3.0f;
 constexpr int64_t TEST_POSITION = 1000;
 constexpr int64_t TEST_PERIOD = 100;
-constexpr uint64_t TEST_BUFFER_DURATION = 10;
 constexpr int64_t TEST_SOURCE_DURATION = 5000;
 }
 
@@ -66,18 +56,18 @@ public:
 
 class TestRendererFirstFrameWritingCallback : public AudioRendererFirstFrameWritingCallback {
 public:
-    void OnFirstFrameWritingCallback(uint64_t &duration) override {}
+    void OnFirstFrameWriting(uint64_t latency) override {}
 };
 
 class TestRendererErrorCallback : public AudioRendererErrorCallback {
 public:
-    void OnError(const ErrorCode errorCode) override {}
+    void OnError(const AudioErrors errorCode) override {}
 };
 
 class TestOutputDeviceChangeCallback : public AudioRendererOutputDeviceChangeCallback {
 public:
     void OnOutputDeviceChange(const AudioDeviceDescriptor &desc,
-        const AudioStreamDeviceChangeReasonExt reason) override {}
+        const AudioStreamDeviceChangeReason reason) override {}
 };
 
 // ==================== AudioRendererCallbackAiut ====================
@@ -172,7 +162,6 @@ HWTEST_F(AudioRendererProxyObjAiut, SaveRendererObj_001, TestSize.Level0)
 
     // After SaveRendererObj, the proxy should hold the renderer
     StreamSetStateEventInternal event = {};
-    event.streamId = 100;
     proxyObj->MuteStreamImpl(event);
     // Verify renderer is still in valid state after proxy method call
     AIUT_EXPECT_EQ_INFO_LOG(renderer->GetStatus(), RENDERER_PREPARED,
@@ -225,7 +214,6 @@ HWTEST_F(AudioRendererProxyObjAiut, MuteStreamImpl_001, TestSize.Level0)
     proxyObj->SaveRendererObj(renderer);
 
     StreamSetStateEventInternal event = {};
-    event.streamId = 100;
     proxyObj->MuteStreamImpl(event);
     // Verify renderer state is still valid after MuteStreamImpl
     AIUT_EXPECT_EQ_INFO_LOG(renderer->GetStatus(), RENDERER_PREPARED,
@@ -422,6 +410,8 @@ HWTEST_F(AudioRendererProxyObjAiut, SetOffloadModeImpl_002, TestSize.Level0)
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
     AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     proxyObj->SaveRendererObj(renderer);
+    AIUT_EXPECT_EQ_INFO_LOG(renderer->GetStatus(), RENDERER_PREPARED,
+        "proxyObj should still be functional after SetOffloadModeImpl on null renderer, state=%d",
         renderer->GetStatus());
 }
 
@@ -462,6 +452,8 @@ HWTEST_F(AudioRendererProxyObjAiut, UnsetOffloadModeImpl_002, TestSize.Level0)
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
     AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     proxyObj->SaveRendererObj(renderer);
+    AIUT_EXPECT_EQ_INFO_LOG(renderer->GetStatus(), RENDERER_PREPARED,
+        "proxyObj should still be functional after UnsetOffloadModeImpl on null renderer, state=%d",
         renderer->GetStatus());
 }
 
@@ -511,9 +503,15 @@ void SharedAudioRendererWrapperAiut::TearDown(void) {}
 std::shared_ptr<SharedAudioRendererWrapper> CreateTestWrapper()
 {
     auto innerRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
-    AIUT_ASSERT_NE_INFO_LOG(innerRenderer, nullptr, "innerRenderer is null in CreateTestWrapper");
+    if (innerRenderer == nullptr) {
+        AIUT_INFO_LOG("innerRenderer is null in CreateTestWrapper");
+        return nullptr;
+    }
     auto wrapper = std::make_shared<SharedAudioRendererWrapper>(innerRenderer);
-    AIUT_ASSERT_NE_INFO_LOG(wrapper, nullptr, "wrapper is null in CreateTestWrapper");
+    if (wrapper == nullptr) {
+        AIUT_INFO_LOG("wrapper is null in CreateTestWrapper");
+        return nullptr;
+    }
     return wrapper;
 }
 

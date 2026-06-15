@@ -50,7 +50,7 @@ AudioCapturerDebugInfo CreateTestCapturerDebugInfo()
     AudioCapturerDebugInfo info;
     info.sessionId = TEST_SESSION_ID + 1;
     info.samplingRate = TEST_CAPTURER_SAMPLING_RATE;
-    info.channels = AudioChannel::CHANNEL_1;
+    info.channels = AudioChannel::MONO;
     info.format = AudioSampleFormat::SAMPLE_S16LE;
     info.encoding = AudioEncodingType::ENCODING_PCM;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;

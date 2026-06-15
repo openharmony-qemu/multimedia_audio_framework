@@ -12,12 +12,12 @@
 # limitations under the License.
 
 import("//build/test.gni")
-import("../../../../config.gni")
+import("../../../../../config.gni")
 
 audio_renderer_aiut_output_path = "audio_framework/audio_route_renderer/audio_renderer"
 
 # Common includes and flags shared by all AIUT modules
-_aiut_include_dirs = [
+aiut_include_dirs = [
   "./include",
   "../../include",
   "../../../../../test/unittest/common/include",
@@ -25,39 +25,39 @@ _aiut_include_dirs = [
   "../../../../../interfaces/inner_api/native/audiorenderer/include",
   "../../../../../interfaces/inner_api/native/audiomanager/include",
   "../../../../../interfaces/inner_api/native/audio_debug_manager/include",
-  "../../../../audiorenderer/include",
-  "../../../../audiostream/include",
-  "../../../../audiodefinitions/include",
-  "../../../../audioutils/include",
-  "../../../../common/include",
-  "../../../../audioschedule/include",
+  "../../../audiorenderer/include",
+  "../../../audiostream/include",
+  "../../../audiodefinitions/include",
+  "../../../audioutils/include",
+  "../../../common/include",
+  "../../../audioschedule/include",
   "../../../../../services/audio_service/client/include",
   "../../../../../services/audio_service/common/include/dfx",
   "../../../../../services/audio_policy/client/include",
 ]
 
-_aiut_cflags = [
+aiut_cflags = [
   "-Wall",
   "-Werror",
   "-Wno-macro-redefined",
   "-fno-access-control",
 ]
 
-_aiut_deps = [
+aiut_deps = [
   "../../../../../services/audio_policy:audio_policy_client",
   "../../../../../services/audio_service:audio_client",
   "../../../../../services/audio_service:audio_engine_manager",
   "../../../../../services/audio_service:audio_policy_manager",
   "../../../../../services/audio_service:audio_stream_client",
   "../../../../../services/audio_service:audio_common",
-  "../../../../audiodefinitions:audio_definitions",
-  "../../../../audiorenderer:audio_renderer",
-  "../../../../audioutils:audio_utils",
-  "../../../../audioschedule:audio_schedule",
-  "../../../../audio_debug_manager:audio_debug_manager",
+  "../../../audiodefinitions:audio_definitions",
+  "../../../audiorenderer:audio_renderer",
+  "../../../audioutils:audio_utils",
+  "../../../audioschedule:audio_schedule",
+  "../../../audio_debug_manager:audio_debug_manager",
 ]
 
-_aiut_external_deps = [
+aiut_external_deps = [
   "c_utils:utils",
   "eventhandler:libeventhandler",
   "hilog:libhilog",
@@ -67,11 +67,11 @@ _aiut_external_deps = [
   "samgr:samgr_proxy",
 ]
 
-ohos_unittest("audio_renderer_aiut") {
+ohos_unittest("audio_renderer_native_aiut") {
   testonly = true
   module_out_path = audio_renderer_aiut_output_path
-  include_dirs = _aiut_include_dirs
-  cflags = _aiut_cflags
+  include_dirs = aiut_include_dirs
+  cflags = aiut_cflags
   cflags_cc = [ "-std=c++20" ]
   sources = [
     "src/audio_renderer_aiut.cpp",
@@ -79,66 +79,77 @@ ohos_unittest("audio_renderer_aiut") {
     "../../src/audio_renderer.cpp",
     "../../src/audio_renderer_proxy_obj.cpp",
   ]
-  deps = _aiut_deps
-  external_deps = _aiut_external_deps
+  deps = aiut_deps
+  external_deps = aiut_external_deps
 }
 
 ohos_unittest("audio_renderer_engine_aiut") {
   testonly = true
   module_out_path = "audio_framework/audio_framework_engine/audio_effect"
-  include_dirs = _aiut_include_dirs
-  cflags = _aiut_cflags
+  include_dirs = aiut_include_dirs
+  cflags = aiut_cflags
   cflags_cc = [ "-std=c++20" ]
   sources = [
     "src/audio_renderer_engine_aiut.cpp",
     "../../src/audio_renderer.cpp",
     "../../src/audio_renderer_proxy_obj.cpp",
   ]
-  deps = _aiut_deps
-  external_deps = _aiut_external_deps
+  deps = aiut_deps
+  external_deps = aiut_external_deps
 }
 
 ohos_unittest("audio_renderer_interrupt_aiut") {
   testonly = true
   module_out_path = "audio_framework/audio_framework_focus/audio_interrupt"
-  include_dirs = _aiut_include_dirs
-  cflags = _aiut_cflags
+  include_dirs = aiut_include_dirs
+  cflags = aiut_cflags
   cflags_cc = [ "-std=c++20" ]
   sources = [
     "src/audio_renderer_interrupt_aiut.cpp",
     "../../src/audio_renderer.cpp",
     "../../src/audio_renderer_proxy_obj.cpp",
   ]
-  deps = _aiut_deps
-  external_deps = _aiut_external_deps
+  deps = aiut_deps
+  external_deps = aiut_external_deps
 }
 
 ohos_unittest("audio_renderer_volume_aiut") {
   testonly = true
   module_out_path = "audio_framework/audio_framework_policy/audio_volume"
-  include_dirs = _aiut_include_dirs
-  cflags = _aiut_cflags
+  include_dirs = aiut_include_dirs
+  cflags = aiut_cflags
   cflags_cc = [ "-std=c++20" ]
   sources = [
     "src/audio_renderer_volume_aiut.cpp",
     "../../src/audio_renderer.cpp",
     "../../src/audio_renderer_proxy_obj.cpp",
   ]
-  deps = _aiut_deps
-  external_deps = _aiut_external_deps
+  deps = aiut_deps
+  external_deps = aiut_external_deps
 }
 
 ohos_unittest("audio_renderer_device_aiut") {
   testonly = true
   module_out_path = "audio_framework/audio_framework_policy/audio_device"
-  include_dirs = _aiut_include_dirs
-  cflags = _aiut_cflags
+  include_dirs = aiut_include_dirs
+  cflags = aiut_cflags
   cflags_cc = [ "-std=c++20" ]
   sources = [
     "src/audio_renderer_device_aiut.cpp",
     "../../src/audio_renderer.cpp",
     "../../src/audio_renderer_proxy_obj.cpp",
   ]
-  deps = _aiut_deps
-  external_deps = _aiut_external_deps
+  deps = aiut_deps
+  external_deps = aiut_external_deps
+}
+
+group("audio_renderer_aiut") {
+  testonly = true
+  deps = [
+    ":audio_renderer_native_aiut",
+    ":audio_renderer_engine_aiut",
+    ":audio_renderer_interrupt_aiut",
+    ":audio_renderer_volume_aiut",
+    ":audio_renderer_device_aiut",
+  ]
 }

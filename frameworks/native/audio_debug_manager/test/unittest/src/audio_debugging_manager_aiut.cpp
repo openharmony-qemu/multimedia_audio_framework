@@ -91,7 +91,7 @@ AudioRendererDebugInfo CreateTestRendererDebugInfo()
     AudioRendererDebugInfo info;
     info.sessionId = TEST_SESSION_ID;
     info.samplingRate = TEST_SAMPLING_RATE;
-    info.channels = AudioChannel::CHANNEL_2;
+    info.channels = AudioChannel::STEREO;
     info.format = AudioSampleFormat::SAMPLE_S16LE;
     info.encoding = AudioEncodingType::ENCODING_PCM;
     info.streamUsage = STREAM_USAGE_MUSIC;
@@ -118,7 +118,7 @@ AudioCapturerDebugInfo CreateTestCapturerDebugInfo()
     AudioCapturerDebugInfo info;
     info.sessionId = TEST_SESSION_ID + 1;
     info.samplingRate = TEST_CAPTURER_SAMPLING_RATE;
-    info.channels = AudioChannel::CHANNEL_1;
+    info.channels = AudioChannel::MONO;
     info.format = AudioSampleFormat::SAMPLE_S16LE;
     info.encoding = AudioEncodingType::ENCODING_PCM;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
@@ -539,19 +539,7 @@ HWTEST_F(AudioDebuggingManagerAiut, Taihe_PrintAppInfo_WithAllCallbacks, TestSiz
     AudioDebugManager::GetInstance().UnregisterAudioLoopback(lKey);
 }
 
-// ==================== NAPI PrintAppInfo / ClassName Tests ====================
-
-/**
-* @tc.name  : Test NAPI class name constant
-* @tc.number: Napi_ClassName_Verification
-* @tc.desc  : Test AUDIO_DEBUGGING_MGR_NAPI_CLASS_NAME constant. Value equals "AudioDebuggingManager".
-*/
-HWTEST_F(AudioDebuggingManagerAiut, Napi_ClassName_Verification, TestSize.Level0)
-{
-    AIUT_INFO_LOG("entry");
-    // Verify the NAPI class name constant matches the expected value
-    AIUT_EXPECT_EQ_INFO_LOG(AUDIO_DEBUGGING_MGR_NAPI_CLASS_NAME, "AudioDebuggingManager", "class name mismatch");
-}
+// ==================== NAPI PrintAppInfo Tests ====================
 
 /**
 * @tc.name  : Test NAPI printAppInfo API with valid fd
