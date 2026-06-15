@@ -596,6 +596,20 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
         + std::to_string(sceneType));
     HpaeProcessorType tmpSceneType = (sceneClusterMap_[sceneType] == SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT))
         ? HPAE_SCENE_DEFAULT : sceneType;
+    HpaeProcessorType pendingSceneType = HPAE_SCENE_UNCONNECTED;
+    for (const auto &[stopSceneType, stopSessionId] : toBeStoppedSceneTypeToSessionMap_) {
+        if (stopSessionId == sessionId && stopSceneType != tmpSceneType) {
+            pendingSceneType = stopSceneType;
+            break;
+        }
+    }
+    if (pendingSceneType != HPAE_SCENE_UNCONNECTED) {
+        if (SafeGetMap(sceneClusterMap_, pendingSceneType) && SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            sceneClusterMap_[pendingSceneType]->AudioRendererStop(
+                sinkInputNodeMap_[sessionId]->GetNodeInfo(), sinkInfo_);
+        }
+        toBeStoppedSceneTypeToSessionMap_.erase(pendingSceneType);
+    }
     if (toBeStoppedSceneTypeToSessionMap_.count(tmpSceneType) > 0) {
         uint32_t sessionIdToStop = toBeStoppedSceneTypeToSessionMap_[tmpSceneType];
         if (sessionIdToStop == sessionId) {

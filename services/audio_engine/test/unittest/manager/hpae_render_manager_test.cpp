@@ -2891,6 +2891,64 @@ HWTEST_F(HpaeRendererManagerTest, OnDisConnectProcessCluster_003, TestSize.Level
 }
 
 /**
+ * @tc.name : ConnectProcessCluster
+ * @tc.type : FUNC
+ * @tc.number: ConnectProcessCluster_001
+ * @tc.desc : Test ConnectProcessCluster
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_001, TestSize.Level0)
+{
+    uint32_t sessionId = 10001;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    // Build the sink input node. bypass=false so DisConnectInputCluster takes the deferred-stop path.
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
+
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+    HpaeNodeInfo movieNodeInfo = nodeInfo;
+    movieNodeInfo.sceneType = HPAE_SCENE_MOVIE;
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE] =
+        std::make_shared<HpaeProcessCluster>(movieNodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+
+    // Start the session on OLD.
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MUSIC);
+
+    // Disconnect OLD -> it is now empty, so the stop is deferred into toBeStoppedSceneTypeToSessionMap_.
+    hpaeRendererManager->DisConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_EQ(hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_.count(HPAE_SCENE_MUSIC), 1u);
+    EXPECT_EQ(hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_[HPAE_SCENE_MUSIC], sessionId);
+
+    // Refresh connects the session to NEW. The deferred OLD stop must be flushed here; without the
+    // fix the OLD entry would survive and fire a late Stop on a session that is now running on NEW.
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MOVIE);
+    EXPECT_EQ(hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_.count(HPAE_SCENE_MUSIC), 0u);
+    EXPECT_EQ(hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_.empty(), true);
+
+    hpaeRendererManager->DeleteProcessClusterInner(sessionId, HPAE_SCENE_MUSIC);
+    hpaeRendererManager->DeleteProcessClusterInner(sessionId, HPAE_SCENE_MOVIE);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
  * @tc.name  : Test SetOffloadRenderCallbackType
  * @tc.type  : FUNC
  * @tc.number: SetOffloadRenderCallbackType
