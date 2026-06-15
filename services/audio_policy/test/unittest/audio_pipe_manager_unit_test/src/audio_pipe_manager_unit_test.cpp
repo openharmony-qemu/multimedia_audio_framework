@@ -2354,7 +2354,7 @@ HWTEST_F(AudioPipeManagerUnitTest, HasRunningRecognitionCapturerStream_001, Test
     ASSERT_NE(audioPipeManager, nullptr);
     audioPipeManager->curPipeList_.clear();
 
-    EXPECT_EQ(audioPipeManager->HasRunningRecognitionCapturerStream(), false);
+    EXPECT_EQ(audioPipeManager->HasRunningRecognitionCapturerStream(DEVICE_TYPE_NONE), false);
 }
 
 /**
@@ -2378,7 +2378,7 @@ HWTEST_F(AudioPipeManagerUnitTest, HasRunningRecognitionCapturerStream_002, Test
     pipeInfo->streamDescriptors_.push_back(desc);
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
-    EXPECT_EQ(audioPipeManager->HasRunningRecognitionCapturerStream(), true);
+    EXPECT_EQ(audioPipeManager->HasRunningRecognitionCapturerStream(DEVICE_TYPE_NONE), true);
 }
 
 /**

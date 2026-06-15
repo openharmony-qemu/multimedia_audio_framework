@@ -620,7 +620,8 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
 int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isRecognitionScene, bool isScoSelected)
 {
     AUDIO_INFO_LOG("scene %{public}d to %{public}d, isRecognitionScene %{public}d to %{public}d, "
-        "isScoSelected %{public}d to %{public}d", scene_.load(), scene, isScoSelected_.load(), isScoSelected);
+        "isScoSelected %{public}d to %{public}d", scene_.load(), scene,
+        isRecognitionScene_.load(), isRecognitionScene, isScoSelected_.load(), isScoSelected);
     scene_.store(scene);
     isScoSelected_.store(isScoSelected);
     isRecognitionScene_.store(isRecognitionScene);
@@ -684,12 +685,12 @@ ScoCategory AudioHfpManager::JudgeScoCategory()
     auto scene = scene_.load();
     if ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) && !isInbandRingEnabled) {
         AUDIO_WARNING_LOG("The inbandRing switch is off, ignore the ring scene.");
-    if (isRecognitionScene_.load()) {
-        return ScoCategory::SCO_RECOGNITION;
-    } else if (isScoSelected_.load()) {
-        return ScoCategory::SCO_VIRTUAL;
-    }
-    return ScoCategory::SCO_DEFAULT;
+        if (isRecognitionScene_.load()) {
+            return ScoCategory::SCO_RECOGNITION;
+        } else if (isScoSelected_.load()) {
+            return ScoCategory::SCO_VIRTUAL;
+        }
+        return ScoCategory::SCO_DEFAULT;
     }
 
     if (scene == AUDIO_SCENE_VOICE_RINGING || scene == AUDIO_SCENE_PHONE_CALL) {

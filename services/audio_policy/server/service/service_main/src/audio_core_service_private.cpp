@@ -3451,7 +3451,7 @@ void AudioCoreService::FetchDevicesForDescs(const std::vector<std::shared_ptr<Au
         auto newDescs = audioRouterCenter_.FetchOutputDevices(info);
         pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
     }
-    for (auto &desc : outStreamDescs) {
+    for (auto &desc : inStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         FetchDeviceInfo info;
         info.sourceType = desc->capturerInfo_.sourceType;

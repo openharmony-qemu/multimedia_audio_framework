@@ -1221,8 +1221,8 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
 
 void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    auto outputStreamDescs = GetAllOutputStreamDescsIncludingModem();
-    auto inputStreamDescs = GetAllInputStreamDescs();
+    auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModem();
+    auto inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
     FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
     bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
     bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
