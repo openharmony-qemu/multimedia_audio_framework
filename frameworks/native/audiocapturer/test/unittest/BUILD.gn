@@ -1,0 +1,123 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("../../../../../config.gni")
+
+audio_capturer_aiut_output_path = "audio_framework/audio_route_capturer/audio_capturer"
+
+# Common includes and flags shared by all AIUT modules
+aiut_include_dirs = [
+  "./include",
+  "../../include",
+  "../../../../../test/unittest/common/include",
+  "../../../../../interfaces/inner_api/native/audiocommon/include",
+  "../../../../../interfaces/inner_api/native/audiocapturer/include",
+  "../../../../../interfaces/inner_api/native/audiomanager/include",
+  "../../../../../interfaces/inner_api/native/audio_debug_manager/include",
+  "../../../audiocapturer/include",
+  "../../../audiostream/include",
+  "../../../audiodefinitions/include",
+  "../../../audioutils/include",
+  "../../../common/include",
+  "../../../audioschedule/include",
+  "../../../../../services/audio_service/client/include",
+  "../../../../../services/audio_service/common/include/dfx",
+  "../../../../../services/audio_policy/client/include",
+]
+
+aiut_cflags = [
+  "-Wall",
+  "-Werror",
+  "-Wno-macro-redefined",
+  "-fno-access-control",
+]
+
+aiut_deps = [
+  "../../../../../services/audio_policy:audio_policy_client",
+  "../../../../../services/audio_service:audio_client",
+  "../../../../../services/audio_service:audio_engine_manager",
+  "../../../../../services/audio_service:audio_policy_manager",
+  "../../../../../services/audio_service:audio_stream_client",
+  "../../../../../services/audio_service:audio_common",
+  "../../../audiodefinitions:audio_definitions",
+  "../../../audiocapturer:audio_capturer",
+  "../../../audioutils:audio_utils",
+  "../../../audioschedule:audio_schedule",
+  "../../../audio_debug_manager:audio_debug_manager",
+]
+
+aiut_external_deps = [
+  "c_utils:utils",
+  "eventhandler:libeventhandler",
+  "hilog:libhilog",
+  "ipc:ipc_single",
+  "media_foundation:media_monitor_client",
+  "media_foundation:media_monitor_common",
+  "samgr:samgr_proxy",
+]
+
+ohos_unittest("audio_capturer_native_aiut") {
+  testonly = true
+  module_out_path = audio_capturer_aiut_output_path
+  include_dirs = aiut_include_dirs
+  cflags = aiut_cflags
+  cflags_cc = [ "-std=c++20" ]
+  sources = [
+    "src/audio_capturer_aiut.cpp",
+    "src/audio_capturer_wrapper_aiut.cpp",
+    "../../src/audio_capturer.cpp",
+    "../../src/audio_capturer_proxy_obj.cpp",
+  ]
+  deps = aiut_deps
+  external_deps = aiut_external_deps
+}
+
+ohos_unittest("audio_capturer_interrupt_aiut") {
+  testonly = true
+  module_out_path = "audio_framework/audio_framework_focus/audio_interrupt"
+  include_dirs = aiut_include_dirs
+  cflags = aiut_cflags
+  cflags_cc = [ "-std=c++20" ]
+  sources = [
+    "src/audio_capturer_interrupt_aiut.cpp",
+    "../../src/audio_capturer.cpp",
+    "../../src/audio_capturer_proxy_obj.cpp",
+  ]
+  deps = aiut_deps
+  external_deps = aiut_external_deps
+}
+
+ohos_unittest("audio_capturer_device_aiut") {
+  testonly = true
+  module_out_path = "audio_framework/audio_framework_policy/audio_device"
+  include_dirs = aiut_include_dirs
+  cflags = aiut_cflags
+  cflags_cc = [ "-std=c++20" ]
+  sources = [
+    "src/audio_capturer_device_aiut.cpp",
+    "../../src/audio_capturer.cpp",
+    "../../src/audio_capturer_proxy_obj.cpp",
+  ]
+  deps = aiut_deps
+  external_deps = aiut_external_deps
+}
+
+group("audio_capturer_aiut") {
+  testonly = true
+  deps = [
+    ":audio_capturer_native_aiut",
+    ":audio_capturer_interrupt_aiut",
+    ":audio_capturer_device_aiut",
+  ]
+}
