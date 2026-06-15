@@ -332,6 +332,8 @@ private:
     void UpdateBypassSpatializationForStereo(bool bypass);
 
 private:
+    static constexpr uint32_t UNBOUND_SESSION_ID = 0;
+
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
     std::unordered_map<std::string, std::shared_ptr<IHpaeCapturerManager>> capturerManagerMap_;
     std::unordered_map<std::string, std::shared_ptr<IHpaeRendererManager>> rendererManagerMap_;
@@ -376,7 +378,7 @@ private:
     HpaeDelayedTaskQueue delayedTaskQueue_;
 
     int32_t boundUid_ = -1;
-    uint32_t boundSessionId_ = 0;
+    uint32_t boundSessionId_ = UNBOUND_SESSION_ID;
     CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
 };
 
