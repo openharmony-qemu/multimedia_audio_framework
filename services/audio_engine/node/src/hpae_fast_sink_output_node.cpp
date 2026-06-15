@@ -977,6 +977,7 @@ void HpaeFastSinkOutputNode::UpdateAmplitudeIfNeeded(BufferDesc &writeBuf)
 
 void HpaeFastSinkOutputNode::ZeroVolumeCheck(int32_t vol)
 {
+    CHECK_AND_RETURN(sinkOutAttr_.audioStreamFlag != AUDIO_FLAG_VOIP_FAST);
     if (currentOutputDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         return;
     }
