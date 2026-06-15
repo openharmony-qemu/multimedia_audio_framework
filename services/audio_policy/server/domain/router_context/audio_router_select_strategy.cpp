@@ -475,14 +475,12 @@ bool AudioRouterSelectStrategy::HasValidSelectDevice(AudioSelectDeviceInfo selec
 AudioDeviceDescriptor AudioRouterSelectStrategy::Get1stCurrentInputDevice(int32_t uid)
 {
     auto descs = GetCurrentInputDevice(uid);
-    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid, descs.empty() ? 0 : descs[0]->deviceId_);
     return !descs.empty() && descs.back() ? *descs.back() : AudioDeviceDescriptor();
 }
 
 AudioDeviceDescriptor AudioRouterSelectStrategy::Get1stCurrentOutputDevice(int32_t uid)
 {
     auto descs = GetCurrentOutputDevice(uid);
-    AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid, descs.empty() ? 0 : descs[0]->deviceId_);
     return !descs.empty() && descs.back() ? *descs.back() : AudioDeviceDescriptor();
 }
 
