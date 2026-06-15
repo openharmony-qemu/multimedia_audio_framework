@@ -51,7 +51,6 @@
     *GetAudioScoDeviceMac*;
     *GetScoCategory*;
     *connectionState_*;
-    *ClearScoSelected*;
   local:
     *;
 };

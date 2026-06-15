@@ -675,22 +675,23 @@ bool AudioPipeManager::HasRunningScoOutputStream()
             continue;
         }
         for (auto &desc : it->streamDescriptors_) {
-            if (desc == nullptr || desc->streamStatus_ != STREAM_STATUS_STARTED || desc->newDeviceDescs_.empty()) {
+            if (desc == nullptr || desc->streamStatus_ != STREAM_STATUS_STARTED) {
                 continue;
             }
-            if (desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            if (desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+                return true;
+            }
+            if (!desc->newDeviceDescs_.empty() &&
+                desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
                 return true;
             }
         }
     }
     for (auto &entry : modemCommunicationIdMap_) {
-        if (entry.second == nullptr || entry.second->streamStatus_ != STREAM_STATUS_STARTED ||
-            entry.second->newDeviceDescs_.empty()) {
+        if (entry.second == nullptr || entry.second->streamStatus_ != STREAM_STATUS_STARTED) {
             continue;
         }
-        if (entry.second->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            return true;
-        }
+        return true;
     }
     return false;
 }
