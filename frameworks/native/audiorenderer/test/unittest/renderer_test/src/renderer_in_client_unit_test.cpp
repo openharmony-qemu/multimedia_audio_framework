@@ -2618,6 +2618,78 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_089, TestSize.Level1
 /**
  * @tc.name  : Test RendererInClientInner API
  * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_089_LowLatency
+ * @tc.desc  : Test CheckBufferNeedWrite when IsLowLatencyRenderer is true and readableFrames == cacheSizeInFrame_
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_089_LowLatency, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->sizePerFrameInByte_ = 1;
+    ptrRendererInClientInner->cacheSizeInFrame_ = 2;
+    ptrRendererInClientInner->cbBufferSize_ = 1;
+
+    ptrRendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+
+    ptrRendererInClientInner->clientBuffer_->SetCurWriteFrame(2);
+    bool ret = ptrRendererInClientInner->CheckBufferNeedWrite();
+
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_089_LowLatency_LessThan
+ * @tc.desc  : Test CheckBufferNeedWrite when IsLowLatencyRenderer is true and readableFrames < cacheSizeInFrame_
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_089_LowLatency_LessThan, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->sizePerFrameInByte_ = 1;
+    ptrRendererInClientInner->cacheSizeInFrame_ = 2;
+    ptrRendererInClientInner->cbBufferSize_ = 1;
+
+    ptrRendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+
+    ptrRendererInClientInner->clientBuffer_->SetCurWriteFrame(1);
+    bool ret = ptrRendererInClientInner->CheckBufferNeedWrite();
+
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_089_NonLowLatency_Equal
+ * @tc.desc  : Test CheckBufferNeedWrite when IsLowLatencyRenderer is false and readableFrames == cacheSizeInFrame_
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_089_NonLowLatency_Equal, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->sizePerFrameInByte_ = 1;
+    ptrRendererInClientInner->cacheSizeInFrame_ = 2;
+    ptrRendererInClientInner->cbBufferSize_ = 1;
+
+    ptrRendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+
+    ptrRendererInClientInner->clientBuffer_->SetCurWriteFrame(2);
+    bool ret = ptrRendererInClientInner->CheckBufferNeedWrite();
+
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
  * @tc.number: RendererInClientInner_090
  * @tc.desc  : Test RendererInClientInner::ProcessWriteInner
  */

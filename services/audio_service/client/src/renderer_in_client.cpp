@@ -637,7 +637,11 @@ bool RendererInClientInner::CheckBufferNeedWrite()
         return false;
     }
 
-    RETURN_RET_IF(readableFrames <= static_cast<int32_t>(cacheSizeInFrame_), true);
+    if (IsLowLatencyRenderer()) {
+        RETURN_RET_IF(readableFrames < static_cast<int32_t>(cacheSizeInFrame_), true);
+    } else {
+        RETURN_RET_IF(readableFrames <= static_cast<int32_t>(cacheSizeInFrame_), true);
+    }
 
     return false;
 }
