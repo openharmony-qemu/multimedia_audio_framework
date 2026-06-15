@@ -1,0 +1,82 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+
+ohos_unittest("remote_sink_aiut") {
+  testonly = true
+  module_out_path = "audio_framework/hdiadapter/remote_sink"
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  include_dirs = [
+    "include",
+    # Remote adapter mock
+    "../remote_adapter/include",
+    # Device manager mock
+    "../../adapter_common/device_manager/include",
+    # Main source includes
+    "../../../include",
+    "../../../include/util",
+    # Common test includes
+    "../../../../../../../test/unittest/common/include",
+    "../../../../../../../interfaces/inner_api/native/audiocommon/include",
+    # Sibling module includes
+    "../../../../../audioutils/include",
+    "../../../../../audioclock/include",
+    "../../../../../audiodefinitions/include",
+  ]
+
+  sources = [
+    "src/remote_audio_render_sink_aiut.cpp",
+    "src/remote_fast_audio_render_sink_aiut.cpp",
+    "src/remote_offload_audio_render_sink_aiut.cpp",
+    "src/remote_multichannel_audio_render_sink_aiut.cpp",
+    # Source files under test
+    "../../../sink/i_audio_render_sink.cpp",
+    "../../../sink/remote_audio_render_sink.cpp",
+    "../../../sink/remote_fast_audio_render_sink.cpp",
+    "../../../sink/remote_offload_audio_render_sink.cpp",
+    "../../../sink/remote_multichannel_audio_render_sink.cpp",
+  ]
+
+  defines = [ "FEATURE_DISTRIBUTE_AUDIO" ]
+
+  deps = [
+    "../../../..:hdiadapter_new",
+    "../../../../../audioclock:audio_clock",
+    "../../../../../audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "googletest:gtest",
+    "googletest:gmock",
+    "init:libbegetutil",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "drivers_interface_audio:libaudio_proxy_6.1",
+    "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
+    "hdf_core:libhdf_ipc_adapter",
+    "drivers_interface_distributed_audio:libdaudio_proxy_2.0",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}

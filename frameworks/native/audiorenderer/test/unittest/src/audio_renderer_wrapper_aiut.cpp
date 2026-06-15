@@ -77,7 +77,7 @@ public:
 class TestOutputDeviceChangeCallback : public AudioRendererOutputDeviceChangeCallback {
 public:
     void OnOutputDeviceChange(const AudioDeviceDescriptor &desc,
-        const AudioStreamDeviceChangeReasonExt reason) override {}
+        const AudioStreamDeviceChangeReason reason) override {}
 };
 
 // ==================== AudioRendererCallbackAiut ====================

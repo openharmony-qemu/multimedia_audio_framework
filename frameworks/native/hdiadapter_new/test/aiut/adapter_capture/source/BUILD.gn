@@ -1,0 +1,81 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+
+ohos_unittest("source_aiut") {
+  testonly = true
+  module_out_path = "audio_framework/hdiadapter/source"
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  include_dirs = [
+    "include",
+    # Device manager mock
+    "../../adapter_common/device_manager/include",
+    # Main source includes
+    "../../../include",
+    "../../../include/util",
+    # Common test includes
+    "../../../../../../../test/unittest/common/include",
+    "../../../../../../../interfaces/inner_api/native/audiocommon/include",
+    # Sibling module includes
+    "../../../../../audioutils/include",
+    "../../../../../audioclock/include",
+    "../../../../../audiodefinitions/include",
+  ]
+
+  sources = [
+    "src/audio_capture_source_aiut.cpp",
+    "src/bluetooth_audio_capture_source_aiut.cpp",
+    "src/fast_audio_capture_source_aiut.cpp",
+    "src/file_audio_capture_source_aiut.cpp",
+    "src/va_capture_source_aiut.cpp",
+    "src/wakeup_audio_capture_source_aiut.cpp",
+    # Source files under test
+    "../../../source/i_audio_capture_source.cpp",
+    "../../../source/audio_capture_source.cpp",
+    "../../../source/bluetooth_audio_capture_source.cpp",
+    "../../../source/fast_audio_capture_source.cpp",
+    "../../../source/file_audio_capture_source.cpp",
+    "../../../source/wakeup_audio_capture_source.cpp",
+    "../../../source/va_capture_source.cpp",
+  ]
+
+  deps = [
+    "../../../..:hdiadapter_new",
+    "../../../../../audioclock:audio_clock",
+    "../../../../../audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "googletest:gtest",
+    "googletest:gmock",
+    "init:libbegetutil",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "drivers_interface_audio:libaudio_proxy_6.1",
+    "drivers_interface_bluetooth:hdi_audio_bluetooth_header",
+    "hdf_core:libhdf_ipc_adapter",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}

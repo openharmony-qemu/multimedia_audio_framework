@@ -42,7 +42,7 @@ HWTEST_F(AudioRendererEngineAiut, FadeInAudioBuffer_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     BufferDesc bufferDesc = {nullptr, 0, 0};
-    int32_t ret = AudioRenderer::FadeInAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
+    int32_t ret = AudioRenderer::FadeInAudioBuffer(bufferDesc, SAMPLE_S16LE, STEREO);
     AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
         "nullptr buffer should return ERR_INVALID_PARAM, ret=%d", ret);
 }
@@ -57,7 +57,7 @@ HWTEST_F(AudioRendererEngineAiut, FadeInAudioBuffer_002, TestSize.Level0)
     AIUT_INFO_LOG("entry");
     uint8_t buffer[TEST_BUFFER_SIZE];
     BufferDesc bufferDesc = {buffer, 0, TEST_BUFFER_SIZE};
-    int32_t ret = AudioRenderer::FadeInAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
+    int32_t ret = AudioRenderer::FadeInAudioBuffer(bufferDesc, SAMPLE_S16LE, STEREO);
     AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
         "zero bufLength should return ERR_INVALID_PARAM, ret=%d", ret);
 }
@@ -72,7 +72,7 @@ HWTEST_F(AudioRendererEngineAiut, FadeInAudioBuffer_003, TestSize.Level0)
     AIUT_INFO_LOG("entry");
     uint8_t buffer[TEST_BUFFER_SIZE];
     BufferDesc bufferDesc = {buffer, TEST_BUFFER_SIZE, 0};
-    int32_t ret = AudioRenderer::FadeInAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
+    int32_t ret = AudioRenderer::FadeInAudioBuffer(bufferDesc, SAMPLE_S16LE, STEREO);
     AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
         "zero dataLength should return ERR_INVALID_PARAM, ret=%d", ret);
 }
@@ -88,7 +88,7 @@ HWTEST_F(AudioRendererEngineAiut, FadeOutAudioBuffer_001, TestSize.Level0)
 {
     AIUT_INFO_LOG("entry");
     BufferDesc bufferDesc = {nullptr, 0, 0};
-    int32_t ret = AudioRenderer::FadeOutAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
+    int32_t ret = AudioRenderer::FadeOutAudioBuffer(bufferDesc, SAMPLE_S16LE, STEREO);
     AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
         "nullptr buffer should return ERR_INVALID_PARAM, ret=%d", ret);
 }
@@ -103,7 +103,7 @@ HWTEST_F(AudioRendererEngineAiut, FadeOutAudioBuffer_002, TestSize.Level0)
     AIUT_INFO_LOG("entry");
     uint8_t buffer[TEST_BUFFER_SIZE];
     BufferDesc bufferDesc = {buffer, 0, TEST_BUFFER_SIZE};
-    int32_t ret = AudioRenderer::FadeOutAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
+    int32_t ret = AudioRenderer::FadeOutAudioBuffer(bufferDesc, SAMPLE_S16LE, STEREO);
     AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
         "zero bufLength should return ERR_INVALID_PARAM, ret=%d", ret);
 }
@@ -118,7 +118,7 @@ HWTEST_F(AudioRendererEngineAiut, FadeOutAudioBuffer_003, TestSize.Level0)
     AIUT_INFO_LOG("entry");
     uint8_t buffer[TEST_BUFFER_SIZE];
     BufferDesc bufferDesc = {buffer, TEST_BUFFER_SIZE, 0};
-    int32_t ret = AudioRenderer::FadeOutAudioBuffer(bufferDesc, SAMPLE_S16LE, CHANNEL_2);
+    int32_t ret = AudioRenderer::FadeOutAudioBuffer(bufferDesc, SAMPLE_S16LE, STEREO);
     AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM,
         "zero dataLength should return ERR_INVALID_PARAM, ret=%d", ret);
 }
