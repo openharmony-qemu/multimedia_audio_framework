@@ -103,6 +103,7 @@ private:
     std::shared_ptr<AudioRunningLock> runningLock_;
 #endif
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
+    int32_t currentPhoneCallSceneType_ = SCENE_TYPE_MODEM;
     std::atomic<bool> isCheckPositionSuccess_ = true;
 
     // low latency

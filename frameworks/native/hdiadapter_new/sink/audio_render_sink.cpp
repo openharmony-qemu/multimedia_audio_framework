@@ -566,9 +566,10 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
 
     int32_t ret = SUCCESS;
 
-    if (isConnect && phoneCallSceneType != SCENE_TYPE_INVALID) {
+    if (isConnect && phoneCallSceneType == SCENE_TYPE_TRANSFER) {
         ret = SetPhoneCallSceneType(phoneCallSceneType);
-        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+        CHECK_AND_CONTINUE_LOG(ret == SUCCESS, "SetPhoneCallSceneType failed, ret=%{public}d", ret);
+        currentPhoneCallSceneType_ = phoneCallSceneType;
     }
 
     ret = SelectSceneToHdi(audioScene, scoExcludeFlag);
@@ -597,9 +598,10 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
         UpdateNearlinkOutputRoute();
     }
 
-    if (isDisconnect) {
+    if (isDisconnect && currentPhoneCallSceneType_ == SCENE_TYPE_TRANSFER) {
         ret = SetPhoneCallSceneType(SCENE_TYPE_MODEM);
-        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+        CHECK_AND_CONTINUE_LOG(ret == SUCCESS, "SetPhoneCallSceneType reset failed, ret=%{public}d", ret);
+        currentPhoneCallSceneType_ = SCENE_TYPE_MODEM;
     }
 
     if (isRingingToDefaultScene) {
