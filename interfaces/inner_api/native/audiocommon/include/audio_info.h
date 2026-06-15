@@ -89,6 +89,7 @@ constexpr uint64_t AUDIO_NS_PER_US = 1000;
 constexpr uint64_t AUDIO_US_PER_S = 1000000;
 constexpr uint64_t AUDIO_MS_PER_S = 1000;
 
+constexpr uint64_t DEFAULT_FAST_CBBUF_IN_USEC = 5000;
 constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
 constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
 constexpr uint64_t MIN_FAST_CBBUF_IN_USEC = 2500;
