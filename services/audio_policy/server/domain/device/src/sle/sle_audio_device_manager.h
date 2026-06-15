@@ -47,6 +47,8 @@ enum SleAudioStreamType : uint32_t {
     SLE_AUDIO_STREAM_ALERT = 0x00000100,
     SLE_AUDIO_STREAM_VIDEO = 0x00000200,
     SLE_AUDIO_STREAM_GUID = 0x00000400,
+    SLE_AUDIO_STREAM_ALARM = 0x00000800,
+    SLE_AUDIO_STREAM_SING = 0x00001000,
 };
 
 enum SleTimeout : int32_t {
@@ -97,7 +99,7 @@ public:
     int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc,
         SourceType sourceType, SleSelectState eventType = USER_SELECT_SLE);
     int32_t SetDeviceAbsVolume(const std::string &device, AudioStreamType streamType, int32_t volume);
-    bool IsAudioLoopbackSupported(const std::string &remoteAddr);
+    bool IsAudioLoopbackSupported(const std::string &remoteAddr) const override;
 
     // Core Device Management Methods
     int32_t AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);

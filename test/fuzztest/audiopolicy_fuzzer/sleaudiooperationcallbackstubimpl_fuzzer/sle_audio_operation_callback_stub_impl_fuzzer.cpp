@@ -120,6 +120,7 @@ public:
     int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t eventType) override { return 0; };
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override { return 0; };
     int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) override { return 0; };
+    bool IsAudioLoopbackSupported(const std::string &remoteAddr) const override { return !remoteAddr.empty(); };
 };
 
 void GetSleAudioDeviceListFuzzTest(FuzzedDataProvider& fdp)
@@ -361,6 +362,25 @@ void GetRenderPositionFuzzTestNullCallback(FuzzedDataProvider& fdp)
     operationCallbackStub->GetRenderPosition(device, delayValue);
 }
 
+void IsAudioLoopbackSupportedFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
+    CHECK_AND_RETURN(operationCallbackStub != nullptr);
+    operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
+    std::string remoteAddr = ConsumeString(fdp, "nearlink_sink");
+    bool ret = false;
+    operationCallbackStub->IsAudioLoopbackSupported(remoteAddr, ret);
+}
+
+void IsAudioLoopbackSupportedFuzzTestNullCallback(FuzzedDataProvider& fdp)
+{
+    auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
+    CHECK_AND_RETURN(operationCallbackStub != nullptr);
+    std::string remoteAddr = ConsumeString(fdp, "nearlink_sink");
+    bool ret = false;
+    operationCallbackStub->IsAudioLoopbackSupported(remoteAddr, ret);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -386,6 +406,8 @@ void Test(FuzzedDataProvider& fdp)
     SendUserSelectionFuzzTestNullCallback,
     GetRenderPositionFuzzTest,
     GetRenderPositionFuzzTestNullCallback,
+    IsAudioLoopbackSupportedFuzzTest,
+    IsAudioLoopbackSupportedFuzzTestNullCallback,
     });
     func(fdp);
 }

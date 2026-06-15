@@ -247,7 +247,13 @@ public:
 
     int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) override
     {
-        delayValue = 0;
+        productId = remoteAddr.empty() ? "" : "productId";
+        return 0;
+    }
+
+    int32_t IsAudioLoopbackSupported(const std::string &remoteAddr, bool &ret) override
+    {
+        ret = !remoteAddr.empty();
         return 0;
     }
 };
@@ -639,6 +645,7 @@ void SleAudioDeviceManagerGetRenderPositionFuzzTest(FuzzedDataProvider& fdp)
 void SleAudioDeviceManagerIsAudioLoopbackSupportedFuzzTest(FuzzedDataProvider& fdp)
 {
     SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
+    EnsureCallback(manager);
     std::string remoteAddr = ConsumeString(fdp, "nearlink_sink");
     manager.IsAudioLoopbackSupported(remoteAddr);
 }

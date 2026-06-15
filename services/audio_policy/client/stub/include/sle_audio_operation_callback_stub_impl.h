@@ -42,6 +42,7 @@ public:
         uint32_t sleStreamType, int32_t eventType, int32_t& ret) override;
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override;
     int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) override;
+    int32_t IsAudioLoopbackSupported(const std::string &remoteAddr, bool &ret) override;
 private:
     std::mutex sleAudioOperationCallbackMutex_;
     std::weak_ptr<SleAudioOperationCallback> sleAudioOperationCallback_;

@@ -2174,6 +2174,9 @@ HWTEST(SleAudioDeviceManagerUnitTest, IsAudioLoopbackSupported_001, TestSize.Lev
 {
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
     std::string remoteAddr = "1234567890";
     bool ret = sleAudioDeviceManager_->IsAudioLoopbackSupported(remoteAddr);
     EXPECT_TRUE(ret);
@@ -2188,9 +2191,28 @@ HWTEST(SleAudioDeviceManagerUnitTest, IsAudioLoopbackSupported_002, TestSize.Lev
 {
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
     std::string remoteAddr = "";
     bool ret = sleAudioDeviceManager_->IsAudioLoopbackSupported(remoteAddr);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test IsAudioLoopbackSupported
+ * @tc.number: IsAudioLoopbackSupported_003
+ * @tc.desc  : Test SleAudioDeviceManager::IsAudioLoopbackSupported with null callback
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, IsAudioLoopbackSupported_003, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback = nullptr;
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+    std::string remoteAddr = "1234567890";
+    bool ret = sleAudioDeviceManager_->IsAudioLoopbackSupported(remoteAddr);
+    EXPECT_FALSE(ret);
 }
 
 /**

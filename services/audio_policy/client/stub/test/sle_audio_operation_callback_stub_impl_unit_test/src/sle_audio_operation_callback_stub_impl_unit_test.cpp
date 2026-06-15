@@ -290,5 +290,39 @@ HWTEST(SleAudioOperationCallbackStubImplUnitTest, CallbackStubUnitTest_013, Test
     EXPECT_NE(SUCCESS, ret);
     delete audioSleCb;
 }
+
+/**
+* @tc.name  : Test SleAudioOperationCallbackStubImplUnitTest.
+* @tc.number: CallbackStubUnitTest_014
+* @tc.desc  : Test IsAudioLoopbackSupported with null callback
+*/
+HWTEST(SleAudioOperationCallbackStubImplUnitTest, CallbackStubUnitTest_014, TestSize.Level4)
+{
+    auto audioSleCb = new (std::nothrow) SleAudioOperationCallbackStubImpl();
+    EXPECT_NE(audioSleCb, nullptr);
+    std::string remoteAddr = "test_addr";
+    bool result = false;
+    auto ret = audioSleCb->IsAudioLoopbackSupported(remoteAddr, result);
+    EXPECT_EQ(ERROR, ret);
+    delete audioSleCb;
+}
+
+/**
+* @tc.name  : Test SleAudioOperationCallbackStubImplUnitTest.
+* @tc.number: CallbackStubUnitTest_015
+* @tc.desc  : Test IsAudioLoopbackSupported with weak callback set to nullptr
+*/
+HWTEST(SleAudioOperationCallbackStubImplUnitTest, CallbackStubUnitTest_015, TestSize.Level4)
+{
+    auto audioSleCb = new (std::nothrow) SleAudioOperationCallbackStubImpl();
+    EXPECT_NE(audioSleCb, nullptr);
+    std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback;
+    audioSleCb->sleAudioOperationCallback_ = sleAudioOperationCallback;
+    std::string remoteAddr = "test_addr";
+    bool result = false;
+    auto ret = audioSleCb->IsAudioLoopbackSupported(remoteAddr, result);
+    EXPECT_NE(SUCCESS, ret);
+    delete audioSleCb;
+}
 } // namespace AudioStandard
 } // namespace OHOS

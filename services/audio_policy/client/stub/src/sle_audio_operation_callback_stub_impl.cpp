@@ -181,5 +181,16 @@ int32_t SleAudioOperationCallbackStubImpl::GetDeviceProductId(const std::string 
 
     return sleAudioOperationCallback->GetDeviceProductId(remoteAddr, productId);
 }
+
+int32_t SleAudioOperationCallbackStubImpl::IsAudioLoopbackSupported(const std::string &remoteAddr, bool &ret)
+{
+    std::unique_lock lock(sleAudioOperationCallbackMutex_);
+    std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback = sleAudioOperationCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(sleAudioOperationCallback != nullptr, ERROR, "sleAudioOperationCallback_ is nullptr");
+    lock.unlock();
+
+    ret = sleAudioOperationCallback->IsAudioLoopbackSupported(remoteAddr);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
