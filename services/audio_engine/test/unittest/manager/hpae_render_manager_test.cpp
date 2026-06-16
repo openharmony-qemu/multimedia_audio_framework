@@ -2996,6 +2996,11 @@ HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_002, TestSize.Level0)
     // The pending deferred stop is flushed by the block, regardless of the inner condition.
     EXPECT_EQ(hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_.count(HPAE_SCENE_MUSIC), 0u);
 
+    // Verify the target scene (MOVIE) was actually connected to both the output cluster and the
+    // session, so the test fails if ConnectProcessCluster silently dropped the connection.
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE]->GetConnectedFlag(), true);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_[sessionId]->connectedProcessorType_, HPAE_SCENE_MOVIE);
+
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
@@ -3049,6 +3054,11 @@ HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_003, TestSize.Level0)
     EXPECT_EQ(hpaeRendererManager->sceneClusterMap_.count(HPAE_SCENE_MUSIC), 0u);
     EXPECT_EQ(hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_.count(HPAE_SCENE_MUSIC), 0u);
 
+    // Verify the target scene (MOVIE) was actually connected to both the output cluster and the
+    // session, so the test fails if ConnectProcessCluster silently dropped the connection.
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE]->GetConnectedFlag(), true);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_[sessionId]->connectedProcessorType_, HPAE_SCENE_MOVIE);
+
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
@@ -3100,6 +3110,11 @@ HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_004, TestSize.Level0)
     // Both deferred entries are flushed and the missing sinkInputNode is still absent (no crash).
     EXPECT_EQ(hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_.empty(), true);
     EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.count(sessionId), 0u);
+
+    // Early-return path: the sinkInputNode is absent, so ConnectProcessCluster returns before it
+    // connects the target scene. Confirm MOVIE was left unconnected (output flag still false),
+    // which proves the expected early-return branch was taken.
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE]->GetConnectedFlag(), false);
 
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
