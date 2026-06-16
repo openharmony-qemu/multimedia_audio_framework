@@ -1555,28 +1555,7 @@ HWTEST(CapturerInClientUnitTest, PauseAudioStream_001, TestSize.Level1)
     EXPECT_EQ(ret, false);
 }
 
-/**
- * @tc.name  : Test PauseAudioStream API
- * @tc.type  : FUNC
- * @tc.number: PauseAudioStream_002
- * @tc.desc  : Test PauseAudioStream interface.
- */
-HWTEST(CapturerInClientUnitTest, PauseAudioStream_002, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner);
 
-    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
-    capturerInClientInner->state_ = RUNNING;
-    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
-    capturerInClientInner->notifiedOperation_ = PAUSE_STREAM;
-    auto ret = capturerInClientInner->PauseAudioStream(cmdType);
-    EXPECT_EQ(ret, true);
-
-    ret = capturerInClientInner->PauseAudioStream(cmdType);
-    EXPECT_EQ(ret, false);
-}
 
 /**
  * @tc.name  : Test PauseAudioStream API

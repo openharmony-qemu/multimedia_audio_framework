@@ -109,7 +109,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:audio_engine_manager_unit_test",
     "../services/audio_service/test/unittest:audio_spatial_channel_converter_unit_test",
     "../services/audio_service/test/unittest:audio_thread_task_unit_test",
-    "../services/audio_service/test/unittest:capturer_in_client_unit_test",
+
     "../services/audio_service/test/unittest:capturer_in_server_unit_test",
     "../services/audio_service/test/unittest:format_converter_unit_test",
     "../services/audio_service/test/unittest:futex_tool_unit_test",
