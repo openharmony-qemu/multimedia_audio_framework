@@ -3464,6 +3464,7 @@ void AudioCoreService::FetchDevicesForDescs(const std::vector<std::shared_ptr<Au
             pipeManager_->UpdateNewDeviceDesc(desc, {newDesc});
         }
     }
+    audioActiveDevice_.UpdateStreamDeviceMap("FetchDevicesForDescs");
 }
 
 bool AudioCoreService::HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene)

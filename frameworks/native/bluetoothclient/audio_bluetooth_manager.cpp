@@ -619,7 +619,7 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
 
 int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isRecognitionScene, bool isScoSelected)
 {
-    if (scene_.load() != scene && isRecognitionScene_.load() != isRecognitionScene &&
+    if (scene_.load() != scene || isRecognitionScene_.load() != isRecognitionScene ||
         isScoSelected_.load() != isScoSelected) {
         AUDIO_INFO_LOG("scene %{public}d to %{public}d, isRecognitionScene %{public}d to %{public}d, "
             "isScoSelected %{public}d to %{public}d", scene_.load(), scene,

@@ -1231,11 +1231,12 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
     bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
     bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
     bool hasRecognition = pipeManager_->HasRunningRecognitionCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
+    bool isScoDevice = streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty() &&
+        streamDesc->newDeviceDescs_[0] != nullptr &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
     bool isScoSelected = hasScoPlay || hasScoRecord || hasRecognition ||
-        (audioSceneManager_.IsVoiceCallRelatedScene() &&
-            streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
+        (audioSceneManager_.IsVoiceCallRelatedScene() && isScoDevice);
     auto scene = !isScoSelected ? AUDIO_SCENE_DEFAULT : audioSceneManager_.GetAudioScene(true);
-    
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene, hasRecognition, isScoSelected);
 
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
