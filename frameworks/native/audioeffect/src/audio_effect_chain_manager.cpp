@@ -2369,8 +2369,8 @@ int32_t AudioEffectChainManager::UpdateSpatializationStateInner(AudioSpatializat
 int32_t AudioEffectChainManager::UpdatePersonalizedSpatializationEnabledToChains()
 {
     std::set<std::shared_ptr<AudioEffectChain>> audioEffectChainSetTemp;
-    CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.empty() ||
-        access(PERSONALIZED_HRTF_BIN_PATH.c_str(), F_OK) == 0, ERROR, "personalized hrtf file not exist");
+    CHECK_AND_RETURN_RET_LOG(access(PERSONALIZED_HRTF_BIN_PATH.c_str(), F_OK) == 0,
+        ERROR, "personalized hrtf file not exist");
     for (const auto& [key, audioEffectChain] : sceneTypeToEffectChainMap_) {
         CHECK_AND_CONTINUE_LOG(audioEffectChain != nullptr, "audioEffectChain is null");
         CHECK_AND_CONTINUE_LOG(audioEffectChainSetTemp.find(audioEffectChain) == audioEffectChainSetTemp.end(),
