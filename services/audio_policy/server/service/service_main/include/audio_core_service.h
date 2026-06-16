@@ -792,7 +792,7 @@ private:
     void GetFlagForUltraFastStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
 
     void HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
-    void CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool forceUpdate);
     void ForceStopInterphoneStreamsIfNecessary(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
     int32_t CheckStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc, uint32_t& audioFlag);
     int32_t CreateCallCommunicationRenderer(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
