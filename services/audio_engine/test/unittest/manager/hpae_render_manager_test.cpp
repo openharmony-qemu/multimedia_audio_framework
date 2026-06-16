@@ -2949,6 +2949,164 @@ HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_001, TestSize.Level0)
 }
 
 /**
+ * @tc.name  : ConnectProcessCluster
+ * @tc.type  : FUNC
+ * @tc.number: ConnectProcessCluster_002
+ * @tc.desc  : Test ConnectProcessCluster when a deferred stop is pending and both the pending
+ *             sceneCluster and the sinkInputNode exist, so the inner condition is true and
+ *             AudioRendererStop is invoked for the pending scene.
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_002, TestSize.Level0)
+{
+    uint32_t sessionId = 10002;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
+
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+    HpaeNodeInfo movieNodeInfo = nodeInfo;
+    movieNodeInfo.sceneType = HPAE_SCENE_MOVIE;
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE] =
+        std::make_shared<HpaeProcessCluster>(movieNodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+
+    // Directly inject a deferred stop for a pending scene (MUSIC) that differs from the target
+    // scene (MOVIE). Both the pending sceneCluster and the sinkInputNode exist, so the inner
+    // condition "SafeGetMap(sceneClusterMap_, pendingSceneType) && SafeGetMap(sinkInputNodeMap_,
+    // sessionId)" is true and AudioRendererStop is called for the pending scene.
+    hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_[HPAE_SCENE_MUSIC] = sessionId;
+    EXPECT_EQ(hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_.count(HPAE_SCENE_MUSIC), 1u);
+
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MOVIE);
+
+    // The pending deferred stop is flushed by the block, regardless of the inner condition.
+    EXPECT_EQ(hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_.count(HPAE_SCENE_MUSIC), 0u);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : ConnectProcessCluster
+ * @tc.type  : FUNC
+ * @tc.number: ConnectProcessCluster_003
+ * @tc.desc  : Test ConnectProcessCluster when a deferred stop is pending but the pending
+ *             sceneCluster does not exist. The inner condition short-circuits on its first
+ *             operand and AudioRendererStop is skipped.
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_003, TestSize.Level0)
+{
+    uint32_t sessionId = 10003;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
+
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+    HpaeNodeInfo movieNodeInfo = nodeInfo;
+    movieNodeInfo.sceneType = HPAE_SCENE_MOVIE;
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE] =
+        std::make_shared<HpaeProcessCluster>(movieNodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+
+    // Inject a deferred stop for MUSIC, then drop the MUSIC sceneCluster so that
+    // SafeGetMap(sceneClusterMap_, pendingSceneType) is null. The inner && short-circuits on the
+    // first operand and AudioRendererStop is skipped.
+    hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_[HPAE_SCENE_MUSIC] = sessionId;
+    hpaeRendererManager->sceneClusterMap_.erase(HPAE_SCENE_MUSIC);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_.count(HPAE_SCENE_MUSIC), 0u);
+
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MOVIE);
+
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_.count(HPAE_SCENE_MUSIC), 0u);
+    EXPECT_EQ(hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_.count(HPAE_SCENE_MUSIC), 0u);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : ConnectProcessCluster
+ * @tc.type  : FUNC
+ * @tc.number: ConnectProcessCluster_004
+ * @tc.desc  : Test ConnectProcessCluster when a deferred stop is pending, the pending sceneCluster
+ *             exists, but the sinkInputNode is missing. The inner condition short-circuits on its
+ *             second operand and AudioRendererStop is skipped; the function then returns early.
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_004, TestSize.Level0)
+{
+    uint32_t sessionId = 10004;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    // sinkInputNodeMap_ intentionally does NOT contain sessionId for this case, so that
+    // SafeGetMap(sinkInputNodeMap_, sessionId) is null.
+
+    // Both the pending sceneCluster (MUSIC) and the target sceneCluster (MOVIE) exist.
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    HpaeNodeInfo movieNodeInfo = nodeInfo;
+    movieNodeInfo.sceneType = HPAE_SCENE_MOVIE;
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE] =
+        std::make_shared<HpaeProcessCluster>(movieNodeInfo, sinkInfo);
+
+    // Inject two deferred stops: one for the pending scene (MUSIC) that drives the block, and one
+    // for the target scene (MOVIE) whose value equals sessionId. The latter routes the post-block
+    // logic through the early-return path (sessionIdToStop == sessionId), so the absent
+    // sinkInputNode is never dereferenced and the function returns safely.
+    hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_[HPAE_SCENE_MUSIC] = sessionId;
+    hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_[HPAE_SCENE_MOVIE] = sessionId;
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.count(sessionId), 0u);
+
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MOVIE);
+
+    // Both deferred entries are flushed and the missing sinkInputNode is still absent (no crash).
+    EXPECT_EQ(hpaeRendererManager->toBeStoppedSceneTypeToSessionMap_.empty(), true);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.count(sessionId), 0u);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
  * @tc.name  : Test SetOffloadRenderCallbackType
  * @tc.type  : FUNC
  * @tc.number: SetOffloadRenderCallbackType
