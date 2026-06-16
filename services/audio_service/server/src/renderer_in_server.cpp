@@ -88,6 +88,7 @@ namespace {
     static constexpr int32_t AVS3METADATA_SIZE = 19824;
     constexpr int32_t MAX_CACHED_BUFFER_COUNT = 5;
     constexpr int32_t MAX_CAHCED_COUNT = 6;
+    constexpr int32_t FAST_ROUTE_CACHE_COUNT = 1;
     static const int32_t THREE_DA_BYTES_PER_FRAME = 1;
     constexpr int32_t SILENT_TYPE_SILENT_SESSION = 0;
     constexpr int32_t SILENT_TYPE_MUTE_SESSION = 1;
@@ -3525,7 +3526,7 @@ int32_t RendererInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_
         cacheSizeInFrame = spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT;
     }
     if (processConfig_.rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST) {
-        cacheCount = 0;
+        cacheCount = FAST_ROUTE_CACHE_COUNT;
         AUDIO_INFO_LOG("CalculateCacheCount: cacheSizeInFrame=%{public}u, spanSizeInFrame_=%{public}zu, "
             "cacheCount=%{public}u", cacheSizeInFrame, spanSizeInFrame_, cacheCount);
         return SUCCESS;
