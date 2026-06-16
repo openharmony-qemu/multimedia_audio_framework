@@ -382,8 +382,6 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_014, TestSize.Leve
     EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].isBack, true);
 }
 
-
-
 /**
  * @tc.name  : Test NotifyBackgroundTaskStateChange API
  * @tc.type  : FUNC
