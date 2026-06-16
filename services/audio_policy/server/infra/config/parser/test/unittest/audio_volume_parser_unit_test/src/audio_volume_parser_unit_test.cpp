@@ -131,8 +131,6 @@ HWTEST_F(AudioVolumeParserUnitTest, AudioVolumeParserUnitTest_003, TestSize.Leve
         streamVolumeInfoMap[STREAM_VOICE_ASSISTANT]->deviceVolumeInfos[EARPIECE_VOLUME_TYPE]->volumePoints[0].index, 1);
 }
 
-
-
 /**
  * @tc.name  : Test ParseVolumeFixInfo
  * @tc.number: ParseVolumeFixInfo_007

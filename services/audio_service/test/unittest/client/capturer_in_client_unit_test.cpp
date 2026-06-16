@@ -1555,8 +1555,6 @@ HWTEST(CapturerInClientUnitTest, PauseAudioStream_001, TestSize.Level1)
     EXPECT_EQ(ret, false);
 }
 
-
-
 /**
  * @tc.name  : Test PauseAudioStream API
  * @tc.type  : FUNC

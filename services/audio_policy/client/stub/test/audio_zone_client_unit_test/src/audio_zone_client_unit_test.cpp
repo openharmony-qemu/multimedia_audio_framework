@@ -69,8 +69,6 @@ public:
         AudioZoneInterruptReason reason) override {}
 };
 
-
-
 /**
 * @tc.name  : Test AudiZoneClientUnitTest.
 * @tc.number: AudiZoneClientUnitTest_002
