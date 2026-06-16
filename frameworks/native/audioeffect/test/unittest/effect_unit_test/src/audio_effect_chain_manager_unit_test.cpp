@@ -5713,10 +5713,11 @@ HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_010, Te
 /**
 * @tc.name   : Test UpdatePersonalizedSpatializationStateInner API
 * @tc.number : UpdatePersonalizedSpatializationStateInner_001
-* @tc.desc   : Test UpdatePersonalizedSpatializationStateInner with btOffloadSupported_=false.
-*              Should take UpdatePersonalizedSpatializationEnabledToChains path.
-*              With empty chain map, chains returns ERROR; personalizedSpatializationEnabled=true
-*              triggers rollback to false.
+* @tc.desc   : Test UpdatePersonalizedSpatializationStateInner with btOffloadSupported_=false
+*              and an EMPTY chain map. UpdatePersonalizedSpatializationEnabledToChains short-circuits
+*              on sceneTypeToEffectChainMap_.empty() (the file-existence check is skipped) and returns
+*              SUCCESS, so no rollback occurs and personalizedSpatializationEnabled_ stays true.
+*              Covers the sceneTypeToEffectChainMap_.empty() branch of the guards.
 */
 HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInner_001, TestSize.Level1)
 {
@@ -5726,10 +5727,9 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInn
     mgr->personalizedSpatializationEnabled_ = false;
 
     int32_t ret = mgr->UpdatePersonalizedSpatializationStateInner(true);
-    // btOffloadSupported_=false → chains path; no chains → ERROR
-    // personalizedSpatializationEnabled=true + fail → rollback to false
-    EXPECT_NE(ret, SUCCESS);
-    EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
+    // btOffloadSupported_=false → chains path; empty map short-circuits the guards → SUCCESS, no rollback
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(mgr->personalizedSpatializationEnabled_, true);
 
     mgr->ResetInfo();
 }
@@ -5738,8 +5738,9 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInn
 * @tc.name   : Test UpdatePersonalizedSpatializationStateInner API
 * @tc.number : UpdatePersonalizedSpatializationStateInner_002
 * @tc.desc   : Test UpdatePersonalizedSpatializationStateInner with btOffloadSupported_=true,
-*              btOffloadEnabled_=false. Should take UpdatePersonalizedSpatializationEnabledToChains path.
-*              Pass false so failure does not trigger rollback.
+*              btOffloadEnabled_=false (chains path) and an EMPTY chain map. The empty map
+*              short-circuits the file-existence check so chains returns SUCCESS; passing false
+*              means no rollback even though the path succeeds.
 */
 HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInner_002, TestSize.Level1)
 {
@@ -5749,9 +5750,8 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInn
     mgr->personalizedSpatializationEnabled_ = true;
 
     int32_t ret = mgr->UpdatePersonalizedSpatializationStateInner(false);
-    // btOffloadSupported_=true && btOffloadEnabled_=false → chains path
-    // personalizedSpatializationEnabled=false + fail → no rollback
-    EXPECT_NE(ret, SUCCESS);
+    // btOffloadSupported_=true && btOffloadEnabled_=false → chains path; empty map → SUCCESS
+    EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
 
     mgr->ResetInfo();
@@ -5843,6 +5843,34 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInn
 
     mgr->UpdatePersonalizedSpatializationStateInner(false);
     // Pass false, no rollback even on failure
+    EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdatePersonalizedSpatializationStateInner API
+* @tc.number : UpdatePersonalizedSpatializationStateInner_007
+* @tc.desc   : Test UpdatePersonalizedSpatializationStateInner chains path with a NON-empty chain map
+*              and personalizedSpatializationEnabled=true. With the HRTF file absent in the test
+*              environment, sceneTypeToEffectChainMap_.empty() is false and !personalizedSpatializationEnabled_
+*              is false, so the file-existence guard in UpdatePersonalizedSpatializationEnabledToChains
+*              fires and returns ERROR; true + fail triggers rollback to false. This is the only
+*              chains-path ERROR branch left after the map.empty()/!enabled short-circuits were added.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInner_007, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    mgr->btOffloadSupported_ = false;
+    mgr->btOffloadEnabled_ = false;
+    mgr->personalizedSpatializationEnabled_ = false;
+
+    int32_t ret = mgr->UpdatePersonalizedSpatializationStateInner(true);
+    // btOffloadSupported_=false → chains path; non-empty map + enabled=true + no HRTF file → ERROR
+    // personalizedSpatializationEnabled=true + fail → rollback to false
+    EXPECT_NE(ret, SUCCESS);
     EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
 
     mgr->ResetInfo();
