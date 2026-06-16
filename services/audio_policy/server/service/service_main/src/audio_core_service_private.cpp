@@ -1847,7 +1847,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
     }
     shouldUpdateDeviceDueToDualTone_ = false;
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
-        !VolumeUtils::IsPCVolumeEnable()) {
+        !VolumeUtils::IsPCVolumeEnable() && !streamDesc->newDeviceDescs_.front()->isBTSupportWearDetectionEnable_) {
         UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, pipeId);
     } else if (AudioCollaborativeService::GetAudioCollaborativeService().GetRealCollaborativeState() &&
         (streamDesc->isNearLinkCollaborationEnable_ || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||

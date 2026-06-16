@@ -206,6 +206,8 @@ private:
 
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
         int32_t apiVersion, bool isSupportedDevice = true) const;
+    
+    bool MarshallingInnerdata(Parcel &parcel, int32_t devType, const std::list<AudioStreamInfo> &capabilities) const;
 public:
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
@@ -251,6 +253,7 @@ public:
     HdPlaybackMode hdPlaybackMode_ = HD_NOT_SUPPORTED;
     bool isSupportRemoteMultichannel_ = true;
     uint32_t deviceTokenId_ = 0;
+    bool isBTSupportWearDetectionEnable_ = false;
 
     uint32_t glassesWearCount_ = 0;
     static constexpr int64_t TEN_YEARS_MS = 10LL*365*24*3600*1000;
