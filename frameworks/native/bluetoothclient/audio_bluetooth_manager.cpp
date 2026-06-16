@@ -685,12 +685,7 @@ ScoCategory AudioHfpManager::JudgeScoCategory()
     auto scene = scene_.load();
     if ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) && !isInbandRingEnabled) {
         AUDIO_WARNING_LOG("The inbandRing switch is off, ignore the ring scene.");
-        if (isRecognitionScene_.load()) {
-            return ScoCategory::SCO_RECOGNITION;
-        } else if (isScoSelected_.load()) {
-            return ScoCategory::SCO_VIRTUAL;
-        }
-        return ScoCategory::SCO_DEFAULT;
+        return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
     }
 
     if (scene == AUDIO_SCENE_VOICE_RINGING || scene == AUDIO_SCENE_PHONE_CALL) {
@@ -699,7 +694,12 @@ ScoCategory AudioHfpManager::JudgeScoCategory()
         return !IsVirtualCall() ? ScoCategory::SCO_CALLULAR : ScoCategory::SCO_VIRTUAL;
     }
 
-    return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
+    if (isRecognitionScene_.load()) {
+        return ScoCategory::SCO_RECOGNITION;
+    } else if (isScoSelected_.load()) {
+        return ScoCategory::SCO_VIRTUAL;
+    }
+    return ScoCategory::SCO_DEFAULT;
 }
 
 int32_t AudioHfpManager::TryUpdateScoCategory()
