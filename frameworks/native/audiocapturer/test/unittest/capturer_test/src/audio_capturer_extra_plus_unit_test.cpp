@@ -142,6 +142,34 @@ public:
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override { return restoreStatus; }
 };
 
+class FastAudioStreamForkWithSessionId : public FastAudioStreamFork2 {
+public:
+    explicit FastAudioStreamForkWithSessionId(uint32_t sessionId) : sessionId_(sessionId) {}
+    int32_t GetAudioSessionID(uint32_t &sessionID) override
+    {
+        sessionID = sessionId_;
+        return SUCCESS;
+    }
+
+private:
+    uint32_t sessionId_ = 0;
+};
+
+class FastAudioStreamForkNewWithSessionId : public FastAudioStreamForkWithSessionId {
+public:
+    explicit FastAudioStreamForkNewWithSessionId(uint32_t sessionId) : FastAudioStreamForkWithSessionId(sessionId) {}
+    State GetState() override { return NEW; }
+};
+
+class FastAudioStreamForkGetSessionIdFail : public FastAudioStreamFork2 {
+public:
+    int32_t GetAudioSessionID(uint32_t &sessionID) override
+    {
+        (void)sessionID;
+        return ERROR;
+    }
+};
+
 class FastAudioStreamFork3 : public FastAudioStream {
 public:
     FastAudioStreamFork3() : FastAudioStream(AudioStreamType::STREAM_MUSIC,
@@ -495,6 +523,54 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_018, TestSize.Level1)
 
     capturer->HandleAudioInterruptWhenServerDied();
     EXPECT_EQ(capturer->GetStatusInner(), CapturerState::CAPTURER_RUNNING);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_018_UpdateStreamId
+ * @tc.desc  : Test AudioCapturerPrivate::HandleAudioInterruptWhenServerDied updates interrupt stream id.
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_018_UpdateStreamId, TestSize.Level1)
+{
+    constexpr uint32_t oldSessionId = 100001;
+    constexpr uint32_t newSessionId = 100002;
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    capturer->sessionID_ = oldSessionId;
+    capturer->audioInterrupt_.streamId = oldSessionId;
+    capturer->audioStream_ = std::make_shared<FastAudioStreamForkWithSessionId>(newSessionId);
+
+    capturer->HandleAudioInterruptWhenServerDied();
+
+    EXPECT_EQ(capturer->sessionID_, newSessionId);
+    EXPECT_EQ(capturer->audioInterrupt_.streamId, newSessionId);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_018_GetSessionIdFail
+ * @tc.desc  : Test AudioCapturerPrivate::HandleAudioInterruptWhenServerDied returns when session id query fails.
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_018_GetSessionIdFail, TestSize.Level1)
+{
+    constexpr uint32_t oldSessionId = 100003;
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
+    ASSERT_NE(capturer, nullptr);
+
+    capturer->sessionID_ = oldSessionId;
+    capturer->audioInterrupt_.streamId = oldSessionId;
+    capturer->audioStream_ = std::make_shared<FastAudioStreamForkGetSessionIdFail>();
+
+    capturer->HandleAudioInterruptWhenServerDied();
+
+    EXPECT_EQ(capturer->sessionID_, oldSessionId);
+    EXPECT_EQ(capturer->audioInterrupt_.streamId, oldSessionId);
+    EXPECT_EQ(capturer->audioInterruptCallback_, nullptr);
 }
 
 /**
