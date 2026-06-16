@@ -569,6 +569,7 @@ void AudioSession::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo, 
     sessionDebugInfo.strategy = strategy_;
     sessionDebugInfo.defaultDeviceType = defaultDeviceType_;
     sessionDebugInfo.state = state_;
+    sessionDebugInfo.uid = callerUid_;
     if (isAudioSessionInterrupt) {
         sessionDebugInfo.audioSessionScene = audioSessionScene_;
         sessionDebugInfo.streamInfos.clear();

@@ -3910,13 +3910,18 @@ void AudioInterruptService::GetFocusDebugInfoByStreamId(uint32_t streamId, Audio
 int32_t AudioInterruptService::GetSessionDebugInfo(int32_t pid, AudioSessionDebugInfo &sessionDebugInfo)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET(sessionService_.IsAudioSessionActivated(pid), ERROR);
+    if (!sessionService_.IsAudioSessionActivated(pid)) {
+        return ERROR;
+    }
     bool streamFlag = false;
     sessionDebugInfo.streamInfos.clear();
+    sessionDebugInfo.pid = pid;
     for (const auto &zonePair : zonesMap_) {
         CHECK_AND_CONTINUE(zonePair.second != nullptr);
         for (const auto &audioFocusPair : zonePair.second->audioFocusInfoList) {
-            CHECK_AND_CONTINUE(audioFocusPair.first.pid == pid);
+            if (audioFocusPair.first.pid != pid) {
+                continue;
+            }
 
             if (streamFlag) {
                 AudioStreamDebugInfo streamDebugInfo;
@@ -3927,8 +3932,6 @@ int32_t AudioInterruptService::GetSessionDebugInfo(int32_t pid, AudioSessionDebu
                 continue;
             }
             
-            sessionDebugInfo.pid = audioFocusPair.first.pid;
-            sessionDebugInfo.uid = audioFocusPair.first.uid;
             sessionService_.GetSessionDebugInfo(sessionDebugInfo, audioFocusPair.first.isAudioSessionInterrupt);
             
             if (audioFocusPair.first.isAudioSessionInterrupt) {
@@ -3944,7 +3947,10 @@ int32_t AudioInterruptService::GetSessionDebugInfo(int32_t pid, AudioSessionDebu
             streamFlag = true;
         }
     }
-    return streamFlag ? SUCCESS : ERROR;
+    if (!streamFlag) {
+        sessionService_.GetSessionDebugInfo(sessionDebugInfo, false);
+    }
+    return SUCCESS;
 }
 
 void AudioInterruptService::RecordFocusHistory(const AudioInterrupt &currentInterrupt,
