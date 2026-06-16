@@ -204,12 +204,12 @@ CAudioConvertResult AudioConverterProcess(AudioConverterHandle handle, const uin
         result.errCode = ERR_CODE_INVALID_STATE;
         return result;
     }
-    uint32_t bytesCount =
-        static_cast<uint32_t>(inSampleCount) * AudioSuiteUtil::GetSampleSize(wrapper->inputFormat.sampleFormat);
+    uint32_t bytesCount = static_cast<uint32_t>(inSampleCount) * wrapper->inputFormat.channelCount *
+        AudioSuiteUtil::GetSampleSize(wrapper->inputFormat.sampleFormat);
     AudioSuite::AudioConvertResult innerResult =
         wrapper->converter->SyncProcess(inData, bytesCount);
-    int outSampleCount =
-        static_cast<int>(innerResult.outByteCount / AudioSuiteUtil::GetSampleSize(wrapper->outputFormat.sampleFormat));
+    int outSampleCount = static_cast<int>(innerResult.outByteCount /
+        AudioSuiteUtil::GetSampleSize(wrapper->outputFormat.sampleFormat) / wrapper->outputFormat.channelCount);
     result.outData = innerResult.outData;
     result.outSampleCount = static_cast<int>(outSampleCount);
     result.errCode = innerResult.errCode == SUCCESS ? ERR_CODE_SUCCESS : ERR_CODE_OPERATION_FAILED;
@@ -261,7 +261,7 @@ AudioMixHandle AudioMixerCreate(const AudioFormatConfig* inCfg)
     }
 
     AudioFormat format = ConvertToAudioFormat(inCfg);
-    std::unique_ptr<MixerProcessor> mixer = MixerProcessorManager::Create(format, false);
+    std::unique_ptr<MixerProcessor> mixer = MixerProcessorManager::Create(format, true);
     if (mixer == nullptr) {
         AUDIO_ERR_LOG("failed to create MixerProcessor");
         return nullptr;

@@ -17,6 +17,7 @@ import("../../config.gni")
 
 group("audio_suite_packages") {
   deps = [
+    ":audio_pcm_process",
     ":audio_suite",
     ":audio_suite_capabilities",
   ]
