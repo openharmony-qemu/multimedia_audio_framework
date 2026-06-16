@@ -2985,10 +2985,11 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
 int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "Stream desc is nullptr");
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_[0] != nullptr, ERR_INVALID_PARAM, "Invalid stream desc");
 
     auto result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
-    CheckScoState(streamDesc);
+    CheckScoState(streamDesc, true);
     if (result == REFETCH_DEVICE) {
         FetchOutputDeviceAndRoute("ActivateOutputDevice", reason);
         FetchInputDeviceAndRoute("ActivateOutputDevice", reason);
@@ -3003,7 +3004,7 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
         streamDesc->newDeviceDescs_[0] != nullptr, ERR_INVALID_PARAM, "Invalid stream desc");
 
     auto result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
-    CheckScoState(streamDesc);
+    CheckScoState(streamDesc, true);
     if (result == REFETCH_DEVICE) {
         FetchOutputDeviceAndRoute("ActivateInputDevice", reason);
         FetchInputDeviceAndRoute("ActivateInputDevice", reason);
