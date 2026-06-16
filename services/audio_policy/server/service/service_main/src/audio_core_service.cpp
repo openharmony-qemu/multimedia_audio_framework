@@ -1219,17 +1219,24 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
     CHECK_AND_RETURN_LOG(res == SUCCESS, "remote device state is invalid!");
 }
 
-void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool forceUpdate)
 {
-    auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModem();
-    auto inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
-    FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
+    if (!forceUpdate) {
+        CHECK_AND_RETURN(!audioSceneManager_.IsVoiceCallRelatedScene());
+        auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModem();
+        auto inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
+        FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
+    }
+    
     bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
     bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
-    bool isScoSelected = hasScoPlay || hasScoRecord;
     bool hasRecognition = pipeManager_->HasRunningRecognitionCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
-    Bluetooth::AudioHfpManager::UpdateAudioScene(
-        audioSceneManager_.GetAudioScene(true), hasRecognition, isScoSelected);
+    bool isScoSelected = hasScoPlay || hasScoRecord || hasRecognition ||
+        (audioSceneManager_.IsVoiceCallRelatedScene() &&
+            streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
+    auto scene = !isScoSelected ? AUDIO_SCENE_DEFAULT : audioSceneManager_.GetAudioScene(true);
+    
+    Bluetooth::AudioHfpManager::UpdateAudioScene(scene, hasRecognition, isScoSelected);
 
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     if (streamDesc->audioMode_ == AUDIO_MODE_RECORD && streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
@@ -1517,7 +1524,7 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
     }
     ForceRemoveSleStreamType(streamDesc);
 
-    CheckScoState(streamDesc);
+    CheckScoState(streamDesc, false);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         HandlePlaybackStoppingOperations(streamDesc, "PauseClient");
     }
@@ -1593,7 +1600,7 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
             streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_STOPPED);
     }
 
-    CheckScoState(streamDesc);
+    CheckScoState(streamDesc, false);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         HandlePlaybackStoppingOperations(streamDesc, "StopClient");
     }
@@ -1627,7 +1634,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
 
-    CheckScoState(streamDesc);
+    CheckScoState(streamDesc, false);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         HandlePlaybackStoppingOperations(streamDesc, "ReleaseClient");
     }
