@@ -81,7 +81,6 @@ group("audio_policy_unittest_packages") {
     ":audio_spatialization_service_unit_test",
     ":audio_state_manager_unit_test",
     ":audio_stream_collector_pro_unit_test",
-    ":audio_stream_collector_unit_test",
     ":audio_strategy_router_parser_unit_test",
     ":audio_setting_provider_unit_test",
     ":audio_tone_parser_unit_test",

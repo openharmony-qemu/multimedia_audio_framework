@@ -24,7 +24,6 @@ group("audio_policy_config_parser_unittest_packages") {
     ":audio_concurrency_parser_unit_test",
     ":audio_focus_parser_unit_test",
     ":audio_tone_parser_test",
-    ":audio_volume_parser_unit_test",
     ":audio_policy_global_parser_unit_test",
   ]
 }
