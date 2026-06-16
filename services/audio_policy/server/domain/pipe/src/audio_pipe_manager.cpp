@@ -1326,8 +1326,8 @@ bool AudioPipeManager::HasRunningRecognitionCapturerStream(DeviceType type)
             desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
             ((type == DEVICE_TYPE_NONE) ||
                 (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
-                desc->newDeviceDescs_[0]->deviceType_ == type) &&
-                desc->newDeviceDescs_[0]->isVrSupported_)) {
+                desc->newDeviceDescs_[0]->deviceType_ == type &&
+                desc->newDeviceDescs_[0]->isVrSupported_))) {
                 return true;
             }
         }
