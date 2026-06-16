@@ -36,7 +36,7 @@ public:
     void SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
         const std::vector<StreamDeviceInfo> &inputDevices);
     void ClearSelectedDevices();
-    std::shared_ptr<AudioDeviceDescriptor> GetHighestPriorityDevice();
+    std::shared_ptr<AudioDeviceDescriptor> GetHighestPriorityDevice() override;
 
 private:
     bool IsCallStreamUsage(StreamUsage streamUsage);
