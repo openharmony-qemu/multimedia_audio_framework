@@ -367,7 +367,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_014, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:66";
     
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
 }
 
 /**
@@ -395,7 +395,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_015, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:55";
     
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
 }
 
 /**
@@ -423,7 +423,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_016, TestSize.Level1)
     inputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     inputDevice->macAddress_ = "00:11:22:33:44:66";
     
-    EXPECT_TRUE(handler.Detect(inputDevice, ROUTER_TYPE_USER_SELECT));
+    EXPECT_TRUE(handler.Detect(inputDevice, ROUTER_TYPE_DEFAULT));
 }
 
 /**
@@ -451,10 +451,10 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_018, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
     outputDevice->macAddress_ = "00:11:22:33:44:66";
     
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
     
     outputDevice->macAddress_ = "00:11:22:33:44:55";
-    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
 }
 
 /**
@@ -537,10 +537,38 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_022, TestSize.Level1)
     auto outputDevice = std::make_shared<AudioDeviceDescriptor>();
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:66";
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
 
     outputDevice->macAddress_ = "00:11:22:33:44:55";
-    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
+    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler IsCallStreamUsage with VOICE_CALL_ASSISTANT and INTERPHONE.
+ * @tc.number: WirelessConflictHandler_023
+ * @tc.desc  : Test IsCallStreamUsage returns true for VOICE_CALL_ASSISTANT and INTERPHONE.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_023, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+
+    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_VOICE_CALL_ASSISTANT));
+    EXPECT_TRUE(handler.IsCallStreamUsage(STREAM_USAGE_INTERPHONE));
+}
+
+/**
+ * @tc.name  : Test WirelessConflictHandler GetPriority with VOICE_CALL_ASSISTANT and INTERPHONE.
+ * @tc.number: WirelessConflictHandler_024
+ * @tc.desc  : Test GetPriority returns PRIORITY_CALL_OUTPUT for VOICE_CALL_ASSISTANT and INTERPHONE.
+ */
+HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_024, TestSize.Level1)
+{
+    WirelessConflictHandler handler;
+
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_VOICE_CALL_ASSISTANT,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
+    EXPECT_EQ(handler.GetPriority(STREAM_USAGE_INTERPHONE,
+        SOURCE_TYPE_INVALID, ROUTER_TYPE_NONE, true), PRIORITY_CALL_OUTPUT);
 }
 
 } // namespace AudioStandard
