@@ -1938,8 +1938,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_005, TestSize.L
     EXPECT_EQ(collector.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO), true);
 }
 
-
-
 /**
 * @tc.name  : Test AudioStreamCollector.
 * @tc.number: HandleFreezeStateChange_002
