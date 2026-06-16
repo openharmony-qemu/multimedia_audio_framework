@@ -17,7 +17,7 @@
           "SystemCapability.Multimedia.Audio.Renderer",
           "SystemCapability.Multimedia.Audio.Capturer",
           "SystemCapability.Multimedia.Audio.Device",
-          "SystemCapability.Multimedia.Audio.DeviceEnhance",
+          "SystemCapability.Multimedia.Audio.DeviceEnhance = false",
           "SystemCapability.Multimedia.Audio.Volume",
           "SystemCapability.Multimedia.Audio.Communication",
           "SystemCapability.Multimedia.Audio.Tone",

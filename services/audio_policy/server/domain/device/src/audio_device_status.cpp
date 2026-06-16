@@ -1406,6 +1406,9 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
         int32_t result = HandleLocalDeviceConnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
         reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
+#ifdef BLUETOOTH_ENABLE
+        CheckAndActiveHfpDevice(updatedDesc);
+#endif
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
@@ -1423,6 +1426,27 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
     }
     AUDIO_INFO_LOG("Device: %{public}d, isConnected: %{public}d", updatedDesc.deviceType_, isConnected);
 }
+
+#ifdef BLUETOOTH_ENABLE
+void AudioDeviceStatus::CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
+        AudioRendererInfo rendererInfo = {};
+        rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+        auto coreService = AudioCoreService::GetCoreService();
+        CHECK_AND_RETURN_LOG(coreService != nullptr, "AudioCoreService is null");
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
+            coreService->GetPreferredOutputDeviceDescInner(rendererInfo);
+        CHECK_AND_RETURN(!preferredDeviceList.empty());
+        CHECK_AND_RETURN(preferredDeviceList[0] != nullptr);
+        if (preferredDeviceList[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::AudioHfpManager::SetActiveHfpDevice(preferredDeviceList[0]->macAddress_);
+        } else {
+            Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
+        }
+    }
+}
+#endif
 
 void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
@@ -1598,6 +1622,9 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ClearPreferredWhenCategoryUpdated");
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(desc.macAddress_);
+#ifdef BLUETOOTH_ENABLE
+        CheckAndActiveHfpDevice(desc);
+#endif
     }
 }
 
