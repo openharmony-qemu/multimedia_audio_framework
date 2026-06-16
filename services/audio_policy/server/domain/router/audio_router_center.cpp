@@ -227,7 +227,7 @@ RouterType AudioRouterCenter::GetBypassWithSco(AudioScene audioScene)
 void AudioRouterCenter::PostProcessOutPutDeviceLog(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     FetchDeviceInfo &bak, RouterType &routerType, const FetchDeviceInfo &info)
 {
-    CHECK_AND_RETURN(info.caller == "Arbiter");
+    CHECK_AND_RETURN(info.caller != "Arbiter");
     if (descs.size() > 0 && descs[0] != nullptr) {
         int32_t audioId = descs[0]->deviceId_;
         descs[0]->routerType_ = routerType;

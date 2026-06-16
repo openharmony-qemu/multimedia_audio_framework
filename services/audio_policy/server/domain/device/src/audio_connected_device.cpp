@@ -353,9 +353,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetDev
         if (device == nullptr) {
             continue;
         }
-        AUDIO_INFO_LOG("networkId=[%{public}s], deviceRole=[%{public}d], deviceType=[%{public}d], isLocal=[%{public}d]",
-            device->networkId_.c_str(), static_cast<int32_t>(device->deviceRole_),
-                static_cast<int32_t>(device->deviceType_), (device->networkId_ == LOCAL_NETWORK_ID ? 1 : 0));
         bool filterAllLocal = deviceFlag == DeviceFlag::ALL_DEVICES_FLAG && device->networkId_ == LOCAL_NETWORK_ID;
         bool filterLocalOutput = deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG
             && device->networkId_ == LOCAL_NETWORK_ID
