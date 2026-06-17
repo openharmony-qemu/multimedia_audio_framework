@@ -936,6 +936,8 @@ int32_t AudioEffectService::SetAudioSeparationEffectEnabled(bool enabled, int32_
 {
     AUDIO_INFO_LOG("SetAudioSeparationEffectEnabled: enabled=%{public}d, uid=%{public}d, streamId=%{public}" PRId64,
         enabled, uid, streamId);
+    CHECK_AND_RETURN_RET_LOG(IsAudioSeparationEffectSupported(), ERR_NOT_SUPPORTED,
+        "Effect is not supported");
     CHECK_AND_RETURN_RET_LOG(uid > 0, ERR_INVALID_PARAM, "SetAudioSeparationEffectEnabled: invalid uid");
 
     CHECK_AND_RETURN_RET(streamId == -1, HPAE::IHpaeManager::GetHpaeManager().SetAissEnabledSync(streamId, enabled));
@@ -945,6 +947,8 @@ int32_t AudioEffectService::SetAudioSeparationEffectEnabled(bool enabled, int32_
 int32_t AudioEffectService::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
 {
     AUDIO_INFO_LOG("SetAudioSeparationEffectVolume: type=%{public}d, volume=%{public}f", type, volume);
+    CHECK_AND_RETURN_RET_LOG(IsAudioSeparationEffectSupported(), ERR_NOT_SUPPORTED,
+        "Effect is not supported");
     CHECK_AND_RETURN_RET_LOG(type == AudioSeparationVolumeType::VOLUME_TYPE_VOCAL, ERR_INVALID_PARAM,
         "SetAudioSeparationEffectVolume: invalid type");
     CHECK_AND_RETURN_RET_LOG(volume >= 0.0 && volume <= 1.0, ERR_INVALID_PARAM,
