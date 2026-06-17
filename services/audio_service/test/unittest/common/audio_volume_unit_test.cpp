@@ -1822,9 +1822,10 @@ HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_PCVolumeEnabled, TestSi
     audioVolumeTest->appIndividualVolumeEnabled_ = false;
     bool isPCVolumeEnabled = true;
     VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    int32_t uid = 1000;
     AudioStreamType streamType = STREAM_MUSIC;
 
-    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(uid, streamType);
     EXPECT_TRUE(result);
 
     VolumeUtils::SetPCVolumeEnable(false);
@@ -1840,9 +1841,10 @@ HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_AppIndividualVolumeDisa
     audioVolumeTest->appIndividualVolumeEnabled_ = false;
     bool isPCVolumeEnabled = false;
     VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    int32_t uid = 1000;
     AudioStreamType streamType = STREAM_MUSIC;
 
-    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(uid, streamType);
     EXPECT_FALSE(result);
 }
 
@@ -1856,9 +1858,10 @@ HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_StreamMusic, TestSize.L
     audioVolumeTest->appIndividualVolumeEnabled_ = true;
     bool isPCVolumeEnabled = false;
     VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    int32_t uid = 1000;
     AudioStreamType streamType = STREAM_MUSIC;
 
-    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(uid, streamType);
     EXPECT_TRUE(result);
 
     audioVolumeTest->appIndividualVolumeEnabled_ = false;
@@ -1874,9 +1877,50 @@ HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_StreamNotMusic, TestSiz
     audioVolumeTest->appIndividualVolumeEnabled_ = true;
     bool isPCVolumeEnabled = false;
     VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    int32_t uid = 1000;
     AudioStreamType streamType = STREAM_VOICE_CALL;
 
-    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(uid, streamType);
+    EXPECT_FALSE(result);
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+}
+
+/**
+ * @tc.name  : ShouldApplySystemAppVolume_VoiceAssistantNonSystemApp
+ * @tc.number: ShouldApplySystemAppVolume_005
+ * @tc.desc  : Test STREAM_VOICE_ASSISTANT with non-system-app uid enters if-branch,
+ *              volumeType becomes STREAM_MUSIC, returns true
+ */
+HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_VoiceAssistantNonSystemApp, TestSize.Level1)
+{
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    bool isPCVolumeEnabled = false;
+    VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    int32_t uid = 9999;
+    AudioStreamType streamType = STREAM_VOICE_ASSISTANT;
+
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(uid, streamType);
+    EXPECT_TRUE(result);
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+}
+
+/**
+ * @tc.name  : ShouldApplySystemAppVolume_VoiceAssistantSystemApp
+ * @tc.number: ShouldApplySystemAppVolume_006
+ * @tc.desc  : Test STREAM_VOICE_ASSISTANT with system-app uid skips if-branch,
+ *              volumeType stays STREAM_VOICE_ASSISTANT, returns false
+ */
+HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_VoiceAssistantSystemApp, TestSize.Level1)
+{
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    bool isPCVolumeEnabled = false;
+    VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    int32_t uid = 1003;
+    AudioStreamType streamType = STREAM_VOICE_ASSISTANT;
+
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(uid, streamType);
     EXPECT_FALSE(result);
 
     audioVolumeTest->appIndividualVolumeEnabled_ = false;

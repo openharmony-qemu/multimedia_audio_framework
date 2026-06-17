@@ -8112,6 +8112,62 @@ HWTEST_F(AudioCoreServiceUnitTest, GetActiveStreamsVolumeInfo_NonRunningState, T
 }
 
 /**
+ * @tc.name  : GetActiveStreamsVolumeInfo_VoiceAssistantNonSystemApp
+ * @tc.number: GetActiveStreamsVolumeInfo_006
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo with STREAM_VOICE_ASSISTANT and non-system-app uid,
+ *             volumeType is remapped to STREAM_MUSIC via the if-branch
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetActiveStreamsVolumeInfo_VoiceAssistantNonSystemApp, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto &streamCollector = audioCoreService->streamCollector_;
+    streamCollector.audioRendererChangeInfos_.clear();
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->clientUID = 9999;
+    info->rendererState = RENDERER_RUNNING;
+    info->rendererInfo.contentType = CONTENT_TYPE_SPEECH;
+    info->rendererInfo.streamUsage = STREAM_USAGE_VOICE_ASSISTANT;
+    streamCollector.audioRendererChangeInfos_.push_back(std::move(info));
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioCoreService->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(1, static_cast<int32_t>(activeStreamsVolumeInfo.size()));
+    EXPECT_EQ(activeStreamsVolumeInfo[0].volumeType_, STREAM_MUSIC);
+
+    streamCollector.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : GetActiveStreamsVolumeInfo_VoiceAssistantSystemApp
+ * @tc.number: GetActiveStreamsVolumeInfo_007
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo with STREAM_VOICE_ASSISTANT and system-app uid,
+ *             volumeType stays STREAM_VOICE_ASSISTANT (if-branch not entered)
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetActiveStreamsVolumeInfo_VoiceAssistantSystemApp, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto &streamCollector = audioCoreService->streamCollector_;
+    streamCollector.audioRendererChangeInfos_.clear();
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->clientUID = 1003;
+    info->rendererState = RENDERER_RUNNING;
+    info->rendererInfo.contentType = CONTENT_TYPE_SPEECH;
+    info->rendererInfo.streamUsage = STREAM_USAGE_VOICE_ASSISTANT;
+    streamCollector.audioRendererChangeInfos_.push_back(std::move(info));
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioCoreService->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(1, static_cast<int32_t>(activeStreamsVolumeInfo.size()));
+    EXPECT_EQ(activeStreamsVolumeInfo[0].volumeType_, STREAM_VOICE_ASSISTANT);
+
+    streamCollector.audioRendererChangeInfos_.clear();
+}
+
+/**
  * @tc.name  : HandleNormalInputPipes_VoipPriorityLowered_001
  * @tc.number: HandleNormalInputPipes_VoipPriorityLowered_001
  * @tc.desc  : Test lowered VoIP stream is skipped during priority comparison.

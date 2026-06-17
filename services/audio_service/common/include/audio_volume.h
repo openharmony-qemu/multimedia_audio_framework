@@ -125,7 +125,7 @@ private:
     // MUST be called with volumeMutex_ held
     void GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, uint32_t pipeId, VolumeValues *volumes);
     void UpdateVkbVolume(VkbMode mode, bool isMuted, float &sysVolume);
-    bool ShouldApplySystemAppVolume(AudioStreamType streamType);
+    bool ShouldApplySystemAppVolume(int32_t appUid, AudioStreamType streamType);
     float GetSystemAppVolumeEffective(StreamVolume &stream);
 private:
     std::unordered_map<uint32_t, std::shared_ptr<StreamVolume>> streamVolume_ {};
