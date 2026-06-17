@@ -209,7 +209,6 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     HandleMuteBeforeDeviceSwitch(streamDescs, reason);
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
-    uint32_t sessionId = 0;
     int32_t uid = SYSTEM_UID;
     for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
         // if streamDesc select bluetooth or headset, active it.
@@ -226,7 +225,6 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
                 reason);
             needUpdateActiveDevice = !isUpdateActiveDevice;
-            sessionId = streamDesc->sessionId_;
             uid = GetRealUid(streamDesc);
         }
     }
@@ -234,8 +232,8 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     AudioDeviceDescriptor audioDeviceDescriptor = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
     std::shared_ptr<AudioDeviceDescriptor> descPtr =
         std::make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
-    if (isUpdateActiveDevice && audioDeviceManager_.IsDeviceConnected(descPtr)) {
-        AUDIO_INFO_LOG("active device updated, update volume for %{public}d", sessionId);
+    if ((isUpdateActiveDevice && audioDeviceManager_.IsDeviceConnected(descPtr)) ||
+        (descPtr != nullptr && descPtr->IsRemote())) {
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor, reason);
     }
     return isUpdateActiveDevice;
