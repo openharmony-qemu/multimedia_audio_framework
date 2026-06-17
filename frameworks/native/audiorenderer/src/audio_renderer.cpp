@@ -1896,7 +1896,6 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume, bool setVo
     State currentState = audioStream_->GetState();
     bool isMute = audioStream_->GetMute();
     bool noNeedActive = setVolume && (audioStream_->GetVolume() > 0) && (volume > 0);
-    audioStream_->ResetNotifyStreamSilentChangeFlag();
     if (currentState == NEW || currentState == PREPARED) {
         AUDIO_INFO_LOG("set volume before RUNNING,  volume=%{public}f", volume);
         isStillZeroStreamVolume_ = (volume == 0);
@@ -1911,6 +1910,7 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume, bool setVo
         if (currentState == RUNNING && !noNeedActive) {
             AudioInterrupt audioInterrupt = audioInterrupt_;
             AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume,  volume=%{public}f", volume);
+            audioStream_->ResetNotifyStreamSilentChangeFlag();
             int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt, 0, true);
             CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed at SetVolume");
         }
