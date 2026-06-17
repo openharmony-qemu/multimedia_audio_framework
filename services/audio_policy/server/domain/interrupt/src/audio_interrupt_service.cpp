@@ -1291,9 +1291,25 @@ void AudioInterruptService::SetRegisterStateChangeCallbackFlag(int32_t callerPid
     sessionService_.SetRegisterStateChangeCallbackFlag(callerPid, stateChangeCallbackFlag);
 }
 
+bool AudioInterruptService::VerifyStreamType(const AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.audioFocusType.streamType >= 0 &&
+        audioInterrupt.audioFocusType.streamType <= STREAM_TYPE_MAX &&
+        audioInterrupt.audioFocusType.sourceType < 0) {
+        return true;
+    }
+    if (audioInterrupt.audioFocusType.streamType < 0 &&
+        audioInterrupt.audioFocusType.sourceType >= 0 &&
+        audioInterrupt.audioFocusType.sourceType <= SOURCE_TYPE_MAX) {
+        return true;
+    }
+    return false;
+}
+
 int32_t AudioInterruptService::ActivateAudioInterruptCoreProcedure(
     const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy, bool &updateScene)
 {
+    CHECK_AND_RETURN_RET_LOG(VerifyStreamType(audioInterrupt), ERR_INVALID_PARAM, "VerifyStreamType fail");
     bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
     PrintLogsOfFocusStrategyBaseMusic(audioInterrupt); // Print logs for automatic detection tools.
     if (isPreemptMode_) {
