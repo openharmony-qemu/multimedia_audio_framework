@@ -1990,8 +1990,8 @@ int32_t AudioServer::SetAudioMonoState(bool audioMono)
         uint32_t type = IdHandler::GetInstance().ParseType(renderId);
         std::string info = IdHandler::GetInstance().ParseInfo(renderId);
         if (type == HDI_ID_TYPE_PRIMARY) {
-            return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_DIRECT
-                || info == HDI_ID_INFO_VOIP || info == HDI_ID_INFO_USB;
+            return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_DIRECT ||
+                info == HDI_ID_INFO_VOIP || info == HDI_ID_INFO_USB;
         }
         if (type == HDI_ID_TYPE_BLUETOOTH) {
             return info == HDI_ID_INFO_DEFAULT;
@@ -2042,8 +2042,8 @@ int32_t AudioServer::SetAudioBalanceValueInner(bool isAudioBalanceEnable, float 
         uint32_t type = IdHandler::GetInstance().ParseType(renderId);
         std::string info = IdHandler::GetInstance().ParseInfo(renderId);
         if (type == HDI_ID_TYPE_PRIMARY) {
-            return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_DIRECT
-                || info == HDI_ID_INFO_VOIP || info == HDI_ID_INFO_USB;
+            return info == HDI_ID_INFO_DEFAULT || info == HDI_ID_INFO_DIRECT ||
+                info == HDI_ID_INFO_VOIP || info == HDI_ID_INFO_USB;
         }
         if (type == HDI_ID_TYPE_BLUETOOTH) {
             return info == HDI_ID_INFO_DEFAULT;
