@@ -1260,8 +1260,6 @@ bool VolumeDataMaintainer::LoadMuteFromMap(std::shared_ptr<AudioDeviceDescriptor
         "key %{public}s not in muteStatusMap_", volumeKey.c_str());
     CHECK_AND_RETURN_RET_LOG(volumeValueMap_[volumeKey].contains(volumeType), false,
         "key %{public}s volumeType %{public}d not in muteStatusMap_", volumeKey.c_str(), volumeType);
-    AUDIO_INFO_LOG("volumeKey: %{public}s, volumeType: %{public}d, muteStatus: %{public}d",
-        volumeKey.c_str(), volumeType, volumeValueMap_[volumeKey][volumeType].mute_);
     return volumeValueMap_[volumeKey][volumeType].mute_;
 }
 
