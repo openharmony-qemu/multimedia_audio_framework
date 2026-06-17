@@ -1448,7 +1448,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
 
     // Force stop interphone streams when VoIP/Cellular stream starts
     ForceStopInterphoneStreamsIfNecessary(streamDesc);
-    CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
+    CheckAndSleepBeforeRingDeviceSet(streamDesc);
     pipeManager_->StartClient(sessionId);
     CHECK_AND_CALL_FUNC_RETURN_RET(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[StartClient]newDeviceDescs_ is empty"));

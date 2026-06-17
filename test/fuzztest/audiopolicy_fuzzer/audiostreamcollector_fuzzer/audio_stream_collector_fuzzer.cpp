@@ -1075,23 +1075,6 @@ void AudioStreamCollectorHasVoipRendererStreamFuzzTest(const uint8_t *rawData, s
     audioStreamCollector_.HasVoipRendererStream();
 }
 
-void AudioStreamCollectorIsMediaPlayingFuzzTest(const uint8_t *rawData, size_t size)
-{
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioRendererInfo rendererInfo;
-    rendererInfo.contentType = g_testContentTypes[index % g_testContentTypes.size()];
-    rendererInfo.streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
-    std::unique_ptr<AudioRendererChangeInfo> info = std::make_unique<AudioRendererChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
-    info->sessionId = randIntValue % NUM_2;
-    info->rendererState = g_testRendererState[index % g_testRendererState.size()];
-    info->rendererInfo = rendererInfo;
-    info->channelCount = randIntValue % NUM_2;
-    audioStreamCollector_.audioRendererChangeInfos_.clear();
-    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(info));
-    audioStreamCollector_.IsMediaPlaying();
-}
-
 void AudioStreamCollectorIsVoipStreamActiveFuzzTest(const uint8_t *rawData, size_t size)
 {
     uint32_t index = static_cast<uint32_t>(size);
@@ -1200,7 +1183,7 @@ void AudioStreamCollectorHasRunningRendererStreamFuzzTest(const uint8_t *rawData
     audioStreamCollector_.HasRunningRendererStream();
 }
 
-void AudioStreamCollectorGetPlayingMediaRendererChangeInfosFuzzTest(const uint8_t *rawData, size_t size)
+void AudioStreamCollectorGetPlayingNonDualOutputRendererChangeInfosFuzzTest(const uint8_t *rawData, size_t size)
 {
     uint32_t index = static_cast<uint32_t>(size);
     AudioRendererInfo rendererInfo;
@@ -1212,7 +1195,7 @@ void AudioStreamCollectorGetPlayingMediaRendererChangeInfosFuzzTest(const uint8_
     audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    audioStreamCollector_.GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+    audioStreamCollector_.GetPlayingNonDualOutputRendererChangeInfos(rendererChangeInfos);
 }
 
 void AudioStreamCollectorIsStreamRunningFuzzTest(const uint8_t *rawData, size_t size)
@@ -1285,7 +1268,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioStreamCollectorGetAllCapturerSessionIDForUIDFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorChangeVoipCapturerStreamToNormalFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorHasVoipRendererStreamFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorIsMediaPlayingFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsVoipStreamActiveFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorCheckVoiceCallActiveFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorPostReclaimMemoryTaskFuzzTest,
@@ -1295,7 +1277,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioStreamCollectorIsVoiceCallActiveFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorWriteCaptureStreamReleaseSysEventFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorHasRunningRendererStreamFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetPlayingMediaRendererChangeInfosFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorGetPlayingNonDualOutputRendererChangeInfosFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsStreamRunningFuzzTest,
 };
 

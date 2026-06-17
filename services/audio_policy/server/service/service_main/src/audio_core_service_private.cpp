@@ -88,7 +88,7 @@ static const uint32_t BASE_DEVICE_SWITCH_SLEEP_US = 80000; // 80ms
 static const uint32_t OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US = 150000; // 150ms
 static const uint32_t DISTRIBUTED_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US = 350000; // 350ms
 static const uint32_t HEADSET_TO_SPK_EP_EXTRA_SLEEP_US = 120000; // 120ms
-static const uint32_t MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US = 120000; // 120ms
+static const uint32_t PRIMARY_OUTPUT_BUFFER_DRAIN_DELAY_US = 120000; // 120ms
 static const uint32_t VOICE_CALL_DEVICE_SET_DELAY_US = 120000; // 120ms
 static const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
 static const int64_t COLLABORATIVE_STATE_CHANGE_MUTE_SINK_PORT_US = 200000; // 200ms
@@ -1395,6 +1395,19 @@ bool AudioCoreService::IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamD
     return true;
 }
 
+/**
+ * Determines whether UpdateOutputRoute should be invoked from MoveToNewOutputDevice.
+ * Returns false only when the audio scene transitions from DEFAULT to RINGING,
+ * because in that case UpdateOutputRoute is called from StartClient instead of MoveToNewOutputDevice.
+ */
+bool AudioCoreService::ShouldUpdateOutputRoute(const AudioStreamDeviceChangeReasonExt reason)
+{
+    AudioScene lastAudioScene = audioSceneManager_.GetLastAudioScene();
+    AudioScene audioScene = audioSceneManager_.GetAudioScene();
+    return !(lastAudioScene == AUDIO_SCENE_DEFAULT) &&
+        (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING);
+}
+
 void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     std::shared_ptr<AudioPipeInfo> pipeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -1447,7 +1460,8 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
         "[MoveToNewOutputDevice]Move sink faild!");
 
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
-    if (pipeManager_->GetUpdateRouteSupport()) {
+    bool shouldUpdateOutputRoute = ShouldUpdateOutputRoute(reason);
+    if (pipeManager_->GetUpdateRouteSupport() && shouldUpdateOutputRoute) {
         UpdateOutputRoute(streamDesc, pipeInfo->id_);
     }
 
@@ -2788,10 +2802,36 @@ void AudioCoreService::CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDe
 }
 
 /**
- * Mutes media streams on the primary sink when a dual-tone ringtone is playing.
- * Ensures that media does not play simultaneously on two devices.
+ * Mutes voice message streams on the primary sink when a ringtone is playing.
+ * Prevents voice message audio from leaking through the speaker
  */
-void AudioCoreService::HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+void AudioCoreService::HandleVoiceMessageMuteForSingleRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty() &&
+        streamDesc->newDeviceDescs_.front() != nullptr, "Invalid streamDesc");
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
+    if (streamDesc->newDeviceDescs_.size() != 1) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    streamCollector_.GetPlayingVoiceMessageRendererChangeInfos(rendererChangeInfos);
+    for (const auto &changeInfo : rendererChangeInfos) {
+        if (changeInfo != nullptr && pipeManager_->IsOnPrimaryAdapter(changeInfo->sessionId)) {
+            // Reuse the dual-ring mute marker to track voice message streams muted in the
+            // single-ring scenario, so they can be restored together during unmute recovery.
+            streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(changeInfo->sessionId, STREAM_VOICE_MESSAGE));
+            audioPolicyManager_.SetDualStreamVolumeMute(changeInfo->sessionId, true);
+        }
+    }
+}
+
+/**
+ * Mutes non-dual-output streams on the primary sink when a dual-tone ringtone is playing.
+ * Prevents non-dual-output audio (e.g. media, voice call) from leaking through the speaker
+ * while the dual-output ring stream occupies both primary and secondary outputs simultaneously.
+ */
+void AudioCoreService::HandlePrimaryNonDualOutputStreamMuteForDualRing(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty() &&
         streamDesc->newDeviceDescs_.front() != nullptr, "Invalid streamDesc");
@@ -2803,7 +2843,7 @@ void AudioCoreService::HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioSt
         return;
     }
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    streamCollector_.GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+    streamCollector_.GetPlayingNonDualOutputRendererChangeInfos(rendererChangeInfos);
     for (const auto &changeInfo : rendererChangeInfos) {
         if (changeInfo != nullptr && pipeManager_->IsOnPrimaryAdapter(changeInfo->sessionId)) {
             AudioStreamType streamType = streamCollector_.GetStreamType(changeInfo->sessionId);
@@ -2813,21 +2853,24 @@ void AudioCoreService::HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioSt
     }
 }
 
-// After media playback is interrupted by the alarm or ring,
-// a delay is required before switching to dual output (e.g., speaker + headset).
-// This ensures that the remaining audio buffer is drained,
-// preventing any residual media sound from leaking through the speaker.
-void AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+/**
+ * When a stream playing on the primary output (e.g. headset) is interrupted by an alarm or ring,
+ * a delay is required before switching to the other output (e.g., speaker + headset).
+ * This allows the primary output buffer to be fully drained,
+ * preventing residual audio from leaking through the speaker.
+ */
+void AudioCoreService::CheckAndSleepBeforeRingDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
     CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "Invalid streamDesc");
     bool isRingOrAlarmStream = Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage);
-    DeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
-    if (streamDesc->streamStatus_ == STREAM_STATUS_NEW &&
-        streamDesc->newDeviceDescs_.size() > 1 &&
-        (streamCollector_.IsMediaPlaying() || streamCollector_.IsStreamRunning(STREAM_USAGE_ALARM)) &&
-        IsRingerOrAlarmerDualDevicesRange(deviceType) && isRingOrAlarmStream) {
-        HandlePrimaryMediaMuteForDualRing(streamDesc);
-        usleep(MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US);
+    uint32_t inPastMs = PRIMARY_OUTPUT_BUFFER_DRAIN_DELAY_US * 2;
+    if (streamDesc->streamStatus_ == STREAM_STATUS_NEW && isRingOrAlarmStream &&
+        pipeManager_->IsOnPrimaryAdapter(streamDesc->sessionId_) &&
+        pipeManager_->HasActiveStreamOnPrimary(inPastMs)) {
+        HandleVoiceMessageMuteForSingleRing(streamDesc);
+        HandlePrimaryNonDualOutputStreamMuteForDualRing(streamDesc);
+        usleep(PRIMARY_OUTPUT_BUFFER_DRAIN_DELAY_US);
     }
 }
 

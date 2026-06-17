@@ -1377,56 +1377,17 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_046, TestSize.Level1
 }
 
 /**
-* @tc.name  : IsMediaPlaying_Test01
-* @tc.number: AudioStreamCollectorUnitTest_IsMediaPlaying_Test01
-* @tc.desc  : Test IsMediaPlaying function when there is at least one media renderer running.
-*/
-HWTEST_F(AudioStreamCollectorUnitTest, IsMediaPlaying_Test01, TestSize.Level1)
-{
-    std::unique_ptr<AudioStreamCollector> collector = std::make_unique<AudioStreamCollector>();
-    AudioRendererInfo rendererInfo1 = {CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA, 0};
-    std::unique_ptr<AudioRendererChangeInfo> info1 = std::make_unique<AudioRendererChangeInfo>();
-    info1->sessionId = 1;
-    info1->rendererState = RENDERER_PAUSED;
-    info1->rendererInfo = rendererInfo1;
-    info1->channelCount = 2;
-    collector->audioRendererChangeInfos_.push_back(std::move(info1));
-    bool result = collector->IsMediaPlaying();
-    EXPECT_FALSE(result);
-
-    AudioRendererInfo rendererInfo2 = {CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION, 0};
-    std::unique_ptr<AudioRendererChangeInfo> info2 = std::make_unique<AudioRendererChangeInfo>();
-    info2->sessionId = 2;
-    info2->rendererState = RENDERER_RUNNING;
-    info2->rendererInfo = rendererInfo2;
-    info2->channelCount = 1;
-    collector->audioRendererChangeInfos_.push_back(std::move(info2));
-    result = collector->IsMediaPlaying();
-    EXPECT_FALSE(result);
-
-    AudioRendererInfo rendererInfo3 = {CONTENT_TYPE_MOVIE, STREAM_USAGE_MEDIA, 0};
-    std::unique_ptr<AudioRendererChangeInfo> info3 = std::make_unique<AudioRendererChangeInfo>();
-    info3->sessionId = 3;
-    info3->rendererState = RENDERER_RUNNING;
-    info3->rendererInfo = rendererInfo3;
-    info3->channelCount = 2;
-    collector->audioRendererChangeInfos_.push_back(std::move(info3));
-    result = collector->IsMediaPlaying();
-    EXPECT_TRUE(result);
-}
-
-/**
 * @tc.name  : Test AudioStreamCollector
-* @tc.number: GetPlayingMediaRendererChangeInfos_001
-* @tc.desc  : Test GetPlayingMediaRendererChangeInfos()
+* @tc.number: GetPlayingNonDualOutputRendererChangeInfos_001
+* @tc.desc  : Test GetPlayingNonDualOutputRendererChangeInfos()
 */
-HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingMediaRendererChangeInfos_001, TestSize.Level1)
+HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingNonDualOutputRendererChangeInfos_001, TestSize.Level1)
 {
     // Test1
     std::unique_ptr<AudioStreamCollector> collector = std::make_unique<AudioStreamCollector>();
     collector->audioRendererChangeInfos_.push_back(nullptr);
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    collector->GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+    collector->GetPlayingNonDualOutputRendererChangeInfos(rendererChangeInfos);
     EXPECT_EQ(0, rendererChangeInfos.size());
     rendererChangeInfos.clear();
 
@@ -1438,7 +1399,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingMediaRendererChangeInfos_001, T
     info1->rendererInfo = rendererInfo1;
     info1->channelCount = 2;
     collector->audioRendererChangeInfos_.push_back(std::move(info1));
-    collector->GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+    collector->GetPlayingNonDualOutputRendererChangeInfos(rendererChangeInfos);
     EXPECT_EQ(0, rendererChangeInfos.size());
     rendererChangeInfos.clear();
 
@@ -1450,7 +1411,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingMediaRendererChangeInfos_001, T
     info2->rendererInfo = rendererInfo2;
     info2->channelCount = 1;
     collector->audioRendererChangeInfos_.push_back(std::move(info2));
-    collector->GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+    collector->GetPlayingNonDualOutputRendererChangeInfos(rendererChangeInfos);
     EXPECT_EQ(0, rendererChangeInfos.size());
     rendererChangeInfos.clear();
 
@@ -1462,7 +1423,59 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingMediaRendererChangeInfos_001, T
     info3->rendererInfo = rendererInfo3;
     info3->channelCount = 2;
     collector->audioRendererChangeInfos_.push_back(std::move(info3));
-    collector->GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+    collector->GetPlayingNonDualOutputRendererChangeInfos(rendererChangeInfos);
+    EXPECT_EQ(1, rendererChangeInfos.size());
+    rendererChangeInfos.clear();
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector
+* @tc.number: GetPlayingVoiceMessageRendererChangeInfos_001
+* @tc.desc  : Test GetPlayingVoiceMessageRendererChangeInfos()
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingVoiceMessageRendererChangeInfos_001, TestSize.Level1)
+{
+    // Test1: nullptr entry should be skipped
+    std::unique_ptr<AudioStreamCollector> collector = std::make_unique<AudioStreamCollector>();
+    collector->audioRendererChangeInfos_.push_back(nullptr);
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    collector->GetPlayingVoiceMessageRendererChangeInfos(rendererChangeInfos);
+    EXPECT_EQ(0, rendererChangeInfos.size());
+    rendererChangeInfos.clear();
+
+    // Test2: non-VOICE_MESSAGE stream (MEDIA) + RUNNING should be skipped
+    AudioRendererInfo rendererInfo1 = {CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA, 0};
+    std::unique_ptr<AudioRendererChangeInfo> info1 = std::make_unique<AudioRendererChangeInfo>();
+    info1->sessionId = 1001;
+    info1->rendererState = RENDERER_RUNNING;
+    info1->rendererInfo = rendererInfo1;
+    info1->channelCount = 2;
+    collector->audioRendererChangeInfos_.push_back(std::move(info1));
+    collector->GetPlayingVoiceMessageRendererChangeInfos(rendererChangeInfos);
+    EXPECT_EQ(0, rendererChangeInfos.size());
+    rendererChangeInfos.clear();
+
+    // Test3: VOICE_MESSAGE + PAUSED (not RUNNING) should be skipped
+    AudioRendererInfo rendererInfo2 = {CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_MESSAGE, 0};
+    std::unique_ptr<AudioRendererChangeInfo> info2 = std::make_unique<AudioRendererChangeInfo>();
+    info2->sessionId = 1002;
+    info2->rendererState = RENDERER_PAUSED;
+    info2->rendererInfo = rendererInfo2;
+    info2->channelCount = 1;
+    collector->audioRendererChangeInfos_.push_back(std::move(info2));
+    collector->GetPlayingVoiceMessageRendererChangeInfos(rendererChangeInfos);
+    EXPECT_EQ(0, rendererChangeInfos.size());
+    rendererChangeInfos.clear();
+
+    // Test4: VOICE_MESSAGE + RUNNING should match
+    AudioRendererInfo rendererInfo3 = {CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_MESSAGE, 0};
+    std::unique_ptr<AudioRendererChangeInfo> info3 = std::make_unique<AudioRendererChangeInfo>();
+    info3->sessionId = 1003;
+    info3->rendererState = RENDERER_RUNNING;
+    info3->rendererInfo = rendererInfo3;
+    info3->channelCount = 1;
+    collector->audioRendererChangeInfos_.push_back(std::move(info3));
+    collector->GetPlayingVoiceMessageRendererChangeInfos(rendererChangeInfos);
     EXPECT_EQ(1, rendererChangeInfos.size());
     rendererChangeInfos.clear();
 }
