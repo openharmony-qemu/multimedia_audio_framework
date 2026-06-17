@@ -75,14 +75,6 @@ int32_t AudioScoDeviceBehavior::HandleScoOutputDeviceFetched(const std::shared_p
             std::make_shared<AudioDeviceDescriptor>(*deviceDesc), EXCEPTION_FLAG_UPDATE, inreason);
         return ERROR;
     }
-    if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
-        auto pipeManager = AudioPipeManager::GetPipeManager();
-        CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_NULL_POINTER, "pipeManager is nullptr");
-        if (!pipeManager->IsFocusStandby(streamDesc->sessionId_)) {
-            Bluetooth::AudioHfpManager::ClearScoSelected();
-            Bluetooth::AudioHfpManager::UpdateAudioScene(AudioSceneManager::GetInstance().GetAudioScene(true), true);
-        }
-    }
 #endif
     AUDIO_INFO_LOG("out");
     return SUCCESS;
@@ -102,36 +94,7 @@ int32_t AudioScoDeviceBehavior::BluetoothScoInputFetch(const std::shared_ptr<Aud
         return ERROR;
     }
 
-    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
-        return SUCCESS;
-    }
-    auto pipeManager = AudioPipeManager::GetPipeManager();
-    CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_NULL_POINTER, "pipeManager is nullptr");
-    bool hasRunningRecognitionCapturerStream = pipeManager->HasRunningRecognitionCapturerStream();
-    if (desc->isVrSupported_ &&
-        (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType) || hasRunningRecognitionCapturerStream)) {
-        ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_, desc->isVrSupported_);
-    } else {
-        Bluetooth::AudioHfpManager::ClearScoSelected();
-        ret = Bluetooth::AudioHfpManager::UpdateAudioScene(AudioSceneManager::GetInstance().GetAudioScene(true), true);
-    }
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("sco [%{public}s] is not connected yet",
-            AudioPolicyUtils::GetInstance().GetEncryptAddr(desc->macAddress_).c_str());
-    }
     return SUCCESS;
-}
-
-int32_t AudioScoDeviceBehavior::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
-    ConnectState connectState, bool isVrSupported)
-{
-    HILOG_COMM_INFO("[ScoInputDeviceFetchedForRecongnition]handleflag %{public}d, address %{public}s, "
-        "connectState %{public}d", handleFlag, AudioPolicyUtils::GetInstance().GetEncryptAddr(address).c_str(),
-        connectState);
-    if (handleFlag && (connectState != DEACTIVE_CONNECTED || !isVrSupported)) {
-        return SUCCESS;
-    }
-    return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag);
 }
 
 bool AudioScoDeviceBehavior::RecoverFetchedDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)

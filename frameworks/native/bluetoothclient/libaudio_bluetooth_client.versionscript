@@ -18,7 +18,6 @@
     *UnregisterBluetoothScoListener*;
     *GetA2dpDeviceStreamInfo*;
     *GetRenderPosition*;
-    *HandleScoWithRecongnition*;
     *SetDeviceAbsVolume*;
     *SetActiveA2dpDevice*;
     *GetActiveA2dpDeviceLocal*;
@@ -52,7 +51,6 @@
     *GetAudioScoDeviceMac*;
     *GetScoCategory*;
     *connectionState_*;
-    *ClearScoSelected*;
   local:
     *;
 };

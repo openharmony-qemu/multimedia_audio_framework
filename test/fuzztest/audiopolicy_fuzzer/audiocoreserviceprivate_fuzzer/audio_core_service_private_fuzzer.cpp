@@ -333,16 +333,6 @@ void AudioCoreServicePrivateOnDeviceConfigurationChangedFuzzTest()
     }
 }
 
-void ScoInputDeviceFetchedForRecongnitionFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    bool handleFlag = GetData<uint32_t>() % NUM_2;
-    std::string address = "abc";
-    constexpr int32_t connectStateCount = static_cast<int32_t>(ConnectState::DEACTIVE_CONNECTED) + 1;
-    ConnectState connectState = static_cast<ConnectState>(GetData<uint8_t>() % connectStateCount);
-    audioCoreService->ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-}
-
 void CheckModemSceneFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -1087,7 +1077,8 @@ void UpdateSessionConnectionStateFuzzTest()
     std::unique_ptr<ConcurrentCaptureDfxResult> DfxResult;
     audioCoreService->WriteCapturerConcurrentMsg(audioStreamDescriptor, DfxResult);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs;
-    audioCoreService->FetchOutputDevicesForDescs(outputDescs);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> inputDescs;
+    audioCoreService->FetchDevicesForDescs(outputDescs, inputDescs);
     uint32_t sessionId = GetData<uint32_t>();
     audioCoreService->PlayBackToInjection(sessionId);
     audioCoreService->InjectionToPlayBack(sessionId);
@@ -1148,7 +1139,6 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateNotifyRouteUpdate,
     AudioCoreServicePrivateUpdateModemRoute,
     HandleA2dpSuspendWhenFetchFuzzTest,
-    ScoInputDeviceFetchedForRecongnitionFuzzTest,
     CheckModemSceneFuzzTest,
     GetVoiceCallMuteDurationFuzzTest,
     UpdateSessionConnectionStateFuzzTest,

@@ -408,17 +408,6 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     return SUCCESS;
 }
 
-int32_t AudioCoreService::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
-    ConnectState connectState, bool isVrSupported)
-{
-    HILOG_COMM_INFO("[ScoInputDeviceFetchedForRecongnition]handleflag %{public}d, address %{public}s, "
-        "connectState %{public}d", handleFlag, GetEncryptAddr(address).c_str(), connectState);
-    if (handleFlag && (connectState != DEACTIVE_CONNECTED || !isVrSupported)) {
-        return SUCCESS;
-    }
-    return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag);
-}
-
 void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -2999,9 +2988,11 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
 int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "Stream desc is nullptr");
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_[0] != nullptr, ERR_INVALID_PARAM, "Invalid stream desc");
 
     auto result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
+    CheckScoState(streamDesc, true);
     if (result == REFETCH_DEVICE) {
         FetchOutputDeviceAndRoute("ActivateOutputDevice", reason);
         FetchInputDeviceAndRoute("ActivateOutputDevice", reason);
@@ -3016,6 +3007,7 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
         streamDesc->newDeviceDescs_[0] != nullptr, ERR_INVALID_PARAM, "Invalid stream desc");
 
     auto result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
+    CheckScoState(streamDesc, true);
     if (result == REFETCH_DEVICE) {
         FetchOutputDeviceAndRoute("ActivateInputDevice", reason);
         FetchInputDeviceAndRoute("ActivateInputDevice", reason);
@@ -3452,18 +3444,29 @@ void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDevice
 #endif
 }
 
-void AudioCoreService::FetchOutputDevicesForDescs(
-    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs)
+void AudioCoreService::FetchDevicesForDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inStreamDescs)
 {
-    for (auto &desc : outputDescs) {
+    for (auto &desc : outStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         FetchDeviceInfo info = { desc->rendererInfo_.streamUsage, GetRealUid(desc),
-            desc->rendererInfo_.privacyType, "StartClient", desc->bundleName_ };
+            desc->rendererInfo_.privacyType, "Arbiter", desc->bundleName_ };
         info.streamId = desc->sessionId_;
         auto newDescs = audioRouterCenter_.FetchOutputDevices(info);
         pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
     }
-    audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDevicesForDescs");
+    for (auto &desc : inStreamDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+        FetchDeviceInfo info;
+        info.sourceType = desc->capturerInfo_.sourceType;
+        info.clientUID = GetRealUid(desc);
+        info.streamId = desc->sessionId_;
+        info.caller = "Arbiter";
+        auto newDesc = audioRouterCenter_.FetchInputDevice(info);
+        if (newDesc != nullptr) {
+            pipeManager_->UpdateNewDeviceDesc(desc, {newDesc});
+        }
+    }
 }
 
 bool AudioCoreService::HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene)

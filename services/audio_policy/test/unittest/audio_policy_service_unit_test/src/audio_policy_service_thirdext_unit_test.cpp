@@ -568,30 +568,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsRingerOrAlarmerDualDevicesRange_002
     EXPECT_EQ(false, ret);
 }
 
-/**
- * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
- * @tc.number: ScoInputDeviceFetchedForRecongnition_001
- * @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interfaces.
- */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ScoInputDeviceFetchedForRecongnition_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ScoInputDeviceFetchedForRecongnition_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-    std::string address = "";
-
-    bool handleFlag = false;
-    ConnectState connectState = DEACTIVE_CONNECTED;
-    int32_t result = server->audioPolicyService_.audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(handleFlag,
-        address, connectState);
-    EXPECT_NE(SUCCESS, result);
-
-    handleFlag = true;
-    connectState = VIRTUAL_CONNECTED;
-    result = server->audioPolicyService_.audioDeviceCommon_.ScoInputDeviceFetchedForRecongnition(handleFlag,
-        address, connectState);
-    EXPECT_EQ(SUCCESS, result);
-}
 #ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
 * @tc.name  : Test SetRotationToEffect.

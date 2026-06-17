@@ -291,46 +291,5 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, IsSameDevice_006, TestSize.Level4)
     EXPECT_TRUE(result);
 }
 
-/**
-* @tc.name  : Test ClientDiedDisconnectScoRecognition.
-* @tc.number: ClientDiedDisconnectScoRecognition_001
-* @tc.desc  : Test ClientDiedDisconnectScoRecognition interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoRecognition_001, TestSize.Level4)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    capturerChangeInfo->capturerState = CAPTURER_RUNNING;
-    capturerChangeInfo->capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    audioDeviceCommon.streamCollector_.audioCapturerChangeInfos_.push_back(capturerChangeInfo);
-
-    audioDeviceCommon.ClientDiedDisconnectScoRecognition();
-    EXPECT_TRUE(audioDeviceCommon.pipeManager_->HasRunningRecognitionCapturerStream());
-}
-
-/**
-* @tc.name  : Test ClientDiedDisconnectScoRecognition.
-* @tc.number: ClientDiedDisconnectScoRecognition_002
-* @tc.desc  : Test ClientDiedDisconnectScoRecognition interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, ClientDiedDisconnectScoRecognition_002, TestSize.Level4)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    AudioDeviceDescriptor inputDevice;
-    inputDevice.deviceType_ = DEVICE_TYPE_MIC;
-    inputDevice.deviceId_ = 1001;
-    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(
-        make_shared<AudioDeviceDescriptor>(inputDevice));
-    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID,
-        {make_shared<AudioDeviceDescriptor>(inputDevice)});
-
-    audioDeviceCommon.streamCollector_.audioCapturerChangeInfos_.clear();
-    audioDeviceCommon.ClientDiedDisconnectScoRecognition();
-    EXPECT_EQ(audioDeviceCommon.audioActiveDevice_.GetCurrentInputDeviceType(), DEVICE_TYPE_MIC);
-}
 } // namespace AudioStandard
 } // namespace OHOS
