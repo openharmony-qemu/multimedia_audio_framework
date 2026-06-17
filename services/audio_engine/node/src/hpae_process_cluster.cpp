@@ -287,12 +287,16 @@ int32_t HpaeProcessCluster::CheckNodes(uint32_t sessionId)
     return ERROR;
 }
  
-int32_t HpaeProcessCluster::DestroyNodes(uint32_t sessionId)
+int32_t HpaeProcessCluster::DestroyNodes(uint32_t sessionId, SessionEffectCleanupMode mode)
 {
     CHECK_AND_RETURN_RET(CheckNodes(sessionId) == SUCCESS, ERROR);
     auto seNode = SafeGetMap(idSessionEffectMap_, sessionId);
     if (seNode) {
-        seNode->DropEffect();
+        if (mode == SessionEffectCleanupMode::DETACH_FOR_RELOAD) {
+            seNode->DetachEffectForReload();
+        } else {
+            seNode->DropEffect();
+        }
         idSessionEffectMap_.erase(sessionId);
     }
     idConverterMap_.erase(sessionId);
@@ -549,15 +553,6 @@ int32_t HpaeProcessCluster::SessionEffectStart(uint32_t sessionId)
         return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
     }
     return node->StartEffect();
-}
-
-int32_t HpaeProcessCluster::SessionEffectStop(uint32_t sessionId)
-{
-    auto node = SafeGetMap(idSessionEffectMap_, sessionId);
-    if (node == nullptr) {
-        return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
-    }
-    return node->StopEffect();
 }
 
 int32_t HpaeProcessCluster::SessionEffectFlush(uint32_t sessionId)

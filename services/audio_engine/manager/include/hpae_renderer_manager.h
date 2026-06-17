@@ -161,7 +161,8 @@ private:
     void EnableCollaboration();
     void DisableCollaboration();
     int32_t HandleSyncId(uint32_t sessionId, int32_t syncId);
-    int32_t DeleteProcessCluster(uint32_t sessionId, bool needInitEffect = true);
+    int32_t DeleteProcessCluster(uint32_t sessionId, bool needInitEffect = true,
+        SessionEffectCleanupMode mode = SessionEffectCleanupMode::DROP_AND_DISABLE);
     int32_t DeleteProcessClusterInner(uint32_t sessionId, HpaeProcessorType sceneType);
     void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
     void SwitchBypassState(const std::shared_ptr<HpaeSinkInputNode> &node,
@@ -176,7 +177,8 @@ private:
     int32_t UpdateClusterStreamInfo(HpaeProcessorType sceneType);
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
     bool QueryOneStreamUnderrun();
-    void DeleteNodesByTraversal(uint32_t sessionId);
+    void DeleteNodesByTraversal(uint32_t sessionId,
+        SessionEffectCleanupMode mode = SessionEffectCleanupMode::DROP_AND_DISABLE);
     void StopOuputNode();
     void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId,
         RendererState state, uint32_t appUid = INVALID_UID);

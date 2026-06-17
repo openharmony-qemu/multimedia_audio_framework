@@ -45,6 +45,7 @@ public:
     int32_t CreateEffectWithInstance(const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
     int32_t DropEffect();  // Release node reference without destroying algorithm instance
+    int32_t DetachEffectForReload();
 
     // Query
     std::shared_ptr<IEffectInstance> GetEffectInstance() const;
@@ -53,7 +54,6 @@ public:
 
     // Control
     int32_t StartEffect();
-    int32_t StopEffect();
     int32_t FlushEffect();
     int32_t SetParameter(int32_t type, float value);
 

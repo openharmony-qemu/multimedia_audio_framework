@@ -308,8 +308,11 @@ private:
     bool MovingSinkStateChange(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &sinkInput);
     bool SetMovingStreamState(HpaeStreamClassType streamType, uint32_t sessionId,
         HpaeSessionState status, HpaeSessionState state, IOperation operation);
+    bool SetMovingPlayStreamState(uint32_t sessionId, HpaeSessionState state, IOperation operation);
+    bool SetMovingCaptureStreamState(uint32_t sessionId, HpaeSessionState state, IOperation operation);
     void AddPreferSinkForDefaultChange(bool isAdd, const std::string &sinkName);
     void OnCallbackOpenOrReloadFailed(bool isReload);
+    void RecreateAissForReloadedRenderer(const std::string &sinkName);
     bool ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId);
     bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName);
     bool CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName);
@@ -329,6 +332,8 @@ private:
     void UpdateBypassSpatializationForStereo(bool bypass);
 
 private:
+    static constexpr uint32_t UNBOUND_SESSION_ID = 0;
+
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
     std::unordered_map<std::string, std::shared_ptr<IHpaeCapturerManager>> capturerManagerMap_;
     std::unordered_map<std::string, std::shared_ptr<IHpaeRendererManager>> rendererManagerMap_;
@@ -373,7 +378,7 @@ private:
     HpaeDelayedTaskQueue delayedTaskQueue_;
 
     int32_t boundUid_ = -1;
-    uint32_t boundSessionId_ = 0;
+    uint32_t boundSessionId_ = UNBOUND_SESSION_ID;
     CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
 };
 

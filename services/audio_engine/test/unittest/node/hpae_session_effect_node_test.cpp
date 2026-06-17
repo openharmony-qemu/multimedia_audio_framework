@@ -257,10 +257,10 @@ HWTEST_F(HpaeSessionEffectNodeTest, startEffect_noInstance_returnsZero, TestSize
     EXPECT_EQ(node_->StartEffect(), 0);
 }
 
-// StopEffect returns 0
-HWTEST_F(HpaeSessionEffectNodeTest, stopEffect_returnsZero, TestSize.Level0)
+// DropEffect returns 0 when no instance is bound
+HWTEST_F(HpaeSessionEffectNodeTest, dropEffect_noInstance_returnsZero, TestSize.Level0)
 {
-    EXPECT_EQ(node_->StopEffect(), 0);
+    EXPECT_EQ(node_->DropEffect(), 0);
 }
 
 // FlushEffect delegates to Flush
@@ -1101,8 +1101,8 @@ HWTEST_F(SessionEffectNodeThreadTest, preheatThread_exitAndTransition, TestSize.
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
 }
 
-// SE-W4: StopEffect sets stopRequested and joins thread
-HWTEST_F(SessionEffectNodeThreadTest, stopEffect_joinsThread, TestSize.Level0)
+// SE-W4: DropEffect sets stopRequested and joins thread
+HWTEST_F(SessionEffectNodeThreadTest, dropEffect_joinsThread, TestSize.Level0)
 {
     node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
 
@@ -1111,8 +1111,9 @@ HWTEST_F(SessionEffectNodeThreadTest, stopEffect_joinsThread, TestSize.Level0)
     node_->StartEffect();
     ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 
-    node_->StopEffect();
+    node_->DropEffect();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
+    EXPECT_EQ(node_->GetEffectInstance(), nullptr);
 }
 
 HWTEST_F(SessionEffectNodeStateTest, preheatNoDataTimeout_feedsPaddingAndExits, TestSize.Level0)

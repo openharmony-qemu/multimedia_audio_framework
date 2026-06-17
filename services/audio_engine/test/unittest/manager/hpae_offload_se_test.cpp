@@ -249,6 +249,55 @@ HWTEST_F(HpaeOffloadSeTest, createSessionEffect_curNode_immediate, TestSize.Leve
     EXPECT_EQ(callback_->events_.back().state, HPAE_SESSION_RUNNING);
 }
 
+// OSE-1b: Reload detach drops only the physical node and recreate uses a fresh node
+HWTEST_F(HpaeOffloadSeTest, reloadDetach_recreatesFreshNodeWithoutDisabled, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
+    ASSERT_EQ(ret, 0);
+    auto oldNode = manager_->sessionEffectNode_;
+    ASSERT_NE(oldNode, nullptr);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    ASSERT_EQ(manager_->DisConnectInputSession(), SUCCESS);
+    manager_->DetachSessionEffectNodeForReload();
+
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(oldNode->GetEffectInstance(), nullptr);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
+    EXPECT_EQ(ret, 0);
+    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_NE(manager_->sessionEffectNode_, oldNode);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, CUR_SESSION_ID);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetEffectInstance(), instance);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
+}
+
+// OSE-1c: Reload detach clears deferred physical requests without reporting logical disable
+HWTEST_F(HpaeOffloadSeTest, reloadDetach_pendingOnly_clearsPendingWithoutDisabled, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->converterForLoudness_ = nullptr;
+
+    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
+    ASSERT_EQ(ret, 0);
+    ASSERT_EQ(manager_->sessionEffectNode_, nullptr);
+    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
+    EXPECT_EQ(manager_->pendingSessionEffects_.count(CUR_SESSION_ID), 1u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    manager_->DetachSessionEffectNodeForReload();
+
+    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+}
+
 // OSE-1a: CreateSessionEffect creation failure clears active SE state without disabled rollback
 HWTEST_F(HpaeOffloadSeTest, createSessionEffect_createFailure_clearsStateWithoutDisabled, TestSize.Level0)
 {
