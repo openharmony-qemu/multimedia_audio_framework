@@ -367,6 +367,15 @@ public:
         return newDeviceDescs_[0]->IsA2dpOffload();
     }
 
+    bool IsRemoteCastStream()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        if (newDeviceDescs_.size() < 1 || newDeviceDescs_[0] == nullptr) {
+            return false;
+        }
+        return newDeviceDescs_[0]->getType() == DEVICE_TYPE_REMOTE_CAST;
+    }
+
     void AddNewDevice(std::shared_ptr<AudioDeviceDescriptor> device)
     {
         if (device == nullptr) {
