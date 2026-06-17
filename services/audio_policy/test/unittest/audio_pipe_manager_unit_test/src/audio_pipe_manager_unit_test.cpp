@@ -653,7 +653,6 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_013, TestSize.Level1)
     bool result = audioPipeManager->IsSpecialPipe(routeFlag);
     EXPECT_TRUE(result);
 }
-
 /**
  * @tc.name: GetPipeinfoByNameAndFlag_001
  * @tc.desc: Test GetPipeinfoByNameAndFlag when adapterName does not match.
@@ -675,6 +674,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetPipeinfoByNameAndFlag_001, TestSize.Level1
     auto result = audioPipeManager->GetPipeinfoByNameAndFlag(targetAdapterName, targetRouteFlag);
     EXPECT_EQ(result, nullptr);
 }
+
 
 /**
  * @tc.name: GetPipeinfoByNameAndFlag_002
@@ -3303,6 +3303,44 @@ HWTEST_F(AudioPipeManagerUnitTest, IsVoipOrCellularStreamActive_002, TestSize.Le
 
     EXPECT_TRUE(audioPipeManager->IsVoipOrCellularStreamActive());
     audioPipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name: GetPipeinfoById_001
+ * @tc.desc: Test GetPipeinfoById when pipe ID does not match.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetPipeinfoById_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->id_ = 3344;
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    uint32_t targetPipeId = 5566;
+    auto result = audioPipeManager->GetPipeinfoById(targetPipeId);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name: GetPipeinfoById_002
+ * @tc.desc: Test GetPipeinfoById when pipe ID matches.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetPipeinfoById_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->id_ = 3344;
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    uint32_t targetPipeId = 3344;
+    auto result = audioPipeManager->GetPipeinfoById(targetPipeId);
+    EXPECT_NE(result, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
