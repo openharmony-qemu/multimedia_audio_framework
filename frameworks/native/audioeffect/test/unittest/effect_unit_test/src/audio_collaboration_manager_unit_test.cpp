@@ -318,34 +318,19 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_003, Test
 
 /**
 * @tc.name   : Test LoadCollaborationConfigInner API
-* @tc.number : LoadCollaborationConfigInner_004
-* @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
-*/
-HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_004, TestSize.Level1)
-{
-    auto mockNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
-    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
-
-    AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
-    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeEarphoneNameConfig_.empty());
-}
-
-/**
-* @tc.name   : Test LoadCollaborationConfigInner API
 * @tc.number : LoadCollaborationConfigInner_005
 * @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
 */
 HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_005, TestSize.Level1)
 {
     auto mockNode = std::make_shared<MockAudioXmlNode>();
+    auto mockCopyNode = std::make_shared<MockAudioXmlNode>();
     EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, getCopyNode()).Times(1).WillOnce(Return(mockCopyNode));
+    EXPECT_CALL(*mockCopyNode, GetProp("deviceType", _)).WillOnce(Return(-1));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
@@ -360,10 +345,13 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_005, Test
 HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_006, TestSize.Level1)
 {
     auto mockNode = std::make_shared<MockAudioXmlNode>();
+    auto mockCopyNode = std::make_shared<MockAudioXmlNode>();
     EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, getCopyNode()).Times(1).WillOnce(Return(mockCopyNode));
+    EXPECT_CALL(*mockCopyNode, GetProp("deviceType", _)).WillOnce(Return(-1));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
