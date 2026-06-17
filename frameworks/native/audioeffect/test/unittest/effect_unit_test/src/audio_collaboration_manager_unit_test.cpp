@@ -329,7 +329,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_005, Test
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, getCopyNode()).Times(1).WillOnce(Return(mockCopyNode));
+    EXPECT_CALL(*mockNode, GetCopyNode()).Times(1).WillOnce(Return(mockCopyNode));
     EXPECT_CALL(*mockCopyNode, GetProp("deviceType", _)).WillOnce(Return(-1));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
@@ -350,7 +350,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_006, Test
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, CompareName("collabSupportedStreamUsage")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, getCopyNode()).Times(1).WillOnce(Return(mockCopyNode));
+    EXPECT_CALL(*mockNode, GetCopyNode()).Times(1).WillOnce(Return(mockCopyNode));
     EXPECT_CALL(*mockCopyNode, GetProp("deviceType", _)).WillOnce(Return(-1));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
