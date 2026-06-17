@@ -177,7 +177,7 @@ int32_t AudioCollaborativeService::SetCollaborativePlaybackEnabledForDevice(
 bool AudioCollaborativeService::IsCollaborativePlaybackEnabledForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {
-    AUDIO_INFO_LOG("isCollaborativePlaybackEnabledForDevice Entered!");
+    AUDIO_DEBUG_LOG("isCollaborativePlaybackEnabledForDevice Entered!");
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
     if (addressToCollaborativeEnabledMap_.find(selectedAudioDevice->macAddress_) !=
         addressToCollaborativeEnabledMap_.end()) {
