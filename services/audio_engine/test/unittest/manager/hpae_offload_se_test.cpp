@@ -343,6 +343,32 @@ HWTEST_F(HpaeOffloadSeTest, removeSessionEffectNode_active_sendsDisabled, TestSi
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
+// OSE-4a1: RemoveSessionEffectNode waits preheat thread before restoring offload chain
+HWTEST_F(HpaeOffloadSeTest, removeSessionEffectNode_waitsPreheatThreadIdle, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
+    auto node = manager_->sessionEffectNode_;
+    ASSERT_NE(node, nullptr);
+
+    node->stopRequested_.store(false);
+    node->preheatThread_ = std::thread([node]() {
+        while (!node->stopRequested_.load()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
+    ASSERT_TRUE(node->preheatThread_.joinable());
+
+    int32_t ret = manager_->RemoveSessionEffectNode();
+
+    EXPECT_EQ(ret, 0);
+    EXPECT_TRUE(node->stopRequested_.load());
+    EXPECT_FALSE(node->preheatThread_.joinable());
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
 // OSE-4b: DeleteInputSession drops active SE and sends disabled
 HWTEST_F(HpaeOffloadSeTest, deleteInputSession_activeSessionEffect_sendsDisabled, TestSize.Level0)
 {
@@ -849,36 +875,18 @@ HWTEST_F(HpaeOffloadSeDataflowTest, pauseFlushStart_stateTransitions, TestSize.L
     EXPECT_GT(fake_.GetFeedInputCount(), 0u) << "FeedInput not called after Flush→Start";
 }
 
-// OSE-FLUSH-1: InsertSessionEffectNode flushes sinkOutputNode_ internal buffer
-HWTEST_F(HpaeOffloadSeTest, insert_flushesSinkOutput, TestSize.Level0)
+// OSE-FLUSH-1: running offload SE switch requests StopStream path
+HWTEST_F(HpaeOffloadSeTest, stopOffloadSinkIfRunning_running, TestSize.Level0)
 {
-    manager_->sinkOutputNode_->renderFrameData_.resize(1024, 0xAB);
-    ASSERT_GT(manager_->sinkOutputNode_->GetLatency(), 0u);
-
-    auto instance = MakeTestEffectInstance();
-    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance",
-        instance, config_);
-    EXPECT_EQ(ret, 0);
-
-    EXPECT_TRUE(manager_->sinkOutputNode_->renderFrameData_.empty());
-    EXPECT_EQ(manager_->sinkOutputNode_->GetLatency(), 0u);
+    curNode_->SetState(HPAE_SESSION_RUNNING);
+    EXPECT_TRUE(manager_->StopOffloadSinkIfRunning());
 }
 
-// OSE-FLUSH-2: RemoveSessionEffectNode flushes sinkOutputNode_ internal buffer
-HWTEST_F(HpaeOffloadSeTest, remove_flushesSinkOutput, TestSize.Level0)
+// OSE-FLUSH-2: non-running offload SE switch skips sink flush/stop
+HWTEST_F(HpaeOffloadSeTest, stopOffloadSinkIfRunning_nonRunning, TestSize.Level0)
 {
-    auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
-    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
-
-    manager_->sinkOutputNode_->renderFrameData_.resize(1024, 0xCD);
-    ASSERT_GT(manager_->sinkOutputNode_->GetLatency(), 0u);
-
-    int32_t ret = manager_->DestroySessionEffect(CUR_SESSION_ID);
-    EXPECT_EQ(ret, 0);
-
-    EXPECT_TRUE(manager_->sinkOutputNode_->renderFrameData_.empty());
-    EXPECT_EQ(manager_->sinkOutputNode_->GetLatency(), 0u);
+    curNode_->SetState(HPAE_SESSION_PAUSED);
+    EXPECT_FALSE(manager_->StopOffloadSinkIfRunning());
 }
 
 }  // namespace HPAE

@@ -113,6 +113,38 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_FullNoCondition_ShouldN
     EXPECT_TRUE(offloadNode_->isHdiFull_.load());
 }
 
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, RenderSinkFlush_PreservesHdiFullState, TestSize.Level0)
+{
+    offloadNode_->SetSinkState(STREAM_MANAGER_RUNNING);
+    offloadNode_->isHdiFull_.store(true);
+    ASSERT_EQ(offloadNode_->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    EXPECT_CALL(*mockSink_, Flush()).WillOnce(Return(SUCCESS));
+
+    EXPECT_EQ(offloadNode_->RenderSinkFlush(), SUCCESS);
+    EXPECT_TRUE(offloadNode_->isHdiFull_.load());
+}
+
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, StopStream_ClearsHdiFullAndRenderFrameData, TestSize.Level0)
+{
+    auto callback = std::make_shared<NiceMock<MockNodeCallback>>();
+    offloadNode_->nodeInfo_.statusCallback = callback;
+    offloadNode_->isHdiFull_.store(true);
+    offloadNode_->renderFrameData_.resize(DATA_SIZE, 0xAB);
+
+    EXPECT_CALL(*mockSink_, LockOffloadRunningLock()).Times(1);
+    EXPECT_CALL(*mockSink_, GetPresentationPosition(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(0), SetArgReferee<1>(0),
+            SetArgReferee<2>(0), Return(SUCCESS)));
+    EXPECT_CALL(*mockSink_, Flush()).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*callback, OnRewindAndFlush(_, _)).Times(1);
+
+    offloadNode_->StopStream();
+
+    EXPECT_FALSE(offloadNode_->isHdiFull_.load());
+    EXPECT_TRUE(offloadNode_->renderFrameData_.empty());
+}
+
 // Test error type with retry count below max
 HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_ErrorBelowMaxRetry_ShouldIncreaseRetry, TestSize.Level0)
 {

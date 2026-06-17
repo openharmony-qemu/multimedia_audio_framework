@@ -516,6 +516,7 @@ int32_t HpaeProcessCluster::DestroySessionEffectNode(uint32_t sessionId, uint64_
 
     // Close SE flow: mark crossfade (Phase 2: no-op in bypass, Phase 3: real crossfade)
     node->StartCloseCrossfade();
+    node->StopPreheatThread();
 
     // Get latency before disconnect (Phase 2: returns 0, Phase 3: returns real latency)
     outLatency = node->GetLatency(sessionId);
