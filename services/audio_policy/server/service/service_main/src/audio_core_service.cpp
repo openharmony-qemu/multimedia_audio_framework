@@ -4688,6 +4688,9 @@ int32_t AudioCoreService::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVol
         int32_t systemAppVolumePercentage = 0;
         audioVolumeManager_.GetSystemAppVolumePercentage(uid, systemAppVolumePercentage);
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+        if (volumeType == STREAM_VOICE_ASSISTANT && !CheckoutSystemAppUtil::CheckoutSystemApp(uid)) {
+            volumeType = STREAM_MUSIC;
+        }
         ActiveStreamVolumeInfo activeStreamVolumeInfo {volumeType, systemAppVolumePercentage, uid};
         if (std::find(activeStreamsVolumeInfo.begin(), activeStreamsVolumeInfo.end(),
             activeStreamVolumeInfo) == activeStreamsVolumeInfo.end()) {

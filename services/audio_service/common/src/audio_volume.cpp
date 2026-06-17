@@ -1075,7 +1075,7 @@ int32_t AudioVolume::GetOffloadEnable(uint32_t streamIndex)
 
 float AudioVolume::GetSystemAppVolume(int32_t uid, AudioStreamType streamType)
 {
-    if (!ShouldApplySystemAppVolume(streamType)) {
+    if (!ShouldApplySystemAppVolume(uid, streamType)) {
         return 1.0f;
     }
     auto it = systemAppVolume_.find(uid);
@@ -1088,14 +1088,15 @@ float AudioVolume::GetSystemAppVolume(int32_t uid, AudioStreamType streamType)
 
 float AudioVolume::GetSystemAppVolumeEffective(StreamVolume &stream)
 {
-    if (!ShouldApplySystemAppVolume(static_cast<AudioStreamType>(stream.GetStreamType()))) {
+    if (!ShouldApplySystemAppVolume(stream.GetAppUid(),
+        static_cast<AudioStreamType>(stream.GetStreamType()))) {
         return 1.0f;
     }
     return stream.systemAppVolume_;
 }
 
 // PC uses app volume by default; phone uses app volume based on switch and volume type
-bool AudioVolume::ShouldApplySystemAppVolume(AudioStreamType streamType)
+bool AudioVolume::ShouldApplySystemAppVolume(int32_t appUid, AudioStreamType streamType)
 {
     if (VolumeUtils::IsPCVolumeEnable()) {
         return true;
@@ -1105,6 +1106,9 @@ bool AudioVolume::ShouldApplySystemAppVolume(AudioStreamType streamType)
         return false;
     }
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (volumeType == STREAM_VOICE_ASSISTANT && !CheckoutSystemAppUtil::CheckoutSystemApp(appUid)) {
+        volumeType = STREAM_MUSIC;
+    }
     return volumeType == STREAM_MUSIC;
 }
 
