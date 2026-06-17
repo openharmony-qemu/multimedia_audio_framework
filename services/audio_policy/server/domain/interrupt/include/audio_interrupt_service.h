@@ -430,6 +430,7 @@ private:
     void AddFocusHistory(uint32_t streamId, const AudioFocusBehavior &focusBehavior);
     bool UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry, AudioFocuState &activeState,
         AudioFocuState &incomingState);
+    bool VerifyStreamType(const AudioInterrupt &audioInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
