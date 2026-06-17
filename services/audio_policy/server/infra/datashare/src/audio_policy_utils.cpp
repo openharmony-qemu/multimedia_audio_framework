@@ -901,6 +901,7 @@ AudioDeviceUsage AudioPolicyUtils::GetAudioDeviceUsageByStreamUsage(StreamUsage 
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
         case StreamUsage::STREAM_USAGE_INTERPHONE:
             return CALL_OUTPUT_DEVICES;
         default:
@@ -915,6 +916,7 @@ PreferredType AudioPolicyUtils::GetPreferredTypeByStreamUsage(StreamUsage stream
         case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION:
         case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
         case StreamUsage::STREAM_USAGE_INTERPHONE:
             return AUDIO_CALL_RENDER;
         default:

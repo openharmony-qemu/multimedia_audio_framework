@@ -1790,7 +1790,7 @@ bool AudioStreamCollector::IsCallStreamUsage(StreamUsage usage)
 {
     if (usage == STREAM_USAGE_VOICE_COMMUNICATION || usage == STREAM_USAGE_VIDEO_COMMUNICATION ||
         usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION || usage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
-        usage == STREAM_USAGE_INTERPHONE) {
+        usage == STREAM_USAGE_VOICE_CALL_ASSISTANT || usage == STREAM_USAGE_INTERPHONE) {
         return true;
     }
     return false;
