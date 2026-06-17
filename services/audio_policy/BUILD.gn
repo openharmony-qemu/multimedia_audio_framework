@@ -869,6 +869,7 @@ ohos_shared_library("audio_foundation") {
   external_deps = [
     "hilog:libhilog",
     "ipc:ipc_core",
+    "samgr:samgr_proxy",
   ]
 
   cflags = [ "-Os" ]

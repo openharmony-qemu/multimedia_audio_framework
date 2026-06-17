@@ -59,6 +59,7 @@ audio_ohos_library("audio_bluetooth_client") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "samgr:samgr_proxy",
   ]
 
   cflags = [ "-Os" ]

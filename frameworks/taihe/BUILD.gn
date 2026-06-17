@@ -150,6 +150,7 @@ taihe_shared_library("audio_taihe") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "napi:ace_napi",
+    "samgr:samgr_proxy",
   ]
 
   defines = []
