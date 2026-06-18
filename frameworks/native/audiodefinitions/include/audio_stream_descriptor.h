@@ -23,7 +23,6 @@
 #include "audio_device_descriptor.h"
 #include "audio_stream_enum.h"
 #include "audio_info.h"
-#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -119,25 +118,11 @@ public:
         return (streamStatus_ == STREAM_STATUS_STARTED);
     }
 
-    bool IsActive(uint32_t inPastMs = 0) const
-    {
-        if (streamStatus_ == STREAM_STATUS_STARTED) {
-            return true;
-        }
-        int64_t curTime = ClockTime::GetCurMilli();
-        int64_t elapsedMs = curTime - stopTime_;
-        return elapsedMs < static_cast<int64_t>(inPastMs);
-    }
+    bool IsActive(uint32_t inPastMs = 0) const;
 
-    void SetStopTime()
-    {
-        stopTime_ = ClockTime::GetCurMilli();
-    }
+    void SetStopTime();
 
-    void ResetStopTime()
-    {
-        stopTime_ = 0;
-    }
+    void ResetStopTime();
 
     StreamUsage GetRenderUsage() const
     {

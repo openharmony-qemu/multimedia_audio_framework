@@ -2862,7 +2862,7 @@ void AudioCoreService::CheckAndSleepBeforeRingDeviceSet(std::shared_ptr<AudioStr
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
     CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "Invalid streamDesc");
     bool isRingOrAlarmStream = Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage);
-    uint32_t inPastMs = PRIMARY_OUTPUT_BUFFER_DRAIN_DELAY_US * 2;
+    uint32_t inPastMs = PRIMARY_OUTPUT_BUFFER_DRAIN_DELAY_US / AUDIO_US_PER_MS * 2;
     if (streamDesc->streamStatus_ == STREAM_STATUS_NEW && isRingOrAlarmStream &&
         pipeManager_->IsOnPrimaryAdapter(streamDesc->sessionId_) &&
         pipeManager_->HasActiveStreamOnPrimary(inPastMs)) {

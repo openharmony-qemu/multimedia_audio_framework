@@ -349,5 +349,25 @@ int32_t AudioStreamDescriptor::GetRealUid() const
     }
     return callerUid_;
 }
+
+bool AudioStreamDescriptor::IsActive(uint32_t inPastMs) const
+{
+    if (streamStatus_ == STREAM_STATUS_STARTED) {
+        return true;
+    }
+    int64_t curTime = ClockTime::GetCurMilli();
+    int64_t elapsedMs = curTime - stopTime_;
+    return elapsedMs < static_cast<int64_t>(inPastMs);
+}
+
+void AudioStreamDescriptor::SetStopTime()
+{
+    stopTime_ = ClockTime::GetCurMilli();
+}
+
+void AudioStreamDescriptor::ResetStopTime()
+{
+    stopTime_ = 0;
+}
 } // AudioStandard
 } // namespace OHOS
