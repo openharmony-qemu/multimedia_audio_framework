@@ -322,8 +322,6 @@ private:
         const AudioFocusEntry &focusEntry);
     bool CanMixForActiveSession(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         const AudioFocusEntry &focusEntry);
-    bool CapturerMixForSessionBehavior(const AudioInterrupt &incomingInterrupt,
-        const AudioInterrupt &activeInterrupt);
     bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);

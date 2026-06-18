@@ -775,32 +775,6 @@ bool AudioInterruptService::IsCanMixInterrupt(const AudioInterrupt &incomingInte
     return true;
 }
 
-bool AudioInterruptService::CapturerMixForSessionBehavior(const AudioInterrupt &incomingInterrupt,
-    const AudioInterrupt &activeInterrupt)
-{
-    if (incomingInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INVALID ||
-        activeInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INVALID) {
-        return false;
-    }
-    if (sessionService_.IsAudioSessionActivated(incomingInterrupt.pid) &&
-        sessionService_.GetSessionBehaviors(incomingInterrupt.pid).voipNoPrivacyFlag &&
-        incomingInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        AUDIO_INFO_LOG("Incoming VOIP capturer can mix with other capturer because of session behavior.");
-        return true;
-    }
-    if (sessionService_.IsAudioSessionActivated(activeInterrupt.pid) &&
-        sessionService_.GetSessionBehaviors(activeInterrupt.pid).voipNoPrivacyFlag &&
-        activeInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        AUDIO_INFO_LOG("Active VOIP capturer can mix with other capturer because of session behavior.");
-        return true;
-    }
-    if (activeInterrupt.behaviorFlags_.voipNoPrivacyFlag || incomingInterrupt.behaviorFlags_.voipNoPrivacyFlag) {
-        AUDIO_INFO_LOG("Two capturers can mix because of VOIP capturer independently activated session behavior");
-        return true;
-    }
-    return false;
-}
-
 bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
@@ -808,10 +782,6 @@ bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInter
         sessionService_.IsSystemAppWithMixStrategy(activeInterrupt)) {
         AUDIO_INFO_LOG("System app can mix with others anyway, incomingPid: %{public}d, activePid: %{public}d",
             incomingInterrupt.pid, activeInterrupt.pid);
-        return true;
-    }
-
-    if (CapturerMixForSessionBehavior(incomingInterrupt, activeInterrupt)) {
         return true;
     }
 
