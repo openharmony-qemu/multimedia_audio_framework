@@ -42,9 +42,16 @@ public:
     int32_t GetLoudnessGainNodeCount();
     int32_t GetPreOutNum();
     int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
-    int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
-    int32_t AudioRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    int32_t HandleRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    int32_t HandleRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t AudioRendererRelease(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    // Deferred-stop ownership: when the last stream on a real-effect cluster disconnects, HandleRendererStop
+    // defers the real effect REMOVE (AudioRendererStop) until drain completes; ExecuteDeferredStop performs it;
+    // flushes a pending stop for a specific session (used on scene switch), and the observers expose pending state.
+    void ExecuteDeferredStop();
+    bool ExecuteDeferredStopFor(uint32_t sessionId);
+    bool HasDeferredStop() const { return hasPendingStop_; }
+    uint32_t GetDeferredStopSessionId() const { return pendingStopSessionId_; }
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
     std::shared_ptr<HpaeGainNode> GetGainNodeById(uint32_t id) const;
     std::shared_ptr<HpaeAudioFormatConverterNode> GetConverterNodeById(uint32_t id) const;
@@ -78,6 +85,9 @@ public:
 
 private:
     void ConnectMixerNode();
+    int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    int32_t AudioRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    void ClearDeferredStop();
     void CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateLoudnessGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
@@ -91,6 +101,10 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSessionEffectNode>> idSessionEffectMap_;
     HpaeSinkInfo sinkInfo_;
     bool isConnectedToOutputCluster = false;
+    // Deferred-stop state: at most one pending session (only the last stream on an empty cluster can defer).
+    bool hasPendingStop_ = false;
+    uint32_t pendingStopSessionId_ = 0;
+    HpaeNodeInfo pendingStopNodeInfo_ {};
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

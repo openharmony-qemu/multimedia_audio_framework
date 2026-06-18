@@ -406,6 +406,228 @@ HWTEST_F(HpaeProcessClusterTest, testEffectNode_001, TestSize.Level0)
     EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
 }
 
+/**
+ * @tc.name  : DeferredStop_001
+ * @tc.type  : FUNC
+ * @tc.number: DeferredStop_001
+ * @tc.desc  : On a real-effect cluster, HandleRendererStop defers when it is the last stream;
+ *             ExecuteDeferredStop performs the real stop; reconnecting the same session cancels a
+ *             pending deferred stop instead of starting.
+ */
+HWTEST_F(HpaeProcessClusterTest, DeferredStop_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC; // real-effect cluster -> may defer
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(cluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(cluster->CreateNodes(sinkInputNode), SUCCESS);
+    cluster->Connect(sinkInputNode);
+    EXPECT_EQ(cluster->GetPreOutNum(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(cluster->HandleRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(cluster->HasDeferredStop(), false);
+
+    // Disconnect the only stream -> cluster is empty -> HandleRendererStop defers (does not stop now).
+    cluster->DisConnect(sinkInputNode);
+    EXPECT_EQ(cluster->GetPreOutNum(), 0);
+    EXPECT_EQ(cluster->HandleRendererStop(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(cluster->HasDeferredStop(), true);
+    EXPECT_EQ(cluster->GetDeferredStopSessionId(), nodeInfo.sessionId);
+
+    // Drain completes: ExecuteDeferredStop performs the real stop and clears the deferred state.
+    cluster->ExecuteDeferredStop();
+    EXPECT_EQ(cluster->HasDeferredStop(), false);
+
+    // Re-defer, then reconnect the same session: HandleRendererStart cancels the deferred stop.
+    cluster->Connect(sinkInputNode);
+    EXPECT_EQ(cluster->HandleRendererStart(nodeInfo, sinkInfo), 0);
+    cluster->DisConnect(sinkInputNode);
+    EXPECT_EQ(cluster->HandleRendererStop(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(cluster->HasDeferredStop(), true);
+    EXPECT_EQ(cluster->HandleRendererStart(nodeInfo, sinkInfo), SUCCESS); // cancel, no start
+    EXPECT_EQ(cluster->HasDeferredStop(), false);
+
+    cluster->ExecuteDeferredStop(); // no-op now, must not crash
+    cluster->AudioRendererRelease(nodeInfo, sinkInfo);
+}
+
+/**
+ * @tc.name  : DeferredStop_002
+ * @tc.type  : FUNC
+ * @tc.number: DeferredStop_002
+ * @tc.desc  : A NONE/extra cluster (renderEffectNode_ == nullptr) never defers: HandleRendererStop stops
+ *             immediately and ExecuteDeferredStop is a no-op.
+ */
+HWTEST_F(HpaeProcessClusterTest, DeferredStop_002, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE; // none/extra cluster -> never defers
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(cluster->CreateNodes(sinkInputNode), SUCCESS);
+    cluster->Connect(sinkInputNode);
+    cluster->DisConnect(sinkInputNode);
+    EXPECT_EQ(cluster->GetPreOutNum(), 0);
+    // Even though the cluster is empty, a NONE cluster stops immediately (no deferred state recorded).
+    EXPECT_EQ(cluster->HandleRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(cluster->HasDeferredStop(), false);
+    cluster->ExecuteDeferredStop(); // no-op, must not crash
+    EXPECT_EQ(cluster->HasDeferredStop(), false);
+}
+
+/**
+ * @tc.name  : DeferredStop_003
+ * @tc.type  : FUNC
+ * @tc.number: DeferredStop_003
+ * @tc.desc  : If a session is released while its stop is deferred, AudioRendererRelease clears the pending
+ *             state, so a later AudioRendererCreate + HandleRendererStart of the same sessionId is not
+ *             misread as a reconnect (it must perform a real AudioRendererStart).
+ */
+HWTEST_F(HpaeProcessClusterTest, DeferredStop_003, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC; // real-effect cluster -> may defer
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(cluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(cluster->CreateNodes(sinkInputNode), SUCCESS);
+    cluster->Connect(sinkInputNode);
+    EXPECT_EQ(cluster->HandleRendererStart(nodeInfo, sinkInfo), 0);
+
+    // Last-stream disconnect defers the stop.
+    cluster->DisConnect(sinkInputNode);
+    EXPECT_EQ(cluster->HandleRendererStop(nodeInfo, sinkInfo), SUCCESS);
+    EXPECT_EQ(cluster->HasDeferredStop(), true);
+
+    // The session is released before drain completes: pending state must be cleared.
+    EXPECT_EQ(cluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(cluster->HasDeferredStop(), false);
+
+    // A fresh create + start of the same sessionId must take the real-start path, not the cancel path.
+    // (hasPendingStop_ is false here, so HandleRendererStart cannot hit its cancel branch.)
+    EXPECT_EQ(cluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(cluster->HandleRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(cluster->HasDeferredStop(), false);
+
+    cluster->AudioRendererRelease(nodeInfo, sinkInfo);
+}
+
+/**
+ * @tc.name  : DeferredStop_004
+ * @tc.type  : FUNC
+ * @tc.number: DeferredStop_004
+ * @tc.desc  : On a real-effect cluster with more than one stream, disconnecting a non-last stream stops
+ *             immediately (GetPreOutNum > 0) and does NOT register a deferred stop.
+ */
+HWTEST_F(HpaeProcessClusterTest, DeferredStop_004, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfoX;
+    nodeInfoX.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfoX.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfoX.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfoX.samplingRate = SAMPLE_RATE_48000;
+    nodeInfoX.channels = STEREO;
+    nodeInfoX.format = SAMPLE_F32LE;
+    nodeInfoX.sceneType = HPAE_SCENE_MUSIC; // real-effect cluster
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfoX, sinkInfo);
+    EXPECT_EQ(cluster->AudioRendererCreate(nodeInfoX, sinkInfo), 0);
+
+    auto nodeX = std::make_shared<HpaeSinkInputNode>(nodeInfoX);
+    EXPECT_EQ(cluster->CreateNodes(nodeX), SUCCESS);
+    cluster->Connect(nodeX);
+    EXPECT_EQ(cluster->HandleRendererStart(nodeInfoX, sinkInfo), 0);
+
+    HpaeNodeInfo nodeInfoY = nodeInfoX;
+    nodeInfoY.sessionId = DEFAULT_SESSIONID_NUM_SECOND;
+    auto nodeY = std::make_shared<HpaeSinkInputNode>(nodeInfoY);
+    EXPECT_EQ(cluster->CreateNodes(nodeY), SUCCESS);
+    cluster->Connect(nodeY);
+    EXPECT_EQ(cluster->HandleRendererStart(nodeInfoY, sinkInfo), 0);
+    EXPECT_EQ(cluster->GetPreOutNum(), DEFAULT_VALUE_TWO); // two streams connected
+
+    // Disconnect X while Y is still connected -> not the last stream -> stop immediately, no defer.
+    cluster->DisConnect(nodeX);
+    EXPECT_EQ(cluster->GetPreOutNum(), DEFAULT_VALUE_ONE);
+    EXPECT_EQ(cluster->HandleRendererStop(nodeInfoX, sinkInfo), 0);
+    EXPECT_EQ(cluster->HasDeferredStop(), false);
+
+    cluster->DisConnect(nodeY);
+    cluster->AudioRendererRelease(nodeInfoX, sinkInfo);
+    cluster->AudioRendererRelease(nodeInfoY, sinkInfo);
+}
+
+/**
+ * @tc.name  : DeferredStop_005
+ * @tc.type  : FUNC
+ * @tc.number: DeferredStop_005
+ * @tc.desc  : When a different session connects while another session's stop is deferred on the same cluster,
+ *             HandleRendererStart flushes the pending stop (ExecuteDeferredStop) and then starts the new session.
+ */
+HWTEST_F(HpaeProcessClusterTest, DeferredStop_005, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfoX;
+    nodeInfoX.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfoX.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfoX.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfoX.samplingRate = SAMPLE_RATE_48000;
+    nodeInfoX.channels = STEREO;
+    nodeInfoX.format = SAMPLE_F32LE;
+    nodeInfoX.sceneType = HPAE_SCENE_MUSIC; // real-effect cluster
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfoX, sinkInfo);
+    EXPECT_EQ(cluster->AudioRendererCreate(nodeInfoX, sinkInfo), 0);
+    auto nodeX = std::make_shared<HpaeSinkInputNode>(nodeInfoX);
+    EXPECT_EQ(cluster->CreateNodes(nodeX), SUCCESS);
+    cluster->Connect(nodeX);
+    EXPECT_EQ(cluster->HandleRendererStart(nodeInfoX, sinkInfo), 0);
+
+    // X is the last stream -> disconnect defers its stop.
+    cluster->DisConnect(nodeX);
+    EXPECT_EQ(cluster->HandleRendererStop(nodeInfoX, sinkInfo), SUCCESS);
+    EXPECT_EQ(cluster->HasDeferredStop(), true);
+    EXPECT_EQ(cluster->GetDeferredStopSessionId(), DEFAULT_SESSIONID_NUM_FIRST);
+
+    // A different session Y connects to the same cluster: the pending X stop is flushed, then Y starts.
+    HpaeNodeInfo nodeInfoY = nodeInfoX;
+    nodeInfoY.sessionId = DEFAULT_SESSIONID_NUM_SECOND;
+    auto nodeY = std::make_shared<HpaeSinkInputNode>(nodeInfoY);
+    EXPECT_EQ(cluster->CreateNodes(nodeY), SUCCESS);
+    cluster->Connect(nodeY);
+    EXPECT_EQ(cluster->HandleRendererStart(nodeInfoY, sinkInfo), 0); // flush X, start Y
+    EXPECT_EQ(cluster->HasDeferredStop(), false); // pending X was flushed by ExecuteDeferredStop
+
+    cluster->DisConnect(nodeY);
+    cluster->AudioRendererRelease(nodeInfoX, sinkInfo);
+    cluster->AudioRendererRelease(nodeInfoY, sinkInfo);
+}
+
 HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
 {
     // test processCluster without effectnode and loundess algorithm handle
