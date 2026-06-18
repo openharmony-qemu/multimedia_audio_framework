@@ -506,7 +506,6 @@ bool AudioRouterSelectStrategy::IsCurrentOutputDevice(const int32_t deviceId, in
 
 set<shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::FindCurrentOutputDevice(set<DeviceType> &&types)
 {
-    AUDIO_INFO_LOG("deviceType=%{public}d", types.empty() ? 0 : *types.begin());
     set<shared_ptr<AudioDeviceDescriptor>> result;
     auto ids = AudioRouterInfra::GetInstance().FindCurrentOutputDevice(std::move(types));
     for (auto deviceId: ids) {
@@ -520,7 +519,6 @@ set<shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::FindCurrentOut
 
 set<shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::FindCurrentInputDevice(set<DeviceType> &&types)
 {
-    AUDIO_INFO_LOG("deviceType=%{public}d", types.empty() ? 0 : *types.begin());
     set<shared_ptr<AudioDeviceDescriptor>> result;
     auto ids = AudioRouterInfra::GetInstance().FindCurrentInputDevice(std::move(types));
     for (auto deviceId: ids) {
