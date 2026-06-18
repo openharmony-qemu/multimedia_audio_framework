@@ -1755,14 +1755,7 @@ std::vector<SourceOutput> AudioCoreService::FilterSourceOutputs(int32_t sessionI
 std::vector<SourceOutput> AudioCoreService::GetSourceOutputs()
 {
     std::vector<SourceOutput> sourceOutputs;
-    {
-        std::unordered_map<std::string, AudioIOHandle> mapCopy = AudioIOHandleMap::GetInstance().GetCopy();
-        if (std::any_of(mapCopy.cbegin(), mapCopy.cend(), [](const auto &pair) {
-                return std::find(SourceNames.cbegin(), SourceNames.cend(), pair.first) != SourceNames.cend();
-            })) {
-            sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
-        }
-    }
+    sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
     return sourceOutputs;
 }
 
