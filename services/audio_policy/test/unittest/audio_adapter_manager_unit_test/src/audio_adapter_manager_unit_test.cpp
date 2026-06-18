@@ -543,8 +543,10 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSourceAttr_001, TestSize.Level1)
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     AudioModuleInfo info;
     info.channelLayout = "263"; // 263 = 100000111
+    info.routeFlag = AUDIO_INPUT_FLAG_AI;
     IAudioSourceAttr attr = audioAdapterManager->GetAudioSourceAttr(info);
     EXPECT_EQ(attr.channelLayout, 263); // 263 = 100000111
+    EXPECT_EQ(attr.routeFlag, AUDIO_INPUT_FLAG_AI);
 }
 
 /**
