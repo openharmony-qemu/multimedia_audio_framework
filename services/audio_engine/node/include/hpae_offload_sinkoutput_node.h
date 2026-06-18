@@ -89,6 +89,8 @@ private:
     void RegOffloadCallback();
     // offload callback reg to hdi
     void OffloadCallback(const RenderCallbackType type);
+    void HandleNonBlockWriteCompleted();
+    void HandleRenderFull();
     // check when stop hdi, if need suspend
     bool CheckIfSuspend();
     // check renderFrame ret to decide whether need sleep

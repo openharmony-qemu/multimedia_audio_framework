@@ -1242,10 +1242,7 @@ int32_t HpaeOffloadRendererManager::InsertSessionEffectNode(const std::string &e
 
     // Flush HDI/DSP cache and internal buffer to prevent stale bypass data
     // mixing with SE output during warmup, which causes pop noise.
-    if (sinkOutputNode_ != nullptr) {
-        sinkOutputNode_->RenderSinkFlush();
-        sinkOutputNode_->FlushStream();
-    }
+    StopOffloadSinkIfRunning();
 
     AUDIO_INFO_LOG("InsertSessionEffectNode: SE node inserted for session %{public}u",
         sessionEffectSessionId_);
@@ -1260,6 +1257,7 @@ int32_t HpaeOffloadRendererManager::RemoveSessionEffectNode()
 
     // Close SE flow
     sessionEffectNode_->StartCloseCrossfade();
+    sessionEffectNode_->StopPreheatThread();
     uint64_t latency = sessionEffectNode_->GetLatency(sessionEffectSessionId_);
 
     // Restore original chain
@@ -1272,10 +1270,7 @@ int32_t HpaeOffloadRendererManager::RemoveSessionEffectNode()
 
     // Flush HDI/DSP cache and internal buffer to prevent stale SE-processed data
     // mixing with bypass output after removal, which causes pop noise.
-    if (sinkOutputNode_ != nullptr) {
-        sinkOutputNode_->RenderSinkFlush();
-        sinkOutputNode_->FlushStream();
-    }
+    StopOffloadSinkIfRunning();
 
     sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
     sessionEffectNode_.reset();
@@ -1303,6 +1298,15 @@ int32_t HpaeOffloadRendererManager::RemoveSessionEffectNode()
     AUDIO_INFO_LOG("RemoveSessionEffectNode: session %{public}u, latency=%{public}llu",
         sid, (unsigned long long)latency);
     return 0;
+}
+
+bool HpaeOffloadRendererManager::StopOffloadSinkIfRunning()
+{
+    CHECK_AND_RETURN_RET(curNode_ != nullptr, false);
+    CHECK_AND_RETURN_RET(curNode_->GetState() == HPAE_SESSION_RUNNING, false);
+    CHECK_AND_RETURN_RET(sinkOutputNode_ != nullptr, false);
+    sinkOutputNode_->StopStream();
+    return true;
 }
 
 void HpaeOffloadRendererManager::DetachSessionEffectNodeForReload()

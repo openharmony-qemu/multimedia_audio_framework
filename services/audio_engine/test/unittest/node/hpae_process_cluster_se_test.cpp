@@ -123,6 +123,32 @@ HWTEST_F(HpaeProcessClusterSeTest, DestroySessionEffectNode_disconnects, TestSiz
     EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
 }
 
+// PC-2a: DestroySessionEffectNode waits preheat thread before disconnect/flush path
+HWTEST_F(HpaeProcessClusterSeTest, DestroySessionEffectNode_waitsPreheatThreadIdle, TestSize.Level0)
+{
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("test_effect", config_);
+    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+    auto node = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(node, nullptr);
+
+    node->stopRequested_.store(false);
+    node->preheatThread_ = std::thread([node]() {
+        while (!node->stopRequested_.load()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
+    ASSERT_TRUE(node->preheatThread_.joinable());
+
+    uint64_t taskId = 0;
+    int32_t ret = cluster_->DestroySessionEffectNode(TEST_SESSION_ID, taskId);
+
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_TRUE(node->stopRequested_.load());
+    EXPECT_FALSE(node->preheatThread_.joinable());
+    EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+}
+
 // PC-4: DoProcess with SessionEffectNode active
 HWTEST_F(HpaeProcessClusterSeTest, DoProcess_callsSignalProcess, TestSize.Level0)
 {

@@ -796,9 +796,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ReadAlgoOutput(HpaePcmBuffer *inputBuf, si
 void HpaeSessionEffectNode::CloseSessionEffectCore()
 {
     // Step 1: Join preheat thread if running
-    if (status_ == STATUS::WARMING_UP) {
-        StopPreheatThread();
-    }
+    StopPreheatThread();
 
     // Step 2: Calculate pipeline latency and trigger RewindBuffer callback
     uint64_t latencyUs = GetLatency();
