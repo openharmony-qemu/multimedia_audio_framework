@@ -18,6 +18,7 @@
 #include <memory>
 #include <chrono>
 #include "audio_errors.h"
+#include "effect_instance.h"
 #include "hpae_offload_renderer_manager.h"
 #include "hpae_offload_sinkoutput_node.h"
 #include "hpae_session_effect_node.h"
@@ -554,6 +555,30 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Stop_001, TestSize.Level0)
     int32_t ret = manager_->Stop(TEST_SESSION_ID);
     EXPECT_EQ(ret, SUCCESS);
     manager_->HandleMsg();
+    EXPECT_EQ(testNode_->GetState(), HPAE_SESSION_STOPPED);
+}
+
+HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Stop_activeSessionEffect_pausesNode, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = testNode_->GetNodeInfo();
+    manager_->sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(nodeInfo);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("audio_aiss_enhance", config);
+    ASSERT_EQ(manager_->sessionEffectNode_->CreateEffectWithInstance("audio_aiss_enhance", instance, config), 0);
+    ASSERT_FALSE(manager_->sessionEffectNode_->IsPaused());
+
+    int32_t ret = manager_->Stop(TEST_SESSION_ID);
+    EXPECT_EQ(ret, SUCCESS);
+    manager_->HandleMsg();
+
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_TRUE(manager_->sessionEffectNode_->IsPaused());
     EXPECT_EQ(testNode_->GetState(), HPAE_SESSION_STOPPED);
 }
 

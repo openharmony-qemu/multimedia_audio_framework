@@ -17,6 +17,8 @@
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
 #include "audio_stream_enum.h"
+#include "audio_device_descriptor.h"
+#include "audio_info.h"
 
 using namespace testing::ext;
 
@@ -3005,6 +3007,44 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetStreamPropInfoForMultiChannel_NearLinkDis
     auto result = manager.GetStreamPropInfoForMultiChannel(desc, adapterPipeInfo, CH_LAYOUT_STEREO);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->isCollaborationEnable_, false);
+}
+
+/**
+ * @tc.name: ProcessNewPipeList_RemoteCast_001
+ * @tc.desc: Test ProcessNewPipeList when stream has DEVICE_TYPE_REMOTE_CAST device.
+ *           Should match pipe with adapterName REMOTE_CAST_INNER_CAPTURER_SINK_NAME.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_RemoteCast_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    streamDesc1->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc1->streamAction_ = AUDIO_STREAM_ACTION_NEW;
+    streamDesc1->sessionId_ = 100001;
+    streamDesc1->createTimeStamp_ = 1;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
+    streamDesc1->newDeviceDescs_.push_back(deviceDesc);
+    streamDescs.push_back(streamDesc1);
+    
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList{};
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = REMOTE_CAST_INNER_CAPTURER_SINK_NAME;
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    newPipeInfoList.push_back(pipe1);
+    
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+    
+    audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescToOldPipeInfo, streamDescs);
+    
+    EXPECT_EQ(newPipeInfoList.size(), 1);
+    EXPECT_EQ(newPipeInfoList[0]->streamDescriptors_.size(), 1);
+    EXPECT_EQ(newPipeInfoList[0]->adapterName_, REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
+    EXPECT_EQ(newPipeInfoList[0]->streamDescMap_.count(100001), 1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

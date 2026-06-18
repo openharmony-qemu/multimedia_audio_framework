@@ -309,6 +309,28 @@ int32_t HpaeSessionEffectNode::DropEffect()
     return 0;
 }
 
+int32_t HpaeSessionEffectNode::DetachEffectForReload()
+{
+    StopPreheatThread();
+    // Reload keeps the logical binding alive; skip StopEffect and reset runtime state for fresh recreation.
+    AUDIO_INFO_LOG("[SE::SessionEffectNode] %s→IDLE reason=ReloadDetach sessionId=%{public}u",
+        StatusToString(status_), GetSessionId());
+    effectInstance_.reset();
+    status_ = STATUS::IDLE;
+    closeCrossfadePending_ = false;
+    isPaused_ = false;
+    stopRequested_ = false;
+    prebufFilled_.store(false);
+    warmupStartTime_ = std::chrono::steady_clock::time_point {};
+    pauseAccumulatedUs_ = 0;
+    pauseStartTime_ = std::chrono::steady_clock::time_point {};
+    preheatNoDataStartTime_ = std::chrono::steady_clock::time_point {};
+    prebufTargetBytes_ = 0;
+    ResetAccounting();
+    ResetTailPaddingState();
+    return 0;
+}
+
 std::shared_ptr<IEffectInstance> HpaeSessionEffectNode::GetEffectInstance() const
 {
     return effectInstance_;
@@ -401,24 +423,6 @@ int32_t HpaeSessionEffectNode::StartEffect()
     ResetTailPaddingState();
     RestartPreheat();
 
-    return 0;
-}
-
-int32_t HpaeSessionEffectNode::StopEffect()
-{
-    if (effectInstance_) {
-        effectInstance_->StopEffect();  // Keep DISABLE behavior unchanged.
-    }
-
-    // Stop preheat thread if running
-    if (status_ == STATUS::WARMING_UP) {
-        StopPreheatThread();
-    }
-    auto oldStatus = status_;
-    status_ = STATUS::IDLE;
-    ResetTailPaddingState();
-    AUDIO_INFO_LOG("[SE::SessionEffectNode] %s→IDLE reason=StopEffect sessionId=%{public}u totalBytesIn=%{public}zu",
-        StatusToString(oldStatus), GetSessionId(), totalBytesIn_);
     return 0;
 }
 

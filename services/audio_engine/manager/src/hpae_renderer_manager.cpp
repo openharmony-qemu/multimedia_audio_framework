@@ -495,7 +495,8 @@ int32_t HpaeRendererManager::DeleteProcessClusterInner(uint32_t sessionId, HpaeP
     return SUCCESS;
 }
 
-int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId, bool needInitEffect)
+int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId, bool needInitEffect,
+    SessionEffectCleanupMode mode)
 {
     if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
         AUDIO_INFO_LOG("could not find session:%{public}d", sessionId);
@@ -512,10 +513,10 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId, bool needI
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneTypeToDestroyNodes), ERROR,
         "SessionId %{public}u, sceneCluster processorType %{public}d not exist, cant destroy nodes",
         sessionId, sceneTypeToDestroyNodes);
-    if (sceneClusterMap_[sceneTypeToDestroyNodes]->DestroyNodes(sessionId) != SUCCESS) {
+    if (sceneClusterMap_[sceneTypeToDestroyNodes]->DestroyNodes(sessionId, mode) != SUCCESS) {
         AUDIO_INFO_LOG("SessionId %{public}d, Nodes not found in sceneCluster processorType %{public}d,"
             "try to destroy nodes by traverse sceneCluster", sessionId, sceneTypeToDestroyNodes);
-        DeleteNodesByTraversal(sessionId);
+        DeleteNodesByTraversal(sessionId, mode);
     }
     DeleteProcessClusterInner(sessionId, nodeInfo.sceneType);
     return SUCCESS;
@@ -1049,6 +1050,9 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
             "Stop not find sessionId %{public}u", sessionId);
         HpaeProcessorType sceneType = GetProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
+            if (HasSessionEffect(sessionId) && SafeGetMap(sceneClusterMap_, sceneType)) {
+                sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
+            }
             DisConnectInputSession(sessionId);
         }
         UpdateClusterStreamInfo(sceneType);
@@ -1167,9 +1171,12 @@ void HpaeRendererManager::ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo,
 {
     AUDIO_INFO_LOG("ReloadRenderManager deviceName %{public}s", GetEncryptStr(sinkInfo.deviceName).c_str());
     StopOuputNode();
+    // Streams restored after reload keep logical SessionEffect state, so detach without disabled callbacks.
+    SessionEffectCleanupMode cleanupMode = isNeedCallBack ?
+        SessionEffectCleanupMode::DETACH_FOR_RELOAD : SessionEffectCleanupMode::DROP_AND_DISABLE;
     for (const auto &it : sinkInputNodeMap_) {
         TriggerStreamState(it.first, it.second);
-        DeleteProcessCluster(it.first, false);
+        DeleteProcessCluster(it.first, false, cleanupMode);
         if (it.second != nullptr) {
             TransNodeInfoForCollaboration(it.second->GetNodeInfo(), isCollaborationEnabled_);
         }
@@ -1586,7 +1593,7 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId)
         AUDIO_INFO_LOG("Fade done, call back at RendererManager");
         IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ?
             OPERATION_STOPPED : OPERATION_PAUSED;
-        if (operation == OPERATION_PAUSED && HasSessionEffect(sessionId)) {
+        if ((operation == OPERATION_PAUSED || operation == OPERATION_STOPPED) && HasSessionEffect(sessionId)) {
             HpaeProcessorType sceneType = GetProcessorType(sessionId);
             if (SafeGetMap(sceneClusterMap_, sceneType)) {
                 sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
@@ -1982,11 +1989,11 @@ bool HpaeRendererManager::QueryOneStreamUnderrun()
     return false;
 }
 
-void HpaeRendererManager::DeleteNodesByTraversal(uint32_t sessionId)
+void HpaeRendererManager::DeleteNodesByTraversal(uint32_t sessionId, SessionEffectCleanupMode mode)
 {
     auto it = sceneClusterMap_.begin();
     for (; it != sceneClusterMap_.end(); ++it) {
-        if (SafeGetMap(sceneClusterMap_, it->first) && it->second->DestroyNodes(sessionId) == SUCCESS) {
+        if (SafeGetMap(sceneClusterMap_, it->first) && it->second->DestroyNodes(sessionId, mode) == SUCCESS) {
             AUDIO_INFO_LOG("SessionId %{public}u, Nodes found in processorType %{public}d and destroyed",
                 sessionId, it->first);
             break;

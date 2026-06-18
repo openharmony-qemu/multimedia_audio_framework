@@ -508,68 +508,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_056, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
-* @tc.number: ScoInputDeviceFetchedForRecongnition_003
-* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, ScoInputDeviceFetchedForRecongnition_003, TestSize.Level1)
-{
-    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    bool handleFlag = true;
-    std::string address = "00:11:22:33:44:55";
-    ConnectState connectState = CONNECTED;
-    bool isVrSupported = false;
-
-    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(
-        handleFlag, address, connectState, isVrSupported);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-/**
-* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
-* @tc.number: ScoInputDeviceFetchedForRecongnition_004
-* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, ScoInputDeviceFetchedForRecongnition_004, TestSize.Level1)
-{
-    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    bool handleFlag = true;
-    std::string address = "00:11:22:33:44:55";
-    ConnectState connectState = DEACTIVE_CONNECTED;
-    bool isVrSupported = true;
-
-    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(
-        handleFlag, address, connectState, isVrSupported);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-/**
-* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
-* @tc.number: ScoInputDeviceFetchedForRecongnition_005
-* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, ScoInputDeviceFetchedForRecongnition_005, TestSize.Level1)
-{
-    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    bool handleFlag = true;
-    std::string address = "00:11:22:33:44:55";
-    ConnectState connectState = CONNECTED;
-    bool isVrSupported = true;
-
-    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(
-        handleFlag, address, connectState, isVrSupported);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_065
+ * @tc.name  : Test AudioDeviceCommon.
+ * @tc.number: AudioDeviceCommon_065
 * @tc.desc  : Test GetSpatialDeviceType interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_065, TestSize.Level1)

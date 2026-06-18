@@ -30,6 +30,8 @@ bool WirelessConflictHandler::IsCallStreamUsage(StreamUsage streamUsage)
            streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
            streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
            streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+           streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
+           streamUsage == STREAM_USAGE_INTERPHONE ||
            streamUsage == STREAM_USAGE_RINGTONE ||
            streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
            streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE;
@@ -122,7 +124,7 @@ bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor
     if (device == nullptr || device->macAddress_.empty() || !IsWirelessDevice(device)) {
         return false;
     }
-    
+
     CHECK_AND_RETURN_RET(cachedHighestPriorityDevice_ != nullptr, false);
     if (IsScoDevice(device) && !IsScoDevice(cachedHighestPriorityDevice_)) {
         return true;
@@ -148,6 +150,11 @@ void WirelessConflictHandler::ClearSelectedDevices()
     inputStreamDevices_.clear();
     cachedHighestPriority_ = 0;
     cachedHighestPriorityDevice_ = nullptr;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> WirelessConflictHandler::GetHighestPriorityDevice()
+{
+    return cachedHighestPriorityDevice_;
 }
 
 } // namespace AudioStandard

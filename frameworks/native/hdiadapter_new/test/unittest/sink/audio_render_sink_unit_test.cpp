@@ -21,6 +21,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "audio_stream_enum.h"
 #include "util/id_handler.h"
+#include "audio_info.h"
 
 using namespace testing::ext;
 
@@ -1191,6 +1192,24 @@ HWTEST_F(AudioRenderSinkUnitTest, IdHandler_UsbArmUltraFast_001, TestSize.Level1
     
     std::string info = idHandler.ParseInfo(id);
     EXPECT_EQ(info, HDI_ID_INFO_USB);
+}
+
+/**
+ * @tc.name   : Test IdHandler GetRenderIdByDeviceClassSub API
+ * @tc.number : IdHandler_RemoteCastInnerCapturer_001
+ * @tc.desc   : Test GetRenderIdByDeviceClassSub with RemoteCastInnerCapturer deviceClass
+ */
+HWTEST_F(AudioRenderSinkUnitTest, IdHandler_RemoteCastInnerCapturer_001, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t id = idHandler.GetRenderIdByDeviceClassSub("RemoteCastInnerCapturer", "", 0);
+    EXPECT_NE(id, HDI_INVALID_ID);
+    
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, static_cast<uint32_t>(HDI_ID_TYPE_PRIMARY));
+    
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
 }
 
 /**

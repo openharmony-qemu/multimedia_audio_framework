@@ -164,6 +164,7 @@ private:
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
     int32_t RemoveSessionEffectNode();
     bool StopOffloadSinkIfRunning();
+    void DetachSessionEffectNodeForReload();
 
     int32_t lastPolicyState_ = 0;   // real policy state, restored after AISS close
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;

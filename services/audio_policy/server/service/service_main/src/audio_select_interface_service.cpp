@@ -121,7 +121,6 @@ void AudioSelectInterfaceService::HandleNegtiveBt(DeviceType deviceType)
         deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
             currentOutputDevice.macAddress_, USER_NOT_SELECT_SLE);
-        Bluetooth::AudioHfpManager::DisconnectSco();
     }
     if (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
         deviceType == DEVICE_TYPE_NEARLINK) {
@@ -139,7 +138,6 @@ void AudioSelectInterfaceService::HandleActiveBt(DeviceType deviceType, std::str
         deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
             currentOutputDevice.macAddress_, USER_NOT_SELECT_SLE);
-        Bluetooth::AudioHfpManager::DisconnectSco();
     }
     if (currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
         deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -628,6 +626,7 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
         if (desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             desc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
             desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+            desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
             desc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
             CHECK_AND_CONTINUE(!skipForce);
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,

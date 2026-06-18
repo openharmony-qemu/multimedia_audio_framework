@@ -23,6 +23,7 @@
 #include "audio_device_descriptor.h"
 #include "audio_stream_enum.h"
 #include "audio_info.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,6 +45,7 @@ public:
     int64_t createTimeStamp_ = 0;
     int64_t startTimeStamp_ = 0;
     int64_t stateStartTimeStamp_ = 0;
+    int64_t stopTime_ = 0;
     AudioRendererInfo rendererInfo_ = {};
     AudioCapturerInfo capturerInfo_ = {};
     AppInfo appInfo_ = {};
@@ -115,6 +117,26 @@ public:
     bool IsRunning() const
     {
         return (streamStatus_ == STREAM_STATUS_STARTED);
+    }
+
+    bool IsActive(uint32_t inPastMs = 0) const
+    {
+        if (streamStatus_ == STREAM_STATUS_STARTED) {
+            return true;
+        }
+        int64_t curTime = ClockTime::GetCurMilli();
+        int64_t elapsedMs = curTime - stopTime_;
+        return elapsedMs < static_cast<int64_t>(inPastMs);
+    }
+
+    void SetStopTime()
+    {
+        stopTime_ = ClockTime::GetCurMilli();
+    }
+
+    void ResetStopTime()
+    {
+        stopTime_ = 0;
     }
 
     StreamUsage GetRenderUsage() const
@@ -343,6 +365,15 @@ public:
             return false;
         }
         return newDeviceDescs_[0]->IsA2dpOffload();
+    }
+
+    bool IsRemoteCastStream()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        if (newDeviceDescs_.size() < 1 || newDeviceDescs_[0] == nullptr) {
+            return false;
+        }
+        return newDeviceDescs_[0]->getType() == DEVICE_TYPE_REMOTE_CAST;
     }
 
     void AddNewDevice(std::shared_ptr<AudioDeviceDescriptor> device)

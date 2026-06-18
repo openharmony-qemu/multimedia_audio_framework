@@ -1979,6 +1979,79 @@ HWTEST_F(AudioPipeManagerUnitTest, IsOnPrimaryAdapter_003, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test HasActiveStreamOnPrimary.
+ * @tc.number: HasActiveStreamOnPrimary_001.
+ * @tc.desc  : No primary adapter in pipe list, returns false
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasActiveStreamOnPrimary_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "remote";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t inPastMs = 240000;
+    bool ret = audioPipeManager->HasActiveStreamOnPrimary(inPastMs);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test HasActiveStreamOnPrimary.
+ * @tc.number: HasActiveStreamOnPrimary_002.
+ * @tc.desc  : Primary adapter with active stream (STARTED), returns true
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasActiveStreamOnPrimary_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t inPastMs = 240000;
+    bool ret = audioPipeManager->HasActiveStreamOnPrimary(inPastMs);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test HasActiveStreamOnPrimary.
+ * @tc.number: HasActiveStreamOnPrimary_003.
+ * @tc.desc  : Primary adapter with NOT active stream, returns false
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasActiveStreamOnPrimary_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->ResetStopTime();
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t inPastMs = 240000;
+    bool ret = audioPipeManager->HasActiveStreamOnPrimary(inPastMs);
+    EXPECT_FALSE(ret);
+}
+
+/**
  * @tc.name: GetUnusedPipe_007
  * @tc.desc: Test GetUnusedPipe when pipe className is primary_extra.
  * @tc.type: FUNC
@@ -2354,7 +2427,7 @@ HWTEST_F(AudioPipeManagerUnitTest, HasRunningRecognitionCapturerStream_001, Test
     ASSERT_NE(audioPipeManager, nullptr);
     audioPipeManager->curPipeList_.clear();
 
-    EXPECT_EQ(audioPipeManager->HasRunningRecognitionCapturerStream(), false);
+    EXPECT_EQ(audioPipeManager->HasRunningRecognitionCapturerStream(DEVICE_TYPE_NONE), false);
 }
 
 /**
@@ -2378,7 +2451,7 @@ HWTEST_F(AudioPipeManagerUnitTest, HasRunningRecognitionCapturerStream_002, Test
     pipeInfo->streamDescriptors_.push_back(desc);
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
-    EXPECT_EQ(audioPipeManager->HasRunningRecognitionCapturerStream(), true);
+    EXPECT_EQ(audioPipeManager->HasRunningRecognitionCapturerStream(DEVICE_TYPE_NONE), true);
 }
 
 /**

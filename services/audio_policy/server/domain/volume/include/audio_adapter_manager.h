@@ -312,7 +312,6 @@ public:
     void RegisterAppIndividualVolumeEnableObserver();
     void HandleAppIndividualVolumeSettingChanged();
     void RegisterCloneStateObserver();
-    void HandleCloneStateChanged();
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
     void SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state);
@@ -502,6 +501,7 @@ private:
     int32_t StopAudioPort(std::string oldSinkName);
     void DealDoNotDisturbStatus();
     void DealDoNotDisturbStatusWhiteList();
+    void HandleCloneStateChanged();
     void UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDeviceDescriptor> device);
     void SendVolumeKeyEventCbWithUpdateUi(AudioStreamType streamType,
         std::shared_ptr<AudioDeviceDescriptor> device);

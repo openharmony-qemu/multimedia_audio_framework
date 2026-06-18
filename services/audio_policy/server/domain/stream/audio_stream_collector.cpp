@@ -1790,7 +1790,7 @@ bool AudioStreamCollector::IsCallStreamUsage(StreamUsage usage)
 {
     if (usage == STREAM_USAGE_VOICE_COMMUNICATION || usage == STREAM_USAGE_VIDEO_COMMUNICATION ||
         usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION || usage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
-        usage == STREAM_USAGE_INTERPHONE) {
+        usage == STREAM_USAGE_VOICE_CALL_ASSISTANT || usage == STREAM_USAGE_INTERPHONE) {
         return true;
     }
     return false;
@@ -1910,34 +1910,7 @@ bool AudioStreamCollector::HasRunningCapturerStreamByUid(int32_t uid)
     return hasStream;
 }
 
-// Check if media is currently playing
-bool AudioStreamCollector::IsMediaPlaying()
-{
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    for (auto &changeInfo: audioRendererChangeInfos_) {
-        if (changeInfo->rendererState != RENDERER_RUNNING) {
-            continue;
-        }
-        AudioStreamType streamType = GetStreamType((changeInfo->rendererInfo).contentType,
-        (changeInfo->rendererInfo).streamUsage);
-        switch (streamType) {
-            case STREAM_MUSIC:
-            case STREAM_MEDIA:
-            case STREAM_MOVIE:
-            case STREAM_GAME:
-            case STREAM_SPEECH:
-            case STREAM_NAVIGATION:
-            case STREAM_CAMCORDER:
-            case STREAM_VOICE_MESSAGE:
-                return true;
-            default:
-                break;
-        }
-    }
-    return false;
-}
-
-void AudioStreamCollector::GetPlayingMediaRendererChangeInfos(
+void AudioStreamCollector::GetPlayingNonDualOutputRendererChangeInfos(
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
@@ -1950,12 +1923,25 @@ void AudioStreamCollector::GetPlayingMediaRendererChangeInfos(
         STREAM_NAVIGATION,
         STREAM_CAMCORDER,
         STREAM_VOICE_MESSAGE,
-        STREAM_VOICE_ASSISTANT
+        STREAM_VOICE_ASSISTANT,
+        STREAM_NOTIFICATION
     };
     for (auto &changeInfo: audioRendererChangeInfos_) {
         if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING &&
             mediaStreamTypes.count(GetStreamType((changeInfo->rendererInfo).contentType,
             (changeInfo->rendererInfo).streamUsage)) > 0) {
+            rendererChangeInfos.push_back(std::make_shared<AudioRendererChangeInfo>(*changeInfo));
+        }
+    }
+}
+
+void AudioStreamCollector::GetPlayingVoiceMessageRendererChangeInfos(
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING &&
+            (changeInfo->rendererInfo).streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
             rendererChangeInfos.push_back(std::make_shared<AudioRendererChangeInfo>(*changeInfo));
         }
     }

@@ -5713,10 +5713,11 @@ HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_010, Te
 /**
 * @tc.name   : Test UpdatePersonalizedSpatializationStateInner API
 * @tc.number : UpdatePersonalizedSpatializationStateInner_001
-* @tc.desc   : Test UpdatePersonalizedSpatializationStateInner with btOffloadSupported_=false.
-*              Should take UpdatePersonalizedSpatializationEnabledToChains path.
-*              With empty chain map, chains returns ERROR; personalizedSpatializationEnabled=true
-*              triggers rollback to false.
+* @tc.desc   : Test UpdatePersonalizedSpatializationStateInner with btOffloadSupported_=false
+*              (chains path) and personalizedSpatializationEnabled=true. With the HRTF file absent,
+*              !personalizedSpatializationEnabled_ is false, so the file-existence guard in
+*              UpdatePersonalizedSpatializationEnabledToChains returns ERROR; true + fail triggers
+*              rollback to false.
 */
 HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInner_001, TestSize.Level1)
 {
@@ -5726,8 +5727,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInn
     mgr->personalizedSpatializationEnabled_ = false;
 
     int32_t ret = mgr->UpdatePersonalizedSpatializationStateInner(true);
-    // btOffloadSupported_=false → chains path; no chains → ERROR
-    // personalizedSpatializationEnabled=true + fail → rollback to false
+    // btOffloadSupported_=false → chains path; enabled=true + no HRTF file → ERROR; rollback to false
     EXPECT_NE(ret, SUCCESS);
     EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
 
@@ -5738,8 +5738,10 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInn
 * @tc.name   : Test UpdatePersonalizedSpatializationStateInner API
 * @tc.number : UpdatePersonalizedSpatializationStateInner_002
 * @tc.desc   : Test UpdatePersonalizedSpatializationStateInner with btOffloadSupported_=true,
-*              btOffloadEnabled_=false. Should take UpdatePersonalizedSpatializationEnabledToChains path.
-*              Pass false so failure does not trigger rollback.
+*              btOffloadEnabled_=false (chains path) and personalizedSpatializationEnabled=false.
+*              !personalizedSpatializationEnabled_ short-circuits the file-existence guard so chains
+*              returns SUCCESS (the empty map makes the loop a no-op, so SUCCESS is deterministic);
+*              passing false means no rollback.
 */
 HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInner_002, TestSize.Level1)
 {
@@ -5749,9 +5751,8 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdatePersonalizedSpatializationStateInn
     mgr->personalizedSpatializationEnabled_ = true;
 
     int32_t ret = mgr->UpdatePersonalizedSpatializationStateInner(false);
-    // btOffloadSupported_=true && btOffloadEnabled_=false → chains path
-    // personalizedSpatializationEnabled=false + fail → no rollback
-    EXPECT_NE(ret, SUCCESS);
+    // btOffloadSupported_=true && btOffloadEnabled_=false → chains path; enabled=false → SUCCESS
+    EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(mgr->personalizedSpatializationEnabled_, false);
 
     mgr->ResetInfo();

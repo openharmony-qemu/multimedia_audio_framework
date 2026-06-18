@@ -287,16 +287,6 @@ void IsRingDualToneOnPrimarySpeakerFuzzTest()
     OnStop();
 }
 
-void ScoInputDeviceFetchedForRecongnitionFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    bool handleFlag = GetData<bool>();
-    std::string address = "";
-    ConnectState connectState = GetData<ConnectState>();
-    audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    OnStop();
-}
-
 void ClearRingMuteWhenCallStartFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
@@ -376,12 +366,6 @@ void IsSameDeviceFuzzTest()
     deviceInfo.deviceRole_ = GetData<DeviceRole>();
     audioDeviceCommon.IsSameDevice(desc, deviceInfo);
     OnStop();
-}
-
-void ClientDiedDisconnectScoRecognitionFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.ClientDiedDisconnectScoRecognition();
 }
 
 void RingToneVoiceControlFuzzTest()
@@ -493,7 +477,6 @@ TestFuncs g_testFuncs[] = {
     TriggerRecreateRendererStreamCallbackFuzzTest,
     IsRingDualToneOnPrimarySpeakerFuzzTest,
     ClearRingMuteWhenCallStartFuzzTest,
-    ScoInputDeviceFetchedForRecongnitionFuzzTest,
     HasLowLatencyCapabilityFuzzTest,
     GetSpatialDeviceTypeFuzzTest,
     IsSameDeviceFuzzTest,
@@ -537,7 +520,6 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     OHOS::AudioStandard::IsDeviceConnectedFuzzTest();
     OHOS::AudioStandard::GetSourceOutputsFuzzTest();
     OHOS::AudioStandard::SetFirstScreenOnFuzzTest();
-    OHOS::AudioStandard::ClientDiedDisconnectScoRecognitionFuzzTest();
     OHOS::AudioStandard::OnStop();
     return 0;
 }

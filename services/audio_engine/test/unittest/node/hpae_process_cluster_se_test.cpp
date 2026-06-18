@@ -25,6 +25,7 @@
 #include "test_case_common.h"
 #include "audio_errors.h"
 #include "fake_audio_effect_lib_entry.h"
+#include "mock_effect_instance.h"
 #include "hpae_plugin_node.h"
 
 using namespace testing::ext;
@@ -161,8 +162,8 @@ HWTEST_F(HpaeProcessClusterSeTest, DoProcess_callsSignalProcess, TestSize.Level0
     EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
 }
 
-// PC-5: SessionEffect start/stop control works
-HWTEST_F(HpaeProcessClusterSeTest, SessionEffectStart_stop, TestSize.Level0)
+// PC-5: SessionEffect start/pause control works
+HWTEST_F(HpaeProcessClusterSeTest, SessionEffectStart_pause, TestSize.Level0)
 {
     FakeAudioEffectLibEntry fake;
     fake.SetPreheatFrames(0);
@@ -174,8 +175,11 @@ HWTEST_F(HpaeProcessClusterSeTest, SessionEffectStart_stop, TestSize.Level0)
     cluster_->SessionEffectStart(TEST_SESSION_ID);
     EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
 
-    cluster_->SessionEffectStop(TEST_SESSION_ID);
-    EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));  // still exists after stop
+    EXPECT_EQ(cluster_->SessionEffectPause(TEST_SESSION_ID), 0);
+    auto node = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(node, nullptr);
+    EXPECT_TRUE(node->IsPaused());
+    EXPECT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));  // still exists after pause
 }
 
 // Stream data callback: fills PCM buffer with a constant float value.
@@ -732,6 +736,24 @@ HWTEST_F(HpaeProcessClusterSeTest, DestroyNodes_cleansSessionEffectMap, TestSize
     EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
 
     // Verify other maps also cleaned
+    EXPECT_EQ(cluster_->GetConverterNodeCount(), 0);
+    EXPECT_EQ(cluster_->GetGainNodeCount(), 0);
+    EXPECT_EQ(cluster_->GetLoudnessGainNodeCount(), 0);
+}
+
+// DESTROY-2: Reload cleanup detaches SE without disabling the logical effect instance
+HWTEST_F(HpaeProcessClusterSeTest, DestroyNodes_reloadDetachDoesNotStopEffect, TestSize.Level0)
+{
+    auto instance = std::make_shared<testing::NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(testing::Return(0));
+    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+    ASSERT_TRUE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
+
+    EXPECT_CALL(*instance, StopEffect()).Times(0);
+    int32_t ret = cluster_->DestroyNodes(TEST_SESSION_ID, SessionEffectCleanupMode::DETACH_FOR_RELOAD);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
     EXPECT_EQ(cluster_->GetConverterNodeCount(), 0);
     EXPECT_EQ(cluster_->GetGainNodeCount(), 0);
     EXPECT_EQ(cluster_->GetLoudnessGainNodeCount(), 0);

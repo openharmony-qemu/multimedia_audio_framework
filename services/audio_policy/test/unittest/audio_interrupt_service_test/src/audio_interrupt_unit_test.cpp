@@ -4514,6 +4514,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
     interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
 
     AudioInterrupt audioInterrupt = {};
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
     auto ret1 = interruptServiceTest->ActivateAudioInterrupt(0, audioInterrupt);
     EXPECT_EQ(ret1.retCode, SUCCESS);
 
@@ -6652,6 +6653,29 @@ HWTEST_F(AudioInterruptUnitTest, UpdateMediaWithDuckStrategy_003, TestSize.Level
     EXPECT_TRUE(interruptService->sessionService_.IsSystemApp(activeInterrupt.pid));
     audioInterruptStrategy->UpdateMediaWithDuckStrategy(activeInterrupt, incomingInterrupt, focusEntry);
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_DUCK);
+}
+
+/**
+ * @tc.name  : Test VerifyStreamType
+ * @tc.number: VerifyStreamType_001
+ * @tc.desc  : Test VerifyStreamType_001
+ */
+HWTEST_F(AudioInterruptUnitTest, VerifyStreamType_001, TestSize.Level1)
+{
+    auto interruptService = GetInterruptServiceTest();
+    auto server = GetPolicyServerTest();
+    interruptService->Init(server);
+
+    AudioInterrupt testInterrupt;
+    testInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
+    testInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    auto ret = interruptService->VerifyStreamType(testInterrupt);
+    EXPECT_EQ(ret, false);
+
+    testInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    testInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    auto ret = interruptService->VerifyStreamType(testInterrupt);
+    EXPECT_EQ(ret, false);
 }
 
 } // namespace AudioStandard

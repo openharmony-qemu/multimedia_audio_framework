@@ -181,10 +181,6 @@ void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDev
 #ifdef BLUETOOTH_ENABLE
     Bluetooth::SendUserSelectionEvent(
         audioDeviceDescriptor->deviceType_, audioDeviceDescriptor->macAddress_, USER_NOT_SELECT_SLE);
-    auto descs = AudioRouterSelectStrategy::GetInstance().FindCurrentOutputDevice({DEVICE_TYPE_BLUETOOTH_SCO});
-    if (!descs.empty() && audioDeviceDescriptor->IsSameDeviceDescPtr(*descs.begin())) {
-        Bluetooth::AudioHfpManager::DisconnectSco();
-    }
 #endif
     SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor, streamUsage, USER_NOT_SELECT_SLE);
 }

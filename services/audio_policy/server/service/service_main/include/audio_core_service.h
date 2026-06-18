@@ -563,8 +563,6 @@ private:
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchCapturerPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
-    int32_t ScoInputDeviceFetchedForRecongnition(
-        bool handleFlag, const std::string &address, ConnectState connectState, bool isVrSupported = true);
     void CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
          const AudioStreamDeviceChangeReasonExt reason);
     int32_t GetPhoneCallSceneType(AudioScene audioScene, AudioScene lastAudioScene);
@@ -713,8 +711,9 @@ private:
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDeviceChangeReasonExt reason);
-    void CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    void HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void CheckAndSleepBeforeRingDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void HandlePrimaryNonDualOutputStreamMuteForDualRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void HandleVoiceMessageMuteForSingleRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SleepForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     bool IsHeadsetToSpkOrEp(const std::shared_ptr<AudioDeviceDescriptor> &oldDesc,
@@ -755,7 +754,9 @@ private:
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void FetchOutputDevicesForDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs);
+    void FetchDevicesForDescs(
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inStreamDescs);
     void DeactivateBluetoothDevice(bool isRunning);
     bool DeactivateA2dpAfterExclude(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &excludeDeviceDescs,
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs);
@@ -792,7 +793,7 @@ private:
     void GetFlagForUltraFastStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
 
     void HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
-    void CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool forceUpdate);
     void ForceStopInterphoneStreamsIfNecessary(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
     int32_t CheckStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc, uint32_t& audioFlag);
     int32_t CreateCallCommunicationRenderer(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -853,6 +854,7 @@ private:
     void NotifyRequiredPipesReady();
     bool CheckCollaborativeStreamRunning();
     void UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState);
+    bool ShouldUpdateOutputRoute(const AudioStreamDeviceChangeReasonExt reason);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;

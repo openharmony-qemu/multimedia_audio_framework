@@ -1526,9 +1526,9 @@ void AudioPolicyServerHandler::ProcessPreferredOutputDeviceForClient(int32_t cli
         int32_t uid = rendererFilter.uid;
         StreamUsage streamUsage = rendererFilter.rendererInfo.streamUsage;
 
-        // Force-send check: if client process uid matches forceUid (callerUid), skip dedup
+        // Force-send check: if client process uid or registered callback uid matches forceUid, skip dedup
         int32_t clientUid = pidUidMap_.count(clientPid) > 0 ? pidUidMap_[clientPid] : INVALID_UID;
-        bool forceSend = (forceUid != INVALID_UID && clientUid == forceUid);
+        bool forceSend = (forceUid != INVALID_UID && (clientUid == forceUid || uid == forceUid));
         if (!forceSend) {
             CHECK_AND_CONTINUE(!ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, deviceDescs));
         }

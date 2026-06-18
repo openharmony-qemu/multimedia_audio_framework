@@ -673,5 +673,39 @@ HWTEST_F(AudioStreamDescriptorUnitTest, ResetForcedNormalBool_002, TestSize.Leve
     EXPECT_FALSE(oldValue);
     EXPECT_FALSE(streamDesc.GetFastStreamForcedNormalFlag());
 }
+
+/**
+ * @tc.name   : Test AudioStreamDescriptor API
+ * @tc.type   : FUNC
+ * @tc.number : IsRemoteCastStream_001
+ * @tc.desc   : Test AudioStreamDescriptor::IsRemoteCastStream with empty/nullptr/non-RemoteCast devices
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, IsRemoteCastStream_001, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+    EXPECT_FALSE(streamDesc.IsRemoteCastStream());
+
+    streamDesc.newDeviceDescs_.push_back(nullptr);
+    EXPECT_FALSE(streamDesc.IsRemoteCastStream());
+
+    streamDesc.newDeviceDescs_.clear();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    streamDesc.newDeviceDescs_.push_back(deviceDesc);
+    EXPECT_FALSE(streamDesc.IsRemoteCastStream());
+}
+
+/**
+ * @tc.name   : Test AudioStreamDescriptor API
+ * @tc.type   : FUNC
+ * @tc.number : IsRemoteCastStream_002
+ * @tc.desc   : Test AudioStreamDescriptor::IsRemoteCastStream with DEVICE_TYPE_REMOTE_CAST device
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, IsRemoteCastStream_002, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
+    streamDesc.newDeviceDescs_.push_back(deviceDesc);
+    EXPECT_TRUE(streamDesc.IsRemoteCastStream());
+}
 } // namespace AudioStandard
 } // namespace OHOS

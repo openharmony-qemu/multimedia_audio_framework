@@ -358,6 +358,7 @@ void AudioPipeManager::StartClient(uint32_t sessionId)
     streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->isStandby_ = false;
+    streamDesc->ResetStopTime();
 }
 
 void AudioPipeManager::PauseClient(uint32_t sessionId)
@@ -367,6 +368,7 @@ void AudioPipeManager::PauseClient(uint32_t sessionId)
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
     streamDesc->streamStatus_ = STREAM_STATUS_PAUSED;
+    streamDesc->SetStopTime();
 }
 
 void AudioPipeManager::StandbyClient(uint32_t sessionId)
@@ -394,6 +396,7 @@ void AudioPipeManager::StopClient(uint32_t sessionId)
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
     streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->SetStopTime();
 }
 
 void AudioPipeManager::RemoveClient(uint32_t sessionId)
@@ -1264,6 +1267,28 @@ bool AudioPipeManager::HasRunningStream(uint32_t sessionId)
     return false;
 }
 
+/**
+ * Checks if any stream on the primary adapter was active within the past @p inPastMs ms.
+ * The grace window accounts for residual data still rendering on the pipeline after stop.
+ */
+bool AudioPipeManager::HasActiveStreamOnPrimary(uint32_t inPastMs)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        if (pipeInfo->adapterName_ != ADAPTER_TYPE_PRIMARY) {
+            continue;
+        }
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (desc->IsActive(inPastMs)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool AudioPipeManager::IsA2dpUsed()
 {
     auto outputStreamDescs = GetAllOutputStreamDescs();
@@ -1314,23 +1339,25 @@ bool AudioPipeManager::IsStreamUseUltraFastRoute(uint32_t sessionId)
     return false;
 }
 
-bool AudioPipeManager::HasRunningRecognitionCapturerStream()
+bool AudioPipeManager::HasRunningRecognitionCapturerStream(DeviceType type)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    bool hasRunningRecognitionCapturerStream = false;
     for (auto &pipeInfo : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         for (auto &desc : pipeInfo->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
             (desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
-            desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION)) {
+            desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
+            ((type == DEVICE_TYPE_NONE) ||
+                (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
+                desc->newDeviceDescs_[0]->deviceType_ == type &&
+                desc->newDeviceDescs_[0]->isVrSupported_))) {
                 return true;
             }
         }
     }
-    AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", hasRunningRecognitionCapturerStream);
-    return hasRunningRecognitionCapturerStream;
+    return false;
 }
 
 bool AudioPipeManager::HasRunningNormalCapturerStream(DeviceType type)
