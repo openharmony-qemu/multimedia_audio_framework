@@ -1983,7 +1983,7 @@ HWTEST(CapturerInClientUnitTest, PauseAudioStream_001, TestSize.Level1)
     EXPECT_EQ(ret, false);
 
     capturerInClientInner->state_ = RUNNING;
-    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->ipcStream_ = sptr<IpcStreamTest>::MakeSptr();
     ret = capturerInClientInner->PauseAudioStream(cmdType);
     EXPECT_EQ(ret, false);
 }
@@ -2002,7 +2002,7 @@ HWTEST(CapturerInClientUnitTest, PauseAudioStream_002, TestSize.Level1)
 
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     capturerInClientInner->state_ = RUNNING;
-    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->ipcStream_ = sptr<IpcStreamTest>::MakeSptr();
     capturerInClientInner->notifiedOperation_ = PAUSE_STREAM;
     auto ret = capturerInClientInner->PauseAudioStream(cmdType);
     EXPECT_EQ(ret, true);
@@ -2025,7 +2025,7 @@ HWTEST(CapturerInClientUnitTest, PauseAudioStream_003, TestSize.Level1)
 
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     capturerInClientInner->state_ = RUNNING;
-    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->ipcStream_ = sptr<IpcStreamTest>::MakeSptr();
     capturerInClientInner->notifiedResult_ = 1;
 
     auto ret = capturerInClientInner->PauseAudioStream(cmdType);
@@ -2051,7 +2051,7 @@ HWTEST(CapturerInClientUnitTest, FlushAudioStream_001, TestSize.Level1)
     EXPECT_EQ(ret, false);
 
     capturerInClientInner->state_ = RUNNING;
-    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->ipcStream_ = sptr<IpcStreamTest>::MakeSptr();
     capturerInClientInner->notifiedOperation_ = FLUSH_STREAM;
     capturerInClientInner->notifiedResult_ = SUCCESS;
     ret = capturerInClientInner->FlushAudioStream();
@@ -2073,7 +2073,7 @@ HWTEST(CapturerInClientUnitTest, FlushAudioStream_002, TestSize.Level1)
     capturerInClientInner->ringCache_ = std::make_unique<AudioRingCache>(size);
 
     capturerInClientInner->state_ = PAUSED;
-    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->ipcStream_ = sptr<IpcStreamTest>::MakeSptr();
     capturerInClientInner->notifiedOperation_ = RELEASE_STREAM;
     capturerInClientInner->notifiedResult_ = SUCCESS;
     auto ret = capturerInClientInner->FlushAudioStream();
@@ -2099,7 +2099,7 @@ HWTEST(CapturerInClientUnitTest, FlushAudioStream_003, TestSize.Level1)
     capturerInClientInner->ringCache_ = std::make_unique<AudioRingCache>(size);
 
     capturerInClientInner->state_ = STOPPED;
-    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->ipcStream_ = sptr<IpcStreamTest>::MakeSptr();
     capturerInClientInner->notifiedOperation_ = RELEASE_STREAM;
     capturerInClientInner->notifiedResult_ = 10;
     auto ret = capturerInClientInner->FlushAudioStream();
@@ -2376,7 +2376,7 @@ HWTEST(CapturerInClientUnitTest, StopAudioStream_004, TestSize.Level1)
     Init(capturerInClientInner);
     capturerInClientInner->state_ = State::PAUSED;
     capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
-    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->ipcStream_ = sptr<IpcStreamTest>::MakeSptr();
     bool result = capturerInClientInner->StopAudioStream();
     EXPECT_EQ(capturerInClientInner->state_, State::INVALID);
     EXPECT_EQ(result, false);
