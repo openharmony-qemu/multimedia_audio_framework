@@ -202,5 +202,13 @@ int32_t CoreServiceProviderWrapper::NotifyDeviceStateChange(const std::string &n
     coreServiceWorker_->OnDeviceStateChange(networkId, static_cast<DeviceRole>(role), isAvailable);
     return SUCCESS;
 }
+ 
+// Notify silent state change
+int32_t CoreServiceProviderWrapper::NotifySilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    coreServiceWorker_->NotifySilentStateChange(sessionId, isSilent);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

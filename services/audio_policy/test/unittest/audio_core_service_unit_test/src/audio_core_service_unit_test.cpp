@@ -7813,7 +7813,7 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_001, TestSize.Level1)
     auto pipeManager = AudioPipeManager::GetPipeManager();
     auto streamDescAfter = pipeManager->GetStreamDescById(sessionId);
     if (streamDescAfter != nullptr) {
-        EXPECT_EQ(streamDescAfter->isStandby_, true);
+        EXPECT_EQ(streamDescAfter->isStandby_.load(), true);
     }
 
     AudioPipeManager::GetPipeManager()->curPipeList_.clear();
@@ -7870,7 +7870,7 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_003, TestSize.Level1)
     auto pipeManager = AudioPipeManager::GetPipeManager();
     auto streamDescAfter = pipeManager->GetStreamDescById(sessionId);
     if (streamDescAfter != nullptr) {
-        EXPECT_EQ(streamDescAfter->isStandby_, false);
+        EXPECT_EQ(streamDescAfter->isStandby_.load(), false);
     }
 
     AudioPipeManager::GetPipeManager()->curPipeList_.clear();

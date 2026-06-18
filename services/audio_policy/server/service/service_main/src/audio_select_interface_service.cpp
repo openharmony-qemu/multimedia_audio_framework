@@ -73,6 +73,13 @@ int32_t AudioSelectInterfaceService::SetDeviceActive(DeviceType deviceType, bool
                 std::make_shared<AudioDeviceDescriptor>(**itr), ENABLE_UPDATE, reason);
             AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(address);
         }
+        if (AudioPolicyUtils::GetInstance().IsWirelessDevice((*itr)->deviceType_)) {
+            auto silentDesc = std::make_shared<AudioDeviceDescriptor>(**itr);
+            silentDesc->isSilent_ = false;
+            AudioDeviceManager::GetAudioDeviceManager().UpdateWirelessDeviceSilentState(silentDesc);
+            AUDIO_DEBUG_LOG("Clear silent state when set device active: %{public}s",
+                (*itr)->macAddress_.c_str());
+        }
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, *itr, uid, "SetDeviceActive");
 #ifdef BLUETOOTH_ENABLE
         CHECK_AND_RETURN_RET(callerUid == SYSTEM_UID || callerUid == ownerUid, SUCCESS);
@@ -366,6 +373,11 @@ void AudioSelectInterfaceService::SetDeviceEnableAndUsage(const std::shared_ptr<
     AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(deviceDesc, USAGE_UPDATE, reason);
     deviceDesc->exceptionFlag_ = false;
     AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE, reason);
+    if (AudioPolicyUtils::GetInstance().IsWirelessDevice(deviceDesc->deviceType_)) {
+        auto silentDesc = std::make_shared<AudioDeviceDescriptor>(*deviceDesc);
+        silentDesc->isSilent_ = false;
+        AudioDeviceManager::GetAudioDeviceManager().UpdateWirelessDeviceSilentState(silentDesc);
+    }
 }
 
 int32_t AudioSelectInterfaceService::SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
@@ -684,6 +696,16 @@ int32_t AudioSelectInterfaceService::UnexcludeOutputDevices(AudioDeviceUsage aud
     }
     int32_t ret = UnexcludeOutputDevicesInner(audioDevUsage, deviceDescs);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Unexclude devices failed");
+
+    for (const auto &deviceDesc : deviceDescs) {
+        if (deviceDesc != nullptr && AudioPolicyUtils::GetInstance().IsWirelessDevice(deviceDesc->deviceType_)) {
+            auto silentDesc = std::make_shared<AudioDeviceDescriptor>(*deviceDesc);
+            silentDesc->isSilent_ = false;
+            AudioDeviceManager::GetAudioDeviceManager().UpdateWirelessDeviceSilentState(silentDesc);
+            AUDIO_DEBUG_LOG("Clear silent state when unexclude output device: %{public}s",
+                deviceDesc->macAddress_.c_str());
+        }
+    }
 
     ret = FetchInputAndOutputDevice("UnexcludeOutputDevices", AudioStreamDeviceChangeReason::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchInputAndOutputDevice failed");
