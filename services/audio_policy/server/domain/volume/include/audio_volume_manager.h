@@ -345,6 +345,7 @@ private:
     AudioVolumeType forceControlVolumeType_ = STREAM_DEFAULT;
     std::shared_ptr<ForceControlVolumeTypeMonitor> forceControlVolumeTypeMonitor_;
     std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
+    std::shared_ptr<AudioPolicyStateMonitor> audioPolicyStateMonitor_;
 };
 
 class ForceControlVolumeTypeMonitor : public AudioPolicyStateMonitorCallback {
