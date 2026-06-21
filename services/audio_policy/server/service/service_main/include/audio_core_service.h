@@ -854,7 +854,7 @@ private:
     void NotifyRequiredPipesReady();
     bool CheckCollaborativeStreamRunning();
     void UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState);
-    bool ShouldUpdateOutputRoute();
+    bool ShouldUpdateOutputRoute(const AudioStreamDeviceChangeReasonExt reason);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
