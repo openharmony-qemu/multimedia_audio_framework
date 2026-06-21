@@ -34,6 +34,24 @@ static const uint32_t TEST_IO_HANDLE = 1234;
 inline static const std::string EMPTY_ADDRESS{"00:00:00:00:00:00"};
 inline static const std::string NULL_ADDRESS{""};
 
+static std::shared_ptr<AudioStreamDescriptor> MakeFastPlaybackStreamDesc(uint32_t routeFlag, int32_t originalFlag)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->routeFlag_ = routeFlag;
+    streamDesc->rendererInfo_.originalFlag = originalFlag;
+    return streamDesc;
+}
+
+static std::shared_ptr<AudioStreamDescriptor> MakeFastRecordStreamDesc(uint32_t routeFlag, int32_t originalFlag)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->routeFlag_ = routeFlag;
+    streamDesc->capturerInfo_.originalFlag = originalFlag;
+    return streamDesc;
+}
+
 void AudioCoreServicePrivateTest::SetUp(void)
 {
     testCoreService_ = std::make_shared<AudioCoreService>();
@@ -4874,6 +4892,110 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleVoiceMessageMuteForSingleRing_004, T
     audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
     audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.clear();
     audioCoreService->pipeManager_->RemoveAudioPipeInfo(pipeInfo);
+}
+
+/**
+ * @tc.name  : CheckFastToNormalForPlayback_001
+ * @tc.number: CheckFastToNormalForPlayback_001
+ * @tc.desc  : Test CheckFastToNormalForPlayback keeps original flag unchanged when opMsg is default.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckFastToNormalForPlayback_001, TestSize.Level1)
+{
+    auto streamDesc = MakeFastPlaybackStreamDesc(AUDIO_OUTPUT_FLAG_FAST, AUDIO_FLAG_MMAP);
+    testCoreService_->CheckFastToNormalForPlayback(streamDesc, SESSION_OP_MSG_DEFAULT);
+    EXPECT_EQ(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_MMAP);
+}
+
+/**
+ * @tc.name  : CheckFastToNormalForPlayback_002
+ * @tc.number: CheckFastToNormalForPlayback_002
+ * @tc.desc  : Test CheckFastToNormalForPlayback keeps original flag unchanged when route is normal.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckFastToNormalForPlayback_002, TestSize.Level1)
+{
+    auto streamDesc = MakeFastPlaybackStreamDesc(AUDIO_OUTPUT_FLAG_NORMAL, AUDIO_FLAG_MMAP);
+    testCoreService_->CheckFastToNormalForPlayback(streamDesc, SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL);
+    EXPECT_EQ(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_MMAP);
+}
+
+/**
+ * @tc.name  : CheckFastToNormalForPlayback_003
+ * @tc.number: CheckFastToNormalForPlayback_003
+ * @tc.desc  : Test CheckFastToNormalForPlayback keeps original flag unchanged when route is normal.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckFastToNormalForPlayback_003, TestSize.Level1)
+{
+    auto streamDesc = MakeFastPlaybackStreamDesc(AUDIO_OUTPUT_FLAG_NORMAL, AUDIO_FLAG_MMAP);
+    testCoreService_->CheckFastToNormalForPlayback(streamDesc, SESSION_OP_MSG_DEFAULT);
+    EXPECT_EQ(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_MMAP);
+}
+
+/**
+ * @tc.name  : CheckFastToNormalForPlayback_004
+ * @tc.number: CheckFastToNormalForPlayback_004
+ * @tc.desc  : Test CheckFastToNormalForPlayback updates original flag when opMsg and route both match.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckFastToNormalForPlayback_004, TestSize.Level1)
+{
+    auto streamDesc = MakeFastPlaybackStreamDesc(AUDIO_OUTPUT_FLAG_FAST, AUDIO_FLAG_MMAP);
+    testCoreService_->CheckFastToNormalForPlayback(streamDesc, SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL);
+    EXPECT_EQ(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
+}
+
+/**
+ * @tc.name  : CheckFastToNormalForRecord_001
+ * @tc.number: CheckFastToNormalForRecord_001
+ * @tc.desc  : Test CheckFastToNormalForRecord keeps original flag unchanged when opMsg is default.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckFastToNormalForRecord_001, TestSize.Level1)
+{
+    auto streamDesc = MakeFastRecordStreamDesc(AUDIO_INPUT_FLAG_FAST, AUDIO_FLAG_MMAP);
+    testCoreService_->CheckFastToNormalForRecord(streamDesc, SESSION_OP_MSG_DEFAULT);
+    EXPECT_EQ(streamDesc->capturerInfo_.originalFlag, AUDIO_FLAG_MMAP);
+}
+
+/**
+ * @tc.name  : CheckFastToNormalForRecord_002
+ * @tc.number: CheckFastToNormalForRecord_002
+ * @tc.desc  : Test CheckFastToNormalForRecord keeps original flag unchanged when route is normal.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckFastToNormalForRecord_002, TestSize.Level1)
+{
+    auto streamDesc = MakeFastRecordStreamDesc(AUDIO_INPUT_FLAG_NORMAL, AUDIO_FLAG_MMAP);
+    testCoreService_->CheckFastToNormalForRecord(streamDesc, SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL);
+    EXPECT_EQ(streamDesc->capturerInfo_.originalFlag, AUDIO_FLAG_MMAP);
+}
+
+/**
+ * @tc.name  : CheckFastToNormalForRecord_003
+ * @tc.number: CheckFastToNormalForRecord_003
+ * @tc.desc  : Test CheckFastToNormalForRecord keeps original flag unchanged when route is normal.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckFastToNormalForRecord_003, TestSize.Level1)
+{
+    auto streamDesc = MakeFastRecordStreamDesc(AUDIO_INPUT_FLAG_NORMAL, AUDIO_FLAG_MMAP);
+    testCoreService_->CheckFastToNormalForRecord(streamDesc, SESSION_OP_MSG_DEFAULT);
+    EXPECT_EQ(streamDesc->capturerInfo_.originalFlag, AUDIO_FLAG_MMAP);
+}
+
+/**
+ * @tc.name  : CheckFastToNormalForRecord_004
+ * @tc.number: CheckFastToNormalForRecord_004
+ * @tc.desc  : Test CheckFastToNormalForRecord updates original flag when opMsg and route both match.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckFastToNormalForRecord_004, TestSize.Level1)
+{
+    auto streamDesc = MakeFastRecordStreamDesc(AUDIO_INPUT_FLAG_FAST, AUDIO_FLAG_MMAP);
+    testCoreService_->CheckFastToNormalForRecord(streamDesc, SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL);
+    EXPECT_EQ(streamDesc->capturerInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
 }
 
 } // namespace AudioStandard
