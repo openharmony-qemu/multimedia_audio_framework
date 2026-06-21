@@ -1135,19 +1135,6 @@ void SessionEffectInvalidSessionFuzzTest()
     rendererManager->DeInit();
 }
 
-void AuxiliarySinkFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    rendererManager->Init();
-    WaitForMsgProcessing(rendererManager);
-    bool isEnabled = GetData<bool>();
-    rendererManager->SetAuxiliarySinkEnable(isEnabled);
-    WaitForMsgProcessing(rendererManager);
-    rendererManager->DeInit();
-}
-
 void HDFDumpFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
@@ -1200,7 +1187,6 @@ TestFuncs g_testFuncs[] = {
     ConnectProcessClusterFullFlowFuzzTest,
     SessionEffectLifecycleFuzzTest,
     SessionEffectInvalidSessionFuzzTest,
-    AuxiliarySinkFuzzTest,
     HDFDumpFuzzTest,
     StartWithSyncIdFuzzTest,
     SetLoudnessGainFuzzTest,

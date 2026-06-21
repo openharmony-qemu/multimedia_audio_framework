@@ -53,6 +53,8 @@ static size_t g_pos;
 const size_t THRESHOLD = 10;
 // Modulus used to clamp a fuzz int into a valid stream-category range.
 const int32_t CATEGORY_RANGE = 20;
+// Modulus for the fuzzed session-ID string length (0..15 chars).
+const uint32_t SESSION_ID_LEN_RANGE = 16;
 
 typedef void (*TestFuncs)();
 
@@ -176,7 +178,7 @@ void SystemVolumeNotFoundFuzzTest()
 // GetStreamVolume not-found, StreamVolumeDelete not-found.
 void FuzzedSessionVolumeFuzzTest()
 {
-    uint32_t len = GetData<uint32_t>() % 16; // 0..15 chars
+    uint32_t len = GetData<uint32_t>() % SESSION_ID_LEN_RANGE; // 0..15 chars
     std::string sessionID;
     for (uint32_t i = 0; i < len; i++) {
         sessionID.push_back(static_cast<char>(GetData<uint8_t>()));

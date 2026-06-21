@@ -40,6 +40,8 @@ static size_t g_pos = 0;
 constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
 constexpr uint32_t DEFAULT_CHANNEL_COUNT = 2;
 constexpr size_t MIN_FUZZ_INPUT_SIZE = 10;
+// Modulus for the fuzzed library-entry count (0..3 entries) in LibraryAndTimeoutFuzzTest.
+constexpr uint32_t LIB_ENTRY_COUNT_RANGE = 4;
 
 template <typename T>
 T GetData()
@@ -204,7 +206,7 @@ void LibraryAndTimeoutFuzzTest()
     sem.SetLazyReleaseTimeout(GetData<uint64_t>()); // setter (253)
 
     std::vector<std::shared_ptr<AudioEffectLibEntry>> libEntries;
-    uint32_t n = GetData<uint32_t>() % 4; // 0..3 entries
+    uint32_t n = GetData<uint32_t>() % LIB_ENTRY_COUNT_RANGE; // 0..3 entries
     for (uint32_t i = 0; i < n; i++) {
         auto entry = std::make_shared<AudioEffectLibEntry>();
         entry->libraryName = GetFuzzString(16);

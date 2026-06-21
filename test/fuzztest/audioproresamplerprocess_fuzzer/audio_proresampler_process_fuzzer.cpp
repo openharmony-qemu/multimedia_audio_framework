@@ -22,6 +22,7 @@
 #include "../fuzz_utils.h"
 #define TWO_STEPS 2
 #define THREE_STEPS 3
+#define FOUR_STEPS 4
 #define MAX_RATIO_INTEGRAL_METHOD 32
 
 using namespace std;
@@ -45,6 +46,10 @@ const uint32_t PROC_BUF_IN_LEN = 128;
 const uint32_t PROC_BUF_OUT_LEN = 256;
 const uint32_t STREAM_BUF_IN_LEN = 64;
 const uint32_t STREAM_BUF_OUT_LEN = 128;
+// Factor-range modulus (1..64) and the 48000/44100 streaming ratio factors.
+const uint32_t FACTOR_RANGE_MOD = 64;   // % N + NUM_1 -> 1..64 decim/interp
+const uint32_t STREAM_DECIM_FACTOR = 480;
+const uint32_t STREAM_INTERP_FACTOR = 441;
 
 // Helper: Init resampler, run Process, then Free
 static void ProcessAndFree(uint32_t channels, uint32_t decim, uint32_t interp, int32_t quality)
@@ -105,18 +110,18 @@ void SetResamplerFunctionCoarseFuzzTest()
 
 void ProcessFineMonoFuzzTest()
 {
-    ProcessAndFree(1, 2, 3, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(1, TWO_STEPS, THREE_STEPS, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 void ProcessFineStereoFuzzTest()
 {
-    ProcessAndFree(2, 2, 3, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(NUM_2, TWO_STEPS, THREE_STEPS, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 void ProcessFineMultiChFuzzTest()
 {
     uint32_t ch = g_fuzzUtils.GetData<uint32_t>() % CHANNEL_COUNT_MOD + NUM_3; // 3-8 channels
-    ProcessAndFree(ch, 2, 3, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(ch, TWO_STEPS, THREE_STEPS, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 // === Halfband path (2*interp == decim) ===
@@ -124,18 +129,18 @@ void ProcessFineMultiChFuzzTest()
 
 void ProcessHalfbandMonoFuzzTest()
 {
-    ProcessAndFree(1, 2, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(1, TWO_STEPS, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 void ProcessHalfbandStereoFuzzTest()
 {
-    ProcessAndFree(2, 2, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(NUM_2, TWO_STEPS, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 void ProcessHalfbandMultiChFuzzTest()
 {
     uint32_t ch = g_fuzzUtils.GetData<uint32_t>() % CHANNEL_COUNT_MOD + NUM_3;
-    ProcessAndFree(ch, 2, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(ch, TWO_STEPS, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 // === Thirdband path (3*interp == decim) ===
@@ -143,18 +148,18 @@ void ProcessHalfbandMultiChFuzzTest()
 
 void ProcessThirdbandMonoFuzzTest()
 {
-    ProcessAndFree(1, 3, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(1, THREE_STEPS, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 void ProcessThirdbandStereoFuzzTest()
 {
-    ProcessAndFree(2, 3, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(NUM_2, THREE_STEPS, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 void ProcessThirdbandMultiChFuzzTest()
 {
     uint32_t ch = g_fuzzUtils.GetData<uint32_t>() % CHANNEL_COUNT_MOD + NUM_3;
-    ProcessAndFree(ch, 3, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(ch, THREE_STEPS, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 // === Coarse upsampling (decim=1, interp > 1) ===
@@ -162,18 +167,18 @@ void ProcessThirdbandMultiChFuzzTest()
 
 void ProcessCoarseUpMonoFuzzTest()
 {
-    ProcessAndFree(1, 1, 4, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(1, 1, FOUR_STEPS, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 void ProcessCoarseUpStereoFuzzTest()
 {
-    ProcessAndFree(2, 1, 4, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(NUM_2, 1, FOUR_STEPS, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 void ProcessCoarseUpMultiChFuzzTest()
 {
     uint32_t ch = g_fuzzUtils.GetData<uint32_t>() % CHANNEL_COUNT_MOD + NUM_3;
-    ProcessAndFree(ch, 1, 4, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(ch, 1, FOUR_STEPS, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 // === Coarse downsampling (decim > 1, interp=1) ===
@@ -181,18 +186,18 @@ void ProcessCoarseUpMultiChFuzzTest()
 
 void ProcessCoarseDownMonoFuzzTest()
 {
-    ProcessAndFree(1, 5, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(1, NUM_5, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 void ProcessCoarseDownStereoFuzzTest()
 {
-    ProcessAndFree(2, 5, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(NUM_2, NUM_5, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 void ProcessCoarseDownMultiChFuzzTest()
 {
     uint32_t ch = g_fuzzUtils.GetData<uint32_t>() % CHANNEL_COUNT_MOD + NUM_3;
-    ProcessAndFree(ch, 5, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
+    ProcessAndFree(ch, NUM_5, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11);
 }
 
 // === SetRate: covers UpdateResamplerState, UpdateFilterMemory, ComputeGcd ===
@@ -202,7 +207,8 @@ void SetRateFuzzTest()
     int32_t err = RESAMPLER_ERR_SUCCESS;
     uint32_t ch = g_fuzzUtils.GetData<uint32_t>() % NUM_3 + NUM_1;
     SingleStagePolyphaseResamplerState *state =
-        SingleStagePolyphaseResamplerInit(ch, 2, 3, g_fuzzUtils.GetData<int32_t>() % NUM_11, &err);
+        SingleStagePolyphaseResamplerInit(ch, TWO_STEPS, THREE_STEPS,
+            g_fuzzUtils.GetData<int32_t>() % NUM_11, &err);
     if (state == nullptr) {
         return;
     }
@@ -226,7 +232,8 @@ void ResetMemAndSkipHalfTapsFuzzTest()
     int32_t err = RESAMPLER_ERR_SUCCESS;
     uint32_t ch = g_fuzzUtils.GetData<uint32_t>() % NUM_3 + NUM_1;
     SingleStagePolyphaseResamplerState *state =
-        SingleStagePolyphaseResamplerInit(ch, 2, 3, g_fuzzUtils.GetData<int32_t>() % NUM_11, &err);
+        SingleStagePolyphaseResamplerInit(ch, TWO_STEPS, THREE_STEPS,
+            g_fuzzUtils.GetData<int32_t>() % NUM_11, &err);
     if (state == nullptr) {
         return;
     }
@@ -255,7 +262,7 @@ void FreeAndNullFuzzTest()
     int32_t err = RESAMPLER_ERR_SUCCESS;
     uint32_t ch = g_fuzzUtils.GetData<uint32_t>() % NUM_3 + NUM_1;
     SingleStagePolyphaseResamplerState *state =
-        SingleStagePolyphaseResamplerInit(ch, 2, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11, &err);
+        SingleStagePolyphaseResamplerInit(ch, TWO_STEPS, 1, g_fuzzUtils.GetData<int32_t>() % NUM_11, &err);
     if (state) {
         SingleStagePolyphaseResamplerFree(state);
     }
@@ -270,7 +277,8 @@ void ProcessNullInputFuzzTest()
     int32_t err = RESAMPLER_ERR_SUCCESS;
     uint32_t ch = g_fuzzUtils.GetData<uint32_t>() % NUM_3 + NUM_1;
     SingleStagePolyphaseResamplerState *state =
-        SingleStagePolyphaseResamplerInit(ch, 2, 3, g_fuzzUtils.GetData<int32_t>() % NUM_11, &err);
+        SingleStagePolyphaseResamplerInit(ch, TWO_STEPS, THREE_STEPS,
+            g_fuzzUtils.GetData<int32_t>() % NUM_11, &err);
     if (state == nullptr) {
         return;
     }
@@ -289,12 +297,13 @@ void ProcessStreamingFuzzTest()
     int32_t err = RESAMPLER_ERR_SUCCESS;
     uint32_t ch = g_fuzzUtils.GetData<uint32_t>() % NUM_3 + NUM_1;
     SingleStagePolyphaseResamplerState *state =
-        SingleStagePolyphaseResamplerInit(ch, 480, 441, g_fuzzUtils.GetData<int32_t>() % NUM_11, &err);
+        SingleStagePolyphaseResamplerInit(ch, STREAM_DECIM_FACTOR, STREAM_INTERP_FACTOR,
+            g_fuzzUtils.GetData<int32_t>() % NUM_11, &err);
     if (state == nullptr) {
         return;
     }
     // Simulate streaming: multiple small Process calls
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < NUM_3; i++) {
         uint32_t inLen = STREAM_BUF_IN_LEN;
         uint32_t outLen = STREAM_BUF_OUT_LEN;
         vector<float> inBuf(inLen * ch, 0.5f);
@@ -310,12 +319,12 @@ void ProcessStreamingFuzzTest()
 void ArgValidationFuzzTest()
 {
     int32_t err = RESAMPLER_ERR_SUCCESS;
-    (void)SingleStagePolyphaseResamplerInit(0, 2, 1, 5, &err);  // numChannels = 0
-    (void)SingleStagePolyphaseResamplerInit(2, 0, 1, 5, &err);  // decimate = 0
-    (void)SingleStagePolyphaseResamplerInit(2, 2, 0, 5, &err);  // interpolate = 0
-    (void)SingleStagePolyphaseResamplerInit(2, 2, 1, NUM_11, &err);  // quality > 10
-    (void)SingleStagePolyphaseResamplerInit(2, 2, 1, -1, &err); // quality < 0
-    SingleStagePolyphaseResamplerState *state = SingleStagePolyphaseResamplerInit(2, 2, 1, 5, &err);
+    (void)SingleStagePolyphaseResamplerInit(0, NUM_2, 1, NUM_5, &err);  // numChannels = 0
+    (void)SingleStagePolyphaseResamplerInit(NUM_2, 0, 1, NUM_5, &err);  // decimate = 0
+    (void)SingleStagePolyphaseResamplerInit(NUM_2, NUM_2, 0, NUM_5, &err);  // interpolate = 0
+    (void)SingleStagePolyphaseResamplerInit(NUM_2, NUM_2, 1, NUM_11, &err);  // quality > 10
+    (void)SingleStagePolyphaseResamplerInit(NUM_2, NUM_2, 1, -1, &err); // quality < 0
+    SingleStagePolyphaseResamplerState *state = SingleStagePolyphaseResamplerInit(NUM_2, NUM_2, 1, NUM_5, &err);
     if (state != nullptr) {
         (void)SingleStagePolyphaseResamplerSetRate(state, 0, 0); // expect INVALID_ARG
         SingleStagePolyphaseResamplerFree(state);
@@ -330,8 +339,8 @@ void OverflowGuardFuzzTest()
 {
     int32_t err = RESAMPLER_ERR_SUCCESS;
     uint32_t ch = g_fuzzUtils.GetData<uint32_t>() % NUM_3 + NUM_1; // 1..3 channels
-    uint32_t dec = (g_fuzzUtils.GetData<uint32_t>() % 64) + 1;     // 1..64
-    uint32_t interp = (g_fuzzUtils.GetData<uint32_t>() % 64) + 1;  // 1..64
+    uint32_t dec = (g_fuzzUtils.GetData<uint32_t>() % FACTOR_RANGE_MOD) + 1;     // 1..64
+    uint32_t interp = (g_fuzzUtils.GetData<uint32_t>() % FACTOR_RANGE_MOD) + 1;  // 1..64
     SingleStagePolyphaseResamplerState *state =
         SingleStagePolyphaseResamplerInit(ch, dec, interp, NUM_11 - 1, &err); // quality=10 -> 256 taps
     if (state == nullptr) {

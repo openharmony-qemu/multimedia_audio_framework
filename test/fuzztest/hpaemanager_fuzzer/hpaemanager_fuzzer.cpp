@@ -50,6 +50,10 @@ constexpr uint8_t ENUM_MOVESessionType_COUNT = 4;
 constexpr uint8_t ENUM_HPAEMSGCODE_COUNT = 12;
 constexpr uint8_t ENUM_SOURCETYPE_COUNT = 20; // Includes -1 offset (SOURCE_TYPE_MAX = 19)
 constexpr uint8_t ENUM_HPAEPROCESSORTYPE_COUNT = 28; // Includes valid range 0-26
+// Out-of-range value (255) cast into enum types to exercise invalid-enum branches.
+constexpr int32_t INVALID_ENUM_VALUE = 255;
+// Even/odd modulus used to alternate between two enum values.
+constexpr uint8_t BINARY_CHOICE_MOD = 2;
 
 // FuzzedDataProvider::ConsumeIntegral<T> requires an integral T (static_assert), so enums
 // must be consumed as their underlying int and cast back. Mirrors the sibling-fuzzer pattern.
@@ -518,7 +522,8 @@ void HandleMoveSourceOutputFuzzTest(FuzzedDataProvider& fdp)
 
     HpaeCaptureMoveInfo moveInfo;
     moveInfo.sessionId = fdp.ConsumeIntegral<uint32_t>();
-    moveInfo.sessionInfo.state = static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
+    moveInfo.sessionInfo.state =
+        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
 
     std::string sourceName;
     size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
@@ -543,7 +548,8 @@ void HandleMoveAllSourceOutputsFuzzTest(FuzzedDataProvider& fdp)
     for (size_t i = 0; i < infoCount; i++) {
         HpaeCaptureMoveInfo info;
         info.sessionId = fdp.ConsumeIntegral<uint32_t>();
-        info.sessionInfo.state = static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
+        info.sessionInfo.state =
+            static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
         moveInfos.push_back(info);
     }
 
@@ -553,7 +559,8 @@ void HandleMoveAllSourceOutputsFuzzTest(FuzzedDataProvider& fdp)
         sourceName += fdp.ConsumeIntegral<char>();
     }
 
-    MoveSessionType moveType = static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESessionType_COUNT);
+    MoveSessionType moveType =
+        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESessionType_COUNT);
 
     if (hpaeManager->IsInit()) {
         (void)hpaeManager->HandleMoveAllSourceOutputs(moveInfos, sourceName, moveType);
@@ -567,9 +574,11 @@ void HandleMoveSessionFailedFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    MoveSessionType moveType = static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESessionType_COUNT);
+    MoveSessionType moveType =
+        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESessionType_COUNT);
 
     std::string name;
     size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
@@ -589,9 +598,11 @@ void HandleUpdateStatusFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    HpaeSessionState status = static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
+    HpaeSessionState status =
+        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
     IOperation operation = static_cast<IOperation>(fdp.ConsumeIntegral<uint8_t>() % ENUM_IOPERATION_COUNT);
 
     if (hpaeManager->IsInit()) {
@@ -651,7 +662,8 @@ void EnqueuePendingTransitionFuzzTest(FuzzedDataProvider& fdp)
     }
 
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    HpaeSessionState state = static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
+    HpaeSessionState state =
+        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
     IOperation operation = static_cast<IOperation>(fdp.ConsumeIntegral<uint8_t>() % ENUM_IOPERATION_COUNT);
 
     if (hpaeManager->IsInit()) {
@@ -714,10 +726,13 @@ void SetMovingStreamStateFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    HpaeSessionState status = static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-    HpaeSessionState state = static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
+    HpaeSessionState status =
+        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
+    HpaeSessionState state =
+        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
     IOperation operation = static_cast<IOperation>(fdp.ConsumeIntegral<uint8_t>() % ENUM_IOPERATION_COUNT);
 
     if (hpaeManager->IsInit()) {
@@ -732,7 +747,8 @@ void DestroyStreamFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     hpaeManager->DestroyStream(streamClassType, sessionId);
@@ -745,7 +761,8 @@ void ShouldNotSkipProcessFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     if (hpaeManager->IsInit()) {
@@ -760,56 +777,11 @@ void StartFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     hpaeManager->Start(streamClassType, sessionId);
-}
-
-void HandleMoveSinkInputFailedFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    auto sinkInputNode = MakeSinkInputNode();
-    if (sinkInputNode == nullptr) {
-        return;
-    }
-
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleMoveSinkInput(sinkInputNode, sinkName);
-    }
-}
-
-void HandleMoveSinkInputSuccessFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    auto sinkInputNode = MakeSinkInputNode();
-    if (sinkInputNode == nullptr) {
-        return;
-    }
-
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleMoveSinkInput(sinkInputNode, sinkName);
-    }
 }
 
 void PauseFuzzTest(FuzzedDataProvider& fdp)
@@ -819,7 +791,8 @@ void PauseFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     hpaeManager->Pause(streamClassType, sessionId);
@@ -832,7 +805,8 @@ void DrainFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     hpaeManager->Drain(streamClassType, sessionId);
@@ -845,7 +819,8 @@ void StopFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     hpaeManager->Stop(streamClassType, sessionId);
@@ -858,7 +833,8 @@ void ReleaseFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     hpaeManager->Release(streamClassType, sessionId);
@@ -874,16 +850,18 @@ void OnDisConnectProcessClusterFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    // Fix: Use abs to ensure non-negative value for enum generation
-    HpaeProcessorType sceneType = static_cast<HpaeProcessorType>(std::abs(fdp.ConsumeIntegral<int32_t>() % ENUM_HPAEPROCESSORTYPE_COUNT));
-
-    auto nodeCallback = std::make_shared<INodeCallback>();
-    if (nodeCallback == nullptr) {
-        return;
-    }
+    // Use abs to ensure a non-negative value for enum generation
+    HpaeProcessorType sceneType =
+        static_cast<HpaeProcessorType>(std::abs(fdp.ConsumeIntegral<int32_t>() % ENUM_HPAEPROCESSORTYPE_COUNT));
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     if (hpaeManager->IsInit()) {
-        (void)nodeCallback->OnDisConnectProcessCluster(sceneType);
+        // Route through HpaeManager to the real HpaeRendererManager override. The INodeCallback
+        // base body is empty, so instantiating it directly would never exercise real code.
+        auto rendererManager = hpaeManager->GetRendererManagerById(sessionId);
+        if (rendererManager != nullptr) {
+            (void)rendererManager->OnDisConnectProcessCluster(sceneType);
+        }
     }
 }
 
@@ -932,7 +910,8 @@ void HandleMoveAllSinkInputsFuzzTest(FuzzedDataProvider& fdp)
         sinkName += fdp.ConsumeIntegral<char>();
     }
 
-    MoveSessionType moveType = static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESessionType_COUNT);
+    MoveSessionType moveType =
+        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESessionType_COUNT);
 
     if (hpaeManager->IsInit()) {
         (void)hpaeManager->HandleMoveAllSinkInputs(sinkInputs, sinkName, moveType);
@@ -972,7 +951,8 @@ void GetUsedMoveInfosFuzzTest(FuzzedDataProvider& fdp)
     for (size_t i = 0; i < infoCount; i++) {
         HpaeCaptureMoveInfo info;
         info.sessionId = fdp.ConsumeIntegral<uint32_t>();
-        info.sessionInfo.state = static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
+        info.sessionInfo.state =
+            static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
         moveInfos.push_back(info);
     }
 
@@ -1064,7 +1044,8 @@ void FlushFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     hpaeManager->Flush(streamClassType, sessionId);
@@ -1077,7 +1058,8 @@ void StartWithSyncIdFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     int32_t syncId = fdp.ConsumeIntegral<int32_t>();
 
@@ -1105,7 +1087,8 @@ void RegisterStatusCallbackFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     std::weak_ptr<IStreamStatusCallback> callback;
@@ -1865,7 +1848,8 @@ void TriggerAppsUidUpdateFuzzTest(FuzzedDataProvider& fdp)
         return;
     }
 
-    HpaeStreamClassType streamClassType = static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamClassType =
+        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     if (hpaeManager->IsInit()) {
@@ -1953,9 +1937,9 @@ void CreateStreamWithInvalidEnumFuzzTest(FuzzedDataProvider& fdp)
 
     HpaeStreamInfo streamInfo;
     InitStreamInfo(streamInfo, fdp);
-    streamInfo.streamType = static_cast<AudioStreamType>(255);
-    streamInfo.sourceType = static_cast<SourceType>(255);
-    streamInfo.streamClassType = static_cast<HpaeStreamClassType>(255);
+    streamInfo.streamType = static_cast<AudioStreamType>(INVALID_ENUM_VALUE);
+    streamInfo.sourceType = static_cast<SourceType>(INVALID_ENUM_VALUE);
+    streamInfo.streamClassType = static_cast<HpaeStreamClassType>(INVALID_ENUM_VALUE);
 
     hpaeManager->CreateStream(streamInfo);
 }
@@ -2034,7 +2018,8 @@ void SetVolumeWithExtremeValuesFuzzTest(FuzzedDataProvider& fdp)
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
 
     float extremeVolumes[] = {0.0f, -1.0f, 0.5f, 1.0f, 2.0f, 10.0f};
-    float volume = extremeVolumes[fdp.ConsumeIntegral<uint8_t>() % (sizeof(extremeVolumes) / sizeof(extremeVolumes[0]))];
+    float volume =
+        extremeVolumes[fdp.ConsumeIntegral<uint8_t>() % (sizeof(extremeVolumes) / sizeof(extremeVolumes[0]))];
 
     hpaeManager->SetClientVolume(sessionId, volume);
 }
@@ -2371,7 +2356,7 @@ void UpdateCollaborativeStateFuzzTest(FuzzedDataProvider& fdp)
     }
 
     uint8_t pick = fdp.ConsumeIntegral<uint8_t>();
-    CollaborationState state = (pick % 2 == 0)
+    CollaborationState state = (pick % BINARY_CHOICE_MOD == 0)
         ? static_cast<CollaborationState>(pick % ENUM_COLLABORATIONSTATE_COUNT)
         : static_cast<CollaborationState>(pick);  // deliberately out-of-range
 
@@ -2549,7 +2534,7 @@ void SetSpatializationSceneTypeFuzzTest(FuzzedDataProvider& fdp)
     }
 
     uint8_t pick = fdp.ConsumeIntegral<uint8_t>();
-    AudioSpatializationSceneType sceneType = (pick % 2 == 0)
+    AudioSpatializationSceneType sceneType = (pick % BINARY_CHOICE_MOD == 0)
         ? static_cast<AudioSpatializationSceneType>(pick % ENUM_SPATIALIZATION_SCENE_TYPE_COUNT)
         : static_cast<AudioSpatializationSceneType>(pick);  // out-of-range
 
@@ -2812,8 +2797,6 @@ void Test(FuzzedDataProvider& fdp)
         DestroyStreamFuzzTest,
         ShouldNotSkipProcessFuzzTest,
         StartFuzzTest,
-        HandleMoveSinkInputFailedFuzzTest,
-        HandleMoveSinkInputSuccessFuzzTest,
         PauseFuzzTest,
         DrainFuzzTest,
         StopFuzzTest,

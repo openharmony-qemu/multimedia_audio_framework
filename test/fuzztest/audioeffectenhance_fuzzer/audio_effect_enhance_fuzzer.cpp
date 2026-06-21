@@ -48,11 +48,16 @@ const int32_t NUM_2 = 2;
 // Enum-range moduli used to clamp fuzz ints into valid DeviceType / AudioVolumeType ranges.
 const int32_t DEVICE_TYPE_RANGE = 20;
 const int32_t VOLUME_TYPE_RANGE = 10;
+// EffectChainManagerParam.maxExtraNum default value.
+const uint32_t DEFAULT_MAX_EXTRA_NUM = 3;
+// Dummy buffer length and fill byte used by AudioEnhanceChainManagerMoreFuzzTest.
+const uint32_t DUMMY_BUFFER_LEN = 1000;
+const uint8_t DUMMY_DATA_FILL_BYTE = 0x08;
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
 vector<shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
 
 EffectChainManagerParam DEFAULT_EFFECT_CHAIN_MANAGER_PARAM{
-    3,
+    DEFAULT_MAX_EXTRA_NUM,
     "SCENE_DEFAULT",
     {},
     {{"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
@@ -305,7 +310,7 @@ void AudioEnhanceChainSetParaFuzzTest()
     std::string prop = "test_prop";
     audioEnhanceChain->SetEnhanceProperty(effect, prop);
 
-    bool isMute = (GetData<uint32_t>() % 2 == 0);
+    bool isMute = (GetData<uint32_t>() % NUM_2 == 0);
     uint32_t systemVol = GetData<uint32_t>();
     audioEnhanceChain->SetEnhanceParam(isMute, systemVol);
 
@@ -377,8 +382,8 @@ void AudioEnhanceChainManagerMoreFuzzTest()
 {
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
 
-    const uint32_t bufferLen = 1000;
-    std::vector<uint8_t> dummyData(bufferLen, 0x08);
+    const uint32_t bufferLen = DUMMY_BUFFER_LEN;
+    std::vector<uint8_t> dummyData(bufferLen, DUMMY_DATA_FILL_BYTE);
     EnhanceTransBuffer transBuf = {};
     transBuf.micData = dummyData.data();
     transBuf.micDataLen = dummyData.size();
