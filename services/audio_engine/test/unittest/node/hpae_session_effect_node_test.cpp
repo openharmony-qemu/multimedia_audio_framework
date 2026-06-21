@@ -43,6 +43,10 @@ static constexpr uint32_t TEST_SESSION_ID = 42;
 static constexpr uint32_t TEST_FRAME_LEN = 960;
 static constexpr uint32_t TEST_SAMPLE_RATE = 48000;
 static constexpr uint32_t TEST_CHANNEL_COUNT = 2;
+static constexpr uint32_t TEST_PREHEAT_FRAME_COUNT = 5;
+static constexpr size_t TEST_FRAME_BYTE_LEN =
+    static_cast<size_t>(TEST_FRAME_LEN) * TEST_CHANNEL_COUNT * sizeof(float);
+static constexpr size_t TEST_PREBUF_TARGET_BYTE_LEN = TEST_PREHEAT_FRAME_COUNT * TEST_FRAME_BYTE_LEN;
 
 static AudioEffectConfig MakeTestConfig()
 {
@@ -363,6 +367,10 @@ public:
     using HpaeSessionEffectNode::SetPrebufTargetBytesForTest;
     using HpaeSessionEffectNode::SetActiveNoDataStartForTest;
     using HpaeSessionEffectNode::ProcessActiveNoInputForTest;
+    using HpaeSessionEffectNode::UpdatePrebufTargetBytesForTest;
+    using HpaeSessionEffectNode::HandleNoDataTimeoutForTest;
+    using HpaeSessionEffectNode::SetPreheatNoDataStartTimeForTest;
+    using HpaeSessionEffectNode::SetStopRequestedForTest;
     using HpaeSessionEffectNode::GetTotalBytesIn;
     using HpaeSessionEffectNode::GetTotalBytesOut;
     void AccountOutputForTest(size_t byteLen)
@@ -1058,10 +1066,9 @@ protected:
 // SE-W2: Preheat thread pulls upstream data and FeedInput
 HWTEST_F(SessionEffectNodeThreadTest, preheatThread_pullsAndFeeds, TestSize.Level0)
 {
-    // prebufTarget = GetPreheatFrames() * frameBytes = 5 * 960 * 2 * 4 = 38400
-    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
+    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(TEST_PREHEAT_FRAME_COUNT));
     node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
-    size_t prebufTarget = 5 * 960 * 2 * sizeof(float);
+    const size_t prebufTarget = TEST_PREBUF_TARGET_BYTE_LEN;
     int count = 0;
     ON_CALL(*mockInst_, GetInputLevel())
         .WillByDefault(testing::Invoke([&]() -> size_t {
@@ -1082,9 +1089,9 @@ HWTEST_F(SessionEffectNodeThreadTest, preheatThread_pullsAndFeeds, TestSize.Leve
 // SE-W3: Prebuf filled -> thread exits -> DoProcess transitions to INTERCEPTING
 HWTEST_F(SessionEffectNodeThreadTest, preheatThread_exitAndTransition, TestSize.Level0)
 {
-    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
+    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(TEST_PREHEAT_FRAME_COUNT));
     node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
-    size_t prebufTarget = 5 * 960 * 2 * sizeof(float);
+    const size_t prebufTarget = TEST_PREBUF_TARGET_BYTE_LEN;
 
     // Track mock calls via global atomics (thread-safe, no production code changes)
     static std::atomic<int> gFeedCount{0};
@@ -1333,7 +1340,7 @@ HWTEST_F(SessionEffectNodeStateTest, resume_fromWarmingUp, TestSize.Level0)
 
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
     EXPECT_FALSE(node_->IsPaused());
-    EXPECT_EQ(node_->GetPrebufTargetBytes(), 5 * TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float));
+    EXPECT_EQ(node_->GetPrebufTargetBytes(), TEST_PREBUF_TARGET_BYTE_LEN);
 }
 
 HWTEST_F(SessionEffectNodeStateTest, resume_fromWarmingUpWithZeroPreheatMarksFilled, TestSize.Level0)
@@ -2287,6 +2294,120 @@ HWTEST_F(SessionEffectNodeStateTest, computeSkipFrames_flushResets, TestSize.Lev
 
     node_->DoProcess();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+}
+
+// --- Phase 3D-1: branch coverage gaps from fresh gcov ---
+
+// Covers DetachEffectForReload() — full function was previously unhit.
+// Reset state, clear effectInstance_, transition to IDLE regardless of current state.
+HWTEST_F(SessionEffectNodeStateTest, detachEffectForReload_resetsStateAndInstance, TestSize.Level0)
+{
+    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
+    ASSERT_NE(node_->GetEffectInstance(), nullptr);
+
+    int32_t ret = node_->DetachEffectForReload();
+
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
+    EXPECT_EQ(node_->GetEffectInstance(), nullptr);
+    EXPECT_FALSE(node_->IsCloseCrossfadePending());
+    EXPECT_FALSE(node_->IsPaused());
+    EXPECT_FALSE(node_->GetPrebufFilled());
+    EXPECT_EQ(node_->GetPrebufTargetBytes(), 0u);
+}
+
+// Covers UpdatePrebufTargetBytes early return when effectInstance_ == nullptr.
+HWTEST_F(SessionEffectNodeStateTest, updatePrebufTargetBytes_noInstance_returnsEarly, TestSize.Level0)
+{
+    // No CreateEffectWithInstance called — effectInstance_ is null.
+    node_->SetPrebufTargetBytesForTest(123u);
+    node_->UpdatePrebufTargetBytesForTest();
+    EXPECT_EQ(node_->GetPrebufTargetBytes(), 0u);
+}
+
+// Covers UpdatePrebufTargetBytes GetPcmByteLen-fail return (channels == 0).
+HWTEST_F(SessionEffectNodeStateTest, updatePrebufTargetBytes_zeroChannels_returnsEarly, TestSize.Level0)
+{
+    AudioEffectConfig config = MakeTestConfig();
+    config.inputCfg.channels = 0;
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config);
+
+    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillRepeatedly(testing::Return(5));
+    node_->UpdatePrebufTargetBytesForTest();
+    EXPECT_EQ(node_->GetPrebufTargetBytes(), 0u);
+}
+
+// Covers HandleNoDataTimeout early-return when timeout not yet elapsed.
+HWTEST_F(SessionEffectNodeStateTest, handleNoDataTimeout_withinWindow_returnsFalse, TestSize.Level0)
+{
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
+    node_->SetPrebufTargetBytesForTest(100u);
+    node_->SetPreheatNoDataStartTimeForTest(std::chrono::steady_clock::now());
+    EXPECT_FALSE(node_->HandleNoDataTimeoutForTest(0u));
+}
+
+// Covers HandleNoDataTimeout: timeout elapsed AND stopRequested_ == true.
+HWTEST_F(SessionEffectNodeStateTest, handleNoDataTimeout_stopRequestedAfterTimeout_returnsTrue, TestSize.Level0)
+{
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
+    node_->SetPrebufTargetBytesForTest(100u);
+    auto past = std::chrono::steady_clock::now() - std::chrono::hours(1);
+    node_->SetPreheatNoDataStartTimeForTest(past);
+    node_->SetStopRequestedForTest(true);
+    EXPECT_TRUE(node_->HandleNoDataTimeoutForTest(0u));
+}
+
+// Covers HandleNoDataTimeout: timeout elapsed AND inputLevel >= prebufTargetBytes_.
+HWTEST_F(SessionEffectNodeStateTest, handleNoDataTimeout_inputLevelAtTargetAfterTimeout_returnsTrue, TestSize.Level0)
+{
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
+    node_->SetPrebufTargetBytesForTest(100u);
+    auto past = std::chrono::steady_clock::now() - std::chrono::hours(1);
+    node_->SetPreheatNoDataStartTimeForTest(past);
+    // stopRequested_ stays false; inputLevel == prebufTargetBytes_ takes the early return.
+    EXPECT_TRUE(node_->HandleNoDataTimeoutForTest(100u));
+}
+
+// Covers StartPreheatThread joinable branch (L541-543): after entering ACTIVE
+// via the real preheat thread, the std::thread handle is still joinable even
+// though PreheatThreadFunc has returned. Calling FlushEffect → RestartPreheat →
+// StartPreheatThread must observe preheatThread_.joinable()==true and stop the
+// existing thread before starting a new one.
+HWTEST_F(SessionEffectNodeThreadTest, flushDuringActive_restartsPreheatThread_joinableBranch, TestSize.Level0)
+{
+    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(TEST_PREHEAT_FRAME_COUNT));
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
+    ASSERT_EQ(node_->StartEffect(), 0);
+    ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+
+    // Drive preheat thread to completion: inputLevel reaches prebufTarget →
+    // PreheatThreadFunc returns; preheatThread_ is still joinable (not joined yet).
+    const size_t prebufTarget = TEST_PREBUF_TARGET_BYTE_LEN;
+    int count = 0;
+    ON_CALL(*mockInst_, GetInputLevel())
+        .WillByDefault(testing::Invoke([&]() -> size_t {
+            return ++count > 3 ? prebufTarget : 0;
+        }));
+    for (int i = 0; i < 100 && !node_->GetPrebufFilled(); i++) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    ASSERT_TRUE(node_->GetPrebufFilled());
+
+    // Force status to ACTIVE so FlushEffect takes the ACTIVE branch that calls
+    // RestartPreheat without StopPreheatThread first.
+    node_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
+
+    node_->FlushEffect();
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+
+    // Wait for the new preheat thread to also reach prebufFilled so TearDown
+    // joins cleanly without races.
+    count = 0;
+    for (int i = 0; i < 100 && !node_->GetPrebufFilled(); i++) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 }
 
 }  // namespace HPAE
