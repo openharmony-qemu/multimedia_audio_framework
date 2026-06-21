@@ -271,7 +271,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerGetAudioTime_001, TestSi
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->Init();
-    rendererInServer->Start();
+    rendererInServer->Start(false);
     rendererInServer->resetTime_ = true;
     uint64_t framePos = TEST_FRAMEPOS;
     uint64_t timestamp = TEST_TIMESTAMP;
@@ -1203,7 +1203,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStart_001, TestSize.Leve
     rendererInServer->playerDfx_ = 0;
     rendererInServer->managerType_ = DIRECT_PLAYBACK;
     
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1227,7 +1227,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStart_002, TestSize.Leve
     rendererInServer->playerDfx_ = 0;
     rendererInServer->managerType_ = DIRECT_PLAYBACK;
     
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1251,7 +1251,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStart_003, TestSize.Leve
     rendererInServer->playerDfx_ = 0;
     rendererInServer->managerType_ = VOIP_PLAYBACK;
     
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1275,7 +1275,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStart_004, TestSize.Leve
     rendererInServer->playerDfx_ = 0;
     rendererInServer->managerType_ = EAC3_PLAYBACK;
     
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1299,7 +1299,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStart_005, TestSize.Leve
     rendererInServer->playerDfx_ = 0;
     rendererInServer->managerType_ = RECORDER;
     
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1323,7 +1323,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStart_006, TestSize.Leve
     rendererInServer->playerDfx_ = 0;
     rendererInServer->managerType_ = VOIP_PLAYBACK;
     
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1347,7 +1347,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStart_007, TestSize.Leve
     rendererInServer->playerDfx_ = 0;
     rendererInServer->managerType_ = EAC3_PLAYBACK;
     
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1371,7 +1371,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStart_008, TestSize.Leve
     rendererInServer->playerDfx_ = 0;
     rendererInServer->managerType_ = RECORDER;
     
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 

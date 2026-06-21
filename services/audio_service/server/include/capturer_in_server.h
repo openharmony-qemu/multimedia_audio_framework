@@ -43,7 +43,7 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
     int32_t GetSessionId(uint32_t &sessionId);
     int32_t SetMuteHint(bool mute);
-    int32_t Start();
+    int32_t Start(bool hasNoCallback);
     int32_t Pause();
     int32_t Flush();
     int32_t Stop();
@@ -88,7 +88,7 @@ private:
     int32_t InitCacheBuffer(size_t targetSize);
     bool IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
         std::shared_ptr<IStreamListener> stateListener);
-    int32_t StartInner();
+    int32_t StartInner(bool hasNoCallback);
     int64_t GetLastAudioDuration();
     void HandleOperationFlushed();
     void UpdateBufferTimeStamp(size_t readLen);

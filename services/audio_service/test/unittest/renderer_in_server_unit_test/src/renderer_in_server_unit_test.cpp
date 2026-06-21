@@ -1057,7 +1057,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_001, TestSize.Level1)
     ret = rendererInServer->EnableDualTone("Speaker");
     rendererInServer->OnStatusUpdate(OPERATION_RELEASED);
 
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1079,7 +1079,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_002, TestSize.Level1)
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_RELEASED);
 
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1101,7 +1101,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_003, TestSize.Level1)
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_PAUSED);
 
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1123,7 +1123,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_004, TestSize.Level1)
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STOPPED);
 
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1153,7 +1153,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_005, TestSize.Level1)
     rendererInServer->dualToneStream_ = nullptr;
     rendererInServer->OnStatusUpdate(OPERATION_PAUSED);
 
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1175,7 +1175,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_006, TestSize.Level1)
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(true, ret);
 }
 
@@ -1198,7 +1198,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_007, TestSize.Level1)
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
     rendererInServer->standByEnable_ = true;
 
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1221,7 +1221,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_008, TestSize.Level1)
     rendererInServer->standByEnable_ = true;
     rendererInServer->OnStatusUpdate(OPERATION_PAUSED);
 
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1244,7 +1244,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_009, TestSize.Level1)
     rendererInServer->standByEnable_ = true;
     rendererInServer->OnStatusUpdate(OPERATION_PAUSED);
 
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1267,7 +1267,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_010, TestSize.Level1)
     rendererInServer->standByEnable_ = false;
     rendererInServer->managerType_ = AUDIO_VIVID_3DA_DIRECT_PLAYBACK;
 
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1892,7 +1892,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerGetAudioTime_001, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->Init();
-    rendererInServer->Start();
+    rendererInServer->Start(false);
     uint64_t framePos = TEST_FRAMEPOS;
     uint64_t timestamp = TEST_TIMESTAMP;
     int32_t ret = rendererInServer->GetAudioTime(framePos, timestamp);
@@ -1931,7 +1931,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerGetAudioTime_003, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->Init();
-    rendererInServer->Start();
+    rendererInServer->Start(false);
     rendererInServer->resetTime_ = false;
     uint64_t framePos = TEST_FRAMEPOS;
     uint64_t timestamp = TEST_TIMESTAMP;
@@ -4373,7 +4373,7 @@ HWTEST_F(RendererInServerUnitTest, StartInner_FastBypass_001, TestSize.Level1)
     ASSERT_EQ(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_PAUSED;
-    ret = rendererInServer->Start();
+    ret = rendererInServer->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 

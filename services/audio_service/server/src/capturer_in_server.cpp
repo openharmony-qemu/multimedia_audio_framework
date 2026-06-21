@@ -781,7 +781,7 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
     return true;
 }
 
-int32_t CapturerInServer::Start()
+int32_t CapturerInServer::Start(bool hasNoCallback)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE ||
         filterConfig_.isModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
@@ -795,7 +795,7 @@ int32_t CapturerInServer::Start()
     AudioXCollie audioXCollie(
         "CapturerInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    int32_t ret = StartInner();
+    int32_t ret = StartInner(hasNoCallback);
     CapturerStage stage = ret == SUCCESS ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
     if (recorderDfx_) {
         recorderDfx_->WriteDfxStartMsg(streamIndex_, stage, processConfig_);
@@ -809,7 +809,7 @@ int32_t CapturerInServer::Start()
 }
 
 // LCOV_EXCL_START
-int32_t CapturerInServer::StartInner()
+int32_t CapturerInServer::StartInner(bool hasNoCallback)
 {
     needStart = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
@@ -845,7 +845,8 @@ int32_t CapturerInServer::StartInner()
     NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START,
+            hasNoCallback ? SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL : SESSION_OP_MSG_DEFAULT);
     }
 
     status_ = I_STATUS_STARTING;

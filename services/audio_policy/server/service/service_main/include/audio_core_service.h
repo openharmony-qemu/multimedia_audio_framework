@@ -344,13 +344,13 @@ public:
     void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
-    int32_t StartClient(uint32_t sessionId);
+    int32_t StartClient(uint32_t sessionId, SessionOperationMsg opMsg);
     int32_t StartClientForPlayback(uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+        std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, SessionOperationMsg opMsg);
     int32_t StartClientForRecord(uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+        std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, SessionOperationMsg opMsg);
     int32_t PauseClient(uint32_t sessionId);
     int32_t StandbyClient(uint32_t sessionId);
     void NotifyStandbyStatus(uint32_t sessionId, bool standbyStatus);
@@ -855,6 +855,10 @@ private:
     bool CheckCollaborativeStreamRunning();
     void UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState);
     bool ShouldUpdateOutputRoute(const AudioStreamDeviceChangeReasonExt reason);
+    void CheckFastToNormalForPlayback(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        SessionOperationMsg opMsg);
+    void CheckFastToNormalForRecord(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        SessionOperationMsg opMsg);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;

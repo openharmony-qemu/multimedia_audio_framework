@@ -197,13 +197,13 @@ int32_t IpcStreamInServer::GetAudioSessionID(uint32_t &sessionId)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::Start()
+int32_t IpcStreamInServer::Start(bool hasNoCallback)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->Start();
+        return rendererInServer_->Start(hasNoCallback);
     }
     if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
-        return capturerInServer_->Start();
+        return capturerInServer_->Start(hasNoCallback);
     }
     AUDIO_ERR_LOG("Start failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;

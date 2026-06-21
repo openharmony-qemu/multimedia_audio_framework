@@ -798,7 +798,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, StartInner_TurnOnMicIndicatorFail_001, 
     EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
     info.nextState = CAPTURER_PREPARED;
     EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
-    auto ret = capturerInServer_->StartInner();
+    auto ret = capturerInServer_->StartInner(false);
     EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
     EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
     manager.tokenIdRecordMap_.clear();
