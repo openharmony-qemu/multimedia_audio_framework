@@ -289,7 +289,6 @@ private:
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
     int32_t StartSwitchProcess(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
         std::string callingFunc);
-    bool GetFinalOffloadAllowed(bool originalAllowed);
     void SetReleaseFlagWithLock(bool releaseFlag);
     void SetReleaseFlagNoLock(bool releaseFlag);
     bool IsRestoreOrStopNeeded();
