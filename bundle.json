@@ -91,6 +91,7 @@
             "input",
             "ipc",
             "kv_store",
+            "relational_store",
             "libxml2",
             "napi",
             "os_account",

@@ -27,6 +27,13 @@ typedef void (*TestFuncs)();
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 namespace HPAE {
 const uint32_t FRAME_SIZE = 1000 ;
+// Test frame sizes (samples per channel) and quality used by the process-path fuzz cases.
+const uint32_t SMALL_FRAME_SIZE = 100;
+const uint32_t IN_FRAME_SIZE_480 = 480;
+const uint32_t OUT_FRAME_SIZE_512 = 512;
+const uint32_t IN_FRAME_SIZE_320 = 320;
+const uint32_t OUT_FRAME_SIZE_1024 = 1024;
+const int32_t DEFAULT_RESAMPLE_QUALITY = 5;
 
 std::shared_ptr<ProResampler> CreateProResampler(bool force)
 {
@@ -135,6 +142,106 @@ void AudioProresamplerErrCodeToStringFuzzTest()
     proResampler->ErrCodeToString(errCode);
 }
 
+void AudioProresamplerProcessZeroFramesFuzzTest()
+{
+    auto proResampler = CreateProResampler(true);
+    if (proResampler == nullptr) {
+        return;
+    }
+    uint32_t channels = proResampler->GetChannels();
+    std::vector<float> outBuffer(SMALL_FRAME_SIZE * channels);
+    // Process with zero input frames (null inBuffer)
+    proResampler->Process(nullptr, 0, outBuffer.data(), 100);
+    // Process with zero output frames
+    std::vector<float> inBuffer(SMALL_FRAME_SIZE * channels, 0.5f);
+    proResampler->Process(inBuffer.data(), 100, outBuffer.data(), 0);
+}
+
+void AudioProresamplerProcessMonoFuzzTest()
+{
+    AudioSamplingRate inRate = SAMPLE_RATE_48000;
+    AudioSamplingRate outRate = SAMPLE_RATE_44100;
+    auto proResampler = std::make_shared<ProResampler>(inRate, outRate, MONO, 1);
+    if (proResampler == nullptr) {
+        return;
+    }
+    uint32_t channels = proResampler->GetChannels();
+    uint32_t inFrameSize = IN_FRAME_SIZE_480;
+    uint32_t outFrameSize = OUT_FRAME_SIZE_512;
+    std::vector<float> inBuffer(inFrameSize * channels, 0.5f);
+    std::vector<float> outBuffer(outFrameSize * channels, 0.0f);
+    proResampler->Process(inBuffer.data(), inFrameSize, outBuffer.data(), outFrameSize);
+}
+
+void AudioProresamplerProcessMultiChFuzzTest()
+{
+    AudioSamplingRate inRate = SAMPLE_RATE_16000;
+    AudioSamplingRate outRate = SAMPLE_RATE_48000;
+    auto proResampler = std::make_shared<ProResampler>(inRate, outRate, CHANNEL_6, 1);
+    if (proResampler == nullptr) {
+        return;
+    }
+    uint32_t channels = proResampler->GetChannels();
+    uint32_t inFrameSize = IN_FRAME_SIZE_320;
+    uint32_t outFrameSize = OUT_FRAME_SIZE_1024;
+    std::vector<float> inBuffer(inFrameSize * channels, 0.5f);
+    std::vector<float> outBuffer(outFrameSize * channels, 0.0f);
+    proResampler->Process(inBuffer.data(), inFrameSize, outBuffer.data(), outFrameSize);
+}
+
+// === Incremental supplement ===
+// CreateProResampler hardcodes quality=1; vary quality 0..10 so every
+// QUALITY_TABLE entry / filterLength path in the C core is exercised.
+void AudioProresamplerQualityVariationFuzzTest()
+{
+    uint32_t quality = g_fuzzUtils.GetData<uint32_t>() % 11; // 0..10
+    uint32_t channels = (g_fuzzUtils.GetData<uint32_t>() % 2) + 1; // 1 or 2
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_44100, channels, quality);
+    uint32_t inFrameSize = FRAME_SIZE / 4;
+    uint32_t outFrameSize = FRAME_SIZE / 4;
+    std::vector<float> inBuffer(inFrameSize * channels, 0.5f);
+    std::vector<float> outBuffer(outFrameSize * channels, 0.0f);
+    resampler.Process(inBuffer.data(), inFrameSize, outBuffer.data(), outFrameSize);
+}
+
+// Getters not exercised by the existing GetChannelsFuzzTest.
+void AudioProresamplerRemainingGettersFuzzTest()
+{
+    auto proResampler = CreateProResampler(g_fuzzUtils.GetData<bool>());
+    if (proResampler == nullptr) {
+        return;
+    }
+    proResampler->GetInRate();
+    proResampler->GetOutRate();
+    proResampler->GetDelayFrames();
+}
+
+// Constructor validation early-return paths. Safe: state_ has a default member
+// initializer (nullptr), so zombie objects destruct/process without UB.
+void AudioProresamplerInvalidConstructorFuzzTest()
+{
+    ProResampler r1(SAMPLE_RATE_48000, SAMPLE_RATE_48000, STEREO, 5);  // inRate == outRate
+    ProResampler r2(100, SAMPLE_RATE_48000, STEREO, 5);                // inRate < MIN(8000)
+    ProResampler r3(SAMPLE_RATE_48000, 999999, STEREO, 5);             // outRate > MAX(384000)
+    ProResampler r4(SAMPLE_RATE_48000, SAMPLE_RATE_24000, 20, 5);      // channels > 16
+    ProResampler r5(SAMPLE_RATE_48000, SAMPLE_RATE_24000, STEREO, 11); // quality > 10
+    // Process on a zombie (state_ == nullptr) -> returns ALLOC_FAILED, no crash
+    std::vector<float> inBuffer(FRAME_SIZE / 4, 0.0f);
+    std::vector<float> outBuffer(FRAME_SIZE / 4, 0.0f);
+    r5.Process(inBuffer.data(), FRAME_SIZE / 4, outBuffer.data(), FRAME_SIZE / 4);
+}
+
+// UpdateRates to an invalid rate pair -> CheckRateAndChannelParam frees state_ ->
+// subsequent Process hits the state_ == nullptr (ALLOC_FAILED) branch.
+void AudioProresamplerNullStateProcessFuzzTest()
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_24000, STEREO, DEFAULT_RESAMPLE_QUALITY);
+    resampler.UpdateRates(SAMPLE_RATE_48000, SAMPLE_RATE_48000); // invalid (equal) -> state_ freed
+    std::vector<float> inBuffer(FRAME_SIZE / 4 * STEREO, 0.0f);
+    std::vector<float> outBuffer(FRAME_SIZE / 4 * STEREO, 0.0f);
+    resampler.Process(inBuffer.data(), FRAME_SIZE / 4, outBuffer.data(), FRAME_SIZE / 4); // expect ALLOC_FAILED
+}
+
 vector<TestFuncs> g_testFuncs = {
     AudioProresamplerProcessFuzzTest,
     AudioProresamplerUpdateRatesFuzzTest,
@@ -143,6 +250,13 @@ vector<TestFuncs> g_testFuncs = {
     AudioProresamplerResetFuzzTest,
     AudioProresamplerGetChannelsFuzzTest,
     AudioProresamplerErrCodeToStringFuzzTest,
+    AudioProresamplerProcessZeroFramesFuzzTest,
+    AudioProresamplerProcessMonoFuzzTest,
+    AudioProresamplerProcessMultiChFuzzTest,
+    AudioProresamplerQualityVariationFuzzTest,
+    AudioProresamplerRemainingGettersFuzzTest,
+    AudioProresamplerInvalidConstructorFuzzTest,
+    AudioProresamplerNullStateProcessFuzzTest,
 };
 } // namespace HPAE
 } // namespace AudioStandard

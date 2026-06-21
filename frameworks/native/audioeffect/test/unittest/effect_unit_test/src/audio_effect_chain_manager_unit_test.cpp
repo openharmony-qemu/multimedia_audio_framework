@@ -5291,6 +5291,209 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfoInner_RenderId_00
 }
 
 /**
+* @tc.name   : Test ReturnEffectChannelInfoInner different chain skipped
+* @tc.number : ReturnEffectChannelInfoInner_002
+* @tc.desc   : The for loop skips a session whose scene type maps to a different chain instance, so
+*              FindMaxEffectChannels is not called for it and the output channel count stays zero.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfoInner_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::shared_ptr<AudioEffectChain> targetChain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_MOVIE", true);
+    std::shared_ptr<AudioEffectChain> otherChain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_OTHER", true);
+    ASSERT_NE(targetChain, nullptr);
+    ASSERT_NE(otherChain, nullptr);
+    ASSERT_NE(targetChain, otherChain);
+
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.clear();
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_["SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER"] =
+        targetChain;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_["SCENE_OTHER_&_DEVICE_TYPE_SPEAKER"] =
+        otherChain;
+
+    SessionEffectInfo info = DEFAULT_INFO;
+    info.sceneType = "SCENE_OTHER";
+    info.channels = DEFAULT_MCH_NUM_CHANNEL;
+    EXPECT_EQ(SUCCESS, AudioEffectChainManager::GetInstance()->SessionInfoMapAdd("session_other", info));
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfoInner("SCENE_MOVIE",
+        channels, channelLayout);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(0u, channels);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ReturnEffectChannelInfoInner unmapped scene mode
+* @tc.number : ReturnEffectChannelInfoInner_003
+* @tc.desc   : When a session scene mode has no effect chain, FindMaxEffectChannels falls back to the
+*              default channel count instead of the session channel count.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfoInner_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    std::string sceneTypeAndDeviceKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+    ASSERT_NE(audioEffectChain, nullptr);
+
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.clear();
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
+
+    SessionEffectInfo info = DEFAULT_INFO;
+    info.sceneMode = "EFFECT_NONE";
+    info.channels = DEFAULT_MCH_NUM_CHANNEL;
+    EXPECT_EQ(SUCCESS, AudioEffectChainManager::GetInstance()->SessionInfoMapAdd("session_default", info));
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfoInner(sceneType,
+        channels, channelLayout);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(DEFAULT_NUM_CHANNEL, channels);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ReturnEffectChannelInfoInner null pair chain skipped
+* @tc.number : ReturnEffectChannelInfoInner_004
+* @tc.desc   : The for loop skips a session whose scene type maps to a null chain instance,
+*              exercising the non-null guard so the output channel count stays zero.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfoInner_004, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    std::string sceneTypeAndDeviceKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+    ASSERT_NE(audioEffectChain, nullptr);
+
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.clear();
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_["SCENE_OTHER_&_DEVICE_TYPE_SPEAKER"] = nullptr;
+
+    SessionEffectInfo info = DEFAULT_INFO;
+    info.sceneType = "SCENE_OTHER";
+    info.channels = DEFAULT_MCH_NUM_CHANNEL;
+    EXPECT_EQ(SUCCESS, AudioEffectChainManager::GetInstance()->SessionInfoMapAdd("session_other", info));
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfoInner(sceneType,
+        channels, channelLayout);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(0u, channels);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ReturnEffectChannelInfoInner renderId shared chain
+* @tc.number : ReturnEffectChannelInfoInner_RenderId_003
+* @tc.desc   : The nested for loop finds a session sharing the renderId keyed chain and invokes
+*              FindMaxEffectChannels to report its channel count.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfoInner_RenderId_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    uint32_t renderId = 100;
+    AudioEffectChainManager::GetInstance()->deviceType_ = deviceType;
+    EXPECT_EQ(SUCCESS, AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, deviceType, renderId));
+
+    std::string renderIdKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, deviceType, renderId);
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[renderIdKey];
+    ASSERT_NE(audioEffectChain, nullptr);
+    std::string legacyKey = sceneType + "_&_DEVICE_TYPE_SPEAKER";
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[legacyKey] = audioEffectChain;
+
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.clear();
+    SessionEffectInfo info = DEFAULT_INFO;
+    info.channels = DEFAULT_MCH_NUM_CHANNEL;
+    info.channelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
+    info.deviceType = deviceType;
+    info.renderId = renderId;
+    EXPECT_EQ(SUCCESS, AudioEffectChainManager::GetInstance()->SessionInfoMapAdd("session_render", info));
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfoInner(
+        sceneType, deviceType, renderId, channels, channelLayout);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(DEFAULT_NUM_CHANNEL, channels);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ReturnEffectChannelInfoInner renderId dangling session
+* @tc.number : ReturnEffectChannelInfoInner_RenderId_004
+* @tc.desc   : A session id present in the scene map but absent from the effect info map is skipped by
+*              the continue branch, while the valid session is still processed.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfoInner_RenderId_004, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    uint32_t renderId = 100;
+    AudioEffectChainManager::GetInstance()->deviceType_ = deviceType;
+    EXPECT_EQ(SUCCESS, AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, deviceType, renderId));
+
+    std::string renderIdKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, deviceType, renderId);
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[renderIdKey];
+    ASSERT_NE(audioEffectChain, nullptr);
+    std::string legacyKey = sceneType + "_&_DEVICE_TYPE_SPEAKER";
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[legacyKey] = audioEffectChain;
+
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.clear();
+    SessionEffectInfo info = DEFAULT_INFO;
+    info.channels = DEFAULT_MCH_NUM_CHANNEL;
+    info.channelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
+    info.deviceType = deviceType;
+    info.renderId = renderId;
+    EXPECT_EQ(SUCCESS, AudioEffectChainManager::GetInstance()->SessionInfoMapAdd("session_real", info));
+    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_[sceneType].insert("session_dangling");
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    int32_t result = AudioEffectChainManager::GetInstance()->ReturnEffectChannelInfoInner(
+        sceneType, deviceType, renderId, channels, channelLayout);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(DEFAULT_NUM_CHANNEL, channels);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
 * @tc.name   : Test CheckProcessClusterInstances with renderId - null chain
 * @tc.number : CheckProcessClusterInstances_RenderId_004
 * @tc.desc   : Test CheckProcessClusterInstances with renderId when chain exists but is null.

@@ -45,7 +45,7 @@ ohos_fuzztest("AudioEffectEnhanceFuzzTest") {
   deps = [
     "../../../frameworks/native/audioeffect:audio_effect_static",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
-    "../../../services/audio_policy:audio_policy_service",
+    "../../../services/audio_policy:audio_policy_service_static",
   ]
 
   external_deps = [
@@ -82,6 +82,7 @@ ohos_fuzztest("AudioEffectEnhanceFuzzTest") {
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "bluetooth:btframework",
   ]
   defines = []
   if (!audio_framework_feature_new_engine_flag) {

@@ -1046,6 +1046,8 @@ void HpaeOffloadRendererManager::SendRequest(Request &&request, const std::strin
 
 void HpaeOffloadRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation operation)
 {
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr,
+        "HpaeOffloadRendererManager::OnNodeStatusUpdate curNode_ is null");
     TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(), operation);
 }
 

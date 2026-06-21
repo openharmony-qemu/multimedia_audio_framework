@@ -24,6 +24,10 @@ using namespace std;
 
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
+// Mirrors the engine limit in offline_audio_effect_server_chain.cpp (PARAM_MAX_SIZE = 4096).
+// SetParam/GetParam reject payloads whose size is >= this value; keep in sync with the engine.
+const size_t PARAM_MAX_SIZE = 4096;
+const size_t PARAM_OVERFLOW_RANGE = 1024;
 
 typedef void (*TestFuncs)();
 
@@ -117,6 +121,65 @@ void OfflineAudioEffectServerChainReleaseFuzzTest()
     serverChain->Release();
 }
 
+void OfflineAudioEffectGetParamFuzzTest()
+{
+    shared_ptr<OfflineAudioEffectServerChain> serverChain = make_shared<OfflineAudioEffectServerChain>("serverChain");
+    CHECK_AND_RETURN(serverChain != nullptr);
+    std::vector<uint8_t> param;
+    serverChain->GetParam(param);
+}
+
+void OfflineAudioEffectFullLifecycleFuzzTest()
+{
+    shared_ptr<OfflineAudioEffectServerChain> serverChain = make_shared<OfflineAudioEffectServerChain>("serverChain");
+    CHECK_AND_RETURN(serverChain != nullptr);
+    serverChain->Create();
+
+    AudioStreamInfo inInfo;
+    inInfo.samplingRate = g_fuzzUtils.GetData<AudioSamplingRate>();
+    AudioStreamInfo outInfo;
+    serverChain->SetConfig(inInfo, outInfo);
+
+    std::vector<uint8_t> param;
+    param.push_back(g_fuzzUtils.GetData<uint8_t>());
+    serverChain->SetParam(param);
+
+    size_t inSize = g_fuzzUtils.GetData<size_t>();
+    std::shared_ptr<AudioSharedMemory> bufferIn = AudioSharedMemory::CreateFromLocal(inSize, "bufIn");
+    size_t outSize = g_fuzzUtils.GetData<size_t>();
+    std::shared_ptr<AudioSharedMemory> bufferOut = AudioSharedMemory::CreateFromLocal(outSize, "bufOut");
+    serverChain->Prepare(bufferIn, bufferOut);
+
+    serverChain->inBufferSize_ = inSize;
+    serverChain->outBufferSize_ = outSize;
+    serverChain->Process(1, 1);
+
+    std::vector<uint8_t> outParam;
+    serverChain->GetParam(outParam);
+
+    serverChain->Release();
+}
+
+// Exercise the PARAM_MAX_SIZE (4096) boundary paths that the size-1 / empty param tests miss:
+// SetParam oversized -> rejection (214-215); GetParam non-empty -> memcpy branch (234-237);
+// GetParam oversized -> rejection (230-231).
+void ParamBoundaryFuzzTest()
+{
+    shared_ptr<OfflineAudioEffectServerChain> serverChain = make_shared<OfflineAudioEffectServerChain>("serverChain");
+    CHECK_AND_RETURN(serverChain != nullptr);
+
+    size_t bigSize = PARAM_MAX_SIZE + g_fuzzUtils.GetData<uint32_t>() % PARAM_OVERFLOW_RANGE; // >= PARAM_MAX_SIZE
+    std::vector<uint8_t> bigParam(bigSize, g_fuzzUtils.GetData<uint8_t>());
+    serverChain->SetParam(bigParam); // rejected: size >= PARAM_MAX_SIZE (lines 214-215)
+
+    size_t smallSize = g_fuzzUtils.GetData<uint32_t>() % (PARAM_MAX_SIZE - 1) + 1; // 1..4095, always non-empty
+    std::vector<uint8_t> smallParam(smallSize, g_fuzzUtils.GetData<uint8_t>());
+    serverChain->GetParam(smallParam); // memcpy branch (lines 234-237), then controller-null return
+
+    std::vector<uint8_t> hugeParam(PARAM_MAX_SIZE + 1, 0);
+    serverChain->GetParam(hugeParam); // rejected: size >= PARAM_MAX_SIZE (lines 230-231)
+}
+
 vector<TestFuncs> g_testFuncs = {
     OfflineAudioEffectServerChainInitDumpFuzzTest,
     OfflineAudioEffectServerChainCreateFuzzTest,
@@ -127,6 +190,9 @@ vector<TestFuncs> g_testFuncs = {
     OfflineAudioEffectServerChainProcessFuzzTest,
     OfflineAudioEffectServerChainGetOfflineAudioEffectChainsFuzzTest,
     OfflineAudioEffectServerChainReleaseFuzzTest,
+    OfflineAudioEffectGetParamFuzzTest,
+    OfflineAudioEffectFullLifecycleFuzzTest,
+    ParamBoundaryFuzzTest,
 };
 
 } // namespace AudioStandard

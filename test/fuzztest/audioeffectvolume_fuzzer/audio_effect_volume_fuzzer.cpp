@@ -51,6 +51,8 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+// Modulus used to clamp a fuzz int into a valid stream-category range.
+const int32_t CATEGORY_RANGE = 20;
 
 typedef void (*TestFuncs)();
 
@@ -107,9 +109,99 @@ void StreamVolumeDeleteFuzzTest()
     audioEffectVolume->StreamVolumeDelete(sessionID);
 }
 
+void GetStreamVolumeFuzzTest()
+{
+    std::string sessionID = "456";
+    float streamVolume = GetData<float>();
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    if (audioEffectVolume == nullptr) {
+        return;
+    }
+    audioEffectVolume->SetStreamVolume(sessionID, streamVolume);
+    audioEffectVolume->GetStreamVolume(sessionID);
+    audioEffectVolume->StreamVolumeDelete(sessionID);
+}
+
+void SystemVolumeFuzzTest()
+{
+    int32_t category = GetData<int32_t>() % CATEGORY_RANGE;
+    float volume = GetData<float>();
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    if (audioEffectVolume == nullptr) {
+        return;
+    }
+    audioEffectVolume->SetSystemVolume(category, volume);
+    audioEffectVolume->GetSystemVolume(category);
+}
+
+void DspVolumeFuzzTest()
+{
+    float volume = GetData<float>();
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    if (audioEffectVolume == nullptr) {
+        return;
+    }
+    audioEffectVolume->SetDspVolume(volume);
+    audioEffectVolume->GetDspVolume();
+}
+
+void VolumeDeleteAndGetFuzzTest()
+{
+    std::string sessionID = "789";
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    if (audioEffectVolume == nullptr) {
+        return;
+    }
+    audioEffectVolume->StreamVolumeDelete(sessionID);
+    audioEffectVolume->GetStreamVolume(sessionID);
+}
+
+// Query a system-volume type that was never Set -> exercises GetSystemVolume's
+// not-found branch (return SystemVolumeMap_[STREAM_MUSIC]).
+void SystemVolumeNotFoundFuzzTest()
+{
+    int32_t category = GetData<int32_t>(); // un-clamped: very likely absent from the map
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    if (audioEffectVolume == nullptr) {
+        return;
+    }
+    audioEffectVolume->GetSystemVolume(category); // not-found -> STREAM_MUSIC fallback
+    float volume = GetData<float>();
+    audioEffectVolume->SetSystemVolume(category, volume);
+    audioEffectVolume->GetSystemVolume(category); // now found
+}
+
+// Fuzz-driven sessionID across the full Set/Get/Delete cycle, hitting every branch:
+// SetStreamVolume (insert), GetStreamVolume found, StreamVolumeDelete erase,
+// GetStreamVolume not-found, StreamVolumeDelete not-found.
+void FuzzedSessionVolumeFuzzTest()
+{
+    uint32_t len = GetData<uint32_t>() % 16; // 0..15 chars
+    std::string sessionID;
+    for (uint32_t i = 0; i < len; i++) {
+        sessionID.push_back(static_cast<char>(GetData<uint8_t>()));
+    }
+    float volume = GetData<float>();
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    if (audioEffectVolume == nullptr) {
+        return;
+    }
+    audioEffectVolume->SetStreamVolume(sessionID, volume); // insert (line 69)
+    audioEffectVolume->GetStreamVolume(sessionID);         // found (line 78)
+    audioEffectVolume->StreamVolumeDelete(sessionID);      // erase (line 88)
+    audioEffectVolume->GetStreamVolume(sessionID);         // not-found (line 75-76)
+    audioEffectVolume->StreamVolumeDelete(sessionID);      // not-found (line 85-86)
+}
+
 TestFuncs g_testFuncs[] = {
     SetStreamVolumeFuzzTest,
     StreamVolumeDeleteFuzzTest,
+    GetStreamVolumeFuzzTest,
+    SystemVolumeFuzzTest,
+    DspVolumeFuzzTest,
+    VolumeDeleteAndGetFuzzTest,
+    SystemVolumeNotFoundFuzzTest,
+    FuzzedSessionVolumeFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)
