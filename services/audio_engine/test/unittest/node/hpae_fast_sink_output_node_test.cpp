@@ -790,16 +790,20 @@ HWTEST_F(HpaeFastSinkOutputNodeTest, zeroVolumeCheck_Loopback_001, TestSize.Leve
  * @tc.name  : zeroVolumeCheck_BluetoothA2dp_001
  * @tc.type  : FUNC
  * @tc.number: HpaeFastSinkOutputNodeTest_051
- * @tc.desc  : Test ZeroVolumeCheck skips for Bluetooth A2DP device
+ * @tc.desc  : Test ZeroVolumeCheck skips for Bluetooth A2DP sink (deviceClass == "a2dp")
  */
 HWTEST_F(HpaeFastSinkOutputNodeTest, zeroVolumeCheck_BluetoothA2dp_001, TestSize.Level0)
 {
-    fastNode_->needCheckZeroVolume_ = true;
-    fastNode_->isExistLoopback_ = false;
-    fastNode_->currentOutputDevice_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    fastNode_->ZeroVolumeCheck(0);
-    // INACTIVE, unchanged due to A2DP early return
-    EXPECT_EQ(fastNode_->zeroVolumeState_, HpaeFastSinkOutputNode::ZeroVolumeState::INACTIVE);
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.deviceClass = "a2dp_fast";
+    auto a2dpNode = std::make_shared<HpaeFastSinkOutputNode>(nodeInfo);
+    auto a2dpMockSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
+    a2dpNode->audioRendererSink_ = a2dpMockSink;
+    a2dpNode->needCheckZeroVolume_ = true;
+    a2dpNode->isExistLoopback_ = false;
+    a2dpNode->ZeroVolumeCheck(0);
+    EXPECT_EQ(a2dpNode->zeroVolumeState_, HpaeFastSinkOutputNode::ZeroVolumeState::INACTIVE);
 }
 
 /**
