@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <nlohmann/json.hpp>
 
 #include "ability_connect_callback_interface.h"
@@ -29,8 +30,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string BUNDLE_NAME = "com.hmos.mediacontroller";
-const std::string ABILITY_NAME = "DialogExtension";
+static constexpr std::string_view BUNDLE_NAME = "com.hmos.mediacontroller";
+static constexpr std::string_view ABILITY_NAME = "DialogExtension";
 const uint32_t PARAM_SIZE = 4;
 const uint32_t ORDER_SIZE = 2;
 class AudioPrivacyUIExtConnection : public OHOS::AAFwk::AbilityConnectionStub {
