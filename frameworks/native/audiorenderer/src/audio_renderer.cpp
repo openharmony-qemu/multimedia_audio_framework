@@ -1909,6 +1909,7 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume, bool setVo
         if (currentState == RUNNING && !noNeedActive) {
             AudioInterrupt audioInterrupt = audioInterrupt_;
             AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume,  volume=%{public}f", volume);
+            audioStream_->ResetNotifyStreamSilentChangeFlag();
             int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt, 0, true);
             CHECK_AND_RETURN_LOG(ret == 0, "ActivateAudioInterrupt Failed at SetVolume");
         }
