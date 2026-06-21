@@ -46,7 +46,7 @@ constexpr uint8_t MAX_ARRAY_SIZE_MEDIUM = 10;
 constexpr uint8_t ENUM_IOPERATION_COUNT = 14;
 constexpr uint8_t ENUM_HPAESESSIONSTATE_COUNT = 9;
 constexpr uint8_t ENUM_HPAESTREAMCLASSTYPE_COUNT = 3;
-constexpr uint8_t ENUM_MOVESessionType_COUNT = 4;
+constexpr uint8_t ENUM_MOVESESSIONTYPE_COUNT = 4;
 constexpr uint8_t ENUM_HPAEMSGCODE_COUNT = 12;
 constexpr uint8_t ENUM_SOURCETYPE_COUNT = 20; // Includes -1 offset (SOURCE_TYPE_MAX = 19)
 constexpr uint8_t ENUM_HPAEPROCESSORTYPE_COUNT = 28; // Includes valid range 0-26
@@ -560,7 +560,7 @@ void HandleMoveAllSourceOutputsFuzzTest(FuzzedDataProvider& fdp)
     }
 
     MoveSessionType moveType =
-        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESessionType_COUNT);
+        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESESSIONTYPE_COUNT);
 
     if (hpaeManager->IsInit()) {
         (void)hpaeManager->HandleMoveAllSourceOutputs(moveInfos, sourceName, moveType);
@@ -578,7 +578,7 @@ void HandleMoveSessionFailedFuzzTest(FuzzedDataProvider& fdp)
         static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     MoveSessionType moveType =
-        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESessionType_COUNT);
+        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESESSIONTYPE_COUNT);
 
     std::string name;
     size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
@@ -911,7 +911,7 @@ void HandleMoveAllSinkInputsFuzzTest(FuzzedDataProvider& fdp)
     }
 
     MoveSessionType moveType =
-        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESessionType_COUNT);
+        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESESSIONTYPE_COUNT);
 
     if (hpaeManager->IsInit()) {
         (void)hpaeManager->HandleMoveAllSinkInputs(sinkInputs, sinkName, moveType);
@@ -1033,7 +1033,7 @@ void SendRequestFuzzTest(FuzzedDataProvider& fdp)
     }
 
     if (hpaeManager->IsInit()) {
-        (void)hpaeManager->SendRequest([]{}, __func__);
+        (void)hpaeManager->SendRequest([] {}, __func__);
     }
 }
 

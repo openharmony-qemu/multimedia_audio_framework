@@ -42,6 +42,12 @@ constexpr uint32_t DEFAULT_CHANNEL_COUNT = 2;
 constexpr size_t MIN_FUZZ_INPUT_SIZE = 10;
 // Modulus for the fuzzed library-entry count (0..3 entries) in LibraryAndTimeoutFuzzTest.
 constexpr uint32_t LIB_ENTRY_COUNT_RANGE = 4;
+// Max fuzz-string lengths (chars) for names passed to the SessionEffectManager APIs.
+constexpr uint32_t EFFECT_NAME_MAX_LEN = 32;
+constexpr uint32_t LIBRARY_NAME_MAX_LEN = 16;
+constexpr uint32_t SHORT_NAME_MAX_LEN = 8;
+// Number of sessions bound in ReuseWithDifferentSessionsFuzzTest (session-preemption path).
+constexpr uint32_t REUSE_TEST_SESSION_COUNT = 3;
 
 template <typename T>
 T GetData()
@@ -97,7 +103,7 @@ void TryReuseEmptyFuzzTest()
 {
     auto manager = std::make_shared<HpaeManager>();
     SessionEffectManager sem(*manager);
-    std::string effectName = GetFuzzString(32);
+    std::string effectName = GetFuzzString(EFFECT_NAME_MAX_LEN);
     uint32_t sessionId = GetData<uint32_t>();
     AudioEffectConfig config = GetFuzzConfig();
     std::shared_ptr<EffectInstance> outInstance;
@@ -110,7 +116,7 @@ void TryReuseWithBoundFuzzTest()
 {
     auto manager = std::make_shared<HpaeManager>();
     SessionEffectManager sem(*manager);
-    std::string effectName = GetFuzzString(32);
+    std::string effectName = GetFuzzString(EFFECT_NAME_MAX_LEN);
     uint32_t sessionId = GetData<uint32_t>();
     AudioEffectConfig config = GetFuzzConfig();
     std::shared_ptr<EffectInstance> outInstance;
@@ -138,7 +144,7 @@ void ReuseWithDifferentSessionsFuzzTest()
     SessionEffectManager sem(*manager);
     std::string effectName = "test_effect";
     AudioEffectConfig config = GetFuzzConfig();
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < REUSE_TEST_SESSION_COUNT; i++) {
         uint32_t sessionId = GetData<uint32_t>();
         std::shared_ptr<EffectInstance> outInstance;
         sem.BindSessionEffect(sessionId, effectName, config, outInstance);
@@ -151,7 +157,7 @@ void FullLifecycleFuzzTest()
 {
     auto manager = std::make_shared<HpaeManager>();
     SessionEffectManager sem(*manager);
-    std::string effectName = GetFuzzString(32);
+    std::string effectName = GetFuzzString(EFFECT_NAME_MAX_LEN);
     uint32_t sessionId = GetData<uint32_t>();
     AudioEffectConfig config = GetFuzzConfig();
     // Bind effect
@@ -174,7 +180,7 @@ void PendingAndDestroyFuzzTest()
 {
     auto manager = std::make_shared<HpaeManager>();
     SessionEffectManager sem(*manager);
-    std::string effectName = GetFuzzString(32);
+    std::string effectName = GetFuzzString(EFFECT_NAME_MAX_LEN);
     uint32_t sessionId = GetData<uint32_t>();
     AudioEffectConfig config = GetFuzzConfig();
     std::shared_ptr<EffectInstance> outInstance;
@@ -188,7 +194,7 @@ void PendingAndDestroyFuzzTest()
     (void)sem.FlushPendingEffectInstance(effectName); // PENDING -> Flush (244-246)
 
     // not-found branches:
-    std::string unknown = GetFuzzString(8);
+    std::string unknown = GetFuzzString(SHORT_NAME_MAX_LEN);
     sem.OnSessionDestroyed(GetData<uint32_t>());      // instance not found (186-188)
     (void)sem.GetPendingEffectInstance(unknown);      // not in map (229-231)
     (void)sem.FlushPendingEffectInstance(unknown);    // not in map (241-243)
@@ -209,14 +215,14 @@ void LibraryAndTimeoutFuzzTest()
     uint32_t n = GetData<uint32_t>() % LIB_ENTRY_COUNT_RANGE; // 0..3 entries
     for (uint32_t i = 0; i < n; i++) {
         auto entry = std::make_shared<AudioEffectLibEntry>();
-        entry->libraryName = GetFuzzString(16);
+        entry->libraryName = GetFuzzString(LIBRARY_NAME_MAX_LEN);
         libEntries.push_back(entry);
     }
     sem.InitEffectLibraries(libEntries);              // populate effectLibMap_ (288-291)
     if (!libEntries.empty()) {
         (void)sem.GetEffectLibEntry(libEntries[0]->libraryName); // found (298)
     }
-    (void)sem.GetEffectLibEntry(GetFuzzString(8));    // not found (300)
+    (void)sem.GetEffectLibEntry(GetFuzzString(SHORT_NAME_MAX_LEN));    // not found (300)
     sem.SetAudioEffectLibraryForTest(nullptr);        // inline test setter
     sem.Deinit();
 }

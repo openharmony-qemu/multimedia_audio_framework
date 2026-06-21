@@ -199,7 +199,6 @@ void AudioProresamplerProcessMultiChFuzzTest()
 }
 
 // === Incremental supplement ===
-// CreateProResampler hardcodes quality=1; vary quality 0..10 so every
 // QUALITY_TABLE entry / filterLength path in the C core is exercised.
 void AudioProresamplerQualityVariationFuzzTest()
 {

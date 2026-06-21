@@ -161,7 +161,6 @@ void OfflineAudioEffectFullLifecycleFuzzTest()
 }
 
 // Exercise the PARAM_MAX_SIZE (4096) boundary paths that the size-1 / empty param tests miss:
-// SetParam oversized -> rejection (214-215); GetParam non-empty -> memcpy branch (234-237);
 // GetParam oversized -> rejection (230-231).
 void ParamBoundaryFuzzTest()
 {
