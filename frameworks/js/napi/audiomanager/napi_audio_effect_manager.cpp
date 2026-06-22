@@ -30,36 +30,6 @@ using namespace std;
 using namespace HiviewDFX;
 static __thread napi_ref g_effectMgrConstructor = nullptr;
 
-static napi_value CreatePromiseError(napi_env env, int32_t audioErrCode, const std::string &customMessage = "")
-{
-    int32_t napiErrCode = audioErrCode;
-    std::string message = NapiAudioError::GetMessageByCode(napiErrCode);
-    if (!customMessage.empty()) {
-        message = customMessage;
-    }
-
-    napi_value messageValue = nullptr;
-    napi_create_string_utf8(env, message.c_str(), NAPI_AUTO_LENGTH, &messageValue);
-    napi_value errorValue = nullptr;
-    napi_create_error(env, nullptr, messageValue, &errorValue);
-    napi_value codeValue = nullptr;
-    napi_create_int32(env, napiErrCode, &codeValue);
-    napi_set_named_property(env, errorValue, "code", codeValue);
-    return errorValue;
-}
-
-static napi_value CreateEffectOperationErrorValue(napi_env env, int32_t ret, const char *operation)
-{
-    if (ret == ERR_NOT_SUPPORTED) {
-        AUDIO_WARNING_LOG("%{public}s not supported", operation);
-    } else {
-        AUDIO_ERR_LOG("%{public}s failed: %{public}d", operation, ret);
-    }
-
-    return CreatePromiseError(env, ret,
-        ret == ERR_NOT_SUPPORTED ? "Effect is not supported in this device" : "");
-}
-
 NapiAudioEffectMgr::NapiAudioEffectMgr()
     : env_(nullptr), audioEffectMngr_(nullptr) {}
 
@@ -312,7 +282,7 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectEnabled(napi_env env, nap
     };
     context->GetCbInfo(env, info, inputParser);
     if (context->status != napi_ok) {
-        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -330,7 +300,11 @@ napi_value NapiAudioEffectMgr::UpdateAudioSeparationEffectEnabled(napi_env env,
         context->intValue = napiEffectMgr->audioEffectMngr_->SetAudioSeparationEffectEnabled(
             context->enabled, context->uid, context->streamId);
         if (context->intValue != SUCCESS) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            if (context->intValue == ERR_NOT_SUPPORTED) {
+                context->SignError(NAPI_ERR_UNSUPPORTED);
+            } else {
+                context->SignError(NAPI_ERR_SYSTEM);
+            }
         }
     };
 
@@ -379,7 +353,7 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectVolume(napi_env env, napi
     };
     context->GetCbInfo(env, info, inputParser);
     if (context->status != napi_ok) {
-        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -397,7 +371,11 @@ napi_value NapiAudioEffectMgr::UpdateAudioSeparationEffectVolume(napi_env env,
         context->intValue = napiEffectMgr->audioEffectMngr_->SetAudioSeparationEffectVolume(
             context->volumeType, context->volume);
         if (context->intValue != SUCCESS) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            if (context->intValue == ERR_NOT_SUPPORTED) {
+                context->SignError(NAPI_ERR_UNSUPPORTED);
+            } else {
+                context->SignError(NAPI_ERR_SYSTEM);
+            }
         }
     };
 
