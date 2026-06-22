@@ -463,9 +463,7 @@ int64_t HpaeFastSourceInputNode::GetPredictNextWriteTime(uint64_t posInFrame)
 {
     Trace trace("HpaeFastSourceInputNode::GetPredictNextWriteTime");
     uint64_t handleSpanCnt = posInFrame / srcSpanSizeInframe_;
-    uint32_t startPeriodCnt = TIMESTAMP_SYNC_CNT_AT_START;
-    uint32_t oneBigPeriodCnt = TIMESTAMP_SYNC_CNT_INTERVAL;
-    if (handleSpanCnt < startPeriodCnt || handleSpanCnt % oneBigPeriodCnt == 0) {
+    if (handleSpanCnt < TIMESTAMP_SYNC_CNT_AT_START || handleSpanCnt % TIMESTAMP_SYNC_CNT_INTERVAL == 0) {
         updateThreadCV_.notify_all();
     }
     uint64_t writeFrame = 0;
