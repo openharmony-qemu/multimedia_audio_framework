@@ -2115,7 +2115,6 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
     }
     if (focusEntry.hintType == INTERRUPT_HINT_STOP || focusEntry.hintType == INTERRUPT_HINT_PAUSE) {
         if (CheckAudioConcurrencyForInterrupt(iterActive->first, incomingInterrupt)) {
-            AUDIO_DEBUG_LOG("Audio concurrency detected, skip interrupt");
             return;
         }
     }
