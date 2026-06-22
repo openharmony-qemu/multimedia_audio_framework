@@ -2086,15 +2086,22 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
     }
 }
 
+bool AudioInterruptService::CheckAudioConcurrencyForInterrupt(const AudioInterrupt &activeInterrupt,
+    const AudioInterrupt &incomingInterrupt)
+{
+    SourceType existSourceType = activeInterrupt.audioFocusType.sourceType;
+    SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
+    std::vector<SourceType> existConcurrentSources = activeInterrupt.currencySources.sourcesTypes;
+    std::vector<SourceType> incomingConcurrentSources = incomingInterrupt.currencySources.sourcesTypes;
+
+    return IsAudioSourceConcurrency(existSourceType, incomingSourceType,
+        existConcurrentSources, incomingConcurrentSources);
+}
+
 void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
     &iterActive, AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
     bool &removeFocusInfo, InterruptEventInternal &interruptEvent)
 {
-    SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
-    std::vector<SourceType> incomingConcurrentSources = incomingInterrupt.currencySources.sourcesTypes;
-    SourceType existSourceType = (iterActive->first).audioFocusType.sourceType;
-    std::vector<SourceType> existConcurrentSources = (iterActive->first).currencySources.sourcesTypes;
-
     // if the callerPid has an active audio session, the hint type need to be updated.
     if (IsCanMixInterrupt(incomingInterrupt, iterActive->first)) {
         UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
@@ -2106,12 +2113,14 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
         interruptEvent.hintType = focusEntry.hintType;
         return;
     }
+    if (focusEntry.hintType == INTERRUPT_HINT_STOP || focusEntry.hintType == INTERRUPT_HINT_PAUSE) {
+        if (CheckAudioConcurrencyForInterrupt(iterActive->first, incomingInterrupt)) {
+            AUDIO_DEBUG_LOG("Audio concurrency detected, skip interrupt");
+            return;
+        }
+    }
     switch (focusEntry.hintType) {
         case INTERRUPT_HINT_STOP:
-            if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
-                incomingConcurrentSources)) {
-                break;
-            }
             interruptEvent.hintType = focusEntry.hintType;
             if (IsGameAvoidCallbackCase(iterActive->first)) {
                 interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
@@ -2122,10 +2131,6 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
             removeFocusInfo = true;
             break;
         case INTERRUPT_HINT_PAUSE:
-            if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
-                incomingConcurrentSources)) {
-                break;
-            }
             if (iterActive->second == ACTIVE || iterActive->second == DUCK) {
                 iterActive->second = PAUSE;
                 interruptEvent.hintType = focusEntry.hintType;
