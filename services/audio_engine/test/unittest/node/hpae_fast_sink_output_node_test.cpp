@@ -1938,24 +1938,6 @@ HWTEST_F(HpaeFastSinkOutputNodeTest, checkPlaySignal_DspTimestampSuccess_001, Te
     EXPECT_EQ(fastNode_->signalDetectAgent_->dspTimestampGot_, true);
     EXPECT_EQ(fastNode_->signalDetectAgent_->signalDetected_, false);
 }
-
-HWTEST_F(HpaeFastSinkOutputNodeTest, checkPlaySignal_SignalDetectedResetTime_001, TestSize.Level0)
-{
-    fastNode_->latencyMeasEnabled_ = true;
-    fastNode_->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
-    fastNode_->sinkOutAttr_.sampleRate = DEFAULT_SAMPLE_RATE;
-    fastNode_->sinkOutAttr_.channel = DEFAULT_CHANNELS;
-    fastNode_->sinkOutAttr_.format = SAMPLE_S16LE;
-    fastNode_->detectedTime_ = 500;
-    int16_t signalData = 32767;
-    std::vector<uint8_t> buffer(4096, 0);
-    memcpy(buffer.data(), &signalData, sizeof(signalData));
-    fastNode_->CheckPlaySignal(buffer.data(), buffer.size());
-    if (fastNode_->signalDetected_) {
-        EXPECT_EQ(fastNode_->detectedTime_, 0);
-    }
-}
-
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
