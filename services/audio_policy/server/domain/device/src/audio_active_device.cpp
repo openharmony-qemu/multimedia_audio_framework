@@ -341,10 +341,11 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
         desc->newDeviceDescs_.front()->hasStreamRunning_ = desc->IsRunning() ? true :
             desc->newDeviceDescs_.front()->hasStreamRunning_;
         AUDIO_INFO_LOG("session: %{public}d, calleruid: %{public}d, appuid: %{public}d " \
-            "usage:%{public}d devices:%{public}s, status:%{public}d",
+            "usage:%{public}d devices:%{public}s, status:%{public}d, privacyType:%{public}d",
             desc->sessionId_, desc->callerUid_, desc->appInfo_.appUid,
             desc->rendererInfo_.streamUsage, desc->GetNewDevicesInfo().c_str(),
-            desc->newDeviceDescs_.front()->hasStreamRunning_);
+            desc->newDeviceDescs_.front()->hasStreamRunning_,
+            desc->newDeviceDescs_.front()->GetDevicePrivacyType());
         UpdateVolumeTypeDeviceMap(desc);
         UpdateStreamUsageDeviceMap(desc);
 
