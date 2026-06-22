@@ -5738,7 +5738,7 @@ int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, const std::s
     } else {
         return SUCCESS;
     }
-    (void)audioVolumeManager_StartNearlinkKaraokeTransition(enable);
+    (void)audioVolumeManager_.StartNearlinkKaraokeTransition(enable);
     return SUCCESS;
 }
 
