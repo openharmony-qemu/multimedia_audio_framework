@@ -4269,7 +4269,9 @@ void AudioAdapterManager::AdjustVolumeForSpecialDevice(std::shared_ptr<AudioDevi
         volumeDb = isMuted ? 0.0f : 0.63957f; // 0.63957 = -4dB
         return;
     } else if (device->deviceType_ == DEVICE_TYPE_NEARLINK) {
-        if (volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) {
+        if (AudioVolumeManager::GetInstance().IsNearlinkKaraokeVolumeManaged(volumeType)) {
+            volumeDb = volumeDb * 0.63957f;
+        } else if (volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) {
             isMuted = isAbsVolumeMuteNearlink_.load();
             volumeDb = isMuted ? 0.0f : 0.63957f;
         } else if (volumeType == STREAM_VOICE_CALL) {
