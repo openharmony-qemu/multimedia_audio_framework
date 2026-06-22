@@ -150,6 +150,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, initAndDeInit_001, TestSize.Level1)
 {
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->IsInit(), true);
 
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);
@@ -214,6 +216,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, createStreamWithInvalidFrameLen_001, Tes
 {
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
 
     HpaeStreamInfo streamInfo;
     streamInfo.channels = STEREO;
@@ -237,6 +241,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, createStreamWithInvalidFrameLen_001, Tes
  */
 HWTEST_F(HpaeDirectRendererManagerTest, createAndDestroyStream_001, TestSize.Level1)
 {
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
 
@@ -287,6 +293,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, releaseStream_001, TestSize.Level1)
 {
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
 
     HpaeStreamInfo streamInfo;
     streamInfo.channels = STEREO;
@@ -319,6 +327,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, releaseStream_001, TestSize.Level1)
  */
 HWTEST_F(HpaeDirectRendererManagerTest, startPauseStopStream_001, TestSize.Level1)
 {
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
 
@@ -604,6 +614,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, moveStream_001, TestSize.Level1)
 {
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
 
     // Move non-existent session, should trigger MOVE_SESSION_FAILED callback
     directManager_->MoveStream(99999, "valid_sink_name");
@@ -623,6 +635,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, moveStream_001, TestSize.Level1)
  */
 HWTEST_F(HpaeDirectRendererManagerTest, moveStream_002, TestSize.Level1)
 {
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
 
@@ -712,6 +726,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, dumpSinkInfo_002, TestSize.Level1)
 {
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->DumpSinkInfo(), SUCCESS);
     WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);
@@ -755,6 +771,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, setOffloadPolicy_001, TestSize.Level1)
  */
 HWTEST_F(HpaeDirectRendererManagerTest, registerWriteCallback_001, TestSize.Level1)
 {
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
 
@@ -814,6 +832,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, onNotifyQueue_001, TestSize.Level0)
  */
 HWTEST_F(HpaeDirectRendererManagerTest, onNotifyQueue_002, TestSize.Level1)
 {
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->IsInit(), true);
@@ -877,6 +897,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, voipDirectInit_001, TestSize.Level1)
     auto voipManager = std::make_shared<HpaeDirectRendererManager>(sinkInfo);
     EXPECT_EQ(voipManager->Init(), SUCCESS);
     WaitForMsgProcessing(voipManager);
+    EXPECT_EQ(voipManager->Init(), SUCCESS);
+    WaitForMsgProcessing(voipManager);
     EXPECT_EQ(voipManager->IsInit(), true);
     EXPECT_EQ(voipManager->DeInit(), SUCCESS);
     WaitForMsgProcessing(voipManager);
@@ -892,6 +914,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, reloadRenderManager_001, TestSize.Level1
 {
     HpaeSinkInfo sinkInfo = GetDirectSinkInfo();
     EXPECT_EQ(directManager_->ReloadRenderManager(sinkInfo, true), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->IsInit(), true);
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);
@@ -909,6 +933,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, destructor_001, TestSize.Level1)
     {
         HpaeSinkInfo sinkInfo = GetDirectSinkInfo();
         auto manager = std::make_shared<HpaeDirectRendererManager>(sinkInfo);
+        EXPECT_EQ(manager->Init(), SUCCESS);
+        WaitForMsgProcessing(manager);
         EXPECT_EQ(manager->Init(), SUCCESS);
         WaitForMsgProcessing(manager);
         EXPECT_EQ(manager->IsInit(), true);
@@ -1849,6 +1875,8 @@ HWTEST_F(HpaeDirectRendererManagerTest, voipStreamLifecycle_001, TestSize.Level1
  */
 HWTEST_F(HpaeDirectRendererManagerTest, startStopLifecycle_001, TestSize.Level1)
 {
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
 
