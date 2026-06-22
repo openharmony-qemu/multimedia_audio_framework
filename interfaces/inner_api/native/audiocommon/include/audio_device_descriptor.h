@@ -260,6 +260,7 @@ public:
     bool isSupportRemoteMultichannel_ = true;
     uint32_t deviceTokenId_ = 0;
     bool isBTSupportWearDetectionEnable_ = false;
+    bool isSupportMultiZone_ = false;
 
     uint32_t glassesWearCount_ = 0;
     static constexpr int64_t TEN_YEARS_MS = 10LL*365*24*3600*1000;

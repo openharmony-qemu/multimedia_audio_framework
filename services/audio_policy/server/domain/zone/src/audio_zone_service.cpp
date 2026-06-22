@@ -214,6 +214,16 @@ int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
     }
 
     for (auto device : devices) {
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+        if (device && IsSystemVolumeProxyEnable(zoneId, device->deviceType_)) {
+            AUDIO_INFO_LOG("init volume for proxy, deviceType %{public}d", device->deviceType_);
+            audioVolumeManager_.InitAudioZoneVolume(zoneId, device);
+        } else {
+            AUDIO_WARNING_LOG("no available volume proxy, skip");
+        }
+#endif
+        CHECK_AND_CONTINUE_LOG(device != nullptr && !device->isSupportMultiZone_,
+            "support multi zone, no need move from global");
         RemoveDeviceFromGlobal(device);
     }
     return SUCCESS;
@@ -249,6 +259,8 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
     }
     // maybe whether or not add unbind devices to global is specified by caller
     for (auto it : toGlobalDevices) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr && !it->isSupportMultiZone_,
+            "support multi zone, no need move to global");
         AudioDeviceStatus::GetInstance().AddDeviceBackToGlobalOnly(it);
     }
     return SUCCESS;
