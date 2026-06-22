@@ -740,7 +740,7 @@ int32_t AudioVolumeManager::StepNearlinkKaraokeTransition()
         SetSharedVolume(STREAM_MUSIC, DEVICE_TYPE_NEARLINK, {false, volumeDegree, 0});
         SetNearlinkTransitionCurrentFwkVolume(nextFwkVolume);
     }
-    return KRRAOKE_TRANSITION_CONTINUE;
+    return KARAOKE_TRANSITION_CONTINUE;
 }
 
 int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, const VolumeScale &volume,
