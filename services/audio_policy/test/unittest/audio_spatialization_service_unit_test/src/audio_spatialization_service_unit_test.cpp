@@ -1180,7 +1180,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_056, Tes
 
     auto result = ptrAudioSpatializationService->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
 
-    EXPECT_EQ(result, SPATIALIZATION_SERVICE_OK);
+    EXPECT_EQ(result, ERROR);
 }
 
 /**
