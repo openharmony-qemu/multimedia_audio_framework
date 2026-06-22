@@ -1560,10 +1560,12 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, DeviceFilterByUsageInner_001, TestSize
     std::shared_ptr<AudioDeviceDescriptor> desc1 = std::make_shared<AudioDeviceDescriptor>();
     desc1->deviceType_ = DEVICE_TYPE_SPEAKER;
     desc1->networkId_ = "RemoteDevice";
+    desc1->deviceRole_ = OUTPUT_DEVICE;
     descs.push_back(desc1);
     std::shared_ptr<AudioDeviceDescriptor> desc2 = std::make_shared<AudioDeviceDescriptor>();
     desc2->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
     desc2->networkId_ = "LocalDevice";
+    desc2->deviceRole_ = OUTPUT_DEVICE;
     descs.push_back(desc2);
     auto filterDevices = server->audioPolicyService_.DeviceFilterByUsageInner(usage, descs);
     EXPECT_EQ(filterDevices.size(), descs.size());
