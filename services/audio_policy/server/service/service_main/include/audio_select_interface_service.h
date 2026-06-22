@@ -105,6 +105,16 @@ private:
     static void WriteDesignateAudioCaptureDeviceEvent(SourceType sourceType, int32_t deviceType,
         bool isNormalSelection);
     int32_t RefreshVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void HandleNegtiveBtEnhancedRouting(DeviceType deviceType);
+    void HandleActiveBtEnhancedRouting(DeviceType deviceType, const std::string &macAddress);
+    void NotifyBtForOutputDeviceSelection(std::shared_ptr<AudioDeviceDescriptor> selectedDevice,
+        StreamUsage streamUsage);
+    void NotifyBtForInputDeviceSelection(std::shared_ptr<AudioDeviceDescriptor> selectedDevice,
+        SourceType sourceType);
+    void HandleNegtiveBtOriginalLogic(DeviceType deviceType);
+    void HandleActiveBtOriginalLogic(DeviceType deviceType, const std::string &macAddress);
+    int32_t SelectOutputDevicePrepare(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
+        StreamUsage strUsage);
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;

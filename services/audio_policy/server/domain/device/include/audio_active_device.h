@@ -17,6 +17,7 @@
 
 #include <bitset>
 #include <list>
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -48,6 +49,35 @@ public:
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
     void NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
         bool isSameDevice = false, StreamUsage streamUsage = STREAM_USAGE_INVALID);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> BuildWirelessDeviceNeedsBothDirections(
+        const std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> &outputPreviewResults,
+        const std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> &inputPreviewResults);
+    bool IsDeviceInWirelessNeeds(std::shared_ptr<AudioDeviceDescriptor> device,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &needs);
+    void DecideWirelessDeviceActionBasedOnPreview(
+        const std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> &outputPreviewResults,
+        const std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> &inputPreviewResults,
+        std::shared_ptr<AudioDeviceDescriptor> newSelectedDevice,
+        StreamUsage streamUsage);
+    void DecideActionForSingleWirelessOutputDevice(
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+        StreamUsage streamUsage,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &wirelessDeviceNeeds);
+    void DecideWirelessDeviceActionForInputBasedOnPreview(
+        const std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> &outputPreviewResults,
+        const std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> &inputPreviewResults,
+        std::shared_ptr<AudioDeviceDescriptor> newSelectedDevice,
+        SourceType sourceType);
+    void DecideActionForSingleWirelessInputDevice(
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+        SourceType sourceType,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &wirelessDeviceNeeds);
+    void NotifyNewInputDeviceSelected(
+        std::shared_ptr<AudioDeviceDescriptor> newSelectedDevice,
+        SourceType sourceType);
+    void NotifyNewDeviceSelected(
+        std::shared_ptr<AudioDeviceDescriptor> newSelectedDevice,
+        StreamUsage streamUsage);
     void NotifyUserSelectionEventForInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
         SourceType sourceType = SOURCE_TYPE_INVALID);
     void NotifyUserSelectionEventToRemote(std::shared_ptr<AudioDeviceDescriptor> desc);
