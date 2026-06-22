@@ -2406,7 +2406,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetStreamTypeFromUsageContent_NotFoundInM
     AudioStreamCollector &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
     auto result = streamCollector.GetStreamTypeFromUsageContent(STREAM_USAGE_DTMF,
         CONTENT_TYPE_SPEECH);
-    EXPECT_EQ(result, STREAM_MUSIC);
+    EXPECT_EQ(result, STREAM_SPEECH);
 }
 } // namespace AudioStandard
 } // namespace OHOS
