@@ -1399,12 +1399,22 @@ void AudioCoreService::ForceStopInterphoneStreamsIfNecessary(const std::shared_p
     }
 }
 
+void AudioCoreService::CheckFastToNormalForPlayback(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    SessionOperationMsg opMsg)
+{
+    if (opMsg == SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL && (streamDesc->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST)) {
+        streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+        AUDIO_INFO_LOG("fast playback need to change to FORCED_NORMAL");
+    }
+}
+
 int32_t AudioCoreService::StartClientForPlayback(uint32_t sessionId,
     std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+    std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, SessionOperationMsg opMsg)
 {
     AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
         streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_RUNNING);
+    CheckFastToNormalForPlayback(streamDesc, opMsg);
     int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
     deviceDesc = streamDesc->GetMainNewDeviceDesc();
@@ -1418,12 +1428,22 @@ int32_t AudioCoreService::StartClientForPlayback(uint32_t sessionId,
     return SUCCESS;
 }
 
+void AudioCoreService::CheckFastToNormalForRecord(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    SessionOperationMsg opMsg)
+{
+    if (opMsg == SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL && (streamDesc->routeFlag_ & AUDIO_INPUT_FLAG_FAST)) {
+        streamDesc->capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+        AUDIO_INFO_LOG("fast record need to change to FORCED_NORMAL");
+    }
+}
+
 int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+    std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, SessionOperationMsg opMsg)
 {
     AudioRouterInfra::GetInstance().UpdateInputStreamState(GetRealUid(streamDesc), sessionId,
         streamDesc->capturerInfo_.sourceType, CapturerState::CAPTURER_RUNNING);
+    CheckFastToNormalForRecord(streamDesc, opMsg);
     FetchInputDeviceAndRoute("StartClient");
     deviceDesc = streamDesc->GetMainNewDeviceDesc();
     CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr");
@@ -1437,7 +1457,7 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     return SUCCESS;
 }
 
-int32_t AudioCoreService::StartClient(uint32_t sessionId)
+int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg opMsg)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
         HILOG_COMM_ERROR("[StartClient]Call communication stream, directly return"));
@@ -1461,10 +1481,10 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
 
     int32_t ret = SUCCESS;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        ret = StartClientForPlayback(sessionId, streamDesc, deviceDesc);
+        ret = StartClientForPlayback(sessionId, streamDesc, deviceDesc, opMsg);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartClientForPlayback fail!");
     } else {
-        ret = StartClientForRecord(sessionId, streamDesc, deviceDesc);
+        ret = StartClientForRecord(sessionId, streamDesc, deviceDesc, opMsg);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartClientForRecord fail!");
     }
 

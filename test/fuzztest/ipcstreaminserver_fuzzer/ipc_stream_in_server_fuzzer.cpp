@@ -103,7 +103,8 @@ void IpcStreamInServerStartFuzzTest()
 {
     shared_ptr<IpcStreamInServer> ipcStreamInServerRet = CreateIpcStreamInServer();
     CHECK_AND_RETURN(ipcStreamInServerRet != nullptr);
-    ipcStreamInServerRet->Start();
+    bool hasNoCallback = g_fuzzUtils.GetData<bool>();
+    ipcStreamInServerRet->Start(hasNoCallback);
 }
 
 void IpcStreamInServerPauseFuzzTest()

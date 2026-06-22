@@ -146,7 +146,7 @@ public:
 
     virtual int32_t GetAudioSessionID(uint32_t &sessionId)  override { return 0; }
 
-    virtual int32_t Start() override { return 0; }
+    virtual int32_t Start(bool hasNoCallback) override { return 0; }
 
     virtual int32_t Pause()  override { return 0; }
 
