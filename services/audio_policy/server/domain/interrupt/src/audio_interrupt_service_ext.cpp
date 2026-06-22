@@ -557,11 +557,11 @@ void AudioInterruptService::HandleMuteInterruptEvent(const AudioInterrupt &audio
     }
 }
 
-bool IsAncoAudioMediaInterrupt(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
+bool AudioInterruptService::IsAncoAudioMediaInterrupt(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
     const AudioInterrupt &incomingInterrupt)
 {
-    return (focusEntry.hinttype == INTERRUPT_HINT_STOP && currAudioInterrupt.uid == AUDIO_ID &&
-        AudioInterruptUtils::IsMediaStream(currAudioInterrupt.audioFocusType.streamType) &&
+    return (focusEntry.hintType == INTERRUPT_HINT_STOP && currentInterrupt.uid == AUDIO_ID &&
+        AudioInterruptUtils::IsMediaStream(currentInterrupt.audioFocusType.streamType) &&
         AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType));
 }
 }
