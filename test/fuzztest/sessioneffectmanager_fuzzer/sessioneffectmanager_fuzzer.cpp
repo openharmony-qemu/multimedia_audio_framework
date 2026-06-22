@@ -89,10 +89,8 @@ AudioEffectConfig GetFuzzConfig()
 // Test 1: Construct and Deinit
 void ConstructAndDeinitFuzzTest()
 {
-    HpaeManager *hpaeManager = nullptr;
-    // Create SessionEffectManager with null HpaeManager reference
-    // This tests the constructor and Deinit path gracefully
-    // We test with a minimal safe approach
+    // Construct SessionEffectManager with a valid HpaeManager instance,
+    // then exercise the Deinit path.
     auto manager = std::make_shared<HpaeManager>();
     SessionEffectManager sem(*manager);
     sem.Deinit();
