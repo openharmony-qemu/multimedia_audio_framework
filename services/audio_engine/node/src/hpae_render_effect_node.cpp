@@ -243,9 +243,9 @@ int32_t HpaeRenderEffectNode::AudioRendererStart(HpaeNodeInfo &nodeInfo)
     AUDIO_INFO_LOG("in");
     ModifyAudioEffectChainInfo(nodeInfo, ADD_AUDIO_EFFECT_CHAIN_INFO);
     if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN && tempEffectBuffer_ != nullptr) {
- 	    tempEffectBuffer_->SetStopRunningState(false);
+        tempEffectBuffer_->SetStopRunningState(false);
         tempEffectBuffer_->SetCollabDoFade(false);
- 	}
+    }
     AUDIO_INFO_LOG("out");
     return SUCCESS;
 }
@@ -597,16 +597,16 @@ void HpaeRenderEffectNode::SetDelayCountToEffectNode(int32_t delayCount)
 
 void HpaeRenderEffectNode::SetCollabDoFade(bool fadeOutState)
 {
- 	if (tempEffectBuffer_ != nullptr) {
- 	    tempEffectBuffer_->SetCollabDoFade(fadeOutState);
- 	}
+    if (tempEffectBuffer_ != nullptr) {
+        tempEffectBuffer_->SetCollabDoFade(fadeOutState);
+    }
 }
 
 void HpaeRenderEffectNode::SetStopRunningState(bool stopRunning)
 {
     if (tempEffectBuffer_ != nullptr) {
- 	    tempEffectBuffer_->SetStopRunningState(stopRunning);
- 	}
+        tempEffectBuffer_->SetStopRunningState(stopRunning);
+    }
 }
 
 HpaeTempEffectBuffer::HpaeTempEffectBuffer(PcmBufferInfo pcmBufferInfo, CollaborationState isCollaborationEnabled)
@@ -633,18 +633,18 @@ void HpaeTempEffectBuffer::ChangeEffectDataForLatency(HpaePcmBuffer* buffer)
     }
 
     if (stopRunning_ == true) {
- 	    SetSilenceDataInAllChannel(buffer);
- 	    return;
+        SetSilenceDataInAllChannel(buffer);
+        return;
  	}
     WriteDataEnqueueRingCache(buffer);
     ReadDataDequeueRingCache(buffer);
 
     if (effectCollabDoFadeOutState_ == true) {
- 	    DoFadeOut(buffer);
- 	    effectCollabDoFadeOutState_ = false;
- 	    stopRunning_ = true;
- 	    AUDIO_INFO_LOG("CollabDoFadeOut finish");
- 	}
+        DoFadeOut(buffer);
+        effectCollabDoFadeOutState_ = false;
+        stopRunning_ = true;
+        AUDIO_INFO_LOG("CollabDoFadeOut finish");
+    }
 }
 
 void HpaeTempEffectBuffer::WriteDataEnqueueRingCache(HpaePcmBuffer* buffer)
@@ -730,27 +730,27 @@ void HpaeTempEffectBuffer::SetTempBufferData(HpaePcmBuffer* buffer, float *tempO
 
  void HpaeTempEffectBuffer::SetSilenceDataInAllChannel(HpaePcmBuffer* buffer)
 {
- 	float *collOutPut = buffer->GetPcmDataBuffer();
- 	for (uint32_t i = 0; i < buffer->GetFrameLen(); ++i) {
- 	    collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i] = SMALL_SIGNAL_NUM;
- 	    collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + 1] = SMALL_SIGNAL_NUM;
- 	    collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] = SMALL_SIGNAL_NUM;
- 	    collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] = SMALL_SIGNAL_NUM;
- 	}
+    float *collOutPut = buffer->GetPcmDataBuffer();
+    for (uint32_t i = 0; i < buffer->GetFrameLen(); ++i) {
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i] = SMALL_SIGNAL_NUM;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + 1] = SMALL_SIGNAL_NUM;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] = SMALL_SIGNAL_NUM;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] = SMALL_SIGNAL_NUM;
+    }
 }
  	 
 void HpaeTempEffectBuffer::DoFadeOut(HpaePcmBuffer* buffer)
 {
- 	float *collOutPut = buffer->GetPcmDataBuffer();
- 	float gain = 1.0f;
- 	float deltaGain = 1.0f / buffer->GetFrameLen();
- 	for (uint32_t i = 0; i< buffer->GetFrameLen(); ++i) {
- 	    collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i] *= gain;
- 	    collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + 1] *= gain;
- 	    collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] *= gain;
- 	    collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] *= gain;
- 	    gain -= deltaGain;
- 	}
+    float *collOutPut = buffer->GetPcmDataBuffer();
+    float gain = 1.0f;
+    float deltaGain = 1.0f / buffer->GetFrameLen();
+    for (uint32_t i = 0; i< buffer->GetFrameLen(); ++i) {
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i] *= gain;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + 1] *= gain;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] *= gain;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] *= gain;
+        gain -= deltaGain;
+    }
 }
 
 bool HpaeTempEffectBuffer::DelayAlignmentForEffectNode(HpaePcmBuffer* buffer)
@@ -837,26 +837,26 @@ HpaeTempEffectBuffer::~HpaeTempEffectBuffer()
 
  void HpaeTempEffectBuffer::UpdateNearLinkCollaborationStateToHdi(CollaborationState isCollaborationEnabled)
 {
- 	CHECK_AND_RETURN_LOG(isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN,
- 	    "isCollaborationEnabled not COLLABORATION_NEARLINK_OPEN");
- 	HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
- 	std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
- 	CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
- 	std::string keyValue = std::string("nearLink_collaborative_state=") + "1";
- 	deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", keyValue);
- 	AUDIO_INFO_LOG("effectNode: UpdateNearLinkCollaborationStateToHdi, value: %{public}s", keyValue.c_str());
+    CHECK_AND_RETURN_LOG(isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN,
+        "isCollaborationEnabled not COLLABORATION_NEARLINK_OPEN");
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    std::string keyValue = std::string("nearLink_collaborative_state=") + "1";
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", keyValue);
+    AUDIO_INFO_LOG("effectNode: UpdateNearLinkCollaborationStateToHdi, value: %{public}s", keyValue.c_str());
 }
  	 
 void HpaeTempEffectBuffer::SetCollabDoFade(bool fadeOutState)
 {
- 	AUDIO_INFO_LOG("SetCollabDoFade: %{public}d", fadeOutState);
- 	effectCollabDoFadeOutState_ = fadeOutState;
+    AUDIO_INFO_LOG("SetCollabDoFade: %{public}d", fadeOutState);
+    effectCollabDoFadeOutState_ = fadeOutState;
 }
  	 
 void HpaeTempEffectBuffer::SetStopRunningState(bool stopRunning)
 {
     AUDIO_INFO_LOG("SetStopRunningState: %{public}d", stopRunning);
- 	stopRunning_ = stopRunning;
+    stopRunning_ = stopRunning;
 }
 } // namespace HPAE
 } // namespace AudioStandard

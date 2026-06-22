@@ -622,20 +622,20 @@ void HpaeProcessCluster::SetDelayCountToEffectNode(int32_t delayCount)
 
 void HpaeProcessCluster::SetCollabDoFade(bool fadeOutState)
 {
- 	if (renderEffectNode_ != nullptr) {
- 	    renderEffectNode_->SetCollabDoFade(fadeOutState);
- 	}
+    if (renderEffectNode_ != nullptr) {
+        renderEffectNode_->SetCollabDoFade(fadeOutState);
+    }
  	 
- 	return;
+    return;
 }
 
 void HpaeProcessCluster::SetStopRunningState(bool stopRunning)
 {
- 	if (renderEffectNode_ != nullptr) {
- 	    renderEffectNode_->SetStopRunningState(stopRunning);
- 	}
+    if (renderEffectNode_ != nullptr) {
+        renderEffectNode_->SetStopRunningState(stopRunning);
+    }
  	 
- 	return;
+    return;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

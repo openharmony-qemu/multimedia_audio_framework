@@ -148,8 +148,8 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
         sessionId, GetEncryptStr(sinkInfo_.deviceClass).c_str(), nodeInfo.sceneType);
     CreateProcessClusterAndConnect(nodeInfo, isConnect);
     if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
- 	    SetSessionFade(sessionId, OPERATION_STARTED);
- 	}
+        SetSessionFade(sessionId, OPERATION_STARTED);
+    }
 
     NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId, ConvertHpaeToRendererState(node->GetState()),
         node->GetAppUid());
@@ -922,7 +922,7 @@ void HpaeRendererManager::SetCollabDoFade(HpaeProcessorType sceneType)
     CHECK_AND_RETURN_LOG(sceneClusterMap_[sceneType]->GetPreOutNum() == 0,
         "no need SetCollabDoFade, PreOutNum: %{public}d",
         static_cast<int32_t>(sceneClusterMap_[sceneType]->GetPreOutNum()));
- 	sceneClusterMap_[sceneType]->SetCollabDoFade(true);
+    sceneClusterMap_[sceneType]->SetCollabDoFade(true);
 }
 
 void HpaeRendererManager::DisConnectOutputCluster(HpaeProcessorType sceneType)

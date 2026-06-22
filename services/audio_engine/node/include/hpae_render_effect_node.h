@@ -45,8 +45,8 @@ public:
     void ReadDataDequeueRingCache(HpaePcmBuffer* buffer);
     void WriteDataEnqueueRingCache(HpaePcmBuffer* buffer);
     void UpdateNearLinkCollaborationStateToHdi(CollaborationState isCollaborationEnabled);
- 	void SetCollabDoFade(bool fadeOutState);
- 	void SetStopRunningState(bool stopRunning);
+    void SetCollabDoFade(bool fadeOutState);
+    void SetStopRunningState(bool stopRunning);
 private:
     void SetSilenceData(HpaePcmBuffer* buffer);
     void SetSilenceDataInAllChannel(HpaePcmBuffer* buffer);
@@ -59,8 +59,8 @@ private:
     int32_t waitCountThreshold_ = 0;
     std::unique_ptr<HpaePcmBuffer> tempOutput_ = nullptr;
     CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
- 	bool effectCollabDoFadeOutState_ = false;
- 	bool stopRunning_ = false;
+    bool effectCollabDoFadeOutState_ = false;
+    bool stopRunning_ = false;
 };
 
 class HpaeRenderEffectNode : public HpaePluginNode, public HpaeTempEffectBuffer {
