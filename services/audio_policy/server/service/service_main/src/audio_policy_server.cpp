@@ -1532,7 +1532,7 @@ int32_t AudioPolicyServer::SetStreamMuteLegacy(int32_t streamTypeIn, bool mute, 
 }
 
 // LCOV_EXCL_START
-int32_t AudioPolicyServer::SetStreamMute(int32_t streamTypeIn, bool mute, int32_t deviceTypeIn)
+int32_t AudioPolicyServer::SetStreamMute(int32_t streamTypeIn, bool mute, int32_t deviceTypeIn, int32_t volumeFlag)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("No system permission");
@@ -1541,9 +1541,10 @@ int32_t AudioPolicyServer::SetStreamMute(int32_t streamTypeIn, bool mute, int32_
 
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
     DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
+    bool isUpdateUi = volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI;
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
-    return SetStreamMuteInternal(streamType, mute, false, deviceType, zoneId);
+    return SetStreamMuteInternal(streamType, mute, isUpdateUi, deviceType, zoneId);
 }
 // LCOV_EXCL_STOP
 

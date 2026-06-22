@@ -76,7 +76,7 @@ interface IAudioPolicy {
     void GetSystemAppVolumePercentageForUid([in] int appUid, [out] int volumePercentage);
     void GetSelfAppVolumeLevel([out] int volumeLevel);
     void SetStreamMuteLegacy([in] int volumeType, [in] boolean mute, [in] int deviceType); /*deviceType default DEVICE_TYPE_NONE, AudioVolumeType volumeType*/
-    void SetStreamMute([in] int volumeType, [in] boolean mute, [in] int deviceType); /*deviceType default DEVICE_TYPE_NONE*/
+    void SetStreamMute([in] int volumeType, [in] boolean mute, [in] int deviceType, [in] int volumeFlag); /*deviceType default DEVICE_TYPE_NONE, volumeFlag default 0*/
     void GetStreamMute([in] int volumeType, [out] boolean retMute);
     void IsStreamActive([in] int volumeType, [out] boolean retActive);
     void IsStreamActiveByStreamUsage([in] int streamUsage, [out] boolean active);
