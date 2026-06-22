@@ -16,7 +16,7 @@ import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("HpaeManagerFuzzTest") {
+ohos_fuzztest("HpaeManagerEngineFuzzTest") {
   module_out_path = "audio_framework/audio_framework_engine"
   fuzz_config_file = "../hpaemanager_fuzzer"
 
@@ -82,5 +82,5 @@ ohos_fuzztest("HpaeManagerFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":HpaeManagerFuzzTest" ]
+  deps = [ ":HpaeManagerEngineFuzzTest" ]
 }
