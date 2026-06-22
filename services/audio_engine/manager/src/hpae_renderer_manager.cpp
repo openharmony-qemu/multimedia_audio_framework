@@ -596,7 +596,7 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
         + std::to_string(sceneType));
     auto targetCluster = SafeGetMap(sceneClusterMap_, sceneType);
     for (const auto &[type, cluster] : sceneClusterMap_) {
-        if (cluster != targetCluster) {
+        if (SafeGetMap(sceneClusterMap_, type) && cluster != targetCluster) {
             cluster->ExecuteDeferredStopFor(sessionId);
         }
     }
