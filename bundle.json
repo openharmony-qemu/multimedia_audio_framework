@@ -51,7 +51,8 @@
           "audio_framework_feature_multi_bus",
           "audio_framework_feature_source_period_size",
           "audio_framework_feature_input_independent_routing_rule",
-          "audio_framework_feature_multi_zone_volume"
+          "audio_framework_feature_multi_zone_volume",
+          "audio_framework_feature_multi_user_zone"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",

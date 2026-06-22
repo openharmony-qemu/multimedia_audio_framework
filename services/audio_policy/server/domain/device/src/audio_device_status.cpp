@@ -262,7 +262,7 @@ void AudioDeviceStatus::WriteAllDeviceSysEvents(
 }
 
 void AudioDeviceStatus::TriggerAvailableDeviceChangedCallback(
-    const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected)
+    const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected, const int32_t zoneId)
 {
     Trace trace("AudioDeviceStatus::TriggerAvailableDeviceChangedCallback");
 
@@ -272,18 +272,18 @@ void AudioDeviceStatus::TriggerAvailableDeviceChangedCallback(
         StreamDfxManager::GetInstance().SendAudioErrorEvent(
             IPCSkeleton::GetCallingUid(), ERR_PLAY_DEVICE_SWITCH_CALLBACK_NULL_POINTER,
             "TriggerAvailableDeviceChangedCallback handler is nullptr", false));
-    audioPolicyServerHandler_->SendAvailableDeviceChange(desc, isConnected);
+    audioPolicyServerHandler_->SendAvailableDeviceChange(desc, isConnected, zoneId);
 }
 
 void AudioDeviceStatus::TriggerDeviceChangedCallback(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
-    bool isConnected)
+    bool isConnected, const int32_t zoneId)
 {
     Trace trace("AudioDeviceStatus::TriggerDeviceChangedCallback");
     WriteAllDeviceSysEvents(desc, isConnected);
     CHECK_AND_CALL_FUNC_RETURN(audioPolicyServerHandler_ != nullptr,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             ERR_PLAY_DEVICE_SWITCH_CALLBACK_NULL_POINTER, "TriggerDeviceChangedCallback handler is nullptr", false));
-    audioPolicyServerHandler_->SendDeviceChangedCallback(desc, isConnected);
+    audioPolicyServerHandler_->SendDeviceChangedCallback(desc, isConnected, zoneId);
 }
 
 void AudioDeviceStatus::TriggerDeviceInfoUpdatedCallback(
@@ -1375,12 +1375,13 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
         && AudioSpatializationService::GetAudioSpatializationService().
         IsSpatializationSupportedForDevice(updatedDesc.macAddress_)
         && AudioSpatializationService::GetAudioSpatializationService().IsSpatializationSupported();
+    bool isNeedExclude = CheckNeedExclude(updatedDesc, isConnected);
     UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
     TriggerDeviceChangedCallback(descForCb, isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
 
-    if (!isActualConnection) {
+    if (!isActualConnection || isNeedExclude) {
         return;
     }
     // fetch input&output device
@@ -1424,6 +1425,10 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+#ifdef MULTI_USER_ZONE
+        auto descPtr = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
+        AudioZoneService::GetInstance().RemoveDeviceToGlobalFromZones(descPtr);
+#endif
         CheckForA2dpSuspend(updatedDesc);
         // fix pop, fetch device before unload module
         if (IsOutputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
@@ -1489,7 +1494,9 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     }
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
-    bool isStatusUpdated = audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command, reason);
+    bool isZoneUpdated = AudioZoneService::GetInstance().UpdateDevicesListInfo(audioDescriptor, command, reason);
+    bool isManagerUpdated = audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command, reason);
+    bool isStatusUpdated = isZoneUpdated || isManagerUpdated;
     CheckForA2dpSuspend(desc);
     if (isStatusUpdated) {
         OnPreferredStateUpdated(desc, command, reason);
@@ -1521,6 +1528,20 @@ void AudioDeviceStatus::UpdateChangeReasonForCollaboration(AudioDeviceDescriptor
         AUDIO_INFO_LOG("Update Reason For Collaboration");
         reason = AudioStreamDeviceChangeReasonExt::ExtEnum::COLLABORATIVE_STATE_CHANGE;
     }
+}
+
+bool AudioDeviceStatus::CheckNeedExclude(AudioDeviceDescriptor &desc, bool isConnected)
+{
+#ifdef MULTI_USER_ZONE
+    AUDIO_INFO_LOG("isConnected=%{public}d", isConnected);
+    CHECK_AND_RETURN_RET(isConnected, false);
+    desc.visibleMode_ = SYSTEM_SERVICE_VISIBLE;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = {};
+    descs.push_back(std::make_shared<AudioDeviceDescriptor>(desc));
+    AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
+    return true;
+#endif
+    return false;
 }
 
 void AudioDeviceStatus::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
@@ -1684,12 +1705,16 @@ bool AudioDeviceStatus::NeedClearPreferredWhenCategoryUpdated(const AudioDeviceD
     return updated.IsSameDeviceDesc(preferred);
 }
 
-void AudioDeviceStatus::RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc)
+void AudioDeviceStatus::RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc, const int32_t zoneId)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     AUDIO_INFO_LOG("remove device from global list only");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
     audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(desc, descForCb, false);
+#ifdef MULTI_USER_ZONE
+    TriggerDeviceChangedCallback(descForCb, true, zoneId);
+    TriggerAvailableDeviceChangedCallback(descForCb, true, zoneId);
+#endif
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
 }

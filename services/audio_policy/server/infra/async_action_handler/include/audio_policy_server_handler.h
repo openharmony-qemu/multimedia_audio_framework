@@ -184,9 +184,11 @@ public:
     void AddDistributedRoutingRoleChangeCbsMap(int32_t clientId,
         const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveDistributedRoutingRoleChangeCbsMap(int32_t clientId);
-    bool SendDeviceChangedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    bool SendDeviceChangedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected,
+        const int32_t zoneId = 0);
     bool SendDeviceInfoUpdatedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
-    bool SendAvailableDeviceChange(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    bool SendAvailableDeviceChange(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected,
+        const int32_t zoneId = 0);
     bool SendMicrophoneBlockedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
         DeviceBlockStatus status);
     void HandleMicrophoneBlockedCallback(const AppExecFwk::InnerEvent::Pointer &event);
@@ -347,6 +349,10 @@ private:
     bool CheckCallbackTokenId(
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors, uint32_t callbackTokenId);
     void CheckVolumeKeyEventForRSS(int32_t pid, VolumeEvent &volumeEvent);
+#ifdef MULTI_USER_ZONE
+    bool CheckCallbackVisibleMode(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors,
+        int32_t pid, int32_t zoneId, bool isSystemService);
+#endif
 
     // Helper functions for reducing nesting depth in HandlePreferredOutput/InputDeviceUpdated
     void ProcessPreferredOutputDeviceForClient(int32_t clientPid,

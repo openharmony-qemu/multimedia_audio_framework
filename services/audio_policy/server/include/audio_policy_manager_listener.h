@@ -39,6 +39,7 @@ public:
 public:
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
+    bool isSystemService_ = false;
     uint32_t tokenId_ = 0;
 
 private:
