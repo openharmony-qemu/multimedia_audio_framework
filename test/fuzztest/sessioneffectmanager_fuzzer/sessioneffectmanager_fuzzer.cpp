@@ -144,7 +144,7 @@ void ReuseWithDifferentSessionsFuzzTest()
     SessionEffectManager sem(*manager);
     std::string effectName = "test_effect";
     AudioEffectConfig config = GetFuzzConfig();
-    for (int i = 0; i < REUSE_TEST_SESSION_COUNT; i++) {
+    for (uint32_t i = 0; i < REUSE_TEST_SESSION_COUNT; i++) {
         uint32_t sessionId = GetData<uint32_t>();
         std::shared_ptr<EffectInstance> outInstance;
         sem.BindSessionEffect(sessionId, effectName, config, outInstance);
@@ -264,7 +264,7 @@ static TestFunc g_testFuncs[] = {
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    if (data == nullptr || size < MIN_FUZZ_INPUT_SIZE) {
+    if (data == nullptr || size < OHOS::AudioStandard::HPAE::MIN_FUZZ_INPUT_SIZE) {
         return 0;
     }
     OHOS::AudioStandard::HPAE::RAW_DATA = data;
