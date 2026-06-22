@@ -398,6 +398,8 @@ int32_t HpaeFastRendererManager::InitSinkInner(bool isReload)
             }
         }
     });
+    // Creating only without starting/stopping can lead to power consumption issues.
+    // After starting here, the data thread will trigger the delay stop for fast sink.
     sinkOutputNode_->RenderSinkStart();
     return SUCCESS;
 }
