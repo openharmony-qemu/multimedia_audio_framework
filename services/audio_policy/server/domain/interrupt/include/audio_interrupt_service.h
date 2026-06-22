@@ -431,6 +431,8 @@ private:
     bool UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry, AudioFocuState &activeState,
         AudioFocuState &incomingState);
     bool VerifyStreamType(const AudioInterrupt &audioInterrupt);
+    bool IsAncoAudioMediaInterrupt(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
+        const AudioInterrupt &incomingInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

@@ -2099,6 +2099,13 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
     if (IsCanMixInterrupt(incomingInterrupt, iterActive->first)) {
         UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
     }
+    if (IsAncoAudioMediaInterrupt(focusEntry, iterActive->first, incomingInterrupt)) {
+        AUDIO_INFO_LOG("is anco audio media interrupt");
+        interruptEvent.handleForceStream = false;
+        interruptEvent.forceType = INTERRUPT_SHARE;
+        interruptEvent.hintType = focusEntry.hintType;
+        return;
+    }
     switch (focusEntry.hintType) {
         case INTERRUPT_HINT_STOP:
             if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
