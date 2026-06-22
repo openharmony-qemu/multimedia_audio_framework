@@ -1026,7 +1026,7 @@ struct AudioCapturerOptions {
   streamInfo: AudioStreamInfo;
   capturerInfo: AudioCapturerInfo;
   preferredInputDevice: Optional<AudioDeviceDescriptor>;
-  playbackCaptureMode: Optional<AudioPlaybackCaptureMode>;
+  @optional playbackCaptureMode: Optional<AudioPlaybackCaptureMode>;
 }
 
 enum PlaybackCaptureStartState: i32 {
