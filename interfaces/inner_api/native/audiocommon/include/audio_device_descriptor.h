@@ -261,7 +261,7 @@ public:
     static constexpr uint32_t WEAR_AGAIN = 2;
 
 private:
-    uint32_t deviceSupportMmap_ = 0; //only vaild on armusb
+    uint32_t deviceSupportMmap_ = 0; //only valid on armusb
 
 private:
     bool IsOutput()

@@ -33,6 +33,7 @@ config("audio_toneplayer_config") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-Os",
   ]
 }
 

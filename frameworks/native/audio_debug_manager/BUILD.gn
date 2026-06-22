@@ -24,6 +24,7 @@ config("audio_debug_manager_config") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-Os",
   ]
 }
 
@@ -42,6 +43,7 @@ ohos_shared_library("audio_debug_manager") {
     ubsan = true
     boundary_sanitize = true
   }
+
   install_enable = true
 
   configs = [ ":audio_debug_manager_config" ]

@@ -61,7 +61,10 @@ ohos_shared_library("ohaudiosuite") {
     "../../../services/audio_service:audio_common",
     "../audioutils:audio_utils",
   ]
-  cflags = [ "-Werror" ]
+  cflags = [
+    "-Werror",
+    "-Os",
+  ]
 
     external_deps = [
       "c_utils:utils",

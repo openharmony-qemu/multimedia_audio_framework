@@ -30,6 +30,7 @@ config("audio_loopback_config") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-Os",
   ]
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]

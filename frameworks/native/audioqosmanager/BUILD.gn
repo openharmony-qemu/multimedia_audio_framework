@@ -36,7 +36,7 @@ ohos_shared_library("audio_qosmanager") {
 
   sources = [ "audio_qosmanager.cpp" ]
 
-  cflags = []
+  cflags = [ "-Os" ]
   deps = []
   external_deps = []
 
