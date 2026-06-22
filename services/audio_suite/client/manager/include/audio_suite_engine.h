@@ -118,7 +118,6 @@ private:
 
 private:
     std::atomic<bool> isInit_ = false;
-    bool isExistRealtime_ = false;
 
     AudioSuiteManagerCallback& managerCallback_;
     AudioSuiteEngineCfg engineCfg_;
