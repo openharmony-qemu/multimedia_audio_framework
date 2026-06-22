@@ -22,10 +22,39 @@
 #include "i_renderer_stream.h"
 // Note: IStreamCallback is defined in i_renderer_stream.h
 // Note: ICapturerStreamCallback is defined in i_capturer_stream.h
+// Note: IEffectInstance is needed for CreateSessionEffect fuzz coverage
+#include "i_effect_instance.h"
 #include <atomic>
 
 namespace OHOS {
 namespace AudioStandard {
+
+// Minimal stub of IEffectInstance to drive CreateSessionEffect success/failure
+// paths in HpaeOffloadRendererManager::InsertSessionEffectNode without depending
+// on the real algorithm library. Each virtual returns a benign value so the
+// node layer does not crash when it inspects the instance pointer.
+class StubEffectInstance : public HPAE::IEffectInstance {
+public:
+    StubEffectInstance() = default;
+    ~StubEffectInstance() override = default;
+
+    int32_t Release() override { return 0; }
+    const std::string &GetEffectName() const override { return effectName_; }
+    const AudioEffectConfig &GetAudioConfig() const override { return config_; }
+    int32_t FeedInput(const uint8_t *data, size_t len) override { return 0; }
+    int32_t ReadOutput(uint8_t *buf, size_t len, uint32_t *skipCount) override { return 0; }
+    size_t GetInputLevel() const override { return 0; }
+    void ClearBuffers() override {}
+    int32_t StopEffect() override { return 0; }
+    int32_t TriggerProcess() override { return 0; }
+    int32_t Flush() override { return 0; }
+    int32_t SetParameter(int32_t type, float value) override { return 0; }
+    uint32_t GetPreheatFrames() override { return 0; }
+
+private:
+    std::string effectName_ {"fuzz_stub_effect"};
+    AudioEffectConfig config_ {};
+};
 
 // Test callback class for renderer operations
 class WriteFixedDataCb : public IStreamCallback, public std::enable_shared_from_this<WriteFixedDataCb> {

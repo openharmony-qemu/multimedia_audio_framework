@@ -106,6 +106,20 @@ const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     STEREO,
 };
 
+// Multichannel layouts drive the remote_offload limiter creation branch
+// (HpaeOffloadRendererManager::CreateOffloadNodes: channelCount > STEREO).
+const std::vector<AudioChannel> MULTICHANNELS {
+    CHANNEL_3,
+    CHANNEL_4,
+    CHANNEL_5,
+    CHANNEL_6,
+    CHANNEL_7,
+    CHANNEL_8,
+};
+
+// Session Effect fuzz constants
+constexpr int32_t SESSION_EFFECT_RAND_STRING_MAX_LEN = 64;
+
 const std::vector<AudioSamplingRate> SUPPORTED_SAMPLE_RATES {
     SAMPLE_RATE_8000,
     SAMPLE_RATE_16000,
@@ -998,6 +1012,8 @@ void HpaeOffloadRendererManagerOnNodeStatusUpdateFuzzTest()
     offloadRendererManager->Init();
     WaitForMsgProcessing(offloadRendererManager);
 
+    // No stream created -> curNode_ is null. OnNodeStatusUpdate null-checks curNode_
+    // (engine fixed) and returns safely, exercising the null path.
     uint32_t sessionId = GetData<uint32_t>();
     IOperation operation = static_cast<IOperation>(GetData<int32_t>());
     offloadRendererManager->OnNodeStatusUpdate(sessionId, operation);
@@ -1948,8 +1964,7 @@ void HpaeOffloadRendererManagerZeroFrameLengthFuzzTest()
 void HpaeOffloadRendererManagerCurNodeUseAfterFreeFuzzTest()
 {
     // CRITICAL: Test OnNodeStatusUpdate(), OnRewindAndFlush(), OnNotifyHdiData()
-    // after DeleteInputSession() which sets curNode_ to nullptr.
-    // Source lines 860-901 show these methods access curNode_ without null check.
+    // after DestroyStream() which sets curNode_ to nullptr. All three now null-check curNode_.
 
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
@@ -1975,11 +1990,8 @@ void HpaeOffloadRendererManagerCurNodeUseAfterFreeFuzzTest()
     offloadRendererManager->DestroyStream(sessionId);
     WaitForMsgProcessing(offloadRendererManager);
 
-    // Now test callbacks that access curNode_ WITHOUT null check:
-    // Line 862: curNode_->GetState() - NO NULL CHECK
+    // All three callbacks now null-check curNode_ (OnNodeStatusUpdate fixed) and return safely.
     offloadRendererManager->OnNodeStatusUpdate(sessionId, OPERATION_PAUSED);
-
-    // Line 893: curNode_->RewindHistoryBuffer() - has CHECK_AND_RETURN_LOG but not safe
     offloadRendererManager->OnRewindAndFlush(GetData<uint64_t>(), GetData<uint64_t>());
 
     // Line 900: curNode_->NotifyOffloadHdiPos() - has CHECK_AND_RETURN_LOG
@@ -2222,13 +2234,387 @@ void HpaeOffloadRendererManagerCombinedCriticalEdgeCasesFuzzTest()
     offloadRendererManager->DestroyStream(sessionId);
     WaitForMsgProcessing(offloadRendererManager);
 
-    // Try callbacks after destruction (tests curNode_ null access)
+    // Try callbacks after destruction (curNode_ is null). All three null-check curNode_
+    // (OnNodeStatusUpdate fixed) and return safely.
     offloadRendererManager->OnNodeStatusUpdate(sessionId, OPERATION_DRAINED);
     offloadRendererManager->OnRewindAndFlush(DEFAULT_REWIND_TIME_MS, DEFAULT_HDI_FRAME_POSITION);
     offloadRendererManager->OnNotifyHdiData({ZERO_HDI_FRAME_POSITION, TimePoint::clock::now()});
 
     // Try SetSpeed after destruction
     offloadRendererManager->SetSpeed(sessionId, NORMAL_PLAYBACK_SPEED);
+
+    offloadRendererManager->DeInit();
+}
+
+// === Session Effect coverage (P0) ===
+// These exercise the newest code in hpae_offload_renderer_manager.cpp which no existing
+// fuzz function touched. InsertSessionEffectNode/RemoveSessionEffectNode are reached
+// through the public Create/DestroySessionEffect entry points.
+
+void HpaeOffloadRendererManagerCreateSessionEffectFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->Init();
+    WaitForMsgProcessing(offloadRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    offloadRendererManager->CreateStream(streamInfo);
+    uint32_t sessionId = streamInfo.sessionId;
+    WaitForMsgProcessing(offloadRendererManager);
+    offloadRendererManager->Start(sessionId);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    AudioEffectConfig config;
+    std::string effectName = GetFuzzString(SESSION_EFFECT_RAND_STRING_MAX_LEN);
+    auto stubInstance = std::make_shared<StubEffectInstance>();
+
+    // Matched session: immediate InsertSessionEffectNode path (or chain-not-created guard).
+    offloadRendererManager->CreateSessionEffect(sessionId, effectName, stubInstance, config);
+    WaitForMsgProcessing(offloadRendererManager);
+    // Repeat on the same session: ERR_SESSION_ALREADY_BOUND guard.
+    offloadRendererManager->CreateSessionEffect(sessionId, effectName, stubInstance, config);
+    WaitForMsgProcessing(offloadRendererManager);
+    // Nullptr instance: drives CreateEffectWithInstance failure and its cleanup branch.
+    offloadRendererManager->CreateSessionEffect(sessionId, effectName, nullptr, config);
+    WaitForMsgProcessing(offloadRendererManager);
+    // Mismatched session: deferred pending-storage path (pendingSessionEffects_ map).
+    uint32_t mismatchedId = sessionId + SESSION_ID_OFFSET_1;
+    offloadRendererManager->CreateSessionEffect(mismatchedId, effectName, stubInstance, config);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    offloadRendererManager->DeInit();
+}
+
+void HpaeOffloadRendererManagerDestroySessionEffectFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->Init();
+    WaitForMsgProcessing(offloadRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    offloadRendererManager->CreateStream(streamInfo);
+    uint32_t sessionId = streamInfo.sessionId;
+    WaitForMsgProcessing(offloadRendererManager);
+
+    AudioEffectConfig config;
+    auto stubInstance = std::make_shared<StubEffectInstance>();
+    offloadRendererManager->CreateSessionEffect(sessionId,
+        GetFuzzString(SESSION_EFFECT_RAND_STRING_MAX_LEN), stubInstance, config);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    // Remove the active SE node (RemoveSessionEffectNode crossfade + latency rewind).
+    offloadRendererManager->DestroySessionEffect(sessionId);
+    WaitForMsgProcessing(offloadRendererManager);
+    // Double destroy: ERR_EFFECT_NOT_BOUND path.
+    offloadRendererManager->DestroySessionEffect(sessionId);
+    WaitForMsgProcessing(offloadRendererManager);
+    // Destroy an unknown session id.
+    offloadRendererManager->DestroySessionEffect(GetData<uint32_t>());
+    WaitForMsgProcessing(offloadRendererManager);
+
+    offloadRendererManager->DeInit();
+}
+
+void HpaeOffloadRendererManagerPostCreateSessionEffectFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->Init();
+    WaitForMsgProcessing(offloadRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    offloadRendererManager->CreateStream(streamInfo);
+    uint32_t sessionId = streamInfo.sessionId;
+    WaitForMsgProcessing(offloadRendererManager);
+    offloadRendererManager->Start(sessionId);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    // Async variant dispatches CreateSessionEffect onto the SignalProcessThread (contract-correct).
+    AudioEffectConfig config;
+    auto stubInstance = std::make_shared<StubEffectInstance>();
+    offloadRendererManager->PostCreateSessionEffect(sessionId,
+        GetFuzzString(SESSION_EFFECT_RAND_STRING_MAX_LEN), stubInstance, config);
+    offloadRendererManager->PostCreateSessionEffect(GetData<uint32_t>(),
+        GetFuzzString(SESSION_EFFECT_RAND_STRING_MAX_LEN), nullptr, config);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    offloadRendererManager->DeInit();
+}
+
+void HpaeOffloadRendererManagerPostDestroySessionEffectFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->Init();
+    WaitForMsgProcessing(offloadRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    offloadRendererManager->CreateStream(streamInfo);
+    uint32_t sessionId = streamInfo.sessionId;
+    WaitForMsgProcessing(offloadRendererManager);
+
+    AudioEffectConfig config;
+    auto stubInstance = std::make_shared<StubEffectInstance>();
+    offloadRendererManager->PostCreateSessionEffect(sessionId,
+        GetFuzzString(SESSION_EFFECT_RAND_STRING_MAX_LEN), stubInstance, config);
+    WaitForMsgProcessing(offloadRendererManager);
+    // Async destroy on the bound session.
+    offloadRendererManager->PostDestroySessionEffect(sessionId);
+    // Async destroy on a fuzzed (likely unbound) session.
+    offloadRendererManager->PostDestroySessionEffect(GetData<uint32_t>());
+    WaitForMsgProcessing(offloadRendererManager);
+
+    offloadRendererManager->DeInit();
+}
+
+void HpaeOffloadRendererManagerSetSessionEffectParameterFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->Init();
+    WaitForMsgProcessing(offloadRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    offloadRendererManager->CreateStream(streamInfo);
+    uint32_t sessionId = streamInfo.sessionId;
+    WaitForMsgProcessing(offloadRendererManager);
+
+    AudioEffectConfig config;
+    auto stubInstance = std::make_shared<StubEffectInstance>();
+    offloadRendererManager->CreateSessionEffect(sessionId,
+        GetFuzzString(SESSION_EFFECT_RAND_STRING_MAX_LEN), stubInstance, config);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    // Bound session: SetSessionEffectParameter forwards to the SE node (full int32 type range,
+    // float value including NaN / inf produced by GetData).
+    offloadRendererManager->SetSessionEffectParameter(sessionId, GetData<int32_t>(), GetData<float>());
+    // Unbound session id: ERR_EFFECT_NOT_BOUND path.
+    offloadRendererManager->SetSessionEffectParameter(GetData<uint32_t>(), GetData<int32_t>(),
+        GetData<float>());
+
+    offloadRendererManager->DeInit();
+}
+
+void HpaeOffloadRendererManagerPostSetSessionEffectParameterFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->Init();
+    WaitForMsgProcessing(offloadRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    offloadRendererManager->CreateStream(streamInfo);
+    uint32_t sessionId = streamInfo.sessionId;
+    WaitForMsgProcessing(offloadRendererManager);
+
+    AudioEffectConfig config;
+    auto stubInstance = std::make_shared<StubEffectInstance>();
+    offloadRendererManager->PostCreateSessionEffect(sessionId,
+        GetFuzzString(SESSION_EFFECT_RAND_STRING_MAX_LEN), stubInstance, config);
+    WaitForMsgProcessing(offloadRendererManager);
+    offloadRendererManager->PostSetSessionEffectParameter(sessionId, GetData<int32_t>(),
+        GetData<float>());
+    offloadRendererManager->PostSetSessionEffectParameter(GetData<uint32_t>(), GetData<int32_t>(),
+        GetData<float>());
+    WaitForMsgProcessing(offloadRendererManager);
+
+    offloadRendererManager->DeInit();
+}
+
+void HpaeOffloadRendererManagerIsValidSessionFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->Init();
+    WaitForMsgProcessing(offloadRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    offloadRendererManager->CreateStream(streamInfo);
+    uint32_t sessionId = streamInfo.sessionId;
+    WaitForMsgProcessing(offloadRendererManager);
+
+    offloadRendererManager->IsValidSession(sessionId);
+    offloadRendererManager->IsValidSession(GetData<uint32_t>());
+    offloadRendererManager->IsValidSession(UINT32_MAX);
+
+    offloadRendererManager->DeInit();
+}
+
+void HpaeOffloadRendererManagerSetOffloadPolicyAissInterceptFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->Init();
+    WaitForMsgProcessing(offloadRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    offloadRendererManager->CreateStream(streamInfo);
+    uint32_t sessionId = streamInfo.sessionId;
+    WaitForMsgProcessing(offloadRendererManager);
+    offloadRendererManager->Start(sessionId);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    // Bind a session effect first so sessionEffectNode_ != nullptr, then issue a BACKGROUND
+    // policy: SetOffloadPolicy must intercept (early return) and stash the real state.
+    AudioEffectConfig config;
+    auto stubInstance = std::make_shared<StubEffectInstance>();
+    offloadRendererManager->PostCreateSessionEffect(sessionId,
+        GetFuzzString(SESSION_EFFECT_RAND_STRING_MAX_LEN), stubInstance, config);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    offloadRendererManager->SetOffloadPolicy(sessionId, OFFLOAD_INACTIVE_BACKGROUND);
+    WaitForMsgProcessing(offloadRendererManager);
+    // A normal foreground policy should still pass through to sinkOutputNode_.
+    offloadRendererManager->SetOffloadPolicy(sessionId, OFFLOAD_ACTIVE_FOREGROUND);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    offloadRendererManager->DeInit();
+}
+
+// === OnRewindBuffer direct entry (P1) ===
+void HpaeOffloadRendererManagerOnRewindBufferFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->Init();
+    WaitForMsgProcessing(offloadRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    offloadRendererManager->CreateStream(streamInfo);
+    uint32_t sessionId = streamInfo.sessionId;
+    WaitForMsgProcessing(offloadRendererManager);
+    offloadRendererManager->Start(sessionId);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    // Boundary rewind times to stress history-buffer arithmetic in RewindHistoryBuffer.
+    std::vector<uint64_t> rewindBoundaries {
+        0,
+        1,
+        std::numeric_limits<uint64_t>::max() / HALF_DIVISOR,
+        std::numeric_limits<uint64_t>::max(),
+    };
+    for (uint64_t rewindTimeUs : rewindBoundaries) {
+        offloadRendererManager->OnRewindBuffer(sessionId, rewindTimeUs);
+    }
+    // Fuzzed rewind time on a fuzzed session id.
+    offloadRendererManager->OnRewindBuffer(GetData<uint32_t>(), GetData<uint64_t>());
+
+    offloadRendererManager->DestroyStream(sessionId);
+    WaitForMsgProcessing(offloadRendererManager);
+    // After destruction curNode_ is null: exercises the null-guard early return.
+    offloadRendererManager->OnRewindBuffer(sessionId, GetData<uint64_t>());
+
+    offloadRendererManager->DeInit();
+}
+
+// === Pause(sessionId, isStandby) two-arg form (P2) ===
+void HpaeOffloadRendererManagerPauseWithStandbyFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->Init();
+    WaitForMsgProcessing(offloadRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    offloadRendererManager->CreateStream(streamInfo);
+    uint32_t sessionId = streamInfo.sessionId;
+    WaitForMsgProcessing(offloadRendererManager);
+    offloadRendererManager->Start(sessionId);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    // Two-argument Pause form (with fuzzed isStandby) that single-arg PauseFuzzTest never uses.
+    offloadRendererManager->Pause(sessionId, GetData<bool>());
+    WaitForMsgProcessing(offloadRendererManager);
+    // Resume, then a standby=true pause, then a standby=false pause to stress sink restart.
+    offloadRendererManager->Start(sessionId);
+    WaitForMsgProcessing(offloadRendererManager);
+    offloadRendererManager->Pause(sessionId, true);
+    WaitForMsgProcessing(offloadRendererManager);
+    offloadRendererManager->Pause(sessionId, false);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    offloadRendererManager->DeInit();
+}
+
+// === Multichannel limiter creation branch (P2) ===
+void HpaeOffloadRendererManagerMultichannelLimiterFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    // remote_offload + >STEREO drives HpaeLimiterNode creation in CreateOffloadNodes,
+    // which the MONO/STEREO-only SUPPORTED_CHANNELS never reached.
+    sinkInfo.channels = MULTICHANNELS[GetData<uint32_t>() % MULTICHANNELS.size()];
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->Init();
+    WaitForMsgProcessing(offloadRendererManager);
+
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    streamInfo.channels = sinkInfo.channels;
+    offloadRendererManager->CreateStream(streamInfo);
+    uint32_t sessionId = streamInfo.sessionId;
+    WaitForMsgProcessing(offloadRendererManager);
+    offloadRendererManager->Start(sessionId);
+    WaitForMsgProcessing(offloadRendererManager);
+
+    // If the limiter was created, OnRequestLatency reaches limiterNode_->GetLatency().
+    uint64_t latency = 0;
+    offloadRendererManager->OnRequestLatency(sessionId, latency);
 
     offloadRendererManager->DeInit();
 }
@@ -2311,6 +2697,19 @@ TestFuncs g_testFuncs[] = {
     HpaeOffloadRendererManagerRegisterCallbackInvalidSessionFuzzTest,
     HpaeOffloadRendererManagerHistoryFrameCountOverflowFuzzTest,
     HpaeOffloadRendererManagerCombinedCriticalEdgeCasesFuzzTest,
+    // Round 3 supplemental coverage: Session Effect family, OnRewindBuffer,
+    // Pause(isStandby), multichannel limiter, AISS policy intercept.
+    HpaeOffloadRendererManagerCreateSessionEffectFuzzTest,
+    HpaeOffloadRendererManagerDestroySessionEffectFuzzTest,
+    HpaeOffloadRendererManagerPostCreateSessionEffectFuzzTest,
+    HpaeOffloadRendererManagerPostDestroySessionEffectFuzzTest,
+    HpaeOffloadRendererManagerSetSessionEffectParameterFuzzTest,
+    HpaeOffloadRendererManagerPostSetSessionEffectParameterFuzzTest,
+    HpaeOffloadRendererManagerIsValidSessionFuzzTest,
+    HpaeOffloadRendererManagerSetOffloadPolicyAissInterceptFuzzTest,
+    HpaeOffloadRendererManagerOnRewindBufferFuzzTest,
+    HpaeOffloadRendererManagerPauseWithStandbyFuzzTest,
+    HpaeOffloadRendererManagerMultichannelLimiterFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
