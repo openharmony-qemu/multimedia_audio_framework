@@ -635,7 +635,7 @@ void HpaeTempEffectBuffer::ChangeEffectDataForLatency(HpaePcmBuffer* buffer)
     if (stopRunning_ == true) {
         SetSilenceDataInAllChannel(buffer);
         return;
- 	}
+    }
     WriteDataEnqueueRingCache(buffer);
     ReadDataDequeueRingCache(buffer);
 

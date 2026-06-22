@@ -360,7 +360,7 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
     }
     if (sinkInfo.deviceName == MCH_SINK_NAME && isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
         AUDIO_INFO_LOG("ReloadRenderManager MCH_Speaker, need set isCollaborationEnabled: %{public}d",
- 	        isCollaborationEnabled_);
+            isCollaborationEnabled_);
         sinkInfo.isCollaborationEnabled = isCollaborationEnabled_;
     }
     rendererManagerMap_[audioModuleInfo.name]->ReloadRenderManager(sinkInfo, isReload);
