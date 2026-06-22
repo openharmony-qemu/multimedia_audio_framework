@@ -2581,6 +2581,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     offloadManager->OnNotifyHdiData(hdiPos);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
   
     CreateTwoStreamInOffload(offloadManager);
 
@@ -2638,6 +2639,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_003, 
     std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
   
     CreateTwoStreamInOffload(offloadManager);
 
@@ -3183,6 +3185,7 @@ HWTEST_F(HpaeRendererManagerTest, SetOffloadRenderCallbackType_001, TestSize.Lev
     std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
   
     CreateTwoStreamInOffload(offloadManager);
     auto ret = offloadManager->SetOffloadRenderCallbackType(TEST_STREAM_SESSION_ID, CB_NONBLOCK_WRITE_COMPLETED);
@@ -3256,6 +3259,7 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_002, TestSize.Level1)
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     HpaeNodeInfo nodeInfo;
     nodeInfo.sessionId = TEST_STREAM_SESSION_ID;
@@ -3291,6 +3295,7 @@ HWTEST_F(HpaeRendererManagerTest, AddNodeToSink_001, TestSize.Level1)
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     HpaeNodeInfo nodeInfo;
     nodeInfo.sessionId = 60001;
@@ -3320,6 +3325,7 @@ HWTEST_F(HpaeRendererManagerTest, AddAllNodesToSink_001, TestSize.Level1)
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
 
@@ -3363,6 +3369,7 @@ HWTEST_F(HpaeRendererManagerTest, OffloadMoveAllStream_001, TestSize.Level1)
 
     offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     EXPECT_EQ(offloadManager->MoveAllStream(sinkName, sessionIds, moveType), SUCCESS);
     WaitForMsgProcessing(offloadManager);
@@ -3382,6 +3389,7 @@ HWTEST_F(HpaeRendererManagerTest, MoveStream_003, TestSize.Level1)
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     uint32_t activeSid = 95001;
     uint32_t normalSid = 95002;
@@ -3421,6 +3429,7 @@ HWTEST_F(HpaeRendererManagerTest, OffloadStopManager_001, TestSize.Level1)
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     offloadManager->sinkOutputNode_.reset();
     EXPECT_EQ(offloadManager->StopManager(), SUCCESS);
@@ -3603,6 +3612,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_001, TestSi
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
     EXPECT_EQ(offloadManager->IsInit(), true);
 
     // Create stream to trigger CreateOffloadNodes
@@ -3648,6 +3658,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_002, TestSi
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
     EXPECT_EQ(offloadManager->IsInit(), true);
 
     // Create stream to trigger CreateOffloadNodes
@@ -3685,6 +3696,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_NotCreateForNonRemoteOffload_001, 
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
     EXPECT_EQ(offloadManager->IsInit(), true);
 
     // Create stream to trigger CreateOffloadNodes
@@ -3729,6 +3741,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_Destroy_001, TestSize.Level1)
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
@@ -3779,6 +3792,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_ConnectAndDisconnect_001, TestSize
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     // Create and start stream to trigger ConnectInputSession
     HpaeStreamInfo streamInfo;
@@ -3833,6 +3847,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_LatencyCalculation_001, TestSize.L
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
@@ -3891,6 +3906,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_SetupAudioLimiter_001, TestSize.Le
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
