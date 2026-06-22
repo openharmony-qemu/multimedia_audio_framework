@@ -398,6 +398,7 @@ int32_t HpaeFastRendererManager::InitSinkInner(bool isReload)
             }
         }
     });
+    sinkOutputNode_->RenderSinkStart();
     return SUCCESS;
 }
 

@@ -216,6 +216,7 @@ int32_t HpaeFastCapturerManager::InitCapturerManager()
     isInit_.store(true);
     mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     mixerNode_->Connect(sourceInputNode_);
+    sourceInputNode_->CapturerSourceStart();
     return SUCCESS;
 }
 
