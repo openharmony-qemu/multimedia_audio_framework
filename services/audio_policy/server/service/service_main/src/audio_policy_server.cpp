@@ -5730,6 +5730,15 @@ int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, b
 int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret)
 {
     ret = AudioServerProxy::GetInstance().SetKaraokeParameters(static_cast<DeviceType>(deviceType), parameters);
+    bool enable = false;
+    if (parameters.starts_with("Karaoke_enable=enable")) {
+        enable = true;
+    } else if (parameters.starts_with("Karaoke_enable=disable")) {
+        enable = false;
+    } else {
+        return SUCCESS;
+    }
+    (void)audioVolumeManager_.StartNearlinkKaraokeTransition(enable);
     return SUCCESS;
 }
 
