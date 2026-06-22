@@ -2797,10 +2797,9 @@ void AudioCoreService::EvaluateActiveVoipPrivacyPresence(
         }
         uint32_t sessionId = streamDesc->GetSessionId();
         bool voipMuted = streamDesc->voipPriorityLowered_.load();
-        bool voipPrivacy = streamDesc->voipNoPrivacyFlag_.load();
-        AUDIO_INFO_LOG("sessionId:%{public}u voipMuted:%{public}d voipPrivacy:%{public}d",
-            sessionId, voipMuted, voipPrivacy);
-        if (voipMuted || voipPrivacy) {
+        AUDIO_INFO_LOG("sessionId:%{public}u voipMuted:%{public}d",
+            sessionId, voipMuted);
+        if (voipMuted) {
             continue;
         }
 
@@ -3646,49 +3645,6 @@ void AudioCoreService::NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool l
 
     streamDesc->voipPriorityLowered_.store(lowered);
     TriggerVoipPriorityReload(streamDesc, lowered);
-}
-
-bool AudioCoreService::UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled)
-{
-    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagBySessionId sessionId:%{public}u enabled:%{public}d",
-        sessionId, enabled);
-    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, false, "pipeManager_ is nullptr");
-    auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
-    CHECK_AND_RETURN_RET(streamDesc->IsRecording(), false);
-    CHECK_AND_RETURN_RET(streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION, false);
-    CHECK_AND_RETURN_RET(streamDesc->voipNoPrivacyFlag_.load() != enabled, false);
-    streamDesc->voipNoPrivacyFlag_.store(enabled);
-    return true;
-}
-
-bool AudioCoreService::UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled)
-{
-    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagByPid callerPid:%{public}d enabled:%{public}d",
-        callerPid, enabled);
-    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, false, "pipeManager_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(callerPid > 0, false, "callerPid is invalid");
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> allCapturerStreamDescs =
-        pipeManager_->GetAllCapturerStreamDescs();
-    size_t updateCount = 0;
-    for (const auto &streamDesc : allCapturerStreamDescs) {
-        if (streamDesc == nullptr) {
-            continue;
-        }
-        int32_t streamCallerPid = streamDesc->callerPid_ > 0 ? streamDesc->callerPid_ : streamDesc->appInfo_.appPid;
-        if (streamCallerPid != callerPid) {
-            continue;
-        }
-        if (streamDesc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION ||
-            streamDesc->voipNoPrivacyFlag_.load() == enabled) {
-            continue;
-        }
-        streamDesc->voipNoPrivacyFlag_.store(enabled);
-        ++updateCount;
-    }
-    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagByPid done callerPid:%{public}d updateCount:%{public}zu",
-        callerPid, updateCount);
-    return updateCount > 0;
 }
 
 void AudioCoreService::TriggerVoipPriorityReload(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool lowered)
