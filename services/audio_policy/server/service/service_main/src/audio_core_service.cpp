@@ -801,10 +801,6 @@ int32_t AudioCoreService::CreateCapturerClient(
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetCaptureClientDevice(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t sessionId)
 {
-    bool hasRunningStream = streamCollector_.HasRunningCapturerStreamByUid(INVALID_UID);
-    CHECK_AND_RETURN_RET(!hasRunningStream, std::make_shared<AudioDeviceDescriptor>(
-            audioRouterSelectStrategy_.Get1stCurrentInputDevice(GetRealUid(streamDesc))));
-
     FetchDeviceInfo info;
     info.sourceType = streamDesc->capturerInfo_.sourceType;
     info.clientUID = GetRealUid(streamDesc);
