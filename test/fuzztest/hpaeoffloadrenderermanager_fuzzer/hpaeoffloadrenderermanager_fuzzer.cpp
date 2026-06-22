@@ -1965,8 +1965,6 @@ void HpaeOffloadRendererManagerCurNodeUseAfterFreeFuzzTest()
 {
     // CRITICAL: Test OnNodeStatusUpdate(), OnRewindAndFlush(), OnNotifyHdiData()
     // after DestroyStream() which sets curNode_ to nullptr. All three now null-check curNode_.
-    // after DeleteInputSession() which sets curNode_ to nullptr.
-    // Source lines 860-901 show these methods access curNode_ without null check.
 
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
