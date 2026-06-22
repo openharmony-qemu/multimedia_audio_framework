@@ -32,14 +32,16 @@ namespace AudioSuite {
 // Raw format conversion class using primitive conversion functions
 class AudioSuiteRawFormatConversion {
 public:
-    AudioSuiteRawFormatConversion(const uint32_t resampleQuality);
+    AudioSuiteRawFormatConversion();
     ~AudioSuiteRawFormatConversion();
 
     // Initialize with input and output formats
-    int32_t Init(const PcmBufferFormat& inputFormat, const PcmBufferFormat& outputFormat);
+    int32_t Init(
+        const PcmBufferFormat& inputFormat, const PcmBufferFormat& outputFormat, const uint32_t resampleQuality);
 
     // Perform conversion on input data
     int32_t Process(const uint8_t* inData, uint32_t inDataSize, std::vector<uint8_t>& outputVector);
+    uint32_t GetDelayFrames() const;
 
     // Reset internal state
     void Reset();
@@ -74,13 +76,15 @@ private:
     // Configuration
     PcmBufferFormat inputFormat_;
     PcmBufferFormat outputFormat_;
-    bool initialized_;
-    bool formatsSame_;  // true if input and output formats are identical
+    bool initialized_ = false;
+    bool formatsSame_ = false;  // true if input and output formats are identical
 
     // Thread safety
     std::mutex mutex_;
     uint32_t resampleQuality_ = 1;
-    static constexpr uint32_t DOUBLE_FRAME = 2;
+    // for processing delay
+    bool isFirstProcess_ = true;
+    uint32_t delayFrames_ = 0;
 };
 
 } // namespace AudioSuite

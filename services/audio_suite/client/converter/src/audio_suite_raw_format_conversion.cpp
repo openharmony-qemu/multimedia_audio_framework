@@ -32,18 +32,20 @@ namespace AudioSuite {
 constexpr uint32_t MILLISECONDS_PER_SECOND = 1000;
 constexpr uint32_t FLOAT_SIZE_BYTES = sizeof(float);
 
-AudioSuiteRawFormatConversion::AudioSuiteRawFormatConversion(const uint32_t resampleQuality)
-    : initialized_(false), formatsSame_(false), resampleQuality_(resampleQuality)
-{}
+AudioSuiteRawFormatConversion::AudioSuiteRawFormatConversion()
+{
+}
 
 AudioSuiteRawFormatConversion::~AudioSuiteRawFormatConversion()
 {
 }
 
-int32_t AudioSuiteRawFormatConversion::Init(const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat)
+int32_t AudioSuiteRawFormatConversion::Init(
+    const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat, const uint32_t resampleQuality)
 {
     inputFormat_ = inputFormat;
     outputFormat_ = outputFormat;
+    resampleQuality_ = resampleQuality;
     initialized_ = true;
 
     // Check if input and output formats are identical
@@ -89,6 +91,8 @@ void AudioSuiteRawFormatConversion::Reset()
     channelConverter_.Reset();
     initialized_ = false;
     formatsSame_ = false;
+    isFirstProcess_ = true;
+    delayFrames_ = 0;
 
     floatBuffer_.clear();
     resampleBuffer_.clear();
@@ -119,6 +123,10 @@ int32_t AudioSuiteRawFormatConversion::ProcessResample(
 
     outData = resampleBuffer_.data();
     outSampleCount = actualOutFrameSize * inputFormat_.channelCount;
+    if (isFirstProcess_) {
+        isFirstProcess_ = false;
+        delayFrames_ = proResampler_->GetDelayFrames();
+    }
     return SUCCESS;
 }
 
@@ -232,6 +240,11 @@ int32_t AudioSuiteRawFormatConversion::Process(
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Process: ConvertFromFloat failed");
 
     return SUCCESS;
+}
+
+uint32_t AudioSuiteRawFormatConversion::GetDelayFrames() const
+{
+    return delayFrames_;
 }
 
 }  // namespace AudioSuite

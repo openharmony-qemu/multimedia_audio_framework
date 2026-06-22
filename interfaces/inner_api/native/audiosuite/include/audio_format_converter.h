@@ -56,17 +56,18 @@ public:
     virtual ~AudioFormatConverter() = default;
 
     static std::shared_ptr<AudioFormatConverter> Create(
-        const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat, const uint32_t resampleQuality = 1);
+        const PcmBufferFormat &inputFormat, const PcmBufferFormat &outputFormat,
+        const uint32_t resampleQuality = 1, const bool enableDataAlignment = false);
 
+    // Input data is passed using a callback method, the output data and the original data are aligned in position.
     virtual int32_t SetInputCallback(std::shared_ptr<FormatConverterDataCallback> callback) = 0;
-
     virtual int32_t Process(void* outputData, uint32_t outputCapacity, uint32_t* outputSize) = 0;
 
+    // Input data is transferred through the interface
     virtual AudioConvertResult SyncProcess(const uint8_t* inData, uint32_t inBytes) = 0;
+    virtual size_t GetDelayDataSize() = 0;
 
     virtual void Destroy() = 0;
-private:
-    static std::mutex createMutex_;
 };
 
 } // namespace AudioSuite
