@@ -108,7 +108,7 @@ struct InterruptEvent : public Parcelable {
     InterruptEvent(InterruptType eventTypeIn, InterruptForceType forceTypeIn,
         InterruptHint hintType, bool callbackToAppIn = true, bool handleForceStreamIn = true)
         : eventType(eventTypeIn), forceType(forceTypeIn), hintType(hintType),
-        callbackToApp(callbackToAppIn), handleForceStream(handleForceStreamIn){}
+          callbackToApp(callbackToAppIn), handleForceStream(handleForceStreamIn) {}
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteInt32(static_cast<int32_t>(eventType));
