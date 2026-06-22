@@ -74,7 +74,10 @@ if (!audio_framework_feature_opensl_es) {
       "src/util/table_struct.cpp",
     ]
 
-    cflags = [ "-Werror" ]
+    cflags = [
+      "-Werror",
+      "-Os",
+    ]
 
     deps = [
       "../../../services/audio_service:audio_client",

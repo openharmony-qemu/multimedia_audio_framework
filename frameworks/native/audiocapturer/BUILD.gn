@@ -29,6 +29,7 @@ config("audio_capturer_config") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-Os"
   ]
 }
 
@@ -56,6 +57,7 @@ ohos_shared_library("audio_capturer") {
     ubsan = true
     boundary_sanitize = true
   }
+
   install_enable = true
 
   configs = [ ":audio_capturer_config" ]

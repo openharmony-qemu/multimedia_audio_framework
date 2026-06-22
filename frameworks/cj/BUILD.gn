@@ -32,6 +32,8 @@ ohos_shared_library("cj_multimedia_audio_ffi") {
     debug = false
   }
 
+  cflags = [ "-Os" ]
+
   include_dirs = [
     "include",
     "../../frameworks/native/include",
