@@ -729,9 +729,7 @@ int64_t HpaeFastSinkOutputNode::GetPredictNextReadTime(uint64_t posInFrame)
 {
     Trace trace("HpaeFastSinkOutputNode::GetPredictNextRead");
     uint64_t handleSpanCnt = posInFrame / dstSpanSizeInframe_;
-    uint32_t startPeriodCnt = TIMESTAMP_SYNC_CNT_AT_START;
-    uint32_t oneBigPeriodCnt = TIMESTAMP_SYNC_CNT_INTERVAL;
-    if (handleSpanCnt < startPeriodCnt || handleSpanCnt % oneBigPeriodCnt == 0) {
+    if (handleSpanCnt < TIMESTAMP_SYNC_CNT_AT_START || handleSpanCnt % TIMESTAMP_SYNC_CNT_INTERVAL == 0) {
         updateThreadCV_.notify_all();
     }
     uint64_t readFrame = 0;
