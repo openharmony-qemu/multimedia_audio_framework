@@ -2465,6 +2465,12 @@ bool CapturerInClientInner::ResetStaticPlayPosition()
     return false;
 }
 
+int32_t CapturerInClientInner::ResetNotifyStreamSilentChangeFlag()
+{
+    AUDIO_WARNING_LOG("Not support");
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t CapturerInClientInner::SetInMainThreadState(bool isInMainThread)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE,

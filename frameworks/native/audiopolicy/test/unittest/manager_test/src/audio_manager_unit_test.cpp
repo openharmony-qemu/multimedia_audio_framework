@@ -1733,45 +1733,6 @@ HWTEST(AudioManagerUnitTest, GetLowPowerVolume_002, TestSize.Level1)
 }
 #endif
 
-#ifdef TEMP_DISABLE
-/**
- * @tc.name   : Test GetSingleStreamVolume API
- * @tc.number : GetSingleStreamVolume_002
- * @tc.desc   : Test function GetSingleStreamVolume in the recording scene
- */
-HWTEST(AudioManagerUnitTest, GetSingleStreamVolume_002, TestSize.Level1)
-{
-    int32_t streamId = 0;
-    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfo;
-    AudioCapturerOptions capturerOptions = {};
-    AppInfo appInfo = {};
-    appInfo.appUid = static_cast<int32_t>(getuid());
-    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
-    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
-    capturerOptions.streamInfo.channels = AudioChannel::MONO;
-    capturerOptions.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
-    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
-
-    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions, appInfo);
-    ASSERT_NE(nullptr, audioCapturer);
-    int32_t ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfo);
-    EXPECT_EQ(SUCCESS, ret);
-
-    for (auto it = audioCapturerChangeInfo.begin(); it != audioCapturerChangeInfo.end(); it++) {
-        AudioCapturerChangeInfo audioCapturerChangeInfo_ = **it;
-        if (audioCapturerChangeInfo_.clientUID == appInfo.appUid) {
-            streamId = audioCapturerChangeInfo_.sessionId;
-        }
-    }
-    ASSERT_NE(0, streamId);
-
-    float vol = AudioSystemManager::GetInstance()->GetSingleStreamVolume(streamId);
-    EXPECT_FALSE((vol < VOLUME_MIN || vol > VOLUME_MAX));
-    audioCapturer->Release();
-}
-#endif
-
 /**
 * @tc.name   : Test SetPauseOrResumeStream API
 * @tc.number : SetPauseOrResumeStream_001

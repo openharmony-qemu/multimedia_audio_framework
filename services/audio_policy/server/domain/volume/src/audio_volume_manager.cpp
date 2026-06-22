@@ -143,6 +143,7 @@ bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPol
     if (forceControlVolumeTypeMonitor_ == nullptr) {
         forceControlVolumeTypeMonitor_ = std::make_shared<ForceControlVolumeTypeMonitor>();
     }
+    audioPolicyStateMonitor_ = DelayedSingleton<AudioPolicyStateMonitor>::GetInstance();
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     loudVolumeSupportMode_ = system::GetIntParameter("const.audio.loudvolume", 0);
@@ -164,6 +165,7 @@ void AudioVolumeManager::DeInit(void)
     policyVolumeMap_ = nullptr;
     safeVolumeExit_ = true;
     forceControlVolumeTypeMonitor_ = nullptr;
+    audioPolicyStateMonitor_ = nullptr;
     if (calculateLoopSafeTime_ != nullptr && calculateLoopSafeTime_->joinable()) {
         calculateLoopSafeTime_->join();
         calculateLoopSafeTime_.reset();

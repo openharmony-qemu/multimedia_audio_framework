@@ -95,6 +95,8 @@ static const char* PRIMARY_BT_CLASS = "Built_in_bt";
 static const char* REMOTE_SUFFIX = "out";
 static const char* REMOTE_OFFLOAD_SUFFIX = "out_offload";
 static const char* REMOTE_MCH_SUFFIX = "out_multichannel";
+static const char* FAST_VOIP_CAPTURER_SOURCE = "FastVOIPCapturerSource";
+static const char* FAST_CAPTURER_SOURCE = "FastCapturerSource";
 }
 
 static std::unordered_map<std::string, std::string> MODULENAME_TO_PIPENAME = {

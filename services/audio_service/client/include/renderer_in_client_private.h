@@ -254,6 +254,7 @@ public:
     void SetBundleName(std::string &name) override;
 
     bool ResetStaticPlayPosition() override;
+    int32_t ResetNotifyStreamSilentChangeFlag() override;
     void ReportExceptionForInterval();
     void CheckAndReportTimestamp();
 

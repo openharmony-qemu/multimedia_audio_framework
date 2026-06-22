@@ -185,6 +185,22 @@ HWTEST_F(HpaeSessionEffectNodeTest, pauseEffect_noInstance_returnsZero, TestSize
     EXPECT_EQ(node_->PauseEffect(), 0);
 }
 
+HWTEST_F(HpaeSessionEffectNodeTest, stopPreheatThread_JoinsRunningThread, TestSize.Level0)
+{
+    node_->stopRequested_.store(false);
+    node_->preheatThread_ = std::thread([node = node_]() {
+        while (!node->stopRequested_.load()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
+    ASSERT_TRUE(node_->preheatThread_.joinable());
+
+    node_->StopPreheatThread();
+
+    EXPECT_TRUE(node_->stopRequested_.load());
+    EXPECT_FALSE(node_->preheatThread_.joinable());
+}
+
 // DropEffect clears node's reference and resets to IDLE
 HWTEST_F(HpaeSessionEffectNodeTest, dropEffect_clearsInstance, TestSize.Level0)
 {
@@ -1513,6 +1529,27 @@ HWTEST_F(SessionEffectNodeStateTest, closeSE_duringActive, TestSize.Level0)
     EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
 
     node_->CloseSessionEffectCore();
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
+}
+
+// SE-OP12a: Close SE during ACTIVE must also stop stale preheat thread
+HWTEST_F(SessionEffectNodeStateTest, closeSE_duringActive_joinsPreheatThread, TestSize.Level0)
+{
+    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
+    node_->stopRequested_.store(false);
+    node_->preheatThread_ = std::thread([node = node_]() {
+        while (!node->stopRequested_.load()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
+    ASSERT_TRUE(node_->preheatThread_.joinable());
+
+    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
+
+    node_->CloseSessionEffectCore();
+
+    EXPECT_TRUE(node_->stopRequested_.load());
+    EXPECT_FALSE(node_->preheatThread_.joinable());
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
 }
 

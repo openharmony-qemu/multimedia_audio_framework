@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "audio_interrupt_service.h"
+#include "audio_connected_device.h"
 #include "sle_audio_device_manager.h"
 #include "audio_volume_manager_ext_unit_test.h"
 
@@ -1086,12 +1087,14 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SetDeviceSafeVolumeStatus_001, TestSize.
     auto nearLinkDevice = std::make_shared<AudioDeviceDescriptor>();
     nearLinkDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
     nearLinkDevice->networkId_ = LOCAL_NETWORK_ID;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(nearLinkDevice);
     audioVolumeManager.audioActiveDevice_.streamUsageDeviceMap_[STREAM_USAGE_MUSIC] = {nearLinkDevice};
     audioVolumeManager.userSelect_ = true;
 
     audioVolumeManager.SetDeviceSafeVolumeStatus();
     EXPECT_EQ(audioVolumeManager.safeStatusSle_, SAFE_INACTIVE);
 
+    AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_NEARLINK);
     audioVolumeManager.audioActiveDevice_.streamUsageDeviceMap_.erase(STREAM_USAGE_MUSIC);
 }
 
@@ -1200,12 +1203,14 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithEventVolume_001, TestSize.Level4
     auto nearLinkDevice = std::make_shared<AudioDeviceDescriptor>();
     nearLinkDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
     nearLinkDevice->networkId_ = LOCAL_NETWORK_ID;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(nearLinkDevice);
     audioVolumeManager.audioActiveDevice_.volumeTypeDeviceMap_[STREAM_MUSIC] = {nearLinkDevice};
     const int32_t notificationId = RESTORE_VOLUME_NOTIFICATION_ID;
 
     auto ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_NE(ret, ERROR);
 
+    AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_NEARLINK);
     audioVolumeManager.audioActiveDevice_.volumeTypeDeviceMap_.erase(STREAM_MUSIC);
 }
 
@@ -1220,12 +1225,14 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithEventVolume_002, TestSize.Level4
     auto nearLinkDevice = std::make_shared<AudioDeviceDescriptor>();
     nearLinkDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
     nearLinkDevice->networkId_ = LOCAL_NETWORK_ID;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(nearLinkDevice);
     audioVolumeManager.audioActiveDevice_.volumeTypeDeviceMap_[STREAM_MUSIC] = {nearLinkDevice};
     const int32_t notificationId = INCREASE_VOLUME_NOTIFICATION_ID;
 
     auto ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_NE(ret, ERROR);
 
+    AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_NEARLINK);
     audioVolumeManager.audioActiveDevice_.volumeTypeDeviceMap_.erase(STREAM_MUSIC);
 }
 
@@ -1240,12 +1247,14 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithEventVolume_003, TestSize.Level4
     auto nearLinkDevice = std::make_shared<AudioDeviceDescriptor>();
     nearLinkDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
     nearLinkDevice->networkId_ = LOCAL_NETWORK_ID;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(nearLinkDevice);
     audioVolumeManager.audioActiveDevice_.volumeTypeDeviceMap_[STREAM_MUSIC] = {nearLinkDevice};
     const int32_t notificationId = 1;
 
     auto ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_EQ(ret, 0);
 
+    AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_NEARLINK);
     audioVolumeManager.audioActiveDevice_.volumeTypeDeviceMap_.erase(STREAM_MUSIC);
 }
 

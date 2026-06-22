@@ -630,29 +630,34 @@ void HpaeOffloadSinkOutputNode::OffloadCallback(const RenderCallbackType type)
     CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
     Trace trace("HpaeOffloadSinkOutputNode::OffloadCallback");
     switch (type) {
-        case CB_NONBLOCK_WRITE_COMPLETED: {
-            if (isHdiFull_.load()) {
-                RunningLock(true);
-                UpdatePresentationPosition();
-                NotifyHdiPos();
-                isHdiFull_.store(false);
-                auto callback = GetNodeInfo().statusCallback.lock();
-                if (callback) {
-                    callback->OnNotifyQueue();
-                }
-            }
+        case CB_NONBLOCK_WRITE_COMPLETED:
+            HandleNonBlockWriteCompleted();
             break;
-        }
-        case CB_RENDER_FULL: {
-            if (!isHdiFull_.load()) {
-                RunningLock(false);
-                isHdiFull_.store(true);
-            }
+        case CB_RENDER_FULL:
+            HandleRenderFull();
             break;
-        }
         default:
             break;
     }
+}
+
+void HpaeOffloadSinkOutputNode::HandleNonBlockWriteCompleted()
+{
+    CHECK_AND_RETURN(isHdiFull_.load());
+    RunningLock(true);
+    UpdatePresentationPosition();
+    NotifyHdiPos();
+    isHdiFull_.store(false);
+    auto callback = GetNodeInfo().statusCallback.lock();
+    CHECK_AND_RETURN(callback);
+    callback->OnNotifyQueue();
+}
+
+void HpaeOffloadSinkOutputNode::HandleRenderFull()
+{
+    CHECK_AND_RETURN(!isHdiFull_.load());
+    RunningLock(false);
+    isHdiFull_.store(true);
 }
 
 void HpaeOffloadSinkOutputNode::RegOffloadCallback()

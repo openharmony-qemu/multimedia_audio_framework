@@ -381,6 +381,7 @@ private:
     std::mutex nearlinkKaraokeMutex_;
     NearlinkKaraokeVolumeMode nearlinkKaraokeMode_ = NearlinkKaraokeVolumeMode::VOLUME_NEARLINK;
     NearlinkKaraokeTransition nearlinkKaraokeTransition_;
+    std::shared_ptr<AudioPolicyStateMonitor> audioPolicyStateMonitor_;
 };
 
 class ForceControlVolumeTypeMonitor : public AudioPolicyStateMonitorCallback {

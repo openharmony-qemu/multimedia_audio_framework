@@ -60,6 +60,7 @@ public:
     // Close SE support
     void StartCloseCrossfade();
     bool IsCloseCrossfadePending() const;
+    void StopPreheatThread();
 
     // Pause: preserves caches, does NOT send DISABLE to algorithm
     int32_t PauseEffect();
@@ -112,7 +113,6 @@ private:
     void OnNoDataReceived(bool &noDataTimerActive,
         std::chrono::steady_clock::time_point &noDataStartTime, uint32_t &backoffMs);
     bool HandleNoDataTimeout(size_t inputLevel);
-    void StopPreheatThread();
     HpaePcmBuffer *ProcessIntercepting(const std::vector<HpaePcmBuffer *> &inputs);
     HpaePcmBuffer *ProcessActive(const std::vector<HpaePcmBuffer *> &inputs);
     HpaePcmBuffer *ProcessActiveNoInput();
