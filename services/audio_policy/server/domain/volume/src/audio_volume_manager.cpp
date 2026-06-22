@@ -614,25 +614,25 @@ int32_t AudioVolumeManager::GetNearlinkKaraokeVolume()
     }
 }
 
-void AudioVolmeManager::SetNearlinkTransitionTargetFwkVolume(int32_t volumeLevel)
+void AudioVolumeManager::SetNearlinkTransitionTargetFwkVolume(int32_t volumeLevel)
 {
     std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
     nearlinkKaraokeTransition_.targetFwkVolume = volumeLevel;
 }
 
-void AudioVolmeManager::SetNearlinkTransitionTargetAbsVolume(int32_t volumeLevel)
+void AudioVolumeManager::SetNearlinkTransitionTargetAbsVolume(int32_t volumeLevel)
 {
     std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
     nearlinkKaraokeTransition_.targetAbsVolume = volumeLevel;
 }
 
-void AudioVolmeManager::SetNearlinkTransitionCurrentFwkVolume(int32_t volumeLevel)
+void AudioVolumeManager::SetNearlinkTransitionCurrentFwkVolume(int32_t volumeLevel)
 {
     std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
     nearlinkKaraokeTransition_.currentFwkVolume = volumeLevel;
 }
 
-void AudioVolmeManager::SetNearlinkTransitionCurrentAbsVolume(int32_t volumeLevel)
+void AudioVolumeManager::SetNearlinkTransitionCurrentAbsVolume(int32_t volumeLevel)
 {
     std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
     nearlinkKaraokeTransition_.currentAbsVolume = volumeLevel;
@@ -675,7 +675,7 @@ int32_t AudioVolumeManager::StartNearlinkKaraokeTransition(bool enable)
         AUDIO_INFO_LOG("KARAOKE TRANSITION: enable(%{public}d) currentAbsVolume=%{public}d targetAbsVolume=%{public}d"
             " -- currentFwkVolume=%{public}d targetFwkVolume=%{public}d", enable,
             nearlinkKaraokeTransition_.currentAbsVolume, nearlinkKaraokeTransition_.targetAbsVolume,
-            nearlinkKaraokeTransition_.currentFwkVolume, nearlinkKaraokeTransition_.targetFwkVolume,);
+            nearlinkKaraokeTransition_.currentFwkVolume, nearlinkKaraokeTransition_.targetFwkVolume);
     }
     TriggerKaraokeTransition();
     return SUCCESS;
@@ -696,7 +696,7 @@ int32_t AudioVolumeManager::StepNearlinkKaraokeTransition()
     Trace trace("AudioVolumeManager::StepNearlinkKaraokeTransition");
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     std::string curOutputDeviceMacAddr = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
-    CHECK_AND_RETURN_RET_LOG(curOutputDeviceType == DEVICE_TYPE_NEARLINK, KARAOKE_TRANSITION_END);
+    CHECK_AND_RETURN_RET(curOutputDeviceType == DEVICE_TYPE_NEARLINK, KARAOKE_TRANSITION_END);
 
     int32_t absDiff = 0;
     int32_t fwkDiff = 0;
@@ -706,14 +706,14 @@ int32_t AudioVolumeManager::StepNearlinkKaraokeTransition()
     {
         std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
         absDiff = nearlinkKaraokeTransition_.targetAbsVolume - nearlinkKaraokeTransition_.currentAbsVolume;
-        fwkDiff = nearlinkKaraokeTransition_.targetFwkVolume - nearlinkKaraokeTransition_.curentFwkVolume;
+        fwkDiff = nearlinkKaraokeTransition_.targetFwkVolume - nearlinkKaraokeTransition_.currentFwkVolume;
         if (absDiff == 0 && fwkDiff == 0) {
             FinishNearlinkKaraokeTransition();
             return KARAOKE_TRANSITION_END;
         }
         nextAbsVolume = nearlinkKaraokeTransition_.currentAbsVolume + ((absDiff > 0) ? 1 : -1);
         nextFwkVolume = nearlinkKaraokeTransition_.currentFwkVolume + ((absDiff > 0) ? 1 : -1);
-        AUDIO_INFO_LOG("KARAOKE TRANSITION: currentAbs={public}d targetAbs=%{public}d -- currentFwk=%{public}d"
+        AUDIO_INFO_LOG("KARAOKE TRANSITION: currentAbs=%{public}d targetAbs=%{public}d -- currentFwk=%{public}d"
             " targetFwk=%{public}d", nearlinkKaraokeTransition_.currentAbsVolume,
             nearlinkKaraokeTransition_.targetAbsVolume, nearlinkKaraokeTransition_.currentFwkVolume,
             nearlinkKaraokeTransition_.targetFwkVolume);
@@ -740,7 +740,7 @@ int32_t AudioVolumeManager::StepNearlinkKaraokeTransition()
         SetSharedVolume(STREAM_MUSIC, DEVICE_TYPE_NEARLINK, {false, volumeDegree, 0});
         SetNearlinkTransitionCurrentFwkVolume(nextFwkVolume);
     }
-    return KRAROKE_TRANSITION_CONTINUE;
+    return KRRAOKE_TRANSITION_CONTINUE;
 }
 
 int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, const VolumeScale &volume,
@@ -2575,7 +2575,7 @@ void AudioVolumeManager::KaraokeTransitionThreadFunc()
     AUDIO_INFO_LOG("KARAOKE TRANSITION: Karaoke transition thread started");
     while (true) {
         std::unique_lock<std::mutex> lock(transitionThreadSignalMutex_);
-        karaokeTransitionoCondition_.wait(lock, [this] {
+        karaokeTransitionCondition_.wait(lock, [this] {
             return karaokeTransitionThreadReady_ || karaokeTransitionThreadStop_;
         });
         if (karaokeTransitionThreadStop_) {
