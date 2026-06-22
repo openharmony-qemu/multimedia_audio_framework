@@ -245,11 +245,7 @@ void HpaeMixerNode::DrainProcess()
         waitFrames_ = 0;
     } else {
         waitFrames_++;
-        uint32_t waitFramesTemp = WAIT_FRAMES_NUM;
-        if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
-            waitFramesTemp = COLLAB_WAIT_FRAMES_NUM;
-        }
-        if (waitFrames_ >= waitFramesTemp) {
+        if (waitFrames_ == WAIT_FRAMES_NUM) {
             waitFrames_ = 0;
             auto statusCallback = GetNodeStatusCallback().lock();
             if (statusCallback) {

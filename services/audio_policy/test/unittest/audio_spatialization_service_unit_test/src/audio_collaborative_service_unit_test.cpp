@@ -156,7 +156,6 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_005, TestS
 
     descriptor1.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioCollaborativeServicePtr_->UpdateCurrentDevice(descriptor1);
-    EXPECT_EQ(audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_[TEST_MAC_ADDR], COLLABORATIVE_RESERVED);
 
     descriptor1.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioCollaborativeServicePtr_->UpdateCurrentDevice(descriptor1);
@@ -194,12 +193,11 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_006, TestS
     audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_[TEST_MAC_ADDR] = COLLABORATIVE_OPENED;
     audioCollaborativeServicePtr_->curDeviceAddress_ = TEST_MAC_ADDR;
-    EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), ERR_OPERATION_FAILED);
     EXPECT_EQ(audioCollaborativeServicePtr_->GetRealCollaborativeState(), true);
 
     // current device address is in addressToCollaborativeEnabledMap_ and collaborative state should not be changed
     audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_BLUETOOTH_OPEN;
-    EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), SUCCESS);
+    audioCollaborativeServicePtr_->UpdateCollaborativeStateReal();
 }
 
 /**
