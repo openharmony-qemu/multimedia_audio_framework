@@ -629,6 +629,12 @@ napi_value NapiAudioSpatializationManager::SetPersonalizedSpatializationEnabled(
     auto inputParser = [env, context, &requireArgc](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc == requireArgc, "mandatory parameters are left unspecified",
             NAPI_ERR_INPUT_INVALID);
+
+        napi_valuetype valueType;
+        napi_typeof(env, argv[PARAM0], &valueType);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_object,
+            "incorrect parameter types: deviceDescriptor must be AudioDeviceDescriptor object", NAPI_ERR_INPUT_INVALID);
+            
         bool argTransFlag = true;
         context->status = NapiParamUtils::GetAudioDeviceDescriptor(env, context->deviceDescriptor, argTransFlag,
             argv[PARAM0]);
@@ -643,7 +649,7 @@ napi_value NapiAudioSpatializationManager::SetPersonalizedSpatializationEnabled(
     };
     context->GetCbInfo(env, info, inputParser);
     if (context->status != napi_ok) {
-        NapiAudioError::ThrowError(env, "incorrect parameter types", context->errCode);
+        NapiAudioError::ThrowError(env, context->errMessage, context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
