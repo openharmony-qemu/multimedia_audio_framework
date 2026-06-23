@@ -33,6 +33,7 @@ public:
     ~AudioSuiteFormatConversion() = default;
 
     AudioSuitePcmBuffer *Process(AudioSuitePcmBuffer *inPcmBuffer, PcmBufferFormat &outFormat);
+    uint32_t GetDelayFrames() const;
     void Reset();
 
 private:
@@ -53,6 +54,10 @@ private:
         uint32_t channels;
     };
     struct ResampleCfg resampleCfg_ = {0};
+
+    // for processing delay
+    bool isFirstProcess_ = true;
+    uint32_t delayFrames_ = 0;
 };
 
 }  // namespace AudioSuite
