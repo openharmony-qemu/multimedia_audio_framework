@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_policy_utils.h"
+#include "audio_collaborative_service.h"
 
 #include "client_type_manager.h"
 
@@ -267,6 +268,13 @@ int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceD
     static const unordered_set<StreamUsage> EXTENDED_WAITING_USAGES = {
         STREAM_USAGE_VOICE_MESSAGE, STREAM_USAGE_VOICE_ASSISTANT, STREAM_USAGE_NAVIGATION
     };
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>(deviceDesc);
+    if (streamUsage == STREAM_USAGE_NAVIGATION &&
+        AudioCollaborativeService::GetAudioCollaborativeService().IsCollaborativePlaybackEnabledForDevice(
+            descriptor)) {
+        return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, uid, isLoopback),
+            SLE_COLLABORATION_TIMEOUT_MS);
+    }
     return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, uid, isLoopback),
         EXTENDED_WAITING_USAGES.contains(streamUsage) ?
             SLE_EXTENDED_TIMEOUT_MS : SLE_STANDARD_TIMEOUT_MS);
