@@ -134,7 +134,6 @@ std::shared_ptr<AudioStreamDescriptor> MakeCapturerDesc(FuzzedDataProvider &fdp)
     streamDesc->capturerInfo_.capturerFlags = fdp.ConsumeBool() ? AUDIO_FLAG_FORCED_NORMAL : AUDIO_FLAG_NORMAL;
     streamDesc->streamStatus_ = fdp.ConsumeBool() ? STREAM_STATUS_STARTED : STREAM_STATUS_NEW;
     streamDesc->bundleName_ = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
-    streamDesc->voipNoPrivacyFlag_.store(fdp.ConsumeBool());
     streamDesc->voipPrivacyMuted_.store(false);
     streamDesc->newDeviceDescs_.push_back(MakeDevice(fdp, INPUT_DEVICE));
     return streamDesc;
@@ -288,8 +287,6 @@ void AudioCoreServiceVoipPrivacyGapFuzzTest(FuzzedDataProvider &fdp)
     targetMuteSessions.clear();
     audioCoreService->SyncVoipPrivacyMuteState(streamDescs, targetMuteSessions);
     audioCoreService->NotifyVoipPriorityLoweredByMute(streamDesc->sessionId_, fdp.ConsumeBool());
-    audioCoreService->UpdateVoipNoPrivacyFlagBySessionId(streamDesc->sessionId_, fdp.ConsumeBool());
-    audioCoreService->UpdateVoipNoPrivacyFlagByPid(streamDesc->callerPid_, fdp.ConsumeBool());
 }
 
 void AudioCoreServiceVolumeGapFuzzTest(FuzzedDataProvider &fdp)

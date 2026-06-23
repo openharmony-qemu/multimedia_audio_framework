@@ -150,8 +150,6 @@ public:
         int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) override;
         void OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable) override;
         void ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason);
-        void UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled, const std::string &reason);
-        void UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled, const std::string &reason);
 
         // IDeviceStatusObserver
         void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command) override;
@@ -507,8 +505,6 @@ public:
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
     void NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc);
     void NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool lowered);
-    bool UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled);
-    bool UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled);
     int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
     void TriggerVoipPriorityReload(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool lowered);
     int32_t ReloadCaptureSessionSoftLink();

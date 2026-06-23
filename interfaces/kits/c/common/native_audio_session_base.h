@@ -53,9 +53,6 @@ typedef enum {
     /** @brief Default behavior, used to clear behavior settings. */
     DEFAULT = 0x00000000,
 
-    /** @brief Non‑private VoIP, allowed to be recorded. */
-    VOIP_PRIVACY_TYPE_PUBLIC = 0x00000001,
-
     /** @brief When the audio stream is interrupted by the system, it will be muted. */
     MUTE_WHEN_INTERRUPTED = 0x00000002,
 
