@@ -346,13 +346,18 @@ int32_t AudioSpatializationService::SetPersonalizedSpatializationEnabled(
     }
 
     int32_t ret = UpdatePersonalizedSpatializationState(enable);
-    CHECK_AND_RETURN_RET(ret == 0, ERROR, "set personalizedSpatializationEnabled failed");
-    addressToSpatialEnabledMap_[encryptedAddress].personalizedSpatializationEnabled = enable;
-    HandlePersonalizedSpatializationEnabledChange(selectedAudioDevice, enable);
+    if (ret == 0) {
+        addressToSpatialEnabledMap_[encryptedAddress].personalizedSpatializationEnabled = enable;
+    } else {
+        AUDIO_WARNING_LOG("set personalizedSpatializationEnabled failed, ret = %{public}d, "
+            "keep original value %{public}d and notify callback", ret, originalEnabled);
+    }
+    HandlePersonalizedSpatializationEnabledChange(selectedAudioDevice,
+        addressToSpatialEnabledMap_[encryptedAddress].personalizedSpatializationEnabled);
     std::string deviceSpatialInfo = EncapsulateDeviceInfo(address);
     UpdateDeviceSpatialMapInfo(address, deviceSpatialInfo);
     WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
-    return SPATIALIZATION_SERVICE_OK;
+    return ret;
 }
 
 void AudioSpatializationService::HandleSpatializationEnabledChange(const bool &enabled)
@@ -582,11 +587,12 @@ void AudioSpatializationService::UpdateCurrentDevice(const AudioDeviceDescriptor
     if (UpdatePersonalizedSpatializationState(currentPersonalizedState) != 0) {
         AUDIO_WARNING_LOG("UpdatePersonalizedSpatializationState fail");
         if (currentPersonalizedState != false) {
+            currentPersonalizedState = false;
             addressToSpatialEnabledMap_[currEncryptedAddress].personalizedSpatializationEnabled = false;
-            auto devicePtr = std::make_shared<AudioDeviceDescriptor>(currentDevice_);
-            HandlePersonalizedSpatializationEnabledChange(devicePtr, false);
         }
     }
+    auto devicePtr = std::make_shared<AudioDeviceDescriptor>(currentDevice_);
+    HandlePersonalizedSpatializationEnabledChange(devicePtr, currentPersonalizedState);
 
     if (!currentDevice_.macAddress_.empty()) {
         std::string deviceSpatialInfo = EncapsulateDeviceInfo(currentDevice_.macAddress_);
