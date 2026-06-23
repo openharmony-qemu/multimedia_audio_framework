@@ -28,7 +28,6 @@
 #include "audio_zone_service.h"
 #include "audio_info.h"
 #include "stream_dfx_manager.h"
-#include <unistd.h>
 #include "ipc_skeleton.h"
 #include "audio_utils.h"
 
@@ -426,7 +425,7 @@ bool AudioPolicyServerHandler::SendInterruptEventWithStreamIdCallback(const Inte
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(eventContextObj != nullptr, false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             INTERRUPT_CALLBACK_NULL_POINTER, "EventContextObj get nullptr", false),
         "EventContextObj get nullptr");
     eventContextObj->interruptEvent = interruptEvent;
@@ -436,7 +435,7 @@ bool AudioPolicyServerHandler::SendInterruptEventWithStreamIdCallback(const Inte
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID,
         eventContextObj));
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret, ret,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             INTERRUPT_CALLBACK_NULL_POINTER, "Send INTERRUPT_EVENT_WITH_STREAMID event failed", false),
         "Send INTERRUPT_EVENT_WITH_STREAMID event failed");
     return ret;
