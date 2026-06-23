@@ -177,6 +177,7 @@ private:
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
     bool QueryOneStreamUnderrun();
     void DeleteNodesByTraversal(uint32_t sessionId);
+    HpaeProcessorType FindSceneTypeByNodes(uint32_t sessionId);
     void StopOuputNode();
     void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId,
         RendererState state, uint32_t appUid = INVALID_UID);
