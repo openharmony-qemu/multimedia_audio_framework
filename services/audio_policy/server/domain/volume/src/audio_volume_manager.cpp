@@ -712,7 +712,7 @@ int32_t AudioVolumeManager::StepNearlinkKaraokeTransition()
             return KARAOKE_TRANSITION_END;
         }
         nextAbsVolume = nearlinkKaraokeTransition_.currentAbsVolume + ((absDiff > 0) ? 1 : -1);
-        nextFwkVolume = nearlinkKaraokeTransition_.currentFwkVolume + ((absDiff > 0) ? 1 : -1);
+        nextFwkVolume = nearlinkKaraokeTransition_.currentFwkVolume + ((fwkDiff > 0) ? 1 : -1);
         AUDIO_INFO_LOG("KARAOKE TRANSITION: currentAbs=%{public}d targetAbs=%{public}d -- currentFwk=%{public}d"
             " targetFwk=%{public}d", nearlinkKaraokeTransition_.currentAbsVolume,
             nearlinkKaraokeTransition_.targetAbsVolume, nearlinkKaraokeTransition_.currentFwkVolume,
