@@ -2086,8 +2086,8 @@ InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForced
     audioStream_->GetAudioSessionID(sessionID_);
     switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_PAUSE:
-            if (currentFocusState == FOCUS_RUNNING || currentFocusState == FOCUS_PREPARED ||
-                currentFocusState == FOCUS_STARTING) {
+            if ((currentFocusState == FOCUS_RUNNING || currentFocusState == FOCUS_PREPARED ||
+                currentFocusState == FOCUS_STARTING) && interruptEvent.handleForceStream) {
                 HandleForcePause(currentFocusState);
             } else {
                 AUDIO_WARNING_LOG("sessionId: %{public}u, currentFocusState: %{public}d. No need to pause",
@@ -2104,7 +2104,9 @@ InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForced
             isForcePaused_ = false;
             return FORCE_PAUSED_TO_RESUME_EVENT;
         case INTERRUPT_HINT_STOP:
-            HandleForceStop(currentFocusState);
+            if (interruptEvent.handleForceStream) {
+                HandleForceStop(currentFocusState);
+            }
             break;
         case INTERRUPT_HINT_DUCK:
             if (!HandleForceDucking(interruptEvent)) {
@@ -2181,7 +2183,7 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 
     auto ret = HandleAndNotifyForcedEvent(interruptEvent);
     lock.unlock();
-    if (NoNeedNotifyEvent(interruptEvent) == true) {
+    if (NoNeedNotifyEvent(interruptEvent) == true && interruptEvent.handleForceStream) {
         return;
     }
     if (ret == FORCE_EVENT) {
