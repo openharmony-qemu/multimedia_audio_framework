@@ -349,8 +349,7 @@ int32_t AudioSpatializationService::SetPersonalizedSpatializationEnabled(
     if (ret == 0) {
         addressToSpatialEnabledMap_[encryptedAddress].personalizedSpatializationEnabled = enable;
     } else {
-        AUDIO_WARNING_LOG("set personalizedSpatializationEnabled failed, ret = %{public}d, "
-            "keep original value %{public}d and notify callback", ret, originalEnabled);
+        AUDIO_WARNING_LOG("set personalizedSpatializationEnabled failed");
     }
     HandlePersonalizedSpatializationEnabledChange(selectedAudioDevice,
         addressToSpatialEnabledMap_[encryptedAddress].personalizedSpatializationEnabled);
