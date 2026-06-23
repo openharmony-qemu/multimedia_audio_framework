@@ -1331,7 +1331,8 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     }
 
     if (ShouldBypassAudioSessionFocus(zoneId, audioInterrupt)) {
-        TryHandleStreamCallbackInSession(zoneId, audioInterrupt);
+        CHECK_AND_CALL_FUNC_RETURN_RET(TryHandleStreamCallbackInSession(zoneId, audioInterrupt), ERROR,
+            HILOG_COMM_INFO("[ActivateAudioInterruptInternal]fakeFocuState is pause or System error"));
         SendActiveVolumeTypeChangeEvent(zoneId);
         sessionService_.AddStreamInfo({audioInterrupt, ACTIVE});
         AddInterruptErrorEvent(zoneId, currAudioInterrupt);
@@ -2734,7 +2735,7 @@ bool AudioInterruptService::ShouldBypassAudioSessionFocus(const int32_t zoneId, 
     return false;
 }
 
-void AudioInterruptService::TryHandleStreamCallbackInSession(
+bool AudioInterruptService::TryHandleStreamCallbackInSession(
     const int32_t zoneId, const AudioInterrupt &incomingInterrupt)
 {
     bool isRecord = incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
@@ -2743,11 +2744,11 @@ void AudioInterruptService::TryHandleStreamCallbackInSession(
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             isRecord ? RECORD_INTERRUPT_CALLBACK_NULL_POINTER : INTERRUPT_CALLBACK_NULL_POINTER,
             "AudioPolicyServerHandler is nullptr", false);
-        return;
+        return false;
     }
 
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_CALL_FUNC_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr),
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             isRecord ? RECORD_INTERRUPT_QUERY_NULL_POINTER : INTERRUPT_QUERY_NULL_POINTER,
             "can not find zone", false),
@@ -2760,7 +2761,7 @@ void AudioInterruptService::TryHandleStreamCallbackInSession(
     };
     auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isAudioSessionFocusPresent);
     if (iter == audioFocusInfoList.end()) {
-        return;
+        return true;
     }
 
     if (iter->second == AudioFocuState::DUCK) {
@@ -2771,7 +2772,9 @@ void AudioInterruptService::TryHandleStreamCallbackInSession(
     if (iter->second == AudioFocuState::PAUSE) {
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
         handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, incomingInterrupt.streamId);
+        return false;
     }
+    return true;
 }
 
 AudioFocuState AudioInterruptService::GetNewIncomingState(InterruptHint hintType, AudioFocuState oldState)
