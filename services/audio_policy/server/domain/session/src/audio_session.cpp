@@ -545,10 +545,6 @@ bool AudioSession::IsMuteSuggestionWhenMixEnabled()
 int32_t AudioSession::SetAudioSessionBehavior(const uint32_t behavior)
 {
     behaviorFlags_ = {};
-    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)) {
-        behaviorFlags_.voipNoPrivacyFlag = true;
-        AUDIO_INFO_LOG("Session pid: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", callerPid_);
-    }
     if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)) {
         behaviorFlags_.pauseWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Session pid: %{public}d activated PAUSE_WHEN_INTERRUPTED success", callerPid_);

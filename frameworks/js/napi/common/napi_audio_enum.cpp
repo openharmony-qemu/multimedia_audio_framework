@@ -615,7 +615,6 @@ const std::map<std::string, int32_t> NapiAudioEnum::BluetoothAndNearlinkPreferre
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioSessionBehaviorFlagsMap = {
     {"DEFAULT_BEHAVIOR", static_cast<int32_t>(AudioSessionBehaviorFlags::DEFAULT)},
-    {"VOIP_PRIVACY_TYPE_PUBLIC", static_cast<int32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)},
     {"MUTE_WHEN_INTERRUPTED", static_cast<int32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)},
     {"PAUSE_WHEN_INTERRUPTED", static_cast<int32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)},
 };

@@ -93,6 +93,7 @@ protected:
         pauseAccumulatedUs_ = 0;
         pauseStartTime_ = std::chrono::steady_clock::time_point{};
     }
+    void SetWarmupStartTimeForTest(std::chrono::steady_clock::time_point t) { warmupStartTime_ = t; }
     size_t GetPrebufTargetBytes() const;  // TEMP diag
     bool IsPaused() const { return isPaused_; }
     size_t GetTotalBytesIn() const { return totalBytesIn_; }
@@ -102,6 +103,10 @@ protected:
     void SetStatsReportThresholdForTest(int64_t threshold) { statsReportThreshold_ = threshold; }
     void SetActiveNoDataStartForTest(std::chrono::steady_clock::time_point start) { activeNoDataStart_ = start; }
     HpaePcmBuffer *ProcessActiveNoInputForTest() { return ProcessActiveNoInput(); }
+    void UpdatePrebufTargetBytesForTest() { UpdatePrebufTargetBytes(); }
+    bool HandleNoDataTimeoutForTest(size_t inputLevel) { return HandleNoDataTimeout(inputLevel); }
+    void SetPreheatNoDataStartTimeForTest(std::chrono::steady_clock::time_point t) { preheatNoDataStartTime_ = t; }
+    void SetStopRequestedForTest(bool v) { stopRequested_ = v; }
     size_t FeedInputFromBuffer(HpaePcmBuffer *buf);
     int32_t FeedPaddingInput(size_t byteLen);
     void AccountOutput(size_t byteLen);
