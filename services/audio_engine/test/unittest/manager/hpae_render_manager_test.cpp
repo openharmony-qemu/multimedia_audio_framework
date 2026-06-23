@@ -3163,83 +3163,21 @@ HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_005, TestSize.Level0)
 }
 
 /**
- * @tc.name  : FindSceneTypeByNodes
- * @tc.type  : FUNC
- * @tc.number: FindSceneTypeByNodes_001
- * @tc.desc  : FindSceneTypeByNodes returns the sceneType whose cluster holds the session's nodes.
- */
-HWTEST_F(HpaeRendererManagerTest, FindSceneTypeByNodes_001, TestSize.Level0)
-{
-    uint32_t sessionId = 21001;
-    HpaeSinkInfo sinkInfo;
-    GetBtSpeakerSinkInfo(sinkInfo);
-    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
-    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
-    WaitForMsgProcessing(hpaeRendererManager);
-
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.sessionId = sessionId;
-    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
-    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
-    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
-    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] =
-        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
-    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
-        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
-
-    // The MUSIC cluster owns the session's nodes -> recovery resolves to MUSIC.
-    EXPECT_EQ(hpaeRendererManager->FindSceneTypeByNodes(sessionId), HPAE_SCENE_MUSIC);
-
-    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->DestroyNodes(sessionId);
-    WaitForMsgProcessing(hpaeRendererManager);
-    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
-}
-
-/**
- * @tc.name  : FindSceneTypeByNodes
- * @tc.type  : FUNC
- * @tc.number: FindSceneTypeByNodes_002
- * @tc.desc  : FindSceneTypeByNodes returns HPAE_SCENE_UNCONNECTED when no cluster holds the session's
- *             nodes (recovery cannot find a cluster).
- */
-HWTEST_F(HpaeRendererManagerTest, FindSceneTypeByNodes_002, TestSize.Level0)
-{
-    uint32_t sessionId = 21002;
-    HpaeSinkInfo sinkInfo;
-    GetBtSpeakerSinkInfo(sinkInfo);
-    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
-    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
-    WaitForMsgProcessing(hpaeRendererManager);
-
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.sessionId = sessionId;
-    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
-    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    // No cluster has this session's nodes.
-
-    EXPECT_EQ(hpaeRendererManager->FindSceneTypeByNodes(sessionId), HPAE_SCENE_UNCONNECTED);
-
-    WaitForMsgProcessing(hpaeRendererManager);
-    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
-}
-
-/**
  * @tc.name  : DeleteProcessCluster
  * @tc.type  : FUNC
- * @tc.number: DeleteProcessCluster_RecoveryAfterPause
- * @tc.desc  : Pause sets connectedProcessorType_ to HPAE_SCENE_UNCONNECTED. The subsequent
- *             Release/DeleteProcessCluster must recover the real sceneType via FindSceneTypeByNodes so
- *             the co-buffer/output cleanup is not skipped. Covers the recovery (if-true) branch.
+ * @tc.number: DeleteProcessCluster_001
+ * @tc.desc  : connectedProcessorType_ is UNCONNECTED (Pause cleared it) and a cluster still holds the
+ *             session's nodes -> the recovery loop resolves the real sceneType and cleanup completes.
  */
-HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_RecoveryAfterPause, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_001, TestSize.Level0)
 {
-    uint32_t sessionId = 21003;
+    uint32_t sessionId = 10006;
     HpaeSinkInfo sinkInfo;
     GetBtSpeakerSinkInfo(sinkInfo);
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
 
     HpaeNodeInfo nodeInfo;
     nodeInfo.sessionId = sessionId;
@@ -3248,18 +3186,15 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_RecoveryAfterPause, TestS
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
-    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] =
-        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
     EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
         CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
     hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_MUSIC] = 1;
 
-    // Simulate the post-Pause state: connectedProcessorType_ has been cleared to UNCONNECTED while the
-    // session's nodes still live in the MUSIC cluster.
+    // Simulate the post-Pause state: connectedProcessorType_ cleared to UNCONNECTED, nodes still present.
     hpaeRendererManager->sinkInputNodeMap_[sessionId]->connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
-    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->CheckNodes(sessionId), SUCCESS);
 
-    // Release path: DeleteProcessCluster recovers sceneType via FindSceneTypeByNodes and completes cleanup.
+    // Recovery loop finds the MUSIC cluster (CheckNodes SUCCESS) and cleanup completes.
     EXPECT_EQ(hpaeRendererManager->DeleteProcessCluster(sessionId), SUCCESS);
 
     // No cluster retains this session's nodes after release.
@@ -3271,24 +3206,26 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_RecoveryAfterPause, TestS
 
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
 /**
  * @tc.name  : DeleteProcessCluster
  * @tc.type  : FUNC
- * @tc.number: DeleteProcessCluster_NoRecoveryNeeded
- * @tc.desc  : When connectedProcessorType_ is still the real scene (no prior Pause), DeleteProcessCluster
- *             takes the direct path (recovery branch skipped) and cleans up normally. Covers the
- *             if-false branch.
+ * @tc.number: DeleteProcessCluster_002
+ * @tc.desc  : connectedProcessorType_ is UNCONNECTED and no cluster holds the session's nodes -> the
+ *             recovery loop exhausts without matching, sceneType stays UNCONNECTED, cleanup is skipped
+ *             gracefully and no crash.
  */
-HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_NoRecoveryNeeded, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_002, TestSize.Level0)
 {
-    uint32_t sessionId = 21004;
+    uint32_t sessionId = 10007;
     HpaeSinkInfo sinkInfo;
     GetBtSpeakerSinkInfo(sinkInfo);
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
 
     HpaeNodeInfo nodeInfo;
     nodeInfo.sessionId = sessionId;
@@ -3297,8 +3234,45 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_NoRecoveryNeeded, TestSiz
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
-    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] =
-        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    // A MUSIC cluster exists but does NOT hold this session's nodes (CheckNodes fails).
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    hpaeRendererManager->sinkInputNodeMap_[sessionId]->connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
+
+    // Recovery loop exhausts; sceneType stays UNCONNECTED, co-buffer/output cleanup skipped, no crash.
+    EXPECT_EQ(hpaeRendererManager->DeleteProcessCluster(sessionId), SUCCESS);
+    // Nothing was wrongly erased: the nodeless MUSIC cluster is still there.
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_.count(HPAE_SCENE_MUSIC), 1);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : DeleteProcessCluster
+ * @tc.type  : FUNC
+ * @tc.number: DeleteProcessCluster_003
+ * @tc.desc  : connectedProcessorType_ is still the real scene (no prior Pause) -> the recovery branch is
+ *             skipped and DeleteProcessCluster cleans up via the direct path.
+ */
+HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_003, TestSize.Level0)
+{
+    uint32_t sessionId = 10008;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
     EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
         CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
     hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_MUSIC] = 1;
@@ -3316,6 +3290,7 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_NoRecoveryNeeded, TestSiz
 
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
 /**
