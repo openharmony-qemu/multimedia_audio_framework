@@ -54,6 +54,7 @@ enum SleAudioStreamType : uint32_t {
 enum SleTimeout : int32_t {
     SLE_STANDARD_TIMEOUT_MS = 1000,
     SLE_EXTENDED_TIMEOUT_MS = 2000,
+    SLE_COLLABORATION_TIMEOUT_MS = 200,
 };
 
 class SleAudioDeviceManager : public SleAudioOperationCallback {

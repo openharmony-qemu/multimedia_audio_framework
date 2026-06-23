@@ -390,7 +390,6 @@ public:
         res = res && parcel.WriteInt32(interrupt.state);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.strategy));
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.callbackType));
-        res = res && parcel.WriteBool(interrupt.behaviorFlags_.voipNoPrivacyFlag);
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.muteWhenInterruptFlag);
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.pauseWhenInterruptFlag);
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.aibaseMuteVoip);
@@ -431,7 +430,6 @@ public:
         interrupt.state = parcel.ReadInt32();
         interrupt.strategy = static_cast<InterruptStrategy>(parcel.ReadInt32());
         interrupt.callbackType = static_cast<InterruptEventCallbackType>(parcel.ReadInt32());
-        interrupt.behaviorFlags_.voipNoPrivacyFlag = parcel.ReadBool();
         interrupt.behaviorFlags_.muteWhenInterruptFlag = parcel.ReadBool();
         interrupt.behaviorFlags_.pauseWhenInterruptFlag = parcel.ReadBool();
         interrupt.behaviorFlags_.aibaseMuteVoip = parcel.ReadBool();

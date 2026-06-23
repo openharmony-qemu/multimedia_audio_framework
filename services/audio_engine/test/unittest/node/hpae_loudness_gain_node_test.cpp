@@ -15,6 +15,8 @@
 
 #include <gtest/gtest.h>
 #include <cmath>
+#include <cstring>
+#include <dlfcn.h>
 #include <memory>
 #include "hpae_loudness_gain_node.h"
 #include "test_case_common.h"
@@ -55,6 +57,76 @@ static void FillBufferWithValue(HpaePcmBuffer& buffer, float value)
     for (uint32_t i = 0; i < totalSamples; i++) {
         data[i] = value;
     }
+}
+
+int32_t FakeLoudnessProcess(AudioEffectHandle self, AudioBuffer *inBuffer, AudioBuffer *outBuffer)
+{
+    (void)self;
+    if (inBuffer == nullptr || outBuffer == nullptr || inBuffer->raw == nullptr || outBuffer->raw == nullptr) {
+        return ERROR;
+    }
+    // The production node passes frameLength only; tests only need a deterministic success path.
+    if (inBuffer->raw != outBuffer->raw) {
+        (void)memcpy_s(outBuffer->raw, inBuffer->frameLength * STEREO * sizeof(float), inBuffer->raw,
+            inBuffer->frameLength * STEREO * sizeof(float));
+    }
+    return SUCCESS;
+}
+
+int32_t FakeLoudnessCommand(AudioEffectHandle self, uint32_t cmdCode, AudioEffectTransInfo *cmdInfo,
+    AudioEffectTransInfo *replyInfo)
+{
+    (void)self;
+    (void)cmdCode;
+    (void)cmdInfo;
+    if (replyInfo != nullptr && replyInfo->data != nullptr && replyInfo->size >= sizeof(int32_t)) {
+        *static_cast<int32_t *>(replyInfo->data) = SUCCESS;
+    }
+    return SUCCESS;
+}
+
+int32_t FakeLoudnessCreateEffect(const AudioEffectDescriptor descriptor, AudioEffectHandle *handle)
+{
+    (void)descriptor;
+    if (handle == nullptr) {
+        return ERROR;
+    }
+    static AudioEffectInterface fakeInterface = {
+        .process = FakeLoudnessProcess,
+        .command = FakeLoudnessCommand,
+        .feedInput = nullptr,
+        .getOutput = nullptr,
+    };
+    auto fakeHandle = new AudioEffectInterface *;
+    *fakeHandle = &fakeInterface;
+    *handle = fakeHandle;
+    return SUCCESS;
+}
+
+int32_t FakeLoudnessReleaseEffect(AudioEffectHandle handle)
+{
+    delete handle;
+    return SUCCESS;
+}
+
+AudioEffectLibrary g_fakeLoudnessLibrary = {
+    .version = 1,
+    .name = "fake_loudness",
+    .implementor = "unit_test",
+    .checkEffect = nullptr,
+    .createEffect = FakeLoudnessCreateEffect,
+    .releaseEffect = FakeLoudnessReleaseEffect,
+    .supportEffect = nullptr,
+};
+
+void InjectFakeDspLibrary(const std::shared_ptr<HpaeLoudnessGainNode> &node)
+{
+    if (node->dlHandle_ != nullptr) {
+        dlclose(node->dlHandle_);
+    }
+    node->dlHandle_ = dlopen(nullptr, RTLD_NOW);
+    ASSERT_NE(node->dlHandle_, nullptr);
+    node->audioEffectLibHandle_ = &g_fakeLoudnessLibrary;
 }
 
 HWTEST_F(HpaeLoudnessGainNodeTest, testLoudnessGainNode, TestSize.Level0)
@@ -624,8 +696,7 @@ HWTEST_F(HpaeLoudnessGainNodeTest, Constructor_InitialState_001, TestSize.Level0
     auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
 
     EXPECT_EQ(node->handle_, nullptr);
-    EXPECT_NE(node->dlHandle_, nullptr);
-    EXPECT_NE(node->audioEffectLibHandle_, nullptr);
+    EXPECT_EQ(node->audioEffectLibHandle_ != nullptr, node->dlHandle_ != nullptr);
     EXPECT_FLOAT_EQ(node->loudnessGain_, 0.0f);
     EXPECT_LT(fabs(node->linearGain_ - 1.0f), EPSILON_TOLERANCE);
     EXPECT_EQ(node->pcmBufferInfo_.ch, static_cast<uint32_t>(STEREO));
@@ -683,6 +754,7 @@ HWTEST_F(HpaeLoudnessGainNodeTest, SignalProcess_DspPath_NullHandle_001, TestSiz
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    InjectFakeDspLibrary(node);
     // dlHandle_ is non-null (DSP loaded), handle_ is null
 
     // Directly set loudnessGain_ to bypass SetLoudnessGain, keeping handle_ null
@@ -712,6 +784,7 @@ HWTEST_F(HpaeLoudnessGainNodeTest, SetLoudnessGain_DspPath_CreateHandle_001, Tes
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    InjectFakeDspLibrary(node);
     // dlHandle_ is non-null, takes DSP path
 
     int32_t ret = node->SetLoudnessGain(6.0f);
@@ -735,6 +808,7 @@ HWTEST_F(HpaeLoudnessGainNodeTest, IsLoudnessAlgoOn_DspPath_WithHandle_001, Test
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    InjectFakeDspLibrary(node);
 
     EXPECT_FALSE(node->IsLoudnessAlgoOn());
 
@@ -759,6 +833,7 @@ HWTEST_F(HpaeLoudnessGainNodeTest, GetLatency_DspPath_WithHandle_001, TestSize.L
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    InjectFakeDspLibrary(node);
 
     node->SetLoudnessGain(6.0f);
     EXPECT_NE(node->handle_, nullptr);
@@ -780,6 +855,7 @@ HWTEST_F(HpaeLoudnessGainNodeTest, SignalProcess_DspPath_WithHandle_001, TestSiz
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    InjectFakeDspLibrary(node);
 
     node->SetLoudnessGain(6.0f);
     ASSERT_NE(node->handle_, nullptr);
@@ -808,6 +884,7 @@ HWTEST_F(HpaeLoudnessGainNodeTest, SetLoudnessGain_DspPath_GainChange_001, TestS
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    InjectFakeDspLibrary(node);
 
     // First create handle_ via SetLoudnessGain(6.0f)
     ASSERT_EQ(node->SetLoudnessGain(6.0f), SUCCESS);
@@ -834,6 +911,7 @@ HWTEST_F(HpaeLoudnessGainNodeTest, SetLoudnessGain_DspPath_ZeroGain_ReleaseHandl
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    InjectFakeDspLibrary(node);
 
     ASSERT_EQ(node->SetLoudnessGain(6.0f), SUCCESS);
     ASSERT_NE(node->handle_, nullptr);
@@ -860,6 +938,7 @@ HWTEST_F(HpaeLoudnessGainNodeTest, ReleaseHandle_DspPath_Success_001, TestSize.L
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     auto node = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    InjectFakeDspLibrary(node);
 
     ASSERT_EQ(node->SetLoudnessGain(6.0f), SUCCESS);
     ASSERT_NE(node->handle_, nullptr);
