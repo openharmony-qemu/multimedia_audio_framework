@@ -74,6 +74,39 @@ static HpaeSinkInfo GetSinkInfo()
     return sinkInfo;
 }
 
+static uint32_t InjectMockRenderSink(const HpaeSinkInfo &sinkInfo)
+{
+    std::string info = sinkInfo.deviceNetId == "LocalDevice" ? HDI_ID_INFO_DEFAULT : sinkInfo.deviceNetId;
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
+        sinkInfo.deviceClass, info, true);
+    EXPECT_NE(renderId, HDI_INVALID_ID);
+
+    auto mockRenderSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
+    auto isInited = std::make_shared<bool>(false);
+    ON_CALL(*mockRenderSink, Init(_)).WillByDefault(Invoke([isInited](const IAudioSinkAttr &) {
+        *isInited = true;
+        return SUCCESS;
+    }));
+    ON_CALL(*mockRenderSink, IsInited()).WillByDefault(Invoke([isInited]() {
+        return *isInited;
+    }));
+    ON_CALL(*mockRenderSink, DeInit()).WillByDefault(Invoke([isInited]() {
+        *isInited = false;
+    }));
+    ON_CALL(*mockRenderSink, Start()).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, Stop()).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, Pause()).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, Flush()).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, UpdateAppsUid(A<const std::vector<int32_t> &>())).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, RegistOffloadHdiCallback(_)).WillByDefault(Return());
+    ON_CALL(*mockRenderSink, SetBufferSize(_)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, SetVolume(_, _)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, GetLatency(_)).WillByDefault(Return(SUCCESS));
+
+    HdiAdapterManager::GetInstance().renderSinks_[renderId].sink_ = mockRenderSink;
+    return renderId;
+}
+
 static void TestCheckSinkInputInfo(HpaeSinkInputInfo &sinkInputInfo, const HpaeStreamInfo &streamInfo)
 {
     EXPECT_EQ(sinkInputInfo.nodeInfo.channels == streamInfo.channels, true);
@@ -195,6 +228,49 @@ void HpaeRendererManagerTest::TearDown()
 {
     hpaeRendererManager_.reset();
     outputCluster_.reset();
+}
+
+HWTEST_F(HpaeRendererManagerTest, CoverageDrainAndAuxiliarySinkImmediateQueue_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeRendererManager_, nullptr);
+    EXPECT_NE(outputCluster_, nullptr);
+
+    hpaeRendererManager_->isInit_.store(true);
+    hpaeRendererManager_->hpaeSignalProcessThread_.reset();
+    hpaeRendererManager_->sinkInfo_.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+
+    hpaeRendererManager_->sessionNodeMap_[1].state = HPAE_SESSION_PAUSED;
+    EXPECT_EQ(hpaeRendererManager_->Drain(1), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+
+    hpaeRendererManager_->sessionNodeMap_[1].state = HPAE_SESSION_RUNNING;
+    EXPECT_EQ(hpaeRendererManager_->Drain(1), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+
+    hpaeRendererManager_->sinkInfo_.deviceClass = "a2dp";
+    EXPECT_EQ(hpaeRendererManager_->SetAuxiliarySinkEnable(true), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+
+    hpaeRendererManager_->sinkInfo_.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    EXPECT_EQ(hpaeRendererManager_->SetAuxiliarySinkEnable(false), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+
+    HpaeNodeInfo stoppedNodeInfo;
+    stoppedNodeInfo.sessionId = 2;
+    auto stoppedNode = std::make_shared<HpaeSinkInputNode>(stoppedNodeInfo);
+    stoppedNode->SetState(HPAE_SESSION_STOPPED);
+    stoppedNode->appUid_ = 456;
+    hpaeRendererManager_->sinkInputNodeMap_[2] = stoppedNode;
+    sinkInputNode_->SetState(HPAE_SESSION_RUNNING);
+    sinkInputNode_->appUid_ = 123;
+    hpaeRendererManager_->sinkInfo_.deviceClass = "remote";
+
+    hpaeRendererManager_->TriggerAppsUidUpdate(2);
+    EXPECT_EQ(hpaeRendererManager_->appsUid_.size(), 2);
+
+    sinkInputNode_->SetState(HPAE_SESSION_STOPPED);
+    hpaeRendererManager_->TriggerAppsUidUpdate(0);
+    EXPECT_EQ(hpaeRendererManager_->appsUid_.size(), 0);
 }
 
 template <class RenderManagerType>
@@ -2579,10 +2655,10 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     std::pair<uint64_t, TimePoint> hdiPos = std::make_pair(0, std::chrono::high_resolution_clock::now());
     offloadManager->OnNotifyHdiData(hdiPos);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    ASSERT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
     offloadManager->isInit_ = true;
-  
+
     CreateTwoStreamInOffload(offloadManager);
 
     // create nodes for stream1
@@ -2640,7 +2716,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_003, 
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
     offloadManager->isInit_ = true;
-  
+
     CreateTwoStreamInOffload(offloadManager);
 
     offloadManager->DestroyStream(TEST_STREAM_SESSION_ID);
@@ -3186,7 +3262,7 @@ HWTEST_F(HpaeRendererManagerTest, SetOffloadRenderCallbackType_001, TestSize.Lev
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
     offloadManager->isInit_ = true;
-  
+
     CreateTwoStreamInOffload(offloadManager);
     auto ret = offloadManager->SetOffloadRenderCallbackType(TEST_STREAM_SESSION_ID, CB_NONBLOCK_WRITE_COMPLETED);
     EXPECT_EQ(ret, SUCCESS);
@@ -3256,6 +3332,7 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_002, TestSize.Level1)
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
@@ -3281,6 +3358,8 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_002, TestSize.Level1)
     offloadManager->TriggerAppsUidUpdate(0);
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->appsUid_.size(), 0);
+    EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3609,11 +3688,11 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_001, TestSi
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    ASSERT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    offloadManager->isInit_ = true;
-    EXPECT_EQ(offloadManager->IsInit(), true);
+    ASSERT_EQ(offloadManager->IsInit(), true);
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
@@ -3624,16 +3703,17 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_001, TestSi
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    ASSERT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is created for remote_offload device
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
     EXPECT_TRUE(offloadManager->limiterNode_->IsLimiterInited());
 
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3655,11 +3735,11 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_002, TestSi
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    offloadManager->isInit_ = true;
-    EXPECT_EQ(offloadManager->IsInit(), true);
+    ASSERT_EQ(offloadManager->IsInit(), true);
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
@@ -3679,6 +3759,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_002, TestSi
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3693,6 +3774,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_NotCreateForNonRemoteOffload_001, 
     // Ensure deviceClass is not "remote_offload"
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
@@ -3717,6 +3799,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_NotCreateForNonRemoteOffload_001, 
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3738,6 +3821,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_Destroy_001, TestSize.Level1)
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
@@ -3752,14 +3836,14 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_Destroy_001, TestSize.Level1)
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    ASSERT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is created
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
 
     // Destroy stream to trigger DestroyOffloadNodes
-    EXPECT_EQ(offloadManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    ASSERT_EQ(offloadManager->DestroyStream(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is destroyed
@@ -3768,6 +3852,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_Destroy_001, TestSize.Level1)
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3789,8 +3874,9 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_ConnectAndDisconnect_001, TestSize
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    ASSERT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
     offloadManager->isInit_ = true;
 
@@ -3803,26 +3889,27 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_ConnectAndDisconnect_001, TestSize
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    ASSERT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(streamInfo.sessionId), SUCCESS);
+    ASSERT_EQ(offloadManager->Start(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is connected (nodes should be non-null after start)
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
-    EXPECT_NE(offloadManager->converterForOutput_, nullptr);
-    EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->converterForOutput_, nullptr);
+    ASSERT_NE(offloadManager->loudnessGainNode_, nullptr);
 
     // Pause stream to trigger DisConnectInputSession
-    EXPECT_EQ(offloadManager->Pause(streamInfo.sessionId), SUCCESS);
+    ASSERT_EQ(offloadManager->Pause(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ still exists (disconnection doesn't destroy the node)
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
 
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3844,8 +3931,9 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_LatencyCalculation_001, TestSize.L
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    ASSERT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
     offloadManager->isInit_ = true;
 
@@ -3858,9 +3946,9 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_LatencyCalculation_001, TestSize.L
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    ASSERT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(streamInfo.sessionId), SUCCESS);
+    ASSERT_EQ(offloadManager->Start(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ contributes to latency calculation
@@ -3882,6 +3970,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_LatencyCalculation_001, TestSize.L
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3903,8 +3992,9 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_SetupAudioLimiter_001, TestSize.Le
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    ASSERT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
     offloadManager->isInit_ = true;
 
@@ -3917,16 +4007,17 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_SetupAudioLimiter_001, TestSize.Le
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    ASSERT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is initialized after CreateOffloadNodes
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
     EXPECT_TRUE(offloadManager->limiterNode_->IsLimiterInited());
 
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**

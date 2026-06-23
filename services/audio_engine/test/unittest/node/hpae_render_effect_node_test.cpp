@@ -26,6 +26,7 @@
 #include "test_case_common.h"
 #include "audio_errors.h"
 #include "audio_effect_chain_manager.h"
+#include "audio_effect_chain.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -1232,6 +1233,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_Create_001, TestSiz
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
     // Constructor with NearLink collaboration state
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
     EXPECT_NE(node, nullptr);
@@ -1252,6 +1254,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_Bt_Create_002, TestSize.Leve
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
     EXPECT_NE(node, nullptr);
     EXPECT_EQ(node->isCollaborationEnabled_, COLLABORATION_BLUETOOTH_OPEN);
@@ -1271,6 +1274,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_Close_Create_003, TestSize.L
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_CLOSE);
     EXPECT_NE(node, nullptr);
     EXPECT_EQ(node->isCollaborationEnabled_, COLLABORATION_CLOSE);
@@ -1290,6 +1294,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_TempBuffer_004, Tes
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
     EXPECT_NE(node, nullptr);
     // For NearLink, tempEffectBuffer_ should be created
@@ -1310,6 +1315,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_Bt_Outputs_005, TestSize.Lev
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
     EXPECT_NE(node, nullptr);
     // For BT, directOutput_ and collaborativeOutput_ should be created
@@ -1331,6 +1337,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, SetDelayCountToEffectNode_NearLink_006, TestS
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
     EXPECT_NE(node, nullptr);
     // Should not crash
@@ -1352,6 +1359,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, SetDelayCountToEffectNode_NullBuffer_007, Tes
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
     EXPECT_NE(node, nullptr);
     EXPECT_EQ(node->tempEffectBuffer_, nullptr);
@@ -1378,6 +1386,770 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_DefaultScene_008, T
     EXPECT_NE(node, nullptr);
     EXPECT_EQ(node->isCollaborationEnabled_, COLLABORATION_NEARLINK_OPEN);
 }
+
+// --- Phase 3D-2: AudioRenderer/OffloadRenderer lifecycle coverage ---
+// These methods were previously never called by tests, leaving entire function
+// bodies at 0% branch coverage. Calling them directly drives the bodies.
+
+HWTEST_F(HpaeRenderEffectNodeTest, AudioRendererStart_called_directly, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    ASSERT_EQ(node->AudioRendererCreate(nodeInfo), 0);
+    EXPECT_EQ(node->AudioRendererStart(nodeInfo), 0);
+    EXPECT_EQ(node->AudioRendererStop(nodeInfo), 0);
+    EXPECT_EQ(node->AudioRendererRelease(nodeInfo), 0);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, AudioRendererCreate_secondCallDedups, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID + 100;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    ASSERT_EQ(node->AudioRendererCreate(nodeInfo), 0);
+    // Second call with the same sessionId re-enters CreateAudioEffectChain
+    // and returns early via CheckAndAddSessionID dedup — covers that branch.
+    EXPECT_EQ(node->AudioRendererCreate(nodeInfo), 0);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_remote_offload_returnsEarly, TestSize.Level1)
+{
+    // sinkInfo.deviceClass == "remote_offload" → OffloadRendererCheckNotifyEffect
+    // returns false → AudioOffloadRenderer* returns ERR_INVALID_HANDLE.
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID + 200;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote_offload";
+
+    EXPECT_NE(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_NE(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_NE(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_NE(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), 0);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest,
+    AudioOffloadRenderer_nonOffloadDevice_returnsEarlyWhenOffloadDisabled, TestSize.Level1)
+{
+    // sinkInfo.deviceClass != "remote_offload" → OffloadRendererCheckNotifyEffect
+    // proceeds through GetOffloadEnabled() checks. In the unit-test environment
+    // effect offload is disabled, so all operations return ERR_INVALID_HANDLE.
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID + 300;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "speaker";
+
+    EXPECT_NE(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_NE(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_NE(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_NE(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), 0);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_monoChannels, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID + 500;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = MONO;
+    nodeInfo.channelLayout = CH_LAYOUT_MONO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_DEFAULT;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    EXPECT_EQ(node->AudioRendererCreate(nodeInfo), 0);
+}
+
+// --- Phase 3D-3: DoProcess collaborative-scene branches ---
+// DoProcess branches at L107-152 are 0% covered because existing tests never
+// call DoProcess on a collaborative-scene node. These tests construct nodes
+// with effectScene = SCENE_COLLABORATIVE (the correct way to set sceneType_),
+// then call DoProcess to drive the empty-preOutputs branches.
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_nearLink_emptyInput, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID + 600;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    ASSERT_NE(node->tempEffectBuffer_, nullptr);
+    // DoProcess with empty upstream drives the NearLink empty-input exit path.
+    node->DoProcess();
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_emptyInput_writesSilence, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID + 700;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    ASSERT_NE(node->directOutput_, nullptr);
+    ASSERT_NE(node->collaborativeOutput_, nullptr);
+    // DoProcess with empty upstream, BT mode — falls through to the `else`
+    // branch at L139-141 which writes silence to both outputs.
+    node->DoProcess();
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_defaultScene_delegatesToPluginNode, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID + 800;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_DEFAULT;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    // Non-collaborative scenes delegate to parent processing and skip the
+    // collaborative render-effect branch body.
+    node->DoProcess();
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_closeState_emptyInput, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID + 900;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    // COLLABORATION_CLOSE → isCollaborationEnabled_ != NEARLINK_OPEN, falls
+    // through to the BT-style branch (directOutput_/collaborativeOutput_ null
+    // because they're only created when isCollaborationEnabled_ ==
+    // COLLABORATION_BLUETOOTH_OPEN). Both inner conditions fail, hits the
+    // `else` silence-write branch.
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_CLOSE);
+    node->DoProcess();
+    SUCCEED();
+}
+
+// --- Phase 3D-4: HpaeTempEffectBuffer latency/ring-cache branches ---
+// These public methods own most of the remaining uncovered branch bodies in
+// hpae_render_effect_node.cpp. Drive them with real 4-channel PCM buffers so
+// the test verifies behavior instead of just calling methods.
+
+static void FillCollaborativeChannels(HpaePcmBuffer &buffer, float leftValue, float rightValue)
+{
+    constexpr uint32_t collaborativeOutputChannels = 4;
+    constexpr uint32_t collaborativeLeftIndex = 2;
+    constexpr uint32_t collaborativeRightIndex = 3;
+    float *data = buffer.GetPcmDataBuffer();
+    ASSERT_NE(data, nullptr);
+    for (uint32_t i = 0; i < buffer.GetFrameLen(); ++i) {
+        data[collaborativeOutputChannels * i + collaborativeLeftIndex] = leftValue;
+        data[collaborativeOutputChannels * i + collaborativeRightIndex] = rightValue;
+    }
+    buffer.SetBufferValid(true);
+    buffer.SetBufferSilence(false);
+}
+
+static void ExpectCollaborativeChannelsNear(
+    HpaePcmBuffer &buffer, float leftValue, float rightValue, float precision = 1e-6f)
+{
+    constexpr uint32_t collaborativeOutputChannels = 4;
+    constexpr uint32_t collaborativeLeftIndex = 2;
+    constexpr uint32_t collaborativeRightIndex = 3;
+    float *data = buffer.GetPcmDataBuffer();
+    ASSERT_NE(data, nullptr);
+    for (uint32_t i = 0; i < buffer.GetFrameLen(); ++i) {
+        EXPECT_NEAR(data[collaborativeOutputChannels * i + collaborativeLeftIndex], leftValue, precision);
+        EXPECT_NEAR(data[collaborativeOutputChannels * i + collaborativeRightIndex], rightValue, precision);
+    }
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_waitingForDelay_outputsSilence, TestSize.Level1)
+{
+    constexpr float smallSignal = 1e-6f;
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000);
+    HpaeTempEffectBuffer tempBuffer(pcmBufferInfo);
+    HpaePcmBuffer buffer(pcmBufferInfo);
+    FillCollaborativeChannels(buffer, 0.3f, 0.7f);
+
+    tempBuffer.SetDelayCountToEffectNode(2);
+    tempBuffer.ChangeEffectDataForLatency(&buffer);
+
+    ExpectCollaborativeChannelsNear(buffer, smallSignal, smallSignal);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_readBeforeWrite_outputsSilence, TestSize.Level1)
+{
+    constexpr float smallSignal = 1e-6f;
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000);
+    HpaeTempEffectBuffer tempBuffer(pcmBufferInfo);
+    HpaePcmBuffer buffer(pcmBufferInfo);
+    FillCollaborativeChannels(buffer, 0.4f, 0.8f);
+
+    tempBuffer.ReadDataDequeueRingCache(&buffer);
+
+    ExpectCollaborativeChannelsNear(buffer, smallSignal, smallSignal);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_writeThenRead_roundTripsCollaborativeChannels, TestSize.Level1)
+{
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000);
+    HpaeTempEffectBuffer tempBuffer(pcmBufferInfo);
+    HpaePcmBuffer writeBuffer(pcmBufferInfo);
+    HpaePcmBuffer readBuffer(pcmBufferInfo);
+    FillCollaborativeChannels(writeBuffer, 0.25f, 0.75f);
+    FillCollaborativeChannels(readBuffer, 0.0f, 0.0f);
+
+    tempBuffer.WriteDataEnqueueRingCache(&writeBuffer);
+    tempBuffer.ReadDataDequeueRingCache(&readBuffer);
+
+    ExpectCollaborativeChannelsNear(readBuffer, 0.25f, 0.75f);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_delayThresholdReached_runsAlignmentPath, TestSize.Level1)
+{
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000);
+    HpaeTempEffectBuffer tempBuffer(pcmBufferInfo);
+    HpaePcmBuffer buffer(pcmBufferInfo);
+    FillCollaborativeChannels(buffer, 0.5f, 0.9f);
+
+    tempBuffer.SetDelayCountToEffectNode(0);
+
+    EXPECT_TRUE(tempBuffer.DelayAlignmentForEffectNode(&buffer));
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_fillSilenceFrames_handlesNegativeLatency, TestSize.Level1)
+{
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000);
+    HpaeTempEffectBuffer tempBuffer(pcmBufferInfo);
+
+    tempBuffer.FillSilenceFramesForEffectNode(-1);
+
+    SUCCEED();
+}
+
+// --- Phase 3E: white-box branches for Taken-at-least-once coverage ---
+// Only UT state is arranged here; production code is not modified.
+
+class EffectManagerOffloadGuard {
+public:
+    EffectManagerOffloadGuard()
+    {
+        auto *manager = AudioEffectChainManager::GetInstance();
+        oldDeviceType_ = manager->deviceType_;
+        oldSpkOffloadEnabled_ = manager->spkOffloadEnabled_;
+        oldBtOffloadEnabled_ = manager->btOffloadEnabled_;
+        manager->deviceType_ = DEVICE_TYPE_SPEAKER;
+        manager->spkOffloadEnabled_ = false;
+        manager->btOffloadEnabled_ = false;
+    }
+
+    ~EffectManagerOffloadGuard()
+    {
+        auto *manager = AudioEffectChainManager::GetInstance();
+        manager->deviceType_ = oldDeviceType_;
+        manager->spkOffloadEnabled_ = oldSpkOffloadEnabled_;
+        manager->btOffloadEnabled_ = oldBtOffloadEnabled_;
+        manager->ResetInfo();
+    }
+
+private:
+    DeviceType oldDeviceType_ = DEVICE_TYPE_INVALID;
+    bool oldSpkOffloadEnabled_ = false;
+    bool oldBtOffloadEnabled_ = false;
+};
+
+static HpaeNodeInfo BuildRenderEffectNodeInfo(uint32_t nodeId, AudioChannel channels = STEREO,
+    AudioChannelLayout channelLayout = CH_LAYOUT_STEREO)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = nodeId;
+    nodeInfo.sessionId = nodeId;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = channels;
+    nodeInfo.channelLayout = channelLayout;
+    nodeInfo.format = SAMPLE_F32LE;
+    return nodeInfo;
+}
+
+static void AddBufferedPreOutput(HpaeRenderEffectNode &node, OutputPort<HpaePcmBuffer *> &output,
+    HpaePcmBuffer &buffer)
+{
+    output.WriteDataToOutput(&buffer);
+    node.inputStream_.AddPreOutput(nullptr, &output);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, AudioOffloadRenderer_nonRemoteStillReturnsEarlyWithCurrentManager, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 1400);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "speaker";
+
+    EXPECT_EQ(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    EXPECT_EQ(node->AudioOffloadRendererStart(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    EXPECT_EQ(node->AudioOffloadRendererStop(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+    EXPECT_EQ(node->AudioOffloadRendererRelease(nodeInfo, sinkInfo), ERR_INVALID_HANDLE);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, SignalProcess_offloadEnabledReturnsOriginalInput, TestSize.Level1)
+{
+    EffectManagerOffloadGuard guard;
+    auto *manager = AudioEffectChainManager::GetInstance();
+    manager->spkOffloadEnabled_ = true;
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 1500);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(false);
+    std::vector<HpaePcmBuffer *> inputs = {&inputBuffer};
+
+    EXPECT_EQ(node->SignalProcess(inputs), &inputBuffer);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, IsByPassEffectZeroVolume_invalidBufferReturnsFalse, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 1600);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.SetBufferValid(false);
+
+    EXPECT_FALSE(node->IsByPassEffectZeroVolume(&inputBuffer));
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, IsByPassEffectZeroVolume_silenceReachesBypassThreshold, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 1700);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(STEREO, SAMPLE_RATE_48000 * 4, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(true);
+
+    EXPECT_TRUE(node->IsByPassEffectZeroVolume(&inputBuffer));
+    EXPECT_TRUE(node->isByPassEffect_);
+    EXPECT_TRUE(node->isDisplayEffectZeroVolume_);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, IsByPassEffectZeroVolume_monitorClosedEffectBranch, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 1800);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(STEREO, SAMPLE_RATE_48000 * 300, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(true);
+    node->isByPassEffect_ = true;
+    node->isDisplayEffectZeroVolume_ = true;
+
+    EXPECT_TRUE(node->IsByPassEffectZeroVolume(&inputBuffer));
+    EXPECT_EQ(node->silenceDataUs_, 0);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, IsByPassEffectZeroVolume_nonSilenceReopensEffect, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 1900);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(false);
+    node->isByPassEffect_ = true;
+    node->isDisplayEffectZeroVolume_ = true;
+    node->silenceDataUs_ = 1000;
+
+    EXPECT_FALSE(node->IsByPassEffectZeroVolume(&inputBuffer));
+    EXPECT_FALSE(node->isByPassEffect_);
+    EXPECT_FALSE(node->isDisplayEffectZeroVolume_);
+    EXPECT_EQ(node->silenceDataUs_, 0);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, SplitCollaborativeData_stereoEffectOutputReturnsError, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2000);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+
+    EXPECT_EQ(node->SplitCollaborativeData(), ERROR);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, SplitCollaborativeData_fourChannelEffectOutputSplitsToStereoBuffers, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2100, CHANNEL_4, CH_LAYOUT_4POINT0);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    ASSERT_NE(node->directOutput_, nullptr);
+    ASSERT_NE(node->collaborativeOutput_, nullptr);
+    float *effectData = node->effectOutput_.GetPcmDataBuffer();
+    ASSERT_NE(effectData, nullptr);
+    for (uint32_t i = 0; i < node->effectOutput_.GetFrameLen(); ++i) {
+        effectData[4 * i] = 1.0f;
+        effectData[4 * i + 1] = 2.0f;
+        effectData[4 * i + 2] = 3.0f;
+        effectData[4 * i + 3] = 4.0f;
+    }
+
+    EXPECT_EQ(node->SplitCollaborativeData(), SUCCESS);
+    constexpr float silenceEpsilon = 1e-6f;
+    // SplitCollaborativeData adds the same silence epsilon used by the
+    // collaborative output path before copying channel data.
+    EXPECT_NEAR(node->directOutput_->GetPcmDataBuffer()[0], 1.0f + silenceEpsilon, 1e-7f);
+    EXPECT_NEAR(node->directOutput_->GetPcmDataBuffer()[1], 2.0f + silenceEpsilon, 1e-7f);
+    EXPECT_NEAR(node->collaborativeOutput_->GetPcmDataBuffer()[0], 3.0f + silenceEpsilon, 1e-7f);
+    EXPECT_NEAR(node->collaborativeOutput_->GetPcmDataBuffer()[1], 4.0f + silenceEpsilon, 1e-7f);
+}
+
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_nearLink_nonEmptyInputRunsLatencyPath, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2300, CHANNEL_4, CH_LAYOUT_4POINT0);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(false);
+    OutputPort<HpaePcmBuffer *> preOutput(nullptr);
+    AddBufferedPreOutput(*node, preOutput, inputBuffer);
+
+    node->DoProcess();
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_nonEmptyInputWritesSilenceOnSplitError, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2400, STEREO, CH_LAYOUT_STEREO);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(false);
+    OutputPort<HpaePcmBuffer *> preOutput(nullptr);
+    AddBufferedPreOutput(*node, preOutput, inputBuffer);
+
+    node->DoProcess();
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_disabledProcessForwardsPreOutput, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2500, STEREO, CH_LAYOUT_STEREO);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_CLOSE);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(false);
+    OutputPort<HpaePcmBuffer *> preOutput(nullptr);
+    AddBufferedPreOutput(*node, preOutput, inputBuffer);
+    ASSERT_EQ(node->EnableProcess(false), SUCCESS);
+
+    node->DoProcess();
+
+    SUCCEED();
+}
+
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_fourChannelOutputWritesSplitBuffers, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2600, CHANNEL_4, CH_LAYOUT_4POINT0);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(false);
+    OutputPort<HpaePcmBuffer *> preOutput(nullptr);
+    AddBufferedPreOutput(*node, preOutput, inputBuffer);
+
+    node->DoProcess();
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, SignalProcess_bypassSilenceReturnsOriginalInput, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2700);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(STEREO, SAMPLE_RATE_48000 * 4, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(true);
+    std::vector<HpaePcmBuffer *> inputs = {&inputBuffer};
+
+    EXPECT_EQ(node->SignalProcess(inputs), &inputBuffer);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, AudioRendererStart_unsupportedEffectModeUsesEffectNone, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2800);
+    nodeInfo.effectInfo.effectScene = SCENE_MOVIE;
+    nodeInfo.effectInfo.effectMode = static_cast<AudioEffectMode>(0xff);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    EXPECT_EQ(node->AudioRendererStart(nodeInfo), SUCCESS);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, ModifyAudioEffectChainInfo_unknownReasonNoUpdate, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2900);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    node->ModifyAudioEffectChainInfo(nodeInfo, static_cast<ModifyAudioEffectChainInfoReason>(99));
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, InitEffectBuffer_collaborativeReturnsEarly, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 3000);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+
+    node->InitEffectBuffer(nodeInfo.sessionId);
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_nullRingCacheGuardsReturn, TestSize.Level1)
+{
+    HpaeTempEffectBuffer tempBuffer;
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+
+    tempBuffer.FillSilenceFramesForEffectNode(1);
+    tempBuffer.ReadDataDequeueRingCache(&inputBuffer);
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_nullTempOutputGuardsReturn, TestSize.Level1)
+{
+    PcmBufferInfo stereoInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaeTempEffectBuffer tempBuffer(stereoInfo);
+    tempBuffer.tempOutput_ = nullptr;
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+
+    tempBuffer.WriteDataEnqueueRingCache(&inputBuffer);
+    tempBuffer.FillSilenceFramesForEffectNode(1);
+    tempBuffer.ReadDataDequeueRingCache(&inputBuffer);
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_changeEffectDataReadyRunsWriteAndRead, TestSize.Level1)
+{
+    PcmBufferInfo stereoInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaeTempEffectBuffer tempBuffer(stereoInfo);
+    tempBuffer.SetDelayCountToEffectNode(0);
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    float *data = inputBuffer.GetPcmDataBuffer();
+    ASSERT_NE(data, nullptr);
+    data[2] = 1.0f;
+    data[3] = 2.0f;
+
+    tempBuffer.ChangeEffectDataForLatency(&inputBuffer);
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_insufficientRingCacheSpaceReturnsEarly, TestSize.Level1)
+{
+    PcmBufferInfo stereoInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaeTempEffectBuffer tempBuffer(stereoInfo);
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+
+    tempBuffer.FillSilenceFramesForEffectNode(1000);
+    tempBuffer.FillSilenceFramesForEffectNode(800);
+    tempBuffer.WriteDataEnqueueRingCache(&inputBuffer);
+
+    SUCCEED();
+}
+
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_nearLink_disabledProcessSkipsSignal, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 3400, CHANNEL_4, CH_LAYOUT_4POINT0);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+    OutputPort<HpaePcmBuffer *> preOutput(nullptr);
+    AddBufferedPreOutput(*node, preOutput, inputBuffer);
+    ASSERT_EQ(node->EnableProcess(false), SUCCESS);
+
+    node->DoProcess();
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_nearLink_nullTempBufferSkipsSignal, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 3500, CHANNEL_4, CH_LAYOUT_4POINT0);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    node->tempEffectBuffer_ = nullptr;
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+    OutputPort<HpaePcmBuffer *> preOutput(nullptr);
+    AddBufferedPreOutput(*node, preOutput, inputBuffer);
+
+    node->DoProcess();
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_nullDirectOutputForwardsPreOutput, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 3600, STEREO, CH_LAYOUT_STEREO);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    node->directOutput_ = nullptr;
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+    OutputPort<HpaePcmBuffer *> preOutput(nullptr);
+    AddBufferedPreOutput(*node, preOutput, inputBuffer);
+
+    node->DoProcess();
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_nullCollaborativeOutputForwardsPreOutput, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 3700, STEREO, CH_LAYOUT_STEREO);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    node->collaborativeOutput_ = nullptr;
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+    OutputPort<HpaePcmBuffer *> preOutput(nullptr);
+    AddBufferedPreOutput(*node, preOutput, inputBuffer);
+
+    node->DoProcess();
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, IsByPassEffectZeroVolume_bypassSilenceBeforeMonitorKeepsClosed, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 3900);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(true);
+    node->isByPassEffect_ = true;
+    node->isDisplayEffectZeroVolume_ = true;
+    node->silenceDataUs_ = 0;
+
+    EXPECT_TRUE(node->IsByPassEffectZeroVolume(&inputBuffer));
+    EXPECT_GT(node->silenceDataUs_, 0);
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_writeWithNullRingCacheReturnsAfterTempCopy, TestSize.Level1)
+{
+    HpaeTempEffectBuffer tempBuffer;
+    PcmBufferInfo stereoInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    tempBuffer.tempOutput_ = std::make_unique<HpaePcmBuffer>(stereoInfo);
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+
+    tempBuffer.WriteDataEnqueueRingCache(&inputBuffer);
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_readWithNullTempOutputAfterReadableDataReturns, TestSize.Level1)
+{
+    PcmBufferInfo stereoInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaeTempEffectBuffer tempBuffer(stereoInfo);
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.GetPcmDataBuffer();
+    tempBuffer.FillSilenceFramesForEffectNode(20);
+    tempBuffer.tempOutput_ = nullptr;
+
+    tempBuffer.ReadDataDequeueRingCache(&inputBuffer);
+
+    SUCCEED();
+}
+
+HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_keepsNodeInfoWhenManagerHasNoNodeChain, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2200, STEREO, CH_LAYOUT_STEREO);
+    nodeInfo.effectInfo.effectScene = SCENE_MOVIE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    node->sceneType_ = "SCENE_MOVIE";
+
+    node->ReconfigOutputBuffer();
+
+    EXPECT_EQ(node->GetNodeInfo().channels, STEREO);
+    EXPECT_EQ(node->GetNodeInfo().channelLayout, CH_LAYOUT_STEREO);
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -2171,6 +2171,200 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetUsedMoveInfos001, TestSize.Level1)
     EXPECT_EQ(results.size(), 1);
 }
 
+HWTEST_F(HpaeManagerUnitTest, FlushDrainCoveredRoutedPlayAndRecordBranches001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    const uint32_t playSessionId = TEST_STREAM_SESSION_ID + 100;
+    const uint32_t recordSessionId = TEST_STREAM_SESSION_ID + 101;
+    const uint32_t innerRecordSessionId = TEST_STREAM_SESSION_ID + 102;
+    const std::string sinkName = "Speaker_File";
+    const std::string sourceName = "mic";
+    const std::string innerSourceName = "inner_capture";
+
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto rendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    hpaeManager_->rendererManagerMap_[sinkName] = rendererManager;
+    hpaeManager_->rendererManagerMap_[innerSourceName] = rendererManager;
+
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    hpaeManager_->capturerManagerMap_[sourceName] = capturerManager;
+
+    HpaeSessionInfo playSessionInfo;
+    playSessionInfo.streamInfo = GetRenderStreamInfo();
+    playSessionInfo.streamInfo.sessionId = playSessionId;
+    playSessionInfo.state = HPAE_SESSION_RUNNING;
+    hpaeManager_->rendererIdSinkNameMap_[playSessionId] = sinkName;
+    hpaeManager_->rendererIdStreamInfoMap_[playSessionId] = playSessionInfo;
+
+    HpaeSessionInfo recordSessionInfo;
+    recordSessionInfo.streamInfo = GetCaptureStreamInfo();
+    recordSessionInfo.streamInfo.sessionId = recordSessionId;
+    recordSessionInfo.streamInfo.sourceType = SOURCE_TYPE_MIC;
+    recordSessionInfo.state = HPAE_SESSION_RUNNING;
+    hpaeManager_->capturerIdSourceNameMap_[recordSessionId] = sourceName;
+    hpaeManager_->capturerIdStreamInfoMap_[recordSessionId] = recordSessionInfo;
+
+    HpaeSessionInfo innerRecordSessionInfo = recordSessionInfo;
+    innerRecordSessionInfo.streamInfo.sessionId = innerRecordSessionId;
+    innerRecordSessionInfo.streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    hpaeManager_->capturerIdSourceNameMap_[innerRecordSessionId] = innerSourceName;
+    hpaeManager_->capturerIdStreamInfoMap_[innerRecordSessionId] = innerRecordSessionInfo;
+
+    EXPECT_EQ(hpaeManager_->Flush(HPAE_STREAM_CLASS_TYPE_PLAY, playSessionId), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Drain(HPAE_STREAM_CLASS_TYPE_PLAY, playSessionId), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Flush(HPAE_STREAM_CLASS_TYPE_RECORD, recordSessionId), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Drain(HPAE_STREAM_CLASS_TYPE_RECORD, recordSessionId), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Flush(HPAE_STREAM_CLASS_TYPE_RECORD, innerRecordSessionId), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Drain(HPAE_STREAM_CLASS_TYPE_RECORD, innerRecordSessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, InnerRecordStartPauseStopRoutesToRendererManager001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    const uint32_t innerStartSessionId = TEST_STREAM_SESSION_ID + 110;
+    const uint32_t innerPauseSessionId = TEST_STREAM_SESSION_ID + 111;
+    const uint32_t innerStopSessionId = TEST_STREAM_SESSION_ID + 112;
+    const std::string innerSourceName = "inner_capture";
+
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto rendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    hpaeManager_->rendererManagerMap_[innerSourceName] = rendererManager;
+
+    HpaeSessionInfo innerStartSessionInfo;
+    innerStartSessionInfo.streamInfo = GetCaptureStreamInfo();
+    innerStartSessionInfo.streamInfo.sessionId = innerStartSessionId;
+    innerStartSessionInfo.streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    innerStartSessionInfo.state = HPAE_SESSION_PREPARED;
+    hpaeManager_->capturerIdSourceNameMap_[innerStartSessionId] = innerSourceName;
+    hpaeManager_->capturerIdStreamInfoMap_[innerStartSessionId] = innerStartSessionInfo;
+
+    HpaeSessionInfo innerPauseSessionInfo = innerStartSessionInfo;
+    innerPauseSessionInfo.streamInfo.sessionId = innerPauseSessionId;
+    innerPauseSessionInfo.state = HPAE_SESSION_RUNNING;
+    hpaeManager_->capturerIdSourceNameMap_[innerPauseSessionId] = innerSourceName;
+    hpaeManager_->capturerIdStreamInfoMap_[innerPauseSessionId] = innerPauseSessionInfo;
+
+    HpaeSessionInfo innerStopSessionInfo = innerStartSessionInfo;
+    innerStopSessionInfo.streamInfo.sessionId = innerStopSessionId;
+    innerStopSessionInfo.state = HPAE_SESSION_RUNNING;
+    hpaeManager_->capturerIdSourceNameMap_[innerStopSessionId] = innerSourceName;
+    hpaeManager_->capturerIdStreamInfoMap_[innerStopSessionId] = innerStopSessionInfo;
+
+    EXPECT_EQ(hpaeManager_->Start(HPAE_STREAM_CLASS_TYPE_RECORD, innerStartSessionId), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Pause(HPAE_STREAM_CLASS_TYPE_RECORD, innerPauseSessionId), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Stop(HPAE_STREAM_CLASS_TYPE_RECORD, innerStopSessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+static void PrepareCoverageManager(std::shared_ptr<HpaeManager> &hpaeManager)
+{
+    EXPECT_NE(hpaeManager, nullptr);
+    hpaeManager->Init();
+    EXPECT_EQ(hpaeManager->IsInit(), true);
+    sleep(1);
+}
+
+struct CoverageRouteInfo {
+    HpaeSinkInfo sinkInfo;
+    HpaeSourceInfo sourceInfo;
+};
+
+static CoverageRouteInfo AddCoverageRouteManagers(std::shared_ptr<HpaeManager> &hpaeManager,
+    const std::string &sinkName, const std::string &sourceName, const std::string &innerSourceName)
+{
+    CoverageRouteInfo routeInfo;
+    routeInfo.sinkInfo = GetSinkInfo();
+    routeInfo.sinkInfo.routeFlag = AUDIO_OUTPUT_FLAG_FAST;
+    auto rendererManager = std::make_shared<HpaeRendererManager>(routeInfo.sinkInfo);
+    hpaeManager->rendererManagerMap_[sinkName] = rendererManager;
+    hpaeManager->rendererManagerMap_[innerSourceName] = rendererManager;
+
+    InitSourceInfo(routeInfo.sourceInfo);
+    routeInfo.sourceInfo.routeFlag = AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP;
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(routeInfo.sourceInfo);
+    hpaeManager->capturerManagerMap_[sourceName] = capturerManager;
+    return routeInfo;
+}
+
+static HpaeSessionInfo AddCoveragePlaySession(std::shared_ptr<HpaeManager> &hpaeManager,
+    uint32_t sessionId, const std::string &sinkName)
+{
+    HpaeSessionInfo sessionInfo;
+    sessionInfo.streamInfo = GetRenderStreamInfo();
+    sessionInfo.streamInfo.sessionId = sessionId;
+    sessionInfo.streamInfo.frameLen = FRAME_LENGTH;
+    sessionInfo.state = HPAE_SESSION_RUNNING;
+    hpaeManager->rendererIdSinkNameMap_[sessionId] = sinkName;
+    hpaeManager->rendererIdStreamInfoMap_[sessionId] = sessionInfo;
+    return sessionInfo;
+}
+
+static HpaeSessionInfo AddCoverageRecordSession(std::shared_ptr<HpaeManager> &hpaeManager,
+    uint32_t sessionId, const std::string &sourceName, SourceType sourceType)
+{
+    HpaeSessionInfo sessionInfo;
+    sessionInfo.streamInfo = GetCaptureStreamInfo();
+    sessionInfo.streamInfo.sessionId = sessionId;
+    sessionInfo.streamInfo.frameLen = FRAME_LENGTH + 1;
+    sessionInfo.streamInfo.sourceType = sourceType;
+    sessionInfo.state = HPAE_SESSION_RUNNING;
+    hpaeManager->capturerIdSourceNameMap_[sessionId] = sourceName;
+    hpaeManager->capturerIdStreamInfoMap_[sessionId] = sessionInfo;
+    return sessionInfo;
+}
+
+HWTEST_F(HpaeManagerUnitTest, StreamSpanRouteAndInnerReadCallbackBranches001, TestSize.Level1)
+{
+    PrepareCoverageManager(hpaeManager_);
+
+    const uint32_t playSessionId = TEST_STREAM_SESSION_ID + 120;
+    const uint32_t recordSessionId = TEST_STREAM_SESSION_ID + 121;
+    const uint32_t innerRecordSessionId = TEST_STREAM_SESSION_ID + 122;
+    const std::string sinkName = "Speaker_File";
+    const std::string sourceName = "mic";
+    const std::string innerSourceName = "inner_capture";
+
+    CoverageRouteInfo routeInfo = AddCoverageRouteManagers(hpaeManager_, sinkName, sourceName, innerSourceName);
+    HpaeSessionInfo playSessionInfo = AddCoveragePlaySession(hpaeManager_, playSessionId, sinkName);
+    HpaeSessionInfo recordSessionInfo = AddCoverageRecordSession(
+        hpaeManager_, recordSessionId, sourceName, SOURCE_TYPE_MIC);
+    AddCoverageRecordSession(hpaeManager_, innerRecordSessionId, innerSourceName, SOURCE_TYPE_PLAYBACK_CAPTURE);
+
+    uint32_t spanSizeInFrame = 0;
+    EXPECT_EQ(hpaeManager_->GetStreamSpanSize(HPAE_STREAM_CLASS_TYPE_PLAY, playSessionId, spanSizeInFrame), SUCCESS);
+    EXPECT_EQ(spanSizeInFrame, static_cast<uint32_t>(playSessionInfo.streamInfo.frameLen));
+    EXPECT_EQ(hpaeManager_->GetStreamSpanSize(
+        HPAE_STREAM_CLASS_TYPE_RECORD, recordSessionId, spanSizeInFrame), SUCCESS);
+    EXPECT_EQ(spanSizeInFrame, static_cast<uint32_t>(recordSessionInfo.streamInfo.frameLen));
+    EXPECT_EQ(hpaeManager_->GetStreamSpanSize(HPAE_STREAM_CLASS_TYPE_INVALID, recordSessionId, spanSizeInFrame),
+        ERR_INVALID_OPERATION);
+
+    uint32_t routeFlag = 0;
+    EXPECT_EQ(hpaeManager_->GetStreamRouteFlag(HPAE_STREAM_CLASS_TYPE_PLAY, playSessionId, routeFlag), SUCCESS);
+    EXPECT_EQ(routeFlag, routeInfo.sinkInfo.routeFlag);
+    EXPECT_EQ(hpaeManager_->GetStreamRouteFlag(HPAE_STREAM_CLASS_TYPE_RECORD, recordSessionId, routeFlag), SUCCESS);
+    EXPECT_EQ(routeFlag, routeInfo.sourceInfo.routeFlag);
+    hpaeManager_->rendererManagerMap_.erase(sinkName);
+    EXPECT_EQ(hpaeManager_->GetStreamRouteFlag(HPAE_STREAM_CLASS_TYPE_PLAY, playSessionId, routeFlag),
+        ERR_INVALID_OPERATION);
+    hpaeManager_->rendererManagerMap_[sinkName] = hpaeManager_->rendererManagerMap_[innerSourceName];
+
+    std::shared_ptr<ReadDataCb> readDataCb = std::make_shared<ReadDataCb>(ROOT_PATH);
+    EXPECT_EQ(hpaeManager_->RegisterReadCallback(innerRecordSessionId, readDataCb), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
 HWTEST_F(HpaeManagerUnitTest, StopAudioPort001, TestSize.Level4)
 {
     EXPECT_NE(hpaeManager_, nullptr);

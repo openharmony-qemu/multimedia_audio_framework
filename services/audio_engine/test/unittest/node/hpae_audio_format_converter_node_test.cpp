@@ -809,21 +809,25 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, AppendUnprocessed_NormalAppend, TestS
 }
 
 /**
- * @tc.name  : AppendUnprocessed_RequiresResize
+ * @tc.name  : AppendUnprocessed_OverflowRejected
  * @tc.type  : FUNC
- * @tc.number: AppendUnprocessed_RequiresResize
- * @tc.desc  : Append larger than current buffer capacity triggers resize
+ * @tc.number: AppendUnprocessed_OverflowRejected
+ * @tc.desc  : Append larger than current buffer capacity is rejected without resizing
  */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, AppendUnprocessed_RequiresResize, TestSize.Level0)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, AppendUnprocessed_OverflowRejected, TestSize.Level0)
 {
     auto converterNode = CreateStdConverter();
     size_t originalSize = converterNode->unprocessedBuffer_.size();
-    // Create data larger than original capacity
+    uint32_t originalFrames = converterNode->unprocessedFrames_;
+    uint32_t originalCredit = converterNode->pullAheadCredit_;
     uint32_t largeFrameLen = static_cast<uint32_t>(originalSize / STEREO + 100);
-    std::vector<float> data(largeFrameLen * STEREO, 0.25f);
+    std::vector<float> data(static_cast<size_t>(largeFrameLen) * STEREO, 0.25f);
+
     converterNode->AppendToUnprocessedBuffer(data.data(), largeFrameLen, STEREO);
-    EXPECT_EQ(converterNode->unprocessedFrames_, largeFrameLen);
-    EXPECT_GE(converterNode->unprocessedBuffer_.size(), static_cast<size_t>(largeFrameLen) * STEREO);
+
+    EXPECT_EQ(converterNode->unprocessedFrames_, originalFrames);
+    EXPECT_EQ(converterNode->unprocessedBuffer_.size(), originalSize);
+    EXPECT_EQ(converterNode->pullAheadCredit_, originalCredit);
 }
 
 /**
@@ -862,20 +866,23 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, AppendProcessed_NormalAppend, TestSiz
 }
 
 /**
- * @tc.name  : AppendProcessed_RequiresResize
+ * @tc.name  : AppendProcessed_OverflowRejected
  * @tc.type  : FUNC
- * @tc.number: AppendProcessed_RequiresResize
- * @tc.desc  : Append triggers resize when processedBuffer_ too small
+ * @tc.number: AppendProcessed_OverflowRejected
+ * @tc.desc  : Append larger than current buffer capacity is rejected without resizing
  */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, AppendProcessed_RequiresResize, TestSize.Level0)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, AppendProcessed_OverflowRejected, TestSize.Level0)
 {
     auto converterNode = CreateStdConverter();
     size_t originalSize = converterNode->processedBuffer_.size();
+    uint32_t originalFrames = converterNode->processedFrames_;
     uint32_t largeFrameLen = static_cast<uint32_t>(originalSize / STEREO + 100);
-    std::vector<float> data(largeFrameLen * STEREO, 0.4f);
+    std::vector<float> data(static_cast<size_t>(largeFrameLen) * STEREO, 0.4f);
+
     converterNode->AppendToProcessedBuffer(data.data(), largeFrameLen, STEREO);
-    EXPECT_EQ(converterNode->processedFrames_, largeFrameLen);
-    EXPECT_GE(converterNode->processedBuffer_.size(), static_cast<size_t>(largeFrameLen) * STEREO);
+
+    EXPECT_EQ(converterNode->processedFrames_, originalFrames);
+    EXPECT_EQ(converterNode->processedBuffer_.size(), originalSize);
 }
 
 // =========================================================================
@@ -1093,25 +1100,26 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MoveUnprocessed_NormalMove, TestSize.
 }
 
 /**
- * @tc.name  : MoveUnprocessed_BufferNeedsResize
+ * @tc.name  : MoveUnprocessed_OverflowRejected
  * @tc.type  : FUNC
- * @tc.number: MoveUnprocessed_BufferNeedsResize
- * @tc.desc  : Move triggers resize when processedBuffer_ too small
+ * @tc.number: MoveUnprocessed_OverflowRejected
+ * @tc.desc  : Move is rejected when processedBuffer_ is too small
  */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, MoveUnprocessed_BufferNeedsResize, TestSize.Level0)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MoveUnprocessed_OverflowRejected, TestSize.Level0)
 {
     auto converterNode = CreateStdConverter();
     uint32_t frames = 2000;
     uint32_t channels = STEREO;
-    std::vector<float> data(frames * channels, 0.8f);
+    std::vector<float> data(static_cast<size_t>(frames) * channels, 0.8f);
     converterNode->unprocessedBuffer_ = data;
     converterNode->unprocessedFrames_ = frames;
     converterNode->processedBuffer_.clear();
 
     converterNode->MoveUnprocessedToProcessed(channels);
-    EXPECT_EQ(converterNode->unprocessedFrames_, 0u);
-    EXPECT_EQ(converterNode->processedFrames_, frames);
-    EXPECT_GE(converterNode->processedBuffer_.size(), static_cast<size_t>(frames) * channels);
+
+    EXPECT_EQ(converterNode->unprocessedFrames_, frames);
+    EXPECT_EQ(converterNode->processedFrames_, 0u);
+    EXPECT_EQ(converterNode->processedBuffer_.size(), 0u);
 }
 
 // =========================================================================
@@ -2126,27 +2134,26 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_PassthroughDoesNotAccumula
 }
 
 /**
- * @tc.name  : LowLatency_DiffRateStillUses20ms
+ * @tc.name  : LowLatency_DiffRateUsesConfiguredFrameMs
  * @tc.type  : FUNC
- * @tc.number: LowLatency_DiffRateStillUses20ms
- * @tc.desc  : Different rate (44100->48000) still uses 20ms outputFrameLen even with 5ms input
+ * @tc.number: LowLatency_DiffRateUsesConfiguredFrameMs
+ * @tc.desc  : Different rate (44100->48000) uses configured 5ms frame duration
  */
-HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_DiffRateStillUses20ms, TestSize.Level0)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, LowLatency_DiffRateUsesConfiguredFrameMs, TestSize.Level0)
 {
     HpaeNodeInfo pre;
     pre.samplingRate = SAMPLE_RATE_44100;
-    pre.frameLen = SAMPLE_RATE_44100 * FRAME_LEN_5MS / MILLISECOND_PER_SECOND; // 220.5 -> 220
+    pre.frameLen = SAMPLE_RATE_44100 * FRAME_LEN_5MS / MILLISECOND_PER_SECOND;
     pre.channels = STEREO;
     HpaeNodeInfo out;
     out.samplingRate = SAMPLE_RATE_48000;
-    out.frameLen = SAMPLE_RATE_48000 * FRAME_LEN_5MS / MILLISECOND_PER_SECOND; // 240
+    out.frameLen = SAMPLE_RATE_48000 * FRAME_LEN_5MS / MILLISECOND_PER_SECOND;
     out.channels = STEREO;
     auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
 
-    // Different rate: outputFrameLen20ms_ should be 20ms at output rate (960), not node frameLen
-    uint32_t expected20ms = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
-    EXPECT_EQ(converterNode->outputFrameLen20ms_, expected20ms);
-    EXPECT_EQ(converterNode->outputFrameLen20ms_, 960u);
+    uint32_t expected5ms = SAMPLE_RATE_48000 * FRAME_LEN_5MS / MILLISECOND_PER_SECOND;
+    EXPECT_EQ(converterNode->outputFrameLen20ms_, expected5ms);
+    EXPECT_EQ(converterNode->outputFrameLen20ms_, FRAMELEN_5MS_48K);
 }
 
 /**

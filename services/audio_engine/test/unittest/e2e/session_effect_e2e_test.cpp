@@ -36,6 +36,7 @@ static constexpr uint32_t WAIT_SHORT_US = 200000;       // 200ms
 static constexpr uint32_t WAIT_LONG_US = 500000;        // 500ms
 static constexpr uint32_t VERIFY_WAIT_US = 100000;      // 100ms
 static constexpr uint32_t WARMUP_WAIT_US = 50000;        // 50ms
+static constexpr const char *AISS_EFFECT_NAME = "audio_aiss_enhance";
 
 AudioModuleInfo GetTestAudioModuleInfo()
 {
@@ -76,9 +77,13 @@ protected:
         hpaeManager_->Init();
         sleep(1);
 
-        // Inject fake library into SessionEffectManager (must be member, not local)
+        // Inject fake library via InitEffectLibraries so CreateNewInstance picks it up
+        // through GetEffectLibEntry (mirrors session_effect_manager_test pattern).
         fakeLibStruct_ = fakeLib_.GetLibrary();
-        hpaeManager_->sessionEffectManager_->SetAudioEffectLibraryForTest(&fakeLibStruct_);
+        auto libEntry = std::make_shared<AudioEffectLibEntry>();
+        libEntry->libraryName = AISS_EFFECT_NAME;
+        libEntry->audioEffectLibHandle = &fakeLibStruct_;
+        hpaeManager_->sessionEffectManager_->InitEffectLibraries({libEntry});
 
         // Full pipeline setup via OpenAudioPort (creates RendererManager with Init)
         AudioModuleInfo audioModuleInfo = GetTestAudioModuleInfo();
