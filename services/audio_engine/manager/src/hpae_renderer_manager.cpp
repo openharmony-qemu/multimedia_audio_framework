@@ -347,8 +347,8 @@ void HpaeRendererManager::SwitchBypassState(const std::shared_ptr<HpaeSinkInputN
     } else if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
         processClusterDecision != USE_NONE_PROCESSCLUSTER &&
         GetProcessorType(nodeInfo.sessionId) == HPAE_SCENE_EFFECT_NONE) {
-        sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererRelease(nodeInfo, sinkInfo_);	 
-        CreateProcessCluster(nodeInfo);	 
+        sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererRelease(nodeInfo, sinkInfo_);
+        CreateProcessCluster(nodeInfo);
         AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
     } else {
         AUDIO_INFO_LOG("sessionId: %{public}u refresh to %{public}d", nodeInfo.sessionId, processClusterDecision);
