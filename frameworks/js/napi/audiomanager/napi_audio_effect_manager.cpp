@@ -347,8 +347,8 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectVolume(napi_env env, napi
             "incorrect parameter types: The type of volume must be number",
             NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueDouble(env, context->volume, argv[PARAM1]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok && context->volume >= 0.0 && context->volume <= 1.0,
-            "parameter verification failed: volume range is [0.0, 1.0]",
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok && context->volume >= 0.0 &&
+            context->volume <= 1.0, "parameter verification failed: volume range is [0.0, 1.0]",
             NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
