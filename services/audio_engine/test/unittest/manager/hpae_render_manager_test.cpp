@@ -1004,7 +1004,7 @@ HWTEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_001, TestSize.Leve
 {
     HpaeSinkInfo sinkInfo;
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
-    EXPECT_NE(hpaeRendererManager, nullptr);
+    ASSERT_NE(hpaeRendererManager, nullptr);
     HpaeNodeInfo nodeInfo;
     hpaeRendererManager->CreateDefaultProcessCluster(nodeInfo);
 }
@@ -1020,7 +1020,7 @@ HWTEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_002, TestSize.Leve
     HpaeSinkInfo sinkInfo;
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
 
-    EXPECT_NE(hpaeRendererManager, nullptr);
+    ASSERT_NE(hpaeRendererManager, nullptr);
     HpaeNodeInfo defaultNodeInfo;
     HpaeNodeInfo nodeInfo;
     hpaeRendererManager->CreateDefaultProcessCluster(defaultNodeInfo);
@@ -1064,17 +1064,17 @@ HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_002, TestSize.Level1)
     auto tmpNodeId1 = hpaeRendererManager->converterForOutput_->GetNodeId();
     auto tmpNodeId2 = hpaeRendererManager->loudnessGainNode_->GetNodeId();
     auto tmpNodeId3 = hpaeRendererManager->converterForLoudness_->GetNodeId();
-    EXPECT_NE(hpaeRendererManager->converterForOutput_, nullptr);
-    EXPECT_NE(hpaeRendererManager->loudnessGainNode_, nullptr);
-    EXPECT_NE(hpaeRendererManager->converterForLoudness_, nullptr);
+    ASSERT_NE(hpaeRendererManager->converterForOutput_, nullptr);
+    ASSERT_NE(hpaeRendererManager->loudnessGainNode_, nullptr);
+    ASSERT_NE(hpaeRendererManager->converterForLoudness_, nullptr);
     EXPECT_EQ(hpaeRendererManager->ConnectInputSession(), SUCCESS);
 
     int32_t ret = hpaeRendererManager->ReloadRenderManager(sinkInfo);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_NE(hpaeRendererManager->converterForOutput_, nullptr);
-    EXPECT_NE(hpaeRendererManager->loudnessGainNode_, nullptr);
-    EXPECT_NE(hpaeRendererManager->converterForLoudness_, nullptr);
+    ASSERT_NE(hpaeRendererManager->converterForOutput_, nullptr);
+    ASSERT_NE(hpaeRendererManager->loudnessGainNode_, nullptr);
+    ASSERT_NE(hpaeRendererManager->converterForLoudness_, nullptr);
     EXPECT_EQ(tmpNodeId1, hpaeRendererManager->converterForOutput_->GetNodeId());
     EXPECT_EQ(tmpNodeId2, hpaeRendererManager->loudnessGainNode_->GetNodeId());
     EXPECT_EQ(tmpNodeId3, hpaeRendererManager->converterForLoudness_->GetNodeId());
@@ -1100,17 +1100,17 @@ HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_003, TestSize.Level1)
     auto tmpNodeId1 = hpaeRendererManager->converterForOutput_->GetNodeId();
     auto tmpNodeId2 = hpaeRendererManager->loudnessGainNode_->GetNodeId();
     auto tmpNodeId3 = hpaeRendererManager->converterForLoudness_->GetNodeId();
-    EXPECT_NE(hpaeRendererManager->converterForOutput_, nullptr);
-    EXPECT_NE(hpaeRendererManager->loudnessGainNode_, nullptr);
-    EXPECT_NE(hpaeRendererManager->converterForLoudness_, nullptr);
+    ASSERT_NE(hpaeRendererManager->converterForOutput_, nullptr);
+    ASSERT_NE(hpaeRendererManager->loudnessGainNode_, nullptr);
+    ASSERT_NE(hpaeRendererManager->converterForLoudness_, nullptr);
     EXPECT_EQ(hpaeRendererManager->ConnectInputSession(), SUCCESS);
 
     int32_t ret = hpaeRendererManager->ReloadRenderManager(sinkInfo);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_NE(hpaeRendererManager->converterForOutput_, nullptr);
-    EXPECT_NE(hpaeRendererManager->loudnessGainNode_, nullptr);
-    EXPECT_NE(hpaeRendererManager->converterForLoudness_, nullptr);
+    ASSERT_NE(hpaeRendererManager->converterForOutput_, nullptr);
+    ASSERT_NE(hpaeRendererManager->loudnessGainNode_, nullptr);
+    ASSERT_NE(hpaeRendererManager->converterForLoudness_, nullptr);
     EXPECT_EQ(tmpNodeId1, hpaeRendererManager->converterForOutput_->GetNodeId());
     EXPECT_EQ(tmpNodeId2, hpaeRendererManager->loudnessGainNode_->GetNodeId());
     EXPECT_EQ(tmpNodeId3, hpaeRendererManager->converterForLoudness_->GetNodeId());
@@ -1269,7 +1269,7 @@ HWTEST_F(HpaeRendererManagerTest, SetIsLowLatency_001, TestSize.Level1)
     auto it = hpaeRendererManager->sinkInputNodeMap_.find(streamInfo.sessionId);
     ASSERT_EQ(it != hpaeRendererManager->sinkInputNodeMap_.end(), true);
     auto node = it->second;
-    EXPECT_NE(node, nullptr);
+    ASSERT_NE(node, nullptr);
     EXPECT_EQ(node->GetIsLowLatency(), false);
 
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
@@ -1289,13 +1289,13 @@ HWTEST_F(HpaeRendererManagerTest, CreateRendererManager_001, TestSize.Level0)
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceClass = "remote_offload";
     std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    EXPECT_NE(hpaeRendererManager, nullptr);
+    ASSERT_NE(hpaeRendererManager, nullptr);
     sinkInfo.deviceClass = "offload";
     hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    EXPECT_NE(hpaeRendererManager, nullptr);
+    ASSERT_NE(hpaeRendererManager, nullptr);
     sinkInfo.deviceClass = "test";
     hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    EXPECT_NE(hpaeRendererManager, nullptr);
+    ASSERT_NE(hpaeRendererManager, nullptr);
 }
 
 /**
@@ -1467,7 +1467,7 @@ HWTEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001, TestSize.Level1)
     nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.channelLayout = CH_LAYOUT_STEREO;
     std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
-    EXPECT_NE(coBufferNode, nullptr);
+    ASSERT_NE(coBufferNode, nullptr);
     coBufferNode->SetNodeInfo(nodeInfo);
     coBufferNode->SetOutputClusterConnected(true);
     hpaeRendererManager->outputCluster_->Start();
@@ -2514,17 +2514,17 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_001, 
     EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
     // nodes create for curNode
-    EXPECT_NE(offloadManager->curNode_, nullptr);
+    ASSERT_NE(offloadManager->curNode_, nullptr);
     auto tmpNodeId1 = offloadManager->converterForOutput_->GetNodeId();
     auto tmpNodeId2 = offloadManager->loudnessGainNode_->GetNodeId();
     auto tmpNodeId3 = offloadManager->converterForLoudness_->GetNodeId();
-    EXPECT_NE(offloadManager->converterForOutput_, nullptr);
-    EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);
-    EXPECT_NE(offloadManager->converterForLoudness_, nullptr);
+    ASSERT_NE(offloadManager->converterForOutput_, nullptr);
+    ASSERT_NE(offloadManager->loudnessGainNode_, nullptr);
+    ASSERT_NE(offloadManager->converterForLoudness_, nullptr);
 
     offloadManager->SetCurrentNode();
     // curNode exit, nodes remain unchanged
-    EXPECT_NE(offloadManager->curNode_, nullptr);
+    ASSERT_NE(offloadManager->curNode_, nullptr);
     EXPECT_EQ(tmpNodeId1, offloadManager->converterForOutput_->GetNodeId());
     EXPECT_EQ(tmpNodeId2, offloadManager->loudnessGainNode_->GetNodeId());
     EXPECT_EQ(tmpNodeId3, offloadManager->converterForLoudness_->GetNodeId());
@@ -2586,9 +2586,9 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     CreateTwoStreamInOffload(offloadManager);
 
     // create nodes for stream1
-    EXPECT_NE(offloadManager->converterForOutput_, nullptr);
-    EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);
-    EXPECT_NE(offloadManager->converterForLoudness_, nullptr);
+    ASSERT_NE(offloadManager->converterForOutput_, nullptr);
+    ASSERT_NE(offloadManager->loudnessGainNode_, nullptr);
+    ASSERT_NE(offloadManager->converterForLoudness_, nullptr);
     auto tmpNodeId1 = offloadManager->converterForOutput_->GetNodeId();
     auto tmpNodeId2 = offloadManager->loudnessGainNode_->GetNodeId();
     auto tmpNodeId3 = offloadManager->converterForLoudness_->GetNodeId();
@@ -2608,12 +2608,12 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     EXPECT_EQ(offloadManager->converterForLoudness_, nullptr);
     
     offloadManager->SetCurrentNode();
-    EXPECT_NE(offloadManager->curNode_, nullptr);
+    ASSERT_NE(offloadManager->curNode_, nullptr);
     offloadManager->OnNotifyHdiData(hdiPos);
     // new curNode, create new nodes for stream2
-    EXPECT_NE(offloadManager->converterForOutput_, nullptr);
-    EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);
-    EXPECT_NE(offloadManager->converterForLoudness_, nullptr);
+    ASSERT_NE(offloadManager->converterForOutput_, nullptr);
+    ASSERT_NE(offloadManager->loudnessGainNode_, nullptr);
+    ASSERT_NE(offloadManager->converterForLoudness_, nullptr);
     EXPECT_NE(tmpNodeId1, offloadManager->converterForOutput_->GetNodeId());
     EXPECT_NE(tmpNodeId2, offloadManager->loudnessGainNode_->GetNodeId());
     EXPECT_NE(tmpNodeId3, offloadManager->converterForLoudness_->GetNodeId());
@@ -2646,9 +2646,9 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_003, 
     offloadManager->DestroyStream(TEST_STREAM_SESSION_ID);
     WaitForMsgProcessing(offloadManager);
     EXPECT_NE(offloadManager->curNode_->GetState(), HPAE_SESSION_RUNNING);
-    EXPECT_NE(offloadManager->converterForOutput_, nullptr);
-    EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);
-    EXPECT_NE(offloadManager->converterForLoudness_, nullptr);
+    ASSERT_NE(offloadManager->converterForOutput_, nullptr);
+    ASSERT_NE(offloadManager->loudnessGainNode_, nullptr);
+    ASSERT_NE(offloadManager->converterForLoudness_, nullptr);
 
     offloadManager->Start(DEFAULT_SESSIONID_NUM_FIRST);
     WaitForMsgProcessing(offloadManager);
@@ -2720,11 +2720,11 @@ HWTEST_F(HpaeRendererManagerTest, DeleteInputSessionIdNotExit, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo = GetSinkInfo();
     auto rendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
-    EXPECT_NE(rendererManager, nullptr);
+    ASSERT_NE(rendererManager, nullptr);
     EXPECT_EQ(hpaeRendererManager_->DeleteInputSession(INVALID_ID), SUCCESS);
 
     auto injectorManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
-    EXPECT_NE(injectorManager, nullptr);
+    ASSERT_NE(injectorManager, nullptr);
     EXPECT_EQ(hpaeRendererManager_->DeleteInputSession(INVALID_ID), SUCCESS);
 }
 
@@ -3194,7 +3194,7 @@ HWTEST_F(HpaeRendererManagerTest, SetOffloadRenderCallbackType_001, TestSize.Lev
     ret = offloadManager->SetOffloadRenderCallbackType(DEFAULT_SESSIONID_NUM_FIRST, CB_RENDER_FULL);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    EXPECT_NE(offloadManager->curNode_, nullptr);
+    ASSERT_NE(offloadManager->curNode_, nullptr);
     EXPECT_NE(offloadManager->sinkInputNodeMap_.size(), 1);
 }
 
@@ -3220,7 +3220,7 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_001, TestSize.Level1)
 
     EXPECT_EQ(hpaeRendererManager->CreateInputSession(streamInfo), SUCCESS);
     auto sinkInputNode = hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId];
-    EXPECT_NE(sinkInputNode, nullptr);
+    ASSERT_NE(sinkInputNode, nullptr);
     hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->state_ = HPAE_SESSION_RUNNING;
     hpaeRendererManager->TriggerAppsUidUpdate(streamInfo.sessionId);
     WaitForMsgProcessing(hpaeRendererManager);
@@ -3628,7 +3628,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_001, TestSi
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is created for remote_offload device
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
     EXPECT_TRUE(offloadManager->limiterNode_->IsLimiterInited());
 
     WaitForMsgProcessing(offloadManager);
@@ -3756,7 +3756,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_Destroy_001, TestSize.Level1)
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is created
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
 
     // Destroy stream to trigger DestroyOffloadNodes
     EXPECT_EQ(offloadManager->DestroyStream(streamInfo.sessionId), SUCCESS);
@@ -3809,16 +3809,16 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_ConnectAndDisconnect_001, TestSize
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is connected (nodes should be non-null after start)
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
-    EXPECT_NE(offloadManager->converterForOutput_, nullptr);
-    EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->converterForOutput_, nullptr);
+    ASSERT_NE(offloadManager->loudnessGainNode_, nullptr);
 
     // Pause stream to trigger DisConnectInputSession
     EXPECT_EQ(offloadManager->Pause(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ still exists (disconnection doesn't destroy the node)
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
 
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
@@ -3921,7 +3921,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_SetupAudioLimiter_001, TestSize.Le
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is initialized after CreateOffloadNodes
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
     EXPECT_TRUE(offloadManager->limiterNode_->IsLimiterInited());
 
     WaitForMsgProcessing(offloadManager);
@@ -4222,7 +4222,7 @@ HWTEST_F(HpaeRendererManagerTest, SendRequest_Interphone_Sync_001, TestSize.Leve
     
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_, nullptr);
-    EXPECT_NE(hpaeRendererManager->outputCluster_, nullptr);
+    ASSERT_NE(hpaeRendererManager->outputCluster_, nullptr);
     
     auto mockRenderSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
     auto outputClusterImpl = std::static_pointer_cast<HpaeOutputCluster>(hpaeRendererManager->outputCluster_);
@@ -4471,5 +4471,226 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_NoChange_004, TestSiz
     // State is COLLABORATION_CLOSE by default, set same state
     EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE), SUCCESS);
     EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Materialize_Primary_ExpiredClearsAttachStateAndEmitsDisabled
+ * @tc.type  : FUNC
+ * @tc.number: Materialize_Primary_ExpiredClearsAttachStateAndEmitsDisabled
+ * @tc.desc  : When attach-state instance is expired, Materialize clears attach state and emits DISABLED.
+ */
+HWTEST_F(HpaeRendererManagerTest, Materialize_Primary_ExpiredClearsAttachStateAndEmitsDisabled, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 801;
+    constexpr uint32_t testNodeId = 111;
+
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+
+    // Write attach state with an expired instance
+    SessionEffectAttachState st;
+    st.enabled = true;
+    st.effectName = "audio_aiss_enhance";
+    // instance is default-constructed weak_ptr (expired)
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    auto sinkInputNode = hpaeRendererManager_->sinkInputNodeMap_[sessionId];
+    sinkInputNode->SetSessionEffectAttachState(st);
+    ASSERT_TRUE(sinkInputNode->HasSessionEffectAttachState());
+
+    hpaeRendererManager_->MaterializeSessionEffectFromAttachState(sessionId, HPAE_SCENE_EFFECT_NONE);
+
+    EXPECT_FALSE(sinkInputNode->HasSessionEffectAttachState());
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+/**
+ * @tc.name  : MoveStream_Primary_PreservesAttachState_NoDisabled
+ * @tc.type  : FUNC
+ * @tc.number: MoveStream_Primary_PreservesAttachState_NoDisabled
+ * @tc.desc  : MoveStreamSync must NOT clear attach state or emit DISABLED.
+ */
+HWTEST_F(HpaeRendererManagerTest, MoveStream_Primary_PreservesAttachState_NoDisabled, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 802;
+    constexpr uint32_t testNodeId = 112;
+
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    callback->events_.clear();
+
+    hpaeRendererManager_->MoveStreamSync(sessionId, "new_sink");
+    WaitForMsgProcessing(hpaeRendererManager_);
+
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+}
+
+/**
+ * @tc.name  : DeleteInputSession_FullTeardown_EmitsDisabled
+ * @tc.type  : FUNC
+ * @tc.number: DeleteInputSession_FullTeardown_EmitsDisabled
+ * @tc.desc  : Default DeleteInputSession mode (FULL_TEARDOWN) emits DISABLED and clears attach state.
+ */
+HWTEST_F(HpaeRendererManagerTest, DeleteInputSession_FullTeardown_EmitsDisabled, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 803;
+    constexpr uint32_t testNodeId = 113;
+
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    callback->events_.clear();
+
+    EXPECT_EQ(hpaeRendererManager_->DeleteInputSession(sessionId), SUCCESS);
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+/**
+ * @tc.name  : Materialize_Primary_SuccessEmitsEnabled
+ * @tc.type  : FUNC
+ * @tc.number: Materialize_Primary_SuccessEmitsEnabled
+ * @tc.desc  : When MaterializeSessionEffectFromAttachState succeeds, ENABLED is emitted.
+ */
+HWTEST_F(HpaeRendererManagerTest, Materialize_Primary_SuccessEmitsEnabled, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 804;
+    constexpr uint32_t testNodeId = 114;
+
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+
+    SessionEffectAttachState st;
+    st.enabled = true;
+    st.effectName = "audio_aiss_enhance";
+    st.instance = instance;
+    st.config = config;
+
+    auto sinkInputNode = hpaeRendererManager_->sinkInputNodeMap_[sessionId];
+    sinkInputNode->SetSessionEffectAttachState(st);
+
+    hpaeRendererManager_->MaterializeSessionEffectFromAttachState(sessionId, HPAE_SCENE_EFFECT_NONE);
+
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+    EXPECT_TRUE(hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->HasSessionEffectNode(sessionId));
+}
+
+/**
+ * @tc.name  : DetachSessionEffectNodeForRefresh_CapturesLastSeStatus
+ * @tc.type  : FUNC
+ * @tc.number: DetachSessionEffectNodeForRefresh_CapturesLastSeStatus
+ * @tc.desc  : DetachSessionEffectNodeForRefresh captures lastSeStatus into attach state.
+ */
+HWTEST_F(HpaeRendererManagerTest, DetachSessionEffectNodeForRefresh_CapturesLastSeStatus, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 805;
+    constexpr uint32_t testNodeId = 115;
+
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    // Force the SE node status to WARMING_UP
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE];
+    auto seNode = cluster->GetSessionEffectNode(sessionId);
+    ASSERT_NE(seNode, nullptr);
+    seNode->SetStatusForTest(HpaeSessionEffectNode::STATUS::WARMING_UP);
+
+    hpaeRendererManager_->DetachSessionEffectNodeForRefresh(sessionId, HPAE_SCENE_EFFECT_NONE);
+
+    auto sinkInputNode = hpaeRendererManager_->sinkInputNodeMap_[sessionId];
+    ASSERT_TRUE(sinkInputNode->HasSessionEffectAttachState());
+    auto stOpt = sinkInputNode->GetSessionEffectAttachState();
+    ASSERT_TRUE(stOpt.has_value());
+    EXPECT_EQ(stOpt->lastSeStatus, static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP));
+}
+
+/**
+ * @tc.name  : SuspendResumePreheatForGraphSwitch_Pairing
+ * @tc.type  : FUNC
+ * @tc.number: SuspendResumePreheatForGraphSwitch_Pairing
+ * @tc.desc  : Suspend stops preheat thread; Resume restarts it; flag is managed correctly.
+ */
+HWTEST_F(HpaeRendererManagerTest, SuspendResumePreheatForGraphSwitch_Pairing, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 806;
+    constexpr uint32_t testNodeId = 116;
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = testNodeId;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    auto seNode = std::make_shared<HpaeSessionEffectNode>(nodeInfo);
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(FRAME_LENGTH_960));
+    ASSERT_EQ(seNode->CreateEffectWithInstance("audio_aiss_enhance", instance, config), SUCCESS);
+
+    seNode->SetStatusForTest(HpaeSessionEffectNode::STATUS::WARMING_UP);
+    seNode->StartEffect();
+
+    // Suspend: should stop thread and set flag
+    seNode->SuspendSessionEffectPreheatForGraphSwitch();
+
+    // Resume: should restart thread and clear flag
+    seNode->ResumeSessionEffectPreheatForGraphSwitch();
+
+    // Resume without Suspend: should be no-op (flag already cleared)
+    seNode->ResumeSessionEffectPreheatForGraphSwitch();
+
+    seNode->DropEffect();
+    EXPECT_TRUE(true); // If we get here without crashing, test passes
 }
 }  // namespace

@@ -223,7 +223,10 @@ protected:
             manager_->sessionEffectNode_.reset();
             manager_->sessionEffectSessionId_ = 0;
         }
-        manager_->pendingSessionEffects_.clear();
+        // Clear attach state on test nodes
+        for (auto &[sid, node] : manager_->sinkInputNodeMap_) {
+            if (node) { node->ClearSessionEffectAttachState(); }
+        }
         manager_.reset();
     }
 
@@ -241,12 +244,38 @@ HWTEST_F(HpaeOffloadSeTest, createSessionEffect_curNode_immediate, TestSize.Leve
     int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance",
         instance, config_);
     EXPECT_EQ(ret, 0);
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, CUR_SESSION_ID);
-    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    // Attach state should be on the SinkInputNode
+    EXPECT_TRUE(curNode_->HasSessionEffectAttachState());
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
     ASSERT_FALSE(callback_->events_.empty());
     EXPECT_EQ(callback_->events_.back().state, HPAE_SESSION_RUNNING);
+}
+
+// OSE-B1: a duplicate CreateSessionEffect (curNode already has a materialized SE) is rejected with
+// ERR_SESSION_ALREADY_BOUND and must NOT overwrite the existing attach state on the SinkInputNode.
+HWTEST_F(HpaeOffloadSeTest, createSessionEffect_duplicateBound_doesNotOverwriteAttachState, TestSize.Level0)
+{
+    auto instance1 = MakeTestEffectInstance();
+    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance1, config_);
+    ASSERT_EQ(ret, 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
+
+    // Second Create with a different instance/effect — must be rejected as ALREADY_BOUND.
+    auto instance2 = MakeTestEffectInstance();
+    int32_t ret2 = manager_->CreateSessionEffect(CUR_SESSION_ID, "other_effect", instance2, config_);
+    EXPECT_EQ(ret2, static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND));
+
+    // Attach state still reflects the FIRST accepted Create, not the rejected second one.
+    auto st = curNode_->GetSessionEffectAttachState();
+    ASSERT_TRUE(st.has_value());
+    EXPECT_EQ(st->effectName, "audio_aiss_enhance");
+    EXPECT_EQ(st->instance.lock().get(), instance1.get());
+    EXPECT_NE(st->instance.lock().get(), instance2.get());
+    // The rejected Create must not emit a second ENABLED.
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 }
 
 // OSE-1b: Reload detach drops only the physical node and recreate uses a fresh node
@@ -269,7 +298,7 @@ HWTEST_F(HpaeOffloadSeTest, reloadDetach_recreatesFreshNodeWithoutDisabled, Test
 
     ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
     EXPECT_EQ(ret, 0);
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_NE(manager_->sessionEffectNode_, oldNode);
     EXPECT_EQ(manager_->sessionEffectSessionId_, CUR_SESSION_ID);
     EXPECT_EQ(manager_->sessionEffectNode_->GetEffectInstance(), instance);
@@ -277,7 +306,7 @@ HWTEST_F(HpaeOffloadSeTest, reloadDetach_recreatesFreshNodeWithoutDisabled, Test
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
 }
 
-// OSE-1c: Reload detach clears deferred physical requests without reporting logical disable
+// OSE-1c: Reload detach preserves attach state (no physical node was created)
 HWTEST_F(HpaeOffloadSeTest, reloadDetach_pendingOnly_clearsPendingWithoutDisabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
@@ -286,16 +315,49 @@ HWTEST_F(HpaeOffloadSeTest, reloadDetach_pendingOnly_clearsPendingWithoutDisable
     int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_EQ(ret, 0);
     ASSERT_EQ(manager_->sessionEffectNode_, nullptr);
-    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
-    EXPECT_EQ(manager_->pendingSessionEffects_.count(CUR_SESSION_ID), 1u);
+    // Attach state should be on the SinkInputNode (deferred, no physical node)
+    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
     manager_->DetachSessionEffectNodeForReload();
 
-    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    // Attach state SURVIVES reload (will re-materialize on ConnectInputSession)
+    EXPECT_TRUE(curNode_->HasSessionEffectAttachState());
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+}
+
+// OSE-1d: DetachSessionEffectNodeForReload captures lastSeStatus so preheat restarts after reload.
+HWTEST_F(HpaeOffloadSeTest, detachForReload_writesLastSeStatus_toAttachState, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
+    ASSERT_EQ(ret, 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
+
+    // Drive the SE node into WARMING_UP so GetStatus() reports an active preheat state.
+    manager_->sessionEffectNode_->StartEffect();
+    ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+
+    manager_->DetachSessionEffectNodeForReload();
+
+    // Physical cache is reset, attach state survives...
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
+    // ...and now carries the captured lastSeStatus so materialize can restart preheat.
+    auto st = curNode_->GetSessionEffectAttachState();
+    ASSERT_TRUE(st.has_value());
+    EXPECT_EQ(st->lastSeStatus, static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP));
+
+    // Re-materialize: lastSeStatus >= WARMING_UP triggers StartEffect on the fresh node, so it
+    // ends up in WARMING_UP (not IDLE) — proving the captured status flowed through.
+    manager_->MaterializeSessionEffectFromAttachState(CUR_SESSION_ID);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
 }
 
 // OSE-1a: CreateSessionEffect creation failure clears active SE state without disabled rollback
@@ -320,10 +382,8 @@ HWTEST_F(HpaeOffloadSeTest, createSessionEffect_notCurNode_deferred, TestSize.Le
     // SE not created yet (session is not curNode_)
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
-    // Stored in pending map
-    EXPECT_EQ(manager_->pendingSessionEffects_.size(), 1u);
-    EXPECT_NE(manager_->pendingSessionEffects_.find(OTHER_SESSION_ID),
-        manager_->pendingSessionEffects_.end());
+    // Attach state stored on otherNode_ (deferred)
+    EXPECT_TRUE(otherNode_->HasSessionEffectAttachState());
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
     ASSERT_FALSE(callback_->events_.empty());
     EXPECT_EQ(callback_->events_.back().state, HPAE_SESSION_RUNNING);
@@ -359,20 +419,20 @@ HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_active_restoresChain, TestSize.
     // (no SE node in between)
     // After disconnect+reconnect, loudnessGainNode_'s upstream should be converterForLoudness_
     // We verify indirectly: no crash when SignalProcess runs on the chain
-    EXPECT_NE(manager_->loudnessGainNode_, nullptr);
-    EXPECT_NE(manager_->converterForLoudness_, nullptr);
+    ASSERT_NE(manager_->loudnessGainNode_, nullptr);
+    ASSERT_NE(manager_->converterForLoudness_, nullptr);
 }
 
-// OSE-4: DestroySessionEffect for pending SE → remove from map
+// OSE-4: DestroySessionEffect for deferred SE (attach state only) → clear state + disabled
 HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_pending, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
     manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
-    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
+    ASSERT_TRUE(otherNode_->HasSessionEffectAttachState());
 
     int32_t ret = manager_->DestroySessionEffect(OTHER_SESSION_ID);
     EXPECT_EQ(ret, 0);
-    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    EXPECT_FALSE(otherNode_->HasSessionEffectAttachState());
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
@@ -431,12 +491,12 @@ HWTEST_F(HpaeOffloadSeTest, deleteInputSession_activeSessionEffect_sendsDisabled
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
-// OSE-4c: DestroyStream erases pending SE and sends disabled
+// OSE-4c: DestroyStream clears attach state and sends disabled for non-curNode
 HWTEST_F(HpaeOffloadSeTest, destroyStream_pendingSessionEffect_sendsDisabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
     manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
-    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
+    ASSERT_TRUE(otherNode_->HasSessionEffectAttachState());
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
     manager_->isInit_.store(true);
@@ -444,16 +504,16 @@ HWTEST_F(HpaeOffloadSeTest, destroyStream_pendingSessionEffect_sendsDisabled, Te
     EXPECT_EQ(ret, SUCCESS);
     manager_->HandleMsg();
 
-    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    // Node is removed from map after DestroyStream, so we check via callback
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
-// OSE-4d: MoveStream for non-current pending SE rolls back enabled status
-HWTEST_F(HpaeOffloadSeTest, moveStream_pendingSessionEffect_sendsDisabled, TestSize.Level0)
+// OSE-4d: MoveStream for non-current deferred SE — attach state follows stream (no DISABLED)
+HWTEST_F(HpaeOffloadSeTest, moveStream_pendingSessionEffect_attachStateFollowsNoDisabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
     manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
-    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
+    ASSERT_TRUE(otherNode_->HasSessionEffectAttachState());
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
     manager_->isInit_.store(true);
@@ -461,65 +521,75 @@ HWTEST_F(HpaeOffloadSeTest, moveStream_pendingSessionEffect_sendsDisabled, TestS
     EXPECT_EQ(ret, SUCCESS);
     manager_->HandleMsg();
 
-    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
-    EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    // BEHAVIOR CHANGE: MoveStream no longer emits DISABLED — attach state follows the stream
+    // to the new sink and will re-materialize there via ConnectInputSession.
+    EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    // Positive assertion: attach state survived on the node and follows the stream to the new
+    // sink. The re-materialized ENABLED on the new sink is verified end-to-end (ConnectInputSession
+    // is too heavy to drive from this unit test).
+    EXPECT_TRUE(otherNode_->HasSessionEffectAttachState());
 }
 
-// OSE-4e: MoveAllStreamToNewSink for non-current pending SE rolls back enabled status
-HWTEST_F(HpaeOffloadSeTest, moveAllStream_pendingSessionEffect_sendsDisabled, TestSize.Level0)
+// OSE-4e: MoveAllStreamToNewSink for non-current deferred SE — attach state follows stream (no DISABLED)
+HWTEST_F(HpaeOffloadSeTest, moveAllStream_pendingSessionEffect_attachStateFollowsNoDisabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
     manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
-    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
+    ASSERT_TRUE(otherNode_->HasSessionEffectAttachState());
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
     std::vector<uint32_t> moveIds = { OTHER_SESSION_ID };
     manager_->MoveAllStreamToNewSink("new_sink", moveIds, MOVE_SINGLE);
 
-    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
-    EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    // BEHAVIOR CHANGE: MoveAllStreamToNewSink no longer emits DISABLED — attach state follows
+    // the stream to the new sink and will re-materialize there via ConnectInputSession.
+    EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    // Positive assertion: attach state survived on the node and follows the stream to the new
+    // sink. The re-materialized ENABLED on the new sink is verified end-to-end (ConnectInputSession
+    // is too heavy to drive from this unit test).
+    EXPECT_TRUE(otherNode_->HasSessionEffectAttachState());
 }
 
-// OSE-4f: Pending activation failure rolls back previously sent enabled status
+// OSE-4f: Attach-state materialization failure rolls back previously sent enabled status
 HWTEST_F(HpaeOffloadSeTest, connectInputSession_pendingInsertFailure_rollsBackEnabled, TestSize.Level0)
 {
-    auto instance = MakeTestEffectInstance();
-    manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
-    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
+    // Use nullptr instance — CreateEffectWithInstance will fail inside InsertSessionEffectNode
+    manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", nullptr, config_);
+    ASSERT_TRUE(otherNode_->HasSessionEffectAttachState());
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
+    // Simulate curNode_ switch: OTHER_SESSION_ID becomes curNode_
     manager_->curNode_ = otherNode_;
-    HpaeNodeInfo outputInfo = MakeOutputNodeInfo();
-    manager_->sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(outputInfo);
-    manager_->sessionEffectSessionId_ = 0;
+    // Chain is already set up from SetUp(); InsertSessionEffectNode will fail on nullptr instance
 
     int32_t ret = manager_->ConnectInputSession();
     EXPECT_EQ(ret, SUCCESS);
 
-    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    // Materialization failed: sessionEffectSessionId_ stays 0, DISABLED emitted
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
-// OSE-5: active and pending SessionEffect state are tracked directly
+// OSE-5: active and deferred SessionEffect state tracked via physical cache + attach state
 HWTEST_F(HpaeOffloadSeTest, sessionEffectState_activeAndPending, TestSize.Level0)
 {
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
-    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    EXPECT_FALSE(curNode_->HasSessionEffectAttachState());
 
     // Create active SE for curNode_
     auto instance1 = MakeTestEffectInstance();
     manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance1, config_);
 
-    // Create pending SE for otherNode_
+    // Create deferred SE for otherNode_
     auto instance2 = MakeTestEffectInstance();
     manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance2, config_);
 
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, CUR_SESSION_ID);
-    EXPECT_EQ(manager_->pendingSessionEffects_.count(OTHER_SESSION_ID), 1u);
-    EXPECT_EQ(manager_->pendingSessionEffects_.count(INVALID_SESSION_ID), 0u);
+    // otherNode_ has attach state (deferred), curNode_ also has attach state
+    EXPECT_TRUE(otherNode_->HasSessionEffectAttachState());
+    EXPECT_TRUE(curNode_->HasSessionEffectAttachState());
 }
 
 // OSE-6: IsValidSession checks sinkInputNodeMap_
@@ -549,40 +619,25 @@ HWTEST_F(HpaeOffloadSeTest, setSessionEffectParameter_notActive, TestSize.Level0
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
 }
 
-// OSE-9: Pending SE auto-created when session becomes curNode_
-// Simulates what ConnectInputSession does: checks pending map for curNode_'s session
+// OSE-9: Deferred SE auto-materialized when session becomes curNode_ via ConnectInputSession
 HWTEST_F(HpaeOffloadSeTest, pendingCreatedOnSetCurrentNode, TestSize.Level0)
 {
-    // 1. Create pending SE for OTHER_SESSION_ID (not curNode_)
+    // 1. Create deferred SE for OTHER_SESSION_ID (not curNode_)
     auto instance = MakeTestEffectInstance();
     manager_->CreateSessionEffect(OTHER_SESSION_ID, "audio_aiss_enhance", instance, config_);
-    ASSERT_EQ(manager_->pendingSessionEffects_.size(), 1u);
+    ASSERT_TRUE(otherNode_->HasSessionEffectAttachState());
     ASSERT_EQ(manager_->sessionEffectNode_, nullptr);
 
     // 2. Simulate curNode_ switch: OTHER_SESSION_ID becomes curNode_
-    //    (normally done by SetCurrentNode → CreateOffloadNodes → ConnectInputSession)
     manager_->curNode_ = otherNode_;
 
-    // 3. Simulate ConnectInputSession's pending SE resolution:
-    //    "check if curNode_ has pending SE"
-    uint32_t newCurSessionId = manager_->curNode_->GetSessionId();
-    auto pendingIt = manager_->pendingSessionEffects_.find(newCurSessionId);
-    ASSERT_NE(pendingIt, manager_->pendingSessionEffects_.end());
-
-    // Recreate chain for new curNode_ (simplified: reuse existing nodes)
-    manager_->sessionEffectSessionId_ = newCurSessionId;
-    int32_t ret = manager_->InsertSessionEffectNode(pendingIt->second.effectName,
-        pendingIt->second.instance, pendingIt->second.config);
-    EXPECT_EQ(ret, 0);
-
-    // Pending should be consumed
-    manager_->pendingSessionEffects_.erase(pendingIt);
-    EXPECT_TRUE(manager_->pendingSessionEffects_.empty());
+    // 3. ConnectInputSession will read attach state and materialize physical SE
+    int32_t ret = manager_->ConnectInputSession();
+    EXPECT_EQ(ret, SUCCESS);
 
     // SE now active for the new curNode_
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, OTHER_SESSION_ID);
-    EXPECT_EQ(manager_->pendingSessionEffects_.count(OTHER_SESSION_ID), 0u);
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 }
 
@@ -936,6 +991,195 @@ HWTEST_F(HpaeOffloadSeTest, stopOffloadSinkIfRunning_nonRunning, TestSize.Level0
 {
     curNode_->SetState(HPAE_SESSION_PAUSED);
     EXPECT_FALSE(manager_->StopOffloadSinkIfRunning());
+}
+
+// OSE-FIX1a: Expired instance in MaterializeSessionEffectFromAttachState clears attach state + emits DISABLED
+HWTEST_F(HpaeOffloadSeTest, materialize_offload_expiredClearsAttachState, TestSize.Level0)
+{
+    // Set up attach state with expired instance on curNode_
+    SessionEffectAttachState st;
+    st.enabled = true;
+    st.effectName = "audio_aiss_enhance";
+    // instance is default weak_ptr (expired)
+    st.config = config_;
+    curNode_->SetSessionEffectAttachState(st);
+    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
+
+    manager_->MaterializeSessionEffectFromAttachState(CUR_SESSION_ID);
+
+    EXPECT_FALSE(curNode_->HasSessionEffectAttachState());
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE-FIX1b: valid instance + ready chain → materialize succeeds and emits ENABLED.
+// The actual insert-failure path (clears attach state + emits DISABLED) is covered by
+// materialize_offload_chainBroken_emitsDisabledAndClears below.
+HWTEST_F(HpaeOffloadSeTest, materialize_offload_validInstance_emitsEnabled, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    SessionEffectAttachState st;
+    st.enabled = true;
+    st.effectName = "audio_aiss_enhance";
+    st.instance = instance;
+    st.config = config_;
+    curNode_->SetSessionEffectAttachState(st);
+    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
+
+    manager_->MaterializeSessionEffectFromAttachState(CUR_SESSION_ID);
+
+    // Valid instance + intact chain → materialize succeeds and emits ENABLED.
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+}
+
+// OSE-MOVE-CUR: MoveStream for current node preserves attach state (no DISABLED)
+HWTEST_F(HpaeOffloadSeTest, moveStream_currentNode_preservesAttachState_noDisabled, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
+    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+    callback_->events_.clear();
+
+    manager_->isInit_.store(true);
+    int32_t ret = manager_->MoveStream(CUR_SESSION_ID, "new_sink");
+    EXPECT_EQ(ret, SUCCESS);
+    manager_->HandleMsg();
+
+    // BEHAVIOR CHANGE: MoveStream for current node now preserves attach state (no DISABLED)
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    // Positive assertion: attach state survived DeleteInputSession(KEEP_ATTACH_STATE_FOR_MOVE)
+    // and follows the stream to the new sink. The re-materialized ENABLED is verified end-to-end.
+    EXPECT_TRUE(curNode_->HasSessionEffectAttachState());
+}
+
+// ============================================================================
+// MaterializeSessionEffectFromAttachState — branch coverage
+//
+// Reachable branches covered below + by existing tests:
+//   B1a sessionEffectNode_ != nullptr  -> early return            [T1]
+//   B1b sessionEffectNode_ == nullptr  -> continue               [T2-T6]
+//   B2a curSinkInput == nullptr        -> early return            [T2]
+//   B2b !HasSessionEffectAttachState   -> early return            [T3]
+//   B2c HasSessionEffectAttachState    -> continue               [T1/T4/T5/T6]
+//   B3b has_value && !enabled          -> early return            [T4]
+//   B3c has_value && enabled           -> continue               [T1/T5/T6]
+//   B4a inst == nullptr                -> DISABLED + clear       [existing expired test]
+//   B4b inst != nullptr                -> continue               [T5/T6]
+//   B5a seRet != SUCCESS               -> DISABLED + clear        [T5]
+//   B5b seRet == SUCCESS               -> continue               [T6 + existing success test]
+//   B6a lastSeStatus < WARMING_UP      -> skip StartEffect       [existing success test]
+//   B6c lastSeStatus >= WARMING_UP     -> StartEffect + ENABLED   [T6]
+//
+// Unreachable defensive branches (documented, cannot be covered):
+//   B3a !stOpt.has_value(): tautologically false right after HasSessionEffectAttachState()
+//       returned true (both check the same optional).
+//   B6b lastSeStatus >= WARMING_UP && sessionEffectNode_ == nullptr: impossible because
+//       InsertSessionEffectNode only returns SUCCESS after assigning sessionEffectNode_.
+// ============================================================================
+
+// B1a: sessionEffectNode_ already present → Materialize is a no-op.
+HWTEST_F(HpaeOffloadSeTest, materialize_offload_alreadyMaterialized_isNoOp, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
+    callback_->events_.clear();
+
+    manager_->MaterializeSessionEffectFromAttachState(CUR_SESSION_ID);
+
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 0u);
+}
+
+// B2a: session id not in sinkInputNodeMap_ → early return, no callback.
+HWTEST_F(HpaeOffloadSeTest, materialize_offload_unknownSession_isNoOp, TestSize.Level0)
+{
+    manager_->MaterializeSessionEffectFromAttachState(INVALID_SESSION_ID);
+
+    EXPECT_EQ(callback_->Count(INVALID_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    EXPECT_EQ(callback_->Count(INVALID_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 0u);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+}
+
+// B2b: session exists but has no attach state → early return, no callback.
+HWTEST_F(HpaeOffloadSeTest, materialize_offload_noAttachState_isNoOp, TestSize.Level0)
+{
+    ASSERT_FALSE(curNode_->HasSessionEffectAttachState());
+
+    manager_->MaterializeSessionEffectFromAttachState(CUR_SESSION_ID);
+
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 0u);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+}
+
+// B3b: attach state present but enabled == false → early return, attach state untouched.
+HWTEST_F(HpaeOffloadSeTest, materialize_offload_disabledAttachState_isNoOp, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    SessionEffectAttachState st;
+    st.enabled = false;
+    st.effectName = "audio_aiss_enhance";
+    st.instance = instance;
+    st.config = config_;
+    curNode_->SetSessionEffectAttachState(st);
+    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
+
+    manager_->MaterializeSessionEffectFromAttachState(CUR_SESSION_ID);
+
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 0u);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    // Attach state survives (only permanent failures clear it).
+    EXPECT_TRUE(curNode_->HasSessionEffectAttachState());
+}
+
+// B5a: valid instance but chain broken → InsertSessionEffectNode returns ERR_SESSION_NOT_FOUND,
+// Materialize treats it as permanent failure: clear attach state + emit DISABLED.
+HWTEST_F(HpaeOffloadSeTest, materialize_offload_chainBroken_emitsDisabledAndClears, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    SessionEffectAttachState st;
+    st.enabled = true;
+    st.effectName = "audio_aiss_enhance";
+    st.instance = instance;
+    st.config = config_;
+    curNode_->SetSessionEffectAttachState(st);
+    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
+
+    // Break the node chain so InsertSessionEffectNode fails with ERR_SESSION_NOT_FOUND.
+    manager_->converterForLoudness_ = nullptr;
+
+    manager_->MaterializeSessionEffectFromAttachState(CUR_SESSION_ID);
+
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_FALSE(curNode_->HasSessionEffectAttachState());
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+}
+
+// B6c: success path with lastSeStatus >= WARMING_UP → StartEffect called on the fresh node,
+// ENABLED emitted, node ends up in WARMING_UP (proves StartEffect ran, not left in IDLE).
+HWTEST_F(HpaeOffloadSeTest, materialize_offload_lastStatusWarm_restartsPreheat, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    SessionEffectAttachState st;
+    st.enabled = true;
+    st.effectName = "audio_aiss_enhance";
+    st.instance = instance;
+    st.config = config_;
+    st.lastSeStatus = static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP);
+    curNode_->SetSessionEffectAttachState(st);
+    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
+
+    manager_->MaterializeSessionEffectFromAttachState(CUR_SESSION_ID);
+
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    // Without B6c's StartEffect the new node would stay IDLE; StartEffect pushes it to WARMING_UP.
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 }
 
 }  // namespace HPAE

@@ -2289,6 +2289,103 @@ HWTEST_F(SessionEffectNodeStateTest, computeSkipFrames_flushResets, TestSize.Lev
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
 }
 
+HWTEST_F(HpaeSessionEffectNodeTest, suspendPreheatForGraphSwitch_warmingUp_setsFlag, TestSize.Level0)
+{
+    auto instance = std::make_shared<testing::NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(testing::Return(0));
+    ON_CALL(*instance, StopEffect()).WillByDefault(testing::Return(0));
+    ASSERT_EQ(node_->CreateEffectWithInstance("test_effect", instance, config_), 0);
+    ASSERT_EQ(node_->StartEffect(), 0);
+    ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+
+    node_->SuspendSessionEffectPreheatForGraphSwitch();
+
+    EXPECT_TRUE(node_->preheatSuspendedForGraphSwitch_);
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+    node_->DropEffect();
+}
+
+// B1b: Suspend while NOT WARMING_UP is a no-op (flag stays false).
+HWTEST_F(HpaeSessionEffectNodeTest, suspendPreheatForGraphSwitch_nonWarmingUp_isNoOp, TestSize.Level0)
+{
+    auto instance = std::make_shared<testing::NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(testing::Return(0));
+    ON_CALL(*instance, StopEffect()).WillByDefault(testing::Return(0));
+    ASSERT_EQ(node_->CreateEffectWithInstance("test_effect", instance, config_), 0);
+    // status_ stays IDLE — StartEffect NOT called.
+    ASSERT_NE(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+
+    node_->SuspendSessionEffectPreheatForGraphSwitch();
+
+    EXPECT_FALSE(node_->preheatSuspendedForGraphSwitch_);
+    node_->DropEffect();
+}
+
+// B2a: Resume without prior Suspend is a no-op.
+HWTEST_F(HpaeSessionEffectNodeTest, resumePreheatForGraphSwitch_withoutSuspend_isNoOp, TestSize.Level0)
+{
+    ASSERT_FALSE(node_->preheatSuspendedForGraphSwitch_);
+    ASSERT_EQ(node_->GetEffectInstance(), nullptr);
+
+    node_->ResumeSessionEffectPreheatForGraphSwitch();
+
+    EXPECT_FALSE(node_->preheatSuspendedForGraphSwitch_);
+}
+
+// B2b + B3a: Resume when suspended but status no longer WARMING_UP clears the
+// flag and skips RestartPreheat.
+HWTEST_F(HpaeSessionEffectNodeTest, resumePreheatForGraphSwitch_suspendedNonWarmingUp_clearsFlag, TestSize.Level0)
+{
+    auto instance = std::make_shared<testing::NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(testing::Return(0));
+    ON_CALL(*instance, StopEffect()).WillByDefault(testing::Return(0));
+    ASSERT_EQ(node_->CreateEffectWithInstance("test_effect", instance, config_), 0);
+    ASSERT_EQ(node_->StartEffect(), 0);
+    node_->SuspendSessionEffectPreheatForGraphSwitch();
+    ASSERT_TRUE(node_->preheatSuspendedForGraphSwitch_);
+    node_->SetStatusForTest(HpaeSessionEffectNode::STATUS::IDLE);  // status drifted off WARMING_UP
+
+    node_->ResumeSessionEffectPreheatForGraphSwitch();
+
+    EXPECT_FALSE(node_->preheatSuspendedForGraphSwitch_);
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
+    node_->DropEffect();
+}
+
+// B2b + B3b: Resume when WARMING_UP but effectInstance_ already released clears
+// the flag and skips RestartPreheat.
+HWTEST_F(HpaeSessionEffectNodeTest, resumePreheatForGraphSwitch_warmingUpNoInstance_clearsFlag, TestSize.Level0)
+{
+    // Fixture node_ has no effectInstance_ (CreateEffectWithInstance not called).
+    ASSERT_EQ(node_->GetEffectInstance(), nullptr);
+    node_->SetStatusForTest(HpaeSessionEffectNode::STATUS::WARMING_UP);
+    node_->preheatSuspendedForGraphSwitch_ = true;  // simulate a prior Suspend
+
+    node_->ResumeSessionEffectPreheatForGraphSwitch();
+
+    EXPECT_FALSE(node_->preheatSuspendedForGraphSwitch_);
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+}
+
+// B2b + B3c: Resume when suspended, WARMING_UP, and instance bound restarts
+// the preheat thread and clears the flag.
+HWTEST_F(HpaeSessionEffectNodeTest, resumePreheatForGraphSwitch_suspendedWarmingUp_restartsAndClearsFlag, TestSize.Level0)
+{
+    auto instance = std::make_shared<testing::NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(testing::Return(0));
+    ON_CALL(*instance, StopEffect()).WillByDefault(testing::Return(0));
+    ASSERT_EQ(node_->CreateEffectWithInstance("test_effect", instance, config_), 0);
+    ASSERT_EQ(node_->StartEffect(), 0);
+    node_->SuspendSessionEffectPreheatForGraphSwitch();
+    ASSERT_TRUE(node_->preheatSuspendedForGraphSwitch_);
+
+    node_->ResumeSessionEffectPreheatForGraphSwitch();
+
+    EXPECT_FALSE(node_->preheatSuspendedForGraphSwitch_);
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+    node_->DropEffect();
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

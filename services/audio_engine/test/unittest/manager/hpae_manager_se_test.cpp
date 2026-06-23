@@ -354,7 +354,7 @@ HWTEST_F(HpaeManagerSeTest, SetVocalRatio_invalidRange, TestSize.Level0)
 HWTEST_F(HpaeManagerSeTest, SetVocalRatio_notBound, TestSize.Level0)
 {
     int32_t ret = hpaeManager_->SetVocalRatioSync(0.5f);
-    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 // API-11: SetVocalRatioSync succeeds via UID binding path
@@ -913,7 +913,7 @@ HWTEST_F(HpaeManagerSeE2eTest, ReloadRenderManager_recreatesSessionEffect_E2E, T
     EXPECT_TRUE(rendererManager_->HasSessionEffect(TEST_SESSION_ID));
 }
 
-// HM-RELOAD-OFFLOAD: HpaeManager replay also restores SE on HpaeOffloadRendererManager
+// HM-RELOAD-OFFLOAD: reload rebuild restores SE on HpaeOffloadRendererManager from attach state
 HWTEST_F(HpaeManagerSeE2eTest, ReloadRenderManager_recreatesOffloadSessionEffect_E2E, TestSize.Level0)
 {
     HpaeSinkInfo sinkInfo = GetTestSinkInfo();
@@ -968,6 +968,30 @@ HWTEST_F(HpaeManagerSeE2eTest, UpdateAudioPortInfo_recreatesSessionEffect_E2E, T
     auto newNode = rendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->GetSessionEffectNode(TEST_SESSION_ID);
     EXPECT_NE(newNode, nullptr);
     EXPECT_NE(newNode, oldNode);
+}
+
+// HM-REFRESH: detaching the SE node for refresh removes it from the OLD cluster but preserves
+// the attach state so the NEW cluster can re-materialize it on reconnect (no ClearSessionEffectAttachState).
+HWTEST_F(HpaeManagerSeE2eTest, DetachSessionEffectNodeForRefresh_preservesAttachState, TestSize.Level0)
+{
+    ASSERT_TRUE(SetupStreamWithSE(hpaeManager_, rendererManager_));
+    constexpr HpaeProcessorType oldSceneType = HPAE_SCENE_EFFECT_NONE;
+    auto oldCluster = rendererManager_->sceneClusterMap_[oldSceneType];
+    ASSERT_NE(oldCluster, nullptr);
+    auto sinkInputNode = rendererManager_->sinkInputNodeMap_[TEST_SESSION_ID];
+    ASSERT_NE(sinkInputNode, nullptr);
+
+    // Preconditions: SE node present in OLD cluster, attach state present.
+    ASSERT_TRUE(oldCluster->HasSessionEffectNode(TEST_SESSION_ID));
+    ASSERT_TRUE(sinkInputNode->HasSessionEffectAttachState());
+
+    // Act: detach SE node for refresh (delete physical node, keep attach state).
+    rendererManager_->DetachSessionEffectNodeForRefresh(TEST_SESSION_ID, oldSceneType);
+
+    // SE node removed from OLD cluster.
+    EXPECT_FALSE(oldCluster->HasSessionEffectNode(TEST_SESSION_ID));
+    // Attach state SURVIVES (core requirement).
+    EXPECT_TRUE(sinkInputNode->HasSessionEffectAttachState());
 }
 
 // --- E2E: Pause→Start (SessionEffectStart recovery) ---

@@ -18,6 +18,7 @@
 #include "hpae_mocks.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_sink_output_node.h"
+#include "mock_effect_instance.h"
 #include "test_case_common.h"
 #include "audio_errors.h"
 
@@ -955,6 +956,115 @@ HWTEST_F(HpaeSinkInputNodeTest, testRewindHistoryBufferNull, TestSize.Level0)
     EXPECT_EQ(sinkInputNode->historyBuffer_, nullptr);
     
     sinkInputNode->RewindHistoryBuffer(10000, 100);
+}
+
+/**
+ * @tc.name  : session_effect_attach_state_default_empty_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test that a newly constructed node has no SessionEffectAttachState
+ */
+HWTEST_F(HpaeSinkInputNodeTest, session_effect_attach_state_default_empty_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto sinkInputNode = std::make_unique<HpaeSinkInputNode>(nodeInfo);
+
+    EXPECT_FALSE(sinkInputNode->HasSessionEffectAttachState());
+    EXPECT_FALSE(sinkInputNode->GetSessionEffectAttachState().has_value());
+}
+
+/**
+ * @tc.name  : session_effect_attach_state_set_then_get_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetSessionEffectAttachState then GetSessionEffectAttachState returns matching values
+ */
+HWTEST_F(HpaeSinkInputNodeTest, session_effect_attach_state_set_then_get_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto sinkInputNode = std::make_unique<HpaeSinkInputNode>(nodeInfo);
+
+    auto mockEffect = std::make_shared<NiceMock<MockEffectInstance>>();
+    SessionEffectAttachState state;
+    state.enabled = true;
+    state.effectName = "aiss_test";
+    state.instance = mockEffect;
+    state.config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    state.config.inputCfg.channels = STEREO;
+
+    sinkInputNode->SetSessionEffectAttachState(state);
+
+    EXPECT_TRUE(sinkInputNode->HasSessionEffectAttachState());
+    auto retrieved = sinkInputNode->GetSessionEffectAttachState();
+    ASSERT_TRUE(retrieved.has_value());
+    EXPECT_TRUE(retrieved->enabled);
+    EXPECT_EQ(retrieved->effectName, "aiss_test");
+    EXPECT_FALSE(retrieved->instance.expired());
+    EXPECT_EQ(retrieved->config.inputCfg.samplingRate, SAMPLE_RATE_48000);
+    EXPECT_EQ(retrieved->config.inputCfg.channels, STEREO);
+}
+
+/**
+ * @tc.name  : session_effect_attach_state_clear_resets_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test ClearSessionEffectAttachState resets the state to empty
+ */
+HWTEST_F(HpaeSinkInputNodeTest, session_effect_attach_state_clear_resets_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto sinkInputNode = std::make_unique<HpaeSinkInputNode>(nodeInfo);
+
+    auto mockEffect = std::make_shared<NiceMock<MockEffectInstance>>();
+    SessionEffectAttachState state;
+    state.enabled = true;
+    state.effectName = "aiss_test";
+    state.instance = mockEffect;
+
+    sinkInputNode->SetSessionEffectAttachState(state);
+    EXPECT_TRUE(sinkInputNode->HasSessionEffectAttachState());
+
+    sinkInputNode->ClearSessionEffectAttachState();
+    EXPECT_FALSE(sinkInputNode->HasSessionEffectAttachState());
+    EXPECT_FALSE(sinkInputNode->GetSessionEffectAttachState().has_value());
+}
+
+/**
+ * @tc.name  : session_effect_attach_state_overwrite_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test that SetSessionEffectAttachState overwrites previous state
+ */
+HWTEST_F(HpaeSinkInputNodeTest, session_effect_attach_state_overwrite_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto sinkInputNode = std::make_unique<HpaeSinkInputNode>(nodeInfo);
+
+    auto mockEffectA = std::make_shared<NiceMock<MockEffectInstance>>();
+    SessionEffectAttachState stateA;
+    stateA.enabled = true;
+    stateA.effectName = "effect_a";
+    stateA.instance = mockEffectA;
+
+    sinkInputNode->SetSessionEffectAttachState(stateA);
+
+    auto mockEffectB = std::make_shared<NiceMock<MockEffectInstance>>();
+    SessionEffectAttachState stateB;
+    stateB.enabled = false;
+    stateB.effectName = "effect_b";
+    stateB.instance = mockEffectB;
+
+    sinkInputNode->SetSessionEffectAttachState(stateB);
+
+    EXPECT_TRUE(sinkInputNode->HasSessionEffectAttachState());
+    auto retrieved = sinkInputNode->GetSessionEffectAttachState();
+    ASSERT_TRUE(retrieved.has_value());
+    EXPECT_EQ(retrieved->effectName, "effect_b");
+    EXPECT_FALSE(retrieved->enabled);
+    EXPECT_FALSE(retrieved->instance.expired());
+    auto locked = retrieved->instance.lock();
+    ASSERT_NE(locked, nullptr);
+    EXPECT_EQ(locked.get(), mockEffectB.get());
 }
 
 } // namespace HPAE
