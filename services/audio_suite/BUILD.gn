@@ -41,6 +41,7 @@ config("audio_suite_public_config") {
   cflags_cc = [
     "-Wall",
     "-Werror",
+    "-Os",
   ]
 
   ldflags = [ "-Wl" ]
@@ -156,6 +157,7 @@ audio_ohos_library("audio_suite") {
 
 audio_ohos_library("audio_pcm_process") {
   stack_protector_ret = true
+  cflags = [ "-Os" ]
   sanitize = {
     cfi = true
     cfi_cross_dso = true

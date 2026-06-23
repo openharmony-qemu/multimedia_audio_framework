@@ -616,6 +616,119 @@ static OHConverterTestInfo g_converterTestCasesDirectProcess[] = {
         AudioSampleFormat::SAMPLE_S16LE},
 };
 
+static OHConverterTestInfo g_converterAlignTestCases[] = {
+    {"in_converter_44100_2_s16le.pcm", "converterAlignOut.pcm", "d791abb7b78bf83453c19d96867d1f46",
+        AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_11025, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioSampleFormat::SAMPLE_S24LE},
+    {"in_converter_44100_2_s16le.pcm", "converterAlignOut1.pcm", "2bce9b821087155bde224acd6c259ad5",
+        AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"in_converter_44100_2_s16le.pcm", "converterAlignOut2.pcm", "f22b51f71ce072b3dcb51602bb04e993",
+        AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_11025, AudioChannelLayout::CH_LAYOUT_MONO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"in_converter_11025_1_s16.pcm", "converterAlignOut3.pcm", "c274111c0facfae79fea46c3a7a6153b",
+        AudioSamplingRate::SAMPLE_RATE_11025, AudioChannelLayout::CH_LAYOUT_MONO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_11025, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"in_converter_22050_2_s24le.pcm", "converterAlignOut4.pcm", "1b88042b3b133b097c509b681b21ba09",
+        AudioSamplingRate::SAMPLE_RATE_22050, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S24LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_MONO,
+        AudioSampleFormat::SAMPLE_S24LE},
+    {"in_converter_44100_2_s16le.pcm", "converterAlignOut5.pcm", "8a19dcbd1c48b1d41928c844c9b09d05",
+        AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_22050, AudioChannelLayout::CH_LAYOUT_MONO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"in_converter_44100_2_s16le.pcm", "converterAlignOut6.pcm", "bf2f211c5177201c592a60166fe10b1e",
+        AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioSampleFormat::SAMPLE_S24LE},
+    {"ch_in_001.pcm", "ch_out_Align_001.pcm", "7ad1dea7cfa24bc384abf10361f68589",
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_MONO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_MONO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"ch_in_002.pcm", "ch_out_Align_002.pcm", "8e7bf216800b562fdb3bdecf4d3d5e13",
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"ch_in_003.pcm", "ch_out_Align_003.pcm", "4f4965f5dc0fa47ddad4f6719acca5b1",
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_MONO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"ch_in_004.pcm", "ch_out_Align_004.pcm", "60263be9555026e50a0900e937240f20",
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_MONO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"ch_in_005.pcm", "ch_out_Align_005.pcm", "0b4283429309cd3b6683ebb57aff2644",
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_2POINT1,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_2POINT1,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"ch_in_006.pcm", "ch_out_Align_006.pcm", "8ba80cd0123365f56a753d71b3001ae2",
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_5POINT1,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_5POINT1,
+        AudioSampleFormat::SAMPLE_S24LE},
+    {"ch_in_007.pcm", "ch_out_Align_007.pcm", "e8c09270ba16186d9b7590db485c51b0",
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_7POINT1,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_7POINT1,
+        AudioSampleFormat::SAMPLE_U8},
+    {"ch_in_008.pcm", "ch_out_Align_008.pcm", "819e720a1f9f128f98f8a61a4ce2a202",
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_OCTAGONAL,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_OCTAGONAL,
+        AudioSampleFormat::SAMPLE_F32LE},
+    {"ch_in_009.pcm", "ch_out_Align_009.pcm", "8e7bf216800b562fdb3bdecf4d3d5e13",
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"ch_in_010.pcm", "ch_out_Align_010.pcm", "4f5b26721600ce7cee23216790608948",
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_HEXAGONAL,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_48000, AudioChannelLayout::CH_LAYOUT_HEXAGONAL,
+        AudioSampleFormat::SAMPLE_S32LE},
+    {"ch_in_011.pcm", "ch_out_Align_011.pcm", "ee774cbbdc9a8298b9017251b2c0fae8",
+        AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_22050, AudioChannelLayout::CH_LAYOUT_HEXAGONAL,
+        AudioSampleFormat::SAMPLE_S24LE},
+    {"ch_in_012.pcm", "ch_out_Align_012.pcm", "40dc24ea492d185d32ea5df3fdb44203",
+        AudioSamplingRate::SAMPLE_RATE_22050, AudioChannelLayout::CH_LAYOUT_HEXAGONAL,
+        AudioSampleFormat::SAMPLE_S24LE,
+        AudioSamplingRate::SAMPLE_RATE_44100, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"ch_in_012.pcm", "ch_out_Align_013.pcm", "f764c5e6de5478c42f8533bcc25f5a7f",
+        AudioSamplingRate::SAMPLE_RATE_22050, AudioChannelLayout::CH_LAYOUT_HEXAGONAL,
+        AudioSampleFormat::SAMPLE_S24LE,
+        AudioSamplingRate::SAMPLE_RATE_176400, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE},
+    {"ch_in_013.pcm", "ch_out_Align_014.pcm", "37bf9cf33f2d8ee11b3a259f727b6e0f",
+        AudioSamplingRate::SAMPLE_RATE_176400, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE,
+        AudioSamplingRate::SAMPLE_RATE_16000, AudioChannelLayout::CH_LAYOUT_3POINT1POINT2,
+        AudioSampleFormat::SAMPLE_S24LE},
+    {"ch_in_014.pcm", "ch_out_Align_015.pcm", "1ecebe2e484847af7ff6f398a8348454",
+        AudioSamplingRate::SAMPLE_RATE_192000, AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioSampleFormat::SAMPLE_S24LE,
+        AudioSamplingRate::SAMPLE_RATE_8000, AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE},
+};
+
 static AudioSuite::PcmBufferFormat SetupInputFormat(const OHConverterTestInfo& info)
 {
     AudioSuite::PcmBufferFormat format;
@@ -647,6 +760,17 @@ static std::shared_ptr<AudioSuite::AudioFormatConverter> CreateConverter(const O
     AudioSuite::PcmBufferFormat inputFormat = SetupInputFormat(info);
     AudioSuite::PcmBufferFormat outputFormat = SetupOutputFormat(info);
     auto converter = AudioSuite::AudioFormatConverter::Create(inputFormat, outputFormat);
+    if (converter == nullptr) {
+        return nullptr;
+    }
+    return converter;
+}
+
+static std::shared_ptr<AudioSuite::AudioFormatConverter> CreateConverterWithAlignment(const OHConverterTestInfo& info)
+{
+    AudioSuite::PcmBufferFormat inputFormat = SetupInputFormat(info);
+    AudioSuite::PcmBufferFormat outputFormat = SetupOutputFormat(info);
+    auto converter = AudioSuite::AudioFormatConverter::Create(inputFormat, outputFormat, 1, true);
     if (converter == nullptr) {
         return nullptr;
     }
@@ -736,6 +860,46 @@ static bool RunOHConverterTest(const OHConverterTestInfo& info)
     return true;
 }
 
+static bool RunOHConverterTestWithAlignment(const OHConverterTestInfo& info)
+{
+    auto converter = CreateConverterWithAlignment(info);
+    if (converter == nullptr) {
+        return false;
+    }
+    
+    FILE* inputFile = OpenInputFile(info);
+    if (inputFile == nullptr) {
+        converter->Destroy();
+        return false;
+    }
+    
+    auto fileCallback = std::make_shared<ReadFileCallback>(inputFile);
+    converter->SetInputCallback(fileCallback);
+    
+    FILE* outputFile = OpenOutputFile(info);
+    if (outputFile == nullptr) {
+        fclose(inputFile);
+        converter->Destroy();
+        return false;
+    }
+    
+    ProcessConversion(converter.get(), outputFile);
+    
+    int32_t result = fclose(inputFile);
+    if (result != 0) {
+        return false;
+    }
+    result = fclose(outputFile);
+    if (result != 0) {
+        return false;
+    }
+    
+    VerifyResults(info);
+    
+    converter->Destroy();
+    return true;
+}
+
 static int32_t RunAllOHConverterTests()
 {
     size_t count = sizeof(g_converterTestCases) / sizeof(g_converterTestCases[0]);
@@ -743,6 +907,17 @@ static int32_t RunAllOHConverterTests()
     for (size_t idx = 0; idx < count; idx++) {
         const OHConverterTestInfo& info = g_converterTestCases[idx];
         EXPECT_TRUE(RunOHConverterTest(info));
+    }
+    return SUCCESS;
+}
+
+static int32_t RunAllOHConverterAlignTests()
+{
+    size_t count = sizeof(g_converterAlignTestCases) / sizeof(g_converterAlignTestCases[0]);
+    
+    for (size_t idx = 0; idx < count; idx++) {
+        const OHConverterTestInfo& info = g_converterAlignTestCases[idx];
+        EXPECT_TRUE(RunOHConverterTestWithAlignment(info));
     }
     return SUCCESS;
 }
@@ -993,19 +1168,29 @@ HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Process_Compare_Pcm_Small, T
 }
 
 /**
- * @tc.name  : Test OH_AudioConverter_Process without initialization.
+ * @tc.name  : Test OH_AudioConverter_Process without set callback.
  * @tc.number: OH_AudioConverter_DonConvert_001
- * @tc.desc  : Test calling Process before Create.
+ * @tc.desc  : Test calling Process before set callback.
  */
 HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_DonConvert_001, TestSize.Level0)
 {
     auto converter = std::make_unique<AudioSuite::AudioFormatConverterImpl>();
+    AudioSuite::PcmBufferFormat inputFormat(
+        AudioSamplingRate::SAMPLE_RATE_44100, 2,
+        AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE);
+    AudioSuite::PcmBufferFormat outputFormat(
+        AudioSamplingRate::SAMPLE_RATE_48000, 2,
+        AudioChannelLayout::CH_LAYOUT_STEREO,
+        AudioSampleFormat::SAMPLE_S16LE);
+    converter->Init(inputFormat, outputFormat, 1, false);
+
     uint8_t outputBuffer[DEFAULT_BUFFER_SIZE] = {0};
     uint32_t outputSize = 0;
     
-    // Calling Process directly without first calling Create should return an uninitialized error.
+    // Calling Process directly without first calling Create should return an call back not find error.
     int32_t ret = converter->Process(outputBuffer, sizeof(outputBuffer), &outputSize);
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(ret, ERR_CALLBACK_NOT_FOUND);
 }
 
 /**
@@ -1090,6 +1275,21 @@ HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Process_Direct_Data_File_001
         const OHConverterTestInfo& info = g_converterTestCasesDirectProcess[idx];
         EXPECT_TRUE(RunOHConverterTestWithDirectProcess(info));
     }
+}
+
+/**
+ * @tc.name  : Test OH_AudioConverter_Process with data alignment enabled.
+ * @tc.number: OH_AudioConverter_Process_Data_Alignment_001
+ * @tc.desc  : Test conversion from real pcm file with data alignment (remove delay and padding).
+ */
+HWTEST_F(AudioSuiteConverterTest, OH_AudioConverter_Process_Data_Alignment_001, TestSize.Level0)
+{
+    g_outputCapacity = EXTRA_LARGE_BUFFER_SIZE;
+    int32_t ret = RunAllOHConverterAlignTests();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_GT(g_callbackCallCount, 0);
+    EXPECT_GT(g_totalBytesRead, 0);
+    EXPECT_GT(g_totalBytesWritten, 0);
 }
 
 }

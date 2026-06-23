@@ -48,9 +48,15 @@ public:
     int32_t GetLoudnessGainNodeCount();
     int32_t GetPreOutNum();
     int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    int32_t HandleRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    int32_t HandleRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t AudioRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t AudioRendererRelease(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    void ExecuteDeferredStop();
+    bool ExecuteDeferredStopFor(uint32_t sessionId);
+    bool HasDeferredStop() const { return hasPendingStop_; }
+    uint32_t GetDeferredStopSessionId() const { return pendingStopSessionId_; }
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
     std::shared_ptr<HpaeGainNode> GetGainNodeById(uint32_t id) const;
     std::shared_ptr<HpaeAudioFormatConverterNode> GetConverterNodeById(uint32_t id) const;
@@ -84,6 +90,7 @@ public:
 
 private:
     void ConnectMixerNode();
+    void ClearDeferredStop();
     void CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateLoudnessGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
@@ -97,6 +104,9 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSessionEffectNode>> idSessionEffectMap_;
     HpaeSinkInfo sinkInfo_;
     bool isConnectedToOutputCluster = false;
+    bool hasPendingStop_ = false;
+    uint32_t pendingStopSessionId_ = 0;
+    HpaeNodeInfo pendingStopNodeInfo_ {};
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

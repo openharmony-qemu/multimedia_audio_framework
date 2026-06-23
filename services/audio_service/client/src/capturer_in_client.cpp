@@ -1441,7 +1441,7 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, false,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_START_ILLEGAL_STATE, "ipcStream is not inited", true), "ipcStream is not inited!");
-    int32_t ret = ipcStream_->Start();
+    int32_t ret = ipcStream_->Start(readCb_ == nullptr);
     if (ret != SUCCESS) {
         SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
             RECORD_START_OPERATION_FAILED, "Start call server failed", true, state_);
@@ -2463,6 +2463,12 @@ bool CapturerInClientInner::ResetStaticPlayPosition()
 {
     AUDIO_ERR_LOG("Not Support!");
     return false;
+}
+
+int32_t CapturerInClientInner::ResetNotifyStreamSilentChangeFlag()
+{
+    AUDIO_WARNING_LOG("Not support");
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t CapturerInClientInner::SetInMainThreadState(bool isInMainThread)

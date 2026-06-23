@@ -1110,6 +1110,20 @@ napi_status NapiParamUtils::SetValueMicStateChange(const napi_env &env, const Mi
     return napi_ok;
 }
 
+napi_status NapiParamUtils::SetValueSystemRecordControllerChangeInfo(const napi_env &env,
+    const SystemRecordControllerChangeInfo &changeInfo, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "napi_create_object failed");
+    status = NapiParamUtils::SetValueBoolean(env, "enabled", changeInfo.enabled, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueBoolean failed");
+    status = NapiParamUtils::SetValueInt32(env, "uid", changeInfo.uid, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt32 failed");
+    status = NapiParamUtils::SetValueInt32(env, "sourceType", static_cast<int32_t>(changeInfo.sourceType), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueInt32 failed");
+    return status;
+}
+
 napi_status NapiParamUtils::SetVolumeGroupInfos(const napi_env &env,
     const std::vector<sptr<VolumeGroupInfo>> &volumeGroupInfos, napi_value &result)
 {

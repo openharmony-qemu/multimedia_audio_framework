@@ -98,6 +98,8 @@ static inline const char* ResolvePrimaryMicPort(uint32_t routeFlag)
         case AUDIO_INPUT_FLAG_VOICE_RECOGNITION:return PRIMARY_VOICE_RECOGNITION_MIC;
         case AUDIO_INPUT_FLAG_RAW_AI:           return PRIMARY_RAW_AI_MIC;
         case AUDIO_INPUT_FLAG_CAMCORDER:        return PRIMARY_CAMCORDER;
+        case AUDIO_INPUT_FLAG_FAST:             return FAST_CAPTURER_SOURCE;
+        case AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP: return FAST_VOIP_CAPTURER_SOURCE;
         default:                                return PRIMARY_MIC;
     }
 }

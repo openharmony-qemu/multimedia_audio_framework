@@ -17,7 +17,10 @@ import("//build/test.gni")
 config("audio_utils_public_config") {
   include_dirs = [ "./include" ]
 
-  cflags_cc = [ "-std=c++20" ]
+  cflags_cc = [
+    "-std=c++20",
+    "-Os"
+  ]
 }
 
 ohos_shared_library("audio_definitions") {

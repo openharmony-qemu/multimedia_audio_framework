@@ -61,7 +61,7 @@ public:
 
     virtual int32_t GetAudioSessionID(uint32_t &sessionId) override { return 0; }
 
-    virtual int32_t Start() override { return 0; }
+    virtual int32_t Start(bool hasNoCallback) override { return 0; }
 
     virtual int32_t Pause() override { return 0; }
 
@@ -4083,7 +4083,7 @@ public:
         sessionId = 100; // 100 is temp id
         return SUCCESS;
     }
-    int32_t Start() override { return SUCCESS; }
+    int32_t Start(bool hasNoCallback) override { return SUCCESS; }
     int32_t Pause() override { return SUCCESS; }
     int32_t Stop() override { return SUCCESS; }
     int32_t Release(bool isSwitchStream) override { return SUCCESS; }

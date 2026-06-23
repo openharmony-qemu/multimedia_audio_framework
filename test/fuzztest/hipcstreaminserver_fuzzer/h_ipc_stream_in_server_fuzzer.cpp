@@ -58,7 +58,8 @@ void FuzzExecute(FuzzedDataProvider &provider)
 
 void ExecutePartOne(sptr<IpcStreamInServer> ptrIpcStreamStub, FuzzedDataProvider &provider)
 {
-    ptrIpcStreamStub->Start();
+    bool hasNoCallback = provider.ConsumeBool();
+    ptrIpcStreamStub->Start(hasNoCallback);
     uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     ptrIpcStreamStub->GetAudioSessionID(sessionId);
     ptrIpcStreamStub->UpdatePosition();

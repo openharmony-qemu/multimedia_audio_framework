@@ -556,5 +556,13 @@ void AudioInterruptService::HandleMuteInterruptEvent(const AudioInterrupt &audio
         SetNonInterruptMute(audioInterrupt.streamId, muteFlag);
     }
 }
+
+bool AudioInterruptService::IsAncoAudioMediaInterrupt(const AudioFocusEntry &focusEntry,
+    const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt)
+{
+    return (focusEntry.hintType == INTERRUPT_HINT_STOP && currentInterrupt.uid == AUDIO_ID &&
+        AudioInterruptUtils::IsMediaStream(currentInterrupt.audioFocusType.streamType) &&
+        AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType));
+}
 }
 } // namespace OHOS

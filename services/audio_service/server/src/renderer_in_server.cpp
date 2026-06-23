@@ -1418,7 +1418,7 @@ int32_t RendererInServer::GetSessionId(uint32_t &sessionId)
     return SUCCESS;
 }
 
-int32_t RendererInServer::Start()
+int32_t RendererInServer::Start(bool hasNoCallback)
 {
     AudioXCollie audioXCollie(
         "RendererInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
@@ -1426,7 +1426,7 @@ int32_t RendererInServer::Start()
     if (stream_ != nullptr) {
         stream_->TriggerAppsUidUpdate();
     }
-    int32_t ret = StartInner();
+    int32_t ret = StartInner(hasNoCallback);
     RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
     if (playerDfx_) {
         playerDfx_->WriteDfxStartMsg(streamIndex_, stage, sourceDuration_, processConfig_);
@@ -1523,7 +1523,7 @@ void RendererInServer::UpdateStartTimeInfo()
     resetTime_ = true;
 }
 
-int32_t RendererInServer::StartInner()
+int32_t RendererInServer::StartInner(bool hasNoCallback)
 {
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     int32_t ret = 0;
@@ -1540,7 +1540,8 @@ int32_t RendererInServer::StartInner()
     CHECK_AND_RETURN_RET(ValidateStartState() == SUCCESS, ERR_ILLEGAL_STATE);
     CHECK_AND_RETURN_RET(ValidateAndSetupBufferForStart() == SUCCESS, ERR_OPERATION_FAILED);
 
-    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START,
+        hasNoCallback ? SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL : SESSION_OP_MSG_DEFAULT);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(processConfig_.appInfo.appUid),
             PLAY_START_OPERATION_FAILED, "Policy start client failed", false),

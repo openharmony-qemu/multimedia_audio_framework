@@ -1218,7 +1218,8 @@ void AudioAdapterManager::RedirectVolumeType(std::shared_ptr<AudioStreamDescript
 void AudioAdapterManager::SaveSystemVolumeForSwitchDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
     AudioStreamType streamType, int32_t volumeLevel)
 {
-    if (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP || streamType != STREAM_MUSIC) {
+    if ((desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP && desc->deviceType_ != DEVICE_TYPE_NEARLINK) ||
+        streamType != STREAM_MUSIC) {
         // volume manager no save BLUETOOTH_A2DP abs volume, so this value is wrongs
         // BLUETOOTH_A2DP abs volume save in other place
         SaveSystemVolumeForEffect(desc->deviceType_, streamType, volumeLevel);

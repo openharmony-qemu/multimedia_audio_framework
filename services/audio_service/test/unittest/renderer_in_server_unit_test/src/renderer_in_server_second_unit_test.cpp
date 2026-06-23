@@ -279,7 +279,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerStart_001, TestSize.Level1
     server->OnStatusUpdate(OPERATION_PAUSED);
     server->playerDfx_ = nullptr;
 
-    ret = server->Start();
+    ret = server->Start(false);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -1032,7 +1032,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerGetAudioTime_004, TestSize
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->Init();
-    rendererInServer->Start();
+    rendererInServer->Start(false);
     rendererInServer->resetTime_ = true;
     uint64_t framePos = TEST_FRAMEPOS;
     uint64_t timestamp = TEST_TIMESTAMP;
@@ -2006,7 +2006,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerStartInner_001, TestSize.L
     server->playerDfx_ = nullptr;
     server->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
 
-    ret = server->StartInner();
+    ret = server->StartInner(false);
     EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard

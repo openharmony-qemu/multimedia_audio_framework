@@ -1402,8 +1402,9 @@ bool AudioCoreService::ShouldUpdateOutputRoute(const AudioStreamDeviceChangeReas
 {
     AudioScene lastAudioScene = audioSceneManager_.GetLastAudioScene();
     AudioScene audioScene = audioSceneManager_.GetAudioScene();
-    return !(lastAudioScene == AUDIO_SCENE_DEFAULT) &&
+    bool isSceneChangedFromDefaultToRinging = (lastAudioScene == AUDIO_SCENE_DEFAULT) &&
         (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING);
+    return !(reason.IsSetAudioScene() && isSceneChangedFromDefaultToRinging);
 }
 
 void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -1755,14 +1756,7 @@ std::vector<SourceOutput> AudioCoreService::FilterSourceOutputs(int32_t sessionI
 std::vector<SourceOutput> AudioCoreService::GetSourceOutputs()
 {
     std::vector<SourceOutput> sourceOutputs;
-    {
-        std::unordered_map<std::string, AudioIOHandle> mapCopy = AudioIOHandleMap::GetInstance().GetCopy();
-        if (std::any_of(mapCopy.cbegin(), mapCopy.cend(), [](const auto &pair) {
-                return std::find(SourceNames.cbegin(), SourceNames.cend(), pair.first) != SourceNames.cend();
-            })) {
-            sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
-        }
-    }
+    sourceOutputs = audioPolicyManager_.GetAllSourceOutputs();
     return sourceOutputs;
 }
 

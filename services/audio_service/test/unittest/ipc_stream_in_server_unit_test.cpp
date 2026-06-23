@@ -226,17 +226,17 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_006, TestSize.Level1)
     AudioProcessConfig configRet;
     AudioMode modeRet = AUDIO_MODE_PLAYBACK;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    auto ret = ipcStreamInServerRet.Start();
+    auto ret = ipcStreamInServerRet.Start(false);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
-    ret = ipcStreamInServerRet.Start();
+    ret = ipcStreamInServerRet.Start(false);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
     ipcStreamInServerRet.ConfigCapturer();
     EXPECT_NE(ipcStreamInServerRet.capturerInServer_, nullptr);
-    ret = ipcStreamInServerRet.Start();
+    ret = ipcStreamInServerRet.Start(false);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
@@ -1186,7 +1186,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_047, TestSize.Level1)
 
     ipcStreamInServerRet.rendererInServer_ = nullptr;
     ipcStreamInServerRet.capturerInServer_ = nullptr;
-    auto ret = ipcStreamInServerRet.Start();
+    auto ret = ipcStreamInServerRet.Start(false);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
@@ -1204,7 +1204,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_048, TestSize.Level1)
 
     ipcStreamInServerRet.rendererInServer_ = nullptr;
     ipcStreamInServerRet.capturerInServer_ = nullptr;
-    auto ret = ipcStreamInServerRet.Start();
+    auto ret = ipcStreamInServerRet.Start(false);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
@@ -1809,7 +1809,7 @@ HWTEST(IpcStreamInServerUnitTest, start_001, TestSize.Level3)
  
     ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
-    auto ret = ipcStreamInServerRet.Start();
+    auto ret = ipcStreamInServerRet.Start(false);
     EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
  
@@ -1828,7 +1828,7 @@ HWTEST(IpcStreamInServerUnitTest, start_002, TestSize.Level3)
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
     ipcStreamInServerRet.rendererInServer_->audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
-    auto ret = ipcStreamInServerRet.Start();
+    auto ret = ipcStreamInServerRet.Start(false);
     EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
  

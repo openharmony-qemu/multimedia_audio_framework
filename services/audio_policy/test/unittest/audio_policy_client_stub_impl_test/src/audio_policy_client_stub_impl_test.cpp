@@ -2092,5 +2092,152 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_MultiCallback_00
         SUCCESS);
     EXPECT_EQ(audioPolicyClient->GetPreferredOutputDeviceChangeCallbackSize(), 0);
 }
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_089
+* @tc.desc  : Test AddRecordControllerEnabledChangeCallback/RemoveRecordControllerEnabledChangeCallback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_089, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<ConcreteSystemRecordControllerEnabledChangeCallback> cb0 =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    std::shared_ptr<ConcreteSystemRecordControllerEnabledChangeCallback> cb1 =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+
+    EXPECT_FALSE(audioPolicyClient->HasRecordControllerEnabledChangeCallback());
+    EXPECT_EQ(audioPolicyClient->AddRecordControllerEnabledChangeCallback(cb0), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetRecordControllerEnabledChangeCallbackSize(), 1);
+    EXPECT_EQ(audioPolicyClient->AddRecordControllerEnabledChangeCallback(cb1), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetRecordControllerEnabledChangeCallbackSize(), 2);
+    EXPECT_TRUE(audioPolicyClient->HasRecordControllerEnabledChangeCallback());
+
+    SystemRecordControllerChangeInfo changeInfo;
+    changeInfo.enabled = true;
+    changeInfo.uid = TEST_UID;
+    changeInfo.sourceType = SOURCE_TYPE_MIC;
+    audioPolicyClient->OnRecordControllerEnabledChange(changeInfo);
+    EXPECT_TRUE(cb0->isCallbackInvoked_);
+    EXPECT_TRUE(cb0->lastChangeInfo_.enabled);
+    EXPECT_EQ(cb0->lastChangeInfo_.uid, TEST_UID);
+    EXPECT_EQ(cb0->lastChangeInfo_.sourceType, SOURCE_TYPE_MIC);
+
+    EXPECT_EQ(audioPolicyClient->RemoveRecordControllerEnabledChangeCallback(), SUCCESS);
+    EXPECT_FALSE(audioPolicyClient->HasRecordControllerEnabledChangeCallback());
+    EXPECT_EQ(audioPolicyClient->GetRecordControllerEnabledChangeCallbackSize(), 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_090
+* @tc.desc  : Test OnRecordControllerEnabledChange with empty callback list.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_090, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    SystemRecordControllerChangeInfo changeInfo;
+    changeInfo.enabled = false;
+    changeInfo.uid = TEST_UID;
+    changeInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    EXPECT_EQ(audioPolicyClient->OnRecordControllerEnabledChange(changeInfo), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_091
+* @tc.desc  : Test OnRecordControllerEnabledChange with single callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_091, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    audioPolicyClient->AddRecordControllerEnabledChangeCallback(cb);
+
+    SystemRecordControllerChangeInfo changeInfo;
+    changeInfo.enabled = true;
+    changeInfo.uid = TEST_UID;
+    changeInfo.sourceType = SOURCE_TYPE_LIVE;
+    audioPolicyClient->OnRecordControllerEnabledChange(changeInfo);
+    EXPECT_TRUE(cb->isCallbackInvoked_);
+    EXPECT_TRUE(cb->lastChangeInfo_.enabled);
+    EXPECT_EQ(cb->lastChangeInfo_.uid, TEST_UID);
+    EXPECT_EQ(cb->lastChangeInfo_.sourceType, SOURCE_TYPE_LIVE);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_092
+* @tc.desc  : Test AddRecordControllerEnabledChangeCallback with nullptr.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_092, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    EXPECT_EQ(audioPolicyClient->AddRecordControllerEnabledChangeCallback(nullptr), ERR_INVALID_PARAM);
+    EXPECT_EQ(audioPolicyClient->GetRecordControllerEnabledChangeCallbackSize(), 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_093
+* @tc.desc  : Test RemoveRecordControllerEnabledChangeCallback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_093, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    ASSERT_TRUE(audioPolicyClient != nullptr);
+
+    auto cb = std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    audioPolicyClient->AddRecordControllerEnabledChangeCallback(cb);
+    EXPECT_EQ(audioPolicyClient->GetRecordControllerEnabledChangeCallbackSize(), 1);
+    EXPECT_TRUE(audioPolicyClient->HasRecordControllerEnabledChangeCallback());
+
+    audioPolicyClient->RemoveRecordControllerEnabledChangeCallback();
+    EXPECT_EQ(audioPolicyClient->GetRecordControllerEnabledChangeCallbackSize(), 0);
+    EXPECT_FALSE(audioPolicyClient->HasRecordControllerEnabledChangeCallback());
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_094
+* @tc.desc  : Test OnRecordControllerEnabledChange without callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_094, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    ASSERT_TRUE(audioPolicyClient != nullptr);
+
+    EXPECT_FALSE(audioPolicyClient->HasRecordControllerEnabledChangeCallback());
+    SystemRecordControllerChangeInfo changeInfo;
+    changeInfo.enabled = false;
+    changeInfo.uid = TEST_UID;
+    changeInfo.sourceType = SOURCE_TYPE_MIC;
+    audioPolicyClient->OnRecordControllerEnabledChange(changeInfo);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_095
+* @tc.desc  : Test OnRecordControllerEnabledChange with multiple callbacks.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_095, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    ASSERT_TRUE(audioPolicyClient != nullptr);
+
+    auto cb1 = std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    auto cb2 = std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    audioPolicyClient->AddRecordControllerEnabledChangeCallback(cb1);
+    audioPolicyClient->AddRecordControllerEnabledChangeCallback(cb2);
+    EXPECT_EQ(audioPolicyClient->GetRecordControllerEnabledChangeCallbackSize(), 2);
+
+    SystemRecordControllerChangeInfo changeInfo;
+    changeInfo.enabled = true;
+    changeInfo.uid = TEST_UID;
+    changeInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    audioPolicyClient->OnRecordControllerEnabledChange(changeInfo);
+    EXPECT_TRUE(cb1->isCallbackInvoked_);
+    EXPECT_TRUE(cb2->isCallbackInvoked_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

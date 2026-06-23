@@ -24,6 +24,7 @@ config("offline_audio_effect_config") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-Os",
   ]
 }
 
@@ -74,6 +75,7 @@ if (!audio_framework_feature_offline_effect) {
   }
 
   audio_ohos_library("offline_audio_effect_service") {
+    cflags = [ "-Os" ]
     sanitize = {
       cfi = true
       cfi_cross_dso = true

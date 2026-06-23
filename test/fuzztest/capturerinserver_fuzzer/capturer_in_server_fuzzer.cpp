@@ -680,10 +680,11 @@ void Start()
     AppInfo appInfo;
     uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     capturerInServer_->recorderDfx_ = std::make_unique<RecorderDfxWriter>(appInfo, index);
-    capturerInServer_->Start();
+    bool hasNoCallback = g_fuzzUtils.GetData<bool>();
+    capturerInServer_->Start(hasNoCallback);
     capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
     capturerInServer_->needCheckBackground_ = false;
-    capturerInServer_->StartInner();
+    capturerInServer_->StartInner(hasNoCallback);
 }
 
 void MicIndicatorFuzzTest()

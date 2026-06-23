@@ -150,8 +150,6 @@ public:
         int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) override;
         void OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable) override;
         void ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason);
-        void UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled, const std::string &reason);
-        void UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled, const std::string &reason);
 
         // IDeviceStatusObserver
         void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command) override;
@@ -344,13 +342,13 @@ public:
     void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
-    int32_t StartClient(uint32_t sessionId);
+    int32_t StartClient(uint32_t sessionId, SessionOperationMsg opMsg);
     int32_t StartClientForPlayback(uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+        std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, SessionOperationMsg opMsg);
     int32_t StartClientForRecord(uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+        std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, SessionOperationMsg opMsg);
     int32_t PauseClient(uint32_t sessionId);
     int32_t StandbyClient(uint32_t sessionId);
     void NotifyStandbyStatus(uint32_t sessionId, bool standbyStatus);
@@ -470,6 +468,10 @@ public:
     int32_t SetRingerMode(AudioRingerMode ringMode);
     int32_t FetchOutputDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
+    std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> PreviewOutputDeviceSelection(
+        const std::string &caller);
+    std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> PreviewInputDeviceSelection(
+        const std::string &caller);
     bool HandleA2dpSuspendWhenLoad();
     void HandleA2dpRestore();
     int32_t FetchInputDeviceAndRoute(std::string caller,
@@ -503,8 +505,6 @@ public:
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
     void NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc);
     void NotifyVoipPriorityLoweredByMute(uint32_t streamId, bool lowered);
-    bool UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled);
-    bool UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled);
     int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
     void TriggerVoipPriorityReload(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool lowered);
     int32_t ReloadCaptureSessionSoftLink();
@@ -855,6 +855,10 @@ private:
     bool CheckCollaborativeStreamRunning();
     void UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState);
     bool ShouldUpdateOutputRoute(const AudioStreamDeviceChangeReasonExt reason);
+    void CheckFastToNormalForPlayback(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        SessionOperationMsg opMsg);
+    void CheckFastToNormalForRecord(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        SessionOperationMsg opMsg);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;

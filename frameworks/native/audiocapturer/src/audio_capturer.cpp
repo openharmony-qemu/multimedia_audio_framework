@@ -1638,7 +1638,6 @@ void AudioCapturerPrivate::SendAudioErrorEventAndProcessOther(int32_t uid, int32
 
 int32_t AudioCapturerPrivate::StartImpl()
 {
-    AsyncCheckAudioCapturer("Start");
     Trace trace("KeyAction AudioCapturer::Start" + std::to_string(sessionID_));
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
@@ -1689,7 +1688,6 @@ int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBloc
 {
     Trace trace("AudioCapturer::Read");
     CheckSignalData(&buffer, userSize);
-    AsyncCheckAudioCapturer("Read");
 
     std::unique_lock<std::mutex> lock(inSwitchingMtx_);
     taskLoopCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_OVERTIMES_IN_MS), [this] {
@@ -2218,7 +2216,6 @@ int32_t AudioCapturerPrivate::SetCapturerMetaDataCallback(
 
 int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc)
 {
-    AsyncCheckAudioCapturer("GetBufferDesc");
     std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -2338,7 +2335,6 @@ int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc
 
 int32_t AudioCapturerPrivate::Enqueue(const BufferDesc &bufDesc)
 {
-    AsyncCheckAudioCapturer("Enqueue");
     std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -3422,11 +3418,6 @@ int32_t AudioCapturerPrivate::SetIndependentAudioSessionStrategy(
     const AudioSessionStrategy &strategy, const uint32_t behavior)
 {
     audioInterrupt_.behaviorFlags_ = {};
-    if ((behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)) &&
-        (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION)) {
-        audioInterrupt_.behaviorFlags_.voipNoPrivacyFlag = true;
-        AUDIO_INFO_LOG("Capturer id: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", sessionID_);
-    }
     if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)) {
         audioInterrupt_.behaviorFlags_.pauseWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Capturer id: %{public}d activated PAUSE_WHEN_INTERRUPTED success", sessionID_);

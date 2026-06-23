@@ -364,6 +364,37 @@ int32_t HpaeProcessCluster::AudioRendererCreate(HpaeNodeInfo &nodeInfo, const Hp
     return 0;
 }
 
+int32_t HpaeProcessCluster::HandleRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo)
+{
+    uint32_t sessionId = nodeInfo.sessionId;
+    if (hasPendingStop_ && pendingStopSessionId_ == sessionId) {
+        ClearDeferredStop();
+        AUDIO_INFO_LOG("sessionId %{public}u reconnect, cancel deferred stop", sessionId);
+        return SUCCESS;
+    }
+    if (hasPendingStop_) {
+        AUDIO_INFO_LOG("flush deferred stop %{public}u before start %{public}u", pendingStopSessionId_, sessionId);
+        ExecuteDeferredStop();
+    }
+    return AudioRendererStart(nodeInfo, sinkInfo);
+}
+
+int32_t HpaeProcessCluster::HandleRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo)
+{
+    uint32_t sessionId = nodeInfo.sessionId;
+    if (renderEffectNode_ != nullptr && GetPreOutNum() == 0) {
+        if (hasPendingStop_) {
+            AUDIO_WARNING_LOG("overwrite pending stop %{public}u with %{public}u", pendingStopSessionId_, sessionId);
+        }
+        hasPendingStop_ = true;
+        pendingStopSessionId_ = sessionId;
+        pendingStopNodeInfo_ = nodeInfo;
+        AUDIO_INFO_LOG("sessionId %{public}u will be stop (deferred)", sessionId);
+        return SUCCESS;
+    }
+    return AudioRendererStop(nodeInfo, sinkInfo);
+}
+
 int32_t HpaeProcessCluster::AudioRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo)
 {
     if (renderEffectNode_ != nullptr) {
@@ -390,8 +421,36 @@ int32_t HpaeProcessCluster::AudioRendererStop(HpaeNodeInfo &nodeInfo, const Hpae
     return 0;
 }
 
+void HpaeProcessCluster::ExecuteDeferredStop()
+{
+    if (!hasPendingStop_) {
+        return;
+    }
+    AUDIO_INFO_LOG("sessionId %{public}u execute deferred stop", pendingStopSessionId_);
+    AudioRendererStop(pendingStopNodeInfo_, sinkInfo_);
+    ClearDeferredStop();
+}
+
+bool HpaeProcessCluster::ExecuteDeferredStopFor(uint32_t sessionId)
+{
+    if (!hasPendingStop_ || pendingStopSessionId_ != sessionId) {
+        return false;
+    }
+    ExecuteDeferredStop();
+    return true;
+}
+
+void HpaeProcessCluster::ClearDeferredStop()
+{
+    hasPendingStop_ = false;
+    pendingStopSessionId_ = 0;
+}
+
 int32_t HpaeProcessCluster::AudioRendererRelease(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo)
 {
+    if (hasPendingStop_ && pendingStopSessionId_ == nodeInfo.sessionId) {
+        ClearDeferredStop();
+    }
     if (renderEffectNode_ != nullptr) {
         return renderEffectNode_->AudioRendererRelease(nodeInfo);
     }
@@ -520,6 +579,7 @@ int32_t HpaeProcessCluster::DestroySessionEffectNode(uint32_t sessionId, uint64_
 
     // Close SE flow: mark crossfade (Phase 2: no-op in bypass, Phase 3: real crossfade)
     node->StartCloseCrossfade();
+    node->StopPreheatThread();
 
     // Get latency before disconnect (Phase 2: returns 0, Phase 3: returns real latency)
     outLatency = node->GetLatency(sessionId);

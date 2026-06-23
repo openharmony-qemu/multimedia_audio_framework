@@ -27,6 +27,7 @@
 #include "audio_core_service.h"
 #include "audio_select_interface_service.h"
 #include "audio_router_select_strategy.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -142,7 +143,8 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
             audioCapturerFilter->uid = -1;
             audioCapturerFilter->capturerInfo.sourceType =
                 static_cast<SourceType>(usageOrSourceType);
-            result = SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
+            result = AudioSelectInterfaceService::GetInstance().SelectInputDevice(audioCapturerFilter,
+                deviceDescriptorVector);
         }
     }
     return result;

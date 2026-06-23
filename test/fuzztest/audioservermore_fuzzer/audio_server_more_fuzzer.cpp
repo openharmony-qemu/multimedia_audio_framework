@@ -382,7 +382,8 @@ void AudioLoadAudioEffectLibrariesTest(const uint8_t* rawData, size_t size)
 void AudioCapturerInServerTestFirst(std::shared_ptr<CapturerInServer> capturerInServer)
 {
     capturerInServer->Init();
-    capturerInServer->Start();
+    bool hasNoCallback = GetData<bool>();
+    capturerInServer->Start(hasNoCallback);
     capturerInServer->ConfigServerBuffer();
     if (capturerInServer->isInited_ == true) {
         capturerInServer->InitBufferStatus();
@@ -524,7 +525,8 @@ void AudioRendererInServerTest()
     }
     std::shared_ptr<RendererInServer> renderer = ipcStreamInServer->GetRenderer();
     renderer->Init();
-    renderer->Start();
+    bool hasNoCallback = GetData<bool>();
+    renderer->Start(hasNoCallback);
     renderer->ConfigServerBuffer();
     renderer->InitBufferStatus();
     renderer->UpdateWriteIndex();

@@ -96,7 +96,7 @@ public:
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);
-    int32_t Start();
+    int32_t Start(bool hasNoCallback);
     int32_t Pause();
     void HandleDupStreamPause();
     void HandleDualTonePause();
@@ -218,7 +218,7 @@ private:
     void StandByCheck();
     bool ShouldEnableStandBy();
     int32_t OffloadSetVolumeInner();
-    int32_t StartInner();
+    int32_t StartInner(bool hasNoCallback);
     int32_t ValidateStartState();
     int32_t ValidateAndSetupBufferForStart();
     void UpdateStartTimeInfo();

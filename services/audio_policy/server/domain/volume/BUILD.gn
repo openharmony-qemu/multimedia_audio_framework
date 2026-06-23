@@ -54,6 +54,7 @@ ohos_shared_library("audio_safe_volume_notification_impl") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-Os",
   ]
 
   if (target_cpu == "arm") {

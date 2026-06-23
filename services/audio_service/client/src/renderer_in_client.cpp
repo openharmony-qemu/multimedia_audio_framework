@@ -883,7 +883,7 @@ void RendererInClientInner::FirstFrameProcess()
 
 void RendererInClientInner::NotifyStreamSilentChange()
 {
-    CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && volumeDataCount_ > 0);
+    CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && GetVolume() > 0.0f && volumeDataCount_ > 0);
     int64_t stamp = ClockTime::GetCurNano();
     Trace trace("RendererInClientInner::NotifyStreamSilentChange " + std::to_string(sessionId_));
     AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
@@ -1477,7 +1477,7 @@ int32_t RendererInClientInner::CallStartWhenInStandby()
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, SUCCESS, "Client is not RUNNING!");
     CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, ERROR,
         HILOG_COMM_ERROR("[CallStartWhenInStandby]ipcStream is not inited!"));
-    int32_t ret = ipcStream_->Start();
+    int32_t ret = ipcStream_->Start(writeCb_ == nullptr);
     AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
     return SUCCESS;
 }

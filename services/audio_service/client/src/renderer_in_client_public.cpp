@@ -1254,24 +1254,30 @@ void RendererInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Set privacy type failed");
 }
 
+int32_t RendererInClientInner::ResetNotifyStreamSilentChangeFlag()
+{
+    needNotifyStreamSilentChange_.store(true);
+    volumeDataCount_ = 0;
+    return SUCCESS;
+}
+
 bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
     CheckAndProcessPendingSpanSize();
     mutePlayStartTime_ = 0;
-    volumeDataCount_ = 0;
-    needNotifyStreamSilentChange_.store(true);
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(state_ == PREPARED || state_ == STOPPED || state_ == PAUSED, false,
         SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_), PLAY_START_ILLEGAL_STATE,
             "Illegal state", true, state_), "Start failed");
+    ResetNotifyStreamSilentChangeFlag();
     hasFirstFrameWrited_ = false;
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ipcStream_ != nullptr, false,
         SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
             PLAY_START_NULL_POINTER, "ipcStream is not inited", true, state_),
         HILOG_COMM_ERROR("[StartAudioStream]ipcStream is not inited!"));
-    int32_t ret = ipcStream_->Start();
+    int32_t ret = ipcStream_->Start(writeCb_ == nullptr);
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, false,
         SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
             PLAY_START_OPERATION_FAILED, "Start call server failed", true, state_),

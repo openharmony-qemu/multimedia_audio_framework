@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/features.gni")
+import("//build/test.gni")
+
+ohos_fuzztest("HpaeDelayedTaskQueueFuzzTest") {
+  module_out_path = "audio_framework/audio_framework_route"
+  fuzz_config_file = "../hpae_delayed_task_queue_fuzzer"
+
+  include_dirs = [
+    "../../../services/audio_engine/utils",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+  ]
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  sources = [ "hpae_delayed_task_queue_fuzzer.cpp" ]
+
+  deps = [
+    "../../../services/audio_engine:audio_engine_utils",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "hilog:libhilog",
+  ]
+}
+
+group("fuzztest") {
+  testonly = true
+  deps = [ ":HpaeDelayedTaskQueueFuzzTest" ]
+}
