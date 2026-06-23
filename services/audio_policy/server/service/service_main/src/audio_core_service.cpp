@@ -3753,19 +3753,14 @@ void AudioCoreService::TriggerVoipPriorityReload(const std::shared_ptr<AudioStre
 bool AudioCoreService::HasNormalTypeCapturerSession(
     const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList)
 {
-    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
-    if (sourceStrategyMap == nullptr) {
-        sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
-    }
     for (const auto &pipe : pipeList) {
-        if (pipe == nullptr) {
+        if (pipe == nullptr || !pipe->IsNormalSourcePipe(isEcFeatureEnable_)) {
             continue;
         }
 
         for (const auto &stream : pipe->streamDescriptors_) {
             CHECK_AND_RETURN_RET(stream == nullptr || !stream->IsRecording() ||
-                specialSourceTypeSet_.count(stream->capturerInfo_.sourceType) > 0 ||
-                sourceStrategyMap->count(stream->capturerInfo_.sourceType) > 0, true);
+                specialSourceTypeSet_.count(stream->capturerInfo_.sourceType) > 0, true);
         }
     }
     return false;

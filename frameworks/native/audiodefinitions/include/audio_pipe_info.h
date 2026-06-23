@@ -176,6 +176,8 @@ public:
 
     bool IsPipeMatch(const std::string adapterName, const uint32_t targetFlag);
 
+    bool IsNormalSourcePipe(bool isEcFeatureEnable) const;
+
 private:
     void DumpCommonAttrs(std::string &dumpString);
 
