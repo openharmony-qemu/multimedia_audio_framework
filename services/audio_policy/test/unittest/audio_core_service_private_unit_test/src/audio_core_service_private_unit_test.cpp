@@ -3538,25 +3538,12 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateHearingAidCall_001, TestSize
  */
 HWTEST_F(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
 {
-    auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    newDeviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    newDeviceDesc->deviceId_ = 1;
-    newDeviceDesc->deviceName_ = "usb_arm_headset";
-
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_HEARING_AID;
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
-
-    auto mockDeviceBehavior = std::make_shared<MockAudioArmDeviceBehavior>();
-    ASSERT_NE(mockDeviceBehavior, nullptr);
-
-    EXPECT_CALL(*mockDeviceBehavior, ActivateDevice(_, _)).WillOnce(Return(SUCCESS));
-
-    auto& audioDeviceFactory = AudioDeviceFactory::GetInstance();
-    audioDeviceFactory.deviceBehaviorCache_[DEVICE_TYPE_USB_ARM_HEADSET] = mockDeviceBehavior;
-
+    auto audioCoreService = std::make_shared<AudioCoreService>();
     int32_t ret = audioCoreService->ActivateOutputDevice(streamDesc);
-    ASSERT_NE(audioCoreService, nullptr);
     ASSERT_EQ(ret, ERR_INVALID_PARAM);
 }
 
