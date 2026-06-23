@@ -1224,7 +1224,8 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     AudioVolume::GetInstance()->RemoveStreamVolume(processStream->GetAudioSessionId());
 
     bool isFind = false;
-    std::lock_guard<std::mutex> lock(listLock_);
+    bool needStop = false;
+    std::unique_lock<std::mutex> lock(listLock_);
     auto processItr = processList_.begin();
     auto bufferItr = processBufferList_.begin();
     while (processItr != processList_.end()) {
@@ -1240,12 +1241,17 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
         }
     }
     if (processList_.size() == 0) {
-        std::unique_lock<std::mutex> lock(startStatusLock_);
-        StopDevice();
-        UpdateEndpointStatus(UNLINKED);
+        needStop = true;
     } else if (!IsAnyProcessRunningInner()) {
         UpdateEndpointStatus(IDEL);
         delayStopTime_.store(DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS);
+    }
+    lock.unlock();
+
+    if (needStop) {
+        std::unique_lock<std::mutex> lock(startStatusLock_);
+        StopDevice();
+        UpdateEndpointStatus(UNLINKED);
     }
 
     AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
