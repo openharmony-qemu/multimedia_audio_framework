@@ -202,6 +202,9 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
 
 void HpaeOffloadRendererManager::DeleteInputSession(SessionEffectMoveMode moveMode)
 {
+    if (sessionEffectNode_ != nullptr) {
+        sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
+    }
     DisConnectInputSession();
 
     // Session Effect: clean up SE node. DisConnectInputSession already disconnected
@@ -210,7 +213,6 @@ void HpaeOffloadRendererManager::DeleteInputSession(SessionEffectMoveMode moveMo
     if (sessionEffectNode_ != nullptr) {
         uint32_t sid = sessionEffectSessionId_;
         HpaeSessionState state = curNode_ != nullptr ? curNode_->GetState() : HPAE_SESSION_NEW;
-        sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
         sessionEffectNode_.reset();
         sessionEffectSessionId_ = 0;
         if (moveMode == SessionEffectMoveMode::FULL_TEARDOWN) {
