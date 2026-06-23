@@ -1037,5 +1037,22 @@ int32_t AudioSystemManager::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamV
 {
     return AudioVolumeClientManager::GetInstance().GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
 }
+
+int32_t AudioSystemManager::EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config)
+{
+    return AudioRecordControlManager::GetInstance().EnableSystemRecordController(show, config);
+}
+
+int32_t AudioSystemManager::SetRecordControllerEnabledChangeCallback(
+    const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &callback)
+{
+    return AudioRecordControlManager::GetInstance().SetRecordControllerEnabledChangeCallback(callback);
+}
+
+int32_t AudioSystemManager::UnsetRecordControllerEnabledChangeCallback(
+    const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &callback)
+{
+    return AudioRecordControlManager::GetInstance().UnsetRecordControllerEnabledChangeCallback(callback);
+}
 } // namespace AudioStandard
 } // namespace OHOS

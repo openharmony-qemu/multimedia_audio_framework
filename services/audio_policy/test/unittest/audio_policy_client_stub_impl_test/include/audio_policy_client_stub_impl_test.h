@@ -166,6 +166,16 @@ class ConcreteAudioPersonalizedSpatializationEnabledChangeCallback :
     void OnPersonalizedSpatializationEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) override {}
 };
+
+class ConcreteSystemRecordControllerEnabledChangeCallback : public SystemRecordControllerEnabledChangeCallback {
+    void OnRecordControllerEnabledChange(const SystemRecordControllerChangeInfo &changeInfo) override
+    {
+        isCallbackInvoked_ = true;
+        lastChangeInfo_ = changeInfo;
+    }
+    bool isCallbackInvoked_ = false;
+    SystemRecordControllerChangeInfo lastChangeInfo_;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_POLICY_CLIENT_STUB_IMPL_TEST_H

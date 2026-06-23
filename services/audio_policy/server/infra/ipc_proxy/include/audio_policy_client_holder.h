@@ -81,6 +81,7 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled);
     void OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode);
     void OnAudioSeparationEffectEnabledChange(const bool &enabled);
+    void OnRecordControllerEnabledChange(const SystemRecordControllerChangeInfo &changeInfo);
     int32_t OnAudioRouteSelectRefined(const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo,
         int32_t &selectResult);
 private:

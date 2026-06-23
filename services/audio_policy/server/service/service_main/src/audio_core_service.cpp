@@ -44,6 +44,7 @@
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
 #include "audio_collaborative_service.h"
+#include "audio_record_controller.h"
 
 namespace {
     #include "v6_1/iaudio_manager.h"
@@ -1248,11 +1249,11 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
 void AudioCoreService::TrackScoStreamAudioScene(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isAdd)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
-    
+
     uint32_t streamId = streamDesc->sessionId_;
     AudioScene audioScene = AUDIO_SCENE_DEFAULT;
     bool isRecognition = false;
-    
+
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
         if (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
@@ -1271,7 +1272,7 @@ void AudioCoreService::TrackScoStreamAudioScene(std::shared_ptr<AudioStreamDescr
         isRecognition = (sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
                          sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION);
     }
-    
+
     if (isAdd) {
         ScoAudioSceneManager::GetInstance().AddScoStream(streamId, audioScene,
             streamDesc->callerUid_, isRecognition);
@@ -1457,7 +1458,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg op
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
         HILOG_COMM_ERROR("[StartClient]Call communication stream, directly return"));
-    
+
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
     CHECK_AND_CALL_FUNC_RETURN_RET(streamDesc != nullptr, ERR_NULL_POINTER,
         HILOG_COMM_ERROR("[StartClient]Cannot find session %{public}u", sessionId));
@@ -1492,6 +1493,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg op
     if (streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         ReloadCaptureSession(sessionId, SESSION_OPERATION_START);
         ReEvaluateVoipPrivacyMuteForCapturers("AudioCoreService::StartClient");
+        AudioRecordController::GetInstance().OnRecordStart(sessionId, streamDesc->GetRealUid(),
+            streamDesc->callerPid_, streamDesc->GetSourceType());
     }
     return SUCCESS;
 }
@@ -1546,6 +1549,8 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
     }
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         ReEvaluateVoipPrivacyMuteForCapturers("AudioCoreService::PauseClient");
+        AudioRecordController::GetInstance().OnRecordStop(sessionId, streamDesc->GetRealUid(),
+            streamDesc->callerPid_, streamDesc->GetSourceType());
     }
 
     return SUCCESS;
@@ -1622,6 +1627,8 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
     }
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         ReEvaluateVoipPrivacyMuteForCapturers("AudioCoreService::StopClient");
+        AudioRecordController::GetInstance().OnRecordStop(sessionId, streamDesc->GetRealUid(),
+            streamDesc->callerPid_, streamDesc->GetSourceType());
     }
 
     return SUCCESS;
@@ -1636,7 +1643,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         pipeManager_->RemoveModemCommunicationId(sessionId);
         return SUCCESS;
     }
-    
+
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         AudioRouterInfra::GetInstance().UpdateInputStreamState(GetRealUid(streamDesc), sessionId,
@@ -1664,6 +1671,8 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             ReleaseCaptureInjector();
         }
+        AudioRecordController::GetInstance().OnRecordStop(sessionId, streamDesc->GetRealUid(),
+            streamDesc->callerPid_, streamDesc->GetSourceType());
         ReloadCaptureSession(sessionId, SESSION_OPERATION_RELEASE);
         ReEvaluateVoipPrivacyMuteForCapturers("AudioCoreService::ReleaseClient");
     }
@@ -4805,7 +4814,7 @@ int32_t AudioCoreService::GetActiveStreamRendererInfosForDevice(
         CHECK_AND_CONTINUE(streamDesc != nullptr);
         CHECK_AND_CONTINUE(streamDesc->streamStatus_ == AudioStreamStatus::STREAM_STATUS_STARTED);
         CHECK_AND_CONTINUE(!streamDesc->GetNewDeviceDescs().empty());
-        
+
         auto streamDevice = streamDesc->GetNewDeviceDescs().front();
         CHECK_AND_CONTINUE(streamDevice != nullptr);
         if (streamDevice->IsSameDeviceDesc(*deviceDesc)) {

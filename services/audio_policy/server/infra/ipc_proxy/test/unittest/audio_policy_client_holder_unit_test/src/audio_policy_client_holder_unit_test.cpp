@@ -21,6 +21,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 static const int32_t  SUCCESS = 0;
+constexpr int32_t TEST_RECORD_CONTROLLER_UID = 1001;
 
 void AudioPolicyClientHolderUnitTest::SetUpTestCase(void) {}
 void AudioPolicyClientHolderUnitTest::TearDownTestCase(void) {}
@@ -246,6 +247,38 @@ HWTEST_F(AudioPolicyClientHolderUnitTest, OnPersonalizedSpatializationEnabledCha
     bool enabled = true;
     auto deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     clientHolder_->OnPersonalizedSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+}
+
+/**
+ * @tc.name  : Test OnRecordControllerEnabledChange.
+ * @tc.number: AudioPolicyClientHolderTest_OnRecordControllerEnabledChange_001
+ * @tc.desc  : Verify that hasSystemPermission_ == true.
+ */
+HWTEST_F(AudioPolicyClientHolderUnitTest, OnRecordControllerEnabledChange_001, TestSize.Level4)
+{
+    EXPECT_CALL(*mockClient_, OnRecordControllerEnabledChange(_)).WillOnce(Return(SUCCESS));
+    clientHolder_->audioPolicyClient_ = mockClient_;
+    clientHolder_->hasSystemPermission_ = true;
+    SystemRecordControllerChangeInfo changeInfo;
+    changeInfo.enabled = true;
+    changeInfo.uid = TEST_RECORD_CONTROLLER_UID;
+    changeInfo.sourceType = SOURCE_TYPE_MIC;
+    clientHolder_->OnRecordControllerEnabledChange(changeInfo);
+}
+
+/**
+ * @tc.name  : Test OnRecordControllerEnabledChange.
+ * @tc.number: AudioPolicyClientHolderTest_OnRecordControllerEnabledChange_002
+ * @tc.desc  : Verify that audioPolicyClient_ is nullptr.
+ */
+HWTEST_F(AudioPolicyClientHolderUnitTest, OnRecordControllerEnabledChange_002, TestSize.Level4)
+{
+    clientHolder_->audioPolicyClient_ = nullptr;
+    SystemRecordControllerChangeInfo changeInfo;
+    changeInfo.enabled = false;
+    changeInfo.uid = TEST_RECORD_CONTROLLER_UID;
+    changeInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    clientHolder_->OnRecordControllerEnabledChange(changeInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS

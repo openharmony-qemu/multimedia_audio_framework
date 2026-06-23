@@ -416,7 +416,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeKeyEvent_Test_002, TestSize
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
-    
+
     int32_t clientPid = 1;
     std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
@@ -439,11 +439,11 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeKeyEvent_Test_003, TestSize
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
-    
+
     int32_t clientPid = 1;
     std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
-    
+
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = STREAM_ULTRASONIC;
     volumeEvent.volume = 1;
@@ -2287,6 +2287,40 @@ HWTEST(AudioPolicyServerHandlerUnitTest, ShouldSkipDuplicateInputCallback_012, T
 
     bool result = handler->ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, currentDevices);
     EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test SendRecordControllerEnabledChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: SendRecordControllerEnabledChangeCallback_001
+ * @tc.desc  : Test SendRecordControllerEnabledChangeCallback interface with enabled=true.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SendRecordControllerEnabledChangeCallback_001, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemRecordControllerChangeInfo changeInfo;
+    changeInfo.enabled = true;
+    changeInfo.uid = TEST_UID;
+    changeInfo.sourceType = SOURCE_TYPE_MIC;
+    bool ret = handler->SendRecordControllerEnabledChangeCallback(changeInfo);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test SendRecordControllerEnabledChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: SendRecordControllerEnabledChangeCallback_002
+ * @tc.desc  : Test SendRecordControllerEnabledChangeCallback interface with enabled=false.
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, SendRecordControllerEnabledChangeCallback_002, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    SystemRecordControllerChangeInfo changeInfo;
+    changeInfo.enabled = false;
+    changeInfo.uid = TEST_UID;
+    changeInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    bool ret = handler->SendRecordControllerEnabledChangeCallback(changeInfo);
+    EXPECT_TRUE(ret);
 }
 
 /**

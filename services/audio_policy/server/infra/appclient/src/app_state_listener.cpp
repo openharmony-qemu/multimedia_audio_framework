@@ -33,6 +33,7 @@
 #include "audio_session_service.h"
 #include "audio_usr_select_manager.h"
 #include "audio_router_infra.h"
+#include "audio_record_controller.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -68,6 +69,16 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
         HandleBackgroundAppStateChange(appProcessData.pid, appData.uid, static_cast<int32_t>(appProcessData.appState));
         AudioStreamMonitor::GetInstance().NotifyAppStateChange(appData.uid,
             (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_BACKGROUND));
+
+        if (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_FOREGROUND) {
+            AudioRecordController::GetInstance().OnAppStateChanged(appData.uid, appProcessData.pid, true);
+        } else if (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_BACKGROUND ||
+                   appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_CREATE) {
+            AudioRecordController::GetInstance().OnAppStateChanged(appData.uid, appProcessData.pid, false);
+        } else if (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_END ||
+                   appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_TERMINATED) {
+            AudioRecordController::GetInstance().OnAppDied(appData.uid, appProcessData.pid);
+        }
     }
 
     OHOS::Singleton<AudioSessionService>::GetInstance().NotifyAppStateChange(appProcessData.pid,

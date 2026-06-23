@@ -169,6 +169,8 @@ public:
     /* NapiAudioManager Get&&Set object */
     static napi_status SetValueMicStateChange(const napi_env &env, const MicStateChangeEvent &micStateChangeEvent,
         napi_value &result);
+    static napi_status SetValueSystemRecordControllerChangeInfo(const napi_env &env,
+        const SystemRecordControllerChangeInfo &changeInfo, napi_value &result);
     static napi_status SetVolumeGroupInfos(const napi_env &env,
         const std::vector<sptr<VolumeGroupInfo>> &volumeGroupInfos, napi_value &result);
     static napi_status SetValueVolumeEvent(const napi_env& env, const VolumeEvent &volumeEvent,
