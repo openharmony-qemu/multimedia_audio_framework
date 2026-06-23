@@ -638,7 +638,7 @@ HWTEST_F(HpaeOffloadSeTest, pendingCreatedOnSetCurrentNode, TestSize.Level0)
     // SE now active for the new curNode_
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, OTHER_SESSION_ID);
-    EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+    EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
 }
 
 // OSE-EXTRA: Double create for same session returns ERR_SESSION_ALREADY_BOUND

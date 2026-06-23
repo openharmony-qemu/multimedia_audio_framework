@@ -261,7 +261,13 @@ protected:
         probe_->Connect(cluster_);
     }
 
-    void TearDown() override {}
+    void TearDown() override
+    {
+        auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+        if (seNode != nullptr) {
+            seNode->DropEffect();
+        }
+    }
 
     std::shared_ptr<EffectInstance> CreateEffectInstance()
     {

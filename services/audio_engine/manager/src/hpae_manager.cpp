@@ -3088,7 +3088,7 @@ bool IsAissStreamSupported(const HpaeStreamInfo &streamInfo, uint32_t sessionId,
             caller, streamInfo.sourceType, sessionId);
         return false;
     }
-    if (streamInfo.channels != STEREO) {
+    if (streamInfo.channels > STEREO) {
         AUDIO_INFO_LOG("%{public}s: skip non-stereo stream channels=%{public}u session=%{public}u",
             caller, streamInfo.channels, sessionId);
         return false;

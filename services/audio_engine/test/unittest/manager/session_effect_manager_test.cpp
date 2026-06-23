@@ -517,6 +517,52 @@ HWTEST_F(SessionEffectManagerTest, setEffectParameter_sameTypeTwice_keepsLatest,
     EXPECT_EQ(CountSetParamCalls(fake), 1u);
 }
 
+// FlushPendingEffectInstance: effect not in map -> ERR_EFFECT_NOT_BOUND (branch: instance == nullptr)
+HWTEST_F(SessionEffectManagerTest, flushPendingEffectInstance_noEffect_returnsNotBound, TestSize.Level0)
+{
+    int32_t ret = sem_->FlushPendingEffectInstance("nonexistent_effect");
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
+}
+
+// FlushPendingEffectInstance: PENDING_RELEASE -> calls Flush() on the underlying lib and returns SUCCESS
+HWTEST_F(SessionEffectManagerTest, flushPendingEffectInstance_pendingRelease_callsFlush, TestSize.Level0)
+{
+    FakeAudioEffectLibEntry fake;
+    AudioEffectLibrary lib = fake.GetLibrary();
+    auto libEntry = std::make_shared<AudioEffectLibEntry>();
+    libEntry->libraryName = "audio_aiss_enhance";
+    libEntry->audioEffectLibHandle = &lib;
+    sem_->InitEffectLibraries({libEntry});
+
+    std::shared_ptr<EffectInstance> instance;
+    ASSERT_EQ(sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    sem_->UnbindSessionEffect(1);
+    ASSERT_EQ(instance->GetState(), EffectInstance::EffectState::PENDING_RELEASE);
+
+    fake.Reset();
+    EXPECT_EQ(fake.GetFlushCount(), 0u);
+
+    int32_t ret = sem_->FlushPendingEffectInstance("audio_aiss_enhance");
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_EQ(fake.GetFlushCount(), 1u);  // Flush() propagated to the lib via EFFECT_CMD_FLUSH
+    // State is unchanged — Flush does not transition state
+    EXPECT_EQ(instance->GetState(), EffectInstance::EffectState::PENDING_RELEASE);
+}
+
+// FlushPendingEffectInstance: instance exists but not PENDING_RELEASE -> ERR_EFFECT_NOT_BOUND
+// (covers ACTIVE; IDLE/ERROR share the same return path)
+HWTEST_F(SessionEffectManagerTest, flushPendingEffectInstance_activeState_returnsNotBound, TestSize.Level0)
+{
+    std::shared_ptr<EffectInstance> instance;
+    ASSERT_EQ(sem_->BindSessionEffect(1, "test_effect", config_, instance),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_EQ(instance->GetState(), EffectInstance::EffectState::ACTIVE);
+
+    int32_t ret = sem_->FlushPendingEffectInstance("test_effect");
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
+}
+
 // Multiple distinct parameter types are all re-applied on CreateNewInstance.
 HWTEST_F(SessionEffectManagerTest, setEffectParameter_multipleTypes_allReapplied, TestSize.Level0)
 {
