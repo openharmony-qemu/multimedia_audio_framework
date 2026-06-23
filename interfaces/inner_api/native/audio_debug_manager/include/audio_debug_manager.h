@@ -19,8 +19,6 @@
 #include <cstdint>
 #include <memory>
 
-#define INVALID_DEBUGKEY 0
-
 namespace OHOS {
 namespace AudioStandard {
 

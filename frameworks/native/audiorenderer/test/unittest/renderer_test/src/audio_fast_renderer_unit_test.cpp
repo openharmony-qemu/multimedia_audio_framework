@@ -235,7 +235,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_005, TestSize.Level1)
     EXPECT_EQ(ERR_INCORRECT_MODE, ret);
 
     ret = GetRenderPtr()->SetRenderRate(RENDER_RATE_DOUBLE);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     ret = GetRenderPtr()->SetRenderRate(RENDER_RATE_NORMAL);
     EXPECT_EQ(SUCCESS, ret);

@@ -31,10 +31,6 @@
 #include "audio_errors.h"
 #include "audio_task_loop.h"
 
-#ifndef INVALID_DEBUGKEY
-#define INVALID_DEBUGKEY 0
-#endif
-
 namespace OHOS {
 namespace AudioStandard {
 class RendererPolicyServiceDiedCallback;
@@ -159,7 +155,7 @@ public:
     void GetRendererDebugFocusInfo(AudioRendererDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
     void GetRendererDebugErrorInfo(AudioRendererDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
     uint32_t GetRendererDebugKey() const override { return debugKey_; }
-    uint32_t debugKey_ = INVALID_DEBUGKEY;
+    uint32_t debugKey_ = 0;
     bool IsFastRenderer() override;
 
     void SetSilentModeAndMixWithOthers(bool on) override;
