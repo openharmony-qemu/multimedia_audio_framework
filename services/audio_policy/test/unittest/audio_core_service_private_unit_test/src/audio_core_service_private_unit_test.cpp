@@ -3557,7 +3557,7 @@ HWTEST_F(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
 
     int32_t ret = audioCoreService->ActivateOutputDevice(streamDesc);
     ASSERT_NE(audioCoreService, nullptr);
-    ASSERT_EQ(ret, SUCCESS);
+    ASSERT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 /**

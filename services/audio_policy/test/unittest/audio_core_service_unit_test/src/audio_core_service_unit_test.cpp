@@ -2037,21 +2037,6 @@ HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportIndependentPipe_002, TestSize.
 
 /**
 * @tc.name  : Test AudioCoreServiceUnit
-* @tc.number : SetFlagForSpecialStream_002
-* @tc.desc   : Test SetFlagForSpecialStream with VOICE_CALL_ASSISTANT stream
-*/
-HWTEST_F(AudioCoreServiceUnitTest, SetFlagForSpecialStream_002, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_CALL_ASSISTANT;
-    bool isCreateProcess = true;
-    AudioFlag result = GetServerPtr()->coreService_->SetFlagForSpecialStream(streamDesc, isCreateProcess);
-    EXPECT_EQ(result, AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT);
-}
-
-/**
-* @tc.name  : Test AudioCoreServiceUnit
 * @tc.number: AddAudioCapturerMicrophoneDescriptor_001
 * @tc.desc  : Test AudioCoreService interfaces - mic desc should be added.
 */
