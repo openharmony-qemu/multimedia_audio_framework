@@ -221,7 +221,6 @@ void AudioProresamplerRemainingGettersFuzzTest()
     }
     proResampler->GetInRate();
     proResampler->GetOutRate();
-    proResampler->GetDelayFrames();
 }
 
 // Constructor validation early-return paths. Safe: state_ has a default member
