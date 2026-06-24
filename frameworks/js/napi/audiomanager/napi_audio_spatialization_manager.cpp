@@ -649,7 +649,7 @@ napi_value NapiAudioSpatializationManager::SetPersonalizedSpatializationEnabled(
     };
     context->GetCbInfo(env, info, inputParser);
     if (context->status != napi_ok) {
-        NapiAudioError::ThrowError(env, context->errMessage, context->errCode);
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
