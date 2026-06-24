@@ -876,7 +876,7 @@ DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVer
             return DEVICE_TYPE_NEARLINK;
         case DEVICE_TYPE_BT_SPP:
         case DEVICE_TYPE_NEARLINK_PORT:
-            if (isUnidirectional) {
+            if (isUnidirectional_) {
                 return DEVICE_TYPE_BLUETOOTH_SCO;
             }
             return deviceType_;
