@@ -124,7 +124,7 @@ private:
     int32_t DestroyOffloadNodes();
     int32_t ConnectInputSession();
     int32_t DisConnectInputSession();
-    void DeleteInputSession();
+    void DeleteInputSession(SessionEffectMoveMode moveMode = SessionEffectMoveMode::FULL_TEARDOWN);
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
@@ -148,23 +148,19 @@ private:
     std::shared_ptr<HpaeLimiterNode> limiterNode_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
 
-    // Session Effect state
-    struct PendingSessionEffect {
-        std::string effectName;
-        std::shared_ptr<IEffectInstance> instance;
-        AudioEffectConfig config;
-    };
+    // Session Effect state: sessionEffectNode_/sessionEffectSessionId_ cache the
+    // currently materialized physical SE node. Logical binding (attach state) lives
+    // on each HpaeSinkInputNode via SetSessionEffectAttachState.
     std::shared_ptr<HpaeSessionEffectNode> sessionEffectNode_ = nullptr;
     uint32_t sessionEffectSessionId_ = 0;
-    std::unordered_map<uint32_t, PendingSessionEffect> pendingSessionEffects_;
 
     // Session Effect helpers (called on SignalProcessThread)
-    void HandlePendingSessionEffect(uint32_t sessionId);
     int32_t InsertSessionEffectNode(const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
     int32_t RemoveSessionEffectNode();
     bool StopOffloadSinkIfRunning();
     void DetachSessionEffectNodeForReload();
+    void MaterializeSessionEffectFromAttachState(uint32_t curSessionId);
 
     int32_t lastPolicyState_ = 0;   // real policy state, restored after AISS close
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;

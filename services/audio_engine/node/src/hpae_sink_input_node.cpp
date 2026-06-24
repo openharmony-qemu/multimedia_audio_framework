@@ -439,6 +439,26 @@ bool HpaeSinkInputNode::IsDrain()
     return isDrain_;
 }
 
+void HpaeSinkInputNode::SetSessionEffectAttachState(const SessionEffectAttachState &state)
+{
+    sessionEffectAttachState_ = state;
+}
+
+void HpaeSinkInputNode::ClearSessionEffectAttachState()
+{
+    sessionEffectAttachState_.reset();
+}
+
+bool HpaeSinkInputNode::HasSessionEffectAttachState() const
+{
+    return sessionEffectAttachState_.has_value();
+}
+
+std::optional<SessionEffectAttachState> HpaeSinkInputNode::GetSessionEffectAttachState() const
+{
+    return sessionEffectAttachState_;
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

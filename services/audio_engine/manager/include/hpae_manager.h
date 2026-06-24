@@ -312,7 +312,6 @@ private:
     bool SetMovingCaptureStreamState(uint32_t sessionId, HpaeSessionState state, IOperation operation);
     void AddPreferSinkForDefaultChange(bool isAdd, const std::string &sinkName);
     void OnCallbackOpenOrReloadFailed(bool isReload);
-    void RecreateAissForReloadedRenderer(const std::string &sinkName);
     bool ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId);
     bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName);
     bool CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName);

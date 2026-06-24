@@ -304,6 +304,7 @@ int32_t HpaeSessionEffectNode::DropEffect()
     effectInstance_.reset();
     status_ = STATUS::IDLE;
     prebufTargetBytes_ = 0;
+    preheatSuspendedForGraphSwitch_ = false;
     ResetAccounting();
     ResetTailPaddingState();
     return 0;
@@ -319,6 +320,7 @@ int32_t HpaeSessionEffectNode::DetachEffectForReload()
     status_ = STATUS::IDLE;
     closeCrossfadePending_ = false;
     isPaused_ = false;
+    preheatSuspendedForGraphSwitch_ = false;
     stopRequested_ = false;
     prebufFilled_.store(false);
     warmupStartTime_ = std::chrono::steady_clock::time_point {};
@@ -840,6 +842,27 @@ void HpaeSessionEffectNode::PrepareMoveStream()
 {
     CloseSessionEffectCore();
     AUDIO_INFO_LOG("PrepareMoveStream: sessionId=%{public}u ready for move", GetSessionId());
+}
+
+void HpaeSessionEffectNode::SuspendSessionEffectPreheatForGraphSwitch()
+{
+    if (status_ == STATUS::WARMING_UP) {
+        StopPreheatThread();
+        preheatSuspendedForGraphSwitch_ = true;
+        AUDIO_INFO_LOG("[SE] Preheat suspended for graph switch, session=%{public}u", GetSessionId());
+    }
+}
+
+void HpaeSessionEffectNode::ResumeSessionEffectPreheatForGraphSwitch()
+{
+    if (!preheatSuspendedForGraphSwitch_) {
+        return;
+    }
+    preheatSuspendedForGraphSwitch_ = false;
+    if (status_ == STATUS::WARMING_UP && effectInstance_) {
+        RestartPreheat();
+        AUDIO_INFO_LOG("[SE] Preheat resumed after graph switch, session=%{public}u", GetSessionId());
+    }
 }
 
 }  // namespace HPAE
