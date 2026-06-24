@@ -1273,6 +1273,7 @@ int32_t HpaeRendererManager::InitOutputCluster()
     attr.filePath = sinkInfo_.filePath.c_str();
     attr.aux = sinkInfo_.splitMode.c_str();
     attr.auxSinkEnable = sinkInfo_.auxSinkEnable;
+    attr.address = sinkInfo_.macAddress;
     ret = outputCluster_->Init(attr);
     isInit_.store(ret == SUCCESS);
     renderId_ = outputCluster_->GetRenderId();
