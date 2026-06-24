@@ -19,6 +19,7 @@
 
 #include "session_effect_manager.h"
 #include "hpae_manager.h"
+#include "audio_utils.h"
 #include "audio_engine_log.h"
 
 namespace OHOS {
@@ -36,12 +37,11 @@ SessionEffectManager::~SessionEffectManager()
 int32_t SessionEffectManager::TryReuseExistingInstance(const std::string &effectName,
     uint32_t sessionId, std::shared_ptr<EffectInstance> &outInstance, uint32_t *preemptedSessionId)
 {
-    auto it = effectInstanceMap_.find(effectName);
-    if (it == effectInstanceMap_.end()) {
+    auto instance = SafeGetMap(effectInstanceMap_, effectName);
+    if (instance == nullptr) {
         return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
     }
 
-    auto &instance = it->second;
     auto state = instance->GetState();
     if (state == EffectInstance::EffectState::PENDING_RELEASE) {
         hpaeManager_.CancelDelayedTask(instance->GetPendingTaskId());
@@ -78,7 +78,7 @@ int32_t SessionEffectManager::TryReuseExistingInstance(const std::string &effect
         AUDIO_INFO_LOG("[SE::SessionEffectManager] effect released reason=staleState "
             "effect=%{public}s state=%{public}d", effectName.c_str(), static_cast<int>(state));
         instance->Release();
-        effectInstanceMap_.erase(it);
+        effectInstanceMap_.erase(effectName);
     }
     return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
 }
@@ -101,6 +101,19 @@ int32_t SessionEffectManager::CreateNewInstance(const std::string &effectName, u
     instance->SetBoundSessionId(sessionId);
     instance->SetState(EffectInstance::EffectState::ACTIVE);
     effectInstanceMap_[effectName] = instance;
+    // Re-apply persisted parameters (e.g. from a previous IDLE/ERROR -> recreate cycle).
+    // Best-effort: a failed re-apply does not fail CreateNewInstance.
+    auto savedIt = savedEffectParameters_.find(effectName);
+    if (savedIt != savedEffectParameters_.end()) {
+        for (const auto &param : savedIt->second) {
+            int32_t applyRet = instance->SetParameter(param.first, param.second);
+            if (applyRet != 0) {
+                AUDIO_WARNING_LOG("[SE::SessionEffectManager] re-apply param failed "
+                    "effect=%{public}s type=%{public}d ret=%{public}d",
+                    effectName.c_str(), param.first, applyRet);
+            }
+        }
+    }
     outInstance = instance;
     AUDIO_INFO_LOG("[SE::SessionEffectManager] effect created reason=new "
         "effect=%{public}s session=%{public}u", effectName.c_str(), sessionId);
@@ -155,17 +168,17 @@ int32_t SessionEffectManager::UnbindSessionEffect(uint32_t sessionId)
 
 void SessionEffectManager::LazyReleaseExpired(const std::string &effectName, uint32_t generation)
 {
-    auto it = effectInstanceMap_.find(effectName);
-    if (it == effectInstanceMap_.end()) {
+    auto instance = SafeGetMap(effectInstanceMap_, effectName);
+    if (instance == nullptr) {
         return;
     }
-    auto &instance = it->second;
     if (instance->GetState() != EffectInstance::EffectState::PENDING_RELEASE ||
         instance->GetReleaseGeneration() != generation) {
         return;
     }
     instance->Release();
-    effectInstanceMap_.erase(it);
+    effectInstanceMap_.erase(effectName);
+    savedEffectParameters_.erase(effectName);
     AUDIO_INFO_LOG("[SE::SessionEffectManager] effect lazyReleased "
         "effect=%{public}s gen=%{public}u", effectName.c_str(), generation);
 }
@@ -215,34 +228,34 @@ void SessionEffectManager::OnSessionDestroyed(uint32_t sessionId)
 
 bool SessionEffectManager::HasPendingEffectInstance(const std::string &effectName) const
 {
-    auto it = effectInstanceMap_.find(effectName);
-    if (it == effectInstanceMap_.end()) {
+    auto instance = SafeGetMap(effectInstanceMap_, effectName);
+    if (instance == nullptr) {
         return false;
     }
-    return it->second->GetState() == EffectInstance::EffectState::PENDING_RELEASE;
+    return instance->GetState() == EffectInstance::EffectState::PENDING_RELEASE;
 }
 
 std::shared_ptr<EffectInstance> SessionEffectManager::GetPendingEffectInstance(
     const std::string &effectName) const
 {
-    auto it = effectInstanceMap_.find(effectName);
-    if (it == effectInstanceMap_.end()) {
+    auto instance = SafeGetMap(effectInstanceMap_, effectName);
+    if (instance == nullptr) {
         return nullptr;
     }
-    if (it->second->GetState() == EffectInstance::EffectState::PENDING_RELEASE) {
-        return it->second;
+    if (instance->GetState() == EffectInstance::EffectState::PENDING_RELEASE) {
+        return instance;
     }
     return nullptr;
 }
 
 int32_t SessionEffectManager::FlushPendingEffectInstance(const std::string &effectName)
 {
-    auto it = effectInstanceMap_.find(effectName);
-    if (it == effectInstanceMap_.end()) {
+    auto instance = SafeGetMap(effectInstanceMap_, effectName);
+    if (instance == nullptr) {
         return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
     }
-    if (it->second->GetState() == EffectInstance::EffectState::PENDING_RELEASE) {
-        it->second->Flush();
+    if (instance->GetState() == EffectInstance::EffectState::PENDING_RELEASE) {
+        instance->Flush();
         return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
     }
     return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
@@ -255,11 +268,11 @@ void SessionEffectManager::SetLazyReleaseTimeout(uint64_t timeoutMs)
 
 uint32_t SessionEffectManager::GetBoundSessionId(const std::string &effectName) const
 {
-    auto it = effectInstanceMap_.find(effectName);
-    if (it == effectInstanceMap_.end()) {
+    auto instance = SafeGetMap(effectInstanceMap_, effectName);
+    if (instance == nullptr) {
         return 0;
     }
-    return it->second->GetBoundSessionId();
+    return instance->GetBoundSessionId();
 }
 
 std::vector<std::string> SessionEffectManager::GetAllActiveEffectNames() const
@@ -275,11 +288,14 @@ std::vector<std::string> SessionEffectManager::GetAllActiveEffectNames() const
 
 int32_t SessionEffectManager::SetEffectParameter(const std::string &effectName, int32_t type, float value)
 {
-    auto it = effectInstanceMap_.find(effectName);
-    CHECK_AND_RETURN_RET_LOG(it != effectInstanceMap_.end() && it->second != nullptr,
-        static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
-        "SetEffectParameter: effect %{public}s not found", effectName.c_str());
-    return it->second->SetParameter(type, value);
+    savedEffectParameters_[effectName][type] = value;
+    auto instance = SafeGetMap(effectInstanceMap_, effectName);
+    CHECK_AND_RETURN_RET(instance != nullptr, SUCCESS);
+    // Persist so the parameter can be re-applied when the instance is recreated
+    // (e.g. after an IDLE/ERROR -> CreateNewInstance cycle). Cleared on LazyReleaseExpired.
+    int32_t ret = instance->SetParameter(type, value);
+    CHECK_AND_RETURN_RET(ret == 0, ret);
+    return ret;
 }
 
 void SessionEffectManager::InitEffectLibraries(

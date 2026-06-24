@@ -358,13 +358,16 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
         TransSinkInfoToNodeInfo(sinkInfo, rendererManagerMap_[audioModuleInfo.name], nodeInfo);
         sinkVirtualOutputNodeMap_[sinkInfo.sinkId]->ReloadNode(nodeInfo);
     }
+
     if (sinkInfo.deviceName == MCH_SINK_NAME && isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
         AUDIO_INFO_LOG("ReloadRenderManager MCH_Speaker, need set isCollaborationEnabled: %{public}d",
             isCollaborationEnabled_);
         sinkInfo.isCollaborationEnabled = isCollaborationEnabled_;
     }
     rendererManagerMap_[audioModuleInfo.name]->ReloadRenderManager(sinkInfo, isReload);
-    RecreateAissForReloadedRenderer(audioModuleInfo.name);
+    // Both primary and offload self-heal SE via attach-state on SinkInputNode.
+    // No external replay needed — ConnectInputSession reads attach state and materializes.
+
     return SUCCESS;
 }
 
@@ -2861,6 +2864,9 @@ void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const Audio
         sinkOutputNode->ReloadNode(nodeInfo);
         rendererManager->ReloadRenderManager(sinkInfo, false);
         RecreateAissForReloadedRenderer(sinkName);
+
+        // Both primary and offload self-heal SE via attach-state on SinkInputNode.
+        // No external replay needed — ConnectInputSession reads attach state and materializes.
     };
     SendRequest(request, __func__);
 }
@@ -3091,7 +3097,7 @@ bool IsAissStreamSupported(const HpaeStreamInfo &streamInfo, uint32_t sessionId,
             caller, streamInfo.sourceType, sessionId);
         return false;
     }
-    if (streamInfo.channels != STEREO) {
+    if (streamInfo.channels > STEREO) {
         AUDIO_INFO_LOG("%{public}s: skip non-stereo stream channels=%{public}u session=%{public}u",
             caller, streamInfo.channels, sessionId);
         return false;
@@ -3100,6 +3106,7 @@ bool IsAissStreamSupported(const HpaeStreamInfo &streamInfo, uint32_t sessionId,
 }
 }  // namespace
 
+<<<<<<< master
 void HpaeManager::RecreateAissForReloadedRenderer(const std::string &sinkName)
 {
     CHECK_AND_RETURN_LOG(sessionEffectManager_ != nullptr,
@@ -3147,6 +3154,8 @@ void HpaeManager::RecreateAissForReloadedRenderer(const std::string &sinkName)
         boundSessionId, AUDIO_AISS_ENHANCE_EFFECT_NAME, instance, audioConfig);
 }
 
+=======
+>>>>>>> master
 void HpaeManager::TryBindSessionEffectOnStart(uint32_t sessionId)
 {
     if (boundUid_ == -1 || sessionEffectManager_ == nullptr) {

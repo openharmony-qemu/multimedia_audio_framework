@@ -27,6 +27,11 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
+enum class SessionEffectMoveMode {
+    FULL_TEARDOWN,
+    KEEP_ATTACH_STATE_FOR_MOVE,
+};
+
 class IEffectInstance;  // forward declaration
 class IHpaeRendererManager : public HpaeStreamManager {
 public:

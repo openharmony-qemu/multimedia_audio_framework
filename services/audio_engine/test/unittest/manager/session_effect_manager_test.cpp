@@ -412,6 +412,186 @@ HWTEST_F(SessionEffectManagerTest, setEffectParameter_activeInstance_sendsSetPar
     EXPECT_TRUE(hasSetParam);
 }
 
+// Helper: count EFFECT_CMD_SET_PARAM entries in the fake call log
+static uint32_t CountSetParamCalls(const FakeAudioEffectLibEntry &fake)
+{
+    uint32_t count = 0;
+    for (const auto &entry : fake.GetCallLog()) {
+        if (entry.cmdCode == EFFECT_CMD_SET_PARAM) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+// SetEffectParameter persists params that are re-applied when the instance is recreated
+// via the IDLE/ERROR -> CreateNewInstance path.
+HWTEST_F(SessionEffectManagerTest, setEffectParameter_reappliedOnCreateNewInstance_idlePath, TestSize.Level0)
+{
+    FakeAudioEffectLibEntry fake;
+    AudioEffectLibrary lib = fake.GetLibrary();
+    auto libEntry = std::make_shared<AudioEffectLibEntry>();
+    libEntry->libraryName = "audio_aiss_enhance";
+    libEntry->audioEffectLibHandle = &lib;
+    sem_->InitEffectLibraries({libEntry});
+
+    std::shared_ptr<EffectInstance> instance;
+    ASSERT_EQ(sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_EQ(sem_->SetEffectParameter("audio_aiss_enhance",
+        static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), 0.7f),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    // Force IDLE so TryReuseExistingInstance releases+erases, then CreateNewInstance re-applies.
+    instance->SetState(EffectInstance::EffectState::IDLE);
+    fake.Reset();
+
+    std::shared_ptr<EffectInstance> instance2;
+    int32_t ret = sem_->BindSessionEffect(2, "audio_aiss_enhance", config_, instance2);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_NE(instance2, nullptr);
+    EXPECT_EQ(instance2->GetState(), EffectInstance::EffectState::ACTIVE);
+    // Exactly one re-applied SET_PARAM (the saved VOCAL_RATIO).
+    EXPECT_EQ(CountSetParamCalls(fake), 1u);
+}
+
+// LazyReleaseExpired clears saved parameters: a fresh bind after lazy release does NOT
+// re-apply any SET_PARAM.
+HWTEST_F(SessionEffectManagerTest, lazyReleaseExpired_clearsSavedParameters, TestSize.Level0)
+{
+    sem_->SetLazyReleaseTimeout(10);
+
+    FakeAudioEffectLibEntry fake;
+    AudioEffectLibrary lib = fake.GetLibrary();
+    auto libEntry = std::make_shared<AudioEffectLibEntry>();
+    libEntry->libraryName = "audio_aiss_enhance";
+    libEntry->audioEffectLibHandle = &lib;
+    sem_->InitEffectLibraries({libEntry});
+
+    std::shared_ptr<EffectInstance> instance;
+    ASSERT_EQ(sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_EQ(sem_->SetEffectParameter("audio_aiss_enhance",
+        static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), 0.7f),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    sem_->UnbindSessionEffect(1);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    ProcessDelayedTasks();
+    EXPECT_FALSE(sem_->HasPendingEffectInstance("audio_aiss_enhance"));
+
+    // After lazy release, saved params must be gone -> rebind sends no SET_PARAM.
+    fake.Reset();
+    std::shared_ptr<EffectInstance> instance2;
+    int32_t ret = sem_->BindSessionEffect(2, "audio_aiss_enhance", config_, instance2);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_EQ(CountSetParamCalls(fake), 0u);
+}
+
+// Setting the same type twice keeps only the latest value (map dedup) -> a single re-apply.
+HWTEST_F(SessionEffectManagerTest, setEffectParameter_sameTypeTwice_keepsLatest, TestSize.Level0)
+{
+    FakeAudioEffectLibEntry fake;
+    AudioEffectLibrary lib = fake.GetLibrary();
+    auto libEntry = std::make_shared<AudioEffectLibEntry>();
+    libEntry->libraryName = "audio_aiss_enhance";
+    libEntry->audioEffectLibHandle = &lib;
+    sem_->InitEffectLibraries({libEntry});
+
+    std::shared_ptr<EffectInstance> instance;
+    ASSERT_EQ(sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    auto type = static_cast<int32_t>(EffectParameterType::VOCAL_RATIO);
+    ASSERT_EQ(sem_->SetEffectParameter("audio_aiss_enhance", type, 0.3f),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_EQ(sem_->SetEffectParameter("audio_aiss_enhance", type, 0.9f),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    instance->SetState(EffectInstance::EffectState::IDLE);
+    fake.Reset();
+
+    std::shared_ptr<EffectInstance> instance2;
+    int32_t ret = sem_->BindSessionEffect(2, "audio_aiss_enhance", config_, instance2);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    // Dedup: one saved entry -> one re-applied SET_PARAM.
+    EXPECT_EQ(CountSetParamCalls(fake), 1u);
+}
+
+// FlushPendingEffectInstance: effect not in map -> ERR_EFFECT_NOT_BOUND (branch: instance == nullptr)
+HWTEST_F(SessionEffectManagerTest, flushPendingEffectInstance_noEffect_returnsNotBound, TestSize.Level0)
+{
+    int32_t ret = sem_->FlushPendingEffectInstance("nonexistent_effect");
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
+}
+
+// FlushPendingEffectInstance: PENDING_RELEASE -> calls Flush() on the underlying lib and returns SUCCESS
+HWTEST_F(SessionEffectManagerTest, flushPendingEffectInstance_pendingRelease_callsFlush, TestSize.Level0)
+{
+    FakeAudioEffectLibEntry fake;
+    AudioEffectLibrary lib = fake.GetLibrary();
+    auto libEntry = std::make_shared<AudioEffectLibEntry>();
+    libEntry->libraryName = "audio_aiss_enhance";
+    libEntry->audioEffectLibHandle = &lib;
+    sem_->InitEffectLibraries({libEntry});
+
+    std::shared_ptr<EffectInstance> instance;
+    ASSERT_EQ(sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    sem_->UnbindSessionEffect(1);
+    ASSERT_EQ(instance->GetState(), EffectInstance::EffectState::PENDING_RELEASE);
+
+    fake.Reset();
+    EXPECT_EQ(fake.GetFlushCount(), 0u);
+
+    int32_t ret = sem_->FlushPendingEffectInstance("audio_aiss_enhance");
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_EQ(fake.GetFlushCount(), 1u);  // Flush() propagated to the lib via EFFECT_CMD_FLUSH
+    // State is unchanged — Flush does not transition state
+    EXPECT_EQ(instance->GetState(), EffectInstance::EffectState::PENDING_RELEASE);
+}
+
+// FlushPendingEffectInstance: instance exists but not PENDING_RELEASE -> ERR_EFFECT_NOT_BOUND
+// (covers ACTIVE; IDLE/ERROR share the same return path)
+HWTEST_F(SessionEffectManagerTest, flushPendingEffectInstance_activeState_returnsNotBound, TestSize.Level0)
+{
+    std::shared_ptr<EffectInstance> instance;
+    ASSERT_EQ(sem_->BindSessionEffect(1, "test_effect", config_, instance),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_EQ(instance->GetState(), EffectInstance::EffectState::ACTIVE);
+
+    int32_t ret = sem_->FlushPendingEffectInstance("test_effect");
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
+}
+
+// Multiple distinct parameter types are all re-applied on CreateNewInstance.
+HWTEST_F(SessionEffectManagerTest, setEffectParameter_multipleTypes_allReapplied, TestSize.Level0)
+{
+    FakeAudioEffectLibEntry fake;
+    AudioEffectLibrary lib = fake.GetLibrary();
+    auto libEntry = std::make_shared<AudioEffectLibEntry>();
+    libEntry->libraryName = "audio_aiss_enhance";
+    libEntry->audioEffectLibHandle = &lib;
+    sem_->InitEffectLibraries({libEntry});
+
+    std::shared_ptr<EffectInstance> instance;
+    ASSERT_EQ(sem_->BindSessionEffect(1, "audio_aiss_enhance", config_, instance),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_EQ(sem_->SetEffectParameter("audio_aiss_enhance",
+        static_cast<int32_t>(EffectParameterType::VOCAL_RATIO), 0.7f),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_EQ(sem_->SetEffectParameter("audio_aiss_enhance", 2, 0.5f), // a second distinct type
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    instance->SetState(EffectInstance::EffectState::IDLE);
+    fake.Reset();
+
+    std::shared_ptr<EffectInstance> instance2;
+    int32_t ret = sem_->BindSessionEffect(2, "audio_aiss_enhance", config_, instance2);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    // Two distinct saved types -> two re-applied SET_PARAM calls.
+    EXPECT_EQ(CountSetParamCalls(fake), 2u);
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

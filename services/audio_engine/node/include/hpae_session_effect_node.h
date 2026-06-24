@@ -67,6 +67,12 @@ public:
     // Prepare for MoveStream: RewindBuffer + clear caches (manager handles node deletion)
     void PrepareMoveStream();
 
+    // Graph-switch preheat suspend/resume (idempotent, same-node only).
+    // Suspend: stops preheat thread if WARMING_UP, marks resume expected.
+    void SuspendSessionEffectPreheatForGraphSwitch();
+    // Resume: restarts preheat thread if previously suspended and still WARMING_UP.
+    void ResumeSessionEffectPreheatForGraphSwitch();
+
     // HpaePluginNode override
     uint64_t GetLatency(uint32_t sessionId = 0) override;
 
@@ -110,6 +116,7 @@ private:
 
     STATUS status_ = STATUS::IDLE; // Phase 3B: three-stage state machine
     bool closeCrossfadePending_ = false;
+    bool preheatSuspendedForGraphSwitch_ = false;
     std::shared_ptr<IEffectInstance> effectInstance_;
     std::string effectName_;
     AudioEffectConfig audioConfig_;

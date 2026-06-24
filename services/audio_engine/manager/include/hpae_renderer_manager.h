@@ -129,7 +129,8 @@ private:
     bool IsMchDevice();
     bool IsRemoteDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
-    int32_t DeleteInputSession(uint32_t sessionId);
+    int32_t DeleteInputSession(uint32_t sessionId,
+        SessionEffectMoveMode moveMode = SessionEffectMoveMode::FULL_TEARDOWN);
     bool isSplitProcessorType(HpaeProcessorType sceneType) const;
     int32_t ConnectInputSession(uint32_t sessionId);
     int32_t DisConnectInputSession(uint32_t sessionId);
@@ -188,6 +189,10 @@ private:
     void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
     void ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo, bool isReload, bool isNeedCallBack);
     void StopInterphoneSinkIfNeeded();
+    void DetachSessionEffectNodeForRefresh(uint32_t sessionId, HpaeProcessorType oldSceneType);
+    void MaterializeSessionEffectFromAttachState(uint32_t sessionId, HpaeProcessorType sceneType);
+    void HandleSessionEffectMaterializeFailure(uint32_t sessionId, int32_t ret,
+        const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
 
     DeviceType GetCurrentSinkDeviceType();
     int32_t InitOutputCluster();

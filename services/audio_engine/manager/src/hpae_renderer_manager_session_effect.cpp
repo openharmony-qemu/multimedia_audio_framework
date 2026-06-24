@@ -50,6 +50,14 @@ int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::
         auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
         if (sinkInputNode != nullptr) {
             sinkInputNode->EnsureHistoryBufferForAiss(instance->GetPreheatFrames());
+            SessionEffectAttachState st;
+            st.enabled = true;
+            st.effectName = effectName;
+            st.instance = instance;
+            st.config = config;
+            sinkInputNode->SetSessionEffectAttachState(st);
+            AUDIO_INFO_LOG("[SE::RendererManager] AttachState written sessionId=%{public}u effect=%{public}s",
+                sessionId, effectName.c_str());
         } else {
             AUDIO_WARNING_LOG("CreateSessionEffect: SinkInputNode not found for session %{public}u", sessionId);
         }
@@ -84,16 +92,62 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
     // RewindHistoryBuffer: return unconsumed data to SinkInputNode
     // Phase 2: latency=0, RewindBuffer(0) is no-op
     // Phase 3: latency>0, RewindBuffer returns data to historyBuffer
-    if (latency > 0) {
-        auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
-        if (sinkInputNode != nullptr) {
+    auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    if (sinkInputNode != nullptr) {
+        if (latency > 0) {
             sinkInputNode->RewindHistoryBuffer(latency);
         }
+        sinkInputNode->ClearSessionEffectAttachState();
+        AUDIO_INFO_LOG("[SE::RendererManager] AttachState cleared sessionId=%{public}u", sessionId);
     }
     AUDIO_INFO_LOG("[SE::RendererManager] DestroySessionEffect sessionId=%{public}u", sessionId);
     TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, it->second.state,
         OPERATION_SESSION_EFFECT_DISABLED);
     return ret;
+}
+
+void HpaeRendererManager::DetachSessionEffectNodeForRefresh(uint32_t sessionId, HpaeProcessorType oldSceneType)
+{
+    // Remove the physical SE node from the OLD cluster before a refresh-driven disconnect, WITHOUT
+    // clearing attach state, so ConnectInputSession re-materializes it in the NEW cluster.
+    auto processCluster = SafeGetMap(sceneClusterMap_, oldSceneType);
+    CHECK_AND_RETURN_LOG(processCluster != nullptr,
+        "DetachSessionEffectNodeForRefresh: old cluster not found sceneType %{public}d",
+        static_cast<int32_t>(oldSceneType));
+    CHECK_AND_RETURN_LOG(processCluster->HasSessionEffectNode(sessionId),
+        "DetachSessionEffectNodeForRefresh: no SE node for session %{public}u", sessionId);
+    // Capture lastSeStatus before destroy so materialize can restart preheat.
+    auto seNode = processCluster->GetSessionEffectNode(sessionId);
+    auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    if (seNode != nullptr && sinkInputNode != nullptr && sinkInputNode->HasSessionEffectAttachState()) {
+        auto st = sinkInputNode->GetSessionEffectAttachState();
+        if (st.has_value()) {
+            st->lastSeStatus = static_cast<int32_t>(seNode->GetStatus());
+            sinkInputNode->SetSessionEffectAttachState(st.value());
+        }
+    }
+    uint64_t latency = 0;
+    int32_t ret = processCluster->DestroySessionEffectNode(sessionId, latency);
+    CHECK_AND_RETURN_LOG(ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS),
+        "DetachSessionEffectNodeForRefresh: destroy failed session %{public}u ret %{public}d", sessionId, ret);
+    AUDIO_INFO_LOG("[SE::RendererManager] Detached SE node for refresh sessionId=%{public}u oldSceneType=%{public}d",
+        sessionId, static_cast<int32_t>(oldSceneType));
+    CHECK_AND_RETURN(latency > 0 && sinkInputNode != nullptr);
+    sinkInputNode->RewindHistoryBuffer(latency);
+}
+
+void HpaeRendererManager::HandleSessionEffectMaterializeFailure(uint32_t sessionId, int32_t ret,
+    const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode)
+{
+    // Permanent materialize failure: tear down any partial node, clear attach state, emit DISABLED.
+    auto sessionIt = sessionNodeMap_.find(sessionId);
+    HpaeSessionState sessionState = (sessionIt != sessionNodeMap_.end())
+        ? sessionIt->second.state : HPAE_SESSION_NEW;
+    sinkInputNode->ClearSessionEffectAttachState();
+    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionState,
+        OPERATION_SESSION_EFFECT_DISABLED);
+    AUDIO_WARNING_LOG("[SE::RendererManager] Materialize failure permanent, attach-state cleared, "
+        "sessionId=%{public}u ret=%{public}d", sessionId, ret);
 }
 
 bool HpaeRendererManager::HasSessionEffect(uint32_t sessionId) const

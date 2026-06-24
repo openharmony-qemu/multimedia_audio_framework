@@ -73,6 +73,9 @@ private:
     HpaeManager &hpaeManager_;
     std::map<std::string, std::shared_ptr<EffectInstance>> effectInstanceMap_;
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectLibMap_;
+    // Persisted (type, value) pairs per effectName; re-applied on CreateNewInstance,
+    // cleared on LazyReleaseExpired. Survives IDLE/ERROR -> recreate cycles.
+    std::map<std::string, std::map<int32_t, float>> savedEffectParameters_;
     std::shared_ptr<bool> alive_;
     uint64_t lazyReleaseTimeoutMs_ = 3000;
     const AudioEffectLibrary *testLib_ = nullptr;

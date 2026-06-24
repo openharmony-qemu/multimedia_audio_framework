@@ -344,7 +344,8 @@ void HpaeRendererManager::SwitchBypassState(const std::shared_ptr<HpaeSinkInputN
 {
     if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
         processClusterDecision == USE_NONE_PROCESSCLUSTER) {
-        AUDIO_INFO_LOG("sessionId: %{public}u no need to refresh", nodeInfo.sessionId);
+        AUDIO_INFO_LOG("sessionId: %{public}u real->NONE", nodeInfo.sessionId);
+        DetachSessionEffectNodeForRefresh(nodeInfo.sessionId, node->connectedProcessorType_);
         DisconnectNodeFromEffectChain(nodeInfo);
     } else if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
         processClusterDecision != USE_NONE_PROCESSCLUSTER &&
@@ -382,6 +383,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
     } else if (node->connectedProcessorType_ != GetProcessorType(nodeInfo.sessionId) &&
         node->GetState() == HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("sessionId: %{public}u need to refresh %{public}d", nodeInfo.sessionId, processClusterDecision);
+        DetachSessionEffectNodeForRefresh(nodeInfo.sessionId, node->connectedProcessorType_);
         DisConnectInputSession(nodeInfo.sessionId);
         ConnectInputSession(nodeInfo.sessionId);
     }
@@ -446,7 +448,8 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
+int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId,
+    SessionEffectMoveMode moveMode)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSession");
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
@@ -456,10 +459,13 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
     if (sessionIt != sessionNodeMap_.end()) {
         sessionState = sessionIt->second.state;
     }
-    if (HasSessionEffect(sessionId)) {
-        AUDIO_INFO_LOG("[SE::RendererManager] DeleteInputSession sessionId=%{public}u", sessionId);
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionState,
-            OPERATION_SESSION_EFFECT_DISABLED);
+    if (moveMode == SessionEffectMoveMode::FULL_TEARDOWN) {
+        if (HasSessionEffect(sessionId)) {
+            AUDIO_INFO_LOG("[SE::RendererManager] DeleteInputSession sessionId=%{public}u", sessionId);
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionState,
+                OPERATION_SESSION_EFFECT_DISABLED);
+        }
+        sinkInputNode->ClearSessionEffectAttachState();
     }
     DeleteProcessCluster(sessionId);
 #ifdef ENABLE_HIDUMP_DFX
@@ -621,6 +627,50 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
     sceneClusterMap_[sceneType]->SetLoudnessGain(sessionId, sinkInputNode->GetLoudnessGain());
 }
 
+void HpaeRendererManager::MaterializeSessionEffectFromAttachState(uint32_t sessionId, HpaeProcessorType sceneType)
+{
+    auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_LOG(sinkInputNode != nullptr, "sessionId %{public}u sinkInputNode is null", sessionId);
+    if (!sinkInputNode->HasSessionEffectAttachState()) {
+        return;
+    }
+    auto st = sinkInputNode->GetSessionEffectAttachState();
+    if (!st.has_value() || !st->enabled) {
+        return;
+    }
+    auto inst = st->instance.lock();
+    if (!inst) {
+        AUDIO_WARNING_LOG("[SE::RendererManager] AttachState instance expired sessionId=%{public}u effect=%{public}s",
+            sessionId, st->effectName.c_str());
+        HandleSessionEffectMaterializeFailure(sessionId,
+            static_cast<int32_t>(SessionEffectErrCode::ERR_INVALID_PARAMETER), sinkInputNode);
+        return;
+    }
+    auto processCluster = SafeGetMap(sceneClusterMap_, sceneType);
+    CHECK_AND_RETURN_LOG(processCluster != nullptr,
+        "[SE::RendererManager] AttachState cluster not found sessionId=%{public}u sceneType=%{public}d",
+        sessionId, static_cast<int32_t>(sceneType));
+    int32_t ret = processCluster->CreateSessionEffectNode(sessionId, st->effectName, inst, st->config);
+    if (ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS) ||
+        ret == static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND)) {
+        // Restart preheat if previous incarnation was active.
+        if (st->lastSeStatus >= static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP)) {
+            auto seNode = processCluster->GetSessionEffectNode(sessionId);
+            if (seNode != nullptr) {
+                seNode->StartEffect();
+            }
+        }
+        auto sessionIt = sessionNodeMap_.find(sessionId);
+        HpaeSessionState sessionState = (sessionIt != sessionNodeMap_.end())
+            ? sessionIt->second.state : HPAE_SESSION_NEW;
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionState,
+            OPERATION_SESSION_EFFECT_ENABLED);
+        AUDIO_INFO_LOG("[SE::RendererManager] AttachState materialized+ENABLED sessionId=%{public}u", sessionId);
+    } else {
+        HandleSessionEffectMaterializeFailure(sessionId, ret, sinkInputNode);
+    }
+}
+
 void HpaeRendererManager::ConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
 {
     CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
@@ -638,6 +688,9 @@ void HpaeRendererManager::ConnectInputCluster(uint32_t sessionId, HpaeProcessorT
     if (sessionGainNode != nullptr) {
         sessionGainNode->ResetVolume();
     }
+    // Materialize physical SE node from attach-state (survives reload/disconnect).
+    // CreateSessionEffectNode has a duplicate-guard, so calling it when the node already exists is safe.
+    MaterializeSessionEffectFromAttachState(sessionId, sceneType);
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
     sinkInputNodeMap_[sessionId]->connectedProcessorType_ =
         (sceneClusterMap_[sceneType] == SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT)) ?
@@ -692,7 +745,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
         CHECK_AND_CONTINUE_LOG(SafeGetMap(sinkInputNodeMap_, it),
             "sessionid: %{public}u can not found in sinkInputNodeMap", it);
         TriggerStreamState(it, sinkInputNodeMap_[it]);
-        DeleteInputSession(it);
+        DeleteInputSession(it, SessionEffectMoveMode::KEEP_ATTACH_STATE_FOR_MOVE);
     }
     HILOG_COMM_INFO("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         GetEncryptStr(idStr).c_str(), GetEncryptStr(name).c_str(), moveType);
@@ -749,7 +802,7 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
     }
     std::shared_ptr<HpaeSinkInputNode> inputNode = sinkInputNodeMap_[sessionId];
     TriggerStreamState(sessionId, inputNode);
-    DeleteInputSession(sessionId);
+    DeleteInputSession(sessionId, SessionEffectMoveMode::KEEP_ATTACH_STATE_FOR_MOVE);
     UpdateClusterStreamInfo(sceneType);
     std::string name = sinkName;
     TriggerCallback(MOVE_SINK_INPUT, inputNode, name);

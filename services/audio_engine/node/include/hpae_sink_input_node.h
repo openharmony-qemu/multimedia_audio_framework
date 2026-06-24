@@ -17,17 +17,30 @@
 #define HPAE_SINK_INPUT_NODE_H
 #include <memory>
 #include <atomic>
+#include <optional>
+#include <string>
 #include "hpae_msg_channel.h"
 #include "hpae_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_info.h"
 #include "i_renderer_stream.h"
+#include "i_effect_instance.h"
 #include "linear_pos_time_model.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 typedef void (*AppCallbackFunc)(void *pHndl);
+
+// Attach-state for session-bound effect (e.g. AISS).
+// The manager owns the IEffectInstance lifecycle; the node holds a weak reference.
+struct SessionEffectAttachState {
+    bool enabled = false;
+    std::string effectName;
+    std::weak_ptr<IEffectInstance> instance;
+    AudioEffectConfig config;
+    int32_t lastSeStatus = 0;   // HpaeSessionEffectNode::STATUS as int. 0 = IDLE/unknown.
+};
 
 class HpaeSinkInputNode : public OutputNode<HpaePcmBuffer *> {
 public:
@@ -73,6 +86,10 @@ public:
     void SetDirect(bool isDirect);
     bool GetDirect() const noexcept;
     bool GetIsNonStandardSampleRate() const;
+    void SetSessionEffectAttachState(const SessionEffectAttachState &state);
+    void ClearSessionEffectAttachState();
+    bool HasSessionEffectAttachState() const;
+    std::optional<SessionEffectAttachState> GetSessionEffectAttachState() const;
     void SetNodeInfo(HpaeNodeInfo& nodeInfo) override;
 
     bool isConnected_ = false;
@@ -104,6 +121,7 @@ private:
     bool isLowLatency_ = false;
     bool isDirect_ = false;
     bool isNonStandardSampleRate_ = false;
+    std::optional<SessionEffectAttachState> sessionEffectAttachState_;
 };
 
 }  // namespace HPAE
