@@ -41,7 +41,6 @@ public:
 
     int32_t PrepareOfflineEffectChain(std::shared_ptr<AudioSharedMemory> &inBuffer,
         std::shared_ptr<AudioSharedMemory> &outBuffer) override;
-
     int32_t ProcessOfflineEffectChain(uint32_t inSize, uint32_t outSize) override;
 
     int32_t ReleaseOfflineEffectChain() override;

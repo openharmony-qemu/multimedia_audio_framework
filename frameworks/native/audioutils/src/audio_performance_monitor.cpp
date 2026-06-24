@@ -21,13 +21,13 @@
 #include "xperf_adapter.h"
 #include <memory>
 #include <string>
+#include <sstream>
 #include "audio_errors.h"
 #include "media_monitor_manager.h"
 #include "audio_common_log.h"
 #include "audio_utils.h"
 #include "audio_utils_c.h"
 #include "audio_bundle_manager.h"
-#include "audio_resource_service.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83

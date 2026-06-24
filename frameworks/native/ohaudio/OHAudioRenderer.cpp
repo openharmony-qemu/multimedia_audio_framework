@@ -1171,9 +1171,9 @@ int32_t OHAudioRenderer::SetIndependentAudioSessionStrategy(
     return audioRenderer_->SetIndependentAudioSessionStrategy(strategy, behavior);
 }
 
-const AudioRenderer *OHAudioRenderer::GetAudioRenderer() const
+std::shared_ptr<AudioRenderer> OHAudioRenderer::GetAudioRenderer()
 {
-    return audioRenderer_.get();
+    return audioRenderer_;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

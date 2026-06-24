@@ -574,7 +574,7 @@ HWTEST_F(SharedAudioRendererWrapperAiut, SharedAudioRendererWrapper_GetRendererD
     AIUT_INFO_LOG("entry");
     auto wrapper = CreateTestWrapper();
     uint32_t key = wrapper->GetRendererDebugKey();
-    AIUT_EXPECT_EQ_INFO_LOG(key, INVALID_DEBUGKEY, "debug key should be 0, key=%u", key);
+    AIUT_EXPECT_EQ_INFO_LOG(key, 0, "debug key should be 0, key=%u", key);
 }
 
 /**

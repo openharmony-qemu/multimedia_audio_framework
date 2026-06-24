@@ -74,10 +74,10 @@ idl_gen_interface("audio_service_idl_interface") {
     "IStandardAudioService.idl",
   ]
   if (audio_framework_feature_offline_effect) {
-    sources += [ "IIpcOfflineStream.idl"]
+    sources += [ "IIpcOfflineStream.idl" ]
   }
   sources_callback = []
-  sources_common = [ "AudioServiceTypes.idl" ]
+  sources_common = [ "AudioServiceTypes.idl"]
 
   log_tag = "AudioServiceIdl"
   hitrace = "HITRACE_TAG_ZAUDIO"
