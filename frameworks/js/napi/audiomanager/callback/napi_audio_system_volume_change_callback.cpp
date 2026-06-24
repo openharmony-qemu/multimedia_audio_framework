@@ -114,6 +114,7 @@ void NapiAudioSystemVolumeChangeCallback::SafeJsCallbackSystemVolumeChangeWork(
         static_cast<AudioSystemVolumeChangeJsCallback*>(event),
         [](AudioSystemVolumeChangeJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
@@ -145,9 +146,10 @@ void NapiAudioSystemVolumeChangeCallback::SystemVolumeChangeTsfnFinalize(napi_en
     AUDIO_INFO_LOG("SystemVolumeChangeTsfnFinalize: CleanUp is removed.");
     NapiAudioSystemVolumeChangeCallback *context = reinterpret_cast<NapiAudioSystemVolumeChangeCallback*>(data);
     napi_remove_env_cleanup_hook(env, NapiAudioSystemVolumeChangeCallback::CleanUp, context);
-    if (context->GetTsfn() != nullptr) {
+    if (context != nullptr && context->GetTsfn() != nullptr) {
         AUDIO_INFO_LOG("SystemVolumeChangeTsfnFinalize: context is released.");
         delete context;
+        context = nullptr;
     }
 }
 

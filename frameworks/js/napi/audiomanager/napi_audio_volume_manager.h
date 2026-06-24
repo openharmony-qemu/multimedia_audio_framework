@@ -141,7 +141,6 @@ private:
     static napi_value GetActiveStreamsVolumeInfo(napi_env env, napi_callback_info info);
 
     AudioSystemManager *audioSystemMngr_;
-
     int32_t cachedClientId_ = -1;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
     std::shared_ptr<VolumeKeyEventCallback> volumeDegreeCallbackNapi_ = nullptr;
