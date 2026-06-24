@@ -3165,11 +3165,11 @@ HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_005, TestSize.Level0)
 /**
  * @tc.name  : DeleteProcessCluster
  * @tc.type  : FUNC
- * @tc.number: DeleteProcessCluster_001
+ * @tc.number: DeleteProcessCluster_002
  * @tc.desc  : connectedProcessorType_ is UNCONNECTED (Pause cleared it) and a cluster still holds the
  *             session's nodes -> the recovery loop resolves the real sceneType and cleanup completes.
  */
-HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_001, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_002, TestSize.Level0)
 {
     uint32_t sessionId = 10006;
     HpaeSinkInfo sinkInfo;
@@ -3212,12 +3212,12 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_001, TestSize.Level0)
 /**
  * @tc.name  : DeleteProcessCluster
  * @tc.type  : FUNC
- * @tc.number: DeleteProcessCluster_002
+ * @tc.number: DeleteProcessCluster_003
  * @tc.desc  : connectedProcessorType_ is UNCONNECTED and no cluster holds the session's nodes -> the
  *             recovery loop exhausts without matching, sceneType stays UNCONNECTED, cleanup is skipped
  *             gracefully and no crash.
  */
-HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_002, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_003, TestSize.Level0)
 {
     uint32_t sessionId = 10007;
     HpaeSinkInfo sinkInfo;
@@ -3251,11 +3251,11 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_002, TestSize.Level0)
 /**
  * @tc.name  : DeleteProcessCluster
  * @tc.type  : FUNC
- * @tc.number: DeleteProcessCluster_003
+ * @tc.number: DeleteProcessCluster_004
  * @tc.desc  : connectedProcessorType_ is still the real scene (no prior Pause) -> the recovery branch is
  *             skipped and DeleteProcessCluster cleans up via the direct path.
  */
-HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_003, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_004, TestSize.Level0)
 {
     uint32_t sessionId = 10008;
     HpaeSinkInfo sinkInfo;
