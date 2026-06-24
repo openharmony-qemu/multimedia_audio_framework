@@ -29,7 +29,6 @@
 #include "audio_connected_device.h"
 #include "audio_volume_manager.h"
 #include "stream_dfx_manager.h"
-#include <unistd.h>
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -739,12 +738,12 @@ AudioInterruptResult AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
         JUDGE_AND_INFO_LOG(zoneId != 0, "active interrupt of zone %{public}d", zoneId);
         std::lock_guard<std::mutex> lock(zoneMutex_);
         CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(zoneClientManager_ != nullptr && interruptService_ != nullptr, result,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(audioInterrupt.uid,
                 isRecord ? RECORD_INTERRUPT_START_NULL_POINTER : INTERRUPT_START_NULL_POINTER,
                 "zoneClientManager or interruptService is nullptr", false),
             HILOG_COMM_ERROR("[ActivateAudioInterrupt]zoneClientManager or interruptService is nullptr"));
         CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(CheckIsZoneValid(zoneId), result,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(audioInterrupt.uid,
                 isRecord ? RECORD_INTERRUPT_START_INVALID_PARAM : INTERRUPT_START_INVALID_PARAM,
                 "zone id is not valid", false),
             HILOG_COMM_ERROR("[ActivateAudioInterrupt]zone id %{public}d is not valid", zoneId));
@@ -752,7 +751,7 @@ AudioInterruptResult AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(tmp != nullptr, result,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(audioInterrupt.uid,
             isRecord ? RECORD_INTERRUPT_START_NULL_POINTER : INTERRUPT_START_NULL_POINTER,
             "interruptService_ tmp is nullptr", false),
         HILOG_COMM_ERROR("[ActivateAudioInterrupt]interruptService_ tmp is nullptr"));
@@ -779,12 +778,12 @@ AudioInterruptResult AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
         JUDGE_AND_INFO_LOG(zoneId != 0, "deactive interrupt of zone %{public}d", zoneId);
         std::lock_guard<std::mutex> lock(zoneMutex_);
         CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(zoneClientManager_ != nullptr && interruptService_ != nullptr, result,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(audioInterrupt.uid,
                 isRecord ? RECORD_INTERRUPT_STOP_NULL_POINTER : INTERRUPT_STOP_NULL_POINTER,
                 "zoneClientManager or interruptService is nullptr", false),
             HILOG_COMM_ERROR("[DeactivateAudioInterrupt]zoneClientManager or interruptService is nullptr"));
         CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(CheckIsZoneValid(zoneId), result,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(audioInterrupt.uid,
                 isRecord ? RECORD_INTERRUPT_STOP_INVALID_PARAM : INTERRUPT_STOP_INVALID_PARAM,
                 "zone id is not valid", false),
             HILOG_COMM_ERROR("[DeactivateAudioInterrupt]zone id %{public}d is not valid", zoneId));
@@ -792,7 +791,7 @@ AudioInterruptResult AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(tmp != nullptr, result,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(audioInterrupt.uid,
             isRecord ? RECORD_INTERRUPT_STOP_NULL_POINTER : INTERRUPT_STOP_NULL_POINTER,
             "interruptService_ tmp is nullptr", false),
         HILOG_COMM_ERROR("[DeactivateAudioInterrupt]interruptService_ tmp is nullptr"));
@@ -1073,18 +1072,18 @@ AudioInterruptResult AudioZoneService::ActivateAudioSession(const int32_t zoneId
         JUDGE_AND_INFO_LOG(zoneId != 0, "active audio session of zone %{public}d", zoneId);
         std::lock_guard<std::mutex> lock(zoneMutex_);
         CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(zoneClientManager_ != nullptr && interruptService_ != nullptr, result,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(callerUid,
                 SESSION_START_NULL_POINTER, "zoneClientManager or interruptService is nullptr", false),
             HILOG_COMM_ERROR("[ActivateAudioSession]zoneClientManager or interruptService is nullptr"));
         CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(CheckIsZoneValid(zoneId), result,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(callerUid,
                 SESSION_START_INVALID_PARAM, "zone id is not valid", false),
             HILOG_COMM_ERROR("[ActivateAudioSession]zone id %{public}d is not valid", zoneId));
         tmp = interruptService_;
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(tmp != nullptr, result,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(callerUid,
             SESSION_START_NULL_POINTER, "interruptService_ tmp is nullptr", false),
         HILOG_COMM_ERROR("[ActivateAudioSession]interruptService_ tmp is nullptr"));
     
@@ -1105,18 +1104,18 @@ int32_t AudioZoneService::DeactivateAudioSession(int32_t zoneId, const int32_t c
         JUDGE_AND_INFO_LOG(zoneId != 0, "deactive audio session of zone %{public}d", zoneId);
         std::lock_guard<std::mutex> lock(zoneMutex_);
         CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(zoneClientManager_ != nullptr && interruptService_ != nullptr, ERROR,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
                 SESSION_STOP_NULL_POINTER, "zoneClientManager or interruptService is nullptr", false),
             HILOG_COMM_ERROR("[DeactivateAudioSession]zoneClientManager or interruptService is nullptr"));
         CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(CheckIsZoneValid(zoneId), ERROR,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
                 SESSION_STOP_INVALID_PARAM, "zone id is not valid", false),
             HILOG_COMM_ERROR("[DeactivateAudioSession]zone id %{public}d is not valid", zoneId));
         tmp = interruptService_;
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(tmp != nullptr, ERROR,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             SESSION_STOP_NULL_POINTER, "interruptService_ tmp is nullptr", false),
         HILOG_COMM_ERROR("[DeactivateAudioSession]interruptService_ tmp is nullptr"));
     

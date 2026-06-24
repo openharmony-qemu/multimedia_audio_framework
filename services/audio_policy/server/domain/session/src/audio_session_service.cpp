@@ -26,7 +26,6 @@
 #include "ipc_skeleton.h"
 #include "audio_session_device_info.h"
 #include "stream_dfx_manager.h"
-#include <unistd.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -87,7 +86,7 @@ int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const
     auto audioSession = CreateAudioSession(callerPid, strategy, callerUid);
     if (audioSession == nullptr) {
         AUDIO_ERR_LOG("Create audio session fail, pid: %{public}d!", callerPid);
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(callerUid,
             SESSION_START_OPERATION_FAILED, "Create audio session fail", false);
         return ERROR;
     }
@@ -132,7 +131,7 @@ int32_t AudioSessionService::DeactivateAudioSessionInternal(const int32_t caller
     if (session == sessionMap_.end()) {
         // The audio session of the callerPid is not existed or has been released.
         AUDIO_ERR_LOG("The audio seesion of pid %{public}d is not found!", callerPid);
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             SESSION_START_ILLEGAL_STATE, "The audio session is not found", false);
         return ERR_ILLEGAL_STATE;
     }
@@ -154,8 +153,6 @@ bool AudioSessionService::IsAudioSessionActivated(const int32_t callerPid)
     if (session == sessionMap_.end()) {
         // The audio session of the callerPid is not existed or has been released.
         AUDIO_WARNING_LOG("The audio seesion of pid %{public}d is not found!", callerPid);
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            SESSION_QUERY_ILLEGAL_STATE, "The audio session is not found", false);
         return false;
     }
 
@@ -216,7 +213,7 @@ int32_t AudioSessionService::SetAudioSessionScene(int32_t callerPid, AudioSessio
     auto audioSession = CreateAudioSession(callerPid, strategy, callerUid);
     if (audioSession == nullptr) {
         AUDIO_ERR_LOG("Create audio session fail, pid: %{public}d!", callerPid);
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(callerUid,
             SESSION_CONFIG_OPERATION_FAILED, "Create audio session fail", false);
         return ERROR;
     }
@@ -377,7 +374,7 @@ AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid
         fakeAudioInterrupt.behaviorFlags_.pauseWhenInterruptFlag = sessionBehaviors.pauseWhenInterruptFlag;
     } else {
         AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(fakeAudioInterrupt.uid,
             SESSION_QUERY_ILLEGAL_STATE, "audio session not found when generate fake interrupt", false);
     }
 
@@ -714,18 +711,18 @@ int32_t AudioSessionService::EnableMuteSuggestionWhenMixWithOthers(int32_t calle
 
     auto session = sessionMap_.find(callerPid);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(session != sessionMap_.end(), ERROR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             SESSION_CONFIG_ILLEGAL_STATE, "The audio session has not been created", false),
         "The audio session of pid %{public}d has not been created", callerPid);
 
     std::shared_ptr<AudioSession> audioSession = session->second;
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioSession->IsSceneParameterSet(), ERROR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             SESSION_CONFIG_ILLEGAL_STATE, "The audio session not set audio session scene", false),
         "The audio session of pid %{public}d not set audio session scene", callerPid);
 
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!audioSession->IsActivated(), ERROR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             SESSION_CONFIG_ILLEGAL_STATE, "mute suggestion must be set before activating the audio session", false),
         "The audio session of pid %{public}d mute suggestion must be set before activating the audio session",
         callerPid);
@@ -766,7 +763,7 @@ int32_t AudioSessionService::SetAudioSessionCapturerMuteHint(int32_t callerPid, 
         runningCapturerStreamIds.emplace_back(static_cast<uint32_t>(capturerInfo->sessionId));
     }
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!runningCapturerStreamIds.empty(), ERROR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             SESSION_CONFIG_INVALID_PARAM, "no running capturer stream", false),
         "no running capturer stream for pid %{public}d", callerPid);
 
@@ -795,7 +792,7 @@ int32_t AudioSessionService::SetAudioSessionBehavior(const int32_t callerPid,
     auto audioSession = CreateAudioSession(callerPid, strategy, callerUid);
     if (audioSession == nullptr) {
         AUDIO_ERR_LOG("Create audio session fail, pid: %{public}d!", callerPid);
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(callerUid,
             SESSION_CONFIG_OPERATION_FAILED, "Create audio session fail", false);
         return ERROR;
     }

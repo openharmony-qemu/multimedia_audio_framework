@@ -2628,15 +2628,24 @@ HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_ErrorReturn_002, TestSize.Level
 {
     HpaeNodeInfo nodeInfo;
     PrepareNodeInfo(nodeInfo);
+    nodeInfo.deviceClass = "remote";
     auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
 
     auto mockSink = std::make_shared<MockAudioRenderSink>();
     hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+    
+    EXPECT_CALL(*mockSink, Init(_)).WillOnce(Return(SUCCESS));
+    IAudioSinkAttr attr;
+    attr.adapterName = "primary";
+    int32_t result = hpaeSinkOutputNode->RenderSinkInit(attr);
+    EXPECT_EQ(result, SUCCESS);
 
-    EXPECT_CALL(*mockSink, Start())
-        .WillOnce(Return(ERR_OPERATION_FAILED));
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
 
-    int32_t result = hpaeSinkOutputNode->RenderSinkStart();
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
+    EXPECT_CALL(*mockSink, Start()).WillOnce(Return(ERR_OPERATION_FAILED));
+
+    result = hpaeSinkOutputNode->RenderSinkStart();
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 }
 

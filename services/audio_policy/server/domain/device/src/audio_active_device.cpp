@@ -185,6 +185,180 @@ void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDev
     SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor, streamUsage, USER_NOT_SELECT_SLE);
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioActiveDevice::BuildWirelessDeviceNeedsBothDirections(
+    const std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> &outputPreviewResults,
+    const std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> &inputPreviewResults)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> wirelessDeviceNeeds;
+    // 1. Check output direction — iterate ALL devices in the output preview vector
+    for (const auto &entry : outputPreviewResults) {
+        const auto &devices = entry.second;
+        for (const auto &device : devices) {
+            if (device != nullptr && (IsBtDevice(device->deviceType_) || IsNearlinkDevice(device->deviceType_))) {
+                wirelessDeviceNeeds.push_back(device);
+            }
+        }
+    }
+    // 2. Check input direction
+    for (const auto &entry : inputPreviewResults) {
+        const auto &device = entry.second;
+        if (device != nullptr && (IsBtDevice(device->deviceType_) || IsNearlinkDevice(device->deviceType_))) {
+            wirelessDeviceNeeds.push_back(device);
+        }
+    }
+    return wirelessDeviceNeeds;
+}
+
+bool AudioActiveDevice::IsDeviceInWirelessNeeds(std::shared_ptr<AudioDeviceDescriptor> device,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &needs)
+{
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is nullptr");
+    for (const auto &need : needs) {
+        CHECK_AND_CONTINUE(need != nullptr);
+        // BT devices: use IsSameBtDeviceDescPtr (allows cross-direction match by MAC)
+        if (device->IsSameBtDeviceDescPtr(need)) {
+            return true;
+        }
+        // NearLink devices: same MAC + same networkId + both are NearLink type
+        if (IsNearlinkDevice(device->deviceType_) && IsNearlinkDevice(need->deviceType_) &&
+            device->macAddress_ == need->macAddress_ &&
+            device->networkId_ == need->networkId_) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void AudioActiveDevice::DecideWirelessDeviceActionBasedOnPreview(
+    const std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> &outputPreviewResults,
+    const std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> &inputPreviewResults,
+    std::shared_ptr<AudioDeviceDescriptor> newSelectedDevice,
+    StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_LOG(newSelectedDevice != nullptr, "newSelectedDevice is nullptr");
+    auto wirelessDeviceNeeds = BuildWirelessDeviceNeedsBothDirections(outputPreviewResults, inputPreviewResults);
+
+    auto currentBtDevices = AudioRouterSelectStrategy::GetInstance().FindCurrentOutputDevice(
+        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_NEARLINK, DEVICE_TYPE_BLUETOOTH_A2DP});
+
+    for (auto &item : currentBtDevices) {
+        CHECK_AND_CONTINUE_LOG(item != nullptr, "item is nullptr");
+        bool isSameDevice = item->IsSameDeviceDescPtr(newSelectedDevice) ||
+            item->IsSameBtDeviceDesc(newSelectedDevice);
+        CHECK_AND_CONTINUE(!isSameDevice);
+        DecideActionForSingleWirelessOutputDevice(item, streamUsage, wirelessDeviceNeeds);
+    }
+
+    NotifyNewDeviceSelected(newSelectedDevice, streamUsage);
+}
+
+void AudioActiveDevice::DecideActionForSingleWirelessOutputDevice(
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+    StreamUsage streamUsage,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &wirelessDeviceNeeds)
+{
+    bool deviceStillNeeded = IsDeviceInWirelessNeeds(deviceDesc, wirelessDeviceNeeds);
+    CHECK_AND_RETURN(!deviceStillNeeded);
+    switch (deviceDesc->deviceType_) {
+#ifdef BLUETOOTH_ENABLE
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            Bluetooth::SendUserSelectionEvent(deviceDesc->deviceType_,
+                deviceDesc->macAddress_, USER_NOT_SELECT_SLE);
+            break;
+#endif
+        case DEVICE_TYPE_NEARLINK:
+            SleAudioDeviceManager::GetInstance().SendUserSelection(*deviceDesc,
+                streamUsage, USER_NOT_SELECT_SLE);
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioActiveDevice::NotifyNewDeviceSelected(
+    std::shared_ptr<AudioDeviceDescriptor> newSelectedDevice,
+    StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_LOG(newSelectedDevice != nullptr, "newSelectedDevice is nullptr");
+#ifdef BLUETOOTH_ENABLE
+    if (newSelectedDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
+        newSelectedDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        Bluetooth::SendUserSelectionEvent(
+            newSelectedDevice->deviceType_, newSelectedDevice->macAddress_, USER_SELECT_SLE);
+    }
+#endif
+    if (newSelectedDevice->deviceType_ == DEVICE_TYPE_NEARLINK) {
+        SleAudioDeviceManager::GetInstance().SendUserSelection(*newSelectedDevice,
+            streamUsage, USER_SELECT_SLE);
+    }
+}
+
+void AudioActiveDevice::DecideWirelessDeviceActionForInputBasedOnPreview(
+    const std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> &outputPreviewResults,
+    const std::map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>> &inputPreviewResults,
+    std::shared_ptr<AudioDeviceDescriptor> newSelectedDevice,
+    SourceType sourceType)
+{
+    CHECK_AND_RETURN_LOG(newSelectedDevice != nullptr, "newSelectedDevice is nullptr");
+    auto wirelessDeviceNeeds = BuildWirelessDeviceNeedsBothDirections(outputPreviewResults, inputPreviewResults);
+
+    auto currentInputDevices = AudioRouterSelectStrategy::GetInstance().FindCurrentInputDevice(
+        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_NEARLINK_IN, DEVICE_TYPE_BLUETOOTH_A2DP_IN});
+
+    for (auto &item : currentInputDevices) {
+        CHECK_AND_CONTINUE_LOG(item != nullptr, "item is nullptr");
+        bool isSameDevice = item->IsSameDeviceDescPtr(newSelectedDevice) ||
+            item->IsSameBtDeviceDesc(newSelectedDevice);
+        CHECK_AND_CONTINUE(!isSameDevice);
+        DecideActionForSingleWirelessInputDevice(item, sourceType, wirelessDeviceNeeds);
+    }
+
+    NotifyNewInputDeviceSelected(newSelectedDevice, sourceType);
+}
+
+void AudioActiveDevice::DecideActionForSingleWirelessInputDevice(
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc,
+    SourceType sourceType,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &wirelessDeviceNeeds)
+{
+    bool deviceStillNeeded = IsDeviceInWirelessNeeds(deviceDesc, wirelessDeviceNeeds);
+    CHECK_AND_RETURN(!deviceStillNeeded);
+    switch (deviceDesc->deviceType_) {
+#ifdef BLUETOOTH_ENABLE
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP_IN:
+            Bluetooth::SendUserSelectionEvent(deviceDesc->deviceType_,
+                deviceDesc->macAddress_, USER_NOT_SELECT_SLE);
+            break;
+#endif
+        case DEVICE_TYPE_NEARLINK_IN:
+            SleAudioDeviceManager::GetInstance().SendUserSelection(*deviceDesc,
+                sourceType, USER_NOT_SELECT_SLE);
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioActiveDevice::NotifyNewInputDeviceSelected(
+    std::shared_ptr<AudioDeviceDescriptor> newSelectedDevice,
+    SourceType sourceType)
+{
+    CHECK_AND_RETURN_LOG(newSelectedDevice != nullptr, "newSelectedDevice is nullptr");
+#ifdef BLUETOOTH_ENABLE
+    if (newSelectedDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
+        newSelectedDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+        Bluetooth::SendUserSelectionEvent(newSelectedDevice->deviceType_,
+            newSelectedDevice->macAddress_, USER_SELECT_SLE);
+    }
+#endif
+    if (newSelectedDevice->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
+        SleAudioDeviceManager::GetInstance().SendUserSelection(*newSelectedDevice,
+            sourceType, USER_SELECT_SLE);
+    }
+}
+
 void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
     SourceType sourceType)
 {
@@ -341,10 +515,11 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
         desc->newDeviceDescs_.front()->hasStreamRunning_ = desc->IsRunning() ? true :
             desc->newDeviceDescs_.front()->hasStreamRunning_;
         AUDIO_INFO_LOG("session: %{public}d, calleruid: %{public}d, appuid: %{public}d " \
-            "usage:%{public}d devices:%{public}s, status:%{public}d",
+            "usage:%{public}d devices:%{public}s, status:%{public}d, privacyType:%{public}d",
             desc->sessionId_, desc->callerUid_, desc->appInfo_.appUid,
             desc->rendererInfo_.streamUsage, desc->GetNewDevicesInfo().c_str(),
-            desc->newDeviceDescs_.front()->hasStreamRunning_);
+            desc->newDeviceDescs_.front()->hasStreamRunning_,
+            desc->newDeviceDescs_.front()->GetDevicePrivacyType());
         UpdateVolumeTypeDeviceMap(desc);
         UpdateStreamUsageDeviceMap(desc);
 

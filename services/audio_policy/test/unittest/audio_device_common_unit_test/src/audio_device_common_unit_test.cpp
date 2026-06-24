@@ -959,5 +959,19 @@ HWTEST_F(AudioDeviceCommonUnitTest, ExcludeIndirectUsbArmInput_DisconnectUnexclu
     strategy.UnexcludeDevices(unexcludeDescs, ALL_INPUT_DEVICES);
     EXPECT_FALSE(strategy.IsDeviceExcluded(registeredDesc, MEDIA_INPUT_DEVICES));
 }
+
+HWTEST_F(AudioDeviceCommonUnitTest, UpdateDevicePrivacyType_001, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceCategory_ = CATEGORY_DEFAULT;
+    audioDeviceCommon.UpdateDevicePrivacyType(desc);
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    audioDeviceCommon.UpdateDevicePrivacyType(desc);
+    EXPECT_EQ(desc->GetDevicePrivacyType(), AudioDevicePrivacyType::TYPE_PRIVACY);
+}
 } // namespace AudioStandard
 } // namespace OHOS

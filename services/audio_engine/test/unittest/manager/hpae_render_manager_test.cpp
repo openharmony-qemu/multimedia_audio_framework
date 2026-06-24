@@ -74,6 +74,39 @@ static HpaeSinkInfo GetSinkInfo()
     return sinkInfo;
 }
 
+static uint32_t InjectMockRenderSink(const HpaeSinkInfo &sinkInfo)
+{
+    std::string info = sinkInfo.deviceNetId == "LocalDevice" ? HDI_ID_INFO_DEFAULT : sinkInfo.deviceNetId;
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
+        sinkInfo.deviceClass, info, true);
+    EXPECT_NE(renderId, HDI_INVALID_ID);
+
+    auto mockRenderSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
+    auto isInited = std::make_shared<bool>(false);
+    ON_CALL(*mockRenderSink, Init(_)).WillByDefault(Invoke([isInited](const IAudioSinkAttr &) {
+        *isInited = true;
+        return SUCCESS;
+    }));
+    ON_CALL(*mockRenderSink, IsInited()).WillByDefault(Invoke([isInited]() {
+        return *isInited;
+    }));
+    ON_CALL(*mockRenderSink, DeInit()).WillByDefault(Invoke([isInited]() {
+        *isInited = false;
+    }));
+    ON_CALL(*mockRenderSink, Start()).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, Stop()).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, Pause()).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, Flush()).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, UpdateAppsUid(A<const std::vector<int32_t> &>())).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, RegistOffloadHdiCallback(_)).WillByDefault(Return());
+    ON_CALL(*mockRenderSink, SetBufferSize(_)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, SetVolume(_, _)).WillByDefault(Return(SUCCESS));
+    ON_CALL(*mockRenderSink, GetLatency(_)).WillByDefault(Return(SUCCESS));
+
+    HdiAdapterManager::GetInstance().renderSinks_[renderId].sink_ = mockRenderSink;
+    return renderId;
+}
+
 static void TestCheckSinkInputInfo(HpaeSinkInputInfo &sinkInputInfo, const HpaeStreamInfo &streamInfo)
 {
     EXPECT_EQ(sinkInputInfo.nodeInfo.channels == streamInfo.channels, true);
@@ -195,6 +228,49 @@ void HpaeRendererManagerTest::TearDown()
 {
     hpaeRendererManager_.reset();
     outputCluster_.reset();
+}
+
+HWTEST_F(HpaeRendererManagerTest, CoverageDrainAndAuxiliarySinkImmediateQueue_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeRendererManager_, nullptr);
+    EXPECT_NE(outputCluster_, nullptr);
+
+    hpaeRendererManager_->isInit_.store(true);
+    hpaeRendererManager_->hpaeSignalProcessThread_.reset();
+    hpaeRendererManager_->sinkInfo_.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+
+    hpaeRendererManager_->sessionNodeMap_[1].state = HPAE_SESSION_PAUSED;
+    EXPECT_EQ(hpaeRendererManager_->Drain(1), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+
+    hpaeRendererManager_->sessionNodeMap_[1].state = HPAE_SESSION_RUNNING;
+    EXPECT_EQ(hpaeRendererManager_->Drain(1), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+
+    hpaeRendererManager_->sinkInfo_.deviceClass = "a2dp";
+    EXPECT_EQ(hpaeRendererManager_->SetAuxiliarySinkEnable(true), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+
+    hpaeRendererManager_->sinkInfo_.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    EXPECT_EQ(hpaeRendererManager_->SetAuxiliarySinkEnable(false), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager_->IsMsgProcessing(), false);
+
+    HpaeNodeInfo stoppedNodeInfo;
+    stoppedNodeInfo.sessionId = 2;
+    auto stoppedNode = std::make_shared<HpaeSinkInputNode>(stoppedNodeInfo);
+    stoppedNode->SetState(HPAE_SESSION_STOPPED);
+    stoppedNode->appUid_ = 456;
+    hpaeRendererManager_->sinkInputNodeMap_[2] = stoppedNode;
+    sinkInputNode_->SetState(HPAE_SESSION_RUNNING);
+    sinkInputNode_->appUid_ = 123;
+    hpaeRendererManager_->sinkInfo_.deviceClass = "remote";
+
+    hpaeRendererManager_->TriggerAppsUidUpdate(2);
+    EXPECT_EQ(hpaeRendererManager_->appsUid_.size(), 2);
+
+    sinkInputNode_->SetState(HPAE_SESSION_STOPPED);
+    hpaeRendererManager_->TriggerAppsUidUpdate(0);
+    EXPECT_EQ(hpaeRendererManager_->appsUid_.size(), 0);
 }
 
 template <class RenderManagerType>
@@ -2579,9 +2655,10 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     std::pair<uint64_t, TimePoint> hdiPos = std::make_pair(0, std::chrono::high_resolution_clock::now());
     offloadManager->OnNotifyHdiData(hdiPos);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    ASSERT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-  
+    offloadManager->isInit_ = true;
+
     CreateTwoStreamInOffload(offloadManager);
 
     // create nodes for stream1
@@ -2638,7 +2715,8 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_003, 
     std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-  
+    offloadManager->isInit_ = true;
+
     CreateTwoStreamInOffload(offloadManager);
 
     offloadManager->DestroyStream(TEST_STREAM_SESSION_ID);
@@ -2891,6 +2969,278 @@ HWTEST_F(HpaeRendererManagerTest, OnDisConnectProcessCluster_003, TestSize.Level
 }
 
 /**
+ * @tc.name : ConnectProcessCluster
+ * @tc.type : FUNC
+ * @tc.number: ConnectProcessCluster_001
+ * @tc.desc : Test ConnectProcessCluster
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_001, TestSize.Level0)
+{
+    uint32_t sessionId = 10001;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    // Build the sink input node. bypass=false so DisConnectInputCluster takes the deferred-stop path.
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
+
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+    HpaeNodeInfo movieNodeInfo = nodeInfo;
+    movieNodeInfo.sceneType = HPAE_SCENE_MOVIE;
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE] =
+        std::make_shared<HpaeProcessCluster>(movieNodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+
+    // Start the session on OLD (MUSIC).
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MUSIC);
+
+    // Disconnect OLD -> it is now empty, so the stop is deferred inside the MUSIC cluster.
+    hpaeRendererManager->DisConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->HasDeferredStop(), true);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->GetDeferredStopSessionId(), sessionId);
+
+    // Reconnect to NEW (MOVIE). The deferred OLD stop must be flushed on MUSIC; without the fix it would
+    // survive and fire a late Stop on a session that is now running on MOVIE.
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MOVIE);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->HasDeferredStop(), false);
+    // Verify the target scene (MOVIE) was actually connected.
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE]->GetConnectedFlag(), true);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_[sessionId]->connectedProcessorType_, HPAE_SCENE_MOVIE);
+
+    hpaeRendererManager->DeleteProcessClusterInner(sessionId, HPAE_SCENE_MUSIC);
+    hpaeRendererManager->DeleteProcessClusterInner(sessionId, HPAE_SCENE_MOVIE);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : ConnectProcessCluster
+ * @tc.type  : FUNC
+ * @tc.number: ConnectProcessCluster_002
+ * @tc.desc  : Test ConnectProcessCluster when a deferred stop is pending and both the pending
+ *             sceneCluster and the sinkInputNode exist, so the inner condition is true and
+ *             AudioRendererStop is invoked for the pending scene.
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_002, TestSize.Level0)
+{
+    uint32_t sessionId = 10002;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
+
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MUSIC);
+    // Last-stream disconnect defers the stop inside the MUSIC cluster.
+    hpaeRendererManager->DisConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->HasDeferredStop(), true);
+
+    // Reconnect the SAME session to the SAME cluster: the deferred stop is cancelled (the effect chain
+    // still considers the session started, so AudioRendererStart is a no-op) and the connection is restored.
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->HasDeferredStop(), false);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->GetConnectedFlag(), true);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_[sessionId]->connectedProcessorType_, HPAE_SCENE_MUSIC);
+
+    hpaeRendererManager->DeleteProcessClusterInner(sessionId, HPAE_SCENE_MUSIC);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : ConnectProcessCluster
+ * @tc.type  : FUNC
+ * @tc.number: ConnectProcessCluster_003
+ * @tc.desc  : Test ConnectProcessCluster when a deferred stop is pending but the pending
+ *             sceneCluster does not exist. The inner condition short-circuits on its first
+ *             operand and AudioRendererStop is skipped.
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_003, TestSize.Level0)
+{
+    uint32_t sessionId = 10003;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
+
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+    // Keep a non-zero count so OnDisConnectProcessCluster does not erase the cluster before we can assert.
+    hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_MUSIC] = 1;
+
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MUSIC);
+    hpaeRendererManager->DisConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->HasDeferredStop(), true);
+
+    // Drain completes: OnDisConnectProcessCluster self-executes the deferred stop (no AudioRendererStop
+    // call from the manager anymore).
+    hpaeRendererManager->OnDisConnectProcessCluster(HPAE_SCENE_MUSIC);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->HasDeferredStop(), false);
+
+    hpaeRendererManager->DeleteProcessClusterInner(sessionId, HPAE_SCENE_MUSIC);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : ConnectProcessCluster
+ * @tc.type  : FUNC
+ * @tc.number: ConnectProcessCluster_004
+ * @tc.desc  : The deferred stop is an effect-chain REMOVE independent of the graph nodes: even if the
+ *             session's nodes are destroyed before drain completes, ExecuteDeferredStop still performs the
+ *             (idempotent) REMOVE and clears the deferred state, with no crash.
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_004, TestSize.Level0)
+{
+    uint32_t sessionId = 10004;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
+
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+    hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_MUSIC] = 1;
+
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MUSIC);
+    hpaeRendererManager->DisConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->HasDeferredStop(), true);
+
+    // Simulate the session being fully released before drain completes.
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->DestroyNodes(sessionId), SUCCESS);
+
+    // Drain completes: even though the session's graph nodes are gone, ExecuteDeferredStop still performs the
+    // effect REMOVE (idempotent) and clears the deferred state, with no crash.
+    hpaeRendererManager->OnDisConnectProcessCluster(HPAE_SCENE_MUSIC);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->HasDeferredStop(), false);
+
+    hpaeRendererManager->DeleteProcessClusterInner(sessionId, HPAE_SCENE_MUSIC);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : ConnectProcessCluster
+ * @tc.type  : FUNC
+ * @tc.number: ConnectProcessCluster_005
+ * @tc.desc  : null processCluster
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectProcessCluster_005, TestSize.Level0)
+{
+    uint32_t sessionId = 10005;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    // Build the sink input node. bypass=false so DisConnectInputCluster takes the deferred-stop path.
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
+
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+    HpaeNodeInfo movieNodeInfo = nodeInfo;
+    movieNodeInfo.sceneType = HPAE_SCENE_MOVIE;
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE] =
+        std::make_shared<HpaeProcessCluster>(movieNodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]), SUCCESS);
+
+    // Inject a corrupted null shared_ptr entry. Without the SafeGetMap guard in ConnectProcessCluster
+    // this null pointer is dereferenced on the very first loop traversal and crashes.
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_GAME] = nullptr;
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_GAME], nullptr);
+
+    // Start the session on OLD (MUSIC); the loop must skip the null GAME entry without crashing.
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MUSIC);
+
+    // Disconnect OLD -> it is now empty, so the stop is deferred inside the MUSIC cluster.
+    hpaeRendererManager->DisConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->HasDeferredStop(), true);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->GetDeferredStopSessionId(), sessionId);
+
+    // Reconnect to NEW (MOVIE). The null GAME entry must still be skipped, the deferred stop on the
+    // valid MUSIC cluster must be flushed, and MOVIE must be connected.
+    hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_MOVIE);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->HasDeferredStop(), false);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MOVIE]->GetConnectedFlag(), true);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_[sessionId]->connectedProcessorType_, HPAE_SCENE_MOVIE);
+    // The guard must neither crash on nor mutate the corrupted null entry.
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_GAME], nullptr);
+
+    hpaeRendererManager->sceneClusterMap_.erase(HPAE_SCENE_GAME);
+    hpaeRendererManager->DeleteProcessClusterInner(sessionId, HPAE_SCENE_MUSIC);
+    hpaeRendererManager->DeleteProcessClusterInner(sessionId, HPAE_SCENE_MOVIE);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
  * @tc.name  : Test SetOffloadRenderCallbackType
  * @tc.type  : FUNC
  * @tc.number: SetOffloadRenderCallbackType
@@ -2911,7 +3261,8 @@ HWTEST_F(HpaeRendererManagerTest, SetOffloadRenderCallbackType_001, TestSize.Lev
     std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-  
+    offloadManager->isInit_ = true;
+
     CreateTwoStreamInOffload(offloadManager);
     auto ret = offloadManager->SetOffloadRenderCallbackType(TEST_STREAM_SESSION_ID, CB_NONBLOCK_WRITE_COMPLETED);
     EXPECT_EQ(ret, SUCCESS);
@@ -2981,9 +3332,11 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_002, TestSize.Level1)
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     HpaeNodeInfo nodeInfo;
     nodeInfo.sessionId = TEST_STREAM_SESSION_ID;
@@ -3005,6 +3358,8 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_002, TestSize.Level1)
     offloadManager->TriggerAppsUidUpdate(0);
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->appsUid_.size(), 0);
+    EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3019,6 +3374,7 @@ HWTEST_F(HpaeRendererManagerTest, AddNodeToSink_001, TestSize.Level1)
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     HpaeNodeInfo nodeInfo;
     nodeInfo.sessionId = 60001;
@@ -3048,6 +3404,7 @@ HWTEST_F(HpaeRendererManagerTest, AddAllNodesToSink_001, TestSize.Level1)
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
 
@@ -3091,6 +3448,7 @@ HWTEST_F(HpaeRendererManagerTest, OffloadMoveAllStream_001, TestSize.Level1)
 
     offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     EXPECT_EQ(offloadManager->MoveAllStream(sinkName, sessionIds, moveType), SUCCESS);
     WaitForMsgProcessing(offloadManager);
@@ -3110,6 +3468,7 @@ HWTEST_F(HpaeRendererManagerTest, MoveStream_003, TestSize.Level1)
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     uint32_t activeSid = 95001;
     uint32_t normalSid = 95002;
@@ -3149,6 +3508,7 @@ HWTEST_F(HpaeRendererManagerTest, OffloadStopManager_001, TestSize.Level1)
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     offloadManager->sinkOutputNode_.reset();
     EXPECT_EQ(offloadManager->StopManager(), SUCCESS);
@@ -3328,10 +3688,11 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_001, TestSi
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    ASSERT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->IsInit(), true);
+    ASSERT_EQ(offloadManager->IsInit(), true);
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
@@ -3342,16 +3703,17 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_001, TestSi
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    ASSERT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is created for remote_offload device
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
     EXPECT_TRUE(offloadManager->limiterNode_->IsLimiterInited());
 
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3373,10 +3735,11 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_002, TestSi
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->IsInit(), true);
+    ASSERT_EQ(offloadManager->IsInit(), true);
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
@@ -3396,6 +3759,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_002, TestSi
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3410,9 +3774,11 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_NotCreateForNonRemoteOffload_001, 
     // Ensure deviceClass is not "remote_offload"
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
     EXPECT_EQ(offloadManager->IsInit(), true);
 
     // Create stream to trigger CreateOffloadNodes
@@ -3433,6 +3799,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_NotCreateForNonRemoteOffload_001, 
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3454,9 +3821,11 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_Destroy_001, TestSize.Level1)
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
@@ -3467,14 +3836,14 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_Destroy_001, TestSize.Level1)
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    ASSERT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is created
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
 
     // Destroy stream to trigger DestroyOffloadNodes
-    EXPECT_EQ(offloadManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    ASSERT_EQ(offloadManager->DestroyStream(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is destroyed
@@ -3483,6 +3852,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_Destroy_001, TestSize.Level1)
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3504,9 +3874,11 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_ConnectAndDisconnect_001, TestSize
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    ASSERT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     // Create and start stream to trigger ConnectInputSession
     HpaeStreamInfo streamInfo;
@@ -3517,26 +3889,27 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_ConnectAndDisconnect_001, TestSize
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    ASSERT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(streamInfo.sessionId), SUCCESS);
+    ASSERT_EQ(offloadManager->Start(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is connected (nodes should be non-null after start)
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
-    EXPECT_NE(offloadManager->converterForOutput_, nullptr);
-    EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->converterForOutput_, nullptr);
+    ASSERT_NE(offloadManager->loudnessGainNode_, nullptr);
 
     // Pause stream to trigger DisConnectInputSession
-    EXPECT_EQ(offloadManager->Pause(streamInfo.sessionId), SUCCESS);
+    ASSERT_EQ(offloadManager->Pause(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ still exists (disconnection doesn't destroy the node)
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
 
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3558,9 +3931,11 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_LatencyCalculation_001, TestSize.L
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    ASSERT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
@@ -3571,9 +3946,9 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_LatencyCalculation_001, TestSize.L
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    ASSERT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(streamInfo.sessionId), SUCCESS);
+    ASSERT_EQ(offloadManager->Start(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ contributes to latency calculation
@@ -3595,6 +3970,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_LatencyCalculation_001, TestSize.L
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**
@@ -3616,9 +3992,11 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_SetupAudioLimiter_001, TestSize.Le
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 
+    uint32_t mockRenderId = InjectMockRenderSink(sinkInfo);
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    ASSERT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    offloadManager->isInit_ = true;
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
@@ -3629,16 +4007,17 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_SetupAudioLimiter_001, TestSize.Le
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    ASSERT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
     // Verify limiterNode_ is initialized after CreateOffloadNodes
-    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    ASSERT_NE(offloadManager->limiterNode_, nullptr);
     EXPECT_TRUE(offloadManager->limiterNode_->IsLimiterInited());
 
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(offloadManager->IsInit(), false);
+    HdiAdapterManager::GetInstance().ReleaseId(mockRenderId);
 }
 
 /**

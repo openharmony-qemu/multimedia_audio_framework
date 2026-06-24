@@ -45,11 +45,19 @@ static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
 const int32_t NUM_2 = 2;
+// Enum-range moduli used to clamp fuzz ints into valid DeviceType / AudioVolumeType ranges.
+const int32_t DEVICE_TYPE_RANGE = 20;
+const int32_t VOLUME_TYPE_RANGE = 10;
+// EffectChainManagerParam.maxExtraNum default value.
+const uint32_t DEFAULT_MAX_EXTRA_NUM = 3;
+// Dummy buffer length and fill byte used by AudioEnhanceChainManagerMoreFuzzTest.
+const uint32_t DUMMY_BUFFER_LEN = 1000;
+const uint8_t DUMMY_DATA_FILL_BYTE = 0x08;
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
 vector<shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
 
 EffectChainManagerParam DEFAULT_EFFECT_CHAIN_MANAGER_PARAM{
-    3,
+    DEFAULT_MAX_EXTRA_NUM,
     "SCENE_DEFAULT",
     {},
     {{"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
@@ -302,7 +310,7 @@ void AudioEnhanceChainSetParaFuzzTest()
     std::string prop = "test_prop";
     audioEnhanceChain->SetEnhanceProperty(effect, prop);
 
-    bool isMute = (GetData<uint32_t>() % 2 == 0);
+    bool isMute = (GetData<uint32_t>() % NUM_2 == 0);
     uint32_t systemVol = GetData<uint32_t>();
     audioEnhanceChain->SetEnhanceParam(isMute, systemVol);
 
@@ -374,8 +382,8 @@ void AudioEnhanceChainManagerMoreFuzzTest()
 {
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
 
-    const uint32_t bufferLen = 1000;
-    std::vector<uint8_t> dummyData(bufferLen, 0x08);
+    const uint32_t bufferLen = DUMMY_BUFFER_LEN;
+    std::vector<uint8_t> dummyData(bufferLen, DUMMY_DATA_FILL_BYTE);
     EnhanceTransBuffer transBuf = {};
     transBuf.micData = dummyData.data();
     transBuf.micDataLen = dummyData.size();
@@ -405,6 +413,102 @@ void AudioEnhanceChainAdapterMoreFuzzTest()
 #endif
 }
 
+void AudioEnhanceReleaseChainFuzzTest()
+{
+    AudioEnhanceChainManager *mgr = AudioEnhanceChainManager::GetInstance();
+    if (mgr == nullptr) {
+        return;
+    }
+    uint64_t sceneKeyCode = GetData<uint64_t>();
+    mgr->ReleaseAudioEnhanceChainDynamic(sceneKeyCode);
+}
+
+void AudioEnhanceDeviceVolumeFuzzTest()
+{
+    AudioEnhanceChainManager *mgr = AudioEnhanceChainManager::GetInstance();
+    if (mgr == nullptr) {
+        return;
+    }
+    uint32_t captureId = GetData<uint32_t>();
+    DeviceType inputDevice = static_cast<DeviceType>(GetData<int32_t>() % DEVICE_TYPE_RANGE);
+    mgr->SetInputDevice(captureId, inputDevice);
+
+    uint32_t renderId = GetData<uint32_t>();
+    DeviceType outputDevice = static_cast<DeviceType>(GetData<int32_t>() % DEVICE_TYPE_RANGE);
+    mgr->SetOutputDevice(renderId, outputDevice);
+
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(GetData<int32_t>() % VOLUME_TYPE_RANGE);
+    float systemVol = GetData<float>();
+    mgr->SetVolumeInfo(volumeType, systemVol);
+
+    bool isMute = GetData<bool>();
+    mgr->SetMicrophoneMuteInfo(isMute);
+
+    uint32_t sessionId = GetData<uint32_t>();
+    float streamVol = GetData<float>();
+    mgr->SetStreamVolumeInfo(sessionId, streamVol);
+}
+
+void AudioEnhanceStreamControlFuzzTest()
+{
+    AudioEnhanceChainManager *mgr = AudioEnhanceChainManager::GetInstance();
+    if (mgr == nullptr) {
+        return;
+    }
+    mgr->NotifyChainToStopStream();
+    mgr->ResetInfo();
+}
+
+void AudioEnhanceMuteStateFuzzTest()
+{
+    AudioEnhanceChainManager *mgr = AudioEnhanceChainManager::GetInstance();
+    if (mgr == nullptr) {
+        return;
+    }
+    uint64_t sceneKeyCode = GetData<uint64_t>();
+    bool isMute = GetData<bool>();
+    mgr->SetAppsMuteStateToChainById(sceneKeyCode, isMute);
+}
+
+// InitAudioEnhanceChainManager on the enhance manager singleton (uses the file-level DEFAULT_*
+// params). Covers the init body (158-197). ResetInfo at the end restores clean state so the
+// shared singleton does not disturb other tests that assume an un-initialized manager.
+void EnhanceManagerInitFuzzTest()
+{
+    AudioEnhanceChainManager *mgr = AudioEnhanceChainManager::GetInstance();
+    if (mgr == nullptr) {
+        return;
+    }
+    mgr->InitAudioEnhanceChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_EFFECT_CHAIN_MANAGER_PARAM,
+        DEFAULT_EFFECT_LIBRARY_LIST);
+    mgr->ResetInfo();
+}
+
+// AudioEnhanceChainGetAlgoConfig (426-438) + SetAudioEnhanceProperty (582-607, non-empty array ->
+// loop body) + GetAudioEnhanceProperty (644-659, non-NONE deviceType -> db-update branch).
+void EnhanceManagerAlgoConfigAndPropertyFuzzTest()
+{
+    AudioEnhanceChainManager *mgr = AudioEnhanceChainManager::GetInstance();
+    if (mgr == nullptr) {
+        return;
+    }
+    uint64_t sceneKeyCode = GetData<uint64_t>();
+    AudioBufferConfig micConfig;
+    AudioBufferConfig ecConfig;
+    AudioBufferConfig micRefConfig;
+    mgr->AudioEnhanceChainGetAlgoConfig(sceneKeyCode, micConfig, ecConfig, micRefConfig);
+
+    AudioEffectPropertyArray propArray;
+    AudioEffectProperty prop;
+    prop.name = "effect1";
+    prop.category = "category1";
+    propArray.property.push_back(prop); // non-empty -> SetAudioEnhanceProperty loop body runs
+    mgr->SetAudioEnhanceProperty(propArray, DEVICE_TYPE_SPEAKER);
+
+    AudioEffectPropertyArray getResult;
+    mgr->GetAudioEnhanceProperty(getResult, DEVICE_TYPE_SPEAKER); // non-NONE -> db-update branch
+}
+
 using FuzzFunc = decltype(AudioEffectChainEnhanceFuzzTest);
 FuzzFunc *g_fuzzFuncs[] = {
     AudioEffectChainEnhanceFuzzTest,
@@ -422,6 +526,12 @@ FuzzFunc *g_fuzzFuncs[] = {
     AudioEnhanceChainGetParaFuzzTest,
     ChainPoolFuzzTest,
     ThreadHandlerFuzzTest,
+    AudioEnhanceReleaseChainFuzzTest,
+    AudioEnhanceDeviceVolumeFuzzTest,
+    AudioEnhanceStreamControlFuzzTest,
+    AudioEnhanceMuteStateFuzzTest,
+    EnhanceManagerInitFuzzTest,
+    EnhanceManagerAlgoConfigAndPropertyFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

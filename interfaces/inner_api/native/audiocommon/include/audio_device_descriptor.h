@@ -104,6 +104,10 @@ public:
 
     DeviceCategory GetDeviceCategory() const;
 
+    void SetDevicePrivacyType(AudioDevicePrivacyType privacyType);
+
+    AudioDevicePrivacyType GetDevicePrivacyType() const;
+
     bool IsAudioDeviceDescriptor() const;
 
     bool Marshalling(Parcel &parcel) const override;
@@ -225,6 +229,7 @@ public:
     std::list<DeviceStreamInfo> audioStreamInfo_;
     std::list<AudioStreamInfo> capabilities_;
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
+    AudioDevicePrivacyType privacyType_ = TYPE_NEGATIVE;
     ConnectState connectState_ = CONNECTED;
     DeviceUsage deviceUsage_ = ALL_USAGE;
     // AudioDeviceDescriptor
@@ -261,7 +266,7 @@ public:
     static constexpr uint32_t WEAR_AGAIN = 2;
 
 private:
-    uint32_t deviceSupportMmap_ = 0; //only vaild on armusb
+    uint32_t deviceSupportMmap_ = 0; //only valid on armusb
 
 private:
     bool IsOutput()

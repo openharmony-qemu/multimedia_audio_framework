@@ -696,7 +696,7 @@ HWTEST_F(HpaeGainNodeTest, EnsureVolumeAvailable_NormalBothNull_Retrieved, TestS
     CleanupStreamAndPipeVolume(sessionId);
 }
 
-HWTEST_F(HpaeGainNodeTest, EnsureVolumeAvailable_InnerCapturerStreamNull_Retrieved, TestSize.Level0)
+HWTEST_F(HpaeGainNodeTest, EnsureVolumeAvailable_InjectorStreamNull_Retrieved, TestSize.Level0)
 {
     constexpr uint32_t sessionId = UT_SESSION_ID + 13;
     HpaeNodeInfo nodeInfo;
@@ -706,12 +706,12 @@ HWTEST_F(HpaeGainNodeTest, EnsureVolumeAvailable_InnerCapturerStreamNull_Retriev
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.streamType = STREAM_MUSIC;
-    nodeInfo.deviceClass = UT_DEVICE_CLASS_INNER_CAPTURER;
+    nodeInfo.deviceClass = VIRTUAL_INJECTOR;
     nodeInfo.sessionId = sessionId;
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
     EXPECT_EQ(hpaeGainNode->isInnerCapturerOrInjector_, true);
 
-    // streamVolume_ is null for inner capturer
+    // streamVolume_ is null for injector capture stream.
     EXPECT_EQ(hpaeGainNode->streamVolume_, nullptr);
 
     SetupStreamVolumeOnly(sessionId, UT_HALF_GAIN);

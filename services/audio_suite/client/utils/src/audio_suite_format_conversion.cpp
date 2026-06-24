@@ -53,7 +53,6 @@ int32_t AudioSuiteFormatConversion::ChannelConvert(AudioSuitePcmBuffer *in, Audi
     uint32_t inLen = in->GetDataSize();
     float *outputData =  reinterpret_cast<float *>(out->GetPcmData());
     uint32_t outLen = out->GetDataSize();
-
     ret = channelConverter_.Process(frameSize, inputData, inLen, outputData, outLen);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Process fail with error code: %{public}d", ret);
 
@@ -94,6 +93,10 @@ int32_t AudioSuiteFormatConversion::Resample(AudioSuitePcmBuffer *in, AudioSuite
     int32_t ret = proResampler_->Process(inputData, inFrameSize, outputData, outFrameSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DoResampleProcess fail with error code: %{public}d", ret);
 
+    if (isFirstProcess_) {
+        isFirstProcess_ = false;
+        delayFrames_ = proResampler_->GetDelayFrames();
+    }
     return SUCCESS;
 }
 
@@ -151,11 +154,18 @@ AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(
     return in;
 }
 
+uint32_t AudioSuiteFormatConversion::GetDelayFrames() const
+{
+    return delayFrames_;
+}
+
 void AudioSuiteFormatConversion::Reset()
 {
     resampleCfg_.inRate = 0;
     resampleCfg_.outRate = 0;
     resampleCfg_.channels = 0;
+    delayFrames_ = 0;
+    isFirstProcess_ = true;
 }
 
 }

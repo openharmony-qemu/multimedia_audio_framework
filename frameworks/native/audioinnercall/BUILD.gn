@@ -32,6 +32,7 @@ ohos_shared_library("audio_inner_call") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-Os",
   ]
 
   cflags_cc = cflags

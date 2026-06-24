@@ -63,6 +63,7 @@ audio_sources = [
   "$WORK_DIR/audiorenderer/callback/napi_renderer_period_position_callback.cpp",
   "$WORK_DIR/audiorenderer/callback/napi_renderer_position_callback.cpp",
   "$WORK_DIR/audiorenderer/napi_audio_renderer.cpp",
+  "$WORK_DIR/recordcontroller/napi_audio_record_controller.cpp",
   "$WORK_DIR/common/napi_async_work.cpp",
   "$WORK_DIR/common/napi_audio_enum.cpp",
   "$WORK_DIR/common/napi_audio_error.cpp",

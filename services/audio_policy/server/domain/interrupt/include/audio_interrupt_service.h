@@ -322,8 +322,6 @@ private:
         const AudioFocusEntry &focusEntry);
     bool CanMixForActiveSession(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         const AudioFocusEntry &focusEntry);
-    bool CapturerMixForSessionBehavior(const AudioInterrupt &incomingInterrupt,
-        const AudioInterrupt &activeInterrupt);
     bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
@@ -386,7 +384,7 @@ private:
     void DeactivateAudioSessionInFakeFocusMode(const int32_t pid, InterruptHint hintType);
     void SendAudioSessionInterruptEventCallback(
         const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt);
-    void TryHandleStreamCallbackInSession(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
+    bool TryHandleStreamCallbackInSession(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     bool HasAudioSessionFakeInterrupt(const int32_t zoneId, const int32_t callerPid);
     int32_t HandleExistStreamsForSession(const int32_t zoneId, const int32_t callerPid, bool &updateScene);
     void HandleOtherZoneExistStreams(const int32_t targetZoneId, const int32_t callerPid, bool &updateScene);
@@ -431,6 +429,10 @@ private:
     bool UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry, AudioFocuState &activeState,
         AudioFocuState &incomingState);
     bool VerifyStreamType(const AudioInterrupt &audioInterrupt);
+    bool IsAncoAudioMediaInterrupt(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
+        const AudioInterrupt &incomingInterrupt);
+    bool CheckAudioConcurrencyForInterrupt(const AudioInterrupt &activeInterrupt,
+        const AudioInterrupt &incomingInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

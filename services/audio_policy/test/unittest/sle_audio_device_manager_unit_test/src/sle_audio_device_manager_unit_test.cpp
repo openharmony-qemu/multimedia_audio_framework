@@ -2228,7 +2228,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamTypeByStreamUsage_Loopback_001
     int32_t uid = INVALID_UID;
     bool isLoopback = true;
     uint32_t ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, uid, isLoopback);
-    EXPECT_EQ(ret, SLE_AUDIO_STREAM_GAME);
+    EXPECT_EQ(ret, SLE_AUDIO_STREAM_SING);
 }
 
 /**

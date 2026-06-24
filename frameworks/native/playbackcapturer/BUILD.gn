@@ -26,6 +26,7 @@ config("playback_capturer_config") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-Os",
   ]
 }
 

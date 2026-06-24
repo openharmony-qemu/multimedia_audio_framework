@@ -41,6 +41,7 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 const int32_t SYSTEM_ABILITY_ID = 3009;
+const size_t MAX_ARRAY_SIZE = 1024;
 const bool RUN_ON_CREATE = false;
 bool g_hasServerInit = false;
 static const uint8_t* RAW_DATA = nullptr;
@@ -276,7 +277,7 @@ void AudioPolicyServerGetAudioZoneForApp(FuzzedDataProvider& fdp)
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     std::vector<int32_t> userIds;
-    size_t size = GetData<size_t>();
+    size_t size = GetData<size_t>() % MAX_ARRAY_SIZE;
     for (size_t i = 0; i < size; ++i) {
         userIds.push_back(GetData<int32_t>());
     }

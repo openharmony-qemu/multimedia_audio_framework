@@ -40,6 +40,7 @@
 #include "hpae_renderer_manager.h"
 #include "hpae_sink_input_node.h"
 #include "i_hpae_renderer_manager.h"
+#include "i_stream.h" // IOperation enum, used directly by FUZZ_OPERATIONS
 
 namespace OHOS {
 namespace AudioStandard {
@@ -76,6 +77,17 @@ const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     CHANNEL_14,
     CHANNEL_15,
     CHANNEL_16,
+};
+
+// IOperation values fed to OnNodeStatusUpdate. That method is a thin forwarder
+// today (no branch on the value), so this set mainly guards the entry point and
+// keeps diversity in case branching is added later.
+const std::vector<IOperation> FUZZ_OPERATIONS {
+    OPERATION_STARTED,
+    OPERATION_PAUSED,
+    OPERATION_STOPPED,
+    OPERATION_FLUSHED,
+    OPERATION_DRAINED,
 };
 
 template<class T>
@@ -730,6 +742,410 @@ void ConnectProcessClusterFullFlowFuzzTest()
     rendererManager->DeInit();
 }
 
+// ===== Incremental coverage supplement =====
+// The functions below cover public methods of HpaeRendererManager that were not
+// exercised by the original dispatch table. They only target code defined in
+// hpae_renderer_manager.cpp (the Session Effect cluster lives in a sibling file
+// and is intentionally out of scope here).
+
+void StartWithSyncIdFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    rendererManager->CreateStream(streamInfo);
+    WaitForMsgProcessing(rendererManager);
+    // The real id reaches the request body (SafeGetMap passes); a random id
+    // also exercises the not-found guard, so both branches are covered.
+    int32_t syncId = GetData<int32_t>();
+    rendererManager->StartWithSyncId(streamInfo.sessionId, syncId);
+    WaitForMsgProcessing(rendererManager);
+    uint32_t fuzzSessionId = GetData<uint32_t>();
+    rendererManager->StartWithSyncId(fuzzSessionId, GetData<int32_t>());
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void SetLoudnessGainFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    rendererManager->CreateStream(streamInfo);
+    rendererManager->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    // The real id reaches the body (node + cluster loudness set); a random id
+    // also exercises the not-found guard.
+    float loudnessGain = GetData<float>();
+    rendererManager->SetLoudnessGain(streamInfo.sessionId, loudnessGain);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->SetLoudnessGain(GetData<uint32_t>(), GetData<float>());
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void SetAndGetPrivacyTypeFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    uint32_t sessionId = GetData<uint32_t>();
+    int32_t privacyType = GetData<int32_t>();
+    rendererManager->SetPrivacyType(sessionId, privacyType);
+    int32_t outPrivacyType = GetData<int32_t>();
+    rendererManager->GetPrivacyType(sessionId, outPrivacyType);
+    rendererManager->DeInit();
+}
+
+void RendererManagerSetterStubFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    uint32_t sessionId = GetData<uint32_t>();
+    rendererManager->GetWritableSize(sessionId);
+    bool spatializationEnabled = GetData<bool>();
+    bool headTrackingEnabled = GetData<bool>();
+    rendererManager->UpdateSpatializationState(sessionId, spatializationEnabled, headTrackingEnabled);
+    uint32_t maxLength = GetData<uint32_t>();
+    rendererManager->UpdateMaxLength(sessionId, maxLength);
+    rendererManager->DeInit();
+}
+
+void RendererManagerQueryFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->GetAllSinkInputsInfo();
+    rendererManager->GetSinkInfo();
+    rendererManager->GetThreadName();
+    rendererManager->GetDeviceHDFDumpInfo();
+    rendererManager->DeInit();
+}
+
+void DumpSinkInfoFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DumpSinkInfo();
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void AddNodeToSinkFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeSinkInputNode> node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    CHECK_AND_RETURN(node != nullptr);
+    rendererManager->AddNodeToSink(node);
+    WaitForMsgProcessing(rendererManager);
+    std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs = {node};
+    bool isConnect = GetData<bool>();
+    rendererManager->AddAllNodesToSink(sinkInputs, isConnect);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void RegisterReadCallbackFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    uint32_t sessionId = GetData<uint32_t>();
+    // RegisterReadCallback currently ignores its argument; pass an empty weak_ptr
+    // to exercise the entry point without triggering any file I/O.
+    std::weak_ptr<ICapturerStreamCallback> readCb;
+    rendererManager->RegisterReadCallback(sessionId, readCb);
+    rendererManager->DeInit();
+}
+
+// Uses a non-initialized stack instance on purpose: OnNodeStatusUpdate touches
+// sessionNodeMap_ directly, so avoiding the SignalProcessThread removes any
+// concurrent-access risk while still exercising the entry point.
+void OnNodeStatusUpdateFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    HpaeRendererManager rendererManager(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    IOperation operation = FUZZ_OPERATIONS[GetData<uint32_t>() % FUZZ_OPERATIONS.size()];
+    rendererManager.OnNodeStatusUpdate(sessionId, operation);
+}
+
+void OnRequestLatencyFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    rendererManager->CreateStream(streamInfo);
+    rendererManager->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    // A live session + cluster makes the body accumulate latency instead of
+    // hitting the SafeGetMap guard. The query is read-only and is invoked after
+    // the queue drains (same thread context the latency query runs in).
+    uint64_t latency = GetData<uint64_t>();
+    rendererManager->OnRequestLatency(streamInfo.sessionId, latency);
+    rendererManager->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void OnRewindBufferFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    rendererManager->CreateStream(streamInfo);
+    rendererManager->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    // Rewind on a stopped session (no active pull) keeps the history-buffer
+    // mutation race-free; the real id reaches RewindHistoryBuffer.
+    uint64_t rewindTimeUs = GetData<uint64_t>();
+    rendererManager->OnRewindBuffer(streamInfo.sessionId, rewindTimeUs);
+    rendererManager->DeInit();
+}
+
+void OnNotifyQueueFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->OnNotifyQueue();
+    rendererManager->DeInit();
+}
+
+void OnDisConnectProcessClusterFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    rendererManager->CreateStream(streamInfo);
+    rendererManager->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    // A started stream populates sceneClusterMap_, so a matching sceneType
+    // reaches the GetPreOutNum() check instead of the empty-map guard. The deep
+    // DisConnectOutputCluster branch additionally needs GetPreOutNum() == 0.
+    HpaeProcessorType sceneType = GetData<HpaeProcessorType>();
+    rendererManager->OnDisConnectProcessCluster(sceneType);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->Stop(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void OnDisConnectCoBufferWaitFadeOutDoneFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->OnDisConnectCoBufferWaitFadeOutDone();
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+// The file_io test sink never matches the BT/USB device-class guard, so this
+// exercises the guarded early-return path. Reaching the real
+// outputCluster_->SetAuxiliarySinkEnable branch requires live BT/USB hardware.
+void SetAuxiliarySinkEnableFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    bool isEnabled = GetData<bool>();
+    rendererManager->SetAuxiliarySinkEnable(isEnabled);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+// Drive collaboration through the normal Init path (mirrors
+// EnableCollaborationWithMovieSceneFuzzTest), then invoke SetCollDelayCount
+// after the message queue has drained so the direct map access is race-free.
+void SetCollDelayCountFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->SetCollDelayCount();
+    rendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+// The file_io test sink is not a remote device, so IsRemoteDevice() short-
+// circuits the request. Reaching the apps-uid body needs a real remote HDI
+// device with a non-null output cluster.
+void TriggerAppsUidUpdateFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    uint32_t sessionId = GetData<uint32_t>();
+    rendererManager->TriggerAppsUidUpdate(sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void StopManagerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->StopManager();
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+// DeactivateThread tears down the SignalProcessThread, so it must run last on
+// its own instance; nothing else is dispatched afterwards.
+void DeactivateThreadFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->IsMsgProcessing();
+    rendererManager->DeactivateThread();
+    rendererManager->DeInit();
+}
+
+// HandleMsg drains the message queue directly, so a non-initialized stack
+// instance (no worker thread) is used to avoid any concurrent queue access.
+void HandleMsgFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    HpaeRendererManager rendererManager(sinkInfo);
+    rendererManager.IsMsgProcessing();
+    rendererManager.HandleMsg();
+}
+
+void SessionEffectLifecycleFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    rendererManager->CreateStream(streamInfo);
+    WaitForMsgProcessing(rendererManager);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    std::string effectName = "test_effect";
+    rendererManager->CreateSessionEffect(sessionId, effectName, nullptr, {});
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->HasSessionEffect(sessionId);
+    int32_t type = GetData<int32_t>();
+    float value = GetData<float>();
+    rendererManager->SetSessionEffectParameter(sessionId, type, value);
+    rendererManager->PostSetSessionEffectParameter(sessionId, type, value);
+    rendererManager->DestroySessionEffect(sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->PostDestroySessionEffect(sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+// Exercise the session-effect API with a sessionId that was never created via CreateStream,
+// plus IsValidSession and the async Post* wrappers. Hits the not-found / false early-return
+// branches (and IsValidSession / PostCreateSessionEffect, which the lifecycle test never calls).
+void SessionEffectInvalidSessionFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+
+    uint32_t invalidSessionId = GetData<uint32_t>(); // almost certainly absent from sessionNodeMap_
+    int32_t type = GetData<int32_t>();
+    float value = GetData<float>();
+    std::string effectName = "test_effect";
+
+    // Synchronous not-found / false branches:
+    rendererManager->CreateSessionEffect(invalidSessionId, effectName, nullptr, {});
+    rendererManager->DestroySessionEffect(invalidSessionId);
+    (void)rendererManager->HasSessionEffect(invalidSessionId);
+    (void)rendererManager->IsValidSession(invalidSessionId);
+    rendererManager->SetSessionEffectParameter(invalidSessionId, type, value);
+
+    // Asynchronous Post* wrappers (dispatched to the signal-process thread):
+    rendererManager->PostSetSessionEffectParameter(invalidSessionId, type, value);
+    rendererManager->PostCreateSessionEffect(invalidSessionId, effectName, nullptr, {});
+    rendererManager->PostDestroySessionEffect(invalidSessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
+void HDFDumpFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->GetDeviceHDFDumpInfo();
+    rendererManager->DeInit();
+}
+
 typedef void (*TestFuncs)();
 TestFuncs g_testFuncs[] = {
     UploadDumpSinkInfoFuzzTest,
@@ -769,6 +1185,29 @@ TestFuncs g_testFuncs[] = {
     OnFadeDoneWithActiveSessionFuzzTest,
     CoBufferConnectDisconnectSequenceFuzzTest,
     ConnectProcessClusterFullFlowFuzzTest,
+    SessionEffectLifecycleFuzzTest,
+    SessionEffectInvalidSessionFuzzTest,
+    HDFDumpFuzzTest,
+    StartWithSyncIdFuzzTest,
+    SetLoudnessGainFuzzTest,
+    SetAndGetPrivacyTypeFuzzTest,
+    RendererManagerSetterStubFuzzTest,
+    RendererManagerQueryFuzzTest,
+    DumpSinkInfoFuzzTest,
+    AddNodeToSinkFuzzTest,
+    RegisterReadCallbackFuzzTest,
+    OnNodeStatusUpdateFuzzTest,
+    OnRequestLatencyFuzzTest,
+    OnRewindBufferFuzzTest,
+    OnNotifyQueueFuzzTest,
+    OnDisConnectProcessClusterFuzzTest,
+    OnDisConnectCoBufferWaitFadeOutDoneFuzzTest,
+    SetAuxiliarySinkEnableFuzzTest,
+    SetCollDelayCountFuzzTest,
+    TriggerAppsUidUpdateFuzzTest,
+    StopManagerFuzzTest,
+    DeactivateThreadFuzzTest,
+    HandleMsgFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

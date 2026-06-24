@@ -92,6 +92,20 @@ enum VolumeNotifyActionType {
     ACTOPN_CANCEL
 };
 
+enum class NearlinkKaraokeVolumeMode {
+    VOLUME_FWK,
+    VOLUME_NEARLINK,
+    VOLUME_FWK_TO_NEARLINK,
+    VOLUME_NEARLINK_TO_FWK
+};
+
+struct NearlinkKaraokeTransition {
+    int32_t currentAbsVolume = 0;
+    int32_t targetAbsVolume = 0;
+    int32_t currentFwkVolume = 0;
+    int32_t targetFwkVolume = 0;
+};
+
 class AudioVolumeManager {
 public:
     static AudioVolumeManager& GetInstance()
@@ -222,6 +236,8 @@ public:
     bool ReloadLoudVolumeMode(const AudioStreamType streamInFocus, SetLoudVolMode setVolMode);
     int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
     bool CheckLoudVolumeMode(int32_t volLevel, int32_t keyType, AudioStreamType streamInFocus);
+    bool IsNearlinkKaraokeVolumeManaged(AudioStreamType streamType);
+    int32_t StartNearlinkKaraokeTransition(bool enable);
 
 private:
     AudioVolumeManager();
@@ -263,6 +279,17 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
     int32_t HandleStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
         DeviceType deviceType, int32_t zoneId);
+    int32_t StepNearlinkKaraokeTransition();
+    void FinishNearlinkKaraokeTransition();
+    int32_t GetCurrentNearlinkAbsVolume();
+    int32_t GetNearlinkKaraokeVolume();
+    NearlinkKaraokeVolumeMode GetNearlinkKaraokeMode();
+    void SetNearlinkTransitionTargetFwkVolume(int32_t volumeLevel);
+    void SetNearlinkTransitionTargetAbsVolume(int32_t volumeLevel);
+    void SetNearlinkTransitionCurrentFwkVolume(int32_t volumeLevel);
+    void SetNearlinkTransitionCurrentAbsVolume(int32_t volumeLevel);
+    void TriggerKaraokeTransition();
+    void KaraokeTransitionThreadFunc();
 
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
@@ -345,6 +372,15 @@ private:
     AudioVolumeType forceControlVolumeType_ = STREAM_DEFAULT;
     std::shared_ptr<ForceControlVolumeTypeMonitor> forceControlVolumeTypeMonitor_;
     std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
+
+    std::unique_ptr<std::thread> karaokeTransitionThread_ = nullptr;
+    std::mutex transitionThreadSignalMutex_;
+    std::condition_variable karaokeTransitionCondition_;
+    bool karaokeTransitionThreadReady_ = false;
+    bool karaokeTransitionThreadStop_ = false;
+    std::mutex nearlinkKaraokeMutex_;
+    NearlinkKaraokeVolumeMode nearlinkKaraokeMode_ = NearlinkKaraokeVolumeMode::VOLUME_NEARLINK;
+    NearlinkKaraokeTransition nearlinkKaraokeTransition_;
     std::shared_ptr<AudioPolicyStateMonitor> audioPolicyStateMonitor_;
 };
 

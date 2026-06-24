@@ -114,6 +114,15 @@ bool AudioSelectInterfaceService::GetEnhancedRoutingSupported() const
 
 void AudioSelectInterfaceService::HandleNegtiveBt(DeviceType deviceType)
 {
+    if (Util::IsEnhancedRoutingSupported()) {
+        HandleNegtiveBtEnhancedRouting(deviceType);
+        return;
+    }
+    HandleNegtiveBtOriginalLogic(deviceType);
+}
+
+void AudioSelectInterfaceService::HandleNegtiveBtOriginalLogic(DeviceType deviceType)
+{
     auto descs = AudioRouterSelectStrategy::GetInstance().FindCurrentOutputDevice(
         {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_NEARLINK});
     auto currentOutputDevice = !descs.empty() && *descs.begin() ? *(*descs.begin()) : AudioDeviceDescriptor();
@@ -129,7 +138,43 @@ void AudioSelectInterfaceService::HandleNegtiveBt(DeviceType deviceType)
     }
 }
 
+void AudioSelectInterfaceService::HandleNegtiveBtEnhancedRouting(DeviceType deviceType)
+{
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_LOG(coreService != nullptr, "coreService is null");
+    auto previewResults = coreService->PreviewOutputDeviceSelection("HandleNegtiveBt");
+    auto inputPreviewResults = coreService->PreviewInputDeviceSelection("HandleNegtiveBt");
+    auto wirelessDeviceNeeds = AudioActiveDevice::GetInstance().BuildWirelessDeviceNeedsBothDirections(
+        previewResults, inputPreviewResults);
+
+    auto descs = AudioRouterSelectStrategy::GetInstance().FindCurrentOutputDevice(
+        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_NEARLINK});
+    for (auto &desc : descs) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        bool deviceStillNeeded = AudioActiveDevice::GetInstance().IsDeviceInWirelessNeeds(desc, wirelessDeviceNeeds);
+        CHECK_AND_CONTINUE(!deviceStillNeeded);
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+                desc->macAddress_, USER_NOT_SELECT_SLE);
+        }
+        if (desc->deviceType_ == DEVICE_TYPE_NEARLINK && deviceType == DEVICE_TYPE_NEARLINK) {
+            SleAudioDeviceManager::GetInstance().SendUserSelection(*desc,
+                STREAM_USAGE_VOICE_COMMUNICATION, USER_NOT_SELECT_SLE);
+        }
+    }
+}
+
 void AudioSelectInterfaceService::HandleActiveBt(DeviceType deviceType, std::string macAddress)
+{
+    if (Util::IsEnhancedRoutingSupported()) {
+        HandleActiveBtEnhancedRouting(deviceType, macAddress);
+        return;
+    }
+    HandleActiveBtOriginalLogic(deviceType, macAddress);
+}
+
+void AudioSelectInterfaceService::HandleActiveBtOriginalLogic(DeviceType deviceType,
+    const std::string &macAddress)
 {
     auto descs = AudioRouterSelectStrategy::GetInstance().FindCurrentOutputDevice(
         {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_NEARLINK});
@@ -155,6 +200,73 @@ void AudioSelectInterfaceService::HandleActiveBt(DeviceType deviceType, std::str
     }
 }
 
+void AudioSelectInterfaceService::HandleActiveBtEnhancedRouting(DeviceType deviceType,
+    const std::string &macAddress)
+{
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_LOG(coreService != nullptr, "coreService is null");
+    auto previewResults = coreService->PreviewOutputDeviceSelection("HandleActiveBt");
+    auto inputPreviewResults = coreService->PreviewInputDeviceSelection("HandleActiveBt");
+    auto wirelessDeviceNeeds = AudioActiveDevice::GetInstance().BuildWirelessDeviceNeedsBothDirections(
+        previewResults, inputPreviewResults);
+
+    auto descs = AudioRouterSelectStrategy::GetInstance().FindCurrentOutputDevice(
+        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_NEARLINK});
+    for (auto &desc : descs) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        bool deviceStillNeeded = AudioActiveDevice::GetInstance().IsDeviceInWirelessNeeds(desc, wirelessDeviceNeeds);
+        CHECK_AND_CONTINUE(!deviceStillNeeded);
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
+                desc->macAddress_, USER_NOT_SELECT_SLE);
+        }
+        if (desc->deviceType_ == DEVICE_TYPE_NEARLINK) {
+            SleAudioDeviceManager::GetInstance().SendUserSelection(*desc,
+                STREAM_USAGE_VOICE_COMMUNICATION, USER_NOT_SELECT_SLE);
+        }
+    }
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO, macAddress, USER_SELECT_SLE);
+    }
+    if (deviceType == DEVICE_TYPE_NEARLINK) {
+        AudioDeviceDescriptor desc;
+        desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+        desc.macAddress_ = macAddress;
+        SleAudioDeviceManager::GetInstance().SendUserSelection(desc,
+            STREAM_USAGE_VOICE_COMMUNICATION, USER_SELECT_SLE);
+    }
+}
+
+void AudioSelectInterfaceService::NotifyBtForOutputDeviceSelection(
+    std::shared_ptr<AudioDeviceDescriptor> selectedDevice, StreamUsage streamUsage)
+{
+    if (!Util::IsEnhancedRoutingSupported()) {
+        AudioActiveDevice::GetInstance().NotifyUserSelectionEventToBt(selectedDevice, streamUsage);
+        return;
+    }
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_LOG(coreService != nullptr, "coreService is null");
+    auto previewResults = coreService->PreviewOutputDeviceSelection("SelectOutputDevice");
+    auto inputPreviewResults = coreService->PreviewInputDeviceSelection("SelectOutputDevice");
+    AudioActiveDevice::GetInstance().DecideWirelessDeviceActionBasedOnPreview(
+        previewResults, inputPreviewResults, selectedDevice, streamUsage);
+}
+
+void AudioSelectInterfaceService::NotifyBtForInputDeviceSelection(
+    std::shared_ptr<AudioDeviceDescriptor> selectedDevice, SourceType sourceType)
+{
+    if (!Util::IsEnhancedRoutingSupported()) {
+        AudioActiveDevice::GetInstance().NotifyUserSelectionEventForInput(selectedDevice, sourceType);
+        return;
+    }
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_LOG(coreService != nullptr, "coreService is null");
+    auto outputPreview = coreService->PreviewOutputDeviceSelection("SelectInputDevice");
+    auto inputPreview = coreService->PreviewInputDeviceSelection("SelectInputDevice");
+    AudioActiveDevice::GetInstance().DecideWirelessDeviceActionForInputBasedOnPreview(
+        outputPreview, inputPreview, selectedDevice, sourceType);
+}
+
 int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode,
     const bool isNeedNotifyBt)
@@ -165,18 +277,9 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 && selectedDesc[0] &&
         selectedDesc[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE, ERR_INVALID_OPERATION, "DeviceCheck no success");
 
-    int32_t res = SUCCESS;
     StreamUsage strUsage = audioRendererFilter->rendererInfo.streamUsage;
-    auto audioDevUsage = AudioPolicyUtils::GetInstance().GetAudioDeviceUsageByStreamUsage(strUsage);
-    vector<shared_ptr<AudioDeviceDescriptor>> unexcludeDevice = {
-        make_shared<AudioDeviceDescriptor>(*selectedDesc[0])};
-    if (AudioRouterSelectStrategy::GetInstance().IsDeviceExcluded(unexcludeDevice[0], audioDevUsage)) {
-        res = UnexcludeOutputDevicesInner(audioDevUsage, unexcludeDevice);
-        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "UnexcludeOutputDevicesInner fail");
-    }
-
-    AudioActiveDevice::GetInstance().NotifyUserSelectionEventToRemote(selectedDesc[0]);
-    SetDeviceEnableAndUsage(selectedDesc[0]);
+    int32_t prepareRes = SelectOutputDevicePrepare(selectedDesc, strUsage);
+    CHECK_AND_RETURN_RET_LOG(prepareRes == SUCCESS, prepareRes, "SelectOutputDevicePrepare fail");
 
     if (audioDeviceSelectMode == SELECT_STRATEGY_STREAM || audioDeviceSelectMode == SELECT_STRATEGY_INDEPENDENT) {
         CHECK_AND_CALL_FUNC_RETURN_RET(audioRendererFilter->uid > 0, ERR_INVALID_OPERATION,
@@ -187,7 +290,7 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     } else if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
         return SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
     } else {
-        res = SetRenderDeviceForUsage(strUsage, selectedDesc[0], audioRendererFilter->uid);
+        int32_t res = SetRenderDeviceForUsage(strUsage, selectedDesc[0], audioRendererFilter->uid);
         CHECK_AND_CALL_FUNC_RETURN_RET(res == SUCCESS, res,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
                 ERR_PLAY_DEVICE_SWITCH_OPERATION_FAILED, "SelectOutputDevice: SetRenderDeviceForUsage failed", false));
@@ -204,7 +307,7 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     }
 
     if (isNeedNotifyBt) {
-        AudioActiveDevice::GetInstance().NotifyUserSelectionEventToBt(selectedDesc[0], strUsage);
+        NotifyBtForOutputDeviceSelection(selectedDesc[0], strUsage);
     }
     HandleFetchDeviceChange(AudioStreamDeviceChangeReason::OVERRODE, "SelectOutputDevice");
     auto coreService = AudioCoreService::GetCoreService();
@@ -212,6 +315,21 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     coreService->OnPreferredOutputDeviceUpdated(AudioRouterSelectStrategy::GetInstance()
         .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE,
         static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
+    return SUCCESS;
+}
+
+int32_t AudioSelectInterfaceService::SelectOutputDevicePrepare(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc, StreamUsage strUsage)
+{
+    auto audioDevUsage = AudioPolicyUtils::GetInstance().GetAudioDeviceUsageByStreamUsage(strUsage);
+    vector<shared_ptr<AudioDeviceDescriptor>> unexcludeDevice = {
+        make_shared<AudioDeviceDescriptor>(*selectedDesc[0])};
+    if (AudioRouterSelectStrategy::GetInstance().IsDeviceExcluded(unexcludeDevice[0], audioDevUsage)) {
+        int32_t res = UnexcludeOutputDevicesInner(audioDevUsage, unexcludeDevice);
+        CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "UnexcludeOutputDevicesInner fail");
+    }
+    AudioActiveDevice::GetInstance().NotifyUserSelectionEventToRemote(selectedDesc[0]);
+    SetDeviceEnableAndUsage(selectedDesc[0]);
     return SUCCESS;
 }
 
@@ -412,7 +530,7 @@ int32_t AudioSelectInterfaceService::SelectInputDevice(sptr<AudioCapturerFilter>
         AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(selectUid, selectStreamId, selectedDesc[0]);
     }
 
-    AudioActiveDevice::GetInstance().NotifyUserSelectionEventForInput(selectedDesc[0], srcType);
+    NotifyBtForInputDeviceSelection(selectedDesc[0], srcType);
     coreService->FetchInputDeviceAndRoute("SelectInputDevice_2");
 
     coreService->ReloadSourceForDeviceChange(AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(),

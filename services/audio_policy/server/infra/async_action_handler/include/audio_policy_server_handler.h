@@ -97,6 +97,7 @@ public:
         EFFECT_MODE_CHANGE_FOR_ANY_DEVICE,
         PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE,
         AUDIO_SEPARATION_EFFECT_ENABLED_CHANGE,
+        RECORD_CONTROLLER_ENABLED_CHANGE_EVENT,
     };
     /* event data */
     class EventContextObj {
@@ -109,6 +110,7 @@ public:
         std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
         AudioRingerMode ringMode;
         MicStateChangeEvent micStateChangeEvent;
+        SystemRecordControllerChangeInfo recordControllerChangeInfo;
         InterruptEventInternal interruptEvent;
         uint32_t sessionId;
         int32_t clientId;
@@ -198,6 +200,7 @@ public:
     bool SendSystemAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent);
     bool SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent);
     bool SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent, int32_t clientId);
+    bool SendRecordControllerEnabledChangeCallback(const SystemRecordControllerChangeInfo &changeInfo);
     bool SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent);
     bool SendInterruptEventWithStreamIdCallback(const InterruptEventInternal &interruptEvent,
         const uint32_t &streamId);
@@ -276,6 +279,7 @@ private:
     void HandleRingerModeUpdatedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleMicStateUpdatedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleMicStateUpdatedEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleRecordControllerEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventForAudioSession(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithStreamId(const AppExecFwk::InnerEvent::Pointer &event);

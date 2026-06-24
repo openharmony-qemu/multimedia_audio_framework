@@ -54,6 +54,7 @@ ohos_shared_library("audio_engine_utils") {
     "-Wall",
     "-Werror",
     "-D_FORTIFY_SOURCE=2 -O2",
+    "-Os",
   ]
 
   deps = [
@@ -106,6 +107,7 @@ ohos_shared_library("audio_engine_plugins") {
     "-Wall",
     "-Werror",
     "-D_FORTIFY_SOURCE=2 -O2",
+    "-Os",
   ]
 
   external_deps = [

@@ -384,7 +384,8 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
     bool ret = false;
     uint32_t sessionId = 0;
     ipcStream->GetAudioSessionID(sessionId);
-    ipcStream->Start();
+    bool hasNoCallback = GetData<bool>();
+    ipcStream->Start(hasNoCallback);
     ipcStream->Pause();
     ipcStream->Drain(ret);
     AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC}, FilterMode::INCLUDE, {0}, FilterMode::INCLUDE}, false};

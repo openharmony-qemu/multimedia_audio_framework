@@ -30,36 +30,6 @@ using namespace std;
 using namespace HiviewDFX;
 static __thread napi_ref g_effectMgrConstructor = nullptr;
 
-static napi_value CreatePromiseError(napi_env env, int32_t audioErrCode, const std::string &customMessage = "")
-{
-    int32_t napiErrCode = audioErrCode;
-    std::string message = NapiAudioError::GetMessageByCode(napiErrCode);
-    if (!customMessage.empty()) {
-        message = customMessage;
-    }
-
-    napi_value messageValue = nullptr;
-    napi_create_string_utf8(env, message.c_str(), NAPI_AUTO_LENGTH, &messageValue);
-    napi_value errorValue = nullptr;
-    napi_create_error(env, nullptr, messageValue, &errorValue);
-    napi_value codeValue = nullptr;
-    napi_create_int32(env, napiErrCode, &codeValue);
-    napi_set_named_property(env, errorValue, "code", codeValue);
-    return errorValue;
-}
-
-static napi_value CreateEffectOperationErrorValue(napi_env env, int32_t ret, const char *operation)
-{
-    if (ret == ERR_NOT_SUPPORTED) {
-        AUDIO_WARNING_LOG("%{public}s not supported", operation);
-    } else {
-        AUDIO_ERR_LOG("%{public}s failed: %{public}d", operation, ret);
-    }
-
-    return CreatePromiseError(env, ret,
-        ret == ERR_NOT_SUPPORTED ? "Effect is not supported in this device" : "");
-}
-
 NapiAudioEffectMgr::NapiAudioEffectMgr()
     : env_(nullptr), audioEffectMngr_(nullptr) {}
 
@@ -277,53 +247,71 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectEnabled(napi_env env, nap
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
-    size_t argc = ARGS_THREE;
-    napi_value args[ARGS_THREE] = {};
-    auto *napiEffectMgr = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO && napiEffectMgr != nullptr &&
-        napiEffectMgr->audioEffectMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: mandatory parameters are left unspecified"),
-        "argcCount invalid");
-    napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_boolean, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of enabled must be boolean"),
-        "invaild valueType");
-
-    bool enabled = false;
-    napi_status status = NapiParamUtils::GetValueBoolean(env, enabled, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed"), "get enabled failed");
-    valueType = napi_undefined;
-    napi_typeof(env, args[PARAM1], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of uid must be number"),
-        "invaild valueType");
-    int32_t uid = 0;
-    status = NapiParamUtils::GetValueInt32(env, uid, args[PARAM1]);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed"), "get uid failed");
-    int64_t streamId = -1;
-    if (argc == ARGS_THREE) {
-        status = NapiParamUtils::GetValueInt64(env, streamId, args[PARAM2]);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
-            NAPI_ERR_INVALID_PARAM, "parameter verification failed"), "get streamId failed");
+    auto context = std::make_shared<AudioEffectManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("SetAudioSeparationEffectEnabled failed : no memory");
+        NapiAudioError::ThrowError(env, "SetAudioSeparationEffectEnabled failed : no memory",
+            NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    napi_value promise = nullptr;
-    napi_deferred deferred = nullptr;
-    napi_status promiseStatus = napi_create_promise(env, &deferred, &promise);
-    CHECK_AND_RETURN_RET_LOG(promiseStatus == napi_ok, nullptr, "create promise failed");
-    int32_t ret = napiEffectMgr->audioEffectMngr_->SetAudioSeparationEffectEnabled(enabled, uid, streamId);
-    if (ret == AUDIO_OK) {
-        AUDIO_INFO_LOG("SetAudioSeparationEffectEnabled success, resolving promise");
-        napi_resolve_deferred(env, deferred, nullptr);
-    } else {
-        napi_value errorValue = CreateEffectOperationErrorValue(env, ret, "SetAudioSeparationEffectEnabled");
-        napi_reject_deferred(env, deferred, errorValue);
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO,
+            "parameter verification failed: mandatory parameters are left unspecified",
+            NAPI_ERR_INVALID_PARAM);
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[PARAM0], &valueType);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_boolean,
+            "incorrect parameter types: The type of enabled must be boolean",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueBoolean(env, context->enabled, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "parameter verification failed", NAPI_ERR_INVALID_PARAM);
+        napi_typeof(env, argv[PARAM1], &valueType);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_number,
+            "incorrect parameter types: The type of uid must be number",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->uid, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+            "parameter verification failed", NAPI_ERR_INVALID_PARAM);
+        if (argc == ARGS_THREE) {
+            context->status = NapiParamUtils::GetValueInt64(env, context->streamId, argv[PARAM2]);
+            NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
+                "parameter verification failed", NAPI_ERR_INVALID_PARAM);
+        }
+    };
+    context->GetCbInfo(env, info, inputParser);
+    if (context->status != napi_ok) {
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    return promise;  // Return Promise<void>
+    return UpdateAudioSeparationEffectEnabled(env, context);
+}
+
+napi_value NapiAudioEffectMgr::UpdateAudioSeparationEffectEnabled(napi_env env,
+    std::shared_ptr<AudioEffectManagerAsyncContext> &context)
+{
+    auto executor = [context]() {
+        auto obj = reinterpret_cast<NapiAudioEffectMgr*>(context->native);
+        CHECK_AND_RETURN_LOG(obj != nullptr, "napiEffectMgr is nullptr");
+        auto *napiEffectMgr = obj;
+        CHECK_AND_RETURN_LOG(napiEffectMgr->audioEffectMngr_ != nullptr, "audioEffectMngr_ is nullptr");
+        context->intValue = napiEffectMgr->audioEffectMngr_->SetAudioSeparationEffectEnabled(
+            context->enabled, context->uid, context->streamId);
+        if (context->intValue != SUCCESS) {
+            if (context->intValue == ERR_NOT_SUPPORTED) {
+                context->SignError(NAPI_ERR_UNSUPPORTED);
+            } else {
+                context->SignError(NAPI_ERR_SYSTEM);
+            }
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetAudioSeparationEffectEnabled", executor, complete);
 }
 
 napi_value NapiAudioEffectMgr::SetAudioSeparationEffectVolume(napi_env env, napi_callback_info info)
@@ -331,50 +319,70 @@ napi_value NapiAudioEffectMgr::SetAudioSeparationEffectVolume(napi_env env, napi
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
-    size_t argc = ARGS_TWO;
-    napi_value args[ARGS_TWO] = {};
-    auto *napiEffectMgr = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO && napiEffectMgr != nullptr &&
-        napiEffectMgr->audioEffectMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "parameter verification failed: mandatory parameters are left unspecified"),
-        "argcCount invalid");
-
-    napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of type must be number"),
-        "invaild valueType");
-    int32_t typeValue = 0;
-    napi_status status = NapiParamUtils::GetValueInt32(env, typeValue, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok && typeValue == VOLUME_TYPE_VOCAL,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: type value must be VOLUME_TYPE_VOCAL"), "get type failed");
-    valueType = napi_undefined;
-    napi_typeof(env, args[PARAM1], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of volume must be number"),
-        "invaild valueType");
-    double volume = 0.0;
-    status = NapiParamUtils::GetValueDouble(env, volume, args[PARAM1]);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok && volume >= 0.0 && volume <= 1.0,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: volume range is [0.0, 1.0]"), "get volume failed");
-
-    napi_value promise = nullptr;
-    napi_deferred deferred = nullptr;
-    napi_status promiseStatus = napi_create_promise(env, &deferred, &promise);
-    CHECK_AND_RETURN_RET_LOG(promiseStatus == napi_ok, nullptr, "create promise failed");
-    AudioSeparationVolumeType volumeType = static_cast<AudioSeparationVolumeType>(typeValue);
-    int32_t ret = napiEffectMgr->audioEffectMngr_->SetAudioSeparationEffectVolume(volumeType, volume);
-    if (ret == AUDIO_OK) {
-        AUDIO_INFO_LOG("SetAudioSeparationEffectVolume success, resolving promise");
-        napi_resolve_deferred(env, deferred, nullptr);
-    } else {
-        napi_value errorValue = CreateEffectOperationErrorValue(env, ret, "SetAudioSeparationEffectVolume");
-        napi_reject_deferred(env, deferred, errorValue);
+    auto context = std::make_shared<AudioEffectManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("SetAudioSeparationEffectVolume failed : no memory");
+        NapiAudioError::ThrowError(env, "SetAudioSeparationEffectVolume failed : no memory",
+            NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    return promise;  // Return Promise<void>
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc == ARGS_TWO,
+            "parameter verification failed: mandatory parameters are left unspecified",
+            NAPI_ERR_INVALID_PARAM);
+        napi_valuetype valueType = napi_undefined;
+        napi_typeof(env, argv[PARAM0], &valueType);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_number,
+            "incorrect parameter types: The type of type must be number",
+            NAPI_ERR_INVALID_PARAM);
+        int32_t typeValue = 0;
+        context->status = NapiParamUtils::GetValueInt32(env, typeValue, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok && typeValue == VOLUME_TYPE_VOCAL,
+            "parameter verification failed: type value must be VOLUME_TYPE_VOCAL",
+            NAPI_ERR_INVALID_PARAM);
+        context->volumeType = static_cast<AudioSeparationVolumeType>(typeValue);
+        napi_typeof(env, argv[PARAM1], &valueType);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, valueType == napi_number,
+            "incorrect parameter types: The type of volume must be number",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueDouble(env, context->volume, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok && context->volume >= 0.0 &&
+            context->volume <= 1.0, "parameter verification failed: volume range is [0.0, 1.0]",
+            NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+    if (context->status != napi_ok) {
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    return UpdateAudioSeparationEffectVolume(env, context);
+}
+
+napi_value NapiAudioEffectMgr::UpdateAudioSeparationEffectVolume(napi_env env,
+    std::shared_ptr<AudioEffectManagerAsyncContext> &context)
+{
+    auto executor = [context]() {
+        auto obj = reinterpret_cast<NapiAudioEffectMgr*>(context->native);
+        CHECK_AND_RETURN_LOG(obj != nullptr, "napiEffectMgr is nullptr");
+        auto *napiEffectMgr = obj;
+        CHECK_AND_RETURN_LOG(napiEffectMgr->audioEffectMngr_ != nullptr, "audioEffectMngr_ is nullptr");
+        context->intValue = napiEffectMgr->audioEffectMngr_->SetAudioSeparationEffectVolume(
+            context->volumeType, context->volume);
+        if (context->intValue != SUCCESS) {
+            if (context->intValue == ERR_NOT_SUPPORTED) {
+                context->SignError(NAPI_ERR_UNSUPPORTED);
+            } else {
+                context->SignError(NAPI_ERR_SYSTEM);
+            }
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetAudioSeparationEffectVolume", executor, complete);
 }
 
 napi_value NapiAudioEffectMgr::OnAudioSeparationEffectEnabledChange(napi_env env, napi_callback_info info)

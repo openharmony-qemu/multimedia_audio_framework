@@ -26,7 +26,7 @@ interface IIpcStream {
     void ResolveBuffer([out] sharedptr<OHAudioBuffer> buffer);
     void UpdatePosition();
     void GetAudioSessionID([out] unsigned int sessionId);
-    void Start();
+    void Start([in] boolean hasNoCallback);
     void Pause();
     void Stop();
     void Release([in] boolean isSwitchStream); // isSwitchStream = false

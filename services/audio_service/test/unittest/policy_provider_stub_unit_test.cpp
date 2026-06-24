@@ -48,6 +48,10 @@ public:
 
     int32_t GetMaxRendererInstances() override;
 
+    bool IsSupportInnerCaptureOffload() override;
+
+    int32_t GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName) override;
+
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
 
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
@@ -106,6 +110,16 @@ int32_t MockPolicyProvider::GetAndSaveClientType(uint32_t uid, const std::string
 }
 
 int32_t MockPolicyProvider::GetMaxRendererInstances()
+{
+    return SUCCESS;
+}
+
+bool MockPolicyProvider::IsSupportInnerCaptureOffload()
+{
+    return false;
+}
+
+int32_t MockPolicyProvider::GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName)
 {
     return SUCCESS;
 }

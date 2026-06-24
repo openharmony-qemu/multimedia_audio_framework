@@ -615,9 +615,12 @@ const std::map<std::string, int32_t> NapiAudioEnum::BluetoothAndNearlinkPreferre
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioSessionBehaviorFlagsMap = {
     {"DEFAULT_BEHAVIOR", static_cast<int32_t>(AudioSessionBehaviorFlags::DEFAULT)},
-    {"VOIP_PRIVACY_TYPE_PUBLIC", static_cast<int32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)},
     {"MUTE_WHEN_INTERRUPTED", static_cast<int32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)},
     {"PAUSE_WHEN_INTERRUPTED", static_cast<int32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::audioSeparationVolumeTypeMap = {
+    {"VOLUME_TYPE_VOCAL", 0},
 };
 
 NapiAudioEnum::NapiAudioEnum()
@@ -718,6 +721,7 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AsrVoiceControlMode", CreateEnumObject(env,
             asrVoiceControlModeMap)),
         DECLARE_NAPI_PROPERTY("AsrVoiceMuteMode", CreateEnumObject(env, asrVoiceMuteModeMap)),
+        DECLARE_NAPI_PROPERTY("AudioSeparationVolumeType", CreateEnumObject(env, audioSeparationVolumeTypeMap)),
     };
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);

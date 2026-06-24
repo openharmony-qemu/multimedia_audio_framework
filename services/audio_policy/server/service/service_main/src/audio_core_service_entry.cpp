@@ -148,7 +148,7 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
         sessionId, SessionOperationToString(operation), SessionOperationMsgToString(opMsg));
     switch (operation) {
         case SESSION_OPERATION_START:
-            return coreService_->StartClient(sessionId);
+            return coreService_->StartClient(sessionId, opMsg);
         case SESSION_OPERATION_PAUSE:
             return coreService_->PauseClient(sessionId);
         case SESSION_OPERATION_STANDBY:
@@ -851,30 +851,6 @@ void AudioCoreService::EventEntry::OnDeviceStateChange(const std::string &networ
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     coreService_->OnDeviceStateChange(networkId, role, isAvailable);
-}
-
-void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagBySessionId(uint32_t sessionId, bool enabled,
-    const std::string &reason)
-{
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
-    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagBySessionId sessionId:%{public}u enabled:%{public}d",
-        sessionId, enabled);
-    if (coreService_->UpdateVoipNoPrivacyFlagBySessionId(sessionId, enabled)) {
-        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
-    }
-}
-
-void AudioCoreService::EventEntry::UpdateVoipNoPrivacyFlagByPid(int32_t callerPid, bool enabled,
-    const std::string &reason)
-{
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
-    AUDIO_INFO_LOG("UpdateVoipNoPrivacyFlagByPid callerPid:%{public}d enabled:%{public}d",
-        callerPid, enabled);
-    if (coreService_->UpdateVoipNoPrivacyFlagByPid(callerPid, enabled)) {
-        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
-    }
 }
 
 void AudioCoreService::EventEntry::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)

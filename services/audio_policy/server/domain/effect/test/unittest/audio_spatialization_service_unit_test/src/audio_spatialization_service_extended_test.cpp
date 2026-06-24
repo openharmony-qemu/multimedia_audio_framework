@@ -125,8 +125,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_003, Tes
         SPATIALIZATION_SERVICE_OK);
     EXPECT_EQ(sSpatializationService_->SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable),
         SPATIALIZATION_SERVICE_OK);
-    EXPECT_EQ(sSpatializationService_->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable),
-        SPATIALIZATION_SERVICE_OK);
+    EXPECT_EQ(sSpatializationService_->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable), ERROR);
 
     sSpatializationService_->currentDevice_.macAddress_ = "00:11:22:33:44:66";
     enable = false;

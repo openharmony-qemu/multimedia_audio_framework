@@ -229,6 +229,12 @@ public:
 
     int32_t UnsetMicStateChangeCallback(const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback);
 
+    int32_t EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config);
+    int32_t SetRecordControllerEnabledChangeCallback(
+        const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &callback);
+    int32_t UnsetRecordControllerEnabledChangeCallback(
+        const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &callback);
+
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const std::shared_ptr<AudioInterruptCallback> &callback, uint32_t clientUid, const int32_t zoneID = 0);
 

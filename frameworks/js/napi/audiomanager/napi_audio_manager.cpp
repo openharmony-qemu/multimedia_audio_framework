@@ -24,6 +24,7 @@
 #include "napi_audio_collaborative_manager.h"
 #include "napi_audio_device_enhance_manager.h"
 #include "napi_audio_spatialization_manager.h"
+#include "napi_audio_record_controller.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
@@ -141,6 +142,7 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("getSpatializationManager", GetSpatializationManager),
         DECLARE_NAPI_FUNCTION("disableSafeMediaVolume", DisableSafeMediaVolume),
         DECLARE_NAPI_FUNCTION("getCollaborativeManager", GetCollaborativeManager),
+        DECLARE_NAPI_FUNCTION("getRecordingManager", GetRecordingManager),
         DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserChoice", ReportPlaybackCaptureUserChoice),
         DECLARE_NAPI_FUNCTION("getDeviceEnhanceManager", GetDeviceEnhanceManager),
         DECLARE_NAPI_FUNCTION("getDebuggingManager", GetDebuggingManager),
@@ -1616,6 +1618,19 @@ napi_value NapiAudioManager::GetCollaborativeManager(napi_env env, napi_callback
 #else
     return nullptr;
 #endif
+}
+
+napi_value NapiAudioManager::GetRecordingManager(napi_env env, napi_callback_info info)
+{
+    napi_status status;
+    size_t argCount = 0;
+
+    status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
+    if (status != napi_ok || argCount != 0) {
+        AUDIO_ERR_LOG("Invalid arguments!");
+        return nullptr;
+    }
+    return NapiAudioRecordController::CreateAudioRecordController(env, info);
 }
 
 napi_value NapiAudioManager::ReportPlaybackCaptureUserChoice(napi_env env, napi_callback_info info)

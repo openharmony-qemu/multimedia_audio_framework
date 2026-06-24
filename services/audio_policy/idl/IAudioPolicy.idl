@@ -47,6 +47,8 @@ sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneVolumeConfig;
 sequenceable audio_debug_info..OHOS.AudioStandard.AudioDebugInfo;
 sequenceable audio_debug_info..OHOS.AudioStandard.AudioSessionDebugInfo;
 sequenceable audio_info..OHOS.AudioStandard.SystemVolumeFilter;
+sequenceable audio_info..OHOS.AudioStandard.SystemRecordControllerConfig;
+sequenceable audio_info..OHOS.AudioStandard.SystemRecordControllerChangeInfo;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -61,7 +63,7 @@ interface IAudioPolicy {
         [in] int volumeType, /* volumeType type is AudioVolumeType */
         [in] int volumeLevel,
         [in] int volumeFlag, /* volumeFlag default 0 */
-        [in] int uid /* uid default 0 */); 
+        [in] int uid /* uid default 0 */);
     void SetSystemAppVolumePercentageForUid([in] int appUid, [in] int volumePercentage);
     void SetAppVolumeMuted([in] int appUid, [in] boolean muted, [in] int volumeFlag); /*volumeFlag default 0*/
     void SetAppRingMuted([in] int appUid, [in] boolean muted);
@@ -278,7 +280,7 @@ interface IAudioPolicy {
     void GetLoopbackVolume([out] float volume, [out] boolean ret);
     void IsAudioLoopbackSupported([in] int mode, [in] int deviceType, [out] boolean isSupported);
     void GetLoopbackSupportedDevicePairs([out] List<sharedptr<AudioDeviceDescriptor>> inputDevices,
-        [out] List<sharedptr<AudioDeviceDescriptor>> outputDevices, [out] int ret); 
+        [out] List<sharedptr<AudioDeviceDescriptor>> outputDevices, [out] int ret);
     void GetLoopbackPreferredDevicePair([out] sharedptr<AudioDeviceDescriptor> inputDevice,
         [out] sharedptr<AudioDeviceDescriptor> outputDevice, [out] int ret);
     void SetCollaborativePlaybackEnabledForDevice([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enabled);
@@ -363,4 +365,5 @@ interface IAudioPolicy {
     void RemoveAllSystemVolumeChangeCallbackInfo();
     void PauseAudioFocusForExtAudioZone();
     void ResumeAudioFocusForExtAudioZone();
+    void EnableSystemRecordController([in] boolean show, [in] SystemRecordControllerConfig config);
 }

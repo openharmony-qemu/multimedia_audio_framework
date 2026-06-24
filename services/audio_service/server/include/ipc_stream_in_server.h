@@ -61,7 +61,7 @@ public:
 
     int32_t GetAudioSessionID(uint32_t &sessionId) override;
 
-    int32_t Start() override;
+    int32_t Start(bool hasNoCallback) override;
 
     int32_t Pause() override;
 

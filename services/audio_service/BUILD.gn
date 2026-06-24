@@ -261,6 +261,7 @@ config("audio_sasdk_public_config") {
   cflags = [
     "-Wall",
     "-Werror",
+    "-Os",
   ]
 
   if (target_cpu == "arm") {
@@ -908,6 +909,7 @@ ohos_shared_library("audio_sasdk") {
     boundary_sanitize = true
   }
 
+  cflags = [ "-Os" ]
   install_enable = true
   sources = [ "client/src/audio_sasdk.cpp" ]
 

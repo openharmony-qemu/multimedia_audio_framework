@@ -83,7 +83,10 @@ ohos_shared_library("ohaudio") {
     "../audiocapturer:audio_capturer",
     "../audiorenderer:audio_renderer",
   ]
-  cflags = [ "-Werror" ]
+  cflags = [
+    "-Werror",
+    "-Os",
+  ]
 
   external_deps = [
     "c_utils:utils",

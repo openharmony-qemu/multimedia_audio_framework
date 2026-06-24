@@ -87,6 +87,13 @@ public:
     int32_t RemoveMicStateChangeCallback();
     size_t GetMicStateChangeCallbackSize() const;
     bool HasMicStateChangeCallback();
+    int32_t AddRecordControllerEnabledChangeCallback(
+        const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &cb);
+    int32_t RemoveRecordControllerEnabledChangeCallback();
+    int32_t RemoveRecordControllerEnabledChangeCallback(
+        const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &cb);
+    size_t GetRecordControllerEnabledChangeCallbackSize() const;
+    bool HasRecordControllerEnabledChangeCallback();
     int32_t AddPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo, int32_t uid,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &cb);
     int32_t RemovePreferredOutputDeviceChangeCallback(int32_t uid, StreamUsage streamUsage,
@@ -204,6 +211,7 @@ public:
     int32_t OnSelfAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     int32_t OnSystemAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     int32_t OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
+    int32_t OnRecordControllerEnabledChange(const SystemRecordControllerChangeInfo &changeInfo) override;
     int32_t OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo, int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
     int32_t OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo, int32_t uid,
@@ -267,6 +275,8 @@ private:
     std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerAppVolumeChangeCallback>>> selfAppVolumeChangeCallback_;
     std::map<int32_t, int32_t> selfAppVolumeChangeCallbackNum_;
     std::vector<std::shared_ptr<AudioManagerMicStateChangeCallback>> micStateChangeCallbackList_;
+    std::vector<std::shared_ptr<SystemRecordControllerEnabledChangeCallback>>
+        recordControllerEnabledChangeCallbackList_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
     std::vector<std::weak_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
@@ -319,6 +329,7 @@ private:
     mutable std::mutex appVolumeChangeForUidMutex_;
     mutable std::mutex selfAppVolumeChangeMutex_;
     mutable std::mutex micStateChangeMutex_;
+    mutable std::mutex recordControllerEnabledChangeMutex_;
     mutable std::mutex deviceChangeWithInfoCallbackMutex_;
     mutable std::mutex headTrackingDataRequestedChangeMutex_;
     mutable std::mutex spatializationEnabledChangeMutex_;

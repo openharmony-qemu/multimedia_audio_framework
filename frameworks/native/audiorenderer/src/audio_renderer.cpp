@@ -1471,7 +1471,6 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
 {
     Trace trace("KeyAction AudioRenderer::Start " + std::to_string(sessionID_));
     RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::START_RENDERER_BEGIN);
-    AsyncCheckAudioRenderer("Start", true);
     AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
         [](void *) { AUDIO_ERR_LOG("Start timeout"); }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
@@ -1537,7 +1536,6 @@ void AudioRendererPrivate::HandleAudioInterruptInfo()
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("AudioRenderer::Write");
-    AsyncCheckAudioRenderer("Write", false);
 
     std::unique_lock<std::mutex> lock(inSwitchingMtx_);
     taskLoopCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_OVERTIMES_IN_MS), [this] {
@@ -1559,7 +1557,6 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize)
 {
     Trace trace("Write");
-    AsyncCheckAudioRenderer("Write", false);
 
     std::unique_lock<std::mutex> lock(inSwitchingMtx_);
     taskLoopCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_OVERTIMES_IN_MS), [this] {
@@ -1596,7 +1593,6 @@ bool AudioRendererPrivate::GetAudioTime(Timestamp &timestamp, Timestamp::Timesta
 
 bool AudioRendererPrivate::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    AsyncCheckAudioRenderer("GetAudioPosition", false);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->GetAudioPosition(timestamp, base);
@@ -2090,8 +2086,8 @@ InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForced
     audioStream_->GetAudioSessionID(sessionID_);
     switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_PAUSE:
-            if (currentFocusState == FOCUS_RUNNING || currentFocusState == FOCUS_PREPARED ||
-                currentFocusState == FOCUS_STARTING) {
+            if ((currentFocusState == FOCUS_RUNNING || currentFocusState == FOCUS_PREPARED ||
+                currentFocusState == FOCUS_STARTING) && interruptEvent.handleForceStream) {
                 HandleForcePause(currentFocusState);
             } else {
                 AUDIO_WARNING_LOG("sessionId: %{public}u, currentFocusState: %{public}d. No need to pause",
@@ -2108,7 +2104,9 @@ InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForced
             isForcePaused_ = false;
             return FORCE_PAUSED_TO_RESUME_EVENT;
         case INTERRUPT_HINT_STOP:
-            HandleForceStop(currentFocusState);
+            if (interruptEvent.handleForceStream) {
+                HandleForceStop(currentFocusState);
+            }
             break;
         case INTERRUPT_HINT_DUCK:
             if (!HandleForceDucking(interruptEvent)) {
@@ -2185,7 +2183,7 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 
     auto ret = HandleAndNotifyForcedEvent(interruptEvent);
     lock.unlock();
-    if (NoNeedNotifyEvent(interruptEvent) == true) {
+    if (NoNeedNotifyEvent(interruptEvent) == true && interruptEvent.handleForceStream) {
         return;
     }
     if (ret == FORCE_EVENT) {
@@ -2283,7 +2281,6 @@ AudioRenderMode AudioRendererPrivate::GetRenderMode() const
 
 int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc)
 {
-    AsyncCheckAudioRenderer("GetBufferDesc", false);
     std::shared_ptr<IAudioStream> currentStream = audioStream_;
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t ret = currentStream->GetBufferDesc(bufDesc);
@@ -2295,7 +2292,6 @@ int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc)
     // if dataLength = 0, this buffer will be discard.
     Trace trace("AudioRenderer::Enqueue dataLength:" + std::to_string(bufDesc.dataLength) + " bufLength:" +
         std::to_string(bufDesc.bufLength));
-    AsyncCheckAudioRenderer("Enqueue", false);
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
     size_t length = isHWDecodingType_ ? bufDesc.dataLength : bufDesc.bufLength;
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), length);
@@ -3859,11 +3855,6 @@ int32_t AudioRendererPrivate::SetIndependentAudioSessionStrategy(
     const AudioSessionStrategy &strategy, const uint32_t behavior)
 {
     audioInterrupt_.behaviorFlags_ = {};
-    if ((behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)) &&
-        (audioInterrupt_.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION)) {
-        audioInterrupt_.behaviorFlags_.voipNoPrivacyFlag = true;
-        AUDIO_INFO_LOG("Renderer id: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", sessionID_);
-    }
     if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)) {
         audioInterrupt_.behaviorFlags_.pauseWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Renderer id: %{public}d activated PAUSE_WHEN_INTERRUPTED success", sessionID_);

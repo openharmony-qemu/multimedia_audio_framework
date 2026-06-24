@@ -222,7 +222,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_006, TestSize.Level1)
     AudioHfpManager::scene_ = AUDIO_SCENE_PHONE_CHAT;
     AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice(HFP_DEVICE_MAC2);
 
-    AudioHfpManager::SetVirtualCall(0, false);
+    AudioHfpManager::SetVirtualCall(1, false);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTED);
     EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_CALLULAR), false);
 }

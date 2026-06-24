@@ -42,6 +42,7 @@
 #include "audio_core_service.h"
 #include "audio_interrupt_service.h"
 #include "stream_dfx_manager.h"
+#include "audio_utils.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -66,6 +67,9 @@ private:
 static const int64_t MAX_LEGACY_HIGH_VOLUME_CHECK_TIME_S = 24 * 60 * 60; // 24h
 const int32_t DUAL_TONE_RING_VOLUME = 0;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
+constexpr int32_t KARAOKE_TRANSITION_INTERVAL_NS = 200000000;
+constexpr int32_t KARAOKE_TRANSITION_CONTINUE = 1;
+constexpr int32_t KARAOKE_TRANSITION_END = 0;
 constexpr const char *HIPLAY_DEVICE = "hiplay";
 constexpr int32_t RSS_UID = 1096;
 
@@ -171,6 +175,16 @@ void AudioVolumeManager::DeInit(void)
         safeVolumeDialogThrd_->join();
         safeVolumeDialogThrd_.reset();
         safeVolumeDialogThrd_ = nullptr;
+    }
+    {
+        std::lock_guard<std::mutex> lock(transitionThreadSignalMutex_);
+        karaokeTransitionThreadStop_ = true;
+    }
+    karaokeTransitionCondition_.notify_all();
+    if (karaokeTransitionThread_ != nullptr && karaokeTransitionThread_->joinable()) {
+        karaokeTransitionThread_->join();
+        karaokeTransitionThread_.reset();
+        karaokeTransitionThread_ = nullptr;
     }
     audioPolicyServerHandler_ = nullptr;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -325,6 +339,9 @@ int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType, int
     }
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK &&
         (volumeType == STREAM_MUSIC || volumeType == STREAM_VOICE_CALL)) {
+        if (IsNearlinkKaraokeVolumeManaged(volumeType)) {
+            return GetNearlinkKaraokeVolume();
+        }
         return SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(volumeType, *deviceDesc);
     }
     int32_t volume = audioPolicyManager_.GetSystemVolumeLevel(deviceDesc, streamType, zoneId);
@@ -562,6 +579,170 @@ int32_t AudioVolumeManager::HandleNearlinkDeviceAbsVolume(AudioStreamType stream
     return result;
 }
 
+bool AudioVolumeManager::IsNearlinkKaraokeVolumeManaged(AudioStreamType streamType)
+{
+    if (streamType != STREAM_MUSIC || audioActiveDevice_.GetCurrentOutputDeviceType() != DEVICE_TYPE_NEARLINK) {
+        return false;
+    }
+    return GetNearlinkKaraokeMode() != NearlinkKaraokeVolumeMode::VOLUME_NEARLINK;
+}
+
+int32_t AudioVolumeManager::GetCurrentNearlinkAbsVolume()
+{
+    auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_MUSIC);
+    auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(volumeType);
+    CHECK_AND_RETURN_RET(deviceDesc != nullptr, ERROR);
+    CHECK_AND_RETURN_RET(deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK, ERROR);
+    int32_t volume = SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(STREAM_MUSIC, *deviceDesc);
+    return volume;
+}
+
+NearlinkKaraokeVolumeMode AudioVolumeManager::GetNearlinkKaraokeMode()
+{
+    std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
+    return nearlinkKaraokeMode_;
+}
+
+int32_t AudioVolumeManager::GetNearlinkKaraokeVolume()
+{
+    std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
+    if (nearlinkKaraokeMode_ == NearlinkKaraokeVolumeMode::VOLUME_FWK ||
+        nearlinkKaraokeMode_ == NearlinkKaraokeVolumeMode::VOLUME_NEARLINK_TO_FWK) {
+        return nearlinkKaraokeTransition_.targetFwkVolume;
+    } else {
+        return nearlinkKaraokeTransition_.targetAbsVolume;
+    }
+}
+
+void AudioVolumeManager::SetNearlinkTransitionTargetFwkVolume(int32_t volumeLevel)
+{
+    std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
+    nearlinkKaraokeTransition_.targetFwkVolume = volumeLevel;
+}
+
+void AudioVolumeManager::SetNearlinkTransitionTargetAbsVolume(int32_t volumeLevel)
+{
+    std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
+    nearlinkKaraokeTransition_.targetAbsVolume = volumeLevel;
+}
+
+void AudioVolumeManager::SetNearlinkTransitionCurrentFwkVolume(int32_t volumeLevel)
+{
+    std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
+    nearlinkKaraokeTransition_.currentFwkVolume = volumeLevel;
+}
+
+void AudioVolumeManager::SetNearlinkTransitionCurrentAbsVolume(int32_t volumeLevel)
+{
+    std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
+    nearlinkKaraokeTransition_.currentAbsVolume = volumeLevel;
+}
+
+int32_t AudioVolumeManager::StartNearlinkKaraokeTransition(bool enable)
+{
+    Trace trace("AudioVolumeManager::StartNearlinkKaraokeTransition");
+    {
+        std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
+        if (enable && (nearlinkKaraokeMode_ == NearlinkKaraokeVolumeMode::VOLUME_FWK ||
+            nearlinkKaraokeMode_ == NearlinkKaraokeVolumeMode::VOLUME_NEARLINK_TO_FWK)) {
+            return SUCCESS;
+        }
+        if (!enable && (nearlinkKaraokeMode_ == NearlinkKaraokeVolumeMode::VOLUME_NEARLINK ||
+            nearlinkKaraokeMode_ == NearlinkKaraokeVolumeMode::VOLUME_FWK_TO_NEARLINK)) {
+            return SUCCESS;
+        }
+        DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+        CHECK_AND_RETURN_RET_LOG(curOutputDeviceType == DEVICE_TYPE_NEARLINK, ERROR,
+            "KARAOKE TRANSITION: nearlink karaoke transition only supports nearlink output");
+
+        nearlinkKaraokeTransition_.currentAbsVolume = GetCurrentNearlinkAbsVolume();
+        int32_t nearlinkMaxVolumeLevel = GetMaxVolumeLevel(STREAM_MUSIC, DEVICE_TYPE_NEARLINK);
+
+        if (enable) {
+            nearlinkKaraokeTransition_.currentFwkVolume =
+                nearlinkKaraokeMode_ == NearlinkKaraokeVolumeMode::VOLUME_NEARLINK ?
+                nearlinkMaxVolumeLevel : nearlinkKaraokeTransition_.currentFwkVolume;
+            nearlinkKaraokeTransition_.targetFwkVolume =
+                nearlinkKaraokeMode_ == NearlinkKaraokeVolumeMode::VOLUME_NEARLINK ?
+                nearlinkKaraokeTransition_.currentAbsVolume : nearlinkKaraokeTransition_.targetAbsVolume;
+            nearlinkKaraokeTransition_.targetAbsVolume = nearlinkMaxVolumeLevel;
+            nearlinkKaraokeMode_ = NearlinkKaraokeVolumeMode::VOLUME_NEARLINK_TO_FWK;
+        } else {
+            nearlinkKaraokeTransition_.targetAbsVolume = nearlinkKaraokeTransition_.targetFwkVolume;
+            nearlinkKaraokeTransition_.targetFwkVolume = GetMaxVolumeLevel(STREAM_MUSIC);
+            nearlinkKaraokeMode_ = NearlinkKaraokeVolumeMode::VOLUME_FWK_TO_NEARLINK;
+        }
+        AUDIO_INFO_LOG("KARAOKE TRANSITION: enable(%{public}d) currentAbsVolume=%{public}d targetAbsVolume=%{public}d"
+            " -- currentFwkVolume=%{public}d targetFwkVolume=%{public}d", enable,
+            nearlinkKaraokeTransition_.currentAbsVolume, nearlinkKaraokeTransition_.targetAbsVolume,
+            nearlinkKaraokeTransition_.currentFwkVolume, nearlinkKaraokeTransition_.targetFwkVolume);
+    }
+    TriggerKaraokeTransition();
+    return SUCCESS;
+}
+
+void AudioVolumeManager::FinishNearlinkKaraokeTransition()
+{
+    // nearlinkKaraokeMutex_ has already held when this func is called
+    AUDIO_INFO_LOG("KARAOKE TRANSITION: Transition completed, finalAbsVolume=%{public}d"
+        " finalFwkVolume=%{public}d", nearlinkKaraokeTransition_.currentAbsVolume,
+        nearlinkKaraokeTransition_.currentFwkVolume);
+    nearlinkKaraokeMode_ = nearlinkKaraokeMode_ == NearlinkKaraokeVolumeMode::VOLUME_NEARLINK_TO_FWK ?
+        NearlinkKaraokeVolumeMode::VOLUME_FWK : NearlinkKaraokeVolumeMode::VOLUME_NEARLINK;
+}
+
+int32_t AudioVolumeManager::StepNearlinkKaraokeTransition()
+{
+    Trace trace("AudioVolumeManager::StepNearlinkKaraokeTransition");
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    std::string curOutputDeviceMacAddr = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
+    CHECK_AND_RETURN_RET(curOutputDeviceType == DEVICE_TYPE_NEARLINK, KARAOKE_TRANSITION_END);
+
+    int32_t absDiff = 0;
+    int32_t fwkDiff = 0;
+    int32_t nearlinkMaxVolumeLevel = GetMaxVolumeLevel(STREAM_MUSIC, DEVICE_TYPE_NEARLINK);
+    int32_t nextAbsVolume = 0;
+    int32_t nextFwkVolume = 0;
+    {
+        std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
+        absDiff = nearlinkKaraokeTransition_.targetAbsVolume - nearlinkKaraokeTransition_.currentAbsVolume;
+        fwkDiff = nearlinkKaraokeTransition_.targetFwkVolume - nearlinkKaraokeTransition_.currentFwkVolume;
+        if (absDiff == 0 && fwkDiff == 0) {
+            FinishNearlinkKaraokeTransition();
+            return KARAOKE_TRANSITION_END;
+        }
+        nextAbsVolume = nearlinkKaraokeTransition_.currentAbsVolume + ((absDiff > 0) ? 1 : -1);
+        nextFwkVolume = nearlinkKaraokeTransition_.currentFwkVolume + ((fwkDiff > 0) ? 1 : -1);
+        AUDIO_INFO_LOG("KARAOKE TRANSITION: currentAbs=%{public}d targetAbs=%{public}d -- currentFwk=%{public}d"
+            " targetFwk=%{public}d", nearlinkKaraokeTransition_.currentAbsVolume,
+            nearlinkKaraokeTransition_.targetAbsVolume, nearlinkKaraokeTransition_.currentFwkVolume,
+            nearlinkKaraokeTransition_.targetFwkVolume);
+    }
+    if (absDiff != 0) {
+        int32_t ret = SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(curOutputDeviceMacAddr,
+            STREAM_MUSIC, nextAbsVolume);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, KARAOKE_TRANSITION_END,
+            "KARAOKE TRANSITION: set nearlink karaoke abs volume to device failed");
+        VolumeScale vol(nextAbsVolume);
+        ret = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceVolume(curOutputDeviceMacAddr, STREAM_MUSIC, vol);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, KARAOKE_TRANSITION_END,
+            "KARAOKE TRANSITION: set nearlink karaoke abs volume to sle failed");
+        SetNearlinkTransitionCurrentAbsVolume(nextAbsVolume);
+    }
+
+    if (fwkDiff != 0) {
+        int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(nextFwkVolume, GetMaxVolumeLevel(STREAM_MUSIC));
+        VolumeScale buffedVolume = {nextFwkVolume, volumeDegree, GetMaxVolumeLevel(STREAM_MUSIC)};
+        auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
+        int32_t ret = audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, buffedVolume, deviceDesc);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, KARAOKE_TRANSITION_END,
+            "KARAOKE TRANSITION: set nearlink karaoke framework volume failed");
+        SetSharedVolume(STREAM_MUSIC, DEVICE_TYPE_NEARLINK, {false, volumeDegree, 0});
+        SetNearlinkTransitionCurrentFwkVolume(nextFwkVolume);
+    }
+    return KARAOKE_TRANSITION_CONTINUE;
+}
+
 int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, const VolumeScale &volume,
     std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId)
 {
@@ -579,6 +760,19 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, con
         }
         volDeviceDesc = audioActiveDevice_.GetDeviceForVolume(streamType);
         DeviceType deviceType = volDeviceDesc != nullptr ? volDeviceDesc->deviceType_ : DEVICE_TYPE_SPEAKER;
+        if (IsNearlinkKaraokeVolumeManaged(streamType)) {
+            if (GetNearlinkKaraokeMode() == NearlinkKaraokeVolumeMode::VOLUME_FWK_TO_NEARLINK) {
+                SetNearlinkTransitionTargetAbsVolume(volume.VolumeLevel());
+            } else {
+                SetNearlinkTransitionTargetFwkVolume(volume.VolumeLevel());
+            }
+            if (GetNearlinkKaraokeMode() == NearlinkKaraokeVolumeMode::VOLUME_FWK) {
+                audioPolicyManager_.SetSystemVolumeLevel(streamType, buffedVolume, volDeviceDesc);
+                SetSharedVolume(streamType, volDeviceDesc->deviceType_, {false, volume.VolumeDegree(), 0});
+                SetNearlinkTransitionCurrentFwkVolume(volume.VolumeLevel());
+            }
+            return SUCCESS;
+        }
         ret = SetSystemVolumeExternal(streamType, buffedVolume, deviceType);
         if (ret != SUCCESS) {
             ret = SetSystemVolumeLevelInternal(streamType, buffedVolume, volDeviceDesc, zoneId);
@@ -1408,11 +1602,8 @@ int32_t AudioVolumeManager::HandleStreamMute(AudioStreamType streamType, bool mu
     DeviceType deviceType, int32_t zoneId)
 {
     auto volType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(streamType);
-    if (deviceType != DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("set stream mute for specified device [%{public}d]", deviceType);
-        deviceDesc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
-    }
+    auto deviceDesc = deviceType == DEVICE_TYPE_NONE ?
+        audioActiveDevice_.GetDeviceForVolume(streamType) : audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_POINTER, "deviceDesc is nullptr");
     deviceType = deviceDesc->deviceType_;
     std::string deviceMacAddr = deviceDesc->macAddress_;
@@ -1436,7 +1627,10 @@ int32_t AudioVolumeManager::HandleStreamMute(AudioStreamType streamType, bool mu
     }
 
     if (volType == STREAM_MUSIC && deviceType == DEVICE_TYPE_NEARLINK) {
-        int32_t resultSet = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceMute(deviceMacAddr, streamType, mute);
+        int32_t resultSet = SUCCESS;
+        if (!IsNearlinkKaraokeVolumeManaged(streamType)) {
+            resultSet = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceMute(deviceMacAddr, streamType, mute);
+        }
         if (resultSet == SUCCESS) {
             audioPolicyManager_.SetAbsVolumeMuteNearlink(mute);
             Volume vol = {false, 1.0f, 0};
@@ -1912,6 +2106,9 @@ int32_t AudioVolumeManager::GetSystemVolumeDegree(AudioStreamType streamType, in
 
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK &&
         (volumeType == STREAM_MUSIC || volumeType == STREAM_VOICE_CALL)) {
+        if (IsNearlinkKaraokeVolumeManaged(streamType)) {
+            return VolumeUtils::VolumeLevelToDegree(GetNearlinkKaraokeVolume(), GetMaxVolumeLevel(STREAM_MUSIC));
+        }
         return SleAudioDeviceManager::GetInstance().GetVolumeDegreeByVolumeType(volumeType, *deviceDesc);
     }
 
@@ -2357,6 +2554,40 @@ int32_t AudioVolumeManager::SetDoubleRingVolumeDb(const AudioStreamType &streamT
     auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(streamType);
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_POINTER, "deviceDesc is nullptr");
     return audioPolicyManager_.SetDoubleRingVolumeDb(streamType, volumeLevel, deviceDesc->deviceType_);
+}
+
+void AudioVolumeManager::TriggerKaraokeTransition()
+{
+    if (karaokeTransitionThread_ == nullptr) {
+        karaokeTransitionThread_ = std::make_unique<std::thread>([this] { this->KaraokeTransitionThreadFunc(); });
+        pthread_setname_np(karaokeTransitionThread_->native_handle(), "OS_KaraokeTransition");
+        AUDIO_INFO_LOG("KARAOKE TRANSITION: Karaoke transition thread created.");
+    }
+    {
+        std::lock_guard<std::mutex> lock(transitionThreadSignalMutex_);
+        karaokeTransitionThreadReady_ = true;
+    }
+    karaokeTransitionCondition_.notify_one();
+}
+
+void AudioVolumeManager::KaraokeTransitionThreadFunc()
+{
+    AUDIO_INFO_LOG("KARAOKE TRANSITION: Karaoke transition thread started");
+    while (true) {
+        std::unique_lock<std::mutex> lock(transitionThreadSignalMutex_);
+        karaokeTransitionCondition_.wait(lock, [this] {
+            return karaokeTransitionThreadReady_ || karaokeTransitionThreadStop_;
+        });
+        if (karaokeTransitionThreadStop_) {
+            break;
+        }
+        karaokeTransitionThreadReady_ = false;
+        lock.unlock();
+        while (StepNearlinkKaraokeTransition()) {
+            ClockTime::RelativeSleep(KARAOKE_TRANSITION_INTERVAL_NS);
+        }
+    }
+    AUDIO_INFO_LOG("KARAOKE TRANSITION: Karaoke transition thread stopped");
 }
 }
 }

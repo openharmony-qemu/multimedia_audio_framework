@@ -28,6 +28,15 @@ namespace OHOS {
 namespace AudioStandard {
 inline const std::string AUDIO_EFFECT_MGR_NAPI_CLASS_NAME = "AudioEffectManager";
 
+struct AudioEffectManagerAsyncContext : public ContextBase {
+    bool enabled = false;
+    int32_t uid = 0;
+    int64_t streamId = -1;
+    AudioSeparationVolumeType volumeType = AudioSeparationVolumeType::VOLUME_TYPE_VOCAL;
+    double volume = 0.0;
+    int32_t intValue = SUCCESS;
+};
+
 class NapiAudioEffectMgr {
 public:
     NapiAudioEffectMgr();
@@ -48,7 +57,11 @@ private:
     
     static napi_value IsAudioSeparationEffectSupported(napi_env env, napi_callback_info info);
     static napi_value SetAudioSeparationEffectEnabled(napi_env env, napi_callback_info info);
+    static napi_value UpdateAudioSeparationEffectEnabled(napi_env env,
+        std::shared_ptr<AudioEffectManagerAsyncContext> &context);
     static napi_value SetAudioSeparationEffectVolume(napi_env env, napi_callback_info info);
+    static napi_value UpdateAudioSeparationEffectVolume(napi_env env,
+        std::shared_ptr<AudioEffectManagerAsyncContext> &context);
     static napi_value OnAudioSeparationEffectEnabledChange(napi_env env, napi_callback_info info);
     static napi_value OffAudioSeparationEffectEnabledChange(napi_env env, napi_callback_info info);
 

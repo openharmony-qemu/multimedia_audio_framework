@@ -32,6 +32,7 @@ constexpr int32_t TEST_VALUE_1 = 10;
 constexpr int32_t TEST_VALUE_2 = 20;
 constexpr int32_t TEST_VALUE_3 = 30;
 constexpr int32_t TEST_VALUE_4 = 40;
+constexpr int32_t DEFAULT_UID = -1;
 constexpr uint32_t TOTAL_SIZE_IN_FRAME = 882;
 constexpr uint32_t BYTE_SIZE_PER_FRAME = 4;
 const std::string TEST_STRING_VALUE_1 = "abc";
@@ -1129,6 +1130,141 @@ HWTEST(AudioIpcSerializationUnitTest, AudioProcessConfig_001, TestSize.Level1)
     auto newConfig = std::shared_ptr<AudioProcessConfig>(AudioProcessConfig::Unmarshalling(parcel));
     ASSERT_NE(newConfig, nullptr);
     EXPECT_TRUE(IsAudioProcessConfigEqual(*newConfig, config));
+}
+
+/**
+ * @tc.name  : Test SystemRecordControllerConfig Marshalling/Unmarshalling
+ * @tc.type  : FUNC
+ * @tc.number: SystemRecordControllerConfig_001
+ * @tc.desc  : Test SystemRecordControllerConfig serialization with SOURCE_TYPE_MIC.
+ */
+HWTEST(AudioIpcSerializationUnitTest, SystemRecordControllerConfig_001, TestSize.Level1)
+{
+    Parcel parcel;
+    SystemRecordControllerConfig config;
+    config.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_TRUE(config.Marshalling(parcel));
+    auto *newConfig = SystemRecordControllerConfig::Unmarshalling(parcel);
+    ASSERT_NE(newConfig, nullptr);
+    EXPECT_EQ(newConfig->sourceType, SOURCE_TYPE_MIC);
+    delete newConfig;
+}
+
+/**
+ * @tc.name  : Test SystemRecordControllerConfig Marshalling/Unmarshalling
+ * @tc.type  : FUNC
+ * @tc.number: SystemRecordControllerConfig_002
+ * @tc.desc  : Test SystemRecordControllerConfig serialization with SOURCE_TYPE_CAMCORDER.
+ */
+HWTEST(AudioIpcSerializationUnitTest, SystemRecordControllerConfig_002, TestSize.Level1)
+{
+    Parcel parcel;
+    SystemRecordControllerConfig config;
+    config.sourceType = SOURCE_TYPE_CAMCORDER;
+    EXPECT_TRUE(config.Marshalling(parcel));
+    auto *newConfig = SystemRecordControllerConfig::Unmarshalling(parcel);
+    ASSERT_NE(newConfig, nullptr);
+    EXPECT_EQ(newConfig->sourceType, SOURCE_TYPE_CAMCORDER);
+    delete newConfig;
+}
+
+/**
+ * @tc.name  : Test SystemRecordControllerConfig Marshalling/Unmarshalling
+ * @tc.type  : FUNC
+ * @tc.number: SystemRecordControllerConfig_003
+ * @tc.desc  : Test SystemRecordControllerConfig serialization with SOURCE_TYPE_LIVE.
+ */
+HWTEST(AudioIpcSerializationUnitTest, SystemRecordControllerConfig_003, TestSize.Level1)
+{
+    Parcel parcel;
+    SystemRecordControllerConfig config;
+    config.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_TRUE(config.Marshalling(parcel));
+    auto *newConfig = SystemRecordControllerConfig::Unmarshalling(parcel);
+    ASSERT_NE(newConfig, nullptr);
+    EXPECT_EQ(newConfig->sourceType, SOURCE_TYPE_LIVE);
+    delete newConfig;
+}
+
+/**
+ * @tc.name  : Test SystemRecordControllerConfig Marshalling/Unmarshalling
+ * @tc.type  : FUNC
+ * @tc.number: SystemRecordControllerConfig_004
+ * @tc.desc  : Test SystemRecordControllerConfig serialization with SOURCE_TYPE_INVALID.
+ */
+HWTEST(AudioIpcSerializationUnitTest, SystemRecordControllerConfig_004, TestSize.Level1)
+{
+    Parcel parcel;
+    SystemRecordControllerConfig config;
+    config.sourceType = SOURCE_TYPE_INVALID;
+    EXPECT_TRUE(config.Marshalling(parcel));
+    auto *newConfig = SystemRecordControllerConfig::Unmarshalling(parcel);
+    ASSERT_NE(newConfig, nullptr);
+    EXPECT_EQ(newConfig->sourceType, SOURCE_TYPE_INVALID);
+    delete newConfig;
+}
+
+/**
+ * @tc.name  : Test SystemRecordControllerChangeInfo Marshalling/Unmarshalling
+ * @tc.type  : FUNC
+ * @tc.number: SystemRecordControllerChangeInfo_001
+ * @tc.desc  : Test SystemRecordControllerChangeInfo serialization with enabled=true.
+ */
+HWTEST(AudioIpcSerializationUnitTest, SystemRecordControllerChangeInfo_001, TestSize.Level1)
+{
+    Parcel parcel;
+    SystemRecordControllerChangeInfo info;
+    info.enabled = true;
+    info.uid = TEST_VALUE_1;
+    info.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_TRUE(info.Marshalling(parcel));
+    auto *newInfo = SystemRecordControllerChangeInfo::Unmarshalling(parcel);
+    ASSERT_NE(newInfo, nullptr);
+    EXPECT_EQ(newInfo->enabled, true);
+    EXPECT_EQ(newInfo->uid, TEST_VALUE_1);
+    EXPECT_EQ(newInfo->sourceType, SOURCE_TYPE_MIC);
+    delete newInfo;
+}
+
+/**
+ * @tc.name  : Test SystemRecordControllerChangeInfo Marshalling/Unmarshalling
+ * @tc.type  : FUNC
+ * @tc.number: SystemRecordControllerChangeInfo_002
+ * @tc.desc  : Test SystemRecordControllerChangeInfo serialization with enabled=false.
+ */
+HWTEST(AudioIpcSerializationUnitTest, SystemRecordControllerChangeInfo_002, TestSize.Level1)
+{
+    Parcel parcel;
+    SystemRecordControllerChangeInfo info;
+    info.enabled = false;
+    info.uid = TEST_VALUE_2;
+    info.sourceType = SOURCE_TYPE_CAMCORDER;
+    EXPECT_TRUE(info.Marshalling(parcel));
+    auto *newInfo = SystemRecordControllerChangeInfo::Unmarshalling(parcel);
+    ASSERT_NE(newInfo, nullptr);
+    EXPECT_EQ(newInfo->enabled, false);
+    EXPECT_EQ(newInfo->uid, TEST_VALUE_2);
+    EXPECT_EQ(newInfo->sourceType, SOURCE_TYPE_CAMCORDER);
+    delete newInfo;
+}
+
+/**
+ * @tc.name  : Test SystemRecordControllerChangeInfo Marshalling/Unmarshalling
+ * @tc.type  : FUNC
+ * @tc.number: SystemRecordControllerChangeInfo_003
+ * @tc.desc  : Test SystemRecordControllerChangeInfo serialization with default values.
+ */
+HWTEST(AudioIpcSerializationUnitTest, SystemRecordControllerChangeInfo_003, TestSize.Level1)
+{
+    Parcel parcel;
+    SystemRecordControllerChangeInfo info;
+    EXPECT_TRUE(info.Marshalling(parcel));
+    auto *newInfo = SystemRecordControllerChangeInfo::Unmarshalling(parcel);
+    ASSERT_NE(newInfo, nullptr);
+    EXPECT_EQ(newInfo->enabled, false);
+    EXPECT_EQ(newInfo->uid, DEFAULT_UID);
+    EXPECT_EQ(newInfo->sourceType, SOURCE_TYPE_INVALID);
+    delete newInfo;
 }
 } // namespace AudioStandard
 } // namespace OHOS
