@@ -104,6 +104,10 @@ public:
 
     DeviceCategory GetDeviceCategory() const;
 
+    void SetDevicePrivacyType(AudioDevicePrivacyType privacyType);
+
+    AudioDevicePrivacyType GetDevicePrivacyType() const;
+
     bool IsAudioDeviceDescriptor() const;
 
     bool Marshalling(Parcel &parcel) const override;
@@ -225,6 +229,7 @@ public:
     std::list<DeviceStreamInfo> audioStreamInfo_;
     std::list<AudioStreamInfo> capabilities_;
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
+    AudioDevicePrivacyType privacyType_ = TYPE_NEGATIVE;
     ConnectState connectState_ = CONNECTED;
     DeviceUsage deviceUsage_ = ALL_USAGE;
     // AudioDeviceDescriptor

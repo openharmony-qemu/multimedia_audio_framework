@@ -372,6 +372,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     descForCb.push_back(audioDescriptor);
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     AudioAdapterManager::GetInstance().QueryDeviceVolumeBehavior(audioDescriptor);
+    UpdateDevicePrivacyType(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
 
     std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
@@ -450,6 +451,18 @@ bool AudioDeviceCommon::NeedUpdatePreferredDevice(const AudioDeviceDescriptor &d
 #endif
 
     return true;
+}
+
+void AudioDeviceCommon::UpdateDevicePrivacyType(std::shared_ptr<AudioDeviceDescriptor> audioDescriptor)
+{
+    CHECK_AND_RETURN_LOG(audioDescriptor != nullptr, "audioDescriptor is nullptr");
+    auto privacyType = audioDeviceManager_.GetDevicePrivacyType(audioDescriptor);
+    if (audioDescriptor->deviceCategory_ == BT_UNWEAR_HEADPHONE) {
+        privacyType = AudioDevicePrivacyType::TYPE_PRIVACY;
+    }
+    audioDescriptor->SetDevicePrivacyType(privacyType);
+    AUDIO_INFO_LOG("UpdateDevicePrivacyType, deviceType:%{public}d, category:%{public}d, privacyType:%{public}d",
+        audioDescriptor->deviceType_, audioDescriptor->deviceCategory_, privacyType);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(

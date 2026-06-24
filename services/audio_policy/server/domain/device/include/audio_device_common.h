@@ -140,6 +140,8 @@ private:
         const DeviceUsage usage) const;
     bool NeedUpdatePreferredDevice(const AudioDeviceDescriptor &desc);
 
+    void UpdateDevicePrivacyType(std::shared_ptr<AudioDeviceDescriptor> audioDescriptor);
+
     // fetchOutput
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
     vector<std::shared_ptr<AudioDeviceDescriptor>> GetDeviceDescriptorInner(
