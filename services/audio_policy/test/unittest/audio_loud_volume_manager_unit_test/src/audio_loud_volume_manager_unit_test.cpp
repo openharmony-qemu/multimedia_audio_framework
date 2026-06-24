@@ -46,8 +46,11 @@ void LoudVolumeManagerUnitTest::TearDown(void)
 HWTEST_F(LoudVolumeManagerUnitTest, ReloadLoudVolumeMode_NotSupport_001, TestSize.Level1)
 {
     loudVolumeManager_->loudVolumeSupportMode_ = LOUD_VOLUME_NOT_SUPPORT;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    device->networkId_ = LOCAL_NETWORK_ID;
 
-    bool result = loudVolumeManager_->ReloadLoudVolumeMode(STREAM_MUSIC, LOUD_VOLUME_SWITCH_ON, nullptr);
+    bool result = loudVolumeManager_->ReloadLoudVolumeMode(STREAM_MUSIC, LOUD_VOLUME_SWITCH_ON, device);
     EXPECT_FALSE(result);
 }
 
@@ -59,8 +62,11 @@ HWTEST_F(LoudVolumeManagerUnitTest, ReloadLoudVolumeMode_NotSupport_001, TestSiz
 HWTEST_F(LoudVolumeManagerUnitTest, ReloadLoudVolumeMode_SkipCloseType_002, TestSize.Level1)
 {
     loudVolumeManager_->loudVolumeSupportMode_ = LOUD_VOLUME_SUPPORT;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    device->networkId_ = LOCAL_NETWORK_ID;
 
-    bool result = loudVolumeManager_->ReloadLoudVolumeMode(STREAM_RING, LOUD_VOLUME_SWITCH_ON, nullptr);
+    bool result = loudVolumeManager_->ReloadLoudVolumeMode(STREAM_RING, LOUD_VOLUME_SWITCH_ON, device);
     EXPECT_FALSE(result);
 }
 
@@ -72,8 +78,11 @@ HWTEST_F(LoudVolumeManagerUnitTest, ReloadLoudVolumeMode_SkipCloseType_002, Test
 HWTEST_F(LoudVolumeManagerUnitTest, ReloadLoudVolumeMode_UnsupportedStream_003, TestSize.Level1)
 {
     loudVolumeManager_->loudVolumeSupportMode_ = LOUD_VOLUME_SUPPORT;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    device->networkId_ = LOCAL_NETWORK_ID;
 
-    bool result = loudVolumeManager_->ReloadLoudVolumeMode(STREAM_ALARM, LOUD_VOLUME_SWITCH_ON, nullptr);
+    bool result = loudVolumeManager_->ReloadLoudVolumeMode(STREAM_ALARM, LOUD_VOLUME_SWITCH_ON, device);
     EXPECT_FALSE(result);
 }
 
@@ -148,9 +157,12 @@ HWTEST_F(LoudVolumeManagerUnitTest, ReloadLoudVolumeMode_ValidSpeakerDevice_007,
 HWTEST_F(LoudVolumeManagerUnitTest, CheckLoudVolumeMode_NotSupport_001, TestSize.Level1)
 {
     loudVolumeManager_->loudVolumeSupportMode_ = LOUD_VOLUME_NOT_SUPPORT;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    device->networkId_ = LOCAL_NETWORK_ID;
 
     bool result = loudVolumeManager_->CheckLoudVolumeMode(
-        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_MUSIC, nullptr);
+        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_MUSIC, device);
     EXPECT_FALSE(result);
 }
 
@@ -162,9 +174,12 @@ HWTEST_F(LoudVolumeManagerUnitTest, CheckLoudVolumeMode_NotSupport_001, TestSize
 HWTEST_F(LoudVolumeManagerUnitTest, CheckLoudVolumeMode_UnsupportedStream_002, TestSize.Level1)
 {
     loudVolumeManager_->loudVolumeSupportMode_ = LOUD_VOLUME_SUPPORT;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    device->networkId_ = LOCAL_NETWORK_ID;
 
     bool result = loudVolumeManager_->CheckLoudVolumeMode(
-        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_ALARM, nullptr);
+        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_ALARM, device);
     EXPECT_FALSE(result);
 }
 
@@ -179,9 +194,12 @@ HWTEST_F(LoudVolumeManagerUnitTest, CheckLoudVolumeMode_UpAlreadyHolding_003, Te
     loudVolumeManager_->triggerTime = 0;
     loudVolumeManager_->upTriggerTimeMSec = 0;
     loudVolumeManager_->SetLoudVolumeHoldMap(LOUD_VOLUME_MODE_MUSIC, true);
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    device->networkId_ = LOCAL_NETWORK_ID;
 
     bool result = loudVolumeManager_->CheckLoudVolumeMode(
-        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_MUSIC, nullptr);
+        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_MUSIC, device);
     EXPECT_FALSE(result);
 
     loudVolumeManager_->ClearLoudVolumeHoldMap(LOUD_VOLUME_MODE_MUSIC);
@@ -198,9 +216,12 @@ HWTEST_F(LoudVolumeManagerUnitTest, CheckLoudVolumeMode_UpTriggerOn_004, TestSiz
     loudVolumeManager_->triggerTime = 2;
     loudVolumeManager_->upTriggerTimeMSec = INT64_MAX / 2;
     loudVolumeManager_->loudVolumeHoldMap_.clear();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    device->networkId_ = LOCAL_NETWORK_ID;
 
     bool result = loudVolumeManager_->CheckLoudVolumeMode(
-        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_MUSIC, nullptr);
+        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_MUSIC, device);
     EXPECT_TRUE(result);
 }
 
@@ -215,9 +236,12 @@ HWTEST_F(LoudVolumeManagerUnitTest, CheckLoudVolumeMode_UpTriggerIncrement_005, 
     loudVolumeManager_->triggerTime = 1;
     loudVolumeManager_->upTriggerTimeMSec = 0;
     loudVolumeManager_->loudVolumeHoldMap_.clear();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    device->networkId_ = LOCAL_NETWORK_ID;
 
     bool result = loudVolumeManager_->CheckLoudVolumeMode(
-        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_MUSIC, nullptr);
+        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_MUSIC, device);
     EXPECT_FALSE(result);
     EXPECT_EQ(loudVolumeManager_->triggerTime, 2);
 }
@@ -233,9 +257,12 @@ HWTEST_F(LoudVolumeManagerUnitTest, CheckLoudVolumeMode_UpFirstTrigger_006, Test
     loudVolumeManager_->triggerTime = 0;
     loudVolumeManager_->upTriggerTimeMSec = 0;
     loudVolumeManager_->loudVolumeHoldMap_.clear();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    device->networkId_ = LOCAL_NETWORK_ID;
 
     bool result = loudVolumeManager_->CheckLoudVolumeMode(
-        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_MUSIC, nullptr);
+        15, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, STREAM_MUSIC, device);
     EXPECT_FALSE(result);
     EXPECT_EQ(loudVolumeManager_->triggerTime, 1);
 }
@@ -251,9 +278,12 @@ HWTEST_F(LoudVolumeManagerUnitTest, CheckLoudVolumeMode_DownWithHolding_007, Tes
     loudVolumeManager_->triggerTime = 0;
     loudVolumeManager_->upTriggerTimeMSec = 0;
     loudVolumeManager_->SetLoudVolumeHoldMap(LOUD_VOLUME_MODE_MUSIC, true);
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    device->networkId_ = LOCAL_NETWORK_ID;
 
     bool result = loudVolumeManager_->CheckLoudVolumeMode(
-        5, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN, STREAM_MUSIC, nullptr);
+        5, OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN, STREAM_MUSIC, device);
     EXPECT_TRUE(result);
 }
 
@@ -269,9 +299,12 @@ HWTEST_F(LoudVolumeManagerUnitTest, CheckLoudVolumeMode_ElseReset_008, TestSize.
     loudVolumeManager_->upTriggerTimeMSec = 1000;
     loudVolumeManager_->loudVolumeHoldMap_.clear();
     constexpr int32_t INVALID_KEY_TYPE = 9999;
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+    device->networkId_ = LOCAL_NETWORK_ID;
 
     bool result = loudVolumeManager_->CheckLoudVolumeMode(
-        5, INVALID_KEY_TYPE, STREAM_MUSIC, nullptr);
+        5, INVALID_KEY_TYPE, STREAM_MUSIC, device);
     EXPECT_FALSE(result);
     EXPECT_EQ(loudVolumeManager_->triggerTime, 0);
     EXPECT_EQ(loudVolumeManager_->upTriggerTimeMSec, 0);

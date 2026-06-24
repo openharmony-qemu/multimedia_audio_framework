@@ -2373,7 +2373,7 @@ HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolumeEffective_WithVolumeRecord, Test
     VolumeUtils::SetPCVolumeEnable(false);
 
     float result = audioVolumeTest->GetSystemAppVolumeEffective(streamVolume);
-    EXPECT_EQ(0.8f, result);
+    EXPECT_FLOAT_EQ(0.8f, result);
 }
 
 /**
