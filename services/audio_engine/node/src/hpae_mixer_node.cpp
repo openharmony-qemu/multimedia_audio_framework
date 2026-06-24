@@ -32,7 +32,6 @@ static constexpr uint32_t WAIT_FRAMES_NUM = 5; // wait 5 * 20ms before disconnec
 static constexpr uint32_t DEFAULT_CHANNEL_COUNT = 2;
 static constexpr uint32_t DEFAULT_FRAME_LEN = 960;
 static constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
-static constexpr uint32_t COLLAB_WAIT_FRAMES_NUM = 15;
     
 HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
