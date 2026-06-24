@@ -75,6 +75,15 @@ static AudioProcessConfig GetInnerCapConfig()
     return config;
 }
 
+static void InitAudioServerBufferForOnReadDataTest(const std::shared_ptr<CapturerInServer> &capturerInServer)
+{
+    constexpr uint32_t totalSizeInFrame = 10;
+    constexpr uint32_t spanSizeInFrame = 10;
+    constexpr uint32_t byteSizePerFrame = 10;
+    capturerInServer->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+}
+
 class ICapturerStreamTest1 : public ICapturerStream {
 public:
     int32_t GetStreamFramesRead(uint64_t &framesRead) override { return 0; }
@@ -514,6 +523,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_001, TestSize.Level1)
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    InitAudioServerBufferForOnReadDataTest(capturerInServer_);
     size_t length = 0;
     int32_t result = capturerInServer_->OnReadData(length);
     EXPECT_EQ(result, SUCCESS);
@@ -1116,6 +1126,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_002, TestSize.Level1)
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    InitAudioServerBufferForOnReadDataTest(capturerInServer_);
     const size_t testDataSize = 0;
     auto testData = std::make_unique<int8_t[]>(testDataSize);
  
@@ -1134,6 +1145,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_003, TestSize.Level4)
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    InitAudioServerBufferForOnReadDataTest(capturerInServer_);
     const size_t testDataSize = 1000;
     auto testData = std::make_unique<int8_t[]>(testDataSize);
  
@@ -1152,6 +1164,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_004, TestSize.Level1)
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    InitAudioServerBufferForOnReadDataTest(capturerInServer_);
     size_t length = 0;
     bool currentStatus = false;
     int32_t result = capturerInServer_->OnReadData(length);
@@ -1170,6 +1183,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_005, TestSize.Level4)
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    InitAudioServerBufferForOnReadDataTest(capturerInServer_);
     size_t length = 0;
     bool currentStatus = true;
     int32_t result = capturerInServer_->OnReadData(length);
