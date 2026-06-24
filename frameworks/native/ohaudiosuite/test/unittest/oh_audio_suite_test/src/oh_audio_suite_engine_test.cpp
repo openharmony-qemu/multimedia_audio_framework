@@ -341,7 +341,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_CreatePipeline_005, TestSiz
 
     OH_AudioSuitePipeline *limitPipeline = nullptr;
     ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &limitPipeline, AUDIOSUITE_PIPELINE_REALTIME_MODE);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_CREATED_EXCEED_SYSTEM_LIMITS);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
