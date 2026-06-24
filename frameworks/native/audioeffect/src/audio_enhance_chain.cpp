@@ -49,6 +49,18 @@ const std::map<uint32_t, AudioSampleFormat> FORMAT_CONVERT_MAP = {
     {BYTE_SIZE_SAMPLE_S32, SAMPLE_S32LE},
 };
 
+const std::vector<std::string> NEED_EC_SCENE = {
+    "SCENE_VOIP_UP",
+    "SCENE_PRE_ENHANCE",
+    "SCENE_RECOGNITION",
+};
+
+const std::vector<std::string> NEED_MICREF_SCENE = {
+    "SCENE_VOIP_UP",
+    "SCENE_RECORD",
+    "SCENE_COLLABORATIVE_RECORD",
+};
+
 AudioSampleFormat ConvertFormat(uint32_t format)
 {
     auto item = FORMAT_CONVERT_MAP.find(format);
@@ -79,14 +91,14 @@ void AudioEnhanceChain::InitAudioEnhanceChain()
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * DEFAULT_FORMAT;
     algoAttr_ = {DEFAULT_FORMAT, deviceAttr_.micChannels, byteLenPerFrame};
 
-    if (deviceAttr_.needEc) {
+    if (deviceAttr_.needEc && count(NEED_EC_SCENE.begin(), NEED_EC_SCENE.end(), sceneType_)) {
         needEcFlag_ = true;
         algoSupportedConfig_.ecNum = deviceAttr_.ecChannels;
         algoAttr_.batchLen = deviceAttr_.micChannels + algoSupportedConfig_.ecNum;
         enhanceBuf_.ecBuffer.resize(deviceAttr_.ecChannels * byteLenPerFrame);
     }
 
-    if (deviceAttr_.needMicRef) {
+    if (deviceAttr_.needMicRef && count(NEED_MICREF_SCENE.begin(), NEED_MICREF_SCENE.end(), sceneType_)) {
         needMicRefFlag_ = true;
         algoSupportedConfig_.micRefNum = deviceAttr_.micRefChannels;
         algoAttr_.batchLen += algoSupportedConfig_.micRefNum;
