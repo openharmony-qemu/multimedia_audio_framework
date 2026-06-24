@@ -608,6 +608,7 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
     if (sceneType == HPAE_SCENE_COLLABORATIVE && SafeGetMap(sceneClusterMap_, sceneType)) {
         sceneClusterMap_[sceneType]->SetStopRunningState(false);
         sceneClusterMap_[sceneType]->SetCollabDoFade(false);
+    }
     int32_t ret = sceneClusterMap_[sceneType]->HandleRendererStart(sinkInputNodeMap_[sessionId]->GetNodeInfo(),
         sinkInfo_);
     if (ret != SUCCESS) {
