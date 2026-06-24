@@ -15,6 +15,7 @@ import("//build/ohos.gni")
 import("//foundation/multimedia/audio_framework/config.gni")
 
 ohos_shared_library("pro_audio_service_adapter") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true

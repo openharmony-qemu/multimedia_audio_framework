@@ -759,7 +759,7 @@ audio_ohos_library("audio_process_service") {
 }
 
 audio_ohos_library("audio_service") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -898,7 +898,7 @@ audio_ohos_library("audio_service") {
 }
 
 ohos_shared_library("audio_sasdk") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true

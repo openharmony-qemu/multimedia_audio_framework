@@ -34,6 +34,7 @@ if (!audio_framework_feature_offline_effect) {
   }
 } else {
   audio_ohos_library("offline_audio_effect") {
+    branch_protector_ret = "pac_ret"
     sanitize = {
       cfi = true
       cfi_cross_dso = true
@@ -75,6 +76,7 @@ if (!audio_framework_feature_offline_effect) {
   }
 
   audio_ohos_library("offline_audio_effect_service") {
+    branch_protector_ret = "pac_ret"
     cflags = [ "-Os" ]
     sanitize = {
       cfi = true
