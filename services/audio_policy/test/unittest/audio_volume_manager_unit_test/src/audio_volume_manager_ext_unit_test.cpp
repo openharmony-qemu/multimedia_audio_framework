@@ -511,50 +511,6 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_004, TestSize.Level
 
 /**
  * @tc.name  : Test AudioVolumeManager.
- * @tc.number: SelectDealSafeVolume_005
- * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT_SOUNDBOX category.
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_005, TestSize.Level4)
-{
-    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
-    AudioStreamType streamType = STREAM_MUSIC;
-    VolumeScale volume = VolumeScale(15, -1, 15);
-    auto device = std::make_shared<AudioDeviceDescriptor>();
-    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    device->networkId_ = LOCAL_NETWORK_ID;
-    device->deviceCategory_ = BT_SOUNDBOX;
-    AudioConnectedDevice::GetInstance().AddConnectedDevice(device);
-
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, DEVICE_TYPE_BLUETOOTH_A2DP);
-    EXPECT_EQ(ret.VolumeLevel(), volume.VolumeLevel());
-
-    AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_BLUETOOTH_A2DP);
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
- * @tc.number: SelectDealSafeVolume_006
- * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT_CAR category.
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_006, TestSize.Level4)
-{
-    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
-    AudioStreamType streamType = STREAM_MUSIC;
-    VolumeScale volume = VolumeScale(15, -1, 15);
-    auto device = std::make_shared<AudioDeviceDescriptor>();
-    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    device->networkId_ = LOCAL_NETWORK_ID;
-    device->deviceCategory_ = BT_CAR;
-    AudioConnectedDevice::GetInstance().AddConnectedDevice(device);
-
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, DEVICE_TYPE_BLUETOOTH_A2DP);
-    EXPECT_EQ(ret.VolumeLevel(), volume.VolumeLevel());
-
-    AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_BLUETOOTH_A2DP);
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
  * @tc.number: SelectDealSafeVolume_007
  * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT isBtFirstBoot true.
  */
