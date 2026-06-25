@@ -765,7 +765,7 @@ int32_t AudioCoreService::SetSplitModeReady()
 {
     AUDIO_INFO_LOG("SetSplitModeReady");
     int32_t setRet = AudioRouterCenter::GetAudioRouterCenter().SetSplitModeReady();
-    CHECK_AND_RETURN_RET_LOG(setRet != 0, setRet, "SetSplitModeReady failed");
+    CHECK_AND_RETURN_RET_LOG(setRet == 0, setRet, "SetSplitModeReady failed");
     FetchOutputDeviceAndRoute("SetSplitModeReady");
     return SUCCESS;
 }
