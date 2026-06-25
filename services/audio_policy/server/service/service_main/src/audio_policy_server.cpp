@@ -6075,9 +6075,9 @@ int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::NotifyStreamSilentChange(uint32_t streamId)
+int32_t AudioPolicyServer::NotifyStreamSilentChange(int32_t callerPid, uint32_t streamId)
 {
-    AudioZoneService::GetInstance().NotifyStreamSilentChange(streamId);
+    AudioZoneService::GetInstance().NotifyStreamSilentChange(callerPid, streamId);
     return SUCCESS;
 }
 

@@ -168,7 +168,7 @@ public:
         const int32_t streamId, const InterruptEventInternal interruptEventResume);
     void OnUserUnlocked();
     void SetUserId(const int32_t newId, const int32_t oldId);
-    bool NotifyStreamSilentChange(uint32_t streamId);
+    bool NotifyStreamSilentChange(int32_t callerPid, uint32_t streamId);
     int32_t GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     std::future<void> stopFuture_;
 
@@ -418,6 +418,8 @@ private:
     void MuteCheckFocusStrategy(AudioFocusEntry &focusEntry,
         const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt,
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
+    void DelayRemoveMuteCheckRecord(uint32_t currentPid);
+    void RemoveMuteCheckRecord(uint32_t currentPid);
     void ResetInterruptMuteState(const AudioInterrupt &audioInterrupt);
     bool IsActiveInjectFocusExist(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     void AudioSessionStateChangeCallbackEvent(const int32_t zoneId, const int32_t callerPid,

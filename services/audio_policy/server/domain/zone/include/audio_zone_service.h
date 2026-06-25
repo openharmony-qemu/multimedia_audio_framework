@@ -118,7 +118,7 @@ public:
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
     bool HasVolumeControllableDeviceInAudioZone();
-    void NotifyStreamSilentChange(uint32_t streamId);
+    void NotifyStreamSilentChange(int32_t callerPid, uint32_t streamId);
     int32_t GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     AudioScene GetAudioSceneFromAllZones();
     AudioInterruptResult ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,

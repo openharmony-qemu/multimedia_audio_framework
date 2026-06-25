@@ -821,7 +821,7 @@ public:
     int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
     AudioScene GetAudioSceneFromAllZones();
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
-    int32_t NotifyStreamSilentChange(uint32_t streamId);
+    int32_t NotifyStreamSilentChange(int32_t clientPid, uint32_t streamId);
     int32_t SetAudioSessionBehavior(const uint32_t behavior);
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
     int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
