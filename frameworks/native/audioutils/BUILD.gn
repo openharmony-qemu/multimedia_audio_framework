@@ -78,6 +78,7 @@ ohos_shared_library("audio_utils") {
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
     "bounds_checking_function:libsec_shared",
+    "cJSON:cjson",
   ]
 
   if (sonic_enable == true) {

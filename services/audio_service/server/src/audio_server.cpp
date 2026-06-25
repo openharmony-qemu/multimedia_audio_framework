@@ -75,6 +75,7 @@
 #include "audio_injector_service.h"
 #include "audio_sink_latency_fetcher.h"
 #include "audio_system_load_listener.h"
+#include "cJSON.h"
 
 #ifdef SUPPORT_OLD_ENGINE
 #define PA
@@ -1072,16 +1073,18 @@ void AudioServer::HapReportWakeupEvent(const std::string &key,
     CHECK_AND_RETURN(key == MAIN_KEY_DFX);
     for (const auto &kvPair : kvpairs) {
         CHECK_AND_CONTINUE(kvPair.first == SUB_KEY_UPDATE_WAKEUP_TRACE_RESULT);
-        nlohmann::json json;
-        CHECK_AND_BREAK_LOG(nlohmann::json::accept(kvPair.second) == true,
-            "Failed to parse dfx: invalid JSON format");
-        json = nlohmann::json::parse(kvPair.second);
-        CHECK_AND_BREAK_LOG((json.contains("stage") && json.contains("result") && json.contains("errCode") &&
-            json["stage"].is_string() && json["result"].is_string() && json["errCode"].is_string()),
-            "Failed to parse update_wakeup_trace_result: contains or type check error");
-        std::string stageStr = json["stage"].get<std::string>();
-        std::string resultStr = json["result"].get<std::string>();
-        std::string errCodeStr = json["errCode"].get<std::string>();
+        cJSON *root = cJSON_Parse(kvPair.second.c_str());
+        CHECK_AND_RETURN_LOG(root != nullptr, "parse json failed");
+        cJSON *stageObj = cJSON_GetObjectItem(root, "stage");
+        cJSON *resultObj = cJSON_GetObjectItem(root, "result");
+        cJSON *errCodeObj = cJSON_GetObjectItem(root, "errCode");
+        CHECK_AND_CALL_FUNC_RETURN_LOG(stageObj != nullptr && resultObj != nullptr && errCodeObj != nullptr &&
+            cJSON_IsString(stageObj) && cJSON_IsString(resultObj) && cJSON_IsString(errCodeObj),
+            cJSON_Delete(root), "invalid json fields");
+        std::string stageStr = stageObj->valuestring;
+        std::string resultStr = resultObj->valuestring;
+        std::string errCodeStr = errCodeObj->valuestring;
+        cJSON_Delete(root);
 
         int32_t stage = 0;
         int32_t result = 0;

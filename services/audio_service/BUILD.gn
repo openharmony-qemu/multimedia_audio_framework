@@ -814,6 +814,7 @@ audio_ohos_library("audio_service") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "cJSON:cjson",
     "drivers_interface_audio:libeffect_proxy_1.0",
     "eventhandler:libeventhandler",
     "frame_aware_sched:rtg_interface",
