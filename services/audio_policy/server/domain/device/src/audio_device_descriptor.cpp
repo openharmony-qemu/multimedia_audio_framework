@@ -216,6 +216,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     isBTSupportWearDetectionEnable_ = false;
     modemCallSupported_ = true;
     highQualityRecordingSupported_ = false;
+    isUnidirectional_ = false;
     dmDeviceInfo_ = "";
     hdPlaybackMode_ = HD_NOT_SUPPORTED;
     isSupportRemoteMultichannel_ = true;
@@ -256,6 +257,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     isBTSupportWearDetectionEnable_ = false;
     modemCallSupported_ = true;
     highQualityRecordingSupported_ = false;
+    isUnidirectional_ = false;
     dmDeviceInfo_ = "";
     hdPlaybackMode_ = HD_NOT_SUPPORTED;
     isSupportRemoteMultichannel_ = true;
@@ -300,6 +302,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     clientInfo_ = deviceDescriptor.clientInfo_;
     modemCallSupported_ = deviceDescriptor.modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor.highQualityRecordingSupported_;
+    isUnidirectional_ = false;
     dmDeviceInfo_ = deviceDescriptor.dmDeviceInfo_;
     volumeBehavior_ = deviceDescriptor.volumeBehavior_;
     deviceSupportMmap_ = deviceDescriptor.GetDeviceSupportMmap();
@@ -349,6 +352,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     clientInfo_ = deviceDescriptor->clientInfo_;
     modemCallSupported_ = deviceDescriptor->modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor->highQualityRecordingSupported_;
+    isUnidirectional_ = deviceDescriptor->isUnidirectional_;
     dmDeviceInfo_ = deviceDescriptor->dmDeviceInfo_;
     volumeBehavior_ = deviceDescriptor->volumeBehavior_;
     deviceSupportMmap_ = deviceDescriptor->GetDeviceSupportMmap();
