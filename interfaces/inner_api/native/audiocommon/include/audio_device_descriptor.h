@@ -253,6 +253,7 @@ public:
     VolumeBehavior volumeBehavior_;
     bool modemCallSupported_ = true;
     bool highQualityRecordingSupported_ = false;
+    bool isUnidirectional_ = false;
     bool hasStreamRunning_ = false;
     std::string dmDeviceInfo_ = "";
     HdPlaybackMode hdPlaybackMode_ = HD_NOT_SUPPORTED;
