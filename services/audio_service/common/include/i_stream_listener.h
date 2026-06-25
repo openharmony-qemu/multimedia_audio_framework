@@ -35,6 +35,7 @@ enum Operation : int32_t {
     DATA_LINK_CONNECTED,
     RESTORE_SESSION,
     USER_PRIVACY_AUTHORITY,
+    SENSITIVE_RECORD_PERMIT,
     MAX_OPERATION_CODE // in plan add underrun overflow
 };
 class IStreamListener {

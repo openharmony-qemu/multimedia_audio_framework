@@ -141,6 +141,7 @@ public:
         bool audioSeparationEffectEnabled = false;
         int32_t zoneId = -1;
         int32_t forceUid_ = INVALID_UID;  // Force-send target uid, default INVALID_UID means no force
+        bool isPermitted;
     };
 
     struct RendererDeviceChangeEvent {

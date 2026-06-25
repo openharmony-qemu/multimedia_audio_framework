@@ -253,6 +253,8 @@ public:
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
     const std::string GetBundleName() override;
     void SetBundleName(std::string &name) override;
+    void SetSensitiveRecordPermitCallback(
+        const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback) override;
 
     bool ResetStaticPlayPosition() override;
     int32_t ResetNotifyStreamSilentChangeFlag() override;
@@ -275,6 +277,8 @@ private:
     std::shared_ptr<FastAudioStreamCaptureCallback> micProcClientCb_ = nullptr;
     std::mutex metaDataCbMutex_;
     std::shared_ptr<AudioCapturerMetaDataCallback> metaDataCb_ = nullptr;
+    std::mutex sensitiveRecordPermitCallbackMutex_;
+    std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> sensitiveRecordPermitCallback_ = nullptr;
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> firstFrameWritingCb_ = nullptr;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
     AudioRendererInfo rendererInfo_;

@@ -470,5 +470,12 @@ int32_t AudioGeneralManager::UnregisterPreferredDeviceSetCallback(
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     return AudioPolicyManager::GetInstance().UnregisterPreferredDeviceSetCallback(callback);
 }
+
+int32_t AudioGeneralManager::NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioGeneralManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    return gasp->NotifySensitiveRecordPermit(sessionId, isPermitted);
+}
 } // namespace AudioStandard
 } // namespace OHOS

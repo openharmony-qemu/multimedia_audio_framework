@@ -97,6 +97,8 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE, false}},
     {"SOURCE_TYPE_VOICE_CALL",
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_CALL, false}},
+    {"SOURCE_TYPE_VOICE_DOWNLINK",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_DOWNLINK, false}},
     {"SOURCE_TYPE_VOICE_MESSAGE",
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_VOICE_MESSAGE, false}},
     {"SOURCE_TYPE_REMOTE_CAST",

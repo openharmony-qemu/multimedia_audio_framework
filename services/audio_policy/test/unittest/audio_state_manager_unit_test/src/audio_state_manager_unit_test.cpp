@@ -107,6 +107,11 @@ public:
     {
         return SUCCESS;
     }
+
+    ErrCode StartVoiceBroadcast(uint32_t sessionId) override
+    {
+        return 0;
+    }
 };
 
 /**

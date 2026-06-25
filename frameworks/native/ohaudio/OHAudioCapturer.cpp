@@ -857,6 +857,20 @@ void OHAudioCapturerFastStatusChangeCallback::OnFastStatusChange(FastStatus stat
     callback_(ohAudioCapturer_, userData_, static_cast<OH_AudioStream_FastStatus>(status));
 }
 
+void OHAudioCapturerSensitiveRecordPermitCallback::OnSensitiveRecordPermit(bool isPermitted)
+{
+    CHECK_AND_CALL_FUNC_RETURN_LOG(ohAudioCapturer_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        RECORD_CALLBACK_ILLEGAL_STATE, "capturer client is nullptr", true),
+        "capturer client is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(callback_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        RECORD_CALLBACK_INVALID_PARAM, "pointer to the function is nullptr", true),
+        "pointer to the function is nullptr");
+
+    callback_(ohAudioCapturer_, userData_, isPermitted);
+}
+
 void OHAudioCapturerOnPlaybackCaptureStartCallback::OnPlaybackCaptureStartResult(
     PlaybackCaptureStartState state)
 {
@@ -1026,6 +1040,23 @@ void OHAudioCapturer::SetCapturerFastStatusChangeCallback(OH_AudioCapturer_OnFas
     audioCapturerFastStatusChangeCallback_ = std::make_shared<OHAudioCapturerFastStatusChangeCallback> (callback,
         reinterpret_cast<OH_AudioCapturer*>(this), userData);
     audioCapturer_->SetFastStatusChangeCallback(audioCapturerFastStatusChangeCallback_);
+}
+
+void OHAudioCapturer::SetCapturerSensitiveRecordPermitCallback(OH_AudioCapturer_SensitiveRecordPermitCallback callback,
+    void *userData)
+{
+    CHECK_AND_CALL_FUNC_RETURN_LOG(audioCapturer_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        RECORD_CALLBACK_ILLEGAL_STATE, "capturer client is nullptr", true),
+        "capturer client is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_LOG(callback != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        RECORD_CALLBACK_INVALID_PARAM, "callback is nullptr", true),
+        "callback is nullptr");
+    audioCapturerSensitiveRecordPermitCallback_ =
+        std::make_shared<OHAudioCapturerSensitiveRecordPermitCallback>(callback,
+        reinterpret_cast<OH_AudioCapturer*>(this), userData);
+    audioCapturer_->SetSensitiveRecordPermitCallback(audioCapturerSensitiveRecordPermitCallback_);
 }
 
 int32_t OHAudioCapturer::StartPlaybackCapture(OH_AudioCapturer* capturer,
