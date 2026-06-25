@@ -91,14 +91,16 @@ void AudioEnhanceChain::InitAudioEnhanceChain()
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * DEFAULT_FORMAT;
     algoAttr_ = {DEFAULT_FORMAT, deviceAttr_.micChannels, byteLenPerFrame};
 
-    if (deviceAttr_.needEc && count(NEED_EC_SCENE.begin(), NEED_EC_SCENE.end(), sceneType_)) {
+    if (deviceAttr_.needEc &&
+        std::find(NEED_EC_SCENE.begin(), NEED_EC_SCENE.end(), sceneType_) != NEED_EC_SCENE.end()) {
         needEcFlag_ = true;
         algoSupportedConfig_.ecNum = deviceAttr_.ecChannels;
         algoAttr_.batchLen = deviceAttr_.micChannels + algoSupportedConfig_.ecNum;
         enhanceBuf_.ecBuffer.resize(deviceAttr_.ecChannels * byteLenPerFrame);
     }
 
-    if (deviceAttr_.needMicRef && count(NEED_MICREF_SCENE.begin(), NEED_MICREF_SCENE.end(), sceneType_)) {
+    if (deviceAttr_.needMicRef &&
+        std::find(NEED_MICREF_SCENE.begin(), NEED_MICREF_SCENE.end(), sceneType_) != NEED_MICREF_SCENE.end()) {
         needMicRefFlag_ = true;
         algoSupportedConfig_.micRefNum = deviceAttr_.micRefChannels;
         algoAttr_.batchLen += algoSupportedConfig_.micRefNum;

@@ -479,7 +479,7 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedNotEc, TestSize.Leve
 HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedNotEc_2, TestSize.Level1)
 {
     const uint64_t chainId = 0x5681; // 0x5681 for test chainid
-    std::string scene = "SCENE_VOIP_UP";
+    std::string scene = "SCENE_RECORD";
     const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
         "DEVICE_OTHER", "SPEAKER", "SCENE_RECORD", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr =
@@ -507,7 +507,7 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedEc, TestSize.Level1)
 HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedEc_2, TestSize.Level1)
 {
     const uint64_t chainId = 0x5681; // 0x5681 for test chainid
-    std::string scene = "SCENE_VOIP_UP";
+    std::string scene = "SCENE_RECORD";
     const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
         "DEVICE_OTHER", "SPEAKER", "SCENE_RECORD", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr =
@@ -536,9 +536,9 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedNotMicRef, TestSize.
 HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedNotMicRef_2, TestSize.Level1)
 {
     const uint64_t chainId = 0x5681; // 0x5681 for test chainid
-    std::string scene = "SCENE_VOIP_UP";
+    std::string scene = "SCENE_PRE_ENHANCE";
     const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
-        "DEVICE_OTHER", "SPEAKER", "SCENE_RECORD", "DEVICE_NAME" };
+        "DEVICE_OTHER", "SPEAKER", "SCENE_PRE_ENHANCE", "DEVICE_NAME" };
     // needMicRef is false
     const AudioEnhanceDeviceAttr deviceAttr =
         { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 2, 2 }; // 48000 for rate, 2 for ch and format
@@ -566,9 +566,9 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedMicRef, TestSize.Lev
 HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_NeedMicRef_2, TestSize.Level1)
 {
     const uint64_t chainId = 0x5681; // 0x5681 for test chainid
-    std::string scene = "SCENE_VOIP_UP";
+    std::string scene = "SCENE_PRE_ENHANCE";
     const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
-        "DEVICE_OTHER", "SPEAKER", "SCENE_RECORD", "DEVICE_NAME" };
+        "DEVICE_OTHER", "SPEAKER", "SCENE_PRE_ENHANCE", "DEVICE_NAME" };
     // needMicRef is true
     const AudioEnhanceDeviceAttr deviceAttr =
         { 48000, 2, 2, false, 48000, 2, 2, true, 48000, 4, 2 }; // 48000 for rate, 2 for ch and format
