@@ -3293,14 +3293,12 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
     }
     if (audioInterrupt.isAudioSessionInterrupt) {
         SendAudioSessionInterruptEventCallback(interruptEvent, audioInterrupt);
-        if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE ||
-            interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+        if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
             RemovePidSuggestionRecord(audioInterrupt.pid);
         }
     } else {
         handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, streamId);
-        if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE ||
-            interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+        if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
             RemoveStreamIdSuggestionRecord(streamId);
         }
     }
