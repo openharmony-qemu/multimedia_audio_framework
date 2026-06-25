@@ -405,7 +405,7 @@ private:
     std::unordered_map<int32_t, std::atomic<size_t>> innerCapFirstWriteMap_;
     bool isNonStandardSampleRate_ = false;
     bool isWriteFirst_ = false;
-    bool isOffloadJankReport = false;
+    std::atomic<bool> isOffloadJankReport = false;
     std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 };
 } // namespace AudioStandard
