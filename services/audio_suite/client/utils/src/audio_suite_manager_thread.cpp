@@ -32,7 +32,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-static constexpr int32_t FRAME_DURATION_MS = 20;  // 20 ms, frame duration ms
+static constexpr uint64_t FRAME_DURATION_MS = 20;  // 20 ms, frame duration ms
 
 AudioSuiteManagerThread::~AudioSuiteManagerThread()
 {

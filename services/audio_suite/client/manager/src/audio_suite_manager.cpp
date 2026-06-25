@@ -1295,7 +1295,7 @@ template<typename T>
 void ParseValue(const std::string valueStr, T &result)
 {
     std::istringstream iss(valueStr);
-    float value;
+    float value = 0.0f;
     iss >> value;
     result = static_cast<T>(value);
 }
@@ -1303,15 +1303,15 @@ void ParseValue(const std::string valueStr, T &result)
 void ParseValue(const std::string valueStr, AudioSpaceRenderPositionParams &result)
 {
     std::istringstream iss(valueStr);
-    char comma;
+    char comma = ',';
     iss >> result.x >> comma >> result.y >> comma >> result.z;
 }
 
 void ParseValue(const std::string valueStr, AudioSpaceRenderRotationParams &result)
 {
     std::istringstream iss(valueStr);
-    char comma;
-    int directionInt;
+    char comma = ',';
+    int directionInt = 0;
     iss >> result.x >> comma >> result.y >> comma >> result.z >> comma >> result.surroundTime >> comma >>
         directionInt;
     result.surroundDirection = static_cast<AudioSurroundDirection>(directionInt);
@@ -1320,24 +1320,24 @@ void ParseValue(const std::string valueStr, AudioSpaceRenderRotationParams &resu
 void ParseValue(const std::string valueStr, AudioSpaceRenderExtensionParams &result)
 {
     std::istringstream iss(valueStr);
-    char comma;
+    char comma = ',';
     iss >> result.extRadius >> comma >> result.extAngle;
 }
 
 void ParseValue(const std::string valueStr, float &speed, float &pitch)
 {
     std::istringstream iss(valueStr);
-    char comma;
+    char comma = ',';
     iss >> speed >> comma >> pitch;
 }
 
 void ParseValue(const std::string valueStr, AudioPureVoiceChangeOption &option)
 {
     std::istringstream iss(valueStr);
-    char comma;
-    int32_t genderInt;
-    int32_t typeInt;
-    float pitch;
+    char comma = ',';
+    int32_t genderInt = 0;
+    int32_t typeInt = 0;
+    float pitch = 0.0f;
     iss >> genderInt >> comma >> typeInt >> comma >> pitch;
     option.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(genderInt);
     option.optionType = static_cast<AudioPureVoiceChangeType>(typeInt);
