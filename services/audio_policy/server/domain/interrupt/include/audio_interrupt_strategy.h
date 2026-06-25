@@ -23,6 +23,7 @@
 #include "iremote_object.h"
 #include "istandard_audio_policy_manager_listener.h"
 #include "audio_session_service.h"
+
 #ifdef HAS_WINDOW_MANAGER
 #include "window_utils.h"
 #endif
@@ -43,22 +44,22 @@ private:
 
     void UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
+    void UpdateWindowFocusStrategy(const int32_t &currentPid,
+        const int32_t &incomingPid, const AudioStreamType &existStreamType,
+        const AudioStreamType &incomingStreamType, AudioFocusEntry &focusEntry);
     void UpdatePauseAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
-    void UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
-        const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
-        AudioFocusEntry &focusEntry);
     void UpdateMicFocusByUid(const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdateMicFocusStrategy(const AudioFocusType &existAudioFocusType,
         const AudioFocusType &incomingAudioFocusType, const std::string &currentBundleName,
         const std::string &incomingBundleName, AudioFocusEntry &focusEntry);
-    void UpdateMapFocusStrategy(const std::string &bundleName,
-        AudioFocusEntry &focusEntry, bool isExistMediaStream, SourceType incomingSourceType);
-    void UpdateFocusStrategy(const std::string &bundleName,
-        AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
     void UpdateAIBaseFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
+    void UpdateMapFocusStrategy(const std::string &bundleName,
+        AudioFocusEntry &focusEntry, bool isExistMediaStream, SourceType incomingSourceType);
+    void UpdateFocusStrategy(const std::string& bundleName,
+        AudioFocusEntry& focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
     bool IsMicSource(SourceType sourceType);
     void UpdateMediaWithMixStrategy(const AudioInterrupt &activeInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
