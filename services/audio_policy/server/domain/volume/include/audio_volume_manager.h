@@ -214,6 +214,8 @@ public:
     bool IsNeedForceControlVolumeType();
     AudioVolumeType GetForceControlVolumeType();
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, int32_t zoneId = 0);
+    int32_t GetSystemVolumeDegree(AudioStreamType streamType, DeviceType deviceType,
+        const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
     int32_t UpdateSafeVolumeByStrMode();
     void OnCheckActiveMusicTime(const std::string &reason);
@@ -290,6 +292,8 @@ private:
     void SetNearlinkTransitionCurrentAbsVolume(int32_t volumeLevel);
     void TriggerKaraokeTransition();
     void KaraokeTransitionThreadFunc();
+    bool GetSpecialDeviceVolumeDegree(AudioStreamType streamType, AudioVolumeType volumeType,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t &volumeDegree);
 
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;

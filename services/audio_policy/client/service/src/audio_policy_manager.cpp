@@ -3876,6 +3876,17 @@ int32_t AudioPolicyManager::GetSystemVolumeDegree(AudioVolumeType volumeType, in
     return volumeDegree;
 }
 
+int32_t AudioPolicyManager::GetSystemVolumeDegreeWithDevice(AudioVolumeType volumeType, DeviceType deviceType,
+    std::string networkId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    int32_t volumeDegree = -1;
+    gsp->GetSystemVolumeDegreeWithDevice(volumeType, deviceType, networkId, volumeDegree);
+    return volumeDegree;
+}
+
 int32_t AudioPolicyManager::GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
