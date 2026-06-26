@@ -4784,4 +4784,44 @@ HWTEST_F(HpaeRendererManagerTest, SuspendResumePreheatForGraphSwitch_Pairing, Te
     seNode->DropEffect();
     EXPECT_TRUE(true); // If we get here without crashing, test passes
 }
+
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitOutputCluster_InvalidDeviceTypeFallback, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    sinkInfo.deviceType = DEVICE_TYPE_INVALID;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    // line 1259 fallback: INVALID → SPEAKER
+    EXPECT_EQ(hpaeRendererManager->renderDeviceType_, DEVICE_TYPE_SPEAKER);
+    // renderId_ is populated unconditionally regardless of deviceType fallback.
+    EXPECT_NE(hpaeRendererManager->renderId_, HDI_INVALID_ID);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+// Negative case: a valid deviceType must be preserved (no fallback triggered).
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitOutputCluster_DeviceTypePreserved, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    sinkInfo.deviceType = DEVICE_TYPE_USB_HEADSET;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    SetSinkVirtualOutputNode(sinkInfo, hpaeRendererManager);
+
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    EXPECT_EQ(hpaeRendererManager->renderDeviceType_, DEVICE_TYPE_USB_HEADSET);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
 }  // namespace
