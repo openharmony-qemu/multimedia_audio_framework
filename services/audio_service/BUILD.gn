@@ -688,7 +688,8 @@ audio_ohos_library("audio_process_service") {
     "qos_manager:concurrent_task_client",
     "ability_runtime:extension_manager",
     "init:libbegetutil",
-    "bounds_checking_function:libsec_static"
+    "bounds_checking_function:libsec_static",
+    "cJSON:cjson",
   ]
 
   if (!audio_framework_feature_new_engine_flag) {

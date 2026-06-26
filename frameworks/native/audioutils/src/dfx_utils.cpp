@@ -14,6 +14,7 @@
  */
 
 #include "dfx_utils.h"
+#include "audio_log.h"
 #include "cJSON.h"
 
 namespace OHOS {

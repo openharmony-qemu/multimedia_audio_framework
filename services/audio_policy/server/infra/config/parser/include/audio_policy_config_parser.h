@@ -19,7 +19,6 @@
 #include <set>
 #include <unordered_map>
 #include <string>
-#include <regex>
 #include <cstdlib>
 #include <cerrno>
 #include <climits>
