@@ -49,36 +49,6 @@ int32_t AudioRoutingClientManager::GetPreferredOutputDeviceForRendererInfo(Audio
     return SUCCESS;
 }
 
-RecommendInputDevices AudioRoutingClientManager::GetRecommendInputDevices(
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
-{
-    AudioCapturerInfo captureInfo;
-    captureInfo.sourceType = SOURCE_TYPE_CAMCORDER;
-    GetPreferredInputDeviceForCapturerInfo(captureInfo, descs);
-
-    return ConvertRecommendInputDevices(descs);
-}
-
-RecommendInputDevices AudioRoutingClientManager::ConvertRecommendInputDevices(
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
-{
-    if (descs.size() == 0) {
-        return RecommendInputDevices::NO_UNAVAILABLE_DEVICE;
-    }
-
-    auto it = std::find_if(descs.begin(), descs.end(), [](const auto &desc) {
-        return desc && desc->deviceType_ == DEVICE_TYPE_MIC && desc->networkId_ == LOCAL_NETWORK_ID;
-    });
-    if (it != descs.end()) {
-        auto desc = *it;
-        descs.clear();
-        descs.push_back(desc);
-        return RecommendInputDevices::RECOMMEND_BUILT_IN_MIC;
-    } else {
-        return RecommendInputDevices::RECOMMEND_EXTERNAL_MIC;
-    }
-}
-
 int32_t AudioRoutingClientManager::GetPreferredInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
@@ -190,6 +160,14 @@ int32_t AudioRoutingClientManager::SetDeviceConnectionStatus(const std::shared_p
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "desc is nullptr");
     return AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(desc, isConnected);
+}
+
+int32_t AudioRoutingClientManager::SetCustomAudioMix(const std::string &zoneName,
+    const std::vector<AudioZoneMix> &audioMixes)
+{
+    CHECK_AND_RETURN_RET_LOG(zoneName != "" && audioMixes.size() > 0, ERR_INVALID_PARAM,
+                             "zoneName is empty or audioMix is empty.");
+    return AudioPolicyManager::GetInstance().SetCustomAudioMix(zoneName, audioMixes);
 }
 } // namespace AudioStandard
 } // namespace OHOS
