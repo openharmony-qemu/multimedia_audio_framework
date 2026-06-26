@@ -1275,7 +1275,7 @@ int32_t HpaeRendererManager::InitOutputCluster()
         renderDeviceType_ = DEVICE_TYPE_SPEAKER;
     }
     AUDIO_INFO_LOG("init sink:%{public}s, renderid:%{public}u, devicetype:%{public}d",
- 	    sinkInfo_.deviceName.c_str(), renderId_, renderDeviceType_);
+        sinkInfo_.deviceName.c_str(), renderId_, renderDeviceType_);
     return ret;
 }
 

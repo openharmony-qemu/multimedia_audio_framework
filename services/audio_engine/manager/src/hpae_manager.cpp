@@ -810,7 +810,7 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
         std::shared_ptr<IHpaeRendererManager> newRendererManager = GetRendererManagerByName(name);
         if (newRendererManager == nullptr || !newRendererManager->IsInit()) {
             AUDIO_WARNING_LOG("sink: %{public}s not exist or not init, do not change default sink",
- 	            GetEncryptStr(name).c_str());
+                GetEncryptStr(name).c_str());
             return;
         }
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(defaultSink_);
@@ -849,8 +849,7 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
         
         std::shared_ptr<IHpaeCapturerManager> newCapturerManager = GetCapturerManagerByName(name);
         if (newCapturerManager == nullptr || !newCapturerManager->IsInit()) {
-            AUDIO_WARNING_LOG("source: %{public}s not exist or not init, do not change default source",
- 	            name.c_str());
+            AUDIO_WARNING_LOG("source: %{public}s not exist or not init, do not change default source", name.c_str());
             return;
         }
         std::shared_ptr<IHpaeCapturerManager> capturerManager = GetCapturerManagerByName(defaultSource_);
