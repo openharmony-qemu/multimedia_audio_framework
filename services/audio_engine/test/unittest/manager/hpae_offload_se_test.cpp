@@ -680,7 +680,7 @@ public:
             data[i] = fillValue_;
         }
         silenceData_.SetBufferValid(true);
-        outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
+        outputStream_.WriteDataToOutput(&silenceData_);
     }
 
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override
