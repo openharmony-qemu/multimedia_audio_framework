@@ -86,7 +86,7 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     if (Util::IsEnhancedRoutingSupported()) {
-        nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_());
+        nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
         nodeInfo.renderId = renderId_;
     }
     sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
@@ -112,7 +112,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     if (Util::IsEnhancedRoutingSupported()) {
-        nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_());
+        nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
         nodeInfo.renderId = renderId_;
     }
     // no need history buffer in not offload sink
@@ -170,7 +170,7 @@ void HpaeRendererManager::CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo)
         HpaeNodeInfo temp = nodeInfo;
         temp.sceneType = HPAE_SCENE_DEFAULT;
         temp.renderId = renderId_;
-        temp.deviceType = static_cast<int32_t>(renderDeviceType_());
+        temp.deviceType = static_cast<int32_t>(renderDeviceType_);
         auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
         sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
         sceneClusterMap_[nodeInfo.sceneType] = hpaeProcessCluster;
@@ -356,7 +356,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
     CHECK_AND_RETURN_LOG(node != nullptr, "sinkInputNode is nullptr");
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     if (Util::IsEnhancedRoutingSupported()) {
-        nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_());
+        nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
         nodeInfo.renderId = renderId_;
     }
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
@@ -1197,7 +1197,7 @@ void HpaeRendererManager::ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo,
     for (const auto &it : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
         if (Util::IsEnhancedRoutingSupported()) {
-            nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_());
+            nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
             nodeInfo.renderId = renderId_;
         }
         CreateProcessClusterAndConnect(nodeInfo);
@@ -1292,7 +1292,7 @@ void HpaeRendererManager::InitDefaultNodeInfo()
     defaultNodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     defaultNodeInfo.deviceClass = sinkInfo_.deviceClass;
     defaultNodeInfo.statusCallback = weak_from_this();
-    defaultNodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_());
+    defaultNodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
     defaultNodeInfo.renderId = renderId_;
     sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] = std::make_shared<HpaeProcessCluster>(defaultNodeInfo, sinkInfo_);
     sceneTypeToProcessClusterCountMap_[HPAE_SCENE_EFFECT_NONE] = 1;
