@@ -1271,10 +1271,10 @@ int32_t HpaeRendererManager::InitOutputCluster()
     isInit_.store(ret == SUCCESS);
     renderId_ = outputCluster_->GetRenderId();
     renderDeviceType_ = static_cast<DeviceType>(attr.deviceType);
- 	if (renderDeviceType_ == DEVICE_TYPE_INVALID) {
- 	    renderDeviceType_ = DEVICE_TYPE_SPEAKER;
- 	}
- 	AUDIO_INFO_LOG("init sink:%{public}s, renderid:%{public}u, devicetype:%{public}d",
+    if (renderDeviceType_ == DEVICE_TYPE_INVALID) {
+        renderDeviceType_ = DEVICE_TYPE_SPEAKER;
+    }
+    AUDIO_INFO_LOG("init sink:%{public}s, renderid:%{public}u, devicetype:%{public}d",
  	    sinkInfo_.deviceName.c_str(), renderId_, renderDeviceType_);
     return ret;
 }

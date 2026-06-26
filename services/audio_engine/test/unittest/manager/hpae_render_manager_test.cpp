@@ -4785,8 +4785,6 @@ HWTEST_F(HpaeRendererManagerTest, SuspendResumePreheatForGraphSwitch_Pairing, Te
     EXPECT_TRUE(true); // If we get here without crashing, test passes
 }
 
-//   if (renderDeviceType_ == DEVICE_TYPE_INVALID) { renderDeviceType_ = DEVICE_TYPE_SPEAKER; }
-// SinkInfo carries DEVICE_TYPE_INVALID → InitOutputCluster must coerce it to DEVICE_TYPE_SPEAKER.
 HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitOutputCluster_InvalidDeviceTypeFallback, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo = GetSinkInfo();
