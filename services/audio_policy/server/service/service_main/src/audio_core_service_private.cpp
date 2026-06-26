@@ -3545,8 +3545,10 @@ void AudioCoreService::OnRemoteDeviceStatusUpdatedWhenNoRunningStream(std::share
     // with no running stream, update device status
     auto currentDesc = std::make_shared<AudioDeviceDescriptor>(audioRouterSelectStrategy_.Get1stCurrentOutputDevice());
     CHECK_AND_RETURN_LOG(currentDesc != nullptr && newDesc != nullptr, "desc is nullptr");
-    CHECK_AND_RETURN(currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX &&
-        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX);
+    CHECK_AND_RETURN((currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX &&
+        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX) ||
+        (currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_MUSIC_HOST &&
+        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_MUSIC_HOST));
     NotifyRemoteDeviceStatusUpdate(currentDesc);
 }
 
@@ -3566,8 +3568,10 @@ void AudioCoreService::OnRemoteDeviceStatusUpdated()
         oldDesc = streamDesc->oldDeviceDescs_.front();
         newDesc = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(oldDesc != nullptr && newDesc != nullptr);
-        CHECK_AND_CONTINUE(oldDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX ||
-            newDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX);
+        CHECK_AND_CONTINUE((oldDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX ||
+            newDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX) &&
+            (oldDesc->dmDeviceType_ != DM_DEVICE_TYPE_MUSIC_HOST ||
+            newDesc->dmDeviceType_ == DM_DEVICE_TYPE_MUSIC_HOST));
         isNeedUpdate = false;
     }
     CHECK_AND_RETURN(isNeedUpdate);
