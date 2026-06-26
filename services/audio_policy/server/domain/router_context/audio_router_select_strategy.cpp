@@ -24,6 +24,7 @@
 #include "audio_router_infra.h"
 #include "audio_device_manager.h"
 #include "audio_policy_log.h"
+#include "audio_policy_utils.h"
 #include "audio_core_config_manager.h"
 #include "audio_utils.h"
 

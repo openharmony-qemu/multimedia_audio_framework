@@ -59,6 +59,9 @@
 #include "audio_policy_dump.h"
 #include "boot_animation_state_info.h"
 #include "multi_condition_waiter.h"
+#include "audio_stutter.h"
+#include "audio_stream_monitor.h"
+#include "standard_audio_server_manager_listener_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -245,6 +248,9 @@ public:
         int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId) override;
         int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId) override;
         bool IsSupportIndependentPipe() override;
+        // Notify silent state change
+        void NotifySilentStateChange(uint32_t sessionId, bool isSilent) override;
+        void NotifyDataTransSilentStateChange(uint32_t sessionId, bool isSilent);
         void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
         void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
         void ReloadSourceForEffect(const AudioEffectPropertyArray oldPropertyArray,
@@ -282,6 +288,7 @@ public:
     std::shared_ptr<EventEntry> GetEventEntry();
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
     std::shared_ptr<AsyncActionHandler> GetAsyncActionHandler() const;
+    std::shared_ptr<AudioPipeManager> GetPipeManager() const;
     void SetConfigParserFlag();
     // Pipe capability pass-through interfaces. Synchronization is managed in pipe/domain modules.
     void SetEcEnableState(bool ecEnableState);
@@ -354,6 +361,9 @@ public:
     void NotifyStandbyStatus(uint32_t sessionId, bool standbyStatus);
     int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId);
     int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId);
+    // Notify silent state change
+    void NotifySilentStateChange(uint32_t sessionId, bool isSilent);
+    void NotifyDataTransSilentStateChange(uint32_t sessionId, bool isSilent);
     int32_t StopClient(uint32_t sessionId);
     int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT,
         bool needRemoveFromMap = false);
@@ -992,12 +1002,93 @@ private:
     MultiConditionNotifier readyConditionNotifier_;
 };
 
+class SilentStreamDataTransferCallback : public DataTransferStateChangeCallbackInner {
+public:
+    SilentStreamDataTransferCallback(std::shared_ptr<AsyncActionHandler> asyncHandler,
+        std::shared_ptr<AudioCoreService::EventEntry> eventEntry)
+        : asyncHandler_(asyncHandler), eventEntry_(eventEntry) {}
+    ~SilentStreamDataTransferCallback() override = default;
+
+    void OnDataTransferStateChange(const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) override;
+
+    void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
+        const uint32_t &sessionId, const bool &isMuted) override;
+
+private:
+    std::shared_ptr<AsyncActionHandler> asyncHandler_;
+    std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
+};
+
+class SilentStreamListenerStub : public StandardAudioServerManagerListenerStub {
+public:
+    explicit SilentStreamListenerStub(std::shared_ptr<SilentStreamDataTransferCallback> callback)
+        : callback_(callback) {}
+    ~SilentStreamListenerStub() override = default;
+
+    int32_t OnDataTransferStateChange(int32_t callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) override
+    {
+        CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+        callback_->OnDataTransferStateChange(callbackId, info);
+        return SUCCESS;
+    }
+
+    int32_t OnMuteStateChange(int32_t callbackId, int32_t uid, uint32_t sessionId, bool isMuted) override
+    {
+        CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+        callback_->OnMuteStateChange(callbackId, uid, sessionId, isMuted);
+        return SUCCESS;
+    }
+
+    int32_t OnAudioParameterChange(const std::string &networkId, int32_t key,
+        const std::string& condition, const std::string& value) override { return SUCCESS; }
+    int32_t OnHdiRouteStateChange(const std::string &networkId, bool enable) override { return SUCCESS; }
+    int32_t OnCapturerState(bool isActive) override { return SUCCESS; }
+    int32_t OnWakeupClose() override { return SUCCESS; }
+
+private:
+    std::shared_ptr<SilentStreamDataTransferCallback> callback_;
+};
+
 class RestoreA2dpSinkAction : public AsyncActionHandler::AsyncAction {
 public:
     void Exec() override
     {
         AudioCoreService::GetCoreService()->HandleA2dpRestore();
     }
+};
+
+class RegisterSilentStreamCallbackAction : public AsyncActionHandler::AsyncAction {
+public:
+    RegisterSilentStreamCallbackAction(
+        std::shared_ptr<AsyncActionHandler> asyncHandler,
+        std::shared_ptr<AudioCoreService::EventEntry> eventEntry)
+        : asyncHandler_(asyncHandler), eventEntry_(eventEntry) {}
+    void Exec() override;
+private:
+    std::shared_ptr<AsyncActionHandler> asyncHandler_;
+    std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
+};
+
+class NotifyMuteSilentStateAction : public AsyncActionHandler::AsyncAction {
+public:
+    NotifyMuteSilentStateAction(uint32_t sessionId, bool isMuteSilent)
+        : sessionId_(sessionId), isMuteSilent_(isMuteSilent) {}
+    void Exec() override;
+private:
+    uint32_t sessionId_;
+    bool isMuteSilent_;
+};
+
+class NotifyDataTransSilentStateAction : public AsyncActionHandler::AsyncAction {
+public:
+    NotifyDataTransSilentStateAction(uint32_t sessionId, bool isDataTransSilent)
+        : sessionId_(sessionId), isDataTransSilent_(isDataTransSilent) {}
+    void Exec() override;
+private:
+    uint32_t sessionId_;
+    bool isDataTransSilent_;
 };
 }
 }

@@ -89,6 +89,7 @@ struct DataTransferMonitorParam : public Parcelable {
     int32_t badDataTransferTypeBitMap;
     int64_t timeInterval;
     int32_t badFramesRatio;
+    bool needImmediateResumeNotify = false;
 
     DataTransferMonitorParam() = default;
     ~DataTransferMonitorParam() = default;
@@ -103,7 +104,8 @@ struct DataTransferMonitorParam : public Parcelable {
         return parcel.WriteInt32(clientUID) &&
             parcel.WriteInt32(badDataTransferTypeBitMap) &&
             parcel.WriteInt64(timeInterval) &&
-            parcel.WriteInt32(badFramesRatio);
+            parcel.WriteInt32(badFramesRatio) &&
+            parcel.WriteBool(needImmediateResumeNotify);
     }
 
     static DataTransferMonitorParam *Unmarshalling(Parcel &parcel)
@@ -116,6 +118,7 @@ struct DataTransferMonitorParam : public Parcelable {
         param->badDataTransferTypeBitMap = parcel.ReadInt32();
         param->timeInterval = parcel.ReadInt64();
         param->badFramesRatio = parcel.ReadInt32();
+        param->needImmediateResumeNotify = parcel.ReadBool();
         return param;
     }
 };

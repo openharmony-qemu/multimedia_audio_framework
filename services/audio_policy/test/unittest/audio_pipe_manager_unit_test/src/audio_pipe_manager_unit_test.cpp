@@ -2146,7 +2146,7 @@ HWTEST_F(AudioPipeManagerUnitTest, ClearStandbyFlag_001, TestSize.Level1)
 
     uint32_t targetSessionId = 10000;
     audioPipeManager->ClearStandbyFlag(targetSessionId);
-    EXPECT_FALSE(streamDesc->isStandby_);
+    EXPECT_FALSE(streamDesc->isStandby_.load());
 }
 
 /**
@@ -2170,7 +2170,7 @@ HWTEST_F(AudioPipeManagerUnitTest, ClearStandbyFlag_002, TestSize.Level1)
 
     uint32_t invalidSessionId = 99999;
     audioPipeManager->ClearStandbyFlag(invalidSessionId);
-    EXPECT_TRUE(streamDesc->isStandby_);
+    EXPECT_TRUE(streamDesc->isStandby_.load());
 }
 
 /**

@@ -265,6 +265,7 @@ public:
     static constexpr int64_t TEN_YEARS_MS = 10LL*365*24*3600*1000;
     static constexpr uint32_t WEAR_FIRST = 1;
     static constexpr uint32_t WEAR_AGAIN = 2;
+    bool isSilent_ = false;
 
 private:
     uint32_t deviceSupportMmap_ = 0; //only valid on armusb

@@ -27,6 +27,7 @@
 #include "audio_adapter_manager.h"
 #include "audio_device_status.h"
 #include "audio_pipe_manager.h"
+#include "audio_scene_manager.h"
 #include "audio_zone_service.h"
 
 #undef LOG_DOMAIN
@@ -1668,6 +1669,74 @@ void AudioDeviceManager::UpdateDeviceDescriptorByCapability(std::shared_ptr<Audi
     auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     CHECK_AND_RETURN_LOG(itr != connectedDevices_.end(), "Device not found");
     AudioDeviceStatus::GetInstance().UpdateDeviceDescriptorByCapability(*(*itr));
+}
+
+void AudioDeviceManager::UpdateWirelessDeviceSilentState(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (auto &desc : connectedDevices_) {
+        if (desc != nullptr &&
+            desc->macAddress_ == devDesc->macAddress_ &&
+            desc->isSilent_ != devDesc->isSilent_) {
+            desc->isSilent_ = devDesc->isSilent_;
+        }
+    }
+}
+
+// Update silent state for all connected wireless devices (A2DP, SCO, NearLink)
+void AudioDeviceManager::UpdateAllWirelessDevicesSilentState()
+{
+    std::vector<DeviceType> wirelessTypes = {
+        DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_NEARLINK
+    };
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> wirelessDevices;
+    {
+        std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+        for (auto &deviceType : wirelessTypes) {
+            for (auto &desc : connectedDevices_) {
+                if (desc != nullptr && desc->deviceType_ == deviceType && desc->deviceRole_ == OUTPUT_DEVICE) {
+                    wirelessDevices.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
+                }
+            }
+        }
+    }
+    bool isSilent = CheckAllStreamsSilentOrStandByOnDevice();
+    for (auto &devDesc : wirelessDevices) {
+        devDesc->isSilent_ = isSilent;
+        UpdateWirelessDeviceSilentState(devDesc);
+    }
+}
+
+// Check whether all output streams are silent or standby
+bool AudioDeviceManager::CheckAllStreamsSilentOrStandByOnDevice()
+{
+    if (AudioSceneManager::GetInstance().IsVoiceCallRelatedScene()) {
+        return false;
+    }
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, false, "pipeManager is nullptr");
+    auto allStreams = pipeManager->GetAllOutputStreamDescs();
+    if (allStreams.size() == 0) {
+        return false;
+    }
+    bool hasRunningSilentStream  = false;
+    for (auto &streamDesc : allStreams) {
+        if (streamDesc == nullptr) {
+            continue;
+        }
+        auto mainDevice = streamDesc->GetMainNewDeviceDesc();
+        if (mainDevice == nullptr) {
+            continue;
+        }
+        if (streamDesc->IsRunning()) {
+            if (!pipeManager->IsStreamSilent(streamDesc->sessionId_) && !streamDesc->isStandby_.load()) {
+                return false;
+            }
+            hasRunningSilentStream  = true;
+        }
+    }
+    return hasRunningSilentStream ;
 }
 }
 }
