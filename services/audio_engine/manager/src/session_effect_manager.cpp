@@ -178,7 +178,6 @@ void SessionEffectManager::LazyReleaseExpired(const std::string &effectName, uin
     }
     instance->Release();
     effectInstanceMap_.erase(effectName);
-    savedEffectParameters_.erase(effectName);
     AUDIO_INFO_LOG("[SE::SessionEffectManager] effect lazyReleased "
         "effect=%{public}s gen=%{public}u", effectName.c_str(), generation);
 }

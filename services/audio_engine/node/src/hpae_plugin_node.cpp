@@ -58,7 +58,7 @@ void HpaePluginNode::DoProcess()
         return;
     }
     Trace trace("[sceneType:" + std::to_string(GetSceneType()) + "]" + GetNodeName() + "::DoProcess is_silence");
-    outputStream_.WriteDataToOutput(&silenceData_);
+    outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
 }
 
 bool HpaePluginNode::Reset()

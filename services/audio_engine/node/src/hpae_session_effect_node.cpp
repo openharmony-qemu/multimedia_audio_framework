@@ -297,6 +297,7 @@ int32_t HpaeSessionEffectNode::DropEffect()
 {
     StopPreheatThread();  // Always join if joinable
     if (effectInstance_) {
+        effectInstance_->Flush();
         effectInstance_->StopEffect();  // DISABLE if not already
     }
     AUDIO_INFO_LOG("[SE::SessionEffectNode] %s→IDLE reason=DropEffect sessionId=%{public}u",
@@ -487,7 +488,7 @@ void HpaeSessionEffectNode::DoProcess()
 {
     // Paused: output silence, don't pull upstream
     if (isPaused_) {
-        outputStream_.WriteDataToOutput(&silenceData_);
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
         return;
     }
 
@@ -506,7 +507,7 @@ void HpaeSessionEffectNode::DoProcess()
             // Fall through to normal DoProcess (pull upstream + SignalProcess)
         } else {
             // Disconnect: don't pull upstream, output silence directly
-            outputStream_.WriteDataToOutput(&silenceData_);
+            outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
             return;
         }
     }
@@ -664,7 +665,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<Hpae
         return inputBuf;
     }
 
-    return &silenceData_;
+    return PrepareSilenceBuffer();
 }
 
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessActive(const std::vector<HpaePcmBuffer *> &inputs)
@@ -689,18 +690,18 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessActive(const std::vector<HpaePcmBuf
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessActiveNoInput()
 {
     if (!effectInstance_ || status_ != STATUS::ACTIVE) {
-        return &silenceData_;
+        return PrepareSilenceBuffer();
     }
 
     size_t channels = tailOutputData_.GetChannelCount();
     if (audioConfig_.inputCfg.channels != channels) {
         AUDIO_WARNING_LOG("ProcessActiveNoInput channel mismatch: config=%{public}u buffer=%{public}zu",
             audioConfig_.inputCfg.channels, channels);
-        return &silenceData_;
+        return PrepareSilenceBuffer();
     }
     size_t byteLen = 0;
     if (!GetPcmByteLen(tailOutputData_.GetFrameLen(), channels, byteLen)) {
-        return &silenceData_;
+        return PrepareSilenceBuffer();
     }
 
     auto now = std::chrono::steady_clock::now();
@@ -792,7 +793,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ReadAlgoOutput(HpaePcmBuffer *inputBuf, si
     }
     // No output → return silence
     stats_.underrunCount++;
-    return &silenceData_;
+    return PrepareSilenceBuffer();
 }
 
 void HpaeSessionEffectNode::CloseSessionEffectCore()
@@ -816,7 +817,7 @@ void HpaeSessionEffectNode::CloseSessionEffectCore()
     if (effectInstance_) {
         effectInstance_->Flush();
     }
-
+    ResetAccounting();
     // Step 4: Enter bypass mode
     status_ = STATUS::IDLE;
     isPaused_ = false;

@@ -119,7 +119,7 @@ void HpaeAudioFormatConverterNode::DoProcess()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
                 BusinessScenario::QUERY, ERR_NULL_POINTER), "resampler_ is nullptr", false);
-        outputStream_.WriteDataToOutput(&silenceData_);
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
         return;
     }
     if (hasPreOutput) {
@@ -148,7 +148,7 @@ void HpaeAudioFormatConverterNode::DoProcess()
     AUDIO_DEBUG_LOG("NodeId %{public}d: output silence, "
         "hasValidInput=%{public}d, enableProcess=%{public}d, processedFrames=%{public}u",
         GetNodeId(), hasValidInput, enableProcess_, processedFrames_);
-    outputStream_.WriteDataToOutput(&silenceData_);
+    outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
 }
 
 void HpaeAudioFormatConverterNode::AccumulateInputAndPullAhead(HpaePcmBuffer *input)
@@ -158,7 +158,8 @@ void HpaeAudioFormatConverterNode::AccumulateInputAndPullAhead(HpaePcmBuffer *in
     uint32_t inputChannels = input->GetChannelCount();
 
     // Step 1: Append input data to unprocessedBuffer_
-    AppendToUnprocessedBuffer(srcData, inputFrameLen, inputChannels);
+    CHECK_AND_RETURN_LOG(AppendToUnprocessedBuffer(srcData, inputFrameLen, inputChannels),
+        "NodeId %{public}d: AppendToUnprocessedBuffer failed", GetNodeId());
 
     // Step 1b: Pull-Ahead -- if not enough data accumulated and credit available, actively pull from upstream
     AudioChannelInfo inChannelInfo = channelConverter_.GetInChannelInfo();
@@ -194,7 +195,7 @@ HpaePcmBuffer* HpaeAudioFormatConverterNode::ProcessAndExtractOutput(HpaePcmBuff
         AUDIO_DEBUG_LOG("NodeId %{public}d: insufficient output, "
             "processedFrames=%{public}u < outputFrameLen20ms=%{public}u, returning silence",
             GetNodeId(), processedFrames_, outputFrameLen20ms_);
-        return &silenceData_;
+        return PrepareSilenceBuffer();
     }
 
     AUDIO_DEBUG_LOG("NodeId %{public}d: output success, "
@@ -513,25 +514,25 @@ uint32_t HpaeAudioFormatConverterNode::CalculateResamplerInputThreshold() const
     }
 }
 
-void HpaeAudioFormatConverterNode::AppendToUnprocessedBuffer(const float *data, uint32_t frameLen,
+bool HpaeAudioFormatConverterNode::AppendToUnprocessedBuffer(const float *data, uint32_t frameLen,
     uint32_t channels)
 {
     if (frameLen == 0 || data == nullptr) {
-        return;
+        return false;
     }
     size_t samplesToAdd = static_cast<size_t>(frameLen) * channels;
     size_t requiredSize = static_cast<size_t>(unprocessedFrames_ + frameLen) * channels;
     if (unprocessedBuffer_.size() < requiredSize) {
         AUDIO_ERR_LOG("NodeId %{public}d: AppendToUnprocessedBuffer buffer overflow, "
             "size=%{public}zu, required=%{public}zu", GetNodeId(), unprocessedBuffer_.size(), requiredSize);
-        return;
+        return false;
     }
     errno_t ret = memcpy_s(unprocessedBuffer_.data() + static_cast<size_t>(unprocessedFrames_) * channels,
         (unprocessedBuffer_.size() - static_cast<size_t>(unprocessedFrames_) * channels) * sizeof(float),
         data, samplesToAdd * sizeof(float));
     if (ret != EOK) {
         AUDIO_ERR_LOG("NodeId %{public}d: AppendToUnprocessedBuffer memcpy_s failed", GetNodeId());
-        return;
+        return false;
     }
     unprocessedFrames_ += frameLen;
     if (pullAheadCredit_ > 0) {
@@ -539,9 +540,10 @@ void HpaeAudioFormatConverterNode::AppendToUnprocessedBuffer(const float *data, 
     }
     AUDIO_DEBUG_LOG("NodeId %{public}d: AppendToUnprocessedBuffer added %{public}u frames @%{public}u ch, "
         "total unprocessedFrames=%{public}u", GetNodeId(), frameLen, channels, unprocessedFrames_);
+    return true;
 }
 
-void HpaeAudioFormatConverterNode::AppendToProcessedBuffer(const float *data, uint32_t frameLen, uint32_t channels)
+bool HpaeAudioFormatConverterNode::AppendToProcessedBuffer(const float *data, uint32_t frameLen, uint32_t channels)
 {
     size_t writeOffset = static_cast<size_t>(processedReadPos_ + processedFrames_) * channels;
     size_t samplesToAdd = static_cast<size_t>(frameLen) * channels;
@@ -549,16 +551,17 @@ void HpaeAudioFormatConverterNode::AppendToProcessedBuffer(const float *data, ui
         AUDIO_ERR_LOG("NodeId %{public}d: AppendToProcessedBuffer buffer overflow, "
             "size=%{public}zu, required=%{public}zu", GetNodeId(), processedBuffer_.size(),
             writeOffset + samplesToAdd);
-        return;
+        return false;
     }
     errno_t ret = memcpy_s(processedBuffer_.data() + writeOffset,
         (processedBuffer_.size() - writeOffset) * sizeof(float),
         data, samplesToAdd * sizeof(float));
     if (ret != EOK) {
         AUDIO_ERR_LOG("NodeId %{public}d: AppendToProcessedBuffer memcpy_s failed", GetNodeId());
-        return;
+        return false;
     }
     processedFrames_ += frameLen;
+    return true;
 }
 
 bool HpaeAudioFormatConverterNode::TryPullOneFrame()
@@ -570,8 +573,7 @@ bool HpaeAudioFormatConverterNode::TryPullOneFrame()
     float *data = newInputs[0]->GetPcmDataBuffer();
     uint32_t frameLen = newInputs[0]->GetFrameLen();
     uint32_t channels = newInputs[0]->GetChannelCount();
-    AppendToUnprocessedBuffer(data, frameLen, channels);
-    return true;
+    return AppendToUnprocessedBuffer(data, frameLen, channels);
 }
 
 void HpaeAudioFormatConverterNode::PullAheadUntilThresholdOrFailure(uint32_t inputFrameLen)
@@ -623,9 +625,11 @@ void HpaeAudioFormatConverterNode::ProcessSameRateChannelConversion(uint32_t inC
             break;
         }
 
-        AppendToProcessedBuffer(resamplerOutBuf_.data(), outFrameLen, outCh);
+        CHECK_AND_BREAK_LOG(AppendToProcessedBuffer(resamplerOutBuf_.data(), outFrameLen, outCh),
+            "NodeId %{public}d: AppendToProcessedBuffer failed", GetNodeId());
         // Remove at inCh per frame
-        RemoveConsumedInputFrames(inFrameLen, inCh);
+        CHECK_AND_BREAK_LOG(RemoveConsumedInputFrames(inFrameLen, inCh),
+            "NodeId %{public}d: RemoveConsumedInputFrames failed", GetNodeId());
     }
 }
 
@@ -659,8 +663,10 @@ void HpaeAudioFormatConverterNode::ProcessDiffRateResample(uint32_t inCh, uint32
             break;
         }
 
-        AppendToProcessedBuffer(resamplerOutBuf_.data(), outFrameLen, outCh);
-        RemoveConsumedInputFrames(inFrameLen, inCh);
+        CHECK_AND_BREAK_LOG(AppendToProcessedBuffer(resamplerOutBuf_.data(), outFrameLen, outCh),
+            "NodeId %{public}d: AppendToProcessedBuffer failed", GetNodeId());
+        CHECK_AND_BREAK_LOG(RemoveConsumedInputFrames(inFrameLen, inCh),
+            "NodeId %{public}d: RemoveConsumedInputFrames failed", GetNodeId());
     }
 }
 
@@ -783,12 +789,12 @@ bool HpaeAudioFormatConverterNode::ExtractOutputFromProcessedBuffer()
     return true;
 }
 
-void HpaeAudioFormatConverterNode::RemoveConsumedInputFrames(uint32_t consumedFrames, uint32_t channels)
+bool HpaeAudioFormatConverterNode::RemoveConsumedInputFrames(uint32_t consumedFrames, uint32_t channels)
 {
     uint32_t remainingFrames = unprocessedFrames_ - consumedFrames;
     if (remainingFrames == 0) {
         unprocessedFrames_ = 0;
-        return;
+        return true;
     }
     size_t srcOffset = static_cast<size_t>(consumedFrames) * channels;
     size_t remainingSamples = static_cast<size_t>(remainingFrames) * channels;
@@ -796,8 +802,10 @@ void HpaeAudioFormatConverterNode::RemoveConsumedInputFrames(uint32_t consumedFr
         unprocessedBuffer_.data() + srcOffset, remainingSamples * sizeof(float));
     if (ret != EOK) {
         AUDIO_ERR_LOG("NodeId %{public}d: RemoveConsumedInputFrames memmove_s failed", GetNodeId());
+        return false;
     }
     unprocessedFrames_ = remainingFrames;
+    return true;
 }
 
 void HpaeAudioFormatConverterNode::CompactProcessedBuffer(uint32_t channels)

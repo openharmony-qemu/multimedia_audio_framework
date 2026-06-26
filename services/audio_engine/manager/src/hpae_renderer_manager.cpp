@@ -122,7 +122,9 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
         nodeInfo.renderId = renderId_;
     }
     // no need history buffer in not offload sink
-    nodeInfo.historyFrameCount = 0;
+    if (!node->HasSessionEffectAttachState()) {
+        nodeInfo.historyFrameCount = 0;
+    }
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.sceneType = TransToProperSceneType(nodeInfo.effectInfo.streamUsage, nodeInfo.effectInfo.effectScene);
     // for collaboration

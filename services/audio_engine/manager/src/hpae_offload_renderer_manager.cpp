@@ -1325,7 +1325,9 @@ bool HpaeOffloadRendererManager::StopOffloadSinkIfRunning()
     CHECK_AND_RETURN_RET(curNode_ != nullptr, false);
     CHECK_AND_RETURN_RET(curNode_->GetState() == HPAE_SESSION_RUNNING, false);
     CHECK_AND_RETURN_RET(sinkOutputNode_ != nullptr, false);
-    sinkOutputNode_->StopStream();
+    // Only flush HDI/DSP cache to prevent pop noise on SE insert/remove.
+    // Do NOT rewind the upstream history buffer; the SE pipeline handles buffering itself.
+    sinkOutputNode_->StopStream(false);
     return true;
 }
 

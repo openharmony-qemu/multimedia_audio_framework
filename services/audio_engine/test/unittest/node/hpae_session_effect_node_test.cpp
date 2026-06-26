@@ -356,7 +356,7 @@ public:
         : HpaeNode(nodeInfo), HpaeSessionEffectNode(nodeInfo) {}
     HpaePcmBuffer *GetSilenceDataForTest()
     {
-        return &silenceData_;
+        return PrepareSilenceBuffer();
     }
     using HpaeSessionEffectNode::FeedInputFromBuffer;
     using HpaeSessionEffectNode::FeedPaddingInput;

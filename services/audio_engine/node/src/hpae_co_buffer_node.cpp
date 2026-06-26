@@ -93,7 +93,7 @@ void HpaeCoBufferNode::DoProcess()
     
     // return if enqueue is not running
     if (enqueueRunning_ == false && isOutputClusterConnected_ == true) {
-        outputStream_.WriteDataToOutput(&silenceData_);
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
         AUDIO_INFO_LOG("Dequeue failed, Enqueue is not running");
         return;
     }
@@ -252,14 +252,14 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
                 AUDIO_INFO_LOG("finish write, OnDisConnectCoBufferWaitFadeOutDone");
             }
         }
-        outputStream_.WriteDataToOutput(&silenceData_);
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
     } else {
         // read buffer
         BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), requestDataLen};
         result = ringCache_->Dequeue(bufferWrap);
         if (result.ret != OPERATION_SUCCESS) {
             AUDIO_INFO_LOG("Dequeue data failed");
-            outputStream_.WriteDataToOutput(&silenceData_);
+            outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
         } else {
             outputStream_.WriteDataToOutput(&coBufferOut_);
         }

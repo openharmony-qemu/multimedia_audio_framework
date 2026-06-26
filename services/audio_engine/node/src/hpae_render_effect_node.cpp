@@ -127,7 +127,7 @@ void HpaeRenderEffectNode::DoProcess()
         SignalProcess(preOutputs);
         int32_t ret = SplitCollaborativeData();
         if (ret != SUCCESS) {
-            outputStream_.WriteDataToOutput(&silenceData_);
+            outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
             outputStream_.WriteDataToOutput(&silenceData_, HPAE_BUFFER_TYPE_COBUFFER);
         } else {
             outputStream_.WriteDataToOutput(directOutput_.get());
@@ -137,7 +137,7 @@ void HpaeRenderEffectNode::DoProcess()
         outputStream_.WriteDataToOutput(preOutputs[0]);
         outputStream_.WriteDataToOutput(preOutputs[0], HPAE_BUFFER_TYPE_COBUFFER);
     } else {
-        outputStream_.WriteDataToOutput(&silenceData_);
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
         outputStream_.WriteDataToOutput(&silenceData_, HPAE_BUFFER_TYPE_COBUFFER);
     }
 #ifdef ENABLE_HOOK_PCM
