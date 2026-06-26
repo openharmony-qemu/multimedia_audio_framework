@@ -80,6 +80,7 @@ private:
     int32_t CreateRender(void);
     void StartTestThread(void);
     bool SetPlayingAppNameParam(const std::string &param);
+    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
 
 private:
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -116,6 +117,8 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     std::thread testThread_;
+
+    DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
 };
 
 } // namespace AudioStandard

@@ -41,6 +41,8 @@ public:
         const std::string &info = HDI_ID_INFO_DEFAULT, uint32_t routeFlag = 0);
     uint32_t GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
         const std::string &info = HDI_ID_INFO_DEFAULT, uint32_t routeFlag = 0);
+    uint32_t GetCaptureIdByDeviceClassExt(const std::string &deviceClass, const SourceType sourceType,
+        const std::string &info = HDI_ID_INFO_DEFAULT, uint32_t routeFlag = 0);
 
     void IncInfoIdUseCount(uint32_t id);
     void DecInfoIdUseCount(uint32_t id);

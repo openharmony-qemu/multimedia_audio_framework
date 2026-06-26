@@ -173,7 +173,16 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VA, HDI_ID_INFO_VA);
     } else if (deviceClass == "usb") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-    } else if (deviceClass == "a2dp") {
+    } else {
+        return GetCaptureIdByDeviceClassExt(deviceClass, sourceType, info, routeFlag);
+    }
+}
+
+
+uint32_t IdHandler::GetCaptureIdByDeviceClassExt(const std::string &deviceClass, const SourceType sourceType,
+    const std::string &info, uint32_t routeFlag)
+{
+    if (deviceClass == "a2dp") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT);
 #ifdef FEATURE_FILE_IO
     } else if (deviceClass == "file_io") {
