@@ -1684,6 +1684,264 @@ HWTEST_F(HpaeFastSinkOutputNodeTest, doProcess_HappyPath_001, TestSize.Level0)
     fastNode_->DisConnect(mixerNode);
 }
 
+// ==================== GetPredictNextReadTime Tests ====================
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, getPredictNextReadTime_StartPeriodNotify_001, TestSize.Level0)
+{
+    fastNode_->readTimeModel_.ConfigSampleRate(DEFAULT_SAMPLE_RATE);
+    fastNode_->readTimeModel_.ResetFrameStamp(0, 0);
+    fastNode_->dstSpanSizeInframe_ = DEFAULT_FRAME_LEN;
+    uint64_t posInFrame = DEFAULT_FRAME_LEN * 10;
+    int64_t result = fastNode_->GetPredictNextReadTime(posInFrame);
+    EXPECT_NE(result, 0);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, getPredictNextReadTime_BigPeriodNotify_001, TestSize.Level0)
+{
+    fastNode_->readTimeModel_.ConfigSampleRate(DEFAULT_SAMPLE_RATE);
+    fastNode_->readTimeModel_.ResetFrameStamp(0, 0);
+    fastNode_->dstSpanSizeInframe_ = DEFAULT_FRAME_LEN;
+    uint64_t posInFrame = DEFAULT_FRAME_LEN * 40;
+    int64_t result = fastNode_->GetPredictNextReadTime(posInFrame);
+    EXPECT_NE(result, 0);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, getPredictNextReadTime_NoNotify_001, TestSize.Level0)
+{
+    fastNode_->readTimeModel_.ConfigSampleRate(DEFAULT_SAMPLE_RATE);
+    fastNode_->readTimeModel_.ResetFrameStamp(0, 0);
+    fastNode_->dstSpanSizeInframe_ = DEFAULT_FRAME_LEN;
+    uint64_t posInFrame = DEFAULT_FRAME_LEN * 21;
+    int64_t result = fastNode_->GetPredictNextReadTime(posInFrame);
+    EXPECT_NE(result, 0);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, getPredictNextReadTime_FrameStampNotConfiged_001, TestSize.Level0)
+{
+    fastNode_->dstSpanSizeInframe_ = DEFAULT_FRAME_LEN;
+    int64_t result = fastNode_->GetPredictNextReadTime(DEFAULT_FRAME_LEN);
+    EXPECT_EQ(result, 20000000);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, getPredictNextReadTime_ReadFrameEqualsPos_001, TestSize.Level0)
+{
+    fastNode_->readTimeModel_.ConfigSampleRate(DEFAULT_SAMPLE_RATE);
+    fastNode_->dstSpanSizeInframe_ = DEFAULT_FRAME_LEN;
+    fastNode_->posInFrame_ = DEFAULT_FRAME_LEN * 10;
+    fastNode_->timeInNano_ = 200000000;
+    fastNode_->readTimeModel_.ResetFrameStamp(fastNode_->posInFrame_.load(), fastNode_->timeInNano_.load());
+    fastNode_->needReSyncPosition_ = false;
+    int64_t result = fastNode_->GetPredictNextReadTime(DEFAULT_FRAME_LEN * 10);
+    EXPECT_NE(result, 0);
+    EXPECT_EQ(fastNode_->needReSyncPosition_, false);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, getPredictNextReadTime_UpdataCheckSuccess_001, TestSize.Level0)
+{
+    fastNode_->readTimeModel_.ConfigSampleRate(DEFAULT_SAMPLE_RATE);
+    fastNode_->dstSpanSizeInframe_ = DEFAULT_FRAME_LEN;
+    fastNode_->readTimeModel_.ResetFrameStamp(0, 0);
+    fastNode_->posInFrame_ = DEFAULT_FRAME_LEN;
+    fastNode_->timeInNano_ = 20000000;
+    fastNode_->needReSyncPosition_ = false;
+    int64_t result = fastNode_->GetPredictNextReadTime(DEFAULT_FRAME_LEN * 10);
+    EXPECT_NE(result, 0);
+    EXPECT_EQ(fastNode_->needReSyncPosition_, false);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, getPredictNextReadTime_UpdataCheckFailed_001, TestSize.Level0)
+{
+    fastNode_->readTimeModel_.ConfigSampleRate(DEFAULT_SAMPLE_RATE);
+    fastNode_->dstSpanSizeInframe_ = DEFAULT_FRAME_LEN;
+    fastNode_->readTimeModel_.ResetFrameStamp(0, 0);
+    fastNode_->posInFrame_ = DEFAULT_FRAME_LEN;
+    fastNode_->timeInNano_ = 100000000000LL;
+    int64_t result = fastNode_->GetPredictNextReadTime(DEFAULT_FRAME_LEN);
+    EXPECT_NE(result, 0);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, getPredictNextReadTime_UpdataNeedModify_001, TestSize.Level0)
+{
+    fastNode_->readTimeModel_.ConfigSampleRate(DEFAULT_SAMPLE_RATE);
+    fastNode_->readTimeModel_.ResetFrameStamp(0, 0);
+    fastNode_->dstSpanSizeInframe_ = DEFAULT_FRAME_LEN;
+    int64_t baseTime = 1000000000LL;
+    int64_t spanDuration = static_cast<int64_t>(DEFAULT_FRAME_LEN) * AUDIO_NS_PER_SECOND / DEFAULT_SAMPLE_RATE;
+    for (int i = 1; i <= 4; i++) {
+        fastNode_->readTimeModel_.UpdateFrameStamp(i * DEFAULT_FRAME_LEN, baseTime + i * spanDuration);
+    }
+    fastNode_->posInFrame_ = 5 * DEFAULT_FRAME_LEN;
+    fastNode_->timeInNano_ = baseTime + 5 * spanDuration;
+    fastNode_->needReSyncPosition_ = false;
+    int64_t result = fastNode_->GetPredictNextReadTime(DEFAULT_FRAME_LEN * 10);
+    EXPECT_EQ(fastNode_->needReSyncPosition_, true);
+    EXPECT_NE(result, 0);
+}
+
+// ==================== UpdateVirtualDeviceHandleInfo Tests ====================
+HWTEST_F(HpaeFastSinkOutputNodeTest, updateVirtualDeviceHandleInfo_NormalIncrement_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.sampleRate = DEFAULT_SAMPLE_RATE;
+    fastNode_->posInFrame_ = 0;
+    fastNode_->timeInNano_ = ClockTime::GetCurNano() - 10000000;
+    uint64_t posBefore = fastNode_->posInFrame_;
+    int64_t timeBefore = fastNode_->timeInNano_;
+    fastNode_->UpdateVirtualDeviceHandleInfo();
+    EXPECT_GT(fastNode_->posInFrame_, posBefore);
+    EXPECT_GT(fastNode_->timeInNano_, timeBefore);
+}
+
+// ==================== PrepareNextLoop WakeUpTime Abnormal Tests ====================
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, prepareNextLoop_WakeUpTimeAbnormal_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    fastNode_->dstSpanSizeInframe_ = SPAN_SIZE_IN_FRAME;
+    fastNode_->readTimeModel_.ConfigSampleRate(DEFAULT_SAMPLE_RATE);
+    fastNode_->readTimeModel_.ResetFrameStamp(0, 0);
+    fastNode_->serverAheadReadTime_ = 100000000000LL;
+    int64_t wakeUpTime = 0;
+    EXPECT_EQ(fastNode_->TriggerPrepareNextLoop(DEFAULT_FRAME_LEN, wakeUpTime), false);
+    EXPECT_GT(wakeUpTime, ClockTime::GetCurNano());
+}
+
+// ==================== AsyncGetPosTime Branch Tests ====================
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, asyncGetPosTime_NotStartedVirtualUpdate_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.sampleRate = DEFAULT_SAMPLE_RATE;
+    fastNode_->posInFrame_ = 0;
+    fastNode_->timeInNano_ = ClockTime::GetCurNano() - 10000000;
+    fastNode_->isStarted_ = false;
+    fastNode_->stopUpdateThread_.store(false);
+    uint64_t posBefore = fastNode_->posInFrame_;
+    EXPECT_CALL(*mockSink_, GetMmapHandlePosition(_, _, _))
+        .WillRepeatedly(DoAll(SetArgReferee<0>(100), SetArgReferee<1>(0), SetArgReferee<2>(10000), Return(SUCCESS)));
+    fastNode_->AsyncGetPosTime();
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    EXPECT_EQ(fastNode_->posInFrame_, posBefore);
+    fastNode_->StopUpdateThread();
+    EXPECT_EQ(fastNode_->isStarted_, false);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, asyncGetPosTime_StartedGetDeviceHandleInfo_001, TestSize.Level0)
+{
+    fastNode_->isStarted_ = true;
+    fastNode_->stopUpdateThread_.store(false);
+    EXPECT_CALL(*mockSink_, GetMmapHandlePosition(_, _, _))
+        .WillRepeatedly(DoAll(SetArgReferee<0>(960), SetArgReferee<1>(0), SetArgReferee<2>(20000000), Return(SUCCESS)));
+    fastNode_->AsyncGetPosTime();
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    EXPECT_EQ(fastNode_->posInFrame_, 0);
+    fastNode_->StopUpdateThread();
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, asyncGetPosTime_StopThreadBreak_001, TestSize.Level0)
+{
+    fastNode_->isStarted_ = true;
+    fastNode_->stopUpdateThread_.store(false);
+    EXPECT_CALL(*mockSink_, GetMmapHandlePosition(_, _, _))
+        .WillRepeatedly(DoAll(SetArgReferee<0>(960), SetArgReferee<1>(0), SetArgReferee<2>(20000000), Return(SUCCESS)));
+    fastNode_->AsyncGetPosTime();
+    fastNode_->StopUpdateThread();
+    EXPECT_EQ(fastNode_->stopUpdateThread_.load(), true);
+    EXPECT_EQ(fastNode_->updatePosTimeThread_.joinable(), false);
+}
+
+// ==================== CheckPlaySignal Tests ====================
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkPlaySignal_LatencyMeasNotEnabled_001, TestSize.Level0)
+{
+    fastNode_->latencyMeasEnabled_ = false;
+    std::vector<uint8_t> buffer(1024, 128);
+    fastNode_->CheckPlaySignal(buffer.data(), buffer.size());
+    EXPECT_EQ(fastNode_->signalDetected_, false);
+    EXPECT_EQ(fastNode_->detectedTime_, 0);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkPlaySignal_SignalDetectAgentNull_001, TestSize.Level0)
+{
+    fastNode_->latencyMeasEnabled_ = true;
+    fastNode_->signalDetectAgent_ = nullptr;
+    std::vector<uint8_t> buffer(1024, 128);
+    fastNode_->CheckPlaySignal(buffer.data(), buffer.size());
+    EXPECT_EQ(fastNode_->signalDetected_, false);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkPlaySignal_DenominatorZero_001, TestSize.Level0)
+{
+    fastNode_->latencyMeasEnabled_ = true;
+    fastNode_->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    fastNode_->sinkOutAttr_.sampleRate = 0;
+    fastNode_->sinkOutAttr_.channel = 2;
+    fastNode_->sinkOutAttr_.format = SAMPLE_S16LE;
+    std::vector<uint8_t> buffer(1024, 128);
+    fastNode_->CheckPlaySignal(buffer.data(), buffer.size());
+    EXPECT_EQ(fastNode_->signalDetected_, false);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkPlaySignal_DetectedTimeNotReached_001, TestSize.Level0)
+{
+    fastNode_->latencyMeasEnabled_ = true;
+    fastNode_->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    fastNode_->sinkOutAttr_.sampleRate = DEFAULT_SAMPLE_RATE;
+    fastNode_->sinkOutAttr_.channel = DEFAULT_CHANNELS;
+    fastNode_->sinkOutAttr_.format = SAMPLE_F32LE;
+    fastNode_->detectedTime_ = 0;
+    fastNode_->signalDetectAgent_->signalDetected_ = true;
+    fastNode_->signalDetectAgent_->dspTimestampGot_ = false;
+    std::vector<uint8_t> buffer(1024, 0);
+    fastNode_->CheckPlaySignal(buffer.data(), buffer.size());
+    EXPECT_LT(fastNode_->detectedTime_, 1000);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkPlaySignal_DspTimestampAlreadyGot_001, TestSize.Level0)
+{
+    fastNode_->latencyMeasEnabled_ = true;
+    fastNode_->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    fastNode_->sinkOutAttr_.sampleRate = DEFAULT_SAMPLE_RATE;
+    fastNode_->sinkOutAttr_.channel = DEFAULT_CHANNELS;
+    fastNode_->sinkOutAttr_.format = SAMPLE_F32LE;
+    fastNode_->detectedTime_ = 2000;
+    fastNode_->signalDetectAgent_->signalDetected_ = true;
+    fastNode_->signalDetectAgent_->dspTimestampGot_ = true;
+    std::vector<uint8_t> buffer(1024, 0);
+    fastNode_->CheckPlaySignal(buffer.data(), buffer.size());
+    EXPECT_EQ(fastNode_->signalDetectAgent_->dspTimestampGot_, true);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkPlaySignal_SignalNotDetected_001, TestSize.Level0)
+{
+    fastNode_->latencyMeasEnabled_ = true;
+    fastNode_->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    fastNode_->sinkOutAttr_.sampleRate = DEFAULT_SAMPLE_RATE;
+    fastNode_->sinkOutAttr_.channel = DEFAULT_CHANNELS;
+    fastNode_->sinkOutAttr_.format = SAMPLE_F32LE;
+    fastNode_->detectedTime_ = 2000;
+    fastNode_->signalDetectAgent_->signalDetected_ = false;
+    fastNode_->signalDetectAgent_->dspTimestampGot_ = false;
+    std::vector<uint8_t> buffer(1024, 0);
+    fastNode_->CheckPlaySignal(buffer.data(), buffer.size());
+    EXPECT_EQ(fastNode_->signalDetectAgent_->dspTimestampGot_, false);
+}
+
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkPlaySignal_DspTimestampSuccess_001, TestSize.Level0)
+{
+    fastNode_->latencyMeasEnabled_ = true;
+    fastNode_->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    fastNode_->sinkOutAttr_.sampleRate = DEFAULT_SAMPLE_RATE;
+    fastNode_->sinkOutAttr_.channel = DEFAULT_CHANNELS;
+    fastNode_->sinkOutAttr_.format = SAMPLE_F32LE;
+    fastNode_->detectedTime_ = 2000;
+    fastNode_->signalDetectAgent_->signalDetected_ = true;
+    fastNode_->signalDetectAgent_->dspTimestampGot_ = false;
+    fastNode_->signalDetectAgent_->lastPeakBufferTime_ = "2026-01-01";
+    EXPECT_CALL(*mockSink_, GetAudioParameter(_, _)).WillOnce(Return("1000"));
+    std::vector<uint8_t> buffer(1024, 0);
+    fastNode_->CheckPlaySignal(buffer.data(), buffer.size());
+    EXPECT_EQ(fastNode_->signalDetectAgent_->dspTimestampGot_, true);
+    EXPECT_EQ(fastNode_->signalDetectAgent_->signalDetected_, false);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
