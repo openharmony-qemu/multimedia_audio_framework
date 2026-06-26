@@ -419,6 +419,9 @@ private:
         const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt,
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
     void ResetInterruptMuteState(const AudioInterrupt &audioInterrupt);
+    bool ScheduleDeferredUnmuteOrResume(AudioFocuState oldState, AudioFocuState newState,
+        const AudioInterrupt &audioInterrupt, int32_t zoneId);
+    void DeferredUnmuteOrResumeCheck(uint32_t streamId, int32_t zoneId);
     bool IsActiveInjectFocusExist(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     void AudioSessionStateChangeCallbackEvent(const int32_t zoneId, const int32_t callerPid,
         const InterruptErrorCode interruptErrorCode);
@@ -452,6 +455,7 @@ private:
     std::map<uint32_t, std::unordered_set<int32_t>> suggestionPidRecords_;
 
     std::map<uint32_t, std::list<std::pair<AudioInterrupt, AudioFocuState>>> muteAudioFocus_;
+    std::set<uint32_t> pendingDeferredUnmuteStreamIds_;
 
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
