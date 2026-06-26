@@ -146,6 +146,38 @@ int32_t AudioSessionService::DeactivateAudioSessionInternal(const int32_t caller
     return SUCCESS;
 }
 
+StreamUsage AudioSessionService::GetAudioSessionStreamUsage(int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end()) {
+        return session->second->GetSessionStreamUsage();
+    }
+
+    return STREAM_USAGE_INVALID;
+}
+
+void AudioSessionService::GetStateChangeCallbackFlag(int32_t callerPid,
+    bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end()) {
+        session->second->GetStateChangeCallbackFlag(registerCallbackFlag, activatedRegisterCallbackFlag);
+    }
+}
+
+StreamUsage AudioSessionService::GetAudioSessionStreamUsageForDevice(const int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end()) {
+        return session->second->GetAudioSessionStreamUsageForDevice();
+    }
+
+    return STREAM_USAGE_INVALID;
+}
+
 bool AudioSessionService::IsAudioSessionActivated(const int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
@@ -228,38 +260,6 @@ void AudioSessionService::SetRegisterStateChangeCallbackFlag(int32_t callerPid, 
     if (session != sessionMap_.end()) {
         session->second->SetRegisterStateChangeCallbackFlag(stateChangeCallbackFlag, stateChangeCallbackFlag);
     }
-}
-
-StreamUsage AudioSessionService::GetAudioSessionStreamUsage(int32_t callerPid)
-{
-    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    auto session = sessionMap_.find(callerPid);
-    if (session != sessionMap_.end()) {
-        return session->second->GetSessionStreamUsage();
-    }
-
-    return STREAM_USAGE_INVALID;
-}
-
-void AudioSessionService::GetStateChangeCallbackFlag(int32_t callerPid,
-    bool &registerCallbackFlag, bool &activatedRegisterCallbackFlag)
-{
-    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    auto session = sessionMap_.find(callerPid);
-    if (session != sessionMap_.end()) {
-        session->second->GetStateChangeCallbackFlag(registerCallbackFlag, activatedRegisterCallbackFlag);
-    }
-}
-
-StreamUsage AudioSessionService::GetAudioSessionStreamUsageForDevice(const int32_t callerPid)
-{
-    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    auto session = sessionMap_.find(callerPid);
-    if (session != sessionMap_.end()) {
-        return session->second->GetAudioSessionStreamUsageForDevice();
-    }
-
-    return STREAM_USAGE_INVALID;
 }
 
 bool AudioSessionService::IsAudioSessionFocusMode(int32_t callerPid)
@@ -381,6 +381,18 @@ AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid
     return fakeAudioInterrupt;
 }
 
+void AudioSessionService::GenerateFakeStreamId(int32_t callerPid)
+{
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end()) {
+        uint32_t fakeStreamId = session->second->GetFakeStreamId();
+        if (fakeStreamId == 0) {
+            fakeStreamId = AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
+        }
+        session->second->SaveFakeStreamId(fakeStreamId);
+    }
+}
+
 bool AudioSessionService::HasStreamForDeviceType(int32_t callerPid, DeviceType deviceType)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
@@ -418,18 +430,6 @@ void AudioSessionService::SetFakeFocusInterruptEvent(int32_t callerPid, const In
         session->second->SetFakeFocusInterruptEvent(interruptEvent);
     } else {
         AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
-    }
-}
-
-void AudioSessionService::GenerateFakeStreamId(int32_t callerPid)
-{
-    auto session = sessionMap_.find(callerPid);
-    if (session != sessionMap_.end()) {
-        uint32_t fakeStreamId = session->second->GetFakeStreamId();
-        if (fakeStreamId == 0) {
-            fakeStreamId = AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
-        }
-        session->second->SaveFakeStreamId(fakeStreamId);
     }
 }
 
@@ -638,7 +638,7 @@ int32_t AudioSessionService::FillCurrentOutputDeviceChangedEvent(
     }
 
     if (deviceChangedEvent.devices.size() == 0) {
-        AUDIO_ERR_LOG("Device info is empty, pid: %{public}d!", callerPid);
+        AUDIO_ERR_LOG("Device info is empty, pid: %{public}d", callerPid);
         return ERROR;
     }
 

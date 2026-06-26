@@ -211,6 +211,7 @@ int32_t AudioSession::Activate(const AudioSessionStrategy strategy)
 {
     strategy_ = strategy;
     state_ = AudioSessionState::SESSION_ACTIVE;
+    fakeFocusInterruptEvent_.hintType = INTERRUPT_HINT_NONE;
     AUDIO_INFO_LOG("Audio session state change: pid %{public}d, state %{public}d",
         callerPid_, static_cast<int32_t>(state_));
     needToFetch_ = (EnableDefaultDevice() == NEED_TO_FETCH) ? true : false;
@@ -478,10 +479,17 @@ bool AudioSession::IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDevic
 
 bool AudioSession::IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> desc)
 {
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, true, "input device desc is nullptr");
-    CHECK_AND_RETURN_RET(!inputDeviceDescriptor_.IsSameDeviceDescPtr(desc), true);
+    if (desc == nullptr) {
+        AUDIO_ERR_LOG("AudioSession:: IsSessionInputDeviceChanged input device desc is nullptr");
+        return false;
+    }
+
+    if (inputDeviceDescriptor_.IsSameDeviceInfo(*desc)) {
+        return false;
+    }
+
     inputDeviceDescriptor_ = AudioDeviceDescriptor(desc);
-    return false;
+    return true;
 }
 
 StreamUsage AudioSession::GetSessionStreamUsage()
@@ -495,14 +503,12 @@ StreamUsage AudioSession::GetAudioSessionStreamUsageForDevice()
     if (streamUsage != StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION) {
         return streamUsage;
     }
-    
     for (const auto& iter : interruptMap_) {
         if (iter.second.first.audioFocusType.streamType == STREAM_RING) {
             AUDIO_INFO_LOG("pid [%{public}d] ringtone exists", callerPid_);
             return iter.second.first.streamUsage;
         }
     }
-
     return streamUsage;
 }
 
