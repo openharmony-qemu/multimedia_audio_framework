@@ -51,8 +51,8 @@ static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
         const float left = tempData[NUM_TWO * i];
         const float right = tempData[NUM_TWO * i + 1];
         const float expectedValue = TEST_VALUE_1 * (curGain + i * stepGain) + TEST_VALUE_2 * (curGain + i * stepGain);
-        EXPECT_EQ(left, expectedValue);
-        EXPECT_EQ(right, expectedValue);
+        EXPECT_EQ(fabs(left - expectedValue) < TEST_VALUE_PRESION, true);
+        EXPECT_EQ(fabs(right - expectedValue) < TEST_VALUE_PRESION, true);
     }
     return 0;
 }
