@@ -5026,8 +5026,9 @@ int32_t AudioPolicyServer::SetDeviceVolumeBehavior(const std::string &networkId,
     const VolumeBehavior &volumeBehavior)
 {
     AUDIO_INFO_LOG("networkId [%{public}s], deviceType [%{public}d], isReady [%{public}d], "\
-        "isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]", networkId.c_str(), deviceType,
-        volumeBehavior.isReady, volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
+        "isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]",
+        GetEncryptStr(networkId).c_str(), deviceType, volumeBehavior.isReady,
+        volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_AUDIO) {
         AUDIO_ERR_LOG("No permission");

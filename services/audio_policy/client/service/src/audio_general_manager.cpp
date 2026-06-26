@@ -89,8 +89,9 @@ int32_t AudioGeneralManager::SetDeviceVolumeBehavior(const std::string &networkI
     DeviceType deviceType, VolumeBehavior volumeBehavior)
 {
     AUDIO_INFO_LOG("networkId [%{public}s], deviceType [%{public}d], isReady [%{public}d], "\
-        "isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]", networkId.c_str(), deviceType,
-        volumeBehavior.isReady, volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
+        "isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]",
+        GetEncryptStr(networkId).c_str(), deviceType, volumeBehavior.isReady,
+        volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
     return AudioPolicyManager::GetInstance().SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
 }
 
