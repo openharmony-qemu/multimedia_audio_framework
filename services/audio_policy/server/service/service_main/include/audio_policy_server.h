@@ -135,7 +135,7 @@ public:
         int32_t deviceType) override;
 
     int32_t SetStreamMute(int32_t streamType, bool mute,
-        int32_t deviceType) override;
+        int32_t deviceType, int32_t volumeFlag) override;
 
     int32_t GetStreamMute(int32_t streamType, bool &mute) override;
 
