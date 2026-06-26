@@ -1010,5 +1010,127 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, CallOutput_009, TestSize.Level1
     EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_NONE);
 }
 
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, GetCurrentOutputDevice_Fallback_001, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+
+    AudioRouterIndependentStrategy strategy;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> systemDevices = { speaker };
+
+    strategy.UpdateCurrentOutputDevice(SYSTEM_UID, systemDevices);
+
+    auto systemResult = strategy.GetCurrentOutputDevice(SYSTEM_UID);
+    ASSERT_EQ(systemResult.size(), 1);
+    EXPECT_EQ(systemResult[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(systemResult[0]->deviceId_, speaker->deviceId_);
+
+    auto appResult = strategy.GetCurrentOutputDevice(TEST_APP_UID_10001);
+    ASSERT_EQ(appResult.size(), 1);
+    EXPECT_EQ(appResult[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(appResult[0]->deviceId_, speaker->deviceId_);
+}
+
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, GetCurrentOutputDevice_Fallback_002, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterIndependentStrategy strategy;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> systemDevices = { speaker };
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> appDevices = { earpiece };
+
+    strategy.UpdateCurrentOutputDevice(SYSTEM_UID, systemDevices);
+    strategy.UpdateCurrentOutputDevice(TEST_APP_UID_10001, appDevices);
+
+    auto appResult = strategy.GetCurrentOutputDevice(TEST_APP_UID_10001);
+    ASSERT_EQ(appResult.size(), 1);
+    EXPECT_EQ(appResult[0]->deviceType_, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(appResult[0]->deviceId_, earpiece->deviceId_);
+}
+
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, GetCurrentOutputDevice_Fallback_003, TestSize.Level1)
+{
+    AudioRouterIndependentStrategy strategy;
+
+    auto systemResult = strategy.GetCurrentOutputDevice(SYSTEM_UID);
+    EXPECT_TRUE(systemResult.empty());
+
+    auto appResult = strategy.GetCurrentOutputDevice(TEST_APP_UID_10001);
+    EXPECT_TRUE(appResult.empty());
+}
+
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, GetCurrentOutputDevice_Fallback_004, TestSize.Level1)
+{
+    AudioRouterIndependentStrategy strategy;
+
+    auto result = strategy.GetCurrentOutputDevice(INVALID_UID);
+    EXPECT_TRUE(result.empty());
+}
+
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, GetCurrentInputDevice_Fallback_001, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+
+    AudioRouterIndependentStrategy strategy;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> systemDevices = { mic };
+
+    strategy.UpdateCurrentInputDevice(SYSTEM_UID, systemDevices);
+
+    auto systemResult = strategy.GetCurrentInputDevice(SYSTEM_UID);
+    ASSERT_EQ(systemResult.size(), 1);
+    EXPECT_EQ(systemResult[0]->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(systemResult[0]->deviceId_, mic->deviceId_);
+
+    auto appResult = strategy.GetCurrentInputDevice(TEST_APP_UID_10001);
+    ASSERT_EQ(appResult.size(), 1);
+    EXPECT_EQ(appResult[0]->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(appResult[0]->deviceId_, mic->deviceId_);
+}
+
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, GetCurrentInputDevice_Fallback_002, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterIndependentStrategy strategy;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> systemDevices = { mic };
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> appDevices = { sco };
+
+    strategy.UpdateCurrentInputDevice(SYSTEM_UID, systemDevices);
+    strategy.UpdateCurrentInputDevice(TEST_APP_UID_10001, appDevices);
+
+    auto appResult = strategy.GetCurrentInputDevice(TEST_APP_UID_10001);
+    ASSERT_EQ(appResult.size(), 1);
+    EXPECT_EQ(appResult[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(appResult[0]->deviceId_, sco->deviceId_);
+}
+
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, GetCurrentInputDevice_Fallback_003, TestSize.Level1)
+{
+    AudioRouterIndependentStrategy strategy;
+
+    auto systemResult = strategy.GetCurrentInputDevice(SYSTEM_UID);
+    EXPECT_TRUE(systemResult.empty());
+
+    auto appResult = strategy.GetCurrentInputDevice(TEST_APP_UID_10001);
+    EXPECT_TRUE(appResult.empty());
+}
+
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, GetCurrentInputDevice_Fallback_004, TestSize.Level1)
+{
+    AudioRouterIndependentStrategy strategy;
+
+    auto result = strategy.GetCurrentInputDevice(INVALID_UID);
+    EXPECT_TRUE(result.empty());
+}
+
 }
 }
