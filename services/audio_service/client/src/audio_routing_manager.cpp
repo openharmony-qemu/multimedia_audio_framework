@@ -16,6 +16,11 @@
 #define LOG_TAG "AudioRoutingManager"
 #endif
 
+#include "audio_errors.h"
+#include "audio_policy_manager.h"
+#include "audio_common_log.h"
+#include "audio_type_convert.h"
+#include "audio_volume_client_manager.h"
 #include "audio_routing_manager.h"
 #include "audio_routing_client_manager.h"
 
@@ -54,31 +59,7 @@ int32_t AudioRoutingManager::SetDeclaredDeviceTypes(std::vector<DeviceType> &dev
 RecommendInputDevices AudioRoutingManager::GetRecommendInputDevices(
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
-    AudioCapturerInfo captureInfo;
-    captureInfo.sourceType = SOURCE_TYPE_CAMCORDER;
-    GetPreferredInputDeviceForCapturerInfo(captureInfo, descs);
-
-    return ConvertRecommendInputDevices(descs);
-}
-
-RecommendInputDevices AudioRoutingManager::ConvertRecommendInputDevices(
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
-{
-    if (descs.size() == 0) {
-        return RecommendInputDevices::NO_UNAVAILABLE_DEVICE;
-    }
-
-    auto it = std::find_if(descs.begin(), descs.end(), [](const auto &desc) {
-        return desc && desc->deviceType_ == DEVICE_TYPE_MIC && desc->networkId_ == LOCAL_NETWORK_ID;
-    });
-    if (it != descs.end()) {
-        auto desc = *it;
-        descs.clear();
-        descs.push_back(desc);
-        return RecommendInputDevices::RECOMMEND_BUILT_IN_MIC;
-    } else {
-        return RecommendInputDevices::RECOMMEND_EXTERNAL_MIC;
-    }
+    return AudioRoutingClientManager::GetInstance().GetRecommendInputDevices(descs);
 }
 
 int32_t AudioRoutingManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
@@ -161,6 +142,8 @@ int32_t AudioRoutingManager::SetDeviceConnectionStatus(const std::shared_ptr<Aud
 
 int32_t AudioRoutingManager::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
 {
+    CHECK_AND_RETURN_RET_LOG(zoneName != "" && audioMixes.size() > 0, ERR_INVALID_PARAM,
+                             "zoneName is empty or audioMix is empty.");
     return AudioRoutingClientManager::GetInstance().SetCustomAudioMix(zoneName, audioMixes);
 }
 

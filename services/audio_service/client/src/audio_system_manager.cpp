@@ -49,6 +49,11 @@ AudioSystemManager *AudioSystemManager::GetInstance()
     return &audioManager;
 }
 
+int32_t AudioSystemManager::GetCallingPid() const
+{
+    return getpid();
+}
+
 AudioStreamType AudioSystemManager::GetStreamType(ContentType contentType, StreamUsage streamUsage)
 {
     return AudioTypeConvert::GetStreamType(contentType, streamUsage);
@@ -371,7 +376,6 @@ int32_t AudioSystemManager::SetQueryClientTypeCallback(const std::shared_ptr<Aud
 
 int32_t AudioSystemManager::SetAncoSourceOutputStreamMute(int32_t uid, bool setMute)
 {
-    AUDIO_INFO_LOG("In");
     return AudioSystemClientPolicyManager::GetInstance().SetAncoSourceOutputStreamMute(uid, setMute);
 }
 
@@ -870,12 +874,6 @@ int32_t AudioSystemManager::SetBackgroundMuteCallback(
     return AudioSystemClientPolicyManager::GetInstance().SetBackgroundMuteCallback(callback);
 }
 
-int32_t AudioSystemManager::OnVoiceWakeupState(bool state)
-{
-    AUDIO_INFO_LOG("%{public}d", state);
-    return SUCCESS;
-}
-
 int32_t AudioSystemManager::NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
 {
     return AudioSystemClientPolicyManager::GetInstance().NotifySessionStateChange(uid, pid, hasSession);
@@ -1003,11 +1001,6 @@ std::shared_ptr<WorkgroupPrioRecorder> AudioSystemManager::GetRecorderByGrpId(in
     return WorkgroupPrioRecorderManager::GetInstance().GetRecorderByGrpId(grpId);
 }
 
-int32_t AudioSystemManager::GetVolumeBySessionId(const uint32_t &sessionId, float &volume)
-{
-    return AudioStreamClientManager::GetInstance().GetVolumeBySessionId(sessionId, volume);
-}
-
 void AudioSystemManager::CleanUpResource()
 {
     AudioSystemClientPolicyManager::GetInstance().CleanUpResource();
@@ -1033,26 +1026,14 @@ int32_t AudioSystemManager::UpdateSafeVolumeByStrMode()
     return AudioVolumeClientManager::GetInstance().UpdateSafeVolumeByStrMode();
 }
 
+int32_t AudioSystemManager::GetVolumeBySessionId(const uint32_t &sessionId, float &volume)
+{
+    return AudioSystemClientEngineManager::GetInstance().GetVolumeBySessionId(sessionId, volume);
+}
+
 int32_t AudioSystemManager::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
 {
     return AudioVolumeClientManager::GetInstance().GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
-}
-
-int32_t AudioSystemManager::EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config)
-{
-    return AudioRecordControlManager::GetInstance().EnableSystemRecordController(show, config);
-}
-
-int32_t AudioSystemManager::SetRecordControllerEnabledChangeCallback(
-    const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &callback)
-{
-    return AudioRecordControlManager::GetInstance().SetRecordControllerEnabledChangeCallback(callback);
-}
-
-int32_t AudioSystemManager::UnsetRecordControllerEnabledChangeCallback(
-    const std::shared_ptr<SystemRecordControllerEnabledChangeCallback> &callback)
-{
-    return AudioRecordControlManager::GetInstance().UnsetRecordControllerEnabledChangeCallback(callback);
 }
 } // namespace AudioStandard
 } // namespace OHOS
