@@ -3150,17 +3150,10 @@ void AudioCoreService::ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDes
     streamDesc->ResetOriginalFlag();
 }
 
-void AudioCoreService::UpdateStreamDevicesForStart(
-    std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller)
+void AudioCoreService::UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    std::string caller, std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToRoute)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
-    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
-
-    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
-    streamUsage = audioSessionService_.GetAudioSessionStreamUsageForDevice(GetRealPid(streamDesc));
-    streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
-    streamDesc->rendererInfo_.streamUsage;
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
         devices = std::vector<std::shared_ptr<AudioDeviceDescriptor>> {
@@ -3172,11 +3165,38 @@ void AudioCoreService::UpdateStreamDevicesForStart(
                 DeviceRole::OUTPUT_DEVICE)
         };
     } else {
-        FetchDeviceInfo info = { streamUsage, GetRealUid(streamDesc), streamDesc->GetRenderPrivacyType(), caller,
-            streamDesc->bundleName_ };
-        info.streamId = streamDesc->sessionId_;
-        devices = audioRouterCenter_.FetchOutputDevices(info);
+        streamsToRoute.push_back(streamDesc);
+        return;
     }
+
+    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
+    pipeManager_->UpdateNewDeviceDescWithCheck(streamDesc, devices);
+    
+    if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        !streamDesc->oldDeviceDescs_.empty() && streamDesc->oldDeviceDescs_.front() &&
+        streamDesc->oldDeviceDescs_.front()->deviceType_ != devices[0]->deviceType_) {
+        WriteScoStateFaultEvent(devices[0]);
+    }
+    FetchOutputDupDevice(caller, streamDesc->GetSessionId(), streamDesc);
+
+    ResetOriginalFlagForRemote(streamDesc);
+}
+
+void AudioCoreService::UpdateStreamDevicesForStart(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
+    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
+
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
+    streamUsage = audioSessionService_.GetAudioSessionStreamUsageForDevice(GetRealPid(streamDesc));
+    streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
+    streamDesc->rendererInfo_.streamUsage;
+
+    FetchDeviceInfo info = { streamUsage, GetRealUid(streamDesc), streamDesc->GetRenderPrivacyType(), caller,
+        streamDesc->bundleName_ };
+    info.streamId = streamDesc->sessionId_;
+    auto devices = audioRouterCenter_.FetchOutputDevicesNoLock(info);
 
     pipeManager_->UpdateNewDeviceDescWithCheck(streamDesc, devices);
     if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
