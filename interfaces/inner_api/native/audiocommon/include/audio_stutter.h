@@ -62,6 +62,7 @@ struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
         
         return ret;
     }
+
     static AudioRendererDataTransferStateChangeInfo *Unmarshalling(Parcel &parcel)
     {
         auto info = new(std::nothrow) AudioRendererDataTransferStateChangeInfo();
@@ -93,12 +94,16 @@ struct DataTransferMonitorParam : public Parcelable {
 
     DataTransferMonitorParam() = default;
     ~DataTransferMonitorParam() = default;
+    DataTransferMonitorParam(int32_t clientUIDIn, int32_t badDataTransferTypeBitMapIn,
+        int32_t timeIntervalIn, int32_t badFramesRatioIn)
+        : clientUID(clientUIDIn), badDataTransferTypeBitMap(badDataTransferTypeBitMapIn),
+        timeInterval(timeIntervalIn), badFramesRatio(badFramesRatioIn) {};
     bool operator==(const DataTransferMonitorParam& param) const
     {
         return clientUID == param.clientUID && badDataTransferTypeBitMap == param.badDataTransferTypeBitMap &&
         timeInterval == param.timeInterval && badFramesRatio == param.badFramesRatio;
     }
-
+ 
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(clientUID) &&
@@ -128,8 +133,7 @@ public:
     virtual ~AudioRendererDataTransferStateChangeCallback() = default;
 
     virtual void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) = 0;
-
-    virtual void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) = 0;
+    virtual void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) { return; }
 };
 
 class DataTransferStateChangeCallbackInner {

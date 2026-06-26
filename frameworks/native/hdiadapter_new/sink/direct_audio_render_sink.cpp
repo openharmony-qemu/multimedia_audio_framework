@@ -489,5 +489,23 @@ int32_t DirectAudioRenderSink::CreateRender(void)
 
     return SUCCESS;
 }
+
+int32_t DirectAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
+{
+    CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() == 1, ERR_INVALID_PARAM, "invalid device");
+    if (!Util::IsEnhancedRoutingSupported() || currentActiveDevice_ == outputDevices[0]) {
+        return SUCCESS;
+    }
+    AUDIO_INFO_LOG("set output device from %{public}d to %{public}d", currentActiveDevice_, outputDevices[0]);
+    currentActiveDevice_ = outputDevices[0];
+    ChangePipeDevice(outputDevices);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
+    int32_t ret = deviceManager->SetOutputRoute(attr_.adapterName, outputDevices,
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_HWDECODING));
+    return ret;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
