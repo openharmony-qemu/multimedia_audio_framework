@@ -1165,6 +1165,11 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
     }
 
     audioDescriptor->deviceId_ = AudioPolicyUtils::startDeviceId++;
+#ifdef MULTI_BUS_ENABLE
+    if (devType == DEVICE_TYPE_SPEAKER) {
+        audioDescriptor->isSupportMultiZone_ = true;
+    }
+#endif
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);

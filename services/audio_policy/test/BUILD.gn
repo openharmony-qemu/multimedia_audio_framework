@@ -258,7 +258,6 @@ ohos_unittest("audio_zone_service_unit_test") {
   if (bluetooth_part_enable == true) {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
-
 }
 
 ohos_unittest("audio_zone_unit_test") {
@@ -424,6 +423,9 @@ ohos_unittest("audio_zone_unit_test") {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
 
+  if (audio_framework_feature_multi_zone_volume) {
+    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
+  }
 }
 
 ohos_unittest("audio_interrupt_service_unit_test") {
