@@ -253,7 +253,7 @@ HWTEST_F(AudioCapturerStaticAiut, CapturerGetStatus_001, TestSize.Level0)
 /**
  * @tc.name  : Test GetCapturerDebugKey returns initial value
  * @tc.number: CapturerGetCapturerDebugKey_001
- * @tc.desc  : Test GetCapturerDebugKey returns INVALID_DEBUGKEY (0) for newly created capturer.
+ * @tc.desc  : Test GetCapturerDebugKey returns 0 for newly created capturer.
  */
 HWTEST_F(AudioCapturerStaticAiut, CapturerGetCapturerDebugKey_001, TestSize.Level0)
 {
@@ -261,7 +261,7 @@ HWTEST_F(AudioCapturerStaticAiut, CapturerGetCapturerDebugKey_001, TestSize.Leve
     auto capturer = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, AppInfo{}, false);
     AIUT_ASSERT_NE_INFO_LOG(capturer, nullptr, "capturer is null");
     uint32_t key = capturer->GetCapturerDebugKey();
-    AIUT_EXPECT_EQ_INFO_LOG(key, INVALID_DEBUGKEY, "initial debug key should be 0, key=%u", key);
+    AIUT_EXPECT_EQ_INFO_LOG(key, 0, "initial debug key should be 0, key=%u", key);
 }
 
 // ==================== GetCapturerDebugInfo Tests ====================

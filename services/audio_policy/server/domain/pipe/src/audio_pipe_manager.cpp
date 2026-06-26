@@ -515,6 +515,18 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeinfoByNameAndFlag(
     return nullptr;
 }
 
+std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeinfoById(AudioIOHandle id)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto it : curPipeList_) {
+        if (it->id_ == id) {
+            return it;
+        }
+    }
+    AUDIO_ERR_LOG("Can not find pipe with id %{public}u", id);
+    return nullptr;
+}
+
 std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
 {
     Trace trace("AudioPipeManager::GetAdapterNameBySessionId");

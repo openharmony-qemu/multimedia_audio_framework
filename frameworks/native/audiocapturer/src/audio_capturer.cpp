@@ -99,7 +99,7 @@ static void RegisterAudioCapturerDebugManager(const std::shared_ptr<AudioCapture
     CHECK_AND_RETURN_LOG(debugCallback != nullptr, "Create capturer debug callback failed");
     uint32_t debugKey = 0;
     int32_t ret = AudioDebugManager::GetInstance().RegisterAudioCapturer(debugKey, debugCallback);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS && debugKey != INVALID_DEBUGKEY,
+    CHECK_AND_RETURN_LOG(ret == SUCCESS && debugKey != 0,
         "Register capturer debug manager failed, ret:%{public}d, debugKey:%{public}u", ret, debugKey);
     audioCapturer->debugKey_ = debugKey;
     AUDIO_INFO_LOG("Register capturer debug manager success, debugKey:%{public}u", debugKey);
@@ -107,10 +107,10 @@ static void RegisterAudioCapturerDebugManager(const std::shared_ptr<AudioCapture
 
 static void UnregisterAudioCapturerDebugManager(uint32_t &debugKey)
 {
-    CHECK_AND_RETURN_LOG(debugKey != INVALID_DEBUGKEY, "Unregister capturer debug manager: debugKey is invalid");
+    CHECK_AND_RETURN_LOG(debugKey != 0, "Unregister capturer debug manager: debugKey is invalid");
     (void)AudioDebugManager::GetInstance().UnregisterAudioCapturer(debugKey);
     AUDIO_INFO_LOG("Unregister capturer debug manager, debugKey:%{public}u", debugKey);
-    debugKey = INVALID_DEBUGKEY;
+    debugKey = 0;
 }
 
 AudioCapturer::~AudioCapturer() = default;

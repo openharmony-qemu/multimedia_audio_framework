@@ -62,6 +62,7 @@ private:
     static void LogAudioDebugInfo(const std::string &debugInfo);
     static int32_t WriteAudioDebugInfo(int32_t fd, const std::string &debugInfo);
     static int32_t PrintfAudioDebugInfo(int32_t fd, const std::string &debugInfo);
+    uint32_t GenerateDebugKey();
 
     int32_t GetAudioRendererDebugInfo(uint32_t rendererKey, AudioRendererDebugInfo &debugInfo) const;
     static std::string ParserAudioRendererDebugInfo(const AudioRendererDebugInfo &debugInfo);
@@ -74,8 +75,6 @@ private:
 
     int32_t GetAudioSessionDebugInfo(AudioSessionDebugInfo &debugInfo) const;
     static std::string ParserAudioSessionDebugInfo(const AudioSessionDebugInfo &debugInfo);
-
-    uint32_t GenerateDebugKey();
 
 private:
     mutable std::mutex rendererMutex_;

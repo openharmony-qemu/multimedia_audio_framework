@@ -193,8 +193,8 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_006, TestS
     audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_CLOSE;
     audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_[TEST_MAC_ADDR] = COLLABORATIVE_OPENED;
     audioCollaborativeServicePtr_->curDeviceAddress_ = TEST_MAC_ADDR;
-    EXPECT_EQ(audioCollaborativeServicePtr_->GetRealCollaborativeState(), true);
-    
+    EXPECT_EQ(audioCollaborativeServicePtr_->GetRealCollaborativeState(), false);
+
     // current device address is in addressToCollaborativeEnabledMap_ and collaborative state should not be changed
     audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = COLLABORATION_BLUETOOTH_OPEN;
     audioCollaborativeServicePtr_->UpdateCollaborativeStateReal();

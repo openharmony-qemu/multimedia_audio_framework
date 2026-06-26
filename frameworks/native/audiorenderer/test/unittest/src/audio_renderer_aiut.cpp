@@ -427,7 +427,7 @@ HWTEST_F(AudioRendererStaticAiut, GetStatus_001, TestSize.Level0)
 /**
  * @tc.name  : Test GetRendererDebugKey returns initial value
  * @tc.number: GetRendererDebugKey_001
- * @tc.desc  : Test GetRendererDebugKey returns INVALID_DEBUGKEY (0) for newly created renderer.
+ * @tc.desc  : Test GetRendererDebugKey returns 0 for newly created renderer.
  */
 HWTEST_F(AudioRendererStaticAiut, GetRendererDebugKey_001, TestSize.Level0)
 {
@@ -435,7 +435,7 @@ HWTEST_F(AudioRendererStaticAiut, GetRendererDebugKey_001, TestSize.Level0)
     auto renderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, AppInfo{}, false);
     AIUT_ASSERT_NE_INFO_LOG(renderer, nullptr, "renderer is null");
     uint32_t key = renderer->GetRendererDebugKey();
-    AIUT_EXPECT_EQ_INFO_LOG(key, INVALID_DEBUGKEY, "initial debug key should be 0, key=%u", key);
+    AIUT_EXPECT_EQ_INFO_LOG(key, 0, "initial debug key should be 0, key=%u", key);
 }
 
 // ==================== IsNoStreamRenderer Tests ====================

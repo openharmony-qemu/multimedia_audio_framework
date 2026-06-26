@@ -45,6 +45,15 @@ void CapturerInServerUnitTest::TearDownTestCase() {}
 void CapturerInServerUnitTest::SetUp() {}
 void CapturerInServerUnitTest::TearDown() {}
 
+static void InitAudioServerBufferForOnReadDataTest(const std::shared_ptr<CapturerInServer> &capturerInServer)
+{
+    constexpr uint32_t totalSizeInFrame = 10;
+    constexpr uint32_t spanSizeInFrame = 10;
+    constexpr uint32_t byteSizePerFrame = 10;
+    capturerInServer->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+}
+
 class ConcreteIStreamListener : public IStreamListener {
     int32_t OnOperationHandled(Operation operation, int64_t result) { return SUCCESS; }
 };
@@ -1074,6 +1083,7 @@ HWTEST_F(CapturerInServerUnitTest, OnReadData_001, TestSize.Level1)
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    InitAudioServerBufferForOnReadDataTest(capturerInServer_);
     size_t length = 0;
     int32_t result = capturerInServer_->OnReadData(length);
     EXPECT_EQ(result, SUCCESS);

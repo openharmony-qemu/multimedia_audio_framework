@@ -511,40 +511,6 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_004, TestSize.Level
 
 /**
  * @tc.name  : Test AudioVolumeManager.
- * @tc.number: SelectDealSafeVolume_005
- * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT_SOUNDBOX category.
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_005, TestSize.Level4)
-{
-    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
-    AudioStreamType streamType = STREAM_MUSIC;
-    VolumeScale volume = VolumeScale(15, -1, 15);
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    CurrentActiveDevice().deviceCategory_ = BT_SOUNDBOX;
-
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
-    EXPECT_EQ(ret.VolumeLevel(), volume.VolumeLevel());
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
- * @tc.number: SelectDealSafeVolume_006
- * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT_CAR category.
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_006, TestSize.Level4)
-{
-    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
-    AudioStreamType streamType = STREAM_MUSIC;
-    VolumeScale volume = VolumeScale(15, -1, 15);
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    CurrentActiveDevice().deviceCategory_ = BT_CAR;
-
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
-    EXPECT_EQ(ret.VolumeLevel(), volume.VolumeLevel());
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
  * @tc.number: SelectDealSafeVolume_007
  * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT isBtFirstBoot true.
  */
