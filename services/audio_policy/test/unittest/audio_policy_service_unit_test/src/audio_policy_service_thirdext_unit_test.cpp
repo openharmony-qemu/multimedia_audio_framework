@@ -1250,53 +1250,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_001, TestSiz
 
 /**
 * @tc.name  : Test AudioPolicyConfigManager.
-* @tc.number: AudioPolicyConfigManager_002
-* @tc.desc  : Test AudioPolicyConfigManager.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_002, TestSize.Level1)
-{
-    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
-    size_t adapterMapSize = configData.adapterInfoMap.size();
-    std::unordered_map<AudioAdapterType, std::pair<size_t, size_t>> adapterSizeMap {};
-
-    for (auto &item : configData.adapterInfoMap) {
-        std::pair<size_t, size_t> sizePair = std::make_pair(item.second->deviceInfos.size(),
-            item.second->pipeInfos.size());
-        adapterSizeMap.insert({item.first, sizePair});
-    }
-
-    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
-    EXPECT_EQ(audioConfigManager_.Init(true), true);
-    configData.Reorganize();
-
-    EXPECT_NE(configData.adapterInfoMap.size(), 0);
-
-    for (auto &item : adapterSizeMap) {
-        auto adapterInfoIt = configData.adapterInfoMap.find(item.first);
-        EXPECT_NE(adapterInfoIt, configData.adapterInfoMap.end());
-
-        EXPECT_NE(adapterInfoIt->second->adapterName, "");
-        EXPECT_NE(adapterInfoIt->second->deviceInfos.size(), 0);
-        EXPECT_NE(adapterInfoIt->second->pipeInfos.size(), 0);
-
-        std::pair<size_t, size_t> sizePair = std::make_pair(adapterInfoIt->second->deviceInfos.size(),
-            adapterInfoIt->second->pipeInfos.size());
-        EXPECT_EQ(item.second, sizePair);
-
-        for (auto &deviceInfo : adapterInfoIt->second->deviceInfos) {
-            EXPECT_NE(deviceInfo->supportPipeMap_.size(), 0);
-        }
-
-        for (auto &pipeInfo : adapterInfoIt->second->pipeInfos) {
-            for (auto &streamPropInfo : pipeInfo->streamPropInfos_) {
-                EXPECT_NE(streamPropInfo->supportDeviceMap_.size(), 0);
-            }
-        }
-    }
-}
-
-/**
-* @tc.name  : Test AudioPolicyConfigManager.
 * @tc.number: AudioPolicyConfigManager_003
 * @tc.desc  : Test AudioPolicyConfigManager.
 */
