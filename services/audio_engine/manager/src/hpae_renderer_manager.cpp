@@ -115,8 +115,11 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
         nodeInfo.deviceType = static_cast<int32_t>(renderDeviceType_);
         nodeInfo.renderId = renderId_;
     }
-    // no need history buffer in not offload sink
-    nodeInfo.historyFrameCount = 0;
+    // no need history buffer in not offload sink, unless a session effect is
+    // attached — in that case keep the history buffer for the SE pipeline.
+    if (!node->HasSessionEffectAttachState()) {
+        nodeInfo.historyFrameCount = 0;
+    }
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.sceneType = TransToProperSceneType(nodeInfo.effectInfo.streamUsage, nodeInfo.effectInfo.effectScene);
     // for collaboration
@@ -305,6 +308,14 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId) cons
         return HPAE_SCENE_EFFECT_NONE;
     }
     return nodeInfo.sceneType;
+}
+
+HpaeProcessorType HpaeRendererManager::GetConnectedProcessorType(uint32_t sessionId) const
+{
+    auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_RET(node != nullptr && node->connectedProcessorType_ != HPAE_SCENE_UNCONNECTED,
+        GetProcessorType(sessionId));
+    return node->connectedProcessorType_;
 }
 
 void HpaeRendererManager::DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo)
@@ -792,7 +803,7 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
         return;
     }
 
-    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
     AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [%{public}s] --> [%{public}s]",
         sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str(), GetEncryptStr(sinkName).c_str());
     if (HasSessionEffect(sessionId)) {
@@ -828,10 +839,10 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
             "Start not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Start sessionId %{public}u, deviceName %{public}s",
             sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str());
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
+        HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (HasSessionEffect(sessionId)) {
             sceneClusterMap_[sceneType]->SessionEffectStart(sessionId);
         }
@@ -853,10 +864,10 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
             "StartWithSyncId not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("StartWithSyncId sessionId %{public}u, deviceName %{public}s",
             sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str());
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
+        HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (HasSessionEffect(sessionId)) {
             sceneClusterMap_[sceneType]->SessionEffectStart(sessionId);
         }
@@ -1000,7 +1011,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId, bool isStandby)
             sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str(), isStandby);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Pause not find sessionId %{public}u", sessionId);
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
+        HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_PAUSED, isStandby)) {
             if (HasSessionEffect(sessionId)) {
                 sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
@@ -1037,8 +1048,7 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
             "Flush not find sessionId %{public}u", sessionId);
         // flush history buffer
         sinkInputNodeMap_[sessionId]->Flush();
-        HpaeProcessorType sceneType = (sinkInputNodeMap_[sessionId]->connectedProcessorType_ != HPAE_SCENE_UNCONNECTED)
-            ? sinkInputNodeMap_[sessionId]->connectedProcessorType_ : GetProcessorType(sessionId);
+        HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
             "Flush not find sceneType: %{public}d in sceneClusterMap", static_cast<int32_t>(sceneType));
         auto converter = sceneClusterMap_[sceneType]->GetConverterNodeById(sessionId);
@@ -1088,7 +1098,7 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
             sessionId, GetEncryptStr(sinkInfo_.deviceName).c_str());
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Stop not find sessionId %{public}u", sessionId);
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
+        HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
             if (HasSessionEffect(sessionId) && SafeGetMap(sceneClusterMap_, sceneType)) {
                 sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
@@ -1414,8 +1424,7 @@ int32_t HpaeRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessG
             "session with Id %{public}d not in sinkInputNodeMap_", sessionId);
         sinkInputNode->SetLoudnessGain(loudnessGain);
 
-        HpaeProcessorType sceneType = (sinkInputNodeMap_[sessionId]->connectedProcessorType_ != HPAE_SCENE_UNCONNECTED)
-            ? sinkInputNodeMap_[sessionId]->connectedProcessorType_ : GetProcessorType(sessionId);
+        HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         std::shared_ptr<HpaeProcessCluster> processCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(processCluster != nullptr,
             "session with Id %{public}d not in sceneClusterMap_", sessionId);
@@ -1640,7 +1649,7 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId)
         IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ?
             OPERATION_STOPPED : OPERATION_PAUSED;
         if ((operation == OPERATION_PAUSED || operation == OPERATION_STOPPED) && HasSessionEffect(sessionId)) {
-            HpaeProcessorType sceneType = GetProcessorType(sessionId);
+            HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
             if (SafeGetMap(sceneClusterMap_, sceneType)) {
                 sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
             }
@@ -1663,8 +1672,7 @@ int32_t HpaeRendererManager::RegisterReadCallback(uint32_t sessionId,
 void HpaeRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &latency)
 {
     CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "not find sessionId %{public}u", sessionId);
-    HpaeProcessorType sceneType = (sinkInputNodeMap_[sessionId]->connectedProcessorType_ != HPAE_SCENE_UNCONNECTED) ?
-        sinkInputNodeMap_[sessionId]->connectedProcessorType_ : GetProcessorType(sessionId);
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
 
     uint64_t processLatency = 0;
 
@@ -1721,8 +1729,7 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
 {
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), false,
         "can not get input node of session %{public}u", sessionId);
-    HpaeProcessorType sceneType = (sinkInputNodeMap_[sessionId]->connectedProcessorType_ != HPAE_SCENE_UNCONNECTED)
-        ? sinkInputNodeMap_[sessionId]->connectedProcessorType_ : GetProcessorType(sessionId);
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
     AUDIO_INFO_LOG("sessionId is %{public}d, sceneType is %{public}d", sessionId, sceneType);
     std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
     if (SafeGetMap(sceneClusterMap_, sceneType)) {

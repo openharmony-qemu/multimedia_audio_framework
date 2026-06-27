@@ -45,12 +45,12 @@ private:
     void UpdateTmpOutPcmBufferInfo(const PcmBufferInfo &outPcmBufferInfo);
 
     // --- Dual-buffer mechanism for non-standard sample rate handling ---
-    void AppendToUnprocessedBuffer(const float *data, uint32_t frameLen, uint32_t channels);
-    void AppendToProcessedBuffer(const float *data, uint32_t frameLen, uint32_t channels);
+    bool AppendToUnprocessedBuffer(const float *data, uint32_t frameLen, uint32_t channels);
+    bool AppendToProcessedBuffer(const float *data, uint32_t frameLen, uint32_t channels);
     void PullAheadUntilThresholdOrFailure(uint32_t inputFrameLen);
     void ProcessResampleLoop();
     bool ExtractOutputFromProcessedBuffer();
-    void RemoveConsumedInputFrames(uint32_t consumedFrames, uint32_t channels);
+    bool RemoveConsumedInputFrames(uint32_t consumedFrames, uint32_t channels);
     void CompactProcessedBuffer(uint32_t channels);
     void MoveUnprocessedToProcessed(uint32_t channels);
     bool TryPullOneFrame();
