@@ -624,12 +624,11 @@ void HpaeAudioFormatConverterNode::ProcessSameRateChannelConversion(uint32_t inC
                 "failed, code %{public}d", GetNodeId(), ret);
             break;
         }
-
-        CHECK_AND_BREAK_LOG(AppendToProcessedBuffer(resamplerOutBuf_.data(), outFrameLen, outCh),
-            "NodeId %{public}d: AppendToProcessedBuffer failed", GetNodeId());
         // Remove at inCh per frame
         CHECK_AND_BREAK_LOG(RemoveConsumedInputFrames(inFrameLen, inCh),
             "NodeId %{public}d: RemoveConsumedInputFrames failed", GetNodeId());
+        CHECK_AND_BREAK_LOG(AppendToProcessedBuffer(resamplerOutBuf_.data(), outFrameLen, outCh),
+            "NodeId %{public}d: AppendToProcessedBuffer failed", GetNodeId());
     }
 }
 
@@ -663,10 +662,10 @@ void HpaeAudioFormatConverterNode::ProcessDiffRateResample(uint32_t inCh, uint32
             break;
         }
 
-        CHECK_AND_BREAK_LOG(AppendToProcessedBuffer(resamplerOutBuf_.data(), outFrameLen, outCh),
-            "NodeId %{public}d: AppendToProcessedBuffer failed", GetNodeId());
         CHECK_AND_BREAK_LOG(RemoveConsumedInputFrames(inFrameLen, inCh),
             "NodeId %{public}d: RemoveConsumedInputFrames failed", GetNodeId());
+        CHECK_AND_BREAK_LOG(AppendToProcessedBuffer(resamplerOutBuf_.data(), outFrameLen, outCh),
+            "NodeId %{public}d: AppendToProcessedBuffer failed", GetNodeId());
     }
 }
 

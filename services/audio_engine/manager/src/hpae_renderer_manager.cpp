@@ -121,7 +121,8 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
         nodeInfo.deviceType = static_cast<int32_t>(GetCurrentSinkDeviceType());
         nodeInfo.renderId = renderId_;
     }
-    // no need history buffer in not offload sink
+    // no need history buffer in not offload sink, unless a session effect is
+    // attached — in that case keep the history buffer for the SE pipeline.
     if (!node->HasSessionEffectAttachState()) {
         nodeInfo.historyFrameCount = 0;
     }
