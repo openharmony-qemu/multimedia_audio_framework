@@ -147,7 +147,6 @@ struct HpaeSinkInfo {
     bool isLoopback = false;
     bool isUltraFast = false;
     CollaborationState isCollaborationEnabled = COLLABORATION_CLOSE;
-    std::string macAddress = "";
 };
 
 enum HpaeEcType {
