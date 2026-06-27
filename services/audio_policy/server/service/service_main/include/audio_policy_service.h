@@ -219,6 +219,8 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
+    void NotifySubProfileChanged();
+
     void MuteMediaWhenAccountsChanged();
 
     // for effect
