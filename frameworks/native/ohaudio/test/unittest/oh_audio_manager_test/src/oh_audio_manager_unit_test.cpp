@@ -15,6 +15,7 @@
 
 #include "oh_audio_manager_unit_test.h"
 #include "OHAudioManager.h"
+#include "native_audio_debugging_manager.h"
 
 using namespace testing::ext;
 
@@ -239,5 +240,57 @@ HWTEST(OHAudioManagerUnitTest, OnAudioSceneChange_002, TestSize.Level0)
     cb->OnAudioSceneChange(AudioScene::AUDIO_SCENE_DEFAULT);
     EXPECT_NE(scene, AudioScene::AUDIO_SCENE_DEFAULT);
 }
+/**
+ * @tc.name  : Test OH_AudioManager_GetAudioDebuggingManager
+ * @tc.number: OH_AudioManager_GetAudioDebuggingManager_001
+ * @tc.desc  : Test OH_AudioManager_GetAudioDebuggingManager with valid parameter.
+ */
+HWTEST(OHAudioManagerUnitTest, OH_AudioManager_GetAudioDebuggingManager_001, TestSize.Level0)
+{
+    OH_AudioDebuggingManager *debuggingManager = nullptr;
+    OH_AudioCommon_Result result = OH_AudioManager_GetAudioDebuggingManager(&debuggingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(debuggingManager, nullptr);
+}
+
+/**
+ * @tc.name  : Test OH_AudioManager_GetAudioDebuggingManager
+ * @tc.number: OH_AudioManager_GetAudioDebuggingManager_002
+ * @tc.desc  : Test OH_AudioManager_GetAudioDebuggingManager with invalid parameter.
+ */
+HWTEST(OHAudioManagerUnitTest, OH_AudioManager_GetAudioDebuggingManager_002, TestSize.Level0)
+{
+    OH_AudioCommon_Result result = OH_AudioManager_GetAudioDebuggingManager(nullptr);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioDebuggingManager_PrintAppInfo
+ * @tc.number: OH_AudioDebuggingManager_PrintAppInfo_001
+ * @tc.desc  : Test OH_AudioDebuggingManager_PrintAppInfo with valid parameter.
+ */
+HWTEST(OHAudioManagerUnitTest, OH_AudioDebuggingManager_PrintAppInfo_001, TestSize.Level0)
+{
+    OH_AudioDebuggingManager *debuggingManager = nullptr;
+    OH_AudioCommon_Result result = OH_AudioManager_GetAudioDebuggingManager(&debuggingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(debuggingManager, nullptr);
+
+    // Test with stdout fd (1)
+    result = OH_AudioDebuggingManager_PrintAppInfo(debuggingManager, 1);
+    EXPECT_TRUE(result == AUDIOCOMMON_RESULT_SUCCESS || result == AUDIOCOMMON_RESULT_ERROR_SYSTEM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioDebuggingManager_PrintAppInfo
+ * @tc.number: OH_AudioDebuggingManager_PrintAppInfo_002
+ * @tc.desc  : Test OH_AudioDebuggingManager_PrintAppInfo with invalid parameter.
+ */
+HWTEST(OHAudioManagerUnitTest, OH_AudioDebuggingManager_PrintAppInfo_002, TestSize.Level0)
+{
+    OH_AudioCommon_Result result = OH_AudioDebuggingManager_PrintAppInfo(nullptr, 1);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
