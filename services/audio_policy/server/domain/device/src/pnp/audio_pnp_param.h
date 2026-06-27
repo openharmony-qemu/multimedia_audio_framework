@@ -30,7 +30,7 @@
 #define REMOVE_AUDIO_DEVICE '0'
 #define SWITCH_STATE_PATH    "/sys/class/switch/h2w/state"
 #define SWITCH_STATE_PATH_LINEIN    "/sys/class/switch/h2w_linein/state"
-#define SWITCH_STATE_PATH_LINEOUT   "/sys/class/switch/h2w_lineout/state"
+#define SWITCH_STATE_PATH_LINEOUT    "/sys/class/switch/h2w_lineout/state"
 #define SWITCH_STATE_PATH_MICIN    "/sys/class/switch/h2w_micin/state"
 #define STATE_PATH_ITEM_SIZE 1
 
