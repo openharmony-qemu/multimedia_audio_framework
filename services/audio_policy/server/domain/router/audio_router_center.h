@@ -42,6 +42,15 @@ public:
         return audioRouterCenter;
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo &info);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesNoLock(FetchDeviceInfo &info);
+    class ArbiterScope {
+    public:
+        explicit ArbiterScope(AudioRouterCenter &center);
+        ~ArbiterScope();
+    private:
+        AudioRouterCenter &center_;
+        std::unique_lock<std::mutex> lock_;
+    };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(FetchDeviceInfo &info);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
@@ -173,8 +182,11 @@ private:
         const FetchDeviceInfo &info);
 
     std::vector<StreamDeviceInfo> CollectOutputStreamDevices(const FetchDeviceInfo &deviceInfo);
+    std::vector<StreamDeviceInfo> CollectOutputStreamDevices(RouterType bypassType = ROUTER_TYPE_NONE);
     std::vector<StreamDeviceInfo> CollectInputStreamDevices(const FetchDeviceInfo &deviceInfo);
+    std::vector<StreamDeviceInfo> CollectInputStreamDevices();
     void StartArbiterContext(const FetchDeviceInfo &deviceInfo);
+    void StartArbiterContext();
     void StopArbiterContext();
     std::shared_ptr<WirelessConflictHandler> wirelessConflictHandler_;
     std::mutex routerMutex_;

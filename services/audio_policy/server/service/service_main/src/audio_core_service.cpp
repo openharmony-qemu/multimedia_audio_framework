@@ -2624,8 +2624,17 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     CheckRingAndVoipScene(reason);
 
     AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToRoute;
     for (auto &streamDesc : outputStreamDescs) {
-        UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute");
+        UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute", streamsToRoute);
+    }
+
+    auto size = streamsToRoute.size();
+    {
+        AudioRouterCenter::ArbiterScope arbiterScope(audioRouterCenter_);
+        for (size_t i = 0; i < size; i++) {
+            UpdateStreamDevicesForStart(streamsToRoute[i], caller + "FetchOutputDeviceAndRoute");
+        }
     }
     // todo fix
     HandleA2dpSuspendWhenFetch(reason, audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), outputStreamDescs);

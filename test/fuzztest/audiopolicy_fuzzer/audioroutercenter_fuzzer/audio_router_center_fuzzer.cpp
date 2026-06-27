@@ -505,6 +505,14 @@ void AudioRouterCenterArbiterFuzzTest(FuzzedDataProvider& fdp)
         center.RegisterConflictHandlers(std::make_shared<WirelessConflictHandler>());
     }
     center.StopArbiterContext();
+
+    center.StartArbiterContext();
+    center.StopArbiterContext();
+
+    {
+        AudioRouterCenter::ArbiterScope scope(center);
+        center.FetchOutputDevicesNoLock(info);
+    }
 }
 
 void Test(FuzzedDataProvider& fdp)
