@@ -114,7 +114,7 @@ AudioConverterParser::AudioConverterParser()
     AUDIO_INFO_LOG("AudioConverterParser created");
 }
 
-void AudioConverterParser LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
+void AudioConverterParser::LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
 {
     std::string libName;
     std::string libPath;
@@ -124,7 +124,7 @@ void AudioConverterParser LoadConfigLibrary(ConverterConfig &result, std::shared
     result.library.path = libPath;
 }
 
-void AudioConverterParser LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
+void AudioConverterParser::LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
 {
     curNode->MoveToChildren();
     int32_t countLayoutConf = 0;
