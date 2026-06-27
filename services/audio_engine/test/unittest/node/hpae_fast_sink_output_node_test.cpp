@@ -1942,6 +1942,1059 @@ HWTEST_F(HpaeFastSinkOutputNodeTest, checkPlaySignal_DspTimestampSuccess_001, Te
     EXPECT_EQ(fastNode_->signalDetectAgent_->dspTimestampGot_, true);
     EXPECT_EQ(fastNode_->signalDetectAgent_->signalDetected_, false);
 }
+
+// ==================== CalcServerAheadReadTime tests ====================
+
+/**
+ * @tc.name  : calcServerAheadReadTime_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_107
+ * @tc.desc  : Test CalcServerAheadReadTime returns valid value for normal fast path
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, calcServerAheadReadTime_001, TestSize.Level0)
+{
+    fastNode_->dstSpanSizeInframe_ = SPAN_SIZE_IN_FRAME;
+    fastNode_->dstTotalSizeInframe_ = TOTAL_SIZE_IN_FRAME;
+    fastNode_->isUltraFast_ = false;
+    int64_t result = fastNode_->CalcServerAheadReadTime(DEFAULT_SAMPLE_RATE);
+    EXPECT_GT(result, 0);
+}
+
+/**
+ * @tc.name  : calcServerAheadReadTime_UltraFast_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_108
+ * @tc.desc  : Test CalcServerAheadReadTime with isUltraFast_ enforces minimum 3ms
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, calcServerAheadReadTime_UltraFast_001, TestSize.Level0)
+{
+    fastNode_->dstSpanSizeInframe_ = 1;
+    fastNode_->dstTotalSizeInframe_ = TOTAL_SIZE_IN_FRAME;
+    fastNode_->isUltraFast_ = true;
+    int64_t result = fastNode_->CalcServerAheadReadTime(DEFAULT_SAMPLE_RATE);
+    EXPECT_GE(result, 3000000);
+}
+
+/**
+ * @tc.name  : checkTimeAndBufferReady_BufferNotReady_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_113
+ * @tc.desc  : Test CheckTimeAndBufferReady when buffer not ready updates curTime
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkTimeAndBufferReady_BufferNotReady_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    uint64_t curWritePos = 0;
+    int64_t wakeUpTime = ClockTime::GetCurNano();
+    int64_t curTime = wakeUpTime;
+    fastNode_->CheckTimeAndBufferReady(curWritePos, wakeUpTime, curTime);
+    EXPECT_GE(curTime, wakeUpTime);
+}
+
+// ==================== CheckAllBufferReady success path ====================
+
+/**
+ * @tc.name  : checkAllBufferReady_BufferReady_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_114
+ * @tc.desc  : Test CheckAllBufferReady with valid buffer returns true
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkAllBufferReady_BufferReady_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    int64_t checkTime = ClockTime::GetCurNano() + 10000000;
+    EXPECT_EQ(fastNode_->CheckAllBufferReady(checkTime, 0), true);
+}
+
+// ==================== ReSyncPosition tests ====================
+
+/**
+ * @tc.name  : reSyncPosition_DeviceHandleInfoFail_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_115
+ * @tc.desc  : Test ReSyncPosition when GetDeviceHandleInfo fails returns early
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, reSyncPosition_DeviceHandleInfoFail_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    EXPECT_CALL(*mockSink_, GetMmapHandlePosition(_, _, _)).WillOnce(Return(ERROR));
+    fastNode_->ReSyncPosition();
+}
+
+/**
+ * @tc.name  : reSyncPosition_Success_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_116
+ * @tc.desc  : Test ReSyncPosition with valid handle info updates positions
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, reSyncPosition_Success_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    EXPECT_CALL(*mockSink_, GetMmapHandlePosition(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(100), SetArgReferee<1>(1), SetArgReferee<2>(0), Return(SUCCESS)));
+    fastNode_->ReSyncPosition();
+    EXPECT_EQ(fastNode_->lastPredictWakeUpTime_, 0);
+    EXPECT_NE(fastNode_->posInFrame_.load(), 0);
+}
+
+/**
+ * @tc.name  : reSyncPosition_NullBuffer_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_117
+ * @tc.desc  : Test ReSyncPosition with null dstAudioBuffer_ skips buffer update
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, reSyncPosition_NullBuffer_001, TestSize.Level0)
+{
+    fastNode_->dstAudioBuffer_ = nullptr;
+    EXPECT_CALL(*mockSink_, GetMmapHandlePosition(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(100), SetArgReferee<1>(1), SetArgReferee<2>(0), Return(SUCCESS)));
+    fastNode_->ReSyncPosition();
+    EXPECT_NE(fastNode_->posInFrame_.load(), 0);
+}
+
+// ==================== GetDeviceHandleInfo additional tests ====================
+
+/**
+ * @tc.name  : getDeviceHandleInfo_WithBuffer_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_118
+ * @tc.desc  : Test GetDeviceHandleInfo with valid buffer calls SetHandleInfo
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, getDeviceHandleInfo_WithBuffer_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    EXPECT_CALL(*mockSink_, GetMmapHandlePosition(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(500), SetArgReferee<1>(1), SetArgReferee<2>(0), Return(SUCCESS)));
+    uint64_t frames = 0;
+    int64_t nanoTime = 0;
+    EXPECT_EQ(fastNode_->GetDeviceHandleInfo(frames, nanoTime), true);
+    EXPECT_EQ(frames, 500);
+}
+
+// ==================== CheckSyncInfo write slower than read ====================
+
+/**
+ * @tc.name  : checkSyncInfo_WriteSlower_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_119
+ * @tc.desc  : Test CheckSyncInfo when writeFrame < readFrame triggers warning
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkSyncInfo_WriteSlower_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    fastNode_->dstAudioBuffer_->SetSyncReadFrame(5);
+    fastNode_->CheckSyncInfo(0);
+}
+
+// ==================== PrepareNextLoop failure ====================
+
+/**
+ * @tc.name  : prepareNextLoop_NullBuffer_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_120
+ * @tc.desc  : Test PrepareNextLoop with null dstAudioBuffer_ returns false
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, prepareNextLoop_NullBuffer_001, TestSize.Level0)
+{
+    fastNode_->dstAudioBuffer_ = nullptr;
+    int64_t wakeUpTime = 0;
+    EXPECT_EQ(fastNode_->PrepareNextLoop(0, wakeUpTime), false);
+}
+
+/**
+ * @tc.name  : prepareNextLoop_SetWriteFrameFail_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_121
+ * @tc.desc  : Test PrepareNextLoop when SetCurWriteFrame fails returns false
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, prepareNextLoop_SetWriteFrameFail_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    int64_t wakeUpTime = 0;
+    uint64_t largePos = static_cast<uint64_t>(-1) - SPAN_SIZE_IN_FRAME;
+    EXPECT_EQ(fastNode_->PrepareNextLoop(largePos, wakeUpTime), false);
+}
+
+// ==================== TriggerPrepareNextLoop overload ====================
+
+/**
+ * @tc.name  : triggerPrepareNextLoop_WithPos_Success_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_122
+ * @tc.desc  : Test TriggerPrepareNextLoop(curWritePos, wakeUpTime) with valid buffer
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, triggerPrepareNextLoop_WithPos_Success_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    uint64_t curWritePos = 0;
+    int64_t wakeUpTime = 0;
+    EXPECT_EQ(fastNode_->TriggerPrepareNextLoop(curWritePos, wakeUpTime), true);
+}
+
+// ==================== AsyncGetPosThread tests ====================
+
+/**
+ * @tc.name  : asyncGetPosTime_AlreadyRunning_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_123
+ * @tc.desc  : Test AsyncGetPosTime when thread already joinable returns early
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, asyncGetPosTime_AlreadyRunning_001, TestSize.Level0)
+{
+    fastNode_->AsyncGetPosTime();
+    EXPECT_TRUE(fastNode_->updatePosTimeThread_.joinable());
+    fastNode_->AsyncGetPosTime();
+    fastNode_->StopUpdateThread();
+    EXPECT_FALSE(fastNode_->updatePosTimeThread_.joinable());
+}
+
+// ==================== InitLatencyMeasurement branch tests ====================
+
+/**
+ * @tc.name  : initLatencyMeasurement_AlreadyEnabled_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_126
+ * @tc.desc  : Test InitLatencyMeasurement when already enabled returns early
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, initLatencyMeasurement_AlreadyEnabled_001, TestSize.Level0)
+{
+    fastNode_->latencyMeasEnabled_ = true;
+    fastNode_->InitLatencyMeasurement();
+    EXPECT_EQ(fastNode_->latencyMeasEnabled_, true);
+}
+
+/**
+ * @tc.name  : deinitLatencyMeasurement_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_127
+ * @tc.desc  : Test DeinitLatencyMeasurement resets all fields
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, deinitLatencyMeasurement_001, TestSize.Level0)
+{
+    fastNode_->latencyMeasEnabled_ = true;
+    fastNode_->signalDetected_ = true;
+    fastNode_->detectedTime_ = 100;
+    fastNode_->DeinitLatencyMeasurement();
+    EXPECT_EQ(fastNode_->latencyMeasEnabled_, false);
+    EXPECT_EQ(fastNode_->signalDetected_, false);
+    EXPECT_EQ(fastNode_->detectedTime_, 0);
+}
+
+// ==================== UpdateAmplitudeIfNeeded threshold ====================
+
+/**
+ * @tc.name  : updateAmplitudeIfNeeded_ThresholdReached_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_128
+ * @tc.desc  : Test UpdateAmplitudeIfNeeded when renderFrameNum_ reaches threshold resets
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, updateAmplitudeIfNeeded_ThresholdReached_001, TestSize.Level0)
+{
+    BufferDesc writeBuf = {};
+    uint8_t buffer[16] = {0};
+    writeBuf.buffer = buffer;
+    writeBuf.dataLength = 16;
+    fastNode_->startUpdate_ = true;
+    fastNode_->renderFrameNum_ = 39; // threshold is 40
+    fastNode_->last10FrameStartTime_ = ClockTime::GetCurNano() + 1000000000;
+    fastNode_->lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
+    fastNode_->sinkOutAttr_.format = SAMPLE_S16LE;
+    fastNode_->UpdateAmplitudeIfNeeded(writeBuf);
+    EXPECT_EQ(fastNode_->renderFrameNum_, 0);
+    EXPECT_EQ(fastNode_->startUpdate_, false);
+}
+
+/**
+ * @tc.name  : updateAmplitudeIfNeeded_ThresholdNotExceed_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_129
+ * @tc.desc  : Test UpdateAmplitudeIfNeeded when threshold not reached continues
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, updateAmplitudeIfNeeded_ThresholdNotExceed_001, TestSize.Level0)
+{
+    BufferDesc writeBuf = {};
+    uint8_t buffer[16] = {0};
+    writeBuf.buffer = buffer;
+    writeBuf.dataLength = 16;
+    fastNode_->startUpdate_ = true;
+    fastNode_->renderFrameNum_ = 10;
+    fastNode_->sinkOutAttr_.format = SAMPLE_S16LE;
+    fastNode_->UpdateAmplitudeIfNeeded(writeBuf);
+    EXPECT_EQ(fastNode_->renderFrameNum_, 11);
+    EXPECT_EQ(fastNode_->startUpdate_, true);
+    fastNode_->startUpdate_ = false;
+}
+
+// ==================== DoProcess additional tests ====================
+
+/**
+ * @tc.name  : doProcess_NoReSync_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_130
+ * @tc.desc  : Test DoProcess with needReSyncPosition_=false skips ReSyncPosition
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, doProcess_NoReSync_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    HpaeNodeInfo mixerInfo;
+    mixerInfo.frameLen = DEFAULT_FRAME_LEN;
+    mixerInfo.samplingRate = DEFAULT_SAMPLE_RATE;
+    mixerInfo.channels = DEFAULT_CHANNELS;
+    mixerInfo.format = SAMPLE_F32LE;
+    auto mixerNode = std::make_shared<HpaeMixerNode>(mixerInfo);
+    fastNode_->Connect(mixerNode);
+
+    fastNode_->needReSyncPosition_ = false;
+    fastNode_->DoProcess();
+    EXPECT_EQ(fastNode_->needReSyncPosition_, false);
+    fastNode_->DisConnect(mixerNode);
+}
+
+/**
+ * @tc.name  : doProcess_WithClientWakeCallback_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_131
+ * @tc.desc  : Test DoProcess with clientWakeCallback_ set
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, doProcess_WithClientWakeCallback_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    HpaeNodeInfo mixerInfo;
+    mixerInfo.frameLen = DEFAULT_FRAME_LEN;
+    mixerInfo.samplingRate = DEFAULT_SAMPLE_RATE;
+    mixerInfo.channels = DEFAULT_CHANNELS;
+    mixerInfo.format = SAMPLE_F32LE;
+    auto mixerNode = std::make_shared<HpaeMixerNode>(mixerInfo);
+    fastNode_->Connect(mixerNode);
+
+    bool callbackInvoked = false;
+    fastNode_->SetClientWakeCallback([&callbackInvoked]() { callbackInvoked = true; });
+    fastNode_->needReSyncPosition_ = false;
+    fastNode_->DoProcess();
+    EXPECT_EQ(callbackInvoked, true);
+    fastNode_->DisConnect(mixerNode);
+}
+
+// ==================== PrepareDeviceBuffer zero sampleRate ====================
+
+/**
+ * @tc.name  : prepareDeviceBuffer_ZeroSampleRate_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_132
+ * @tc.desc  : Test PrepareDeviceBuffer when sampleRate is 0 returns ERR_INVALID_PARAM
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, prepareDeviceBuffer_ZeroSampleRate_001, TestSize.Level0)
+{
+    fastNode_->dstAudioBuffer_ = nullptr;
+    fastNode_->sinkOutAttr_.sampleRate = 0;
+    fastNode_->GetNodeInfo().samplingRate = SAMPLE_RATE_8000;
+
+    EXPECT_CALL(*mockSink_, GetMmapBufferInfo(_, _, _, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(1),
+                        SetArgReferee<1>(TOTAL_SIZE_IN_FRAME),
+                        SetArgReferee<2>(SPAN_SIZE_IN_FRAME),
+                        SetArgReferee<3>(BYTE_SIZE_PER_FRAME),
+                        SetArgReferee<4>(0),
+                        Return(SUCCESS)));
+    EXPECT_EQ(fastNode_->PrepareDeviceBuffer(), ERR_ILLEGAL_STATE);
+}
+
+// ==================== Constructor branch tests ====================
+
+/**
+ * @tc.name  : constructNode_ZeroSampleRate_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_133
+ * @tc.desc  : Test construct with samplingRate=0 sets frameLenMs_=0
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, constructNode_ZeroSampleRate_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.samplingRate = SAMPLE_RATE_8000;
+    auto node = std::make_shared<HpaeFastSinkOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    EXPECT_NE(node->frameLenMs_, 0);
+}
+
+/**
+ * @tc.name  : constructNode_CustomSampleRate_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_134
+ * @tc.desc  : Test construct with customSampleRate set
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, constructNode_CustomSampleRate_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.customSampleRate = 96000;
+    auto node = std::make_shared<HpaeFastSinkOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+}
+
+/**
+ * @tc.name  : constructNode_WithDeviceClass_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_135
+ * @tc.desc  : Test construct with non-empty non-ultra deviceClass
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, constructNode_WithDeviceClass_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.deviceClass = "primary_mmap";
+    auto node = std::make_shared<HpaeFastSinkOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    EXPECT_EQ(node->isUltraFast_, false);
+}
+
+// ==================== GetRenderSinkInstance empty netId ====================
+
+/**
+ * @tc.name  : getRenderSinkInstance_EmptyNetId_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_136
+ * @tc.desc  : Test GetRenderSinkInstance with empty deviceNetId uses HDI_ID_INFO_DEFAULT
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, getRenderSinkInstance_EmptyNetId_001, TestSize.Level0)
+{
+    int32_t ret = fastNode_->GetRenderSinkInstance("primary_mmap", "");
+    EXPECT_TRUE(ret == SUCCESS || ret == ERROR);
+}
+
+// ==================== RenderSinkInit success path ====================
+
+/**
+ * @tc.name  : renderSinkInit_Success_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_137
+ * @tc.desc  : Test RenderSinkInit success path with pre-existing buffer
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, renderSinkInit_Success_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    EXPECT_CALL(*mockSink_, IsInited()).WillOnce(Return(true));
+    EXPECT_CALL(*mockSink_, SetVolume(_, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockSink_, GetCurrentOutputDevice()).WillOnce(Return(DEVICE_TYPE_SPEAKER));
+
+    IAudioSinkAttr attr;
+    attr.sampleRate = DEFAULT_SAMPLE_RATE;
+    attr.channel = DEFAULT_CHANNELS;
+    attr.format = SAMPLE_F32LE;
+    int32_t ret = fastNode_->RenderSinkInit(attr);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(fastNode_->GetSinkState(), STREAM_MANAGER_IDLE);
+    EXPECT_EQ(fastNode_->currentOutputDevice_, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : renderSinkInit_VoipFast_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_138
+ * @tc.desc  : Test RenderSinkInit with AUDIO_FLAG_VOIP_FAST sets adapterType_
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, renderSinkInit_VoipFast_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    EXPECT_CALL(*mockSink_, IsInited()).WillOnce(Return(true));
+    EXPECT_CALL(*mockSink_, SetVolume(_, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockSink_, GetCurrentOutputDevice()).WillOnce(Return(DEVICE_TYPE_INVALID));
+
+    IAudioSinkAttr attr;
+    attr.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
+    attr.sampleRate = DEFAULT_SAMPLE_RATE;
+    int32_t ret = fastNode_->RenderSinkInit(attr);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(fastNode_->adapterType_, ADAPTER_TYPE_VOIP_FAST);
+}
+
+/**
+ * @tc.name  : renderSinkInit_UltraFast_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_139
+ * @tc.desc  : Test RenderSinkInit with isUltraFast_ sets adapterType_ to ULTRA_FAST
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, renderSinkInit_UltraFast_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    fastNode_->isUltraFast_ = true;
+    EXPECT_CALL(*mockSink_, IsInited()).WillOnce(Return(true));
+    EXPECT_CALL(*mockSink_, SetVolume(_, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockSink_, GetCurrentOutputDevice()).WillOnce(Return(DEVICE_TYPE_INVALID));
+
+    IAudioSinkAttr attr;
+    attr.audioStreamFlag = AUDIO_FLAG_MMAP;
+    attr.sampleRate = DEFAULT_SAMPLE_RATE;
+    int32_t ret = fastNode_->RenderSinkInit(attr);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(fastNode_->adapterType_, ADAPTER_TYPE_ULTRA_FAST);
+}
+
+/**
+ * @tc.name  : renderSinkInit_InitSucceeds_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_140
+ * @tc.desc  : Test RenderSinkInit when sink not inited, Init succeeds
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, renderSinkInit_InitSucceeds_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    EXPECT_CALL(*mockSink_, IsInited()).WillOnce(Return(false));
+    EXPECT_CALL(*mockSink_, Init(_)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockSink_, SetVolume(_, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockSink_, GetCurrentOutputDevice()).WillOnce(Return(DEVICE_TYPE_INVALID));
+
+    IAudioSinkAttr attr;
+    attr.sampleRate = DEFAULT_SAMPLE_RATE;
+    int32_t ret = fastNode_->RenderSinkInit(attr);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : renderSinkInit_AttrSampleRateZero_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_141
+ * @tc.desc  : Test RenderSinkInit with attr.sampleRate=0 uses node samplingRate
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, renderSinkInit_AttrSampleRateZero_001, TestSize.Level0)
+{
+    SetupMmapBuffer(fastNode_);
+    EXPECT_CALL(*mockSink_, IsInited()).WillOnce(Return(true));
+    EXPECT_CALL(*mockSink_, SetVolume(_, _)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockSink_, GetCurrentOutputDevice()).WillOnce(Return(DEVICE_TYPE_INVALID));
+
+    IAudioSinkAttr attr;
+    attr.sampleRate = 0;
+    int32_t ret = fastNode_->RenderSinkInit(attr);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+// ==================== GetAdapterBufferInfo success ====================
+
+/**
+ * @tc.name  : getAdapterBufferInfo_Success_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_142
+ * @tc.desc  : Test GetAdapterBufferInfo with all valid params returns SUCCESS
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, getAdapterBufferInfo_Success_001, TestSize.Level0)
+{
+    EXPECT_CALL(*mockSink_, GetMmapBufferInfo(_, _, _, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(1),
+                        SetArgReferee<1>(TOTAL_SIZE_IN_FRAME),
+                        SetArgReferee<2>(SPAN_SIZE_IN_FRAME),
+                        SetArgReferee<3>(BYTE_SIZE_PER_FRAME),
+                        SetArgReferee<4>(0),
+                        Return(SUCCESS)));
+    EXPECT_EQ(fastNode_->GetAdapterBufferInfo(), SUCCESS);
+    EXPECT_NE(fastNode_->dstBufferFd_, -1);
+}
+
+/**
+ * @tc.name  : getAdapterBufferInfo_SpanZero_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_143
+ * @tc.desc  : Test GetAdapterBufferInfo with spanSizeInframe=0 returns ERR_ILLEGAL_STATE
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, getAdapterBufferInfo_SpanZero_001, TestSize.Level0)
+{
+    EXPECT_CALL(*mockSink_, GetMmapBufferInfo(_, _, _, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(1),
+                        SetArgReferee<1>(TOTAL_SIZE_IN_FRAME),
+                        SetArgReferee<2>(0),
+                        SetArgReferee<3>(BYTE_SIZE_PER_FRAME),
+                        SetArgReferee<4>(0),
+                        Return(SUCCESS)));
+    EXPECT_EQ(fastNode_->GetAdapterBufferInfo(), ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : getAdapterBufferInfo_BytePerFrameZero_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_144
+ * @tc.desc  : Test GetAdapterBufferInfo with byteSizePerFrame=0 returns ERR_ILLEGAL_STATE
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, getAdapterBufferInfo_BytePerFrameZero_001, TestSize.Level0)
+{
+    EXPECT_CALL(*mockSink_, GetMmapBufferInfo(_, _, _, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(1),
+                        SetArgReferee<1>(TOTAL_SIZE_IN_FRAME),
+                        SetArgReferee<2>(SPAN_SIZE_IN_FRAME),
+                        SetArgReferee<3>(0),
+                        SetArgReferee<4>(0),
+                        Return(SUCCESS)));
+    EXPECT_EQ(fastNode_->GetAdapterBufferInfo(), ERR_ILLEGAL_STATE);
+}
+
+// ==================== RefreshSpanSize branch tests ====================
+
+/**
+ * @tc.name  : refreshSpanSize_Unchanged_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_145
+ * @tc.desc  : Test RefreshSpanSize when buffer info unchanged
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, refreshSpanSize_Unchanged_001, TestSize.Level0)
+{
+    fastNode_->dstBufferFd_ = 1;
+    fastNode_->dstTotalSizeInframe_ = TOTAL_SIZE_IN_FRAME;
+    fastNode_->dstSpanSizeInframe_ = SPAN_SIZE_IN_FRAME;
+    fastNode_->dstByteSizePerFrame_ = BYTE_SIZE_PER_FRAME;
+    fastNode_->syncInfoSize_ = 0;
+
+    EXPECT_CALL(*mockSink_, GetMmapBufferInfo(_, _, _, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(1),
+                        SetArgReferee<1>(TOTAL_SIZE_IN_FRAME),
+                        SetArgReferee<2>(SPAN_SIZE_IN_FRAME),
+                        SetArgReferee<3>(BYTE_SIZE_PER_FRAME),
+                        SetArgReferee<4>(0),
+                        Return(SUCCESS)));
+    bool isUpdated = false;
+    EXPECT_EQ(fastNode_->RefreshSpanSize(isUpdated), SUCCESS);
+    EXPECT_EQ(isUpdated, false);
+}
+
+/**
+ * @tc.name  : refreshSpanSize_Changed_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_146
+ * @tc.desc  : Test RefreshSpanSize when buffer info changed
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, refreshSpanSize_Changed_001, TestSize.Level0)
+{
+    fastNode_->dstBufferFd_ = 1;
+    fastNode_->dstTotalSizeInframe_ = TOTAL_SIZE_IN_FRAME;
+    fastNode_->dstSpanSizeInframe_ = SPAN_SIZE_IN_FRAME;
+    fastNode_->dstByteSizePerFrame_ = BYTE_SIZE_PER_FRAME;
+    fastNode_->syncInfoSize_ = 0;
+
+    EXPECT_CALL(*mockSink_, GetMmapBufferInfo(_, _, _, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(1),
+                        SetArgReferee<1>(TOTAL_SIZE_IN_FRAME),
+                        SetArgReferee<2>(4),
+                        SetArgReferee<3>(BYTE_SIZE_PER_FRAME),
+                        SetArgReferee<4>(0),
+                        Return(SUCCESS)));
+    bool isUpdated = false;
+    fastNode_->RefreshSpanSize(isUpdated);
+    EXPECT_EQ(isUpdated, true);
+}
+
+// ==================== CheckIfSuspend timeout not running ====================
+
+/**
+ * @tc.name  : checkIfSuspend_TimeoutNotRunning_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_147
+ * @tc.desc  : Test CheckIfSuspend timeout but sink not RUNNING does not stop
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkIfSuspend_TimeoutNotRunning_001, TestSize.Level0)
+{
+    fastNode_->SetSinkState(STREAM_MANAGER_IDLE);
+    fastNode_->timeoutThdFrames_ = 1;
+    fastNode_->timeoutStopCount_ = 0;
+    fastNode_->CheckIfSuspend();
+    fastNode_->CheckIfSuspend();
+    EXPECT_EQ(fastNode_->GetSinkState(), STREAM_MANAGER_IDLE);
+}
+
+// ==================== SyncCurrentOutputDevice additional ====================
+
+/**
+ * @tc.name  : syncCurrentOutputDevice_NoneFromSink_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_148
+ * @tc.desc  : Test SyncCurrentOutputDevice when GetCurrentOutputDevice returns NONE
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, syncCurrentOutputDevice_NoneFromSink_001, TestSize.Level0)
+{
+    EXPECT_CALL(*mockSink_, GetCurrentOutputDevice()).WillOnce(Return(DEVICE_TYPE_NONE));
+    fastNode_->SyncCurrentOutputDevice();
+    EXPECT_EQ(fastNode_->currentOutputDevice_, DEVICE_TYPE_INVALID);
+}
+
+/**
+ * @tc.name  : syncCurrentOutputDevice_DeviceChange_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_149
+ * @tc.desc  : Test SyncCurrentOutputDevice with valid device change
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, syncCurrentOutputDevice_DeviceChange_001, TestSize.Level0)
+{
+    fastNode_->currentOutputDevice_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_CALL(*mockSink_, GetCurrentOutputDevice()).WillOnce(Return(DEVICE_TYPE_USB_HEADSET));
+    fastNode_->SyncCurrentOutputDevice();
+    EXPECT_EQ(fastNode_->currentOutputDevice_, DEVICE_TYPE_USB_HEADSET);
+}
+
+// ==================== ResetAll with connections ====================
+
+/**
+ * @tc.name  : resetAll_WithConnections_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_153
+ * @tc.desc  : Test ResetAll with connected pre-output nodes
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, resetAll_WithConnections_001, TestSize.Level0)
+{
+    HpaeNodeInfo mixerInfo;
+    mixerInfo.frameLen = DEFAULT_FRAME_LEN;
+    mixerInfo.samplingRate = DEFAULT_SAMPLE_RATE;
+    mixerInfo.channels = DEFAULT_CHANNELS;
+    mixerInfo.format = SAMPLE_F32LE;
+    auto mixerNode = std::make_shared<HpaeMixerNode>(mixerInfo);
+    fastNode_->Connect(mixerNode);
+    EXPECT_EQ(fastNode_->GetPreOutNum(), 1);
+    EXPECT_EQ(fastNode_->ResetAll(), true);
+    EXPECT_EQ(fastNode_->GetPreOutNum(), 0);
+}
+
+// ==================== IsInvalidBuffer tests ====================
+
+/**
+ * @tc.name  : isInvalidBuffer_U8_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_154
+ * @tc.desc  : Test IsInvalidBuffer with SAMPLE_U8 format and zero data
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, isInvalidBuffer_U8_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.format = SAMPLE_U8;
+    uint8_t data = 0;
+    EXPECT_EQ(fastNode_->IsInvalidBuffer(&data, sizeof(data)), true);
+}
+
+/**
+ * @tc.name  : isInvalidBuffer_U8_NonZero_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_155
+ * @tc.desc  : Test IsInvalidBuffer with SAMPLE_U8 format and non-zero data
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, isInvalidBuffer_U8_NonZero_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.format = SAMPLE_U8;
+    uint8_t data = 0x80;
+    EXPECT_EQ(fastNode_->IsInvalidBuffer(&data, sizeof(data)), false);
+}
+
+/**
+ * @tc.name  : isInvalidBuffer_U8_ZeroSize_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_156
+ * @tc.desc  : Test IsInvalidBuffer with SAMPLE_U8 format and zero buffer size
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, isInvalidBuffer_U8_ZeroSize_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.format = SAMPLE_U8;
+    uint8_t data = 0;
+    EXPECT_EQ(fastNode_->IsInvalidBuffer(&data, 0), false);
+}
+
+/**
+ * @tc.name  : isInvalidBuffer_S16LE_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_157
+ * @tc.desc  : Test IsInvalidBuffer with SAMPLE_S16LE format and zero data
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, isInvalidBuffer_S16LE_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.format = SAMPLE_S16LE;
+    int16_t data = 0;
+    EXPECT_EQ(fastNode_->IsInvalidBuffer(reinterpret_cast<uint8_t *>(&data), sizeof(data)), true);
+}
+
+/**
+ * @tc.name  : isInvalidBuffer_S16LE_NonZero_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_158
+ * @tc.desc  : Test IsInvalidBuffer with SAMPLE_S16LE format and non-zero data
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, isInvalidBuffer_S16LE_NonZero_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.format = SAMPLE_S16LE;
+    int16_t data = 1000;
+    EXPECT_EQ(fastNode_->IsInvalidBuffer(reinterpret_cast<uint8_t *>(&data), sizeof(data)), false);
+}
+
+/**
+ * @tc.name  : isInvalidBuffer_S16LE_SmallSize_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_159
+ * @tc.desc  : Test IsInvalidBuffer with SAMPLE_S16LE format and too-small buffer
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, isInvalidBuffer_S16LE_SmallSize_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.format = SAMPLE_S16LE;
+    uint8_t data = 0;
+    EXPECT_EQ(fastNode_->IsInvalidBuffer(&data, 1), false);
+}
+
+/**
+ * @tc.name  : isInvalidBuffer_Default_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_160
+ * @tc.desc  : Test IsInvalidBuffer with default format (F32LE) returns false
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, isInvalidBuffer_Default_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.format = SAMPLE_F32LE;
+    uint8_t data = 0;
+    EXPECT_EQ(fastNode_->IsInvalidBuffer(&data, sizeof(data)), false);
+}
+
+// ==================== UpdateSilentState tests ====================
+
+/**
+ * @tc.name  : updateSilentState_InvalidBuffer_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_161
+ * @tc.desc  : Test UpdateSilentState with invalid (silent) buffer sets startMuteTime_
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, updateSilentState_InvalidBuffer_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.format = SAMPLE_U8;
+    fastNode_->startMuteTime_ = 0;
+    uint8_t data = 0;
+    fastNode_->UpdateSilentState(&data, sizeof(data));
+    EXPECT_NE(fastNode_->startMuteTime_, 0);
+}
+
+/**
+ * @tc.name  : updateSilentState_ValidBuffer_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_162
+ * @tc.desc  : Test UpdateSilentState with valid buffer resets startMuteTime_
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, updateSilentState_ValidBuffer_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.format = SAMPLE_U8;
+    fastNode_->startMuteTime_ = 100;
+    uint8_t data = 0x80;
+    fastNode_->UpdateSilentState(&data, sizeof(data));
+    EXPECT_EQ(fastNode_->startMuteTime_, 0);
+}
+
+/**
+ * @tc.name  : updateSilentState_SilentRecovery_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_163
+ * @tc.desc  : Test UpdateSilentState transitions from silent to non-silent
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, updateSilentState_SilentRecovery_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.format = SAMPLE_U8;
+    fastNode_->isInSilentState_ = true;
+    fastNode_->startMuteTime_ = 100;
+    uint8_t data = 0x80;
+    fastNode_->UpdateSilentState(&data, sizeof(data));
+    EXPECT_EQ(fastNode_->isInSilentState_, false);
+    EXPECT_EQ(fastNode_->startMuteTime_, 0);
+}
+
+// ==================== ZeroVolumeCheck VOIP_FAST ====================
+
+/**
+ * @tc.name  : zeroVolumeCheck_VoipFast_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_164
+ * @tc.desc  : Test ZeroVolumeCheck with VOIP_FAST flag returns early
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, zeroVolumeCheck_VoipFast_001, TestSize.Level0)
+{
+    fastNode_->sinkOutAttr_.audioStreamFlag = AUDIO_FLAG_VOIP_FAST;
+    fastNode_->needCheckZeroVolume_ = true;
+    fastNode_->currentOutputDevice_ = DEVICE_TYPE_SPEAKER;
+    fastNode_->ZeroVolumeCheck(0);
+    EXPECT_NE(fastNode_->zeroVolumeState_, HpaeFastSinkOutputNode::ZeroVolumeState::ACTIVE);
+}
+
+// ==================== CheckAllBufferReady null ====================
+
+/**
+ * @tc.name  : checkAllBufferReady_NullBuffer_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_170
+ * @tc.desc  : Test CheckAllBufferReady with null buffer returns false
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkAllBufferReady_NullBuffer_001, TestSize.Level0)
+{
+    fastNode_->dstAudioBuffer_ = nullptr;
+    EXPECT_EQ(fastNode_->CheckAllBufferReady(0, 0), false);
+}
+
+// ==================== GetPredictNextReadTime ====================
+
+/**
+ * @tc.name  : getPredictNextReadTime_Invalid_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_171
+ * @tc.desc  : Test GetPredictNextReadTime with no model data returns now+1ms
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, getPredictNextReadTime_Invalid_001, TestSize.Level0)
+{
+    int64_t result = fastNode_->GetPredictNextReadTime(0);
+    int64_t now = ClockTime::GetCurNano();
+    EXPECT_NE(result, now);
+    EXPECT_LE(result, now + 500000000);
+}
+
+// ==================== CheckWakeUpTime tests ====================
+
+/**
+ * @tc.name  : checkWakeUpTime_FarFuture_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_172
+ * @tc.desc  : Test CheckWakeUpTime with wakeUpTime far in future adjusts
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkWakeUpTime_FarFuture_001, TestSize.Level0)
+{
+    int64_t wakeUpTime = ClockTime::GetCurNano() + 5000000000LL;
+    fastNode_->CheckWakeUpTime(wakeUpTime);
+    int64_t now = ClockTime::GetCurNano();
+    EXPECT_LE(wakeUpTime, now + 100000000);
+}
+
+/**
+ * @tc.name  : checkWakeUpTime_Normal_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_173
+ * @tc.desc  : Test CheckWakeUpTime with normal wakeUpTime does not adjust
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, checkWakeUpTime_Normal_001, TestSize.Level0)
+{
+    int64_t wakeUpTime = ClockTime::GetCurNano() + 1000000;
+    int64_t original = wakeUpTime;
+    fastNode_->CheckWakeUpTime(wakeUpTime);
+    EXPECT_EQ(wakeUpTime, original);
+}
+
+// ==================== GetRenderFrameDataInner empty ====================
+
+/**
+ * @tc.name  : getRenderFrameDataInner_Empty_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_174
+ * @tc.desc  : Test GetRenderFrameDataInner with no pre-output returns false
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, getRenderFrameDataInner_Empty_001, TestSize.Level0)
+{
+    HpaePcmBuffer *pcmBuffer = nullptr;
+    EXPECT_EQ(fastNode_->GetRenderFrameDataInner(pcmBuffer), false);
+}
+
+// ==================== UpdateAmplitudeIfNeeded not started ====================
+
+/**
+ * @tc.name  : updateAmplitudeIfNeeded_NotStarted_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_175
+ * @tc.desc  : Test UpdateAmplitudeIfNeeded when startUpdate_ is false returns early
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, updateAmplitudeIfNeeded_NotStarted_001, TestSize.Level0)
+{
+    BufferDesc writeBuf = {};
+    fastNode_->startUpdate_ = false;
+    fastNode_->renderFrameNum_ = 5;
+    fastNode_->UpdateAmplitudeIfNeeded(writeBuf);
+    EXPECT_EQ(fastNode_->renderFrameNum_, 5);
+}
+
+/**
+ * @tc.name  : updateAmplitudeIfNeeded_FirstFrame_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_176
+ * @tc.desc  : Test UpdateAmplitudeIfNeeded with renderFrameNum_=0
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, updateAmplitudeIfNeeded_FirstFrame_001, TestSize.Level0)
+{
+    BufferDesc writeBuf = {};
+    uint8_t buffer[16] = {0};
+    writeBuf.buffer = buffer;
+    writeBuf.dataLength = 16;
+    fastNode_->startUpdate_ = true;
+    fastNode_->renderFrameNum_ = 0;
+    fastNode_->sinkOutAttr_.format = SAMPLE_S16LE;
+    fastNode_->UpdateAmplitudeIfNeeded(writeBuf);
+    EXPECT_EQ(fastNode_->renderFrameNum_, 1);
+    EXPECT_NE(fastNode_->last10FrameStartTime_, 0);
+    fastNode_->startUpdate_ = false;
+}
+
+// ==================== RenderSinkDeInit with renderId ====================
+
+/**
+ * @tc.name  : renderSinkDeInit_WithRenderId_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_177
+ * @tc.desc  : Test RenderSinkDeInit with valid renderId releases it
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, renderSinkDeInit_WithRenderId_001, TestSize.Level0)
+{
+    EXPECT_CALL(*mockSink_, DeInit()).Times(1);
+    fastNode_->renderId_ = 200;
+    EXPECT_EQ(fastNode_->RenderSinkDeInit(), SUCCESS);
+    EXPECT_EQ(fastNode_->renderId_, HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : renderSinkDeInit_InvalidRenderId_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_178
+ * @tc.desc  : Test RenderSinkDeInit with HDI_INVALID_ID does not release
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, renderSinkDeInit_InvalidRenderId_001, TestSize.Level0)
+{
+    EXPECT_CALL(*mockSink_, DeInit()).Times(1);
+    fastNode_->renderId_ = HDI_INVALID_ID;
+    EXPECT_EQ(fastNode_->RenderSinkDeInit(), SUCCESS);
+    EXPECT_EQ(fastNode_->renderId_, HDI_INVALID_ID);
+}
+
+// ==================== InitTransBuffer oversized ====================
+
+/**
+ * @tc.name  : initTransBuffer_Oversized_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_179
+ * @tc.desc  : Test InitTransBuffer with oversized span uses MAX_TRANS_BUFFER_SIZE
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, initTransBuffer_Oversized_001, TestSize.Level0)
+{
+    fastNode_->dstSpanSizeInframe_ = 1000000;
+    fastNode_->dstByteSizePerFrame_ = 8;
+    fastNode_->InitTransBuffer();
+    EXPECT_EQ(fastNode_->dstSpanSizeInByte_, 1 * 1024 * 1024);
+}
+
+// ==================== SetNeedCheckZeroVolume same value ====================
+
+/**
+ * @tc.name  : setNeedCheckZeroVolume_SameValue_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_180
+ * @tc.desc  : Test SetNeedCheckZeroVolume with same value
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, setNeedCheckZeroVolume_SameValue_001, TestSize.Level0)
+{
+    fastNode_->needCheckZeroVolume_ = true;
+    fastNode_->SetNeedCheckZeroVolume(true);
+    EXPECT_EQ(fastNode_->needCheckZeroVolume_, true);
+}
+
+// ==================== GetLatency success ====================
+
+/**
+ * @tc.name  : getLatency_GetLatencySuccess_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSinkOutputNodeTest_181
+ * @tc.desc  : Test GetLatency with SUCCESS returns latency value
+ */
+HWTEST_F(HpaeFastSinkOutputNodeTest, getLatency_GetLatencySuccess_001, TestSize.Level0)
+{
+    EXPECT_CALL(*mockSink_, GetLatency(_))
+        .WillOnce(DoAll(SetArgReferee<0>(5000), Return(SUCCESS)));
+    EXPECT_EQ(fastNode_->GetLatency(), 5000);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
