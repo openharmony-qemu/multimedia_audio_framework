@@ -782,13 +782,13 @@ int32_t RemoteDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteN
             source.ext.device.type = AudioPortPin::PIN_IN_HS_MIC;
             source.ext.device.desc = "pin_in_hs_mic";
             break;
-        case DEVICE_TYPE_USB_HEADSET:
-            source.ext.device.type = AudioPortPin::PIN_IN_USB_EXT;
-            source.ext.device.desc = "pin_in_usb_ext";
-            break;
         case DEVICE_TYPE_LINE_DIGITAL:
             source.ext.device.type = AudioPortPin::PIN_IN_LINEIN;
             source.ext.device.desc = "pin_in_linein";
+            break;
+        case DEVICE_TYPE_USB_HEADSET:
+            source.ext.device.type = AudioPortPin::PIN_IN_USB_EXT;
+            source.ext.device.desc = "pin_in_usb_ext";
             break;
         default:
             ret = ERR_NOT_SUPPORTED;

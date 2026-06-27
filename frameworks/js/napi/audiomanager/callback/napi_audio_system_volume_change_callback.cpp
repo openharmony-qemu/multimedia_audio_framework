@@ -145,9 +145,10 @@ void NapiAudioSystemVolumeChangeCallback::SystemVolumeChangeTsfnFinalize(napi_en
     AUDIO_INFO_LOG("SystemVolumeChangeTsfnFinalize: CleanUp is removed.");
     NapiAudioSystemVolumeChangeCallback *context = reinterpret_cast<NapiAudioSystemVolumeChangeCallback*>(data);
     napi_remove_env_cleanup_hook(env, NapiAudioSystemVolumeChangeCallback::CleanUp, context);
-    if (context->GetTsfn() != nullptr) {
+    if (context != nullptr && context->GetTsfn() != nullptr) {
         AUDIO_INFO_LOG("SystemVolumeChangeTsfnFinalize: context is released.");
         delete context;
+        context = nullptr;
     }
 }
 

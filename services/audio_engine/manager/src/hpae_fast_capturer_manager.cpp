@@ -216,7 +216,16 @@ int32_t HpaeFastCapturerManager::InitCapturerManager()
     isInit_.store(true);
     mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     mixerNode_->Connect(sourceInputNode_);
+    WarmUpCapturer();
     return SUCCESS;
+}
+
+void HpaeFastCapturerManager::WarmUpCapturer()
+{
+    // Creating without Start/Stop will result in residual mmap buffer (affecting other recording channels)
+    // and power consumption issues.
+    sourceInputNode_->CapturerSourceStart();
+    sourceInputNode_->CapturerSourceStop();
 }
 
 int32_t HpaeFastCapturerManager::Init(bool isReload)

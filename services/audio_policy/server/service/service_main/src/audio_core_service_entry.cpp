@@ -834,6 +834,21 @@ int32_t AudioCoreService::EventEntry::NotifyStreamStandbyResume(int32_t pid, uin
     return coreService->NotifyStreamStandbyResume(pid, streamId);
 }
 
+// EventEntry proxy method: notify silent state change
+void AudioCoreService::EventEntry::NotifySilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifySilentStateChange(sessionId, isSilent);
+}
+
+void AudioCoreService::EventEntry::NotifyDataTransSilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifyDataTransSilentStateChange(sessionId, isSilent);
+}
+
 int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bool mute)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);

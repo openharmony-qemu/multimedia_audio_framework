@@ -2459,7 +2459,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SetClientCallbacksEnable_ClearDedupCach
     auto handler = std::make_shared<AudioPolicyServerHandler>();
     ASSERT_NE(handler, nullptr);
 
-    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t clientPid = getpid();
     int32_t uid = TEST_UID;
     StreamUsage streamUsage = TEST_STREAM_USAGE;
     auto devices = CreateTestDeviceList({{DEVICE_TYPE_SPEAKER, TEST_MAC_ADDRESS_1}});
@@ -2492,7 +2492,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SetClientCallbacksEnable_ClearDedupCach
     auto handler = std::make_shared<AudioPolicyServerHandler>();
     ASSERT_NE(handler, nullptr);
 
-    int32_t clientPid = TEST_CLIENT_PID;
+    int32_t clientPid = getpid();
     int32_t uid = TEST_UID;
     SourceType sourceType = TEST_SOURCE_TYPE;
     auto devices = CreateTestDeviceList({{DEVICE_TYPE_MIC, TEST_MAC_ADDRESS_1}});

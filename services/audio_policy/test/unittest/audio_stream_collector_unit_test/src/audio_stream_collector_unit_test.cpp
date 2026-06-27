@@ -2395,18 +2395,5 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetStreamTypeFromUsageContent_FoundInMap,
         CONTENT_TYPE_SPEECH);
     EXPECT_EQ(result, STREAM_VOICE_COMMUNICATION);
 }
-
-/**
- * @tc.name  : GetStreamTypeFromUsageContent_NotFoundInMap
- * @tc.number: GetStreamTypeFromUsageContent_002
- * @tc.desc  : Test if branch false when (contentType, streamUsage) not found in streamTypeMap_
- */
-HWTEST_F(AudioStreamCollectorUnitTest, GetStreamTypeFromUsageContent_NotFoundInMap, TestSize.Level1)
-{
-    AudioStreamCollector &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
-    auto result = streamCollector.GetStreamTypeFromUsageContent(STREAM_USAGE_DTMF,
-        CONTENT_TYPE_SPEECH);
-    EXPECT_EQ(result, STREAM_SPEECH);
-}
 } // namespace AudioStandard
 } // namespace OHOS

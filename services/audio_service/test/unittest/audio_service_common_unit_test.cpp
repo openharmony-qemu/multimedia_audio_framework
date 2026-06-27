@@ -127,7 +127,7 @@ HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_002, TestSize.Level1)
 
     frame = 40;
     nanoTime = 50;
-    g_linearPosTimeModel->UpdataFrameStamp(frame, nanoTime);
+    g_linearPosTimeModel->UpdateFrameStamp(frame, nanoTime);
 
     retPos = g_linearPosTimeModel->GetTimeOfPos(posInFrame);
     deltaFrame = frame - posInFrame;

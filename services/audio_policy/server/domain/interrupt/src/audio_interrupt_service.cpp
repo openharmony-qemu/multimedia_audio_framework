@@ -432,8 +432,6 @@ int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, cons
 
     // audio session v2
     if (HasAudioSessionFakeInterrupt(zoneId, callerPid)) {
-        RemovePidSuggestionRecord(callerPid);
-
         bool registerCallbackFlag = false;
         bool activatedRegisterCallbackFlag = false;
         sessionService_.GetStateChangeCallbackFlag(callerPid, registerCallbackFlag, activatedRegisterCallbackFlag);
@@ -1442,7 +1440,7 @@ AudioInterruptResult AudioInterruptService::DeactivateAudioInterrupt(const int32
     if (interruptDfx_ != nullptr) {
         interruptDfx_->CheckInterruptEvent(currAudioInterrupt.streamId);
     }
-    RemoveStreamIdSuggestionRecord(currAudioInterrupt.streamId);
+
     DeactivateAudioInterruptInternal(zoneId, currAudioInterrupt);
 
     if (isRemoveFocusHis) {
@@ -3013,6 +3011,11 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         AUDIO_DEBUG_LOG("stream (streamId %{public}u) is not active now", audioInterrupt.streamId);
         return;
     }
+    if (audioInterrupt.isAudioSessionInterrupt) {
+        RemovePidSuggestionRecord(audioInterrupt.pid);
+    } else {
+        RemoveStreamIdSuggestionRecord(audioInterrupt.streamId);
+    }
     DeactivateAudioInterruptInternalContinue(zoneId, isSessionTimeout);
     return;
 }
@@ -3243,11 +3246,8 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
     dfxBuilder.WriteActionMsg(infoIdx, effectIdx, stage);
     dfxCollector_->AddDfxMsg(audioInterrupt.streamId, dfxBuilder.GetResult());
 
-    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE) {
-        RemoveStreamIdSuggestionRecord(streamId);
-    } else if (interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+    if (interruptEvent.hintType == INTERRUPT_HINT_STOP) {
         muteAudioFocus_.erase(streamId);
-        RemoveStreamIdSuggestionRecord(streamId);
     }
 
     if ((interruptEvent.hintType == INTERRUPT_HINT_MUTE || interruptEvent.hintType == INTERRUPT_HINT_UNMUTE)) {
@@ -3276,8 +3276,14 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
     }
     if (audioInterrupt.isAudioSessionInterrupt) {
         SendAudioSessionInterruptEventCallback(interruptEvent, audioInterrupt);
+        if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+            RemovePidSuggestionRecord(audioInterrupt.pid);
+        }
     } else {
         handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, streamId);
+        if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+            RemoveStreamIdSuggestionRecord(streamId);
+        }
     }
 }
 

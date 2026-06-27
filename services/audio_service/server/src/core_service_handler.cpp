@@ -233,5 +233,12 @@ void CoreServiceHandler::NotifyDeviceStateChange(const std::string &networkId, D
     CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr");
     iCoreServiceProvider_->NotifyDeviceStateChange(networkId, static_cast<int32_t>(role), isAvailable);
 }
+
+// Notify silent state change
+void CoreServiceHandler::NotifySilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr");
+    iCoreServiceProvider_->NotifySilentStateChange(sessionId, isSilent);
+}
 } // namespace AudioStandard
 } // namespace OHOS

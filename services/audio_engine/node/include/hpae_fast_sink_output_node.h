@@ -111,6 +111,7 @@ private:
     void InitTransBuffer();
     void InitAudiobuffer(bool resetReadWritePos);
     void AsyncGetPosTime();
+    void UpdateVirtualDeviceHandleInfo();
     void StopUpdateThread();
     bool TriggerPrepareNextLoop();
     bool TriggerPrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);

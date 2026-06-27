@@ -71,4 +71,6 @@ interface ICoreServiceProviderIpc {
     void NotifyStreamStandbyResume([in] int pid, [in] unsigned int streamId, [out] int ret);
     void IsSupportIndependentPipe([out] boolean support);
     [oneway] void NotifyDeviceStateChange([in] String networkId, [in] int role, [in] boolean isAvailable);
+    // Notify silent state change
+    void NotifySilentStateChange([in] unsigned int sessionId, [in] boolean isSilent);
 }

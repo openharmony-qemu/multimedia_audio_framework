@@ -27,6 +27,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
+constexpr int32_t AUDIO_UID = 1041;
+
 SafeVolumeEventSubscriber::SafeVolumeEventSubscriber()
 {
 }
@@ -62,6 +64,7 @@ void SafeVolumeEventSubscriber::SubscribeSafeVolumeEvent()
     matchingSkills.AddEvent(AUDIO_INCREASE_VOLUME_EVENT);
     matchingSkills.AddEvent(AUDIO_LEGACY_HIGH_VOLUME_EVENT);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
+    subscribeInfo.SetPublisherUid(AUDIO_UID);
     auto commonSubscribePtr = std::make_shared<SafeVolumeEventHandler>(subscribeInfo,
         [](const EventFwk::CommonEventData& eventData) {
             AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);

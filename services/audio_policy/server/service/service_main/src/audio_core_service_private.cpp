@@ -765,7 +765,7 @@ int32_t AudioCoreService::SetSplitModeReady()
 {
     AUDIO_INFO_LOG("SetSplitModeReady");
     int32_t setRet = AudioRouterCenter::GetAudioRouterCenter().SetSplitModeReady();
-    CHECK_AND_RETURN_RET_LOG(setRet != 0, setRet, "SetSplitModeReady failed");
+    CHECK_AND_RETURN_RET_LOG(setRet == 0, setRet, "SetSplitModeReady failed");
     FetchOutputDeviceAndRoute("SetSplitModeReady");
     return SUCCESS;
 }
@@ -2028,6 +2028,8 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
             AudioPolicyUtils::GetInstance().GetSinkName(*streamDesc->newDeviceDescs_.front(), sessionId) !=
             AudioPolicyUtils::GetInstance().GetSinkName(*streamDesc->newDeviceDescs_.back(), sessionId)) {
             AUDIO_INFO_LOG("set dual hal tone, reset primary sink to default before.");
+            audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG,
+                pipeManager_->QueryPipeIdBySessionId(sessionId));
             if (enableDualHalToneState_ && enableDualHalToneSessionId_ != sessionId) {
                 AUDIO_INFO_LOG("sesion changed, disable old dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);

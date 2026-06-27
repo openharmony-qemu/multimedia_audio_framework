@@ -101,6 +101,12 @@ public:
     void PauseClient(uint32_t sessionId);
     void StandbyClient(uint32_t sessionId);
     void ClearStandbyFlag(uint32_t sessionId);
+    // Set mute silent flag, return whether isSilent_ changed
+    bool SetMuteSilentState(uint32_t sessionId, bool isMuteSilent);
+    // Set data transfer silent flag, return whether isSilent_ changed
+    bool SetDataTransSilentState(uint32_t sessionId, bool isDataTransSilent);
+    // Check whether stream is silent (isSilent_)
+    bool IsStreamSilent(uint32_t sessionId);
     void StopClient(uint32_t sessionId);
     void RemoveClient(uint32_t sessionId);
 

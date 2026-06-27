@@ -15,13 +15,13 @@
 
 #ifndef AUDIO_VOLUME_UTILS_UNIT_TEST_H
 #define AUDIO_VOLUME_UTILS_UNIT_TEST_H
- 
+
 #include "gtest/gtest.h"
 #include "audio_volume_utils.h"
- 
+
 namespace OHOS {
 namespace AudioStandard {
- 
+
 class AudioVolumeUtilsUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
@@ -35,4 +35,4 @@ public:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_VOLUME_UTILS_UNIT_TEST_H
+#endif //AUDIO_VOLUME_UTILS_UNIT_TEST_H

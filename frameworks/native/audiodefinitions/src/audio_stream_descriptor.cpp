@@ -92,6 +92,9 @@ AudioStreamDescriptor::AudioStreamDescriptor(const std::shared_ptr<AudioStreamDe
     micInStreamInfo_ = streamDescriptor->micInStreamInfo_;
     ecStreamInfo_ = streamDescriptor->ecStreamInfo_;
     ultraFastFlag_ = streamDescriptor->ultraFastFlag_;
+    isMuteSilent_ = streamDescriptor->isMuteSilent_.load();
+    isDataTransSilent_ = streamDescriptor->isDataTransSilent_.load();
+    isSilent_ = streamDescriptor->isSilent_.load();
 }
 
 void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
@@ -118,6 +121,9 @@ void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
     streamDesc.micInStreamInfo_ = micInStreamInfo_;
     streamDesc.ecStreamInfo_ = ecStreamInfo_;
     streamDesc.ultraFastFlag_ = ultraFastFlag_;
+    streamDesc.isMuteSilent_ = isMuteSilent_.load();
+    streamDesc.isDataTransSilent_ = isDataTransSilent_.load();
+    streamDesc.isSilent_ = isSilent_.load();
 }
 
 bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const

@@ -94,9 +94,9 @@ bool Serializer<AudioSpaceRenderPositionParams>::Deserialize(const std::string& 
         return false;
     }
     
-    float x;
-    float y;
-    float z;
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
     if (!StringConverterFloat(tokens[PARAM_INDEX_0], x) ||
         !StringConverterFloat(tokens[PARAM_INDEX_1], y) ||
         !StringConverterFloat(tokens[PARAM_INDEX_2], z)) {
@@ -127,11 +127,11 @@ bool Serializer<AudioSpaceRenderRotationParams>::Deserialize(const std::string& 
         return false;
     }
     
-    float x;
-    float y;
-    float z;
-    int32_t surroundTime;
-    int32_t directionInt;
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    int32_t surroundTime = 0;
+    int32_t directionInt = 0;
     if (!StringConverterFloat(tokens[PARAM_INDEX_0], x) ||
         !StringConverterFloat(tokens[PARAM_INDEX_1], y) ||
         !StringConverterFloat(tokens[PARAM_INDEX_2], z) ||
@@ -164,8 +164,8 @@ bool Serializer<AudioSpaceRenderExtensionParams>::Deserialize(const std::string&
         return false;
     }
     
-    float extRadius;
-    int32_t extAngle;
+    float extRadius = 0.0f;
+    int32_t extAngle = 0;
     if (!StringConverterFloat(tokens[PARAM_INDEX_0], extRadius) ||
         !StringConverter(tokens[PARAM_INDEX_1], extAngle)) {
         AUDIO_ERR_LOG("Failed to convert extension parameters");
@@ -191,8 +191,8 @@ bool Serializer<TempoPitchParams>::Deserialize(const std::string& str, TempoPitc
         return false;
     }
     
-    float speed;
-    float pitch;
+    float speed = 0.0f;
+    float pitch = 0.0f;
     if (!StringConverterFloat(tokens[PARAM_INDEX_0], speed) ||
         !StringConverterFloat(tokens[PARAM_INDEX_1], pitch)) {
         AUDIO_ERR_LOG("Failed to convert tempo/pitch parameters");
@@ -221,8 +221,8 @@ bool Serializer<AudioPureVoiceChangeOption>::Deserialize(const std::string& str,
         return false;
     }
     
-    int32_t genderInt;
-    int32_t typeInt;
+    int32_t genderInt = 0;
+    int32_t typeInt = 0;
     if (!StringConverter(tokens[PARAM_INDEX_0], genderInt) ||
         !StringConverter(tokens[PARAM_INDEX_1], typeInt)) {
         AUDIO_ERR_LOG("Failed to convert gender or type parameters");
@@ -251,7 +251,7 @@ std::string Serializer<AudioGeneralVoiceChangeType>::Serialize(const AudioGenera
 bool Serializer<AudioGeneralVoiceChangeType>::Deserialize(const std::string& str,
     AudioGeneralVoiceChangeType& param)
 {
-    int32_t value;
+    int32_t value = 0;
     if (!StringConverter(str, value)) {
         AUDIO_ERR_LOG("Failed to convert GeneralVoiceChange type parameter");
         return false;

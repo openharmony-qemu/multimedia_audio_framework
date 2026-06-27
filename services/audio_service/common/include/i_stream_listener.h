@@ -22,7 +22,6 @@ enum Operation : int32_t {
     START_STREAM = 0,
     PAUSE_STREAM,
     STOP_STREAM,
-    UPDATE_SPANSIZE,
     RELEASE_STREAM,
     FLUSH_STREAM,
     DRAIN_STREAM,
@@ -35,6 +34,7 @@ enum Operation : int32_t {
     DATA_LINK_CONNECTED,
     RESTORE_SESSION,
     USER_PRIVACY_AUTHORITY,
+    UPDATE_SPANSIZE,
     SENSITIVE_RECORD_PERMIT,
     MAX_OPERATION_CODE // in plan add underrun overflow
 };

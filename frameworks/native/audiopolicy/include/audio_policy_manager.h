@@ -94,7 +94,7 @@ public:
     float GetSingleStreamVolume(int32_t streamId);
 
     int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t volumeFlag = 0);
 
     bool GetStreamMute(AudioVolumeType volumeType);
 

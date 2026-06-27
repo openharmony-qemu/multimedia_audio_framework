@@ -66,6 +66,9 @@ static const int32_t REFETCH_DEVICE = 4;
 static const int64_t RING_DUAL_END_DELAY_US = 100000;
 static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
+static constexpr int32_t CHECK_ALL_RENDER_UID = -1;
+constexpr int64_t RENDER_DETECTION_CYCLE_NS = 10000000000;
+constexpr int32_t RENDER_BAD_FRAMES_RATIO = 100;
 static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
 static const std::string PIPE_PRIMARY_INPUT_VOICE_RECOGNITION = "primary_input_voice_recognition";
@@ -477,11 +480,22 @@ std::shared_ptr<AudioCoreService::EventEntry> AudioCoreService::GetEventEntry()
 void AudioCoreService::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
 {
     asyncHandler_ = handler;
+    if (asyncHandler_ != nullptr) {
+        asyncHandler_->PostAsyncAction({
+            .action = std::make_shared<RegisterSilentStreamCallbackAction>(asyncHandler_, eventEntry_),
+            .priority = AsyncActionHandler::ActionPriority::IMMEDIATE
+    });
+    }
 }
 
 std::shared_ptr<AsyncActionHandler> AudioCoreService::GetAsyncActionHandler() const
 {
     return asyncHandler_;
+}
+
+std::shared_ptr<AudioPipeManager> AudioCoreService::GetPipeManager() const
+{
+    return pipeManager_;
 }
 
 void AudioCoreService::DumpPipeManager(std::string &dumpString)
@@ -1468,6 +1482,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg op
     ForceStopInterphoneStreamsIfNecessary(streamDesc);
     CheckAndSleepBeforeRingDeviceSet(streamDesc);
     pipeManager_->StartClient(sessionId);
+    // Update all wireless devices silent state after stream started
+    audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
     CHECK_AND_CALL_FUNC_RETURN_RET(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[StartClient]newDeviceDescs_ is empty"));
     // [Capturer NOTE 1.0] be careful device may be changed.
@@ -1544,6 +1560,7 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
     }
     ForceRemoveSleStreamType(streamDesc);
 
+    audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
     CheckScoState(streamDesc, false);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         HandlePlaybackStoppingOperations(streamDesc, "PauseClient");
@@ -1605,6 +1622,94 @@ int32_t AudioCoreService::NotifyStreamStandbyResume(int32_t pid, uint32_t stream
     return interruptService_->NotifyStreamStandbyResume(pid, streamId);
 }
 
+// Notify silent state change, update stream silent flag and all wireless devices silent state
+void AudioCoreService::NotifySilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+    bool isSilentChanged = pipeManager_->SetMuteSilentState(sessionId, isSilent);
+    // Update device only when isSilent_ state changed
+    if (isSilentChanged) {
+        AUDIO_INFO_LOG("NotifySilentStateChange: session %{public}u, isSilent %{public}d", sessionId, isSilent);
+        audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
+        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+        TriggerFetchDevice(reason);
+    }
+}
+
+void AudioCoreService::NotifyDataTransSilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+    bool isSilentChanged = pipeManager_->SetDataTransSilentState(sessionId, isSilent);
+    // Update device only when isSilent_ state changed
+    if (isSilentChanged) {
+        AUDIO_INFO_LOG("NotifyDataTransSilentStateChange: session %{public}u, isSilent %{public}d",
+            sessionId, isSilent);
+        audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
+        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+        TriggerFetchDevice(reason);
+    }
+}
+
+void SilentStreamDataTransferCallback::OnDataTransferStateChange(const int32_t &callbackId,
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "asyncHandler_ is nullptr");
+    bool isDataTransSilent = (info.stateChangeType == DATA_TRANS_STOP);
+    asyncHandler_->PostAsyncAction({
+        .action = std::make_shared<NotifyDataTransSilentStateAction>(info.sessionId, isDataTransSilent),
+        .priority = AsyncActionHandler::ActionPriority::IMMEDIATE
+    });
+}
+
+void SilentStreamDataTransferCallback::OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
+    const uint32_t &sessionId, const bool &isMuted)
+{
+    CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "asyncHandler_ is nullptr");
+    asyncHandler_->PostAsyncAction({
+        .action = std::make_shared<NotifyMuteSilentStateAction>(sessionId, isMuted),
+        .priority = AsyncActionHandler::ActionPriority::IMMEDIATE
+    });
+}
+
+void RegisterSilentStreamCallbackAction::Exec()
+{
+    auto callback = std::make_shared<SilentStreamDataTransferCallback>(asyncHandler_, eventEntry_);
+    sptr<SilentStreamListenerStub> listener = new SilentStreamListenerStub(callback);
+
+    DataTransferMonitorParam param;
+    param.clientUID = CHECK_ALL_RENDER_UID;
+    param.badDataTransferTypeBitMap = (1 << SILENCE_DATA_TRANS);
+    param.timeInterval = RENDER_DETECTION_CYCLE_NS;
+    param.badFramesRatio = RENDER_BAD_FRAMES_RATIO;
+    param.needImmediateResumeNotify = true;
+
+    int32_t ret = AudioServerProxy::GetInstance().RegisterDataTransferCallback(listener->AsObject());
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Register silent stream callback failed");
+
+    ret = AudioServerProxy::GetInstance().RegisterDataTransferMonitorParam(-1, param);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Register silent stream monitor failed");
+
+    AUDIO_INFO_LOG("RegisterSilentStreamCallbackAction done");
+}
+
+void NotifyMuteSilentStateAction::Exec()
+{
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_LOG(coreService != nullptr, "AudioCoreService is null");
+    auto eventEntry = coreService->GetEventEntry();
+    CHECK_AND_RETURN_LOG(eventEntry != nullptr, "EventEntry is null");
+    eventEntry->NotifySilentStateChange(sessionId_, isMuteSilent_);
+}
+
+void NotifyDataTransSilentStateAction::Exec()
+{
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_LOG(coreService != nullptr, "AudioCoreService is null");
+    auto eventEntry = coreService->GetEventEntry();
+    CHECK_AND_RETURN_LOG(eventEntry != nullptr, "EventEntry is null");
+    eventEntry->NotifyDataTransSilentStateChange(sessionId_, isDataTransSilent_);
+}
+
 int32_t AudioCoreService::StopClient(uint32_t sessionId)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
@@ -1617,6 +1722,7 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
             streamDesc->capturerInfo_.sourceType, CapturerState::CAPTURER_STOPPED);
     }
     ForceRemoveSleStreamType(streamDesc);
+    audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
             streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_STOPPED);
@@ -1657,6 +1763,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     ForceRemoveSleStreamType(streamDesc);
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
+    audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
 
     CheckScoState(streamDesc, false);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
@@ -3754,19 +3861,14 @@ void AudioCoreService::TriggerVoipPriorityReload(const std::shared_ptr<AudioStre
 bool AudioCoreService::HasNormalTypeCapturerSession(
     const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList)
 {
-    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
-    if (sourceStrategyMap == nullptr) {
-        sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
-    }
     for (const auto &pipe : pipeList) {
-        if (pipe == nullptr) {
+        if (pipe == nullptr || !pipe->IsNormalSourcePipe(isEcFeatureEnable_)) {
             continue;
         }
 
         for (const auto &stream : pipe->streamDescriptors_) {
             CHECK_AND_RETURN_RET(stream == nullptr || !stream->IsRecording() ||
-                specialSourceTypeSet_.count(stream->capturerInfo_.sourceType) > 0 ||
-                sourceStrategyMap->count(stream->capturerInfo_.sourceType) > 0, true);
+                specialSourceTypeSet_.count(stream->capturerInfo_.sourceType) > 0, true);
         }
     }
     return false;

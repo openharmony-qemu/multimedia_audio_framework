@@ -122,7 +122,7 @@ bool LinearPosTimeModel::CheckPosTimeReasonable(std::pair<uint64_t, int64_t> &pr
     return std::abs(deltaTime) < REASONABLE_DELTA_BOUND_IN_NANO;
 }
 
-CheckPosTimeRes LinearPosTimeModel::UpdataFrameStamp(uint64_t frame, int64_t nanoTime)
+CheckPosTimeRes LinearPosTimeModel::UpdateFrameStamp(uint64_t frame, int64_t nanoTime)
 {
     if (IsReasonable(frame, nanoTime)) {
         AUDIO_DEBUG_LOG("Updata frame:%{public}" PRIu64" with time:%{public}" PRId64".", frame, nanoTime);

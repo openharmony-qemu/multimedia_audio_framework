@@ -105,6 +105,10 @@ public:
     int32_t GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool IsDeviceAvailable(AudioDeviceUsage audioDevUsage, const std::shared_ptr<AudioDeviceDescriptor> &desc);
     void UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    // Update silent state for all connected wireless devices
+    void UpdateAllWirelessDevicesSilentState();
+    // Update wireless device silent state, only update when isSilent_ differs
+    void UpdateWirelessDeviceSilentState(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
 
 private:
     AudioDeviceManager();
@@ -173,6 +177,8 @@ private:
     void UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc);
     bool TriggerDeviceInfoUpdatedCallback(AudioDeviceDescriptor &desc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
+    // Check whether all streams are silent or standby
+    bool CheckAllStreamsSilentOrStandByOnDevice();
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;

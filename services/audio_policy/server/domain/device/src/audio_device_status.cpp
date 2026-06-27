@@ -1165,6 +1165,11 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
     }
 
     audioDescriptor->deviceId_ = AudioPolicyUtils::startDeviceId++;
+#ifdef MULTI_BUS_ENABLE
+    if (devType == DEVICE_TYPE_SPEAKER) {
+        audioDescriptor->isSupportMultiZone_ = true;
+    }
+#endif
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
@@ -1299,6 +1304,13 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
     bool isNeedNotifyBt = (caller == "Bluetooth") ? false : true;
     for (auto &devDesc : devDescs) {
         if (devDesc->deviceRole_ == OUTPUT_DEVICE) {
+            if (AudioPolicyUtils::GetInstance().IsWirelessDevice(devDesc->deviceType_)) {
+                auto silentDesc = std::make_shared<AudioDeviceDescriptor>(*devDesc);
+                silentDesc->isSilent_ = false;
+                AudioDeviceManager::GetAudioDeviceManager().UpdateWirelessDeviceSilentState(silentDesc);
+                AUDIO_DEBUG_LOG("Clear silent state when forced select device: %{public}s, caller: %{public}s",
+                    devDesc->macAddress_.c_str(), caller.c_str());
+            }
             AudioCoreService::GetCoreService()->SelectOutputDevice(filter, {devDesc}, 0, isNeedNotifyBt);
         }
     }
@@ -1454,6 +1466,14 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
         "connectState[%{public}d] isEnable[%{public}d] deviceUsage[%{public}d]",
         GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_, command, desc.deviceCategory_,
         desc.connectState_, desc.isEnable_, desc.deviceUsage_);
+
+    // Update silent state on wireless device status change: triggered when device is enabled or usage changes
+    if (AudioPolicyUtils::GetInstance().IsWirelessDevice(desc.deviceType_)) {
+        if ((command == ENABLE_UPDATE && desc.isEnable_) || command == USAGE_UPDATE) {
+            audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
+        }
+    }
+
     std::string portNeedClose = "";
     uint32_t oldPaIndex = OPEN_PORT_FAILURE;
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {

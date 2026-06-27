@@ -764,13 +764,12 @@ void AudioServer::RegisterDataTransferStateChangeCallback()
         std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
     CHECK_AND_RETURN_LOG(callback != nullptr, "AudioPolicyServer: failed to  create cb obj");
 
-    int32_t pid = IPCSkeleton::GetCallingPid();
     callback->SetDataTransferMonitorParam(param);
-    audioDataTransferCbMap_[pid] = callback;
+    audioDataTransferCbMap_[SYSTEM_PID] = callback;
     int32_t ret = AudioStreamMonitor::GetInstance().RegisterAudioRendererDataTransferStateListener(
-        param, pid, -1);
+        param, SYSTEM_PID, -1);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "register fail");
-    AUDIO_INFO_LOG("pid: %{public}d RegisterDataTransferStateChangeCallback done", pid);
+    AUDIO_INFO_LOG("pid: %{public}d RegisterDataTransferStateChangeCallback done", SYSTEM_PID);
 }
 
 void DataTransferStateChangeCallbackInnerImpl::SetDataTransferMonitorParam(
