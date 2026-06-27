@@ -1518,6 +1518,56 @@ HWTEST_F(HpaeNodeCommonTest, GetDeviceType_Close_003, TestSize.Level1)
     EXPECT_EQ(GetDeviceType(COLLABORATION_CLOSE), DEVICE_TYPE_INVALID);
 }
 
+/**
+ * @tc.name: TransModuleInfoToHpaeSinkInfo_MacAddress
+ * @tc.type: FUNC
+ * @tc.number: TransModuleInfoToHpaeSinkInfo_MacAddress
+ * @tc.desc: Test TransModuleInfoToHpaeSinkInfo correctly copies macAddress when AudioModuleInfo has a non-empty macAddress
+ */
+HWTEST_F(HpaeNodeCommonTest, TransModuleInfoToHpaeSinkInfo_MacAddress, TestSize.Level0)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    moduleInfo.bufferSize = "3840";
+    moduleInfo.networkId = "local";
+    moduleInfo.className = "primary";
+    moduleInfo.channelLayout = "3";
+    moduleInfo.deviceType = "1";
+    moduleInfo.macAddress = "AA:BB:CC:DD:EE:FF";
+
+    HpaeSinkInfo sinkInfo;
+    int32_t ret = TransModuleInfoToHpaeSinkInfo(moduleInfo, sinkInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(sinkInfo.macAddress, "AA:BB:CC:DD:EE:FF");
+}
+
+/**
+ * @tc.name: TransModuleInfoToHpaeSinkInfo_EmptyMacAddress
+ * @tc.type: FUNC
+ * @tc.number: TransModuleInfoToHpaeSinkInfo_EmptyMacAddress
+ * @tc.desc: Test TransModuleInfoToHpaeSinkInfo results in empty macAddress when AudioModuleInfo.macAddress is empty
+ */
+HWTEST_F(HpaeNodeCommonTest, TransModuleInfoToHpaeSinkInfo_EmptyMacAddress, TestSize.Level0)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    moduleInfo.bufferSize = "3840";
+    moduleInfo.networkId = "local";
+    moduleInfo.className = "primary";
+    moduleInfo.channelLayout = "3";
+    moduleInfo.deviceType = "1";
+    moduleInfo.macAddress = "";
+
+    HpaeSinkInfo sinkInfo;
+    int32_t ret = TransModuleInfoToHpaeSinkInfo(moduleInfo, sinkInfo);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(sinkInfo.macAddress, "");
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

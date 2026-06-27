@@ -2920,6 +2920,23 @@ HWTEST_F(HpaeSinkOutputNodeTest, SetCollaborationState_NearLink_001, TestSize.Le
     hpaeSinkOutputNode->SetCollaborationState(COLLABORATION_NEARLINK_OPEN);
     EXPECT_EQ(hpaeSinkOutputNode->collaborationState_.load(), COLLABORATION_NEARLINK_OPEN);
 }
+
+/**
+ * @tc.name  : GetRenderSinkInstance_WithMacAddress
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetRenderSinkInstance with a non-empty macAddress parameter returns success.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_WithMacAddress, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    std::string macAddress = "AA:BB:CC:DD:EE:FF";
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId, macAddress), SUCCESS);
+    hpaeSinkOutputNode->RenderSinkDeInit();
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

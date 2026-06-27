@@ -1251,7 +1251,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload, bool isNeedCallBack)
 
 int32_t HpaeRendererManager::InitOutputCluster()
 {
-    int32_t ret = outputCluster_->GetInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId);
+    int32_t ret = outputCluster_->GetInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId, sinkInfo_.macAddress);
     IAudioSinkAttr attr;
     attr.adapterName = sinkInfo_.adapterName.c_str();
     attr.sinkName = sinkInfo_.deviceClass.c_str();

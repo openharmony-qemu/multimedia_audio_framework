@@ -192,13 +192,13 @@ void HpaeRemoteSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaeP
 #endif
 }
 
-int32_t HpaeRemoteSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId)
+int32_t HpaeRemoteSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId,
+    const std::string &macAddress)
 {
-    if (deviceNetId.empty()) {
-        renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, HDI_ID_INFO_DEFAULT, true);
-    } else {
-        renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, deviceNetId, true);
-    }
+    // macAddress has highest priority for device selection, then deviceNetId, then default
+    const std::string &info = !macAddress.empty() ? macAddress
+        : (!deviceNetId.empty() ? deviceNetId : HDI_ID_INFO_DEFAULT);
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info, true);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, deviceNetId: %{public}s, renderId_: %{public}u",
