@@ -50,7 +50,6 @@ public:
     int32_t ClearAudioFocusBySessionID(int32_t sessionID) override;
     int32_t IsValidNetworkIdForSendEffectParam(const std::string &networkId, bool &ret) override;
     int32_t NotifyUpdatePersonalizedSpatializationStateResult(int32_t ret) override;
-
 private:
     IPolicyProvider *policyWorker_;
 };
