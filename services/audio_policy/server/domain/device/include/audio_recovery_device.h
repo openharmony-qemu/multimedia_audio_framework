@@ -26,6 +26,8 @@
 #include "audio_device_info.h"
 #include "audio_stream_collector.h"
 #include "audio_device_manager.h"
+#include "audio_utils.h"
+#include "audio_policy_log.h"
 #include "media_monitor_manager.h"
 
 #include "audio_connected_device.h"
@@ -54,6 +56,8 @@ public:
     void SelectOutputDeviceForRemote(std::shared_ptr<AudioDeviceDescriptor> desc);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    int32_t SetAudioClientInfoMg(sptr<AudioCapturerFilter> audioCapturerFilter,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
 private:
     AudioRecoveryDevice() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -70,6 +74,7 @@ private:
     int32_t HandleExcludedOutputDevicesRecovery(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>> &excludedDevices);
 
+    //selsctoutputdevice
     int32_t RefreshVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
     // selectinputdevice
