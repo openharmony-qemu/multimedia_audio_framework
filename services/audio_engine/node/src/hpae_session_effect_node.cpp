@@ -488,7 +488,7 @@ void HpaeSessionEffectNode::DoProcess()
 {
     // Paused: output silence, don't pull upstream
     if (isPaused_) {
-        outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
         return;
     }
 
@@ -507,7 +507,7 @@ void HpaeSessionEffectNode::DoProcess()
             // Fall through to normal DoProcess (pull upstream + SignalProcess)
         } else {
             // Disconnect: don't pull upstream, output silence directly
-            outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
+            outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
             return;
         }
     }
@@ -665,7 +665,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<Hpae
         return inputBuf;
     }
 
-    return PrepareSilenceBuffer();
+    return PrepareSilenceBuffer(silenceData_);
 }
 
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessActive(const std::vector<HpaePcmBuffer *> &inputs)
@@ -690,18 +690,18 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessActive(const std::vector<HpaePcmBuf
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessActiveNoInput()
 {
     if (!effectInstance_ || status_ != STATUS::ACTIVE) {
-        return PrepareSilenceBuffer();
+        return PrepareSilenceBuffer(silenceData_);
     }
 
     size_t channels = tailOutputData_.GetChannelCount();
     if (audioConfig_.inputCfg.channels != channels) {
         AUDIO_WARNING_LOG("ProcessActiveNoInput channel mismatch: config=%{public}u buffer=%{public}zu",
             audioConfig_.inputCfg.channels, channels);
-        return PrepareSilenceBuffer();
+        return PrepareSilenceBuffer(silenceData_);
     }
     size_t byteLen = 0;
     if (!GetPcmByteLen(tailOutputData_.GetFrameLen(), channels, byteLen)) {
-        return PrepareSilenceBuffer();
+        return PrepareSilenceBuffer(silenceData_);
     }
 
     auto now = std::chrono::steady_clock::now();
@@ -793,7 +793,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ReadAlgoOutput(HpaePcmBuffer *inputBuf, si
     }
     // No output → return silence
     stats_.underrunCount++;
-    return PrepareSilenceBuffer();
+    return PrepareSilenceBuffer(silenceData_);
 }
 
 void HpaeSessionEffectNode::CloseSessionEffectCore()

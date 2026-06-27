@@ -291,7 +291,6 @@ int32_t SessionEffectManager::SetEffectParameter(const std::string &effectName, 
     auto instance = SafeGetMap(effectInstanceMap_, effectName);
     CHECK_AND_RETURN_RET(instance != nullptr, SUCCESS);
     // Persist so the parameter can be re-applied when the instance is recreated
-    // (e.g. after an IDLE/ERROR -> CreateNewInstance cycle). Cleared on LazyReleaseExpired.
     int32_t ret = instance->SetParameter(type, value);
     CHECK_AND_RETURN_RET(ret == 0, ret);
     return ret;

@@ -17,6 +17,7 @@
 #endif
 
 #include "hpae_co_buffer_node.h"
+#include "hpae_node_common.h"
 #include "hpae_define.h"
 #include "audio_effect_log.h"
 #include "audio_collaboration_manager.h"
@@ -93,7 +94,7 @@ void HpaeCoBufferNode::DoProcess()
     
     // return if enqueue is not running
     if (enqueueRunning_ == false && isOutputClusterConnected_ == true) {
-        outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
         AUDIO_INFO_LOG("Dequeue failed, Enqueue is not running");
         return;
     }
@@ -252,14 +253,14 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
                 AUDIO_INFO_LOG("finish write, OnDisConnectCoBufferWaitFadeOutDone");
             }
         }
-        outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
     } else {
         // read buffer
         BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), requestDataLen};
         result = ringCache_->Dequeue(bufferWrap);
         if (result.ret != OPERATION_SUCCESS) {
             AUDIO_INFO_LOG("Dequeue data failed");
-            outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
+            outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
         } else {
             outputStream_.WriteDataToOutput(&coBufferOut_);
         }

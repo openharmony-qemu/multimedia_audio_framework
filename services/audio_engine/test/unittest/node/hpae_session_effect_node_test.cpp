@@ -24,6 +24,7 @@
 
 #include "hpae_session_effect_node.h"
 #include "hpae_plugin_node.h"
+#include "hpae_node_common.h"
 #include "effect_instance.h"
 #include "mock_effect_instance.h"
 #include "hpae_pcm_buffer.h"
@@ -356,7 +357,7 @@ public:
         : HpaeNode(nodeInfo), HpaeSessionEffectNode(nodeInfo) {}
     HpaePcmBuffer *GetSilenceDataForTest()
     {
-        return PrepareSilenceBuffer();
+        return PrepareSilenceBuffer(silenceData_);
     }
     using HpaeSessionEffectNode::FeedInputFromBuffer;
     using HpaeSessionEffectNode::FeedPaddingInput;

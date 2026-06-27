@@ -66,12 +66,6 @@ private:
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer coBufferOut_;
     HpaePcmBuffer silenceData_;
-    HpaePcmBuffer* PrepareSilenceBuffer()
-    {
-        silenceData_.SetBufferValid(false);
-        silenceData_.SetBufferSilence(true);
-        return &silenceData_;
-    }
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     int32_t enqueueCount_ = 1;
     uint64_t latency_  = 0; // in ms

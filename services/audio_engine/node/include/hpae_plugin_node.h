@@ -50,12 +50,6 @@ protected:
     InputPort<HpaePcmBuffer*> inputStream_;
     bool enableProcess_;
     HpaePcmBuffer silenceData_;
-    HpaePcmBuffer* PrepareSilenceBuffer()
-    {
-        silenceData_.SetBufferValid(false);
-        silenceData_.SetBufferSilence(true);
-        return &silenceData_;
-    }
     bool isSourceNode_ = false;
 };
 }  // namespace HPAE

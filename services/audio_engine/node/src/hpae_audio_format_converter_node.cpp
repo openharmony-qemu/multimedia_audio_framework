@@ -119,7 +119,7 @@ void HpaeAudioFormatConverterNode::DoProcess()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
                 BusinessScenario::QUERY, ERR_NULL_POINTER), "resampler_ is nullptr", false);
-        outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
         return;
     }
     if (hasPreOutput) {
@@ -148,7 +148,7 @@ void HpaeAudioFormatConverterNode::DoProcess()
     AUDIO_DEBUG_LOG("NodeId %{public}d: output silence, "
         "hasValidInput=%{public}d, enableProcess=%{public}d, processedFrames=%{public}u",
         GetNodeId(), hasValidInput, enableProcess_, processedFrames_);
-    outputStream_.WriteDataToOutput(PrepareSilenceBuffer());
+    outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
 }
 
 void HpaeAudioFormatConverterNode::AccumulateInputAndPullAhead(HpaePcmBuffer *input)
@@ -195,7 +195,7 @@ HpaePcmBuffer* HpaeAudioFormatConverterNode::ProcessAndExtractOutput(HpaePcmBuff
         AUDIO_DEBUG_LOG("NodeId %{public}d: insufficient output, "
             "processedFrames=%{public}u < outputFrameLen20ms=%{public}u, returning silence",
             GetNodeId(), processedFrames_, outputFrameLen20ms_);
-        return PrepareSilenceBuffer();
+        return PrepareSilenceBuffer(silenceData_);
     }
 
     AUDIO_DEBUG_LOG("NodeId %{public}d: output success, "

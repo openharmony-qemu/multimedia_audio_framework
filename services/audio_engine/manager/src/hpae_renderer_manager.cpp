@@ -319,10 +319,10 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId) cons
 
 HpaeProcessorType HpaeRendererManager::GetConnectedProcessorType(uint32_t sessionId) const
 {
-    auto it = sinkInputNodeMap_.find(sessionId);
-    CHECK_AND_RETURN_RET(it != sinkInputNodeMap_.end() && it->second != nullptr &&
-        it->second->connectedProcessorType_ != HPAE_SCENE_UNCONNECTED, GetProcessorType(sessionId));
-    return it->second->connectedProcessorType_;
+    auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_RET(node != nullptr && node->connectedProcessorType_ != HPAE_SCENE_UNCONNECTED,
+        GetProcessorType(sessionId));
+    return node->connectedProcessorType_;
 }
 
 void HpaeRendererManager::DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo)
