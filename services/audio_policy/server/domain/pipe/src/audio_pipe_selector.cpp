@@ -1525,6 +1525,12 @@ static void FillSpecialPipeInfoExtOther(AudioPipeInfo &info, std::shared_ptr<Ada
         info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
         info.moduleInfo_.name = "FastDpRendererSink";
         info.moduleInfo_.role = "sink";
+    } else if (pipeInfoPtr->name_ == "fast_usb_arm_input") {
+        info.moduleInfo_.className = "primary_mmap";
+        info.moduleInfo_.fileName = "usb_arm_fast_source_dump_file";
+        info.moduleInfo_.name = "FastUsbArmCapturerSource";
+        info.moduleInfo_.lib = "libmodule-hdi-source.z.so";
+        info.moduleInfo_.role = "source";
     }
 }
 
