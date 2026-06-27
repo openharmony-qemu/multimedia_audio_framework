@@ -119,7 +119,7 @@ uint32_t IdHandler::GetRenderIdByDeviceClassSub(const std::string &deviceClass, 
     } else if (deviceClass == "RemoteCastInnerCapturer") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     }
-    AUDIO_ERR_LOG("invalid param, deviceClass: %{public}s, info: %{public}s", deviceClass.c_str(), info.c_str());
+    AUDIO_ERR_LOG("invalid param, deviceClass: %{public}s, info: %{private}s", deviceClass.c_str(), info.c_str());
     return HDI_INVALID_ID;
 }
 

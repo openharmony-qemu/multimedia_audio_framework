@@ -234,10 +234,9 @@ int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass
 
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
-        AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, deviceNetId: %{public}s, renderId_: %{public}u",
-            deviceClass.c_str(),
-            deviceNetId.c_str(),
-            renderId_);
+        // Do not print macAddress (sensitive); indicate the actual selection source instead.
+        AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, selectByMac: %{public}d, netIdLen: %{public}zu, "
+            "renderId_: %{public}u", deviceClass.c_str(), !macAddress.empty(), deviceNetId.size(), renderId_);
         HdiAdapterManager::GetInstance().ReleaseId(renderId_);
         return ERROR;
     }
