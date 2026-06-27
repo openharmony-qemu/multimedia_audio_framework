@@ -744,6 +744,7 @@ void HpaeCapturerManager::CreateSourceAttr(IAudioSourceAttr &attr)
     attr.openMicSpeaker = sourceInfo_.openMicSpeaker;
     attr.hasEcConfig = mainMicType_ == HPAE_SOURCE_MIC_EC;
     attr.macAddress = sourceInfo_.macAddress;
+    attr.routeFlag = sourceInfo_.routeFlag;
     return;
 }
 
