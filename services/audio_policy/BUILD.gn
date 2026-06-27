@@ -144,6 +144,7 @@ ohos_shared_library("audio_setting_provider") {
   deps = [ "../../frameworks/native/audioutils:audio_utils" ]
 
   external_deps = [
+    "ability_runtime:dataobs_manager",
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
@@ -437,6 +438,7 @@ audio_ohos_library("audio_policy_service") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
     "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
