@@ -3577,15 +3577,12 @@ void AudioAdapterManager::MdmMuteSwitchCallback(bool isMute)
     AUDIO_INFO_LOG("mdmMuteStatus = %{public}d", isMute);
     AudioMuteFactorManager& audioMuteFactorManager = AudioMuteFactorManager::GetInstance();
     audioMuteFactorManager.SetMdmMuteStatus(isMute);
-    for (auto &streamType : defaultVolumeTypeList_) {
-        if (streamType == STREAM_VOICE_CALL) {
-            auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_VOICE_CALL);
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            int32_t volumeLevel = GetStreamVolume(desc, streamType);
-            float volumeFloat = isMute ? 0 : GetSystemVolumeInDb(streamType, volumeLevel, desc->deviceType_);
-            AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, volumeFloat);
-        }
-    }
+    SendOffloadVolume();
+    auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_VOICE_CALL);
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    int32_t volumeLevel = GetStreamVolume(desc, STREAM_VOICE_CALL);
+    float volumeFloat = isMute ? 0 : GetSystemVolumeInDb(STREAM_VOICE_CALL, volumeLevel, desc->deviceType_);
+    AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(STREAM_VOICE_CALL, volumeFloat);
 }
 
 void AudioAdapterManager::RegisterAppIndividualVolumeEnableObserver()
