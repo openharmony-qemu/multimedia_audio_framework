@@ -97,6 +97,7 @@ struct AudioCapturerDebugInfo {
     bool muteWhenInterrupted = false;
     bool pauseWhenInterrupted = false;
     AudioDeviceDescriptor inputDeviceInfo = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
+    uint32_t pipeId = PIPE_INVALID_ID;
     AudioPipeRole pipeRole = PIPE_ROLE_INPUT;
     AudioStreamInfo pipeInfo = AudioStreamInfo(SAMPLE_RATE_8000, AudioEncodingType::ENCODING_PCM,
         AudioSampleFormat::INVALID_WIDTH, AudioChannel::CHANNEL_UNKNOW, AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -105,6 +106,9 @@ struct AudioCapturerDebugInfo {
     std::vector<AudioFocusBehavior> focusHistory;
     // debug info about fault
     std::vector<AudioFaultRecord> errorInfos;
+    std::string pipeName = "undefine";
+    uint32_t routeFlag = 0;
+    std::string adapterName = "";
 };
 
 struct AudioLoopbackDebugInfo {
@@ -360,7 +364,7 @@ struct AudioDebugInfo : public Parcelable {
             parcel.WriteInt32(loopbackMode) &&
             parcel.WriteInt32(static_cast<int32_t>(loopbackOutputDeviceType)) &&
             parcel.WriteInt32(static_cast<int32_t>(loopbackInputDeviceType)) &&
-            parcel.WriteInt64(captureTimestamp.framePosition) &&
+            parcel.WriteUint32(captureTimestamp.framePosition) &&
             parcel.WriteInt64(static_cast<int64_t>(captureTimestamp.time.tv_sec)) &&
             parcel.WriteInt64(static_cast<int64_t>(captureTimestamp.time.tv_nsec)) &&
             parcel.WriteUint64(captureBufferSize) &&
@@ -499,7 +503,7 @@ struct AudioDebugInfo : public Parcelable {
         loopbackMode = parcel.ReadInt32();
         loopbackOutputDeviceType = static_cast<DeviceType>(parcel.ReadInt32());
         loopbackInputDeviceType = static_cast<DeviceType>(parcel.ReadInt32());
-        captureTimestamp.framePosition = parcel.ReadInt64();
+        captureTimestamp.framePosition = parcel.ReadUint32();
         captureTimestamp.time.tv_sec = static_cast<time_t>(parcel.ReadInt64());
         captureTimestamp.time.tv_nsec = static_cast<long>(parcel.ReadInt64());
         captureBufferSize = parcel.ReadUint64();

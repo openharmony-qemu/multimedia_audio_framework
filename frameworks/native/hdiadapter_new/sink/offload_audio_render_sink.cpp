@@ -836,6 +836,10 @@ void OffloadAudioRenderSink::SetSpeed(float speed)
 int32_t OffloadAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() == 1, ERR_INVALID_PARAM, "invalid device");
+    if (currentActiveDevice_ == outputDevices[0]) {
+        return SUCCESS;
+    }
+    AUDIO_INFO_LOG("set output device from %{public}d to %{public}d", currentActiveDevice_, outputDevices[0]);
     currentActiveDevice_ = outputDevices[0];
     if (!Util::IsEnhancedRoutingSupported()) {
         return SUCCESS;

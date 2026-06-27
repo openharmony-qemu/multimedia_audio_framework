@@ -54,7 +54,6 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
     uint32_t routeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(!deviceClass.empty(), HDI_INVALID_ID, "invalid device class");
-
     if (deviceClass == "primary") {
         if (routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
             return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE);

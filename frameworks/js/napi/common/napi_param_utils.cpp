@@ -16,11 +16,10 @@
 #define LOG_TAG "NapiParamUtils"
 #endif
 
-#include <unistd.h>
-
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
 #include "audio_effect.h"
+#include <unistd.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -80,6 +79,7 @@ const std::vector<DeviceType> DEVICE_TYPE_SET = {
     DEVICE_TYPE_BLUETOOTH_SCO,
     DEVICE_TYPE_BLUETOOTH_A2DP,
     DEVICE_TYPE_BT_SPP,
+    DEVICE_TYPE_NEARLINK_PORT,
     DEVICE_TYPE_MIC,
     DEVICE_TYPE_WAKEUP,
     DEVICE_TYPE_USB_HEADSET,
@@ -557,23 +557,23 @@ napi_status NapiParamUtils::GetEcStreamInfo(const napi_env &env, AudioStreamInfo
 {
     napi_status status = ParseSamplingRate(env, ecStreamInfo, in);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetEcStreamInfo ParseSamplingRate failed");
-
+ 
     int32_t intValue = {0};
     status = GetValueInt32(env, "channels", intValue, in);
     if (status == napi_ok) {
         ecStreamInfo->channels = static_cast<AudioChannel>(intValue);
     }
-
+ 
     status = GetValueInt32(env, "sampleFormat", intValue, in);
     if (status == napi_ok) {
         ecStreamInfo->format = static_cast<OHOS::AudioStandard::AudioSampleFormat>(intValue);
     }
-
+ 
     status = GetValueInt32(env, "encodingType", intValue, in);
     if (status == napi_ok) {
         ecStreamInfo->encoding = static_cast<AudioEncodingType>(intValue);
     }
-
+ 
     int64_t int64Value = 0;
     status = GetValueInt64(env, "channelLayout", int64Value, in);
     if (status == napi_ok) {
@@ -1022,19 +1022,14 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     status = GetCapturerInfo(env, &(opts->capturerInfo), result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerInfo failed");
 
-    bool hasPreferredInputDevice = false;
-    status = napi_has_named_property(env, in, "preferredInputDevice", &hasPreferredInputDevice);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "has preferInputDevice failed");
-    if (hasPreferredInputDevice) {
-        status = napi_get_named_property(env, in, "preferredInputDevice", &result);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get preferInputDevice failed");
-        auto device = std::make_shared<AudioDeviceDescriptor>();
-        bool argTransFlag = false;
-        status = GetAudioDeviceDescriptor(env, device, argTransFlag, result);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse PreferInputDevice failed");
-        CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
-        opts->preferredInputDevice = device;
-    }
+    status = napi_get_named_property(env, in, "preferredInputDevice", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get preferInputDevice failed");
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    bool argTransFlag = false;
+    status = GetAudioDeviceDescriptor(env, device, argTransFlag, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse PreferInputDevice failed");
+    CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
+    opts->preferredInputDevice = device;
 
     status = GetCapturerSubStreamOptions(env, opts, in);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerSubStreamOptions failed");
@@ -1246,6 +1241,7 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
     }
 
     selectedAudioDevice->networkId_ = GetPropertyString(env, in, "networkId");
+    selectedAudioDevice->deviceName_ = GetPropertyString(env, in, "name");
 
     if (GetValueInt32(env, "dmDeviceType", intValue, in) == napi_ok) {
         selectedAudioDevice->dmDeviceType_ = static_cast<uint16_t>(intValue);
@@ -1447,9 +1443,6 @@ napi_status NapiParamUtils::SetRendererChangeInfos(const napi_env &env,
             napi_value deviceInfo = nullptr;
             SetValueDeviceInfo(env, changeInfo->outputDeviceInfo, deviceInfo);
             napi_set_named_property(env, jsChangeInfoObj, "deviceDescriptors", deviceInfo);
-            napi_value streamInfo = nullptr;
-            SetStreamInfo(env, changeInfo->streamInfo, streamInfo);
-            napi_set_named_property(env, jsChangeInfoObj, "streamInfo", streamInfo);
             napi_set_element(env, result, position, jsChangeInfoObj);
             position++;
         }
