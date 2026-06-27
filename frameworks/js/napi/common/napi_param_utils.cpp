@@ -1022,7 +1022,6 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
 
     status = GetStreamInfo(env, &(opts->streamInfo), result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseStreamInfo failed");
-
     CHECK_AND_RETURN_RET_LOG(opts->streamInfo.customSampleRate == 0, napi_generic_failure,
         "streamInfo does not support custom sample rate");
 
