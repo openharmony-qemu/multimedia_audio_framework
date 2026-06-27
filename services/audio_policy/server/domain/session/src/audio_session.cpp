@@ -497,9 +497,16 @@ StreamUsage AudioSession::GetAudioSessionStreamUsageForDevice()
     }
     
     for (const auto& iter : interruptMap_) {
-        if (iter.second.first.audioFocusType.streamType == STREAM_RING) {
-            AUDIO_INFO_LOG("pid [%{public}d] ringtone exists", callerPid_);
-            return iter.second.first.streamUsage;
+        if (iter.second.first.audioFocusType.streamType == STREAM_RING ||
+            iter.second.first.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+            // The external SessionScene only exposes VOICE_COMMUNICATION, so a video_communication
+            // stream inherits VOICE_COMMUNICATION as its streamUsage. On peripheral disconnect,
+            // device re-selection uses streamUsage to pick the default output device. Returning
+            // VOICE_COMMUNICATION would route the video stream to the voice-call default device
+            // (e.g. earpiece) instead of the correct video-call default device (e.g. speaker).
+            // Promote to VIDEO_COMMUNICATION for proper device selection.
+            AUDIO_INFO_LOG("pid [%{public}d] ringtone exists or video communication", callerPid_);
+            streamUsage = iter.second.first.streamUsage;
         }
     }
 
