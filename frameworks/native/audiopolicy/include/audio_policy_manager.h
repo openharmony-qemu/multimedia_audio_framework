@@ -20,6 +20,7 @@
 #include "audio_client_tracker_callback_listener.h"
 #include "audio_effect.h"
 #include "audio_interrupt_callback.h"
+#include "audio_capturer.h"
 #include "iaudio_policy.h"
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_policy_client_stub_impl.h"

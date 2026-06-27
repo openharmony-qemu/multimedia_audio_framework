@@ -355,6 +355,10 @@ HWTEST(CapturerInClientUnitTest, OnOperationHandled_001, TestSize.Level1)
     operation = Operation::START_STREAM;
     ret = capturerInClientInner->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
+
+    operation = Operation::SENSITIVE_RECORD_PERMIT;
+    ret = capturerInClientInner->OnOperationHandled(operation, result);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

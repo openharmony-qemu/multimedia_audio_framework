@@ -96,6 +96,7 @@ config("audio_policy_public_config") {
     "../../frameworks/native/hdiadapter_new/include/common",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
+    "../../interfaces/inner_api/native/audiocapturer/include",
   ]
 
   cflags = [
@@ -610,6 +611,7 @@ config("audio_policy_client_config") {
     "../../frameworks/native/audiopolicy/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
+    "../../interfaces/inner_api/native/audiocapturer/include",
   ]
 
   cflags = [

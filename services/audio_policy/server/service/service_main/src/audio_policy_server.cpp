@@ -2718,6 +2718,7 @@ int32_t AudioPolicyServer::SetQueryBundleNameListCallback(const sptr<IRemoteObje
         AUDIO_ERR_LOG("not audio calling!");
         return ERR_OPERATION_FAILED;
     }
+    queryBundleNameListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
 
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERR_UNKNOWN, "interruptService_ is nullptr");
     interruptService_->SetQueryBundleNameListCallback(object);
@@ -3254,6 +3255,13 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
+    }
+    if (streamChangeInfoIn.audioCapturerChangeInfo.capturerInfo.sourceType == SOURCE_TYPE_VOICE_DOWNLINK &&
+        queryBundleNameListCallback_ != nullptr) {
+        uint32_t sessionId = streamChangeInfoIn.audioCapturerChangeInfo.sessionId;
+        AUDIO_INFO_LOG("About to start voice broadcast thread for sessionId: %{public}u", sessionId);
+        queryBundleNameListCallback_->StartVoiceBroadcast(sessionId);
+        AUDIO_INFO_LOG("StartVoiceBroadcast completed for sessionId: %{public}u", sessionId);
     }
     RegisterClientDeathRecipient(object, TRACKER_CLIENT);
     int32_t apiVersion = GetApiTargetVersion();

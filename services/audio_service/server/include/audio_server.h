@@ -325,6 +325,7 @@ public:
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice) override;
     int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo) override;
     int32_t SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList) override;
+    int32_t NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -423,6 +424,7 @@ private:
     int32_t CheckInnerRecorderPermission(const AudioProcessConfig &config);
     bool CheckRecorderPermission(const AudioProcessConfig &config);
     bool HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config);
+    bool CheckVoiceDownlinkPermission(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
     void RegisterSinkLatencyFetcher(uint32_t renderId);
     void RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency);

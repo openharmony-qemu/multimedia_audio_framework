@@ -39,6 +39,7 @@
 #include "core_service_handler.h"
 #include "record_privacy_manager.h"
 #include "stream_dfx_manager.h"
+#include "audio_general_manager.h"
 #ifdef FEATURE_CALL_MANAGER
 #include "call_manager_client.h"
 #endif
@@ -52,6 +53,7 @@
 namespace OHOS {
 namespace AudioStandard {
 const char* CAPTURE_SERVER_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
+const char* CAPTURE_SERVER_PLAYBACK_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK_DOWNLINK";
 namespace {
     static constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
@@ -783,6 +785,16 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
 
 int32_t CapturerInServer::Start(bool hasNoCallback)
 {
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_DOWNLINK) {
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(CheckVoiceDownlinkPermission(), ERR_ILLEGAL_STATE,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_OPERATION_FAILED, "Voice downlink permission check failed", false),
+            "Voice downlink permission check failed");
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sensitiveRecordPermitted_.load(), ERR_ILLEGAL_STATE,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CREATE_OPERATION_FAILED, "Sensitive record not permitted", false),
+            "Sensitive record not permitted");
+    }
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE ||
         filterConfig_.isModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
         ERR_INVALID_OPERATION,
@@ -797,6 +809,11 @@ int32_t CapturerInServer::Start(bool hasNoCallback)
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     int32_t ret = StartInner(hasNoCallback);
     CapturerStage stage = ret == SUCCESS ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_DOWNLINK) {
+        auto audioGeneralManager = AudioGeneralManager::GetInstance();
+        audioGeneralManager->SetAsrVoiceMuteMode(AsrVoiceMuteMode::CALL_MUTE, false);
+        AUDIO_INFO_LOG("Start() set AsrVoiceMuteMode: CALL_MUTE");
+    }
     if (recorderDfx_) {
         recorderDfx_->WriteDfxStartMsg(streamIndex_, stage, processConfig_);
     }
@@ -1446,6 +1463,40 @@ int32_t CapturerInServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bo
     OnPrivacyAuthorityResult(choice);
     return SUCCESS;
 }
+
+bool CapturerInServer::CheckVoiceDownlinkPermission()
+{
+    bool hasAclPermission = PermissionUtil::VerifyPermission(
+        CAPTURE_SERVER_PLAYBACK_DOWNLINK_PERMISSION, IPCSkeleton::GetCallingTokenID());
+    CHECK_AND_RETURN_RET_LOG(hasAclPermission, false,
+        "CheckVoiceDownlinkPermission failed: no ACL permission");
+    CHECK_AND_RETURN_RET_LOG(!processConfig_.capturerInfo.cellularRecordPhoneNum.empty() &&
+        !processConfig_.capturerInfo.cellularRecordToken.empty(), false,
+        "CheckCallRecordingPermission failed: phoneNum or token is empty");
+
+#ifdef FEATURE_CALL_MANAGER
+    std::shared_ptr<Telephony::CallManagerClient> callManager =
+        DelayedSingleton<Telephony::CallManagerClient>::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(callManager != nullptr, false, "Get CallManagerClient failed");
+
+    callManager->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
+
+    return true;
+#else
+    AUDIO_INFO_LOG("CheckVoiceDownlinkPermission success!");
+    return true;
+#endif
+}
+ 	  
+void CapturerInServer::NotifySensitiveRecordPermit(const bool isPermitted)
+{
+    AUDIO_INFO_LOG("Set sensitive record isPermitted: %{public}d", isPermitted);
+    sensitiveRecordPermitted_ = isPermitted;
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    stateListener->OnOperationHandled(SENSITIVE_RECORD_PERMIT, isPermitted ? 1 : 0);
+}
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

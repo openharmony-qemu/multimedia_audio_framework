@@ -112,6 +112,11 @@ public:
     {
         return SUCCESS;
     }
+
+    ErrCode StartVoiceBroadcast(uint32_t sessionId) override
+    {
+        return SUCCESS;
+    }
 };
 
 class AudioInterruptCallbackTest : public AudioInterruptCallback {

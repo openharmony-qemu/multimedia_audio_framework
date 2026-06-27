@@ -587,7 +587,18 @@ typedef enum {
      *
      * @since 20
      */
-    AUDIOSTREAM_SOURCE_TYPE_LIVE = 17
+    AUDIOSTREAM_SOURCE_TYPE_LIVE = 17,
+
+    /**
+    * Voice call downlink source type.
+    * The audio capturer using this source type should be created after the voice call started.
+    * Note that ohos.permission.CAPTURE_PLAYBACK_DOWNLINK is needed when using
+    * {@link OH_AudioStreamBuilder_GenerateCapturer} to create the capturer stream,
+    * the function will return an error without permission.
+    *
+    * @since 26.0.0
+    */
+    AUDIOSTREAM_SOURCE_TYPE_VOICE_DOWNLINK = 22
 } OH_AudioStream_SourceType;
 
 /**

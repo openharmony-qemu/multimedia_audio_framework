@@ -241,7 +241,11 @@ public:
         (void)callback;
         return ERR_NOT_SUPPORTED;
     }
-
+    virtual void SetSensitiveRecordPermitCallback(
+        const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback)
+    {
+        (void)callback;
+    };
     virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
     virtual int32_t GetBufQueueState(BufferQueueState &bufState) = 0;
     virtual int32_t Enqueue(const BufferDesc &bufDesc) = 0;

@@ -151,6 +151,7 @@ static const std::map<DeviceType, AudioAdapterType> DEVICE_HAL_MAP = {
 const std::map<SourceType, int> NORMAL_SOURCETYPE_PRIORITY = {
     // from high to low
     {SOURCE_TYPE_VOICE_CALL, 8},
+    {SOURCE_TYPE_VOICE_DOWNLINK, 8},
     {SOURCE_TYPE_VOICE_COMMUNICATION, 7},
     {SOURCE_TYPE_VOICE_MESSAGE, 6},
     {SOURCE_TYPE_LIVE, 5},
@@ -4179,6 +4180,7 @@ void AudioCoreService::GetTargetSourceTypeAndMatchingFlag(SourceType source,
             useMatchingPropInfo = isEcFeatureEnable_ ? false : true;
             break;
         case SOURCE_TYPE_VOICE_CALL:
+        case SOURCE_TYPE_VOICE_DOWNLINK:
             targetSource = SOURCE_TYPE_VOICE_CALL;
             break;
         case SOURCE_TYPE_CAMCORDER:

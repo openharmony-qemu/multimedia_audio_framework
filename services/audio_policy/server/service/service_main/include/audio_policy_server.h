@@ -46,6 +46,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
 #include "audio_interrupt_service.h"
+#include "audio_policy_manager_listener.h"
 #include "audio_device_manager.h"
 #include "audio_policy_dump.h"
 #include "app_state_listener.h"

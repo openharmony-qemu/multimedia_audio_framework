@@ -202,6 +202,8 @@ void AudioCapturerPrivate::SetCapturerInfoByOptions(const AudioCapturerOptions &
     strategy_ = capturerOptions.strategy;
     mixWithWakeUp_ = capturerOptions.mixWithWakeUp;
     capturerInfo_.mixWithWakeUp = mixWithWakeUp_;
+    capturerInfo_.cellularRecordPhoneNum = capturerOptions.capturerInfo.cellularRecordPhoneNum;
+    capturerInfo_.cellularRecordToken = capturerOptions.capturerInfo.cellularRecordToken;
 }
 
 // LCOV_EXCL_START
@@ -1356,6 +1358,17 @@ void AudioCapturerPrivate::SetFastStatusChangeCallback(
     SetInnerStreamFastStatusChangeCallback(currentStream);
 }
 
+void AudioCapturerPrivate::SetSensitiveRecordPermitCallback(
+    const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback)
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_CALL_FUNC_RETURN_LOG(currentStream != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CALLBACK_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+        "audioStream_ is nullptr");
+    currentStream->SetSensitiveRecordPermitCallback(callback);
+}
+
 void AudioCapturerPrivate::SetPlaybackCaptureStartStateCallback(
     const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
 {
@@ -1825,7 +1838,7 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
     audioInterrupt_.state = State::RELEASED;
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
-    // Unregister the callaback in policy server
+    // Unregister the callback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
     RemoveCapturerPolicyServiceDiedCallback(audioStream_);
@@ -2122,6 +2135,7 @@ AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
         case SOURCE_TYPE_WAKEUP:
             return STREAM_WAKEUP;
         case SOURCE_TYPE_VOICE_CALL:
+        case SOURCE_TYPE_VOICE_DOWNLINK:
             return STREAM_SOURCE_VOICE_CALL;
         case SOURCE_TYPE_CAMCORDER:
             return STREAM_CAMCORDER;

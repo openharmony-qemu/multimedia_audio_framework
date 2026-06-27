@@ -757,6 +757,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderPermission_001, TestSize.L
     bool ret = audioServer->CheckRecorderPermission(config);
     EXPECT_FALSE(ret);
 
+    config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_DOWNLINK;
+    ret = audioServer->CheckRecorderPermission(config);
+    EXPECT_FALSE(ret);
+
     config.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
     ret = audioServer->CheckRecorderPermission(config);
     EXPECT_TRUE(ret);
@@ -2982,11 +2986,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_005, TestSize.Level1
     EXPECT_NE(nullptr, audioServer);
 
     AudioServer::audioParameterKeys = {
-        {
-            "test_key", {
-                {"unprocess_audio_effect", {"value1", "value2"}}
-            }
-        }
+        { "test_key", { {"unprocess_audio_effect", {"value1", "value2"}} } }
     };
     audioServer->isAudioParameterParsed_.store(true);
 
