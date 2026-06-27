@@ -66,6 +66,8 @@ class AudioZone {
 public:
     AudioZone(std::shared_ptr<AudioZoneClientManager> manager, const std::string &name,
         const AudioZoneContext &context, pid_t clientPid = 0);
+    
+    AudioZone(std::shared_ptr<AudioZoneClientManager> manager);
     ~AudioZone() = default;
 
     int32_t GetId();
@@ -113,6 +115,8 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices();
 
+    void UpdatePreferDevice(AudioZoneChangeReason reason);
+
 private:
     int32_t zoneId_ = -1;
     std::string name_ = "";
@@ -125,6 +129,7 @@ private:
     pid_t zoneClientPid_ = 0;
     AudioZoneContext context_;
     std::unordered_set<DeviceType> volumeProxyDeviceTypes_;
+    std::shared_ptr<AudioDeviceDescriptor> preferDevice_;
 
     int32_t SetDeviceDescriptorState(const std::shared_ptr<AudioDeviceDescriptor> device, const bool enable);
     void SendZoneChangeEvent(AudioZoneChangeReason reason);

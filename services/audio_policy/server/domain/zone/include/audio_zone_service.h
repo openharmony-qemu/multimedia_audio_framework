@@ -127,6 +127,8 @@ public:
     int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
     // interfaces of SessionTimeOutCallback
     void OnSessionTimeout(const int32_t pid) override;
+    void UpdateZonePreferDeviceWhenDeviceConnect();
+    void UpdateZonePreferDeviceWhenDeviceDisConnect(std::shared_ptr<AudioDeviceDescriptor> device);
 
 private:
     AudioZoneService()
@@ -141,12 +143,9 @@ private:
     std::shared_ptr<AudioZoneClientManager> zoneClientManager_;
     std::shared_ptr<SessionTimeOutCallback> sessionTimeoutCallbackPtr_;
     std::unordered_map<int32_t, std::shared_ptr<AudioZone>> zoneMaps_;
-    AudioZoneContext mainZoneContext_;
     std::set<pid_t> zoneReportClientList_;
     std::mutex zoneMutex_;
     bool zoneDeviceVisible_ = true;
-    pid_t mainZoneVolumeProxyClientPid_ = 0;
-    std::unordered_set<DeviceType> mainZoneVolumeProxyDeviceTypes_;
 
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
     int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,

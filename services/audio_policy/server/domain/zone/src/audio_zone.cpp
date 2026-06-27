@@ -19,6 +19,7 @@
 #include "audio_zone.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_router_center.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -197,6 +198,15 @@ AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
       zoneClientPid_(clientPid),
       context_(context)
 {
+    preferDevice_ = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
+}
+
+AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager)
+    : clientManager_(manager)
+{
+    zoneId_ = 0;
+    name_ = std::string(PRIMARY_ZONE_NAME);
+    preferDevice_ = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
 }
 
 int32_t AudioZone::GetId()
@@ -275,6 +285,7 @@ const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptorNoLock()
     descriptor->name_ = name_;
     descriptor->initMode_ = static_cast<int32_t>(context_.initMode_);
     descriptor->supportType_ = static_cast<int32_t>(context_.supportType_);
+    descriptor->preferDevice_ = preferDevice_;
     AUDIO_INFO_LOG("zone %{public}d init mode %{public}d", zoneId_, descriptor->initMode_);
 
     for (const auto &key : keys_) {
@@ -636,5 +647,31 @@ std::shared_ptr<AudioDeviceDescriptor> AudioZone::GetDeviceDescriptor(DeviceType
     AUDIO_ERR_LOG("device not found, deviceType: %{public}d", type);
     return nullptr;
 }
+
+void AudioZone::UpdatePreferDevice(AudioZoneChangeReason reason)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    if (zoneId_ == DEFAULT_ZONEID) {
+        FetchDeviceInfo info = {STREAM_USAGE_MUSIC, "UpdatePreferDevice For Default Zone"};
+        auto newDevice = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
+        if (newDevice != nullptr && !newDevice->IsSameDeviceDescPtr(preferDevice_)) {
+            preferDevice_ = newDevice;
+            SendZoneChangeEvent(reason);
+        }
+        return;
+    }
+
+    auto newDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
+    for (const auto &it : devices_) {
+        if (it.second && it.first->deviceType_ > newDevice->deviceType_) {
+            newDevice = it.first;
+        }
+    }
+    if (newDevice != nullptr && !newDevice->IsSameDeviceDescPtr(preferDevice_)) {
+        preferDevice_ = newDevice;
+        SendZoneChangeEvent(reason);
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

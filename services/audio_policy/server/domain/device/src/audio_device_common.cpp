@@ -34,6 +34,7 @@
 #include "audio_bundle_manager.h"
 #include "audio_volume.h"
 #include "audio_router_select_strategy.h"
+#include "audio_zone_service.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -339,6 +340,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Create device descriptor failed");
     audioDeviceManager_.RemoveNewDevice(devDesc);
+    AudioZoneService::GetInstance().UpdateZonePreferDeviceWhenDeviceDisConnect(devDesc);
     audioMicrophoneDescriptor_.RemoveMicrophoneDescriptor(devDesc);
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == updatedDesc.macAddress_) {
@@ -380,6 +382,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
 
     audioDeviceManager_.AddNewDevice(audioDescriptor);
+    AudioZoneService::GetInstance().UpdateZonePreferDeviceWhenDeviceConnect();
     if (updatedDesc.connectState_ != VIRTUAL_CONNECTED) {
         AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     }
