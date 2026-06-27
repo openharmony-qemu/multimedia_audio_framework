@@ -1188,188 +1188,24 @@ bool AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDevice
 
     bool ret = false;
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
-    switch (updateCommand) {
-        case CATEGORY_UPDATE:
-            ret = UpdateDeviceCategory(devDesc);
-            reason = devDesc->deviceCategory_ == BT_UNWEAR_HEADPHONE ?
-                AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE :
-                AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-            break;
-        case CONNECTSTATE_UPDATE:
-            ret = UpdateConnectState(devDesc);
-            break;
-        case ENABLE_UPDATE:
-            ret = UpdateEnableState(devDesc);
-            reason = devDesc->isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
-                AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-            break;
-        case EXCEPTION_FLAG_UPDATE:
-            ret = UpdateExceptionFlag(devDesc);
-            break;
-        case USAGE_UPDATE:
-            ret = UpdateDeviceUsage(devDesc, reason);
-            break;
-        default:
-            break;
-    }
-    if (!ret) {
-        int32_t audioId = devDesc->deviceId_;
-        AUDIO_ERR_LOG("do not update type:id %{public}d:%{public}d mac:%{public}s\
-            networkid:%{public}s in connected list",
-            devDesc->deviceType_, audioId, GetEncryptStr(devDesc->macAddress_).c_str(),
-            GetEncryptStr(devDesc->networkId_).c_str());
-    }
+    ret = AudioPolicyUtils::GetInstance().UpdateDevicesListInfo(connectedDevices_, devDesc, updateCommand, reason);
+
+    CHECK_AND_RETURN_RET(updateCommand == CATEGORY_UPDATE, ret);
+    UpdateBtDeviceListForCategory(devDesc);
     return ret;
 }
 
-void AudioDeviceManager::UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc)
+// must be called with currentActiveDevicesMutex_ held
+void AudioDeviceManager::UpdateBtDeviceListForCategory(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
-    if (desc.deviceCategory_ == BT_GLASSES) {
-        ++desc.glassesWearCount_;
-        AUDIO_INFO_LOG("glasses wear count: %{public}u", desc.glassesWearCount_);
-        if (desc.glassesWearCount_ < AudioDeviceDescriptor::WEAR_AGAIN) {
-            desc.connectTimeStamp_ = GetCurrentTimeMS();
-        } else {
-            desc.connectTimeStamp_ = GetCurrentTimeMS() - AudioDeviceDescriptor::TEN_YEARS_MS;
-        }
-    } else {
-        desc.connectTimeStamp_ = GetCurrentTimeMS();
-    }
-}
-
-bool AudioDeviceManager::TriggerDeviceInfoUpdatedCallback(AudioDeviceDescriptor &desc,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
-{
-    if (desc.glassesWearCount_ == AudioDeviceDescriptor::WEAR_FIRST && desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
-        return false;
-    }
-
-    if (desc.glassesWearCount_ < AudioDeviceDescriptor::WEAR_AGAIN) {
-        AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
-        return true;
-    }
-
-    return false;
-}
-
-bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
-{
-    bool updateFlag = false;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
     for (auto &desc : connectedDevices_) {
-        if (desc->deviceType_ == devDesc->deviceType_ &&
-            desc->networkId_ == devDesc->networkId_ &&
-            desc->macAddress_ == devDesc->macAddress_ &&
-            desc->deviceCategory_ != devDesc->deviceCategory_) {
-            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
-            desc->deviceCategory_ = devDesc->deviceCategory_;
-            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
-            if (devDesc->deviceCategory_ == BT_UNWEAR_HEADPHONE) {
-                RemoveBtFromOtherList(devDesc);
-            } else {
-                // Update connectTimeStamp_ when wearing headphones that support wear detection
-                UpdateDeviceConnectTimestamp(*desc);
-                AddBtToOtherList(desc);
-            }
-
-            TriggerDeviceInfoUpdatedCallback(*desc, descForCb);
-            updateFlag = true;
+        CHECK_AND_CONTINUE(AudioPolicyUtils::GetInstance().IsDeviceMatch(desc, devDesc));
+        if (devDesc->deviceCategory_ == BT_UNWEAR_HEADPHONE) {
+            RemoveBtFromOtherList(*devDesc);
+        } else {
+            AddBtToOtherList(desc);
         }
     }
-    return updateFlag;
-}
-
-bool AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc)
-{
-    bool updateFlag = false;
-    bool isScoDevice = devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
-
-    for (const auto &desc : connectedDevices_) {
-        if (desc->networkId_ != devDesc->networkId_ ||
-            desc->macAddress_ != devDesc->macAddress_) {
-            continue;
-        }
-        if (desc->deviceType_ == devDesc->deviceType_) {
-            desc->connectState_ = devDesc->connectState_;
-            updateFlag = true;
-            continue;
-        }
-        // a2dp connectState needs to be updated simultaneously when connectState of sco is updated
-        if (isScoDevice) {
-            if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
-                desc->connectState_ != VIRTUAL_CONNECTED &&
-                devDesc->connectState_ == CONNECTED) {
-                // sco connected, suspend a2dp
-                desc->connectState_ = SUSPEND_CONNECTED;
-                updateFlag = true;
-                AUDIO_WARNING_LOG("sco connectState is connected, update a2dp to suspend");
-            } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
-                desc->connectState_ == SUSPEND_CONNECTED &&
-                (devDesc->connectState_ == DEACTIVE_CONNECTED || devDesc->connectState_ == SUSPEND_CONNECTED)) {
-                // sco deactive or suspend, a2dp CONNECTED
-                desc->connectState_ = CONNECTED;
-                updateFlag = true;
-                AUDIO_WARNING_LOG("sco connectState %{public}d, update a2dp to connected", devDesc->connectState_);
-            }
-        }
-    }
-    return updateFlag;
-}
-
-bool AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &devDesc)
-{
-    bool updateFlag = false;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
-    for (const auto &desc : connectedDevices_) {
-        if (desc->deviceType_ == devDesc->deviceType_ &&
-            desc->macAddress_ == devDesc->macAddress_ &&
-            desc->networkId_ == devDesc->networkId_ &&
-            desc->isEnable_ != devDesc->isEnable_) {
-            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
-            desc->isEnable_ = devDesc->isEnable_;
-            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
-            updateFlag = true;
-            AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
-        }
-    }
-    return updateFlag;
-}
-
-bool AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
-{
-    bool updateFlag = false;
-    for (const auto &desc : connectedDevices_) {
-        if (desc->deviceType_ == deviceDescriptor->deviceType_ &&
-            desc->macAddress_ == deviceDescriptor->macAddress_ &&
-            desc->networkId_ == deviceDescriptor->networkId_ &&
-            desc->exceptionFlag_ != deviceDescriptor->exceptionFlag_) {
-            desc->exceptionFlag_ = deviceDescriptor->exceptionFlag_;
-            updateFlag = true;
-        }
-    }
-    return updateFlag;
-}
-
-bool AudioDeviceManager::UpdateDeviceUsage(const shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-    AudioStreamDeviceChangeReasonExt &reason)
-{
-    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, false, "device is nullptr");
-    bool updateFlag = false;
-    for (const auto &desc : connectedDevices_) {
-        CHECK_AND_CONTINUE(desc != nullptr);
-        if (desc->deviceType_ == deviceDesc->deviceType_ &&
-            desc->macAddress_ == deviceDesc->macAddress_ &&
-            desc->networkId_ == deviceDesc->networkId_ &&
-            desc->deviceUsage_ != deviceDesc->deviceUsage_) {
-            reason = (desc->deviceUsage_ > deviceDesc->deviceUsage_) ?
-                AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE :
-                AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-            desc->deviceUsage_ = deviceDesc->deviceUsage_;
-            updateFlag = true;
-        }
-    }
-    CHECK_AND_RETURN_RET_LOG(updateFlag == true, false, "Update usage fails");
-    return true;
 }
 
 void AudioDeviceManager::UpdateEarpieceStatus(const bool hasEarPiece)

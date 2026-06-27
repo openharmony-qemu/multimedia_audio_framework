@@ -4016,6 +4016,15 @@ int32_t AudioPolicyServer::GetPreferBluetoothAndNearlinkRecord(uint32_t &categor
     return SUCCESS;
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetAvailableDevicesInner(AudioDeviceUsage usage)
+{
+#ifdef MULTI_USER_ZONE
+    return AudioZoneService::GetInstance().GetAvailableDevices(usage, IPCSkeleton::GetCallingUid());
+#else
+    return coreService_->GetAvailableDevices(usage);
+#endif
+}
+
 int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
@@ -4035,7 +4044,7 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
             return ERR_INVALID_PARAM;
     }
 
-    descs = coreService_->GetAvailableDevices(usage);
+    descs = GetAvailableDevicesInner(usage);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(descs);
     AudioDeviceDescriptor::MapInputDeviceType(descs);
 
@@ -4548,8 +4557,10 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
 
     bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     bool hasSysPermission = PermissionUtil::VerifySystemPermission();
+    bool isSystemService = PermissionUtil::VerifySystemPermission() && !PermissionUtil::VerifyIsSystemApp();
     callback->hasBTPermission_ = hasBTPermission;
     callback->hasSystemPermission_ = hasSysPermission;
+    callback->isSystemService_ = isSystemService;
     callback->apiVersion_ = GetApiTargetVersion();
     callback->needDeclaredDevices_ = AudioPolicyUtils::needDeclaredDevices;
     for (DeviceType deviceType : AudioPolicyUtils::needDeclaredDevices) {

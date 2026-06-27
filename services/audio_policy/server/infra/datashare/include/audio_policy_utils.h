@@ -33,6 +33,7 @@
 
 #include "audio_a2dp_offload_flag.h"
 #include "audio_core_config_manager.h"
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -106,6 +107,25 @@ public:
 
     bool IsWirelessDevice(DeviceType deviceType);
     static bool CheckInterphone(StreamUsage usage, const shared_ptr<AudioDeviceDescriptor> &desc);
+
+    bool UpdateDevicesListInfo(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        const std::shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceInfoUpdateCommand updateCommand,
+        AudioStreamDeviceChangeReasonExt &reason);
+    bool IsDeviceMatch(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+        const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool TriggerDeviceInfoUpdatedCallback(AudioDeviceDescriptor &desc,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
+    bool UpdateDeviceCategory(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool UpdateConnectState(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool UpdateEnableState(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool UpdateExceptionFlag(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool UpdateDeviceUsage(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        const std::shared_ptr<AudioDeviceDescriptor> &devDesc, AudioStreamDeviceChangeReasonExt &reason);
+    void UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),

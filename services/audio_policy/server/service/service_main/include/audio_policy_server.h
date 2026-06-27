@@ -943,6 +943,7 @@ private:
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
     int32_t VerifyUidAndPid(const int32_t uid, const int32_t pid);
     void FillDeviceTokenId(std::shared_ptr<AudioDeviceDescriptor> device);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
 
     AudioEffectService &audioEffectService_;
     AudioStateManager &audioStateManager_;

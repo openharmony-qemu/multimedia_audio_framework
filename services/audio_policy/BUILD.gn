@@ -326,6 +326,11 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
   }
 
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+    sources += [ "server/domain/zone/src/audio_zone_router.cpp" ]
+  }
+
   if (audio_framework_feature_wired_audio) {
     defines += [ "AUDIO_WIRED_DETECT" ]
     sources += [

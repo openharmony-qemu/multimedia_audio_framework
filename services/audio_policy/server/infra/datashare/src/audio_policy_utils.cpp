@@ -33,6 +33,7 @@
 #include "audio_router_select_strategy.h"
 #include "audio_select_interface_service.h"
 #include "audio_server_proxy.h"
+#include "audio_device_status.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1076,5 +1077,192 @@ void AudioPolicyUtils::FilterDevicesByTokenId(
             }),
         audioDeviceDescriptors.end());
 }
+
+bool AudioPolicyUtils::IsDeviceMatch(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr && devDesc != nullptr, false, "desc is nullptr");
+    return desc->deviceType_ == devDesc->deviceType_ &&
+        desc->macAddress_ == devDesc->macAddress_ &&
+        desc->networkId_ == devDesc->networkId_;
+}
+
+bool AudioPolicyUtils::UpdateDevicesListInfo(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceInfoUpdateCommand updateCommand,
+    AudioStreamDeviceChangeReasonExt &reason)
+{
+    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "desc is nullptr");
+
+    bool ret = false;
+    switch (updateCommand) {
+        case CATEGORY_UPDATE:
+            ret = UpdateDeviceCategory(devices, devDesc);
+            reason = devDesc->deviceCategory_ == BT_UNWEAR_HEADPHONE ?
+                AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE :
+                AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
+            break;
+        case CONNECTSTATE_UPDATE:
+            ret = UpdateConnectState(devices, devDesc);
+            break;
+        case ENABLE_UPDATE:
+            ret = UpdateEnableState(devices, devDesc);
+            reason = devDesc->isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
+                AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+            break;
+        case EXCEPTION_FLAG_UPDATE:
+            ret = UpdateExceptionFlag(devices, devDesc);
+            break;
+        case USAGE_UPDATE:
+            ret = UpdateDeviceUsage(devices, devDesc, reason);
+            break;
+        default:
+            break;
+    }
+    if (!ret) {
+        int32_t audioId = devDesc->deviceId_;
+        AUDIO_ERR_LOG("do not update type:id %{public}d:%{public}d mac:%{public}s\
+            networkid:%{public}s in connected list",
+            devDesc->deviceType_, audioId, GetEncryptStr(devDesc->macAddress_).c_str(),
+            GetEncryptStr(devDesc->networkId_).c_str());
+        return ret;
+    }
+    return ret;
+}
+
+bool AudioPolicyUtils::UpdateDeviceCategory(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    bool updateFlag = false;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+    for (auto &desc : devices) {
+        if (IsDeviceMatch(desc, devDesc) && desc->deviceCategory_ != devDesc->deviceCategory_) {
+            descForCb.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+            desc->deviceCategory_ = devDesc->deviceCategory_;
+            descForCb.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+            if (devDesc->deviceCategory_ != BT_UNWEAR_HEADPHONE) {
+                UpdateDeviceConnectTimestamp(*desc);
+            }
+            TriggerDeviceInfoUpdatedCallback(*desc, descForCb);
+            updateFlag = true;
+        }
+    }
+    return updateFlag;
+}
+
+bool AudioPolicyUtils::UpdateConnectState(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    bool updateFlag = false;
+    bool isScoDevice = devDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO;
+
+    for (const auto &desc : devices) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        if (desc->networkId_ != devDesc->networkId_ ||
+            desc->macAddress_ != devDesc->macAddress_) {
+            continue;
+        }
+        if (desc->deviceType_ == devDesc->deviceType_) {
+            desc->connectState_ = devDesc->connectState_;
+            updateFlag = true;
+            continue;
+        }
+        if (isScoDevice) {
+            if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+                desc->connectState_ != VIRTUAL_CONNECTED &&
+                devDesc->connectState_ == CONNECTED) {
+                desc->connectState_ = SUSPEND_CONNECTED;
+                updateFlag = true;
+                AUDIO_WARNING_LOG("sco connectState is connected, update a2dp to suspend");
+            } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+                desc->connectState_ == SUSPEND_CONNECTED &&
+                (devDesc->connectState_ == DEACTIVE_CONNECTED || devDesc->connectState_ == SUSPEND_CONNECTED)) {
+                desc->connectState_ = CONNECTED;
+                updateFlag = true;
+                AUDIO_WARNING_LOG("sco connectState %{public}d, update a2dp to connected", devDesc->connectState_);
+            }
+        }
+    }
+    return updateFlag;
+}
+
+bool AudioPolicyUtils::UpdateEnableState(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    bool updateFlag = false;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+    for (const auto &desc : devices) {
+        if (IsDeviceMatch(desc, devDesc) && desc->isEnable_ != devDesc->isEnable_) {
+            descForCb.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+            desc->isEnable_ = devDesc->isEnable_;
+            descForCb.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+            updateFlag = true;
+            AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
+        }
+    }
+    return updateFlag;
+}
+
+bool AudioPolicyUtils::UpdateExceptionFlag(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    bool updateFlag = false;
+    for (const auto &desc : devices) {
+        if (IsDeviceMatch(desc, devDesc) && desc->exceptionFlag_ != devDesc->exceptionFlag_) {
+            desc->exceptionFlag_ = devDesc->exceptionFlag_;
+            updateFlag = true;
+        }
+    }
+    return updateFlag;
+}
+
+bool AudioPolicyUtils::UpdateDeviceUsage(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc, AudioStreamDeviceChangeReasonExt &reason)
+{
+    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "device is nullptr");
+    bool updateFlag = false;
+    for (const auto &desc : devices) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        if (IsDeviceMatch(desc, devDesc) && desc->deviceUsage_ != devDesc->deviceUsage_) {
+            reason = (desc->deviceUsage_ > devDesc->deviceUsage_) ?
+                AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE :
+                AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
+            desc->deviceUsage_ = devDesc->deviceUsage_;
+            updateFlag = true;
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG(updateFlag == true, false, "Update usage fails");
+    return true;
+}
+
+bool AudioPolicyUtils::TriggerDeviceInfoUpdatedCallback(AudioDeviceDescriptor &desc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
+{
+    if (desc.glassesWearCount_ == AudioDeviceDescriptor::WEAR_FIRST && desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
+        return false;
+    }
+
+    if (desc.glassesWearCount_ < AudioDeviceDescriptor::WEAR_AGAIN) {
+        AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
+        return true;
+    }
+
+    return false;
+}
+
+void AudioPolicyUtils::UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceCategory_ == BT_GLASSES) {
+        ++desc.glassesWearCount_;
+        AUDIO_INFO_LOG("glasses wear count: %{public}u", desc.glassesWearCount_);
+        if (desc.glassesWearCount_ < AudioDeviceDescriptor::WEAR_AGAIN) {
+            desc.connectTimeStamp_ = GetCurrentTimeMS();
+        } else {
+            desc.connectTimeStamp_ = GetCurrentTimeMS() - AudioDeviceDescriptor::TEN_YEARS_MS;
+        }
+    } else {
+        desc.connectTimeStamp_ = GetCurrentTimeMS();
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

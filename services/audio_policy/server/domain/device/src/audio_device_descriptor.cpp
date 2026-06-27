@@ -222,6 +222,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     isSupportRemoteMultichannel_ = true;
     deviceTokenId_ = 0;
     isSupportMultiZone_ = false;
+    visibleMode_ = GLOBAL_VISIBLE;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -264,6 +265,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     isSupportRemoteMultichannel_ = true;
     deviceTokenId_ = 0;
     isSupportMultiZone_ = false;
+    visibleMode_ = GLOBAL_VISIBLE;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -315,6 +317,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     privacyType_ = deviceDescriptor.GetDevicePrivacyType();
     isSilent_ = deviceDescriptor.isSilent_;
     isSupportMultiZone_ = deviceDescriptor.isSupportMultiZone_;
+    visibleMode_ = deviceDescriptor.visibleMode_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -367,6 +370,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     privacyType_ = deviceDescriptor->GetDevicePrivacyType();
     isSilent_ = deviceDescriptor->isSilent_;
     isSupportMultiZone_ = deviceDescriptor->isSupportMultiZone_;
+    visibleMode_ = deviceDescriptor->visibleMode_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
@@ -559,6 +563,7 @@ bool AudioDeviceDescriptor::MarshallingInnerdata(Parcel &parcel, int32_t devType
         parcel.WriteBool(isSupportRemoteMultichannel_) && parcel.WriteUint32(deviceTokenId_) &&
         parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType())) &&
         parcel.WriteBool(isSilent_) && parcel.WriteBool(isSupportMultiZone_);
+        parcel.WriteInt32(static_cast<int32_t>(visibleMode_));
 }
 
 void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
@@ -632,7 +637,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteInt32(hdPlaybackMode_) &&
         parcel.WriteBool(isSupportRemoteMultichannel_) && parcel.WriteUint32(deviceTokenId_) &&
         parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType())) && parcel.WriteBool(isSilent_) &&
-        parcel.WriteBool(isSupportMultiZone_);
+        parcel.WriteBool(isSupportMultiZone_) && parcel.WriteInt32(static_cast<int32_t>(visibleMode_));
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -679,6 +684,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     privacyType_ = static_cast<AudioDevicePrivacyType>(parcel.ReadInt32());
     isSilent_ = parcel.ReadBool();
     isSupportMultiZone_ = parcel.ReadBool();
+    visibleMode_ = static_cast<VisibleMode>(parcel.ReadInt32());
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
