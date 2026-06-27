@@ -61,7 +61,10 @@ static const std::map<std::string, AsrNoiseSuppressionMode> NS_MODE_MAP = {
     {"TSE_DENOISE_MODE", AsrNoiseSuppressionMode::TSE_DENOISE},
     {"NORMAL_REG_MODE", AsrNoiseSuppressionMode::NORMAL_REG},
     {"PHONE_CALL_MODE", AsrNoiseSuppressionMode::PHONE_CALL},
-    {"TOPMIC_REG_MODE", AsrNoiseSuppressionMode::TOPMIC_REG}
+    {"TOPMIC_REG_MODE", AsrNoiseSuppressionMode::TOPMIC_REG},
+    {"SHIELD", AsrNoiseSuppressionMode::SHIELD},
+    {"DISTANCE_REJECTION_SHIELD", AsrNoiseSuppressionMode::DISTANCE_REJECTION_SHIELD},
+    {"DISTANCE_REJECTION_GENERAL", AsrNoiseSuppressionMode::DISTANCE_REJECTION_GENERAL}
 };
 
 static const std::map<AsrNoiseSuppressionMode, std::string> NS_MODE_MAP_VERSE = {
@@ -76,7 +79,10 @@ static const std::map<AsrNoiseSuppressionMode, std::string> NS_MODE_MAP_VERSE = 
     {AsrNoiseSuppressionMode::TSE_DENOISE, "TSE_DENOISE_MODE"},
     {AsrNoiseSuppressionMode::NORMAL_REG, "NORMAL_REG_MODE"},
     {AsrNoiseSuppressionMode::PHONE_CALL, "PHONE_CALL_MODE"},
-    {AsrNoiseSuppressionMode::TOPMIC_REG, "TOPMIC_REG_MODE"}
+    {AsrNoiseSuppressionMode::TOPMIC_REG, "TOPMIC_REG_MODE"},
+    {AsrNoiseSuppressionMode::SHIELD, "SHIELD"},
+    {AsrNoiseSuppressionMode::DISTANCE_REJECTION_SHIELD, "DISTANCE_REJECTION_SHIELD"},
+    {AsrNoiseSuppressionMode::DISTANCE_REJECTION_GENERAL, "DISTANCE_REJECTION_GENERAL"}
 };
 
 static const std::map<std::string, AsrWhisperDetectionMode> WHISPER_DETECTION_MODE_MAP = {

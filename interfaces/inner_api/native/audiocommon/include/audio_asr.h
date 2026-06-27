@@ -99,6 +99,27 @@ enum class AsrNoiseSuppressionMode {
      * @since 26
      */
     TOPMIC_REG = 10,
+    /**
+     * near field extraction.
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 26
+     */
+    SHIELD = 11,
+    /**
+     * Celia Whisper Full Duplex Distance Rejection Detection (Sound Shield).
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 26
+     */
+    DISTANCE_REJECTION_SHIELD = 12,
+    /**
+     * Celia Whisper Full Duplex Distance Rejection Detection (General).
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 26
+     */
+    DISTANCE_REJECTION_GENERAL = 13,
 };
 
 /**
