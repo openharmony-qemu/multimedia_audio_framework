@@ -3964,7 +3964,8 @@ int32_t AudioCoreService::ReloadCaptureSession(uint32_t sessionId, SessionOperat
     }
     uint32_t targetSessionId = sessionId;
     std::shared_ptr<AudioStreamDescriptor> newStreamDesc = pipeManager_->GetStreamDescById(sessionId);
-    if (newStreamDesc == nullptr || specialSourceTypeSet_.count(newStreamDesc->capturerInfo_.sourceType) != 0) {
+    if (newStreamDesc == nullptr || specialSourceTypeSet_.count(newStreamDesc->capturerInfo_.sourceType) != 0 ||
+        (newStreamDesc->routeFlag_ & AUDIO_INPUT_FLAG_FAST)) {
         AUDIO_ERR_LOG("The session of %{public}u is special or no stream, no need reload.", sessionId);
         return ERROR;
     }
@@ -4570,8 +4571,6 @@ int32_t AudioCoreService::ReloadNormalSource(SessionInfo &sessionInfo,
     }
 
     audioIOHandleMap_.ReloadPortAndUpdateIOHandle(pipeInfo, moduleInfo);
-    audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(uid), moduleInfo.name,
-        true, INPUT_DEVICES_FLAG);
 
     normalSourceOpened_ = targetSource;
 
@@ -4617,8 +4616,6 @@ int32_t AudioCoreService::ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo
         moduleInfo.format.c_str(), moduleInfo.channelLayout.c_str(), moduleInfo.sourceType.c_str());
     int32_t uid = streamDesc->GetRealUid();
     int32_t result = audioIOHandleMap_.ReloadPortAndUpdateIOHandle(pipeInfo, moduleInfo);
-    audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(uid),
-        pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
     if (result == SUCCESS) {
         audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(uid),
             DeviceFlag::INPUT_DEVICES_FLAG, pipeManager_->QueryPipeIdBySessionId(targetSessionId),

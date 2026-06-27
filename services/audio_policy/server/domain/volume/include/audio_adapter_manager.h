@@ -167,11 +167,6 @@ public:
 
     int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID);
 
-    int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name);
-
-    int32_t SetDeviceActive(InternalDeviceType deviceType, std::string name, bool active,
-        DeviceFlag flag = ALL_DEVICES_FLAG);
-
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
 
     int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName);

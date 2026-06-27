@@ -523,6 +523,9 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
             break;
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             portName = USB_MIC;
+            if (routeFlag == AUDIO_INPUT_FLAG_FAST) {
+                portName = "FastUsbArmCapturerSource";
+            }
             break;
         case DeviceType::DEVICE_TYPE_WAKEUP:
             portName = PRIMARY_WAKEUP;

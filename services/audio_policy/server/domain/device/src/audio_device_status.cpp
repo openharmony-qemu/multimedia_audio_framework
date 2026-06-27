@@ -770,9 +770,6 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
 
         CHECK_AND_RETURN(RestoreNewA2dpPort(streamDescs, moduleInfo, currentActivePort) == SUCCESS);
         std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
-        if (!audioSceneManager_.IsVoiceCallRelatedScene()) {
-            audioPolicyManager_.SetDeviceActive(deviceType, portName, true);
-        }
         audioPolicyManager_.SuspendAudioDevice(portName, false);
         audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
         audioConnectedDevice_.UpdateConnectDevice(deviceType, macAddress, deviceName, streamInfo);
@@ -1116,8 +1113,6 @@ bool AudioDeviceStatus::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &
         audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 
         if (devType == DEVICE_TYPE_SPEAKER) {
-            auto result = audioPolicyManager_.SetDeviceActive(devType, moduleInfo.name, true);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, false, "[module_load]::Device failed %{public}d", devType);
             AudioCoreService::GetCoreService()->SetAudioScene(audioSceneManager_.GetAudioScene());
         }
     }
