@@ -17,14 +17,13 @@
 #endif
 
 #include "taihe_param_utils.h"
-
-#include <unistd.h>
-
 #include "audio_stream_info.h"
 #include "audio_log.h"
 #include "taihe_audio_enum.h"
+#include <unistd.h>
 
 namespace ANI::Audio {
+
 const std::vector<OHOS::AudioStandard::DeviceRole> DEVICE_ROLE_SET = {
     OHOS::AudioStandard::DEVICE_ROLE_NONE,
     OHOS::AudioStandard::INPUT_DEVICE,
@@ -41,6 +40,7 @@ const std::vector<OHOS::AudioStandard::DeviceType> DEVICE_TYPE_SET = {
     OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO,
     OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_A2DP,
     OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BT_SPP,
+    OHOS::AudioStandard::DeviceType::DEVICE_TYPE_NEARLINK_PORT,
     OHOS::AudioStandard::DEVICE_TYPE_MIC,
     OHOS::AudioStandard::DEVICE_TYPE_WAKEUP,
     OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET,
@@ -96,7 +96,6 @@ void InitPlaybackCaptureConfig(OHOS::AudioStandard::AudioPlaybackCaptureConfig &
     }
     config.isModernInnerCapturer = true;
 }
-
 const std::unordered_map<OHOS::AudioStandard::AudioSamplingRate, AudioSamplingRate> gNativeToAniAudioSamplingRate = {
     {OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_8000, AudioSamplingRate::key_t::SAMPLE_RATE_8000},
     {OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_11025, AudioSamplingRate::key_t::SAMPLE_RATE_11025},
@@ -259,7 +258,7 @@ int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOp
 
     status = GetCapturerInfo(opts->capturerInfo, options.capturerInfo);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParseCapturerInfo failed");
-
+    
     status = GetPreferredInputDevice(opts, options);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse PreferredInputDevice failed");
 
@@ -299,7 +298,8 @@ int32_t TaiheParamUtils::GetAppInfo(OHOS::AudioStandard::AppInfo &appInfo, AppId
     CHECK_AND_RETURN_RET_LOG(options.appTokenId >= 0, AUDIO_INVALID_PARAM, "appTokenId is invalid negative value");
     appInfo.appTokenId = static_cast<uint32_t>(options.appTokenId);
 
-    CHECK_AND_RETURN_RET_LOG(options.appTokenId >= 0, AUDIO_INVALID_PARAM, "appFullTokenId is invalid negative value");
+    CHECK_AND_RETURN_RET_LOG(options.appFullTokenId >= 0, AUDIO_INVALID_PARAM,
+        "appFullTokenId is invalid negative value");
     appInfo.appFullTokenId = static_cast<uint64_t>(options.appFullTokenId);
 
     return AUDIO_OK;
