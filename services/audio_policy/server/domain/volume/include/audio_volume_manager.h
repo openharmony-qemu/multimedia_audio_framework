@@ -245,7 +245,7 @@ private:
 
     VolumeScale HandleAbsBluetoothVolume(const std::string &macAddress, const VolumeScale &volume,
         bool isNearlinkDevice = false, AudioStreamType streamType = STREAM_DEFAULT);
-    VolumeScale DealWithSafeVolume(const VolumeScale &volume, bool isBtDevice)
+    VolumeScale DealWithSafeVolume(const VolumeScale &volume, bool isBtDevice);
     void CreateCheckMusicActiveThread();
     void CheckBlueToothActiveMusicTime(int32_t safeVolume);
     void CheckNearlinkActiveMusicTime(int32_t safeVolume);

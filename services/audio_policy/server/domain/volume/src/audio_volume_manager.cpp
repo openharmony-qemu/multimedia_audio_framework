@@ -943,23 +943,26 @@ VolumeScale AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macA
     bool isNearlinkDevice, AudioStreamType streamType)
 {
     VolumeScale safeVolume = volume;
+    int32_t sVolumeLevel = 0;
     if (isBtFirstBoot_) {
         // Need to use safe volume level and reset volume degree.
         safeVolume.SetVolumeLevelAndResetDegree(audioPolicyManager_.GetSafeVolumeLevel());
+        sVolumeLevel = safeVolume.VolumeLevel();
         AUDIO_INFO_LOG("Btfirstboot set volume use safe volume");
         isBtFirstBoot_ = false;
         if (!isNearlinkDevice) {
-            Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, safeVolume.VolumeLevel());
+            Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
         } else {
-            SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, streamType, safeVolume.VolumeLevel());
+            SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, streamType, sVolumeLevel);
         }
     } else {
         safeVolume = DealWithSafeVolume(safeVolume, true);
         if (safeVolume.VolumeLevel() != volume.VolumeLevel()) {
+            sVolumeLevel = safeVolume.VolumeLevel();
             if (!isNearlinkDevice) {
-                Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, safeVolume.VolumeLevel());
+                Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
             } else {
-                SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, streamType, safeVolume.VolumeLevel());
+                SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, streamType, sVolumeLevel);
             }
         }
     }
