@@ -139,6 +139,12 @@ public:
         LATENCY_TYPE_HARDWARE = 2
     };
 
+    enum AudioNoiseReductionMode {
+        NOISE_REDUCTION_MODE_FIDELITY = 0,
+        NOISE_REDUCTION_MODE_PURE_VOCALS = 1,
+        NOISE_REDUCTION_MODE_STANDARD = 2
+    };
+
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
@@ -179,6 +185,7 @@ public:
     static bool IsLegalInputArgumentSessionScene(int32_t scene);
     static bool IsLegalRenderTarget(int32_t target);
     static bool IsLegalAudioLatencyType(int32_t latencyType);
+    static bool IsLegalInputArgumentNoiseReductionMode(int32_t noiseReductionMode);
     static LatencyFlag ConvertLatencyTypeToFlag(int32_t latencyType);
     static bool IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category);
 
@@ -290,6 +297,7 @@ private:
     static const std::map<std::string, int32_t> audioStateMap;
     static const std::map<std::string, int32_t> audioPrivacyTypeMap;
     static const std::map<std::string, int32_t> effectModeMap;
+    static const std::map<std::string, int32_t> noiseReductionModeMap;
     static const std::map<std::string, int32_t> deviceChangeTypeMap;
     static const std::map<std::string, int32_t> audioSceneMap;
     static const std::map<std::string, int32_t> interruptActionTypeMap;

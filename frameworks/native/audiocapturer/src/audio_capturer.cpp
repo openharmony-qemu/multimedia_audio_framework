@@ -21,6 +21,8 @@
 
 #include <cinttypes>
 #include <cstring>
+#include <sstream>
+#include <algorithm>
 
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
@@ -31,6 +33,7 @@
 #include "audio_stream_descriptor.h"
 #include "audio_info.h"
 #include "audio_system_client_engine_manager.h"
+#include "audio_system_manager.h"
 #include "audio_capturer_types.h"
 #include "audio_debug_manager.h"
 #include "audio_debug_info.h"
@@ -253,7 +256,7 @@ static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions 
 
     return true;
 }
- 
+
 static inline void FillEcParams(AudioCapturerParams &params, const AudioStreamInfo &ec)
 {
     params.audioEcSampleFormat = ec.format;
@@ -3449,5 +3452,89 @@ int32_t AudioCapturerPrivate::SetIndependentAudioSessionStrategy(
         sessionID_, static_cast<int32_t>(strategy.concurrencyMode));
     return SUCCESS;
 }
+
+int32_t AudioCapturerPrivate::SetNoiseReductionMode(NoiseReductionMode mode)
+{
+    AUDIO_INFO_LOG("SetNoiseReductionMode NoiseReductionMode: %{public}d", mode);
+
+    {
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        if (!hasFetchedSupportedModes_) {
+            std::vector<NoiseReductionMode> tempModes;
+            int32_t ret = GetSupportedNoiseReductionModes(tempModes);
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("SetNoiseReductionMode: failed to get supported modes");
+                return ret;
+            }
+        }
+
+        auto it = std::find(supportedNoiseReductionModes_.begin(),
+                            supportedNoiseReductionModes_.end(), mode);
+        if (it == supportedNoiseReductionModes_.end()) {
+            AUDIO_ERR_LOG("SetNoiseReductionMode: mode %{public}d is not supported", mode);
+            return ERR_INVALID_PARAM;
+        }
+    }
+
+    std::string key = "record_denoise_mode";
+    std::string value = std::to_string(static_cast<int32_t>(mode));
+    AudioSystemManager::GetInstance()->SetAudioParameter(key, value);
+
+    noiseReductionMode_ = mode;
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::GetNoiseReductionMode(NoiseReductionMode &mode)
+{
+    AUDIO_INFO_LOG("GetNoiseReductionMode NoiseReductionMode: %{public}d", noiseReductionMode_);
+    mode = noiseReductionMode_;
+    return SUCCESS;
+}
+
+namespace {
+NoiseReductionMode StringToNoiseReductionMode(const std::string &modeStr)
+{
+    if (modeStr == "fidelity") {
+        return NOISE_REDUCTION_MODE_FIDELITY;
+    } else if (modeStr == "pure_voice") {
+        return NOISE_REDUCTION_MODE_PURE_VOCALS;
+    } else if (modeStr == "normal") {
+        return NOISE_REDUCTION_MODE_STANDARD;
+    }
+    return NOISE_REDUCTION_MODE_MAX;
+}
+}
+
+int32_t AudioCapturerPrivate::GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes)
+{
+    AUDIO_INFO_LOG("GetSupportedNoiseReductionModes");
+    modes.clear();
+    modes.push_back(NOISE_REDUCTION_MODE_FIDELITY);
+    std::string key = "record_denoise_mode_support";
+    std::string value = AudioSystemManager::GetInstance()->GetAudioParameter(key);
+    if (value.empty()) {
+        AUDIO_WARNING_LOG("GetSupportedNoiseReductionModes: failed to get from system, use default");
+        return SUCCESS;
+    }
+
+    std::stringstream ss(value);
+    std::string modeStr;
+    while (std::getline(ss, modeStr, ',')) {
+        if (!modeStr.empty()) {
+            NoiseReductionMode mode = StringToNoiseReductionMode(modeStr);
+            if (mode != NOISE_REDUCTION_MODE_MAX) {
+                modes.push_back(mode);
+            }
+        }
+    }
+
+    {
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        supportedNoiseReductionModes_ = modes;
+        hasFetchedSupportedModes_ = true;
+    }
+    return SUCCESS;
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

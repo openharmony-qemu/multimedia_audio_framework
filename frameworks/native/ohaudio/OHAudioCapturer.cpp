@@ -23,6 +23,7 @@
 #include "audio_utils.h"
 #include "OHAudioDeviceDescriptor.h"
 #include "OHAudioCommon.h"
+#include "audio_noise_reduction_types.h"
 #include "stream_dfx_manager.h"
 #include <unistd.h>
 static const int32_t START_RESULT_SUCCESS = 0;
@@ -36,6 +37,11 @@ static OHOS::AudioStandard::OHAudioCapturer *convertCapturer(OH_AudioCapturer* c
     return reinterpret_cast<OHOS::AudioStandard::OHAudioCapturer*>(capturer);
 }
 
+static bool IsValidNoiseReductionMode(OH_AudioNoiseReductionMode mode)
+{
+    return mode >= AUDIO_NOISE_REDUCTION_MODE_FIDELITY &&
+        mode <= AUDIO_NOISE_REDUCTION_MODE_STANDARD;
+}
 OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer)
 {
     AUDIO_INFO_LOG("in");
@@ -421,6 +427,73 @@ OH_AudioStream_Result OH_AudioCapturer_GetOverflowCount(OH_AudioCapturer* captur
         "convert capturer failed");
 
     *count = audioCapturer->GetOverflowCount();
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioCapturer_SetNoiseReductionMode(OH_AudioCapturer* capturer,
+    OH_AudioNoiseReductionMode noiseReductionMode)
+{
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::RECORD_CONFIG_INVALID_PARAM, "convert capturer failed", true),
+        "convert capturer failed");
+    CHECK_AND_RETURN_RET_LOG(IsValidNoiseReductionMode(noiseReductionMode), AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "noiseReductionMode is invalid");
+
+    auto mode = static_cast<OHOS::AudioStandard::NoiseReductionMode>(noiseReductionMode);
+    int32_t ret = audioCapturer->SetNoiseReductionMode(mode);
+    if (ret == OHOS::AudioStandard::ERR_INVALID_PARAM || ret == OHOS::AudioStandard::ERROR_INVALID_PARAM) {
+        return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    }
+    return ret == OHOS::AudioStandard::SUCCESS ? AUDIOSTREAM_SUCCESS : AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+}
+
+OH_AudioStream_Result OH_AudioCapturer_GetNoiseReductionMode(
+    OH_AudioCapturer* capturer, OH_AudioNoiseReductionMode* noiseReductionMode)
+{
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "convert capturer failed", true),
+        "convert capturer failed");
+    CHECK_AND_RETURN_RET_LOG(noiseReductionMode != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "noiseReductionMode is nullptr");
+
+    OHOS::AudioStandard::NoiseReductionMode mode = OHOS::AudioStandard::NOISE_REDUCTION_MODE_FIDELITY;
+    int32_t ret = audioCapturer->GetNoiseReductionMode(mode);
+    CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, AUDIOSTREAM_ERROR_ILLEGAL_STATE,
+        "GetNoiseReductionMode failed");
+
+    *noiseReductionMode = static_cast<OH_AudioNoiseReductionMode>(mode);
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OH_AudioCapturer_GetSupportedNoiseReductionModes(
+    OH_AudioCapturer* capturer, OH_AudioNoiseReductionMode** noiseReductionModes)
+{
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            OHOS::AudioStandard::RECORD_QUERY_ILLEGAL_STATE, "convert capturer failed", true),
+        "convert capturer failed");
+    CHECK_AND_RETURN_RET_LOG(noiseReductionModes != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "noiseReductionModes is nullptr");
+    std::vector<OHOS::AudioStandard::NoiseReductionMode> nativeModes;
+    int32_t ret = audioCapturer->GetSupportedNoiseReductionModes(nativeModes);
+    CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, AUDIOSTREAM_ERROR_ILLEGAL_STATE,
+        "GetSupportedNoiseReductionModes failed");
+
+    *noiseReductionModes = static_cast<OH_AudioNoiseReductionMode*>(malloc(
+        (nativeModes.size() + 1) * sizeof(OH_AudioNoiseReductionMode)));
+    if (*noiseReductionModes == nullptr) {
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    }
+
+    for (size_t i = 0; i < nativeModes.size(); ++i) {
+        (*noiseReductionModes)[i] = static_cast<OH_AudioNoiseReductionMode>(nativeModes[i]);
+    }
+
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -1102,6 +1175,42 @@ int32_t OHAudioCapturer::SetIndependentAudioSessionStrategy(
             RECORD_CONFIG_ILLEGAL_STATE, "capturer client is nullptr", true),
         "capturer client is nullptr");
     return audioCapturer_->SetIndependentAudioSessionStrategy(strategy, behavior);
+}
+
+int32_t OHAudioCapturer::SetNoiseReductionMode(NoiseReductionMode mode)
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    return audioCapturer_->SetNoiseReductionMode(mode);
+}
+
+int32_t OHAudioCapturer::GetNoiseReductionMode(NoiseReductionMode &mode)
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    return audioCapturer_->GetNoiseReductionMode(mode);
+}
+
+int32_t OHAudioCapturer::GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes)
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    return audioCapturer_->GetSupportedNoiseReductionModes(modes);
+}
+
+int32_t OHAudioCapturer::GetSupportedNoiseReductionModes(OH_AudioNoiseReductionMode **modes)
+{
+    CHECK_AND_RETURN_RET_LOG(modes != nullptr, ERR_INVALID_PARAM, "modes is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+
+    std::vector<NoiseReductionMode> nativeModes;
+    int32_t ret = audioCapturer_->GetSupportedNoiseReductionModes(nativeModes);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSupportedNoiseReductionModes failed");
+
+    supportedNoiseReductionModes_.clear();
+    supportedNoiseReductionModes_.reserve(nativeModes.size());
+    for (const auto &mode : nativeModes) {
+        supportedNoiseReductionModes_.emplace_back(static_cast<OH_AudioNoiseReductionMode>(mode));
+    }
+    *modes = supportedNoiseReductionModes_.data();
+    return SUCCESS;
 }
 
 const AudioCapturer *OHAudioCapturer::GetAudioCapturer() const

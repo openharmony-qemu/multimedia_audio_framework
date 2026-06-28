@@ -1292,11 +1292,21 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     CHECK_AND_RETURN_RET_LOG(AudioParameterValueCheck(key, value), ERR_INVALID_PARAM,
         "AudioParameterValueCheck fail! key: %{public}s, value: %{public}s", key.c_str(), value.c_str());
 
-    if (key != "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
+    if (key == "record_denoise_mode") {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "no audio permission");
+    } else if (key != "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
         bool ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "MODIFY_AUDIO_SETTINGS permission denied");
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "modify permission denied");
+    }
+
+    if (key == "record_denoise_mode") {
+        AudioServer::audioParameters[key] = value;
+        std::string halName = "primary";
+        HdiAdapterManager::GetInstance().SetAudioParameter(HDI_DEVICE_MANAGER_TYPE_LOCAL, halName,
+            AudioParamKey::NONE, "", "record_denoise_mode=" + value);
+        return SUCCESS;
     }
 
     if (key == "VOICE_PHONE_STATUS") {
@@ -1538,7 +1548,16 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     AudioXCollie audioXCollie("GetAudioParameter", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    
+
+    if (key == "record_denoise_mode_support") {
+        auto result = HdiAdapterManager::GetInstance().GetAudioParameterByKey(
+            HDI_DEVICE_MANAGER_TYPE_LOCAL, "record_denoise_mode_support");
+        if (result.has_value() && !result.value().empty()) {
+            return result.value();
+        }
+        return "";
+    }
+
     auto result = HdiAdapterManager::GetInstance().GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, key);
     if (result.has_value()) {
         return result.value();
@@ -1763,10 +1782,10 @@ int32_t AudioServer::SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, b
     AudioScene audioSceneIn = static_cast<AudioScene>(audioScene);
     CHECK_AND_RETURN_RET_LOG(audioSceneIn > AUDIO_SCENE_INVALID && audioSceneIn < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "param is invalid");
-    
+
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
-    
+
     if (pipeId == DEFAULT_PIPE_ID) {
         sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
         source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, false);
@@ -1774,7 +1793,7 @@ int32_t AudioServer::SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, b
         sink = HdiAdapterManager::GetInstance().GetRenderSink(pipeId, true);
         source = HdiAdapterManager::GetInstance().GetCaptureSource(pipeId, false);
     }
-    
+
     int32_t ret = SUCCESS;
     if (sink != nullptr) {
         ret = sink->SetAudioScene(audioSceneIn, scoExcludeFlag);
@@ -1782,14 +1801,14 @@ int32_t AudioServer::SetAudioSceneForPipe(uint32_t pipeId, int32_t audioScene, b
             AUDIO_ERR_LOG("SetAudioScene for sink %{public}u failed: %{public}d", pipeId, ret);
         }
     }
-    
+
     if (source != nullptr) {
         ret = source->SetAudioScene(audioSceneIn, scoExcludeFlag);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("SetAudioScene for source %{public}u failed: %{public}d", pipeId, ret);
         }
     }
-    
+
     AUDIO_INFO_LOG("SetAudioSceneForPipe %{public}u completed with ret %{public}d", pipeId, ret);
     return ret;
 }
@@ -3997,7 +4016,7 @@ bool AudioServer::CheckVoiceDownlinkPermission(const AudioProcessConfig &config)
     return true;
 #endif
 }
- 	  
+
 int32_t AudioServer::NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted)
 {
     AUDIO_INFO_LOG("sessionId: %{public}u, isPermitted: %{public}d", sessionId, isPermitted);

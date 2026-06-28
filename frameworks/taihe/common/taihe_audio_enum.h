@@ -22,6 +22,7 @@
 #include "audio_log.h"
 #include "audio_effect.h"
 #include "audio_session_device_info.h"
+#include "audio_noise_reduction_types.h"
 
 namespace ANI::Audio {
 using namespace taihe;
@@ -107,6 +108,7 @@ public:
 
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
+    static bool IsLegalInputArgumentNoiseReductionMode(int32_t noiseReductionMode);
     static bool IsLegalInputArgumentChannelBlendMode(int32_t blendMode);
     static bool IsLegalCapturerType(int32_t type);
     static bool IsLegalInputArgumentVolType(int32_t inputType);
@@ -168,6 +170,8 @@ public:
     static AudioVolumeType ToTaiheAudioVolumeType(TaiheAudioEnum::AudioJsVolumeType type);
     static ohos::multimedia::audio::AudioRingMode ToTaiheAudioRingMode(OHOS::AudioStandard::AudioRingerMode mode);
     static AudioEffectMode ToTaiheAudioEffectMode(OHOS::AudioStandard::AudioEffectMode mode);
+    static ohos::multimedia::audio::NoiseReductionMode ToTaiheNoiseReductionMode(
+        OHOS::AudioStandard::NoiseReductionMode mode);
     static AudioStreamDeviceChangeReason ToTaiheAudioStreamDeviceChangeReason(
         OHOS::AudioStandard::AudioStreamDeviceChangeReason reason);
     static AudioChannelLayout ToTaiheAudioChannelLayout(OHOS::AudioStandard::AudioChannelLayout layout);

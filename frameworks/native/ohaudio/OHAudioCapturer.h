@@ -16,11 +16,14 @@
 #ifndef OH_AUDIO_CAPTURER_H
 #define OH_AUDIO_CAPTURER_H
 
+#include <vector>
+
 #include "native_audiocapturer.h"
 #include "native_audio_session_base.h"
 #include "audio_capturer.h"
 #include "audio_common_log.h"
 #include "OHAudioDeviceDescriptor.h"
+#include "audio_noise_reduction_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -178,7 +181,7 @@ public:
         : callback_(callback), ohAudioCapturer_(audioCapturer), userData_(userData)
     {
     }
- 
+
     void OnPlaybackCaptureStartResult(PlaybackCaptureStartState state) override;
 private:
     OH_AudioCapturer_OnPlaybackCaptureStartCallback callback_;
@@ -239,6 +242,10 @@ public:
         OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData);
     bool IsModernInnerCapturer();
     int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior);
+    int32_t SetNoiseReductionMode(NoiseReductionMode mode);
+    int32_t GetNoiseReductionMode(NoiseReductionMode &mode);
+    int32_t GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes);
+    int32_t GetSupportedNoiseReductionModes(OH_AudioNoiseReductionMode **modes);
     const AudioCapturer *GetAudioCapturer() const;
 
 private:
@@ -251,6 +258,7 @@ private:
     std::shared_ptr<OHAudioCapturerFastStatusChangeCallback> audioCapturerFastStatusChangeCallback_;
     std::shared_ptr<OHAudioCapturerSensitiveRecordPermitCallback> audioCapturerSensitiveRecordPermitCallback_;
     std::shared_ptr<OHAudioCapturerOnPlaybackCaptureStartCallback> capturerOnPlaybackCaptureStartCallback_ = nullptr;
+    std::vector<OH_AudioNoiseReductionMode> supportedNoiseReductionModes_;
     bool isModernInnerCapturer_ = false;
 };
 }  // namespace AudioStandard

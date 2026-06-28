@@ -275,6 +275,9 @@ napi_status NapiAudioCapturer::InitAudioCapturer(napi_env env, napi_value &const
         DECLARE_NAPI_FUNCTION("getAudioTimestampInfoSync", GetAudioTimestampInfoSync),
         DECLARE_NAPI_FUNCTION("setWillMuteWhenInterrupted", SetWillMuteWhenInterrupted),
         DECLARE_NAPI_FUNCTION("setMuteHint", SetMuteHint),
+        DECLARE_NAPI_FUNCTION("setNoiseReductionMode", SetNoiseReductionMode),
+        DECLARE_NAPI_FUNCTION("getNoiseReductionMode", GetNoiseReductionMode),
+        DECLARE_NAPI_FUNCTION("getSupportedNoiseReductionModes", GetSupportedNoiseReductionModes),
         DECLARE_NAPI_FUNCTION("requestPlaybackCaptureStart", RequestPlaybackCaptureStart),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
@@ -414,7 +417,7 @@ static void UnregisterAudioCapturerCallbackTemplate(napi_env env, napi_value cal
         UnregisterAudioCapturerSingletonCallbackTemplate(env, callback, cbName, cb, removeFunction);
         return;
     }
-    
+
     auto isPresent = [&env, &callback, &cbName, &removeFunction]
         (std::shared_ptr<NapiAudioCapturerCallbackInner> &iter) {
             if (!iter->CheckIfTargetCallbackName(cbName)) {
@@ -548,6 +551,7 @@ napi_value NapiAudioCapturer::CreateAudioCapturer(napi_env env, napi_callback_in
 
     return NapiAsyncWork::Enqueue(env, context, "CreateAudioCapturer", nullptr, complete);
 }
+
 
 napi_value NapiAudioCapturer::CreateMicInAudioCapturer(napi_env env, napi_callback_info info)
 {
@@ -1257,6 +1261,93 @@ napi_value NapiAudioCapturer::SetMuteHint(napi_env env, napi_callback_info info)
     return NapiAsyncWork::Enqueue(env, context, "SetMuteHint", executor, complete);
 }
 
+napi_value NapiAudioCapturer::SetNoiseReductionMode(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+
+    auto *napiAudioCapturer = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of noiseReductionMode must be number"),
+        "invalid valueType");
+
+    int32_t noiseReductionMode = 0;
+    NapiParamUtils::GetValueInt32(env, noiseReductionMode, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentNoiseReductionMode(noiseReductionMode),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of noiseReductionMode must be enum NoiseReductionMode"),
+        "get noiseReductionMode failed");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr, result, "napiAudioCapturer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr, result, "audioCapturer_ is nullptr");
+
+    int32_t ret = napiAudioCapturer->audioCapturer_->SetNoiseReductionMode(
+        static_cast<NoiseReductionMode>(noiseReductionMode));
+    if (ret == ERR_INVALID_PARAM || ret == ERROR_INVALID_PARAM) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM);
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
+        "SetNoiseReductionMode failed");
+    return NapiParamUtils::GetUndefinedValue(env);
+}
+
+napi_value NapiAudioCapturer::GetNoiseReductionMode(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+
+    auto *napiAudioCapturer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr, result, "napiAudioCapturer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr, result, "audioCapturer_ is nullptr");
+
+    NoiseReductionMode noiseReductionMode = NOISE_REDUCTION_MODE_FIDELITY;
+    int32_t ret = napiAudioCapturer->audioCapturer_->GetNoiseReductionMode(noiseReductionMode);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
+        "GetNoiseReductionMode failed");
+
+    NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(noiseReductionMode), result);
+    return result;
+}
+
+napi_value NapiAudioCapturer::GetSupportedNoiseReductionModes(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+
+    auto *napiAudioCapturer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID), "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr, result, "napiAudioCapturer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr, result, "audioCapturer_ is nullptr");
+
+    std::vector<NoiseReductionMode> noiseReductionModes;
+    int32_t ret = napiAudioCapturer->audioCapturer_->GetSupportedNoiseReductionModes(noiseReductionModes);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
+        "GetSupportedNoiseReductionModes failed");
+
+    napi_status status = napi_create_array_with_length(env, noiseReductionModes.size(), &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+        "napi_create_array_with_length failed");
+    for (size_t i = 0; i < noiseReductionModes.size(); ++i) {
+        napi_value jsMode = nullptr;
+        status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(noiseReductionModes[i]), jsMode);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+            "SetValueInt32 failed");
+        status = napi_set_element(env, result, i, jsMode);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+            "napi_set_element failed");
+    }
+    return result;
+}
+
 napi_value NapiAudioCapturer::RequestPlaybackCaptureStart(napi_env env, napi_callback_info info)
 {
     size_t argc = ARGS_TWO;
@@ -1546,11 +1637,11 @@ napi_value NapiAudioCapturer::RegisterPeriodPositionCallback(napi_env env, napi_
 
     CHECK_AND_RETURN_RET_LOG(frameCount > 0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of frame is not supported"), "frameCount value not supported");
-    
+
     CHECK_AND_RETURN_RET_LOG(napiCapturer->periodPositionCbNapi_ == nullptr,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
         "periodReach already subscribed.");
-    
+
     std::shared_ptr<NapiCapturerPeriodPositionCallback> cb = std::make_shared<NapiCapturerPeriodPositionCallback>(env);
     CHECK_AND_RETURN_RET_LOG(cb != nullptr,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "periodPositionCbNapi_ id nullptr");
@@ -1559,7 +1650,7 @@ napi_value NapiAudioCapturer::RegisterPeriodPositionCallback(napi_env env, napi_
     int32_t ret = napiCapturer->audioCapturer_->SetCapturerPeriodPositionCallback(frameCount, cb);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
         "SetCapturerPeriodPositionCallback failed");
-    
+
     cb->SaveCallbackReference(cbName, argv[PARAM2]);
     cb->CreatePeriodPositionTsfn(env);
 
@@ -1789,7 +1880,7 @@ void NapiAudioCapturer::UnregisterAudioCapturerDeviceChangeCallback(napi_env env
         };
     auto callback = GetCallback(argc, argv);
     UnregisterAudioCapturerCallbackTemplate(env, callback, napiCapturer, cbName, removeFunction);
-    
+
     AUDIO_INFO_LOG("UnregisterCapturerDeviceChangeCallback is successful");
 }
 

@@ -39,6 +39,7 @@
 #define NATIVE_AUDIOCAPTURER_H
 
 #include <time.h>
+#include "native_audio_common.h"
 #include "native_audiostream_base.h"
 #include "native_audio_device_base.h"
 #include "native_audio_session_base.h"
@@ -406,6 +407,51 @@ OH_AudioStream_Result OH_AudioCapturer_RequestPlaybackCaptureStart(OH_AudioCaptu
  */
 OH_AudioStream_Result OH_AudioCapturer_SetIndependentAudioSessionStrategy(
     OH_AudioCapturer* capturer, const OH_AudioSession_Strategy *strategy, uint32_t behavior);
+
+/**
+ * @brief Sets noise reduction mode on current audio capturer.
+ *
+ * @param capturer Audio capturer created by OH_AudioStreamBuilder_GenerateCapturer().
+ * @param noiseReductionMode Noise reduction mode to set, refer to {@link OH_AudioNoiseReductionMode}.
+ * @return Function result code:
+ *         {@link AUDIOSTREAM_SUCCESS} If the execution is successful.
+ *         {@link AUDIOSTREAM_ERROR_INVALID_PARAM} The param of capturer is nullptr or noiseReductionMode is invalid.
+ *         {@link AUDIOSTREAM_ERROR_ILLEGAL_STATE} Stream is in running or released state.
+ * @since 26.0.0
+ */
+OH_AudioStream_Result OH_AudioCapturer_SetNoiseReductionMode(OH_AudioCapturer* capturer,
+    OH_AudioNoiseReductionMode noiseReductionMode);
+
+/**
+ * @brief Gets noise reduction mode on current audio capturer.
+ *
+ * @param capturer Audio capturer created by OH_AudioStreamBuilder_GenerateCapturer().
+ * @param noiseReductionMode Pointer to the variable where noise reduction mode will be stored,
+ *                           refer to {@link OH_AudioNoiseReductionMode}.
+ * @return Function result code:
+ *         {@link AUDIOSTREAM_SUCCESS} If the execution is successful.
+ *         {@link AUDIOSTREAM_ERROR_INVALID_PARAM} The param of capturer or noiseReductionMode is nullptr.
+ *         {@link AUDIOSTREAM_ERROR_ILLEGAL_STATE} Stream is in released state.
+ * @since 26.0.0
+ */
+OH_AudioStream_Result OH_AudioCapturer_GetNoiseReductionMode(OH_AudioCapturer* capturer,
+    OH_AudioNoiseReductionMode* noiseReductionMode);
+
+/**
+ * @brief Gets all supported noise reduction modes on current audio capturer.
+ *
+ * @param capturer Audio capturer created by OH_AudioStreamBuilder_GenerateCapturer().
+ * @param noiseReductionModes Pointer to receive the array of supported noise reduction modes.
+ *                            The array is managed by the system. The caller should not free this memory.
+ *                            Refer to {@link OH_AudioNoiseReductionMode}.
+ * @return Function result code:
+ *         {@link AUDIOSTREAM_SUCCESS} If the execution is successful.
+ *         {@link AUDIOSTREAM_ERROR_INVALID_PARAM} The param of capturer or noiseReductionModes is nullptr.
+ *         {@link AUDIOSTREAM_ERROR_ILLEGAL_STATE} Stream is in released state.
+ * @since 26.0.0
+ */
+OH_AudioStream_Result OH_AudioCapturer_GetSupportedNoiseReductionModes(OH_AudioCapturer* capturer,
+    OH_AudioNoiseReductionMode** noiseReductionModes);
 
 /**
  * @brief Callback used to receive when the sensitive warning message playback for cellular call

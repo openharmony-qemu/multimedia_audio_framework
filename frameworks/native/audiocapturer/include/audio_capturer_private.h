@@ -25,6 +25,7 @@
 #include "audio_capturer_proxy_obj.h"
 #include "audio_task_loop.h"
 #include "audio_errors.h"
+#include "audio_noise_reduction_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -132,6 +133,9 @@ public:
     int32_t StartPlaybackCapture() override;
     int32_t SetInMainThreadState(bool isInMainThread) override;
     int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior) override;
+    int32_t SetNoiseReductionMode(NoiseReductionMode mode) override;
+    int32_t GetNoiseReductionMode(NoiseReductionMode &mode) override;
+    int32_t GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes) override;
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
@@ -275,6 +279,10 @@ private:
     std::mutex inSwitchingMtx_;
     bool inSwitchingFlag_ = false;
     bool isFirstTimeSetMainThreadState_ = true;
+    NoiseReductionMode noiseReductionMode_ = NOISE_REDUCTION_MODE_FIDELITY;
+    bool hasFetchedSupportedModes_ = false;
+    std::vector<NoiseReductionMode> supportedNoiseReductionModes_ = {NOISE_REDUCTION_MODE_FIDELITY};
+    std::recursive_mutex noiseReductionModesMtx_;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
@@ -307,7 +315,7 @@ class AudioCapturerSensitiveRecordPermitCallbackImpl :
 public:
     explicit AudioCapturerSensitiveRecordPermitCallbackImpl() = default;
     virtual ~AudioCapturerSensitiveRecordPermitCallbackImpl() = default;
- 
+
     void OnSensitiveRecordPermit(bool isFinished) override;
     void SaveCallback(const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback);
 private:

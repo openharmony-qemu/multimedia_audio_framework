@@ -1082,7 +1082,11 @@ interface AudioCapturer {
 
   @gen_promise("setMuteHint")
   SetMuteHintSync(mute: bool): void;
+  SetNoiseReductionMode(noiseReductionMode: NoiseReductionMode): void;
 
+  GetNoiseReductionMode(): NoiseReductionMode;
+
+  GetSupportedNoiseReductionModes(): Array<NoiseReductionMode>;
   RequestPlaybackCaptureStart(callback: (data: PlaybackCaptureStartState) => void): void;
 
   GetCurrentInputDevices(): Array<AudioDeviceDescriptor>;
@@ -1264,6 +1268,12 @@ interface AudioRenderer {
 enum AudioEffectMode: i32 {
   EFFECT_NONE = 0,
   EFFECT_DEFAULT = 1,
+}
+
+enum NoiseReductionMode: i32 {
+  FIDELITY = 0,
+  PURE_VOCALS = 1,
+  STANDARD = 2,
 }
 
 struct AudioSpatialDeviceState {
