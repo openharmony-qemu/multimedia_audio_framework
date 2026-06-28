@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 import("../../config.gni")
 
 ohos_shared_library("audio_engine_utils") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -78,7 +78,7 @@ config("audio_engine_plugins_config") {
 }
 
 ohos_shared_library("audio_engine_plugins") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -169,7 +169,7 @@ config("audio_engine_node_config") {
 }
 
 ohos_shared_library("audio_engine_node") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -252,7 +252,7 @@ ohos_shared_library("audio_engine_node") {
 }
 
 ohos_shared_library("hpae_engine_manager") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -325,7 +325,7 @@ ohos_shared_library("hpae_engine_manager") {
 }
 
 ohos_shared_library("audio_engine_monitor") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true

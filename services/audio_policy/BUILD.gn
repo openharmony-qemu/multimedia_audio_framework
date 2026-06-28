@@ -120,7 +120,7 @@ config("audio_policy_public_config") {
 }
 
 ohos_shared_library("audio_setting_provider") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -166,7 +166,7 @@ ohos_shared_library("audio_setting_provider") {
 }
 
 audio_ohos_library("audio_policy_service") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
