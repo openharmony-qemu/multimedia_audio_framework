@@ -75,7 +75,8 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> filteredDescs;
         // remove abnormal device or excluded device
         for (const auto &desc : descs) {
-            CHECK_AND_CONTINUE(desc != nullptr);
+            CHECK_AND_CONTINUE(desc != nullptr &&
+                !AudioRouterSelectStrategy::GetInstance().IsDeviceTypeSkipped(desc->deviceType_));
             if (desc->exceptionFlag_ || !desc->isEnable_ ||
                 (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
                     (desc->connectState_ == SUSPEND_CONNECTED ||

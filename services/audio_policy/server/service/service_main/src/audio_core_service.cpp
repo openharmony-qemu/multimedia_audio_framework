@@ -370,6 +370,9 @@ bool AudioCoreService::isBtCrashed = false;
 mutex g_btProxyMutex;
 #endif
 
+bool AudioCoreService::isFusionConnectivityListenerRegistered = false;
+mutex g_fusionConnectivityMutex;
+
 AudioCoreService::AudioCoreService()
     : audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
       audioActiveDevice_(AudioActiveDevice::GetInstance()),
@@ -2047,6 +2050,19 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetActiveBluetoothDevic
     return res;
 }
 
+int32_t AudioCoreService::SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes)
+{
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    AUDIO_INFO_LOG("skipped: %{public}d, uid: %{public}u", skipped, callingUid);
+    CHECK_AND_RETURN_RET_LOG(AudioRouterInfra::GetInstance().HasSkipDeviceTypePermission(callingUid), ERROR,
+        "no skip device type permission");
+    CHECK_AND_RETURN_RET_LOG(AudioRouterInfra::GetInstance().UpdateSkippedDeviceTypes(skipped, deviceTypes), SUCCESS,
+        "skipped not change");
+
+    return FetchDeviceAndRoute("SkipDeviceTypes", skipped ?
+        AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE : AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+}
+
 void AudioCoreService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     audioDeviceStatus_.OnDeviceInfoUpdated(desc, command);
@@ -2562,6 +2578,14 @@ void AudioCoreService::UnregisterBluetoothListener()
 #endif
 }
 
+void AudioCoreService::RegisterFusionConnectivityListener()
+{
+    CHECK_AND_RETURN_LOG(!isFusionConnectivityListenerRegistered,
+        "audio policy service already register fusion connectivity listerer, return");
+    isFusionConnectivityListenerRegistered = true;
+    RegisterFusionConnectivityDeathCallback();
+}
+
 void AudioCoreService::ConfigDistributedRoutingRole(
     const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
@@ -2609,7 +2633,8 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is nullptr");
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
     HILOG_COMM_INFO("[DeviceFetchStart] by %{public}s for %{public}zu output streams, in devices %{public}s",
-        caller.c_str(), outputStreamDescs.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
+        caller.c_str(), outputStreamDescs.size(),
+        AudioRouterInfra::GetInstance().AppendSkippedDeviceTypes(audioDeviceManager_.GetConnDevicesStr()).c_str());
 
     if (outputStreamDescs.empty() && !pipeManager_->IsModemCommunicationIdExist() &&
         !CheckRingAndVoipStreamRunning()) {
@@ -2755,7 +2780,8 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
     AUDIO_INFO_LOG("[DeviceFetchStart] by %{public}s for %{public}zu input streams, in devices %{public}s",
-        caller.c_str(), inputStreamDescs.size(), audioDeviceManager_.GetConnDevicesStr().c_str());
+        caller.c_str(), inputStreamDescs.size(),
+        AudioRouterInfra::GetInstance().AppendSkippedDeviceTypes(audioDeviceManager_.GetConnDevicesStr()).c_str());
 
     if (inputStreamDescs.empty()) {
         return HandleFetchInputWhenNoRunningStream();
@@ -2858,6 +2884,32 @@ void AudioCoreService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
     Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
 }
 #endif
+
+void AudioCoreService::RegisterFusionConnectivityDeathCallback()
+{
+    lock_guard<mutex> lock(g_fusionConnectivityMutex);
+    AUDIO_INFO_LOG("FusionConnectivityDeathCallback Enter");
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_LOG(samgr != nullptr, "get sa manager failed");
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(FUSION_CONNECTIVITY_SA_ID);
+    CHECK_AND_RETURN_LOG(object != nullptr, "get audio service remote object failed");
+    // register death recipent
+    sptr<AudioServerDeathRecipient> asDeathRecipient =
+        new(std::nothrow) AudioServerDeathRecipient(getpid(), getuid());
+    CHECK_AND_RETURN_LOG(asDeathRecipient != nullptr, "asDeathRecipient is nullptr");
+    asDeathRecipient->SetNotifyCb([] (pid_t pid, uid_t uid) {
+        FusionConnectivityCrashedCallback(pid, uid);
+    });
+    CHECK_AND_RETURN_LOG(object->AddDeathRecipient(asDeathRecipient), "failed to add deathRecipient");
+}
+
+void AudioCoreService::FusionConnectivityCrashedCallback(pid_t pid, uid_t uid)
+{
+    AUDIO_INFO_LOG("fusion connectivity sa crashed, will restore in next call");
+    lock_guard<mutex> lock(g_fusionConnectivityMutex);
+    isFusionConnectivityListenerRegistered = false;
+    GetCoreService()->GetEventEntry()->SkipDeviceTypes(false, {});
+}
 
 void AudioCoreService::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
     const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices)

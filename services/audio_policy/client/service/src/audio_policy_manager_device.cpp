@@ -710,6 +710,18 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPolicyManager::GetActiveBluetoothDev
     return descs;
 }
 
+int32_t AudioPolicyManager::SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    std::vector<int32_t> deviceTypeVec;
+    deviceTypeVec.reserve(deviceTypes.size());
+    for (auto deviceType : deviceTypes) {
+        deviceTypeVec.push_back(static_cast<int32_t>(deviceType));
+    }
+    return gsp->SkipDeviceTypes(skipped, deviceTypeVec);
+}
+
 int32_t AudioPolicyManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

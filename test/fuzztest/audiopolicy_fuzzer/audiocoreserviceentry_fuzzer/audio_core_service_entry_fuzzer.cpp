@@ -507,6 +507,11 @@ void AudioCoreServiceEventEntryGetActiveBluetoothDeviceFuzzTest(FuzzedDataProvid
     eventEntry->GetActiveBluetoothDevice();
 }
 
+void AudioCoreServiceEventEntrySkipDeviceTypesFuzzTest(FuzzedDataProvider& fdp)
+{
+    eventEntry->SkipDeviceTypes(fdp.ConsumeBool(), {PickValue(fdp, DeviceTypeVec)});
+}
+
 void AudioCoreServiceEventEntrySetCallDeviceActiveFuzzTest(FuzzedDataProvider& fdp)
 {
     InternalDeviceType deviceType = PickValue(fdp, OutputDeviceTypeVec);
@@ -709,6 +714,7 @@ void Test(FuzzedDataProvider& fdp)
     AudioCoreServiceEventEntryGetPreferredOutputDeviceDescriptorsFuzzTest,
     AudioCoreServiceEventEntryGetPreferredInputDeviceDescriptorsFuzzTest,
     AudioCoreServiceEventEntryGetActiveBluetoothDeviceFuzzTest,
+    AudioCoreServiceEventEntrySkipDeviceTypesFuzzTest,
     AudioCoreServiceEventEntrySetCallDeviceActiveFuzzTest,
     AudioCoreServiceEventEntryRegisterTrackerFuzzTest,
     AudioCoreServiceEventEntryUpdateTrackerFuzzTest,

@@ -116,6 +116,11 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRoutingClientManager::GetActiveBluet
     return AudioPolicyManager::GetInstance().GetActiveBluetoothDevice();
 }
 
+int32_t AudioRoutingClientManager::SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes)
+{
+    return AudioPolicyManager::GetInstance().SkipDeviceTypes(skipped, deviceTypes);
+}
+
 int32_t AudioRoutingClientManager::SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback)
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");

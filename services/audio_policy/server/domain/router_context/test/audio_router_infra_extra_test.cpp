@@ -787,5 +787,19 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ClearWirelessSelec
     EXPECT_EQ(routerInfra.GetStreamSelectDevice(uid, TEST_STREAM_ID_1), nullptr);
 }
 
+/**
+ * @tc.name  : Test AppendSkippedDeviceTypes
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_AppendSkippedDeviceTypes_001
+ * @tc.desc  : Test AppendSkippedDeviceTypes.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_AppendSkippedDeviceTypes_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    routerInfra.isSkipped_ = true;
+    routerInfra.skippedDeviceTypes_ = {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_A2DP};
+    EXPECT_EQ(routerInfra.AppendSkippedDeviceTypes(""), string(" skip device types [7:8]"));
+}
 }
 }
