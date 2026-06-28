@@ -941,6 +941,26 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_009, TestSize.Lev
 
 /**
  * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSourceIdInfoAndIdType_009_Ext01
+ * @tc.type: FUNC
+ * @tc.desc: Test voice message input flag maps to primary voice message HDI id info
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_009_Ext01, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::string idInfo;
+    HdiIdType idType = HDI_ID_TYPE_FAST;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_VOICE_MESSAGE;
+    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
+    EXPECT_EQ(idInfo, HDI_ID_INFO_VOICE_MESSAGE);
+}
+
+/**
+ * @tc.name: Test GetSourceIdInfoAndIdType
  * @tc.number: GetSourceIdInfoAndIdType_010
  * @tc.type: FUNC
  * @tc.desc: primary_extra_capturer should use module name as id info

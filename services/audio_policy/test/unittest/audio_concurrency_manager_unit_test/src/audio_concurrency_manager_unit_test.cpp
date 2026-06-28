@@ -146,5 +146,22 @@ HWTEST_F(AudioConcurrencyManagerUnitTest, GetPipeTypeByRouteFlag_007, TestSize.L
 
     EXPECT_EQ(result, PIPE_TYPE_IN_NORMAL_LIVE);
 }
+
+/**
+ * @tc.name: GetPipeTypeByRouteFlag_008
+ * @tc.number: GetPipeTypeByRouteFlag_008
+ * @tc.desc: Test voice message independent input pipe mapping.
+ */
+HWTEST_F(AudioConcurrencyManagerUnitTest, GetPipeTypeByRouteFlag_008, TestSize.Level1)
+{
+    uint32_t flag = AUDIO_INPUT_FLAG_VOICE_MESSAGE;
+    AudioMode audioMode = AUDIO_MODE_RECORD;
+
+    AudioConcurrencyManager &concurrencyService = AudioConcurrencyManager::GetInstance();
+
+    AudioPipeType result = concurrencyService.GetPipeTypeByRouteFlag(flag, audioMode);
+
+    EXPECT_EQ(result, PIPE_TYPE_IN_NORMAL_VOICE_MESSAGE);
+}
 } // namespace AudioStandard
 } // namespace OHOS
