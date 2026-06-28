@@ -1557,6 +1557,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_CAMCORDER;
         }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOICE_MESSAGE) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_VOICE_MESSAGE;
+        }
     } else if (pipeInfo->adapterName_ == "primary_extra_capturer") {
         idType = HDI_ID_TYPE_PRIMARY;
         idInfo = pipeInfo->moduleInfo_.name;

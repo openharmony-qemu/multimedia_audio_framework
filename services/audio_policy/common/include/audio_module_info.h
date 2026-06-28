@@ -83,6 +83,7 @@ static const char* PRIMARY_VOICE_RECOGNITION_MIC = "Built_in_voice_recognition";
 static const char* PRIMARY_RAW_AI_MIC = "Built_in_raw_ai";
 static const char* PRIMARY_INTERPHON_MIC = "Built_in_interphone";
 static const char* PRIMARY_CAMCORDER = "Built_in_camcorder";
+static const char* PRIMARY_VOICE_MESSAGE_MIC = "Built_in_voice_message";
 static const char* PRIMARY_SPEAKER_PIPENAME = "primary_output";
 static const char* USB_SPEAKER_PIPENAME = "usb_arm_output";
 static const char* USB_MIC_PIPENAME = "usb_arm_input";

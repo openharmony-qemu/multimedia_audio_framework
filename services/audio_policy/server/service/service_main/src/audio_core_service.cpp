@@ -73,6 +73,8 @@ static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
 static const std::string PIPE_PRIMARY_INPUT_VOICE_RECOGNITION = "primary_input_voice_recognition";
 static constexpr uint32_t ONLY_SUPPORT_MMAP = 2;
+static constexpr uint32_t AUDIO_INPUT_VOICE_MESSAGE_TYPE = 1 << 18;
+static const AudioInputType hdiAudioVoiceMessageInputType = static_cast<AudioInputType>(AUDIO_INPUT_VOICE_MESSAGE_TYPE);
 static const std::string PIPE_PRIMARY_INPUT_CAMCORDER = "primary_input_camcorder";
 static const std::unordered_set<SourceType> VOIP_PRIVACY_MUTE_TARGET_SOURCES = {
     SOURCE_TYPE_LIVE,
@@ -180,6 +182,7 @@ const std::map<SourceType, AudioInputType> FWKTYPE_TO_HDITYPE_MAP = {
     { SOURCE_TYPE_UNPROCESSED, AUDIO_INPUT_RAW_TYPE },
     { SOURCE_TYPE_LIVE, AUDIO_INPUT_LIVE_TYPE },
     { SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT, AUDIO_INPUT_RAW_AI_TYPE},
+    { SOURCE_TYPE_VOICE_MESSAGE, hdiAudioVoiceMessageInputType},
 };
 
 static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
@@ -4202,6 +4205,9 @@ void AudioCoreService::GetTargetSourceTypeAndMatchingFlag(SourceType source,
             break;
         case SOURCE_TYPE_LIVE:
             targetSource = SOURCE_TYPE_LIVE;
+            break;
+        case SOURCE_TYPE_VOICE_MESSAGE:
+            targetSource = SOURCE_TYPE_VOICE_MESSAGE;
             break;
         default:
             targetSource = SOURCE_TYPE_MIC;

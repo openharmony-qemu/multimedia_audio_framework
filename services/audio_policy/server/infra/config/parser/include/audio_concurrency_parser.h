@@ -76,6 +76,7 @@ private:
         {"primary in ULTRASONIC", PIPE_TYPE_IN_NORMAL_ULTRASONIC},
         {"primary in voice recognition", PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION},
         {"primary in raw ai", PIPE_TYPE_IN_NORMAL_RAW_AI},
+        {"primary in voice message", PIPE_TYPE_IN_NORMAL_VOICE_MESSAGE},
         {"tts out", PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT}
     };
 };
