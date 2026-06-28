@@ -184,6 +184,7 @@ public:
     virtual State GetState() = 0;
     virtual StreamFocusState GetFocusState() = 0;
     virtual void SetFocusState(StreamFocusState state) = 0;
+
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual int32_t GetBufferSize(size_t &bufferSize) = 0;
