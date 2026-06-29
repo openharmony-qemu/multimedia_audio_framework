@@ -3343,7 +3343,7 @@ bool AudioInterruptService::IsActiveInjectFocusExist(
     return false;
 }
 
-void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout)
+void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout, bool isDeferredCheck)
 {
     AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
     auto itZone = zonesMap_.find(zoneId);
@@ -3366,7 +3366,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
     bool isExistActiveInjectFocus = IsActiveInjectFocusExist(audioFocusInfoList);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList = SimulateFocusEntry(zoneId);
     bool hasFocusRemoved = ProcessFocusListIteration(zoneId, isSessionTimeout,
-        audioFocusInfoList, newAudioFocuInfoList, isExistActiveInjectFocus);
+        audioFocusInfoList, newAudioFocuInfoList, isExistActiveInjectFocus, isDeferredCheck);
 
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
         itZone->second->audioFocusInfoList = audioFocusInfoList;
@@ -3381,7 +3381,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
 bool AudioInterruptService::ProcessFocusListIteration(const int32_t zoneId, bool isSessionTimeout,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &newAudioFocuInfoList,
-    bool isExistActiveInjectFocus)
+    bool isExistActiveInjectFocus, bool isDeferredCheck)
 {
     bool hasFocusRemoved = false;
     for (auto iterActive = audioFocusInfoList.begin(), iterNew = newAudioFocuInfoList.begin();
@@ -3401,7 +3401,7 @@ bool AudioInterruptService::ProcessFocusListIteration(const int32_t zoneId, bool
                 SendSessionTimeOutStopEvent(zoneId, interruptToRemove, audioFocusInfoList);
                 continue;
             }
-            if (ScheduleDeferredUnmuteOrResume(oldState, newState, iterActive->first, zoneId)) {
+            if (ScheduleDeferredUnmuteOrResume(oldState, newState, iterActive->first, zoneId, isDeferredCheck)) {
                 ++iterActive;
                 ++iterNew;
                 continue;
@@ -3479,30 +3479,33 @@ void AudioInterruptService::RefreshAudioSceneAfterDelay(const int32_t zoneId)
 }
 
 bool AudioInterruptService::ScheduleDeferredUnmuteOrResume(AudioFocuState oldState, AudioFocuState newState,
-    const AudioInterrupt &audioInterrupt, int32_t zoneId)
+    const AudioInterrupt &audioInterrupt, int32_t zoneId, bool isDeferredCheck)
 {
     bool needDefer = ((oldState == MUTED && audioInterrupt.behaviorFlags_.muteWhenInterruptFlag) ||
                       (oldState == PAUSE && audioInterrupt.behaviorFlags_.pauseWhenInterruptFlag)) &&
-                     newState == ACTIVE;
-    if (!needDefer) {
-        return false;
-    }
+                      IsAudioStreamActive(newState);
+    CHECK_AND_RETURN_RET(needDefer, false);
+
+    CHECK_AND_RETURN_RET(!isDeferredCheck, false);
+
     uint32_t streamId = audioInterrupt.streamId;
-    if (pendingDeferredUnmuteStreamIds_.find(streamId) != pendingDeferredUnmuteStreamIds_.end()) {
-        AUDIO_INFO_LOG("StreamId %{public}u already pending deferred unmute/resume, skip", streamId);
-        return true;
-    }
+    CHECK_AND_RETURN_RET(pendingDeferredUnmuteStreamIds_.find(streamId) == pendingDeferredUnmuteStreamIds_.end(),
+        true, "StreamId %{public}u already pending deferred unmute/resume, skip", streamId);
+
     pendingDeferredUnmuteStreamIds_.insert(streamId);
-    auto service = shared_from_this();
-    auto checkTask = [service, streamId, zoneId] {
-        if (service == nullptr) {
+    auto audioInterruptService = shared_from_this();
+    auto checkTask = [audioInterruptService, streamId, zoneId] {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (audioInterruptService == nullptr) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+                SESSION_STOP_NULL_POINTER, "audioInterruptService is nullptr", false);
             return;
         }
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        service->DeferredUnmuteOrResumeCheck(streamId, zoneId);
+        audioInterruptService->DeferredUnmuteOrResumeCheck(streamId, zoneId);
     };
     std::thread(checkTask).detach();
-    AUDIO_INFO_LOG("Started deferred unmute/resume for streamId %{public}u with 1s delay", streamId);
+    AUDIO_INFO_LOG("Started deferred unmute/resume for streamId %{public}u with 1s delay",
+        streamId);
     return true;
 }
 
@@ -3510,56 +3513,7 @@ void AudioInterruptService::DeferredUnmuteOrResumeCheck(uint32_t streamId, int32
 {
     std::lock_guard<std::mutex> lock(mutex_);
     pendingDeferredUnmuteStreamIds_.erase(streamId);
-
-    auto itZone = zonesMap_.find(zoneId);
-    if (itZone == zonesMap_.end() || itZone->second == nullptr) {
-        AUDIO_INFO_LOG("Zone %{public}d not found for streamId %{public}u", zoneId, streamId);
-        return;
-    }
-
-    auto &focusList = itZone->second->audioFocusInfoList;
-    auto iter = std::find_if(focusList.begin(), focusList.end(),
-        [streamId](const auto &pair) { return pair.first.streamId == streamId; });
-    if (iter == focusList.end()) {
-        AUDIO_INFO_LOG("StreamId %{public}u not in focus list, skip deferred unmute/resume", streamId);
-        return;
-    }
-
-    AudioFocuState currentState = iter->second;
-    bool isMuteDeferred = currentState == MUTED && iter->first.behaviorFlags_.muteWhenInterruptFlag;
-    bool isPauseDeferred = currentState == PAUSE && iter->first.behaviorFlags_.pauseWhenInterruptFlag;
-    if (!isMuteDeferred && !isPauseDeferred) {
-        AUDIO_INFO_LOG("StreamId %{public}u state is %{public}d, no longer needs deferred unmute/resume",
-            streamId, currentState);
-        return;
-    }
-
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList = SimulateFocusEntry(zoneId);
-    auto newIter = std::find_if(newAudioFocuInfoList.begin(), newAudioFocuInfoList.end(),
-        [streamId](const auto &pair) { return pair.first.streamId == streamId; });
-    if (newIter == newAudioFocuInfoList.end()) {
-        AUDIO_INFO_LOG("StreamId %{public}u not in simulated focus list", streamId);
-        return;
-    }
-
-    if (newIter->second == ACTIVE) {
-        bool removeFocusInfo = false;
-        AUDIO_INFO_LOG("Deferred unmute/resume confirmed for streamId %{public}u, oldState %{public}d -> ACTIVE",
-            streamId, currentState);
-        SendInterruptEvent(currentState, ACTIVE, iter, removeFocusInfo);
-        if (iter->first.deviceTag.empty() && removeFocusInfo &&
-            !IsGameAvoidCallbackCase(iter->first)) {
-            AudioInterrupt interruptToRemove = iter->first;
-            focusList.erase(iter);
-            AUDIO_INFO_LOG("Remove focus info after deferred resume, streamId: %{public}d",
-                interruptToRemove.streamId);
-            SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, interruptToRemove);
-            PostRefreshAudioSceneAction(zoneId);
-        }
-    } else {
-        AUDIO_INFO_LOG("StreamId %{public}u should remain in state %{public}d, skip deferred unmute/resume",
-            streamId, newIter->second);
-    }
+    ResumeAudioFocusList(zoneId, false, true);
 }
 
 void AudioInterruptService::SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,

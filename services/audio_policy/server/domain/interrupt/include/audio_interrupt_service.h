@@ -276,7 +276,7 @@ private:
         const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         AudioFocuState activeState);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioFocusInfoList(const int32_t zoneId);
-    void ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout = false);
+    void ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout = false, bool isDeferredCheck = false);
     bool EvaluateWhetherContinue(const AudioInterrupt &incoming, const AudioInterrupt
         &inprocessing, AudioFocusEntry &focusEntry, bool bConcurrency);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> SimulateFocusEntry(const int32_t zoneId);
@@ -367,7 +367,7 @@ private:
     bool ProcessFocusListIteration(const int32_t zoneId, bool isSessionTimeout,
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
         std::list<std::pair<AudioInterrupt, AudioFocuState>> &newAudioFocuInfoList,
-        bool isExistActiveInjectFocus);
+        bool isExistActiveInjectFocus, bool isDeferredCheck);
 
     void HandleAppStreamType(const int32_t zoneId, AudioInterrupt &audioInterrupt);
     bool IsGameAvoidCallbackCase(const AudioInterrupt &audioInterrupt);
@@ -420,7 +420,7 @@ private:
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
     void ResetInterruptMuteState(const AudioInterrupt &audioInterrupt);
     bool ScheduleDeferredUnmuteOrResume(AudioFocuState oldState, AudioFocuState newState,
-        const AudioInterrupt &audioInterrupt, int32_t zoneId);
+        const AudioInterrupt &audioInterrupt, int32_t zoneId, bool isDeferredCheck);
     void DeferredUnmuteOrResumeCheck(uint32_t streamId, int32_t zoneId);
     bool IsActiveInjectFocusExist(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     void AudioSessionStateChangeCallbackEvent(const int32_t zoneId, const int32_t callerPid,
