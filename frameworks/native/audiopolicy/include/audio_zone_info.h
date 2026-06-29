@@ -138,6 +138,9 @@ public:
                 return false;
             }
         }
+        if (!preferDevice_->Marshalling(parcel)) {
+            return false;
+        }
         return true;
     }
 
@@ -163,6 +166,7 @@ public:
             }
             devices_.emplace_back(device);
         }
+        preferDevice_ = std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel));
     }
 
     static AudioZoneDescriptor *Unmarshalling(Parcel &parcel)

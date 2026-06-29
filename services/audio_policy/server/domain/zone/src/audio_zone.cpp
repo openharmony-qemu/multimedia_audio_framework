@@ -699,27 +699,25 @@ bool AudioZone::UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescripto
 
 void AudioZone::UpdatePreferDevice(AudioZoneChangeReason reason)
 {
+#ifdef MULTI_USER_ZONE
     std::lock_guard<std::mutex> lock(zoneMutex_);
+    auto newDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     if (zoneId_ == DEFAULT_ZONEID) {
         FetchDeviceInfo info = {STREAM_USAGE_MUSIC, "UpdatePreferDevice For Default Zone"};
-        auto newDevice = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
-        if (newDevice != nullptr && !newDevice->IsSameDeviceDescPtr(preferDevice_)) {
-            preferDevice_ = newDevice;
-            SendZoneChangeEvent(reason);
+        newDevice = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
+    } else {
+        auto zonepreferDesc = zoneRouter_.FetchOutputDevices(devices_);
+        if (!zonepreferDesc.empty() && zonepreferDesc.front() != nullptr) {
+            newDevice = zonepreferDesc.front();
         }
-        return;
     }
 
-    auto newDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
-    for (const auto &it : devices_) {
-        if (it.second && it.first->deviceType_ > newDevice->deviceType_) {
-            newDevice = it.first;
-        }
-    }
-    if (newDevice != nullptr && !newDevice->IsSameDeviceDescPtr(preferDevice_)) {
+    if (preferDevice_ != nullptr && !preferDevice_->IsSameDeviceDescPtr(newDevice)) {
         preferDevice_ = newDevice;
+        AUDIO_INFO_LOG("set zone %{public}d, preferdevice as %{public}s", zoneId_, preferDevice_->GetName().c_str());
         SendZoneChangeEvent(reason);
     }
+#endif
 }
 
 } // namespace AudioStandard

@@ -382,10 +382,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
 
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-    AudioZoneService::GetInstance().UpdateZonePreferDeviceWhenDeviceConnect();
-    if (updatedDesc.connectState_ != VIRTUAL_CONNECTED) {
-        AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
-    }
+    UpdateDeviceAfterConnectAndAddtoList(audioDescriptor);
     if (!NeedUpdatePreferredDevice(updatedDesc)) {
         return;
     }
@@ -404,6 +401,14 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID,
             "UpdateConnectedDevicesWhenConnectingForOutputDevice");
+    }
+}
+
+void AudioDeviceCommon::UpdateDeviceAfterConnectAndAddtoList(std::shared_ptr<AudioDeviceDescriptor> audioDescriptor)
+{
+    AudioZoneService::GetInstance().UpdateZonePreferDeviceWhenDeviceConnect();
+    if (audioDescriptor->connectState_ != VIRTUAL_CONNECTED) {
+        AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     }
 }
 
