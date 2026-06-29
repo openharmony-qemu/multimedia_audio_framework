@@ -137,6 +137,7 @@ private:
     void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state,
         uint32_t appUid = INVALID_UID);
     void FlushPipelineNodes(uint32_t sessionId);
+    void TearDownCurrentNodePipeline(uint32_t sessionId, HpaeSessionState state, bool isSessionEffectActive);
 
     std::shared_ptr<HpaeSinkInputNode> curNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
