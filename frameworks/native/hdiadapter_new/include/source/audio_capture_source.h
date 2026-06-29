@@ -156,6 +156,7 @@ private:
     static constexpr uint32_t AUDIO_BUFFER_SIZE = 16 * 1024;
     static constexpr uint32_t USB_DEFAULT_BUFFER_SIZE = 3840;
     static constexpr uint32_t FRAME_TIME_LEN_MS = 20; // 20ms
+    static constexpr uint32_t SECOND_TO_MILLISECONDS = 1000;
 #ifdef FEATURE_POWER_MANAGER
     static constexpr const char *RUNNING_LOCK_NAME = "AudioPrimaryCapture";
     static constexpr const char *RUNNING_LOCK_NAME_WAKEUP = "AudioWakeupCapture";

@@ -827,6 +827,7 @@ int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExclude
 int32_t AudioCaptureSource::UpdateActiveDevice(DeviceType inputDevice)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
+
     return UpdateActiveDeviceWithoutLock(inputDevice);
 }
 
@@ -1258,7 +1259,8 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
         param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
     }
     param.stopThreshold = INT_MAX;
-    int silenceThreTest = 4096;
+    int silenceThreTest =
+        static_cast<int64_t>(attr_.sampleRate) * param.frameSize * FRAME_TIME_LEN_MS / SECOND_TO_MILLISECONDS;
     param.silenceThreshold = silenceThreTest;
     param.sourceType = SOURCE_TYPE_MIC;
 
@@ -1336,7 +1338,8 @@ void AudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, A
     }
     AUDIO_DEBUG_LOG("port: %{public}d", port);
     sceneDesc.desc.pins = port;
-    sceneDesc.desc.desc = const_cast<char *>("");
+    static char emptyStr[] = "";
+    sceneDesc.desc.desc = emptyStr;
 }
 
 // LCOV_EXCL_START

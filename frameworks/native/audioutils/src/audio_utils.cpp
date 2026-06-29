@@ -2223,6 +2223,7 @@ static const std::map<std::string, HdiAdapterType> HALNAME_TO_TYPE_MAP = {
     {"primary", HDI_ADAPTER_TYPE_PRIMARY},
     {"a2dp", HDI_ADAPTER_TYPE_A2DP},
     {"usb", HDI_ADAPTER_TYPE_USB},
+    {"hdmi", HDI_ADAPTER_TYPE_HDMI},
     {"dp", HDI_ADAPTER_TYPE_DP},
     {"remote", HDI_ADAPTER_TYPE_REMOTE},
     {"hearing_aid", HDI_ADAPTER_TYPE_HEARING_AID},

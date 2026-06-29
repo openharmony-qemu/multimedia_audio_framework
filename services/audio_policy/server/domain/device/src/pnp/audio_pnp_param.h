@@ -73,6 +73,10 @@
 #define DP_PORT_COUNT           5
 #define DP_PATH                 "/sys/class/switch/hdmi_audio"
 #define DEVICE_PORT             "device_port="
+#define EXTCON_PATH             "/sys/class/extcon/"
+#define EXTCON_STATE            "/state"
+
+#define FILE_BUFFER_SIZE       256
 
 #include <string>
 

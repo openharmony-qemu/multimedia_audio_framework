@@ -29,6 +29,7 @@
         "features": [
           "audio_framework_feature_wired_audio",
           "audio_framework_feature_usb_audio",
+          "audio_framework_feature_hdmi_detect_audio",
           "audio_framework_feature_double_pnp_detect",
           "audio_framework_feature_dtmf_tone",
           "audio_framework_feature_detect_soundbox",
