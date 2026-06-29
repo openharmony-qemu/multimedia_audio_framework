@@ -137,7 +137,7 @@ const vector<StreamUsage> g_testStreamUsages = {
 const vector<AudioFlag> g_testInputRouteFlags = {
     AUDIO_INPUT_FLAG_NORMAL,
     AUDIO_INPUT_FLAG_FAST,
-    AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP,
+    static_cast<AudioFlag>(AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP),
     AUDIO_INPUT_FLAG_AI,
     AUDIO_INPUT_FLAG_UNPROCESS,
     AUDIO_INPUT_FLAG_ULTRASONIC,
