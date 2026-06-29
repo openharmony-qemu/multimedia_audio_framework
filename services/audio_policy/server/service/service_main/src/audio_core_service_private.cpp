@@ -1395,16 +1395,28 @@ bool AudioCoreService::IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamD
 
 /**
  * Determines whether UpdateOutputRoute should be invoked from MoveToNewOutputDevice.
- * Returns false only when the audio scene transitions from DEFAULT to RINGING,
- * because in that case UpdateOutputRoute is called from StartClient instead of MoveToNewOutputDevice.
+ * Returns false when the audio scene transitions from DEFAULT to RINGING and the stream
+ * remains on the same sink, because in that case UpdateOutputRoute is called from
+ * StartClient instead of MoveToNewOutputDevice to avoid redundant route updates.
  */
-bool AudioCoreService::ShouldUpdateOutputRoute(const AudioStreamDeviceChangeReasonExt reason)
+bool AudioCoreService::ShouldUpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     AudioScene lastAudioScene = audioSceneManager_.GetLastAudioScene();
     AudioScene audioScene = audioSceneManager_.GetAudioScene();
     bool isSceneChangedFromDefaultToRinging = (lastAudioScene == AUDIO_SCENE_DEFAULT) &&
         (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING);
-    return !(reason.IsSetAudioScene() && isSceneChangedFromDefaultToRinging);
+
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && !streamDesc->oldDeviceDescs_.empty() &&
+        !streamDesc->newDeviceDescs_.empty(), true, "Invalid streamDesc");
+    std::shared_ptr<AudioDeviceDescriptor> oldDesc = streamDesc->oldDeviceDescs_.front();
+    std::shared_ptr<AudioDeviceDescriptor> newDesc = streamDesc->newDeviceDescs_.front();
+    CHECK_AND_RETURN_RET(oldDesc != nullptr && newDesc != nullptr, true);
+    std::string oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(oldDesc, streamDesc->sessionId_);
+    std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(newDesc, streamDesc->sessionId_);
+    bool isSameSink = oldSinkName == newSinkName;
+
+    return !(reason.IsSetAudioScene() && isSceneChangedFromDefaultToRinging && isSameSink);
 }
 
 void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -1459,7 +1471,7 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
         "[MoveToNewOutputDevice]Move sink faild!");
 
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
-    bool shouldUpdateOutputRoute = ShouldUpdateOutputRoute(reason);
+    bool shouldUpdateOutputRoute = ShouldUpdateOutputRoute(streamDesc, reason);
     if (pipeManager_->GetUpdateRouteSupport() && shouldUpdateOutputRoute) {
         UpdateOutputRoute(streamDesc, pipeInfo->id_);
     }

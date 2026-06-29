@@ -866,7 +866,8 @@ private:
     void NotifyRequiredPipesReady();
     bool CheckCollaborativeStreamRunning();
     void UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState);
-    bool ShouldUpdateOutputRoute(const AudioStreamDeviceChangeReasonExt reason);
+    bool ShouldUpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
     void CheckFastToNormalForPlayback(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         SessionOperationMsg opMsg);
     void CheckFastToNormalForRecord(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
