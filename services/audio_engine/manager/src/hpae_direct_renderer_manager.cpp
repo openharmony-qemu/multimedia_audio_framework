@@ -270,7 +270,7 @@ int32_t HpaeDirectRendererManager::RecreateSinkOutputNodeIfNeeded()
     sinkInfo_.samplingRate = newSampleRate;
     sinkInfo_.format = newFormat;
     sinkInfo_.channels = newChannels;
-    sinkInfo_.channelLayout =  STEREO;
+    sinkInfo_.channelLayout = STEREO;
     int32_t ret = InitSinkInner(false, false);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "recreate direct sink failed when create stream:%{public}u.",
         outputNodeInfo.sessionId);
