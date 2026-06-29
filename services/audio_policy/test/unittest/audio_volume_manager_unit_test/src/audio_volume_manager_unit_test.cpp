@@ -119,7 +119,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_004, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.isBtFirstBoot_ = true;
-    ret = audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel);
+    VolumeScale safeVolume = audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel);
+    ret = safeVolume.VolumeLevel();
     EXPECT_EQ(ret, 0);
 
     audioVolumeManager.isBtFirstBoot_ = false;
@@ -128,7 +129,8 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_004, TestSize.Level1)
     btCarDevice->deviceCategory_ = BT_CAR;
     btCarDevice->networkId_ = LOCAL_NETWORK_ID;
     AudioConnectedDevice::GetInstance().AddConnectedDevice(btCarDevice);
-    ret = audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel);
+    safeVolume = audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel);
+    ret = safeVolume.VolumeLevel();
     EXPECT_EQ(ret, 0);
     AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_BLUETOOTH_A2DP);
 }
