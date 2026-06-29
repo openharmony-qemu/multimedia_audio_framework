@@ -704,8 +704,23 @@ HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_GetAvailableDevices
  */
 HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_SelectMediaInputDevice_002, TestSize.Level0)
 {
-    // TODO: AudioDeviceDescriptor constructor not linked, skip until GN config merged
-    SUCCEED();
+    OH_AudioSessionManager *audioManager = nullptr;
+    OH_AudioCommon_Result result = OH_AudioManager_GetAudioSessionManager(&audioManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_TRUE(audioManager != nullptr);
+
+    // Create a valid device descriptor
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_MIC;
+    OH_AudioDeviceDescriptor *ohDeviceDescriptor =
+        reinterpret_cast<OH_AudioDeviceDescriptor*>(new OHAudioDeviceDescriptor(deviceDescriptor));
+
+    result = OH_AudioSessionManager_SelectMediaInputDevice(audioManager, ohDeviceDescriptor);
+    // Check the result - SelectMediaInputDevice with valid device should succeed
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+
+    // Clean up
+    delete reinterpret_cast<OHAudioDeviceDescriptor*>(ohDeviceDescriptor);
 }
 
 /**
@@ -827,8 +842,31 @@ HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_IsOtherMediaPlaying
  */
 HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_GetSelectedMediaInputDevice_2, TestSize.Level0)
 {
-    // TODO: AudioDeviceDescriptor constructor not linked, skip until GN config merged
-    SUCCEED();
+    OH_AudioSessionManager *audioManager = nullptr;
+    OH_AudioCommon_Result result = OH_AudioManager_GetAudioSessionManager(&audioManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_TRUE(audioManager != nullptr);
+
+    // First select a media input device
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_MIC;
+    OH_AudioDeviceDescriptor *ohDeviceDescriptor =
+        reinterpret_cast<OH_AudioDeviceDescriptor*>(new OHAudioDeviceDescriptor(deviceDescriptor));
+
+    result = OH_AudioSessionManager_SelectMediaInputDevice(audioManager, ohDeviceDescriptor);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+
+    // Then get the selected device
+    OH_AudioDeviceDescriptor *device = nullptr;
+    result = OH_AudioSessionManager_GetSelectedMediaInputDevice(audioManager, &device);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+
+    if (device != nullptr) {
+        OH_AudioSessionManager_ReleaseDevice(audioManager, device);
+    }
+
+    // Clean up
+    delete reinterpret_cast<OHAudioDeviceDescriptor*>(ohDeviceDescriptor);
 }
 
 /**
