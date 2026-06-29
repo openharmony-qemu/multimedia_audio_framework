@@ -18,6 +18,7 @@
 #include "test_case_common.h"
 #include "audio_errors.h"
 #include "hpae_renderer_manager.h"
+#include "hpae_remote_device_class.h"
 #include "hpae_offload_renderer_manager.h"
 #include "hpae_injector_renderer_manager.h"
 #include "hpae_output_cluster.h"
@@ -4954,5 +4955,50 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitOutputCluster_DeviceTyp
     EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+// ---------------------------------------------------------------------------
+// HiCar MCH remote device-class detection (PR #15881).
+// Only construct the manager and read sinkInfo_ via IsRemoteDevice(); never call
+// Init()/Start()/any worker-triggering API. Private access via -fno-access-control.
+// ---------------------------------------------------------------------------
+
+HWTEST_F(HpaeRendererManagerTest, IsRemoteDeviceClass_Values_001, TestSize.Level1)
+{
+    EXPECT_EQ(IsRemoteDeviceClass("remote"), true);
+    EXPECT_EQ(IsRemoteDeviceClass("remote_multichannel"), true);
+    EXPECT_EQ(IsRemoteDeviceClass("primary"), false);
+    EXPECT_EQ(IsRemoteDeviceClass("a2dp"), false);
+    EXPECT_EQ(IsRemoteDeviceClass(""), false);
+}
+
+HWTEST_F(HpaeRendererManagerTest, IsRemoteDevice_RemoteClass_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    sinkInfo.deviceClass = "remote";
+    auto mgr = std::make_shared<HpaeRendererManager>(sinkInfo);
+    ASSERT_NE(mgr, nullptr);
+    EXPECT_EQ(mgr->IsRemoteDevice(), true);
+}
+
+HWTEST_F(HpaeRendererManagerTest, IsRemoteDevice_RemoteMultichannelClass_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    sinkInfo.deviceClass = "remote_multichannel";
+    auto mgr = std::make_shared<HpaeRendererManager>(sinkInfo);
+    ASSERT_NE(mgr, nullptr);
+    EXPECT_EQ(mgr->IsRemoteDevice(), true);
+}
+
+HWTEST_F(HpaeRendererManagerTest, IsRemoteDevice_LocalClass_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    sinkInfo.deviceClass = "primary";
+    auto mgr = std::make_shared<HpaeRendererManager>(sinkInfo);
+    ASSERT_NE(mgr, nullptr);
+    EXPECT_EQ(mgr->IsRemoteDevice(), false);
 }
 }  // namespace

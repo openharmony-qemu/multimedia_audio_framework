@@ -21,6 +21,7 @@
 
 #include "audio_errors.h"
 #include "hpae_process_cluster.h"
+#include "hpae_remote_device_class.h"
 #include "hpae_node_common.h"
 #include "audio_utils.h"
 #include "audio_engine_log.h"
@@ -464,7 +465,8 @@ int32_t HpaeProcessCluster::AudioRendererRelease(HpaeNodeInfo &nodeInfo, const H
 
 bool HpaeProcessCluster::CheckNeedNotifyEffectNode(const HpaeSinkInfo &sinkInfo)
 {
-    if (sinkInfo.deviceClass == "remote" || sinkInfo.deviceName == "DP_MCH_speaker") {
+    if (IsRemoteDeviceClass(sinkInfo.deviceClass)
+        || sinkInfo.deviceName == "DP_MCH_speaker") {
         return false;
     }
 

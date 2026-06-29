@@ -18,6 +18,7 @@
 #endif
 
 #include <hpae_sink_output_node.h>
+#include "hpae_remote_device_class.h"
 #include "audio_errors.h"
 #include <iostream>
 #include "hpae_format_convert.h"
@@ -87,7 +88,7 @@ HpaeSinkOutputNode::~HpaeSinkOutputNode()
 
 void HpaeSinkOutputNode::HandleRemoteTiming()
 {
-    CHECK_AND_RETURN(GetDeviceClass() == "remote");
+    CHECK_AND_RETURN(IsRemoteDeviceClass(GetDeviceClass()));
     auto now = std::chrono::high_resolution_clock::now();
     remoteTimePoint_ += std::chrono::milliseconds(20);  // 20ms frameLen, need optimize
     if (remoteTimePoint_ > now) {
@@ -124,7 +125,7 @@ void HpaeSinkOutputNode::DoProcess()
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
     if (ret != SUCCESS || writeLen != renderSize_) {
         AUDIO_ERR_LOG("RenderFrame failed");
-        if (GetDeviceClass() != "remote") {
+        if (!IsRemoteDeviceClass(GetDeviceClass())) {
             periodTimer_.Stop();
             uint64_t usedTimeUs = static_cast<uint64_t>(periodTimer_.Elapsed<std::chrono::microseconds>());
             usleep(SLEEP_TIME_IN_US > usedTimeUs ? SLEEP_TIME_IN_US - usedTimeUs : 0);
@@ -442,7 +443,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
         interval);
 #endif
     SetSinkState(STREAM_MANAGER_RUNNING);
-    if (GetDeviceClass() == "remote") {
+    if (IsRemoteDeviceClass(GetDeviceClass())) {
         remoteTimePoint_ = std::chrono::high_resolution_clock::now();
     }
     if (GetDeviceClass() == "primary") {
