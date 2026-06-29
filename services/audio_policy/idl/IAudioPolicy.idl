@@ -368,4 +368,5 @@ interface IAudioPolicy {
     void EnableSystemRecordController([in] boolean show, [in] SystemRecordControllerConfig config);
     void GetSystemVolumeDegreeWithDevice([in] int volumeType, [in] int deviceType,
         [in] String networkId, [out] int volumeDegree);
+    void SkipDeviceTypes([in] boolean skipped, [in] List<int> deviceTypes);
 }

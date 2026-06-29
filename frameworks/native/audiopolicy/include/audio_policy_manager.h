@@ -653,6 +653,8 @@ public:
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
+    int32_t SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes);
+
     ConverterConfig GetConverterConfig();
 
     bool IsHighResolutionExist();

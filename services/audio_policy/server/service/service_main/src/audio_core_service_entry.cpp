@@ -457,6 +457,12 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetActiveBl
     return coreService_->GetActiveBluetoothDevice();
 }
 
+int32_t AudioCoreService::EventEntry::SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes)
+{
+    std::shared_lock<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SkipDeviceTypes(skipped, deviceTypes);
+}
+
 void AudioCoreService::EventEntry::OnDeviceInfoUpdated(
     AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {

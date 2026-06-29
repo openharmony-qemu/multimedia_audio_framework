@@ -29,6 +29,12 @@
 namespace OHOS {
 namespace AudioStandard {
 
+namespace {
+constexpr uid_t AUDIO_UID = 1041;
+constexpr uid_t FUSION_CONNECTIVITY_UID = 7035;
+const std::vector<uid_t> SKIP_DEVICE_TYPES_UID_VEC{AUDIO_UID, FUSION_CONNECTIVITY_UID};
+}
+
 void AudioRouterInfra::RefreshSelectDevice(SelectDeviceType type, int32_t uid,
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, const uint32_t deviceTokenId)
 {
@@ -1182,6 +1188,49 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetEffectiveDefau
         }
     }
     return nullptr;
+}
+
+bool AudioRouterInfra::HasSkipDeviceTypePermission(uid_t uid)
+{
+    return std::find(SKIP_DEVICE_TYPES_UID_VEC.begin(), SKIP_DEVICE_TYPES_UID_VEC.end(), uid) !=
+        SKIP_DEVICE_TYPES_UID_VEC.end();
+}
+
+bool AudioRouterInfra::UpdateSkippedDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    CHECK_AND_RETURN_RET(skipped != isSkipped_, false);
+    isSkipped_ = skipped;
+    skippedDeviceTypes_ = deviceTypes;
+    return true;
+}
+
+bool AudioRouterInfra::IsDeviceTypeSkipped(DeviceType deviceType)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return isSkipped_ &&
+        std::find(skippedDeviceTypes_.begin(), skippedDeviceTypes_.end(), deviceType) != skippedDeviceTypes_.end();
+}
+
+std::string AudioRouterInfra::AppendSkippedDeviceTypes(const std::string &devicesStr)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET(isSkipped_, devicesStr);
+
+    std::stringstream ss;
+    ss << devicesStr << " skip device types [";
+    bool isFirst = true;
+    for (const auto &deviceType : skippedDeviceTypes_) {
+        if (isFirst) {
+            isFirst = false;
+        } else {
+            ss << ":";
+        }
+        ss << static_cast<int32_t>(deviceType);
+    }
+    ss << "]";
+    return ss.str();
 }
 } // namespace AudioStandard
 } // namespace OHOS
