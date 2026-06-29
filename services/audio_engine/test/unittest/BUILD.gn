@@ -658,6 +658,17 @@ ohos_unittest("hpae_node_common_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  defines = []
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
+
   sanitize = {
     cfi = true
     cfi_cross_dso = false
@@ -940,6 +951,17 @@ ohos_unittest("hpae_source_input_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
     "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
+
+  defines = []
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
 
   sanitize = {
     cfi = true

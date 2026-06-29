@@ -345,7 +345,8 @@ HWTEST_F(HpaeSourceInputNodeTest, DoProcessInjectSleepTest_001, TestSize.Level1)
     EXPECT_EQ(historyRemain->second, 0); // no data, so historyremian = 0
 
     EXPECT_CALL(*mockCaptureSource, CaptureFrame(_, _, _))
-        .WillOnce([](char *frame, uint64_t requestBytes, uint64_t &replyBytes) {
+        .Times(SOURCE_PERIOD_SIZE)
+        .WillRepeatedly([](char *frame, uint64_t requestBytes, uint64_t &replyBytes) {
             replyBytes = requestBytes;
             return SUCCESS;
         });

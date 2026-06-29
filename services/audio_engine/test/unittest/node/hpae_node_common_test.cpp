@@ -816,7 +816,7 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_051, TestSize.Level0)
 HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_052, TestSize.Level0)
 {
     size_t result = CalculateFrameLenBySampleRate(SAMPLE_RATE_11025);
-    EXPECT_EQ(result, 441U); // 441 for 11025 samplerate
+    EXPECT_EQ(result, 441U * SOURCE_PERIOD_SIZE); // 441 for 11025 samplerate
 }
 
 /**
@@ -831,9 +831,9 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_053, TestSize.Level0)
     size_t result2 = CalculateFrameLenBySampleRate(SAMPLE_RATE_16000);
     size_t result3 = CalculateFrameLenBySampleRate(SAMPLE_RATE_48000);
     
-    EXPECT_EQ(result1, 160U);
-    EXPECT_EQ(result2, 320U);
-    EXPECT_EQ(result3, 960U);
+    EXPECT_EQ(result1, 160U * SOURCE_PERIOD_SIZE);
+    EXPECT_EQ(result2, 320U * SOURCE_PERIOD_SIZE);
+    EXPECT_EQ(result3, 960U * SOURCE_PERIOD_SIZE);
 }
 
 /**
@@ -847,8 +847,8 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_054, TestSize.Level0)
     size_t result1 = CalculateFrameLenBySampleRate(SAMPLE_RATE_44100);
     size_t result2 = CalculateFrameLenBySampleRate(SAMPLE_RATE_22050);
     
-    EXPECT_EQ(result1, 882U);
-    EXPECT_EQ(result2, 441U);
+    EXPECT_EQ(result1, 882U * SOURCE_PERIOD_SIZE);
+    EXPECT_EQ(result2, 441U * SOURCE_PERIOD_SIZE);
 }
 
 /**
@@ -862,8 +862,8 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_055, TestSize.Level0)
     size_t result1 = CalculateFrameLenBySampleRate(48000U);
     size_t result2 = CalculateFrameLenBySampleRate(44100U);
     
-    EXPECT_EQ(result1, 960U);
-    EXPECT_EQ(result2, 882U);
+    EXPECT_EQ(result1, 960U * SOURCE_PERIOD_SIZE);
+    EXPECT_EQ(result2, 882U * SOURCE_PERIOD_SIZE);
 }
 
 /**
