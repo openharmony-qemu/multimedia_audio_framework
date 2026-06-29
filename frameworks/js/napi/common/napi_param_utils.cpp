@@ -501,13 +501,6 @@ napi_status NapiParamUtils::ParseSamplingRate(const napi_env &env, AudioStreamIn
     // to allow other fields in the same object to continue parsing
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, napi_ok, "samplingRate field not present");
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-    if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_384000) {
-        streamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
-    } else {
-        AUDIO_ERR_LOG("invaild samplingRate");
-        return napi_generic_failure;
-    }
-#else
     // Validate sample rate: 8000-384000, divisible by 10, or 11025
     constexpr int32_t SAMPLE_RATE_RESOLUTION_10 = 10;
     bool isValidRate = (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_384000 &&
@@ -528,6 +521,13 @@ napi_status NapiParamUtils::ParseSamplingRate(const napi_env &env, AudioStreamIn
     streamInfo->samplingRate = SAMPLE_RATE_8000; // default fallback
     streamInfo->customSampleRate = static_cast<uint32_t>(intValue);
     AUDIO_INFO_LOG("custom sample rate: %{public}d", intValue);
+#else
+    if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_384000) {
+        streamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
+    } else {
+        AUDIO_ERR_LOG("invalid samplingRate: %{public}d", intValue);
+        return napi_generic_failure;
+    }
 #endif
     return napi_ok;
 }
