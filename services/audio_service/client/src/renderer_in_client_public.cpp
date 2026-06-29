@@ -1263,6 +1263,10 @@ int32_t RendererInClientInner::ResetNotifyStreamSilentChangeFlag()
 
 bool RendererInClientInner::CheckWriteCb()
 {
+    // In low-latency mode, each frame of data is obtained through onWriteData, and the client must register writeCb,
+    // otherwise it will fall back to normal mode.
+    // In static low-latency mode, the entire audio data is requested from the client at once,
+    // so the static mode does not need to check writeCb_.
     return writeCb_ == nullptr && renderMode_ != RENDER_MODE_STATIC;
 }
 
