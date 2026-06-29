@@ -562,7 +562,7 @@ bool AudioDeviceDescriptor::MarshallingInnerdata(Parcel &parcel, int32_t devType
         parcel.WriteString(dmDeviceInfo_) && parcel.WriteInt32(hdPlaybackMode_) &&
         parcel.WriteBool(isSupportRemoteMultichannel_) && parcel.WriteUint32(deviceTokenId_) &&
         parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType())) &&
-        parcel.WriteBool(isSilent_) && parcel.WriteBool(isSupportMultiZone_);
+        parcel.WriteBool(isSilent_) && parcel.WriteBool(isSupportMultiZone_) &&
         parcel.WriteInt32(static_cast<int32_t>(visibleMode_));
 }
 
