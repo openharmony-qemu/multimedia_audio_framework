@@ -689,8 +689,12 @@ void AudioCapturerImpl::SetNoiseReductionMode(ohos::multimedia::audio::NoiseRedu
         static_cast<OHOS::AudioStandard::NoiseReductionMode>(modeValue));
     if (ret == OHOS::AudioStandard::ERROR_INVALID_PARAM || ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "SetNoiseReductionMode failed");
-    } else if (ret != OHOS::AudioStandard::SUCCESS) {
+    } else if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED || ret == OHOS::AudioStandard::ERROR_UNSUPPORTED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED, "SetNoiseReductionMode failed");
+    } else if (ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE || ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "SetNoiseReductionMode failed");
+    } else if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetNoiseReductionMode failed");
     }
 }
 
@@ -705,7 +709,7 @@ ohos::multimedia::audio::NoiseReductionMode AudioCapturerImpl::GetNoiseReduction
         OHOS::AudioStandard::NOISE_REDUCTION_MODE_FIDELITY;
     int32_t ret = audioCapturer_->GetNoiseReductionMode(noiseReductionMode);
     if (ret != OHOS::AudioStandard::SUCCESS) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "GetNoiseReductionMode failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetNoiseReductionMode failed");
         return ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY;
     }
     return TaiheAudioEnum::ToTaiheNoiseReductionMode(noiseReductionMode);
@@ -722,7 +726,7 @@ taihe::array<ohos::multimedia::audio::NoiseReductionMode> AudioCapturerImpl::Get
     std::vector<OHOS::AudioStandard::NoiseReductionMode> nativeModes;
     int32_t ret = audioCapturer_->GetSupportedNoiseReductionModes(nativeModes);
     if (ret != OHOS::AudioStandard::SUCCESS) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "GetSupportedNoiseReductionModes failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetSupportedNoiseReductionModes failed");
         return taihe::array<ohos::multimedia::audio::NoiseReductionMode>(result);
     }
 

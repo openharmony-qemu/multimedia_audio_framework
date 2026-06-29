@@ -1292,7 +1292,13 @@ napi_value NapiAudioCapturer::SetNoiseReductionMode(napi_env env, napi_callback_
     if (ret == ERR_INVALID_PARAM || ret == ERROR_INVALID_PARAM) {
         return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM);
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
+    if (ret == ERR_NOT_SUPPORTED || ret == ERROR_UNSUPPORTED) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED);
+    }
+    if (ret == ERR_ILLEGAL_STATE || ret == ERROR_ILLEGAL_STATE) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE);
+    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
         "SetNoiseReductionMode failed");
     return NapiParamUtils::GetUndefinedValue(env);
 }
@@ -1310,7 +1316,7 @@ napi_value NapiAudioCapturer::GetNoiseReductionMode(napi_env env, napi_callback_
 
     NoiseReductionMode noiseReductionMode = NOISE_REDUCTION_MODE_FIDELITY;
     int32_t ret = napiAudioCapturer->audioCapturer_->GetNoiseReductionMode(noiseReductionMode);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
         "GetNoiseReductionMode failed");
 
     NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(noiseReductionMode), result);
@@ -1330,7 +1336,7 @@ napi_value NapiAudioCapturer::GetSupportedNoiseReductionModes(napi_env env, napi
 
     std::vector<NoiseReductionMode> noiseReductionModes;
     int32_t ret = napiAudioCapturer->audioCapturer_->GetSupportedNoiseReductionModes(noiseReductionModes);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE),
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
         "GetSupportedNoiseReductionModes failed");
 
     napi_status status = napi_create_array_with_length(env, noiseReductionModes.size(), &result);

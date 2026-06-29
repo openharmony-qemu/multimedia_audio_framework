@@ -417,6 +417,8 @@ OH_AudioStream_Result OH_AudioCapturer_SetIndependentAudioSessionStrategy(
  *         {@link AUDIOSTREAM_SUCCESS} If the execution is successful.
  *         {@link AUDIOSTREAM_ERROR_INVALID_PARAM} The param of capturer is nullptr or noiseReductionMode is invalid.
  *         {@link AUDIOSTREAM_ERROR_ILLEGAL_STATE} Stream is in running or released state.
+ *         {@link AUDIOSTREAM_ERROR_UNSUPPORTED_ABILITY} The setted mode is not supported.
+ *         {@link AUDIOSTREAM_ERROR_SERVICE_DIED} Audio server process died.
  * @since 26.0.0
  */
 OH_AudioStream_Result OH_AudioCapturer_SetNoiseReductionMode(OH_AudioCapturer* capturer,
@@ -441,17 +443,20 @@ OH_AudioStream_Result OH_AudioCapturer_GetNoiseReductionMode(OH_AudioCapturer* c
  * @brief Gets all supported noise reduction modes on current audio capturer.
  *
  * @param capturer Audio capturer created by OH_AudioStreamBuilder_GenerateCapturer().
- * @param noiseReductionModes Pointer to receive the array of supported noise reduction modes.
- *                            The array is managed by the system. The caller should not free this memory.
- *                            Refer to {@link OH_AudioNoiseReductionMode}.
+ * @param noiseReductionModeArray Pointer to a user-allocated array to receive the supported noise reduction modes.
+ * @param inModeArraySize The allocated size of the noiseReductionModeArray input parameter.
+ * @param outModeArraySize Pointer to get the actual modes size. When the supported modes size is larger
+ *                         than inModeArraySize, only part of the modes will be filled into
+ *                         noiseReductionModeArray, and outModeArraySize will be equal to inModeArraySize.
  * @return Function result code:
  *         {@link AUDIOSTREAM_SUCCESS} If the execution is successful.
- *         {@link AUDIOSTREAM_ERROR_INVALID_PARAM} The param of capturer or noiseReductionModes is nullptr.
- *         {@link AUDIOSTREAM_ERROR_ILLEGAL_STATE} Stream is in released state.
+ *         {@link AUDIOSTREAM_ERROR_INVALID_PARAM} The param of capturer, noiseReductionModeArray,
+ *                                               or outModeArraySize is nullptr.
+ *         {@link AUDIOSTREAM_ERROR_SERVICE_DIED} Audio server process died.
  * @since 26.0.0
  */
 OH_AudioStream_Result OH_AudioCapturer_GetSupportedNoiseReductionModes(OH_AudioCapturer* capturer,
-    OH_AudioNoiseReductionMode** noiseReductionModes);
+    OH_AudioNoiseReductionMode* noiseReductionModeArray, uint32_t inModeArraySize, uint32_t *outModeArraySize);
 
 /**
  * @brief Callback used to receive when the sensitive warning message playback for cellular call

@@ -1756,7 +1756,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetNoiseReductionMode_001, TestS
 /**
 * @tc.name  : Test OH_AudioCapturer_GetNoiseReductionMode API via native error.
 * @tc.number: OH_AudioCapturer_GetNoiseReductionMode_002
-* @tc.desc  : Test GetNoiseReductionMode returns illegal state if native call fails.
+* @tc.desc  : Test GetNoiseReductionMode returns invalid param if native call fails.
 */
 HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetNoiseReductionMode_002, TestSize.Level0)
 {
@@ -1766,7 +1766,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetNoiseReductionMode_002, TestS
     OH_AudioCapturer *audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&oHAudioCapturer);
     OH_AudioNoiseReductionMode mode = AUDIO_NOISE_REDUCTION_MODE_FIDELITY;
 
-    EXPECT_EQ(OH_AudioCapturer_GetNoiseReductionMode(audioCapturer, &mode), AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+    EXPECT_EQ(OH_AudioCapturer_GetNoiseReductionMode(audioCapturer, &mode), AUDIOSTREAM_ERROR_INVALID_PARAM);
 }
 
 /**
@@ -1776,26 +1776,33 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetNoiseReductionMode_002, TestS
 */
 HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetSupportedNoiseReductionModes_001, TestSize.Level0)
 {
-    OH_AudioNoiseReductionMode *modes = nullptr;
-    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(nullptr, &modes), AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioNoiseReductionMode modes[4] = {};
+    uint32_t outModeArraySize = 0;
+    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(nullptr, modes, 4, &outModeArraySize),
+        AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     OHAudioCapturer oHAudioCapturer;
     oHAudioCapturer.audioCapturer_ = std::make_shared<NoiseReductionReturnCapturer>(
         SUCCESS, SUCCESS, SUCCESS);
     OH_AudioCapturer *audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&oHAudioCapturer);
-    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, nullptr),
+    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, nullptr, 4, &outModeArraySize),
         AUDIOSTREAM_ERROR_INVALID_PARAM);
-    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, &modes), AUDIOSTREAM_SUCCESS);
-    ASSERT_NE(modes, nullptr);
+    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, modes, 4, nullptr),
+        AUDIOSTREAM_ERROR_INVALID_PARAM);
+    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, modes, 0, &outModeArraySize),
+        AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(outModeArraySize, 0);
+    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, modes, 4, &outModeArraySize),
+        AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(outModeArraySize, 2);
     EXPECT_EQ(modes[0], AUDIO_NOISE_REDUCTION_MODE_FIDELITY);
     EXPECT_EQ(modes[1], AUDIO_NOISE_REDUCTION_MODE_STANDARD);
-    free(modes);
 }
 
 /**
 * @tc.name  : Test OH_AudioCapturer_GetSupportedNoiseReductionModes API via native error.
 * @tc.number: OH_AudioCapturer_GetSupportedNoiseReductionModes_002
-* @tc.desc  : Test GetSupportedNoiseReductionModes returns illegal state if native call fails.
+* @tc.desc  : Test GetSupportedNoiseReductionModes returns service died if native call fails.
 */
 HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetSupportedNoiseReductionModes_002, TestSize.Level0)
 {
@@ -1803,11 +1810,11 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetSupportedNoiseReductionModes_
     oHAudioCapturer.audioCapturer_ = std::make_shared<NoiseReductionReturnCapturer>(
         SUCCESS, SUCCESS, ERR_ILLEGAL_STATE);
     OH_AudioCapturer *audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&oHAudioCapturer);
-    OH_AudioNoiseReductionMode *modes = nullptr;
+    OH_AudioNoiseReductionMode modes[4] = {};
+    uint32_t outModeArraySize = 0;
 
-    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, &modes),
-        AUDIOSTREAM_ERROR_ILLEGAL_STATE);
-    EXPECT_EQ(modes, nullptr);
+    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, modes, 4, &outModeArraySize),
+        AUDIOSTREAM_ERROR_SERVICE_DIED);
 }
 
 #ifdef SUPPOR_PERMISSION

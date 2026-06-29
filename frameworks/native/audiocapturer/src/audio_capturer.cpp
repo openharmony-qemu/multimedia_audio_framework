@@ -3457,6 +3457,10 @@ int32_t AudioCapturerPrivate::SetNoiseReductionMode(NoiseReductionMode mode)
 {
     AUDIO_INFO_LOG("SetNoiseReductionMode NoiseReductionMode: %{public}d", mode);
 
+    CapturerState state = GetStatus();
+    CHECK_AND_RETURN_RET_LOG(state == CAPTURER_PREPARED || state == CAPTURER_STOPPED, ERR_ILLEGAL_STATE,
+        "SetNoiseReductionMode only supports prepared or stopped state");
+
     {
         std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
         if (!hasFetchedSupportedModes_) {
@@ -3472,7 +3476,7 @@ int32_t AudioCapturerPrivate::SetNoiseReductionMode(NoiseReductionMode mode)
                             supportedNoiseReductionModes_.end(), mode);
         if (it == supportedNoiseReductionModes_.end()) {
             AUDIO_ERR_LOG("SetNoiseReductionMode: mode %{public}d is not supported", mode);
-            return ERR_INVALID_PARAM;
+            return ERR_NOT_SUPPORTED;
         }
     }
 

@@ -245,7 +245,6 @@ public:
     int32_t SetNoiseReductionMode(NoiseReductionMode mode);
     int32_t GetNoiseReductionMode(NoiseReductionMode &mode);
     int32_t GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes);
-    int32_t GetSupportedNoiseReductionModes(OH_AudioNoiseReductionMode **modes);
     const AudioCapturer *GetAudioCapturer() const;
 
 private:
@@ -258,7 +257,6 @@ private:
     std::shared_ptr<OHAudioCapturerFastStatusChangeCallback> audioCapturerFastStatusChangeCallback_;
     std::shared_ptr<OHAudioCapturerSensitiveRecordPermitCallback> audioCapturerSensitiveRecordPermitCallback_;
     std::shared_ptr<OHAudioCapturerOnPlaybackCaptureStartCallback> capturerOnPlaybackCaptureStartCallback_ = nullptr;
-    std::vector<OH_AudioNoiseReductionMode> supportedNoiseReductionModes_;
     bool isModernInnerCapturer_ = false;
 };
 }  // namespace AudioStandard
