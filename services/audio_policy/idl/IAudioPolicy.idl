@@ -366,4 +366,6 @@ interface IAudioPolicy {
     void PauseAudioFocusForExtAudioZone();
     void ResumeAudioFocusForExtAudioZone();
     void EnableSystemRecordController([in] boolean show, [in] SystemRecordControllerConfig config);
+    void GetSystemVolumeDegreeWithDevice([in] int volumeType, [in] int deviceType,
+        [in] String networkId, [out] int volumeDegree);
 }

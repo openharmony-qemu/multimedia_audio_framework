@@ -815,6 +815,8 @@ public:
     int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
         int32_t volumeFlag, int32_t uid);
     int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
+    int32_t GetSystemVolumeDegreeWithDevice(AudioVolumeType volumeType, DeviceType deviceType,
+        std::string networkId = LOCAL_NETWORK_ID);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
     int32_t UpdateSafeVolumeByStrMode();
     int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(

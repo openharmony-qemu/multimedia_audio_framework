@@ -1447,6 +1447,68 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_002, TestSize.Leve
 
 /**
 * @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManagerDegree_003
+* @tc.desc  : Test GetSystemVolumeDegree returns A2DP abs volume degree.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_003, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    std::string macAddress = "11:22:33:44:55:77";
+    std::string oldActiveBtDevice = audioVolumeManager.audioActiveDevice_.activeBTDevice_;
+    int32_t expectedVolumeDegree = 66;
+    auto btA2dpDevice = std::make_shared<AudioDeviceDescriptor>();
+    btA2dpDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    btA2dpDevice->networkId_ = LOCAL_NETWORK_ID;
+    btA2dpDevice->macAddress_ = macAddress;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(btA2dpDevice);
+    audioVolumeManager.audioActiveDevice_.activeBTDevice_ = macAddress;
+
+    A2dpDeviceConfigInfo a2dpDeviceConfigInfo;
+    a2dpDeviceConfigInfo.absVolumeSupport = true;
+    a2dpDeviceConfigInfo.mute = false;
+    a2dpDeviceConfigInfo.volumeDegree = expectedVolumeDegree;
+    audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_[macAddress] = a2dpDeviceConfigInfo;
+
+    auto ret = audioVolumeManager.GetSystemVolumeDegree(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(ret, expectedVolumeDegree);
+
+    audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_.erase(macAddress);
+    audioVolumeManager.audioActiveDevice_.activeBTDevice_ = oldActiveBtDevice;
+    AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_BLUETOOTH_A2DP);
+}
+
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManagerDegree_004
+* @tc.desc  : Test GetSystemVolumeDegree returns NearLink voice call degree.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_004, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    std::string macAddress = "nearlink_test_device";
+    int32_t expectedVolumeDegree = 52;
+    auto nearLinkDevice = std::make_shared<AudioDeviceDescriptor>();
+    nearLinkDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
+    nearLinkDevice->networkId_ = LOCAL_NETWORK_ID;
+    nearLinkDevice->macAddress_ = macAddress;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(nearLinkDevice);
+
+    SleVolumeConfigInfo musicConfigInfo;
+    SleVolumeConfigInfo callConfigInfo;
+    callConfigInfo.volumeDegree = expectedVolumeDegree;
+    SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_[macAddress] =
+        std::make_pair(musicConfigInfo, callConfigInfo);
+
+    auto ret = audioVolumeManager.GetSystemVolumeDegree(STREAM_VOICE_CALL, DEVICE_TYPE_NEARLINK);
+    EXPECT_EQ(ret, expectedVolumeDegree);
+
+    SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_.erase(macAddress);
+    AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_NEARLINK);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_063
 * @tc.desc  : Test Init interface.
 */

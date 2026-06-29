@@ -6060,6 +6060,19 @@ int32_t AudioPolicyServer::GetSystemVolumeDegree(int32_t streamType, int32_t uid
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::GetSystemVolumeDegreeWithDevice(int32_t streamType, int32_t deviceType,
+    const std::string &networkId, int32_t &volumeDegree)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
+
+    volumeDegree = audioVolumeManager_.GetSystemVolumeDegree(newStreamType,
+        static_cast<DeviceType>(deviceType), networkId);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree)
 {
     volumeDegree = audioVolumeManager_.GetMinVolumeDegree(static_cast<AudioVolumeType>(volumeType),
