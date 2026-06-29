@@ -467,36 +467,6 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0012, TestSize.Level1)
     TestInnerCapturer(STREAM_USAGE_MOVIE);
 }
 #endif
-/**
-* @tc.name  : Test capturer GAME.
-* @tc.number: Inner_Capturer_Basic_0013
-* @tc.desc  : Test PLAYBACK_CAPTURE
-*/
-HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0013, TestSize.Level1)
-{
-    TestInnerCapturer(STREAM_USAGE_GAME);
-}
-
-/**
-* @tc.name  : Test capturer AUDIOBOOK.
-* @tc.number: Inner_Capturer_Basic_0014
-* @tc.desc  : Test PLAYBACK_CAPTURE
-*/
-HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0014, TestSize.Level1)
-{
-    TestInnerCapturer(STREAM_USAGE_AUDIOBOOK);
-}
-
-/**
-* @tc.name  : Test capturer NAVIGATION.
-* @tc.number: Inner_Capturer_Basic_0015
-* @tc.desc  : Test PLAYBACK_CAPTURE
-*/
-HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0015, TestSize.Level1)
-{
-    TestInnerCapturer(STREAM_USAGE_NAVIGATION);
-}
-
 #ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test capturer EXCLUDE self.

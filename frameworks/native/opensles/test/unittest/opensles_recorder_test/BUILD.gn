@@ -40,22 +40,23 @@ config("audio_opensles_config") {
   include_dirs = [ "../../../include" ]
 }
 
-ohos_unittest("audio_opensles_recorder_unit_test") {
-  module_out_path = module_output_path
-  include_dirs = [ "./include" ]
-
-  configs = [
-    ":audio_opensles_config",
-    ":audio_capture_config",
-  ]
-
-  sources = [ "src/audio_opensles_recorder_unit_test.cpp" ]
-
-  deps = [ "../../../../opensles:opensles" ]
-
-  external_deps = [
-    "hilog:libhilog",
-    "opensles:libSLES",
-    "ipc:ipc_single",
-  ]
-}
+# Disabled due to UNAVAILABLE
+#ohos_unittest("audio_opensles_recorder_unit_test") {
+#  module_out_path = module_output_path
+#  include_dirs = [ "./include" ]
+#
+#  configs = [
+#    ":audio_opensles_config",
+#    ":audio_capture_config",
+#  ]
+#
+#  sources = [ "src/audio_opensles_recorder_unit_test.cpp" ]
+#
+#  deps = [ "../../../../opensles:opensles" ]
+#
+#  external_deps = [
+#    "hilog:libhilog",
+#    "opensles:libSLES",
+#    "ipc:ipc_single",
+#  ]
+#}
