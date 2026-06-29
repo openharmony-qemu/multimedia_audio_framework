@@ -135,6 +135,7 @@ public:
     void SetCapturerSource(int capturerSource) override;
     void SetPrivacyType(AudioPrivacyType privacyType) override;
 
+    bool CheckWriteCb();
     // Common APIs
     bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT,
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) override;

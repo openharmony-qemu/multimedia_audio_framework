@@ -1261,6 +1261,11 @@ int32_t RendererInClientInner::ResetNotifyStreamSilentChangeFlag()
     return SUCCESS;
 }
 
+bool RendererInClientInner::CheckWriteCb()
+{
+    return writeCb_ == nullptr && renderMode_ != RENDER_MODE_STATIC;
+}
+
 bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
@@ -1277,7 +1282,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
         SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
             PLAY_START_NULL_POINTER, "ipcStream is not inited", true, state_),
         HILOG_COMM_ERROR("[StartAudioStream]ipcStream is not inited!"));
-    int32_t ret = ipcStream_->Start(writeCb_ == nullptr);
+    int32_t ret = ipcStream_->Start(CheckWriteCb());
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, false,
         SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
             PLAY_START_OPERATION_FAILED, "Start call server failed", true, state_),
