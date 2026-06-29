@@ -24,6 +24,8 @@
 #include <cstdio>
 #include "audio_policy_log.h"
 #include "audio_effect.h"
+#include "audio_errors.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,8 +39,11 @@ public:
 
 private:
     AudioConverterParser();
+    void LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode);
+    void LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode);
     std::unique_ptr<ConverterConfig> cfg_;
     std::mutex loadConfigMutex_;
+    std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
