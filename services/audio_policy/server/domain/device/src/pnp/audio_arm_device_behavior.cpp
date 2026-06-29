@@ -99,39 +99,58 @@ int32_t AudioArmDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
     CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_INVALID_PARAM, "pipeManager is nullptr");
     bool ret = pipeManager->GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_PARAM, "GetModuleListByType empty");
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
+    bool isEcFeatureEnable = coreService->GetEcFeatureEnable();
     for (auto &moduleInfo : moduleInfoList) {
         DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
         if (configRole != role) {continue;}
         AUDIO_INFO_LOG("[module_reload]: module[%{public}s], role[%{public}d]", moduleInfo.name.c_str(), role);
-        auto coreService = AudioCoreService::GetCoreService();
-        CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
-        bool isEcFeatureEnable = coreService->GetEcFeatureEnable();
-        auto currentOutputDevice = AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice();
-        if (!(isEcFeatureEnable && role == INPUT_DEVICE) &&
-            AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
-            AudioIOHandleMap::GetInstance().MuteDefaultSinkPort(currentOutputDevice.networkId_,
-                AudioPolicyUtils::GetInstance().GetSinkPortName(currentOutputDevice.deviceType_));
-            AudioIOHandleMap::GetInstance().ClosePortAndEraseIOHandle(moduleInfo.name);
-        }
-        UpdateArmModuleInfo(deviceDesc, moduleInfo);
-        if (isEcFeatureEnable) {
-            if (role == OUTPUT_DEVICE) {
-                int32_t ret = AudioIOHandleMap::GetInstance().OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-                CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM,
-                    "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
-                coreService->SetUsbSinkModuleInfo(moduleInfo);
-            } else {
-                AUDIO_INFO_LOG("just save arm usb source module info, rate=%{public}s", moduleInfo.rate.c_str());
-                coreService->SetUsbSourceModuleInfo(moduleInfo);
-                pipeManager->UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
-            }
-        } else {
-            int32_t ret = AudioIOHandleMap::GetInstance().OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM,
-                "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
-        }
+        int32_t result = ProcessModuleActivation(deviceDesc, moduleInfo, role, isEcFeatureEnable);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+            "ProcessModuleActivation %{public}s failed %{public}d", moduleInfo.role.c_str(), result);
     }
     activeArmAddr = address;
+    return SUCCESS;
+}
+
+int32_t AudioArmDeviceBehavior::ReloadArmAudioPort(const AudioModuleInfo &moduleInfo)
+{
+    AUDIO_INFO_LOG("Switch device from arm to another arm, reload arm module");
+    auto currentOutputDevice = AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice();
+    AudioIOHandleMap::GetInstance().MuteDefaultSinkPort(currentOutputDevice.networkId_,
+        AudioPolicyUtils::GetInstance().GetSinkPortName(currentOutputDevice.deviceType_));
+
+    AudioIOHandle activateDeviceIOHandle = HDI_INVALID_ID;
+    bool result = AudioIOHandleMap::GetInstance().GetModuleIdByKey(moduleInfo.name, activateDeviceIOHandle);
+    CHECK_AND_RETURN_RET_LOG(result, ERR_INVALID_PARAM,
+        "can not find %{public}s in io map", moduleInfo.name.c_str());
+
+    uint32_t paIndex = 0;
+    AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager()
+        .ReloadA2dpAudioPort(moduleInfo, paIndex);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
+        HILOG_COMM_ERROR("ReloadArmAudioPort failed for ioHandle[%{public}u]", ioHandle));
+    CHECK_AND_CALL_FUNC_RETURN_RET(paIndex != 0, ERR_INVALID_PARAM,
+        HILOG_COMM_ERROR("ReloadArmAudioPort failed for paId[%{public}u]", paIndex));
+    AudioIOHandleMap::GetInstance().AddIOHandleInfo(moduleInfo.name, ioHandle);
+
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_NULL_POINTER, "pipeManager is nullptr");
+
+    auto pipeInfo = pipeManager->GetPipeinfoById(activateDeviceIOHandle);
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, ERR_NULL_POINTER, "pipeInfo is nullptr");
+    pipeInfo->id_ = ioHandle;
+    pipeInfo->paIndex_ = paIndex;
+    pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->moduleInfo_ = moduleInfo;
+    pipeInfo->InitAudioStreamInfo();
+
+    AudioAdapterManager::GetInstance().RemoveAudioPipeVolume(activateDeviceIOHandle);
+    auto pipeDeviceVolumeGroup = pipeManager->GetPipeDeviceVolumeInfoForPipe(pipeInfo);
+    AudioAdapterManager::GetInstance().UpdateAudioPipeVolume(pipeDeviceVolumeGroup);
+
+    AUDIO_INFO_LOG("open paIndex: %{public}u", paIndex);
     return SUCCESS;
 }
 
@@ -178,6 +197,40 @@ void AudioArmDeviceBehavior::UpdateArmModuleInfo(const std::shared_ptr<AudioDevi
     }
     
     moduleInfo.macAddress = deviceDesc->GetMacAddress();
+}
+
+int32_t AudioArmDeviceBehavior::ProcessModuleActivation(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    AudioModuleInfo &moduleInfo, DeviceRole role, bool isEcFeatureEnable)
+{
+    UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
+
+    if (role == INPUT_DEVICE && isEcFeatureEnable) {
+        AUDIO_INFO_LOG("just save arm usb source module info, rate=%{public}s", moduleInfo.rate.c_str());
+        coreService->SetUsbSourceModuleInfo(moduleInfo);
+        auto pipeManager = AudioPipeManager::GetPipeManager();
+        CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_NULL_POINTER, "pipeManager is nullptr");
+        pipeManager->UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
+        return SUCCESS;
+    }
+
+    if (AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
+        int32_t result = ReloadArmAudioPort(moduleInfo);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_INVALID_PARAM,
+            "Reload usb %{public}s failed %{public}d", moduleInfo.role.c_str(), result);
+    } else {
+        int32_t result = AudioIOHandleMap::GetInstance()
+            .OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_INVALID_PARAM,
+            "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), result);
+    }
+
+    if (isEcFeatureEnable) {
+        coreService->SetUsbSinkModuleInfo(moduleInfo);
+    }
+    return SUCCESS;
 }
 
 int32_t AudioArmDeviceBehavior::DeactivateDevice()

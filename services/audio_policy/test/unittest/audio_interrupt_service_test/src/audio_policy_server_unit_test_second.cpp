@@ -210,7 +210,8 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_207, TestSize.Level1)
     AudioStreamType streamType = STREAM_VOICE_CALL;
     bool mute = true;
     DeviceType deviceType = DEVICE_TYPE_INVALID;
-    auto ret = audioPolicyServer->SetStreamMute(streamType, mute, deviceType);
+    int32_t volumeFlag = 0;
+    auto ret = audioPolicyServer->SetStreamMute(streamType, mute, deviceType, volumeFlag);
     EXPECT_EQ(ret, SUCCESS);
 }
 

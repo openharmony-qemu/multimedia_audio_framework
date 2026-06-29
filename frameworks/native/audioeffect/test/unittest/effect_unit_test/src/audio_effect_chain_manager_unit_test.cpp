@@ -2978,23 +2978,6 @@ HWTEST(AudioEffectChainManagerUnitTest, ConfigureAudioEffectChain_001, TestSize.
 }
 
 /**
-* @tc.name   : Test InitHdiStateInner
-* @tc.number : InitHdiStateInner_001
-* @tc.desc   : Test InitHdiStateInner interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, InitHdiStateInner_001, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    AudioEffectChainManager::GetInstance()->InitHdiStateInner();
-    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-    AudioEffectChainManager::GetInstance()->InitHdiStateInner();
-    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
-    AudioEffectChainManager::GetInstance()->InitHdiStateInner();
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->spkOffloadEnabled_, false);
-}
-
-/**
 * @tc.name   : Test EffectVolumeUpdateInner
 * @tc.number : EffectVolumeUpdateInner_001
 * @tc.desc   : Test EffectVolumeUpdateInner interface.

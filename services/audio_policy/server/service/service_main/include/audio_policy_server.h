@@ -46,6 +46,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
 #include "audio_interrupt_service.h"
+#include "audio_policy_manager_listener.h"
 #include "audio_device_manager.h"
 #include "audio_policy_dump.h"
 #include "app_state_listener.h"
@@ -135,7 +136,7 @@ public:
         int32_t deviceType) override;
 
     int32_t SetStreamMute(int32_t streamType, bool mute,
-        int32_t deviceType) override;
+        int32_t deviceType, int32_t volumeFlag) override;
 
     int32_t GetStreamMute(int32_t streamType, bool &mute) override;
 
@@ -796,6 +797,8 @@ public:
     int32_t ReloadLoudVolumeMode(const int32_t streamInFocus, const int32_t setVolMode, bool &ret) override;
     int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
+    int32_t GetSystemVolumeDegreeWithDevice(int32_t streamType, int32_t deviceType,
+        const std::string &networkId, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
     int32_t UpdateSafeVolumeByStrMode() override;
     void HandleDataShareReadyEvent();
@@ -942,6 +945,7 @@ private:
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
     int32_t VerifyUidAndPid(const int32_t uid, const int32_t pid);
     void FillDeviceTokenId(std::shared_ptr<AudioDeviceDescriptor> device);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
 
     AudioEffectService &audioEffectService_;
     AudioStateManager &audioStateManager_;

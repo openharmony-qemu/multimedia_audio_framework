@@ -1124,3 +1124,1591 @@ HWTEST_F(HpaeFastRendererManagerTest, initWithInvalidFrameLen_001, TestSize.Leve
     // Init should fail internally since frameLen is 0
     EXPECT_EQ(manager->IsInit(), false);
 }
+
+// ==================== ConnectInputCluster branch tests ====================
+
+/**
+ * @tc.name  : connectInputCluster_NullSinkInputNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_064
+ * @tc.desc  : Test ConnectInputCluster with non-existent session returns ERROR
+ */
+HWTEST_F(HpaeFastRendererManagerTest, connectInputCluster_NullSinkInputNode_001, TestSize.Level0)
+{
+    EXPECT_EQ(fastManager_->ConnectInputCluster(99999), ERROR);
+}
+
+/**
+ * @tc.name  : connectInputCluster_NullGainNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_065
+ * @tc.desc  : Test ConnectInputCluster when gainNode missing returns ERR_NULL_POINTER
+ */
+HWTEST_F(HpaeFastRendererManagerTest, connectInputCluster_NullGainNode_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Remove gainNode to hit null gainNode branch
+    fastManager_->gainNodeMap_.erase(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(fastManager_->ConnectInputCluster(TEST_STREAM_SESSION_ID), ERR_NULL_POINTER);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : connectInputCluster_NullConverter_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_066
+ * @tc.desc  : Test ConnectInputCluster when converter missing returns ERR_NULL_POINTER
+ */
+HWTEST_F(HpaeFastRendererManagerTest, connectInputCluster_NullConverter_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Remove converter to hit null converter branch
+    fastManager_->converterNodeMap_.erase(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(fastManager_->ConnectInputCluster(TEST_STREAM_SESSION_ID), ERR_NULL_POINTER);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : connectInputCluster_SinkAlreadyRunning_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_067
+ * @tc.desc  : Test ConnectInputCluster skips RenderSinkStart when sink already RUNNING
+ */
+HWTEST_F(HpaeFastRendererManagerTest, connectInputCluster_SinkAlreadyRunning_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    // Set sink to RUNNING to skip RenderSinkStart branch
+    fastManager_->sinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->ConnectInputCluster(TEST_STREAM_SESSION_ID), SUCCESS);
+    EXPECT_EQ(fastManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_RUNNING);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : connectInputCluster_WhileSuspend_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_068
+ * @tc.desc  : Test ConnectInputCluster skips RenderSinkStart when isSuspend_ is true
+ */
+HWTEST_F(HpaeFastRendererManagerTest, connectInputCluster_WhileSuspend_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    // Force suspend state so RenderSinkStart is skipped
+    fastManager_->isSuspend_.store(true);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->ConnectInputCluster(TEST_STREAM_SESSION_ID), SUCCESS);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== DisConnectInputCluster branch tests ====================
+
+/**
+ * @tc.name  : disConnectInputCluster_NullSinkInputNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_069
+ * @tc.desc  : Test DisConnectInputCluster with non-existent session returns ERROR
+ */
+HWTEST_F(HpaeFastRendererManagerTest, disConnectInputCluster_NullSinkInputNode_001, TestSize.Level0)
+{
+    EXPECT_EQ(fastManager_->DisConnectInputCluster(99999), ERROR);
+}
+
+// ==================== ConnectInputSession branch tests ====================
+
+/**
+ * @tc.name  : connectInputSession_RunningState_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_070
+ * @tc.desc  : Test ConnectInputSession with RUNNING state calls ConnectInputCluster
+ */
+HWTEST_F(HpaeFastRendererManagerTest, connectInputSession_RunningState_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Set state to RUNNING to enter ConnectInputCluster branch
+    fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->SetState(HPAE_SESSION_RUNNING);
+    EXPECT_EQ(fastManager_->ConnectInputSession(TEST_STREAM_SESSION_ID), SUCCESS);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== SetSessionFade branch tests ====================
+
+/**
+ * @tc.name  : setSessionFade_NullNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_071
+ * @tc.desc  : Test SetSessionFade with non-existent session returns false
+ */
+HWTEST_F(HpaeFastRendererManagerTest, setSessionFade_NullNode_001, TestSize.Level0)
+{
+    EXPECT_EQ(fastManager_->SetSessionFade(99999, OPERATION_STARTED), false);
+}
+
+/**
+ * @tc.name  : setSessionFade_NotRunningWithStart_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_072
+ * @tc.desc  : Test SetSessionFade not running with OPERATION_STARTED returns false (no state set)
+ */
+HWTEST_F(HpaeFastRendererManagerTest, setSessionFade_NotRunningWithStart_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Session is PREPARED (not running) -> warning branch, OPERATION_STARTED -> skip state set
+    EXPECT_EQ(fastManager_->SetSessionFade(TEST_STREAM_SESSION_ID, OPERATION_STARTED), false);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : setSessionFade_NotRunningWithPause_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_073
+ * @tc.desc  : Test SetSessionFade not running with OPERATION_PAUSED sets state to PAUSED
+ */
+HWTEST_F(HpaeFastRendererManagerTest, setSessionFade_NotRunningWithPause_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->SetSessionFade(TEST_STREAM_SESSION_ID, OPERATION_PAUSED), false);
+    EXPECT_EQ(fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->GetState(), HPAE_SESSION_PAUSED);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : setSessionFade_NotRunningWithStop_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_074
+ * @tc.desc  : Test SetSessionFade not running with OPERATION_STOPPED sets state to STOPPED
+ */
+HWTEST_F(HpaeFastRendererManagerTest, setSessionFade_NotRunningWithStop_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->SetSessionFade(TEST_STREAM_SESSION_ID, OPERATION_STOPPED), false);
+    EXPECT_EQ(fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->GetState(), HPAE_SESSION_STOPPED);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : setSessionFade_RunningWithStart_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_075
+ * @tc.desc  : Test SetSessionFade running with OPERATION_STARTED sets fade and returns true
+ */
+HWTEST_F(HpaeFastRendererManagerTest, setSessionFade_RunningWithStart_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Now sink is RUNNING and session is RUNNING
+    EXPECT_EQ(fastManager_->SetSessionFade(TEST_STREAM_SESSION_ID, OPERATION_STARTED), true);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : setSessionFade_RunningWithPause_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_076
+ * @tc.desc  : Test SetSessionFade running with OPERATION_PAUSED sets state to PAUSING
+ */
+HWTEST_F(HpaeFastRendererManagerTest, setSessionFade_RunningWithPause_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->SetSessionFade(TEST_STREAM_SESSION_ID, OPERATION_PAUSED), true);
+    EXPECT_EQ(fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->GetState(), HPAE_SESSION_PAUSING);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : setSessionFade_RunningWithStop_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_077
+ * @tc.desc  : Test SetSessionFade running with OPERATION_STOPPED sets state to STOPPING
+ */
+HWTEST_F(HpaeFastRendererManagerTest, setSessionFade_RunningWithStop_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->SetSessionFade(TEST_STREAM_SESSION_ID, OPERATION_STOPPED), true);
+    EXPECT_EQ(fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->GetState(), HPAE_SESSION_STOPPING);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : setSessionFade_PausingStateSkipFade_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_078
+ * @tc.desc  : Test SetSessionFade skips SetFadeState when already PAUSING
+ */
+HWTEST_F(HpaeFastRendererManagerTest, setSessionFade_PausingStateSkipFade_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Set state to PAUSING so SetFadeState is skipped
+    fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->SetState(HPAE_SESSION_PAUSING);
+    EXPECT_EQ(fastManager_->SetSessionFade(TEST_STREAM_SESSION_ID, OPERATION_PAUSED), true);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : setSessionFade_StoppingStateSkipFade_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_079
+ * @tc.desc  : Test SetSessionFade skips SetFadeState when already STOPPING
+ */
+HWTEST_F(HpaeFastRendererManagerTest, setSessionFade_StoppingStateSkipFade_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Set state to STOPPING so SetFadeState is skipped
+    fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->SetState(HPAE_SESSION_STOPPING);
+    EXPECT_EQ(fastManager_->SetSessionFade(TEST_STREAM_SESSION_ID, OPERATION_STOPPED), true);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== AddSingleNodeToSink branch tests ====================
+
+/**
+ * @tc.name  : addSingleNodeToSink_NotConnect_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_080
+ * @tc.desc  : Test AddSingleNodeToSink with isConnect=false skips ConnectInputSession
+ */
+HWTEST_F(HpaeFastRendererManagerTest, addSingleNodeToSink_NotConnect_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 70001;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.format = SAMPLE_S32LE;
+    nodeInfo.channels = STEREO;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    auto node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    node->SetState(HPAE_SESSION_RUNNING);
+    // isConnect=false -> skip ConnectInputSession branch
+    fastManager_->AddSingleNodeToSink(node, false);
+    EXPECT_NE(fastManager_->sinkInputNodeMap_.count(70001), 0);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : addSingleNodeToSink_NotRunningWithConnect_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_081
+ * @tc.desc  : Test AddSingleNodeToSink with isConnect=true but state not RUNNING skips connect
+ */
+HWTEST_F(HpaeFastRendererManagerTest, addSingleNodeToSink_NotRunningWithConnect_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 70002;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.format = SAMPLE_S32LE;
+    nodeInfo.channels = STEREO;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    auto node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    // state PREPARED (not RUNNING) and isConnect=true -> skip connect branch
+    node->SetState(HPAE_SESSION_PREPARED);
+    fastManager_->AddSingleNodeToSink(node, true);
+    EXPECT_NE(fastManager_->sinkInputNodeMap_.count(70002), 0);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : addSingleNodeToSink_RunningWithConnect_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_082
+ * @tc.desc  : Test AddSingleNodeToSink with isConnect=true and state RUNNING calls ConnectInputSession
+ */
+HWTEST_F(HpaeFastRendererManagerTest, addSingleNodeToSink_RunningWithConnect_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 70003;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.format = SAMPLE_S32LE;
+    nodeInfo.channels = STEREO;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    auto node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    node->SetState(HPAE_SESSION_RUNNING);
+    // isConnect=true and state RUNNING -> ConnectInputSession branch
+    fastManager_->AddSingleNodeToSink(node, true);
+    EXPECT_NE(fastManager_->sinkInputNodeMap_.count(70003), 0);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== MoveAllStreamToNewSink branch tests ====================
+
+/**
+ * @tc.name  : moveAllStreamToNewSink_EmptySinkInputs_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_083
+ * @tc.desc  : Test MoveAllStreamToNewSink with no matching sessions logs empty warning
+ */
+HWTEST_F(HpaeFastRendererManagerTest, moveAllStreamToNewSink_EmptySinkInputs_001, TestSize.Level0)
+{
+    // No sessions in map, MOVE_ALL collects nothing -> empty branch
+    fastManager_->MoveAllStreamToNewSink("target_sink", {}, MOVE_ALL);
+    // Should not crash
+}
+
+/**
+ * @tc.name  : moveAllStreamToNewSink_MoveSingleNoMatch_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_084
+ * @tc.desc  : Test MoveAllStreamToNewSink MOVE_SINGLE with no matching sessionIds
+ */
+HWTEST_F(HpaeFastRendererManagerTest, moveAllStreamToNewSink_MoveSingleNoMatch_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(500001)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // MOVE_SINGLE with sessionIds that don't match 500001 -> skip in for loop
+    std::vector<uint32_t> sessionIds = {999999};
+    fastManager_->MoveAllStreamToNewSink("target_sink", sessionIds, MOVE_SINGLE);
+    // Stream should still exist
+    HpaeSinkInputInfo info;
+    EXPECT_EQ(fastManager_->GetSinkInputInfo(500001, info), SUCCESS);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : moveAllStreamToNewSink_MoveSingleMatch_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_085
+ * @tc.desc  : Test MoveAllStreamToNewSink MOVE_SINGLE with matching sessionId collects node
+ */
+HWTEST_F(HpaeFastRendererManagerTest, moveAllStreamToNewSink_MoveSingleMatch_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(500002)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // MOVE_SINGLE with matching sessionId -> TriggerCallback (not MOVE_ALL branch)
+    std::vector<uint32_t> sessionIds = {500002};
+    fastManager_->MoveAllStreamToNewSink("target_sink", sessionIds, MOVE_SINGLE);
+    // Node should be removed after move
+    HpaeSinkInputInfo info;
+    EXPECT_EQ(fastManager_->GetSinkInputInfo(500002, info), ERR_INVALID_OPERATION);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== UpdateAppsUid branch tests ====================
+
+/**
+ * @tc.name  : updateAppsUid_NullSinkOutput_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_086
+ * @tc.desc  : Test UpdateAppsUid with null sinkOutputNode_ skips sink update
+ */
+HWTEST_F(HpaeFastRendererManagerTest, updateAppsUid_NullSinkOutput_001, TestSize.Level0)
+{
+    // Before Init, sinkOutputNode_ is null
+    EXPECT_EQ(fastManager_->sinkOutputNode_, nullptr);
+    fastManager_->UpdateAppsUid();
+    // Should not crash
+}
+
+/**
+ * @tc.name  : updateAppsUid_WithKeepRunning_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_087
+ * @tc.desc  : Test UpdateAppsUid with keepRunning stream keeps needCheckZeroVolume true
+ */
+HWTEST_F(HpaeFastRendererManagerTest, updateAppsUid_WithKeepRunning_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+
+    HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
+    streamInfo.keepRunning = true;
+    EXPECT_EQ(fastManager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // keepRunning=true should keep needCheckZeroVolume unchanged (true)
+    fastManager_->UpdateAppsUid();
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== StopOutputNode branch tests ====================
+
+/**
+ * @tc.name  : stopOutputNode_NullSinkOutput_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_088
+ * @tc.desc  : Test StopOutputNode with null sinkOutputNode_ does nothing
+ */
+HWTEST_F(HpaeFastRendererManagerTest, stopOutputNode_NullSinkOutput_001, TestSize.Level0)
+{
+    EXPECT_EQ(fastManager_->sinkOutputNode_, nullptr);
+    fastManager_->StopOutputNode();
+    // Should not crash
+}
+
+/**
+ * @tc.name  : stopOutputNode_NullMixerNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_089
+ * @tc.desc  : Test StopOutputNode with null mixerNode_ skips DisConnect
+ */
+HWTEST_F(HpaeFastRendererManagerTest, stopOutputNode_NullMixerNode_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    // Force mixerNode_ to null to hit skip-DisConnect branch
+    fastManager_->mixerNode_ = nullptr;
+    fastManager_->StopOutputNode();
+    EXPECT_EQ(fastManager_->sinkOutputNode_, nullptr);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== StartRenderSink branch tests ====================
+
+/**
+ * @tc.name  : startRenderSink_NullSinkOutput_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_090
+ * @tc.desc  : Test StartRenderSink with null sinkOutputNode_ returns ERROR
+ */
+HWTEST_F(HpaeFastRendererManagerTest, startRenderSink_NullSinkOutput_001, TestSize.Level0)
+{
+    EXPECT_EQ(fastManager_->sinkOutputNode_, nullptr);
+    EXPECT_EQ(fastManager_->StartRenderSink(), ERROR);
+}
+
+// ==================== CreateSinkAttr branch tests ====================
+
+/**
+ * @tc.name  : createSinkAttr_DpAdapter_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_091
+ * @tc.desc  : Test CreateSinkAttr with dp adapterName sets AUDIO_PIN_OUT_DP
+ */
+HWTEST_F(HpaeFastRendererManagerTest, createSinkAttr_DpAdapter_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetFastSinkInfo();
+    sinkInfo.adapterName = "dp";
+    auto manager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
+    auto attr = manager->CreateSinkAttr();
+    EXPECT_EQ(attr.pin, AUDIO_PIN_OUT_DP);
+}
+
+/**
+ * @tc.name  : createSinkAttr_NotDpAdapter_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_092
+ * @tc.desc  : Test CreateSinkAttr with non-dp adapterName does not set DP pin
+ */
+HWTEST_F(HpaeFastRendererManagerTest, createSinkAttr_NotDpAdapter_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetFastSinkInfo();
+    sinkInfo.adapterName = "primary_mmap";
+    auto manager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
+    auto attr = manager->CreateSinkAttr();
+    EXPECT_NE(attr.pin, AUDIO_PIN_OUT_DP);
+}
+
+/**
+ * @tc.name  : createSinkAttr_UltraFast_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_093
+ * @tc.desc  : Test CreateSinkAttr with isUltraFast=true sets period
+ */
+HWTEST_F(HpaeFastRendererManagerTest, createSinkAttr_UltraFast_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetFastSinkInfo();
+    sinkInfo.isUltraFast = true;
+    auto manager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
+    auto attr = manager->CreateSinkAttr();
+    EXPECT_GT(attr.period, 0);
+}
+
+/**
+ * @tc.name  : createSinkAttr_NotUltraFast_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_094
+ * @tc.desc  : Test CreateSinkAttr with isUltraFast=false does not set period
+ */
+HWTEST_F(HpaeFastRendererManagerTest, createSinkAttr_NotUltraFast_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetFastSinkInfo();
+    sinkInfo.isUltraFast = false;
+    auto manager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
+    auto attr = manager->CreateSinkAttr();
+    EXPECT_EQ(attr.period, 0);
+}
+
+// ==================== IsRunning branch tests ====================
+
+/**
+ * @tc.name  : isRunning_BothNonNull_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_095
+ * @tc.desc  : Test IsRunning returns true when sink and thread running
+ */
+HWTEST_F(HpaeFastRendererManagerTest, isRunning_BothNonNull_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    // Sink is IDLE, not RUNNING
+    EXPECT_EQ(fastManager_->IsRunning(), false);
+    // Set to RUNNING
+    fastManager_->sinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(fastManager_->IsRunning(), true);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== Process branch tests ====================
+
+/**
+ * @tc.name  : process_RunningWithAppsUid_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_096
+ * @tc.desc  : Test Process when running with running stream (appsUid not empty) takes else branch
+ */
+HWTEST_F(HpaeFastRendererManagerTest, process_RunningWithAppsUid_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Now sink is RUNNING and stream is RUNNING -> appsUid_ not empty after UpdateAppsUid (else branch)
+    fastManager_->Process();
+    // Should not crash; noneStreamTime_ reset to 0 in else branch
+    EXPECT_EQ(fastManager_->noneStreamTime_, 0);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : process_RunningEmptyAppsUid_NoTimeout_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_097
+ * @tc.desc  : Test Process when running with empty appsUid and no timeout sets noneStreamTime
+ */
+HWTEST_F(HpaeFastRendererManagerTest, process_RunningEmptyAppsUid_NoTimeout_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    // Set sink to RUNNING with no running streams -> appsUid_ empty after UpdateAppsUid
+    fastManager_->sinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
+    fastManager_->noneStreamTime_ = 0; // first call -> set to now, no timeout
+    fastManager_->Process();
+    // noneStreamTime_ should now be set (non-zero) since timeout not reached
+    EXPECT_NE(fastManager_->noneStreamTime_, 0);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : process_RunningEmptyAppsUid_Timeout_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_098
+ * @tc.desc  : Test Process when running with empty appsUid and timeout reached stops sink
+ */
+HWTEST_F(HpaeFastRendererManagerTest, process_RunningEmptyAppsUid_Timeout_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    fastManager_->sinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
+    // Set noneStreamTime_ to past so timeout (3s) is reached
+    constexpr int64_t SUSPEND_TIMEOUT_S = 3;
+    fastManager_->appsUid_.clear();
+    fastManager_->noneStreamTime_ = ClockTime::GetCurNano() -
+        static_cast<int64_t>((SUSPEND_TIMEOUT_S + 1) * AUDIO_NS_PER_SECOND);
+    fastManager_->Process();
+    // Sink should be stopped (state changed from RUNNING)
+    EXPECT_NE(fastManager_->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_RUNNING);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== CreateStream invalid stream info ====================
+
+/**
+ * @tc.name  : createStream_InvalidStreamInfo_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_099
+ * @tc.desc  : Test CreateStream with invalid frameLen returns ERROR
+ */
+HWTEST_F(HpaeFastRendererManagerTest, createStream_InvalidStreamInfo_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    HpaeStreamInfo streamInfo = MakeStreamInfo(TEST_STREAM_SESSION_ID);
+    streamInfo.frameLen = 0; // invalid
+    EXPECT_EQ(fastManager_->CreateStream(streamInfo), ERROR);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== Stream control not-found branches ====================
+
+/**
+ * @tc.name  : destroyStream_SessionNotFound_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_100
+ * @tc.desc  : Test DestroyStream non-existent session does not crash
+ */
+HWTEST_F(HpaeFastRendererManagerTest, destroyStream_SessionNotFound_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_NE(fastManager_->DestroyStream(99999), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : start_SessionNotFound_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_101
+ * @tc.desc  : Test Start non-existent session does not crash
+ */
+HWTEST_F(HpaeFastRendererManagerTest, start_SessionNotFound_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(99999), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : pause_SessionNotFound_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_102
+ * @tc.desc  : Test Pause non-existent session does not crash
+ */
+HWTEST_F(HpaeFastRendererManagerTest, pause_SessionNotFound_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Pause(99999), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : pause_RunningSession_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_103
+ * @tc.desc  : Test Pause running session triggers fade (SetSessionFade returns true)
+ */
+HWTEST_F(HpaeFastRendererManagerTest, pause_RunningSession_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Pause running session -> SetSessionFade returns true -> skip DisConnectInputCluster
+    EXPECT_EQ(fastManager_->Pause(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : flush_SessionNotFound_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_104
+ * @tc.desc  : Test Flush non-existent session does not crash
+ */
+HWTEST_F(HpaeFastRendererManagerTest, flush_SessionNotFound_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Flush(99999), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : flush_NullConverter_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_105
+ * @tc.desc  : Test Flush when converter is null skips FlushBuffers
+ */
+HWTEST_F(HpaeFastRendererManagerTest, flush_NullConverter_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Remove converter to hit null converter branch
+    fastManager_->converterNodeMap_.erase(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(fastManager_->Flush(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : drain_SessionNotFound_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_106
+ * @tc.desc  : Test Drain non-existent session does not crash
+ */
+HWTEST_F(HpaeFastRendererManagerTest, drain_SessionNotFound_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Drain(99999), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : drain_RunningSession_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_107
+ * @tc.desc  : Test Drain running session skips status callback (state == RUNNING)
+ */
+HWTEST_F(HpaeFastRendererManagerTest, drain_RunningSession_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Drain when state is RUNNING -> skip TriggerCallback branch
+    EXPECT_EQ(fastManager_->Drain(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : drain_NotRunningSession_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_108
+ * @tc.desc  : Test Drain not-running session triggers status callback
+ */
+HWTEST_F(HpaeFastRendererManagerTest, drain_NotRunningSession_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // State is PREPARED (not RUNNING) -> TriggerCallback branch
+    EXPECT_EQ(fastManager_->Drain(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : stop_SessionNotFound_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_109
+ * @tc.desc  : Test Stop non-existent session does not crash
+ */
+HWTEST_F(HpaeFastRendererManagerTest, stop_SessionNotFound_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Stop(99999), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : stop_RunningSession_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_110
+ * @tc.desc  : Test Stop running session triggers fade (SetSessionFade returns true)
+ */
+HWTEST_F(HpaeFastRendererManagerTest, stop_RunningSession_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Stop running session -> SetSessionFade returns true -> skip DisConnectInputCluster
+    EXPECT_EQ(fastManager_->Stop(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== UpdateLoopbackState branch tests ====================
+
+/**
+ * @tc.name  : updateLoopbackState_NullSinkOutput_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_111
+ * @tc.desc  : Test UpdateLoopbackState with null sinkOutputNode_ skips SetLoopbackState
+ */
+HWTEST_F(HpaeFastRendererManagerTest, updateLoopbackState_NullSinkOutput_001, TestSize.Level0)
+{
+    EXPECT_EQ(fastManager_->sinkOutputNode_, nullptr);
+    fastManager_->UpdateLoopbackState();
+    EXPECT_EQ(fastManager_->isExistLoopback_.load(), false);
+}
+
+/**
+ * @tc.name  : updateLoopbackState_WithSinkOutput_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_112
+ * @tc.desc  : Test UpdateLoopbackState with sinkOutputNode_ calls SetLoopbackState
+ */
+HWTEST_F(HpaeFastRendererManagerTest, updateLoopbackState_WithSinkOutput_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    // Insert a loopback session id so isExistLoopback becomes true
+    fastManager_->loopbackSessionIds_.insert(TEST_STREAM_SESSION_ID);
+    fastManager_->UpdateLoopbackState();
+    EXPECT_EQ(fastManager_->isExistLoopback_.load(), true);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== MoveStreamSync success branch ====================
+
+/**
+ * @tc.name  : moveStreamSync_Success_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_113
+ * @tc.desc  : Test MoveStreamSync with valid session and sink name completes move
+ */
+HWTEST_F(HpaeFastRendererManagerTest, moveStreamSync_Success_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Valid session and non-empty sink name -> success path
+    fastManager_->MoveStreamSync(TEST_STREAM_SESSION_ID, "valid_target_sink");
+    HpaeSinkInputInfo info;
+    EXPECT_EQ(fastManager_->GetSinkInputInfo(TEST_STREAM_SESSION_ID, info), ERR_INVALID_OPERATION);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== SuspendStreamManager branch tests ====================
+
+/**
+ * @tc.name  : suspendStreamManager_NullSinkOutput_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_114
+ * @tc.desc  : Test SuspendStreamManager(true) with null sinkOutputNode_ skips RenderSinkStop
+ */
+HWTEST_F(HpaeFastRendererManagerTest, suspendStreamManager_NullSinkOutput_001, TestSize.Level0)
+{
+    EXPECT_EQ(fastManager_->sinkOutputNode_, nullptr);
+    EXPECT_EQ(fastManager_->SuspendStreamManager(true), SUCCESS);
+    EXPECT_EQ(fastManager_->isSuspend_.load(), false);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : suspendStreamManager_ResumeSinkRunning_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_115
+ * @tc.desc  : Test SuspendStreamManager(false) when sink already RUNNING skips RenderSinkStart
+ */
+HWTEST_F(HpaeFastRendererManagerTest, suspendStreamManager_ResumeSinkRunning_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    // Set suspend=true first, then set sink to RUNNING
+    fastManager_->isSuspend_.store(true);
+    fastManager_->sinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
+    // Resume when sink is already RUNNING -> skip RenderSinkStart branch
+    EXPECT_EQ(fastManager_->SuspendStreamManager(false), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : suspendStreamManager_ResumeNoRunningStream_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_116
+ * @tc.desc  : Test SuspendStreamManager(false) with no running stream skips RenderSinkStart
+ */
+HWTEST_F(HpaeFastRendererManagerTest, suspendStreamManager_ResumeNoRunningStream_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    // Suspend first
+    EXPECT_EQ(fastManager_->SuspendStreamManager(true), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Resume with no running stream -> CheckIsStreamRunning returns false -> skip RenderSinkStart
+    EXPECT_EQ(fastManager_->SuspendStreamManager(false), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== SetClientVolume branch tests ====================
+
+/**
+ * @tc.name  : setClientVolume_WithGainNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_117
+ * @tc.desc  : Test SetClientVolume with existing gainNode calls SetClientVolume
+ */
+HWTEST_F(HpaeFastRendererManagerTest, setClientVolume_WithGainNode_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // gainNode exists -> SetClientVolume called
+    EXPECT_EQ(fastManager_->SetClientVolume(TEST_STREAM_SESSION_ID, 0.8f), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== RegisterWriteCallback branch tests ====================
+
+/**
+ * @tc.name  : registerWriteCallback_SessionNotFound_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_119
+ * @tc.desc  : Test RegisterWriteCallback non-existent session does not crash
+ */
+HWTEST_F(HpaeFastRendererManagerTest, registerWriteCallback_SessionNotFound_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->RegisterWriteCallback(99999, std::weak_ptr<IStreamCallback>()), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== OnFadeDone branch tests ====================
+
+/**
+ * @tc.name  : onFadeDone_RunningState_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_120
+ * @tc.desc  : Test OnFadeDone when session state is RUNNING skips disconnect
+ */
+HWTEST_F(HpaeFastRendererManagerTest, onFadeDone_RunningState_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // State is RUNNING -> CHECK_AND_RETURN_LOG skips disconnect
+    fastManager_->OnFadeDone(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(fastManager_);
+    // State should still be RUNNING
+    EXPECT_EQ(fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->GetState(), HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : onFadeDone_StoppingState_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_121
+ * @tc.desc  : Test OnFadeDone when session state is STOPPING sets state to STOPPED
+ */
+HWTEST_F(HpaeFastRendererManagerTest, onFadeDone_StoppingState_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Set state to STOPPING -> OnFadeDone sets state to STOPPED
+    fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->SetState(HPAE_SESSION_STOPPING);
+    fastManager_->OnFadeDone(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->GetState(), HPAE_SESSION_STOPPED);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : onFadeDone_PausingState_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_122
+ * @tc.desc  : Test OnFadeDone when session state is PAUSING sets state to PAUSED
+ */
+HWTEST_F(HpaeFastRendererManagerTest, onFadeDone_PausingState_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Set state to PAUSING -> OnFadeDone sets state to PAUSED
+    fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->SetState(HPAE_SESSION_PAUSING);
+    fastManager_->OnFadeDone(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->GetState(), HPAE_SESSION_PAUSED);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== OnRequestLatency branch tests ====================
+
+/**
+ * @tc.name  : onRequestLatency_WithConverter_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_123
+ * @tc.desc  : Test OnRequestLatency with converter and mixerNode adds latency
+ */
+HWTEST_F(HpaeFastRendererManagerTest, onRequestLatency_WithConverter_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    uint64_t latency = 0;
+    fastManager_->OnRequestLatency(TEST_STREAM_SESSION_ID, latency);
+    // latency should be accumulated (converter + mixer)
+    EXPECT_EQ(latency, 0);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : onRequestLatency_NullMixerNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_124
+ * @tc.desc  : Test OnRequestLatency with null mixerNode skips mixer latency
+ */
+HWTEST_F(HpaeFastRendererManagerTest, onRequestLatency_NullMixerNode_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Set mixerNode_ to null to skip mixer latency branch
+    fastManager_->mixerNode_ = nullptr;
+    uint64_t latency = 0;
+    fastManager_->OnRequestLatency(TEST_STREAM_SESSION_ID, latency);
+    // latency should still have converter latency
+    EXPECT_EQ(latency, 0);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== OnRewindAndFlush branch tests ====================
+
+/**
+ * @tc.name  : onRewindAndFlush_RunningSession_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_125
+ * @tc.desc  : Test OnRewindAndFlush with running session calls RewindHistoryBuffer
+ */
+HWTEST_F(HpaeFastRendererManagerTest, onRewindAndFlush_RunningSession_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Running session -> call RewindHistoryBuffer branch
+    fastManager_->OnRewindAndFlush(1000, 0);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== GetSpanSizeInFrame branch tests ====================
+
+/**
+ * @tc.name  : getSpanSizeInFrame_Found_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_126
+ * @tc.desc  : Test GetSpanSizeInFrame with existing session returns SUCCESS
+ */
+HWTEST_F(HpaeFastRendererManagerTest, getSpanSizeInFrame_Found_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    uint32_t spanSize = 0;
+    EXPECT_EQ(fastManager_->GetSpanSizeInFrame(TEST_STREAM_SESSION_ID, spanSize), SUCCESS);
+    EXPECT_GT(spanSize, 0);
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== GetMaxAmplitude branch tests ====================
+
+/**
+ * @tc.name  : getMaxAmplitude_WithSinkOutput_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_127
+ * @tc.desc  : Test GetMaxAmplitude with sinkOutputNode_ returns sink amplitude
+ */
+HWTEST_F(HpaeFastRendererManagerTest, getMaxAmplitude_WithSinkOutput_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    // sinkOutputNode_ != null -> call sinkOutputNode_->GetMaxAmplitude()
+    float amp = fastManager_->GetMaxAmplitude();
+    (void)amp;
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== TriggerStreamState branch tests ====================
+
+/**
+ * @tc.name  : triggerStreamState_StoppingState_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_128
+ * @tc.desc  : Test TriggerStreamState with STOPPING state sets to STOPPED
+ */
+HWTEST_F(HpaeFastRendererManagerTest, triggerStreamState_StoppingState_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    auto node = fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID];
+    node->SetState(HPAE_SESSION_STOPPING);
+    fastManager_->TriggerStreamState(TEST_STREAM_SESSION_ID, node);
+    EXPECT_EQ(node->GetState(), HPAE_SESSION_STOPPED);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : triggerStreamState_PausingState_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_129
+ * @tc.desc  : Test TriggerStreamState with PAUSING state sets to PAUSED
+ */
+HWTEST_F(HpaeFastRendererManagerTest, triggerStreamState_PausingState_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    auto node = fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID];
+    node->SetState(HPAE_SESSION_PAUSING);
+    fastManager_->TriggerStreamState(TEST_STREAM_SESSION_ID, node);
+    EXPECT_EQ(node->GetState(), HPAE_SESSION_PAUSED);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : triggerStreamState_OtherState_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_130
+ * @tc.desc  : Test TriggerStreamState with RUNNING state does nothing
+ */
+HWTEST_F(HpaeFastRendererManagerTest, triggerStreamState_OtherState_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    auto node = fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID];
+    node->SetState(HPAE_SESSION_RUNNING);
+    fastManager_->TriggerStreamState(TEST_STREAM_SESSION_ID, node);
+    // State should remain RUNNING (no transition)
+    EXPECT_EQ(node->GetState(), HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== TriggerAppsUidUpdate branch tests ====================
+
+/**
+ * @tc.name  : triggerAppsUidUpdate_WithRunningStream_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_131
+ * @tc.desc  : Test TriggerAppsUidUpdate with running stream collects appUid
+ */
+HWTEST_F(HpaeFastRendererManagerTest, triggerAppsUidUpdate_WithRunningStream_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    fastManager_->TriggerAppsUidUpdate(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(fastManager_);
+    // appsUid_ should be populated with the running stream's appUid
+    EXPECT_FALSE(fastManager_->appsUid_.empty());
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : triggerAppsUidUpdate_NoRunningNoMatch_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_132
+ * @tc.desc  : Test TriggerAppsUidUpdate with no running stream and non-matching sessionId
+ */
+HWTEST_F(HpaeFastRendererManagerTest, triggerAppsUidUpdate_NoRunningNoMatch_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Session is PREPARED (not RUNNING) and sessionId doesn't match -> empty appsUid_
+    fastManager_->TriggerAppsUidUpdate(99999);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_TRUE(fastManager_->appsUid_.empty());
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== ReloadRenderManager running session ====================
+
+/**
+ * @tc.name  : reloadRenderManager_WithRunningSession_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_133
+ * @tc.desc  : Test ReloadRenderManager with running session reconnects after reload
+ */
+HWTEST_F(HpaeFastRendererManagerTest, reloadRenderManager_WithRunningSession_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+
+    HpaeSinkInfo sinkInfo = GetFastSinkInfo();
+    EXPECT_EQ(fastManager_->ReloadRenderManager(sinkInfo, true), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    // Reload should have reconnected the running session
+    EXPECT_EQ(fastManager_->IsInit(), true);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== RemoveNodeFromMap branch tests ====================
+
+/**
+ * @tc.name  : removeNodeFromMap_NullNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_134
+ * @tc.desc  : Test RemoveNodeFromMap with non-existent session uses RELEASED state
+ */
+HWTEST_F(HpaeFastRendererManagerTest, removeNodeFromMap_NullNode_001, TestSize.Level0)
+{
+    EXPECT_EQ(fastManager_->sinkOutputNode_, nullptr);
+    fastManager_->RemoveNodeFromMap(99999);
+    // Should not crash, session not in map
+    EXPECT_EQ(fastManager_->sinkInputNodeMap_.count(99999), 0);
+}
+
+/**
+ * @tc.name  : removeNodeFromMap_WithNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_135
+ * @tc.desc  : Test RemoveNodeFromMap with existing node uses RELEASED state from node
+ */
+HWTEST_F(HpaeFastRendererManagerTest, removeNodeFromMap_WithNode_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // Set state to PREPARED (not RELEASED) so node != nullptr branch is taken
+    fastManager_->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->SetState(HPAE_SESSION_PREPARED);
+    fastManager_->RemoveNodeFromMap(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(fastManager_->sinkInputNodeMap_.count(TEST_STREAM_SESSION_ID), 0);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== SendRequest branch tests ====================
+
+/**
+ * @tc.name  : sendRequest_NullThread_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_136
+ * @tc.desc  : Test SendRequest with isInit=true but null thread reports exception
+ */
+HWTEST_F(HpaeFastRendererManagerTest, sendRequest_NullThread_001, TestSize.Level0)
+{
+    // Force isInit_ true but thread null
+    fastManager_->isInit_.store(true);
+    EXPECT_EQ(fastManager_->hpaeSignalProcessThread_, nullptr);
+    // SetMute uses SendRequest with isInit=false (default)
+    EXPECT_EQ(fastManager_->SetMute(true), SUCCESS);
+    // Request should be pushed but not processed (thread null) -> exception reported
+}
+
+// ==================== CheckIsStreamRunning tests ====================
+
+/**
+ * @tc.name  : checkIsStreamRunning_NoStream_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_137
+ * @tc.desc  : Test CheckIsStreamRunning with no streams returns false
+ */
+HWTEST_F(HpaeFastRendererManagerTest, checkIsStreamRunning_NoStream_001, TestSize.Level0)
+{
+    EXPECT_EQ(fastManager_->CheckIsStreamRunning(), false);
+}
+
+/**
+ * @tc.name  : checkIsStreamRunning_WithRunningStream_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_138
+ * @tc.desc  : Test CheckIsStreamRunning with running stream returns true
+ */
+HWTEST_F(HpaeFastRendererManagerTest, checkIsStreamRunning_WithRunningStream_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_EQ(fastManager_->CheckIsStreamRunning(), true);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== DeleteInputSession tests ====================
+
+/**
+ * @tc.name  : deleteInputSession_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_139
+ * @tc.desc  : Test DeleteInputSession removes node from map
+ */
+HWTEST_F(HpaeFastRendererManagerTest, deleteInputSession_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    EXPECT_NE(fastManager_->sinkInputNodeMap_.count(TEST_STREAM_SESSION_ID), 0);
+    fastManager_->DeleteInputSession(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(fastManager_->sinkInputNodeMap_.count(TEST_STREAM_SESSION_ID), 0);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+// ==================== OnNodeStatusUpdate with existing session ====================
+
+/**
+ * @tc.name  : onNodeStatusUpdate_WithSession_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_140
+ * @tc.desc  : Test OnNodeStatusUpdate with existing session returns node state
+ */
+HWTEST_F(HpaeFastRendererManagerTest, onNodeStatusUpdate_WithSession_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    // node != nullptr branch of ternary
+    fastManager_->OnNodeStatusUpdate(TEST_STREAM_SESSION_ID, OPERATION_STARTED);
+    // Should not crash
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}

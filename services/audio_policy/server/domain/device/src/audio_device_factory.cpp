@@ -25,9 +25,10 @@
 #include "audio_log.h"
 #include "audio_sco_device_behavior.h"
 #include "audio_sle_device_behavior.h"
+#include "sle_audio_device_manager.h"
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
-#include "sle_audio_device_manager.h"
+
 
 namespace OHOS {
 namespace AudioStandard {
@@ -80,7 +81,7 @@ int32_t AudioDeviceFactory::ActivateDevice(const std::shared_ptr<AudioStreamDesc
     auto result = deviceBehavior->ActivateDevice(streamDesc, reason);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(result == SUCCESS, result,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
-            ERR_DEVICE_SWITCH_OPERATION_FAILED, "Active device failded", false),
+            ERR_DEVICE_SWITCH_OPERATION_FAILED, "Activate device failed", false),
         "ActivateDevice failed");
     SleAudioDeviceManager::GetInstance().UpdateSleStreamTypeCount(streamDesc);
     activatedDevices_[deviceDesc->deviceId_] = deviceDesc;
@@ -101,6 +102,7 @@ int32_t AudioDeviceFactory::DeactivateDeviceLocked(DeviceType deviceType)
 {
     auto it = deviceBehaviorCache_.find(deviceType);
     if (it == deviceBehaviorCache_.end() || it->second == nullptr) {
+        AUDIO_ERR_LOG("DeviceType: %{public}d is not activated", deviceType);
         return SUCCESS;
     }
 

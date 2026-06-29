@@ -37,7 +37,7 @@ int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::
     CHECK_AND_RETURN_RET_LOG(instance != nullptr,
         static_cast<int32_t>(SessionEffectErrCode::ERR_INVALID_PARAMETER),
         "CreateSessionEffect: effect instance is null for session %{public}u", sessionId);
-    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
     auto processCluster = SafeGetMap(sceneClusterMap_, sceneType);
     if (!processCluster) {
         AUDIO_WARNING_LOG("CreateSessionEffect: cluster not found for sceneType %{public}d", sceneType);
@@ -75,7 +75,7 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
         AUDIO_WARNING_LOG("DestroySessionEffect: session %{public}u not found", sessionId);
         return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
     }
-    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
     auto processCluster = SafeGetMap(sceneClusterMap_, sceneType);
     if (!processCluster) {
         AUDIO_WARNING_LOG("DestroySessionEffect: cluster not found for sceneType %{public}d", sceneType);
@@ -156,7 +156,7 @@ bool HpaeRendererManager::HasSessionEffect(uint32_t sessionId) const
     if (it == sessionNodeMap_.end()) {
         return false;
     }
-    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
     auto processCluster = SafeGetMap(sceneClusterMap_, sceneType);
     if (!processCluster) {
         return false;
@@ -196,7 +196,7 @@ int32_t HpaeRendererManager::SetSessionEffectParameter(uint32_t sessionId, int32
     CHECK_AND_RETURN_RET_LOG(it != sessionNodeMap_.end(),
         static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),
         "SetSessionEffectParameter: session %{public}u not found", sessionId);
-    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
     auto processCluster = SafeGetMap(sceneClusterMap_, sceneType);
     CHECK_AND_RETURN_RET_LOG(processCluster,
         static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),

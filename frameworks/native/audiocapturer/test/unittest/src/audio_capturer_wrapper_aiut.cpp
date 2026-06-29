@@ -500,7 +500,7 @@ HWTEST_F(SharedAudioCapturerWrapperAiut, SharedCapturerWrapper_GetCapturerDebugK
     AIUT_INFO_LOG("entry");
     auto wrapper = CreateTestCapturerWrapper();
     uint32_t key = wrapper->GetCapturerDebugKey();
-    AIUT_EXPECT_EQ_INFO_LOG(key, INVALID_DEBUGKEY, "debug key should be 0, key=%u", key);
+    AIUT_EXPECT_EQ_INFO_LOG(key, 0, "debug key should be 0, key=%u", key);
 }
 
 // ==================== Callback Registration Delegation Tests ====================

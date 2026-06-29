@@ -157,6 +157,7 @@ private:
     int32_t HandlePriPaPower(uint32_t sessionId);
     bool CheckIsStreamRunning();
     HpaeProcessorType GetProcessorType(uint32_t sessionId) const;
+    HpaeProcessorType GetConnectedProcessorType(uint32_t sessionId) const;
     HpaeProcessorType TransToProperSceneType(StreamUsage streamUsage, AudioEffectScene effectScene);
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
@@ -193,7 +194,6 @@ private:
     void HandleSessionEffectMaterializeFailure(uint32_t sessionId, int32_t ret,
         const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
 
-    DeviceType GetCurrentSinkDeviceType();
     int32_t InitOutputCluster();
 
 private:
@@ -221,6 +221,7 @@ private:
     bool coBufferNodeIsConnected_ = false;
     bool isReloadManagerFromCollStateChange_ = false;
     uint32_t renderId_ = HDI_INVALID_ID;
+    DeviceType renderDeviceType_ = DEVICE_TYPE_INVALID;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

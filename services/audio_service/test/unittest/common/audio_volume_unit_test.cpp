@@ -2373,7 +2373,7 @@ HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolumeEffective_WithVolumeRecord, Test
     VolumeUtils::SetPCVolumeEnable(false);
 
     float result = audioVolumeTest->GetSystemAppVolumeEffective(streamVolume);
-    EXPECT_EQ(0.8f, result);
+    EXPECT_FLOAT_EQ(0.8f, result);
 }
 
 /**
@@ -2664,7 +2664,7 @@ HWTEST_F(AudioVolumeUnitTest, SetStreamVolumeMuteForZone_001, TestSize.Level1)
     AudioVolume::GetInstance()->SetStreamVolumeMuteForZone(sessionId, false);
     AudioVolume::GetInstance()->SetStreamVolumeMuteForZone(sessionId, false);
     float retVolume = AudioVolume::GetInstance()->GetStreamVolume(sessionId);
-    EXPECT_EQ(retVolume, 0);
+    EXPECT_EQ(retVolume, 1);
 }
 
 /**

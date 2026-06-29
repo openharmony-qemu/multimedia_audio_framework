@@ -18,6 +18,8 @@
 #include "cabin_audio_render_sink.h"
 #include "audio_errors.h"
 #include "parameter.h"
+#include "common/hdi_adapter_info.h"
+#include "manager/hdi_adapter_manager.h"
 
 using namespace testing::ext;
 

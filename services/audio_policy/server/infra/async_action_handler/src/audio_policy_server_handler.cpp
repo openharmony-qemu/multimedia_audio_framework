@@ -30,6 +30,7 @@
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
 #include "audio_utils.h"
+#include "os_account_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -176,13 +177,14 @@ int32_t AudioPolicyServerHandler::RemoveDistributedRoutingRoleChangeCbsMap(int32
 }
 
 bool AudioPolicyServerHandler::SendDeviceChangedCallback(
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected, const int32_t zoneId)
 {
     Trace trace("AudioPolicyServerHandler::SendDeviceChangedCallback");
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->deviceChangeAction.type = isConnected ? DeviceChangeType::CONNECT : DeviceChangeType::DISCONNECT;
     eventContextObj->deviceChangeAction.deviceDescriptors = desc;
+    eventContextObj->zoneId = zoneId;
 
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::AUDIO_DEVICE_CHANGE, eventContextObj));
@@ -235,12 +237,13 @@ bool AudioPolicyServerHandler::SendMicrophoneBlockedCallback(
 }
 
 bool AudioPolicyServerHandler::SendAvailableDeviceChange(
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected, const int32_t zoneId)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->deviceChangeAction.type = isConnected ? DeviceChangeType::CONNECT : DeviceChangeType::DISCONNECT;
     eventContextObj->deviceChangeAction.deviceDescriptors = desc;
+    eventContextObj->zoneId = zoneId;
 
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::AVAILABLE_AUDIO_DEVICE_CHANGE,
@@ -851,6 +854,28 @@ bool AudioPolicyServerHandler::CheckCallbackTokenId(
     return deviceTokenId == callbackTokenId;
 }
 
+#ifdef MULTI_USER_ZONE
+bool AudioPolicyServerHandler::CheckCallbackVisibleMode(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs, int32_t pid, int32_t zoneId,
+    bool isSystemService)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDescs.size() > 0 && deviceDescs[0] != nullptr, true, "deviceDescriptors is empty");
+    VisibleMode visibleMode = deviceDescs[0]->visibleMode_;
+    AUDIO_INFO_LOG("visibleMode: %{public}d", visibleMode);
+    CHECK_AND_RETURN_RET(visibleMode != GLOBAL_VISIBLE, true);
+
+    AUDIO_INFO_LOG("isSystemService: %{public}d", isSystemService);
+    CHECK_AND_RETURN_RET(visibleMode != SYSTEM_SERVICE_VISIBLE, isSystemService);
+
+    CHECK_AND_RETURN_RET_LOG(pidUidMap_.count(pid) > 0, false, "can not find pid %{public}d in map", pid);
+    int32_t uid = pidUidMap_[pid];
+    int32_t zoneIdByUid = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    AUDIO_INFO_LOG("uid: %{public}d, zoneIdByUserId: %{public}d, targetZoneId: %{public}d",
+        uid, zoneIdByUid, zoneId);
+    return zoneId == zoneIdByUid || isSystemService;
+}
+#endif
+
 void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -869,6 +894,12 @@ void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::Inn
                 auto deviceDescs = deviceChangeAction.deviceDescriptors;
                 auto tokenId = it->second->tokenId_;
                 CHECK_AND_CONTINUE(CheckCallbackTokenId(deviceDescs, tokenId));
+#ifdef MULTI_USER_ZONE
+                int32_t pid = it->first;
+                int32_t zoneId = eventContextObj->zoneId;
+                auto isSystemService = it->second->isSystemService_;
+                CHECK_AND_CONTINUE(CheckCallbackVisibleMode(deviceDescs, pid, zoneId, isSystemService));
+#endif
                 AUDIO_INFO_LOG("Send DeviceChange deviceType[%{public}d] change to clientPid[%{public}d]",
                     deviceChangeAction.deviceDescriptors[0]->deviceType_, it->first);
                 it->second->OnDeviceChange(deviceChangeAction);
@@ -936,6 +967,12 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
             auto deviceDescs = deviceChangeAction.deviceDescriptors;
             auto tokenId = it->second->tokenId_;
             CHECK_AND_CONTINUE(CheckCallbackTokenId(deviceDescs, tokenId));
+#ifdef MULTI_USER_ZONE
+            int32_t pid = it->first.first;
+            int32_t zoneId = eventContextObj->zoneId;
+            auto isSystemService = it->second->isSystemService_;
+            CHECK_AND_CONTINUE(CheckCallbackVisibleMode(deviceDescs, pid, zoneId, isSystemService));
+#endif
             it->second->OnAvailableDeviceChange(usage, deviceChangeAction);
         }
     }

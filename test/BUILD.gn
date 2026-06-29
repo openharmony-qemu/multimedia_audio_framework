@@ -310,6 +310,8 @@ group("audio_fuzz_test") {
     "fuzztest/hpaevirtualcapturermanager_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanager_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanageradd_fuzzer:fuzztest",
+    "fuzztest/hpae_fast_renderer_manager_fuzzer:fuzztest",
+    "fuzztest/hpae_fast_sink_output_node_fuzzer:fuzztest",
     "fuzztest/ipcstreaminserver_fuzzer:fuzztest",
     "fuzztest/istandardaudiozoneclient_fuzzer:fuzztest",
     "fuzztest/istandardspatializationstatechangelistener_fuzzer:fuzztest",

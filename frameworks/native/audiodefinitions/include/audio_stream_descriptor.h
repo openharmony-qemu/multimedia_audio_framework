@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <mutex>
+#include <atomic>
 #include <shared_mutex>
 #include "parcel.h"
 #include "audio_device_descriptor.h"
@@ -64,8 +65,15 @@ public:
     int32_t oldOriginalFlag_ = AUDIO_FLAG_NORMAL;
     AudioStreamInfo micInStreamInfo_ = {};
     AudioStreamInfo ecStreamInfo_ = {};
-    volatile bool isStandby_{false};
+    std::atomic<bool> isStandby_{false};
     volatile bool isNearLinkCollaborationEnable_{false};
+    // Mute silent flag, true means stream is silent due to volume mute
+    std::atomic<bool> isMuteSilent_{false};
+    // Data transfer silent flag, true means stream is silent due to no/silent data transfer
+    std::atomic<bool> isDataTransSilent_{false};
+    // Stream silent state (computed), true means stream is currently silent
+    // Formula: isSilent_ = isMuteSilent_ || isDataTransSilent_
+    std::atomic<bool> isSilent_{false};
     // Flag to indicate VoIP stream should be excluded from priority comparison during mute callback
     std::atomic<bool> voipPriorityLowered_{false};
     // Flag to indicate this stream is currently muted by VOIP privacy concurrent-capture policy
@@ -115,6 +123,10 @@ public:
     {
         return (streamStatus_ == STREAM_STATUS_STARTED);
     }
+
+    bool GetMuteSilentState() const { return isMuteSilent_.load(); }
+    bool GetDataTransSilentState() const { return isDataTransSilent_.load(); }
+    bool IsSilent() const { return isSilent_.load(); }
 
     bool IsActive(uint32_t inPastMs = 0) const;
 

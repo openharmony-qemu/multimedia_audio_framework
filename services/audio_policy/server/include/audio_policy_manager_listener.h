@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,8 +29,8 @@ public:
     void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
     void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction);
     bool OnQueryClientType(const std::string &bundleName, uint32_t uid);
-    bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid);
     bool OnQueryAllowedPlayback(int32_t uid, int32_t pid);
+    bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid);
     void OnBackgroundMute(const int32_t uid);
     bool OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType);
     bool OnQueryIsForceGetDevByVolumeType(const std::string &bundleName);
@@ -39,6 +39,7 @@ public:
 public:
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
+    bool isSystemService_ = false;
     uint32_t tokenId_ = 0;
 
 private:

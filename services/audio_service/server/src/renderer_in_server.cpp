@@ -121,6 +121,29 @@ void NotifyStandbyAction::Exec()
     CoreServiceHandler::GetInstance().NotifySessionStandbyStatus(sessionId_, isStandbyOn_);
 }
 
+// Execute silent state change notification via CoreServiceHandler
+void NotifySilentStateAction::Exec()
+{
+    if (isInSilentState_) {
+        if (isMuteUpdate_) {
+            AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId_, isInSilentState_);
+        } else {
+            // SetClientVolume path: apply the actual volume after state is synced
+            AudioVolume::GetInstance()->SetStreamVolume(sessionId_, volume_);
+        }
+    }
+    CoreServiceHandler::GetInstance().NotifySilentStateChange(sessionId_, isInSilentState_);
+    // Set volume/mute only after silent state is updated in CoreService
+    if (!isInSilentState_) {
+        if (isMuteUpdate_) {
+            AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId_, isInSilentState_);
+        } else {
+            // SetClientVolume path: apply the actual volume after state is synced
+            AudioVolume::GetInstance()->SetStreamVolume(sessionId_, volume_);
+        }
+    }
+}
+
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
     : processConfig_(processConfig)
 {
@@ -642,14 +665,14 @@ bool RendererInServer::ShouldEnableStandBy()
         maxStandByCounter = std::max(maxStandByCounter, SESSION_EFFECT_STANDBY_COUNTER);
         timeLimit = std::max(timeLimit, SESSION_EFFECT_STANDBY_TIME_NS);
     }
-    if (!isOffloadJankReport && offloadState_ == OFFLOAD_ACTIVE_FOREGROUND_RUNNING &&
+    if (!isOffloadJankReport.load() && offloadState_ == OFFLOAD_ACTIVE_FOREGROUND_RUNNING &&
         standByCounter_ >= offloadStanby_) {
         ReportExceptionForOffload();
-        isOffloadJankReport = true;
-    } else if (!isOffloadJankReport && offloadState_ == OFFLOAD_INACTIVE_BACKGROUND_RUNNING && timeCost >=
+        isOffloadJankReport.store(true);
+    } else if (!isOffloadJankReport.load() && offloadState_ == OFFLOAD_INACTIVE_BACKGROUND_RUNNING && timeCost >=
         static_cast<int64_t>(OFFLOAD_COUNT * AUDIO_NS_PER_SECOND)) {
         ReportExceptionForOffload();
-        isOffloadJankReport = true;
+        isOffloadJankReport.store(true);
         }
     if (standByCounter_ >= maxStandByCounter && timeCost >= timeLimit) {
         AUDIO_INFO_LOG("sessionId:%{public}u reach the limit of stand by: %{public}u time:%{public}" PRId64"ns",
@@ -787,6 +810,7 @@ void RendererInServer::WriteMuteDataSysEvent(BufferDesc &bufferDesc)
         if (isInSilentState_) {
             AUDIO_WARNING_LOG("begin write valid data in server");
             isInSilentState_ = false;
+            audioStreamChecker_->DataResume();
 
             std::unordered_map<std::string, std::string> payload;
             payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
@@ -962,7 +986,7 @@ int32_t RendererInServer::WriteData()
         int32_t ret = Write3DAModeData(currentReadFrame, currentWriteFrame);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "3DA: Write3DAModeData failed");
         standByCounter_ = 0;
-        isOffloadJankReport = false;
+        isOffloadJankReport.store(false);
         lastWriteTime_ = ClockTime::GetCurNano();
         return SUCCESS;
     }
@@ -1001,7 +1025,7 @@ int32_t RendererInServer::WriteData()
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     }
     standByCounter_ = 0;
-    isOffloadJankReport = false;
+    isOffloadJankReport.store(false);
     lastWriteTime_ = ClockTime::GetCurNano();
     return SUCCESS;
 }
@@ -1051,7 +1075,7 @@ void RendererInServer::ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc,
 void RendererInServer::OnWriteDataFinish()
 {
     standByCounter_ = 0;
-    isOffloadJankReport = false;
+    isOffloadJankReport.store(false);
     lastWriteTime_ = ClockTime::GetCurNano();
 
     UpdateStreamInfo();
@@ -1447,10 +1471,7 @@ int32_t RendererInServer::Start(bool hasNoCallback)
 int32_t RendererInServer::Standby(bool isStandbyOn)
 {
     auto action = std::make_shared<NotifyStandbyAction>(streamIndex_, isStandbyOn);
-    AsyncActionHandler::AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
-    CHECK_AND_RETURN_RET_LOG(asyncHandler_ != nullptr, ERR_OPERATION_FAILED, "asyncHandler is null");
-    bool ret = asyncHandler_->PostAsyncAction(desc);
+    auto ret = PostSilentAction(action);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED, "Post failed for sessionId %{public}u", streamIndex_);
     return SUCCESS;
 }
@@ -1464,7 +1485,7 @@ int32_t RendererInServer::StartInnerDuringStandby()
             PLAY_START_NULL_POINTER, "null stream", false),
         "null stream");
     standByCounter_ = 0;
-    isOffloadJankReport = false;
+    isOffloadJankReport.store(false);
     startedTime_ = ClockTime::GetCurNano();
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
 
@@ -1644,7 +1665,7 @@ int32_t RendererInServer::Pause()
         isStandbyTmp = true;
     }
     standByCounter_ = 0;
-    isOffloadJankReport = false;
+    isOffloadJankReport.store(false);
     MarkStaticFadeOut();
 
     // remove eac3 param check
@@ -2596,11 +2617,15 @@ bool RendererInServer::IsHighResolution() const noexcept
     return true;
 }
 
+// Set silent mode and mix with other audio, notify AudioCoreService when state changes
 int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
-    silentModeAndMixWithOthers_ = on;
+    silentModeAndMixWithOthers_.store(on);
     bool isMuted = (isMuted_ || on || muteFlag_);
-    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted);
+    auto ret = PostSilentAction(action);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_HANDLE, "Post failed for sessionId %{public}u", streamIndex_);
+
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
         for (auto &capInfo : captureInfos_) {
@@ -2642,7 +2667,11 @@ int32_t RendererInServer::SetClientVolume()
         static_cast<uint32_t>(AdjustStreamVolume::STREAM_VOLUME_INFO));
     int32_t ret = stream_->SetClientVolume(clientVolume);
     SetStreamVolumeInfoForEnhanceChain();
-    AudioVolume::GetInstance()->SetStreamVolume(streamIndex_, clientVolume);
+
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_,
+        clientVolume == 0.0f || isMuted_ || silentModeAndMixWithOthers_.load() || muteFlag_, clientVolume);
+    ret = PostSilentAction(action);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_HANDLE, "Post failed for sessionId %{public}u", streamIndex_);
 
     std::unordered_map<std::string, std::string> payload;
     payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
@@ -2703,7 +2732,9 @@ int32_t RendererInServer::SetMute(bool isMute)
     isMuted_ = isMute;
     AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
     bool isMuted = (isMute || silentModeAndMixWithOthers_ || muteFlag_);
-    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted);
+    auto ret = PostSilentAction(action);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_HANDLE, "Post failed for sessionId %{public}u", streamIndex_);
 
     std::unordered_map<std::string, std::string> payload;
     payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
@@ -2936,7 +2967,9 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
     AudioVolume::GetInstance()->SetNonInterruptMute(streamIndex_, muteFlag);
 
     bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag);
-    AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, isMuted);
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted);
+    auto ret = PostSilentAction(action);
+    CHECK_AND_RETURN_LOG(ret, "Post failed for sessionId %{public}u", streamIndex_);
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
         for (auto &captureInfo : captureInfos_) {
@@ -3548,6 +3581,17 @@ int32_t RendererInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_
     }
     AUDIO_INFO_LOG("CalculateCacheCount: cacheSizeInFrame=%{public}u, spanSizeInFrame_=%{public}zu, "
         "cacheCount=%{public}u", cacheSizeInFrame, spanSizeInFrame_, cacheCount);
+    return SUCCESS;
+}
+
+int32_t RendererInServer::PostSilentAction(std::shared_ptr<AsyncActionHandler::AsyncAction> action)
+{
+    CHECK_AND_RETURN_RET_LOG(action != nullptr, ERR_INVALID_HANDLE, "action is nullptr");
+    CHECK_AND_RETURN_RET_LOG(asyncHandler_ != nullptr, ERR_INVALID_HANDLE, "asyncHandler is null");
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = action;
+    bool postRet = asyncHandler_->PostAsyncAction(desc);
+    CHECK_AND_RETURN_RET_LOG(postRet, ERR_INVALID_HANDLE, "Post failed for sessionId %{public}u", streamIndex_);
     return SUCCESS;
 }
 } // namespace AudioStandard

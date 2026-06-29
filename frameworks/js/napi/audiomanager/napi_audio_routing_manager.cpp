@@ -800,12 +800,12 @@ napi_value NapiAudioRoutingManager::DeclareDeviceTypesCompatibility(napi_env env
     napi_value argv[ARGS_ONE] = {};
     auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invalid");
+        "mandatory parameters are left unspecified", NAPI_ERR_INPUT_INVALID), "argcCount invalid");
 
     bool isArray = false;
     napi_status status = napi_is_array(env, argv[PARAM0], &isArray);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && isArray, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "parameter type is not array"), "argcType wrong");
+        "parameter type is not array", NAPI_ERR_INPUT_INVALID), "argcType wrong");
 
     std::vector<DeviceType> deviceTypeVector;
     NapiParamUtils::GetAudioDeviceTypeArray(env, deviceTypeVector, argv[PARAM0]);
@@ -814,7 +814,7 @@ napi_value NapiAudioRoutingManager::DeclareDeviceTypesCompatibility(napi_env env
         "audioRoutingMngr_ nullptr");
     int32_t ret = napiAudioRoutingManager->audioRoutingMngr_->SetDeclaredDeviceTypes(deviceTypeVector);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "set declared devicetypes failed"), "set failed");
+        "set declared devicetypes failed", NAPI_ERROR_INVALID_PARAM), "set failed");
     return result;
 }
 

@@ -26,10 +26,6 @@
 #include "audio_task_loop.h"
 #include "audio_errors.h"
 
-#ifndef INVALID_DEBUGKEY
-#define INVALID_DEBUGKEY 0
-#endif
-
 namespace OHOS {
 namespace AudioStandard {
 class AudioCapturerStateChangeCallbackImpl;
@@ -95,6 +91,8 @@ public:
     int32_t RegisterAudioPolicyServerDiedCb(const int32_t clientPid,
         const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback) override;
     void SetFastStatusChangeCallback(const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) override;
+    void SetSensitiveRecordPermitCallback(
+        const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback) override;
     void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
 
@@ -116,7 +114,7 @@ public:
     void GetCapturerDebugFocusInfo(AudioCapturerDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
     void GetCapturerDebugErrorInfo(AudioCapturerDebugInfo &debugInfo, const AudioDebugInfo &audioDebugInfo) const;
     uint32_t GetCapturerDebugKey() const override { return debugKey_; }
-    uint32_t debugKey_ = INVALID_DEBUGKEY;
+    uint32_t debugKey_ = 0;
 
     uint32_t GetOverflowCount() const override;
     int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override;
@@ -240,6 +238,7 @@ private:
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioCapturerErrorCallback> audioCapturerErrorCallback_ = nullptr;
+    std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> audioSensitiveRecordPermitCallback_ = nullptr;
     AppInfo appInfo_ = {};
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, false}, 0};
@@ -301,6 +300,18 @@ private:
     std::mutex mutex_;
     bool switching_ = false;
     std::condition_variable switchStreamCv_;
+};
+
+class AudioCapturerSensitiveRecordPermitCallbackImpl :
+    public AudioCapturerSensitiveRecordPermitCallback {
+public:
+    explicit AudioCapturerSensitiveRecordPermitCallbackImpl() = default;
+    virtual ~AudioCapturerSensitiveRecordPermitCallbackImpl() = default;
+ 
+    void OnSensitiveRecordPermit(bool isFinished) override;
+    void SaveCallback(const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback);
+private:
+    std::weak_ptr<AudioCapturerSensitiveRecordPermitCallback> callback_;
 };
 
 class AudioStreamCallbackCapturer : public AudioStreamCallback {

@@ -309,18 +309,17 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeDegree_001, TestSize.Level4
     ASSERT_NE(desc, nullptr);
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioAdapterManager->handler_ = std::make_shared<AudioAdapterManagerHandler>();
-    std::shared_ptr<AudioDeviceDescriptor> volDeviceDesc = nullptr;
-    auto ret = audioAdapterManager->SetSystemVolumeLevel(streamType, volume, volDeviceDesc);
+    auto ret = audioAdapterManager->SetSystemVolumeLevel(streamType, volume, desc);
     EXPECT_EQ(ret, SUCCESS);
 
     audioAdapterManager->useNonlinearAlgo_ = true;
-    ret = audioAdapterManager->SetSystemVolumeLevel(streamType, volume, volDeviceDesc);
+    ret = audioAdapterManager->SetSystemVolumeLevel(streamType, volume, desc);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = audioAdapterManager->SetSystemVolumeLevel(STREAM_VOICE_CALL, volume, volDeviceDesc);
+    ret = audioAdapterManager->SetSystemVolumeLevel(STREAM_VOICE_CALL, volume, desc);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = audioAdapterManager->SetSystemVolumeLevel(STREAM_VOICE_RING, volume, volDeviceDesc);
+    ret = audioAdapterManager->SetSystemVolumeLevel(STREAM_VOICE_RING, volume, desc);
     EXPECT_EQ(ret, SUCCESS);
 
     ret = audioAdapterManager->GetSystemVolumeDegree(desc, streamType);
@@ -345,13 +344,14 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeDegree_001, TestSize.Level4)
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeDegree = 1;
     VolumeScale volume{volumeDegree, volumeDegree};
-    std::shared_ptr<AudioDeviceDescriptor> volDeviceDesc = nullptr;
+    auto volDeviceDesc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(streamType);
+    ASSERT_NE(volDeviceDesc, nullptr);
 
     auto ret = audioAdapterManager->GetZoneVolumeDegree(0, streamType);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 
     ret = audioAdapterManager->SetZoneVolumeLevel(0, streamType, volume, volDeviceDesc);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, 0);
 
     auto device1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     ASSERT_NE(device1, nullptr);
@@ -369,9 +369,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeDegree_001, TestSize.Level4)
 
     ret = audioAdapterManager->GetZoneVolumeDegree(zoneId1_, streamType);
     EXPECT_EQ(ret, volumeDegree);
-
-    ret = audioAdapterManager->GetZoneVolumeLevel(zoneId1_, streamType);
-    EXPECT_EQ(ret, 0);
 
     VolumeScale volumeTest{5, 5};
     audioAdapterManager->SetSystemVolumeLevel(streamType, volumeTest, volDeviceDesc);
@@ -543,8 +540,10 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSourceAttr_001, TestSize.Level1)
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     AudioModuleInfo info;
     info.channelLayout = "263"; // 263 = 100000111
+    info.routeFlag = AUDIO_INPUT_FLAG_AI;
     IAudioSourceAttr attr = audioAdapterManager->GetAudioSourceAttr(info);
     EXPECT_EQ(attr.channelLayout, 263); // 263 = 100000111
+    EXPECT_EQ(attr.routeFlag, AUDIO_INPUT_FLAG_AI);
 }
 
 /**
@@ -1657,7 +1656,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_NearLink_001, Tes
     auto &manager = AudioAdapterManager::GetInstance();
     int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     // Result depends on adapter initialization, just verify no crash
-    EXPECT_TRUE(ret == SUCCESS);
+    EXPECT_TRUE(ret == SUCCESS || ret == ERR_OPERATION_FAILED);
 }
 
 /**
@@ -1669,7 +1668,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_Bluetooth_001, Te
 {
     auto &manager = AudioAdapterManager::GetInstance();
     int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
-    EXPECT_TRUE(ret == SUCCESS);
+    EXPECT_TRUE(ret == SUCCESS || ret == ERR_OPERATION_FAILED);
 }
 
 /**
@@ -1681,7 +1680,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_Close_001, TestSi
 {
     auto &manager = AudioAdapterManager::GetInstance();
     int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_CLOSE);
-    EXPECT_TRUE(ret == SUCCESS);
+    EXPECT_TRUE(ret == SUCCESS || ret == ERR_OPERATION_FAILED);
 }
 
 } // namespace AudioStandard

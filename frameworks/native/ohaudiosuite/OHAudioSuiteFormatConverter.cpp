@@ -59,7 +59,7 @@ public:
     {
         CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, -1, "The callback function pointer is nullptr.");
 
-        OH_AudioConverter_InputStatus cStatus;
+        OH_AudioConverter_InputStatus cStatus = AUDIOCONVERTER_INPUT_NO_AVAILABLE_DATA;
         int32_t size = callback_(userData_, data, &cStatus);
 
         // Enumeration type conversion: OH_AudioConverter_InputStatus -> InputDataStatus

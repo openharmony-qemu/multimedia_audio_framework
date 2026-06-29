@@ -1459,7 +1459,10 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_001, TestSize.Leve
     VolumeUtils::SetPCVolumeEnable(true);
     audioCoreService->isFirstScreenOn_ = false;
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    {
+        AudioRouterCenter::ArbiterScope scope(audioCoreService->audioRouterCenter_);
+        audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    }
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }
 
@@ -1477,7 +1480,10 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_002, TestSize.Leve
     audioCoreService->isFirstScreenOn_ = true;
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioStreamDescriptor->rendererTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
-    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    {
+        AudioRouterCenter::ArbiterScope scope(audioCoreService->audioRouterCenter_);
+        audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    }
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }
 
@@ -1494,7 +1500,10 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_003, TestSize.Leve
     VolumeUtils::SetPCVolumeEnable(false);
     audioCoreService->isFirstScreenOn_ = true;
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    {
+        AudioRouterCenter::ArbiterScope scope(audioCoreService->audioRouterCenter_);
+        audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    }
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }
 
@@ -1511,8 +1520,49 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_004, TestSize.Leve
     VolumeUtils::SetPCVolumeEnable(false);
     audioCoreService->isFirstScreenOn_ = false;
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    {
+        AudioRouterCenter::ArbiterScope scope(audioCoreService->audioRouterCenter_);
+        audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    }
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamDevicesForStart (streamsToRoute overload, PC volume branch).
+ * @tc.number: UpdateStreamDevicesForStart_005
+ * @tc.desc  : Test streamsToRoute overload with IsPCVolumeEnable && !isFirstScreenOn_, stream not collected.
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_005, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    VolumeUtils::SetPCVolumeEnable(true);
+    audioCoreService->isFirstScreenOn_ = false;
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToRoute;
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test", streamsToRoute);
+    EXPECT_EQ(streamsToRoute.size(), 0);
+    EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamDevicesForStart (streamsToRoute overload, normal branch).
+ * @tc.number: UpdateStreamDevicesForStart_006
+ * @tc.desc  : Test streamsToRoute overload with normal path, stream collected to streamsToRoute.
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_006, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    VolumeUtils::SetPCVolumeEnable(false);
+    audioCoreService->isFirstScreenOn_ = false;
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    audioStreamDescriptor->rendererTarget_ = 0;
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToRoute;
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test", streamsToRoute);
+    EXPECT_EQ(streamsToRoute.size(), 1);
 }
 
 /**

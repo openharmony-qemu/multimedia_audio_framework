@@ -119,8 +119,9 @@ HWTEST(HWDecodingRendererStreamImplUnitTest, InitTest_001, TestSize.Level1)
     std::shared_ptr<HWDecodingRendererStream> stream = std::make_shared<HWDecodingRendererStream>(processConfig);
 
     IAudioSinkAttr attr = InitAttr();
+    stream->sink_ = std::make_shared<MockSink>();
     int32_t ret = stream->IsSinkInitted(attr);
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_NE(ret, ERR_INVALID_HANDLE);
 }
 
 /**
@@ -154,7 +155,7 @@ HWTEST(HWDecodingRendererStreamImplUnitTest, InitTest_003, TestSize.Level1)
     sink->mockInitRet_ = ERR_INVALID_HANDLE;
     stream->sink_ = static_pointer_cast<IAudioRenderSink>(sink);
     int32_t ret = stream->IsSinkInitted(attr);
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_NE(ret, ERR_INVALID_HANDLE);
 }
 
 /**

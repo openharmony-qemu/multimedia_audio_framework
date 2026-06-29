@@ -309,7 +309,7 @@ int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize
     int32_t ret = controller_->EffectProcess(controller_, &input, &output);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "EffectProcess failed ret:%{public}d", ret);
     ret = memcpy_s(reinterpret_cast<int8_t *>(serverBufferOut_->GetBase()), outSize,
-        output.rawData, output.frameCount * GetFormatByteSize(offlineConfig_.outputCfg.format));
+        output.rawData, output.rawDataLen);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "memcpy failed, ret:%{public}d", ret);
     firstProcess_ = true;
     FreeIfNotNull(output.rawData);

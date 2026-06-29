@@ -34,6 +34,9 @@ public:
 private:
     void UpdateArmModuleInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         AudioModuleInfo &moduleInfo);
+    int32_t ReloadArmAudioPort(const AudioModuleInfo &moduleInfo);
+    int32_t ProcessModuleActivation(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        AudioModuleInfo &moduleInfo, DeviceRole role, bool isEcFeatureEnable);
 
     std::string activeArmInputAddr_;
     std::string activeArmOutputAddr_;

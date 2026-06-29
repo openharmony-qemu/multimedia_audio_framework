@@ -67,6 +67,7 @@ public:
     void SetVolume(float volume);
     float GetVolume();
     void CheckVolume();
+    void DataResume();
 private:
     bool IsMonitorMuteFrame(const CheckerParam &para);
     bool IsMonitorNoDataFrame(const CheckerParam &para);

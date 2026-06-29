@@ -37,6 +37,7 @@
 #include "audio_active_device.h"
 #include "audio_volume_utils.h"
 #include "audio_zone_service.h"
+#include "audio_connected_device.h"
 #include "ipc_skeleton.h"
 #include "audio_loud_volume_manager.h"
 #include "audio_core_service.h"
@@ -2091,6 +2092,20 @@ int32_t AudioVolumeManager::GetSystemVolumeDegree(AudioStreamType streamType, in
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(volumeType);
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, DUAL_TONE_RING_VOLUME, "deviceDesc is null");
+
+    int32_t specialVolumeDegree = 0;
+    if (GetSpecialDeviceVolumeDegree(streamType, volumeType, deviceDesc, specialVolumeDegree)) {
+        return specialVolumeDegree;
+    }
+
+    return audioPolicyManager_.GetSystemVolumeDegree(deviceDesc, streamType, zoneId);
+}
+
+bool AudioVolumeManager::GetSpecialDeviceVolumeDegree(AudioStreamType streamType, AudioVolumeType volumeType,
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t &volumeDegree)
+{
+    CHECK_AND_RETURN_RET(deviceDesc != nullptr, false);
+
     {
         DeviceType curOutputDeviceType = deviceDesc->deviceType_;
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
@@ -2099,7 +2114,8 @@ int32_t AudioVolumeManager::GetSystemVolumeDegree(AudioStreamType streamType, in
             A2dpDeviceConfigInfo info;
             bool ret = audioA2dpDevice_.GetA2dpDeviceInfo(btDevice, info);
             if (ret && info.absVolumeSupport) {
-                return info.mute ? 0 : info.volumeDegree;
+                volumeDegree = info.mute ? 0 : info.volumeDegree;
+                return true;
             }
         }
     }
@@ -2107,12 +2123,27 @@ int32_t AudioVolumeManager::GetSystemVolumeDegree(AudioStreamType streamType, in
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK &&
         (volumeType == STREAM_MUSIC || volumeType == STREAM_VOICE_CALL)) {
         if (IsNearlinkKaraokeVolumeManaged(streamType)) {
-            return VolumeUtils::VolumeLevelToDegree(GetNearlinkKaraokeVolume(), GetMaxVolumeLevel(STREAM_MUSIC));
+            volumeDegree = VolumeUtils::VolumeLevelToDegree(GetNearlinkKaraokeVolume(),
+                GetMaxVolumeLevel(STREAM_MUSIC));
+            return true;
         }
-        return SleAudioDeviceManager::GetInstance().GetVolumeDegreeByVolumeType(volumeType, *deviceDesc);
+        volumeDegree = SleAudioDeviceManager::GetInstance().GetVolumeDegreeByVolumeType(volumeType, *deviceDesc);
+        return true;
     }
 
-    return audioPolicyManager_.GetSystemVolumeDegree(deviceDesc, streamType, zoneId);
+    return false;
+}
+
+int32_t AudioVolumeManager::GetSystemVolumeDegree(AudioStreamType streamType, DeviceType deviceType,
+    const std::string &networkId)
+{
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    auto deviceDesc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType, networkId);
+    int32_t specialVolumeDegree = 0;
+    if (GetSpecialDeviceVolumeDegree(streamType, volumeType, deviceDesc, specialVolumeDegree)) {
+        return specialVolumeDegree;
+    }
+    return audioPolicyManager_.GetSystemVolumeDegree(deviceDesc, streamType);
 }
 
 int32_t AudioVolumeManager::GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) const

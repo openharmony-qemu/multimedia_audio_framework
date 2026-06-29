@@ -161,6 +161,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterIndependentStrate
 {
     uid = uid == INVALID_UID ? SYSTEM_UID : uid;
     auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentOutputDevice(uid);
+    if (simpleDescs.empty() && uid != SYSTEM_UID) {
+        simpleDescs = AudioRouterInfra::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    }
     return ConvertSimpleToDevice(simpleDescs);
 }
 
@@ -178,6 +181,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterIndependentStrate
 {
     uid = uid == INVALID_UID ? SYSTEM_UID : uid;
     auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentInputDevice(uid);
+    if (simpleDescs.empty() && uid != SYSTEM_UID) {
+        simpleDescs = AudioRouterInfra::GetInstance().GetCurrentInputDevice(SYSTEM_UID);
+    }
     return ConvertSimpleToDevice(simpleDescs);
 }
 

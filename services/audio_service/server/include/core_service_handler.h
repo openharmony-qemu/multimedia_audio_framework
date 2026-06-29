@@ -64,6 +64,8 @@ public:
     int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId);
     bool IsSupportIndependentPipe();
     void NotifyDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable);
+    // Notify silent state change
+    void NotifySilentStateChange(uint32_t sessionId, bool isSilent);
 private:
     CoreServiceHandler();
     sptr<ICoreServiceProviderIpc> iCoreServiceProvider_ = nullptr;

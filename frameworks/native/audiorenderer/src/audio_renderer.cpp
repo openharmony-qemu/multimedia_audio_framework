@@ -163,7 +163,7 @@ static void RegisterAudioRendererDebugManager(const std::shared_ptr<AudioRendere
     CHECK_AND_RETURN_LOG(debugCallback != nullptr, "Create renderer debug callback failed");
     uint32_t debugKey = 0;
     int32_t ret = AudioDebugManager::GetInstance().RegisterAudioRenderer(debugKey, debugCallback);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS && debugKey != INVALID_DEBUGKEY,
+    CHECK_AND_RETURN_LOG(ret == SUCCESS && debugKey != 0,
         "Register renderer debug manager failed, ret:%{public}d, debugKey:%{public}u", ret, debugKey);
     audioRenderer->debugKey_ = debugKey;
     AUDIO_INFO_LOG("Register renderer debug manager success, debugKey:%{public}u", debugKey);
@@ -171,10 +171,10 @@ static void RegisterAudioRendererDebugManager(const std::shared_ptr<AudioRendere
 
 static void UnregisterAudioRendererDebugManager(uint32_t &debugKey)
 {
-    CHECK_AND_RETURN_LOG(debugKey != INVALID_DEBUGKEY, "Unregister renderer debug manager: debugKey is invalid");
+    CHECK_AND_RETURN_LOG(debugKey != 0, "Unregister renderer debug manager: debugKey is invalid");
     (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(debugKey);
     AUDIO_INFO_LOG("Unregister renderer debug manager, debugKey:%{public}u", debugKey);
-    debugKey = INVALID_DEBUGKEY;
+    debugKey = 0;
 }
 
 std::mutex AudioRenderer::createRendererMutex_;

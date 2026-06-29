@@ -435,7 +435,7 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
             streamType = GetSleStreamTypeByStreamUsage(streamUsage, streamDesc->GetRealUid(),
                 streamDesc->rendererInfo_.isLoopback);
             newDeviceAddr = streamDesc->newDeviceDescs_[0]->macAddress_;
-            if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED && !streamDesc->isStandby_) {
+            if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED && !streamDesc->isStandby_.load()) {
                 UpdateStreamTypeMap(newDeviceAddr, streamType, sessionId, true);
             } else {
                 AUDIO_INFO_LOG("session %{public}d is not running", sessionId);

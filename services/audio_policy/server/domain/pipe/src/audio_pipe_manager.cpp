@@ -389,6 +389,39 @@ void AudioPipeManager::ClearStandbyFlag(uint32_t sessionId)
     streamDesc->isStandby_ = false;
 }
 
+bool AudioPipeManager::SetMuteSilentState(uint32_t sessionId, bool isMuteSilent)
+{
+    Trace trace("AudioPipeManager::SetMuteSilentState");
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "StreamDesc is nullptr");
+    bool oldIsSilent = streamDesc->isSilent_.load();
+    streamDesc->isMuteSilent_ = isMuteSilent;
+    streamDesc->isSilent_ = streamDesc->isMuteSilent_.load() || streamDesc->isDataTransSilent_.load();
+    return (streamDesc->isSilent_.load() != oldIsSilent);
+}
+
+bool AudioPipeManager::SetDataTransSilentState(uint32_t sessionId, bool isDataTransSilent)
+{
+    Trace trace("AudioPipeManager::SetDataTransSilentState");
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "StreamDesc is nullptr");
+    bool oldIsSilent = streamDesc->isSilent_.load();
+    streamDesc->isDataTransSilent_ = isDataTransSilent;
+    streamDesc->isSilent_ = streamDesc->isMuteSilent_.load() || streamDesc->isDataTransSilent_.load();
+    return (streamDesc->isSilent_.load() != oldIsSilent);
+}
+
+bool AudioPipeManager::IsStreamSilent(uint32_t sessionId)
+{
+    Trace trace("AudioPipeManager::IsStreamSilent");
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "StreamDesc is nullptr");
+    return streamDesc->isSilent_.load();
+}
+
 void AudioPipeManager::StopClient(uint32_t sessionId)
 {
     Trace trace("AudioPipeManager::StopClient");
@@ -512,6 +545,18 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeinfoByNameAndFlag(
         }
     }
     AUDIO_ERR_LOG("Can not find pipe %{public}s", adapterName.c_str());
+    return nullptr;
+}
+
+std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeinfoById(AudioIOHandle id)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto it : curPipeList_) {
+        if (it->id_ == id) {
+            return it;
+        }
+    }
+    AUDIO_ERR_LOG("Can not find pipe with id %{public}u", id);
     return nullptr;
 }
 

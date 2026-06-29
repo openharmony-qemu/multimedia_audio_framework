@@ -416,17 +416,17 @@ HWTEST_F(AudioDeviceManagerUnitTest, UpdateDeviceConnectTimestamp_001, TestSize.
     auto ts = AudioPolicyUtils::GetInstance().GetCurrentTimeMS();
 
     desc.deviceCategory_ = CATEGORY_DEFAULT;
-    AudioDeviceManager::GetAudioDeviceManager().UpdateDeviceConnectTimestamp(desc);
+    AudioPolicyUtils::GetInstance().UpdateDeviceConnectTimestamp(desc);
     EXPECT_GE(desc.connectTimeStamp_, ts);
 
     desc.deviceCategory_ = BT_GLASSES;
     desc.glassesWearCount_ = 0;
-    AudioDeviceManager::GetAudioDeviceManager().UpdateDeviceConnectTimestamp(desc);
+    AudioPolicyUtils::GetInstance().UpdateDeviceConnectTimestamp(desc);
     EXPECT_GE(desc.connectTimeStamp_, ts);
 
     desc.deviceCategory_ = BT_GLASSES;
     desc.glassesWearCount_ = 1;
-    AudioDeviceManager::GetAudioDeviceManager().UpdateDeviceConnectTimestamp(desc);
+    AudioPolicyUtils::GetInstance().UpdateDeviceConnectTimestamp(desc);
     EXPECT_LE(desc.connectTimeStamp_, ts);
 }
 
@@ -461,12 +461,12 @@ HWTEST_F(AudioDeviceManagerUnitTest, UpdateDeviceCategory_001, TestSize.Level4)
     deviceManager.connectedDevices_ = { std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE) };
     desc->glassesWearCount_ = 0;
-    EXPECT_TRUE(deviceManager.UpdateDeviceCategory(desc));
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateDeviceCategory(deviceManager.connectedDevices_, desc));
 
     deviceManager.connectedDevices_ = { std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE) };
     desc->glassesWearCount_ = 2;
-    EXPECT_TRUE(deviceManager.UpdateDeviceCategory(desc));
+    EXPECT_TRUE(AudioPolicyUtils::GetInstance().UpdateDeviceCategory(deviceManager.connectedDevices_, desc));
 
     deviceManager.connectedDevices_ = backup;
 }
@@ -632,31 +632,31 @@ HWTEST_F(AudioDeviceManagerUnitTest, TriggerDeviceInfoUpdatedCallback_001, TestS
     // Test case 1: not glasses
     desc.deviceCategory_ = DeviceCategory::BT_UNWEAR_HEADPHONE;
     desc.glassesWearCount_ = 0;
-    bool result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    bool result = AudioPolicyUtils::GetInstance().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
     EXPECT_TRUE(result);
 
     // Test case 2: glasses first unwear
     desc.deviceCategory_ = DeviceCategory::BT_UNWEAR_HEADPHONE;
     desc.glassesWearCount_ = 1;
-    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    result = AudioPolicyUtils::GetInstance().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
     EXPECT_FALSE(result);
 
     // Test case 3: glasses unwear again
     desc.deviceCategory_ = DeviceCategory::BT_UNWEAR_HEADPHONE;
     desc.glassesWearCount_ = 2;
-    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    result = AudioPolicyUtils::GetInstance().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
     EXPECT_FALSE(result);
 
     // Test case 4: not glasses
     desc.deviceCategory_ = DeviceCategory::CATEGORY_DEFAULT;
     desc.glassesWearCount_ = 0;  // WEAR_FIRST is 1, so 0 < 1
-    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    result = AudioPolicyUtils::GetInstance().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
     EXPECT_TRUE(result);
 
     // Test case 5: glasses first wear
     desc.deviceCategory_ = DeviceCategory::BT_GLASSES;
     desc.glassesWearCount_ = 1;
-    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    result = AudioPolicyUtils::GetInstance().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
     EXPECT_TRUE(result);
 }
 
@@ -677,6 +677,31 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_020, TestSize.Le
     EXPECT_EQ(make_shared<AudioDeviceDescriptor>(audioDeviceManager.earpiece_), desc2);
     desc1 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_VIDEO_COMMUNICATION);
     EXPECT_EQ(make_shared<AudioDeviceDescriptor>(audioDeviceManager.speaker_), desc1);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager.
+ * @tc.number: UpdateDevicesListInfo_001.
+ * @tc.desc  : Test UpdateDevicesListInfo with CATEGORY_UPDATE.
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, UpdateDevicesListInfo_001, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->deviceCategory_ = BT_GLASSES;
+    dm.connectedDevices_ = { std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE) };
+    EXPECT_TRUE(dm.UpdateDevicesListInfo(desc, CATEGORY_UPDATE, reason));
+    EXPECT_EQ(dm.connectedDevices_[0]->deviceCategory_, BT_GLASSES);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+
+    auto unwearDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    unwearDesc->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    EXPECT_TRUE(dm.UpdateDevicesListInfo(unwearDesc, CATEGORY_UPDATE, reason));
+    EXPECT_EQ(dm.connectedDevices_[0]->deviceCategory_, BT_UNWEAR_HEADPHONE);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
+    dm.connectedDevices_ = backup;
 }
 } // namespace AudioStandard
 } // namespace OHOS

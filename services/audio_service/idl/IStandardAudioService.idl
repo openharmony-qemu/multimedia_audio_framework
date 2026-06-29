@@ -158,4 +158,5 @@ interface IStandardAudioService {
     [oneway] void RequestUserPrivacyAuthority([in] unsigned int sessionId);
     void SetAudioSceneForPipe([in] unsigned int pipeId, [in] int audioScene, [in] boolean scoExcludeFlag);
     void CreateCallTransferProxy();
+    void NotifySensitiveRecordPermit([in] unsigned int sessionId, [in] boolean isPermitted);
 }

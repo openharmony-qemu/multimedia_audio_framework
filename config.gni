@@ -47,6 +47,7 @@ declare_args() {
   audio_framework_feature_source_period_size = 1
   audio_framework_feature_input_independent_routing_rule = false
   audio_framework_feature_multi_zone_volume = false
+  audio_framework_feature_multi_user_zone = false
   
   if (defined(global_parts_info) &&
       defined(global_parts_info.usb_usb_manager)) {

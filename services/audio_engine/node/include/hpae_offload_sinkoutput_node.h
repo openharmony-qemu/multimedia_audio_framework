@@ -50,8 +50,9 @@ public:
     StreamManagerState GetSinkState(void);
     int32_t SetSinkState(StreamManagerState sinkState);
     const char* GetRenderFrameData(void);
-    // need flush hdi cache and rewind
-    void StopStream();
+    // need flush hdi cache and rewind. When needRewindAndFlush is false, only flush hdi cache
+    // and reset local state; the upstream history buffer is left untouched.
+    void StopStream(bool needRewindAndFlush = true);
     // flush need clear sinkoutputjnode cache
     void FlushStream();
     // set offload policy state
