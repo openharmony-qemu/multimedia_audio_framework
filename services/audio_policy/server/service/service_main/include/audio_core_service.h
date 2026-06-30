@@ -533,7 +533,7 @@ public:
     void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
 
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor,
-        const AudioStreamDeviceChangeReason reason, int32_t forceUid = INVALID_UID);
+        const AudioStreamDeviceChangeReason reason);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t GetActiveStreamRendererInfosForDevice(

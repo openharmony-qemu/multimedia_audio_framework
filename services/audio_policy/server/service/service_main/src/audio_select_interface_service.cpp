@@ -92,7 +92,7 @@ int32_t AudioSelectInterfaceService::SetDeviceActive(DeviceType deviceType, bool
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_OPERATION_FAILED, "coreService is null");
     coreService->OnPreferredOutputDeviceUpdated(
         AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(uid),
-        AudioStreamDeviceChangeReason::OVERRODE, static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
+        AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
 }
 
@@ -320,8 +320,7 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
     coreService->OnPreferredOutputDeviceUpdated(AudioRouterSelectStrategy::GetInstance()
-        .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE,
-        static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
+        .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
 }
 
@@ -398,8 +397,7 @@ int32_t AudioSelectInterfaceService::SelectOutputDeviceForFastInner(sptr<AudioRe
     coreService->FetchOutputDeviceAndRoute("SelectOutputDeviceForFastInner",
         AudioStreamDeviceChangeReason::OVERRODE);
     coreService->OnPreferredOutputDeviceUpdated(AudioRouterSelectStrategy::GetInstance()
-        .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE,
-        static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
+        .Get1stCurrentOutputDevice(audioRendererFilter->uid), AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
 }
 
@@ -863,7 +861,7 @@ void AudioSelectInterfaceService::OnForcedDeviceSelected(DeviceType devType, con
     CHECK_AND_RETURN_LOG(coreService != nullptr, "coreService is null");
     coreService->OnPreferredOutputDeviceUpdated(
         AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(filter->uid),
-        AudioStreamDeviceChangeReason::OVERRODE, static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
+        AudioStreamDeviceChangeReason::OVERRODE);
 }
 
 void AudioSelectInterfaceService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,

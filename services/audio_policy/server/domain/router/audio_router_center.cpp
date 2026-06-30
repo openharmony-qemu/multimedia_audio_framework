@@ -735,7 +735,7 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectOutputStreamDevices(cons
     info.uid = deviceInfo.clientUID;
     info.sessionId = deviceInfo.streamId;
     info.streamUsage = deviceInfo.streamUsage;
-    info.isRunning = false;
+    info.isRunning = deviceInfo.isRunning;
 
     FetchDeviceInfo fetchInfo(info.streamUsage, info.uid, "Arbiter");
     fetchInfo.bypassType = deviceInfo.bypassType;
@@ -788,7 +788,7 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectInputStreamDevices(const
     info.uid = deviceInfo.clientUID;
     info.sessionId = deviceInfo.streamId;
     info.sourceType = deviceInfo.sourceType;
-    info.isRunning = false;
+    info.isRunning = deviceInfo.isRunning;
 
     RouterType routerType = ROUTER_TYPE_NONE;
     info.device = FetchCapturerInputDevice(info.sourceType, info.uid, routerType, info.sessionId);
