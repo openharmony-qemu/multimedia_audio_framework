@@ -337,6 +337,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_004, TestSize.Level1)
 }
 #endif
 
+#ifdef TEMP_DISABLE
 // Test play target usage and start inner-cap the target usage, check data not empty.
 static void TestInnerCapturer(StreamUsage targetUsage)
 {
@@ -385,10 +386,9 @@ static void TestInnerCapturer(StreamUsage targetUsage)
 
     audioCapturer->Release();
 }
+#endif
 
 #ifdef TEMP_DISABLE
-/**
-* @tc.name  : Test capturer UNKNOWN.
 * @tc.number: Inner_Capturer_Basic_005
 * @tc.desc  : Test PLAYBACK_CAPTURE
 */
