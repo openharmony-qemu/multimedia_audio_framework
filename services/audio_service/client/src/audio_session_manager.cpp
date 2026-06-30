@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #include "audio_session_manager.h"
+
+#include "audio_errors.h"
 #include "audio_session_client_manager.h"
 
 namespace OHOS {
