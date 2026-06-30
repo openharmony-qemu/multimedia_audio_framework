@@ -820,5 +820,52 @@ HWTEST_F(AudioZoneServiceUnitTest, RemoveStreamIdFromAudioZone_003, TestSize.Lev
     auto ret = AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(invalidZoneId, streamId);
     EXPECT_EQ(ret, ERROR);
 }
+
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: AudioZoneService_BindDeviceWithProxy_001
+ * @tc.desc  : Test BindDeviceToAudioZone with proxy.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_BindDeviceWithProxy_001, TestSize.Level1)
+{
+    ClearZone();
+    AudioZoneService &svc = AudioZoneService::GetInstance();
+
+    AudioZoneContext context;
+    int32_t zoneId = svc.CreateAudioZone("ProxyZone1", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    pid_t pid = 3000;
+    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientUnitTest();
+    EXPECT_EQ(svc.RegisterAudioZoneClient(pid, client), SUCCESS);
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(pid, zoneId, DEVICE_TYPE_SPEAKER, true), SUCCESS);
+
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    device->macAddress_ = "00:11:22:33:44:55";
+    device->networkId_ = "LocalDevice";
+    device->isSupportMultiZone_ = true;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(device);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = { device };
+
+    EXPECT_EQ(svc.BindDeviceToAudioZone(zoneId, devices), SUCCESS);
+
+    svc.UnRegisterAudioZoneClient(pid);
+    svc.ReleaseAudioZone(zoneId);
+
+    int32_t zoneId2 = svc.CreateAudioZone("ProxyZone2", context, 0);
+    ASSERT_NE(zoneId2, ERROR);
+    auto device2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    device2->macAddress_ = "00:11:22:33:44:66";
+    device2->networkId_ = "LocalDevice";
+    device2->isSupportMultiZone_ = true;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(device2);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices2 = { device2 };
+    EXPECT_EQ(svc.BindDeviceToAudioZone(zoneId2, devices2), SUCCESS);
+
+    svc.ReleaseAudioZone(zoneId2);
+}
+#endif
+
 } // namespace AudioStandard
 } // namespace OHOS

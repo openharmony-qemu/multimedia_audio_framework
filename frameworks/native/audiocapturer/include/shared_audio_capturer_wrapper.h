@@ -307,6 +307,12 @@ public:
         return sharedAudioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
     }
 
+    void SetSensitiveRecordPermitCallback(
+        const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback) override
+    {
+        return sharedAudioCapturer_->SetSensitiveRecordPermitCallback(callback);
+    }
+
     void SetFastStatusChangeCallback(
         const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) override
     {

@@ -105,6 +105,10 @@ public:
     int32_t GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool IsDeviceAvailable(AudioDeviceUsage audioDevUsage, const std::shared_ptr<AudioDeviceDescriptor> &desc);
     void UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    // Update silent state for all connected wireless devices
+    void UpdateAllWirelessDevicesSilentState();
+    // Update wireless device silent state, only update when isSilent_ differs
+    void UpdateWirelessDeviceSilentState(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
 
 private:
     AudioDeviceManager();
@@ -142,6 +146,7 @@ private:
     void AddMediaDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void AddCaptureDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void UpdateBtDeviceListForCategory(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     bool IsExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
         const vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
@@ -161,18 +166,11 @@ private:
     void RemoveCommunicationDevices(const AudioDeviceDescriptor &devDesc);
     void RemoveMediaDevices(const AudioDeviceDescriptor &devDesc);
     void RemoveCaptureDevices(const AudioDeviceDescriptor &devDesc);
-    bool UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    bool UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    bool UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    bool UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    bool UpdateDeviceUsage(const shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-        AudioStreamDeviceChangeReasonExt &reason);
     bool IsDescMatchedInVector(const shared_ptr<AudioDeviceDescriptor> &devDesc, list<DevicePrivacyInfo> &deviceList);
 
     void RemoveVirtualConnectedDevice(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc);
-    bool TriggerDeviceInfoUpdatedCallback(AudioDeviceDescriptor &desc,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
+    // Check whether all streams are silent or standby
+    bool CheckAllStreamsSilentOrStandByOnDevice();
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;

@@ -543,14 +543,14 @@ int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType, int
 }
 
 int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy,
-    const DeviceType &deviceType)
+    const DeviceType &deviceType, int32_t volumeFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     if (isLegacy) {
         return gsp->SetStreamMuteLegacy(volumeType, mute, deviceType);
     }
-    return gsp->SetStreamMute(volumeType, mute, deviceType);
+    return gsp->SetStreamMute(volumeType, mute, deviceType, volumeFlag);
 }
 
 bool AudioPolicyManager::GetStreamMute(AudioVolumeType volumeType)
@@ -3873,6 +3873,17 @@ int32_t AudioPolicyManager::GetSystemVolumeDegree(AudioVolumeType volumeType, in
 
     int32_t volumeDegree = -1;
     gsp->GetSystemVolumeDegree(volumeType, uid, volumeDegree);
+    return volumeDegree;
+}
+
+int32_t AudioPolicyManager::GetSystemVolumeDegreeWithDevice(AudioVolumeType volumeType, DeviceType deviceType,
+    std::string networkId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    int32_t volumeDegree = -1;
+    gsp->GetSystemVolumeDegreeWithDevice(volumeType, deviceType, networkId, volumeDegree);
     return volumeDegree;
 }
 

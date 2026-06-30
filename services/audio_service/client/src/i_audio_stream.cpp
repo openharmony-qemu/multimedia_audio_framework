@@ -86,13 +86,8 @@ std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::Cre
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_UNKNOWN)] = STREAM_RING;
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_MEDIA)] = STREAM_RING;
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
-#ifdef MULTI_ALARM_LEVEL
     streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
     streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
-#else
-    streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ALARM;
-    streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_EMERGENCY)] = STREAM_ALARM;
-#endif
 
     IAudioStream::CreateStreamMap(streamMap);
     return streamMap;
@@ -203,7 +198,7 @@ int32_t IAudioStream::GetByteSizePerFrame(const AudioStreamParams &params, size_
             return ERR_INVALID_PARAM;
             break;
     }
- 
+
     if (params.channels < 1 || params.channels > 16) { // 1 is min channel size, 16 is max channel size
         return ERR_INVALID_PARAM;
     }
@@ -235,7 +230,7 @@ int32_t IAudioStream::GetByteSizePerFrameWithEc(const AudioStreamParams &params,
             return ERR_INVALID_PARAM;
             break;
     }
-
+ 
     if (params.channels < 1 || params.channels > 16) { // 1 is min channel size, 16 is max channel size
         return ERR_INVALID_PARAM;
     }

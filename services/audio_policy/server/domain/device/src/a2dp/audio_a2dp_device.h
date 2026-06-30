@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef ST_AUDIO_A2DP_SERVICE_H
-#define ST_AUDIO_A2DP_SERVICE_H
+#ifndef ST_AUDIO_A2DP_DEVICE_H
+#define ST_AUDIO_A2DP_DEVICE_H
 
 #include <bitset>
 #include <list>
@@ -21,6 +21,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
+#include "audio_utils.h"
+#include "audio_policy_log.h"
 #include "audio_module_info.h"
 #include "audio_device_info.h"
 #include "audio_common_utils.h"

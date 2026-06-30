@@ -2028,6 +2028,8 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
             AudioPolicyUtils::GetInstance().GetSinkName(*streamDesc->newDeviceDescs_.front(), sessionId) !=
             AudioPolicyUtils::GetInstance().GetSinkName(*streamDesc->newDeviceDescs_.back(), sessionId)) {
             AUDIO_INFO_LOG("set dual hal tone, reset primary sink to default before.");
+            audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG,
+                pipeManager_->QueryPipeIdBySessionId(sessionId));
             if (enableDualHalToneState_ && enableDualHalToneSessionId_ != sessionId) {
                 AUDIO_INFO_LOG("sesion changed, disable old dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
@@ -2234,17 +2236,6 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
         id = audioPolicyManager_.OpenAudioPort(pipeInfo, paIndex);
 
         AUDIO_INFO_LOG("routeFlag:%{public}d", pipeInfo->routeFlag_);
-        if ((audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)) == DEVICE_TYPE_MIC ||
-            audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)) == DEVICE_TYPE_ACCESSORY) &&
-            ((pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI) && (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_UNPROCESS) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_LIVE) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_ULTRASONIC) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_VOICE_RECOGNITION) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_RAW_AI) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_INTERPHONE))) {
-            audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)),
-                pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
-        }
     }
 
     CHECK_AND_RETURN_RET_LOG(id != HDI_INVALID_ID, OPEN_PORT_FAILURE,
@@ -3148,17 +3139,10 @@ void AudioCoreService::ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDes
     streamDesc->ResetOriginalFlag();
 }
 
-void AudioCoreService::UpdateStreamDevicesForStart(
-    std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller)
+void AudioCoreService::UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    std::string caller, std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToRoute)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
-    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
-
-    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
-    streamUsage = audioSessionService_.GetAudioSessionStreamUsageForDevice(GetRealPid(streamDesc));
-    streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
-    streamDesc->rendererInfo_.streamUsage;
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
         devices = std::vector<std::shared_ptr<AudioDeviceDescriptor>> {
@@ -3170,11 +3154,38 @@ void AudioCoreService::UpdateStreamDevicesForStart(
                 DeviceRole::OUTPUT_DEVICE)
         };
     } else {
-        FetchDeviceInfo info = { streamUsage, GetRealUid(streamDesc), streamDesc->GetRenderPrivacyType(), caller,
-            streamDesc->bundleName_ };
-        info.streamId = streamDesc->sessionId_;
-        devices = audioRouterCenter_.FetchOutputDevices(info);
+        streamsToRoute.push_back(streamDesc);
+        return;
     }
+
+    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
+    pipeManager_->UpdateNewDeviceDescWithCheck(streamDesc, devices);
+    
+    if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        !streamDesc->oldDeviceDescs_.empty() && streamDesc->oldDeviceDescs_.front() &&
+        streamDesc->oldDeviceDescs_.front()->deviceType_ != devices[0]->deviceType_) {
+        WriteScoStateFaultEvent(devices[0]);
+    }
+    FetchOutputDupDevice(caller, streamDesc->GetSessionId(), streamDesc);
+
+    ResetOriginalFlagForRemote(streamDesc);
+}
+
+void AudioCoreService::UpdateStreamDevicesForStart(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
+    streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
+
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
+    streamUsage = audioSessionService_.GetAudioSessionStreamUsageForDevice(GetRealPid(streamDesc));
+    streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
+    streamDesc->rendererInfo_.streamUsage;
+
+    FetchDeviceInfo info = { streamUsage, GetRealUid(streamDesc), streamDesc->GetRenderPrivacyType(), caller,
+        streamDesc->bundleName_ };
+    info.streamId = streamDesc->sessionId_;
+    auto devices = audioRouterCenter_.FetchOutputDevicesNoLock(info);
 
     pipeManager_->UpdateNewDeviceDescWithCheck(streamDesc, devices);
     if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
@@ -3543,8 +3554,10 @@ void AudioCoreService::OnRemoteDeviceStatusUpdatedWhenNoRunningStream(std::share
     // with no running stream, update device status
     auto currentDesc = std::make_shared<AudioDeviceDescriptor>(audioRouterSelectStrategy_.Get1stCurrentOutputDevice());
     CHECK_AND_RETURN_LOG(currentDesc != nullptr && newDesc != nullptr, "desc is nullptr");
-    CHECK_AND_RETURN(currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX &&
-        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX);
+    CHECK_AND_RETURN((currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX &&
+        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX) ||
+        (currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_MUSIC_HOST &&
+        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_MUSIC_HOST));
     NotifyRemoteDeviceStatusUpdate(currentDesc);
 }
 
@@ -3564,8 +3577,10 @@ void AudioCoreService::OnRemoteDeviceStatusUpdated()
         oldDesc = streamDesc->oldDeviceDescs_.front();
         newDesc = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(oldDesc != nullptr && newDesc != nullptr);
-        CHECK_AND_CONTINUE(oldDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX ||
-            newDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX);
+        CHECK_AND_CONTINUE((oldDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX ||
+            newDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX) &&
+            (oldDesc->dmDeviceType_ != DM_DEVICE_TYPE_MUSIC_HOST ||
+            newDesc->dmDeviceType_ == DM_DEVICE_TYPE_MUSIC_HOST));
         isNeedUpdate = false;
     }
     CHECK_AND_RETURN(isNeedUpdate);

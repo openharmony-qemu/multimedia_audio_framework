@@ -135,10 +135,9 @@ int32_t AudioInterruptClientManager::ActivateAudioInterrupt(AudioInterrupt &audi
 
 int32_t AudioInterruptClientManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
 {
-    bool ret = PermissionUtil::VerifyIsSystemApp();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "SetAppConcurrencyMode: No system permission");
-    ret = PermissionUtil::VerifySelfPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppConcurrencyMode: No system permission");
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+        "SetAppConcurrencyMode: No system permission");
     return AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
 }
 

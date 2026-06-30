@@ -254,8 +254,9 @@ int32_t HpaeDirectRendererManager::RecreateSinkOutputNodeIfNeeded()
     bool isVoip = (sinkInfo_.deviceClass == VOIP_DIRECT_DEVICE_CLASS);
     AudioSamplingRate newSampleRate = GetDirectSampleRate(curNode_->GetSampleRate(), isVoip);
     AudioSampleFormat newFormat = GetDirectFormat(curNode_->GetBitWidth(), isVoip);
-    AudioChannel newChannels = (curNode_->GetChannelCount() > STEREO) ?
-        AudioChannel::STEREO : curNode_->GetChannelCount();
+    // Southbound (HDI) direct path does not support mono, only stereo is supported.
+    // Force the sink output to stereo regardless of the input channel count.
+    AudioChannel newChannels = AudioChannel::STEREO;
     HpaeNodeInfo outputNodeInfo = sinkOutputNode_->GetNodeInfo();
     if (outputNodeInfo.samplingRate == newSampleRate && outputNodeInfo.format == newFormat &&
         outputNodeInfo.channels == newChannels) {
@@ -269,7 +270,7 @@ int32_t HpaeDirectRendererManager::RecreateSinkOutputNodeIfNeeded()
     sinkInfo_.samplingRate = newSampleRate;
     sinkInfo_.format = newFormat;
     sinkInfo_.channels = newChannels;
-    sinkInfo_.channelLayout = newChannels == STEREO ? STEREO : MONO;
+    sinkInfo_.channelLayout = STEREO;
     int32_t ret = InitSinkInner(false, false);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "recreate direct sink failed when create stream:%{public}u.",
         outputNodeInfo.sessionId);

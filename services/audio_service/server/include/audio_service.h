@@ -150,6 +150,7 @@ public:
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
     void SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList);
+    void NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);

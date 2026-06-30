@@ -347,11 +347,12 @@ HWTEST(AudioPolicyUnitTest, SetStreamMute_001, TestSize.Level1)
     int32_t streamTypeIn = 1;
     bool mute = false;
     int32_t deviceTypeIn = 1;
+    int32_t volumeFlag = 0;
 
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    int32_t res = ptrAudioPolicyServer->SetStreamMute(streamTypeIn, mute, deviceTypeIn);
+    int32_t res = ptrAudioPolicyServer->SetStreamMute(streamTypeIn, mute, deviceTypeIn, volumeFlag);
     EXPECT_EQ(res, SUCCESS);
 }
 
@@ -3332,6 +3333,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_161, TestSize.Level1)
 
     int32_t systemAbilityId = APP_MGR_SERVICE_ID;
     std::string deviceId = "test";
+    server->HandleAudioServerRelatedSystemAbility(FUSION_CONNECTIVITY_SA_ID, deviceId);
     server->HandleAudioServerRelatedSystemAbility(systemAbilityId, deviceId);
 
     systemAbilityId = -1;

@@ -239,10 +239,7 @@ bool CabinAudioRenderSink::SetPlayingAppNameParam(const std::string &param)
     AUDIO_INFO_LOG("param: %{public}s", param.c_str());
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, false, "render is nullptr");
     int32_t ret = audioRender_->SetExtraParams(audioRender_, param.c_str());
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("set playing app name param fail, error code: %{public}d", ret);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "set playing app name param fail, error code: %{public}d", ret);
     return true;
 }
 

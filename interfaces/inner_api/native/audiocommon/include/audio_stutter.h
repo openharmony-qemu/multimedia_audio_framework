@@ -62,6 +62,7 @@ struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
         
         return ret;
     }
+
     static AudioRendererDataTransferStateChangeInfo *Unmarshalling(Parcel &parcel)
     {
         auto info = new(std::nothrow) AudioRendererDataTransferStateChangeInfo();
@@ -89,21 +90,27 @@ struct DataTransferMonitorParam : public Parcelable {
     int32_t badDataTransferTypeBitMap;
     int64_t timeInterval;
     int32_t badFramesRatio;
+    bool needImmediateResumeNotify = false;
 
     DataTransferMonitorParam() = default;
     ~DataTransferMonitorParam() = default;
+    DataTransferMonitorParam(int32_t clientUIDIn, int32_t badDataTransferTypeBitMapIn,
+        int32_t timeIntervalIn, int32_t badFramesRatioIn)
+        : clientUID(clientUIDIn), badDataTransferTypeBitMap(badDataTransferTypeBitMapIn),
+        timeInterval(timeIntervalIn), badFramesRatio(badFramesRatioIn) {};
     bool operator==(const DataTransferMonitorParam& param) const
     {
         return clientUID == param.clientUID && badDataTransferTypeBitMap == param.badDataTransferTypeBitMap &&
         timeInterval == param.timeInterval && badFramesRatio == param.badFramesRatio;
     }
-
+ 
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(clientUID) &&
             parcel.WriteInt32(badDataTransferTypeBitMap) &&
             parcel.WriteInt64(timeInterval) &&
-            parcel.WriteInt32(badFramesRatio);
+            parcel.WriteInt32(badFramesRatio) &&
+            parcel.WriteBool(needImmediateResumeNotify);
     }
 
     static DataTransferMonitorParam *Unmarshalling(Parcel &parcel)
@@ -116,6 +123,7 @@ struct DataTransferMonitorParam : public Parcelable {
         param->badDataTransferTypeBitMap = parcel.ReadInt32();
         param->timeInterval = parcel.ReadInt64();
         param->badFramesRatio = parcel.ReadInt32();
+        param->needImmediateResumeNotify = parcel.ReadBool();
         return param;
     }
 };
@@ -125,8 +133,7 @@ public:
     virtual ~AudioRendererDataTransferStateChangeCallback() = default;
 
     virtual void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) = 0;
-
-    virtual void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) = 0;
+    virtual void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) { return; }
 };
 
 class DataTransferStateChangeCallbackInner {

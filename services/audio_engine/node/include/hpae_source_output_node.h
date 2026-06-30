@@ -54,6 +54,9 @@ public:
 private:
     uint64_t GetTimestamp();
     void ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer);
+    HpaePcmBuffer *GetAndValidateOutput();
+    void ProcessAudioData(HpaePcmBuffer *outputData);
+    void WriteDataAndUpdateFrames();
 private:
     InputPort<HpaePcmBuffer *> inputStream_;
     std::weak_ptr<ICapturerStreamCallback> readCallback_;

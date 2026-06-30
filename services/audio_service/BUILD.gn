@@ -21,16 +21,6 @@ import("../../window_manager.gni")
 
 audio_framework_root = "../.."
 
-sanitize_init = {
-  cfi = true
-  cfi_cross_dso = true
-  cfi_vcall_icall_only = true
-  debug = false
-  integer_overflow = false
-  ubsan = true
-  boundary_sanitize = true
-}
-
 group("audio_service_packages") {
   deps = [
     ":audio_common",
@@ -271,7 +261,15 @@ config("audio_sasdk_public_config") {
 
 ohos_shared_library("audio_stream_client") {
   branch_protector_ret = "pac_ret"
-  sanitize = sanitize_init
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = false
+    ubsan = true
+    boundary_sanitize = true
+  }
 
   sources = [
     "client/src/audio_process_in_client.cpp",
@@ -332,7 +330,15 @@ ohos_shared_library("audio_stream_client") {
 ohos_shared_library("audio_policy_manager") {
   branch_protector_ret = "pac_ret"
   install_enable = true
-  sanitize = sanitize_init
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = false
+    ubsan = true
+    boundary_sanitize = true
+  }
 
   sources = [
     "client/src/audio_collaborative_manager.cpp",
@@ -398,7 +404,15 @@ ohos_shared_library("audio_policy_manager") {
 ohos_shared_library("audio_engine_manager") {
   branch_protector_ret = "pac_ret"
   install_enable = true
-  sanitize = sanitize_init
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = false
+    ubsan = true
+    boundary_sanitize = true
+  }
   sources = [
     "client/src/audio_engine_client_manager.cpp",
     "client/src/audio_manager_listener_stub_impl.cpp",
@@ -454,6 +468,15 @@ ohos_shared_library("audio_engine_manager") {
 ohos_shared_library("audio_client") {
   branch_protector_ret = "pac_ret"
   install_enable = true
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = false
+    ubsan = true
+    boundary_sanitize = true
+  }
   sources = [
     "client/src/audio_routing_manager.cpp",
     "client/src/audio_system_manager.cpp",
@@ -759,7 +782,7 @@ audio_ohos_library("audio_process_service") {
 }
 
 audio_ohos_library("audio_service") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -898,7 +921,7 @@ audio_ohos_library("audio_service") {
 }
 
 ohos_shared_library("audio_sasdk") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true

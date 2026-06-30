@@ -26,6 +26,8 @@
 #include "audio_device_descriptor.h"
 #include "audio_zone_client_manager.h"
 #include "audio_connected_device.h"
+#include "audio_device_info.h"
+#include "audio_zone_router.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -93,6 +95,9 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAllOutputDevices();
     std::unordered_set<DeviceType> GetAllOutputDeviceTypes();
+#ifdef MULTI_USER_ZONE
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(DeviceRole deviceRole = DEVICE_ROLE_NONE);
+#endif
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, DeviceType deviceType, bool enable);
     int32_t SetSystemVolumeLevel(const DeviceType deviceType, const AudioVolumeType volumeType,
@@ -104,6 +109,11 @@ public:
     int32_t EnableChangeReport(pid_t clientPid, bool enable);
 
     int32_t UpdateDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> device);
+
+#ifdef MULTI_USER_ZONE
+    bool UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &devDesc,
+        DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
+#endif
 
     pid_t GetClientPid();
 
@@ -126,10 +136,15 @@ private:
     AudioZoneContext context_;
     std::unordered_set<DeviceType> volumeProxyDeviceTypes_;
 
+#ifdef MULTI_USER_ZONE
+    AudioZoneRouter zoneRouter_;
+#endif
+
     int32_t SetDeviceDescriptorState(const std::shared_ptr<AudioDeviceDescriptor> device, const bool enable);
     void SendZoneChangeEvent(AudioZoneChangeReason reason);
     const std::shared_ptr<AudioZoneDescriptor> GetDescriptorNoLock();
     std::unordered_set<DeviceType> GetAllOutputDeviceTypesNoLock();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAllOutputDevicesInner();
 };
 } // namespace AudioStandard
 } // namespace OHOS

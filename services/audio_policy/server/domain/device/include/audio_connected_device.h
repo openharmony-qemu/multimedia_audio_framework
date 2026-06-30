@@ -24,10 +24,11 @@
 #include <shared_mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
+#include "audio_device_descriptor.h"
 #include "audio_module_info.h"
 #include "audio_volume_config.h"
+#include "audio_policy_log.h"
 #include "audio_errors.h"
-#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -81,7 +82,6 @@ public:
         std::string networkId = LOCAL_NETWORK_ID);
     std::unordered_set<DeviceType> GetAllOutputDeviceTypes();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAllOutputDevices();
-
 private:
     AudioConnectedDevice() {}
     ~AudioConnectedDevice() {}

@@ -110,10 +110,11 @@ static void WriteConverterConfigError()
 
 AudioConverterParser::AudioConverterParser()
 {
+    curNode_ = AudioXmlNode::Create();
     AUDIO_INFO_LOG("AudioConverterParser created");
 }
 
-static void LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
+void AudioConverterParser::LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
 {
     std::string libName;
     std::string libPath;
@@ -123,7 +124,7 @@ static void LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlN
     result.library.path = libPath;
 }
 
-static void LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
+void AudioConverterParser::LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
 {
     curNode->MoveToChildren();
     int32_t countLayoutConf = 0;
@@ -168,36 +169,35 @@ ConverterConfig AudioConverterParser::LoadConfig()
     std::lock_guard<std::mutex> lock(loadConfigMutex_);
     AUDIO_INFO_LOG("AudioConverterParser::LoadConfig");
     CHECK_AND_RETURN_RET(cfg_ == nullptr, *cfg_);
-    std::shared_ptr<AudioXmlNode> curNode = AudioXmlNode::Create();
     cfg_ = std::make_unique<ConverterConfig>();
     ConverterConfig &result = *cfg_;
 
     AUDIO_INFO_LOG("use default audio effect config file path: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
-    curNode->Config(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
-    if (!curNode->IsNodeValid()) {
+    curNode_->Config(AUDIO_CONVERTER_CONFIG_FILE, nullptr, XML_PARSE_NOERROR | XML_PARSE_NOWARNING);
+    if (!curNode_->IsNodeValid()) {
         WriteConverterConfigError();
         AUDIO_ERR_LOG("error: could not parse file %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
         return result;
     }
 
-    CHECK_AND_RETURN_RET_LOG(curNode->CompareName("audio_converter_conf"), result,
+    CHECK_AND_RETURN_RET_LOG(curNode_->CompareName("audio_converter_conf"), result,
         "Missing tag - audio_converter_conf: %{public}s", AUDIO_CONVERTER_CONFIG_FILE);
-    curNode->GetProp("version", result.version);
+    curNode_->GetProp("version", result.version);
 
-    curNode->MoveToChildren();
-    while (curNode->IsNodeValid()) {
-        if (!curNode->IsElementNode()) {
-            curNode->MoveToNext();
+    curNode_->MoveToChildren();
+    while (curNode_->IsNodeValid()) {
+        if (!curNode_->IsElementNode()) {
+            curNode_->MoveToNext();
             continue;
         }
-        if (curNode->CompareName("library")) {
-            LoadConfigLibrary(result, curNode->GetCopyNode());
-        } else if (curNode->CompareName("converter_conf")) {
-            LoadConfigChannelLayout(result, curNode->GetCopyNode());
+        if (curNode_->CompareName("library")) {
+            LoadConfigLibrary(result, curNode_->GetCopyNode());
+        } else if (curNode_->CompareName("converter_conf")) {
+            LoadConfigChannelLayout(result, curNode_->GetCopyNode());
         }
-        curNode->MoveToNext();
+        curNode_->MoveToNext();
     }
-    curNode = nullptr;
+    curNode_ = nullptr;
     return result;
 }
 } // namespace AudioStandard

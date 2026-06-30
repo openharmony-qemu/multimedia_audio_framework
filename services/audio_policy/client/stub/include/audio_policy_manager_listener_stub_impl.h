@@ -20,6 +20,7 @@
 
 #include "audio_interrupt_callback.h"
 #include "audio_route_callback.h"
+#include "audio_capturer.h"
 #include "standard_audio_policy_manager_listener_stub.h"
 
 namespace OHOS {
@@ -44,6 +45,7 @@ public:
     int32_t OnQueryDeviceVolumeBehavior(VolumeBehavior &volumeBehavior) override;
     int32_t OnQueryIsForceGetDevByVolumeType(const std::string &bundleName, bool &ret) override;
     int32_t OnQueryUseSystemPreferredDeviceForVolume(const std::string &bundleName, bool &ret) override;
+    int32_t StartVoiceBroadcast(uint32_t sessionId) override;
     // AudioManagerListenerStubImpl
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
     void SetAudioRouteCallback(const std::weak_ptr<AudioRouteCallback> &callback);

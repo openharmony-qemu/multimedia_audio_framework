@@ -125,6 +125,7 @@ public:
     int32_t RestoreDistributedDeviceInfo();
     int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
+    int32_t NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted);
 private:
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
     int32_t volumeChangeClientPid_ = -1;

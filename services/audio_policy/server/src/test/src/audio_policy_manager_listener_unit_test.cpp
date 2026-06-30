@@ -107,6 +107,11 @@ public:
     {
         return 0;
     }
+
+    ErrCode StartVoiceBroadcast(uint32_t sessionId) override
+    {
+        return 0;
+    }
 };
 
 void AudioPolicyManagerListenerUnitTest::SetUpTestCase(void) {}

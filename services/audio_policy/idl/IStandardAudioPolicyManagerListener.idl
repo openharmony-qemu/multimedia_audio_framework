@@ -36,4 +36,5 @@ interface IStandardAudioPolicyManagerListener {
     void OnQueryDeviceVolumeBehavior([out] VolumeBehavior volumeBehavior);
     void OnQueryIsForceGetDevByVolumeType([in] String bundleName, [out] boolean ret);
     void OnQueryUseSystemPreferredDeviceForVolume([in] String bundleName, [out] boolean ret);
+    [oneway] void StartVoiceBroadcast([in] unsigned int sessionId);
 }

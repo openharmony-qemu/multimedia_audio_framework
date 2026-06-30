@@ -343,6 +343,22 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     return descs;
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesNoLock(FetchDeviceInfo &info)
+{
+    return FetchOutputDevicesInner(info);
+}
+
+AudioRouterCenter::ArbiterScope::ArbiterScope(AudioRouterCenter &center)
+    : center_(center), lock_(center.routerMutex_)
+{
+    center_.StartArbiterContext();
+}
+
+AudioRouterCenter::ArbiterScope::~ArbiterScope()
+{
+    center_.StopArbiterContext();
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchMediaOutputDevices(FetchDeviceInfo &info)
 {
     std::lock_guard<std::mutex> lock(routerMutex_);
@@ -711,29 +727,7 @@ bool AudioRouterCenter::IsBlockedDeviceForTransferCall(shared_ptr<AudioDeviceDes
 
 std::vector<StreamDeviceInfo> AudioRouterCenter::CollectOutputStreamDevices(const FetchDeviceInfo &deviceInfo)
 {
-    std::vector<StreamDeviceInfo> outputDevices;
-    auto pipeManager = AudioPipeManager::GetPipeManager();
-    CHECK_AND_RETURN_RET(pipeManager != nullptr, outputDevices);
-    auto allOutputStreams = pipeManager->GetAllOutputStreamDescsIncludingModem();
-
-    for (auto &desc : allOutputStreams) {
-        CHECK_AND_CONTINUE(desc != nullptr);
-        StreamDeviceInfo info;
-        info.uid = desc->GetRealUid();
-        info.sessionId = desc->sessionId_;
-        info.streamUsage = desc->rendererInfo_.streamUsage;
-        info.isRunning = (desc->streamStatus_ == STREAM_STATUS_STARTED &&
-            !pipeManager->IsFocusStandby(desc->sessionId_));
-
-        FetchDeviceInfo fetchInfo(info.streamUsage, info.uid, "Arbiter");
-        fetchInfo.bypassType = deviceInfo.bypassType;
-        auto devices = FetchOutputDevicesInner(fetchInfo);
-        if (!devices.empty()) {
-            info.device = devices.front();
-            info.routerType = fetchInfo.routerType;
-        }
-        outputDevices.push_back(info);
-    }
+    std::vector<StreamDeviceInfo> outputDevices = CollectOutputStreamDevices(deviceInfo.bypassType);
     CHECK_AND_RETURN_RET(deviceInfo.streamUsage != STREAM_USAGE_UNKNOWN, outputDevices);
     CHECK_AND_RETURN_RET(deviceInfo.streamId != INVALID_STREAM_ID, outputDevices);
 
@@ -755,7 +749,56 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectOutputStreamDevices(cons
     return outputDevices;
 }
 
+std::vector<StreamDeviceInfo> AudioRouterCenter::CollectOutputStreamDevices(RouterType bypassType)
+{
+    std::vector<StreamDeviceInfo> outputDevices;
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_RET(pipeManager != nullptr, outputDevices);
+    auto allOutputStreams = pipeManager->GetAllOutputStreamDescsIncludingModem();
+
+    for (auto &desc : allOutputStreams) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        StreamDeviceInfo info;
+        info.uid = desc->GetRealUid();
+        info.sessionId = desc->sessionId_;
+        info.streamUsage = desc->rendererInfo_.streamUsage;
+        info.isRunning = (desc->streamStatus_ == STREAM_STATUS_STARTED &&
+            !pipeManager->IsFocusStandby(desc->sessionId_));
+
+        FetchDeviceInfo fetchInfo(info.streamUsage, info.uid, "Arbiter");
+        fetchInfo.bypassType = bypassType;
+        auto devices = FetchOutputDevicesInner(fetchInfo);
+        if (!devices.empty()) {
+            info.device = devices.front();
+            info.routerType = fetchInfo.routerType;
+        }
+        outputDevices.push_back(info);
+    }
+
+    return outputDevices;
+}
+
 std::vector<StreamDeviceInfo> AudioRouterCenter::CollectInputStreamDevices(const FetchDeviceInfo &deviceInfo)
+{
+    std::vector<StreamDeviceInfo> inputDevices = CollectInputStreamDevices();
+    CHECK_AND_RETURN_RET(deviceInfo.sourceType != SOURCE_TYPE_INVALID, inputDevices);
+    CHECK_AND_RETURN_RET(deviceInfo.streamId != INVALID_STREAM_ID, inputDevices);
+
+    StreamDeviceInfo info;
+    info.uid = deviceInfo.clientUID;
+    info.sessionId = deviceInfo.streamId;
+    info.sourceType = deviceInfo.sourceType;
+    info.isRunning = false;
+
+    RouterType routerType = ROUTER_TYPE_NONE;
+    info.device = FetchCapturerInputDevice(info.sourceType, info.uid, routerType, info.sessionId);
+    info.routerType = routerType;
+    inputDevices.push_back(info);
+
+    return inputDevices;
+}
+
+std::vector<StreamDeviceInfo> AudioRouterCenter::CollectInputStreamDevices()
 {
     auto pipeManager = AudioPipeManager::GetPipeManager();
     std::vector<StreamDeviceInfo> inputDevices;
@@ -775,19 +818,6 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectInputStreamDevices(const
         info.routerType = routerType;
         inputDevices.push_back(info);
     }
-    CHECK_AND_RETURN_RET(deviceInfo.sourceType != SOURCE_TYPE_INVALID, inputDevices);
-    CHECK_AND_RETURN_RET(deviceInfo.streamId != INVALID_STREAM_ID, inputDevices);
-
-    StreamDeviceInfo info;
-    info.uid = deviceInfo.clientUID;
-    info.sessionId = deviceInfo.streamId;
-    info.sourceType = deviceInfo.sourceType;
-    info.isRunning = false;
-
-    RouterType routerType = ROUTER_TYPE_NONE;
-    info.device = FetchCapturerInputDevice(info.sourceType, info.uid, routerType, info.sessionId);
-    info.routerType = routerType;
-    inputDevices.push_back(info);
 
     return inputDevices;
 }
@@ -798,6 +828,19 @@ void AudioRouterCenter::StartArbiterContext(const FetchDeviceInfo &deviceInfo)
 
     auto outputDevices = CollectOutputStreamDevices(deviceInfo);
     auto inputDevices = CollectInputStreamDevices(deviceInfo);
+
+    if (wirelessConflictHandler_ != nullptr) {
+        wirelessConflictHandler_->SetSelectedDevices(outputDevices, inputDevices);
+        RegisterConflictHandlers(wirelessConflictHandler_);
+    }
+}
+
+void AudioRouterCenter::StartArbiterContext()
+{
+    ClearConflictHandlers();
+
+    auto outputDevices = CollectOutputStreamDevices();
+    auto inputDevices = CollectInputStreamDevices();
 
     if (wirelessConflictHandler_ != nullptr) {
         wirelessConflictHandler_->SetSelectedDevices(outputDevices, inputDevices);

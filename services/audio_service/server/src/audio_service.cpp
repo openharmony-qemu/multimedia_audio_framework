@@ -1372,8 +1372,8 @@ void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const
     // when old stream already released and new stream not create yet
     // set muteflag 0 but can not find session in allRendererMap_, allCapturerMap_ and linkedPairedList_
     // need erase it from mutedSessions_ to avoid new stream can not be set unmute
-    if (mutedSessions_.count(sessionId) && !muteFlag) {
-        mutedSessions_.erase(sessionId);
+    if (!muteFlag) {
+        RemoveIdFromMuteControlSet(sessionId);
     }
     // when old stream already released and new stream not create yet
     // set muteflag 1 but cannot find sessionId in allRendererMap_, allCapturerMap_ and linkedPairedList_
@@ -2060,6 +2060,22 @@ void AudioService::SetAncoRecordingConfigChanged(const std::vector<std::string> 
     AUDIO_ERR_LOG("isAncoCapturerExist: %{public}d", isAncoCapturerExist);
     CHECK_AND_CALL_FUNC_RETURN(isAncoCapturerExist,
         AudioPrivacyManagerInServer::GetInstance().UpdateActiveAncoCapturer(bundleNameList));
+}
+
+void AudioService::NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted)
+{
+    AUDIO_INFO_LOG("sessionId: %{public}u, isPermitted: %{public}d", sessionId, isPermitted);
+    std::unique_lock<std::mutex> capturerLock(capturerMapMutex_);
+    if (allCapturerMap_.count(sessionId)) {
+        std::shared_ptr<CapturerInServer> capturer = allCapturerMap_[sessionId].lock();
+        if (capturer == nullptr) {
+            AUDIO_ERR_LOG("capturerinserver is null");
+            return;
+        }
+    capturer->NotifySensitiveRecordPermit(isPermitted);
+    return;
+    }
+    AUDIO_INFO_LOG("Cannot find sessionId %{public}u in allCapturerMap_", sessionId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

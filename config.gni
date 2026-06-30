@@ -39,6 +39,7 @@ declare_args() {
   audio_framework_feature_3da_direct = true
   audio_framework_feature_new_engine_flag = true
   audio_framework_feature_usb_audio = false
+  audio_framework_feature_hdmi_detect_audio = false
   audio_framework_feature_mutesink_enable = true
   audio_framework_feature_audiosuite_support = false
   audio_framework_feature_audiosuite_format_convert_support = false
@@ -47,6 +48,7 @@ declare_args() {
   audio_framework_feature_source_period_size = 1
   audio_framework_feature_input_independent_routing_rule = false
   audio_framework_feature_multi_zone_volume = false
+  audio_framework_feature_multi_user_zone = false
   
   if (defined(global_parts_info) &&
       defined(global_parts_info.usb_usb_manager)) {

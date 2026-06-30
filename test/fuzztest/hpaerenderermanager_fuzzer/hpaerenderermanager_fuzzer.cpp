@@ -1145,6 +1145,19 @@ void HDFDumpFuzzTest()
     rendererManager->GetDeviceHDFDumpInfo();
     rendererManager->DeInit();
 }
+const std::vector<std::string> REMOTE_DEVICE_CLASS_LIST {
+    "remote", "remote_multichannel", "primary", "a2dp", "offload", ""};
+
+// HiCar MCH remote/multichannel device-class detection (PR #15881).
+// Construct-only (no Init/worker thread), pure read of sinkInfo_.
+void IsRemoteDeviceFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    sinkInfo.deviceClass = REMOTE_DEVICE_CLASS_LIST[GetData<uint32_t>() % REMOTE_DEVICE_CLASS_LIST.size()];
+    HpaeRendererManager rendererManager(sinkInfo);
+    rendererManager.IsRemoteDevice();
+}
 
 typedef void (*TestFuncs)();
 TestFuncs g_testFuncs[] = {
@@ -1208,6 +1221,7 @@ TestFuncs g_testFuncs[] = {
     StopManagerFuzzTest,
     DeactivateThreadFuzzTest,
     HandleMsgFuzzTest,
+    IsRemoteDeviceFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

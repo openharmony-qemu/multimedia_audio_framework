@@ -1496,6 +1496,7 @@ HWTEST_F(HpaeCapturerManagerTest, CreateSourceAttr_BasicInfo_Test, TestSize.Leve
     sourceInfo.filePath = "/data/test.pcm";
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
     sourceInfo.openMicSpeaker = true;
+    sourceInfo.routeFlag = AUDIO_INPUT_FLAG_LIVE;
     
     std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     
@@ -1514,6 +1515,7 @@ HWTEST_F(HpaeCapturerManagerTest, CreateSourceAttr_BasicInfo_Test, TestSize.Leve
     EXPECT_EQ(attr.isBigEndian == false, true);
     EXPECT_EQ(attr.sourceType == static_cast<int32_t>(sourceInfo.sourceType), true);
     EXPECT_EQ(attr.openMicSpeaker == sourceInfo.openMicSpeaker, true);
+    EXPECT_EQ(attr.routeFlag == sourceInfo.routeFlag, true);
 }
 
 /**

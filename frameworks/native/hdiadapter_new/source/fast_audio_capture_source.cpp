@@ -408,6 +408,7 @@ enum AudioInputType FastAudioCaptureSource::ConvertToHDIAudioInputType(int32_t s
             hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
             break;
         case SOURCE_TYPE_VOICE_CALL:
+        case SOURCE_TYPE_VOICE_DOWNLINK:
             hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
             break;
         case SOURCE_TYPE_CAMCORDER:
