@@ -681,7 +681,7 @@ void AudioCapturerImpl::SetNoiseReductionMode(ohos::multimedia::audio::NoiseRedu
         return;
     }
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
         return;
     }
 
@@ -701,7 +701,7 @@ void AudioCapturerImpl::SetNoiseReductionMode(ohos::multimedia::audio::NoiseRedu
 ohos::multimedia::audio::NoiseReductionMode AudioCapturerImpl::GetNoiseReductionMode()
 {
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
+        AUDIO_ERR_LOG("GetNoiseReductionMode failed, audioCapturer_ is nullptr");
         return ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY;
     }
 
@@ -709,7 +709,11 @@ ohos::multimedia::audio::NoiseReductionMode AudioCapturerImpl::GetNoiseReduction
         OHOS::AudioStandard::NOISE_REDUCTION_MODE_FIDELITY;
     int32_t ret = audioCapturer_->GetNoiseReductionMode(noiseReductionMode);
     if (ret != OHOS::AudioStandard::SUCCESS) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetNoiseReductionMode failed");
+        AUDIO_ERR_LOG("GetNoiseReductionMode failed, ret=%{public}d", ret);
+        return ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY;
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentNoiseReductionMode(static_cast<int32_t>(noiseReductionMode))) {
+        AUDIO_ERR_LOG("GetNoiseReductionMode invalid mode: %{public}d", static_cast<int32_t>(noiseReductionMode));
         return ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY;
     }
     return TaiheAudioEnum::ToTaiheNoiseReductionMode(noiseReductionMode);

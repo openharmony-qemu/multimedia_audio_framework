@@ -1697,7 +1697,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetNoiseReductionMode_002, TestS
 /**
 * @tc.name  : Test OH_AudioCapturer_SetNoiseReductionMode API via native error.
 * @tc.number: OH_AudioCapturer_SetNoiseReductionMode_003
-* @tc.desc  : Test SetNoiseReductionMode maps native invalid param and illegal state.
+* @tc.desc  : Test SetNoiseReductionMode maps native invalid param, illegal state, unsupported and service died.
 */
 HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetNoiseReductionMode_003, TestSize.Level0)
 {
@@ -1715,6 +1715,20 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetNoiseReductionMode_003, TestS
     capturer = reinterpret_cast<OH_AudioCapturer *>(&illegalStateCapturer);
     result = OH_AudioCapturer_SetNoiseReductionMode(capturer, AUDIO_NOISE_REDUCTION_MODE_STANDARD);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+
+    OHAudioCapturer unsupportedCapturer;
+    unsupportedCapturer.audioCapturer_ = std::make_shared<NoiseReductionReturnCapturer>(
+        ERR_NOT_SUPPORTED, SUCCESS, SUCCESS);
+    capturer = reinterpret_cast<OH_AudioCapturer *>(&unsupportedCapturer);
+    result = OH_AudioCapturer_SetNoiseReductionMode(capturer, AUDIO_NOISE_REDUCTION_MODE_STANDARD);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_UNSUPPORTED_ABILITY);
+
+    OHAudioCapturer serviceDiedCapturer;
+    serviceDiedCapturer.audioCapturer_ = std::make_shared<NoiseReductionReturnCapturer>(
+        ERROR, SUCCESS, SUCCESS);
+    capturer = reinterpret_cast<OH_AudioCapturer *>(&serviceDiedCapturer);
+    result = OH_AudioCapturer_SetNoiseReductionMode(capturer, AUDIO_NOISE_REDUCTION_MODE_STANDARD);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_SERVICE_DIED);
 }
 
 /**
@@ -1732,6 +1746,20 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetNoiseReductionMode_004, TestS
     OH_AudioStream_Result result = OH_AudioCapturer_SetNoiseReductionMode(audioCapturer,
         AUDIO_NOISE_REDUCTION_MODE_STANDARD);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_SetNoiseReductionMode API via released capturer.
+* @tc.number: OH_AudioCapturer_SetNoiseReductionMode_005
+* @tc.desc  : Test SetNoiseReductionMode returns illegal state if capturer client is released.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetNoiseReductionMode_005, TestSize.Level0)
+{
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer *audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_SetNoiseReductionMode(audioCapturer,
+        AUDIO_NOISE_REDUCTION_MODE_STANDARD);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 }
 
 /**
@@ -1813,6 +1841,13 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetSupportedNoiseReductionModes_
     OH_AudioNoiseReductionMode modes[4] = {};
     uint32_t outModeArraySize = 0;
 
+    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, modes, 4, &outModeArraySize),
+        AUDIOSTREAM_ERROR_SERVICE_DIED);
+
+    OHAudioCapturer invalidParamCapturer;
+    invalidParamCapturer.audioCapturer_ = std::make_shared<NoiseReductionReturnCapturer>(
+        SUCCESS, SUCCESS, ERR_INVALID_PARAM);
+    audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&invalidParamCapturer);
     EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, modes, 4, &outModeArraySize),
         AUDIOSTREAM_ERROR_SERVICE_DIED);
 }
