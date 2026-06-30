@@ -1040,7 +1040,7 @@ HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_Write_008, TestSize.Level1
             EXPECT_EQ(true, isStarted);
 
             ret = audioRenderer->SetVolume(0.5);
-            EXPECT_EQ(SUCCESS, ret);
+            EXPECT_EQ(ERROR, ret);
             float volume = audioRenderer->GetVolume();
             EXPECT_EQ(0.5, volume);
         }

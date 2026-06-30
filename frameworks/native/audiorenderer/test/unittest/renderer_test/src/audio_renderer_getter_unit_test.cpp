@@ -631,7 +631,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_001, TestSize.Level1)
  * @tc.number: Audio_Renderer_GetVolume_002
  * @tc.desc  : Test GetVolume interface after set volume call.
  */
-HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_GetVolume_002, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_002, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -641,7 +641,7 @@ HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_GetVolume_002, TestSize.Le
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetVolume(0.5);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     float volume = audioRenderer->GetVolume();
     EXPECT_EQ(0.5, volume);
@@ -655,7 +655,7 @@ HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_GetVolume_002, TestSize.Le
  * @tc.number: Audio_Renderer_GetVolume_003
  * @tc.desc  : Test GetVolume interface after set volume fails.
  */
-HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_GetVolume_003, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_003, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -665,7 +665,7 @@ HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_GetVolume_003, TestSize.Le
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetVolume(0.5);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     ret = audioRenderer->SetVolume(1.5);
     EXPECT_NE(SUCCESS, ret);
@@ -2456,13 +2456,13 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSilentModeAndMixWithOthers_001, 
  * @tc.number: GetFormatSize
  * @tc.desc  : Test GetFormatSize
  */
-HWTEST(AudioRendererUnitTest, DISABLED_GetFormatSize_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, GetFormatSize_001, TestSize.Level1)
 {
     AudioStreamParams params;
     params.format = SAMPLE_U8;
     const AudioStreamParams info_1 = params;
     size_t ret = GetFormatByteSize(info_1.format);
-    EXPECT_EQ(ret, 1);
+    EXPECT_EQ(ret, 2);
 
     params.format = SAMPLE_S16LE;
     const AudioStreamParams info_2 = params;

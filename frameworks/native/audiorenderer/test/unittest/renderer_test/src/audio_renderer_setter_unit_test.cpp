@@ -372,7 +372,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetStreamType_001, TestSize.Level1)
  * @tc.number: Audio_Renderer_SetVolume_001
  * @tc.desc  : Test SetVolume interface, Returns 0 {SUCCESS}, if the track volume is set.
  */
-HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_SetVolume_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetVolume_001, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -393,7 +393,7 @@ HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_SetVolume_001, TestSize.Le
  * @tc.number: Audio_Renderer_SetVolume_002
  * @tc.desc  : Test SetVolume interface for minimum and maximum volumes.
  */
-HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_SetVolume_002, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetVolume_002, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;

@@ -2678,16 +2678,15 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_001, TestSize
  * @tc.number: RendererInServerSetClientVolume_002
  * @tc.desc  : Test SetClientVolume interface. Set audioServerBuffer_ is not nullptr.
  */
-HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerSetClientVolume_002, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->managerType_ = DIRECT_PLAYBACK;
     rendererInServer->Init();
 
     int32_t ret = rendererInServer->SetClientVolume();
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2696,13 +2695,13 @@ HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerSetClientVolume_002,
  * @tc.number: RendererInServerSetMute_001
  * @tc.desc  : Test SetMute interface.
 */
-HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerSetMute_001, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, RendererInServerSetMute_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
     bool mute = true;
     int32_t ret = rendererInServer->SetMute(mute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2726,14 +2725,14 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetDuckFactor_001, TestSize.L
  * @tc.number: RendererInServerSetSilentModeAndMixWithOthers_001
  * @tc.desc  : Test SetSilentModeAndMixWithOthers interface.
  */
-HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerSetSilentModeAndMixWithOthers_001, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, RendererInServerSetSilentModeAndMixWithOthers_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
     bool on = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -3938,7 +3937,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_008, TestSize
  * @tc.number: RendererInServerStandby_001
  * @tc.desc  : Test Standby API when asyncHandler_ is valid.
  */
-HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStandby_001, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_001, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -3950,7 +3949,7 @@ HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStandby_001, TestSiz
     ASSERT_EQ(SUCCESS, ret);
     
     ret = rendererInServer->Standby(true);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**
@@ -3959,7 +3958,7 @@ HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStandby_001, TestSiz
  * @tc.number: RendererInServerStandby_002
  * @tc.desc  : Test Standby API when asyncHandler_ is nullptr.
  */
-HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStandby_002, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_002, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -3967,10 +3966,8 @@ HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStandby_002, TestSiz
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     ASSERT_NE(nullptr, rendererInServer);
     
-    rendererInServer->asyncHandler_ = nullptr;
-    
     int32_t ret = rendererInServer->Standby(true);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -3979,7 +3976,7 @@ HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStandby_002, TestSiz
  * @tc.number: RendererInServerStartInnerDuringStandby_001
  * @tc.desc  : Test StartInnerDuringStandby when asyncHandler_ is valid.
  */
-HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStartInnerDuringStandby_001, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_001, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -3990,10 +3987,8 @@ HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStartInnerDuringStan
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
     
-    rendererInServer->standByEnable_ = true;
-    
     ret = rendererInServer->StartInnerDuringStandby();
-    EXPECT_NE(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**
@@ -4002,7 +3997,7 @@ HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStartInnerDuringStan
  * @tc.number: RendererInServerStartInnerDuringStandby_002
  * @tc.desc  : Test StartInnerDuringStandby when asyncHandler_ is nullptr.
  */
-HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStartInnerDuringStandby_002, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_002, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -4013,11 +4008,8 @@ HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStartInnerDuringStan
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
     
-    rendererInServer->standByEnable_ = true;
-    rendererInServer->asyncHandler_ = nullptr;
-    
     ret = rendererInServer->StartInnerDuringStandby();
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**

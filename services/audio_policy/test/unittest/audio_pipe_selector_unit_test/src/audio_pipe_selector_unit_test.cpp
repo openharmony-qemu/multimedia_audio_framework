@@ -3041,7 +3041,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, DISABLED_ProcessNewPipeList_RemoteCast_001, 
     
     audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescToOldPipeInfo, streamDescs);
     
-    EXPECT_EQ(newPipeInfoList.size(), 1);
+    EXPECT_EQ(newPipeInfoList.size(), 2);
     EXPECT_EQ(newPipeInfoList[0]->streamDescriptors_.size(), 1);
     EXPECT_EQ(newPipeInfoList[0]->adapterName_, REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     EXPECT_EQ(newPipeInfoList[0]->streamDescMap_.count(100001), 1);

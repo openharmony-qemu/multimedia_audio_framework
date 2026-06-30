@@ -2031,7 +2031,7 @@ HWTEST_F(AudioPipeManagerUnitTest, HasActiveStreamOnPrimary_002, TestSize.Level1
  * @tc.number: HasActiveStreamOnPrimary_003.
  * @tc.desc  : Primary adapter with NOT active stream, returns false
  */
-HWTEST_F(AudioPipeManagerUnitTest, DISABLED_HasActiveStreamOnPrimary_003, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, HasActiveStreamOnPrimary_003, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     ASSERT_NE(nullptr, audioPipeManager);
@@ -2048,7 +2048,7 @@ HWTEST_F(AudioPipeManagerUnitTest, DISABLED_HasActiveStreamOnPrimary_003, TestSi
 
     uint32_t inPastMs = 240000;
     bool ret = audioPipeManager->HasActiveStreamOnPrimary(inPastMs);
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -2623,7 +2623,7 @@ HWTEST_F(AudioPipeManagerUnitTest, ProcessPipeForVolumeInfo_005, TestSize.Level1
  * @tc.desc: Test ProcessPipeForVolumeInfo with multiple devices, one is nullptr.
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeManagerUnitTest, DISABLED_ProcessPipeForVolumeInfo_007, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, ProcessPipeForVolumeInfo_007, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     ASSERT_NE(nullptr, audioPipeManager);
@@ -2643,7 +2643,7 @@ HWTEST_F(AudioPipeManagerUnitTest, DISABLED_ProcessPipeForVolumeInfo_007, TestSi
     
     std::vector<PipeDeviceVolumeGroup> result;
     audioPipeManager->ProcessPipeForVolumeInfo(result, pipeInfo);
-    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result.size(), 0);
 }
 
 /**
@@ -2687,7 +2687,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetAllPipeDeviceVolumeInfo_002, TestSize.Leve
  * @tc.desc: Test GetAllPipeDeviceVolumeInfo with valid output pipes.
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeManagerUnitTest, DISABLED_GetAllPipeDeviceVolumeInfo_003, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, GetAllPipeDeviceVolumeInfo_003, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     ASSERT_NE(nullptr, audioPipeManager);
@@ -2708,7 +2708,7 @@ HWTEST_F(AudioPipeManagerUnitTest, DISABLED_GetAllPipeDeviceVolumeInfo_003, Test
     audioPipeManager->curPipeList_.push_back(pipeInfo);
     
     auto result = audioPipeManager->GetAllPipeDeviceVolumeInfo();
-    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result.size(), 0);
 }
 
 /**

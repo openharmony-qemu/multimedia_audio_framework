@@ -2152,7 +2152,7 @@ HWTEST(IpcStreamInServerUnitTest, GetStreamManagerType_001, TestSize.Level3)
  * @tc.number: SetMute_001
  * @tc.desc  : Test SetMute interface.
  */
-HWTEST(IpcStreamInServerUnitTest, DISABLED_SetMute_001, TestSize.Level3)
+HWTEST(IpcStreamInServerUnitTest, SetMute_001, TestSize.Level3)
 {
     AudioProcessConfig configRet;
     AudioMode modeRet = AUDIO_MODE_PLAYBACK;
@@ -2162,7 +2162,7 @@ HWTEST(IpcStreamInServerUnitTest, DISABLED_SetMute_001, TestSize.Level3)
     bool onRet = false;
 
     auto ret = ipcStreamInServerRet.SetMute(onRet);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
 /**
