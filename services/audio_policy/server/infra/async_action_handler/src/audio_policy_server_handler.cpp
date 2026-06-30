@@ -93,8 +93,6 @@ void AudioPolicyServerHandler::RemoveAudioPolicyClientProxyMap(pid_t clientPid)
     audioPolicyClientProxyAPSCbsMap_.erase(clientPid);
     clientCallbacksMap_.erase(clientPid);
     clientSystemVolumeFilterMap_.erase(clientPid);
-    lastSentOutputDeviceMap_.erase(clientPid);
-    lastSentInputDeviceMap_.erase(clientPid);
     pidUidMap_.erase(clientPid);
     pidsStrForPrinting_ = GeneratePidsStrForPrinting(audioPolicyClientProxyAPSCbsMap_);
     AUDIO_INFO_LOG("RemoveAudioPolicyClientProxyMap, group data num [%{public}zu] map %{public}s",
@@ -473,15 +471,11 @@ bool AudioPolicyServerHandler::SendInterruptEventWithClientIdCallback(const Inte
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendPreferredOutputDeviceUpdated(int32_t forceUid)
+bool AudioPolicyServerHandler::SendPreferredOutputDeviceUpdated()
 {
-    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
-    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
-    eventContextObj->forceUid_ = forceUid;
-
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
-        EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED, eventContextObj));
+        EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "SendPreferredOutputDeviceUpdated event failed");
     return ret;
 }
@@ -1552,27 +1546,19 @@ void AudioPolicyServerHandler::HandleInterruptEventWithClientId(const AppExecFwk
     policyListenerCb->OnInterrupt(eventContextObj->interruptEvent);
 }
 
-void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated(const AppExecFwk::InnerEvent::Pointer &event)
+void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
 {
-    int32_t forceUid = INVALID_UID;
-    if (event != nullptr) {
-        std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
-        if (eventContextObj != nullptr) {
-            forceUid = eventContextObj->forceUid_;
-        }
-    }
-
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     std::stringstream ss;
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        ProcessPreferredOutputDeviceForClient(it->first, it->second, forceUid, ss);
+        ProcessPreferredOutputDeviceForClient(it->first, it->second, ss);
     }
     CHECK_AND_RETURN(!ss.str().empty());
-    AUDIO_INFO_LOG("Updated: %{public}s, forceUid: %{public}d", ss.str().c_str(), forceUid);
+    AUDIO_INFO_LOG("Updated: %{public}s", ss.str().c_str());
 }
 
 void AudioPolicyServerHandler::ProcessPreferredOutputDeviceForClient(int32_t clientPid,
-    const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, int32_t forceUid, std::stringstream &ss)
+    const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss)
 {
     std::vector<AudioRendererFilter> rendererFilterList = GetCallbackRendererInfoList(clientPid);
     std::stringstream clientSs;
@@ -1595,15 +1581,6 @@ void AudioPolicyServerHandler::ProcessPreferredOutputDeviceForClient(int32_t cli
         int32_t uid = rendererFilter.uid;
         StreamUsage streamUsage = rendererFilter.rendererInfo.streamUsage;
 
-        // Force-send check: if client process uid or registered callback uid matches forceUid, skip dedup
-        int32_t clientUid = pidUidMap_.count(clientPid) > 0 ? pidUidMap_[clientPid] : INVALID_UID;
-        bool forceSend = (forceUid != INVALID_UID && (clientUid == forceUid || uid == forceUid));
-        if (!forceSend) {
-            CHECK_AND_CONTINUE(!ShouldSkipDuplicateOutputCallback(clientPid, uid, streamUsage, deviceDescs));
-        }
-
-        // Always update dedup cache, even for force-send, to ensure correct baseline for future natural callbacks
-        lastSentOutputDeviceMap_[clientPid][uid][streamUsage] = deviceDescs;
         clientHolder->OnPreferredOutputDeviceUpdated(rendererFilter.rendererInfo, uid, deviceDescs);
 
         clientSs << uid << ":" << static_cast<int32_t>(streamUsage)
@@ -1621,46 +1598,6 @@ bool AudioPolicyServerHandler::IsCallbackRegistered(int32_t clientPid, CallbackC
     return clientCallbacksMap_.count(clientPid) > 0 &&
         clientCallbacksMap_[clientPid].count(callbackType) > 0 &&
         clientCallbacksMap_[clientPid][callbackType];
-}
-
-bool AudioPolicyServerHandler::ShouldSkipDuplicateOutputCallback(int32_t clientPid, int32_t uid,
-    StreamUsage streamUsage, const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices)
-{
-    auto pidIt = lastSentOutputDeviceMap_.find(clientPid);
-    if (pidIt == lastSentOutputDeviceMap_.end()) {
-        return false;
-    }
-    auto uidIt = pidIt->second.find(uid);
-    if (uidIt == pidIt->second.end()) {
-        return false;
-    }
-    auto streamUsageIt = uidIt->second.find(streamUsage);
-    if (streamUsageIt == uidIt->second.end() || streamUsageIt->second.empty()) {
-        return false;
-    }
-
-    // Compare device list length
-    const auto &lastDevices = streamUsageIt->second;
-    if (currentDevices.size() != lastDevices.size()) {
-        return false;  // Length different, don't skip
-    }
-
-    // Compare each device
-    for (size_t i = 0; i < currentDevices.size(); i++) {
-        if (currentDevices[i] == nullptr && lastDevices[i] == nullptr) {
-            continue;  // Both nullptr, consider same
-        }
-        if (currentDevices[i] == nullptr || lastDevices[i] == nullptr) {
-            return false;  // One nullptr one not, don't skip
-        }
-        if (!currentDevices[i]->IsSameDeviceDescPtr(lastDevices[i])) {
-            return false;  // Device different, don't skip
-        }
-    }
-
-    AUDIO_DEBUG_LOG("Skip duplicate callback for pid:%{public}d, uid:%{public}d, streamUsage:%{public}d",
-        clientPid, uid, static_cast<int32_t>(streamUsage));
-    return true;  // All devices same, skip callback
 }
 
 void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
@@ -1696,9 +1633,7 @@ void AudioPolicyServerHandler::ProcessPreferredInputDeviceForClient(int32_t clie
 
         int32_t uid = capturerFilter.uid;
         SourceType sourceType = capturerFilter.capturerInfo.sourceType;
-        CHECK_AND_CONTINUE(!ShouldSkipDuplicateInputCallback(clientPid, uid, sourceType, deviceDescs));
 
-        lastSentInputDeviceMap_[clientPid][uid][sourceType] = deviceDescs;
         clientHolder->OnPreferredInputDeviceUpdated(capturerFilter.capturerInfo, uid, deviceDescs);
 
         clientSs << uid << ":" << static_cast<int32_t>(sourceType)
@@ -1711,56 +1646,14 @@ void AudioPolicyServerHandler::ProcessPreferredInputDeviceForClient(int32_t clie
     }
 }
 
-bool AudioPolicyServerHandler::ShouldSkipDuplicateInputCallback(int32_t clientPid, int32_t uid,
-    SourceType sourceType, const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices)
-{
-    auto pidIt = lastSentInputDeviceMap_.find(clientPid);
-    if (pidIt == lastSentInputDeviceMap_.end()) {
-        return false;
-    }
-    auto uidIt = pidIt->second.find(uid);
-    if (uidIt == pidIt->second.end()) {
-        return false;
-    }
-    auto sourceTypeIt = uidIt->second.find(sourceType);
-    if (sourceTypeIt == uidIt->second.end() || sourceTypeIt->second.empty()) {
-        return false;
-    }
-
-    // Compare device list length
-    const auto &lastDevices = sourceTypeIt->second;
-    if (currentDevices.size() != lastDevices.size()) {
-        return false;  // Length different, don't skip
-    }
-
-    // Compare each device
-    for (size_t i = 0; i < currentDevices.size(); i++) {
-        if (currentDevices[i] == nullptr && lastDevices[i] == nullptr) {
-            continue;  // Both nullptr, consider same
-        }
-        if (currentDevices[i] == nullptr || lastDevices[i] == nullptr) {
-            return false;  // One nullptr one not, don't skip
-        }
-        if (!currentDevices[i]->IsSameDeviceDescPtr(lastDevices[i])) {
-            return false;  // Device different, don't skip
-        }
-    }
-
-    AUDIO_DEBUG_LOG("Skip duplicate callback for pid:%{public}d, uid:%{public}d, sourceType:%{public}d",
-        clientPid, uid, static_cast<int32_t>(sourceType));
-    return true;  // All devices same, skip callback
-}
-
 void AudioPolicyServerHandler::ClearPreferredDeviceDedupCache(int32_t clientId, CallbackChange callbackchange)
 {
     if (callbackchange == CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) {
-        lastSentOutputDeviceMap_.erase(clientId);
         {
             std::lock_guard<std::mutex> rendererLock(clientCbRendererInfoMapMutex_);
             clientCbRendererInfoMap_.erase(clientId);
         }
     } else if (callbackchange == CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) {
-        lastSentInputDeviceMap_.erase(clientId);
         {
             std::lock_guard<std::mutex> capturerLock(clientCbCapturerFilterMapMutex_);
             clientCbCapturerFilterMap_.erase(clientId);
@@ -2298,7 +2191,7 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             HandleDeviceInfoUpdatedCallback(event);
             break;
         case EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED:
-            HandlePreferredOutputDeviceUpdated(event);
+            HandlePreferredOutputDeviceUpdated();
             break;
         case EventAudioServerCmd::PREFERRED_INPUT_DEVICE_UPDATED:
             HandlePreferredInputDeviceUpdated();

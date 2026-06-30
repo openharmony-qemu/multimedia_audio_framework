@@ -104,6 +104,8 @@ private:
     void HandleFetchDeviceChange(const AudioStreamDeviceChangeReason &reason, const std::string &caller);
     static void WriteDesignateAudioCaptureDeviceEvent(SourceType sourceType, int32_t deviceType,
         bool isNormalSelection);
+    int32_t SelectInputDeviceInner(sptr<AudioCapturerFilter> audioCapturerFilter,
+        std::shared_ptr<AudioDeviceDescriptor> selectedDesc);
     int32_t RefreshVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void HandleNegtiveBtEnhancedRouting(DeviceType deviceType);
     void HandleActiveBtEnhancedRouting(DeviceType deviceType, const std::string &macAddress);

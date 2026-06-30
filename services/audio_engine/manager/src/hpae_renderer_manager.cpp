@@ -18,6 +18,8 @@
 #endif
 
 #include "hpae_renderer_manager.h"
+#include "hpae_remote_device_class.h"
+#include <algorithm>
 #include <cinttypes>
 #include "audio_stream_info.h"
 #include "audio_errors.h"
@@ -45,7 +47,6 @@ constexpr int64_t AUDIO_NS_PER_US = 1000;
 constexpr int64_t BUFFER_DURATION_US = 10 * 1000; // 10ms
 constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
 constexpr int64_t UNDERRUN_BYPASS_DURATION_OFFLOAD_NS = 40 * 1000 * 1000; // 40ms
-const std::string REMOTE_DEVICE_CLASS = "remote";
 const std::string BT_SINK_NAME = "a2dp";
 const std::string USB_SINK_NAME = "usb";
 constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
@@ -72,7 +73,7 @@ bool HpaeRendererManager::IsMchDevice()
 
 bool HpaeRendererManager::IsRemoteDevice()
 {
-    return sinkInfo_.deviceClass == REMOTE_DEVICE_CLASS;
+    return IsRemoteDeviceClass(sinkInfo_.deviceClass);
 }
 
 int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo)

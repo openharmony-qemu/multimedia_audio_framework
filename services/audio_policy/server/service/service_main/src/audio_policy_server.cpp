@@ -382,6 +382,7 @@ void AudioPolicyServer::AddSystemAbilityListeners()
 void AudioPolicyServer::AddSystemAbilityListenerAfterAudioServerStart()
 {
     AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
+    AddSystemAbilityListener(FUSION_CONNECTIVITY_SA_ID);
 }
 
 void AudioPolicyServer::OnStop()
@@ -464,6 +465,9 @@ void AudioPolicyServer::HandleAudioServerRelatedSystemAbility(int32_t systemAbil
             break;
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             RegisterBluetoothListener();
+            break;
+        case FUSION_CONNECTIVITY_SA_ID:
+            RegisterFusionConnectivityListener();
             break;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
         case INPUT_METHOD_SYSTEM_ABILITY_ID:
@@ -3727,6 +3731,12 @@ void AudioPolicyServer::RegisterBluetoothListener()
     coreService_->RegisterBluetoothListener();
 }
 
+void AudioPolicyServer::RegisterFusionConnectivityListener()
+{
+    AUDIO_INFO_LOG("OnAddSystemAbility fusion connectivity manager ext start");
+    coreService_->RegisterFusionConnectivityListener();
+}
+
 void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
 {
     AUDIO_INFO_LOG("SubscribeAccessibilityConfigObserver");
@@ -4621,6 +4631,7 @@ int32_t AudioPolicyServer::UpdateContextForAudioZone(int32_t zoneId, const Audio
 
 int32_t AudioPolicyServer::GetAudioZoneForApp(const std::vector<int32_t> &userIds, std::vector<int32_t> &retUserIds)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().GetAudioZoneForApp(userIds, retUserIds);
 }
 
@@ -4899,6 +4910,17 @@ int32_t AudioPolicyServer::GetActiveBluetoothDevice(std::shared_ptr<AudioDeviceD
     }
 
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    std::vector<DeviceType> deviceTypeVec;
+    deviceTypeVec.reserve(deviceTypes.size());
+    for (auto deviceType : deviceTypes) {
+        deviceTypeVec.push_back(static_cast<DeviceType>(deviceType));
+    }
+    return eventEntry_->SkipDeviceTypes(skipped, deviceTypeVec);
 }
 
 int32_t AudioPolicyServer::GetConverterConfig(ConverterConfig &cfg)
@@ -6057,6 +6079,19 @@ int32_t AudioPolicyServer::GetSystemVolumeDegree(int32_t streamType, int32_t uid
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid, OUTPUT_DEVICE);
 
     volumeDegree = audioVolumeManager_.GetSystemVolumeDegreeInterface(newStreamType, zoneId);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetSystemVolumeDegreeWithDevice(int32_t streamType, int32_t deviceType,
+    const std::string &networkId, int32_t &volumeDegree)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
+
+    volumeDegree = audioVolumeManager_.GetSystemVolumeDegree(newStreamType,
+        static_cast<DeviceType>(deviceType), networkId);
     return SUCCESS;
 }
 

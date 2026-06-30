@@ -84,7 +84,8 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
 #ifdef BLUETOOTH_ENABLE
     std::string lastActiveA2dpDevice = AudioActiveDevice::GetInstance().GetActiveBtDeviceMac();
     AudioActiveDevice::GetInstance().SetActiveBtDeviceMac(deviceDesc->macAddress_);
-    auto isActivated = Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDesc->macAddress_;
+    auto isActivated = Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDesc->macAddress_ &&
+        Bluetooth::AudioA2dpManager::GetActiveA2dpDeviceLocal() == deviceDesc->macAddress_;
     if (isActivated) {
         AUDIO_INFO_LOG("[%{public}s] [%{public}s] already active",
             AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->macAddress_).c_str(),

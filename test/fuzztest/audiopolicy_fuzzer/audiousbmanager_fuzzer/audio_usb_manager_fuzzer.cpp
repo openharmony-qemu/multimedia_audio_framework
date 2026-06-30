@@ -104,7 +104,8 @@ void AudioUsbManagerGetUsbSoundCardMapFuzzTest(FuzzedDataProvider& fdp)
     AudioUsbManager &audioUsbManager = AudioUsbManager::GetInstance();
 
     audioUsbManager.initialized_ = fdp.ConsumeBool();
-    audioUsbManager.GetUsbSoundCardMap();
+    bool hdfAudioDeviceTag = true;
+    audioUsbManager.GetUsbSoundCardMap(hdfAudioDeviceTag);
 }
 
 void AudioUsbManagerOnReceiveEventFuzzTest(FuzzedDataProvider& fdp)

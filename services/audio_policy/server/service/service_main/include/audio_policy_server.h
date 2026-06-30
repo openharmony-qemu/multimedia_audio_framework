@@ -612,6 +612,8 @@ public:
 
     int32_t GetActiveBluetoothDevice(std::shared_ptr<AudioDeviceDescriptor> &descs) override;
 
+    int32_t SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes) override;
+
     int32_t GetConverterConfig(ConverterConfig &cfg) override;
 
     int32_t GetSpatializationSceneType(int32_t &type) override;
@@ -797,6 +799,8 @@ public:
     int32_t ReloadLoudVolumeMode(const int32_t streamInFocus, const int32_t setVolMode, bool &ret) override;
     int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
+    int32_t GetSystemVolumeDegreeWithDevice(int32_t streamType, int32_t deviceType,
+        const std::string &networkId, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
     int32_t UpdateSafeVolumeByStrMode() override;
     void HandleDataShareReadyEvent();
@@ -903,6 +907,7 @@ private:
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
     void RegisterBluetoothListener();
+    void RegisterFusionConnectivityListener();
     void SubscribeAccessibilityConfigObserver();
     void RegisterDataObserver();
     void RegisterPowerStateListener();

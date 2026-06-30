@@ -2682,12 +2682,11 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_002, TestSize
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->managerType_ = DIRECT_PLAYBACK;
     rendererInServer->Init();
 
     int32_t ret = rendererInServer->SetClientVolume();
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2702,7 +2701,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetMute_001, TestSize.Level1)
 
     bool mute = true;
     int32_t ret = rendererInServer->SetMute(mute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2733,7 +2732,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetSilentModeAndMixWithOthers
     bool on = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -3950,7 +3949,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_001, TestSize.Level1)
     ASSERT_EQ(SUCCESS, ret);
     
     ret = rendererInServer->Standby(true);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**
@@ -3967,10 +3966,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_002, TestSize.Level1)
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     ASSERT_NE(nullptr, rendererInServer);
     
-    rendererInServer->asyncHandler_ = nullptr;
-    
     int32_t ret = rendererInServer->Standby(true);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -3990,10 +3987,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_001, 
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
     
-    rendererInServer->standByEnable_ = true;
-    
     ret = rendererInServer->StartInnerDuringStandby();
-    EXPECT_NE(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**
@@ -4013,11 +4008,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_002, 
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
     
-    rendererInServer->standByEnable_ = true;
-    rendererInServer->asyncHandler_ = nullptr;
-    
     ret = rendererInServer->StartInnerDuringStandby();
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**

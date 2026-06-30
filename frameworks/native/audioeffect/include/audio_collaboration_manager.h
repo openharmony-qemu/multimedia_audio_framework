@@ -45,15 +45,16 @@ public:
     ~AudioCollaborationManager();
     static AudioCollaborationManager *GetInstance();
     int32_t UpdateCollaborativeProductId(const std::string &productId);
-    bool IsStreamUsageSupported(DeviceType deviceType, StreamUsage streamUsage);
     void LoadCollaborationConfig();
     int32_t GetCollaborationLatency();
+    bool IsStreamUsageSupported(DeviceType deviceType, StreamUsage streamUsage);
 
 private:
     void updateLatencyInner();
     void LoadCollaborationConfigInner(const std::shared_ptr<AudioXmlNode> node);
     void LoadCollaborationLatencyInner(const std::shared_ptr<AudioXmlNode> secondNode, const std::string productId);
     void LoadCollAbsSupportedStreamUsageInner(const std::shared_ptr<AudioXmlNode> node);
+
     std::mutex collaborationMutex_;
     int32_t latencyMs_ = 0;
     std::string productId_ = "default";

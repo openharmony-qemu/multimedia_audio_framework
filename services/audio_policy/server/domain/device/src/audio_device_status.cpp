@@ -673,15 +673,15 @@ void AudioDeviceStatus::OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bo
         pnpDeviceList_.push_back({pnpDesc, isConnected});
         return;
     }
-    if (desc.deviceType_ == DEVICE_TYPE_DP) {
+    if (desc.deviceType_ == DEVICE_TYPE_DP || desc.deviceType_ == DEVICE_TYPE_HDMI) {
         if (isConnected) {
-            auto exists = audioDeviceManager_.ExistsByType(DEVICE_TYPE_DP);
-            CHECK_AND_RETURN_LOG(!exists, "DP device already exists, ignore this one.");
+            auto exists = audioDeviceManager_.ExistsByType(desc.deviceType_);
+            CHECK_AND_RETURN_LOG(!exists, "%{public}d device already exists, ignore this one.", desc.deviceType_);
         } else {
             std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>(desc);
             AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
-            auto exists = audioDeviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_DP, desc.macAddress_);
-            CHECK_AND_RETURN_LOG(exists, "DP device does not exist, can not disconnect.");
+            auto exists = audioDeviceManager_.ExistsByTypeAndAddress(desc.deviceType_, desc.macAddress_);
+            CHECK_AND_RETURN_LOG(exists, "%{public}d device does not exist, can not disconnect.", desc.deviceType_);
         }
     }
     AudioStreamInfo streamInfo = {};
@@ -1097,6 +1097,7 @@ void AudioDeviceStatus::AddEarpiece()
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
+    AudioZoneService::GetInstance().UpdateZonePreferDeviceWhenDeviceConnect();
     AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     AUDIO_INFO_LOG("Add earpiece to device list");
 }
@@ -1169,6 +1170,7 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
     audioMicrophoneDescriptor_.AddMicrophoneDescriptor(audioDescriptor);
+    AudioZoneService::GetInstance().UpdateZonePreferDeviceWhenDeviceConnect();
     AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
 }
 
@@ -1211,6 +1213,7 @@ void AudioDeviceStatus::AddDevice(const PolicyAdapterInfo &adapterInfo, const Ad
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
     audioMicrophoneDescriptor_.AddMicrophoneDescriptor(audioDescriptor);
+    AudioZoneService::GetInstance().UpdateZonePreferDeviceWhenDeviceConnect();
     AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
 }
 

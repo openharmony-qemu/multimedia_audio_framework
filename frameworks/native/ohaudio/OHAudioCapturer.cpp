@@ -103,8 +103,6 @@ OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer)
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             OHOS::AudioStandard::RECORD_START_ILLEGAL_STATE, "convert capturer failed", true),
         "convert capturer failed");
-    // Playback capture created by modern inner capture api forbidden to start.
-    // It should start by RequestPlaybackCaptureStart.
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioCapturer->IsModernInnerCapturer() != true, AUDIOSTREAM_ERROR_ILLEGAL_STATE,
         OHOS::AudioStandard::StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             OHOS::AudioStandard::RECORD_START_ILLEGAL_STATE, "Innercapturer can not use this interface", true),
@@ -972,11 +970,11 @@ void OHAudioCapturerSensitiveRecordPermitCallback::OnSensitiveRecordPermit(bool 
 {
     CHECK_AND_CALL_FUNC_RETURN_LOG(ohAudioCapturer_ != nullptr,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        RECORD_CALLBACK_ILLEGAL_STATE, "capturer client is nullptr", true),
+            RECORD_CALLBACK_ILLEGAL_STATE, "capturer client is nullptr", true),
         "capturer client is nullptr");
     CHECK_AND_CALL_FUNC_RETURN_LOG(callback_ != nullptr,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        RECORD_CALLBACK_INVALID_PARAM, "pointer to the function is nullptr", true),
+            RECORD_CALLBACK_INVALID_PARAM, "pointer to the function is nullptr", true),
         "pointer to the function is nullptr");
 
     callback_(ohAudioCapturer_, userData_, isPermitted);
@@ -1158,11 +1156,11 @@ void OHAudioCapturer::SetCapturerSensitiveRecordPermitCallback(OH_AudioCapturer_
 {
     CHECK_AND_CALL_FUNC_RETURN_LOG(audioCapturer_ != nullptr,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        RECORD_CALLBACK_ILLEGAL_STATE, "capturer client is nullptr", true),
+            RECORD_CALLBACK_ILLEGAL_STATE, "capturer client is nullptr", true),
         "capturer client is nullptr");
     CHECK_AND_CALL_FUNC_RETURN_LOG(callback != nullptr,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        RECORD_CALLBACK_INVALID_PARAM, "callback is nullptr", true),
+            RECORD_CALLBACK_INVALID_PARAM, "callback is nullptr", true),
         "callback is nullptr");
     audioCapturerSensitiveRecordPermitCallback_ =
         std::make_shared<OHAudioCapturerSensitiveRecordPermitCallback>(callback,
@@ -1233,9 +1231,9 @@ int32_t OHAudioCapturer::GetSupportedNoiseReductionModes(std::vector<NoiseReduct
     return audioCapturer_->GetSupportedNoiseReductionModes(modes);
 }
 
-const AudioCapturer *OHAudioCapturer::GetAudioCapturer() const
+std::shared_ptr<AudioCapturer> OHAudioCapturer::GetAudioCapturer()
 {
-    return audioCapturer_.get();
+    return audioCapturer_;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

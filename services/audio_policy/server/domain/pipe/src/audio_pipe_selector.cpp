@@ -1345,9 +1345,10 @@ bool AudioPipeSelector::ShouldAdjustConcedeAction(const std::shared_ptr<AudioStr
     CHECK_AND_RETURN_RET(IsUpdateActionForDeviceLevelHdPlay(existingStream, incomingStream), false);
     CHECK_AND_RETURN_RET(targetStream->GetRoute() != (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_DIRECT), false);
 
-    CHECK_AND_RETURN_RET((existingStream->GetRoute() & AUDIO_OUTPUT_FLAG_LOWPOWER) &&
+    CHECK_AND_RETURN_RET_LOG(!((existingStream->GetRoute() & AUDIO_OUTPUT_FLAG_LOWPOWER) &&
         existingStream->streamStatus_ != STREAM_STATUS_STARTED &&
-        incomingStream->GetRoute() == AUDIO_OUTPUT_FLAG_FAST, false);
+        incomingStream->GetRoute() == AUDIO_OUTPUT_FLAG_FAST), false,
+        "offload stream in non-running state, fast stream skip adjust.");
     return true;
 }
 

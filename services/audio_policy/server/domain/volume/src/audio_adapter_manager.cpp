@@ -85,7 +85,7 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
     {DEVICE_TYPE_DP, {DP_CLASS, DP_MCH_CLASS}},
     {DEVICE_TYPE_FILE_SINK, {FILE_CLASS}},
     {DEVICE_TYPE_FILE_SOURCE, {FILE_CLASS}},
-    {DEVICE_TYPE_HDMI, {PRIMARY_CLASS, DP_CLASS, DP_MCH_CLASS}},
+    {DEVICE_TYPE_HDMI, {PRIMARY_CLASS, HDMI_CLASS, DP_CLASS, DP_MCH_CLASS}},
     {DEVICE_TYPE_ACCESSORY, {ACCESSORY_CLASS}},
     {DEVICE_TYPE_HEARING_AID, {HEARING_AID_CLASS}},
     {DEVICE_TYPE_LINE_DIGITAL, {PRIMARY_CLASS, DP_CLASS, DP_MCH_CLASS}},
@@ -1088,6 +1088,7 @@ bool AudioAdapterManager::SetSinkMute(const std::string &sinkName, bool isMute, 
         {BLUETOOTH_SPEAKER, A2DP_CLASS},
         {MCH_PRIMARY_SPEAKER, MCH_CLASS},
         {USB_SPEAKER, USB_CLASS},
+        {HDMI_SINK, HDMI_CLASS},
         {DP_SINK, DP_CLASS},
         {FILE_SINK, FILE_CLASS},
         {REMOTE_CAST_INNER_CAPTURER_SINK_NAME, REMOTE_CAST_INNER_CAPTURER_SINK_NAME},
@@ -1512,6 +1513,11 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;
             idInfo = HDI_ID_INFO_USB;
+        }
+    } else if (pipeInfo->adapterName_ == "hdmi") {
+        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            idInfo = HDI_ID_INFO_HDMI;
         }
     }
 }

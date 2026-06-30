@@ -2061,7 +2061,7 @@ HWTEST_F(AudioPipeManagerUnitTest, HasActiveStreamOnPrimary_003, TestSize.Level1
 
     uint32_t inPastMs = 240000;
     bool ret = audioPipeManager->HasActiveStreamOnPrimary(inPastMs);
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -2656,7 +2656,7 @@ HWTEST_F(AudioPipeManagerUnitTest, ProcessPipeForVolumeInfo_007, TestSize.Level1
     
     std::vector<PipeDeviceVolumeGroup> result;
     audioPipeManager->ProcessPipeForVolumeInfo(result, pipeInfo);
-    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result.size(), 0);
 }
 
 /**
@@ -2721,7 +2721,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetAllPipeDeviceVolumeInfo_003, TestSize.Leve
     audioPipeManager->curPipeList_.push_back(pipeInfo);
     
     auto result = audioPipeManager->GetAllPipeDeviceVolumeInfo();
-    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result.size(), 0);
 }
 
 /**

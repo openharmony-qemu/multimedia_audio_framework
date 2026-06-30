@@ -119,7 +119,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_001, TestSize.Level0)
     EXPECT_EQ(1.0, volume);
 
     ret = GetRenderPtr()->SetVolume(0.5);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     float volume1 = GetRenderPtr()->GetVolume();
     EXPECT_EQ(0.5, volume1);

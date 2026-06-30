@@ -83,6 +83,7 @@ static const char* PIPE_USB_ARM_INPUT = "usb_arm_input";
 static const char* PIPE_DP_OUTPUT = "dp_output";
 static const char* PIPE_ACCESSORY_INPUT = "accessory_input";
 
+static constexpr int32_t FUSION_CONNECTIVITY_SA_ID = 1191;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_THRESHOLD = 2;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_MSG_ARRAY_MAX = 5;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_HDI_SEGMENTS = 2;
@@ -220,6 +221,7 @@ public:
             AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId = LOCAL_NETWORK_ID,
             const uint32_t streamId = INVALID_STREAM_ID);
         std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
+        int32_t SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes);
         std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
         std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
         int32_t GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>
@@ -454,6 +456,7 @@ public:
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = INVALID_UID,
         const uint32_t streamId = INVALID_STREAM_ID);
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
+    int32_t SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes);
     std::vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
     std::vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
@@ -474,6 +477,7 @@ public:
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void RegisterBluetoothListener();
     void UnregisterBluetoothListener();
+    void RegisterFusionConnectivityListener();
     void ConfigDistributedRoutingRole(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
     int32_t SetRingerMode(AudioRingerMode ringMode);
     int32_t FetchOutputDeviceAndRoute(std::string caller,
@@ -529,7 +533,7 @@ public:
     void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
 
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor,
-        const AudioStreamDeviceChangeReason reason, int32_t forceUid = INVALID_UID);
+        const AudioStreamDeviceChangeReason reason);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t GetActiveStreamRendererInfosForDevice(
@@ -600,6 +604,8 @@ private:
     void RegisterBluetoothDeathCallback();
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
 #endif
+    void RegisterFusionConnectivityDeathCallback();
+    static void FusionConnectivityCrashedCallback(pid_t pid, uid_t uid);
     int32_t FetchDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -866,7 +872,8 @@ private:
     void NotifyRequiredPipesReady();
     bool CheckCollaborativeStreamRunning();
     void UpdateNearLinkCollaborativeState(bool nearLinkCollaborativeState);
-    bool ShouldUpdateOutputRoute(const AudioStreamDeviceChangeReasonExt reason);
+    bool ShouldUpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
     void CheckFastToNormalForPlayback(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         SessionOperationMsg opMsg);
     void CheckFastToNormalForRecord(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -931,6 +938,7 @@ private:
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
     static bool isBtListenerRegistered;
     static bool isBtCrashed;
+    static bool isFusionConnectivityListenerRegistered;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     bool isCurrentRemoteRenderer_ = false;

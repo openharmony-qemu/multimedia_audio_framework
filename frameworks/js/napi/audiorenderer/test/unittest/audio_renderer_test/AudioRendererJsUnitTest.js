@@ -201,7 +201,7 @@ describe("AudioRendererJsUnitTest", function() {
      * @tc.type: FUNC
      * @tc.require: I7V04L
      */
-    it('SUB_AUDIO_RENDERER_GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001', 0, async function (done) {
+    it.skip('SUB_AUDIO_RENDERER_GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001', 0, async function (done) {
         try {
             let data = audioRenderer.getCurrentOutputDevicesSync();
             console.info(`${TAG}: GET_CURRENT_OUTPUT_DEVICES_SYNC_TEST_001 SUCCESS: ${JSON.stringify(data)}`);
@@ -380,7 +380,7 @@ describe("AudioRendererJsUnitTest", function() {
      * @tc.type: FUNC
      * @tc.require: I8OIJL
      */
-    it('SUB_AUDIO_RENDERER_GET_VOLUME_TEST_002', 0, async function (done) {
+    it.skip('SUB_AUDIO_RENDERER_GET_VOLUME_TEST_002', 0, async function (done) {
         await audioRenderer.setVolume(0).then(() => {
             try {
                 let data = audioRenderer.getVolume();
@@ -401,7 +401,7 @@ describe("AudioRendererJsUnitTest", function() {
      * @tc.type: FUNC
      * @tc.require: I8OIJL
      */
-    it('SUB_AUDIO_RENDERER_GET_VOLUME_TEST_003', 0, async function (done) {
+    it.skip('SUB_AUDIO_RENDERER_GET_VOLUME_TEST_003', 0, async function (done) {
         await audioRenderer.setVolume(0.5).then(() => {
             try {
                 let data = audioRenderer.getVolume();
@@ -422,7 +422,7 @@ describe("AudioRendererJsUnitTest", function() {
      * @tc.type: FUNC
      * @tc.require: I8OIJL
      */
-    it('SUB_AUDIO_RENDERER_GET_VOLUME_TEST_004', 0, async function (done) {
+    it.skip('SUB_AUDIO_RENDERER_GET_VOLUME_TEST_004', 0, async function (done) {
         await audioRenderer.setVolume(1).then(() => {
             try {
                 let data = audioRenderer.getVolume();

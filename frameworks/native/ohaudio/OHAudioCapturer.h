@@ -245,7 +245,7 @@ public:
     int32_t SetNoiseReductionMode(NoiseReductionMode mode);
     int32_t GetNoiseReductionMode(NoiseReductionMode &mode);
     int32_t GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes);
-    const AudioCapturer *GetAudioCapturer() const;
+    std::shared_ptr<AudioCapturer> GetAudioCapturer();
 
 private:
     std::shared_ptr<AudioCapturer> audioCapturer_;
