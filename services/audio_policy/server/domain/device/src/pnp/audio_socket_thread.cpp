@@ -292,6 +292,39 @@ int32_t AudioSocketThread::SetAudioPnpServerEventValue(AudioEvent *audioEvent,
             audioPnpUevent->devName, audioPnpUevent->name);
 }
 
+int32_t AudioSocketThread::AudioHeadsetDetectDevice(const struct AudioPnpUevent *audioPnpUevent)
+{
+    AudioEvent audioEvent = {0};
+    if (audioPnpUevent == nullptr) {
+        AUDIO_ERR_LOG("audioPnpUevent is null!");
+        return HDF_ERR_INVALID_PARAM;
+    }
+    if (audioPnpUevent->action == nullptr || audioPnpUevent->name == nullptr ||  audioPnpUevent->state == nullptr) {
+        AUDIO_ERR_LOG("audioPnpUevent members are null!");
+        return HDF_ERR_INVALID_PARAM;
+    }
+    if (strncmp(audioPnpUevent->action, UEVENT_ACTION_CHANGE, strlen(UEVENT_ACTION_CHANGE)) == 0 &&
+        strstr(audioPnpUevent->name, UEVENT_NAME_HEADSET) != NULL) {
+        if (strncmp(audioPnpUevent->state, UEVENT_STATE_ANALOG_HS1, strlen(UEVENT_STATE_ANALOG_HS1)) == 0) {
+            AUDIO_INFO_LOG("set headset event to insert.");
+            audioEvent.eventType = PNP_EVENT_DEVICE_ADD;
+            audioEvent.deviceType = PNP_DEVICE_HEADSET;
+        } else if (strncmp(audioPnpUevent->state, UEVENT_STATE_ANALOG_HS0, strlen(UEVENT_STATE_ANALOG_HS0)) == 0) {
+            AUDIO_INFO_LOG("set headset event to remove.");
+            audioEvent.eventType = PNP_EVENT_DEVICE_REMOVE;
+            audioEvent.deviceType = PNP_DEVICE_HEADSET;
+        } else {
+            return ERROR;
+        }
+        AUDIO_INFO_LOG("headset uevent info recv: %{public}s", audioPnpUevent->name);
+        audioEvent.name = audioPnpUevent->name;
+        UpdatePnpDeviceState(&audioEvent);
+        return SUCCESS;
+    }
+
+    return ERROR;
+}
+
 int32_t AudioSocketThread::AudioAnahsDetectDevice(const struct AudioPnpUevent *audioPnpUevent)
 {
     AudioEvent audioEvent;
@@ -517,50 +550,91 @@ int32_t AudioSocketThread::AudioDetectUsbSoundCard(const AudioPnpUevent &audioPn
 }
 #endif
 
+int32_t AudioSocketThread::ParseHdmiSwitchState(const struct AudioPnpUevent *audioPnpUevent, AudioEvent &audioEvent)
+{
+    if (strcmp(audioPnpUevent->switchState, "1") == 0 || strcmp(audioPnpUevent->state, "HDMI=1") == 0) {
+        audioEvent.eventType = PNP_EVENT_DEVICE_ADD;
+    } else if (strcmp(audioPnpUevent->switchState, "0") == 0 || strcmp(audioPnpUevent->state, "HDMI=0") == 0) {
+        audioEvent.eventType = PNP_EVENT_DEVICE_REMOVE;
+    } else {
+        AUDIO_ERR_LOG("audio hdmi device switch state invalid: %s", audioPnpUevent->switchState);
+        return HDF_FAILURE;
+    }
+    audioEvent.deviceType = PNP_DEVICE_HDMI_DEVICE;
+    return SUCCESS;
+}
+
+void AudioSocketThread::ExtractHdmiDeviceInfo(const struct AudioPnpUevent *audioPnpUevent, AudioEvent &audioEvent)
+{
+    std::string switchNameStr = audioPnpUevent->switchName;
+
+    auto portBegin = switchNameStr.find("device_port=");
+    if (portBegin != switchNameStr.npos) {
+        audioEvent.name = switchNameStr.substr(portBegin + std::strlen("device_port="));
+    }
+
+    // Extract address
+    audioEvent.address = ExtractHdmiAddress(switchNameStr);
+    if (audioEvent.address.empty()) {
+        audioEvent.address = "0";
+    }
+}
+
+// Helper function to extract HDMI address
+std::string AudioSocketThread::ExtractHdmiAddress(const std::string& switchNameStr)
+{
+    auto addressBegin = switchNameStr.find("hdmi_mipi_audio");
+    if (addressBegin == switchNameStr.npos) {
+        return "";
+    }
+
+    auto addressEnd = switchNameStr.find("device_port", addressBegin);
+    size_t startPos = addressBegin + std::strlen("hdmi_mipi_audio");
+
+    std::string portId;
+    if (addressEnd != switchNameStr.npos && addressEnd > startPos) {
+        portId = switchNameStr.substr(startPos, addressEnd - startPos - 1);
+    } else if (addressEnd == switchNameStr.npos) {
+        portId = switchNameStr.substr(startPos);
+    } else {
+        return "";
+    }
+
+    // Clean up trailing underscore
+    if (!portId.empty() && portId.back() == '_') {
+        portId.pop_back();
+    }
+
+    return portId;
+}
+
 int32_t AudioSocketThread::AudioHDMIDetectDevice(const struct AudioPnpUevent *audioPnpUevent)
 {
     AudioEvent audioEvent = {0};
     if (audioPnpUevent == nullptr) {
         return HDF_ERR_INVALID_PARAM;
     }
-    if ((strcmp(audioPnpUevent->subSystem, "switch") != 0) ||
-        (strstr(audioPnpUevent->switchName, "hdmi_mipi_audio") == NULL) ||
-        (strcmp(audioPnpUevent->action, "change") != 0)) {
+    if (audioPnpUevent->subSystem == nullptr ||
+        audioPnpUevent->switchName == nullptr ||
+        audioPnpUevent->action == nullptr ||
+        audioPnpUevent->state == nullptr ||
+        audioPnpUevent->switchState == nullptr) {
+        return HDF_ERR_INVALID_PARAM;
+    }
+    bool isHdmiSwitch = (strcmp(audioPnpUevent->subSystem, "switch") == 0) &&
+                       (strstr(audioPnpUevent->switchName, "hdmi_mipi_audio") != NULL) &&
+                       (strcmp(audioPnpUevent->action, "change") == 0);
+    bool hasHdmiInState = (strstr(audioPnpUevent->state, "HDMI") != NULL);
+    if (!isHdmiSwitch && !hasHdmiInState) {
         AUDIO_DEBUG_LOG("AudioHDMIDetectDevice fail");
         return HDF_ERR_INVALID_PARAM;
     }
-
-    if (strcmp(audioPnpUevent->switchState, "1") == 0) {
-        audioEvent.eventType = PNP_EVENT_DEVICE_ADD;
-    } else if (strcmp(audioPnpUevent->switchState, "0") == 0) {
-        audioEvent.eventType = PNP_EVENT_DEVICE_REMOVE;
-    } else {
-        AUDIO_ERR_LOG("audio hdmi device [%{public}d]", audioEvent.eventType);
-        return ERROR;
+    int32_t result = ParseHdmiSwitchState(audioPnpUevent, audioEvent);
+    if (result != SUCCESS) {
+        return result;
     }
-    audioEvent.deviceType = PNP_DEVICE_HDMI_DEVICE;
-
-    std::string switchNameStr = audioPnpUevent->switchName;
-
-    auto portBegin = switchNameStr.find("device_port=");
-    if (portBegin != switchNameStr.npos) {
-        audioEvent.name = switchNameStr.substr(portBegin + std::strlen("device_port="),
-            switchNameStr.length() - portBegin - std::strlen("device_port="));
-    }
-
-    auto addressBegin = switchNameStr.find("hdmi_mipi_audio");
-    auto addressEnd = switchNameStr.find_first_of("device_port", portBegin);
-    if (addressEnd != switchNameStr.npos) {
-        std::string portId = switchNameStr.substr(addressBegin + std::strlen("hdmi_mipi_audio"),
-            addressEnd - addressBegin - std::strlen("hdmi_mipi_audio")-1);
-        audioEvent.address = portId;
-    }
-
-    if (audioEvent.address.empty()) {
-        audioEvent.address = '0';
-    }
+    ExtractHdmiDeviceInfo(audioPnpUevent, audioEvent);
     AUDIO_INFO_LOG("audio hdmi device [%{public}s]", audioEvent.eventType == PNP_EVENT_DEVICE_ADD ? "add" : "removed");
-
     if (!IsUpdatePnpDeviceState(&audioEvent)) {
         AUDIO_ERR_LOG("audio device[%{public}u] state[%{public}u] not need flush !", audioEvent.deviceType,
             audioEvent.eventType);
@@ -577,8 +651,8 @@ bool AudioSocketThread::ProcessSwitchSubsystem(const struct AudioPnpUevent *ueve
 
     if (uevent->subSystem == nullptr ||
         strncmp(uevent->subSystem, UEVENT_SUBSYSTEM_SWITCH, strlen(UEVENT_SUBSYSTEM_SWITCH)) != 0) {
-            return false;
-        }
+        return false;
+    }
 
     if (AudioAnalogHeadsetDetectDevice(uevent) == SUCCESS ||
         AudioMicInDetectDevice(uevent) == SUCCESS ||
@@ -591,8 +665,8 @@ bool AudioSocketThread::ProcessSwitchSubsystem(const struct AudioPnpUevent *ueve
                 UpdateDeviceState(parsedEvent);
                 handled = true;
             }
-        }
-        return handled;
+    }
+    return handled;
 }
 
 bool AudioSocketThread::ProcessOtherSubsystem(const struct AudioPnpUevent *uevent)
@@ -600,6 +674,9 @@ bool AudioSocketThread::ProcessOtherSubsystem(const struct AudioPnpUevent *ueven
     bool handled = false;
     if (AudioAnahsDetectDevice(uevent) == SUCCESS) {
         AUDIO_INFO_LOG("Handled ANAHS event");
+        handled = true;
+    } else if (AudioHeadsetDetectDevice(uevent) == SUCCESS) {
+        AUDIO_INFO_LOG("Handled Headset event");
         handled = true;
     } else if (AudioNnDetectDevice(uevent) == SUCCESS) {
         AUDIO_INFO_LOG("Handled NN event");
@@ -784,6 +861,66 @@ int32_t AudioSocketThread::DetectPostAudioDevices(AudioEvent *audioEvent)
 
     AUDIO_DEBUG_LOG("DetectPostAudioDevices: No post audio device detected or not added");
     return ERROR;
+}
+
+int32_t AudioSocketThread::DetectHDMIState(AudioEvent *audioEvent)
+{
+    DIR *dir = nullptr;
+    struct dirent *entry = nullptr;
+    const char *extconBasePath = EXTCON_PATH;
+    const char *stateFileName = EXTCON_STATE;
+    char stateBuffer[FILE_BUFFER_SIZE] = {0};
+    std::string statePath;
+    FILE *pFile = nullptr;
+
+    dir = opendir(extconBasePath);
+    if (dir == nullptr) {
+        AUDIO_ERR_LOG("open extcon directory failed %{public}d", errno);
+        return ERROR;
+    }
+
+    while ((entry = readdir(dir)) != nullptr) {
+        if (entry->d_type != DT_DIR && entry->d_type != DT_LNK) {
+            continue;
+        }
+
+        if (strncmp(entry->d_name, "extcon", strlen("extcon")) != 0) {
+            continue;
+        }
+
+        statePath = extconBasePath;
+        statePath += entry->d_name;
+        statePath += stateFileName;
+
+        pFile = fopen(statePath.c_str(), "r");
+        if (pFile == nullptr) {
+            AUDIO_WARNING_LOG("open extcon state file failed: %{public}s, %{public}d",
+                statePath.c_str(), errno);
+            continue;
+        }
+
+        size_t length = fread(stateBuffer, 1, FILE_BUFFER_SIZE - 1, pFile);
+        (void)fclose(pFile);
+        if (length == 0) {
+            AUDIO_WARNING_LOG("read extcon state file failed: %{public}s", statePath.c_str());
+            continue;
+        }
+
+        stateBuffer[length] = '\0';
+
+        if (strstr(stateBuffer, "HDMI=1") != nullptr) {
+            audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
+            audioEvent->deviceType = PNP_DEVICE_HDMI_DEVICE;
+            audioEvent->address = std::to_string(0);
+            AUDIO_INFO_LOG("An HDMI device is plugged in, state: %{public}s", stateBuffer);
+            closedir(dir);
+            return SUCCESS;
+        }
+    }
+
+    closedir(dir);
+    AUDIO_INFO_LOG("The HDMI device is removed");
+    return SUCCESS;
 }
 
 void AudioSocketThread::UpdateDeviceState(AudioEvent audioEvent)

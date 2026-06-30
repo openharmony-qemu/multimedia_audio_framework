@@ -26,6 +26,8 @@
 #include "audio_device_info.h"
 #include "audio_stream_collector.h"
 #include "audio_device_manager.h"
+#include "audio_utils.h"
+#include "audio_policy_log.h"
 #include "media_monitor_manager.h"
 
 #include "audio_connected_device.h"
@@ -70,6 +72,7 @@ private:
     int32_t HandleExcludedOutputDevicesRecovery(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<Media::MediaMonitor::MonitorDeviceInfo>> &excludedDevices);
 
+    //selectoutputdevice
     int32_t RefreshVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
     // selectinputdevice

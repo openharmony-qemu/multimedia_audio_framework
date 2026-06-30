@@ -89,8 +89,9 @@ int32_t AudioGeneralManager::SetDeviceVolumeBehavior(const std::string &networkI
     DeviceType deviceType, VolumeBehavior volumeBehavior)
 {
     AUDIO_INFO_LOG("networkId [%{public}s], deviceType [%{public}d], isReady [%{public}d], "\
-        "isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]", networkId.c_str(), deviceType,
-        volumeBehavior.isReady, volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
+        "isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]",
+        GetEncryptStr(networkId).c_str(), deviceType, volumeBehavior.isReady,
+        volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
     return AudioPolicyManager::GetInstance().SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
 }
 
@@ -469,6 +470,13 @@ int32_t AudioGeneralManager::UnregisterPreferredDeviceSetCallback(
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     return AudioPolicyManager::GetInstance().UnregisterPreferredDeviceSetCallback(callback);
+}
+
+int32_t AudioGeneralManager::NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioGeneralManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
+    return gasp->NotifySensitiveRecordPermit(sessionId, isPermitted);
 }
 } // namespace AudioStandard
 } // namespace OHOS

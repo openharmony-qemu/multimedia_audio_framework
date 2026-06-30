@@ -407,6 +407,24 @@ OH_AudioStream_Result OH_AudioCapturer_RequestPlaybackCaptureStart(OH_AudioCaptu
 OH_AudioStream_Result OH_AudioCapturer_SetIndependentAudioSessionStrategy(
     OH_AudioCapturer* capturer, const OH_AudioSession_Strategy *strategy, uint32_t behavior);
 
+/**
+ * @brief Callback used to receive when the sensitive warning message playback for cellular call
+ * recording is finished.
+ * The application must wait for the permitted result before starting cellular call recording.
+ *
+ * @param capturer The pointer to the {@link OH_AudioCapturer} object created
+ *     by {@link OH_AudioStreamBuilder_GenerateCapturer}.
+ * @param userData The pointer to user data which is set in
+ *     {@link OH_AudioStreamBuilder_SetSensitiveRecordPermitCallback}.
+ * @param isPermitted Indicates whether the sensitive warning message playback is finished.
+ *     If the result is true, the recording can start, otherwise the recording is not permitted.
+ * @since 26.0.0
+ */
+typedef void (*OH_AudioCapturer_SensitiveRecordPermitCallback)(
+    OH_AudioCapturer* capturer,
+    void* userData,
+    bool isPermitted);
+
 #ifdef __cplusplus
 }
 #endif

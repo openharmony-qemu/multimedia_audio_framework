@@ -46,6 +46,8 @@ constexpr int64_t BIT_MASK = 0xFF;
 constexpr size_t LSB_BYTE_INDEX = 0;
 constexpr size_t MID_BYTE_INDEX = 1;
 constexpr size_t MSB_BYTE_INDEX = 2;
+constexpr uint32_t INT24_SIGN_BIT_MASK = (1U << (BIT_LEN_24 - 1));
+constexpr uint32_t INT24_SIGN_EXT_MASK = ~((1U << BIT_LEN_24) - 1);
 
 MixerProcessorNode::MixerProcessorNode()
     : isInitialized_(false)
@@ -348,15 +350,21 @@ void MixerProcessorNode::MixS24Volume(const std::vector<AudioMixStream> &streams
         int64_t sum = 0;
         for (size_t i = 0; i < streams.size(); i++) {
             uint8_t *srcBuffer = reinterpret_cast<uint8_t *>(streams[i].data) + offset;
-            uint32_t srcAudioBuffer24Bit = (srcBuffer[MSB_BYTE_INDEX] << BIT_LEN_16) |
-                (srcBuffer[MID_BYTE_INDEX] << BIT_LEN_8) | srcBuffer[LSB_BYTE_INDEX];
-            int32_t srcAudioData24Bit = (static_cast<int32_t>(srcAudioBuffer24Bit) << BIT_LEN_8) >> BIT_LEN_8;
+            uint32_t srcAudioBuffer24Bit =
+                (static_cast<uint32_t>(srcBuffer[MSB_BYTE_INDEX]) << BIT_LEN_16) |
+                (static_cast<uint32_t>(srcBuffer[MID_BYTE_INDEX]) << BIT_LEN_8) |
+                static_cast<uint32_t>(srcBuffer[LSB_BYTE_INDEX]);
+            int32_t srcAudioData24Bit =
+                (srcAudioBuffer24Bit & INT24_SIGN_BIT_MASK) ?
+                static_cast<int32_t>(srcAudioBuffer24Bit | INT24_SIGN_EXT_MASK) :
+                static_cast<int32_t>(srcAudioBuffer24Bit);
             sum += srcAudioData24Bit;
         }
         sum = std::min(INT24_MAX, std::max(INT24_MIN, sum));
-        *dstPtr++ = static_cast<uint8_t>(sum & BIT_MASK);
-        *dstPtr++ = static_cast<uint8_t>((sum >> BIT_LEN_8) & BIT_MASK);
-        *dstPtr++ = static_cast<uint8_t>((sum >> BIT_LEN_16) & BIT_MASK);
+        uint64_t sumUnsigned = static_cast<uint64_t>(sum);
+        *dstPtr++ = static_cast<uint8_t>(sumUnsigned & BIT_MASK);
+        *dstPtr++ = static_cast<uint8_t>((sumUnsigned >> BIT_LEN_8) & BIT_MASK);
+        *dstPtr++ = static_cast<uint8_t>((sumUnsigned >> BIT_LEN_16) & BIT_MASK);
     }
     *outSize = streams[0].dataSize;
 }

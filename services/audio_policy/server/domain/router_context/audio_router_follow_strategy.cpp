@@ -139,7 +139,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputD
     }
 
     AudioRouterInfra::GetInstance().Unlock();
-    return result == nullptr ? std::make_shared<AudioDeviceDescriptor>() : result;
+    return (result == nullptr || routerInfra.IsDeviceTypeSkipped(result->deviceType_)) ?
+        std::make_shared<AudioDeviceDescriptor>() : result;
 }
 
 void AudioRouterFollowStrategy::SetMediaInputDevice(int32_t uid, uint32_t streamId,
@@ -180,7 +181,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaOutput
     }
     auto result = ConvertSimpleToDevice(simpleDesc);
     AudioRouterInfra::GetInstance().Unlock();
-    CHECK_AND_RETURN_RET(result != nullptr, std::make_shared<AudioDeviceDescriptor>());
+    CHECK_AND_RETURN_RET(result != nullptr && !routerInfra.IsDeviceTypeSkipped(result->deviceType_),
+        std::make_shared<AudioDeviceDescriptor>());
     return result;
 }
 
@@ -210,7 +212,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallInputDe
         return std::make_shared<AudioDeviceDescriptor>();
     }
     auto result = ConvertSimpleToDevice(systemSelectInfo.device_);
-    CHECK_AND_RETURN_RET(result != nullptr, std::make_shared<AudioDeviceDescriptor>());
+    CHECK_AND_RETURN_RET(result != nullptr &&
+        !AudioRouterInfra::GetInstance().IsDeviceTypeSkipped(result->deviceType_),
+        std::make_shared<AudioDeviceDescriptor>());
     return result;
 }
 
@@ -239,7 +243,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallOutputD
 
     auto result = ConvertSimpleToDevice(simpleDesc);
     AudioRouterInfra::GetInstance().Unlock();
-    CHECK_AND_RETURN_RET(result != nullptr, std::make_shared<AudioDeviceDescriptor>());
+    CHECK_AND_RETURN_RET(result != nullptr && !routerInfra.IsDeviceTypeSkipped(result->deviceType_),
+        std::make_shared<AudioDeviceDescriptor>());
     return result;
 }
 

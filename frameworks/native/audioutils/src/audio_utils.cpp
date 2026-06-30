@@ -2223,6 +2223,7 @@ static const std::map<std::string, HdiAdapterType> HALNAME_TO_TYPE_MAP = {
     {"primary", HDI_ADAPTER_TYPE_PRIMARY},
     {"a2dp", HDI_ADAPTER_TYPE_A2DP},
     {"usb", HDI_ADAPTER_TYPE_USB},
+    {"hdmi", HDI_ADAPTER_TYPE_HDMI},
     {"dp", HDI_ADAPTER_TYPE_DP},
     {"remote", HDI_ADAPTER_TYPE_REMOTE},
     {"hearing_aid", HDI_ADAPTER_TYPE_HEARING_AID},
@@ -2427,6 +2428,14 @@ VolumeScale VolumeScale::Refresh()
 VolumeScale VolumeScale::ResetVolumeDegree()
 {
     AUDIO_INFO_LOG("Reset the volume degree to the baseline value of the volume level %{public}d", volumeLevel_);
+    volumeDegree_ = VolumeUtils::VolumeLevelToDegree(volumeLevel_, maxVolumeLevel_);
+    return *this;
+}
+
+VolumeScale VolumeScale::SetVolumeLevelAndResetDegree(int32_t volumeLevel)
+{
+    AUDIO_INFO_LOG("Set volume level to %{public}d and reset volume degree to the baseline value", volumeLevel);
+    volumeLevel_ = volumeLevel;
     volumeDegree_ = VolumeUtils::VolumeLevelToDegree(volumeLevel_, maxVolumeLevel_);
     return *this;
 }

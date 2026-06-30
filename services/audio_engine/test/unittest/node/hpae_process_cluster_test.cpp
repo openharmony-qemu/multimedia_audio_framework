@@ -2318,5 +2318,79 @@ HWTEST_F(HpaeProcessClusterTest, Flush_WithNoConverter_001, TestSize.Level0)
 
     cluster->Flush(NO_EXITS_SESSIONID_ID);
 }
+
+// ---------------------------------------------------------------------------
+// HiCar MCH / distributed remote effect-node notification gating (PR #15881).
+// CheckNeedNotifyEffectNode is a private pure-read helper; only the cluster is
+// constructed here (no DoProcess / no worker). Private access via -fno-access-control.
+// ---------------------------------------------------------------------------
+namespace {
+HpaeNodeInfo MakeEffectNodeInfo()
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    return nodeInfo;
+}
+} // namespace
+
+HWTEST_F(HpaeProcessClusterTest, CheckNeedNotifyEffectNode_RemoteClass_001, TestSize.Level1)
+{
+    HpaeSinkInfo clusterSinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(MakeEffectNodeInfo(), clusterSinkInfo);
+    ASSERT_NE(cluster, nullptr);
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote";
+    sinkInfo.deviceName = "Speaker";
+    EXPECT_EQ(cluster->CheckNeedNotifyEffectNode(sinkInfo), false);
+}
+
+HWTEST_F(HpaeProcessClusterTest, CheckNeedNotifyEffectNode_RemoteMultichannelClass_001, TestSize.Level1)
+{
+    HpaeSinkInfo clusterSinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(MakeEffectNodeInfo(), clusterSinkInfo);
+    ASSERT_NE(cluster, nullptr);
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote_multichannel";
+    sinkInfo.deviceName = "netId_out_multichannel";
+    EXPECT_EQ(cluster->CheckNeedNotifyEffectNode(sinkInfo), false);
+}
+
+HWTEST_F(HpaeProcessClusterTest, CheckNeedNotifyEffectNode_DpMchSpeaker_001, TestSize.Level1)
+{
+    HpaeSinkInfo clusterSinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(MakeEffectNodeInfo(), clusterSinkInfo);
+    ASSERT_NE(cluster, nullptr);
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "primary";
+    sinkInfo.deviceName = "DP_MCH_speaker";
+    EXPECT_EQ(cluster->CheckNeedNotifyEffectNode(sinkInfo), false);
+}
+
+HWTEST_F(HpaeProcessClusterTest, CheckNeedNotifyEffectNode_MchSpeakerStillNotifies_001, TestSize.Level1)
+{
+    HpaeSinkInfo clusterSinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(MakeEffectNodeInfo(), clusterSinkInfo);
+    ASSERT_NE(cluster, nullptr);
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "primary";
+    sinkInfo.deviceName = "MCH_Speaker";
+    EXPECT_EQ(cluster->CheckNeedNotifyEffectNode(sinkInfo), true);
+}
+
+HWTEST_F(HpaeProcessClusterTest, CheckNeedNotifyEffectNode_RegularLocal_001, TestSize.Level1)
+{
+    HpaeSinkInfo clusterSinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(MakeEffectNodeInfo(), clusterSinkInfo);
+    ASSERT_NE(cluster, nullptr);
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "primary";
+    sinkInfo.deviceName = "Speaker";
+    EXPECT_EQ(cluster->CheckNeedNotifyEffectNode(sinkInfo), true);
+}
 } // AudioStandard
 } // OHOS

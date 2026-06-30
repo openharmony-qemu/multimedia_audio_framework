@@ -24,6 +24,7 @@
 #include "audio_router_infra.h"
 #include "audio_device_manager.h"
 #include "audio_policy_log.h"
+#include "audio_policy_utils.h"
 #include "audio_core_config_manager.h"
 #include "audio_utils.h"
 
@@ -200,7 +201,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetRecognition
     auto result = ConvertSimpleToDevice(simpleDesc);
 
     AudioRouterInfra::GetInstance().Unlock();
-    return result;
+    return (result && !IsDeviceTypeSkipped(result->deviceType_)) ?
+        result : std::make_shared<AudioDeviceDescriptor>();
 }
 
 void AudioRouterSelectStrategy::SetRecognitionInputDevice(
@@ -434,6 +436,11 @@ bool AudioRouterSelectStrategy::IsDeviceExcluded(const std::shared_ptr<AudioDevi
     auto simpleDesc = ConvertDeviceToSimple(device);
     auto &routerInfra = AudioRouterInfra::GetInstance();
     return routerInfra.IsDeviceExcluded(simpleDesc, usage);
+}
+
+bool AudioRouterSelectStrategy::IsDeviceTypeSkipped(DeviceType deviceType)
+{
+    return AudioRouterInfra::GetInstance().IsDeviceTypeSkipped(deviceType);
 }
 
 bool AudioRouterSelectStrategy::IsSameDeviceDeviceDescriptor(

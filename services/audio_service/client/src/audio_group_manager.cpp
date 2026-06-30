@@ -194,7 +194,8 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
 }
 
-int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType)
+int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute,
+    const DeviceType &deviceType, int32_t volumeFlag)
 {
     std::lock_guard<std::mutex> lock(volumeMutex_);
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
@@ -206,10 +207,12 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute, const 
     }
 
     if (deviceType != DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("SetMute: deviceType [%{public}d], mute [%{public}d]", deviceType, mute);
+        AUDIO_INFO_LOG("SetMute: deviceType [%{public}d], mute [%{public}d], volumeFlag [%{public}d]",
+            deviceType, mute, volumeFlag);
     }
 
-    AUDIO_INFO_LOG("SetStreamMute: volumeType [%{public}d], mute [%{public}d]", volumeType, mute);
+    AUDIO_INFO_LOG("SetStreamMute: volumeType [%{public}d], mute [%{public}d] volumeFlag [%{public}d]",
+        volumeType, mute, volumeFlag);
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
@@ -232,7 +235,7 @@ int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute, const 
     }
 
     /* Call Audio Policy SetStreamMute */
-    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, false, deviceType);
+    return AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, false, deviceType, volumeFlag);
 }
 
 int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute)

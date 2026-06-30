@@ -127,6 +127,11 @@ public:
     void Lock();
     void Unlock();
 
+    bool HasSkipDeviceTypePermission(uid_t uid);
+    bool UpdateSkippedDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes);
+    bool IsDeviceTypeSkipped(DeviceType deviceType);
+    std::string AppendSkippedDeviceTypes(const std::string &devicesStr);
+
 private:
     AudioRouterInfra() = default;
     ~AudioRouterInfra() = default;
@@ -185,6 +190,8 @@ private:
     std::list<StreamDefaultDeviceEntry> streamDefaultDevicePriority_;
     std::unordered_set<int32_t> exclusiveUids_[static_cast<size_t>(SelectDeviceType::SELECT_DEVICE_TYPE_NUM)];
     std::atomic<bool> isScoExcluded_ {false};
+    bool isSkipped_ {false};
+    std::vector<DeviceType> skippedDeviceTypes_;
 };
 
 }

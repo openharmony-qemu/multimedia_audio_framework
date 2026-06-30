@@ -2966,4 +2966,111 @@ HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_NoChange_004, TestSize.Le
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->DeInit();
 }
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    // Case 1: defaultSink_ starts empty, target not in map → must stay empty.
+    hpaeManager_->defaultSink_ = "";
+    EXPECT_EQ(hpaeManager_->SetDefaultSink("NotInMapSink"), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSink_, "");
+
+    // Case 2: defaultSink_ points to an opened & init'd sink, target not in map
+    //         → must remain unchanged.
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->defaultSink_ = audioModuleInfo.name;
+    std::string before = hpaeManager_->defaultSink_;
+    EXPECT_EQ(hpaeManager_->SetDefaultSink("AnotherMissingSink"), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSink_, before);
+
+    EXPECT_EQ(hpaeManager_->CloseOutAudioPort(audioModuleInfo.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+// Verify: target sink exists and IsInit() == true → defaultSink_ switches.
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink004, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    AudioModuleInfo sinkA = GetSinkAudioModeInfo("Speaker_File");
+    AudioModuleInfo sinkB = GetSinkAudioModeInfo("Speaker_File1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(sinkA), SUCCESS);
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(sinkB), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    // Prime defaultSink_ to sinkA, then switch to init'd sinkB.
+    hpaeManager_->defaultSink_ = sinkA.name;
+    EXPECT_EQ(hpaeManager_->SetDefaultSink(sinkB.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSink_, sinkB.name);
+
+    EXPECT_EQ(hpaeManager_->CloseOutAudioPort(sinkA.name), SUCCESS);
+    EXPECT_EQ(hpaeManager_->CloseOutAudioPort(sinkB.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+// Verify: target source not in capturerManagerMap_ → defaultSource_ must NOT change.
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource002, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    // Case 1: defaultSource_ starts empty, target not in map → must stay empty.
+    hpaeManager_->defaultSource_ = "";
+    EXPECT_EQ(hpaeManager_->SetDefaultSource("NotInMapSource"), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSource_, "");
+
+    // Case 2: defaultSource_ points to an opened & init'd source, target not in map
+    //         → must remain unchanged.
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->defaultSource_ = audioModuleInfo.name;
+    std::string before = hpaeManager_->defaultSource_;
+    EXPECT_EQ(hpaeManager_->SetDefaultSource("AnotherMissingSource"), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSource_, before);
+
+    EXPECT_EQ(hpaeManager_->CloseInAudioPort(audioModuleInfo.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+// Verify: target source exists and IsInit() == true → defaultSource_ switches.
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    AudioModuleInfo srcA = GetSourceAudioModeInfo("mic");
+    AudioModuleInfo srcB = GetSourceAudioModeInfo("mic1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(srcA), SUCCESS);
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(srcB), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    // Prime defaultSource_ to srcA, then switch to init'd srcB.
+    hpaeManager_->defaultSource_ = srcA.name;
+    EXPECT_EQ(hpaeManager_->SetDefaultSource(srcB.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSource_, srcB.name);
+
+    EXPECT_EQ(hpaeManager_->CloseInAudioPort(srcA.name), SUCCESS);
+    EXPECT_EQ(hpaeManager_->CloseInAudioPort(srcB.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
 }  // namespace

@@ -150,6 +150,8 @@ private:
         const int32_t sessionId);
     bool IsRingOverPlayback(AudioMode &mode, RendererState rendererState);
 
+    void UpdateDeviceAfterConnectAndAddtoList(std::shared_ptr<AudioDeviceDescriptor> audioDescriptor);
+
 private:
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
     bool isCurrentRemoteRenderer = false;

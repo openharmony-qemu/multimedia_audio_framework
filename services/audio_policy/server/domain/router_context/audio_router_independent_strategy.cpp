@@ -70,7 +70,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaI
     }
 
     AudioRouterInfra::GetInstance().Unlock();
-    return result == nullptr ? std::make_shared<AudioDeviceDescriptor>() : result;
+    return (result == nullptr || routerInfra.IsDeviceTypeSkipped(result->deviceType_)) ?
+        std::make_shared<AudioDeviceDescriptor>() : result;
 }
 
 void AudioRouterIndependentStrategy::SetMediaInputDevice(int32_t uid, uint32_t streamId,
@@ -94,7 +95,10 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaO
     auto result = ConvertSimpleToDevice(simpleDesc);
 
     AudioRouterInfra::GetInstance().Unlock();
-    return GetFinalOutputDeviceForMedia(result);
+
+    result = GetFinalOutputDeviceForMedia(result);
+    return (result == nullptr || AudioRouterInfra::GetInstance().IsDeviceTypeSkipped(result->deviceType_)) ?
+        std::make_shared<AudioDeviceDescriptor>() : result;
 }
 
 void AudioRouterIndependentStrategy::SetMediaOutputDevice(int32_t uid, uint32_t streamId,
@@ -120,7 +124,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallIn
     auto result = ConvertSimpleToDevice(simpleDesc);
 
     AudioRouterInfra::GetInstance().Unlock();
-    return result;
+    return (result == nullptr || AudioRouterInfra::GetInstance().IsDeviceTypeSkipped(result->deviceType_)) ?
+        std::make_shared<AudioDeviceDescriptor>() : result;
 }
 
 void AudioRouterIndependentStrategy::SetCallInputDevice(int32_t uid,
@@ -138,7 +143,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallOu
     auto result = ConvertSimpleToDevice(simpleDesc);
 
     AudioRouterInfra::GetInstance().Unlock();
-    return GetFinalOutputDeviceForCall(result);
+    result = GetFinalOutputDeviceForCall(result);
+    return (result == nullptr || AudioRouterInfra::GetInstance().IsDeviceTypeSkipped(result->deviceType_)) ?
+        std::make_shared<AudioDeviceDescriptor>() : result;
 }
 
 void AudioRouterIndependentStrategy::SetCallOutputDevice(int32_t uid,
@@ -161,6 +168,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterIndependentStrate
 {
     uid = uid == INVALID_UID ? SYSTEM_UID : uid;
     auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentOutputDevice(uid);
+    if (simpleDescs.empty() && uid != SYSTEM_UID) {
+        simpleDescs = AudioRouterInfra::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
+    }
     return ConvertSimpleToDevice(simpleDescs);
 }
 
@@ -178,6 +188,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterIndependentStrate
 {
     uid = uid == INVALID_UID ? SYSTEM_UID : uid;
     auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentInputDevice(uid);
+    if (simpleDescs.empty() && uid != SYSTEM_UID) {
+        simpleDescs = AudioRouterInfra::GetInstance().GetCurrentInputDevice(SYSTEM_UID);
+    }
     return ConvertSimpleToDevice(simpleDescs);
 }
 

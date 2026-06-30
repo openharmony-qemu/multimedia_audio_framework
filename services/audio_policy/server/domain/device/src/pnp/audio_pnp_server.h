@@ -56,6 +56,7 @@ private:
     void OpenAndReadWithSocket();
     void OpenAndReadInput();
     void DetectAudioDevice();
+    void DetectAudioHDMIDevice();
     void DetectAudioDpDevice();
 };
 

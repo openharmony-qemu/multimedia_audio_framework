@@ -81,6 +81,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
     bool IsDeviceExcluded(const std::shared_ptr<AudioDeviceDescriptor> &device,
         AudioDeviceUsage usage);
+    bool IsDeviceTypeSkipped(DeviceType deviceType);
     void SetScoExcluded(bool scoExcluded);
     bool GetScoExcluded();
     bool IsPreferredDevice(const AudioDeviceDescriptor &desc);

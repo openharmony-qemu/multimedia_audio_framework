@@ -53,6 +53,7 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_DIRECT "direct"
 #define HDI_ID_INFO_VOIP "voip"
 #define HDI_ID_INFO_DP "dp"
+#define HDI_ID_INFO_HDMI "hdmi"
 #define HDI_ID_INFO_USB "usb"
 #define HDI_ID_INFO_EC "ec"
 #define HDI_ID_INFO_MIC_REF "mic_ref"

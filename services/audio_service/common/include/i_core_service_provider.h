@@ -54,6 +54,8 @@ public:
     virtual int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId) = 0;
     virtual bool IsSupportIndependentPipe() = 0;
     virtual void OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable) = 0;
+    // Notify silent state change
+    virtual void NotifySilentStateChange(uint32_t sessionId, bool isSilent) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

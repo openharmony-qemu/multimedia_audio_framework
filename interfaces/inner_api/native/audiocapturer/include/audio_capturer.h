@@ -215,6 +215,19 @@ public:
     virtual void OnPlaybackCaptureStartResult(PlaybackCaptureStartState state) = 0;
 };
 
+class AudioCapturerSensitiveRecordPermitCallback {
+public:
+    virtual ~AudioCapturerSensitiveRecordPermitCallback() = default;
+
+    /**
+    * Called when TTS playback finished event occurs.
+    *
+    * @param isPermitted Indicates whether TTS playback is finished.
+    * since 26
+    */
+    virtual void OnSensitiveRecordPermit(bool isPermitted) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio capturing.
  */
@@ -357,6 +370,18 @@ public:
      */
     virtual void SetFastStatusChangeCallback(
         const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) = 0;
+
+    /**
+    * @brief Set the TTS finished callback listener
+    *
+    * @since 26
+    */
+    virtual void SetSensitiveRecordPermitCallback(
+        const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback)
+        {
+            (void) callback;
+            return;
+        }
 
     /**
      * @brief Set the audio capturer playback capture start state callback listener

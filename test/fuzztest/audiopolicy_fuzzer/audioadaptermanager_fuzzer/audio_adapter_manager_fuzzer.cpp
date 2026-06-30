@@ -207,22 +207,6 @@ void AudioVolumeManagerSaveRingerModeInfoFuzzTest(FuzzedDataProvider& fdp)
     audioAdapterManager->SaveRingerModeInfo(ringMode, "test", "invocationTimeTest");
 }
 
-void AudioVolumeManagerSelectDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    vector<DeviceRole> testDeviceRoles = {
-        DEVICE_ROLE_NONE,
-        INPUT_DEVICE,
-        OUTPUT_DEVICE,
-        DEVICE_ROLE_MAX,
-    };
-    DeviceRole deviceRole = PickValue(fdp, testDeviceRoles);
-    InternalDeviceType deviceType = PickValue(fdp, g_testDeviceTypes);
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    CHECK_AND_RETURN(audioAdapterManager != nullptr);
-    audioAdapterManager->Init();
-    audioAdapterManager->SelectDevice(deviceRole, deviceType, "test");
-}
-
 void AudioVolumeManagerNotifyAccountsChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     int id = fdp.ConsumeIntegral<int>();
@@ -637,7 +621,6 @@ void Test(FuzzedDataProvider& fdp)
     AudioVolumeManagerKvDataFuzzTest,
     AudioVolumeManagerSaveNotificationVolumeToLocalFuzzTest,
     AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest,
-    AudioVolumeManagerSelectDeviceFuzzTest,
     AudioVolumeManagerSaveRingerModeInfoFuzzTest,
     AudioVolumeManagerOpenNotPaAudioPortFuzzTest,
     AudioVolumeManagerUpdateVolumeForLowLatencyFuzzTest,

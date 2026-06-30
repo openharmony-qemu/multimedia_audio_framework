@@ -417,6 +417,7 @@ int32_t AudioPolicyService::SetAvailableDeviceChangeCallback(const int32_t clien
         auto cb = std::make_shared<AudioPolicyManagerListenerCallback>(callback);
         CHECK_AND_RETURN_RET_LOG(cb != nullptr, SUCCESS, "AudioPolicyManagerListenerCallback create failed");
         cb->hasBTPermission_ = hasBTPermission;
+        cb->isSystemService_ = PermissionUtil::VerifySystemPermission() && !PermissionUtil::VerifyIsSystemApp();
 
         if (audioPolicyServerHandler_ != nullptr) {
             audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, cb);

@@ -17,6 +17,7 @@
 #define OH_AUDIO_STREAM_BUILDER_H
 
 #include <cstdint>
+#include <string>
 #include "native_audiostream_base.h"
 #include "audio_interrupt_info.h"
 #include "OHAudioRenderer.h"
@@ -76,7 +77,11 @@ public:
     OH_AudioStream_Result SetMuteWhenInterrupted(bool muteWhenInterrupted);
     OH_AudioStream_Result SetCapturerFastStatusChangeCallback(
         OH_AudioCapturer_OnFastStatusChange callback, void *userData);
+    OH_AudioStream_Result SetCapturerSensitiveRecordPermitCallback(
+        OH_AudioCapturer_SensitiveRecordPermitCallback callback, void *userData);
     OH_AudioStream_Result SetCapturerLoopbackEffectEnabled(bool enabled);
+    OH_AudioStream_Result SetCellularRecordSecurityParams(const char* cellularRecordPhoneNum,
+        const char* cellularRecordToken);
 
 private:
     int32_t streamType_;
@@ -101,6 +106,8 @@ private:
     SourceType sourceType_ = SOURCE_TYPE_MIC;
     bool modernInnerCapturer_ = false;
     bool loopBackEffectEnabled_ = false;
+    std::string cellularRecordPhoneNum_ = "";
+    std::string cellularRecordToken_ = "";
 
     WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
     ReadDataCallbackType readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;
@@ -136,6 +143,8 @@ private:
     void *rendererFastStatusChangeUserData_ = nullptr;
     OH_AudioCapturer_OnFastStatusChange capturerFastStatusChangeCallback_ = nullptr;
     void *capturerFastStatusChangeUserData_ = nullptr;
+    OH_AudioCapturer_SensitiveRecordPermitCallback sensitiveRecordPermitCallback_ = nullptr;
+    void *sensitiveRecordPermitUserData_ = nullptr;
     InterruptMode interruptMode_ = SHARE_MODE;
     InterruptStrategy strategy_ = InterruptStrategy::DEFAULT;
 

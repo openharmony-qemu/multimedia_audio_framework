@@ -457,6 +457,12 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetActiveBl
     return coreService_->GetActiveBluetoothDevice();
 }
 
+int32_t AudioCoreService::EventEntry::SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes)
+{
+    std::shared_lock<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SkipDeviceTypes(skipped, deviceTypes);
+}
+
 void AudioCoreService::EventEntry::OnDeviceInfoUpdated(
     AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
@@ -832,6 +838,21 @@ int32_t AudioCoreService::EventEntry::NotifyStreamStandbyResume(int32_t pid, uin
         coreService = coreService_;
     }
     return coreService->NotifyStreamStandbyResume(pid, streamId);
+}
+
+// EventEntry proxy method: notify silent state change
+void AudioCoreService::EventEntry::NotifySilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifySilentStateChange(sessionId, isSilent);
+}
+
+void AudioCoreService::EventEntry::NotifyDataTransSilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifyDataTransSilentStateChange(sessionId, isSilent);
 }
 
 int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bool mute)

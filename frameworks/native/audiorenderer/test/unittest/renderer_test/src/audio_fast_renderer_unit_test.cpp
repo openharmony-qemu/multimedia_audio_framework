@@ -211,58 +211,6 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_004, TestSize.Level1)
 
 /**
  * @tc.name  : Test Fast Renderer
- * @tc.number: Audio_Fast_Renderer_005
- * @tc.desc  : Audio_Fast_Renderer_005
- */
-HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_005, TestSize.Level1)
-{
-    ASSERT_NE(false, g_isFastRenderer);
-    int32_t ret = -1;
-    ASSERT_NE(nullptr, GetRenderPtr());
-
-    AudioRenderMode renderMode = GetRenderPtr()->GetRenderMode();
-    EXPECT_EQ(RENDER_MODE_NORMAL, renderMode);
-
-    shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
-    ret = GetRenderPtr()->SetRendererWriteCallback(cb);
-    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
-
-    BufferQueueState bQueueSate {};
-    bQueueSate.currentIndex = 1;
-    bQueueSate.numBuffers = 1;
-
-    ret = GetRenderPtr()->GetBufQueueState(bQueueSate);
-    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
-
-    ret = GetRenderPtr()->SetRenderRate(RENDER_RATE_DOUBLE);
-    EXPECT_NE(SUCCESS, ret);
-
-    ret = GetRenderPtr()->SetRenderRate(RENDER_RATE_NORMAL);
-    EXPECT_EQ(SUCCESS, ret);
-
-    AudioRendererRate renderRate = GetRenderPtr()->GetRenderRate();
-    EXPECT_EQ(RENDER_RATE_NORMAL, renderRate);
-
-    shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
-    ret = GetRenderPtr()->SetRendererCallback(audioRendererCB);
-    EXPECT_EQ(SUCCESS, ret);
-
-    BufferDesc bufDesc {};
-    bufDesc.buffer = nullptr;
-    bufDesc.dataLength = RenderUT::g_reqBufLen;
-    ret = GetRenderPtr()->GetBufferDesc(bufDesc);
-    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
-    EXPECT_EQ(nullptr, bufDesc.buffer);
-
-    ret = GetRenderPtr()->Enqueue(bufDesc);
-    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
-
-    ret = GetRenderPtr()->Clear();
-    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
-}
-
-/**
- * @tc.name  : Test Fast Renderer
  * @tc.number: Audio_Fast_Renderer_006
  * @tc.desc  : Audio_Fast_Renderer_006
  */

@@ -106,19 +106,37 @@ void HpaeSourceOutputNode::ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer)
     CHECK_AND_RETURN_LOG(ret == 0, "copy filtered samples failed: %{public}d", ret);
 }
 
-void HpaeSourceOutputNode::DoProcess()
+static void CopyRightToLeft(uint8_t *data, size_t size, const AudioSampleFormat &format)
 {
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo() +
-        (isMute_ ? "_[Mute]" : "_[unMute]"));
+    CHECK_AND_RETURN_LOG(data != nullptr && size > 0, "error param");
+    const size_t bytesPerSample = static_cast<size_t>(GetSizeFromFormat(format));
+    const size_t frameSize = bytesPerSample * 2;
+    CHECK_AND_RETURN_LOG(size > frameSize, "invalid data size");
+    uint8_t *left = nullptr;
+    uint8_t *right = nullptr;
+    for (size_t i = 0; i < size - frameSize + 1; i += frameSize) {
+        left = data + i;
+        right = left + bytesPerSample;
+        CHECK_AND_RETURN_LOG(memcpy_s(left, bytesPerSample, right, bytesPerSample) == 0, "memcpy_s failed");
+    }
+}
+
+HpaePcmBuffer *HpaeSourceOutputNode::GetAndValidateOutput()
+{
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     if (outputVec.empty()) {
         AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), data read is empty", GetSessionId());
-        return;
+        return nullptr;
     }
     HpaePcmBuffer *outputData = outputVec.front();
     if (!outputData->IsValid() && GetNodeInfo().sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        return;
+        return nullptr;
     }
+    return outputData;
+}
+
+void HpaeSourceOutputNode::ProcessAudioData(HpaePcmBuffer *outputData)
+{
     int32_t ret = ERROR;
     if (isMute_) {
         ret = memset_s(sourceOutputData_.data(), sourceOutputData_.size(), 0, sourceOutputData_.size());
@@ -134,6 +152,15 @@ void HpaeSourceOutputNode::DoProcess()
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
+    if (GetNodeInfo().sourceType == SOURCE_TYPE_VOICE_DOWNLINK) {
+        AUDIO_WARNING_LOG("Use downlink call");
+        CopyRightToLeft((uint8_t *)sourceOutputData_.data(), sourceOutputData_.size(), GetNodeInfo().format);
+    }
+}
+
+void HpaeSourceOutputNode::WriteDataAndUpdateFrames()
+{
+    int32_t ret = ERROR;
     streamInfo_ = {
         .framesRead = framesRead_.load(),
         .timestamp = GetTimestamp(),
@@ -154,6 +181,18 @@ void HpaeSourceOutputNode::DoProcess()
     totalFrames_ += GetFrameLen();
     framesRead_.store(totalFrames_);
     return;
+}
+
+void HpaeSourceOutputNode::DoProcess()
+{
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo() +
+        (isMute_ ? "_[Mute]" : "_[unMute]"));
+    HpaePcmBuffer *outputData = GetAndValidateOutput();
+    if (outputData == nullptr) {
+        return;
+    }
+    ProcessAudioData(outputData);
+    WriteDataAndUpdateFrames();
 }
 
 uint64_t HpaeSourceOutputNode::GetTimestamp()

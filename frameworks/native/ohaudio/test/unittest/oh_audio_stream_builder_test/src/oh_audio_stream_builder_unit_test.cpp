@@ -128,6 +128,12 @@ static OH_AudioData_Callback_Result OnWriteDataCallbackWithInvalidData(OH_AudioR
     return AUDIO_DATA_CALLBACK_RESULT_INVALID;
 }
 
+static void OnSensitiveRecordPermitCallback(OH_AudioCapturer* capturer,
+    void* userData,
+    bool isPermitted)
+{
+    return;
+}
 
 void OHAudioStreamBuilderUnitTest::SetUpTestCase(void) { }
 
@@ -1332,6 +1338,37 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_GenerateCapturer_001,
     result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_GenerateCapturer API via illegal state.
+ * @tc.number: c_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_GenerateCapturer interface
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_GenerateCapturer_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+ 
+    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_DOWNLINK;
+    result = OH_AudioStreamBuilder_SetCapturerInfo(builder, sourceType);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+ 
+    OH_AudioCapturer *audioCapturer = nullptr;
+    result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+ 
+    OH_AudioCapturer_SensitiveRecordPermitCallback callback = OnSensitiveRecordPermitCallback;
+    result = OH_AudioStreamBuilder_SetSensitiveRecordPermitCallback(builder, callback, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+ 
+    result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+ 
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }

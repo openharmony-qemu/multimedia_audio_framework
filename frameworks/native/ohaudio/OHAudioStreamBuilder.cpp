@@ -346,6 +346,15 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerFastStatusChangeCallback(
     return audioStreamBuilder->SetCapturerFastStatusChangeCallback(callback, userData);
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetSensitiveRecordPermitCallback(OH_AudioStreamBuilder* builder,
+    OH_AudioCapturer_SensitiveRecordPermitCallback callback, void* userData)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "callback is nullptr");
+    return audioStreamBuilder->SetCapturerSensitiveRecordPermitCallback(callback, userData);
+}
+  
 OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerLoopbackEffectEnabled(
     OH_AudioStreamBuilder* builder, bool enabled)
 {
@@ -354,6 +363,13 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerLoopbackEffectEnabled(
     return audioStreamBuilder->SetCapturerLoopbackEffectEnabled(enabled);
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCellularRecordSecurityParams(OH_AudioStreamBuilder* builder,
+    const char* cellularRecordPhoneNum, const char* cellularRecordToken)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    return audioStreamBuilder->SetCellularRecordSecurityParams(cellularRecordPhoneNum, cellularRecordToken);
+}
 namespace OHOS {
 namespace AudioStandard {
 
@@ -585,6 +601,8 @@ void OHAudioStreamBuilder::ConfigureCapturer(OHAudioCapturer *audioCapturer)
     audioCapturer->SetCapturerWillMuteWhenInterrupted(strategy_);
     audioCapturer->SetCapturerFastStatusChangeCallback(
         capturerFastStatusChangeCallback_, capturerFastStatusChangeUserData_);
+    audioCapturer->SetCapturerSensitiveRecordPermitCallback(
+        sensitiveRecordPermitCallback_, sensitiveRecordPermitUserData_);
 }
 
 void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig &config,
@@ -626,6 +644,10 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         "Error, invalid type input");
     CHECK_AND_RETURN_RET_LOG(capturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "Error, capturer is nullptr");
+    if (sourceType_ == SOURCE_TYPE_VOICE_DOWNLINK) {
+        CHECK_AND_RETURN_RET_LOG(sensitiveRecordPermitCallback_ != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+            "Error, capturer for downlink stream must set SensitiveRecordPermitCallback");
+    }
     AudioStreamInfo streamInfo = {
         (AudioSamplingRate)samplingRate_,
         encodingType_,
@@ -639,6 +661,9 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         latencyMode_
     };
     capturerInfo.loopBackEffectEnabled = loopBackEffectEnabled_;
+
+    capturerInfo.cellularRecordPhoneNum = cellularRecordPhoneNum_;
+    capturerInfo.cellularRecordToken = cellularRecordToken_;
 
     AudioCapturerOptions options = {
         streamInfo,
@@ -844,6 +869,18 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerFastStatusChangeCallback(
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerSensitiveRecordPermitCallback(
+    OH_AudioCapturer_SensitiveRecordPermitCallback callback, void *userData)
+{
+    CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetCapturerSensitiveRecordPermitCallback Error, invalid type input");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetCapturerSensitiveRecordPermitCallback Error, callback is nullptr");
+    sensitiveRecordPermitCallback_ = callback;
+    sensitiveRecordPermitUserData_ = userData;
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerLoopbackEffectEnabled(bool enabled)
 {
     CHECK_AND_RETURN_RET_LOG(streamType_ == CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
@@ -851,5 +888,19 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetCapturerLoopbackEffectEnabled(boo
     loopBackEffectEnabled_ = enabled;
     return AUDIOSTREAM_SUCCESS;
 }
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetCellularRecordSecurityParams(const char* cellularRecordPhoneNum,
+    const char* cellularRecordToken)
+{
+    CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetCellularRecordSecurityParams error, invalid type input.");
+    CHECK_AND_RETURN_RET_LOG(cellularRecordPhoneNum != nullptr && cellularRecordToken != nullptr,
+        AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "SetCellularRecordSecurityParams error, cellularRecordPhoneNum or cellularRecordToken is nullptr.");
+    cellularRecordPhoneNum_ = cellularRecordPhoneNum;
+    cellularRecordToken_ = cellularRecordToken;
+    return AUDIOSTREAM_SUCCESS;
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

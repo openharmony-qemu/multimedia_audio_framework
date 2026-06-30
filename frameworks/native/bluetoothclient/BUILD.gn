@@ -16,6 +16,7 @@ import("../../../audio_framework_test_sources.gni")
 import("../../../config.gni")
 
 audio_ohos_library("audio_bluetooth_client") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true

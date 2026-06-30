@@ -40,6 +40,7 @@ public:
     static int32_t DetectAnalogHeadsetState(AudioEvent *audioEvent);
     static int32_t DetectPostAudioDevices(AudioEvent *audioEvent);
     static void SetAudioPnpUevent(AudioEvent *audioEvent, char switchState);
+    static int32_t DetectHDMIState(AudioEvent *audioEvent);
     static int32_t DetectDPState(AudioEvent *audioEvent);
     static AudioEvent audioSocketEvent_;
 
@@ -58,7 +59,11 @@ private:
 #ifdef USB_ENABLE
     static int32_t AudioDetectUsbSoundCard(const AudioPnpUevent &audioPnpUevent);
 #endif
+    static int32_t AudioHeadsetDetectDevice(const struct AudioPnpUevent *audioPnpUevent);
     static int32_t AudioAnahsDetectDevice(const struct AudioPnpUevent *audioPnpUevent);
+    static int32_t ParseHdmiSwitchState(const struct AudioPnpUevent *audioPnpUevent, AudioEvent &audioEvent);
+    static void ExtractHdmiDeviceInfo(const struct AudioPnpUevent *audioPnpUevent, AudioEvent &audioEvent);
+    static std::string ExtractHdmiAddress(const std::string& switchNameStr);
     static int32_t AudioHDMIDetectDevice(const struct AudioPnpUevent *audioPnpUevent);
     static int32_t SetAudioAnahsEventValue(AudioEvent *audioEvent, const struct AudioPnpUevent *audioPnpUevent);
     static int32_t ReadAndScanDpState(const std::string &path, uint32_t &eventType);

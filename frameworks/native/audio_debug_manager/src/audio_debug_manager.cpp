@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,6 +122,7 @@ const std::map<SourceType, std::string> SOURCE_TYPE_MAP = {
     {SOURCE_TYPE_PLAYBACK_CAPTURE, "SOURCE_TYPE_PLAYBACK_CAPTURE"},
     {SOURCE_TYPE_WAKEUP, "SOURCE_TYPE_WAKEUP"},
     {SOURCE_TYPE_VOICE_CALL, "SOURCE_TYPE_VOICE_CALL"},
+    {SOURCE_TYPE_VOICE_DOWNLINK, "SOURCE_TYPE_VOICE_DOWNLINK"},
     {SOURCE_TYPE_VOICE_COMMUNICATION, "SOURCE_TYPE_VOICE_COMMUNICATION"},
     {SOURCE_TYPE_ULTRASONIC, "SOURCE_TYPE_ULTRASONIC"},
     {SOURCE_TYPE_VIRTUAL_CAPTURE, "SOURCE_TYPE_VIRTUAL_CAPTURE"},

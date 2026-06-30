@@ -1418,6 +1418,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service/client/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/common/include/dfx",
+    "../../../../services/audio_policy/client/include",
   ]
   sources = [
     "../../../../services/audio_service/server/src/audio_engine_manager.cpp",
@@ -1472,6 +1473,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_policy:audio_policy_service",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_policy:audio_manager_client",
     "../../../../services/audio_service:audio_engine_manager",
     "../../../../services/audio_service:audio_policy_manager",
     "../../../../services/audio_service:audio_stream_client",

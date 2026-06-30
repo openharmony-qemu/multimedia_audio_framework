@@ -1432,6 +1432,38 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_014, TestSize.Level
 }
 
 /**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_015
+ * @tc.desc   : Test GetUniqueIdBySourceType fallback by routeFlag
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_015, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    captureSource->attr_.sourceType = SOURCE_TYPE_MIC;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
+
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_AI;
+    uint32_t id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION * UNIQUE_ID_INTERVAL);
+
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_UNPROCESS;
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_UNPROCESS * UNIQUE_ID_INTERVAL);
+
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_LIVE;
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_LIVE * UNIQUE_ID_INTERVAL);
+
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_INTERPHONE;
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_INTERPHONE * UNIQUE_ID_INTERVAL);
+
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_NORMAL;
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
+}
+
+/**
  * @tc.name   : Test GetMultiDeviceUniqueId API
  * @tc.number : GetMultiDeviceUniqueId_001
  * @tc.desc   : Test GetMultiDeviceUniqueId for primary extra typec capturer

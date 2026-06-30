@@ -113,7 +113,7 @@ static const std::map<std::pair<SourceType, SourceType>,
     {{SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_VOICE_RECOGNITION }, {ACTIVE, INTERRUPT_HINT_NONE}}
 };
  	  
-void AudioInterruptCustom::UnprocessedCustomFocus(const AudioInterrupt &incomingInterrupt,
+void AudioInterruptCustom::UnprocessedSourceCustomFocus(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
 {
     if (!activeInterrupt.mixWithWakeUp) {
@@ -142,7 +142,7 @@ void AudioInterruptCustom::ProcessActiveStreamCustomFocus(const AudioInterrupt &
         bundleName = AudioBundleManager::GetBundleNameFromUid(incomingInterrupt.uid);
     }
     CeliaCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent, bundleName);
-    UnprocessedCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent);
+    UnprocessedSourceCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent);
     UltraSonicCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent);
 }
 

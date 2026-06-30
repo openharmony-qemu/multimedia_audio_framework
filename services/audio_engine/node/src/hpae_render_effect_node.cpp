@@ -20,6 +20,7 @@
 #include <cinttypes>
 #include "audio_errors.h"
 #include "hpae_render_effect_node.h"
+#include "hpae_node_common.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_effect_map.h"
@@ -129,7 +130,7 @@ void HpaeRenderEffectNode::DoProcess()
         SignalProcess(preOutputs);
         int32_t ret = SplitCollaborativeData();
         if (ret != SUCCESS) {
-            outputStream_.WriteDataToOutput(&silenceData_);
+            outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
             outputStream_.WriteDataToOutput(&silenceData_, HPAE_BUFFER_TYPE_COBUFFER);
         } else {
             outputStream_.WriteDataToOutput(directOutput_.get());
@@ -139,7 +140,7 @@ void HpaeRenderEffectNode::DoProcess()
         outputStream_.WriteDataToOutput(preOutputs[0]);
         outputStream_.WriteDataToOutput(preOutputs[0], HPAE_BUFFER_TYPE_COBUFFER);
     } else {
-        outputStream_.WriteDataToOutput(&silenceData_);
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
         outputStream_.WriteDataToOutput(&silenceData_, HPAE_BUFFER_TYPE_COBUFFER);
     }
 #ifdef ENABLE_HOOK_PCM
