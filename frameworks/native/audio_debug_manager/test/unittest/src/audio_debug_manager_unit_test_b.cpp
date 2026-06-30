@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,21 +41,33 @@ constexpr uint32_t TEST_STREAM_ID = 300;
 
 class TestCapturerCallback : public AudioCapturerDebugCallback {
 public:
-    int32_t GetCapturerDebugInfo(AudioCapturerDebugInfo &info) override { info = info_; return ret_; }
+    int32_t GetCapturerDebugInfo(AudioCapturerDebugInfo &info) override
+    {
+        info = info_;
+        return ret_;
+    }
     AudioCapturerDebugInfo info_;
     int32_t ret_ = SUCCESS;
 };
 
 class TestLoopbackCallback : public AudioLoopbackDebugCallback {
 public:
-    int32_t GetLoopbackDebugInfo(AudioLoopbackDebugInfo &info) override { info = info_; return ret_; }
+    int32_t GetLoopbackDebugInfo(AudioLoopbackDebugInfo &info) override
+    {
+        info = info_;
+        return ret_;
+    }
     AudioLoopbackDebugInfo info_;
     int32_t ret_ = SUCCESS;
 };
 
 class TestSessionCallback : public AudioSessionDebugCallback {
 public:
-    int32_t GetSessionDebugInfo(AudioSessionDebugInfo &info) override { info = info_; return ret_; }
+    int32_t GetSessionDebugInfo(AudioSessionDebugInfo &info) override
+    {
+        info = info_;
+        return ret_;
+    }
     AudioSessionDebugInfo info_;
     int32_t ret_ = SUCCESS;
 };
