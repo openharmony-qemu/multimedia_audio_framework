@@ -1850,6 +1850,7 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
         AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
     }
 
+    ResetNoiseReductionModeOnRelease();
     return audioStream_->ReleaseAudioStream() ? SUCCESS : ERROR;
 }
 
@@ -3484,12 +3485,17 @@ int32_t AudioCapturerPrivate::SetNoiseReductionMode(NoiseReductionMode mode)
     std::string value = std::to_string(static_cast<int32_t>(mode));
     AudioSystemManager::GetInstance()->SetAudioParameter(key, value);
 
-    noiseReductionMode_ = mode;
+    {
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        noiseReductionMode_ = mode;
+        hasSetNoiseReductionMode_ = true;
+    }
     return SUCCESS;
 }
 
 int32_t AudioCapturerPrivate::GetNoiseReductionMode(NoiseReductionMode &mode)
 {
+    std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
     AUDIO_INFO_LOG("GetNoiseReductionMode NoiseReductionMode: %{public}d", noiseReductionMode_);
     mode = noiseReductionMode_;
     return SUCCESS;
@@ -3509,15 +3515,44 @@ NoiseReductionMode StringToNoiseReductionMode(const std::string &modeStr)
 }
 }
 
+void AudioCapturerPrivate::ResetNoiseReductionModeOnRelease()
+{
+    bool needReset = false;
+    {
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        needReset = hasSetNoiseReductionMode_;
+        hasSetNoiseReductionMode_ = false;
+        noiseReductionMode_ = NOISE_REDUCTION_MODE_FIDELITY;
+    }
+
+    if (!needReset) {
+        return;
+    }
+
+    std::string key = "record_denoise_mode";
+    std::string value = std::to_string(static_cast<int32_t>(NOISE_REDUCTION_MODE_FIDELITY));
+    AudioSystemManager::GetInstance()->SetAudioParameter(key, value);
+}
+
 int32_t AudioCapturerPrivate::GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes)
 {
     AUDIO_INFO_LOG("GetSupportedNoiseReductionModes");
     modes.clear();
     modes.push_back(NOISE_REDUCTION_MODE_FIDELITY);
+    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_MESSAGE) {
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        supportedNoiseReductionModes_ = modes;
+        hasFetchedSupportedModes_ = true;
+        return SUCCESS;
+    }
+
     std::string key = "record_denoise_mode_support";
     std::string value = AudioSystemManager::GetInstance()->GetAudioParameter(key);
     if (value.empty()) {
         AUDIO_WARNING_LOG("GetSupportedNoiseReductionModes: failed to get from system, use default");
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        supportedNoiseReductionModes_ = modes;
+        hasFetchedSupportedModes_ = true;
         return SUCCESS;
     }
 

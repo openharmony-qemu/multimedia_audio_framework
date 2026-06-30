@@ -2882,5 +2882,69 @@ HWTEST(AudioCapturerUnitTest, SetInSwitchingFlag_001, TestSize.Level1)
     audioCapturer->SetInSwitchingFlag(false);
     EXPECT_FALSE(audioCapturer->inSwitchingFlag_);
 }
+
+/**
+ * @tc.name  : Test GetSupportedNoiseReductionModes for non voice message source.
+ * @tc.number: Audio_Capturer_GetSupportedNoiseReductionModes_001
+ * @tc.desc  : Test non voice message capturer returns default noise reduction mode.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetSupportedNoiseReductionModes_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    ASSERT_NE(nullptr, audioCapturer);
+    audioCapturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+
+    std::vector<NoiseReductionMode> modes;
+    int32_t ret = audioCapturer->GetSupportedNoiseReductionModes(modes);
+    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(static_cast<size_t>(1), modes.size());
+    EXPECT_EQ(NOISE_REDUCTION_MODE_FIDELITY, modes[0]);
+    audioCapturer->Release();
+}
+
+/**
+ * @tc.name  : Test Release resets noise reduction mode after SetNoiseReductionMode.
+ * @tc.number: Audio_Capturer_ResetNoiseReductionModeOnRelease_001
+ * @tc.desc  : Test capturer release restores noise reduction mode to fidelity after set noise mode.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_ResetNoiseReductionModeOnRelease_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S16LE;
+    capturerParams.samplingRate = SAMPLE_RATE_44100;
+    capturerParams.audioChannel = MONO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+    int32_t ret = audioCapturer->SetParams(capturerParams);
+    ASSERT_EQ(SUCCESS, ret);
+
+    audioCapturer->hasFetchedSupportedModes_ = true;
+    audioCapturer->supportedNoiseReductionModes_ = {
+        NOISE_REDUCTION_MODE_FIDELITY,
+        NOISE_REDUCTION_MODE_STANDARD
+    };
+
+    ret = audioCapturer->SetNoiseReductionMode(NOISE_REDUCTION_MODE_STANDARD);
+    ASSERT_EQ(SUCCESS, ret);
+
+    NoiseReductionMode mode = NOISE_REDUCTION_MODE_FIDELITY;
+    ret = audioCapturer->GetNoiseReductionMode(mode);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(NOISE_REDUCTION_MODE_STANDARD, mode);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+
+    ret = audioCapturer->GetNoiseReductionMode(mode);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(NOISE_REDUCTION_MODE_FIDELITY, mode);
+    EXPECT_EQ(false, audioCapturer->hasSetNoiseReductionMode_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -232,6 +232,7 @@ private:
         const size_t processFrameSize, size_t &processBufSize, size_t &micInBufSize, size_t &ecBufSize);
     bool CheckForGenerateNewStream();
     int32_t CheckForStartImpl(CapturerState state);
+    void ResetNoiseReductionModeOnRelease();
     void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
  	    const std::string &erroDesc, bool isClient, CapturerState state) const;
 
@@ -280,6 +281,7 @@ private:
     bool inSwitchingFlag_ = false;
     bool isFirstTimeSetMainThreadState_ = true;
     NoiseReductionMode noiseReductionMode_ = NOISE_REDUCTION_MODE_FIDELITY;
+    bool hasSetNoiseReductionMode_ = false;
     bool hasFetchedSupportedModes_ = false;
     std::vector<NoiseReductionMode> supportedNoiseReductionModes_ = {NOISE_REDUCTION_MODE_FIDELITY};
     std::recursive_mutex noiseReductionModesMtx_;
