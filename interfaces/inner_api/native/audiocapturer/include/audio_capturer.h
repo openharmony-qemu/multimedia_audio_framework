@@ -19,7 +19,6 @@
 #include <memory>
 #include <vector>
 
-#include "audio_errors.h"
 #include "audio_stream_change_info.h"
 #include "microphone_descriptor.h"
 #include "timestamp.h"
@@ -220,11 +219,11 @@ public:
     virtual ~AudioCapturerSensitiveRecordPermitCallback() = default;
 
     /**
-    * Called when TTS playback finished event occurs.
-    *
-    * @param isPermitted Indicates whether TTS playback is finished.
-    * since 26
-    */
+     * Called when TTS playback finished event occurs.
+     *
+     * @param isPermitted Indicates whether TTS playback is finished.
+     * since 26
+     */
     virtual void OnSensitiveRecordPermit(bool isPermitted) = 0;
 };
 
@@ -372,16 +371,16 @@ public:
         const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) = 0;
 
     /**
-    * @brief Set the TTS finished callback listener
-    *
-    * @since 26
-    */
+     * @brief Set the TTS finished callback listener
+     *
+     * @since 26
+     */
     virtual void SetSensitiveRecordPermitCallback(
         const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback)
-        {
-            (void) callback;
-            return;
-        }
+    {
+        (void) callback;
+        return;
+    }
 
     /**
      * @brief Set the audio capturer playback capture start state callback listener
@@ -707,7 +706,7 @@ public:
     virtual int32_t SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback)
     {
         (void)callback;
-        return ERR_NOT_SUPPORTED;
+        return 0;
     }
 
     /**
@@ -739,7 +738,7 @@ public:
         (void)processBufSize;
         (void)micInBufSize;
         (void)ecBufSize;
-        return ERR_NOT_SUPPORTED;
+        return 0;
     }
 
     /**
@@ -759,7 +758,7 @@ public:
         (void)processBufDesc;
         (void)micInBufDesc;
         (void)ecBufferDesc;
-        return ERR_NOT_SUPPORTED;
+        return 0;
     }
 
     /**
