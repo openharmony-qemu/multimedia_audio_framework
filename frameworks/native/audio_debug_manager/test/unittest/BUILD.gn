@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Huawei Device Co., Ltd.
+﻿# Copyright (c) 2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,150 +14,83 @@
 import("//build/test.gni")
 import("../../../../../config.gni")
 
-# Module output path mapping
-audio_debug_manager_output_path = "audio_framework/audio_framework_route"
-audio_renderer_output_path = "audio_framework/audio_route_renderer"
-audio_capturer_output_path = "audio_framework/audio_route_capturer"
-audio_loopback_output_path = "audio_framework/audio_framework_engine"
-audio_session_output_path = "audio_framework/audio_framework_focus"
+# Module output path for supplementary standard GTest targets
+audio_debug_manager_supplement_output_path = "audio_framework/audio_debug_manager_supplement"
 
-# Common includes and flags shared by all AIUT modules
-_aiut_include_dirs = [
-  "./include",
+# Common includes and flags for standard GTest
+_supplement_include_dirs = [
   "../../include",
   "../../../../../test/unittest/common/include",
   "../../../../../interfaces/inner_api/native/audiocommon/include",
   "../../../../../interfaces/inner_api/native/audio_debug_manager/include",
-  "../../../../../interfaces/kits/c/audio_manager",
-  "../../../../../interfaces/kits/c/common",
   "../../../audiodefinitions/include",
   "../../../audioutils/include",
-  "../../../../js/napi/audiomanager",
 ]
 
-_aiut_cflags = [
+_supplement_cflags = [
   "-Wall",
   "-Werror",
   "-Wno-macro-redefined",
   "-fno-access-control",
 ]
 
-_aiut_deps = [
+_supplement_deps = [
   "../../../audiodefinitions:audio_definitions",
   "../../../audioutils:audio_utils",
-  "../../../ohaudio:ohaudio",
 ]
 
-_aiut_external_deps = [
+_supplement_external_deps = [
   "c_utils:utils",
+  "googletest:gmock",
+  "googletest:gtest",
   "hilog:libhilog",
   "ipc:ipc_single",
 ]
 
-# ==================== debug_manager (common methods + OHAudio/Taihe/NAPI AppInfo) ====================
+# ==================== Part A: GetInstance / PrintApp / KeyGen / Renderer ====================
 
-ohos_unittest("audio_debugging_manager_aiut") {
+ohos_unittest("audio_debug_manager_unit_test") {
   testonly = true
-  module_out_path = audio_debug_manager_output_path
+  module_out_path = audio_debug_manager_supplement_output_path
 
-  include_dirs = _aiut_include_dirs
-  cflags = _aiut_cflags
+  include_dirs = _supplement_include_dirs
+  cflags = _supplement_cflags
   cflags_cc = [ "-std=c++20" ]
 
   sources = [
-    "src/audio_debugging_manager_aiut.cpp",
+    "src/audio_debug_manager_unit_test.cpp",
     "../../src/audio_debug_manager.cpp",
   ]
 
-  deps = _aiut_deps
-  external_deps = _aiut_external_deps
+  deps = _supplement_deps
+  external_deps = _supplement_external_deps
 }
 
-# ==================== renderer (native + OHAudio + Taihe + NAPI) ====================
+# ==================== Part B: Capturer / Loopback / Session ====================
 
-ohos_unittest("audio_renderer_debugging_manager_aiut") {
+ohos_unittest("audio_debug_manager_unit_test_b") {
   testonly = true
-  module_out_path = audio_renderer_output_path
+  module_out_path = audio_debug_manager_supplement_output_path
 
-  include_dirs = _aiut_include_dirs
-  cflags = _aiut_cflags
+  include_dirs = _supplement_include_dirs
+  cflags = _supplement_cflags
   cflags_cc = [ "-std=c++20" ]
 
   sources = [
-    "src/audio_renderer_debugging_manager_aiut.cpp",
+    "src/audio_debug_manager_unit_test_b.cpp",
     "../../src/audio_debug_manager.cpp",
   ]
 
-  deps = _aiut_deps
-  external_deps = _aiut_external_deps
+  deps = _supplement_deps
+  external_deps = _supplement_external_deps
 }
 
-# ==================== capturer (native + OHAudio + Taihe + NAPI) ====================
+# ==================== Group: all supplementary standard GTest targets ====================
 
-ohos_unittest("audio_capturer_debugging_manager_aiut") {
-  testonly = true
-  module_out_path = audio_capturer_output_path
-
-  include_dirs = _aiut_include_dirs
-  cflags = _aiut_cflags
-  cflags_cc = [ "-std=c++20" ]
-
-  sources = [
-    "src/audio_capturer_debugging_manager_aiut.cpp",
-    "../../src/audio_debug_manager.cpp",
-  ]
-
-  deps = _aiut_deps
-  external_deps = _aiut_external_deps
-}
-
-# ==================== loopback (native + Taihe + NAPI) ====================
-
-ohos_unittest("audio_loopback_debugging_manager_aiut") {
-  testonly = true
-  module_out_path = audio_loopback_output_path
-
-  include_dirs = _aiut_include_dirs
-  cflags = _aiut_cflags
-  cflags_cc = [ "-std=c++20" ]
-
-  sources = [
-    "src/audio_loopback_debugging_manager_aiut.cpp",
-    "../../src/audio_debug_manager.cpp",
-  ]
-
-  deps = _aiut_deps
-  external_deps = _aiut_external_deps
-}
-
-# ==================== session (native + OHAudio + Taihe + NAPI) ====================
-
-ohos_unittest("audio_session_debugging_manager_aiut") {
-  testonly = true
-  module_out_path = audio_session_output_path
-
-  include_dirs = _aiut_include_dirs
-  cflags = _aiut_cflags
-  cflags_cc = [ "-std=c++20" ]
-
-  sources = [
-    "src/audio_session_debugging_manager_aiut.cpp",
-    "../../src/audio_debug_manager.cpp",
-  ]
-
-  deps = _aiut_deps
-  external_deps = _aiut_external_deps
-}
-
-# ==================== Group: all AIUT targets ====================
-
-group("audio_debug_manager_aiut") {
+group("audio_debug_manager_supplement") {
   testonly = true
   deps = [
-    ":audio_debugging_manager_aiut",
-    ":audio_renderer_debugging_manager_aiut",
-    ":audio_capturer_debugging_manager_aiut",
-    ":audio_loopback_debugging_manager_aiut",
-    ":audio_session_debugging_manager_aiut",
+    ":audio_debug_manager_unit_test",
+    ":audio_debug_manager_unit_test_b",
   ]
 }
