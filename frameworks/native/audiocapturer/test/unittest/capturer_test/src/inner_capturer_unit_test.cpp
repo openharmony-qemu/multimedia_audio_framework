@@ -31,9 +31,11 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+#ifdef TEMP_DISABLE
 const int32_t READ_BUFFERS_MAX_COUNT = 100;
 const int32_t VALID_DATA_COUNT = 20;
 const size_t SHORT_SLEEP_TIME = 100000; // us 100ms
+#endif
 const size_t NUM2 = 2;
 } // namespace
 
