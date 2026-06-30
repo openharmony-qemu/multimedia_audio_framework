@@ -925,19 +925,19 @@ public:
     virtual int32_t SetNoiseReductionMode(NoiseReductionMode mode)
     {
         (void)mode;
-        return ERR_NOT_SUPPORTED;
+        return 0;
     }
 
     virtual int32_t GetNoiseReductionMode(NoiseReductionMode &mode)
     {
         (void)mode;
-        return ERR_NOT_SUPPORTED;
+        return 0;
     }
 
     virtual int32_t GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes)
     {
         (void)modes;
-        return ERR_NOT_SUPPORTED;
+        return 0;
     }
 
     /**
