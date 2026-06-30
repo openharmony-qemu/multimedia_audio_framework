@@ -1012,7 +1012,7 @@ HWTEST(AudioPolicyManager, GetLoopbackSupportedDevicePairs_001, TestSize.Level1)
     ASSERT_NE(audioPolicyManager_, nullptr);
 
     auto devicePairs = audioPolicyManager_->GetLoopbackSupportedDevicePairs();
-    EXPECT_TRUE(devicePairs.empty() || !devicePairs.empty());
+    EXPECT_FALSE(devicePairs.empty());
 }
 
 /**
