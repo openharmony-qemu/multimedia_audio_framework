@@ -4031,7 +4031,7 @@ HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_NoPending_001
         std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame, byteSizePerFrame);
     
     rendererInClientInner->CheckAndProcessPendingSpanSize();
-    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 0);
+    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_.load(), 0);
 }
 
 /**
@@ -4070,7 +4070,7 @@ HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_NullBuffer_00
     rendererInClientInner->clientBuffer_ = nullptr;
     
     rendererInClientInner->CheckAndProcessPendingSpanSize();
-    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 0);
+    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_.load(), 0);
 }
 
 class IpcStreamMock : public IIpcStream {

@@ -425,9 +425,9 @@ private:
     std::atomic<FastStatus> fastStatus_ = FASTSTATUS_NORMAL;
 
     size_t cacheSizeInByte_ = 0;
-    uint32_t spanSizeInFrame_ = 0;
+    std::atomic<uint32_t> spanSizeInFrame_ = 0;
     std::atomic<uint32_t> cacheSizeInFrame_ = 0;
-    size_t clientSpanSizeInByte_ = 0;
+    std::atomic<size_t> clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
     uint32_t bufferSizeInMsec_ = 20; // 20ms
