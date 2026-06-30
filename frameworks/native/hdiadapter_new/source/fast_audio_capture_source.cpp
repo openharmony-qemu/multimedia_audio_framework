@@ -395,7 +395,6 @@ enum AudioInputType FastAudioCaptureSource::ConvertToHDIAudioInputType(int32_t s
         case SOURCE_TYPE_PLAYBACK_CAPTURE:
         case SOURCE_TYPE_ULTRASONIC:
         case SOURCE_TYPE_UNPROCESSED:
-        case SOURCE_TYPE_VOICE_MESSAGE:
         case SOURCE_TYPE_LIVE:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
             break;
