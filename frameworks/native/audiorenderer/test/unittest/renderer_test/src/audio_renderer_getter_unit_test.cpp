@@ -1851,9 +1851,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetUnderflowCount_001, TestSize.Lev
     audioRenderer->Release();
 }
 
-
-
-
 /**
  * @tc.name  : Test GetStreamInfo API stability.
  * @tc.number: Audio_Renderer_GetStreamInfo_Stability_001
