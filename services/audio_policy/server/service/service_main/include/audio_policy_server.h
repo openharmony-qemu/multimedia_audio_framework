@@ -282,7 +282,7 @@ public:
 
     int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable) override;
     int32_t SetAudioSessionCapturerMuteHint(bool mute) override;
-    void ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason);
+    void SetStreamInterruptMute(uint32_t streamId, bool mute);
 
     int32_t GetDefaultOutputDevice(int32_t &deviceType) override;
 

@@ -207,7 +207,6 @@ void AudioPolicyServerInterruptSessionGapFuzzTest(FuzzedDataProvider &fdp)
     server->OnAudioStreamRemoved(fdp.ConsumeIntegral<uint64_t>());
     server->GetSessionDebugInfo(sessionDebugInfo);
     server->SetAudioSessionCapturerMuteHint(fdp.ConsumeBool());
-    server->ReEvaluateVoipPrivacyMuteForCapturers(fdp.ConsumeRandomLengthString(MAX_STRING_LEN));
 }
 
 void AudioPolicyServerDebugSpatialGapFuzzTest(FuzzedDataProvider &fdp)

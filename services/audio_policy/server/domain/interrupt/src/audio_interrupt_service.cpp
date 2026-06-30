@@ -3233,18 +3233,7 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
 void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
     const uint32_t &streamId, const AudioInterrupt &audioInterrupt)
 {
-    CHECK_AND_CALL_FUNC_RETURN_LOG(dfxCollector_ != nullptr,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(audioInterrupt.uid,
-            INTERRUPT_CALLBACK_NULL_POINTER, "dfxCollector is null", false),
-        "dfxCollector is null");
-    AUDIO_INFO_LOG("hintType= %{public}d", interruptEvent.hintType);
-    InterruptDfxBuilder dfxBuilder;
-    auto& [infoIdx, effectIdx] = dfxCollector_->GetDfxIndexes(audioInterrupt.streamId);
-
-    auto pos = HINT_STAGE_MAP.find(interruptEvent.hintType);
-    auto stage = (pos == HINT_STAGE_MAP.end()) ? INTERRUPT_STAGE_STOPPED : pos->second;
-    dfxBuilder.WriteActionMsg(infoIdx, effectIdx, stage);
-    dfxCollector_->AddDfxMsg(audioInterrupt.streamId, dfxBuilder.GetResult());
+    CollectInterruptDfx(interruptEvent, audioInterrupt);
 
     if (interruptEvent.hintType == INTERRUPT_HINT_STOP) {
         muteAudioFocus_.erase(streamId);
@@ -3284,7 +3273,25 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
         if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
             RemoveStreamIdSuggestionRecord(streamId);
         }
+        SetStreamInterruptMute(interruptEvent, streamId, audioInterrupt);
     }
+}
+
+void AudioInterruptService::CollectInterruptDfx(const InterruptEventInternal &interruptEvent,
+    const AudioInterrupt &audioInterrupt)
+{
+    CHECK_AND_CALL_FUNC_RETURN_LOG(dfxCollector_ != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(audioInterrupt.uid,
+            INTERRUPT_CALLBACK_NULL_POINTER, "dfxCollector is null", false),
+        "dfxCollector is null");
+    AUDIO_INFO_LOG("hintType= %{public}d", interruptEvent.hintType);
+    InterruptDfxBuilder dfxBuilder;
+    auto& [infoIdx, effectIdx] = dfxCollector_->GetDfxIndexes(audioInterrupt.streamId);
+
+    auto pos = HINT_STAGE_MAP.find(interruptEvent.hintType);
+    auto stage = (pos == HINT_STAGE_MAP.end()) ? INTERRUPT_STAGE_STOPPED : pos->second;
+    dfxBuilder.WriteActionMsg(infoIdx, effectIdx, stage);
+    dfxCollector_->AddDfxMsg(audioInterrupt.streamId, dfxBuilder.GetResult());
 }
 
 void AudioInterruptService::SendAudioSessionInterruptEventCallback(
@@ -3655,7 +3662,6 @@ void AudioInterruptService::SetNonInterruptMute(int32_t streamId, bool muteFlag)
     gsp->SetNonInterruptMute(streamId, muteFlag);
     policyServer_->SetSourceOutputStreamMuteByStreamId(streamId, muteFlag);
     IPCSkeleton::SetCallingIdentity(identity);
-    policyServer_->ReEvaluateVoipPrivacyMuteForCapturers("AudioInterruptService::SetNonInterruptMute");
 }
 
 bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamId,

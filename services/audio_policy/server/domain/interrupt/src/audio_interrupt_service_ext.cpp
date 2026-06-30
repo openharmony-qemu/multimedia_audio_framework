@@ -144,7 +144,6 @@ void AudioInterruptService::SetLatestMuteState(const AudioInterrupt &audioInterr
     if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         policyServer_->NotifyVoipPriorityLoweredByMute(streamId, muteFlag);
     }
-    policyServer_->ReEvaluateVoipPrivacyMuteForCapturers("AudioInterruptService::SetLatestMuteState");
 }
 
 int32_t AudioInterruptService::ProcessActiveStreamFocus(
@@ -530,7 +529,6 @@ void AudioInterruptService::ResetInterruptMuteState(const AudioInterrupt &audioI
     AudioServerProxy::GetInstance().SetLatestMuteState(sessionId, 0);
     streamCollector_.CapturerMutedFlagChange(sessionId, 0);
     CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer_ is nullptr");
-    policyServer_->ReEvaluateVoipPrivacyMuteForCapturers("AudioInterruptService::ResetInterruptMuteState");
 }
 
 int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
@@ -562,6 +560,34 @@ bool AudioInterruptService::IsAncoAudioMediaInterrupt(const AudioFocusEntry &foc
     return (focusEntry.hintType == INTERRUPT_HINT_STOP && currentInterrupt.uid == AUDIO_ID &&
         AudioInterruptUtils::IsMediaStream(currentInterrupt.audioFocusType.streamType) &&
         AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType));
+}
+
+bool AudioInterruptService::IsStreamActive(uint32_t streamId)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    for (const auto &zonePair : zonesMap_) {
+        if (zonePair.second == nullptr) {
+            continue;
+        }
+        for (const auto &iter : zonePair.second->audioFocusInfoList) {
+            if (iter.first.streamId == streamId) {
+                return IsAudioStreamActive(iter.second);
+            }
+        }
+    }
+    return false;
+}
+
+void AudioInterruptService::SetStreamInterruptMute(const InterruptEventInternal &interruptEvent,
+    const uint32_t &streamId, const AudioInterrupt &audioInterrupt)
+{
+    CHECK_AND_RETURN_LOG(audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID, "not capturer stream");
+    CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer_ is nullptr");
+    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+        policyServer_->SetStreamInterruptMute(streamId, true);
+    } else if (interruptEvent.hintType == INTERRUPT_HINT_RESUME) {
+        policyServer_->SetStreamInterruptMute(streamId, false);
+    }
 }
 }
 } // namespace OHOS

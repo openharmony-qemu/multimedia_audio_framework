@@ -140,6 +140,9 @@ public:
     int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId);
     int32_t UpdateStreamFocusStateToStandby(int32_t pid, uint32_t streamId);
     int32_t UpdateStreamFocusStateToActive(int32_t pid, uint32_t streamId);
+    bool IsStreamActive(uint32_t streamId);
+    void SetStreamInterruptMute(const InterruptEventInternal &interruptEvent,
+        const uint32_t &streamId, const AudioInterrupt &audioInterrupt);
 
 private:
     int32_t FindAndUpdateFocusState(uint32_t streamId, AudioFocuState focuState);
@@ -291,6 +294,7 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive, bool &removeFocusInfo);
     void SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
         const uint32_t &streamId, const AudioInterrupt &audioInterrupt);
+    void CollectInterruptDfx(const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt);
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activeInterrupt);
     bool UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType,
         int32_t zoneId = ZONEID_DEFAULT, bool notFromInterrupt = true);
