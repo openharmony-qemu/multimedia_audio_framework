@@ -2405,6 +2405,7 @@ struct FetchDeviceInfo : public Parcelable {
     RouterType bypassType = ROUTER_TYPE_NONE;
     uint32_t streamId = INVALID_STREAM_ID;
     SourceType sourceType = SOURCE_TYPE_INVALID;
+    bool isRunning = false;
 
     FetchDeviceInfo(StreamUsage streamUsage, StreamUsage preStreamUsage, int32_t clientUID,
         RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)
