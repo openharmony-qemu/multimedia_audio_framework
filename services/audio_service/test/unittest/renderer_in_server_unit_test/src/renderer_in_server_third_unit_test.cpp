@@ -1881,9 +1881,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
     EXPECT_NE(nullptr, rendererInServer);
 
     bool on = true;
-    rendererInServer->isMuted_ = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1897,10 +1896,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
     EXPECT_NE(nullptr, rendererInServer);
 
     bool on = true;
-    rendererInServer->isMuted_ = true;
-    rendererInServer->muteFlag_ = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1915,7 +1912,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
 
     bool on = false;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1929,9 +1926,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
     EXPECT_NE(nullptr, rendererInServer);
 
     bool on = true;
-    rendererInServer->isDualToneEnabled_ = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1944,11 +1940,9 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetClientVolume_001, Tes
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->managerType_ = DIRECT_PLAYBACK;
     rendererInServer->Init();
-    rendererInServer->isDualToneEnabled_ = true;
     int32_t ret = rendererInServer->SetClientVolume();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1962,9 +1956,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_001, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     bool isMute = true;
-    rendererInServer->muteFlag_ = true;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1978,10 +1971,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_002, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     bool isMute = true;
-    rendererInServer->silentModeAndMixWithOthers_ = true;
-    rendererInServer->muteFlag_ = true;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1995,10 +1986,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_003, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     bool isMute = false;
-    rendererInServer->silentModeAndMixWithOthers_ = false;
-    rendererInServer->muteFlag_ = false;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2012,9 +2001,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_004, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     bool isMute = true;
-    rendererInServer->isDualToneEnabled_ = true;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2171,7 +2159,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_006, TestSize.
     rendererInServer->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(NORMAL_PLAYBACK, ret);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**

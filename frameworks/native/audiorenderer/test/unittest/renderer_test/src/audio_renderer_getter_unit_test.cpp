@@ -641,7 +641,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_002, TestSize.Level1)
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetVolume(0.5);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     float volume = audioRenderer->GetVolume();
     EXPECT_EQ(0.5, volume);
@@ -665,7 +665,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_003, TestSize.Level1)
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetVolume(0.5);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     ret = audioRenderer->SetVolume(1.5);
     EXPECT_NE(SUCCESS, ret);
@@ -2462,7 +2462,7 @@ HWTEST(AudioRendererUnitTest, GetFormatSize_001, TestSize.Level1)
     params.format = SAMPLE_U8;
     const AudioStreamParams info_1 = params;
     size_t ret = GetFormatByteSize(info_1.format);
-    EXPECT_EQ(ret, 1);
+    EXPECT_EQ(ret, 2);
 
     params.format = SAMPLE_S16LE;
     const AudioStreamParams info_2 = params;

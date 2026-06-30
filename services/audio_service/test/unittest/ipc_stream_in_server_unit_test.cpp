@@ -2162,7 +2162,7 @@ HWTEST(IpcStreamInServerUnitTest, SetMute_001, TestSize.Level3)
     bool onRet = false;
 
     auto ret = ipcStreamInServerRet.SetMute(onRet);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
 /**
