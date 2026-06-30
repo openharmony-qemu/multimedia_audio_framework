@@ -20,14 +20,16 @@
 #include "audio_renderer_log.h"
 #include "taihe_audio_enum.h"
 #include "taihe_param_utils.h"
+#include <optional>
 
 namespace ANI::Audio {
 static const int32_t WRITE_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
 vector<AudioRendererImpl*> TaiheRendererWriteDataCallback::activeRenderers_;
 #endif
-TaiheRendererWriteDataCallback::TaiheRendererWriteDataCallback(AudioRendererImpl *taiheRenderer)
-    : taiheRenderer_(taiheRenderer)
+
+TaiheRendererWriteDataCallback::TaiheRendererWriteDataCallback(AudioRendererImpl *taiheRenderer, size_t bufferSize)
+    : taiheRenderer_(taiheRenderer), bufferSize_(bufferSize), callbackBuffer_(std::make_unique<uint8_t[]>(bufferSize))
 {
     AUDIO_DEBUG_LOG("instance create");
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
@@ -90,63 +92,64 @@ void TaiheRendererWriteDataCallback::OnWriteData(size_t length)
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(rendererWriteDataCallback_ != nullptr, "Cannot find the reference of writeData callback");
 
-    std::unique_ptr<RendererWriteDataJsCallback> cb = std::make_unique<RendererWriteDataJsCallback>();
-    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
+    std::shared_ptr<RendererWriteDataJsCallback> cb = std::make_shared<RendererWriteDataJsCallback>();
     cb->callback = rendererWriteDataCallback_;
     cb->callbackName = WRITE_DATA_CALLBACK_NAME;
     cb->bufDesc.buffer = nullptr;
     cb->rendererTaiheObj = taiheRenderer_;
 
     CHECK_AND_RETURN_LOG(taiheRenderer_ != nullptr, "Cannot find the reference to audio renderer taihe");
-    if (!taiheRenderer_->audioRenderer_) {
-        AUDIO_INFO_LOG("OnWriteData audioRenderer_ is null.");
-        return;
-    }
-    taiheRenderer_->audioRenderer_->GetBufferDesc(cb->bufDesc);
-    if (cb->bufDesc.buffer == nullptr) {
-        return;
-    }
-    if (length > cb->bufDesc.bufLength) {
-        cb->bufDesc.dataLength = cb->bufDesc.bufLength;
-    } else {
-        cb->bufDesc.dataLength = length;
-    }
+    CHECK_AND_RETURN_LOG(taiheRenderer_->audioRenderer_ != nullptr, "OnWriteData audioRenderer_ is null.");
+    CHECK_AND_RETURN_LOG(bufferSize_ >= length, "buffersize: %{public}zu, length: %{public}zu", bufferSize_, length);
+
+    cb->bufDesc.buffer = callbackBuffer_.get();
+    cb->bufDesc.bufLength = length;
+    cb->bufDesc.dataLength = length;
 
     return OnJsRendererWriteDataCallback(cb);
 }
 
-void TaiheRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb)
+void TaiheRendererWriteDataCallback::OnJsRendererWriteDataCallback(
+    const std::shared_ptr<RendererWriteDataJsCallback> &jsCb)
 {
-    if (jsCb == nullptr || jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsRendererWriteDataCallback: jsCb.get() is null");
-        return;
-    }
-
+    CHECK_AND_RETURN_LOG(jsCb != nullptr, "OnJsRendererWriteDataCallback: jsCb is null");
     CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
-    RendererWriteDataJsCallback *event = jsCb.release();
-    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
+    CHECK_AND_RETURN_LOG(jsCb->callback != nullptr, "event is nullptr.");
 
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr]() {
+    auto task = [jsCb, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackWriteDataWork(event);
+            sharePtr->SafeJsCallbackWriteDataWork(*jsCb);
         }
     };
     mainHandler_->PostTask(task, "OnWriteData", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 
-    if (taiheRenderer_ == nullptr) {
+    CHECK_AND_RETURN_LOG(WaitForWriteDataCallbackComplete(jsCb), "Wait write data callback complete failed");
+
+#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
+    auto iter = std::find(activeRenderers_.begin(), activeRenderers_.end(), jsCb->rendererTaiheObj);
+    if (iter == activeRenderers_.end()) {
+        AUDIO_INFO_LOG("TaiheRendererWriteDataCallback is finalize.");
         return;
     }
+#endif
+    CHECK_AND_RETURN_LOG(jsCb->rendererTaiheObj != nullptr && jsCb->rendererTaiheObj->audioRenderer_ != nullptr,
+        "audioRenderer_ is null");
+    int32_t ret = jsCb->rendererTaiheObj->audioRenderer_->Enqueue(jsCb->bufDesc);
+    CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "Enqueue failed, ret: %{public}d", ret);
+}
+
+bool TaiheRendererWriteDataCallback::WaitForWriteDataCallbackComplete(
+    const std::shared_ptr<RendererWriteDataJsCallback> &jsCb)
+{
+    CHECK_AND_RETURN_RET_LOG(taiheRenderer_ != nullptr, false, "TaiheAudioRenderer object is nullptr");
     std::unique_lock<std::mutex> writeCallbackLock(taiheRenderer_->writeCallbackMutex_);
     bool ret = taiheRenderer_->writeCallbackCv_.wait_for(writeCallbackLock,
-        std::chrono::milliseconds(WRITE_CALLBACK_TIMEOUT_IN_MS), [this] () {
-            return taiheRenderer_->enqueued_;
+        std::chrono::milliseconds(WRITE_CALLBACK_TIMEOUT_IN_MS), [jsCb] () {
+            return jsCb->enqueued;
         });
-    if (!ret) {
-        AUDIO_ERR_LOG("Client OnWriteData operation timed out");
-    }
-    taiheRenderer_->enqueued_ = false;
-    writeCallbackLock.unlock();
+    CHECK_AND_RETURN_RET_LOG(ret, false, "Client OnWriteData operation timed out");
+    return true;
 }
 
 void TaiheRendererWriteDataCallback::CheckWriteDataCallbackResult(OHOS::AudioStandard::BufferDesc &bufDesc,
@@ -160,47 +163,30 @@ void TaiheRendererWriteDataCallback::CheckWriteDataCallbackResult(OHOS::AudioSta
     }
 }
 
-void TaiheRendererWriteDataCallback::SafeJsCallbackWriteDataWork(RendererWriteDataJsCallback *event)
+void TaiheRendererWriteDataCallback::SafeJsCallbackWriteDataWork(RendererWriteDataJsCallback &event)
 {
-    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    std::shared_ptr<RendererWriteDataJsCallback> safeContext(
-        static_cast<RendererWriteDataJsCallback*>(event),
-        [](RendererWriteDataJsCallback *ptr) {
-            if (ptr != nullptr) {
-                delete ptr;
-                ptr = nullptr;
-            }
-    });
-    std::string request = event->callbackName;
-    do {
-        std::shared_ptr<taihe::callback<AudioDataCallbackResult(array_view<uint8_t>)>> cacheCallback =
-            std::reinterpret_pointer_cast<taihe::callback<AudioDataCallbackResult(array_view<uint8_t>)>>(
-                event->callback->cb_);
-        CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "%{public}s get reference value fail", request.c_str());
-        AudioDataCallbackResult result =
-            (*cacheCallback)(TaiheParamUtils::ToTaiheArrayBuffer(event->bufDesc.buffer, event->bufDesc.dataLength));
-        CheckWriteDataCallbackResult(event->bufDesc, result);
-        CHECK_AND_BREAK_LOG(event->rendererTaiheObj != nullptr && event->rendererTaiheObj->audioRenderer_ != nullptr,
-            "audioRenderer_ is null");
-#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
-        auto iter = std::find(activeRenderers_.begin(), activeRenderers_.end(), event->rendererTaiheObj);
-        if (iter != activeRenderers_.end()) {
-            if (event->rendererTaiheObj->audioRenderer_) {
-                event->rendererTaiheObj->audioRenderer_->Enqueue(event->bufDesc);
-            } else {
-                AUDIO_INFO_LOG("WorkCallbackRendererWriteData audioRenderer_ is null");
-            }
-        } else {
-            AUDIO_INFO_LOG("TaiheRendererWriteDataCallback is finalize.");
-        }
-#else
-        event->rendererTaiheObj->audioRenderer_->Enqueue(event->bufDesc);
-#endif
-    } while (0);
-    CHECK_AND_RETURN_LOG(event->rendererTaiheObj != nullptr, "TaiheAudioRenderer object is nullptr");
-    std::unique_lock<std::mutex> writeCallbackLock(event->rendererTaiheObj->writeCallbackMutex_);
-    event->rendererTaiheObj->enqueued_ = true;
-    event->rendererTaiheObj->writeCallbackCv_.notify_all();
-    writeCallbackLock.unlock();
+    std::optional<AudioDataCallbackResult> callbackResult = CallWriteDataCallback(event);
+    CHECK_AND_RETURN_LOG(event.rendererTaiheObj != nullptr, "TaiheAudioRenderer object is nullptr");
+    std::lock_guard<std::mutex> writeCallbackLock(event.rendererTaiheObj->writeCallbackMutex_);
+    if (callbackResult.has_value()) {
+        CheckWriteDataCallbackResult(event.bufDesc, callbackResult.value());
+    }
+    event.enqueued = true;
+    event.rendererTaiheObj->writeCallbackCv_.notify_all();
+}
+
+std::optional<AudioDataCallbackResult> TaiheRendererWriteDataCallback::CallWriteDataCallback(
+    RendererWriteDataJsCallback &event)
+{
+    std::string request = event.callbackName;
+    CHECK_AND_RETURN_RET_LOG(event.callback != nullptr, std::nullopt, "event is nullptr.");
+    std::shared_ptr<taihe::callback<AudioDataCallbackResult(array_view<uint8_t>)>> cacheCallback =
+        std::reinterpret_pointer_cast<taihe::callback<AudioDataCallbackResult(array_view<uint8_t>)>>(
+            event.callback->cb_);
+    CHECK_AND_RETURN_RET_LOG(cacheCallback != nullptr, std::nullopt, "%{public}s get reference value fail",
+        request.c_str());
+    array_view<uint8_t> bufferView(event.bufDesc.buffer, event.bufDesc.dataLength);
+    AudioDataCallbackResult result = (*cacheCallback)(bufferView);
+    return result;
 }
 } // namespace ANI::Audio
