@@ -24,6 +24,7 @@ group("unit_test_group") {
     ":audio_speed_unit_test",
     ":audio_utils_plus_unit_test",
     ":audio_utils_pro_unit_test",
+    ":audio_utils_third_unit_test",
     ":audio_utils_unit_test",
     ":audio_sink_latency_fetcher_test",
     ":audio_utils_container_aiut",
@@ -189,6 +190,48 @@ ohos_unittest("audio_speed_unit_test") {
   sources = [ "audio_speed_unit_test.cpp" ]
 
   deps = [ "../../../audioutils:audio_utils" ]
+}
+
+ohos_unittest("audio_utils_third_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../include",
+    "../../../../../test/unittest/common/include",
+    "../../../../../interfaces/inner_api/native/audiocommon/include/",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = [ "-std=c++20" ]
+
+  sources = [
+    "audio_utils_third_unit_test.cpp",
+  ]
+
+  deps = [
+    "../../../audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+  ]
+
+  if (sonic_enable == true) {
+    cflags += [ "-DSONIC_ENABLE" ]
+    external_deps += [ "sonic:sonic" ]
+  }
 }
 
 ohos_unittest("async_action_handler_test") {

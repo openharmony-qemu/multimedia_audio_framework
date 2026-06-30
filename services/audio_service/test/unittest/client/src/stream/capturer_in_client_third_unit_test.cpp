@@ -19,7 +19,6 @@
 #include "audio_errors.h"
 #include "capturer_in_client_inner.h"
 #include "ipc_stream_listener_impl.h"
-#include "ipc_stream_stub.h"
 #include "audio_ring_cache.h"
 
 using namespace testing::ext;
@@ -30,15 +29,22 @@ namespace AudioStandard {
 const int32_t CLIENT_ID = 10;
 const int32_t VALUE_FOUR = 4;
 const int32_t VALUE_FIVE = 5;
-const int32_t VALUE_SIX = 6;
-const int32_t VALUE_EIGHT = 8;
-const int32_t VALUE_TEN = 10;
 const int32_t VALUE_FIF = 15;
-const int32_t VALUE_INVALID = -1;
-const int32_t MAX_TIMES = 21;
-const uint64_t TEST_POSITION = 20000;
-const uint64_t TEST_TIMESTAMP_NS = 20000;
-const size_t SHORT_SLEEP_TIME = 200000; // us 200ms
+
+class TestCapturerReadCallback : public AudioCapturerReadCallback {
+public:
+    void OnReadData(size_t length) override {}
+};
+
+class TestStaticBufferEventCallback : public StaticBufferEventCallback {
+public:
+    void OnStaticBufferEvent(StaticBufferEventId eventId) override {}
+};
+
+class TestFirstFrameWritingCallback : public AudioRendererFirstFrameWritingCallback {
+public:
+    void OnFirstFrameWriting(uint64_t latency) override {}
+};
 
 enum {
     STATE_CHANGE_EVENT = 0,
@@ -67,132 +73,6 @@ public:
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
-};
-
-class IpcStreamTest : public IpcStreamStub {
-public:
-    virtual ~IpcStreamTest() = default;
-
-    virtual int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) { return 0; }
-
-    virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)  { return 0; }
-
-    virtual int32_t UpdatePosition()  { return 0; }
-
-    virtual int32_t GetAudioSessionID(uint32_t &sessionId)  { return 0; }
-
-    virtual int32_t Start(bool hasNoCallback) { return 0; }
-
-    virtual int32_t Pause()  { return 0; }
-
-    virtual int32_t Stop()  { return 0; }
-
-    virtual int32_t Release(bool isSwitchStream) { return 0; }
-
-    virtual int32_t Flush() { return 0; }
-
-    virtual int32_t Drain(bool stopFlag) { return 0; }
-
-    virtual int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size) { return 0; }
-
-    virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) { return 0; }
-
-    virtual int32_t SetInMainThreadState(bool isInMainThread) { return 0; }
-
-    virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) { return 0; }
-
-    virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency,
-        int32_t base)
-    {
-        return 0;
-    }
-
-    virtual int32_t GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency,
-        int32_t base)
-    {
-        return 0;
-    }
-
-    virtual int32_t GetLatency(uint64_t &latency) { return 0; }
-    virtual int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) { return 0; }
-
-    virtual int32_t SetRate(int32_t rate) { return 0; } // SetRenderRate
-
-    virtual int32_t GetRate(int32_t &rate) { return 0; } // SetRenderRate
-
-    virtual int32_t SetLowPowerVolume(float volume) { return 0; } // renderer only
-
-    virtual int32_t GetLowPowerVolume(float &volume) { return 0; } // renderer only
-
-    virtual int32_t SetAudioEffectMode(int32_t effectMode) { return 0; } // renderer only
-
-    virtual int32_t GetAudioEffectMode(int32_t &effectMode) { return 0; } // renderer only
-
-    virtual int32_t SetPrivacyType(int32_t privacyType) { return 0; } // renderer only
-
-    virtual int32_t GetPrivacyType(int32_t &privacyType) { return 0; } // renderer only
-
-    virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) { return 0; } // renderer only
-
-    virtual int32_t SetTarget(int32_t target, int32_t &ret) { return 0; } // renderer only
-
-    virtual int32_t UnsetOffloadMode() { return 0; } // renderer only
-
-    virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
-        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) { return 0; } // renderer only
-
-    virtual int32_t UpdateSpatializationState(bool spatializationEnabled,
-        bool headTrackingEnabled) { return 0; }
-
-    virtual int32_t GetStreamManagerType() { return 0; }
-
-    virtual int32_t SetRebuildFlag() { return 0; }
-
-    virtual int32_t SetSilentModeAndMixWithOthers(bool on) { return 0; }
-
-    virtual int32_t SetClientVolume() { return 0; }
-
-    virtual int32_t SetLoudnessGain(float loudnessGain) { return 0; }
-
-    virtual int32_t SetMute(bool isMute) { return (isMute ? SUCCESS : ERROR); }
-
-    virtual int32_t SetMuteHint(bool mute) { return SUCCESS; }
-
-    virtual int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) { return 0; }
-
-    virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
-        uint32_t threadPriority)
-    {
-        return 0;
-    }
-
-    virtual int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, bool skipForce = false) { return 0; }
-
-    virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
-
-    virtual int32_t SetOffloadDataCallbackState(int32_t state) { return 0; }
-
-    virtual int32_t SetSpeed(float speed) { return 0; }
-
-    virtual sptr<IRemoteObject> AsObject() { return nullptr; }
-
-    virtual int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
-        uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) { return SUCCESS; }
-
-    virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) { return 0; }
-
-    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) { return SUCCESS; }
-
-    virtual int32_t UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal) { return SUCCESS; }
-
-    virtual int32_t ResetStaticPlayPosition() { return SUCCESS; }
-
-    virtual int32_t CalculateCacheCount(uint32_t cacheSizeSizeInFrame, uint32_t &cacheCount)
-    {
-        return SUCCESS;
-    }
-
-    virtual int32_t SetPitch(float pitch) { return SUCCESS; }
 };
 
 void Init(std::shared_ptr<CapturerInClientInner> capturerInClientInner)
@@ -236,7 +116,7 @@ HWTEST(CapturerInClientThirdUnitTest, SetCapturerReadCallback_001, TestSize.Leve
 HWTEST(CapturerInClientThirdUnitTest, SetCapturerReadCallback_002, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    auto callback = std::make_shared<AudioCapturerReadCallback>();
+    auto callback = std::make_shared<TestCapturerReadCallback>();
     capturerInClientInner->capturerMode_ = CAPTURE_MODE_NORMAL;
     int32_t ret = capturerInClientInner->SetCapturerReadCallback(callback);
     EXPECT_EQ(ret, ERR_INCORRECT_MODE);
@@ -548,7 +428,7 @@ HWTEST(CapturerInClientThirdUnitTest, GetRendererSamplingRate_001, TestSize.Leve
 HWTEST(CapturerInClientThirdUnitTest, SetChannelBlendMode_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    int32_t ret = capturerInClientInner->SetChannelBlendMode(CHANNEL_BLEND_MODE_DEFAULT);
+    int32_t ret = capturerInClientInner->SetChannelBlendMode(ChannelBlendMode::MODE_DEFAULT);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -719,7 +599,7 @@ HWTEST(CapturerInClientThirdUnitTest, SetStaticBufferInfo_001, TestSize.Level1)
 HWTEST(CapturerInClientThirdUnitTest, SetStaticBufferEventCallback_capturer_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    auto callback = std::make_shared<StaticBufferEventCallback>();
+    auto callback = std::make_shared<TestStaticBufferEventCallback>();
     int32_t ret = capturerInClientInner->SetStaticBufferEventCallback(callback);
     EXPECT_EQ(ret, ERR_INCORRECT_MODE);
 }
@@ -772,7 +652,7 @@ HWTEST(CapturerInClientThirdUnitTest, DrainAudioStream_001, TestSize.Level1)
 HWTEST(CapturerInClientThirdUnitTest, SetRendererFirstFrameWritingCallback_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    auto callback = std::make_shared<AudioRendererFirstFrameWritingCallback>();
+    auto callback = std::make_shared<TestFirstFrameWritingCallback>();
     int32_t ret = capturerInClientInner->SetRendererFirstFrameWritingCallback(callback);
     EXPECT_EQ(ret, ERR_INVALID_OPERATION);
 }
@@ -901,10 +781,10 @@ HWTEST(CapturerInClientThirdUnitTest, Read_003, TestSize.Level2)
     Init(capturerInClientInner);
     capturerInClientInner->state_ = RUNNING;
     capturerInClientInner->sizePerFrameInByte_ = 4;
-    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(100, 4);
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(100, 4, 4);
     
     uint8_t buffer[16] = {0};
-    int32_t ret = capturerInClientInner->Read(buffer, 16, true);
+    int32_t ret = capturerInClientInner->Read(buffer[0], 16, true);
     EXPECT_NE(ret, SUCCESS);
 }
 
@@ -919,7 +799,7 @@ HWTEST(CapturerInClientThirdUnitTest, StartAudioStream_001, TestSize.Level2)
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     Init(capturerInClientInner);
     capturerInClientInner->state_ = PREPARED;
-    capturerInClientInner->ipcStream_ = new IpcStreamTest();
+    capturerInClientInner->ipcStream_ = nullptr;
     bool result = capturerInClientInner->StartAudioStream(CMD_FROM_CLIENT);
     EXPECT_EQ(result, false);
 }
@@ -935,7 +815,7 @@ HWTEST(CapturerInClientThirdUnitTest, StartAudioStream_002, TestSize.Level2)
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     Init(capturerInClientInner);
     capturerInClientInner->state_ = STOPPED;
-    capturerInClientInner->ipcStream_ = new IpcStreamTest();
+    capturerInClientInner->ipcStream_ = nullptr;
     bool result = capturerInClientInner->StartAudioStream(CMD_FROM_CLIENT);
     EXPECT_EQ(result, false);
 }
@@ -966,7 +846,7 @@ HWTEST(CapturerInClientThirdUnitTest, ReleaseAudioStream_002, TestSize.Level1)
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     Init(capturerInClientInner);
     capturerInClientInner->state_ = RUNNING;
-    capturerInClientInner->ipcStream_ = new IpcStreamTest();
+    capturerInClientInner->ipcStream_ = nullptr;
     bool result = capturerInClientInner->ReleaseAudioStream();
     EXPECT_EQ(result, true);
 }
@@ -1071,8 +951,8 @@ HWTEST(CapturerInClientThirdUnitTest, CheckRestoreStatus_002, TestSize.Level2)
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     Init(capturerInClientInner);
     capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
-    capturerInClientInner->readCb_ = std::make_shared<AudioCapturerReadCallback>();
-    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(100, 4);
+    capturerInClientInner->readCb_ = std::make_shared<TestCapturerReadCallback>();
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(100, 4, 4);
     RestoreStatus status = capturerInClientInner->CheckRestoreStatus();
     EXPECT_NE(status, NEED_RESTORE_TO_NORMAL);
 }

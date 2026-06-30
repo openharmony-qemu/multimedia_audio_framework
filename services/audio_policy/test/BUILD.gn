@@ -251,10 +251,6 @@ ohos_unittest("audio_zone_service_unit_test") {
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
 
-  if (audio_framework_feature_multi_user_zone) {
-    defines += [ "MULTI_USER_ZONE" ]
-  }
-
   if (accessibility_enable == true) {
     cflags += [ "-DACCESSIBILITY_ENABLE" ]
   }
@@ -6920,7 +6916,7 @@ ohos_unittest("va_device_manager_test") {
   module_out_path = module_output_path
   include_dirs = ["./unittest/va_device_manager_test/include",
                   "../../audio_policy/server/domain/device/src/va",
-                  "../../../services/audio_service/unittest/include",
+                  "../../../services/audio_service/test/unittest/include",
                   "../../../frameworks",
                   "//foundation/multimedia/audio_framework/services/audio_service/test/unittest/include/",
   ]

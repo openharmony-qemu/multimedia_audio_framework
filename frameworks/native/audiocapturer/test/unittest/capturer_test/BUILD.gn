@@ -48,6 +48,8 @@ ohos_unittest("audio_capturer_unit_test") {
   sources = [
     "src/audio_capturer_extra_unit_test.cpp",
     "src/audio_capturer_unit_test.cpp",
+    "src/audio_capturer_proxy_obj_unit_test.cpp",
+    "src/audio_capturer_third_unit_test.cpp",
   ]
 
   if (audio_framework_feature_low_latency) {
@@ -59,6 +61,7 @@ ohos_unittest("audio_capturer_unit_test") {
     "../../../../../../services/audio_service:audio_engine_manager",
     "../../../../../../services/audio_service:audio_policy_manager",
     "../../../../../../services/audio_service:audio_stream_client",
+    "../../../../audiodefinitions:audio_definitions",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audioschedule:audio_schedule",
   ]

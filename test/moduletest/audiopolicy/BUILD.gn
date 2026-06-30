@@ -31,7 +31,8 @@ ohos_moduletest("audio_policy_module_test") {
     "./1.0/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
-    "../../../services/audio_service/test/unittest/include"
+    "../../../services/audio_service/test/unittest/include",
+    "../../../services/audio_service/test/unittest/common/include"
   ]
 
   sources = [ "1.0/src/audio_policy_test.cpp" ]
