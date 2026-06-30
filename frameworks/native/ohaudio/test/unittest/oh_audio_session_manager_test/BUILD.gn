@@ -50,7 +50,10 @@ ohos_unittest("audio_oh_session_manager_unit_test") {
 
   sources = [ "src/oh_audio_session_manager_unit_test.cpp" ]
 
-  deps = [ "${audio_framework_root}/frameworks/native/ohaudio:ohaudio" ]
+  deps = [
+    "${audio_framework_root}/frameworks/native/ohaudio:ohaudio",
+    "${audio_framework_root}/services/audio_policy:audio_policy_service_static",
+  ]
 
   external_deps = [
     "hilog:libhilog",
