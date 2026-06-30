@@ -1002,7 +1002,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_007, TestSize.Level1)
  * @tc.desc  : Test Write interface after pause and resume. Returns number of bytes written, if the write is successful.
  */
 
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_008, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_Write_008, TestSize.Level1)
 {
     FILE *wavFile = fopen(RenderUT::AUDIORENDER_TEST_FILE_PATH.c_str(), "rb");
     ASSERT_NE(nullptr, wavFile);

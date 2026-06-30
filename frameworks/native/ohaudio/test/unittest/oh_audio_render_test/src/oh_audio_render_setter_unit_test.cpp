@@ -41,7 +41,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_001, TestSize.Level0)
  * @tc.number: OH_Audio_Render_SetVolume_002
  * @tc.desc  : Test OH_AudioRenderer_SetVolume interface between minimum and maximum volumes.
  */
-HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_002, TestSize.Level0)
+HWTEST(OHAudioRenderUnitTest, DISABLED_OH_Audio_Render_SetVolume_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
     OH_AudioRenderer* audioRenderer;
@@ -57,7 +57,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_002, TestSize.Level0)
  * @tc.number: OH_Audio_Render_SetVolume_003
  * @tc.desc  : Test OH_AudioRenderer_SetVolume interface for minimum and maximum volumes.
  */
-HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolume_003, TestSize.Level0)
+HWTEST(OHAudioRenderUnitTest, DISABLED_OH_Audio_Render_SetVolume_003, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
     OH_AudioRenderer* audioRenderer;

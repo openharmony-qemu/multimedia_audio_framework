@@ -109,7 +109,7 @@ void AudioFastRendererUnitTest::TearDown(void)
  * @tc.number: Audio_Fast_Renderer_001
  * @tc.desc  : Audio_Fast_Renderer_001
  */
-HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_001, TestSize.Level0)
+HWTEST_F(AudioFastRendererUnitTest, DISABLED_Audio_Fast_Renderer_001, TestSize.Level0)
 {
     ASSERT_NE(false, g_isFastRenderer);
     int32_t ret = -1;

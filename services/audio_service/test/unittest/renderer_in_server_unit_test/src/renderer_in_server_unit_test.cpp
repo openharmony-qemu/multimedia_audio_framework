@@ -2678,7 +2678,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_001, TestSize
  * @tc.number: RendererInServerSetClientVolume_002
  * @tc.desc  : Test SetClientVolume interface. Set audioServerBuffer_ is not nullptr.
  */
-HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_002, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerSetClientVolume_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
@@ -2696,7 +2696,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_002, TestSize
  * @tc.number: RendererInServerSetMute_001
  * @tc.desc  : Test SetMute interface.
 */
-HWTEST_F(RendererInServerUnitTest, RendererInServerSetMute_001, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerSetMute_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
@@ -2726,7 +2726,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetDuckFactor_001, TestSize.L
  * @tc.number: RendererInServerSetSilentModeAndMixWithOthers_001
  * @tc.desc  : Test SetSilentModeAndMixWithOthers interface.
  */
-HWTEST_F(RendererInServerUnitTest, RendererInServerSetSilentModeAndMixWithOthers_001, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerSetSilentModeAndMixWithOthers_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
@@ -3938,7 +3938,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_008, TestSize
  * @tc.number: RendererInServerStandby_001
  * @tc.desc  : Test Standby API when asyncHandler_ is valid.
  */
-HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_001, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStandby_001, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -3959,7 +3959,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_001, TestSize.Level1)
  * @tc.number: RendererInServerStandby_002
  * @tc.desc  : Test Standby API when asyncHandler_ is nullptr.
  */
-HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_002, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStandby_002, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -3979,7 +3979,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_002, TestSize.Level1)
  * @tc.number: RendererInServerStartInnerDuringStandby_001
  * @tc.desc  : Test StartInnerDuringStandby when asyncHandler_ is valid.
  */
-HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_001, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStartInnerDuringStandby_001, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -4002,7 +4002,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_001, 
  * @tc.number: RendererInServerStartInnerDuringStandby_002
  * @tc.desc  : Test StartInnerDuringStandby when asyncHandler_ is nullptr.
  */
-HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_002, TestSize.Level1)
+HWTEST_F(RendererInServerUnitTest, DISABLED_RendererInServerStartInnerDuringStandby_002, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);

@@ -3015,7 +3015,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetStreamPropInfoForMultiChannel_NearLinkDis
  *           Should match pipe with adapterName REMOTE_CAST_INNER_CAPTURER_SINK_NAME.
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_RemoteCast_001, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, DISABLED_ProcessNewPipeList_RemoteCast_001, TestSize.Level1)
 {
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;

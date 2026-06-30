@@ -115,9 +115,8 @@ HWTEST(AudioUtilsThirdUnitTest, AudioBlend_ZeroChannels_001, TestSize.Level1)
     audioBlend->Process(buffer, 4);
     
     // Should return early without modifying buffer
-    int16_t* samples = reinterpret_cast<int16_t*>(buffer);
-    EXPECT_EQ(samples[0], 100);
-    EXPECT_EQ(samples[1], 200);
+    EXPECT_EQ(buffer[0], 100);
+    EXPECT_EQ(buffer[1], 200);
 }
 
 /**

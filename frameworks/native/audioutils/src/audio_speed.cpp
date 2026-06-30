@@ -32,6 +32,7 @@ AudioSpeed::AudioSpeed(size_t rate, size_t format, size_t channels, int32_t maxS
 {
     AUDIO_INFO_LOG("AudioSpeed construct");
     Init();
+    speed_ = SPEED_NORMAL;
     streamParam_ = {};
 }
 
@@ -124,7 +125,7 @@ float AudioSpeed::GetPitchForSpeed(float speed)
 {
     float noPitchPoint = 0.5f;
     float pitch = SPEED_NORMAL;
-    if (speed > noPitchPoint) {
+    if (speed >= noPitchPoint) {
         pitch = SPEED_NORMAL;
     } else {
         pitch = (speed - SLOW_PLAY_1_8_SPEED) * (SPEED_NORMAL - SLOW_PLAY_1_8_SPEED) /

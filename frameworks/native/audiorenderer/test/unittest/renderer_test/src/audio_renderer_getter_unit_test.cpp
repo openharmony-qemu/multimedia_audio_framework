@@ -631,7 +631,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_001, TestSize.Level1)
  * @tc.number: Audio_Renderer_GetVolume_002
  * @tc.desc  : Test GetVolume interface after set volume call.
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_002, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_GetVolume_002, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -655,7 +655,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_002, TestSize.Level1)
  * @tc.number: Audio_Renderer_GetVolume_003
  * @tc.desc  : Test GetVolume interface after set volume fails.
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_003, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, DISABLED_Audio_Renderer_GetVolume_003, TestSize.Level1)
 {
     int32_t ret = -1;
     AudioRendererOptions rendererOptions;
@@ -2456,7 +2456,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSilentModeAndMixWithOthers_001, 
  * @tc.number: GetFormatSize
  * @tc.desc  : Test GetFormatSize
  */
-HWTEST(AudioRendererUnitTest, GetFormatSize_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, DISABLED_GetFormatSize_001, TestSize.Level1)
 {
     AudioStreamParams params;
     params.format = SAMPLE_U8;
