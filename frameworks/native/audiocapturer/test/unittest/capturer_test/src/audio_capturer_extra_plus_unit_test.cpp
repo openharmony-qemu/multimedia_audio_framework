@@ -521,7 +521,7 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_018, TestSize.Level1)
 
     capturer->audioStream_ = std::make_shared<FastAudioStreamFork2>();
 
-    capturer->HandleAudioInterruptWhenServerDied();
+    capturer->HandleAudioInterruptWhenServerDied(CapturerState::CAPTURER_RUNNING);
     EXPECT_EQ(capturer->GetStatusInner(), CapturerState::CAPTURER_RUNNING);
 }
 
@@ -543,7 +543,7 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_018_UpdateStreamId, TestSize.
     capturer->audioInterrupt_.streamId = oldSessionId;
     capturer->audioStream_ = std::make_shared<FastAudioStreamForkWithSessionId>(newSessionId);
 
-    capturer->HandleAudioInterruptWhenServerDied();
+    capturer->HandleAudioInterruptWhenServerDied(CapturerState::CAPTURER_RUNNING);
 
     EXPECT_EQ(capturer->sessionID_, newSessionId);
     EXPECT_EQ(capturer->audioInterrupt_.streamId, newSessionId);
@@ -566,7 +566,7 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_018_GetSessionIdFail, TestSiz
     capturer->audioInterrupt_.streamId = oldSessionId;
     capturer->audioStream_ = std::make_shared<FastAudioStreamForkGetSessionIdFail>();
 
-    capturer->HandleAudioInterruptWhenServerDied();
+    capturer->HandleAudioInterruptWhenServerDied(CapturerState::CAPTURER_RUNNING);
 
     EXPECT_EQ(capturer->sessionID_, oldSessionId);
     EXPECT_EQ(capturer->audioInterrupt_.streamId, oldSessionId);
@@ -587,7 +587,7 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_019, TestSize.Level1)
 
     capturer->audioStream_ = std::make_shared<FastAudioStreamFork3>();
 
-    capturer->HandleAudioInterruptWhenServerDied();
+    capturer->HandleAudioInterruptWhenServerDied(CapturerState::CAPTURER_NEW);
     EXPECT_EQ(capturer->GetStatusInner(), CapturerState::CAPTURER_NEW);
 }
 

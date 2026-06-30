@@ -27,7 +27,6 @@ public:
         AudioFocuState &incomingState, InterruptEventInternal &interruptEvent);
     void UpdateCustomFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
-    bool IsUltrasonicConcurrentScene(SourceType firstSourceType, SourceType secondSourceType) const;
 private:
     void UltraSonicCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         AudioFocuState &incomingState, InterruptEventInternal &interruptEvent);

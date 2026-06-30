@@ -143,12 +143,16 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
     AudioXCollie audioXCollie("EventEntry::UpdateSessionOperation", TIMEOUT_CORE_ENTRY_S,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
+    bool isInterruptActive = false;
+    if (operation == SESSION_OPERATION_START) {
+        isInterruptActive = coreService_->IsStreamActive(sessionId);
+    }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     HILOG_COMM_INFO("[UpdateSessionOperation]withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
         sessionId, SessionOperationToString(operation), SessionOperationMsgToString(opMsg));
     switch (operation) {
         case SESSION_OPERATION_START:
-            return coreService_->StartClient(sessionId, opMsg);
+            return coreService_->StartClient(sessionId, opMsg, isInterruptActive);
         case SESSION_OPERATION_PAUSE:
             return coreService_->PauseClient(sessionId);
         case SESSION_OPERATION_STANDBY:
@@ -859,12 +863,7 @@ int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bo
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
-    int32_t ret = coreService_->SetCapturerMuteHint(sessionId, mute);
-    if (ret == SUCCESS) {
-        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(
-            "AudioCoreService::EventEntry::SetCapturerMuteHint");
-    }
-    return ret;
+    return coreService_->SetCapturerMuteHint(sessionId, mute);
 }
 
 void AudioCoreService::EventEntry::OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable)
@@ -874,11 +873,11 @@ void AudioCoreService::EventEntry::OnDeviceStateChange(const std::string &networ
     coreService_->OnDeviceStateChange(networkId, role, isAvailable);
 }
 
-void AudioCoreService::EventEntry::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)
+void AudioCoreService::EventEntry::SetStreamInterruptMute(uint32_t streamId, bool mute)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
-    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    coreService_->SetStreamInterruptMute(streamId, mute);
 }
 
 bool AudioCoreService::EventEntry::IsSupportIndependentPipe()
