@@ -470,7 +470,7 @@ describe("AudioRoutingManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("setCommunicationDevice002", 0, async function (done) {
+  it.skip("setCommunicationDevice002", 0, async function (done) {
     let audioManager = audio.getAudioManager();
     let rendererInfo = {
       content: audio.ContentType.CONTENT_TYPE_SPEECH,

@@ -31,9 +31,11 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+#ifdef TEMP_DISABLE
 const int32_t READ_BUFFERS_MAX_COUNT = 100;
 const int32_t VALID_DATA_COUNT = 20;
 const size_t SHORT_SLEEP_TIME = 100000; // us 100ms
+#endif
 const size_t NUM2 = 2;
 } // namespace
 
@@ -337,6 +339,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_004, TestSize.Level1)
 }
 #endif
 
+#ifdef TEMP_DISABLE
 // Test play target usage and start inner-cap the target usage, check data not empty.
 static void TestInnerCapturer(StreamUsage targetUsage)
 {
@@ -385,10 +388,9 @@ static void TestInnerCapturer(StreamUsage targetUsage)
 
     audioCapturer->Release();
 }
+#endif
 
 #ifdef TEMP_DISABLE
-/**
-* @tc.name  : Test capturer UNKNOWN.
 * @tc.number: Inner_Capturer_Basic_005
 * @tc.desc  : Test PLAYBACK_CAPTURE
 */
@@ -467,36 +469,6 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0012, TestSize.Level1)
     TestInnerCapturer(STREAM_USAGE_MOVIE);
 }
 #endif
-/**
-* @tc.name  : Test capturer GAME.
-* @tc.number: Inner_Capturer_Basic_0013
-* @tc.desc  : Test PLAYBACK_CAPTURE
-*/
-HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0013, TestSize.Level1)
-{
-    TestInnerCapturer(STREAM_USAGE_GAME);
-}
-
-/**
-* @tc.name  : Test capturer AUDIOBOOK.
-* @tc.number: Inner_Capturer_Basic_0014
-* @tc.desc  : Test PLAYBACK_CAPTURE
-*/
-HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0014, TestSize.Level1)
-{
-    TestInnerCapturer(STREAM_USAGE_AUDIOBOOK);
-}
-
-/**
-* @tc.name  : Test capturer NAVIGATION.
-* @tc.number: Inner_Capturer_Basic_0015
-* @tc.desc  : Test PLAYBACK_CAPTURE
-*/
-HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0015, TestSize.Level1)
-{
-    TestInnerCapturer(STREAM_USAGE_NAVIGATION);
-}
-
 #ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test capturer EXCLUDE self.

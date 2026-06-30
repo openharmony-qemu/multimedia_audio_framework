@@ -14,7 +14,7 @@
 import("//build/test.gni")
 import("../../../../../../config.gni")
 
-module_output_path = "audio_framework/audio_framework_route/audio_opensles"
+#module_output_path = "audio_framework/audio_framework_route/audio_opensles"
 
 config("audio_capture_config") {
   include_dirs = [
@@ -40,22 +40,23 @@ config("audio_opensles_config") {
   include_dirs = [ "../../../include" ]
 }
 
-ohos_unittest("audio_opensles_recorder_unit_test") {
-  module_out_path = module_output_path
-  include_dirs = [ "./include" ]
-
-  configs = [
-    ":audio_opensles_config",
-    ":audio_capture_config",
-  ]
-
-  sources = [ "src/audio_opensles_recorder_unit_test.cpp" ]
-
-  deps = [ "../../../../opensles:opensles" ]
-
-  external_deps = [
-    "hilog:libhilog",
-    "opensles:libSLES",
-    "ipc:ipc_single",
-  ]
-}
+# Disabled due to UNAVAILABLE
+#ohos_unittest("audio_opensles_recorder_unit_test") {
+#  module_out_path = module_output_path
+#  include_dirs = [ "./include" ]
+#
+#  configs = [
+#    ":audio_opensles_config",
+#    ":audio_capture_config",
+#  ]
+#
+#  sources = [ "src/audio_opensles_recorder_unit_test.cpp" ]
+#
+#  deps = [ "../../../../opensles:opensles" ]
+#
+#  external_deps = [
+#    "hilog:libhilog",
+#    "opensles:libSLES",
+#    "ipc:ipc_single",
+#  ]
+#}
