@@ -259,7 +259,7 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneChangeCallback(int32_t zoneId,
     const std::shared_ptr<AudioZoneChangeCallback> &callback)
 {
     AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId is invalid");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
@@ -274,7 +274,7 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneChangeCallback(int32_t zoneId,
 int32_t AudioZoneManagerInner::UnRegisterAudioZoneChangeCallback(int32_t zoneId)
 {
     AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId is invalid");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_RET_LOG(client_ != nullptr, ERROR, "client_ is nullptr!");
