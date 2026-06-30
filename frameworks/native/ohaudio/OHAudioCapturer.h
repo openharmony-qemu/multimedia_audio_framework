@@ -239,7 +239,7 @@ public:
         OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData);
     bool IsModernInnerCapturer();
     int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior);
-    const AudioCapturer *GetAudioCapturer() const;
+    std::shared_ptr<AudioCapturer> GetAudioCapturer();
 
 private:
     std::shared_ptr<AudioCapturer> audioCapturer_;
