@@ -25,6 +25,7 @@
 #include "media_monitor_manager.h"
 #include "audio_effect_map.h"
 #include "audio_utils.h"
+#include <cinttypes>
 
 namespace OHOS {
 namespace AudioStandard {
