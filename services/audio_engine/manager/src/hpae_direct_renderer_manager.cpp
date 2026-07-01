@@ -976,6 +976,7 @@ bool HpaeDirectRendererManager::SetSessionFade(uint32_t sessionId, IOperation op
 
 void HpaeDirectRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation operation)
 {
+    CHECK_AND_RETURN_LOG(curNode_, "curNode_ directrenderer is nullptr");
     TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(), operation);
 }
 
