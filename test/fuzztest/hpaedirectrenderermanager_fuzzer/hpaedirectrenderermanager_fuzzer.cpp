@@ -1066,7 +1066,6 @@ void HpaeDirectRendererManagerCallbacksFuzzTest()
 
 // ===========================================================================
 // Pre-Init ops batch.
-//
 // Without Init there is no worker thread and SendRequest rejects every request
 // at the !IsInit() guard, so none of these enqueue anything. This safely
 // covers the not-init early-return branches in Start/Pause/Stop/Flush/Drain/
