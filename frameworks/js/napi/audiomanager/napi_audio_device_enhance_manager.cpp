@@ -113,11 +113,11 @@ napi_value NapiAudioDeviceEnhanceManager::CreateDeviceEnhanceManagerWrapper(napi
     napi_value result = nullptr;
     napi_value constructor;
     napi_status status = napi_get_reference_value(env, g_deviceEnhanceManagerConstructor, &constructor);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiParamUtils::GetUndefinedValue(env),
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr,
         "napi_get_reference_value fail");
 
     status = napi_new_instance(env, constructor, 0, nullptr, &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiParamUtils::GetUndefinedValue(env),
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr,
         "napi_new_instance fail");
     return result;
 }
