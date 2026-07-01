@@ -13,35 +13,15 @@
  * limitations under the License.
  */
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 
 #include "audio_process_in_client.h"
 #include "audio_errors.h"
+#include "audio_service_log.h"
 
 using namespace testing::ext;
-using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
-
-// Minimal mock for IAudioProcess
-class MockIAudioProcessSimple : public IAudioProcess {
-public:
-    MOCK_METHOD(int32_t, ResolveBufferBaseAndGetServerSpanSize,
-        (std::shared_ptr<OHAudioBufferBase> buffer, uint32_t &spanSizeInFrame), (override));
-    MOCK_METHOD(int32_t, GetSessionId, (uint32_t &sessionId), (override));
-    MOCK_METHOD(int32_t, Start, (), (override));
-    MOCK_METHOD(int32_t, Pause, (bool isFlush), (override));
-    MOCK_METHOD(int32_t, Resume, (), (override));
-    MOCK_METHOD(int32_t, Stop, (int32_t stage), (override));
-    MOCK_METHOD(int32_t, Release, (bool isSwitchStream), (override));
-    MOCK_METHOD(int32_t, RegisterProcessCb, (const sptr<IRemoteObject> &), (override));
-    MOCK_METHOD(int32_t, SetMuteHint, (bool mute), (override));
-    MOCK_METHOD(int32_t, SetSourceDuration, (int64_t duration), (override));
-    MOCK_METHOD(sptr<IRemoteObject>, AsObject, (), (override));
-    MOCK_METHOD(int32_t, SetDefaultOutputDevice, (int32_t defaultOutputDevice, bool skipForce), (override));
-    MOCK_METHOD(int32_t, SetSilentModeAndMixWithOthers, (bool on), (override));
-};
 
 class AudioProcessInClientSupplementUnitTest : public testing::Test {
 public:
@@ -170,7 +150,7 @@ HWTEST(AudioProcessInClientSupplementUnitTest, CheckIfSupport_003, TestSize.Leve
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
     config.streamInfo.encoding = ENCODING_PCM;
     config.streamInfo.format = SAMPLE_S16LE;
-    config.streamInfo.channels = 5; // Not MONO or STEREO
+    config.streamInfo.channels = static_cast<AudioChannel>(5); // Not MONO or STEREO
     config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
     config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
     

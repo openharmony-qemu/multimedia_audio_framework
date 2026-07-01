@@ -34,6 +34,32 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 
+class TestErrorCallback : public AudioRendererErrorCallback {
+public:
+    void OnError(AudioErrors errorCode) override {}
+};
+
+class TestOutputDeviceChangeCallback : public AudioRendererOutputDeviceChangeCallback {
+public:
+    void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReason reason) override {}
+};
+
+class TestFastStatusChangeCallback : public AudioRendererFastStatusChangeCallback {
+public:
+    void OnFastStatusChange(FastStatus status) override {}
+};
+
+class TestWriteCallback : public AudioRendererWriteCallback {
+public:
+    void OnWriteData(size_t length) override {}
+};
+
+class TestFirstFrameWritingCallback : public AudioRendererFirstFrameWritingCallback {
+public:
+    void OnFirstFrameWriting(uint64_t latency) override {}
+};
+
 // Test CheckMaxRendererInstances
 /**
  * @tc.name  : Test CheckMaxRendererInstances.
@@ -45,6 +71,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_CheckMaxRendererInstances_001,
     // This function checks if the number of renderer instances exceeds the maximum
     // Since it depends on AudioPolicyManager, we can only test the code path
     int32_t ret = AudioRenderer::CheckMaxRendererInstances();
+    (void)ret;
     // The return value depends on the current system state
     // We just ensure it doesn't crash
     EXPECT_TRUE(ret == SUCCESS || ret == ERR_OVERFLOW);
@@ -286,6 +313,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_CheckUltrasonicPermission_002,
     // This test depends on getuid() which may not be UID_MSDP_SA in test environment
     // We can only test the code path
     bool ret = AudioRenderer::CheckUltrasonicPermission(STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC);
+    (void)ret;
     // The result depends on the current UID
     EXPECT_TRUE(ret == true || ret == false);
 }
@@ -362,7 +390,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_CheckSupportedSamplingRates_00
  */
 HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_CheckSupportedSamplingRates_002, TestSize.Level1)
 {
-    bool ret = AudioRenderer::CheckSupportedSamplingRates(SAMPLE_RATE_7999);
+    bool ret = AudioRenderer::CheckSupportedSamplingRates(static_cast<AudioSamplingRate>(7999));
     EXPECT_EQ(false, ret);
 }
 
@@ -373,7 +401,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_CheckSupportedSamplingRates_00
  */
 HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_CheckSupportedSamplingRates_003, TestSize.Level1)
 {
-    bool ret = AudioRenderer::CheckSupportedSamplingRates(SAMPLE_RATE_384001);
+    bool ret = AudioRenderer::CheckSupportedSamplingRates(static_cast<AudioSamplingRate>(384001));
     EXPECT_EQ(false, ret);
 }
 
@@ -395,7 +423,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_CheckSupportedSamplingRates_00
  */
 HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_CheckSupportedSamplingRates_005, TestSize.Level1)
 {
-    bool ret = AudioRenderer::CheckSupportedSamplingRates(SAMPLE_RATE_16001);
+    bool ret = AudioRenderer::CheckSupportedSamplingRates(static_cast<AudioSamplingRate>(16001));
     EXPECT_EQ(false, ret);
 }
 
@@ -473,8 +501,8 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_HandleSetRendererInfoByOptions
     rendererOptions.rendererInfo.keepRunning = true;
     rendererOptions.rendererInfo.toneFlag = true;
     rendererOptions.rendererInfo.isOffloadAllowed = true;
-    rendererOptions.rendererInfo.playerType = 1;
-    rendererOptions.rendererInfo.volumeMode = 0;
+    rendererOptions.rendererInfo.playerType = static_cast<PlayerType>(1);
+    rendererOptions.rendererInfo.volumeMode = static_cast<AudioVolumeMode>(0);
     rendererOptions.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
 
     // Call HandleSetRendererInfoByOptions
@@ -504,8 +532,8 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetFinalOffloadAllowed_001, Te
     ASSERT_NE(nullptr, audioRenderer);
 
     // Test with true
-    bool result = audioRenderer->GetFinalOffloadAllowed(true);
-    EXPECT_EQ(true, result);
+    int32_t result = audioRenderer->SetOffloadAllowed(true);
+    EXPECT_EQ(SUCCESS, result);
 }
 
 /**
@@ -523,8 +551,8 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetFinalOffloadAllowed_002, Te
     ASSERT_NE(nullptr, audioRenderer);
 
     // Test with false
-    bool result = audioRenderer->GetFinalOffloadAllowed(false);
-    EXPECT_EQ(false, result);
+    int32_t result = audioRenderer->SetOffloadAllowed(false);
+    EXPECT_EQ(SUCCESS, result);
 }
 
 // Test IsRendererFlagsSupportStatic
@@ -754,7 +782,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetInterruptEventCallbackType_
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, false);
     ASSERT_NE(nullptr, audioRenderer);
 
-    audioRenderer->SetInterruptEventCallbackType(INTERRUPT_EVENT_CALLBACK_TYPE_DEFAULT);
+    audioRenderer->SetInterruptEventCallbackType(INTERRUPT_EVENT_CALLBACK_DEFAULT);
     // No crash means success
     SUCCEED();
 }
@@ -824,6 +852,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_CheckStreamTypeAndPermission_0
     // This function checks if the stream type is allowed
     // For ultrasonic stream, the result depends on getuid()
     bool ret = AudioRenderer::CheckStreamTypeAndPermission(STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC);
+    (void)ret;
     // The result depends on the current UID
     EXPECT_TRUE(ret == true || ret == false);
 }
@@ -1034,6 +1063,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetRenderMode_001, TestSize.Le
 
     // Test SetRenderMode
     int32_t ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1055,6 +1085,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_IsOffloadEnable_001, TestSize.
     ASSERT_NE(nullptr, audioRenderer);
 
     bool result = audioRenderer->IsOffloadEnable();
+    (void)result;
     // The result depends on audioStream_
     EXPECT_TRUE(result == true || result == false);
 }
@@ -1095,6 +1126,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetDefaultOutputDevice_001, Te
 
     // Test with valid device type
     int32_t ret = audioRenderer->SetDefaultOutputDevice(DEVICE_TYPE_SPEAKER);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1115,7 +1147,8 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetDefaultOutputDevice_002, Te
     ASSERT_NE(nullptr, audioRenderer);
 
     // Test with invalid device type
-    int32_t ret = audioRenderer->SetDefaultOutputDevice(DEVICE_TYPE_BLUETOOTH);
+    int32_t ret = audioRenderer->SetDefaultOutputDevice(DEVICE_TYPE_BLUETOOTH_SCO);
+    (void)ret;
     // Should return ERR_NOT_SUPPORTED
     EXPECT_TRUE(ret == ERR_NOT_SUPPORTED || ret == ERROR_ILLEGAL_STATE);
 }
@@ -1137,6 +1170,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetSpeed_001, TestSize.Level1)
 
     // Test with valid speed (1.0)
     int32_t ret = audioRenderer->SetSpeed(1.0f);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1178,6 +1212,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetPitch_001, TestSize.Level1)
 
     // Test with valid pitch (1.0)
     int32_t ret = audioRenderer->SetPitch(1.0f);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid and state
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1219,6 +1254,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetLoudnessGain_001, TestSize.
 
     // Test with valid gain (0.0)
     int32_t ret = audioRenderer->SetLoudnessGain(0.0f);
+    (void)ret;
     // The return value depends on stream usage and audioStream_
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1260,6 +1296,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetVolumeWithRamp_001, TestSiz
 
     // Test with valid parameters
     int32_t ret = audioRenderer->SetVolumeWithRamp(0.5f, 100);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1303,6 +1340,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetTarget_001, TestSize.Level1
 
     // Test with valid target
     int32_t ret = audioRenderer->SetTarget(NORMAL_PLAYBACK);
+    (void)ret;
     // The return value depends on state and audioStream_
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1325,6 +1363,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetKeepRunning_001, TestSize.L
 
     bool keepRunning = false;
     int32_t ret = audioRenderer->GetKeepRunning(keepRunning);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1368,6 +1407,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetMainUseArk_001, TestSize.Le
     ASSERT_NE(nullptr, audioRenderer);
 
     int32_t ret = audioRenderer->SetMainUseArk(true);
+    (void)ret;
     // The return value depends on isFirstSetMainUseArk_
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1390,6 +1430,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetAudioTime_001, TestSize.Lev
 
     Timestamp timestamp;
     bool result = audioRenderer->GetAudioTime(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    (void)result;
     // The result depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1412,6 +1453,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetAudioPosition_001, TestSize
 
     Timestamp timestamp;
     bool result = audioRenderer->GetAudioPosition(timestamp, Timestamp::Timestampbase::MONOTONIC);
+    (void)result;
     // The result depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1433,6 +1475,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetFramesWritten_001, TestSize
     ASSERT_NE(nullptr, audioRenderer);
 
     int64_t framesWritten = audioRenderer->GetFramesWritten();
+    (void)framesWritten;
     // The result depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1454,6 +1497,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetUnderflowCount_001, TestSiz
     ASSERT_NE(nullptr, audioRenderer);
 
     uint32_t underflowCount = audioRenderer->GetUnderflowCount();
+    (void)underflowCount;
     // The result depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1514,7 +1558,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetAudioRendererErrorCallback_
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, false);
     ASSERT_NE(nullptr, audioRenderer);
 
-    auto errorCallback = std::make_shared<AudioRendererErrorCallback>();
+    auto errorCallback = std::make_shared<TestErrorCallback>();
     audioRenderer->SetAudioRendererErrorCallback(errorCallback);
     // No crash means success
     SUCCEED();
@@ -1535,7 +1579,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_RegisterOutputDeviceChangeWith
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, false);
     ASSERT_NE(nullptr, audioRenderer);
 
-    auto callback = std::make_shared<AudioRendererOutputDeviceChangeCallback>();
+    auto callback = std::make_shared<TestOutputDeviceChangeCallback>();
     int32_t ret = audioRenderer->RegisterOutputDeviceChangeWithInfoCallback(callback);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -1555,7 +1599,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetFastStatusChangeCallback_00
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, false);
     ASSERT_NE(nullptr, audioRenderer);
 
-    auto callback = std::make_shared<AudioRendererFastStatusChangeCallback>();
+    auto callback = std::make_shared<TestFastStatusChangeCallback>();
     audioRenderer->SetFastStatusChangeCallback(callback);
     // No crash means success
     SUCCEED();
@@ -1578,6 +1622,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetRenderRate_001, TestSize.Le
 
     // Test SetRenderRate
     int32_t ret = audioRenderer->SetRenderRate(RENDER_RATE_NORMAL);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1600,6 +1645,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetRendererSamplingRate_001, T
 
     // Test SetRendererSamplingRate
     int32_t ret = audioRenderer->SetRendererSamplingRate(SAMPLE_RATE_44100);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1620,7 +1666,8 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetChannelBlendMode_001, TestS
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, false);
     ASSERT_NE(nullptr, audioRenderer);
 
-    int32_t ret = audioRenderer->SetChannelBlendMode(CHANNEL_BLEND_MODE_NONE);
+    int32_t ret = audioRenderer->SetChannelBlendMode(ChannelBlendMode::MODE_DEFAULT);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1643,6 +1690,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetAudioEffectMode_001, TestSi
 
     // Test SetAudioEffectMode
     int32_t ret = audioRenderer->SetAudioEffectMode(EFFECT_NONE);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1663,8 +1711,9 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetRendererWriteCallback_001, 
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, false);
     ASSERT_NE(nullptr, audioRenderer);
 
-    auto callback = std::make_shared<AudioRendererWriteCallback>();
+    auto callback = std::make_shared<TestWriteCallback>();
     int32_t ret = audioRenderer->SetRendererWriteCallback(callback);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1685,8 +1734,9 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetRendererFirstFrameWritingCa
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, false);
     ASSERT_NE(nullptr, audioRenderer);
 
-    auto callback = std::make_shared<AudioRendererFirstFrameWritingCallback>();
+    auto callback = std::make_shared<TestFirstFrameWritingCallback>();
     int32_t ret = audioRenderer->SetRendererFirstFrameWritingCallback(callback);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1729,6 +1779,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetSilentModeAndMixWithOthers_
     ASSERT_NE(nullptr, audioRenderer);
 
     bool result = audioRenderer->GetSilentModeAndMixWithOthers();
+    (void)result;
     // The result depends on audioStream_
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1751,6 +1802,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetLowPowerVolume_001, TestSiz
 
     // Test SetLowPowerVolume
     int32_t ret = audioRenderer->SetLowPowerVolume(0.5f);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1772,6 +1824,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetOffloadAllowed_001, TestSiz
     ASSERT_NE(nullptr, audioRenderer);
 
     int32_t ret = audioRenderer->SetOffloadAllowed(true);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1794,6 +1847,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetOffloadMode_001, TestSize.L
 
     // Test SetOffloadMode
     int32_t ret = audioRenderer->SetOffloadMode(0, true);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1815,6 +1869,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetSingleStreamVolume_001, Tes
     ASSERT_NE(nullptr, audioRenderer);
 
     float volume = audioRenderer->GetSingleStreamVolume();
+    (void)volume;
     // The result depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1837,6 +1892,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetLatency_001, TestSize.Level
 
     uint64_t latency = 0;
     int32_t ret = audioRenderer->GetLatency(latency);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1858,7 +1914,8 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetLatencyWithFlag_001, TestSi
     ASSERT_NE(nullptr, audioRenderer);
 
     uint64_t latency = 0;
-    int32_t ret = audioRenderer->GetLatencyWithFlag(latency, LATENCY_FLAG_DEFAULT);
+    int32_t ret = audioRenderer->GetLatencyWithFlag(latency, LATENCY_FLAG_ALL);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid and state
     // Just ensure it doesn't crash
     SUCCEED();
@@ -1881,6 +1938,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_GetCurrentBackMuteStatus_001, 
 
     bool backMute = false;
     int32_t ret = audioRenderer->GetCurrentBackMuteStatus(backMute);
+    (void)ret;
     // The return value depends on AudioPolicyManager
     // Just ensure it doesn't crash
     SUCCEED();
@@ -2263,6 +2321,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetSpeed_003, TestSize.Level1)
 
     // Test with minimum speed (assuming MIN_STREAM_SPEED_LEVEL is 0.25)
     int32_t ret = audioRenderer->SetSpeed(0.25f);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -2284,6 +2343,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetSpeed_004, TestSize.Level1)
 
     // Test with maximum speed (assuming MAX_STREAM_SPEED_LEVEL is 4.0)
     int32_t ret = audioRenderer->SetSpeed(4.0f);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -2306,6 +2366,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetPitch_003, TestSize.Level1)
 
     // Test with minimum pitch (0.25)
     int32_t ret = audioRenderer->SetPitch(0.25f);
+    (void)ret;
     // The return value depends on state and audioStream_
     // Just ensure it doesn't crash
     SUCCEED();
@@ -2327,6 +2388,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetPitch_004, TestSize.Level1)
 
     // Test with maximum pitch (4.0)
     int32_t ret = audioRenderer->SetPitch(4.0f);
+    (void)ret;
     // The return value depends on state and audioStream_
     // Just ensure it doesn't crash
     SUCCEED();
@@ -2349,6 +2411,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetLoudnessGain_003, TestSize.
 
     // Test with minimum gain (-90.0)
     int32_t ret = audioRenderer->SetLoudnessGain(-90.0f);
+    (void)ret;
     // The return value depends on stream usage and audioStream_
     // Just ensure it doesn't crash
     SUCCEED();
@@ -2370,6 +2433,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetLoudnessGain_004, TestSize.
 
     // Test with maximum gain (24.0)
     int32_t ret = audioRenderer->SetLoudnessGain(24.0f);
+    (void)ret;
     // The return value depends on stream usage and audioStream_
     // Just ensure it doesn't crash
     SUCCEED();
@@ -2392,6 +2456,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetVolumeWithRamp_002, TestSiz
 
     // Test with zero volume
     int32_t ret = audioRenderer->SetVolumeWithRamp(0.0f, 100);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();
@@ -2413,6 +2478,7 @@ HWTEST(AudioRendererExtraUnitTest, Audio_Renderer_SetVolumeWithRamp_003, TestSiz
 
     // Test with maximum volume (1.0)
     int32_t ret = audioRenderer->SetVolumeWithRamp(1.0f, 100);
+    (void)ret;
     // The return value depends on whether audioStream_ is valid
     // Just ensure it doesn't crash
     SUCCEED();

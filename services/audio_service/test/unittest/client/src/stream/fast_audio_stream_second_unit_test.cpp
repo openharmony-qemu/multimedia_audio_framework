@@ -28,6 +28,11 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
+class TestStreamCallback : public AudioStreamCallback {
+public:
+    void OnStateChange(const State state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) override {}
+};
+
 class MockAudioProcessInClient : public AudioProcessInClient {
 public:
     MOCK_METHOD(int32_t, SaveDataCallback, (const std::shared_ptr<AudioDataCallback> &dataCallback), (override));
@@ -254,7 +259,7 @@ HWTEST_F(FastSystemStreamSecondUnitTest, StopAudioStream_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("StopAudioStream_002 start");
     stream_->state_ = RUNNING;
-    EXPECT_CALL(*mockProcessClient_, Stop()).WillOnce(Return(ERROR));
+    EXPECT_CALL(*mockProcessClient_, Stop(AUDIO_PROC_STAGE_STOP)).WillOnce(Return(ERROR));
     bool result = stream_->StopAudioStream();
     EXPECT_FALSE(result);
     EXPECT_EQ(stream_->GetState(), RUNNING);
@@ -270,8 +275,8 @@ HWTEST_F(FastSystemStreamSecondUnitTest, ReleaseAudioStream_001, TestSize.Level1
 {
     AUDIO_INFO_LOG("ReleaseAudioStream_001 start");
     stream_->state_ = RUNNING;
-    EXPECT_CALL(*mockProcessClient_, Stop()).WillOnce(Return(SUCCESS));
-    EXPECT_CALL(*mockProcessClient_, Release(false)).WillOnce(Return());
+    EXPECT_CALL(*mockProcessClient_, Stop(AUDIO_PROC_STAGE_STOP)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockProcessClient_, Release(false)).WillOnce(Return(SUCCESS));
     bool result = stream_->ReleaseAudioStream(false);
     EXPECT_TRUE(result);
 }
@@ -316,6 +321,7 @@ HWTEST_F(FastSystemStreamSecondUnitTest, GetAudioTime_001, TestSize.Level1)
     AUDIO_INFO_LOG("GetAudioTime_001 start");
     stream_->processClient_ = nullptr;
     int64_t framePosition = 0;
+    (void)framePosition;
     Timestamp timestamp;
     bool result = stream_->GetAudioTime(timestamp, Timestamp::MONOTONIC);
     EXPECT_FALSE(result);
@@ -409,7 +415,8 @@ HWTEST_F(FastSystemStreamSecondUnitTest, GetLatencyWithFlag_003, TestSize.Level1
 {
     AUDIO_INFO_LOG("GetLatencyWithFlag_003 start");
     uint64_t latency = 0;
-    int32_t result = stream_->GetLatencyWithFlag(latency, LATENCY_FLAG_HARDWARE | LATENCY_FLAG_ENGINE);
+    auto flag = static_cast<LatencyFlag>(LATENCY_FLAG_HARDWARE | LATENCY_FLAG_ENGINE);
+    int32_t result = stream_->GetLatencyWithFlag(latency, flag);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_GT(latency, 20000ULL);
 }
@@ -437,7 +444,7 @@ HWTEST_F(FastSystemStreamSecondUnitTest, SetVolume_002, TestSize.Level1)
 HWTEST_F(FastSystemStreamSecondUnitTest, SetVolume_003, TestSize.Level1)
 {
     AUDIO_INFO_LOG("SetVolume_003 start");
-    EXPECT_CALL(*mockProcessClient_, SetVolume(0.5f)).WillOnce(Return(ERROR));
+    EXPECT_CALL(*mockProcessClient_, SetVolume(Matcher<float>(0.5f))).WillOnce(Return(ERROR));
     int32_t result = stream_->SetVolume(0.5f);
     EXPECT_EQ(result, ERROR);
 }
@@ -576,7 +583,7 @@ HWTEST_F(FastSystemStreamSecondUnitTest, SetStreamCallback_001, TestSize.Level1)
 HWTEST_F(FastSystemStreamSecondUnitTest, SetStreamCallback_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("SetStreamCallback_002 start");
-    auto callback = std::make_shared<AudioStreamCallback>();
+    auto callback = std::make_shared<TestStreamCallback>();
     int32_t result = stream_->SetStreamCallback(callback);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -590,7 +597,7 @@ HWTEST_F(FastSystemStreamSecondUnitTest, SetStreamCallback_002, TestSize.Level1)
 HWTEST_F(FastSystemStreamSecondUnitTest, SetStreamCallback_003, TestSize.Level1)
 {
     AUDIO_INFO_LOG("SetStreamCallback_003 start");
-    auto callback = std::make_shared<AudioStreamCallback>();
+    auto callback = std::make_shared<TestStreamCallback>();
     stream_->state_ = PREPARED;
     int32_t result = stream_->SetStreamCallback(callback);
     EXPECT_EQ(result, SUCCESS);
@@ -853,7 +860,7 @@ HWTEST_F(FastSystemStreamSecondUnitTest, GetSetStaticBufferInfo_001, TestSize.Le
     staticBufferInfo.bufferSize_ = 1024;
     staticBufferInfo.totalLoopTimes_ = 2;
     
-    auto sharedMemory = std::make_shared<AudioSharedMemory>();
+    auto sharedMemory = AudioSharedMemory::CreateFromLocal(1024, "test_static_buffer");
     stream_->SetStaticBufferInfo(staticBufferInfo, sharedMemory);
     
     EXPECT_EQ(stream_->staticBufferInfo_.bufferSize_, 1024);
@@ -925,7 +932,7 @@ HWTEST_F(FastSystemStreamSecondUnitTest, ResetStaticPlayPosition_001, TestSize.L
 HWTEST_F(FastSystemStreamSecondUnitTest, SetPrivacyType_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("SetPrivacyType_001 start");
-    stream_->SetPrivacyType(AUDIO_PRIVACY_PUBLIC);
+    stream_->SetPrivacyType(PRIVACY_TYPE_PUBLIC);
     EXPECT_TRUE(true);
 }
 

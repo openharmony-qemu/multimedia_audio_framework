@@ -143,6 +143,21 @@ ohos_unittest("audio_renderer_device_aiut") {
   external_deps = aiut_external_deps
 }
 
+ohos_unittest("audio_renderer_third_unit_test_aiut") {
+  testonly = true
+  module_out_path = audio_renderer_aiut_output_path
+  include_dirs = aiut_include_dirs
+  cflags = aiut_cflags
+  cflags_cc = [ "-std=c++20" ]
+  sources = [
+    "src/audio_renderer_third_unit_test.cpp",
+    "../../src/audio_renderer.cpp",
+    "../../src/audio_renderer_proxy_obj.cpp",
+  ]
+  deps = aiut_deps
+  external_deps = aiut_external_deps
+}
+
 group("audio_renderer_aiut") {
   testonly = true
   deps = [
@@ -151,5 +166,6 @@ group("audio_renderer_aiut") {
     ":audio_renderer_interrupt_aiut",
     ":audio_renderer_volume_aiut",
     ":audio_renderer_device_aiut",
+    ":audio_renderer_third_unit_test_aiut",
   ]
 }
