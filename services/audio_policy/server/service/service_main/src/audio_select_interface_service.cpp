@@ -581,9 +581,9 @@ int32_t AudioSelectInterfaceService::RefreshVirtualDevice(shared_ptr<AudioDevice
 int32_t AudioSelectInterfaceService::SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
     int32_t uid)
 {
-    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_POINTER, "deviceDesc is null");
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, SUCCESS, "deviceDesc is null");
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceDesc->deviceId_);
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "not connected device");
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, SUCCESS, "not connected device");
     SetDeviceEnableAndUsage(desc, desc->deviceUsage_);
     AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(uid, INVALID_STREAM_ID, desc);
     auto coreService = AudioCoreService::GetCoreService();
