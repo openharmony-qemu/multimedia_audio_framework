@@ -228,6 +228,10 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
 
     ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
     ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
+    AUDIO_INFO_LOG("[%{public}s] with mode [%{public}s], output channels: %{public}u, channelLayout: %{public}" PRIu64,
+        sceneType_.c_str(), effectMode_.c_str(), ioBufferConfig_.outputCfg.channels,
+        ioBufferConfig_.outputCfg.channelLayout);
+
     return SUCCESS;
 }
 
@@ -405,6 +409,12 @@ void AudioEffectChain::UpdateBufferConfig(uint32_t &channels, uint64_t &channelL
 {
     channels = ioBufferConfig_.outputCfg.channels;
     channelLayout = ioBufferConfig_.outputCfg.channelLayout;
+    CHECK_AND_RETURN(channelLayout == 0);
+    if (channels == DEFAULT_NUM_CHANNEL) {
+        channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+    } else if (channels == CHANNEL_8) {
+        channelLayout = CH_LAYOUT_5POINT1POINT2;
+    }
 }
 
 bool AudioEffectChain::IsEmptyEffectHandles()

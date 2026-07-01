@@ -853,5 +853,125 @@ HWTEST(AudioEffectChainUnitTest, AudioEffectChain_033, TestSize.Level1)
     EXPECT_FLOAT_EQ(result3.z, validData2->z);
 #endif
 }
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_034
+ * @tc.desc  : Test AudioEffectChain::UpdateBufferConfig() with channelLayout 0 and stereo channels
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_034, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+
+    EXPECT_NE(audioEffectChain, nullptr);
+
+    audioEffectChain->ioBufferConfig_.outputCfg.channels = 2;
+    audioEffectChain->ioBufferConfig_.outputCfg.channelLayout = 0;
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 1; // any non-zero placeholder
+    audioEffectChain->UpdateBufferConfig(channels, channelLayout);
+    EXPECT_EQ(channels, 2u);
+    EXPECT_EQ(channelLayout, static_cast<uint64_t>(CH_LAYOUT_STEREO));
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_035
+ * @tc.desc  : Test AudioEffectChain::UpdateBufferConfig() with channelLayout 0 and 8 channels
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_035, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+
+    EXPECT_NE(audioEffectChain, nullptr);
+
+    audioEffectChain->ioBufferConfig_.outputCfg.channels = 8;
+    audioEffectChain->ioBufferConfig_.outputCfg.channelLayout = 0;
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    audioEffectChain->UpdateBufferConfig(channels, channelLayout);
+    EXPECT_EQ(channels, 8u);
+    EXPECT_EQ(channelLayout, static_cast<uint64_t>(CH_LAYOUT_5POINT1POINT2));
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_036
+ * @tc.desc  : Test AudioEffectChain::UpdateBufferConfig() with channelLayout 0 and unmatched channels
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_036, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+
+    EXPECT_NE(audioEffectChain, nullptr);
+
+    audioEffectChain->ioBufferConfig_.outputCfg.channels = 1; // neither 2 nor 8
+    audioEffectChain->ioBufferConfig_.outputCfg.channelLayout = 0;
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    audioEffectChain->UpdateBufferConfig(channels, channelLayout);
+    EXPECT_EQ(channels, 1u);
+    EXPECT_EQ(channelLayout, 0ull); // unchanged, no fallback mapping applies
+}
+
+/**
+ * @tc.name  : Test AudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEffectChain_037
+ * @tc.desc  : Test AudioEffectChain::UpdateBufferConfig() with a valid non-zero channelLayout
+ */
+HWTEST(AudioEffectChainUnitTest, AudioEffectChain_037, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectChain> audioEffectChain = nullptr;
+    std::string sceneType = "SCENE_MUSIC";
+#ifdef SENSOR_ENABLE
+    std::shared_ptr<HeadTracker> headTracker = nullptr;
+    headTracker = std::make_shared<HeadTracker>();
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+#else
+    audioEffectChain = std::make_shared<AudioEffectChain>(sceneType);
+#endif
+
+    EXPECT_NE(audioEffectChain, nullptr);
+
+    audioEffectChain->ioBufferConfig_.outputCfg.channels = 2;
+    audioEffectChain->ioBufferConfig_.outputCfg.channelLayout = CH_LAYOUT_MONO;
+
+    uint32_t channels = 0;
+    uint64_t channelLayout = 0;
+    audioEffectChain->UpdateBufferConfig(channels, channelLayout);
+    EXPECT_EQ(channels, 2u);
+    EXPECT_EQ(channelLayout, static_cast<uint64_t>(CH_LAYOUT_MONO)); // unchanged, kept as-is
+}
 } // namespace AudioStandard
 } // namespace OHOS
