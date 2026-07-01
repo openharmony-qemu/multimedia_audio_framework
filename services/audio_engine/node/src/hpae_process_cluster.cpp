@@ -278,10 +278,6 @@ int32_t HpaeProcessCluster::CheckNodes(uint32_t sessionId)
 {
     if (SafeGetMap(idConverterMap_, sessionId) && SafeGetMap(idLoudnessGainNodeMap_, sessionId) &&
         SafeGetMap(idGainMap_, sessionId)) {
-        AUDIO_INFO_LOG("SessionId %{public}u, Success check nodes in this processcluster: "
-            "converterNodeId %{public}u, loudnessGainNodeId %{public}u, gainNodeId %{public}u",
-            sessionId, idConverterMap_[sessionId]->GetNodeId(), idLoudnessGainNodeMap_[sessionId]->GetNodeId(),
-            idGainMap_[sessionId]->GetNodeId());
         return SUCCESS;
     }
     AUDIO_INFO_LOG("SessionId %{public}u, No nodes in this processcluster, cant connect or destroy", sessionId);
