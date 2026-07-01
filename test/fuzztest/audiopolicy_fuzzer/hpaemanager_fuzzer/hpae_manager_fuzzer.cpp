@@ -99,8 +99,17 @@ void UploadDumpSourceInfoFuzzTest()
     capturerManager->UploadDumpSourceInfo(deviceName);
 }
 
+void UpdatePersonalizedHRTFBinFuzzTest()
+{
+    int32_t fd = GetData<int32_t>();
+    long length = GetData<long>();
+
+    HPAE::IHpaeManager::GetHpaeManager().UpdatePersonalizedHRTFBin(fd, length);
+}
+
 TestFuncs g_testFuncs[] = {
     UploadDumpSourceInfoFuzzTest,
+    UpdatePersonalizedHRTFBinFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
