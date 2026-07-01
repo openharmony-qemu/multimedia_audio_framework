@@ -16,7 +16,7 @@ import("//foundation/multimedia/audio_framework/config.gni")
 group("audio_unit_test") {
   testonly = true
 
-  deps = [
+  deps = [ 
     "../frameworks/js/napi/audiomanager/test/unittest/audio_manager_test:jsunittest",
     "../frameworks/js/napi/audiomanager/test/unittest/group_manager_test:jsunittest",
     "../frameworks/js/napi/audiomanager/test/unittest/routing_manager_test:jsunittest",
