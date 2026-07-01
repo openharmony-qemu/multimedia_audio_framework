@@ -121,6 +121,7 @@ public:
     // Session Effect parameter routing
     int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
     void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
+    void SetCollabDoFade(HpaeProcessorType sceneType);
 
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);

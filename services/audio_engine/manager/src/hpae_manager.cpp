@@ -358,9 +358,16 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
         TransSinkInfoToNodeInfo(sinkInfo, rendererManagerMap_[audioModuleInfo.name], nodeInfo);
         sinkVirtualOutputNodeMap_[sinkInfo.sinkId]->ReloadNode(nodeInfo);
     }
+
+    if (sinkInfo.deviceName == MCH_SINK_NAME && isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
+        AUDIO_INFO_LOG("ReloadRenderManager MCH_Speaker, need set isCollaborationEnabled: %{public}d",
+            isCollaborationEnabled_);
+        sinkInfo.isCollaborationEnabled = isCollaborationEnabled_;
+    }
     rendererManagerMap_[audioModuleInfo.name]->ReloadRenderManager(sinkInfo, isReload);
     // Both primary and offload self-heal SE via attach-state on SinkInputNode.
     // No external replay needed — ConnectInputSession reads attach state and materializes.
+
     return SUCCESS;
 }
 
@@ -2859,6 +2866,7 @@ void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const Audio
         TransSinkInfoToNodeInfo(sinkInfo, rendererManager, nodeInfo);
         sinkOutputNode->ReloadNode(nodeInfo);
         rendererManager->ReloadRenderManager(sinkInfo, false);
+
         // Both primary and offload self-heal SE via attach-state on SinkInputNode.
         // No external replay needed — ConnectInputSession reads attach state and materializes.
     };

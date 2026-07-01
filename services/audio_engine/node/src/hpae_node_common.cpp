@@ -223,8 +223,8 @@ void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, CollaborationState is
 {
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
-    if (isCollaborationEnabled == COLLABORATION_BLUETOOTH_OPEN ||
-        isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN) {
+    if ((isCollaborationEnabled == COLLABORATION_BLUETOOTH_OPEN ||
+ 	    isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN) && nodeInfo.sceneType != HPAE_SCENE_COLLABORATIVE) {
         if (audioCollaborationManager->IsStreamUsageSupported(GetDeviceType(isCollaborationEnabled),
             nodeInfo.effectInfo.streamUsage)) {
             nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
