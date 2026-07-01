@@ -63,7 +63,6 @@ const char *DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 
 // ---------------------------------------------------------------------------
 // Supported enum lists.
-//
 // CRITICAL: samplingRate and channels drive the renderFrameData_ allocation
 // (frameLen * channels * formatSize) inside HpaeDirectSinkOutputNode. InitSinkInner
 // recomputes nodeInfo.frameLen = samplingRate * 20 / 1000 AFTER CheckFramelen
@@ -71,7 +70,6 @@ const char *DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 // frameLen ~SIZE_MAX -> malloc(~SIZE_MAX) -> musl aborts the process. channels
 // belongs to the same class of risk. Therefore BOTH must always be picked from
 // the supported lists below, never from raw fuzz bytes.
-//
 // format is self-protecting: GetSizeFromFormat returns 0 for out-of-range
 // values, so the allocation collapses to 0. format may stay fuzzed.
 // ---------------------------------------------------------------------------
@@ -277,13 +275,11 @@ static void InitMultiChannelStreamInfo(HpaeStreamInfo &streamInfo)
 
 // ---------------------------------------------------------------------------
 // Worker drain helper.
-//
 // HpaeDirectRendererManager owns a HpaeSignalProcessThread worker that drains
 // an HpaeNoLockQueue. Public API enqueues requests (producer side, thread
 // safe); the queued lambdas run on the worker (FIFO serial model). After any
 // step that posts a request we must let the worker drain before the next step
 // or before DeInit, otherwise the destructor may join mid-flight.
-//
 // IsMsgProcessing() returns !hpaeNoLockQueue_.IsFinishProcess() and reflects
 // queue state, NOT isInit_. We therefore loop on IsMsgProcessing() unconditionally
 // (regardless of init result) so the worker drains even on the init-failure
@@ -304,17 +300,14 @@ static void WaitForMsgProcessing(std::shared_ptr<HpaeDirectRendererManager> &man
 
 // ===========================================================================
 // Test functions.
-//
 // Threading rules (Phase 0 trap #1): every test calls ONLY the public API from
 // the fuzz main thread. Worker-internal methods (HandleMsg, InitSinkInner,
 // Handle*/Process*, queue internals) are never called directly.
-//
 // Init tolerance (Phase 0 trap #3): "direct" deviceClass is not registered in
 // the standalone fuzzer process, so GetRenderIdByDeviceClass returns
 // HDI_INVALID_ID -> audioRendererSink_ stays null -> RenderSinkInit returns
 // ERR_ILLEGAL_STATE -> isInit_ ends up FALSE. Every test tolerates init failure
 // and just exercises the API; the engine's not-init guards handle the rest.
-//
 // Cleanup: every test that called Init() MUST call DeInit() before returning so
 // the worker thread is stopped deterministically (do not rely on the
 // destructor, which only DeInits when isInit_ is true - on the init-failure
@@ -1030,7 +1023,6 @@ void HpaeDirectRendererManagerMultiChannelFuzzTest()
 
 // ===========================================================================
 // Callback coverage.
-//
 // The engine now guards OnNodeStatusUpdate / OnRequestLatency / OnNotifyQueue
 // / OnFadeDone with CHECK_AND_RETURN_LOG(curNode_, ...) (or thread null checks),
 // so calling these public callbacks from the fuzz main thread after
