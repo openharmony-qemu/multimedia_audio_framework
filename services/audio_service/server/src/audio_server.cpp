@@ -3991,6 +3991,11 @@ bool AudioServer::CheckVoiceDownlinkPermission(const AudioProcessConfig &config)
 
     callManager->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
 
+    bool isValid = callManager->CheckCallRecordingPermission(
+        config.capturerInfo.cellularRecordPhoneNum,
+        config.capturerInfo.cellularRecordToken);
+
+    CHECK_AND_RETURN_RET_LOG(isValid, false, "");
     return true;
 #else
     AUDIO_INFO_LOG("CheckVoiceDownlinkPermission success!");
