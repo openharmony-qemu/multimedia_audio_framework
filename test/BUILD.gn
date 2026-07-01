@@ -320,6 +320,7 @@ group("audio_fuzz_test") {
     "fuzztest/offlineaudioeffectserverchain_fuzzer:fuzztest",
     "fuzztest/offlinestreaminserver_fuzzer:fuzztest",
     "fuzztest/hpae_delayed_task_queue_fuzzer:fuzztest",
+    "fuzztest/hpaedirectrenderermanager_fuzzer:fuzztest",
     "fuzztest/sessioneffectmanager_fuzzer:fuzztest",
     "fuzztest/powerstatelistener_fuzzer:fuzztest",
     "fuzztest/proaudiostreammanager_fuzzer:fuzztest",
