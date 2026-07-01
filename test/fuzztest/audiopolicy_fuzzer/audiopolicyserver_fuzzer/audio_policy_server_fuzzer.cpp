@@ -2020,17 +2020,6 @@ void AudioPolicyServerAddRemoveUidUsagesToAudioZoneFuzzTest()
     server->ReleaseAudioZone(zoneId);
 }
 
-void AudioPolicyServerDownloadPersonalizedHRTFFuzzTest()
-{
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-
-    int32_t fd = GetData<int32_t>();
-    int64_t length = GetData<int64_t>();
-
-    server->DownloadPersonalizedHRTF(fd, length);
-}
-
 TestFuncs g_testFuncs[] = {
     AudioPolicyServerRegisterDefaultVolumeTypeListenerFuzzTest,
     AudioPolicyServerHandleAudioServerRelatedSystemAbilityFuzzTest,
@@ -2206,7 +2195,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerStateOnChangeFuzzTest,
     AudioPolicyServerSetActiveHfpDeviceFuzzTest,
     AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest,
-    AudioPolicyServerDownloadPersonalizedHRTFFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
