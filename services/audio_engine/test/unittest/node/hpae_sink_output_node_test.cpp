@@ -2920,6 +2920,47 @@ HWTEST_F(HpaeSinkOutputNodeTest, SetCollaborationState_NearLink_001, TestSize.Le
     hpaeSinkOutputNode->SetCollaborationState(COLLABORATION_NEARLINK_OPEN);
     EXPECT_EQ(hpaeSinkOutputNode->collaborationState_.load(), COLLABORATION_NEARLINK_OPEN);
 }
+
+/**
+ * @tc.name  : GetRenderSinkInstance_WithMacAddress
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetRenderSinkInstance with a non-empty macAddress parameter returns success.
+ * @tc.note  : file_io ignores the info/macAddress key in IdHandler (always uses HDI_ID_INFO_DEFAULT),
+ *             so this case only verifies the code path does not crash and produces a valid renderId.
+ *             Truly asserting that different macAddress values select different sinks requires an
+ *             HdiAdapterManager mock and a deviceClass that consumes info (e.g. primary_extra/remote).
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_WithMacAddress, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    std::string macAddress = "AA:BB:CC:DD:EE:FF";
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId, macAddress), SUCCESS);
+    EXPECT_NE(hpaeSinkOutputNode->GetRenderId(), HDI_INVALID_ID);
+    hpaeSinkOutputNode->RenderSinkDeInit();
+}
+
+/**
+ * @tc.name  : GetRenderSinkInstance_MacAddressFallback
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetRenderSinkInstance falls back to deviceNetId/default when macAddress is empty.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, GetRenderSinkInstance_MacAddressFallback, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    // Empty macAddress: selection priority falls back to deviceNetId, then HDI_ID_INFO_DEFAULT.
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId, ""), SUCCESS);
+    EXPECT_NE(hpaeSinkOutputNode->GetRenderId(), HDI_INVALID_ID);
+    hpaeSinkOutputNode->RenderSinkDeInit();
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

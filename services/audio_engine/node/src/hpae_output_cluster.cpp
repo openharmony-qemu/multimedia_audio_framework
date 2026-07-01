@@ -158,9 +158,10 @@ int32_t HpaeOutputCluster::GetConverterNodeCount()
     return sceneConverterMap_.size();
 }
 
-int32_t HpaeOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId)
+int32_t HpaeOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
+    const std::string &macAddress)
 {
-    return hpaeSinkOutputNode_->GetRenderSinkInstance(deviceClass, deviceNetId);
+    return hpaeSinkOutputNode_->GetRenderSinkInstance(deviceClass, deviceNetId, macAddress);
 }
 
 int32_t HpaeOutputCluster::Init(IAudioSinkAttr &attr)
