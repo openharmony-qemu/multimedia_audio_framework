@@ -3975,12 +3975,12 @@ AudioScene AudioPolicyManager::GetAudioSceneFromAllZones()
     return static_cast<AudioScene>(audioScene);
 }
 
-int32_t AudioPolicyManager::NotifyStreamSilentChange(uint32_t streamId)
+int32_t AudioPolicyManager::NotifyStreamSilentChange(int32_t clientPid, uint32_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    gsp->NotifyStreamSilentChange(streamId);
+    gsp->NotifyStreamSilentChange(clientPid, streamId);
     return SUCCESS;
 }
 

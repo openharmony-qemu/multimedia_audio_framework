@@ -965,7 +965,7 @@ void AudioProcessInClientInner::NotifyStreamSilentChange()
     CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && volumeDataCount_ > 0);
     int64_t stamp = ClockTime::GetCurNano();
     Trace trace("AudioProcessInClientInner::NotifyStreamSilentChange " + std::to_string(sessionId_));
-    AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
+    AudioPolicyManager::GetInstance().NotifyStreamSilentChange(getpid(), sessionId_);
     needNotifyStreamSilentChange_.store(false);
     AUDIO_INFO_LOG("NotifyStreamSilentChange cost %{public}" PRId64 " ns", ClockTime::GetCurNano() - stamp);
 }

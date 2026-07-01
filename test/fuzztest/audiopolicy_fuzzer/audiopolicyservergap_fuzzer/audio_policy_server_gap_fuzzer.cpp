@@ -98,7 +98,7 @@ void AudioPolicyServerCallbackGapFuzzTest(FuzzedDataProvider &fdp)
 
     server->SetRegisterInterruptCallbackFlag(fdp.ConsumeIntegral<uint32_t>(), enabled);
     server->SetRegisterStateChangeCallbackFlag(enabled);
-    server->NotifyStreamSilentChange(fdp.ConsumeIntegral<uint32_t>());
+    server->NotifyStreamSilentChange(fdp.ConsumeIntegral<uint32_t>(), fdp.ConsumeIntegral<uint32_t>());
     server->SetSourceOutputStreamMuteByStreamId(fdp.ConsumeIntegral<int32_t>(), enabled);
     server->SetAncoSourceOutputStreamMute(fdp.ConsumeIntegral<int32_t>(), enabled);
 }

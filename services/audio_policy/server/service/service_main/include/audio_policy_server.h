@@ -268,7 +268,7 @@ public:
 
     int32_t DeactivateAudioSession() override;
 
-    int32_t NotifyStreamSilentChange(uint32_t streamId) override;
+    int32_t NotifyStreamSilentChange(int32_t callerPid, uint32_t streamId) override;
 
     int32_t IsAudioSessionActivated(bool &active) override;
 
