@@ -1623,8 +1623,7 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             if (desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
                 UpdateNearlinkDeviceVolume(desc);
             }
-            std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
-                make_shared<AudioDeviceDescriptor>(desc)};
+            auto unexcludedDevice = audioDeviceManager_.GetAvailableBluetoothDevice(desc.deviceType_, desc.macAddress_);
             AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
             ClearPreferredWhenCategoryUpdated(desc);
         }

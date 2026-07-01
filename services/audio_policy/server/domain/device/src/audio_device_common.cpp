@@ -378,7 +378,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
 
     std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
-        make_shared<AudioDeviceDescriptor>(updatedDesc)};
+        make_shared<AudioDeviceDescriptor>(audioDescriptor)};
     AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
 
     audioDeviceManager_.AddNewDevice(audioDescriptor);
