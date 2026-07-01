@@ -1472,8 +1472,7 @@ int32_t RendererInServer::Standby(bool isStandbyOn)
 {
     auto action = std::make_shared<NotifyStandbyAction>(streamIndex_, isStandbyOn);
     auto ret = PostSilentAction(action);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
-        "Post failed for sessionId %{public}u", streamIndex_);
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
     return SUCCESS;
 }
 
@@ -2625,7 +2624,7 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
     bool isMuted = (isMuted_ || on || muteFlag_);
     auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted);
     auto ret = PostSilentAction(action);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "Post failed for sessionId %{public}u", streamIndex_);
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
 
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
@@ -2673,7 +2672,7 @@ int32_t RendererInServer::SetClientVolume()
         std::abs(clientVolume - 0.0f) <= std::numeric_limits<float>::epsilon() ||
         isMuted_ || silentModeAndMixWithOthers_.load() || muteFlag_, clientVolume);
     ret = PostSilentAction(action);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "Post failed for sessionId %{public}u", streamIndex_);
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
 
     std::unordered_map<std::string, std::string> payload;
     payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
@@ -2736,7 +2735,7 @@ int32_t RendererInServer::SetMute(bool isMute)
     bool isMuted = (isMute || silentModeAndMixWithOthers_ || muteFlag_);
     auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted);
     auto ret = PostSilentAction(action);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "Post failed for sessionId %{public}u", streamIndex_);
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
 
     std::unordered_map<std::string, std::string> payload;
     payload["uid"] = std::to_string(processConfig_.appInfo.appUid);
@@ -2971,7 +2970,7 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
     bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag);
     auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted);
     auto ret = PostSilentAction(action);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
         for (auto &captureInfo : captureInfos_) {
