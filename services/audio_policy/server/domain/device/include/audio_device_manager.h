@@ -110,6 +110,8 @@ public:
     // Update wireless device silent state, only update when isSilent_ differs
     void UpdateWirelessDeviceSilentState(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
 
+    bool HasWirelessDevicesConnected();
+
 private:
     AudioDeviceManager();
     ~AudioDeviceManager() {};
