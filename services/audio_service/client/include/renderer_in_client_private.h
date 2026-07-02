@@ -292,6 +292,8 @@ private:
     int32_t DeinitIpcStream();
 
     int32_t InitIpcStream();
+    int32_t CreateAndRetryAudioProcess(const AudioProcessConfig &config,
+        const sptr<IStandardAudioService> &gasp, AudioPlaybackCaptureConfig &playbackConfig);
 
     void InitDFXOperaiton();
 

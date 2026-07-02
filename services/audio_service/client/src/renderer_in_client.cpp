@@ -331,6 +331,20 @@ int32_t RendererInClientInner::GetBufferWaitTimeoutInMs() const
     return IsLowLatencyRenderer() ? FAST_WRITE_CACHE_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
 }
 
+int32_t RendererInClientInner::CreateAndRetryAudioProcess(const AudioProcessConfig &config,
+    const sptr<IStandardAudioService> &gasp, AudioPlaybackCaptureConfig &playbackConfig)
+{
+    int32_t errorCode = 0;
+    gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy_);
+    for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) &&
+        (retrycount < MAX_RETRY_COUNT); retrycount++) {
+        AUDIO_WARNING_LOG("retry in client");
+        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
+        gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy_);
+    }
+    return errorCode;
+}
+
 int32_t RendererInClientInner::InitIpcStream()
 {
     Trace trace("RendererInClientInner::InitIpcStream");
@@ -341,15 +355,9 @@ int32_t RendererInClientInner::InitIpcStream()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_SERVICE_UNAVAILABLE, "Can not get service", true),
         HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."));
-    int32_t errorCode = 0;
     ipcProxy_ = nullptr;
     AudioPlaybackCaptureConfig playbackConfig = {};
-    gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy_);
-    for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
-        AUDIO_WARNING_LOG("retry in client");
-        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy_);
-    }
+    int32_t errorCode = CreateAndRetryAudioProcess(config, gasp, playbackConfig);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_NULL_POINTER, "ipcProxy is null", true),
@@ -359,15 +367,12 @@ int32_t RendererInClientInner::InitIpcStream()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_NULL_POINTER, "iface_cast failed", true),
         "failed when iface_cast.");
-
-    // in plan next: old listener_ is destoried here, will server receive dieth notify?
     listener_ = sptr<IpcStreamListenerImpl>::MakeSptr(shared_from_this());
     int32_t ret = ipcStream_->RegisterStreamListener(listener_->AsObject());
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_OPERATION_FAILED, "RegisterStreamListener failed", true),
         "RegisterStreamListener failed:%{public}d", ret);
-
     if (resetSilentMode && gServerProxy_ != nullptr && silentModeAndMixWithOthers_) {
         ipcStream_->SetSilentModeAndMixWithOthers(silentModeAndMixWithOthers_);
     }
@@ -376,13 +381,12 @@ int32_t RendererInClientInner::InitIpcStream()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_OPERATION_FAILED, "InitSharedBuffer failed", true),
         "InitSharedBuffer failed:%{public}d", ret);
-
     ret = ipcStream_->GetAudioSessionID(sessionId_);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_INVALID_INDEX, "GetAudioSessionID failed", true),
         "GetAudioSessionID failed:%{public}d", ret);
-    traceTag_ = "[" + std::to_string(sessionId_) + "]RendererInClient"; // [100001]RendererInClient
+    traceTag_ = "[" + std::to_string(sessionId_) + "]RendererInClient";
     UpdateLogTag();
     InitCallbackHandler();
     return SUCCESS;
