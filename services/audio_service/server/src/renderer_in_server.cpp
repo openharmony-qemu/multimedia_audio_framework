@@ -110,6 +110,16 @@ namespace {
         }
         return dupTotalSizeInFrame;
     }
+
+    static constexpr int64_t REPORT_RUNNING_TIMEOUT_MS = 3 * 60 * 1000;
+    std::set<AudioStreamType> FAST_STREAMTYPE_ABUSE_LIST = {
+        STREAM_MUSIC,
+        STREAM_SPEECH,
+        STREAM_MOVIE,
+        STREAM_NAVIGATION,
+        STREAM_RING,
+        STREAM_ALARM,
+    };
 }
 
 void NotifyStandbyAction::Exec()
@@ -651,6 +661,27 @@ void RendererInServer::ReportExceptionForOffload()
     bean->Add("TYPE", TYPE_OFFLOAD_NOT_ENOUGH_DATA);
     AUDIO_ERR_LOG("ReportExceptionForFast: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
         appName.c_str(), processConfig_.streamType, TYPE_OFFLOAD_NOT_ENOUGH_DATA);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+void RendererInServer::ReportExceptionForFast()
+{
+    CHECK_AND_RETURN(processConfig_.rendererInfo.audioFlag & AUDIO_OUTPUT_FLAG_FAST);
+    AudioStreamType streamType = processConfig_.streamType;
+    CHECK_AND_RETURN(FAST_STREAMTYPE_ABUSE_LIST.find(streamType) != FAST_STREAMTYPE_ABUSE_LIST.end());
+    int64_t runningStamp = startedTime_.load();
+    CHECK_AND_RETURN(runningStamp != 0);
+    bool isTimeout = ((ClockTime::GetCurNano() - runningStamp) / AUDIO_US_PER_SECOND >= REPORT_RUNNING_TIMEOUT_MS);
+    CHECK_AND_RETURN(isTimeout);
+    std::string appName = AppBundleManager::GetBundleNameFromUid(processConfig_.appInfo.appUid);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("APP_NAME", appName);
+    bean->Add("STREAM_TYPE", streamType);
+    bean->Add("TYPE", TYPE_FAST_ABUSE);
+    AUDIO_ERR_LOG("ReportExceptionForFast: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
+        appName.c_str(), streamType, TYPE_FAST_ABUSE);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -1901,6 +1932,7 @@ int32_t RendererInServer::Stop()
         processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
         processConfig_.appInfo.appUid);
 
+    ReportExceptionForFast();
     RemoveStreamInfo();
 
     return ret;

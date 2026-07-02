@@ -224,6 +224,7 @@ public:
     bool IsWriteFirst() const noexcept;
     int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount);
     void ReportExceptionForOffload();
+    void ReportExceptionForFast();
     void OffloadSetVolume();
 public:
     AudioProcessConfig processConfig_;
