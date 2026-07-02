@@ -3017,6 +3017,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         RemoveStreamIdSuggestionRecord(audioInterrupt.streamId);
     }
     DeactivateAudioInterruptInternalContinue(zoneId, isSessionTimeout);
+    RemoveMuteCheckRecord(audioInterrupt);
     return;
 }
 
