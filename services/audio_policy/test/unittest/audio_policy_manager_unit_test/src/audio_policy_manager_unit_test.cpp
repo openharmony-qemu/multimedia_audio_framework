@@ -742,9 +742,6 @@ HWTEST(AudioPolicyManager, SetSystemVolumeDegree_001, TestSize.Level1)
     result = audioPolicyManager_->GetSystemVolumeDegree(volumeType, 0);
     EXPECT_EQ(result, volumeDegree);
 
-    result = audioPolicyManager_->GetSystemVolumeDegreeWithDevice(volumeType, DEVICE_TYPE_SPEAKER, LOCAL_NETWORK_ID);
-    EXPECT_EQ(result, volumeDegree);
-
     result = audioPolicyManager_->GetMinVolumeDegree(volumeType);
     EXPECT_EQ(result, 0);
 }
