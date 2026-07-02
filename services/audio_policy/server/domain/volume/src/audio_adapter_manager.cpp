@@ -4272,16 +4272,19 @@ void AudioAdapterManager::AdjustVolumeForSpecialDevice(std::shared_ptr<AudioDevi
     } else if (device->deviceType_ == DEVICE_TYPE_NEARLINK) {
         if (AudioVolumeManager::GetInstance().IsNearlinkKaraokeVolumeManaged(volumeType)) {
             volumeDb = volumeDb * 0.63957f;
-        } else if (volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) {
+        } else if ((volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) || VolumeUtils::IsPCVolumeEnable()) {
             isMuted = isAbsVolumeMuteNearlink_.load();
             volumeDb = isMuted ? 0.0f : 0.63957f;
         } else if (volumeType == STREAM_VOICE_CALL) {
             volumeDb = 1.0f;
         }
         return;
-    } else if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && IsVgsVolumeSupported() &&
-        volumeType == STREAM_VOICE_CALL) {
-        volumeDb = 1.0f;
+    } else if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && IsVgsVolumeSupported()) {
+        if (volumeType == STREAM_VOICE_CALL) {
+            volumeDb = 1.0f;
+        } else if (VolumeUtils::IsPCVolumeEnable()) {
+            volumeDb = 0.63957f;
+        }
     }
 }
 
