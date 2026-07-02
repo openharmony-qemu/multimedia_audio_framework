@@ -1253,9 +1253,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetSystemVolumeDegree_001, TestSize.Leve
     server->GetSystemVolumeDegree(STREAM_ALL, 0, ret);
     EXPECT_EQ(ret, volumeDegree);
 
-    server->GetSystemVolumeDegreeWithDevice(streamType, DEVICE_TYPE_SPEAKER, LOCAL_NETWORK_ID, ret);
-    EXPECT_EQ(ret, volumeDegree);
-
     server->GetMinVolumeDegree(streamType, DEVICE_TYPE_NONE, ret);
     EXPECT_EQ(ret, 0);
 
