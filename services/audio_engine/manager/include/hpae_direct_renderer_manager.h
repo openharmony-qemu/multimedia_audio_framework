@@ -30,6 +30,7 @@
 #include "i_hpae_renderer_manager.h"
 #include "hpae_gain_node.h"
 #include "hpae_limiter_node.h"
+#include "hpae_session_effect_node.h"
 #include "hpae_volume_sync_node.h"
 #include "hpae_loudness_gain_node.h"
 
@@ -80,6 +81,7 @@ public:
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
     void SetSpeed(uint32_t sessionId, float speed) override;
     std::vector<SinkInput> GetAllSinkInputsInfo() override;
+    int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
     int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) override;
     int32_t RefreshProcessClusterByDevice() override;
     HpaeSinkInfo GetSinkInfo() override;
@@ -99,6 +101,19 @@ public:
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     void TriggerAppsUidUpdate(uint32_t sessionId) override;
 
+    // Session Effect (synchronous — must be called from SignalProcessThread)
+    int32_t CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+    int32_t DestroySessionEffect(uint32_t sessionId) override;
+    // Session Effect (async — dispatches to SignalProcessThread)
+    void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+    void PostDestroySessionEffect(uint32_t sessionId) override;
+    bool IsValidSession(uint32_t sessionId) const override;
+    // Session Effect parameter routing
+    int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
+    void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
+
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
@@ -107,7 +122,7 @@ private:
     int32_t DestroyDirectNodes();
     int32_t ConnectInputSession();
     int32_t DisConnectInputSession(bool isStandby = false);
-    void DeleteInputSession();
+    void DeleteInputSession(SessionEffectMoveMode moveMode = SessionEffectMoveMode::FULL_TEARDOWN);
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
@@ -138,6 +153,19 @@ private:
     std::shared_ptr<HpaeLoudnessGainNode> loudnessGainNode_ = nullptr;
     std::unique_ptr<HpaeDirectSinkOutputNode> sinkOutputNode_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
+
+    // Session Effect state: sessionEffectNode_/sessionEffectSessionId_ cache the
+    // currently materialized physical SE node. Logical binding (attach state) lives
+    // on each HpaeSinkInputNode via SetSessionEffectAttachState.
+    std::shared_ptr<HpaeSessionEffectNode> sessionEffectNode_ = nullptr;
+    uint32_t sessionEffectSessionId_ = 0;
+
+    // Session Effect helpers (called on SignalProcessThread)
+    int32_t InsertSessionEffectNode(const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
+    int32_t RemoveSessionEffectNode();
+    void MaterializeSessionEffectFromAttachState(uint32_t curSessionId);
+    void DetachSessionEffectNodeForReload();
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;
     std::vector<int32_t> appsUid_;

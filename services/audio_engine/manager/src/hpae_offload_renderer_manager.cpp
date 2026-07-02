@@ -1205,6 +1205,11 @@ int32_t HpaeOffloadRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, A
         // has loudness gain algorithm, should convert to 48k, channels and chanellayout stay same as input
         basicFormat.rate = SAMPLE_RATE_48000;
     }
+    // When sessionEffect is enabled, force 48kHz dual channel
+    if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+        basicFormat.rate = SAMPLE_RATE_48000;
+        basicFormat.audioChannelInfo.numChannels = STEREO;
+    }
     return SUCCESS;
 }
 

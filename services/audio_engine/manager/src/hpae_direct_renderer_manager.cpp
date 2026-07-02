@@ -221,9 +221,30 @@ int32_t HpaeDirectRendererManager::CreateStream(const HpaeStreamInfo &streamInfo
     return SUCCESS;
 }
 
-void HpaeDirectRendererManager::DeleteInputSession()
+void HpaeDirectRendererManager::DeleteInputSession(SessionEffectMoveMode moveMode)
 {
+    if (sessionEffectNode_ != nullptr) {
+        sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
+    }
     DisConnectInputSession();
+
+    // Session Effect: clean up SE node. DisConnectInputSession already disconnected
+    // the SE node from the chain (no bypass reconnect), so just clean up the physical node.
+    if (sessionEffectNode_ != nullptr) {
+        uint32_t sid = sessionEffectSessionId_;
+        HpaeSessionState state = curNode_ != nullptr ? curNode_->GetState() : HPAE_SESSION_NEW;
+        sessionEffectNode_.reset();
+        sessionEffectSessionId_ = 0;
+        if (moveMode == SessionEffectMoveMode::FULL_TEARDOWN) {
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sid, state,
+                OPERATION_SESSION_EFFECT_DISABLED);
+        }
+    }
+    // Clear attach state on the SinkInputNode only for full teardown (not for move)
+    if (curNode_ != nullptr && moveMode == SessionEffectMoveMode::FULL_TEARDOWN) {
+        curNode_->ClearSessionEffectAttachState();
+    }
+
     CHECK_AND_RETURN_LOG(curNode_ != nullptr, "curNode_ not exist");
     RemoveNodeFromMap(curNode_->GetSessionId());
 }
@@ -242,6 +263,12 @@ int32_t HpaeDirectRendererManager::DestroyStream(uint32_t sessionId)
             DeleteInputSession();
             SetCurrentNode();
         } else {
+            // Clear attach state for non-curNode stream being destroyed
+            if (node->HasSessionEffectAttachState()) {
+                node->ClearSessionEffectAttachState();
+                TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(),
+                    OPERATION_SESSION_EFFECT_DISABLED);
+            }
             RemoveNodeFromMap(sessionId);
         }
     };
@@ -370,7 +397,14 @@ int32_t HpaeDirectRendererManager::ConnectInputSession()
         } else {
             limiterNode_->Connect(gainNode_);
             gainNode_->Connect(loudnessGainNode_);
-            loudnessGainNode_->Connect(converterForGain_);
+            // Session Effect: insert SE between loudnessGainNode_ and converterForGain_ when active
+            uint32_t curSessionId = curNode_->GetSessionId();
+            if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == curSessionId) {
+                loudnessGainNode_->Connect(sessionEffectNode_);
+                sessionEffectNode_->Connect(converterForGain_);
+            } else {
+                loudnessGainNode_->Connect(converterForGain_);
+            }
             gainNode_->ResetVolume();
             loudnessGainNode_->SetLoudnessGain(curNode_->GetLoudnessGain());
         }
@@ -382,11 +416,22 @@ int32_t HpaeDirectRendererManager::ConnectInputSession()
         } else {
             converterForOutput_->Connect(gainNode_);
             gainNode_->Connect(loudnessGainNode_);
-            loudnessGainNode_->Connect(converterForGain_);
+            // Session Effect: insert SE between loudnessGainNode_ and converterForGain_ when active
+            uint32_t curSessionId = curNode_->GetSessionId();
+            if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == curSessionId) {
+                loudnessGainNode_->Connect(sessionEffectNode_);
+                sessionEffectNode_->Connect(converterForGain_);
+            } else {
+                loudnessGainNode_->Connect(converterForGain_);
+            }
             gainNode_->ResetVolume();
             loudnessGainNode_->SetLoudnessGain(curNode_->GetLoudnessGain());
         }
     }
+
+    // Materialize SE from attach state if curNode has it and physical node not yet created
+    MaterializeSessionEffectFromAttachState(curNode_->GetSessionId());
+
     converterForGain_->Connect(curNode_);
 
     if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
@@ -405,6 +450,10 @@ int32_t HpaeDirectRendererManager::Start(uint32_t sessionId)
         node->SetState(HPAE_SESSION_RUNNING);
         if (sessionId == curNode_->GetSessionId()) {
             ConnectInputSession();
+            // Start SE if active for this session
+            if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+                sessionEffectNode_->StartEffect();
+            }
             SetSessionFade(sessionId, OPERATION_STARTED);
         }
     };
@@ -415,6 +464,17 @@ int32_t HpaeDirectRendererManager::Start(uint32_t sessionId)
 int32_t HpaeDirectRendererManager::DisConnectInputSession(bool isStandby)
 {
     CHECK_AND_RETURN_RET(converterForGain_, SUCCESS);
+
+    // Session Effect: disconnect SE node from chain (no bypass reconnect).
+    // Do NOT DropEffect here — that happens in DeleteInputSession after this returns.
+    if (sessionEffectNode_ != nullptr && loudnessGainNode_ != nullptr
+        && converterForGain_ != nullptr) {
+        loudnessGainNode_->DisConnect(sessionEffectNode_);
+        sessionEffectNode_->DisConnect(converterForGain_);
+    } else if (loudnessGainNode_ != nullptr && converterForGain_ != nullptr) {
+        loudnessGainNode_->DisConnect(converterForGain_);
+    }
+
     converterForGain_->DisConnect(curNode_);
     if (limiterNode_ != nullptr) {
         if (volumeSyncNode_ != nullptr) {
@@ -451,7 +511,12 @@ int32_t HpaeDirectRendererManager::Pause(uint32_t sessionId, bool isStandby)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Pause not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Pause sessionId %{public}u isStandby %{public}d", sessionId, isStandby);
+        auto state = curNode_ != nullptr ? curNode_->GetState() : HPAE_SESSION_NEW;
+        bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         if (curNode_ != nullptr && sessionId == curNode_->GetSessionId()) {
+            if (isSessionEffectActive) {
+                sessionEffectNode_->PauseEffect();
+            }
             if (!SetSessionFade(sessionId, OPERATION_PAUSED, isStandby)) {
                 DisConnectInputSession(isStandby);
             }
@@ -471,7 +536,25 @@ int32_t HpaeDirectRendererManager::Flush(uint32_t sessionId)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Flush not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Flush sessionId %{public}u", sessionId);
+
+        // flush history buffer
         node->Flush();
+
+        // flush converter nodes' dual buffers
+        if (converterForGain_ != nullptr) {
+            converterForGain_->FlushBuffers();
+        }
+        if (converterForOutput_ != nullptr) {
+            converterForOutput_->FlushBuffers();
+        }
+        if (sessionId == curNode_->GetSessionId()) {
+            // flush sinkoutput cache
+            sinkOutputNode_->FlushStream();
+        }
+        // flush SE
+        if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+            sessionEffectNode_->FlushEffect();
+        }
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -484,6 +567,19 @@ int32_t HpaeDirectRendererManager::Drain(uint32_t sessionId)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Drain not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Drain sessionId %{public}u", sessionId);
+
+        // flush converter nodes
+        if (converterForGain_ != nullptr) {
+            converterForGain_->FlushBuffers();
+        }
+        if (converterForOutput_ != nullptr) {
+            converterForOutput_->FlushBuffers();
+        }
+        // flush SE
+        if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+            sessionEffectNode_->FlushEffect();
+        }
+
         node->Drain();
         if (node->GetState() != HPAE_SESSION_RUNNING) {
             TriggerCallback(
@@ -501,7 +597,12 @@ int32_t HpaeDirectRendererManager::Stop(uint32_t sessionId)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Stop not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Stop sessionId %{public}u", sessionId);
+        auto state = curNode_ != nullptr ? curNode_->GetState() : HPAE_SESSION_NEW;
+        bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         if (curNode_ != nullptr && sessionId == curNode_->GetSessionId()) {
+            if (isSessionEffectActive) {
+                sessionEffectNode_->PauseEffect();
+            }
             if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
                 DisConnectInputSession();
             }
@@ -591,10 +692,16 @@ int32_t HpaeDirectRendererManager::MoveStream(uint32_t sessionId, const std::str
             return;
         }
         AUDIO_INFO_LOG("move session:%{public}d,sink [direct] --> [%{public}s]", sessionId, sinkName.c_str());
+        // Prepare SE for move
+        if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+            sessionEffectNode_->PrepareMoveStream();
+        }
         if (sessionId == curNode_->GetSessionId()) {
-            DeleteInputSession();
+            DeleteInputSession(SessionEffectMoveMode::KEEP_ATTACH_STATE_FOR_MOVE);
             SetCurrentNode();
         } else {
+            // Attach state follows the stream to the new sink — do NOT clear it or emit DISABLED.
+            // The SE will re-materialize on the new sink when ConnectInputSession runs.
             RemoveNodeFromMap(sessionId);
         }
         std::string name = sinkName;
@@ -672,6 +779,7 @@ int32_t HpaeDirectRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkI
         AUDIO_INFO_LOG("reload direct");
         if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
             DisConnectInputSession();
+            DetachSessionEffectNodeForReload();  // Detach SE but keep attach state for reload
             DestroyDirectNodes();
         }
         StopOuputNode();
@@ -1005,6 +1113,11 @@ void HpaeDirectRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &l
         processLatency += loudnessGainNode_->GetLatency(sessionId);
     }
 
+    // Session Effect latency
+    if (sessionEffectNode_) {
+        processLatency += sessionEffectNode_->GetLatency(sessionId);
+    }
+
     if (converterForOutput_) {
         processLatency += converterForOutput_->GetLatency();
     }
@@ -1015,6 +1128,24 @@ void HpaeDirectRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &l
 
     latency += processLatency;
     return;
+}
+
+int32_t HpaeDirectRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
+{
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(loudnessGainNode_, ERROR,
+        "sessionId %{public}d, loudnessGainNode does not exist", sessionId);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(loudnessGainNode_->GetSessionId() == sessionId, ERROR,
+        "loudness node sessionId does not match, sessionId %{public}u", sessionId);
+
+    basicFormat.audioChannelInfo.channelLayout = (AudioChannelLayout)sinkInfo_.channelLayout;
+    basicFormat.audioChannelInfo.numChannels = (uint32_t)sinkInfo_.channels;
+    basicFormat.rate = sinkInfo_.samplingRate;
+    // When sessionEffect is enabled, force 48kHz dual channel
+    if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
+        basicFormat.rate = SAMPLE_RATE_48000;
+        basicFormat.audioChannelInfo.numChannels = STEREO;
+    }
+    return SUCCESS;
 }
 
 void HpaeDirectRendererManager::OnNotifyQueue()
@@ -1111,6 +1242,279 @@ void HpaeDirectRendererManager::StopDirectOutputNode(bool isStandby)
         ClockTime::RelativeSleep(PERIOD_NS * DIRECT_SINK_STANDBY_TIMES);
     }
     sinkOutputNode_->RenderSinkStop();
+}
+
+// === Session Effect ===
+
+int32_t HpaeDirectRendererManager::InsertSessionEffectNode(const std::string &effectName,
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+{
+    CHECK_AND_RETURN_RET_LOG(sessionEffectNode_ == nullptr,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND),
+        "InsertSessionEffectNode: SE node already exists");
+    CHECK_AND_RETURN_RET_LOG(converterForGain_ != nullptr && loudnessGainNode_ != nullptr,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND),
+        "InsertSessionEffectNode: chain not created yet");
+
+    HpaeNodeInfo nodeInfo = converterForGain_->GetNodeInfo();
+    sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(nodeInfo);
+    int32_t ret = sessionEffectNode_->CreateEffectWithInstance(effectName, instance, config);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("InsertSessionEffectNode: CreateEffectWithInstance failed, ret=%{public}d", ret);
+        sessionEffectNode_->DropEffect();
+        sessionEffectNode_.reset();
+        sessionEffectSessionId_ = 0;
+        return ret;
+    }
+
+    // Insert between loudnessGainNode_ and converterForGain_
+    loudnessGainNode_->DisConnect(converterForGain_);
+    loudnessGainNode_->Connect(sessionEffectNode_);
+    sessionEffectNode_->Connect(converterForGain_);
+
+    AUDIO_INFO_LOG("InsertSessionEffectNode: SE node inserted for session %{public}u",
+        sessionEffectSessionId_);
+    return 0;
+}
+
+int32_t HpaeDirectRendererManager::RemoveSessionEffectNode()
+{
+    CHECK_AND_RETURN_RET_LOG(sessionEffectNode_ != nullptr,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
+        "RemoveSessionEffectNode: no SE node to remove");
+
+    // Close SE flow
+    sessionEffectNode_->StartCloseCrossfade();
+    sessionEffectNode_->StopPreheatThread();
+    uint64_t latency = sessionEffectNode_->GetLatency(sessionEffectSessionId_);
+
+    sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
+    // Restore original chain
+    if (loudnessGainNode_ != nullptr && converterForGain_ != nullptr) {
+        loudnessGainNode_->DisConnect(sessionEffectNode_);
+        sessionEffectNode_->DisConnect(converterForGain_);
+        loudnessGainNode_->Connect(converterForGain_);
+        converterForGain_->FlushBuffers();  // Clear residual SE output from processedBuffer_
+    }
+
+    sessionEffectNode_.reset();
+    uint32_t sid = sessionEffectSessionId_;
+    HpaeSessionState state = (curNode_ != nullptr) ? curNode_->GetState() : HPAE_SESSION_NEW;
+    sessionEffectSessionId_ = 0;
+    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sid, state,
+        OPERATION_SESSION_EFFECT_DISABLED);
+
+    // RewindHistoryBuffer: return unconsumed data (only SE latency)
+    if (latency > 0 && curNode_ != nullptr) {
+        curNode_->RewindHistoryBuffer(latency);
+    }
+
+    AUDIO_INFO_LOG("RemoveSessionEffectNode: session %{public}u, latency=%{public}llu",
+        sid, (unsigned long long)latency);
+    return 0;
+}
+
+void HpaeDirectRendererManager::MaterializeSessionEffectFromAttachState(uint32_t curSessionId)
+{
+    // VOIP scene does not support SE
+    if (volumeSyncNode_ != nullptr) {
+        return;
+    }
+
+    // Only when the physical SE node has not been created yet.
+    if (sessionEffectNode_ != nullptr) {
+        return;
+    }
+    auto curSinkInput = SafeGetMap(sinkInputNodeMap_, curSessionId);
+    if (curSinkInput == nullptr || !curSinkInput->HasSessionEffectAttachState()) {
+        return;
+    }
+    auto stOpt = curSinkInput->GetSessionEffectAttachState();
+    if (!stOpt.has_value() || !stOpt->enabled) {
+        return;
+    }
+    auto inst = stOpt->instance.lock();
+    HpaeSessionState state = curNode_->GetState();
+    if (inst == nullptr) {
+        curSinkInput->ClearSessionEffectAttachState();
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, curSessionId, state,
+            OPERATION_SESSION_EFFECT_DISABLED);
+        AUDIO_WARNING_LOG("MaterializeSessionEffectFromAttachState: SE instance expired for session %{public}u, "
+            "attach-state cleared", curSessionId);
+        return;
+    }
+    sessionEffectSessionId_ = curSessionId;
+    int32_t seRet = InsertSessionEffectNode(stOpt->effectName, inst, stOpt->config);
+    if (seRet != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+        sessionEffectSessionId_ = 0;
+        curSinkInput->ClearSessionEffectAttachState();
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, curSessionId, state,
+            OPERATION_SESSION_EFFECT_DISABLED);
+        AUDIO_WARNING_LOG("MaterializeSessionEffectFromAttachState: materialize SE failed for session %{public}u, "
+            "attach-state cleared, ret=%{public}d", curSessionId, seRet);
+        return;
+    }
+    // Restart preheat if previous incarnation was active.
+    if (stOpt->lastSeStatus >= static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP)
+        && sessionEffectNode_ != nullptr) {
+        sessionEffectNode_->StartEffect();
+    }
+    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, curSessionId, state,
+        OPERATION_SESSION_EFFECT_ENABLED);
+    AUDIO_INFO_LOG("MaterializeSessionEffectFromAttachState: SE materialized+ENABLED for session %{public}u",
+        curSessionId);
+}
+
+void HpaeDirectRendererManager::DetachSessionEffectNodeForReload()
+{
+    // Do NOT clear attach state — it must survive reload so ConnectInputSession can re-materialize.
+    // Only reset the physical cache (node + sessionId).
+    if (sessionEffectNode_ != nullptr) {
+        // Capture lastSeStatus before reset so MaterializeSessionEffectFromAttachState can restart
+        // preheat (mirrors DetachSessionEffectNodeForReload in HpaeOffloadRendererManager).
+        auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionEffectSessionId_);
+        if (sinkInputNode != nullptr && sinkInputNode->HasSessionEffectAttachState()) {
+            auto st = sinkInputNode->GetSessionEffectAttachState();
+            if (st.has_value()) {
+                st->lastSeStatus = static_cast<int32_t>(sessionEffectNode_->GetStatus());
+                sinkInputNode->SetSessionEffectAttachState(st.value());
+            }
+        }
+        // Reload runs on SignalProcessThread after DisConnectInputSession has removed this node
+        // from the processing chain, so DetachEffectForReload only resets local runtime state.
+        sessionEffectNode_->DetachEffectForReload();
+        sessionEffectNode_.reset();
+    }
+    sessionEffectSessionId_ = 0;
+}
+
+int32_t HpaeDirectRendererManager::CreateSessionEffect(uint32_t sessionId,
+    const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
+    const AudioEffectConfig &config)
+{
+    auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+
+    // Reject a duplicate bind BEFORE touching attach state
+    CHECK_AND_RETURN_RET_LOG(
+        !(curNode_ != nullptr && curNode_->GetSessionId() == sessionId && sessionEffectNode_ != nullptr),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND),
+        "CreateSessionEffect: curNode already has materialized SE for session %{public}u",
+        sessionId);
+
+    // Create accepted — persist the logical binding on the SinkInputNode
+    if (node != nullptr) {
+        SessionEffectAttachState st;
+        st.enabled = true;
+        st.effectName = effectName;
+        st.instance = instance;
+        st.config = config;
+        node->SetSessionEffectAttachState(st);
+    }
+
+    // If session is curNode_ and chain is ready, materialize immediately
+    if (curNode_ != nullptr && curNode_->GetSessionId() == sessionId) {
+        // VOIP mode does not support SE
+        if (volumeSyncNode_ != nullptr) {
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
+                OPERATION_SESSION_EFFECT_ENABLED);
+            AUDIO_WARNING_LOG("CreateSessionEffect: VOIP mode does not support SE for session %{public}u",
+                sessionId);
+            return static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED);
+        }
+
+        if (converterForGain_ == nullptr || loudnessGainNode_ == nullptr) {
+            // Chain not ready; attach state sits on node, will materialize in ConnectInputSession
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
+                OPERATION_SESSION_EFFECT_ENABLED);
+            AUDIO_INFO_LOG("CreateSessionEffect: deferred for current session %{public}u (chain not created)",
+                sessionId);
+            return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
+        }
+        sessionEffectSessionId_ = sessionId;
+        int32_t ret = InsertSessionEffectNode(effectName, instance, config);
+        if (ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
+                OPERATION_SESSION_EFFECT_ENABLED);
+        } else {
+            sessionEffectSessionId_ = 0;
+        }
+        return ret;
+    }
+    // Not curNode_ -> attach state sits on SinkInputNode, waits for ConnectInputSession
+    HpaeSessionState state = (node != nullptr) ? node->GetState() : HPAE_SESSION_NEW;
+    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state,
+        OPERATION_SESSION_EFFECT_ENABLED);
+    AUDIO_INFO_LOG("CreateSessionEffect: deferred for session %{public}u (not curNode)", sessionId);
+    return 0;
+}
+
+int32_t HpaeDirectRendererManager::DestroySessionEffect(uint32_t sessionId)
+{
+    // Clear attach state on SinkInputNode (logical unbinding)
+    auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+    bool hadAttachState = (node != nullptr) && node->HasSessionEffectAttachState();
+    if (node != nullptr) {
+        node->ClearSessionEffectAttachState();
+    }
+
+    // Remove active physical SE node if materialized for this session
+    if (sessionEffectSessionId_ == sessionId && sessionEffectNode_ != nullptr) {
+        return RemoveSessionEffectNode();
+    }
+
+    // If there was attach state but no physical node, emit DISABLED for the logical unbind
+    if (hadAttachState) {
+        HpaeSessionState state = (node != nullptr) ? node->GetState() : HPAE_SESSION_NEW;
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state,
+            OPERATION_SESSION_EFFECT_DISABLED);
+        AUDIO_INFO_LOG("DestroySessionEffect: cleared attach state for session %{public}u", sessionId);
+        return 0;
+    }
+
+    AUDIO_WARNING_LOG("DestroySessionEffect: session %{public}u has no SE", sessionId);
+    return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
+}
+
+int32_t HpaeDirectRendererManager::SetSessionEffectParameter(uint32_t sessionId,
+    int32_t type, float value)
+{
+    if (sessionEffectSessionId_ == sessionId && sessionEffectNode_ != nullptr) {
+        return sessionEffectNode_->SetParameter(type, value);
+    }
+    AUDIO_WARNING_LOG("SetSessionEffectParameter: session %{public}u has no active SE node", sessionId);
+    return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
+}
+
+void HpaeDirectRendererManager::PostCreateSessionEffect(uint32_t sessionId,
+    const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
+    const AudioEffectConfig &config)
+{
+    auto request = [this, sessionId, effectName, instance, config]() {
+        CreateSessionEffect(sessionId, effectName, instance, config);
+    };
+    SendRequest(std::move(request), __func__);
+}
+
+void HpaeDirectRendererManager::PostDestroySessionEffect(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        DestroySessionEffect(sessionId);
+    };
+    SendRequest(std::move(request), __func__);
+}
+
+void HpaeDirectRendererManager::PostSetSessionEffectParameter(uint32_t sessionId,
+    int32_t type, float value)
+{
+    auto request = [this, sessionId, type, value]() {
+        SetSessionEffectParameter(sessionId, type, value);
+    };
+    SendRequest(std::move(request), __func__);
+}
+
+bool HpaeDirectRendererManager::IsValidSession(uint32_t sessionId) const
+{
+    return sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

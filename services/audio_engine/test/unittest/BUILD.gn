@@ -1367,7 +1367,7 @@ ohos_unittest("hpae_direct_renderer_manager_session_effect_test") {
 
   sanitize = {
     cfi = true
-    cfi_cross_dso = false
+    cfi_cross_dso = true
     boundary_sanitize = true
     debug = false
     integer_overflow = true
