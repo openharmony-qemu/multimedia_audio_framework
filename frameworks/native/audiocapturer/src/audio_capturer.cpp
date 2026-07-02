@@ -3503,11 +3503,11 @@ int32_t AudioCapturerPrivate::GetNoiseReductionMode(NoiseReductionMode &mode)
 
 NoiseReductionMode AudioCapturerPrivate::StringToNoiseReductionMode(const std::string &modeStr)
 {
-    if (modeStr == "normal") {
+    if (modeStr == "normal" || modeStr == "fidelity") {
         return NOISE_REDUCTION_MODE_FIDELITY;
     } else if (modeStr == "pure_voice") {
         return NOISE_REDUCTION_MODE_PURE_VOCALS;
-    } 
+    }
     return NOISE_REDUCTION_MODE_MAX;
 }
 
@@ -3557,7 +3557,8 @@ int32_t AudioCapturerPrivate::GetSupportedNoiseReductionModes(std::vector<NoiseR
     while (std::getline(ss, modeStr, ',')) {
         if (!modeStr.empty()) {
             NoiseReductionMode mode = StringToNoiseReductionMode(modeStr);
-            if (mode != NOISE_REDUCTION_MODE_MAX) {
+            if (mode != NOISE_REDUCTION_MODE_MAX &&
+                std::find(modes.begin(), modes.end(), mode) == modes.end()) {
                 modes.push_back(mode);
             }
         }

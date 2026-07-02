@@ -2988,8 +2988,8 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetSupportedNoiseReductionModes_002
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_StringToNoiseReductionMode_001, TestSize.Level1)
 {
     EXPECT_EQ(NOISE_REDUCTION_MODE_FIDELITY, AudioCapturerPrivate::StringToNoiseReductionMode("fidelity"));
+    EXPECT_EQ(NOISE_REDUCTION_MODE_FIDELITY, AudioCapturerPrivate::StringToNoiseReductionMode("normal"));
     EXPECT_EQ(NOISE_REDUCTION_MODE_PURE_VOCALS, AudioCapturerPrivate::StringToNoiseReductionMode("pure_voice"));
-    EXPECT_EQ(NOISE_REDUCTION_MODE_STANDARD, AudioCapturerPrivate::StringToNoiseReductionMode("normal"));
     EXPECT_EQ(NOISE_REDUCTION_MODE_MAX, AudioCapturerPrivate::StringToNoiseReductionMode(""));
     EXPECT_EQ(NOISE_REDUCTION_MODE_MAX, AudioCapturerPrivate::StringToNoiseReductionMode("unknown"));
 }
