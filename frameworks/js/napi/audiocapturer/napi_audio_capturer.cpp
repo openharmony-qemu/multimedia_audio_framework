@@ -1347,6 +1347,9 @@ napi_value NapiAudioCapturer::GetSupportedNoiseReductionModes(napi_env env, napi
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
         "napi_create_array_with_length failed");
     for (size_t i = 0; i < noiseReductionModes.size(); ++i) {
+        CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentNoiseReductionMode(
+            static_cast<int32_t>(noiseReductionModes[i])), NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+            "noiseReductionMode is invalid");
         napi_value jsMode = nullptr;
         status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(noiseReductionModes[i]), jsMode);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),

@@ -233,6 +233,7 @@ private:
     bool CheckForGenerateNewStream();
     int32_t CheckForStartImpl(CapturerState state);
     void ResetNoiseReductionModeOnRelease();
+    static NoiseReductionMode StringToNoiseReductionMode(const std::string &modeStr);
     void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
  	    const std::string &erroDesc, bool isClient, CapturerState state) const;
 

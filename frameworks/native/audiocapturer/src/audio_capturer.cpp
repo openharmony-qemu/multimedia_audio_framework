@@ -3501,8 +3501,7 @@ int32_t AudioCapturerPrivate::GetNoiseReductionMode(NoiseReductionMode &mode)
     return SUCCESS;
 }
 
-namespace {
-NoiseReductionMode StringToNoiseReductionMode(const std::string &modeStr)
+NoiseReductionMode AudioCapturerPrivate::StringToNoiseReductionMode(const std::string &modeStr)
 {
     if (modeStr == "fidelity") {
         return NOISE_REDUCTION_MODE_FIDELITY;
@@ -3512,7 +3511,6 @@ NoiseReductionMode StringToNoiseReductionMode(const std::string &modeStr)
         return NOISE_REDUCTION_MODE_STANDARD;
     }
     return NOISE_REDUCTION_MODE_MAX;
-}
 }
 
 void AudioCapturerPrivate::ResetNoiseReductionModeOnRelease()
