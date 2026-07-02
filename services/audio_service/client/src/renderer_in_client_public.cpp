@@ -770,7 +770,7 @@ bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
 
 void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId)
 {
-    AUDIO_INFO_LOG("NotifyRouteUpdate: routeFlag=0x%{public}x networkId=%{public}s",
+    AUDIO_DEBUG_LOG("NotifyRouteUpdate: routeFlag=0x%{public}x networkId=%{public}s",
         routeFlag, networkId.c_str());
     
     // rendererFlags 更新已通过共享内存 pendingRouteFlag 传递
