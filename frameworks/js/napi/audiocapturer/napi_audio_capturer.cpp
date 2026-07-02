@@ -1268,39 +1268,40 @@ napi_value NapiAudioCapturer::SetNoiseReductionMode(napi_env env, napi_callback_
 
     auto *napiAudioCapturer = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+        "mandatory parameters are left unspecified", NAPI_ERR_INVALID_PARAM), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of noiseReductionMode must be number"),
+        "incorrect parameter types: The type of noiseReductionMode must be number", NAPI_ERR_INVALID_PARAM),
         "invalid valueType");
 
     int32_t noiseReductionMode = 0;
     NapiParamUtils::GetValueInt32(env, noiseReductionMode, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentNoiseReductionMode(noiseReductionMode),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of noiseReductionMode must be enum NoiseReductionMode"),
-        "get noiseReductionMode failed");
+        NapiAudioError::ThrowErrorAndReturn(env, "parameter verification failed: The param of noiseReductionMode\
+            must be enum NoiseReductionMode", NAPI_ERR_INVALID_PARAM), "get noiseReductionMode failed");
 
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "napiAudioCapturer is nullptr");
+        NapiAudioError::ThrowErrorAndReturn(env, "napiAudioCapturer is nullptr", NAPI_ERR_SYSTEM),
+        "napiAudioCapturer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE), "audioCapturer_ is nullptr");
+        NapiAudioError::ThrowErrorAndReturn(env, "audioCapturer_ is nullptr", NAPI_ERR_ILLEGAL_STATE),
+        "audioCapturer_ is nullptr");
 
     int32_t ret = napiAudioCapturer->audioCapturer_->SetNoiseReductionMode(
         static_cast<NoiseReductionMode>(noiseReductionMode));
     if (ret == ERR_INVALID_PARAM || ret == ERROR_INVALID_PARAM) {
-        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM);
+        return NapiAudioError::ThrowErrorAndReturn(env, "invalid arguments", NAPI_ERR_INVALID_PARAM);
     }
     if (ret == ERR_NOT_SUPPORTED || ret == ERROR_UNSUPPORTED) {
-        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_UNSUPPORTED);
+        return NapiAudioError::ThrowErrorAndReturn(env, "unsupported mode", NAPI_ERR_UNSUPPORTED);
     }
     if (ret == ERR_ILLEGAL_STATE || ret == ERROR_ILLEGAL_STATE) {
-        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE);
+        return NapiAudioError::ThrowErrorAndReturn(env, "illegal state", NAPI_ERR_ILLEGAL_STATE);
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "SetNoiseReductionMode failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env,
+        "SetNoiseReductionMode failed", NAPI_ERR_SYSTEM), "SetNoiseReductionMode failed");
     return NapiParamUtils::GetUndefinedValue(env);
 }
 
@@ -1334,29 +1335,30 @@ napi_value NapiAudioCapturer::GetSupportedNoiseReductionModes(napi_env env, napi
 
     auto *napiAudioCapturer = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "napiAudioCapturer is nullptr");
+        NapiAudioError::ThrowErrorAndReturn(env, "napiAudioCapturer is nullptr", NAPI_ERR_SYSTEM),
+        "napiAudioCapturer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioCapturer->audioCapturer_ != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "audioCapturer_ is nullptr");
+        NapiAudioError::ThrowErrorAndReturn(env, "audioCapturer_ is nullptr", NAPI_ERR_SYSTEM),
+        "audioCapturer_ is nullptr");
 
     std::vector<NoiseReductionMode> noiseReductionModes;
     int32_t ret = napiAudioCapturer->audioCapturer_->GetSupportedNoiseReductionModes(noiseReductionModes);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "GetSupportedNoiseReductionModes failed");
-
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env,
+        "GetSupportedNoiseReductionModes failed", NAPI_ERR_SYSTEM), "GetSupportedNoiseReductionModes failed");
     napi_status status = napi_create_array_with_length(env, noiseReductionModes.size(), &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "napi_create_array_with_length failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+        "napi_create_array_with_length failed", NAPI_ERR_SYSTEM), "napi_create_array_with_length failed");
     for (size_t i = 0; i < noiseReductionModes.size(); ++i) {
         CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentNoiseReductionMode(
-            static_cast<int32_t>(noiseReductionModes[i])), NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-            "noiseReductionMode is invalid");
+            static_cast<int32_t>(noiseReductionModes[i])), NapiAudioError::ThrowErrorAndReturn(env,
+                "noiseReductionMode is invalid", NAPI_ERR_SYSTEM), "noiseReductionMode is invalid");
         napi_value jsMode = nullptr;
         status = NapiParamUtils::SetValueInt32(env, static_cast<int32_t>(noiseReductionModes[i]), jsMode);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-            "SetValueInt32 failed");
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, "SetValueInt32 failed",
+        NAPI_ERR_SYSTEM), "SetValueInt32 failed");
         status = napi_set_element(env, result, i, jsMode);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-            "napi_set_element failed");
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, "napi_set_element failed",
+        NAPI_ERR_SYSTEM), "napi_set_element failed");
     }
     return result;
 }
