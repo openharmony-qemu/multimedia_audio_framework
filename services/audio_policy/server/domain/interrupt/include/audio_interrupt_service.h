@@ -425,8 +425,7 @@ private:
     void MuteCheckFocusStrategy(AudioFocusEntry &focusEntry,
         const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt,
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
-    void DelayRemoveMuteCheckRecord(uint32_t currentPid);
-    void RemoveMuteCheckRecord(uint32_t currentPid);
+    void RemoveMuteCheckRecord(const AudioInterrupt &audioInterrupt);
     void ResetInterruptMuteState(const AudioInterrupt &audioInterrupt);
     bool IsActiveInjectFocusExist(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     void AudioSessionStateChangeCallbackEvent(const int32_t zoneId, const int32_t callerPid,
