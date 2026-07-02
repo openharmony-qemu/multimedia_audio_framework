@@ -136,7 +136,8 @@ napi_value NapiAudioLoopback::Construct(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "failed to napi_get_cb_info");
 
     unique_ptr<NapiAudioLoopback> napiLoopback = make_unique<NapiAudioLoopback>();
-    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr, result, "No memory");
+    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
+        sLoopbackType_ == LOOPBACK_TYPE_NORMAL ? result : nullptr, "No memory");
     ObjectRefMap<NapiAudioLoopback>::Insert(napiLoopback.get());
 
     napiLoopback->env_ = env;
@@ -397,7 +398,7 @@ napi_value NapiAudioLoopback::GetSupportedDevicePairs(napi_env env, napi_callbac
     size_t argc = PARAM0;
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+        NapiAudioError::ThrowErrorAndReturn(env, "napiLoopback is nullptr", NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
 
@@ -405,8 +406,8 @@ napi_value NapiAudioLoopback::GetSupportedDevicePairs(napi_env env, napi_callbac
     std::vector<AudioDevicePair> nativePairs = napiLoopback->loopback_->GetSupportedDevicePairs();
     napi_value result = nullptr;
     napi_status status = napi_create_array(env, &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "napi_create_array failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, "napi_create_array failed",
+        NAPI_ERR_SYSTEM), "napi_create_array failed");
 
     size_t insertIndex = 0;
     for (const auto &nativePair : nativePairs) {
@@ -416,11 +417,11 @@ napi_value NapiAudioLoopback::GetSupportedDevicePairs(napi_env env, napi_callbac
         }
         napi_value pairValue = nullptr;
         status = SetJsDevicePair(env, nativePair.first, nativePair.second, pairValue);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-            "SetJsDevicePair failed");
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, "SetJsDevicePair failed",
+            NAPI_ERR_SYSTEM), "SetJsDevicePair failed");
         status = napi_set_element(env, result, insertIndex, pairValue);
-        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-            "napi_set_element failed");
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, "napi_set_element failed",
+            NAPI_ERR_SYSTEM), "napi_set_element failed");
         insertIndex++;
     }
     return result;
@@ -431,7 +432,7 @@ napi_value NapiAudioLoopback::GetPreferredDevicePair(napi_env env, napi_callback
     size_t argc = PARAM0;
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+        NapiAudioError::ThrowErrorAndReturn(env, "napiLoopback is nullptr", NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
 
@@ -443,8 +444,8 @@ napi_value NapiAudioLoopback::GetPreferredDevicePair(napi_env env, napi_callback
         return result;
     }
     napi_status status = SetJsDevicePair(env, nativePair.first, nativePair.second, result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "SetJsDevicePair failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, "SetJsDevicePair failed",
+        NAPI_ERR_SYSTEM), "SetJsDevicePair failed");
     return result;
 }
 
