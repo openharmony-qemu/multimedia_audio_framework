@@ -398,7 +398,8 @@ napi_value NapiAudioLoopback::GetSupportedDevicePairs(napi_env env, napi_callbac
     size_t argc = PARAM0;
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, "napiLoopback is nullptr", NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+        NapiAudioError::ThrowErrorAndReturn(env, "napiLoopback is nullptr", NAPI_ERR_NO_MEMORY),
+        "napiLoopback is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
 
@@ -432,7 +433,8 @@ napi_value NapiAudioLoopback::GetPreferredDevicePair(napi_env env, napi_callback
     size_t argc = PARAM0;
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, "napiLoopback is nullptr", NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+        NapiAudioError::ThrowErrorAndReturn(env, "napiLoopback is nullptr", NAPI_ERR_NO_MEMORY),
+        "napiLoopback is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
 
