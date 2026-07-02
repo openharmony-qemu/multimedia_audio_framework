@@ -493,7 +493,7 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
 void AudioInterruptService::RemoveMuteCheckRecord(const AudioInterrupt &audioInterrupt)
 {
     auto it = muteAudioFocus_.find(audioInterrupt.pid);
-    if (it == muteAudioFocus_.end) {
+    if (it == muteAudioFocus_.end()) {
         return;
     }
 
@@ -507,7 +507,7 @@ void AudioInterruptService::RemoveMuteCheckRecord(const AudioInterrupt &audioInt
     if (focusList.empty()) {
         muteAudioFocus_.erase(it);
         AUDIO_INFO_LOG("pid: %{public}d has been removed from muteAudioFocus_ record, "
-            "now record size: %{public}zu", currentPid, muteAudioFocus_.size());
+            "now record size: %{public}zu", audioInterrupt.pid, muteAudioFocus_.size());
     }
 }
 
