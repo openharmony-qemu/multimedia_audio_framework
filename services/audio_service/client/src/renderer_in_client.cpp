@@ -367,6 +367,7 @@ int32_t RendererInClientInner::InitIpcStream()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_NULL_POINTER, "iface_cast failed", true),
         "failed when iface_cast.");
+    // in plan next: old listener_ is destoried here, will server receive dieth notify?
     listener_ = sptr<IpcStreamListenerImpl>::MakeSptr(shared_from_this());
     int32_t ret = ipcStream_->RegisterStreamListener(listener_->AsObject());
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
