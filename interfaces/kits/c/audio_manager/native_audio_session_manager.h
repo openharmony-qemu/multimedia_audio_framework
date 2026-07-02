@@ -631,11 +631,11 @@ OH_AudioCommon_Result OH_AudioSessionManager_GetSelectedMediaInputDevice(
     OH_AudioSessionManager *audioSessionManager, OH_AudioDeviceDescriptor **audioDeviceDescriptor);
 
 /**
- * @brief Sets the prefered record category with bluetooth and nearlink device.
+ * @brief Sets the preferred record category with bluetooth and nearlink device.
  *     The application can set this category before bluetooth and nearlink connected, and the system will
  *     prefer to use bluetooth and nearlink to record when the device connected.
  *     In scenarios where there are concurrent recording streams with higher priority,
- *     the actual input device used by the application may differ from the prefered one.
+ *     the actual input device used by the application may differ from the preferred one.
  *     The application can use {@link OH_AudioSessionManager_RegisterCurrentInputDeviceChangeCallback}
  *     to register a callback to listen for the actual input device.
  *
@@ -652,7 +652,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_SetBluetoothAndNearlinkPreferredRec
     OH_AudioSession_BluetoothAndNearlinkPreferredRecordCategory category);
 
 /**
- * @brief Gets the prefered record category with bluetooth and nearlink device.
+ * @brief Gets the preferred record category with bluetooth and nearlink device.
  *
  * @param audioSessionManager the {@link OH_AudioSessionManager} handle returned
  *     by {@link OH_AudioManager_GetAudioSessionManager}.
