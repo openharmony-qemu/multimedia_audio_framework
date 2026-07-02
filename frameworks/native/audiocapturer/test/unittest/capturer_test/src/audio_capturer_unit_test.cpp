@@ -61,6 +61,44 @@ private:
     int32_t ret_ = SUCCESS;
 };
 
+class NoiseReductionModeBranchCapturer : public AudioCapturerPrivate {
+public:
+    explicit NoiseReductionModeBranchCapturer(CapturerState state)
+        : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, true), state_(state) {}
+
+    CapturerState GetStatus() const override
+    {
+        return state_;
+    }
+
+    int32_t GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes) override
+    {
+        if (getSupportedRet_ != SUCCESS) {
+            modes.clear();
+            return getSupportedRet_;
+        }
+        modes = supportedModesForQuery_;
+        supportedNoiseReductionModes_ = modes;
+        hasFetchedSupportedModes_ = true;
+        return getSupportedRet_;
+    }
+
+    void SetQuerySupportedModes(const std::vector<NoiseReductionMode> &modes)
+    {
+        supportedModesForQuery_ = modes;
+    }
+
+    void SetGetSupportedRet(int32_t ret)
+    {
+        getSupportedRet_ = ret;
+    }
+
+private:
+    CapturerState state_ = CAPTURER_PREPARED;
+    int32_t getSupportedRet_ = SUCCESS;
+    std::vector<NoiseReductionMode> supportedModesForQuery_ = {NOISE_REDUCTION_MODE_FIDELITY};
+};
+
 int32_t AudioCapturerUnitTest::InitializeCapturer(unique_ptr<AudioCapturer> &audioCapturer)
 {
     AudioCapturerParams capturerParams;
@@ -3060,6 +3098,104 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetNoiseReductionMode_004, TestSize
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
     EXPECT_FALSE(audioCapturer->hasSetNoiseReductionMode_);
     audioCapturer->Release();
+}
+
+/**
+ * @tc.name  : Test SetNoiseReductionMode when supported mode query fails in prepared state.
+ * @tc.number: Audio_Capturer_SetNoiseReductionMode_005
+ * @tc.desc  : Test SetNoiseReductionMode returns query error after passing state check.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetNoiseReductionMode_005, TestSize.Level1)
+{
+    std::shared_ptr<NoiseReductionModeBranchCapturer> audioCapturer =
+        std::make_shared<NoiseReductionModeBranchCapturer>(CAPTURER_PREPARED);
+    ASSERT_NE(nullptr, audioCapturer);
+    audioCapturer->SetGetSupportedRet(ERR_INVALID_PARAM);
+
+    int32_t ret = audioCapturer->SetNoiseReductionMode(NOISE_REDUCTION_MODE_FIDELITY);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    EXPECT_FALSE(audioCapturer->hasFetchedSupportedModes_);
+    EXPECT_FALSE(audioCapturer->hasSetNoiseReductionMode_);
+}
+
+/**
+ * @tc.name  : Test SetNoiseReductionMode with unsupported queried mode.
+ * @tc.number: Audio_Capturer_SetNoiseReductionMode_006
+ * @tc.desc  : Test unsupported branch after supported mode query succeeds.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetNoiseReductionMode_006, TestSize.Level1)
+{
+    std::shared_ptr<NoiseReductionModeBranchCapturer> audioCapturer =
+        std::make_shared<NoiseReductionModeBranchCapturer>(CAPTURER_PREPARED);
+    ASSERT_NE(nullptr, audioCapturer);
+    audioCapturer->SetQuerySupportedModes({NOISE_REDUCTION_MODE_FIDELITY});
+
+    int32_t ret = audioCapturer->SetNoiseReductionMode(NOISE_REDUCTION_MODE_STANDARD);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
+    EXPECT_TRUE(audioCapturer->hasFetchedSupportedModes_);
+    ASSERT_EQ(static_cast<size_t>(1), audioCapturer->supportedNoiseReductionModes_.size());
+    EXPECT_EQ(NOISE_REDUCTION_MODE_FIDELITY, audioCapturer->supportedNoiseReductionModes_[0]);
+    EXPECT_FALSE(audioCapturer->hasSetNoiseReductionMode_);
+}
+
+/**
+ * @tc.name  : Test SetNoiseReductionMode success with queried supported modes.
+ * @tc.number: Audio_Capturer_SetNoiseReductionMode_007
+ * @tc.desc  : Test success branch when supported modes are fetched lazily.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetNoiseReductionMode_007, TestSize.Level1)
+{
+    std::shared_ptr<NoiseReductionModeBranchCapturer> audioCapturer =
+        std::make_shared<NoiseReductionModeBranchCapturer>(CAPTURER_PREPARED);
+    ASSERT_NE(nullptr, audioCapturer);
+    audioCapturer->SetQuerySupportedModes({
+        NOISE_REDUCTION_MODE_FIDELITY,
+        NOISE_REDUCTION_MODE_STANDARD
+    });
+
+    int32_t ret = audioCapturer->SetNoiseReductionMode(NOISE_REDUCTION_MODE_STANDARD);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_TRUE(audioCapturer->hasFetchedSupportedModes_);
+    EXPECT_TRUE(audioCapturer->hasSetNoiseReductionMode_);
+
+    NoiseReductionMode mode = NOISE_REDUCTION_MODE_FIDELITY;
+    ret = audioCapturer->GetNoiseReductionMode(mode);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(NOISE_REDUCTION_MODE_STANDARD, mode);
+
+    audioCapturer->ResetNoiseReductionModeOnRelease();
+    ret = audioCapturer->GetNoiseReductionMode(mode);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(NOISE_REDUCTION_MODE_FIDELITY, mode);
+    EXPECT_FALSE(audioCapturer->hasSetNoiseReductionMode_);
+}
+
+/**
+ * @tc.name  : Test SetNoiseReductionMode success with cached supported modes in stopped state.
+ * @tc.number: Audio_Capturer_SetNoiseReductionMode_008
+ * @tc.desc  : Test cached supported modes and stopped state success branch.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetNoiseReductionMode_008, TestSize.Level1)
+{
+    std::shared_ptr<NoiseReductionModeBranchCapturer> audioCapturer =
+        std::make_shared<NoiseReductionModeBranchCapturer>(CAPTURER_STOPPED);
+    ASSERT_NE(nullptr, audioCapturer);
+    audioCapturer->hasFetchedSupportedModes_ = true;
+    audioCapturer->supportedNoiseReductionModes_ = {
+        NOISE_REDUCTION_MODE_FIDELITY,
+        NOISE_REDUCTION_MODE_PURE_VOCALS
+    };
+
+    int32_t ret = audioCapturer->SetNoiseReductionMode(NOISE_REDUCTION_MODE_PURE_VOCALS);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_TRUE(audioCapturer->hasFetchedSupportedModes_);
+    EXPECT_TRUE(audioCapturer->hasSetNoiseReductionMode_);
+
+    NoiseReductionMode mode = NOISE_REDUCTION_MODE_FIDELITY;
+    ret = audioCapturer->GetNoiseReductionMode(mode);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(NOISE_REDUCTION_MODE_PURE_VOCALS, mode);
+    audioCapturer->ResetNoiseReductionModeOnRelease();
 }
 
 /**
