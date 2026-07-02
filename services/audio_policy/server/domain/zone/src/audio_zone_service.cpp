@@ -546,6 +546,19 @@ int32_t AudioZoneService::FindAudioZoneByKey(int32_t uid, const std::string &dev
     return 0;
 }
 
+int32_t AudioZoneService::FindAudioZoneByExactInfo(int32_t uid, const std::string &deviceTag,
+    uint32_t streamId, const StreamUsage &usage, DeviceRole deviceRole)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    AudioZoneBindKey key(uid, deviceTag, streamId, usage);
+    for (const auto &it : zoneMaps_) {
+        CHECK_AND_CONTINUE(it.second != nullptr && it.second->IsContainKey(key));
+        CHECK_AND_CONTINUE(it.second->IsSupportDeviceRole(deviceRole));
+        return it.first;
+    }
+    return 0;
+}
+
 int32_t AudioZoneService::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
 {
     return RemoveKeysFromAudioZone(zoneId,

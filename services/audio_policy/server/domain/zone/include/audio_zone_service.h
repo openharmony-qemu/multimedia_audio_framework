@@ -81,6 +81,8 @@ public:
         uint32_t streamId = INVALID_STREAM_ID);
     virtual std::string FindAudioZoneNameByUid(int32_t uid, DeviceRole deviceRole = DEVICE_ROLE_NONE,
         uint32_t streamId = INVALID_STREAM_ID);
+    int32_t FindAudioZoneByExactInfo(int32_t uid, const std::string &deviceTag, uint32_t streamId,
+        const StreamUsage &usage, DeviceRole deviceRole);
 #ifdef MULTI_USER_ZONE
     std::vector<int32_t> FindAudioZoneByDeviceForExtZone(const std::shared_ptr<AudioDeviceDescriptor> &device);
     void RemoveDeviceToGlobalFromZones(const std::shared_ptr<AudioDeviceDescriptor> &device);
