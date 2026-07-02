@@ -401,7 +401,7 @@ napi_value NapiAudioLoopback::GetSupportedDevicePairs(napi_env env, napi_callbac
         NapiAudioError::ThrowErrorAndReturn(env, "napiLoopback is nullptr", NAPI_ERR_NO_MEMORY),
         "napiLoopback is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
+        "loopback_ is nullptr", NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
 
     AUDIO_INFO_LOG("GetSupportedDevicePairs called");
     std::vector<AudioDevicePair> nativePairs = napiLoopback->loopback_->GetSupportedDevicePairs();
@@ -436,7 +436,7 @@ napi_value NapiAudioLoopback::GetPreferredDevicePair(napi_env env, napi_callback
         NapiAudioError::ThrowErrorAndReturn(env, "napiLoopback is nullptr", NAPI_ERR_NO_MEMORY),
         "napiLoopback is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
+        "loopback_ is nullptr", NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
 
     AUDIO_INFO_LOG("GetPreferredDevicePair called");
     AudioDevicePair nativePair = napiLoopback->loopback_->GetPreferredDevicePair();
