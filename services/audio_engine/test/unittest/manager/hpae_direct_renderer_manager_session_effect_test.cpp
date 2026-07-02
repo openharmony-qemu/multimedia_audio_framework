@@ -1250,7 +1250,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Flush_001, TestSize.Leve
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Drain_001, TestSize.Level1)
 {
     // Prepare: Create, start stream and SE
-    HpStreamInfo streamInfo = GetDefaultStreamInfo();
+    HpaeStreamInfo streamInfo = GetDefaultStreamInfo();
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
