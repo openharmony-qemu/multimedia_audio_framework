@@ -1510,6 +1510,7 @@ bool RendererInClientInner::CheckRendererAttrInfoFromSpan(RendererAttrInfo &attr
 
 void RendererInClientInner::RefreshRendererAttrInfoFromSpan(const RendererAttrInfo &attr)
 {
+    Trace trace("RendererInClientInner::RefreshRendererAttrInfoFromSpan");
     // Directly update the parameters without calling InitSharedBuffer (the buffer remains unchanged)
     spanSizeInFrame_ = attr.spanSizeInFrame;
     clientSpanSizeInByte_ = spanSizeInFrame_ * sizePerFrameInByte_;
@@ -1538,6 +1539,7 @@ void RendererInClientInner::RefreshRendererAttrInfoFromSpan(const RendererAttrIn
 
 void RendererInClientInner::SyncRendererAttrFromSpan()
 {
+    Trace trace("RendererInClientInner::SyncRendererAttrFromSpan");
     RendererAttrInfo attr;
     if (CheckRendererAttrInfoFromSpan(attr)) {
         RefreshRendererAttrInfoFromSpan(attr);
@@ -1546,8 +1548,11 @@ void RendererInClientInner::SyncRendererAttrFromSpan()
 
 bool RendererInClientInner::JudgeFastStreamByRendererAttr()
 {
+    Trace trace("RendererInClientInner::JudgeFastStreamByRendererAttr");
     SyncRendererAttrFromSpan();
-    return IsFastStream();
+    bool isFast = IsFastStream();
+    AUDIO_DEBUG_LOG("JudgeFastStreamByRendererAttr result:%{public}d, sessionId:%{public}u", isFast, sessionId_);
+    return isFast;
 }
 
 void RendererInClientInner::UpdateStreamState(State state)

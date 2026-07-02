@@ -2497,6 +2497,7 @@ void CapturerInClientInner::SetSensitiveRecordPermitCallback(
 
 bool CapturerInClientInner::CheckCapturerAttrInfoFromSpan(CapturerAttrInfo &attr)
 {
+    Trace trace("CapturerInClientInner::CheckCapturerAttrInfoFromSpan");
     AUDIO_DEBUG_LOG("CheckCapturerAttrInfoFromSpan enter, sessionId:%{public}u", sessionId_);
 
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientBuffer_ is nullptr");
@@ -2522,6 +2523,7 @@ bool CapturerInClientInner::CheckCapturerAttrInfoFromSpan(CapturerAttrInfo &attr
 
 void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrInfo &attr)
 {
+    Trace trace("CapturerInClientInner::RefreshCapturerAttrInfoFromSpan");
     spanSizeInFrame_ = attr.spanSizeInFrame;
     clientSpanSizeInByte_ = spanSizeInFrame_ * sizePerFrameInByte_;
     cacheSizeInByte_ = attr.engineSize;
@@ -2530,13 +2532,16 @@ void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrIn
         capturerInfo_.capturerFlags = static_cast<int32_t>(attr.routeFlag);
         if (attr.routeFlag & AUDIO_INPUT_FLAG_FAST) {
             if (attr.routeFlag & AUDIO_INPUT_FLAG_VOIP) {
+                AUDIO_INFO_LOG("NotifyFastStatusChange to FAST for VOIP, sessionId:%{public}u", sessionId_);
                 NotifyFastStatusChange(FASTSTATUS_FAST);
                 AUDIO_INFO_LOG("Updated capturerFlags to VOIP_FAST (0x%{public}x)", capturerInfo_.capturerFlags);
             } else {
+                AUDIO_INFO_LOG("NotifyFastStatusChange to FAST, sessionId:%{public}u", sessionId_);
                 NotifyFastStatusChange(FASTSTATUS_FAST);
                 AUDIO_INFO_LOG("Updated capturerFlags to FAST (0x%{public}x)", capturerInfo_.capturerFlags);
             }
         } else {
+            AUDIO_INFO_LOG("NotifyFastStatusChange to NORMAL, sessionId:%{public}u", sessionId_);
             NotifyFastStatusChange(FASTSTATUS_NORMAL);
             AUDIO_INFO_LOG("Updated capturerFlags to NORMAL (0x%{public}x)", capturerInfo_.capturerFlags);
         }
@@ -2548,6 +2553,7 @@ void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrIn
 
 void CapturerInClientInner::SyncCapturerAttrFromSpan()
 {
+    Trace trace("CapturerInClientInner::SyncCapturerAttrFromSpan");
     CapturerAttrInfo attr;
     if (CheckCapturerAttrInfoFromSpan(attr)) {
         RefreshCapturerAttrInfoFromSpan(attr);
@@ -2556,8 +2562,12 @@ void CapturerInClientInner::SyncCapturerAttrFromSpan()
 
 FastStatus CapturerInClientInner::JudgeFastStatusByCapturerAttr()
 {
+    Trace trace("CapturerInClientInner::JudgeFastStatusByCapturerAttr");
     SyncCapturerAttrFromSpan();
-    return fastStatus_;
+    FastStatus status = fastStatus_;
+    AUDIO_DEBUG_LOG("JudgeFastStatusByCapturerAttr result:%{public}d, sessionId:%{public}u",
+        static_cast<int32_t>(status), sessionId_);
+    return status;
 }
 } // namespace AudioStandard
 } // namespace OHOS
