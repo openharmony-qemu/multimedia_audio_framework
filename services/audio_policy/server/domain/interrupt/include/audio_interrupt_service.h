@@ -52,6 +52,13 @@ struct CachedFocusInfo {
     AudioInterrupt interrupt;
 };
 
+struct MuteFocusInfo {
+    uint32_t currStreamId;
+    uint32_t incomingStreamId;
+    AudioInterrupt interrupt;
+    InterruptEventInternal interruptEvent;
+};
+
 class AudioPolicyServerHandler;
 class AudioPolicyServer;
 
@@ -453,7 +460,7 @@ private:
     std::map<uint32_t, std::unordered_set<int32_t>> suggestionStreamIdRecords_;
     std::map<uint32_t, std::unordered_set<int32_t>> suggestionPidRecords_;
 
-    std::map<uint32_t, std::list<std::pair<AudioInterrupt, AudioFocuState>>> muteAudioFocus_;
+    std::map<uint32_t, std::list<MuteFocusInfo>> muteAudioFocus_;
 
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;

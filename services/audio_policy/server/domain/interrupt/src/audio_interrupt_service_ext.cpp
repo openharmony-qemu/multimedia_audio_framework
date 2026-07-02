@@ -466,7 +466,7 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
     if (interruptDfx_ != nullptr) {
         interruptDfx_->NotifyStreamSilentChange(streamId);
     }
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> tempMuteList;
+    std::list<MuteFocusInfo> tempMuteList;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         if (muteAudioFocus_.count(callerPid) > 0) {
@@ -475,8 +475,9 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
         }
     }
     for (const auto& audioFocusInfo : tempMuteList) {
-        AudioInterrupt activeInterrupt = audioFocusInfo.first;
-        InterruptEventInternal interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+        AudioInterrupt activeInterrupt = audioFocusInfo.interrupt;
+        InterruptEventInternal interruptEvent = audioFocusInfo.interruptEvent;
+        interruptEvent.hintType = INTERRUPT_HINT_STOP;
         AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
             activeInterrupt.streamId, streamId);
         SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
@@ -535,11 +536,13 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     removeFocusInfo = false;
     focusEntry.hintType = INTERRUPT_HINT_NONE;
     interruptEvent.hintType = INTERRUPT_HINT_NONE;
-    auto& focusList = muteAudioFocus_[incomingInterrupt.pid];
-    auto it = std::find(focusList.begin(), focusList.end(), audioFocusInfo);
-    if (it == focusList.end()) {
-        focusList.push_back(audioFocusInfo);
-    }
+
+    MuteFocusInfo muteFocusInfo;
+    muteFocusInfo.currStreamId = currentInterrupt.streamId;
+    muteFocusInfo.incomingStreamId = incomingInterrupt.streamId;
+    muteFocusInfo.interrupt = currentInterrupt;
+    muteFocusInfo.interruptEvent = interruptEvent;
+    muteAudioFocus_[incomingInterrupt.pid].emplace_back(muteFocusInfo);
 
     DelayRemoveMuteCheckRecord(incomingInterrupt.pid);
     AUDIO_INFO_LOG("%{public}d update muteCheck focusStrategy", incomingInterrupt.streamId);
