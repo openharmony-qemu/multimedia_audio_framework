@@ -273,6 +273,11 @@ private:
     void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
     void NotifyFastStatusChange(FastStatus status);
 
+    bool CheckCapturerAttrInfoFromSpan(CapturerAttrInfo &attr);
+    void RefreshCapturerAttrInfoFromSpan(const CapturerAttrInfo &attr);
+    void SyncCapturerAttrFromSpan();
+    FastStatus JudgeFastStatusByCapturerAttr();
+
     int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
 

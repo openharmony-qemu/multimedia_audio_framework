@@ -270,7 +270,13 @@ public:
 
     void SetupFastStreamThreadPriority();
 
-    void CheckAndProcessPendingSpanSize();
+    void SyncRendererAttrFromSpan();
+
+    bool JudgeFastStreamByRendererAttr();
+
+    bool CheckRendererAttrInfoFromSpan(RendererAttrInfo &attr);
+
+    void RefreshRendererAttrInfoFromSpan(const RendererAttrInfo &attr);
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);

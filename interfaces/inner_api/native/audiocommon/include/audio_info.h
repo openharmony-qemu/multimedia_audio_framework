@@ -949,6 +949,18 @@ struct AudioRendererDesc {
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
 };
 
+struct RendererAttrInfo {
+    uint32_t spanSizeInFrame = 0;
+    uint64_t engineSize = 0;
+    uint32_t routeFlag = 0;
+};
+
+struct CapturerAttrInfo {
+    uint32_t spanSizeInFrame = 0;
+    uint64_t engineSize = 0;
+    uint32_t routeFlag = 0;
+};
+
 struct MicStateChangeEvent : public Parcelable {
     bool mute;
 

@@ -739,7 +739,7 @@ bool RendererInClientInner::WriteCallbackFunc()
     if (!WaitForRunning()) {
         return true;
     }
-    CheckAndProcessPendingSpanSize();
+    SyncRendererAttrFromSpan();
     if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
         HILOG_COMM_WARN("[WriteCallbackFunc]The queue is too long, reducing data through loops");
     }
@@ -1023,7 +1023,7 @@ int32_t RendererInClientInner::ProcessBufferAndWriteCache(uint8_t *buffer, size_
 
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 {
-    CheckAndProcessPendingSpanSize();
+    SyncRendererAttrFromSpan();
     // eg: RendererInClient::sessionId:100001 WriteSize:3840
     DfxWriteInterval();
     Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
@@ -1482,40 +1482,44 @@ int32_t RendererInClientInner::CallStartWhenInStandby()
     return SUCCESS;
 }
 
-void RendererInClientInner::CheckAndProcessPendingSpanSize()
+bool RendererInClientInner::CheckRendererAttrInfoFromSpan(RendererAttrInfo &attr)
 {
-    Trace trace("RendererInClientInner::CheckAndProcessPendingSpanSize");
-    AUDIO_DEBUG_LOG("CheckAndProcessPendingSpanSize enter, sessionId:%{public}u", sessionId_);
+    Trace trace("RendererInClientInner::CheckRendererAttrInfoFromSpan");
+    AUDIO_DEBUG_LOG("CheckRendererAttrInfoFromSpan enter, sessionId:%{public}u", sessionId_);
 
-    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer_ is nullptr");
-    uint64_t spanSize = 0;
-    uint64_t engineSize = 0;
-    uint32_t routeFlag = 0;
-    spanSize = clientBuffer_->GetAndClearPendingSpanSize(engineSize, routeFlag);
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientBuffer_ is nullptr");
+
+    uint64_t spanSize = clientBuffer_->GetAndClearPendingSpanSize(attr.engineSize, attr.routeFlag);
     if (spanSize == 0) {
         AUDIO_DEBUG_LOG("No pending span size");
-        return;
+        return false;
     }
+
     const uint32_t MIN_SPAN_SIZE = 32;
     const uint32_t MAX_SPAN_SIZE = 8192;
-    uint32_t spanSizeInFrame = static_cast<uint32_t>(spanSize);
-    if (spanSizeInFrame < MIN_SPAN_SIZE || spanSizeInFrame > MAX_SPAN_SIZE) {
-        AUDIO_ERR_LOG("Invalid pending span size %{public}u, ignore", spanSizeInFrame);
-        return;
+    attr.spanSizeInFrame = static_cast<uint32_t>(spanSize);
+    if (attr.spanSizeInFrame < MIN_SPAN_SIZE || attr.spanSizeInFrame > MAX_SPAN_SIZE) {
+        AUDIO_ERR_LOG("Invalid pending span size %{public}u, ignore", attr.spanSizeInFrame);
+        return false;
     }
-    AUDIO_INFO_LOG("Process pending span size: %{public}u engineSize:%{public}" PRIu64 " routeFlag:0x%{public}x",
-        spanSizeInFrame, engineSize, routeFlag);
 
+    AUDIO_INFO_LOG("Process pending span size: %{public}u engineSize:%{public}" PRIu64 " routeFlag:0x%{public}x",
+        attr.spanSizeInFrame, attr.engineSize, attr.routeFlag);
+    return true;
+}
+
+void RendererInClientInner::RefreshRendererAttrInfoFromSpan(const RendererAttrInfo &attr)
+{
     // Directly update the parameters without calling InitSharedBuffer (the buffer remains unchanged)
-    spanSizeInFrame_ = spanSizeInFrame;
+    spanSizeInFrame_ = attr.spanSizeInFrame;
     clientSpanSizeInByte_ = spanSizeInFrame_ * sizePerFrameInByte_;
-    cacheSizeInFrame_ = engineSize;
+    cacheSizeInFrame_ = attr.engineSize;
 
     // Update rendererFlags (based on routeFlag)
-    if (routeFlag != 0) {
-        rendererInfo_.audioFlag = routeFlag;
-        if (routeFlag & AUDIO_OUTPUT_FLAG_FAST) {
-            if (routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
+    if (attr.routeFlag != 0) {
+        rendererInfo_.audioFlag = attr.routeFlag;
+        if (attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) {
+            if (attr.routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
                 rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
                 AUDIO_INFO_LOG("Updated rendererFlags to VOIP_FAST (0x%{public}x)", rendererInfo_.rendererFlags);
             } else {
@@ -1530,6 +1534,20 @@ void RendererInClientInner::CheckAndProcessPendingSpanSize()
     AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}u "
         "rendererFlags:0x%{public}x",
         spanSizeInFrame_, clientSpanSizeInByte_, cacheSizeInFrame_.load(), rendererInfo_.rendererFlags);
+}
+
+void RendererInClientInner::SyncRendererAttrFromSpan()
+{
+    RendererAttrInfo attr;
+    if (CheckRendererAttrInfoFromSpan(attr)) {
+        RefreshRendererAttrInfoFromSpan(attr);
+    }
+}
+
+bool RendererInClientInner::JudgeFastStreamByRendererAttr()
+{
+    SyncRendererAttrFromSpan();
+    return IsFastStream();
 }
 
 void RendererInClientInner::UpdateStreamState(State state)

@@ -2494,6 +2494,71 @@ void CapturerInClientInner::SetSensitiveRecordPermitCallback(
     std::lock_guard<std::mutex> lock(sensitiveRecordPermitCallbackMutex_);
     sensitiveRecordPermitCallback_ = callback;
 }
+
+bool CapturerInClientInner::CheckCapturerAttrInfoFromSpan(CapturerAttrInfo &attr)
+{
+    AUDIO_DEBUG_LOG("CheckCapturerAttrInfoFromSpan enter, sessionId:%{public}u", sessionId_);
+
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientBuffer_ is nullptr");
+
+    uint64_t spanSize = clientBuffer_->GetAndClearPendingSpanSize(attr.engineSize, attr.routeFlag);
+    if (spanSize == 0) {
+        AUDIO_DEBUG_LOG("No pending span size");
+        return false;
+    }
+
+    const uint32_t MIN_SPAN_SIZE = 32;
+    const uint32_t MAX_SPAN_SIZE = 8192;
+    attr.spanSizeInFrame = static_cast<uint32_t>(spanSize);
+    if (attr.spanSizeInFrame < MIN_SPAN_SIZE || attr.spanSizeInFrame > MAX_SPAN_SIZE) {
+        AUDIO_ERR_LOG("Invalid pending span size %{public}u, ignore", attr.spanSizeInFrame);
+        return false;
+    }
+
+    AUDIO_INFO_LOG("Process pending span size: %{public}u engineSize:%{public}" PRIu64 " routeFlag:0x%{public}x",
+        attr.spanSizeInFrame, attr.engineSize, attr.routeFlag);
+    return true;
+}
+
+void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrInfo &attr)
+{
+    spanSizeInFrame_ = attr.spanSizeInFrame;
+    clientSpanSizeInByte_ = spanSizeInFrame_ * sizePerFrameInByte_;
+    cacheSizeInByte_ = attr.engineSize;
+
+    if (attr.routeFlag != 0) {
+        capturerInfo_.capturerFlags = static_cast<int32_t>(attr.routeFlag);
+        if (attr.routeFlag & AUDIO_INPUT_FLAG_FAST) {
+            if (attr.routeFlag & AUDIO_INPUT_FLAG_VOIP) {
+                NotifyFastStatusChange(FASTSTATUS_FAST);
+                AUDIO_INFO_LOG("Updated capturerFlags to VOIP_FAST (0x%{public}x)", capturerInfo_.capturerFlags);
+            } else {
+                NotifyFastStatusChange(FASTSTATUS_FAST);
+                AUDIO_INFO_LOG("Updated capturerFlags to FAST (0x%{public}x)", capturerInfo_.capturerFlags);
+            }
+        } else {
+            NotifyFastStatusChange(FASTSTATUS_NORMAL);
+            AUDIO_INFO_LOG("Updated capturerFlags to NORMAL (0x%{public}x)", capturerInfo_.capturerFlags);
+        }
+    }
+    AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}zu "
+        "capturerFlags:0x%{public}x",
+        spanSizeInFrame_, clientSpanSizeInByte_, cacheSizeInByte_, capturerInfo_.capturerFlags);
+}
+
+void CapturerInClientInner::SyncCapturerAttrFromSpan()
+{
+    CapturerAttrInfo attr;
+    if (CheckCapturerAttrInfoFromSpan(attr)) {
+        RefreshCapturerAttrInfoFromSpan(attr);
+    }
+}
+
+FastStatus CapturerInClientInner::JudgeFastStatusByCapturerAttr()
+{
+    SyncCapturerAttrFromSpan();
+    return fastStatus_;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FAST_AUDIO_STREAM_H
