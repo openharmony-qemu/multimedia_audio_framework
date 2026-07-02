@@ -4030,7 +4030,8 @@ HWTEST(RendererInClientNewUnitTest, SyncRendererAttrFromSpan_NoPending_001, Test
     rendererInClientInner->clientBuffer_ =
         std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame, byteSizePerFrame);
     
-    rendererInClientInner->SyncRendererAttrFromSpan();
+    bool ret = rendererInClientInner->SyncRendererAttrFromSpan();
+    EXPECT_FALSE(ret);
     EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 0);
 }
 
@@ -4054,7 +4055,8 @@ HWTEST(RendererInClientNewUnitTest, SyncRendererAttrFromSpan_VoipFlag_001, TestS
     uint64_t engineSize = 1920;
     rendererInClientInner->clientBuffer_->SetPendingSpanSize(validSpanSize, engineSize,
         AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP);
-    rendererInClientInner->SyncRendererAttrFromSpan();
+    bool ret = rendererInClientInner->SyncRendererAttrFromSpan();
+    EXPECT_TRUE(ret);
     EXPECT_EQ(rendererInClientInner->rendererInfo_.rendererFlags, AUDIO_FLAG_VOIP_FAST);
 }
 
@@ -4069,7 +4071,8 @@ HWTEST(RendererInClientNewUnitTest, SyncRendererAttrFromSpan_NullBuffer_001, Tes
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
     rendererInClientInner->clientBuffer_ = nullptr;
     
-    rendererInClientInner->SyncRendererAttrFromSpan();
+    bool ret = rendererInClientInner->SyncRendererAttrFromSpan();
+    EXPECT_FALSE(ret);
     EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 0);
 }
 
@@ -4134,24 +4137,30 @@ HWTEST(RendererInClientNewUnitTest, CheckRendererAttrInfoFromSpan_Valid_001, Tes
 }
 
 /**
- * @tc.name  : Test CheckRendererAttrInfoFromSpan rejects invalid span size
+ * @tc.name  : Test RefreshRendererAttrInfoFromSpan skips invalid span size
  * @tc.type  : FUNC
- * @tc.number: CheckRendererAttrInfoFromSpan_InvalidSize_001
- * @tc.desc  : Test CheckRendererAttrInfoFromSpan with invalid (too small) span size.
+ * @tc.number: RefreshRendererAttrInfoFromSpan_InvalidSize_001
+ * @tc.desc  : Test RefreshRendererAttrInfoFromSpan skips invalid span size but updates other fields.
  */
-HWTEST(RendererInClientNewUnitTest, CheckRendererAttrInfoFromSpan_InvalidSize_001, TestSize.Level1)
+HWTEST(RendererInClientNewUnitTest, RefreshRendererAttrInfoFromSpan_InvalidSize_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
-    rendererInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, 100, 4);
-
-    uint32_t invalidSpanSize = 16; // below MIN_SPAN_SIZE(32)
-    rendererInClientInner->clientBuffer_->SetPendingSpanSize(invalidSpanSize, 0, 0);
+    rendererInClientInner->sizePerFrameInByte_ = 4;
+    rendererInClientInner->spanSizeInFrame_ = 480;
+    rendererInClientInner->clientSpanSizeInByte_ = 1920;
 
     RendererAttrInfo attr;
-    bool ret = rendererInClientInner->CheckRendererAttrInfoFromSpan(attr);
-    EXPECT_FALSE(ret);
+    attr.spanSizeInFrame = 16; // below MIN_SPAN_SIZE(32), invalid
+    attr.engineSize = 1920;
+    attr.routeFlag = AUDIO_OUTPUT_FLAG_FAST;
+
+    rendererInClientInner->RefreshRendererAttrInfoFromSpan(attr);
+    // spanSize should NOT be updated (invalid)
+    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 480);
+    EXPECT_EQ(rendererInClientInner->clientSpanSizeInByte_, 1920);
+    // engineSize and routeFlag should still be updated
+    EXPECT_EQ(rendererInClientInner->cacheSizeInFrame_, 1920);
+    EXPECT_EQ(rendererInClientInner->rendererInfo_.audioFlag, AUDIO_OUTPUT_FLAG_FAST);
 }
 
 /**

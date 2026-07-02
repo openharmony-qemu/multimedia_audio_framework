@@ -263,6 +263,12 @@ public:
         return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
     }
 
+    void UpdateLogTag()
+    {
+        logUtilsTag_ = "[" + std::to_string(sessionId_) + "]" +
+            (IsFastStream() ? "Fast" : "Normal") + "Renderer";
+    }
+
     bool IsUltraFastStream() const
     {
         return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
@@ -270,7 +276,7 @@ public:
 
     void SetupFastStreamThreadPriority();
 
-    void SyncRendererAttrFromSpan();
+    bool SyncRendererAttrFromSpan();
 
     bool JudgeFastStreamByRendererAttr();
 

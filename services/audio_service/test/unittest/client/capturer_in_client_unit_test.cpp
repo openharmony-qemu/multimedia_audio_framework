@@ -2752,24 +2752,32 @@ HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_Valid_001, TestSi
 }
 
 /**
- * @tc.name  : Test CheckCapturerAttrInfoFromSpan rejects invalid size
+ * @tc.name  : Test RefreshCapturerAttrInfoFromSpan skips invalid span size
  * @tc.type  : FUNC
- * @tc.number: CheckCapturerAttrInfoFromSpan_InvalidSize_001
- * @tc.desc  : Test CheckCapturerAttrInfoFromSpan with too small span size.
+ * @tc.number: RefreshCapturerAttrInfoFromSpan_InvalidSize_001
+ * @tc.desc  : Test RefreshCapturerAttrInfoFromSpan skips invalid span size but updates other fields.
  */
-HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_InvalidSize_001, TestSize.Level1)
+HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_InvalidSize_001, TestSize.Level1)
 {
     AudioProcessConfig config;
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
-    capturerInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, 100, 4);
-
-    capturerInClientInner->clientBuffer_->SetPendingSpanSize(16, 0, 0);
+    capturerInClientInner->sizePerFrameInByte_ = 4;
+    capturerInClientInner->spanSizeInFrame_ = 480;
+    capturerInClientInner->clientSpanSizeInByte_ = 1920;
 
     CapturerAttrInfo attr;
-    bool ret = capturerInClientInner->CheckCapturerAttrInfoFromSpan(attr);
-    EXPECT_FALSE(ret);
+    attr.spanSizeInFrame = 16; // below MIN_SPAN_SIZE(32), invalid
+    attr.engineSize = 1920;
+    attr.routeFlag = AUDIO_INPUT_FLAG_FAST;
+
+    capturerInClientInner->RefreshCapturerAttrInfoFromSpan(attr);
+    // spanSize should NOT be updated (invalid)
+    EXPECT_EQ(capturerInClientInner->spanSizeInFrame_, 480);
+    EXPECT_EQ(capturerInClientInner->clientSpanSizeInByte_, 1920);
+    // engineSize and routeFlag should still be updated
+    EXPECT_EQ(capturerInClientInner->cacheSizeInByte_, 1920);
+    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags,
+        static_cast<int32_t>(AUDIO_INPUT_FLAG_FAST));
 }
 
 /**
@@ -2877,7 +2885,8 @@ HWTEST(CapturerInClientUnitTest, SyncCapturerAttrFromSpan_NoPending_001, TestSiz
     capturerInClientInner->clientBuffer_ =
         std::make_shared<OHAudioBufferBase>(bufferHolder, 100, 4);
 
-    capturerInClientInner->SyncCapturerAttrFromSpan();
+    bool ret = capturerInClientInner->SyncCapturerAttrFromSpan();
+    EXPECT_FALSE(ret);
     EXPECT_EQ(capturerInClientInner->spanSizeInFrame_, 0);
 }
 
@@ -2893,7 +2902,8 @@ HWTEST(CapturerInClientUnitTest, SyncCapturerAttrFromSpan_NullBuffer_001, TestSi
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
     capturerInClientInner->clientBuffer_ = nullptr;
 
-    capturerInClientInner->SyncCapturerAttrFromSpan();
+    bool ret = capturerInClientInner->SyncCapturerAttrFromSpan();
+    EXPECT_FALSE(ret);
     EXPECT_EQ(capturerInClientInner->spanSizeInFrame_, 0);
 }
 
