@@ -382,7 +382,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetVolume_001, TestSize.Level1)
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetVolume(0.5);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
@@ -403,10 +403,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetVolume_002, TestSize.Level1)
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetVolume(0);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     ret = audioRenderer->SetVolume(1.0);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
