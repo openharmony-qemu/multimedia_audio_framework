@@ -2779,6 +2779,25 @@ void AudioCoreService::HandleA2dpRestore()
     }
 }
 
+void AudioCoreService::PrepareInputFetchInfos(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs,
+    std::vector<FetchDeviceInfo> &infos)
+{
+    for (const auto &streamDesc : inputStreamDescs) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
+
+        streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+        pipeManager_->UpdateNewDeviceDesc(streamDesc, {});
+
+        FetchDeviceInfo info;
+        info.sourceType = streamDesc->capturerInfo_.sourceType;
+        info.clientUID = GetRealUid(streamDesc);
+        info.streamId = streamDesc->sessionId_;
+
+        infos.emplace_back(std::move(info));
+    }
+}
+
 int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
@@ -2790,17 +2809,20 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
         return HandleFetchInputWhenNoRunningStream();
     }
 
+    std::vector<FetchDeviceInfo> infos;
+    PrepareInputFetchInfos(inputStreamDescs, infos);
+
+    AudioRouterCenter::InputDeviceMap inputDeviceDescs =
+        audioRouterCenter_.FetchInputDeviceForAllInputStreams(infos);
+
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     for (auto streamDesc : inputStreamDescs) {
-        streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
-        pipeManager_->UpdateNewDeviceDesc(streamDesc, {});
-        FetchDeviceInfo info;
-        info.sourceType = streamDesc->capturerInfo_.sourceType;
-        info.clientUID = GetRealUid(streamDesc);
-        info.streamId = streamDesc->sessionId_;
-        auto inputDeviceDesc = audioRouterCenter_.FetchInputDevice(info);
-        CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
+        auto it = inputDeviceDescs.find(streamDesc->sessionId_);
+        CHECK_AND_RETURN_RET_LOG(it != inputDeviceDescs.end() && it->second != nullptr,
+            ERR_INVALID_PARAM, "inputDeviceDesc is nullptr for session %{public}u", streamDesc->sessionId_);
+        std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc = it->second;
         pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);

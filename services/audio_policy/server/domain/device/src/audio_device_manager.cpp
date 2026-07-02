@@ -1574,5 +1574,18 @@ bool AudioDeviceManager::CheckAllStreamsSilentOrStandByOnDevice()
     }
     return hasRunningSilentStream ;
 }
+
+bool AudioDeviceManager::HasWirelessDevicesConnected()
+{
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (const auto &deviceDesc : connectedDevices_) {
+        CHECK_AND_CONTINUE(deviceDesc != nullptr);
+        if (AudioPolicyUtils::GetInstance().IsWirelessDevice(deviceDesc->deviceType_) &&
+            deviceDesc->connectState_ != VIRTUAL_CONNECTED) {
+            return true;
+        }
+    }
+    return false;
+}
 }
 }
