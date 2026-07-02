@@ -79,6 +79,7 @@ static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_VOICE_CALL, STREAM_USAGE_INTERPHONE},
     {STREAM_VOICE_CALL_ASSISTANT, STREAM_USAGE_VOICE_CALL_ASSISTANT},
     {STREAM_VOICE_ASSISTANT, STREAM_USAGE_VOICE_ASSISTANT},
+    {STREAM_VOICE_ASSISTANT_SYSTEM, STREAM_USAGE_VOICE_ASSISTANT_SYSTEM},
     {STREAM_ALARM, STREAM_USAGE_ALARM},
     {STREAM_VOICE_MESSAGE, STREAM_USAGE_VOICE_MESSAGE},
     {STREAM_RING, STREAM_USAGE_RINGTONE},
@@ -438,13 +439,18 @@ std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
     return SetupStaticRendererFinal(audioRenderer, rendererOptions, callback);
 }
 
+StreamUsage AudioRendererPrivate::GetAudioStreamUsage(StreamUsage streamUsage)
+{
+    return streamUsage == STREAM_USAGE_VOICE_ASSISTANT_SYSTEM ? STREAM_USAGE_VOICE_ASSISTANT : streamUsage;
+}
+
 void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions,
     const AppInfo &appInfo)
 {
     rendererInfo_.keepRunning = rendererOptions.rendererInfo.keepRunning;
     rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
     rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
-    rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
+    rendererInfo_.streamUsage = GetAudioStreamUsage(rendererOptions.rendererInfo.streamUsage);
     rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
     rendererInfo_.isOffloadAllowed = rendererOptions.rendererInfo.isOffloadAllowed;
     rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
@@ -628,6 +634,11 @@ void AudioRenderer::SendRendererCreateError(const StreamUsage &sreamUsage,
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+AudioStreamType AudioRendererPrivate::GetAudioStreamType(AudioStreamType audioStreamType)
+{
+    return audioStreamType == STREAM_VOICE_ASSISTANT_SYSTEM ? STREAM_VOICE_ASSISTANT : audioStreamType;
+}
+
 AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)
 {
     appInfo_ = appInfo;
@@ -641,8 +652,8 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
 
     if (createStream) {
         AudioStreamParams tempParams = {};
-        audioStream_ = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, tempParams, audioStreamType,
-            appInfo_.appUid);
+        audioStream_ = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, tempParams,
+            GetAudioStreamType(audioStreamType), appInfo_.appUid);
         if (audioStream_ && STREAM_TYPE_USAGE_MAP.count(audioStreamType) != 0) {
             // Initialize the streamUsage based on the streamType
             rendererInfo_.streamUsage = STREAM_TYPE_USAGE_MAP.at(audioStreamType);

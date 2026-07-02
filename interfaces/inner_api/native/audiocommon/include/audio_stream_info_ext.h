@@ -176,9 +176,14 @@ enum AudioStreamType {
     STREAM_INTERPHONE = 31,
 
     /**
+     * Indicates audio streams used for voice assistant system.
+     */
+    STREAM_VOICE_ASSISTANT_SYSTEM = 32,
+
+    /**
      * Indicates the max value of audio stream type (except STREAM_ALL).
      */
-    STREAM_TYPE_MAX = STREAM_INTERPHONE,
+    STREAM_TYPE_MAX = STREAM_VOICE_ASSISTANT_SYSTEM,
 
     /**
      * Indicates audio streams used for only one volume bar of a device.

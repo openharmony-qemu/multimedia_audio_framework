@@ -304,6 +304,8 @@ private:
     bool ValidateStartState();
     bool ValidateNotSwitching();
     bool ValidateAudioStream();
+    AudioStreamType GetAudioStreamType(AudioStreamType audioStreamType);
+    StreamUsage GetAudioStreamUsage(StreamUsage streamUsage);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
