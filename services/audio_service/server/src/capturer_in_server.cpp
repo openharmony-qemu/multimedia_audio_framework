@@ -1481,6 +1481,11 @@ bool CapturerInServer::CheckVoiceDownlinkPermission()
 
     callManager->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
 
+    bool isValid = callManager->CheckCallRecordingPermission(
+        processConfig_.capturerInfo.cellularRecordPhoneNum,
+        processConfig_.capturerInfo.cellularRecordToken);
+
+    CHECK_AND_RETURN_RET_LOG(isValid, false, "");
     return true;
 #else
     AUDIO_INFO_LOG("CheckVoiceDownlinkPermission success!");
