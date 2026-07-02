@@ -835,7 +835,7 @@ napi_value NapiAudioManager::GetAudioSceneSync(napi_env env, napi_callback_info 
     size_t argc = PARAM0;
     auto *napiAudioManager = GetParamWithSync(env, info, argc, nullptr);
     if (argc > PARAM0) {
-        NapiAudioError::ThrowError(env, NAPI_ERROR_INVALID_PARAM);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERROR_INVALID_PARAM);
         return result;
     }
     CHECK_AND_RETURN_RET_LOG(napiAudioManager != nullptr, result, "napiAudioManager is nullptr");
@@ -1001,7 +1001,7 @@ napi_value NapiAudioManager::GetAudioParameter(napi_env env, napi_callback_info 
 napi_value NapiAudioManager::SetExtraParameters(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     auto context = std::make_shared<AudioManagerAsyncContext>();
     if (context == nullptr) {
@@ -1029,7 +1029,7 @@ napi_value NapiAudioManager::SetExtraParameters(napi_env env, napi_callback_info
     };
     context->GetCbInfo(env, info, inputParser);
     if (context->status != napi_ok) {
-        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowErrorDoNotUse(env, context->errCode, context->errMessage);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -1060,7 +1060,7 @@ napi_value NapiAudioManager::SetExtraParameters(napi_env env, napi_callback_info
 napi_value NapiAudioManager::GetExtraParameters(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     auto context = std::make_shared<AudioManagerAsyncContext>();
     if (context == nullptr) {
@@ -1091,7 +1091,7 @@ napi_value NapiAudioManager::GetExtraParameters(napi_env env, napi_callback_info
     };
     context->GetCbInfo(env, info, inputParser);
     if (context->status != napi_ok) {
-        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowErrorDoNotUse(env, context->errCode, context->errMessage);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -1291,11 +1291,12 @@ napi_value NapiAudioManager::RegisterCallback(napi_env env, napi_value jsThis,
     NapiAudioManager *napiAudioManager = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioManager));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "status error");
-    CHECK_AND_RETURN_RET_LOG(napiAudioManager != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_SYSTEM), "status error");
+    CHECK_AND_RETURN_RET_LOG(napiAudioManager != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_NO_MEMORY), "napiAudioManager is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiAudioManager->audioMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(
-        env, NAPI_ERR_NO_MEMORY), "audioMngr_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioManager->audioMngr_ != nullptr,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_NO_MEMORY),
+        "audioMngr_ is nullptr");
 
     if (!cbName.compare(INTERRUPT_CALLBACK_NAME)) {
         RegisterInterruptCallback(env, argv, napiAudioManager);
@@ -1320,12 +1321,12 @@ template<typename T> void NapiAudioManager::RegisterInterruptCallback(napi_env e
     napi_valuetype handler = napi_undefined;
     if (paramArg1 != napi_object) {
         AUDIO_ERR_LOG("Type mismatch for parameter 2");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID);
         return;
     }
     if (napi_typeof(env, argv[PARAM2], &handler) != napi_ok || handler != napi_function) {
         AUDIO_ERR_LOG("type mismatch for parameter 3");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID);
         return;
     }
     if (napiAudioManager->interruptCallbackNapi_ == nullptr) {
@@ -1355,7 +1356,7 @@ template<typename T> void NapiAudioManager::RegisterRingerModeCallback(napi_env 
         napiAudioManager->ringerModecallbackNapi_ = std::make_shared<NapiAudioRingerModeCallback>(env);
         int32_t ret = napiAudioManager->audioMngr_->SetRingerModeCallback(
             napiAudioManager->cachedClientId_, napiAudioManager->ringerModecallbackNapi_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorDoNotUse(env, ret),
             "SetRingerModeCallback Failed %{public}d", ret);
     }
 
@@ -1374,7 +1375,7 @@ template<typename T> void NapiAudioManager::RegisterVolumeChangeCallback(napi_en
         napiAudioManager->volumeKeyEventCallbackNapi_ = std::make_shared<NapiAudioVolumeKeyEvent>(env);
         int32_t ret = napiAudioManager->audioMngr_->RegisterVolumeKeyEventCallback(napiAudioManager->cachedClientId_,
             napiAudioManager->volumeKeyEventCallbackNapi_, API_8);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorDoNotUse(env, ret),
             "RegisterVolumeKeyEventCallback Failed %{public}d", ret);
     }
     std::shared_ptr<NapiAudioVolumeKeyEvent> cb =
@@ -1393,7 +1394,7 @@ template<typename T> void NapiAudioManager::RegisterDeviceChangeCallback(napi_en
     }
     int32_t ret = napiAudioManager->audioMngr_->SetDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG,
         napiAudioManager->deviceChangeCallbackNapi_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorDoNotUse(env, ret),
         "NapiAudioManager: SetDeviceChangeCallback Failed %{public}d", ret);
     std::shared_ptr<NapiAudioManagerCallback> cb =
         std::static_pointer_cast<NapiAudioManagerCallback>(napiAudioManager->deviceChangeCallbackNapi_);
@@ -1442,13 +1443,13 @@ napi_value NapiAudioManager::On(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argCount, argv, &jsThis, nullptr);
     if (status != napi_ok || argCount < minArgCount) {
         AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 2 parameters");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID);
         return undefinedResult;
     }
 
     napi_valuetype eventType = napi_undefined;
     if (napi_typeof(env, argv[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID);
         return undefinedResult;
     }
     std::string callbackName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
@@ -1458,7 +1459,7 @@ napi_value NapiAudioManager::On(napi_env env, napi_callback_info info)
         napi_valuetype handler = napi_undefined;
         if (napi_typeof(env, argv[PARAM1], &handler) != napi_ok || handler != napi_function) {
             AUDIO_ERR_LOG("type mismatch for parameter 2");
-            NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+            NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID);
             return undefinedResult;
         }
     }
@@ -1473,13 +1474,13 @@ template<typename T> void NapiAudioManager::UnregisterInterruptCallback(napi_env
     napi_valuetype handler = napi_undefined;
     if (napi_typeof(env, argv[PARAM1], &paramArg1) != napi_ok || paramArg1 != napi_object) {
         AUDIO_ERR_LOG("Off type mismatch for parameter 2");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID);
         return;
     }
     if ((argCount == ARGS_THREE) &&
         (napi_typeof(env, argv[PARAM2], &handler) != napi_ok || handler != napi_function)) {
         AUDIO_ERR_LOG("Off type mismatch for parameter 3");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID);
         return;
     }
     int32_t callbackCount = PARAM0;
@@ -1573,13 +1574,13 @@ napi_value NapiAudioManager::Off(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argCount, argv, &jsThis, nullptr);
     if (status != napi_ok || argCount < minArgCount) {
         AUDIO_ERR_LOG("Off fail to napi_get_cb_info/Requires min 1 parameters");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID);
         return undefinedResult;
     }
 
     napi_valuetype eventType = napi_undefined;
     if (napi_typeof(env, argv[PARAM0], &eventType) != napi_ok || eventType != napi_string) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID);
         return undefinedResult;
     }
     std::string callbackName = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
@@ -1595,7 +1596,7 @@ napi_value NapiAudioManager::Off(napi_env env, napi_callback_info info)
     } else if (!callbackName.compare(AUDIO_SCENE_CHANGE_CALLBACK_NAME)) {
         UnregisterAudioSceneChangeCallback(env, argv[PARAM1], napiAudioManager);
     } else {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INVALID_PARAM);
     }
     return undefinedResult;
 }
@@ -1603,7 +1604,7 @@ napi_value NapiAudioManager::Off(napi_env env, napi_callback_info info)
 napi_value NapiAudioManager::GetCollaborativeManager(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     napi_status status;
     size_t argCount = 0;

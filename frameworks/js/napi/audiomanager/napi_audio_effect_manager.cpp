@@ -153,16 +153,16 @@ napi_value NapiAudioEffectMgr::GetSupportedAudioEffectProperty(napi_env env, nap
     size_t argc = PARAM0;
     auto *napiEffectMgr = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(argc == PARAM0 && napiEffectMgr != nullptr && napiEffectMgr->audioEffectMngr_ != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_SYSTEM,
         "incorrect parameter types: The type of options must be empty"), "argcCount invalid");
 
     AudioEffectPropertyArray propertyArray = {};
     int32_t ret = napiEffectMgr->audioEffectMngr_->GetSupportedAudioEffectProperty(propertyArray);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK,  NapiAudioError::ThrowErrorAndReturn(env, ret,
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK,  NapiAudioError::ThrowErrorAndReturnDoNotUse(env, ret,
         "interface operation failed"), "get support audio effect property failure!");
 
     napi_status status = NapiParamUtils::SetEffectProperty(env, propertyArray, result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_SYSTEM, "Combining property data fail"), "fill support effect property failed");
 
     return result;
@@ -174,16 +174,16 @@ napi_value NapiAudioEffectMgr::GetAudioEffectProperty(napi_env env, napi_callbac
     size_t argc = PARAM0;
     auto *napiEffectMgr = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(argc == PARAM0 && napiEffectMgr != nullptr && napiEffectMgr->audioEffectMngr_ != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_SYSTEM,
         "incorrect parameter types: The type of options must be empty"), "argcCount invalid");
 
     AudioEffectPropertyArray propertyArray = {};
     int32_t ret = napiEffectMgr->audioEffectMngr_->GetAudioEffectProperty(propertyArray);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK,  NapiAudioError::ThrowErrorAndReturn(env, ret,
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK,  NapiAudioError::ThrowErrorAndReturnDoNotUse(env, ret,
         "interface operation failed"), "get audio enhance property failure!");
 
     napi_status status = NapiParamUtils::SetEffectProperty(env, propertyArray, result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_SYSTEM, "combining property data fail"), "fill effect property failed");
 
     return result;
@@ -196,28 +196,28 @@ napi_value NapiAudioEffectMgr::SetAudioEffectProperty(napi_env env, napi_callbac
     napi_value args[ARGS_ONE] = {};
     auto *napiEffectMgr = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE && napiEffectMgr != nullptr &&
-        napiEffectMgr->audioEffectMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        napiEffectMgr->audioEffectMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID,
         "parameter verification failed: mandatory parameters are left unspecified"), "argcCount invalid");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of options must be array"), "invaild valueType");
 
     AudioEffectPropertyArray propertyArray = {};
     napi_status status = NapiParamUtils::GetEffectPropertyArray(env, propertyArray, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(propertyArray.property.size() > 0,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: mandatory parameters are left unspecified"), "status or arguments error");
 
     CHECK_AND_RETURN_RET_LOG(status == napi_ok,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: mandatory parameters are left unspecified"), "status or arguments error");
 
     int32_t ret = napiEffectMgr->audioEffectMngr_->SetAudioEffectProperty(propertyArray);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK,  NapiAudioError::ThrowErrorAndReturn(env, ret,
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK,  NapiAudioError::ThrowErrorAndReturnDoNotUse(env, ret,
         "interface operation failed"), "set audio effect property failure!");
 
     return result;
@@ -227,13 +227,13 @@ napi_value NapiAudioEffectMgr::IsAudioSeparationEffectSupported(napi_env env, na
 {
     AUDIO_INFO_LOG("IsAudioSeparationEffectSupported");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiEffectMgr = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(argc == PARAM0 && napiEffectMgr != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID, "invalid arguments"), "argc invalid");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INPUT_INVALID, "invalid arguments"), "argc invalid");
     CHECK_AND_RETURN_RET_LOG(napiEffectMgr->audioEffectMngr_ != nullptr, result, "audioEffectMngr is nullptr");
 
     bool isSupported = napiEffectMgr->audioEffectMngr_->IsAudioSeparationEffectSupported();
@@ -245,7 +245,7 @@ napi_value NapiAudioEffectMgr::IsAudioSeparationEffectSupported(napi_env env, na
 napi_value NapiAudioEffectMgr::SetAudioSeparationEffectEnabled(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     auto context = std::make_shared<AudioEffectManagerAsyncContext>();
     if (context == nullptr) {
@@ -317,7 +317,7 @@ napi_value NapiAudioEffectMgr::UpdateAudioSeparationEffectEnabled(napi_env env,
 napi_value NapiAudioEffectMgr::SetAudioSeparationEffectVolume(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     auto context = std::make_shared<AudioEffectManagerAsyncContext>();
     if (context == nullptr) {
@@ -397,20 +397,20 @@ napi_value NapiAudioEffectMgr::OnAudioSeparationEffectEnabledChange(napi_env env
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     if (status != napi_ok || argc < requireArgc) {
         AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 1 parameters");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
         return undefinedResult;
     }
 
     napi_valuetype handler = napi_undefined;
     if (napi_typeof(env, args[PARAM0], &handler) != napi_ok || handler != napi_function) {
         AUDIO_ERR_LOG("On type mismatch for parameter 1");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID,
             "incorrect parameter types: The type of callback must be function");
         return undefinedResult;
     }
 
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     NapiAudioEffectMgr *napiEffectMgr = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiEffectMgr));
@@ -455,11 +455,11 @@ napi_value NapiAudioEffectMgr::OffAudioSeparationEffectEnabledChange(napi_env en
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID, "invalid arguments"),
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INPUT_INVALID, "invalid arguments"),
         "Off fail to napi_get_cb_info");
 
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     NapiAudioEffectMgr *napiEffectMgr = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiEffectMgr));
@@ -487,7 +487,7 @@ napi_value NapiAudioEffectMgr::OffAudioSeparationEffectEnabledChange(napi_env en
     napi_valuetype valueType = napi_undefined;
     status = napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && valueType == napi_function,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of callback must be function"),
         "Type mismatch for callback");
 
