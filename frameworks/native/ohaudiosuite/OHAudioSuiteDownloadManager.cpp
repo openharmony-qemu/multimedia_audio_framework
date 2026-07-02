@@ -252,7 +252,8 @@ int32_t OHAudioSuiteDownloadManager::UninstallCloudRom(const char *modelVersion)
     return ret;
 }
 
-int32_t OHAudioSuiteDownloadManager::GetDownloadStatus(OH_AudioSuite_DownloadStatusInfo *status, const char *modelVersion)
+int32_t OHAudioSuiteDownloadManager::GetDownloadStatus(
+    OH_AudioSuite_DownloadStatusInfo *status, const char *modelVersion)
 {
     auto& manager = OHOS::AudioStandard::AudioSuite::AudioSuiteDownloadManager::GetInstance();
     OHOS::AudioStandard::AudioSuite::DownloadStatus internalStatus;
@@ -267,25 +268,25 @@ int32_t OHAudioSuiteDownloadManager::GetDownloadStatus(OH_AudioSuite_DownloadSta
         // Map DownloadState to cloudRomStatus
         switch (internalStatus.state) {
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_IDLE:
-                status->cloudRomStatus = 0;  // AUDIOSUITE_CLOUD_ROM_STATUS_INIT
+                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_INIT;
                 break;
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_WAITING:
-                status->cloudRomStatus = 0;  // AUDIOSUITE_CLOUD_ROM_STATUS_INIT
+                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_INIT;
                 break;
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_IN_PROGRESS:
-                status->cloudRomStatus = 20;  // AUDIOSUITE_CLOUD_ROM_STATUS_DOWNLOADING
+                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_DOWNLOADING;
                 break;
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_COMPLETED:
-                status->cloudRomStatus = 23;  // AUDIOSUITE_CLOUD_ROM_STATUS_DOWNLOAD_SUCCESS
+                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_DOWNLOAD_SUCCESS;
                 break;
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_FAILED:
-                status->cloudRomStatus = 22;  // AUDIOSUITE_CLOUD_ROM_STATUS_DOWNLOAD_FAIL
+                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_DOWNLOAD_FAIL;
                 break;
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_CANCELLED:
-                status->cloudRomStatus = 0;  // AUDIOSUITE_CLOUD_ROM_STATUS_INIT
+                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_INIT;
                 break;
             default:
-                status->cloudRomStatus = -1;  // AUDIOSUITE_CLOUD_ROM_STATUS_ERROR
+                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_ERROR;
                 break;
         }
 

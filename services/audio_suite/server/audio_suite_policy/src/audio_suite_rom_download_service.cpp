@@ -258,7 +258,8 @@ ErrCode AudioSuiteRomDownloadService::UninstallCloudRom(const std::string &versi
     return SUCCESS;
 }
 
-ErrCode AudioSuiteRomDownloadService::GetDownloadStatus(DownloadStatus& status, const std::string& version, ErrCode& result)
+ErrCode AudioSuiteRomDownloadService::GetDownloadStatus(
+    DownloadStatus &status, const std::string &version, ErrCode &result)
 {
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService::GetDownloadStatus");
 
@@ -267,24 +268,21 @@ ErrCode AudioSuiteRomDownloadService::GetDownloadStatus(DownloadStatus& status, 
         result = ERR_PERMISSION_DENIED;
         return SUCCESS;
     }
- 
+
     result = downloadManager_->GetDownloadStatus(status, version);
     if (result != SUCCESS) {
         AUDIO_ERR_LOG("GetDownloadStatus failed, error=%{public}d", result);
     }
-    
+
     return SUCCESS;
 }
 
 bool AudioSuiteRomDownloadService::CheckPermission()
 {
-    // 使用完整的命名空间前缀，避免全局命名空间污染
     Security::AccessToken::AccessTokenID token = OHOS::IPCSkeleton::GetCallingTokenID();
-
     Security::AccessToken::ATokenTypeEnum type = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(token);
-
-    // if (type != Security::AccessToken::TOKEN_NATIVE && type != Security::AccessToken::TOKEN_HAP && type != Security::AccessToken::TOKEN_SHELL) {
-    if (type != Security::AccessToken::TOKEN_NATIVE && type != Security::AccessToken::TOKEN_HAP && type != Security::AccessToken::TOKEN_SHELL) {
+    if (type != Security::AccessToken::TOKEN_NATIVE && type != Security::AccessToken::TOKEN_HAP &&
+        type != Security::AccessToken::TOKEN_SHELL) {
         AUDIO_ERR_LOG("CheckPermission: Invalid token type=%{public}d", type);
         return false;
     }

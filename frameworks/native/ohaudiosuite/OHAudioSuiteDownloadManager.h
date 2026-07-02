@@ -50,12 +50,20 @@ private:
 
 namespace AudioSuite {
 
+// 常量定义
+constexpr int32_t STATUS_ARRAY_SIZE = 1;
+constexpr int32_t CLOUD_ROM_STATUS_INIT = 0;
+constexpr int32_t CLOUD_ROM_STATUS_DOWNLOADING = 20;
+constexpr int32_t CLOUD_ROM_STATUS_DOWNLOAD_FAIL = 22;
+constexpr int32_t CLOUD_ROM_STATUS_DOWNLOAD_SUCCESS = 23;
+constexpr int32_t CLOUD_ROM_STATUS_ERROR = -1;
+
 class CDownloadCallbackAdapter : public IDownloadCallbackListener {
 public:
     explicit CDownloadCallbackAdapter(const OH_AudioSuite_DownloadCallback &cCallback)
         : callback_(cCallback)
     {
-        statusArray_.size = 1;
+        statusArray_.size = STATUS_ARRAY_SIZE;
         statusArray_.downloadStatusInfo = &statusInfoPtr_;
         statusInfoPtr_ = &statusInfo_;
     }
@@ -84,19 +92,19 @@ private:
     {
         switch (state) {
             case DownloadState::DOWNLOAD_IDLE:
-                return 0;  // AUDIOSUITE_CLOUD_ROM_STATUS_INIT
+                return CLOUD_ROM_STATUS_INIT;
             case DownloadState::DOWNLOAD_WAITING:
-                return 0;  // AUDIOSUITE_CLOUD_ROM_STATUS_INIT
+                return CLOUD_ROM_STATUS_INIT;
             case DownloadState::DOWNLOAD_IN_PROGRESS:
-                return 20;  // AUDIOSUITE_CLOUD_ROM_STATUS_DOWNLOADING
+                return CLOUD_ROM_STATUS_DOWNLOADING;
             case DownloadState::DOWNLOAD_COMPLETED:
-                return 23;  // AUDIOSUITE_CLOUD_ROM_STATUS_DOWNLOAD_SUCCESS
+                return CLOUD_ROM_STATUS_DOWNLOAD_SUCCESS;
             case DownloadState::DOWNLOAD_FAILED:
-                return 22;  // AUDIOSUITE_CLOUD_ROM_STATUS_DOWNLOAD_FAIL
+                return CLOUD_ROM_STATUS_DOWNLOAD_FAIL;
             case DownloadState::DOWNLOAD_CANCELLED:
-                return 0;  // AUDIOSUITE_CLOUD_ROM_STATUS_INIT
+                return CLOUD_ROM_STATUS_INIT;
             default:
-                return -1;  // AUDIOSUITE_CLOUD_ROM_STATUS_ERROR
+                return CLOUD_ROM_STATUS_ERROR;
         }
     }
 

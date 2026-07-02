@@ -23,6 +23,7 @@ namespace {
 constexpr const char* CHECK_CONDITION_REGION = "china";
 constexpr const char* EMPTY_STRING = "";
 constexpr int32_t MAX_RETRY_COUNT = 3;
+constexpr int32_t DOWNLOAD_COMPLETE = 100;
 } // namespace
 
 #include "audio_errors.h"
@@ -215,8 +216,7 @@ int32_t DownloadManager::GetDownloadStatus(DownloadStatus& status, const std::st
 
     FillDownloadStatus(status, version, statusInfo, versionInfo);
 
-    AUDIO_INFO_LOG("GetDownloadStatus success, state=%{public}d, progress=%{public}u",
-                status.state, status.progress);
+    AUDIO_INFO_LOG("GetDownloadStatus success, state=%{public}d, progress=%{public}u", status.state, status.progress);
     return SUCCESS;
 }
 
@@ -452,17 +452,19 @@ ErrCode DownloadManager::OnCloudRomCallback(const CloudRomCallback &cloudRomData
     static int callbackCount = 0;
     callbackCount++;
     AUDIO_INFO_LOG("OnCloudRomCallback: ENTRY (count=%{public}d), statusInfos size=%{public}zu",
-                  callbackCount, cloudRomData.statusInfos.size());
+        callbackCount,
+        cloudRomData.statusInfos.size());
     AUDIO_INFO_LOG("currentVersion_=%{public}s", currentVersion_.c_str());
 
-    AUDIO_INFO_LOG("OnCloudRomCallback478: statusInfos size=%{public}zu, currentVersion_=%{public}s",
-                  cloudRomData.statusInfos.size(), currentVersion_.c_str());
+    AUDIO_INFO_LOG("OnCloudRomCallback: statusInfos size=%{public}zu, currentVersion_=%{public}s",
+        cloudRomData.statusInfos.size(),
+        currentVersion_.c_str());
 
     for (const StatusInfo &info : cloudRomData.statusInfos) {
         AUDIO_INFO_LOG("OnCloudRomCallback: processing featureName=%{public}s, status=%{public}d, progress=%{public}d",
-                      info.featureInfo.featureName.c_str(),
-                      static_cast<int32_t>(info.status),
-                      info.progress);
+            info.featureInfo.featureName.c_str(),
+            static_cast<int32_t>(info.status),
+            info.progress);
 
         if (info.featureInfo.featureName != currentVersion_) {
             AUDIO_INFO_LOG("OnCloudRomCallback: featureName mismatch, skipping");
@@ -507,7 +509,7 @@ void DownloadManager::HandleInstallSuccess(const StatusInfo &info)
     DownloadStatus status;
     status.version = currentVersion_;
     status.state = DownloadState::DOWNLOAD_COMPLETED;
-    status.progress = 100;
+    status.progress = DOWNLOAD_COMPLETE;
     status.romPath = romPath_;
     status.errMessage = EMPTY_STRING;
     NotifyDownloadStatusChanged(status);
@@ -612,21 +614,16 @@ void DownloadManager::SetUpdateEngineCallback(const sptr<IRemoteObject>& updateE
 bool DownloadManager::WaitForCallbackRegistration(int timeoutMs)
 {
     std::unique_lock<std::mutex> lock(callbackMutex_);
-
     if (isCallbackRegistered_) {
         return true;
     }
-
     AUDIO_INFO_LOG("Waiting for callback registration, timeout=%{public}dms", timeoutMs);
-
     auto status = callbackRegisteredCond_.wait_for(lock, std::chrono::milliseconds(timeoutMs),
         [this] { return isCallbackRegistered_.load(); });
-
     if (!status) {
         AUDIO_ERR_LOG("WaitForCallbackRegistration timeout after %{public}dms", timeoutMs);
         return false;
     }
-
     AUDIO_INFO_LOG("WaitForCallbackRegistration success");
     return true;
 }
@@ -666,12 +663,11 @@ bool DownloadManager::RegisterCloudRomDownloadCallback()
 }
 
 // CloudRomDownloadCallbackImpl 实现
-ErrCode CloudRomDownloadCallbackImpl::OnCloudRomCallback(const CloudRomCallback& cloudRomData)
+ErrCode CloudRomDownloadCallbackImpl::OnCloudRomCallback(const CloudRomCallback &cloudRomData)
 {
     static int stubCallbackCount = 0;
     stubCallbackCount++;
-    AUDIO_INFO_LOG("CloudRomDownloadCallbackImpl::OnCloudRomCallback: ENTRY (count=%{public}d)",
-                  stubCallbackCount);
+    AUDIO_INFO_LOG("CloudRomDownloadCallbackImpl::OnCloudRomCallback: ENTRY (count=%{public}d)", stubCallbackCount);
     AUDIO_INFO_LOG("statusInfos size=%{public}zu", cloudRomData.statusInfos.size());
 
     if (!downloadManager_) {
