@@ -539,7 +539,7 @@ int32_t HpaeDirectRendererManager::Flush(uint32_t sessionId)
 
         // flush history buffer
         node->Flush();
-
+        CHECK_AND_RETURN(curNode_ != nullptr && sessionId == curNode_->GetSessionId());
         // flush converter nodes' dual buffers
         if (converterForGain_ != nullptr) {
             converterForGain_->FlushBuffers();
@@ -547,10 +547,9 @@ int32_t HpaeDirectRendererManager::Flush(uint32_t sessionId)
         if (converterForOutput_ != nullptr) {
             converterForOutput_->FlushBuffers();
         }
-        if (sessionId == curNode_->GetSessionId()) {
-            // flush sinkoutput cache
-            sinkOutputNode_->FlushStream();
-        }
+
+        sinkOutputNode_->FlushStream();
+        
         // flush SE
         if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
             sessionEffectNode_->FlushEffect();
@@ -567,6 +566,8 @@ int32_t HpaeDirectRendererManager::Drain(uint32_t sessionId)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Drain not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Drain sessionId %{public}u", sessionId);
+        node->Drain();
+        CHECK_AND_RETURN(curNode_ != nullptr && sessionId == curNode_->GetSessionId());
 
         // flush converter nodes
         if (converterForGain_ != nullptr) {
@@ -580,7 +581,6 @@ int32_t HpaeDirectRendererManager::Drain(uint32_t sessionId)
             sessionEffectNode_->FlushEffect();
         }
 
-        node->Drain();
         if (node->GetState() != HPAE_SESSION_RUNNING) {
             TriggerCallback(
                 UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_DRAINED);
