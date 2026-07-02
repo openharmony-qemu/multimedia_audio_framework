@@ -73,6 +73,8 @@ public:
     int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override;
     int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<InputNodeRequestDataCallBack> callback) override;
+    int32_t SetRequestMetaDataCallback(uint32_t nodeId,
+        std::shared_ptr<InputNodeRequestMetaDataCallBack> callback) override;
     int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t RenderFrame(
@@ -80,8 +82,13 @@ public:
     int32_t MultiRenderFrame(
         uint8_t **audioDataArray, int32_t arraySize,
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) override;
+    int32_t MetaRenderFrame(AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag) override;
     int32_t SetOptions(uint32_t nodeId, std::string name, std::string value) override;
     int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) override;
+    int32_t SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) override;
+    int32_t GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) override;
+    int32_t GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize) override;
     PipelineWorkMode GetWorkMode() override;
 
     // Getter methods for PrintInfo
@@ -124,6 +131,7 @@ private:
     void SetMixerNodeSampleRate();
     bool CheckHoaInputNodeConnection(uint32_t nodeId, const AudioFormat &format);
     bool CheckHoaRenderPreNode(uint32_t nodeId);
+    bool CheckSystemNodeConnection(uint32_t nodeId);
 
 private:
     static std::mutex allocateIdLock;

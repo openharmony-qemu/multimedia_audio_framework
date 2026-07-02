@@ -42,6 +42,22 @@ private:
     void *userData_ = nullptr;
 };
 
+class OHSuiteInputNodeRequestMetaDataCallBack : public AudioSuite::InputNodeRequestMetaDataCallBack {
+public:
+    explicit OHSuiteInputNodeRequestMetaDataCallBack(
+        OH_AudioNode *audioNode, OH_InputNode_RequestMetaDataCallback callback, void *data)
+        : audioNode_(audioNode), callback_(callback), userData_(data) {}
+    ~OHSuiteInputNodeRequestMetaDataCallBack() = default;
+
+    int32_t OnRequestDataCallBack(
+        AudioSuite::AudioMetaFrame &metaFrame, int32_t *responseMetaDataSize, bool *finished) override;
+
+private:
+    OH_AudioNode *audioNode_ = nullptr;
+    OH_InputNode_RequestMetaDataCallback callback_ = nullptr;
+    void *userData_ = nullptr;
+};
+
 class OHAudioNode {
 public:
     explicit OHAudioNode(uint32_t id, AudioSuite::AudioNodeType type) : nodeId_(id), type_(type) {};
@@ -101,6 +117,9 @@ public:
         uint8_t *audioData, int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);
     int32_t MultiRenderFrame(OHAudioSuitePipeline *audioPipeline,
         AudioSuite::AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag);
+    int32_t MetaRenderFrame(OHAudioSuitePipeline *audioPipeline,
+        AudioSuite::AudioMetaFrame &metaFrame, int32_t *responseAudioSize,
+        int32_t *responseMetaSize, bool *finishedFlag);
 
     // node
     int32_t CreateNode(
@@ -109,6 +128,7 @@ public:
     int32_t GetNodeBypassStatus(OHAudioNode *node, bool *bypassStatus);
     int32_t BypassEffectNode(OHAudioNode *node, bool bypass);
     int32_t SetAudioFormat(OHAudioNode *node, OH_AudioFormat *audioFormat);
+    int32_t SetAudioFormat(OHAudioNode *node, OH_AudioSystemNodeFormat *audioFormat);
     int32_t ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
     int32_t DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
     int32_t SetEqualizerFrequencyBandGains(
@@ -137,6 +157,9 @@ public:
     int32_t GetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType* type);
     int32_t IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported);
     int32_t PrintInfo(OHAudioSuitePipeline *pipeline, int32_t fd);
+    int32_t SetSystemNodeParam(OHAudioNode* node, std::vector<uint8_t> &param);
+    int32_t GetSystemNodeParam(OHAudioNode* node, std::vector<uint8_t> &param);
+    int32_t GetSystemNodeInOutSize(OHAudioNode* node, uint32_t &inSize, uint32_t &outSize);
     template <typename T>
     int32_t SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType,
                                 std::function<int32_t(uint32_t, T)> setter, const char* funcName);
@@ -148,6 +171,7 @@ private:
     explicit OHAudioSuiteEngine() {};
     OHAudioSuiteEngine(const OHAudioSuiteEngine&) = delete;
     OHAudioSuiteEngine& operator=(const OHAudioSuiteEngine&) = delete;
+    int32_t InitInputCallback(OHAudioSuiteNodeBuilder *builder, uint32_t nodeId, OH_AudioNode **audioNode);
     std::unordered_set<OHAudioSuitePipeline*> pipelines_;
     std::recursive_mutex mutex_;
     void AddPipeline(OHAudioSuitePipeline *pipeline);

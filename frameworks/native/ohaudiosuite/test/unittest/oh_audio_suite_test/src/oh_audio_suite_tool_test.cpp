@@ -24,7 +24,9 @@ namespace AudioStandard {
 bool AllNodeTypesSupported()
 {
     for (const auto& nodeTypeEntry : AudioSuite::NODETYPE_TOSTRING_MAP) {
-        if (nodeTypeEntry.first == AudioSuite::NODE_TYPE_EMPTY) {
+        if (nodeTypeEntry.first == AudioSuite::NODE_TYPE_EMPTY ||
+            nodeTypeEntry.first == AudioSuite::NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE ||
+            nodeTypeEntry.first == AudioSuite::NODE_TYPE_SYSTEM_MUSIC_MASTER) {
             continue;
         }
         OH_AudioNode_Type nodeType = static_cast<OH_AudioNode_Type>(nodeTypeEntry.first);

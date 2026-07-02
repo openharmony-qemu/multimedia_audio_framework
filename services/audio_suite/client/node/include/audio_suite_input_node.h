@@ -38,9 +38,12 @@ public:
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DoProcess(uint32_t needDataLength) override;
+    int32_t DoProcess(AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag) override;
     int32_t SetRequestDataCallback(std::shared_ptr<InputNodeRequestDataCallBack> callback) override;
     bool IsSetReadDataCallback() override;
     void SetAudioNodeFormat(AudioFormat audioFormat) override;
+    void SetRequestMetaDataCallback(std::shared_ptr<InputNodeRequestMetaDataCallBack> callback) override;
 
 private:
     int32_t GetDataFromUser();
@@ -48,6 +51,7 @@ private:
     int32_t InitCacheBuffer(uint32_t needDataLength);
 
     std::shared_ptr<InputNodeRequestDataCallBack> reqDataCallback_ = nullptr;
+    std::shared_ptr<InputNodeRequestMetaDataCallBack> reqMetaDataCallback_ = nullptr;
 
     AudioSuitePcmBuffer inPcmData_;
     AudioSuitePcmBuffer outPcmData_;

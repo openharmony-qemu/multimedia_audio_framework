@@ -23,6 +23,7 @@
 #include "audio_suite_manager.h"
 #include "audio_suite_manager_thread.h"
 #include "audio_suite_manager_callback.h"
+#include "audio_suite_base.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,6 +51,8 @@ public:
     virtual int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) = 0;
     virtual int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<InputNodeRequestDataCallBack> callback) = 0;
+    virtual int32_t SetRequestMetaDataCallback(uint32_t nodeId,
+        std::shared_ptr<InputNodeRequestMetaDataCallBack> callback) = 0;
     virtual int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
     virtual int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
     virtual int32_t RenderFrame(uint32_t pipelineId,
@@ -57,8 +60,13 @@ public:
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) = 0;
     virtual int32_t MultiRenderFrame(uint32_t pipelineId,
         AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag) = 0;
+    virtual int32_t MetaRenderFrame(uint32_t pipelineId, AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag) = 0;
     virtual int32_t SetOptions(uint32_t nodeId, std::string name, std::string value) = 0;
     virtual int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) = 0;
+    virtual int32_t SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) = 0;
+    virtual int32_t GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) = 0;
+    virtual int32_t GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize) = 0;
     virtual int32_t PrintInfo(uint32_t pipelineId, int32_t fd) = 0;
 };
 

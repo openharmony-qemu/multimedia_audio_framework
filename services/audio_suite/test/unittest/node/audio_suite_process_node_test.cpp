@@ -119,19 +119,6 @@ public:
     }
 };
 
-class TestReadTapCallBack : public SuiteNodeReadTapDataCallback {
-public:
-    static bool testFlag;
-    void OnReadTapDataCallback(void *audioData, int32_t audioDataSize) override
-    {
-        (void)audioData;
-        (void)audioDataSize;
-        testFlag = true;
-    }
-};
-
-bool TestReadTapCallBack::testFlag = false;
-
 class AudioSuiteProcessNodeTest : public ::testing::Test {
 public:
     void SetUp() override
@@ -145,7 +132,6 @@ public:
         node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_EQUALIZER, audioFormat);
         node_->InitOutputStream();
         node_->nodeNeedDataDuration_ = NEED_DATA_LENGTH;
-        TestReadTapCallBack::testFlag = false;
     }
 
     void TearDown() override
@@ -154,7 +140,6 @@ public:
             return;
         }
         node_->Flush();
-        TestReadTapCallBack::testFlag = false;
     }
 
     std::shared_ptr<TestAudioSuiteProcessNode> node_;
