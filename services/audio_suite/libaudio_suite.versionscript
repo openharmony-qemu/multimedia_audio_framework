@@ -18,6 +18,18 @@
     *IAudioFormatConverter*;
     *MixerProcessorManager*;
     *MixerProcessor*;
+    *AudioSuiteSaClient*;
+    *AudioSuiteDownloadManager*;
+    *AudioSuiteDownloadManager*GetInstance*;
+    *IAudioSuiteSaService*;
+    *AudioSuiteSaServiceProxy*;
+    *IDownloadCallback*;
+    *DownloadCallbackProxy*;
+    *DownloadCallbackStub*;
+    *BrokerDelegator*;
+    *delegator_*;
+    *AudioSuiteSaIdl*;
+    *DownloadCallback*;
   local:
     *;
 };
