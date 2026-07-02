@@ -728,6 +728,8 @@ bool HpaeFastSinkOutputNode::PrepareNextLoop(uint64_t curWritePos, int64_t &wake
 int64_t HpaeFastSinkOutputNode::GetPredictNextReadTime(uint64_t posInFrame)
 {
     Trace trace("HpaeFastSinkOutputNode::GetPredictNextRead");
+    CHECK_AND_RETURN_RET_LOG(dstSpanSizeInframe_ != 0,
+        ClockTime::GetCurNano() + RELATIVE_SLEEP_TIME_NS, "dstSpanSizeInframe_ is zero");
     uint64_t handleSpanCnt = posInFrame / dstSpanSizeInframe_;
     if (handleSpanCnt < TIMESTAMP_SYNC_CNT_AT_START || handleSpanCnt % TIMESTAMP_SYNC_CNT_INTERVAL == 0) {
         updateThreadCV_.notify_all();
