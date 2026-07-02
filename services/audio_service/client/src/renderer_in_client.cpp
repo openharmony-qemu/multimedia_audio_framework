@@ -331,7 +331,7 @@ int32_t RendererInClientInner::GetBufferWaitTimeoutInMs() const
     return IsLowLatencyRenderer() ? FAST_WRITE_CACHE_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
 }
 
-int32_t RendererInClientInner::CreateAndRetryAudioProcess(const AudioProcessConfig &config,
+void RendererInClientInner::CreateAndRetryAudioProcess(const AudioProcessConfig &config,
     const sptr<IStandardAudioService> &gasp, AudioPlaybackCaptureConfig &playbackConfig)
 {
     int32_t errorCode = 0;
@@ -342,7 +342,6 @@ int32_t RendererInClientInner::CreateAndRetryAudioProcess(const AudioProcessConf
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
         gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy_);
     }
-    return errorCode;
 }
 
 int32_t RendererInClientInner::InitIpcStream()
@@ -357,7 +356,7 @@ int32_t RendererInClientInner::InitIpcStream()
         HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."));
     ipcProxy_ = nullptr;
     AudioPlaybackCaptureConfig playbackConfig = {};
-    int32_t errorCode = CreateAndRetryAudioProcess(config, gasp, playbackConfig);
+    CreateAndRetryAudioProcess(config, gasp, playbackConfig);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_NULL_POINTER, "ipcProxy is null", true),
