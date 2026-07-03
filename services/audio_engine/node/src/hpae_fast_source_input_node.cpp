@@ -523,6 +523,8 @@ bool HpaeFastSourceInputNode::TryReadOneSpan(uint64_t handlePos)
     ConvertToFloat(GetBitWidth(), convertSampleCount, readBuf.buffer, inputAudioBuffer_.GetPcmDataBuffer());
     RecordCheckSyncInfo(curReadPos_);
     curReadPos_ += srcSpanSizeInframe_;
+    JUDGE_AND_WARNING_LOG(memset_s(readBuf.buffer, readBuf.bufLength, 0, readBuf.bufLength) != EOK,
+        "reset buffer fail");
     return true;
 }
 
