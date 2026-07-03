@@ -341,6 +341,7 @@ private:
     bool IsForceGetDevByVolumeType(int32_t uid);
     bool ShouldUseSystemPreferredDeviceForVolume(int32_t uid);
     bool IsForceGetZoneDevice(int32_t uid);
+    bool HasVolumeKeyEventCallbacks(int32_t clientPid);
     bool IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent);
     bool IsTargetZoneForVolumeKeyEvent(int32_t pid, int32_t zoneId);
     bool BuildStateChangedEvent(InterruptHint hintType, float &duckVolume,

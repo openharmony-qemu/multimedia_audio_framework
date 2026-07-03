@@ -731,6 +731,7 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
 
     // Fetch pipe
     audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
+    audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
     ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
     networkId = streamDesc->newDeviceDescs_.front()->networkId_;
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
@@ -2642,6 +2643,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     if (outputStreamDescs.empty() && !pipeManager_->IsModemCommunicationIdExist() &&
         !CheckRingAndVoipStreamRunning()) {
         audioActiveDevice_.UpdateStreamDeviceMap("NoStreamInPipe");
+        audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
         CheckAndUpdateHearingAidCall(DEVICE_TYPE_NONE);
         return HandleFetchOutputWhenNoRunningStream(reason);
     }
@@ -2668,6 +2670,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     HandleA2dpSuspendWhenFetch(reason, audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), outputStreamDescs);
     // this will update volume device map
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
+    audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
     // here will update volume must after UpdateStreamDeviceMap
     bool deviceUpdate = UpdateActiveDeviceAndVolumeBeforeMoveSession(outputStreamDescs, reason);
 

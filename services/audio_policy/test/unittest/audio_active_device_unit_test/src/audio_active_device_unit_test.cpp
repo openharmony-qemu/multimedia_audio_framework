@@ -167,5 +167,38 @@ HWTEST_F(AudioActiveDeviceUnitTest, GetDeviceForVolumeEnhanced_ValidUid, TestSiz
     auto result = audioActiveDevice.GetDeviceForVolumeEnhanced(SYSTEM_UID);
     EXPECT_NE(result, nullptr);
 }
+/**
+ * @tc.name  : GetUidVolumeDevicesForEnhancedRouting_UidNotFound
+ * @tc.number: GetUidVolumeDevicesForEnhancedRouting_001
+ * @tc.desc  : Test if condition true branch, uid not in uidVolumeDeviceMap_ returns empty vector
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, GetUidVolumeDevicesForEnhancedRouting_UidNotFound, TestSize.Level1)
+{
+    AudioActiveDevice &audioActiveDevice = AudioActiveDevice::GetInstance();
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+
+    auto result = audioActiveDevice.GetUidVolumeDevicesForEnhancedRouting(9999);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+ * @tc.name  : GetUidVolumeDevicesForEnhancedRouting_UidFound
+ * @tc.number: GetUidVolumeDevicesForEnhancedRouting_002
+ * @tc.desc  : Test if condition false branch, uid found in uidVolumeDeviceMap_ returns devices
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, GetUidVolumeDevicesForEnhancedRouting_UidFound, TestSize.Level1)
+{
+    AudioActiveDevice &audioActiveDevice = AudioActiveDevice::GetInstance();
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+    int32_t uid = 1000;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_USB_HEADSET, OUTPUT_DEVICE);
+    audioActiveDevice.uidVolumeDeviceMap_[uid] = {desc};
+
+    auto result = audioActiveDevice.GetUidVolumeDevicesForEnhancedRouting(uid);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0]->deviceType_, DeviceType::DEVICE_TYPE_USB_HEADSET);
+
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+}
 } // namespace AudioStandard
 } // namespace OHOS
