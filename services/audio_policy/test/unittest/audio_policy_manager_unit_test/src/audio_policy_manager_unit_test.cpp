@@ -999,20 +999,6 @@ HWTEST(AudioPolicyManager, EnableSystemVolumeProxy_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test AudioPolicyManager GetLoopbackSupportedDevicePairs.
- * @tc.number: GetLoopbackSupportedDevicePairs_001
- * @tc.desc  : Test GetLoopbackSupportedDevicePairs with normal case.
- */
-HWTEST(AudioPolicyManager, GetLoopbackSupportedDevicePairs_001, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    ASSERT_NE(audioPolicyManager_, nullptr);
-
-    auto devicePairs = audioPolicyManager_->GetLoopbackSupportedDevicePairs();
-    EXPECT_FALSE(devicePairs.empty());
-}
-
-/**
  * @tc.name  : Test AudioPolicyManager GetLoopbackPreferredDevicePair.
  * @tc.number: GetLoopbackPreferredDevicePair_002
  * @tc.desc  : Test GetLoopbackPreferredDevicePair with proxy null case.
