@@ -2717,7 +2717,7 @@ HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_NoPending_001, Te
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     capturerInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, 100, 4);
+        OHAudioBuffer::CreateFromLocal(100, 100, 4);
 
     CapturerAttrInfo attr;
     bool ret = capturerInClientInner->CheckCapturerAttrInfoFromSpan(attr);
@@ -2736,7 +2736,7 @@ HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_Valid_001, TestSi
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     capturerInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, 100, 4);
+        OHAudioBuffer::CreateFromLocal(100, 100, 4);
 
     uint32_t validSpanSize = 960;
     uint64_t engineSize = 1920;
@@ -2883,7 +2883,7 @@ HWTEST(CapturerInClientUnitTest, SyncCapturerAttrFromSpan_NoPending_001, TestSiz
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     capturerInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, 100, 4);
+        OHAudioBuffer::CreateFromLocal(100, 100, 4);
 
     bool ret = capturerInClientInner->SyncCapturerAttrFromSpan();
     EXPECT_FALSE(ret);
@@ -2919,7 +2919,7 @@ HWTEST(CapturerInClientUnitTest, JudgeFastStatusByCapturerAttr_Fast_001, TestSiz
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     capturerInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, 100, 4);
+        OHAudioBuffer::CreateFromLocal(100, 100, 4);
     capturerInClientInner->sizePerFrameInByte_ = 4;
 
     capturerInClientInner->clientBuffer_->SetPendingSpanSize(960, 1920, AUDIO_INPUT_FLAG_FAST);
@@ -2940,7 +2940,7 @@ HWTEST(CapturerInClientUnitTest, JudgeFastStatusByCapturerAttr_Normal_001, TestS
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     capturerInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, 100, 4);
+        OHAudioBuffer::CreateFromLocal(100, 100, 4);
 
     FastStatus status = capturerInClientInner->JudgeFastStatusByCapturerAttr();
     EXPECT_EQ(status, FASTSTATUS_NORMAL);
