@@ -38,7 +38,7 @@
 #include "hpae_mocks.h"
 #include "audio_utils.h"
 #include "hpae_session_effect_node.h"
-#include "i_effect_instance.h"
+#include "effect_instance.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -57,6 +57,18 @@ constexpr int32_t FRAME_LENGTH_960 = 960;
 
 // Helper functions
 std::string g_rootPath = "/data/";
+
+// Builds a real EffectInstance for tests. Init() without an injected library is a safe no-op
+// (FeedInput/ReadOutput/SetParameter/Flush/GetPreheatFrames all early-return 0 when there is no
+// effect handle), which is exactly what these manager-level SessionEffect tests need: they
+// verify manager/node wiring and lifecycle, not DSP. Mirrors MakeTestEffectInstance in
+// hpae_offload_se_test.cpp.
+static std::shared_ptr<EffectInstance> MakeTestEffectInstance(const AudioEffectConfig &config)
+{
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("audio_aiss_enhance", config);
+    return instance;
+}
 
 static HpaeSinkInfo GetDirectSinkInfo(const std::string &deviceClass = "primary_direct")
 {
@@ -83,13 +95,13 @@ static HpaeSinkInfo GetVoipDirectSinkInfo()
 static HpaeStreamInfo GetDefaultStreamInfo(uint32_t sessionId = TEST_SESSION_ID)
 {
     HpaeStreamInfo streamInfo;
-    streamInfo.sessionId = sessionId;
-    streamInfo.streamType = AudioStreamInfo::STREAM_TYPE_MUSIC;
     streamInfo.channels = STEREO;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_S32LE;
-    streamInfo.frameSize = FRAME_LENGTH_960;
-    streamInfo.uid = 1000;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = sessionId;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     return streamInfo;
 }
 
@@ -110,52 +122,6 @@ void WaitForMsgProcessing(std::shared_ptr<HpaeDirectRendererManager> &manager)
         EXPECT_LT(waitCount, waitCountThd);
     }
 }
-
-// Mock EffectInstance for testing
-class MockEffectInstance : public IEffectInstance {
-public:
-    MockEffectInstance() : initialized_(false) {}
-    virtual ~MockEffectInstance() = default;
-
-    int32_t Init(const std::string& effectName, const AudioEffectConfig& config) override
-    {
-        initialized_ = true;
-        effectName_ = effectName;
-        config_ = config;
-        return 0; // Always succeed
-    }
-
-    int32_t Release() override
-    {
-        initialized_ = false;
-        return 0;
-    }
-
-    int32_t Process(const std::shared_ptr<AudioBuffer>& input,
-                   std::shared_ptr<AudioBuffer>& output) override
-    {
-        return 0;
-    }
-
-    int32_t SetParameter(int32_t type, float value) override
-    {
-        return 0;
-    }
-
-    float GetParameter(int32_t type) override
-    {
-        return 0.0f;
-    }
-
-    bool IsInitialized() const { return initialized_; }
-    std::string GetEffectName() const { return effectName_; }
-
-private:
-    bool initialized_;
-    std::string effectName_;
-    AudioEffectConfig config_;
-};
-
 } // namespace
 
 // ==================== Test Fixture ====================
@@ -219,15 +185,14 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Create_001, TestSize.Lev
     WaitForMsgProcessing(manager_);
 
     // Test: Create SessionEffect
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
 
     int32_t ret = manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_);
 
     // Verify: Success and SE node created
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
 
     // Cleanup
@@ -238,29 +203,29 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Create_001, TestSize.Lev
 }
 
 /**
- * @tc.name    : CreateSessionEffect_Deferred_ChainNotReady
+ * @tc.name    : CreateSessionEffect_MaterializesWithoutStart
  * @tc.type    : FUNC
  * @tc.number  : SE_Create_002
- * @tc.desc    : Test CreateSessionEffect saves attach state when chain not ready
+ * @tc.desc    : Test CreateSessionEffect materializes immediately (chain built at CreateStream)
  */
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Create_002, TestSize.Level1)
 {
-    // Prepare: Create stream but NOT start (chain not ready)
+    // Prepare: Create stream but do NOT start it
     HpaeStreamInfo streamInfo = GetDefaultStreamInfo();
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    // Test: Create SessionEffect before chain is ready
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    // Test: Create SessionEffect. HpaeDirectRendererManager builds the processing chain during
+    // CreateStream, so the SE materializes immediately even before Start; attach state is set.
+    auto instance = MakeTestEffectInstance(defaultConfig_);
 
     int32_t ret = manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_);
 
-    // Verify: Should succeed with attach state saved, but physical node not created yet
+    // Verify: Succeeds, SE materialized immediately, attach state persisted on the node
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    EXPECT_EQ(manager_->sessionEffectNode_, nullptr); // Physical node not created
-    EXPECT_EQ(manager_->sessionEffectSessionId_, 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
 
     // Verify attach state is saved on SinkInputNode
     auto node = manager_->sinkInputNodeMap_[TEST_SESSION_ID];
@@ -285,19 +250,19 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Create_003, TestSize.Lev
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
 
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    // Direct builds the chain at CreateStream, so SE materializes immediately (before Start).
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    // Test: Start stream should materialize SE
+    // Test: Start stream should start the materialized SE
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
     // Verify: SE node is materialized
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
 
     // Cleanup
@@ -329,8 +294,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Create_004, TestSize.Lev
     WaitForMsgProcessing(manager_);
 
     // Test: Create SE for second stream (non-curNode)
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
 
     int32_t ret = manager_->CreateSessionEffect(TEST_SESSION_ID_2, "audio_aiss_enhance",
         instance, defaultConfig_);
@@ -368,15 +332,13 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Create_005, TestSize.Lev
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance1 = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance1->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance1 = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance1, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     // Test: Try to create SE again for same session
-    auto instance2 = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance2->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance2 = MakeTestEffectInstance(defaultConfig_);
 
     int32_t ret = manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance2, defaultConfig_);
@@ -412,8 +374,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Create_006, TestSize.Lev
     WaitForMsgProcessing(voipManager_);
 
     // Test: Try to create SE in VOIP mode
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
 
     int32_t ret = voipManager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_);
@@ -446,11 +407,10 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Destroy_001, TestSize.Le
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     // Test: Destroy SE
     int32_t ret = manager_->DestroySessionEffect(TEST_SESSION_ID);
@@ -480,8 +440,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Destroy_002, TestSize.Le
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
@@ -532,15 +491,14 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_PostCreate_001, TestSize
     WaitForMsgProcessing(manager_);
 
     // Test: PostCreateSessionEffect (async)
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
 
     manager_->PostCreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_);
     WaitForMsgProcessing(manager_);
 
     // Verify: SE node created
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
 
     // Cleanup
@@ -567,12 +525,11 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_PostDestroy_001, TestSiz
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     manager_->PostCreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_);
     WaitForMsgProcessing(manager_);
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     // Test: PostDestroySessionEffect (async)
     manager_->PostDestroySessionEffect(TEST_SESSION_ID);
@@ -604,8 +561,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SetParameter_001, TestSi
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
@@ -654,8 +610,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_PostSetParameter_001, Te
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
@@ -664,7 +619,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_PostSetParameter_001, Te
     WaitForMsgProcessing(manager_);
 
     // Verify: Success (no crash, parameter set)
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     // Cleanup
     manager_->Stop(TEST_SESSION_ID);
@@ -734,15 +689,14 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Insert_001, TestSize.Lev
     ASSERT_NE(manager_->loudnessGainNode_, nullptr);
 
     // Test: Call InsertSessionEffectNode
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
 
     manager_->sessionEffectSessionId_ = TEST_SESSION_ID; // Set before insert
     int32_t ret = manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_);
 
     // Verify: Success
     EXPECT_EQ(ret, 0);
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
 
     // Verify: SE is connected between loudnessGainNode_ and converterForGain_
@@ -764,24 +718,21 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Insert_001, TestSize.Lev
  */
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Insert_002, TestSize.Level1)
 {
-    // Prepare: Create stream but NOT start (chain not ready)
-    HpaeStreamInfo streamInfo = GetDefaultStreamInfo();
-    ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(manager_);
+    // Prepare: no stream created yet, so the processing chain (converterForGain_/
+    // loudnessGainNode_) does not exist. HpaeDirectRendererManager builds that chain inside
+    // CreateStream, so the only way to observe "chain not ready" is to not have a stream.
+    auto instance = MakeTestEffectInstance(defaultConfig_);
 
     // Test: Try to insert when chain not ready
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
-
     manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
     int32_t ret = manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_);
 
-    // Verify: Should return ERR_SESSION_NOT_FOUND
+    // Verify: Should return ERR_SESSION_NOT_FOUND and leave no physical node
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
 
-    // Cleanup
-    manager_->DestroyStream(TEST_SESSION_ID);
-    WaitForMsgProcessing(manager_);
+    // Cleanup: reset the manually-set sessionId (no stream/chain to tear down)
+    manager_->sessionEffectSessionId_ = 0;
 }
 
 /**
@@ -799,15 +750,13 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Insert_003, TestSize.Lev
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance1 = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance1->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance1 = MakeTestEffectInstance(defaultConfig_);
     manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
     ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance1, defaultConfig_), 0);
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     // Test: Try to insert again
-    auto instance2 = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance2->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance2 = MakeTestEffectInstance(defaultConfig_);
     int32_t ret = manager_->InsertSessionEffectNode("audio_aiss_enhance", instance2, defaultConfig_);
 
     // Verify: Should return ERR_SESSION_ALREADY_BOUND
@@ -836,11 +785,10 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_001, TestSize.Lev
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
     ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     // Test: Remove SE
     int32_t ret = manager_->RemoveSessionEffectNode();
@@ -893,38 +841,42 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_002, TestSize.Lev
  * @tc.name    : MaterializeSessionEffectFromAttachState_Success
  * @tc.type    : FUNC
  * @tc.number  : SE_Materialize_001
- * @tc.desc    : Test MaterializeSessionEffectFromAttachState creates SE from attach state
+ * @tc.desc    : Test MaterializeSessionEffectFromAttachState creates SE when a deferred
+ *               (non-curNode) session becomes the curNode via SetCurrentNode + Start
  */
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_001, TestSize.Level1)
 {
-    // Prepare: Create stream and deferred SE
-    HpaeStreamInfo streamInfo = GetDefaultStreamInfo();
-    ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
+    // Prepare: two streams. S1 becomes curNode_; S2 is non-curNode.
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo(TEST_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo(TEST_SESSION_ID_2)), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
-    ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
+    // Create SE for S2 (non-curNode) -> deferred: attach state saved, no physical node yet.
+    auto instance = MakeTestEffectInstance(defaultConfig_);
+    ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID_2, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
 
-    // Verify attach state exists
-    auto node = manager_->sinkInputNodeMap_[TEST_SESSION_ID];
-    ASSERT_NE(node, nullptr);
-    EXPECT_TRUE(node->HasSessionEffectAttachState());
+    auto node2 = manager_->sinkInputNodeMap_[TEST_SESSION_ID_2];
+    ASSERT_NE(node2, nullptr);
+    EXPECT_TRUE(node2->HasSessionEffectAttachState());
 
-    // Test: Materialize SE by starting stream
-    ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
+    // Test: destroy S1 so SetCurrentNode re-selects S2 as curNode_, then Start S2.
+    // ConnectInputSession -> MaterializeSessionEffectFromAttachState materializes S2's SE.
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+    ASSERT_EQ(manager_->Start(TEST_SESSION_ID_2), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    // Verify: SE node materialized
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
-    EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
+    // Verify: SE node materialized for S2
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID_2);
 
     // Cleanup
-    manager_->Stop(TEST_SESSION_ID);
+    manager_->Stop(TEST_SESSION_ID_2);
     WaitForMsgProcessing(manager_);
-    manager_->DestroyStream(TEST_SESSION_ID);
+    manager_->DestroyStream(TEST_SESSION_ID_2);
     WaitForMsgProcessing(manager_);
 }
 
@@ -947,8 +899,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_002, TestSiz
     WaitForMsgProcessing(voipManager_);
 
     // Create attach state (even though VOIP doesn't support SE, attach state can be saved)
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(voipManager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED));
 
@@ -973,40 +924,46 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_002, TestSiz
  * @tc.name    : MaterializeSessionEffectFromAttachState_InstanceExpired
  * @tc.type    : FUNC
  * @tc.number  : SE_Materialize_003
- * @tc.desc    : Test MaterializeSessionEffectFromAttachState clears attach state when instance expired
+ * @tc.desc    : Test MaterializeSessionEffectFromAttachState clears attach state when a deferred
+ *               (non-curNode) session's instance has expired by the time it becomes curNode
  */
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_003, TestSize.Level1)
 {
-    // Prepare: Create stream and deferred SE with weak instance
-    HpaeStreamInfo streamInfo = GetDefaultStreamInfo();
-    ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
+    // Prepare: two streams. S2 (non-curNode) gets a deferred SE bound to a scoped instance.
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo(TEST_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo(TEST_SESSION_ID_2)), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    // Create instance and let it expire (simulate by not keeping strong ref)
+    // Create SE for S2 (non-curNode) with an instance whose strong ref is released below.
     {
-        auto instance = std::make_shared<MockEffectInstance>();
-        ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
-        ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
+        auto instance = MakeTestEffectInstance(defaultConfig_);
+        ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID_2, "audio_aiss_enhance",
             instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+        EXPECT_EQ(manager_->sessionEffectNode_, nullptr); // deferred (non-curNode)
     }
-    // Instance expired here (weak_ref becomes invalid)
+    // instance destroyed here -> S2 attach state now holds an expired weak_ptr
 
-    // Test: Try to materialize with expired instance
-    ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
+    auto node2 = manager_->sinkInputNodeMap_[TEST_SESSION_ID_2];
+    ASSERT_NE(node2, nullptr);
+    ASSERT_TRUE(node2->HasSessionEffectAttachState());
+
+    // Test: make S2 the curNode_ and Start -> MaterializeSessionEffectFromAttachState detects
+    // the expired instance, clears the attach state and emits DISABLED (no physical node).
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+    ASSERT_EQ(manager_->Start(TEST_SESSION_ID_2), SUCCESS);
     WaitForMsgProcessing(manager_);
 
     // Verify: SE not materialized and attach state cleared
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0);
-
-    auto node = manager_->sinkInputNodeMap_[TEST_SESSION_ID];
-    ASSERT_NE(node, nullptr);
-    EXPECT_FALSE(node->HasSessionEffectAttachState());
+    EXPECT_FALSE(node2->HasSessionEffectAttachState());
 
     // Cleanup
-    manager_->Stop(TEST_SESSION_ID);
+    manager_->Stop(TEST_SESSION_ID_2);
     WaitForMsgProcessing(manager_);
-    manager_->DestroyStream(TEST_SESSION_ID);
+    manager_->DestroyStream(TEST_SESSION_ID_2);
     WaitForMsgProcessing(manager_);
 }
 
@@ -1025,8 +982,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_DetachReload_001, TestSi
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
@@ -1047,7 +1003,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_DetachReload_001, TestSi
     manager_->MaterializeSessionEffectFromAttachState(TEST_SESSION_ID);
 
     // Verify: SE re-materialized
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
 
     // Cleanup
@@ -1073,8 +1029,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_DetachReload_002, TestSi
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
@@ -1113,18 +1068,18 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Start_001, TestSize.Leve
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    // Direct builds the chain at CreateStream, so SE materializes immediately (before Start).
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    // Test: Start stream should materialize and start SE
+    // Test: Start stream should start the materialized SE
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
     // Verify: SE created and not paused
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_FALSE(manager_->sessionEffectNode_->IsPaused());
 
     // Cleanup
@@ -1149,8 +1104,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Pause_001, TestSize.Leve
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
@@ -1184,8 +1138,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Stop_001, TestSize.Level
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
@@ -1217,8 +1170,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Flush_001, TestSize.Leve
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
@@ -1254,8 +1206,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Drain_001, TestSize.Leve
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
@@ -1290,8 +1241,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Latency_001, TestSize.Le
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
@@ -1327,8 +1277,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_DeleteInput_001, TestSiz
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
@@ -1360,8 +1309,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_DeleteInput_002, TestSiz
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
@@ -1406,8 +1354,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_DestroyStream_001, TestS
     WaitForMsgProcessing(manager_);
 
     // Create SE for second stream (non-curNode)
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID_2, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
@@ -1442,8 +1389,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_MoveStream_001, TestSize
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
@@ -1482,8 +1428,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Reload_001, TestSize.Lev
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
@@ -1499,13 +1444,12 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Reload_001, TestSize.Lev
     ASSERT_EQ(manager_->ReloadRenderManager(newSinkInfo, true), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    // Verify: Physical SE node removed but attach state preserved
-    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
-    EXPECT_EQ(manager_->sessionEffectSessionId_, 0);
+    // Verify: attach state preserved across reload, and SE re-materialized in ConnectInputSession.
+    // DetachSessionEffectNodeForReload drops the physical node and ConnectInputSession rebuilds
+    // it synchronously inside the same ReloadRenderManager request, so only the final
+    // re-materialized state is observable here.
     EXPECT_TRUE(node->HasSessionEffectAttachState());
-
-    // Verify: SE re-materialized after reload (in ConnectInputSession)
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
 
     // Cleanup
@@ -1532,8 +1476,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Format_001, TestSize.Lev
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
@@ -1601,20 +1544,20 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_AttachState_001, TestSiz
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
     auto node = manager_->sinkInputNodeMap_[TEST_SESSION_ID];
     ASSERT_NE(node, nullptr);
     EXPECT_TRUE(node->HasSessionEffectAttachState());
-    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    // Direct builds the chain at CreateStream, so SE materializes immediately.
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    // Step 2: Start materializes SE
+    // Step 2: Start starts the materialized SE
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
 
     // Step 3: Stop pauses SE
@@ -1646,8 +1589,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_AttachState_002, TestSiz
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
@@ -1683,16 +1625,16 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Error_001, TestSize.Leve
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    // Test: Create SE without chain (should save attach state, not crash)
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    // Test: Create SE without Start. HpaeDirectRendererManager builds the chain at CreateStream,
+    // so the SE materializes immediately (no crash).
+    auto instance = MakeTestEffectInstance(defaultConfig_);
 
     int32_t ret = manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_);
 
-    // Verify: Should succeed with attach state saved
+    // Verify: Succeeds and materializes immediately
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     // Cleanup
     manager_->DestroyStream(TEST_SESSION_ID);
@@ -1708,8 +1650,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Error_001, TestSize.Leve
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Error_002, TestSize.Level1)
 {
     // Test: Create SE for invalid session
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
 
     int32_t ret = manager_->CreateSessionEffect(INVALID_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_);
@@ -1745,13 +1686,11 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Error_003, TestSize.Leve
     WaitForMsgProcessing(manager_);
 
     // Create SE for both streams (both deferred)
-    auto instance1 = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance1->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance1 = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance1, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
-    auto instance2 = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance2->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance2 = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID_2, "audio_aiss_enhance",
         instance2, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
@@ -1766,7 +1705,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Error_003, TestSize.Leve
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
 
     // Verify: Second stream's attach state still intact
@@ -1784,7 +1723,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Error_003, TestSize.Leve
     WaitForMsgProcessing(manager_);
 
     EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID_2);
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     // Cleanup
     manager_->Stop(TEST_SESSION_ID_2);
@@ -1818,13 +1757,12 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Edge_001, TestSize.Level
     ASSERT_EQ(manager_->Flush(TEST_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
     // Verify: SE created successfully even after Flush
-    EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
 
     // Cleanup
@@ -1849,8 +1787,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Edge_002, TestSize.Level
     ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(manager_);
 
-    auto instance = std::make_shared<MockEffectInstance>();
-    ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+    auto instance = MakeTestEffectInstance(defaultConfig_);
     ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
         instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
@@ -1890,12 +1827,11 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Edge_003, TestSize.Level
 
     // Test: Rapid Create/Destroy cycle
     for (int i = 0; i < 3; i++) {
-        auto instance = std::make_shared<MockEffectInstance>();
-        ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+        auto instance = MakeTestEffectInstance(defaultConfig_);
 
         ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
             instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-        EXPECT_NE(manager_->sessionEffectNode_, nullptr);
+        ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
         ASSERT_EQ(manager_->DestroySessionEffect(TEST_SESSION_ID), SUCCESS);
         EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
@@ -1933,8 +1869,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Stress_001, TestSize.Lev
 
     // Test: 100 Create/Destroy cycles
     for (int i = 0; i < 100; i++) {
-        auto instance = std::make_shared<MockEffectInstance>();
-        ASSERT_EQ(instance->Init("audio_aiss_enhance", defaultConfig_), 0);
+        auto instance = MakeTestEffectInstance(defaultConfig_);
 
         ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
             instance, defaultConfig_), static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
@@ -1954,7 +1889,3 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Stress_001, TestSize.Lev
     manager_->DestroyStream(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
 }
-
-} // namespace HPAE
-} // namespace AudioStandard
-} // namespace OHOS

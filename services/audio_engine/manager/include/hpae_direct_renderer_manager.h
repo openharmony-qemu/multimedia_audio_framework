@@ -38,7 +38,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-class HpaeDirectRendererManager : public IHpaeRendererManager {
+class HpaeDirectRendererManager : public IHpaeRendererManager, public INodeFormatInfoCallback {
 public:
     HpaeDirectRendererManager(HpaeSinkInfo& sinkInfo);
     virtual ~HpaeDirectRendererManager();

@@ -511,7 +511,6 @@ int32_t HpaeDirectRendererManager::Pause(uint32_t sessionId, bool isStandby)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Pause not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Pause sessionId %{public}u isStandby %{public}d", sessionId, isStandby);
-        auto state = curNode_ != nullptr ? curNode_->GetState() : HPAE_SESSION_NEW;
         bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         if (curNode_ != nullptr && sessionId == curNode_->GetSessionId()) {
             if (isSessionEffectActive) {
@@ -548,7 +547,7 @@ int32_t HpaeDirectRendererManager::Flush(uint32_t sessionId)
             converterForOutput_->FlushBuffers();
         }
 
-        sinkOutputNode_->FlushStream();
+        sinkOutputNode_->RenderSinkFlush();
         
         // flush SE
         if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
@@ -597,7 +596,6 @@ int32_t HpaeDirectRendererManager::Stop(uint32_t sessionId)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Stop not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Stop sessionId %{public}u", sessionId);
-        auto state = curNode_ != nullptr ? curNode_->GetState() : HPAE_SESSION_NEW;
         bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         if (curNode_ != nullptr && sessionId == curNode_->GetSessionId()) {
             if (isSessionEffectActive) {
@@ -1132,9 +1130,9 @@ void HpaeDirectRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &l
 
 int32_t HpaeDirectRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(loudnessGainNode_, ERROR,
+    CHECK_AND_RETURN_RET_LOG(loudnessGainNode_, ERROR,
         "sessionId %{public}d, loudnessGainNode does not exist", sessionId);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(loudnessGainNode_->GetSessionId() == sessionId, ERROR,
+    CHECK_AND_RETURN_RET_LOG(loudnessGainNode_->GetSessionId() == sessionId, ERROR,
         "loudness node sessionId does not match, sessionId %{public}u", sessionId);
 
     basicFormat.audioChannelInfo.channelLayout = (AudioChannelLayout)sinkInfo_.channelLayout;
