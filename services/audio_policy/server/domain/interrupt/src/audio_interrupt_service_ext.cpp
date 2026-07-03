@@ -538,9 +538,8 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
 
     bool exists = std::any_of(focusList.begin(), focusList.end(), [&](const MuteFocusInfo& info) {
         return info.currStreamId == currentInterrupt.streamId &&
-            info.incomingStreamId == incomingInterrupt.streamId;
+               info.incomingStreamId == incomingInterrupt.streamId;
     });
-
     if (!exists) {
         MuteFocusInfo muteFocusInfo;
         muteFocusInfo.currStreamId = currentInterrupt.streamId;
