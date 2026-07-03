@@ -24,6 +24,8 @@
 #include "audio_errors.h"
 #include "audio_schedule_guard.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B8B
 namespace OHOS {
 namespace AudioStandard {
 int32_t StreamListenerHolder::RegisterStreamListener(sptr<IIpcStreamListener> listener)

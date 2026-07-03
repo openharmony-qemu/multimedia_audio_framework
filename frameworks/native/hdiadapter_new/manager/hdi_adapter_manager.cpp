@@ -23,6 +23,8 @@
 #include "util/id_handler.h"
 #include "manager/hdi_adapter_factory.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B8B
 namespace OHOS {
 namespace AudioStandard {
 namespace {
