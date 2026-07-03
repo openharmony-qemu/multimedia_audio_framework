@@ -33,8 +33,8 @@ public:
 
     static OHAudioSuiteDownloadManager* GetInstance()
     {
-        static OHAudioSuiteDownloadManager OHAudioSuiteDownloadManager;
-        return &OHAudioSuiteDownloadManager;
+        static OHAudioSuiteDownloadManager ohAudioSuiteDownloadManager;
+        return &ohAudioSuiteDownloadManager;
     }
 
     int32_t StartDownload(const char *modelVersion);
