@@ -345,7 +345,7 @@ void AudioInterruptService::RemoveSuggestionRecord(const AudioInterrupt &audioIn
         RemovePidSuggestionRecord(audioInterrupt.pid);
     } else {
         RemoveStreamIdSuggestionRecord(audioInterrupt.streamId);
- 	}
+    }
 }
 
 bool AudioInterruptService::HasMuteSuggestionRecord(uint32_t currentpid)
