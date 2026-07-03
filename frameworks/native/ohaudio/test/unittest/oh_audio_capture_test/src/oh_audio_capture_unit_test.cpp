@@ -1912,7 +1912,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetSupportedNoiseReductionModes_
 /**
 * @tc.name  : Test OH_AudioCapturer_GetSupportedNoiseReductionModes API via invalid native mode.
 * @tc.number: OH_AudioCapturer_GetSupportedNoiseReductionModes_003
-* @tc.desc  : Test GetSupportedNoiseReductionModes returns service died if native mode is out of range.
+* @tc.desc  : Test GetSupportedNoiseReductionModes returns invalid param if native mode is out of range.
 */
 HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetSupportedNoiseReductionModes_003, TestSize.Level0)
 {
@@ -1923,7 +1923,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetSupportedNoiseReductionModes_
     uint32_t outModeArraySize = 0;
 
     EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, modes, 4, &outModeArraySize),
-        AUDIOSTREAM_ERROR_SERVICE_DIED);
+        AUDIOSTREAM_ERROR_INVALID_PARAM);
     EXPECT_EQ(modes[0], AUDIO_NOISE_REDUCTION_MODE_FIDELITY);
 }
 

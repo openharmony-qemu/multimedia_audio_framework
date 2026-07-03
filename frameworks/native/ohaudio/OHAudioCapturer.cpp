@@ -525,7 +525,7 @@ OH_AudioStream_Result OH_AudioCapturer_GetSupportedNoiseReductionModes(
     uint32_t actualSize = static_cast<uint32_t>(std::min<size_t>(nativeModes.size(), inModeArraySize));
     for (uint32_t i = 0; i < actualSize; ++i) {
         OH_AudioNoiseReductionMode ohMode = static_cast<OH_AudioNoiseReductionMode>(nativeModes[i]);
-        CHECK_AND_RETURN_RET_LOG(IsValidNoiseReductionMode(ohMode), AUDIOSTREAM_ERROR_SERVICE_DIED,
+        CHECK_AND_RETURN_RET_LOG(IsValidNoiseReductionMode(ohMode), AUDIOSTREAM_ERROR_INVALID_PARAM,
             "noiseReductionMode is invalid");
         noiseReductionModeArray[i] = ohMode;
     }
