@@ -52,7 +52,7 @@ public:
     virtual int32_t UnregisterDownloadCallback() = 0;
 };
 
-} // namespace AudioSuiteSa
+} // namespace AudioSuite
 } // namespace AudioStandard
 } // namespace OHOS
 

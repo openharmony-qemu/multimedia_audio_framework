@@ -96,6 +96,8 @@ AudioSuiteDownloadManager& AudioSuiteDownloadManager::GetInstance()
         g_managerInstance = std::make_unique<AudioSuiteDownloadManagerImpl>();
         if (g_managerInstance->Init() == SUCCESS) {
             g_managerInitialized = true;
+        } else {
+            AUDIO_ERR_LOG("AudioSuiteDownloadManager initialization failed.");
         }
     }
     return *g_managerInstance;

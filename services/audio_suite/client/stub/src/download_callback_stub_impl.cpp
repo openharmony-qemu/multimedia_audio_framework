@@ -58,6 +58,7 @@ ErrCode DownloadCallbackStubImpl::OnDownloadStatusChanged(const DownloadStatus& 
         downloadCallback_(status);
     } else {
         AUDIO_WARNING_LOG("OnDownloadStatusChanged: callback is null");
+        return ERR_INVALID_PARAM;
     }
     return SUCCESS;
 }

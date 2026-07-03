@@ -128,16 +128,6 @@ int32_t AudioSuiteClientPolicy::RegisterDownloadCallback(std::shared_ptr<IDownlo
         downloadCallbackStub_ = new DownloadCallbackStubImpl();
     }
 
-    if (downloadCallback_ != nullptr) {
-        downloadCallbackStub_->SetCallback([this](const DownloadStatus& status) {
-            if (downloadCallback_) {
-                downloadCallback_->OnDownloadStatusChanged(status);
-            }
-        });
-    } else {
-        downloadCallbackStub_->ClearCallback();
-    }
-
     ErrCode result = SUCCESS;
     proxy_->RegisterDownloadCallback(downloadCallbackStub_->AsObject(), result);
     AUDIO_INFO_LOG("RegisterDownloadCallback IPC result: %{public}d", result);
@@ -147,6 +137,15 @@ int32_t AudioSuiteClientPolicy::RegisterDownloadCallback(std::shared_ptr<IDownlo
         return result;
     }
 
+    if (downloadCallback_ != nullptr) {
+        downloadCallbackStub_->SetCallback([this](const DownloadStatus& status) {
+            if (downloadCallback_) {
+                downloadCallback_->OnDownloadStatusChanged(status);
+            }
+        });
+    } else {
+        downloadCallbackStub_->ClearCallback();
+    }
     return SUCCESS;
 }
 

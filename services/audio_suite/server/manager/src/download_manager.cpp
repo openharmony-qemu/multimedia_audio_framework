@@ -260,9 +260,10 @@ int32_t DownloadManager::GetFeatureStatusInfo(const sptr<IUpdateEngineCallback>&
     std::vector<FeatureInfo> featureInfos;
     featureInfos.emplace_back(FeatureInfo{.featureName = version, .info = EMPTY_STRING});
     StatusInfoResult statusInfoResult;
-
-    int32_t ret = proxy->GetFeatureStatus(featureInfos, statusInfoResult, ret);
-    if (ret != SUCCESS || statusInfoResult.errorInfo.errorNum != 0) {
+    int32_t ret = 0;
+    int32_t funcResult = 0;
+    ret = proxy->GetFeatureStatus(featureInfos, statusInfoResult, funcResult);
+    if (ret != SUCCESS || funcResult != SUCCESS || statusInfoResult.errorInfo.errorNum != 0) {
         AUDIO_ERR_LOG("GetDownloadStatus: GetFeatureStatus failed, ret=%{public}d, errorNum=%{public}d",
             ret, statusInfoResult.errorInfo.errorNum);
         AUDIO_ERR_LOG("errorMsg=%{public}s", statusInfoResult.errorInfo.message.c_str());
@@ -292,9 +293,10 @@ int32_t DownloadManager::GetFeatureNewVersionInfo(const sptr<IUpdateEngineCallba
     featureInfos.emplace_back(FeatureInfo{.featureName = version, .info = EMPTY_STRING});
     CloudRomCheckResult newVersionInfos;
     CheckCondition checkCondition = {CHECK_CONDITION_REGION, EMPTY_STRING};
-
-    int32_t ret = proxy->GetFeatureNewVersion(checkCondition, featureInfos, newVersionInfos, ret);
-    if (ret != SUCCESS || newVersionInfos.errorInfo.errorNum != 0) {
+    int32_t ret = 0;
+    int32_t funcResult = 0;
+    ret = proxy->GetFeatureNewVersion(checkCondition, featureInfos, newVersionInfos, funcResult);
+    if (ret != SUCCESS || funcResult != SUCCESS || newVersionInfos.errorInfo.errorNum != 0) {
         AUDIO_ERR_LOG("GetDownloadStatus: GetFeatureNewVersion failed, ret=%{public}d, errorNum=%{public}d",
             ret, newVersionInfos.errorInfo.errorNum);
         AUDIO_ERR_LOG("errorMsg=%{public}s", newVersionInfos.errorInfo.message.c_str());
@@ -370,7 +372,7 @@ int32_t DownloadManager::DoDownload()
     if (!DownloadAndInstall(currentVersion_)) {
         errorCode_ = ERR_AUDIO_SUITE_SA_DOWNLOAD_FAILED;
         errMessage_ = "Download and install failed";
-        UpdateDownloadStateInternal(DownloadState::DOWNLOAD_FAILED);
+        UpdateDownloadStateInternal(DownloadState::DOWNLOAD_FAILED, errorCode_);
         DownloadStatus status;
         status.state = DownloadState::DOWNLOAD_FAILED;
         status.progress = 0;
@@ -445,6 +447,14 @@ bool DownloadManager::IsDownloaded(const std::string &modelName, bool useCache)
 bool DownloadManager::DownloadAndInstall(const std::string &version)
 {
     if (IsDownloaded(version, false)) {
+        isDownloading_ = false;
+        downloadRetryCount_ = 0;
+        UpdateDownloadStateInternal(DownloadState::DOWNLOAD_COMPLETED);
+        DownloadStatus status;
+        status.state = DownloadState::DOWNLOAD_COMPLETED;
+        status.progress = DOWNLOAD_COMPLETE;
+        status.version = currentVersion_;
+        NotifyDownloadStatusChanged(status);
         return true;
     }
 
@@ -502,6 +512,7 @@ void DownloadManager::ProcessCloudRomStatus(const StatusInfo &info)
 {
     switch (info.status) {
         case CloudRomStatus::INSTALL_SUCCESS:
+        case CloudRomStatus::DOWNLOAD_SUCCESS:
             HandleInstallSuccess(info);
             break;
         case CloudRomStatus::DOWNLOAD_FAIL:
@@ -570,7 +581,8 @@ void DownloadManager::NotifyDownloadFailedAfterRetry()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     downloadRetryCount_ = 0;
-    UpdateDownloadStateInternal(DownloadState::DOWNLOAD_FAILED);
+    errorCode_ = ERR_AUDIO_SUITE_SA_DOWNLOAD_FAILED;
+    UpdateDownloadStateInternal(DownloadState::DOWNLOAD_FAILED, errorCode_);
 
     DownloadStatus status;
     status.version = currentVersion_;
@@ -670,9 +682,10 @@ bool DownloadManager::RegisterCloudRomDownloadCallback()
         AUDIO_ERR_LOG("Failed to cast updateEngineCallback to IUpdateEngineCallback");
         return false;
     }
-
-    int32_t ret = updateEngineCallbackProxy->RegisterCloudRomCallback(cloudRomDownloadCallback_->AsObject(), ret);
-    if (ret != 0) {
+    int32_t ret = 0;
+    int32_t funcResult = 0;
+    ret = updateEngineCallbackProxy->RegisterCloudRomCallback(cloudRomDownloadCallback_->AsObject(), funcResult);
+    if (ret != 0 || funcResult != 0) {
         AUDIO_ERR_LOG("RegisterCloudRomCallback failed, ret=%{public}d", ret);
         return false;
     }
@@ -720,9 +733,10 @@ bool DownloadManager::GetRemoteInfoFromProxy(const sptr<IUpdateEngineCallback>& 
     featureInfos.emplace_back(FeatureInfo{.featureName = version, .info = EMPTY_STRING});
     CloudRomCheckResult newVersionInfos;
     CheckCondition checkCondition = {CHECK_CONDITION_REGION, EMPTY_STRING};
-
-    int32_t ret = proxy->GetFeatureNewVersion(checkCondition, featureInfos, newVersionInfos, ret);
-    if (ret != SUCCESS || newVersionInfos.errorInfo.errorNum != 0) {
+    int32_t ret = 0;
+    int32_t funcResult = 0;
+    ret = proxy->GetFeatureNewVersion(checkCondition, featureInfos, newVersionInfos, funcResult);
+    if (ret != SUCCESS || funcResult != SUCCESS || newVersionInfos.errorInfo.errorNum != 0) {
         AUDIO_ERR_LOG("GetFeatureNewVersion %{public}s failed, errorNum: %{public}d",
                       version.c_str(), newVersionInfos.errorInfo.errorNum);
         AUDIO_ERR_LOG("errorMsg: %{public}s", newVersionInfos.errorInfo.message.c_str());
@@ -761,9 +775,10 @@ bool DownloadManager::IsDownloadedViaCallback(const std::string &modelName, bool
     std::vector<FeatureInfo> featureInfos;
     featureInfos.emplace_back(FeatureInfo{.featureName = modelName, .info = EMPTY_STRING});
     StatusInfoResult statusInfoResult;
-
-    int32_t ret = proxy->GetFeatureStatus(featureInfos, statusInfoResult, ret);
-    if (ret != SUCCESS || statusInfoResult.errorInfo.errorNum != 0) {
+    int32_t ret = 0;
+    int32_t funcResult = 0;
+    ret = proxy->GetFeatureStatus(featureInfos, statusInfoResult, funcResult);
+    if (ret != SUCCESS || funcResult != SUCCESS || statusInfoResult.errorInfo.errorNum != 0) {
         AUDIO_ERR_LOG("GetFeatureStatus failed, ret=%{public}d, errorNum=%{public}d, errorMsg=%{public}s",
             ret, statusInfoResult.errorInfo.errorNum, statusInfoResult.errorInfo.message.c_str());
         return false;
@@ -804,9 +819,10 @@ bool DownloadManager::DownloadAndInstallViaCallback(const std::string &version)
     featureInfos.emplace_back(FeatureInfo{.featureName = version, .info = EMPTY_STRING});
     BusinessError businessError;
     DownloadCondition downloadCondition = {CLOUD_ROM_NETTYPE, EMPTY_STRING, isBackgroundDownload_.load()};
-
-    int32_t ret = proxy->DownloadAndInstall(downloadCondition, featureInfos, businessError, ret);
-    if (businessError.errorNum != 0) {
+    int32_t ret = 0;
+    int32_t funcResult = 0;
+    ret = proxy->DownloadAndInstall(downloadCondition, featureInfos, businessError, funcResult);
+    if (businessError.errorNum != 0 || ret != 0 || funcResult != 0) {
         AUDIO_ERR_LOG("%{public}s failed, errorNum: %{public}d errorMsg: %{public}s", version.c_str(),
                       businessError.errorNum, businessError.message.c_str());
         isDownloading_ = false;
@@ -839,9 +855,10 @@ int32_t DownloadManager::PauseDownloadCloudRomViaCallback(const std::string &ver
     featureInfos.emplace_back(FeatureInfo{.featureName = version, .info = EMPTY_STRING});
     BusinessError businessError;
     PauseCondition pauseCondition = {EMPTY_STRING, false, EMPTY_STRING};
-
-    int32_t pauseRet = proxy->PauseDownloadCloudRom(pauseCondition, featureInfos, businessError, pauseRet);
-    if (pauseRet != SUCCESS || businessError.errorNum != 0) {
+    int32_t pauseRet = 0;
+    int32_t funcResult = 0;
+    pauseRet = proxy->PauseDownloadCloudRom(pauseCondition, featureInfos, businessError, funcResult);
+    if (pauseRet != SUCCESS || funcResult != SUCCESS || businessError.errorNum != 0) {
         AUDIO_ERR_LOG("PauseDownloadCloudRom failed, ret=%{public}d, errorNum=%{public}d, errorMsg=%{public}s",
             pauseRet, businessError.errorNum, businessError.message.c_str());
         return ERR_OPERATION_FAILED;
@@ -872,9 +889,10 @@ int32_t DownloadManager::UninstallCloudRomViaCallback(const std::string& version
     std::vector<FeatureInfo> featureInfos;
     featureInfos.emplace_back(FeatureInfo{.featureName = version, .info = EMPTY_STRING});
     BusinessError businessError;
-
-    int32_t ret = proxy->UninstallCloudRom(featureInfos, businessError, ret);
-    if (ret != SUCCESS || businessError.errorNum != 0) {
+    int32_t ret = 0;
+    int32_t funcResult = 0;
+    ret = proxy->UninstallCloudRom(featureInfos, businessError, funcResult);
+    if (ret != SUCCESS || funcResult != SUCCESS || businessError.errorNum != 0) {
         AUDIO_ERR_LOG("UninstallCloudRom failed, ret=%{public}d, errorNum=%{public}d, errorMsg=%{public}s",
             ret, businessError.errorNum, businessError.message.c_str());
         return ERR_INVALID_PARAM;

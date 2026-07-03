@@ -15,15 +15,15 @@
 #ifndef AUDIO_SUITE_CLIENT_POLICY_H
 #define AUDIO_SUITE_CLIENT_POLICY_H
 
+#include <memory>
+#include <mutex>
+#include <string>
+#include <functional>
 #include "audio_suite_sa_types.h"
 #include "download_callback_stub_impl.h"
 #include "iaudio_suite_sa_service.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
-#include <memory>
-#include <mutex>
-#include <string>
-#include <functional>
 
 namespace OHOS {
 namespace AudioStandard {
