@@ -56,8 +56,11 @@ void AudioSuiteRomDownloadService::OnStart()
     downloadManager_ = std::make_shared<DownloadManager>();
     if (downloadManager_) {
         downloadManager_->Init();
-        downloadManager_->RegisterDownloadCallback(
+        int32_t ret = downloadManager_->RegisterDownloadCallback(
             [this](const DownloadStatus &status) { NotifyDownloadStatusChanged(status); });
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("RegisterDownloadCallback failed, ret=%{public}d", ret);
+        }
     }
 
     bool res = Publish(this);

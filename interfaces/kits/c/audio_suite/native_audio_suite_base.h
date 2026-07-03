@@ -316,54 +316,6 @@ typedef enum {
      * @since 22
      */
     AUDIOSUITE_ERROR_MEMORY_ALLOC_FAILED = 13,
-    /**
-     * @error IPC communication failed.
-     *
-     * @since 26
-     */
-    AUDIOSUITE_ERROR_IPC_FAILED = 14,
-    /**
-     * @error Unsupported operation or feature.
-     *
-     * @since 26
-     */
-    AUDIOSUITE_ERROR_UNSUPPORTED = 15,
-    /**
-     * @error Pipeline is busy and cannot accept new operations.
-     *
-     * @since 26
-     */
-    AUDIOSUITE_ERROR_PIPELINE_BUSY = 16,
-    /**
-     * @error Service is not ready.
-     *
-     * @since 26
-     */
-    AUDIOSUITE_ERROR_NOT_READY = 17,
-    /**
-     * @error Download operation failed.
-     *
-     * @since 26
-     */
-    AUDIOSUITE_ERROR_DOWNLOAD_FAILED = 18,
-    /**
-     * @error Required condition is not met.
-     *
-     * @since 26
-     */
-    AUDIOSUITE_ERROR_CONDITION_NOT_MET = 19,
-    /**
-     * @error Frequent crash detected.
-     *
-     * @since 26
-     */
-    AUDIOSUITE_ERROR_FREQUENT_CRASH = 20,
-    /**
-     * @error Callback is not registered.
-     *
-     * @since 26
-     */
-    AUDIOSUITE_ERROR_CALLBACK_NOT_REGISTERED = 21,
 } OH_AudioSuite_Result;
 /**
  * @brief Define the audio sample format.

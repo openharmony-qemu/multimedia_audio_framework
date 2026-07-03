@@ -119,10 +119,14 @@ int32_t DownloadManager::StartDownload(const std::string& version)
     // 更新状态为等待中
     UpdateDownloadState(DownloadState::DOWNLOAD_WAITING);
 
-    DoDownload();
+    int32_t ret = DoDownload();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("StartDownload: DoDownload failed, ret=%{public}d", ret);
+        return ret;
+    }
 
     AUDIO_INFO_LOG("StartDownload success");
-    return 0;
+    return SUCCESS;
 }
 
 int32_t DownloadManager::CancelDownload()
@@ -143,13 +147,17 @@ int32_t DownloadManager::CancelDownload()
     versionToCancel = currentVersion_;
 
     if (needCancel) {
-        PauseDownloadCloudRomViaCallback(versionToCancel);
+        int32_t ret = PauseDownloadCloudRomViaCallback(versionToCancel);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("CancelDownload: PauseDownloadCloudRomViaCallback failed, ret=%{public}d", ret);
+            return ret;
+        }
     }
 
     UpdateDownloadState(DownloadState::DOWNLOAD_CANCELLED);
 
     AUDIO_INFO_LOG("CancelDownload success");
-    return 0;
+    return SUCCESS;
 }
 
 int32_t DownloadManager::StartBackgroundDownload(const std::string& version)
@@ -180,10 +188,14 @@ int32_t DownloadManager::StartBackgroundDownload(const std::string& version)
     // 更新状态为等待中
     UpdateDownloadState(DownloadState::DOWNLOAD_WAITING);
 
-    DoDownload();
+    int32_t ret = DoDownload();
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("StartBackgroundDownload: DoDownload failed, ret=%{public}d", ret);
+        return ret;
+    }
 
     AUDIO_INFO_LOG("StartBackgroundDownload success");
-    return 0;
+    return SUCCESS;
 }
 
 int32_t DownloadManager::GetDownloadStatus(DownloadStatus& status, const std::string& version)
@@ -199,7 +211,7 @@ int32_t DownloadManager::GetDownloadStatus(DownloadStatus& status, const std::st
 
     auto proxy = GetUpdateEngineCallbackProxy();
     if (proxy == nullptr) {
-        return ERR_AUDIO_SUITE_SA_CALLBACK_NOT_REGISTERED;
+        return ERR_CALLBACK_NOT_REGISTERED;
     }
 
     StatusInfo statusInfo;
@@ -254,12 +266,12 @@ int32_t DownloadManager::GetFeatureStatusInfo(const sptr<IUpdateEngineCallback>&
         AUDIO_ERR_LOG("GetDownloadStatus: GetFeatureStatus failed, ret=%{public}d, errorNum=%{public}d",
             ret, statusInfoResult.errorInfo.errorNum);
         AUDIO_ERR_LOG("errorMsg=%{public}s", statusInfoResult.errorInfo.message.c_str());
-        return ERR_AUDIO_SUITE_SA_CALLBACK_NOT_REGISTERED;
+        return ERR_CALLBACK_NOT_REGISTERED;
     }
 
     if (statusInfoResult.statusInfos.empty()) {
         AUDIO_ERR_LOG("GetDownloadStatus: GetFeatureStatus returned empty statusInfos");
-        return ERR_AUDIO_SUITE_SA_CALLBACK_NOT_REGISTERED;
+        return ERR_CALLBACK_NOT_REGISTERED;
     }
 
     const auto& info = statusInfoResult.statusInfos[0];
@@ -286,12 +298,12 @@ int32_t DownloadManager::GetFeatureNewVersionInfo(const sptr<IUpdateEngineCallba
         AUDIO_ERR_LOG("GetDownloadStatus: GetFeatureNewVersion failed, ret=%{public}d, errorNum=%{public}d",
             ret, newVersionInfos.errorInfo.errorNum);
         AUDIO_ERR_LOG("errorMsg=%{public}s", newVersionInfos.errorInfo.message.c_str());
-        return ERR_AUDIO_SUITE_SA_CALLBACK_NOT_REGISTERED;
+        return ERR_CALLBACK_NOT_REGISTERED;
     }
 
     if (newVersionInfos.newVersionInfos.empty()) {
         AUDIO_ERR_LOG("GetDownloadStatus: GetFeatureNewVersion returned empty newVersionInfos");
-        return ERR_AUDIO_SUITE_SA_CALLBACK_NOT_REGISTERED;
+        return ERR_CALLBACK_NOT_REGISTERED;
     }
 
     const auto& info = newVersionInfos.newVersionInfos[0];
@@ -333,13 +345,20 @@ void DownloadManager::FillDownloadStatus(DownloadStatus& status, const std::stri
     }
 }
 
-void DownloadManager::RegisterDownloadCallback(std::function<void(const DownloadStatus &)> callback)
+int32_t DownloadManager::RegisterDownloadCallback(std::function<void(const DownloadStatus &)> callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("RegisterDownloadCallback: callback is null");
+        return ERR_INVALID_PARAM;
+    }
+    
     downloadCallback_ = callback;
+    return SUCCESS;
 }
 
-void DownloadManager::DoDownload()
+int32_t DownloadManager::DoDownload()
 {
     AUDIO_INFO_LOG("DoDownload started");
 
@@ -360,10 +379,11 @@ void DownloadManager::DoDownload()
         status.errorCode = errorCode_;
         status.errMessage = errMessage_;
         NotifyDownloadStatusChanged(status);
-        return;
+        return ERR_AUDIO_SUITE_SA_DOWNLOAD_FAILED;
     }
     // 注意：下载完成/失败通过 OnCloudRomCallback 回调异步处理
     AUDIO_INFO_LOG("DoDownload initiated successfully");
+    return SUCCESS;
 }
 
 void DownloadManager::UpdateDownloadStateInternal(DownloadState state, int32_t errorCode)
@@ -441,7 +461,7 @@ int32_t DownloadManager::UninstallCloudRom(const std::string& version)
     // 等待回调注册，超时 1 秒
     if (!WaitForCallbackRegistration(CALLBACK_REGISTER_TIMEOUT_MS)) {
         AUDIO_ERR_LOG("UpdateEngine callback not registered within timeout");
-        return ERR_AUDIO_SUITE_SA_CALLBACK_NOT_REGISTERED;
+        return ERR_CALLBACK_NOT_REGISTERED;
     }
 
     return UninstallCloudRomViaCallback(version);
@@ -796,7 +816,7 @@ bool DownloadManager::DownloadAndInstallViaCallback(const std::string &version)
 }
 
 // 新增：通过回调取消下载
-void DownloadManager::PauseDownloadCloudRomViaCallback(const std::string &version)
+int32_t DownloadManager::PauseDownloadCloudRomViaCallback(const std::string &version)
 {
     sptr<IRemoteObject> callbackCopy;
     {
@@ -806,13 +826,13 @@ void DownloadManager::PauseDownloadCloudRomViaCallback(const std::string &versio
 
     if (callbackCopy == nullptr) {
         AUDIO_ERR_LOG("UpdateEngine callback is null");
-        return;
+        return ERR_CALLBACK_NOT_REGISTERED;
     }
 
     auto proxy = iface_cast<IUpdateEngineCallback>(callbackCopy);
     if (proxy == nullptr) {
         AUDIO_ERR_LOG("Failed to cast IUpdateEngineCallback");
-        return;
+        return ERR_CALLBACK_NOT_REGISTERED;
     }
 
     std::vector<FeatureInfo> featureInfos;
@@ -821,6 +841,12 @@ void DownloadManager::PauseDownloadCloudRomViaCallback(const std::string &versio
     PauseCondition pauseCondition = {EMPTY_STRING, false, EMPTY_STRING};
 
     int32_t pauseRet = proxy->PauseDownloadCloudRom(pauseCondition, featureInfos, businessError, pauseRet);
+    if (pauseRet != SUCCESS || businessError.errorNum != 0) {
+        AUDIO_ERR_LOG("PauseDownloadCloudRom failed, ret=%{public}d, errorNum=%{public}d, errorMsg=%{public}s",
+            pauseRet, businessError.errorNum, businessError.message.c_str());
+        return ERR_OPERATION_FAILED;
+    }
+    return SUCCESS;
 }
 
 // 新增：通过回调卸载云 ROM

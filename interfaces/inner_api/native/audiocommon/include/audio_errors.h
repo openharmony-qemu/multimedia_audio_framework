@@ -296,44 +296,8 @@ const int32_t ERR_SAVE_HRTF_TIMEOUT = BASE_AUDIO_ERR_OFFSET - 76;
 /** Fail to save HRTF on disk. */
 const int32_t ERR_SAVE_HRTF_FAIL = BASE_AUDIO_ERR_OFFSET - 77;
 
-/** Audio Suite SA not ready */
-const int32_t ERR_AUDIO_SUITE_SA_NOT_READY = BASE_AUDIO_ERR_OFFSET - 79;
- 
 /** Audio Suite SA download failed */
-const int32_t ERR_AUDIO_SUITE_SA_DOWNLOAD_FAILED = BASE_AUDIO_ERR_OFFSET - 80;
- 
-/** Audio Suite SA param invalid */
-const int32_t ERR_AUDIO_SUITE_SA_PARAM_INVALID = BASE_AUDIO_ERR_OFFSET - 81;
- 
-/** Audio Suite SA process failed */
-const int32_t ERR_AUDIO_SUITE_SA_PROCESS_FAILED = BASE_AUDIO_ERR_OFFSET - 82;
- 
-/** Audio Suite SA condition not met (background download) */
-const int32_t ERR_AUDIO_SUITE_SA_CONDITION_NOT_MET = BASE_AUDIO_ERR_OFFSET - 83;
- 
-/** Audio Suite SA download in progress */
-const int32_t ERR_AUDIO_SUITE_SA_DOWNLOAD_IN_PROGRESS = BASE_AUDIO_ERR_OFFSET - 84;
- 
-/** Audio Suite SA download cancelled */
-const int32_t ERR_AUDIO_SUITE_SA_DOWNLOAD_CANCELLED = BASE_AUDIO_ERR_OFFSET - 85;
- 
-/** Audio Suite SA HDI error */
-const int32_t ERR_AUDIO_SUITE_SA_HDI_ERROR = BASE_AUDIO_ERR_OFFSET - 86;
- 
-/** Audio Suite SA pipeline busy (max count reached) */
-const int32_t ERR_AUDIO_SUITE_SA_PIPELINE_BUSY = BASE_AUDIO_ERR_OFFSET - 87;
- 
-/** Audio Suite SA crash recovery failed */
-const int32_t ERR_AUDIO_SUITE_SA_CRASH_RECOVERY_FAILED = BASE_AUDIO_ERR_OFFSET - 88;
- 
-/** Audio Suite SA frequent crash, service unavailable */
-const int32_t ERR_AUDIO_SUITE_SA_FREQUENT_CRASH = BASE_AUDIO_ERR_OFFSET - 89;
- 
-/** Audio Suite SA pipeline not exist */
-const int32_t ERR_AUDIO_SUITE_SA_PIPELINE_NOT_EXIST = BASE_AUDIO_ERR_OFFSET - 90;
- 
-/** Audio Suite SA callback not registered */
-const int32_t ERR_AUDIO_SUITE_SA_CALLBACK_NOT_REGISTERED = BASE_AUDIO_ERR_OFFSET - 91;
+const int32_t ERR_AUDIO_SUITE_SA_DOWNLOAD_FAILED = BASE_AUDIO_ERR_OFFSET - 79;
 
 /** Ipc related error */
 const int32_t ERR_IPC = BASE_AUDIO_ERR_OFFSET - 100;

@@ -72,7 +72,7 @@ public:
 
     void OnDownloadStatusChanged(const DownloadStatus& status) override
     {
-        statusInfo_.cloudRomStatus = ConvertDownloadStateToCloudRomStatus(status.state);
+        statusInfo_.downloadStatus = ConvertDownloadStateToCloudRomStatus(status.state);
         statusInfo_.progress = status.progress;
         statusInfo_.errorCode = status.errorCode;
 

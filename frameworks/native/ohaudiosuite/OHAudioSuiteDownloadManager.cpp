@@ -26,54 +26,28 @@
 #include "OHAudioSuiteDownloadManager.h"
 #include "audio_suite_download_manager.h"
 #include "native_audio_suite_base.h"
+#include "native_audio_common.h"
 
 using OHOS::AudioStandard::OHAudioSuiteDownloadManager;
             
-static OH_AudioSuite_Result ConvertToSaResult(int32_t internalError)
+static OH_AudioCommon_Result ConvertToSaResult(int32_t internalError)
 {
     using namespace OHOS::AudioStandard;
 
     if (internalError == SUCCESS) {
-        return AUDIOSUITE_SUCCESS;
+        return AUDIOCOMMON_RESULT_SUCCESS;
     }
     if (internalError == ERR_INVALID_PARAM) {
-        return AUDIOSUITE_ERROR_INVALID_PARAM;
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
     if (internalError == ERR_ILLEGAL_STATE || internalError == ERR_NOT_STARTED) {
-        return AUDIOSUITE_ERROR_INVALID_STATE;
+        return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
-    if (internalError == ERR_IPC) {
-        return AUDIOSUITE_ERROR_IPC_FAILED;
-    }
-    if (internalError == ERR_AUDIO_SUITE_SA_PIPELINE_NOT_EXIST) {
-        return AUDIOSUITE_ERROR_PIPELINE_NOT_EXIST;
-    }
-    if (internalError == ERR_MEMORY_ALLOC_FAILED) {
-        return AUDIOSUITE_ERROR_MEMORY_ALLOC_FAILED;
-    }
-    if (internalError == ERR_NOT_SUPPORTED || internalError == ERR_DEVICE_NOT_SUPPORTED) {
-        return AUDIOSUITE_ERROR_UNSUPPORTED;
-    }
-    if (internalError == ERR_AUDIO_SUITE_SA_PIPELINE_BUSY) {
-        return AUDIOSUITE_ERROR_PIPELINE_BUSY;
-    }
-    if (internalError == ERR_AUDIO_SUITE_SA_NOT_READY) {
-        return AUDIOSUITE_ERROR_NOT_READY;
-    }
-    if (internalError == ERR_AUDIO_SUITE_SA_DOWNLOAD_FAILED) {
-        return AUDIOSUITE_ERROR_DOWNLOAD_FAILED;
-    }
-    if (internalError == ERR_AUDIO_SUITE_SA_CONDITION_NOT_MET) {
-        return AUDIOSUITE_ERROR_CONDITION_NOT_MET;
-    }
-    if (internalError == ERR_AUDIO_SUITE_SA_FREQUENT_CRASH) {
-        return AUDIOSUITE_ERROR_FREQUENT_CRASH;
-    }
-    if (internalError == ERR_OPERATION_FAILED || internalError == ERR_AUDIO_SUITE_SA_PROCESS_FAILED) {
-        return AUDIOSUITE_ERROR_SYSTEM;
+    if (internalError == ERR_OPERATION_FAILED || internalError == ERR_IPC) {
+        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
 
-    return AUDIOSUITE_ERROR_SYSTEM;
+    return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
 }
 
 static OHOS::AudioStandard::OHAudioSuiteDownloadManager *ConvertAudioSuitDownloadManager(
@@ -96,8 +70,8 @@ int32_t OH_AudioSuite_GetDownloadManager(OH_AudioSuiteDownloadManager **download
 int32_t OH_AudioSuite_RegisterDownloadCallback(
     OH_AudioSuiteDownloadManager* downloadManager, const OH_AudioSuite_DownloadCallback* callback)
 {
-    if (downloadManager == nullptr) {
-        AUDIO_ERR_LOG("OH_AudioSuite_RegisterDownloadCallback: manager is null");
+    if (downloadManager == nullptr || callback == nullptr) {
+        AUDIO_ERR_LOG("OH_AudioSuite_RegisterDownloadCallback: manager or callback is null");
         return AUDIOSUITE_ERROR_INVALID_PARAM;
     }
 
@@ -265,28 +239,28 @@ int32_t OHAudioSuiteDownloadManager::GetDownloadStatus(
             status->featureName[0] = '\0';
         }
 
-        // Map DownloadState to cloudRomStatus
+        // Map DownloadState to downloadStatus
         switch (internalStatus.state) {
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_IDLE:
-                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_INIT;
+                status->downloadStatus = AudioSuite::CLOUD_ROM_STATUS_INIT;
                 break;
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_WAITING:
-                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_INIT;
+                status->downloadStatus = AudioSuite::CLOUD_ROM_STATUS_INIT;
                 break;
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_IN_PROGRESS:
-                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_DOWNLOADING;
+                status->downloadStatus = AudioSuite::CLOUD_ROM_STATUS_DOWNLOADING;
                 break;
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_COMPLETED:
-                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_DOWNLOAD_SUCCESS;
+                status->downloadStatus = AudioSuite::CLOUD_ROM_STATUS_DOWNLOAD_SUCCESS;
                 break;
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_FAILED:
-                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_DOWNLOAD_FAIL;
+                status->downloadStatus = AudioSuite::CLOUD_ROM_STATUS_DOWNLOAD_FAIL;
                 break;
             case OHOS::AudioStandard::AudioSuite::DownloadState::DOWNLOAD_CANCELLED:
-                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_INIT;
+                status->downloadStatus = AudioSuite::CLOUD_ROM_STATUS_INIT;
                 break;
             default:
-                status->cloudRomStatus = AudioSuite::CLOUD_ROM_STATUS_ERROR;
+                status->downloadStatus = AudioSuite::CLOUD_ROM_STATUS_ERROR;
                 break;
         }
 

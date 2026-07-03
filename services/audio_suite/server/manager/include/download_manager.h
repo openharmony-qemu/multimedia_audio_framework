@@ -63,7 +63,7 @@ public:
     int32_t GetDownloadStatus(DownloadStatus& status, const std::string& version);
 
     // 注册下载状态变化回调
-    void RegisterDownloadCallback(std::function<void(const DownloadStatus &)> callback);
+    int32_t RegisterDownloadCallback(std::function<void(const DownloadStatus &)> callback);
 
     int32_t UninstallCloudRom(const std::string& version);
 
@@ -81,7 +81,7 @@ public:
 
 private:
     // 执行下载
-    void DoDownload();
+    int32_t DoDownload();
 
     // 更新下载状态
     void UpdateDownloadState(DownloadState state, int32_t errorCode = 0);
@@ -116,7 +116,7 @@ private:
     bool DownloadAndInstallViaCallback(const std::string &version);
 
     // 新增：通过回调取消下载
-    void PauseDownloadCloudRomViaCallback(const std::string &version);
+    int32_t PauseDownloadCloudRomViaCallback(const std::string &version);
 
     // 新增：通过回调卸载云 ROM
     int32_t UninstallCloudRomViaCallback(const std::string& version);

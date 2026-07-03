@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /**
- * @addtogroup OHAudioSuite
+ * @addtogroup AudioSuite
  * @{
  *
  * @brief Provide the definition of the C interface for the audio download manager module.
@@ -23,11 +23,9 @@
  */
 /**
  * @file native_audio_suite_download_manager.h
- *
  * @brief Declare audio download manager related interfaces.
- *
- * @library libohaudiosuite.so
  * @syscap SystemCapability.Multimedia.Audio.SuiteEngine
+ * @library libohaudiosuite.so
  * @kit AudioKit
  * @since 26.0.0
  * @version 1.0
@@ -56,7 +54,7 @@ typedef struct OH_AudioSuite_DownloadStatusInfo {
      *
      * @since 26.0.0
      */
-    int32_t cloudRomStatus;
+    int32_t downloadStatus;
     /**
      * @brief feature size.
      *
@@ -124,9 +122,9 @@ typedef void (*OH_AudioSuite_DownloadCallback)(OH_AudioSuite_DownloadStatusInfoA
  * @systemapi
  * @param downloadManager Pointer to receive the download manager handle.
  * @return <ul>
- *         <li>{@link AUDIOSUITE_SUCCESS} If the execution is successful.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
  *         <li>202 if a non-system application calls this system API.</li>
- *         <li>{@link AUDIOSUITE_ERROR_INVALID_PARAM} If downloadManager is nullptr.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager is nullptr.</li>
  *         </ul>
  * @since 26.0.0
  */
@@ -138,12 +136,10 @@ int32_t OH_AudioSuite_GetDownloadManager(OH_AudioSuiteDownloadManager **download
  * @param downloadManager Download manager handle.
  * @param callback Callback function to receive download status updates.
  * @return <ul>
- *         <li>{@link AUDIOSUITE_SUCCESS} If the execution is successful.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
  *         <li>202 if a non-system application calls this system API.</li>
- *         <li>{@link AUDIOSUITE_ERROR_INVALID_PARAM} If downloadManager or callback is nullptr.</li>
- *         <li>{@link AUDIOSUITE_ERROR_IPC_FAILED} If IPC communication fails.</li>
- *         <li>{@link AUDIOSUITE_ERROR_NOT_READY} If the service is not ready.</li>
- *         <li>{@link AUDIOSUITE_ERROR_SYSTEM} If other system errors occur.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager or callback is nullptr.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SYSTEM} If IPC communication fails or the operation fails.</li>
  *         </ul>
  * @since 26.0.0
  */
@@ -156,12 +152,10 @@ int32_t OH_AudioSuite_RegisterDownloadCallback(
  * @param downloadManager Download manager handle.
  * @param callback Callback function to unregister.
  * @return <ul>
- *         <li>{@link AUDIOSUITE_SUCCESS} If the execution is successful.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
  *         <li>202 if a non-system application calls this system API.</li>
- *         <li>{@link AUDIOSUITE_ERROR_INVALID_PARAM} If downloadManager or callback is nullptr.</li>
- *         <li>{@link AUDIOSUITE_ERROR_IPC_FAILED} If IPC communication fails.</li>
- *         <li>{@link AUDIOSUITE_ERROR_NOT_READY} If the service is not ready.</li>
- *         <li>{@link AUDIOSUITE_ERROR_SYSTEM} If other system errors occur.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager or callback is nullptr.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SYSTEM} If IPC communication fails or the operation fails.</li>
  *         </ul>
  * @since 26.0.0
  */
@@ -174,13 +168,10 @@ int32_t OH_AudioSuite_UnregisterDownloadCallback(
  * @param downloadManager Download manager handle.
  * @param featureName Name of the feature to download.
  * @return <ul>
- *         <li>{@link AUDIOSUITE_SUCCESS} If the execution is successful.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
  *         <li>202 if a non-system application calls this system API.</li>
- *         <li>{@link AUDIOSUITE_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
- *         <li>{@link AUDIOSUITE_ERROR_IPC_FAILED} If IPC communication fails.</li>
- *         <li>{@link AUDIOSUITE_ERROR_NOT_READY} If the service is not ready.</li>
- *         <li>{@link AUDIOSUITE_ERROR_DOWNLOAD_FAILED} If the download fails.</li>
- *         <li>{@link AUDIOSUITE_ERROR_SYSTEM} If other system errors occur.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SYSTEM} If IPC communication fails or the operation fails.</li>
  *         </ul>
  * @since 26.0.0
  */
@@ -193,13 +184,11 @@ int32_t OH_AudioSuite_StartDownload(
  * @param downloadManager Download manager handle.
  * @param featureName Name of the feature to cancel.
  * @return <ul>
- *         <li>{@link AUDIOSUITE_SUCCESS} If the execution is successful.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
  *         <li>202 if a non-system application calls this system API.</li>
- *         <li>{@link AUDIOSUITE_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
- *         <li>{@link AUDIOSUITE_ERROR_IPC_FAILED} If IPC communication fails.</li>
- *         <li>{@link AUDIOSUITE_ERROR_NOT_READY} If the service is not ready.</li>
- *         <li>{@link AUDIOSUITE_ERROR_INVALID_STATE} If the current state does not allow cancellation.</li>
- *         <li>{@link AUDIOSUITE_ERROR_SYSTEM} If other system errors occur.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SYSTEM} If IPC communication fails or the operation fails.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} If the current state does not allow cancellation.</li>
  *         </ul>
  * @since 26.0.0
  */
@@ -212,14 +201,10 @@ int32_t OH_AudioSuite_CancelDownload(
  * @param downloadManager Download manager handle.
  * @param featureName Name of the feature to download.
  * @return <ul>
- *         <li>{@link AUDIOSUITE_SUCCESS} If the execution is successful.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
  *         <li>202 if a non-system application calls this system API.</li>
- *         <li>{@link AUDIOSUITE_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
- *         <li>{@link AUDIOSUITE_ERROR_IPC_FAILED} If IPC communication fails.</li>
- *         <li>{@link AUDIOSUITE_ERROR_NOT_READY} If the service is not ready.</li>
- *         <li>{@link AUDIOSUITE_ERROR_DOWNLOAD_FAILED} If the download fails.</li>
- *         <li>{@link AUDIOSUITE_ERROR_CONDITION_NOT_MET} If background download conditions are not met.</li>
- *         <li>{@link AUDIOSUITE_ERROR_SYSTEM} If other system errors occur.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SYSTEM} If IPC communication fails or the operation fails.</li>
  *         </ul>
  * @since 26.0.0
  */
@@ -233,13 +218,10 @@ int32_t OH_AudioSuite_StartBackgroundDownload(
  * @param featureName Name of the feature.
  * @param status Pointer to receive download status information.
  * @return <ul>
- *         <li>{@link AUDIOSUITE_SUCCESS} If the execution is successful.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
  *         <li>202 if a non-system application calls this system API.</li>
- *         <li>{@link AUDIOSUITE_ERROR_INVALID_PARAM} If downloadManager, featureName or status is nullptr.</li>
- *         <li>{@link AUDIOSUITE_ERROR_IPC_FAILED} If IPC communication fails.</li>
- *         <li>{@link AUDIOSUITE_ERROR_NOT_READY} If the service is not ready.</li>
- *         <li>{@link AUDIOSUITE_ERROR_CALLBACK_NOT_REGISTERED} If the callback is not registered.</li>
- *         <li>{@link AUDIOSUITE_ERROR_SYSTEM} If other system errors occur.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager, featureName or status is nullptr.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SYSTEM} If IPC communication fails or the operation fails.</li>
  *         </ul>
  * @since 26.0.0
  */
@@ -253,13 +235,10 @@ int32_t OH_AudioSuite_GetDownloadStatus(
  * @param downloadManager Download manager handle.
  * @param featureName Name of the feature to uninstall.
  * @return <ul>
- *         <li>{@link AUDIOSUITE_SUCCESS} If the execution is successful.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
  *         <li>202 if a non-system application calls this system API.</li>
- *         <li>{@link AUDIOSUITE_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
- *         <li>{@link AUDIOSUITE_ERROR_IPC_FAILED} If IPC communication fails.</li>
- *         <li>{@link AUDIOSUITE_ERROR_NOT_READY} If the service is not ready.</li>
- *         <li>{@link AUDIOSUITE_ERROR_CALLBACK_NOT_REGISTERED} If the callback is not registered.</li>
- *         <li>{@link AUDIOSUITE_ERROR_SYSTEM} If other system errors occur.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SYSTEM} If IPC communication fails or the operation fails.</li>
  *         </ul>
  * @since 26.0.0
  */
