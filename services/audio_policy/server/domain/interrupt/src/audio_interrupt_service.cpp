@@ -3011,12 +3011,9 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         AUDIO_DEBUG_LOG("stream (streamId %{public}u) is not active now", audioInterrupt.streamId);
         return;
     }
-    if (audioInterrupt.isAudioSessionInterrupt) {
-        RemovePidSuggestionRecord(audioInterrupt.pid);
-    } else {
-        RemoveStreamIdSuggestionRecord(audioInterrupt.streamId);
-    }
+    RemoveSuggestionRecord(audioInterrupt);
     DeactivateAudioInterruptInternalContinue(zoneId, isSessionTimeout);
+    RemoveMuteCheckRecord(audioInterrupt);
     return;
 }
 
