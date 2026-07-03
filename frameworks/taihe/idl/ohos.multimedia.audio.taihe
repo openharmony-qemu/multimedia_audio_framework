@@ -1115,6 +1115,11 @@ enum AudioDataCallbackResult: i32 {
   VALID = 0,
 }
 
+struct AudioRendererWriteDataCallbackResult {
+  result: AudioDataCallbackResult;
+  data: @arraybuffer Array<u8>;
+}
+
 enum RenderTarget: i32 {
   PLAYBACK = 0,
   INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
@@ -1248,7 +1253,8 @@ interface AudioRenderer {
   OnStateChange(callback: (data: AudioState) => void): void;
   OnOutputDeviceChange(callback: (data: Array<AudioDeviceDescriptor>) => void): void;
   OnOutputDeviceChangeWithInfo(callback: (data: AudioStreamDeviceChangeInfo) => void): void;
-  OnWriteData(callback: (data: @arraybuffer Array<u8>) => AudioDataCallbackResult): void;
+  @rename("onWriteDataInner")
+  OnWriteDataInner(callback: (length: i32) => AudioRendererWriteDataCallbackResult): void;
   OnPeriodReach(frame: i64, callback: (data: i64) => void): void;
   OnMarkReach(frame: i64, callback: (data: i64) => void): void;
 
@@ -1258,7 +1264,44 @@ interface AudioRenderer {
   OffOutputDeviceChangeWithInfo(callback: Optional<(data: AudioStreamDeviceChangeInfo) => void>): void;
   OffPeriodReach(callback: Optional<(data: i64) => void>): void;
   OffMarkReach(callback: Optional<(data: i64) => void>): void;
-  OffWriteData(callback: Optional<(data: @arraybuffer Array<u8>) => AudioDataCallbackResult>): void;
+  @rename("offWriteDataInner")
+  OffWriteDataInner(callback: Optional<(length: i32) => AudioRendererWriteDataCallbackResult>): void;
+
+  @!sts_inject_into_interface("""
+  onWriteData(callback: (data: ArrayBuffer) => AudioDataCallbackResult): void;
+
+  offWriteData(callback?: (data: ArrayBuffer) => AudioDataCallbackResult): void;
+  """)
+  @!sts_inject_into_class("""
+  private writeDataCallback: ((data: ArrayBuffer) => AudioDataCallbackResult) | undefined = undefined;
+  private writeDataInnerCallback: ((length: int) => AudioRendererWriteDataCallbackResult) | undefined = undefined;
+
+  onWriteData(callback: (data: ArrayBuffer) => AudioDataCallbackResult): void {
+      let innerCallback = (length: int): AudioRendererWriteDataCallbackResult => {
+          let data: ArrayBuffer = new ArrayBuffer(length);
+          let result: AudioDataCallbackResult = callback(data);
+          return { result: result, data: data };
+      };
+      this.writeDataCallback = callback;
+      this.writeDataInnerCallback = innerCallback;
+      this.onWriteDataInner(innerCallback);
+  }
+
+  offWriteData(callback?: (data: ArrayBuffer) => AudioDataCallbackResult): void {
+      if (callback == undefined) {
+          this.offWriteDataInner(undefined);
+          this.writeDataCallback = undefined;
+          this.writeDataInnerCallback = undefined;
+          return;
+      }
+      if (this.writeDataCallback != callback || this.writeDataInnerCallback == undefined) {
+          return;
+      }
+      this.offWriteDataInner(this.writeDataInnerCallback);
+      this.writeDataCallback = undefined;
+      this.writeDataInnerCallback = undefined;
+  }
+  """)
 }
 
 enum AudioEffectMode: i32 {

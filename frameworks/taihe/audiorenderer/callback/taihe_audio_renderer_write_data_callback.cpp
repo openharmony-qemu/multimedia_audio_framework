@@ -17,10 +17,13 @@
 #endif
 
 #include "taihe_audio_renderer_write_data_callback.h"
+#include <algorithm>
+#include <limits>
+#include <optional>
+#include "audio_errors.h"
 #include "audio_renderer_log.h"
 #include "taihe_audio_enum.h"
 #include "taihe_param_utils.h"
-#include <optional>
 
 namespace ANI::Audio {
 static const int32_t WRITE_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
@@ -163,30 +166,45 @@ void TaiheRendererWriteDataCallback::CheckWriteDataCallbackResult(OHOS::AudioSta
     }
 }
 
+void TaiheRendererWriteDataCallback::CopyWriteDataCallbackBuffer(OHOS::AudioStandard::BufferDesc &bufDesc,
+    const taihe::array<uint8_t> &data)
+{
+    CHECK_AND_RETURN_LOG(bufDesc.buffer != nullptr, "bufDesc buffer is nullptr");
+    size_t writeLength = std::min(data.size(), bufDesc.bufLength);
+    std::copy_n(data.begin(), writeLength, bufDesc.buffer);
+    bufDesc.dataLength = writeLength;
+}
+
 void TaiheRendererWriteDataCallback::SafeJsCallbackWriteDataWork(RendererWriteDataJsCallback &event)
 {
-    std::optional<AudioDataCallbackResult> callbackResult = CallWriteDataCallback(event);
+    std::optional<AudioRendererWriteDataCallbackResult> callbackResult = CallWriteDataCallback(event);
     CHECK_AND_RETURN_LOG(event.rendererTaiheObj != nullptr, "TaiheAudioRenderer object is nullptr");
     std::lock_guard<std::mutex> writeCallbackLock(event.rendererTaiheObj->writeCallbackMutex_);
     if (callbackResult.has_value()) {
-        CheckWriteDataCallbackResult(event.bufDesc, callbackResult.value());
+        CheckWriteDataCallbackResult(event.bufDesc, callbackResult->result);
+        if (event.bufDesc.dataLength > 0) {
+            CopyWriteDataCallbackBuffer(event.bufDesc, callbackResult->data);
+        }
+    } else {
+        event.bufDesc.dataLength = 0;
     }
     event.enqueued = true;
     event.rendererTaiheObj->writeCallbackCv_.notify_all();
 }
 
-std::optional<AudioDataCallbackResult> TaiheRendererWriteDataCallback::CallWriteDataCallback(
+std::optional<AudioRendererWriteDataCallbackResult> TaiheRendererWriteDataCallback::CallWriteDataCallback(
     RendererWriteDataJsCallback &event)
 {
     std::string request = event.callbackName;
     CHECK_AND_RETURN_RET_LOG(event.callback != nullptr, std::nullopt, "event is nullptr.");
-    std::shared_ptr<taihe::callback<AudioDataCallbackResult(array_view<uint8_t>)>> cacheCallback =
-        std::reinterpret_pointer_cast<taihe::callback<AudioDataCallbackResult(array_view<uint8_t>)>>(
+    std::shared_ptr<taihe::callback<AudioRendererWriteDataCallbackResult(int32_t)>> cacheCallback =
+        std::reinterpret_pointer_cast<taihe::callback<AudioRendererWriteDataCallbackResult(int32_t)>>(
             event.callback->cb_);
     CHECK_AND_RETURN_RET_LOG(cacheCallback != nullptr, std::nullopt, "%{public}s get reference value fail",
         request.c_str());
-    array_view<uint8_t> bufferView(event.bufDesc.buffer, event.bufDesc.dataLength);
-    AudioDataCallbackResult result = (*cacheCallback)(bufferView);
+    CHECK_AND_RETURN_RET_LOG(event.bufDesc.bufLength <= static_cast<size_t>(std::numeric_limits<int32_t>::max()),
+        std::nullopt, "bufLength is too large");
+    AudioRendererWriteDataCallbackResult result = (*cacheCallback)(static_cast<int32_t>(event.bufDesc.bufLength));
     return result;
 }
 } // namespace ANI::Audio

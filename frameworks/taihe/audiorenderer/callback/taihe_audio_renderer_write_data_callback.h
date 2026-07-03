@@ -45,10 +45,14 @@ private:
     };
 
     static void SafeJsCallbackWriteDataWork(RendererWriteDataJsCallback &event);
-    static std::optional<AudioDataCallbackResult> CallWriteDataCallback(RendererWriteDataJsCallback &event);
+    static std::optional<AudioRendererWriteDataCallbackResult> CallWriteDataCallback(
+        RendererWriteDataJsCallback &event);
+    static void CopyWriteDataCallbackBuffer(OHOS::AudioStandard::BufferDesc &bufDesc,
+        const taihe::array<uint8_t> &data);
     void OnJsRendererWriteDataCallback(const std::shared_ptr<RendererWriteDataJsCallback> &jsCb);
     bool WaitForWriteDataCallbackComplete(const std::shared_ptr<RendererWriteDataJsCallback> &jsCb);
-    static void CheckWriteDataCallbackResult(OHOS::AudioStandard::BufferDesc &bufDesc, AudioDataCallbackResult result);
+    static void CheckWriteDataCallbackResult(OHOS::AudioStandard::BufferDesc &bufDesc,
+        AudioDataCallbackResult result);
 
     std::mutex mutex_;
     std::shared_ptr<AutoRef> rendererWriteDataCallback_ = nullptr;

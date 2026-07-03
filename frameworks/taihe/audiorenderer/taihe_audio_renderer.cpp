@@ -1131,7 +1131,7 @@ void AudioRendererImpl::OnMarkReach(int64_t frame, callback_view<void(int64_t)> 
     RegisterPositionCallback(frame, cacheCallback, MARK_REACH_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OnWriteData(callback_view<AudioDataCallbackResult(array_view<uint8_t>)> callback)
+void AudioRendererImpl::OnWriteDataInner(callback_view<AudioRendererWriteDataCallbackResult(int32_t)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterRendererWriteDataCallback(cacheCallback, WRITE_DATA_CALLBACK_NAME, this);
@@ -1192,7 +1192,8 @@ void AudioRendererImpl::OffMarkReach(optional_view<callback<void(int64_t)>> call
     UnregisterPositionCallback(cacheCallback, MARK_REACH_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OffWriteData(optional_view<callback<AudioDataCallbackResult(array_view<uint8_t>)>> callback)
+void AudioRendererImpl::OffWriteDataInner(
+    optional_view<callback<AudioRendererWriteDataCallbackResult(int32_t)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {

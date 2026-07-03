@@ -97,7 +97,7 @@ public:
     void OnMarkReach(int64_t frame, callback_view<void(int64_t)> callback);
     void OnOutputDeviceChange(callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
     void OnOutputDeviceChangeWithInfo(callback_view<void(AudioStreamDeviceChangeInfo const&)> callback);
-    void OnWriteData(callback_view<AudioDataCallbackResult(array_view<uint8_t>)> callback);
+    void OnWriteDataInner(callback_view<AudioRendererWriteDataCallbackResult(int32_t)> callback);
 
     void OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback);
     void OffStateChange(optional_view<callback<void(AudioState)>> callback);
@@ -105,7 +105,7 @@ public:
     void OffOutputDeviceChangeWithInfo(optional_view<callback<void(AudioStreamDeviceChangeInfo const&)>> callback);
     void OffPeriodReach(optional_view<callback<void(int64_t)>> callback);
     void OffMarkReach(optional_view<callback<void(int64_t)>> callback);
-    void OffWriteData(optional_view<callback<AudioDataCallbackResult(array_view<uint8_t>)>> callback);
+    void OffWriteDataInner(optional_view<callback<AudioRendererWriteDataCallbackResult(int32_t)>> callback);
 
     void DestroyCallbacks();
     void DestroyTaiheCallbacks();
