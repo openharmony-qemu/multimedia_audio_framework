@@ -411,6 +411,7 @@ private:
     void PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId);
     void RemoveStreamIdSuggestionRecord(int32_t streamId);
     void RemovePidSuggestionRecord(int32_t pid);
+    void RemoveSuggestionRecord(const AudioInterrupt &audioInterrupt);
     bool HasMuteSuggestionRecord(uint32_t streamId);
     void SendUnMuteSuggestionInterruptEvent(uint32_t streamId);
     void DelayRemoveMuteSuggestionRecord(uint32_t streamId);
