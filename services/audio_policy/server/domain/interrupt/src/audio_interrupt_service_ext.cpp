@@ -339,6 +339,15 @@ void AudioInterruptService::RemovePidSuggestionRecord(int32_t pid)
     }
 }
 
+void AudioInterruptService::RemoveSuggestionRecord(const AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.isAudioSessionInterrupt) {
+        RemovePidSuggestionRecord(audioInterrupt.pid);
+    } else {
+        RemoveStreamIdSuggestionRecord(audioInterrupt.streamId);
+ 	}
+}
+
 bool AudioInterruptService::HasMuteSuggestionRecord(uint32_t currentpid)
 {
     auto pidRecord = suggestionPidRecords_.find(currentpid);
