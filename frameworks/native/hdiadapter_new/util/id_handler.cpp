@@ -145,6 +145,8 @@ uint32_t IdHandler::GetIdForSolePipeSource(SourceType sourceType, uint32_t route
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE);
     } else if (routeFlag == AUDIO_INPUT_FLAG_CAMCORDER) {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_CAMCORDER);
+    } else if (routeFlag == AUDIO_INPUT_FLAG_VOICE_MESSAGE) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_MESSAGE);
     }
     return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
 }

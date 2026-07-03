@@ -244,6 +244,9 @@ std::optional<std::string> HdiAdapterManager::GetAudioParameterByKey(HdiDeviceMa
         return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::MMI,
             key.substr(strlen(MMI_PREFIX), key.size() - strlen(MMI_PREFIX)));
     }
+    if (key == "record_denoise_mode" || key == "record_denoise_mode_support") {
+        return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::NONE, key);
+    }
     return std::nullopt;
 }
 

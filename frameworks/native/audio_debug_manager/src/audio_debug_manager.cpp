@@ -344,7 +344,7 @@ const std::map<AudioSessionState, std::string> AUDIO_SESSION_STATE_MAP = {
     {AudioSessionState::SESSION_DEACTIVE, "SESSION_DEACTIVE"},
     {AudioSessionState::SESSION_RELEASED, "SESSION_RELEASED"},
 };
- 	 
+
 const std::map<AudioConcurrencyMode, std::string> AUDIO_CONCURRENCY_MODE_MAP = {
     {AudioConcurrencyMode::INVALID, "INVALID"},
     {AudioConcurrencyMode::DEFAULT, "DEFAULT"},
@@ -449,6 +449,7 @@ const RouteFlagEntry ROUTE_FLAG_ENTRIES[] = {
     {AUDIO_INPUT_FLAG_INTERPHONE, "INPUT_FLAG_INTERPHONE"},
     {AUDIO_INPUT_FLAG_LIVE, "INPUT_FLAG_LIVE"},
     {AUDIO_INPUT_FLAG_CAMCORDER, "INPUT_FLAG_CAMCORDER"},
+    {AUDIO_INPUT_FLAG_VOICE_MESSAGE, "INPUT_FLAG_VOICE_MESSAGE"},
 };
 
 std::string AudioRouteFlagToString(uint32_t routeFlag)

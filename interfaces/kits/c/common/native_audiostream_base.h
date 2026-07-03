@@ -88,7 +88,21 @@ typedef enum {
      *
      * @since 19
      */
-    AUDIOSTREAM_ERROR_UNSUPPORTED_FORMAT = 4
+    AUDIOSTREAM_ERROR_UNSUPPORTED_FORMAT = 4,
+
+    /**
+     * @error Unsupported audio stream ability, including function and configuration.
+     *
+     * @since 26.0.0
+     */
+    AUDIOSTREAM_ERROR_UNSUPPORTED_ABILITY = 6800104,
+
+    /**
+     * @error Audio server process died.
+     *
+     * @since 26.0.0
+     */
+    AUDIOSTREAM_ERROR_SERVICE_DIED = 6800302
 } OH_AudioStream_Result;
 
 /**

@@ -129,7 +129,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_VOICE_RECOGNITION_MIC),
     std::string(PRIMARY_RAW_AI_MIC),
     std::string(PRIMARY_INTERPHON_MIC),
-    std::string(PRIMARY_CAMCORDER)
+    std::string(PRIMARY_CAMCORDER),
+    std::string(PRIMARY_VOICE_MESSAGE_MIC)
 };
 
 std::string AudioCoreService::GetEncryptAddr(const std::string &addr)

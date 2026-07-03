@@ -35,6 +35,7 @@ constexpr uint32_t TEST_SAMPLE_RATE_48000 = 48000;
 constexpr uint32_t TEST_CHANNEL_STEREO = 2;
 constexpr uint32_t TEST_CHANNEL_LAYOUT_4POINT0 = CH_LAYOUT_4POINT0;
 constexpr uint32_t TEST_UNIQUE_ID_INTERVAL = 8;
+constexpr uint32_t TEST_AUDIO_INPUT_VOICE_MESSAGE_TYPE = 1u << 18;
 constexpr size_t TEST_DEFAULT_SIZE = 8;
 constexpr float TEST_VOLUME_FULL = 1.0f;
 } // namespace
@@ -148,6 +149,10 @@ HWTEST_F(AudioCaptureSourceAiut, AudioCaptureSource_MappingAudioInputType_001, T
     AIUT_EXPECT_EQ_INFO_LOG(result, AUDIO_INPUT_VOICE_TRANSCRIPTION,
         "expected AUDIO_INPUT_VOICE_TRANSCRIPTION, got %d", static_cast<int32_t>(result));
 
+    result = source->MappingAudioInputType("AUDIO_INPUT_VOICE_MESSAGE_TYPE");
+    AIUT_EXPECT_EQ_INFO_LOG(result, static_cast<AudioInputType>(TEST_AUDIO_INPUT_VOICE_MESSAGE_TYPE),
+        "expected AUDIO_INPUT_VOICE_MESSAGE_TYPE, got %d", static_cast<int32_t>(result));
+
     result = source->MappingAudioInputType("AUDIO_INPUT_INVALID");
     AIUT_EXPECT_EQ_INFO_LOG(result, AUDIO_INPUT_MIC_TYPE,
         "expected AUDIO_INPUT_MIC_TYPE for invalid, got %d", static_cast<int32_t>(result));
@@ -170,6 +175,10 @@ HWTEST_F(AudioCaptureSourceAiut, AudioCaptureSource_ConvertToHDIAudioInputType_0
     AudioInputType result = source->ConvertToHDIAudioInputType(1, hdiSourceType);
     AIUT_EXPECT_EQ_INFO_LOG(result, AUDIO_INPUT_VOICE_TRANSCRIPTION,
         "expected AUDIO_INPUT_VOICE_TRANSCRIPTION, got %d", static_cast<int32_t>(result));
+
+    result = source->ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_MESSAGE, "AUDIO_INPUT_DEFAULT_TYPE");
+    AIUT_EXPECT_EQ_INFO_LOG(result, static_cast<AudioInputType>(TEST_AUDIO_INPUT_VOICE_MESSAGE_TYPE),
+        "expected VOICE_MESSAGE input type, got %d", static_cast<int32_t>(result));
 }
 
 // ==================== GetUniqueIdBySourceType Tests ====================
@@ -426,6 +435,24 @@ HWTEST_F(AudioCaptureSourceAiut, AudioCaptureSource_GetUniqueIdBySourceType_014,
         "expected CAMCORDER offset id, got %u", id);
 }
 
+/**
+ * @tc.name  : Test GetUniqueIdBySourceType for SOURCE_TYPE_VOICE_MESSAGE
+ * @tc.number: AudioCaptureSource_GetUniqueIdBySourceType_015
+ * @tc.desc  : Test GetUniqueIdBySourceType returns correct ID for SOURCE_TYPE_VOICE_MESSAGE.
+ */
+HWTEST_F(AudioCaptureSourceAiut, AudioCaptureSource_GetUniqueIdBySourceType_015, TestSize.Level0)
+{
+    AIUT_INFO_LOG("entry");
+    auto source = std::make_shared<AudioCaptureSource>(TEST_CAPTURE_ID);
+    AIUT_ASSERT_NE_INFO_LOG(source, nullptr, "source is null");
+    source->attr_.sourceType = SOURCE_TYPE_VOICE_MESSAGE;
+    source->attr_.hdiSourceType = "AUDIO_INPUT_VOICE_MESSAGE_TYPE";
+    uint32_t id = source->GetUniqueIdBySourceType();
+    AIUT_EXPECT_EQ_INFO_LOG(id,
+        AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_VOICE_MESSAGE * TEST_UNIQUE_ID_INTERVAL,
+        "expected VOICE_MESSAGE offset id, got %u", id);
+}
+
 // ==================== GetMultiDeviceUniqueId Tests ====================
 
 /**
@@ -516,7 +543,7 @@ HWTEST_F(AudioCaptureSourceAiut, AudioCaptureSource_ConvertToAudioInputRouteFlag
     AIUT_EXPECT_EQ_INFO_LOG(source->ConvertToAudioInputRouteFlag(SOURCE_TYPE_LIVE),
         AUDIO_INPUT_FLAG_LIVE, "LIVE should be LIVE flag");
     AIUT_EXPECT_EQ_INFO_LOG(source->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_MESSAGE),
-        AUDIO_INPUT_FLAG_NORMAL, "VOICE_MESSAGE should be NORMAL flag");
+        AUDIO_INPUT_FLAG_VOICE_MESSAGE, "VOICE_MESSAGE should be VOICE_MESSAGE flag");
     AIUT_EXPECT_EQ_INFO_LOG(source->ConvertToAudioInputRouteFlag(SOURCE_TYPE_ULTRASONIC),
         AUDIO_INPUT_FLAG_ULTRASONIC, "ULTRASONIC should be ULTRASONIC flag");
     AIUT_EXPECT_EQ_INFO_LOG(source->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_RECOGNITION),

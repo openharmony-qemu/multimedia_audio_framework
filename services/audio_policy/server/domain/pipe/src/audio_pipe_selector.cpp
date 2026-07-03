@@ -1201,6 +1201,8 @@ AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
         return PIPE_TYPE_IN_INTERPHONE;
     } else if (flag & AUDIO_INPUT_FLAG_CAMCORDER) {
         return PIPE_TYPE_IN_CAMCORDER;
+    } else if (flag & AUDIO_INPUT_FLAG_VOICE_MESSAGE) {
+        return PIPE_TYPE_IN_NORMAL_VOICE_MESSAGE;
     } else {
         return PIPE_TYPE_IN_NORMAL;
     }

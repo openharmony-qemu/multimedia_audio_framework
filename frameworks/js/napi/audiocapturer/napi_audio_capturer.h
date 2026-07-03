@@ -109,6 +109,9 @@ private:
     static napi_value GetOverflowCountSync(napi_env env, napi_callback_info info);
     static napi_value SetWillMuteWhenInterrupted(napi_env env, napi_callback_info info);
     static napi_value SetMuteHint(napi_env env, napi_callback_info info);
+    static napi_value SetNoiseReductionMode(napi_env env, napi_callback_info info);
+    static napi_value GetNoiseReductionMode(napi_env env, napi_callback_info info);
+    static napi_value GetSupportedNoiseReductionModes(napi_env env, napi_callback_info info);
     static napi_value RequestPlaybackCaptureStart(napi_env env, napi_callback_info info);
     static napi_value SetIndependentAudioSessionStrategy(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
