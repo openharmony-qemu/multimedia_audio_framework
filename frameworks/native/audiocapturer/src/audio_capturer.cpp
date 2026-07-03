@@ -3544,6 +3544,12 @@ int32_t AudioCapturerPrivate::GetSupportedNoiseReductionModes(std::vector<NoiseR
 
     std::string key = "record_denoise_mode_support";
     std::string value = AudioSystemManager::GetInstance()->GetAudioParameter(key);
+    return UpdateSupportedNoiseReductionModes(modes, value);
+}
+
+int32_t AudioCapturerPrivate::UpdateSupportedNoiseReductionModes(
+    std::vector<NoiseReductionMode>& modes, const std::string &value)
+{
     if (value.empty()) {
         AUDIO_WARNING_LOG("GetSupportedNoiseReductionModes: failed to get from system, use default");
         std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
