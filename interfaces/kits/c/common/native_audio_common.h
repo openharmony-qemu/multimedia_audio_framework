@@ -43,6 +43,7 @@
 #define NATIVE_AUDIO_COMMON_H
 
 #include <stdint.h>
+#include "stdbool.h"
 
 #ifdef __cplusplus
 extern "C" {
