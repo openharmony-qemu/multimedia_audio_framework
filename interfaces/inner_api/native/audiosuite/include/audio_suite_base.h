@@ -43,6 +43,8 @@ typedef enum {
     NODE_TYPE_GENERAL_VOICE_CHANGE = 210,
     NODE_TYPE_TEMPO_PITCH = 211,
     NODE_TYPE_HOA_RENDER = 212,
+    NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE = 301,
+    NODE_TYPE_SYSTEM_MUSIC_MASTER = 302,
 } AudioNodeType;
 
 inline static const std::map<AudioNodeType, std::string> NODETYPE_TOSTRING_MAP = {
@@ -61,12 +63,13 @@ inline static const std::map<AudioNodeType, std::string> NODETYPE_TOSTRING_MAP =
     {NODE_TYPE_GENERAL_VOICE_CHANGE, "NODE_TYPE_GENERAL_VOICE_CHANGE"},
     {NODE_TYPE_TEMPO_PITCH, "NODE_TYPE_TEMPO_PITCH"},
     {NODE_TYPE_HOA_RENDER, "NODE_TYPE_HOA_RENDER"},
+    {NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE, "NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE"},
+    {NODE_TYPE_SYSTEM_MUSIC_MASTER, "NODE_TYPE_SYSTEM_MUSIC_MASTER"},
 };
 
 typedef enum {
     ENCODING_TYPE_RAW = 0,
-    ENCODING_TYPE_AUDIOVIVID = 1,
-    ENCODING_TYPE_E_AC3 = 2,
+    ENCODING_METADATA = 9,
 } AudioStreamEncodingType;
 
 // Channel layout to channel number mapping table
@@ -244,6 +247,13 @@ typedef struct AudioDataArray {
     int32_t arraySize;
     int32_t requestFrameSize;
 } AudioDataArray;
+
+typedef struct AudioMetaFrame {
+    void *audioData = nullptr;
+    int32_t audioDataSize = 0;
+    void *metaData = nullptr;
+    int32_t metaDataSize = 0;
+} AudioMetaFrame;
 
 }  // namespace AudioSuite
 }  // namespace AudioStandard
