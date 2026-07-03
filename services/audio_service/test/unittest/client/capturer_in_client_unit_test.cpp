@@ -2696,8 +2696,7 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_InvalidFlagsReset_001, TestSize
  */
 HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_NullBuffer_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner->clientBuffer_ = nullptr;
 
     CapturerAttrInfo attr;
@@ -2713,8 +2712,7 @@ HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_NullBuffer_001, T
  */
 HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_NoPending_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     capturerInClientInner->clientBuffer_ =
         OHAudioBuffer::CreateFromLocal(100, 100, 4);
@@ -2732,8 +2730,7 @@ HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_NoPending_001, Te
  */
 HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_Valid_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     capturerInClientInner->clientBuffer_ =
         OHAudioBuffer::CreateFromLocal(100, 100, 4);
@@ -2759,8 +2756,7 @@ HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_Valid_001, TestSi
  */
 HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_InvalidSize_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner->sizePerFrameInByte_ = 4;
     capturerInClientInner->spanSizeInFrame_ = 480;
     capturerInClientInner->clientSpanSizeInByte_ = 1920;
@@ -2788,8 +2784,7 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_InvalidSize_001
  */
 HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_FastFlag_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner->sizePerFrameInByte_ = 4;
 
     CapturerAttrInfo attr;
@@ -2812,8 +2807,7 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_FastFlag_001, T
  */
 HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_VoipFlag_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner->sizePerFrameInByte_ = 4;
 
     CapturerAttrInfo attr;
@@ -2834,8 +2828,7 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_VoipFlag_001, T
  */
 HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_NormalFlag_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner->sizePerFrameInByte_ = 4;
 
     CapturerAttrInfo attr;
@@ -2856,8 +2849,7 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_NormalFlag_001,
  */
 HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_ZeroFlag_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner->sizePerFrameInByte_ = 4;
     capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_INPUT_FLAG_NORMAL;
 
@@ -2879,8 +2871,7 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_ZeroFlag_001, T
  */
 HWTEST(CapturerInClientUnitTest, SyncCapturerAttrFromSpan_NoPending_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     capturerInClientInner->clientBuffer_ =
         OHAudioBuffer::CreateFromLocal(100, 100, 4);
@@ -2898,8 +2889,7 @@ HWTEST(CapturerInClientUnitTest, SyncCapturerAttrFromSpan_NoPending_001, TestSiz
  */
 HWTEST(CapturerInClientUnitTest, SyncCapturerAttrFromSpan_NullBuffer_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner->clientBuffer_ = nullptr;
 
     bool ret = capturerInClientInner->SyncCapturerAttrFromSpan();
@@ -2915,8 +2905,7 @@ HWTEST(CapturerInClientUnitTest, SyncCapturerAttrFromSpan_NullBuffer_001, TestSi
  */
 HWTEST(CapturerInClientUnitTest, JudgeFastStatusByCapturerAttr_Fast_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     capturerInClientInner->clientBuffer_ =
         OHAudioBuffer::CreateFromLocal(100, 100, 4);
@@ -2936,8 +2925,7 @@ HWTEST(CapturerInClientUnitTest, JudgeFastStatusByCapturerAttr_Fast_001, TestSiz
  */
 HWTEST(CapturerInClientUnitTest, JudgeFastStatusByCapturerAttr_Normal_001, TestSize.Level1)
 {
-    AudioProcessConfig config;
-    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(config);
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     capturerInClientInner->clientBuffer_ =
         OHAudioBuffer::CreateFromLocal(100, 100, 4);
