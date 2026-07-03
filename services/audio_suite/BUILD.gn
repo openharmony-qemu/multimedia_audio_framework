@@ -141,7 +141,6 @@ audio_ohos_library("audio_suite") {
         "client/utils/src/audio_suite_hoa_render_algo_interface_impl.cpp",
         "client/config/src/audio_suite_capabilities_parser.cpp",
         "client/config/src/audio_suite_capabilities.cpp",
-        "client/utils/src/audio_suite_hoa_render_algo_interface_impl.cpp",
       ]
     }
 
