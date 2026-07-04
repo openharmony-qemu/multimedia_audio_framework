@@ -144,7 +144,7 @@ int32_t OH_AudioSuite_GetDownloadManager(OH_AudioSuiteDownloadManager **download
  * @since 26.0.0
  */
 int32_t OH_AudioSuite_RegisterDownloadCallback(
-    OH_AudioSuiteDownloadManager* downloadManager, const OH_AudioSuite_DownloadCallback* callback);
+    OH_AudioSuiteDownloadManager *downloadManager, const OH_AudioSuite_DownloadCallback *callback);
 
 /**
  * @brief Unregister download status callback.
@@ -160,7 +160,7 @@ int32_t OH_AudioSuite_RegisterDownloadCallback(
  * @since 26.0.0
  */
 int32_t OH_AudioSuite_UnregisterDownloadCallback(
-    OH_AudioSuiteDownloadManager* downloadManager, const OH_AudioSuite_DownloadCallback* callback);
+    OH_AudioSuiteDownloadManager *downloadManager, const OH_AudioSuite_DownloadCallback *callback);
 
 /**
  * @brief Start downloading a feature.

@@ -58,61 +58,7 @@ constexpr int32_t CLOUD_ROM_STATUS_DOWNLOAD_FAIL = 22;
 constexpr int32_t CLOUD_ROM_STATUS_DOWNLOAD_SUCCESS = 23;
 constexpr int32_t CLOUD_ROM_STATUS_ERROR = -1;
 
-class CDownloadCallbackAdapter : public IDownloadCallbackListener {
-public:
-    explicit CDownloadCallbackAdapter(const OH_AudioSuite_DownloadCallback &cCallback)
-        : callback_(cCallback)
-    {
-        statusArray_.size = STATUS_ARRAY_SIZE;
-        statusArray_.downloadStatusInfo = &statusInfoPtr_;
-        statusInfoPtr_ = &statusInfo_;
-    }
-
-    ~CDownloadCallbackAdapter() override = default;
-
-    void OnDownloadStatusChanged(const DownloadStatus& status) override
-    {
-        statusInfo_.downloadStatus = ConvertDownloadStateToCloudRomStatus(status.state);
-        statusInfo_.progress = status.progress;
-        statusInfo_.errorCode = status.errorCode;
-
-        strncpy_s(statusInfo_.featureName, sizeof(statusInfo_.featureName), status.version.c_str(),
-                  status.version.length());
-        statusInfo_.featureName[sizeof(statusInfo_.featureName) - 1] = '\0';
-
-        strncpy_s(statusInfo_.installPath, sizeof(statusInfo_.installPath), status.romPath.c_str(),
-                  status.romPath.length());
-        statusInfo_.installPath[sizeof(statusInfo_.installPath) - 1] = '\0';
-
-        callback_(&statusArray_);
-    }
-
-private:
-    static int32_t ConvertDownloadStateToCloudRomStatus(DownloadState state)
-    {
-        switch (state) {
-            case DownloadState::DOWNLOAD_IDLE:
-                return CLOUD_ROM_STATUS_INIT;
-            case DownloadState::DOWNLOAD_WAITING:
-                return CLOUD_ROM_STATUS_INIT;
-            case DownloadState::DOWNLOAD_IN_PROGRESS:
-                return CLOUD_ROM_STATUS_DOWNLOADING;
-            case DownloadState::DOWNLOAD_COMPLETED:
-                return CLOUD_ROM_STATUS_DOWNLOAD_SUCCESS;
-            case DownloadState::DOWNLOAD_FAILED:
-                return CLOUD_ROM_STATUS_DOWNLOAD_FAIL;
-            case DownloadState::DOWNLOAD_CANCELLED:
-                return CLOUD_ROM_STATUS_INIT;
-            default:
-                return CLOUD_ROM_STATUS_ERROR;
-        }
-    }
-
-    OH_AudioSuite_DownloadCallback callback_;
-    OH_AudioSuite_DownloadStatusInfo statusInfo_;
-    OH_AudioSuite_DownloadStatusInfo* statusInfoPtr_;
-    OH_AudioSuite_DownloadStatusInfoArray statusArray_;
-};
+class CDownloadCallbackAdapter;
 
 } // namespace AudioSuite
 

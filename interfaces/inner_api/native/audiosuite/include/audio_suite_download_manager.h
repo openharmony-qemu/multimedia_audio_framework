@@ -22,7 +22,14 @@
 #include <vector>
 #include <functional>
 #include "audio_stream_info.h"
-#include "idownload_callback.h"
+
+namespace OHOS {
+namespace AudioStandard {
+namespace AudioSuite {
+    struct DownloadStatus;
+} // namespace AudioSuite
+} // namespace AudioStandard
+} // namespace OHOS
 
 namespace OHOS {
 namespace AudioStandard {
