@@ -538,6 +538,54 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
     }
 }
 
+void AudioActiveDevice::UpdateUidVolumeDeviceMapForEnhancedRouting()
+{
+    if (!Util::IsEnhancedRoutingSupported()) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
+    uidVolumeDeviceMap_.clear();
+
+    // update system prefer volume device
+    FetchDeviceInfo systemDeviceInfo = {STREAM_USAGE_MUSIC, SYSTEM_UID, "UpdateUidVolumeDeviceMap"};
+    auto devices = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(systemDeviceInfo);
+    if (!devices.empty()) {
+        uidVolumeDeviceMap_[SYSTEM_UID] = devices;
+    }
+
+    // update app prefer volume device
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs =
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
+    streamDescs.push_back(AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDescCopy());
+
+    set<int32_t> uidSet = {};
+    for (auto &streamDesc : streamDescs) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
+        int32_t uid = GetRealUid(streamDesc);
+        uidSet.insert(uid);
+    }
+    for (const auto &uid : uidSet) {
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> tmp;
+        for (auto streamDesc : streamDescs) {
+            CHECK_AND_CONTINUE(streamDesc != nullptr);
+            CHECK_AND_CONTINUE(GetRealUid(streamDesc) == uid);
+            CHECK_AND_CONTINUE(!streamDesc->newDeviceDescs_.empty());
+            CHECK_AND_CONTINUE(streamDesc->newDeviceDescs_.front() != nullptr);
+            tmp.push_back(streamDesc->newDeviceDescs_.front());
+        }
+        if (!tmp.empty()) {
+            SortDevicesByPriority(tmp);
+            uidVolumeDeviceMap_[uid] = tmp;
+        } else {
+            FetchDeviceInfo appDeviceInfo = {STREAM_USAGE_MUSIC, uid, "UpdateUidVolumeDeviceMap"};
+            auto devices = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(appDeviceInfo);
+            if (!devices.empty()) {
+                uidVolumeDeviceMap_[uid] = devices;
+            }
+        }
+    }
+}
+
 bool AudioActiveDevice::IsDeviceInActiveOutputDevices(DeviceType type, bool isRemote)
 {
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
@@ -743,32 +791,26 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolumeEnha
     }
 
     if (useSystemPreferredDevice) {
-        FetchDeviceInfo info = {STREAM_USAGE_MUSIC, SYSTEM_UID, "GetDeviceForVolumeEnhanced"};
-        auto devices = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
+        auto devices = GetUidVolumeDevicesForEnhancedRouting(SYSTEM_UID);
         CHECK_AND_RETURN_RET_LOG(!devices.empty(), nullptr, "No output devices found");
         return devices.front();
     }
 
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
-        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> tmp;
-    for (auto desc : descs) {
-        CHECK_AND_CONTINUE(desc != nullptr);
-        CHECK_AND_CONTINUE(GetRealUid(desc) == appUid);
-        CHECK_AND_CONTINUE(!desc->newDeviceDescs_.empty());
-        tmp.push_back(desc->newDeviceDescs_.front());
-    }
-
-    if (!tmp.empty()) {
-        SortDevicesByPriority(tmp);
-        return tmp.front();
-    }
-
-    FetchDeviceInfo info = {STREAM_USAGE_MUSIC, appUid, "GetDeviceForVolumeEnhanced"};
-    auto devices = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
+    auto devices = GetUidVolumeDevicesForEnhancedRouting(appUid);
     CHECK_AND_RETURN_RET_LOG(!devices.empty(), GetDeviceForVolumeEnhanced(SYSTEM_UID),
         "no uid %{public}d in active", appUid);
     return devices.front();
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioActiveDevice::GetUidVolumeDevicesForEnhancedRouting(
+    int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
+    auto it = uidVolumeDeviceMap_.find(uid);
+    if (it != uidVolumeDeviceMap_.end()) {
+        return it->second;
+    }
+    return {};
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetActiveDeviceForVolume(int32_t appUid)

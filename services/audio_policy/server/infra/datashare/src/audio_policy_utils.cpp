@@ -242,9 +242,16 @@ bool AudioPolicyUtils::IsSelectedByMediaController()
 bool AudioPolicyUtils::ShouldUseSystemPreferredDeviceForVolume(const std::string &bundleName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    auto it = shouldUseSystemPreferredDeviceCache_.find(bundleName);
+    if (it != shouldUseSystemPreferredDeviceCache_.end()) {
+        return it->second;
+    }
+    
     CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback_ != nullptr, false, "callback is nullptr");
     bool ret = false;
     audioClientInfoMgrCallback_->OnQueryUseSystemPreferredDeviceForVolume(bundleName, ret);
+
+    shouldUseSystemPreferredDeviceCache_[bundleName] = ret;
     return ret;
 }
 
