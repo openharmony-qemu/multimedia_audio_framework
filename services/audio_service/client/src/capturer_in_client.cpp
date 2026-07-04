@@ -211,6 +211,10 @@ void CapturerInClientInner::SetClientDeviceId(const std::string &deviceId)
 
 int32_t CapturerInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
+    if (JudgeFastStreamByCapturerAttr()) {
+        AUDIO_ERR_LOG("%{public}s: not supported", logUtilsTag_.c_str());
+        return ERR_NOT_SUPPORTED;
+    }
 #ifdef HAS_FEATURE_INNERCAPTURER
     AUDIO_INFO_LOG("client set %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE,
@@ -2104,6 +2108,8 @@ uint32_t CapturerInClientInner::GetRendererSamplingRate()
 
 int32_t CapturerInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 {
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByCapturerAttr(), ERR_NOT_SUPPORTED,
+        "%{public}s: not supported", logUtilsTag_.c_str());
     // bufferSizeInMsec is checked between 5ms and 20ms.
     bufferSizeInMsec_ = bufferSizeInMsec;
     AUDIO_INFO_LOG("SetBufferSizeInMsec to %{public}d", bufferSizeInMsec_);
@@ -2481,6 +2487,8 @@ int32_t CapturerInClientInner::ResetNotifyStreamSilentChangeFlag()
 
 int32_t CapturerInClientInner::SetInMainThreadState(bool isInMainThread)
 {
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByCapturerAttr(), ERR_NOT_SUPPORTED,
+        "%{public}s: not supported", logUtilsTag_.c_str());
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CONFIG_ILLEGAL_STATE, "IpcStream is nullptr", true), "IpcStream is nullptr");
@@ -2554,12 +2562,13 @@ bool CapturerInClientInner::SyncCapturerAttrFromSpan()
     return true;
 }
 
-FastStatus CapturerInClientInner::JudgeFastStatusByCapturerAttr()
+bool CapturerInClientInner::JudgeFastStreamByCapturerAttr()
 {
     SyncCapturerAttrFromSpan();
-    FastStatus status = fastStatus_;
-    AUDIO_DEBUG_LOG("fastStatus:%{public}d, sessionId:%{public}u", static_cast<int32_t>(status), sessionId_);
-    return status;
+    bool isFast = (fastStatus_ == FASTSTATUS_FAST);
+    AUDIO_DEBUG_LOG("isFast:%{public}d, fastStatus:%{public}d, sessionId:%{public}u",
+        isFast, static_cast<int32_t>(fastStatus_), sessionId_);
+    return isFast;
 }
 } // namespace AudioStandard
 } // namespace OHOS

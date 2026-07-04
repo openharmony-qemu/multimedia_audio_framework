@@ -276,7 +276,7 @@ private:
     bool CheckCapturerAttrInfoFromSpan(CapturerAttrInfo &attr);
     void RefreshCapturerAttrInfoFromSpan(const CapturerAttrInfo &attr);
     bool SyncCapturerAttrFromSpan();
-    FastStatus JudgeFastStatusByCapturerAttr();
+    bool JudgeFastStreamByCapturerAttr();
 
     int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);

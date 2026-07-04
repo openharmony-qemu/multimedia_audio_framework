@@ -2898,12 +2898,12 @@ HWTEST(CapturerInClientUnitTest, SyncCapturerAttrFromSpan_NullBuffer_001, TestSi
 }
 
 /**
- * @tc.name  : Test JudgeFastStatusByCapturerAttr with FAST flag
+ * @tc.name  : Test JudgeFastStreamByCapturerAttr with FAST flag
  * @tc.type  : FUNC
- * @tc.number: JudgeFastStatusByCapturerAttr_Fast_001
- * @tc.desc  : Test JudgeFastStatusByCapturerAttr returns FAST with FAST flag.
+ * @tc.number: JudgeFastStreamByCapturerAttr_Fast_001
+ * @tc.desc  : Test JudgeFastStreamByCapturerAttr returns true with FAST flag.
  */
-HWTEST(CapturerInClientUnitTest, JudgeFastStatusByCapturerAttr_Fast_001, TestSize.Level1)
+HWTEST(CapturerInClientUnitTest, JudgeFastStreamByCapturerAttr_Fast_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -2913,25 +2913,25 @@ HWTEST(CapturerInClientUnitTest, JudgeFastStatusByCapturerAttr_Fast_001, TestSiz
 
     capturerInClientInner->clientBuffer_->SetPendingSpanSize(960, 1920, AUDIO_INPUT_FLAG_FAST);
 
-    FastStatus status = capturerInClientInner->JudgeFastStatusByCapturerAttr();
-    EXPECT_EQ(status, FASTSTATUS_FAST);
+    bool ret = capturerInClientInner->JudgeFastStreamByCapturerAttr();
+    EXPECT_TRUE(ret);
 }
 
 /**
- * @tc.name  : Test JudgeFastStatusByCapturerAttr without FAST flag
+ * @tc.name  : Test JudgeFastStreamByCapturerAttr without FAST flag
  * @tc.type  : FUNC
- * @tc.number: JudgeFastStatusByCapturerAttr_Normal_001
- * @tc.desc  : Test JudgeFastStatusByCapturerAttr returns NORMAL without FAST flag.
+ * @tc.number: JudgeFastStreamByCapturerAttr_Normal_001
+ * @tc.desc  : Test JudgeFastStreamByCapturerAttr returns false without FAST flag.
  */
-HWTEST(CapturerInClientUnitTest, JudgeFastStatusByCapturerAttr_Normal_001, TestSize.Level1)
+HWTEST(CapturerInClientUnitTest, JudgeFastStreamByCapturerAttr_Normal_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     capturerInClientInner->clientBuffer_ =
         OHAudioBuffer::CreateFromLocal(100, 100, 4);
 
-    FastStatus status = capturerInClientInner->JudgeFastStatusByCapturerAttr();
-    EXPECT_EQ(status, FASTSTATUS_NORMAL);
+    bool ret = capturerInClientInner->JudgeFastStreamByCapturerAttr();
+    EXPECT_FALSE(ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS
