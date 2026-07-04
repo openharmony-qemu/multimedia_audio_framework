@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package OHOS.AudioStandard.AudioSuite;
+
+import AudioSuiteSaTypes;
+
+sequenceable OHOS.IRemoteObject;
+
+// UpdateEngine 回调接口
+// audio_policy_ext 实现此接口，audio_suite 调用此接口来访问 UpdateEngine
+interface IUpdateEngineCallback {
+    // 获取新版本信息
+    [ipccode 1] int GetFeatureNewVersion([in] CheckCondition checkCondition,
+        [in] FeatureInfo[] featureInfos,
+        [out] CloudRomCheckResult newVersionInfos);
+
+    // 获取特性状态
+    [ipccode 2] int GetFeatureStatus([in] FeatureInfo[] featureInfos,
+        [out] StatusInfoResult statusInfos);
+
+    // 下载并安装
+    [ipccode 3] int DownloadAndInstall([in] DownloadCondition downloadCondition,
+        [in] FeatureInfo[] featureInfos,
+        [out] BusinessError businessError);
+
+    // 暂停下载
+    [ipccode 4] int PauseDownloadCloudRom([in] PauseCondition pauseCondition,
+        [in] FeatureInfo[] featureInfos,
+        [out] BusinessError businessError);
+
+    // 卸载云 ROM
+    [ipccode 5] int UninstallCloudRom([in] FeatureInfo[] featureInfos,
+        [out] BusinessError businessError);
+
+    // 注册云 ROM 下载回调
+    [ipccode 6] int RegisterCloudRomCallback([in] IRemoteObject object);
+
+    // 注销云 ROM 下载回调
+    [ipccode 7] int UnregisterCloudRomCallback();
+};

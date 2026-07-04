@@ -1,0 +1,192 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/components/idl_tool/idl.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
+
+audio_framework_root = "../../.."
+
+# Audio Suite SA IDL 配置
+config("audio_suite_sa_idl_config") {
+  include_dirs = [
+    "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_framework_root}/services/audio_suite/idl",
+    "${target_gen_dir}",
+  ]
+}
+
+# Audio Suite SA 接口 IDL 编译（主接口）
+idl_gen_interface("audio_suite_sa_idl_interface") {
+  sources = [
+    "IAudioSuiteSaService.idl",
+  ]
+  sources_common = [ "AudioSuiteSaTypes.idl" ]
+
+  configs = [ ":audio_suite_sa_idl_config" ]
+
+  log_tag = "AudioSuiteSaIdl"
+  hitrace = "HITRACE_TAG_ZAUDIO"
+  log_domainid = "0xD002B8C"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+# Audio Suite SA 回调接口 IDL 编译（单独定义，参考 audio_service_idl_callback）
+idl_gen_interface("audio_suite_sa_idl_callback") {
+  sources = [
+    "IDownloadCallback.idl",
+    "ICloudRomDownloadCallback.idl",
+    "IUpdateEngineCallback.idl",
+  ]
+
+  configs = [ ":audio_suite_sa_idl_config" ]
+
+  log_tag = "AudioSuiteSaIdlCallback"
+  hitrace = "HITRACE_TAG_ZAUDIO"
+  log_domainid = "0xD002B8C"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+# Audio Suite SA 客户端 IDL 接口库（包含 Proxy）
+ohos_shared_library("audio_suite_sa_client_idl_interface") {
+  install_enable = true
+  branch_protector_ret = "pac_ret"
+
+  cflags_cc = [
+    "-fomit-frame-pointer",
+    "-fdata-sections",
+    "-ffunction-sections",
+    "-fno-unroll-loops",
+    "-fno-exceptions",
+    "-fno-unwind-tables",
+    "-fno-asynchronous-unwind-tables",
+    "-Os",
+  ]
+
+  include_dirs = [
+    "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  # 参考 audio_client_idl_interface 的正确做法
+  # 1. 主接口的 proxy + types（客户端调用服务端）
+  client_output_values = []
+  client_output_values += filter_include(get_target_outputs(":audio_suite_sa_idl_interface"),
+                           [ "*_proxy.cpp", "*_types.cpp" ])
+  
+  # 2. 回调接口的 stub（客户端接收服务端回调）
+  client_output_values += filter_include(get_target_outputs(":audio_suite_sa_idl_callback"),
+                           [ "*_stub.cpp", "*_types.cpp" ])
+  
+  sources = []
+  sources += client_output_values
+
+  deps = [
+    ":audio_suite_sa_idl_interface",
+    ":audio_suite_sa_idl_callback",
+    "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "ipc:ipc_single",
+    "hitrace:hitrace_meter",
+  ]
+
+  public_configs = [ ":audio_suite_sa_idl_config" ]
+
+  version_script = "libaudio_suite_sa_client_idl_interface.versionscript"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+}
+
+# Audio Suite SA 服务端 IDL 接口库（包含 Stub）
+ohos_shared_library("audio_suite_sa_server_idl_interface") {
+  install_enable = true
+  branch_protector_ret = "pac_ret"
+
+  cflags_cc = [
+    "-fomit-frame-pointer",
+    "-fdata-sections",
+    "-ffunction-sections",
+    "-fno-unroll-loops",
+    "-fno-exceptions",
+    "-fno-unwind-tables",
+    "-fno-asynchronous-unwind-tables",
+    "-Os",
+  ]
+
+  include_dirs = [
+    "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  # 服务端需要：
+  # 1. 主接口的 stub + types（服务端实现）
+  server_output_values = []
+  server_output_values += filter_include(get_target_outputs(":audio_suite_sa_idl_interface"),
+                           [ "*_stub.cpp", "*_types.cpp" ])
+  
+  # 2. 回调接口的 proxy（服务端调用客户端回调）
+  server_output_values += filter_include(get_target_outputs(":audio_suite_sa_idl_callback"),
+                           [ "*_proxy.cpp", "*_types.cpp" ])
+  
+  sources = []
+  sources += server_output_values
+
+  deps = [
+    ":audio_suite_sa_idl_interface",
+    ":audio_suite_sa_idl_callback",
+    "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+    "hitrace:hitrace_meter",
+  ]
+
+  public_configs = [ ":audio_suite_sa_idl_config" ]
+
+  version_script = "libaudio_suite_sa_server_idl_interface.versionscript"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+}
+
+# 导出所有生成的头文件
+group("audio_suite_sa_idl_headers") {
+  deps = [
+    ":audio_suite_sa_idl_interface",
+    ":audio_suite_sa_idl_callback",
+  ]
+}
