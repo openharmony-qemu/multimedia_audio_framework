@@ -1555,6 +1555,6 @@ interface AudioDebuggingManager {
   PrintAppInfo(fd: i32): void;
   PrintRendererInfo(renderer: AudioRenderer, fd: i32): void;
   PrintCapturerInfo(capturer: AudioCapturer, fd: i32): void;
-  PrintLoopbackInfo(loopback: AudioLpback, fd: i32): void;
+  PrintLoopbackInfo(loopback: AudioLoopback, fd: i32): void;
   PrintSessionInfo(session: AudioSessionManager, fd: i32): void;
 }
