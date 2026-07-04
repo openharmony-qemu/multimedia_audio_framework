@@ -2644,7 +2644,7 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_AllValidFlags_001, TestSize.Lev
 {
     auto initCapturer = []() {
         auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    ASSERT_NE(capturerInClientInner, nullptr);
+    EXPECT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->clientPid_ = 10;
         capturerInClientInner->clientUid_ = 10;
         capturerInClientInner->appTokenId_ = 10;
