@@ -22,7 +22,6 @@
 #include <vector>
 #include <functional>
 #include "audio_stream_info.h"
-#include "audio_suite_sa_types.h"
 #include "idownload_callback.h"
 
 namespace OHOS {
