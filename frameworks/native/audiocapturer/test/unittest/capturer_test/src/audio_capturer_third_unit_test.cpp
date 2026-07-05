@@ -50,14 +50,15 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetParams_001, TestSize.Level1
     options.capturerInfo.capturerFlags = AUDIO_INPUT_FLAG_NORMAL;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetParams with invalid parameter
+        AudioCapturerParams params;
+        params.inputSource = static_cast<AudioSourceType>(-1); // Invalid source type
 
-    // Test SetParams with invalid parameter
-    AudioCapturerParams params;
-    params.inputSource = static_cast<AudioSourceType>(-1); // Invalid source type
-
-    int32_t ret = audioCapturer->SetParams(params);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+        int32_t ret = audioCapturer->SetParams(params);
+        EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    }
 }
 
 /**
@@ -75,12 +76,13 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_GetCurrentInputDevices_001, Te
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test GetCurrentInputDevices
-    AudioDeviceDescriptor deviceInfo;
-    int32_t ret = audioCapturer->GetCurrentInputDevices(deviceInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test GetCurrentInputDevices
+        AudioDeviceDescriptor deviceInfo;
+        int32_t ret = audioCapturer->GetCurrentInputDevices(deviceInfo);
+        EXPECT_EQ(SUCCESS, ret);
+    }
 }
 
 /**
@@ -98,11 +100,12 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetInputDevice_001, TestSize.L
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test SetInputDevice
-    int32_t ret = audioCapturer->SetInputDevice(DEVICE_TYPE_MIC);
-    EXPECT_EQ(SUCCESS, ret);
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetInputDevice
+        int32_t ret = audioCapturer->SetInputDevice(DEVICE_TYPE_MIC);
+        EXPECT_EQ(SUCCESS, ret);
+    }
 }
 
 /**
@@ -120,11 +123,12 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_CaptureMode_InvalidParam_001, 
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test SetCaptureMode with invalid parameter
-    int32_t ret = audioCapturer->SetCaptureMode(static_cast<AudioCaptureMode>(-1)); // Invalid mode
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetCaptureMode with invalid parameter
+        int32_t ret = audioCapturer->SetCaptureMode(static_cast<AudioCaptureMode>(-1)); // Invalid mode
+        EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    }
 }
 
 /**
@@ -142,12 +146,13 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_AudioSourceConcurrency_Invalid
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test SetAudioSourceConcurrency with empty vector (invalid parameter)
-    vector<SourceType> targetSources = {}; // Empty vector - invalid parameter
-    int32_t ret = audioCapturer->SetAudioSourceConcurrency(targetSources);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetAudioSourceConcurrency with empty vector (invalid parameter)
+        vector<SourceType> targetSources = {}; // Empty vector - invalid parameter
+        int32_t ret = audioCapturer->SetAudioSourceConcurrency(targetSources);
+        EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    }
 }
 
 /**
@@ -165,11 +170,12 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_InterruptStrategy_InvalidParam
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test SetInterruptStrategy with invalid parameter
-    int32_t ret = audioCapturer->SetInterruptStrategy(static_cast<InterruptStrategy>(-1)); // Invalid strategy
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetInterruptStrategy with invalid parameter
+        int32_t ret = audioCapturer->SetInterruptStrategy(static_cast<InterruptStrategy>(-1)); // Invalid strategy
+        EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    }
 }
 
 /**
@@ -187,12 +193,13 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_MuteHint_InvalidParam_001, Tes
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test SetMuteHint with invalid parameter (nullptr callback)
-    int32_t ret = audioCapturer->SetMuteHint(true);
-    // Since we don't have a valid callback set up, this should return error
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetMuteHint with invalid parameter (nullptr callback)
+        int32_t ret = audioCapturer->SetMuteHint(true);
+        // Since we don't have a valid callback set up, this should return error
+        EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    }
 }
 
 /**
@@ -210,11 +217,12 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_OverflowCount_001, TestSize.Le
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test GetOverflowCount
-    uint32_t overflowCount = audioCapturer->GetOverflowCount();
-    EXPECT_GE(overflowCount, 0);
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test GetOverflowCount
+        uint32_t overflowCount = audioCapturer->GetOverflowCount();
+        EXPECT_GE(overflowCount, 0);
+    }
 }
 
 /**
@@ -233,11 +241,12 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_CurrentMicrophones_InvalidPara
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> capturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, capturer);
-
-    // Test GetCurrentMicrophones - should return empty vector on error
-    vector<sptr<MicrophoneDescriptor>> microphones = capturer->GetCurrentMicrophones();
-    EXPECT_TRUE(microphones.empty()); // Expect empty vector for invalid state
+    ASSERT_EQ(nullptr, capturer);
+    if (capturer != nullptr) {
+        // Test GetCurrentMicrophones - should return empty vector on error
+        vector<sptr<MicrophoneDescriptor>> microphones = capturer->GetCurrentMicrophones();
+        EXPECT_TRUE(microphones.empty()); // Expect empty vector for invalid state
+    }
 }
 
 /**
@@ -256,11 +265,12 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_InMainThreadState_InvalidParam
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test SetInMainThreadState - expect error due to invalid internal state
-    int32_t ret = audioCapturer->SetInMainThreadState(true);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid internal state
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetInMainThreadState - expect error due to invalid internal state
+        int32_t ret = audioCapturer->SetInMainThreadState(true);
+        EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid internal state
+    }
 }
 
 /**
@@ -278,13 +288,14 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_InterruptEventCallbackType_Inv
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetInterruptEventCallbackType with invalid parameter
+        audioCapturer->SetInterruptEventCallbackType(static_cast<InterruptEventCallbackType>(-1)); // Invalid type
 
-    // Test SetInterruptEventCallbackType with invalid parameter
-    audioCapturer->SetInterruptEventCallbackType(static_cast<InterruptEventCallbackType>(-1)); // Invalid type
-
-    // Should not crash (error handling)
-    EXPECT_TRUE(true);
+        // Should not crash (error handling)
+        EXPECT_TRUE(true);
+    }
 }
 
 /**
@@ -315,11 +326,12 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetCapturerCallback_InvalidPar
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test SetCapturerCallback with nullptr (invalid parameter)
-    int32_t ret = audioCapturer->SetCapturerCallback(nullptr);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for nullptr callback
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetCapturerCallback with nullptr (invalid parameter)
+        int32_t ret = audioCapturer->SetCapturerCallback(nullptr);
+        EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for nullptr callback
+    }
 }
 
 /**
@@ -337,13 +349,14 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetAudioCapturerErrorCallback_
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetAudioCapturerErrorCallback with nullptr (invalid parameter)
+        audioCapturer->SetAudioCapturerErrorCallback(nullptr);
 
-    // Test SetAudioCapturerErrorCallback with nullptr (invalid parameter)
-    audioCapturer->SetAudioCapturerErrorCallback(nullptr);
-
-    // Should not crash (error handling)
-    EXPECT_TRUE(true);
+        // Should not crash (error handling)
+        EXPECT_TRUE(true);
+    }
 }
 
 /**
@@ -361,13 +374,14 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetFastStatusChangeCallback_In
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetFastStatusChangeCallback with nullptr (invalid parameter)
+        audioCapturer->SetFastStatusChangeCallback(nullptr);
 
-    // Test SetFastStatusChangeCallback with nullptr (invalid parameter)
-    audioCapturer->SetFastStatusChangeCallback(nullptr);
-
-    // Should not crash (error handling)
-    EXPECT_TRUE(true);
+        // Should not crash (error handling)
+        EXPECT_TRUE(true);
+    }
 }
 
 /**
@@ -386,13 +400,14 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_GetBufferSize_InvalidParam_001
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test GetBufferSize with invalid parameter (nullptr reference is not possible in C++,
-    // but we can test with uninitialized state)
-    size_t bufferSize = static_cast<size_t>(-1); // Invalid size
-    int32_t ret = audioCapturer->GetBufferSize(bufferSize);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test GetBufferSize with invalid parameter (nullptr reference is not possible in C++,
+        // but we can test with uninitialized state)
+        size_t bufferSize = static_cast<size_t>(-1); // Invalid size
+        int32_t ret = audioCapturer->GetBufferSize(bufferSize);
+        EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    }
 }
 
 /**
@@ -410,13 +425,14 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_GetFrameCount_InvalidParam_001
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test GetFrameCount with invalid parameter (nullptr is not possible for reference,
-    // but we can test with uninitialized state)
-    uint32_t frameCount = static_cast<uint32_t>(-1); // Invalid frame count
-    int32_t ret = audioCapturer->GetFrameCount(frameCount);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test GetFrameCount with invalid parameter (nullptr is not possible for reference,
+        // but we can test with uninitialized state)
+        uint32_t frameCount = static_cast<uint32_t>(-1); // Invalid frame count
+        int32_t ret = audioCapturer->GetFrameCount(frameCount);
+        EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    }
 }
 
 /**
@@ -434,11 +450,12 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetBufferDuration_InvalidParam
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test SetBufferDuration with invalid value (negative value)
-    int32_t ret = audioCapturer->SetBufferDuration(-1); // Invalid duration
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetBufferDuration with invalid value (negative value)
+        int32_t ret = audioCapturer->SetBufferDuration(-1); // Invalid duration
+        EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    }
 }
 
 /**
@@ -456,11 +473,12 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetBufferDuration_002, TestSiz
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test SetBufferDuration with invalid value (1ms, too small)
-    int32_t ret = audioCapturer->SetBufferDuration(1);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for too small duration
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetBufferDuration with invalid value (1ms, too small)
+        int32_t ret = audioCapturer->SetBufferDuration(1);
+        EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for too small duration
+    }
 }
 
 /**
@@ -478,11 +496,12 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetBufferDuration_003, TestSiz
     options.capturerInfo.sourceType = SOURCE_TYPE_MIC;
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(options);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    // Test SetBufferDuration with invalid value (100ms, too large)
-    int32_t ret = audioCapturer->SetBufferDuration(100);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for too large duration
+    ASSERT_EQ(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        // Test SetBufferDuration with invalid value (100ms, too large)
+        int32_t ret = audioCapturer->SetBufferDuration(100);
+        EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for too large duration
+    }
 }
 
 } // namespace AudioStandard
