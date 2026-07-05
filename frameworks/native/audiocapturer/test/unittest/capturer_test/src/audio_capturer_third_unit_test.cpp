@@ -23,6 +23,8 @@
 #include "audio_policy_manager.h"
 #include "audio_capturer_private.h"
 #include "audio_stream_enum.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -32,6 +34,23 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 
+void AudioCapturerThirdUnitTest::SetUpTestCase(void)
+{
+    const char *perms[] = {"ohos.permission.MICROPHONE"};
+    NativeTokenInfoParams info = {
+        .dcapsNum = 0,
+        .permsNum = 1,
+        .perms = perms,
+        .aplStr = "system_basic",
+    };
+    uint64_t tokenID = GetAccessTokenId(&info);
+    SetSelfTokenID(tokenID);
+}
+
+void AudioCapturerThirdUnitTest::TearDownTestCase(void) {}
+void AudioCapturerThirdUnitTest::SetUp(void) {}
+void AudioCapturerThirdUnitTest::TearDown(void) {}
+
 // ==================== Additional AudioCapturer Tests ====================
 
 /**
@@ -39,7 +58,7 @@ namespace AudioStandard {
  * @tc.number: Audio_Capturer_SetParams_001
  * @tc.desc  : Test SetParams API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetParams_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_SetParams_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -66,7 +85,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetParams_001, TestSize.Level1
  * @tc.number: Audio_Capturer_GetCurrentInputDevices_001
  * @tc.desc  : Test GetCurrentInputDevices API.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_GetCurrentInputDevices_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -90,7 +109,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_GetCurrentInputDevices_001, Te
  * @tc.number: Audio_Capturer_SetInputDevice_001
  * @tc.desc  : Test SetInputDevice API.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetInputDevice_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_SetInputDevice_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -113,7 +132,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetInputDevice_001, TestSize.L
  * @tc.number: Audio_Capturer_CaptureMode_InvalidParam_001
  * @tc.desc  : Test SetCaptureMode API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_CaptureMode_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_CaptureMode_InvalidParam_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -136,7 +155,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_CaptureMode_InvalidParam_001, 
  * @tc.number: Audio_Capturer_AudioSourceConcurrency_InvalidParam_001
  * @tc.desc  : Test SetAudioSourceConcurrency API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_AudioSourceConcurrency_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_AudioSourceConcurrency_InvalidParam_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -160,7 +179,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_AudioSourceConcurrency_Invalid
  * @tc.number: Audio_Capturer_InterruptStrategy_InvalidParam_001
  * @tc.desc  : Test SetInterruptStrategy API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_InterruptStrategy_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_InterruptStrategy_InvalidParam_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -183,7 +202,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_InterruptStrategy_InvalidParam
  * @tc.number: Audio_Capturer_MuteHint_InvalidParam_001
  * @tc.desc  : Test SetMuteHint API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_MuteHint_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_MuteHint_InvalidParam_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -207,7 +226,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_MuteHint_InvalidParam_001, Tes
  * @tc.number: Audio_Capturer_OverflowCount_001
  * @tc.desc  : Test GetOverflowCount API.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_OverflowCount_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_OverflowCount_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -230,7 +249,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_OverflowCount_001, TestSize.Le
  * @tc.number: Audio_Capturer_CurrentMicrophones_InvalidParam_001
  * @tc.desc  : Test GetCurrentMicrophones API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_CurrentMicrophones_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_CurrentMicrophones_InvalidParam_001, TestSize.Level1)
 {
     // Test GetCurrentMicrophones with invalid internal state
     AudioCapturerOptions options;
@@ -254,7 +273,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_CurrentMicrophones_InvalidPara
  * @tc.number: Audio_Capturer_InMainThreadState_InvalidParam_001
  * @tc.desc  : Test SetInMainThreadState API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_InMainThreadState_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_InMainThreadState_InvalidParam_001, TestSize.Level1)
 {
     // Test with invalid internal state
     AudioCapturerOptions options;
@@ -278,7 +297,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_InMainThreadState_InvalidParam
  * @tc.number: Audio_Capturer_InterruptEventCallbackType_InvalidParam_001
  * @tc.desc  : Test SetInterruptEventCallbackType API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_InterruptEventCallbackType_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_InterruptEventCallbackType_InvalidParam_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -303,7 +322,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_InterruptEventCallbackType_Inv
  * @tc.number: Audio_Capturer_Create_Invalid_001
  * @tc.desc  : Test Create with invalid stream type.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_Create_Invalid_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_Create_Invalid_001, TestSize.Level1)
 {
     // Test with invalid stream type
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(static_cast<AudioStreamType>(-1));
@@ -319,7 +338,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_Create_Invalid_001, TestSize.L
  * @tc.number: Audio_Capturer_SetCapturerCallback_InvalidParam_001
  * @tc.desc  : Test SetCapturerCallback API with invalid parameter (nullptr).
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetCapturerCallback_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_SetCapturerCallback_InvalidParam_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -342,7 +361,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetCapturerCallback_InvalidPar
  * @tc.number: Audio_Capturer_SetAudioCapturerErrorCallback_InvalidParam_001
  * @tc.desc  : Test SetAudioCapturerErrorCallback API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetAudioCapturerErrorCallback_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_SetAudioCapturerErrorCallback_InvalidParam_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -367,7 +386,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetAudioCapturerErrorCallback_
  * @tc.number: Audio_Capturer_SetFastStatusChangeCallback_InvalidParam_001
  * @tc.desc  : Test SetFastStatusChangeCallback API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetFastStatusChangeCallback_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_SetFastStatusChangeCallback_InvalidParam_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -392,7 +411,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetFastStatusChangeCallback_In
  * @tc.number: Audio_Capturer_GetBufferSize_InvalidParam_001
  * @tc.desc  : Test GetBufferSize API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_GetBufferSize_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_GetBufferSize_InvalidParam_001, TestSize.Level1)
 {
     // Test GetBufferSize with nullptr parameter (invalid)
     AudioCapturerOptions options;
@@ -418,7 +437,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_GetBufferSize_InvalidParam_001
  * @tc.number: Audio_Capturer_GetFrameCount_InvalidParam_001
  * @tc.desc  : Test GetFrameCount API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_GetFrameCount_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_GetFrameCount_InvalidParam_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -443,7 +462,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_GetFrameCount_InvalidParam_001
  * @tc.number: Audio_Capturer_SetBufferDuration_InvalidParam_001
  * @tc.desc  : Test SetBufferDuration API with invalid parameter.
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetBufferDuration_InvalidParam_001, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_SetBufferDuration_InvalidParam_001, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -466,7 +485,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetBufferDuration_InvalidParam
  * @tc.number: Audio_Capturer_SetBufferDuration_002
  * @tc.desc  : Test SetBufferDuration API with invalid parameter (too small).
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetBufferDuration_002, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_SetBufferDuration_002, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -489,7 +508,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetBufferDuration_002, TestSiz
  * @tc.number: Audio_Capturer_SetBufferDuration_003
  * @tc.desc  : Test SetBufferDuration API with invalid parameter (too large).
  */
-HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_SetBufferDuration_003, TestSize.Level1)
+HWTEST_F(AudioCapturerThirdUnitTest, Audio_Capturer_SetBufferDuration_003, TestSize.Level1)
 {
     AudioCapturerOptions options;
     options.streamInfo.samplingRate = SAMPLE_RATE_44100;
