@@ -3465,7 +3465,9 @@ int64_t AudioRendererPrivate::GetSourceDuration() const
 void AudioRendererPrivate::SetSourceDuration(int64_t duration)
 {
     sourceDuration_ = duration;
-    audioStream_->SetSourceDuration(sourceDuration_);
+    if (audioStream_ != nullptr) {
+        audioStream_->SetSourceDuration(sourceDuration_);
+    }
 }
 
 int32_t AudioRendererPrivate::SetDefaultOutputDevice(DeviceType deviceType)

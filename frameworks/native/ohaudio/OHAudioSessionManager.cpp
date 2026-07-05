@@ -151,6 +151,8 @@ OH_AudioCommon_Result OH_AudioSessionManager_GetAvailableDevices(OH_AudioSession
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "Invalid param deviceUsage");
     CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptorArray != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioDeviceDescriptorArray is nullptr");
 
     OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,

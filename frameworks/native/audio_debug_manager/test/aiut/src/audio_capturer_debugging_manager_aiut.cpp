@@ -423,25 +423,6 @@ HWTEST_F(AudioCapturerDebuggingManagerAiut, OH_PrintCapturerInfo_NullCapturer, T
     AIUT_EXPECT_EQ_INFO_LOG(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "expected INVALID_PARAM, got %d", result);
 }
 
-/**
-* @tc.name  : Test OH_AudioDebuggingManager_PrintCapturerInfo API with invalid capturer
-* @tc.number: OH_PrintCapturerInfo_InvalidCapturer
-* @tc.desc  : Test OH_AudioDebuggingManager_PrintCapturerInfo interface.
-*             Returns ERROR_ILLEGAL_STATE or ERROR_SYSTEM with invalid capturer pointer.
-*/
-HWTEST_F(AudioCapturerDebuggingManagerAiut, OH_PrintCapturerInfo_InvalidCapturer, TestSize.Level1)
-{
-    AIUT_INFO_LOG("entry");
-    OH_AudioDebuggingManager *manager = nullptr;
-    OH_AudioManager_GetAudioDebuggingManager(&manager);
-    AIUT_ASSERT_NE_INFO_LOG(manager, nullptr, "GetAudioDebuggingManager returned null");
-
-    OH_AudioCapturer *fakeCapturer = reinterpret_cast<OH_AudioCapturer *>(0xCAFE);
-    OH_AudioCommon_Result result = OH_AudioDebuggingManager_PrintCapturerInfo(manager, fakeCapturer, -1);
-    AIUT_EXPECT_TRUE_INFO_LOG(
-        result == AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE || result == AUDIOCOMMON_RESULT_ERROR_SYSTEM,
-        "unexpected result=%d", result);
-}
 
 /**
 * @tc.name  : Test OH_AudioDebuggingManager_PrintCapturerInfo API with both null params

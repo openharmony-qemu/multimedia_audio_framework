@@ -1037,6 +1037,10 @@ int32_t RendererInServer::GetAvailableSize(size_t &length)
         return SUCCESS;
     }
 
+    if (audioServerBuffer_ == nullptr) {
+        AUDIO_ERR_LOG("audioServerBuffer_ is nullptr");
+        return ERR_OPERATION_FAILED;
+    }
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (currentWriteFrame < currentReadFrame) {
@@ -2097,6 +2101,10 @@ int32_t RendererInServer::GetLatency(uint64_t &latency)
     if (managerType_ == DIRECT_PLAYBACK && enableNewRoute != 0) {
         latency = IStreamManager::GetPlaybackManager(managerType_).GetLatency();
         return SUCCESS;
+    }
+    if (stream_ == nullptr) {
+        AUDIO_ERR_LOG("stream_ is nullptr");
+        return ERR_OPERATION_FAILED;
     }
     return stream_->GetLatency(latency);
 }

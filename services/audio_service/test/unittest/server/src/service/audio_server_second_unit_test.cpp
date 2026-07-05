@@ -51,7 +51,10 @@ void AudioServerSecondUnitTest::TearDown(void)
  */
 HWTEST_F(AudioServerSecondUnitTest, AudioServerSetMicrophoneMute_001, TestSize.Level1)
 {
-    EXPECT_NE(nullptr, audioServer);
+    ASSERT_NE(nullptr, audioServer);
+    if (audioServer == nullptr) {
+        return;
+    }
     
     int32_t ret = audioServer->SetMicrophoneMute(true);
     EXPECT_EQ(SUCCESS, ret);

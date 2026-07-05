@@ -1687,7 +1687,9 @@ void CapturerInClientInner::ReleaseCallbackResources(bool releaseRunner)
             cbBufferQueue_.PushNoWait({nullptr, 0, 0});
         }
         cbThreadCv_.notify_all();
-        clientBuffer_->WakeFutex();
+        if (clientBuffer_ != nullptr) {
+            clientBuffer_->WakeFutex();
+        }
         if (callbackLoop_.joinable()) {
             callbackLoop_.join();
         }
