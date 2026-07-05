@@ -17,9 +17,6 @@
 group("audio_framework_droute_aiut") {
   testonly = true
   deps = [
-    "droute_capturer:droute_capturer_aiut",
-    "droute_renderer:droute_renderer_aiut",
-    "droute_common:droute_common_aiut",
     "../../frameworks/native/hdiadapter_new/test/aiut/adapter_remote:adapter_remote_aiut",
   ]
 }

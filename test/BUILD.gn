@@ -357,24 +357,3 @@ group("audio_benchmark_test") {
     "../frameworks/native/audiorenderer/test/benchmark:benchmarktest",
   ]
 }
-
-# ==================== Audio Framework AIUT ====================
-# Top-level AIUT aggregation group.
-# References 6 domain-level AIUT groups:
-#   - common:    default domain (audioutils, audio_debug_manager, hdiadapter)
-#   - policy:    audio policy domain (device, volume, interrupt, route, stream, common)
-#   - engine:    audio engine domain (manager, node, common)
-#   - route:     audio route domain (capturer, renderer, common, manager)
-#   - droute:    distributed route domain (capturer, renderer, common)
-#   - focus:     audio focus domain (interrupt)
-group("audio_framework_aiut") {
-  testonly = true
-  deps = [
-    "unittest/audio_framework_common:audio_framework_common_aiut",
-    "unittest/audio_framework_policy:audio_framework_policy_aiut",
-    "unittest/audio_framework_engine:audio_framework_engine_aiut",
-    "unittest/audio_framework_route:audio_framework_route_aiut",
-    "unittest/audio_framework_droute:audio_framework_droute_aiut",
-    "unittest/audio_framework_focus:audio_framework_focus_aiut",
-  ]
-}
