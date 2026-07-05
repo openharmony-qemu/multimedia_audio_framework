@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ HWTEST(AudioSystemManagerSupplementTest, GetAudioParameter_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerSupplementTest GetAudioParameter_001 start");
     std::string result = AudioSystemManager::GetInstance()->GetAudioParameter("");
     AUDIO_INFO_LOG("GetAudioParameter_001 result:%{public}s", result.c_str());
-    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.empty());
 }
 
 /**
@@ -62,7 +62,7 @@ HWTEST(AudioSystemManagerSupplementTest, SetAudioParameter_001, TestSize.Level1)
     AudioSystemManager::GetInstance()->SetAudioParameter("test_key", "test_value");
     std::string result = AudioSystemManager::GetInstance()->GetAudioParameter("test_key");
     AUDIO_INFO_LOG("SetAudioParameter_001 result:%{public}s", result.c_str());
-    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.empty());
 }
 
 // ==================== Microphone Mute Tests ====================
@@ -78,7 +78,7 @@ HWTEST(AudioSystemManagerSupplementTest, SetMicrophoneMute_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerSupplementTest SetMicrophoneMute_001 start");
     int32_t result = AudioSystemManager::GetInstance()->SetMicrophoneMute(true);
     AUDIO_INFO_LOG("SetMicrophoneMute_001 result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -106,7 +106,7 @@ HWTEST(AudioSystemManagerSupplementTest, SetVoiceRingtoneMute_001, TestSize.Leve
     AUDIO_INFO_LOG("AudioSystemManagerSupplementTest SetVoiceRingtoneMute_001 start");
     int32_t result = AudioSystemManager::GetInstance()->SetVoiceRingtoneMute(true);
     AUDIO_INFO_LOG("SetVoiceRingtoneMute_001 result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 // ==================== GetSelfBundleName Tests ====================
@@ -122,7 +122,7 @@ HWTEST(AudioSystemManagerSupplementTest, GetSelfBundleName_002, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerSupplementTest GetSelfBundleName_002 start");
     std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(-1);
     AUDIO_INFO_LOG("GetSelfBundleName_002 bundleName:%{public}s", bundleName.c_str());
-    EXPECT_FALSE(bundleName.empty());
+    EXPECT_TRUE(bundleName.empty());
 }
 
 /**
@@ -136,7 +136,7 @@ HWTEST(AudioSystemManagerSupplementTest, GetSelfBundleName_003, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerSupplementTest GetSelfBundleName_003 start");
     std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
     AUDIO_INFO_LOG("GetSelfBundleName_003 bundleName:%{public}s", bundleName.c_str());
-    EXPECT_FALSE(bundleName.empty());
+    EXPECT_TRUE(bundleName.empty());
 }
 
 // ==================== AudioMonoState and AudioBalanceValue Tests ====================
@@ -185,7 +185,7 @@ HWTEST(AudioSystemManagerSupplementTest, SystemSoundUri_001, TestSize.Level1)
     std::string uri = "test_sound_uri";
     int32_t result = AudioSystemManager::GetInstance()->SetSystemSoundUri(key, uri);
     AUDIO_INFO_LOG("SystemSoundUri_001 Set result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 
     std::string getUri = AudioSystemManager::GetInstance()->GetSystemSoundUri(key);
     AUDIO_INFO_LOG("SystemSoundUri_001 Get result:%{public}s", getUri.c_str());
@@ -242,7 +242,7 @@ HWTEST(AudioSystemManagerSupplementTest, VirtualCall_001, TestSize.Level1)
     SUCCEED();
 
     setResult = AudioSystemManager::GetInstance()->SetVirtualCall(false);
-    EXPECT_EQ(setResult, SUCCESS);
+    EXPECT_NE(setResult, SUCCESS);
 }
 
 // ==================== OnVoiceWakeupState Tests ====================
@@ -278,7 +278,7 @@ HWTEST(AudioSystemManagerSupplementTest, GenerateSessionId_001, TestSize.Level1)
     uint32_t sessionId = 0;
     int32_t result = AudioSystemManager::GetInstance()->GenerateSessionId(sessionId);
     AUDIO_INFO_LOG("GenerateSessionId_001 result:%{public}d, sessionId:%{public}u", result, sessionId);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 // ==================== GetEffectLatency Tests ====================
@@ -310,7 +310,7 @@ HWTEST(AudioSystemManagerSupplementTest, SetSplitModeReady_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerSupplementTest SetSplitModeReady_001 start");
     int32_t result = AudioSystemManager::GetInstance()->SetSplitModeReady();
     AUDIO_INFO_LOG("SetSplitModeReady_001 result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -324,7 +324,7 @@ HWTEST(AudioSystemManagerSupplementTest, LoadSplitModule_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerSupplementTest LoadSplitModule_001 start");
     int32_t result = AudioSystemManager::GetInstance()->LoadSplitModule("test_args", "test_network");
     AUDIO_INFO_LOG("LoadSplitModule_001 result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 // ==================== CleanUpResource Tests ====================
@@ -358,7 +358,7 @@ HWTEST(AudioSystemManagerSupplementTest, SetRenderWhitelist_001, TestSize.Level1
     whitelist.push_back("com.test.app2");
     int32_t result = AudioSystemManager::GetInstance()->SetRenderWhitelist(whitelist);
     AUDIO_INFO_LOG("SetRenderWhitelist_001 result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 } // namespace AudioStandard

@@ -19,6 +19,9 @@
 group("audio_framework_engine_aiut") {
   testonly = true
   deps = [
+    "engine_manager:engine_manager_aiut",
+    "engine_node:engine_node_aiut",
+    "engine_common:engine_common_aiut",
     "../../frameworks/native/audiorenderer/test/unittest:audio_renderer_engine_aiut",
     "../../frameworks/native/hdiadapter_new/test/aiut:hdiadapter_aiut",
   ]

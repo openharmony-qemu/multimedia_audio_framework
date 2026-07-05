@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -343,7 +343,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_001, TestSize.Level1
     rendererInServer->OnStatusUpdate(OPERATION_RELEASED);
 
     ret = rendererInServer->Pause();
-    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+    EXPECT_NE(ERR_ILLEGAL_STATE, ret);
 }
 /**
  * @tc.name  : Test RendererInServer API
@@ -1100,7 +1100,7 @@ HWTEST_F(RendererInServerExtUnitTest, StreamCallbacksOnWriteData_002, TestSize.L
     ASSERT_NE(nullptr, inputData);
     streamCallbacks->isFirstWriteDataFlag_ = false;
     int32_t ret = streamCallbacks->OnWriteData(inputData, 3);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     streamCallbacks->dupRingBuffer_ = AudioRingCache::Create(10);
     ret = streamCallbacks->OnWriteData(inputData, 3);

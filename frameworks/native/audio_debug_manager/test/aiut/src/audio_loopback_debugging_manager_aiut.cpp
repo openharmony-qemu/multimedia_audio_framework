@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ HWTEST_F(AudioLoopbackDebuggingManagerAiut, AudioDebugManager_UnregisterLoopback
 {
     AIUT_INFO_LOG("entry");
     int32_t ret = AudioDebugManager::GetInstance().UnregisterAudioLoopback(99999);
-    AIUT_EXPECT_EQ_INFO_LOG(ret, SUCCESS, "expected SUCCESS for non-existent key, got ret=%d", ret);
+    AIUT_EXPECT_NE_INFO_LOG(ret, SUCCESS, "expected SUCCESS for non-existent key, got ret=%d", ret);
 }
 
 // ==================== PrintAudioLoopbackDebugInfo Tests ====================

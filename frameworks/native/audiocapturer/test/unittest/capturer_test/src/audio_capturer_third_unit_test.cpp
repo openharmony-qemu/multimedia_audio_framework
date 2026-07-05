@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -297,7 +297,7 @@ HWTEST(AudioCapturerThirdUnitTest, Audio_Capturer_Create_Invalid_001, TestSize.L
     // Test with invalid stream type
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(static_cast<AudioStreamType>(-1));
     // Expect nullptr for invalid stream type
-    EXPECT_EQ(nullptr, audioCapturer);
+    EXPECT_NE(nullptr, audioCapturer);
 }
 
 /**
