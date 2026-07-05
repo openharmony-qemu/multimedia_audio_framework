@@ -23,8 +23,7 @@
 #include "audio_policy_manager.h"
 #include "audio_capturer_private.h"
 #include "audio_stream_enum.h"
-#include "nativetoken_kit.h"
-#include "token_setproc.h"
+#include "audio_aiut_utils.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -36,15 +35,7 @@ namespace AudioStandard {
 
 void AudioCapturerThirdUnitTest::SetUpTestCase(void)
 {
-    const char *perms[] = {"ohos.permission.MICROPHONE"};
-    NativeTokenInfoParams info = {
-        .dcapsNum = 0,
-        .permsNum = 1,
-        .perms = perms,
-        .aplStr = "system_basic",
-    };
-    uint64_t tokenID = GetAccessTokenId(&info);
-    SetSelfTokenID(tokenID);
+    AIUT::GrantPermission("ohos.permission.MICROPHONE");
 }
 
 void AudioCapturerThirdUnitTest::TearDownTestCase(void) {}

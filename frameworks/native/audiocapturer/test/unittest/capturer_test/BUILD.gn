@@ -26,6 +26,7 @@ ohos_unittest("audio_capturer_unit_test") {
     "../../../../audiostream/include",
     "../../../../../../services/audio_policy/server/include",
     "../../../../audioschedule/include",
+    "../../../../../../test/unittest/common/include",
   ]
 
   cflags = [
