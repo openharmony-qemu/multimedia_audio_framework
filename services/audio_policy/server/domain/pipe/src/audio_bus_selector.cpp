@@ -115,7 +115,7 @@ std::string AudioBusSelector::GetDefaultBusByConfig()
 
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(globalConfigs.pipe_);
     if (pipeInfo == nullptr) {
-        AUDIO_ERR_LOG("Can not find pipe info for default bus.");
+        AUDIO_WARNING_LOG("Can not find pipe info for default bus.");
         return "";
     }
     return pipeInfo->paProp_.busAddress_;
