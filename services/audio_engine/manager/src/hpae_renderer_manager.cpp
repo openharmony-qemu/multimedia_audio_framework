@@ -959,6 +959,7 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
     }
 
     cluster->HandleRendererStop(sinkInputNodeMap_[sessionId]->GetNodeInfo(), sinkInfo_);
+    SetCollabDoFade(sceneType);
 }
 
 void HpaeRendererManager::SetCollabDoFade(HpaeProcessorType sceneType)
