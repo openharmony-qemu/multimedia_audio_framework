@@ -119,7 +119,6 @@ private:
     void WriteSmartPAStatusSysEvent(int32_t status);
     void UpdateSinkState(bool started);
     void UpdateNearlinkOutputRoute();
-    void RefreshSpeakerDeviceForEnhancedRouting();
     int32_t SelectSceneToHdi(AudioScene audioScene, bool scoExcludeFlag);
     int32_t HandleSwitchDeviceMuteState(bool mute, bool &applyVolume);
     int32_t SetSinkMuteForSwitchDeviceWithHdiVolume(bool mute);
