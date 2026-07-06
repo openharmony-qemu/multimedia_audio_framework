@@ -163,6 +163,35 @@ static std::unordered_map<OH_AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHA
     {OH_AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK, AudioChannel::CHANNEL_8},
 };
 
+static inline const std::vector<OH_Audio_SampleFormat> AUDIO_SUPPORTED_SAMPLE_FORMAT {
+    AUDIO_SAMPLE_U8,
+    AUDIO_SAMPLE_S16LE,
+    AUDIO_SAMPLE_S24LE,
+    AUDIO_SAMPLE_S32LE,
+    AUDIO_SAMPLE_F32LE,
+};
+
+static inline const std::vector<OH_Audio_SampleRate> AUDIO_SUITE_SUPPORTED_SAMPLING_RATES {
+    OH_Audio_SampleRate::SAMPLE_RATE_8000,
+    OH_Audio_SampleRate::SAMPLE_RATE_11025,
+    OH_Audio_SampleRate::SAMPLE_RATE_12000,
+    OH_Audio_SampleRate::SAMPLE_RATE_16000,
+    OH_Audio_SampleRate::SAMPLE_RATE_22050,
+    OH_Audio_SampleRate::SAMPLE_RATE_24000,
+    OH_Audio_SampleRate::SAMPLE_RATE_32000,
+    OH_Audio_SampleRate::SAMPLE_RATE_44100,
+    OH_Audio_SampleRate::SAMPLE_RATE_48000,
+    OH_Audio_SampleRate::SAMPLE_RATE_64000,
+    OH_Audio_SampleRate::SAMPLE_RATE_88200,
+    OH_Audio_SampleRate::SAMPLE_RATE_96000,
+    OH_Audio_SampleRate::SAMPLE_RATE_176400,
+    OH_Audio_SampleRate::SAMPLE_RATE_192000,
+};
+
+static inline const std::vector<OH_Audio_EncodingType> AUDIO_SUPPORTED_ENCODEING_TYPE {
+    AUDIO_ENCODING_TYPE_RAW,
+};
+
 using namespace OHOS::AudioStandard::AudioSuite;
 
 static bool CheckChannelInfoValid(int32_t channelCount, OH_AudioChannelLayout channelLayout)
@@ -199,6 +228,10 @@ bool CheckHoaInputFormat(OH_AudioFormat audioFormat)
     CHECK_AND_RETURN_RET_LOG(audioFormat.samplingRate == OH_Audio_SampleRate::SAMPLE_RATE_16000 ||
         audioFormat.samplingRate == OH_Audio_SampleRate::SAMPLE_RATE_48000,
         false, "HOA input format requires 16k or 48k samplingRate, got %{public}d", audioFormat.samplingRate);
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_SAMPLE_FORMAT, audioFormat.sampleFormat),
+        false, "input format sampleFormat%{public}d not supported", audioFormat.sampleFormat);
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_ENCODEING_TYPE, audioFormat.encodingType),
+        false, "input format encodingType%{public}d not supported", audioFormat.encodingType);
     switch (audioFormat.channelLayout) {
         case CH_LAYOUT_AMB_ORDER1_ACN_N3D:
         case CH_LAYOUT_AMB_ORDER1_ACN_SN3D:
@@ -224,9 +257,22 @@ bool CheckHoaInputFormat(OH_AudioFormat audioFormat)
     return true;
 }
 
+static bool CheckAudioFormat(
+    OH_Audio_SampleRate samplingRate, OH_Audio_SampleFormat sampleFormat, OH_Audio_EncodingType encodingType)
+{
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUITE_SUPPORTED_SAMPLING_RATES, samplingRate),
+        false, "input format samplingRate:%{public}d, not supported", samplingRate);
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_SAMPLE_FORMAT, sampleFormat),
+        false, "input format sampleFormat%{public}d not supported", sampleFormat);
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_ENCODEING_TYPE, encodingType),
+        false, "input format encodingType%{public}d not supported", encodingType);
+    return true;
+}
+
 bool CheckAudioFormat(OH_AudioFormat audioFormat)
 {
-    return CheckChannelInfoValid(audioFormat.channelCount, audioFormat.channelLayout);
+    return CheckChannelInfoValid(audioFormat.channelCount, audioFormat.channelLayout) &&
+        CheckAudioFormat(audioFormat.samplingRate, audioFormat.sampleFormat, audioFormat.encodingType);
 }
 
 bool CheckAudioFormat(OH_AudioSystemNodeFormat audioFormat)
