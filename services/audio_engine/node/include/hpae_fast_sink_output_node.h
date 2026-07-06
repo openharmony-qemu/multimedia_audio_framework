@@ -128,6 +128,7 @@ private:
     void CheckSyncInfo(uint64_t curWritePos);
     bool GetRenderFrameDataInner(HpaePcmBuffer *&pcmBuffer);
     int32_t WriteToDeviceBuffer(HpaePcmBuffer *pcmBuffer, uint64_t curWritePos);
+    void ProcessVolumeAndDfx(BufferDesc &transBuf);
     AudioStreamInfo GetDfxStreamInfo();
     void InitDumpFile();
     void InitSinkVolume();
