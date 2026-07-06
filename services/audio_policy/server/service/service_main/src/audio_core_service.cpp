@@ -2793,7 +2793,6 @@ void AudioCoreService::PrepareInputFetchInfos(
         CHECK_AND_CONTINUE(streamDesc != nullptr);
 
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
-        pipeManager_->UpdateNewDeviceDesc(streamDesc, {});
 
         FetchDeviceInfo info;
         info.sourceType = streamDesc->capturerInfo_.sourceType;
