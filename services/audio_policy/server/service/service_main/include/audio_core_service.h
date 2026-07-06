@@ -757,8 +757,6 @@ private:
     void UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     void PrepareInputFetchInfos(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs,
         std::vector<FetchDeviceInfo> &infos);
-    void UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller,
-        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToRoute);
     bool IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs);
     bool HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeReasonExt &reason,
         const AudioDeviceDescriptor &actived, const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams);

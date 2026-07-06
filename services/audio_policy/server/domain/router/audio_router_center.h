@@ -44,15 +44,6 @@ public:
         return audioRouterCenter;
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo &info);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesNoLock(FetchDeviceInfo &info);
-    class ArbiterScope {
-    public:
-        explicit ArbiterScope(AudioRouterCenter &center);
-        ~ArbiterScope();
-    private:
-        AudioRouterCenter &center_;
-        std::unique_lock<std::mutex> lock_;
-    };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(FetchDeviceInfo &info);
     InputDeviceMap FetchInputDeviceForAllInputStreams(std::vector<FetchDeviceInfo> &infos);
