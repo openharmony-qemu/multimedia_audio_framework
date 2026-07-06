@@ -119,7 +119,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetZoneDevices();
 
 #ifdef MULTI_USER_ZONE
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(int32_t usage, int32_t clientUid);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage, int32_t clientUid);
 #endif
 
     const std::string GetZoneStringDescriptor(int32_t zoneId);
@@ -173,6 +173,8 @@ private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FilterDevicesByVisibleMode(
         const std::vector<std::pair<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> &zoneDevices,
         int32_t currentZoneId, bool isSystemService);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FilterDevicesByUsage(AudioDeviceUsage usage,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 #endif
 };
 } // namespace AudioStandard
