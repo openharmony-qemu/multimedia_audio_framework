@@ -1309,6 +1309,7 @@ int32_t CapturerInClientInner::Enqueue(const BufferDesc &bufDesc)
         AUDIO_ERR_LOG("Not supported, mode is not callback.");
         return ERR_INCORRECT_MODE;
     }
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Invalid state: %{public}d", state_.load());
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
 
     if (bufDesc.bufLength != cbBufferSize_ || bufDesc.dataLength != cbBufferSize_) {

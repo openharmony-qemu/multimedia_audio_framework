@@ -46,6 +46,7 @@ public:
     std::condition_variable readCallbackCv_;
     std::list<std::shared_ptr<NapiAudioCapturerCallbackInner>> audioCapturerCallbacks_;
     std::atomic<bool> isFrameCallbackDone_;
+    std::atomic<bool> isNotifyFromOff_;
 
 private:
     struct AudioCapturerAsyncContext : public ContextBase {
