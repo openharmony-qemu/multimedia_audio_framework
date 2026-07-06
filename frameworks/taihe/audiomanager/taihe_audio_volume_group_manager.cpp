@@ -64,6 +64,16 @@ AudioVolumeGroupManager AudioVolumeGroupManagerImpl::CreateAudioVolumeGroupManag
     return make_holder<AudioVolumeGroupManagerImpl, AudioVolumeGroupManager>(audioVolumeGroupManagerImpl);
 }
 
+void AudioVolumeGroupManagerImpl::SetVolumeAsync(AudioVolumeType volumeType, int32_t volume)
+{
+    return SetVolumeSync(volumeType, volume);
+}
+
+void AudioVolumeGroupManagerImpl::SetVolumePromise(AudioVolumeType volumeType, int32_t volume)
+{
+    return SetVolumeSync(volumeType, volume);
+}
+
 void AudioVolumeGroupManagerImpl::SetVolumeSync(AudioVolumeType volumeType, int32_t volume)
 {
     int32_t volType = volumeType.get_value();
@@ -116,6 +126,16 @@ AudioVolumeType AudioVolumeGroupManagerImpl::GetActiveVolumeTypeSync(int32_t uid
     return TaiheAudioEnum::GetJsAudioVolumeType(volType);
 }
 
+int32_t AudioVolumeGroupManagerImpl::GetVolumeAsync(AudioVolumeType volumeType)
+{
+    return GetVolumeSync(volumeType);
+}
+
+int32_t AudioVolumeGroupManagerImpl::GetVolumePromise(AudioVolumeType volumeType)
+{
+    return GetVolumeSync(volumeType);
+}
+
 int32_t AudioVolumeGroupManagerImpl::GetVolumeSync(AudioVolumeType volumeType)
 {
     int32_t volType = volumeType.get_value();
@@ -133,6 +153,16 @@ int32_t AudioVolumeGroupManagerImpl::GetVolumeSync(AudioVolumeType volumeType)
     return volLevel;
 }
 
+int32_t AudioVolumeGroupManagerImpl::GetMinVolumeAsync(AudioVolumeType volumeType)
+{
+    return GetMinVolumeSync(volumeType);
+}
+
+int32_t AudioVolumeGroupManagerImpl::GetMinVolumePromise(AudioVolumeType volumeType)
+{
+    return GetMinVolumeSync(volumeType);
+}
+
 int32_t AudioVolumeGroupManagerImpl::GetMinVolumeSync(AudioVolumeType volumeType)
 {
     int32_t volType = volumeType.get_value();
@@ -148,6 +178,16 @@ int32_t AudioVolumeGroupManagerImpl::GetMinVolumeSync(AudioVolumeType volumeType
     }
     volLevel = audioGroupMngr_->GetMinVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
     return volLevel;
+}
+
+int32_t AudioVolumeGroupManagerImpl::GetMaxVolumeAsync(AudioVolumeType volumeType)
+{
+    return GetMaxVolumeSync(volumeType);
+}
+
+int32_t AudioVolumeGroupManagerImpl::GetMaxVolumePromise(AudioVolumeType volumeType)
+{
+    return GetMaxVolumeSync(volumeType);
 }
 
 int32_t AudioVolumeGroupManagerImpl::GetMaxVolumeSync(AudioVolumeType volumeType)
@@ -203,6 +243,16 @@ bool AudioVolumeGroupManagerImpl::IsMuteSync(AudioVolumeType volumeType)
     return isMute;
 }
 
+void AudioVolumeGroupManagerImpl::SetRingerModeAsync(AudioRingMode mode)
+{
+    return SetRingerModeSync(mode);
+}
+
+void AudioVolumeGroupManagerImpl::SetRingerModePromise(AudioRingMode mode)
+{
+    return SetRingerModeSync(mode);
+}
+
 void AudioVolumeGroupManagerImpl::SetRingerModeSync(AudioRingMode mode)
 {
     int32_t ringMode = mode.get_value();
@@ -220,6 +270,16 @@ void AudioVolumeGroupManagerImpl::SetRingerModeSync(AudioRingMode mode)
     return;
 }
 
+AudioRingMode AudioVolumeGroupManagerImpl::GetRingerModeAsync()
+{
+    return GetRingerModeSync();
+}
+
+AudioRingMode AudioVolumeGroupManagerImpl::GetRingerModePromise()
+{
+    return GetRingerModeSync();
+}
+
 AudioRingMode AudioVolumeGroupManagerImpl::GetRingerModeSync()
 {
     OHOS::AudioStandard::AudioRingerMode ringerMode = OHOS::AudioStandard::AudioRingerMode::RINGER_MODE_NORMAL;
@@ -229,6 +289,16 @@ AudioRingMode AudioVolumeGroupManagerImpl::GetRingerModeSync()
     }
     ringerMode = audioGroupMngr_->GetRingerMode();
     return TaiheAudioEnum::ToTaiheAudioRingMode(ringerMode);
+}
+
+void AudioVolumeGroupManagerImpl::SetMicrophoneVolumeMuteAsync(bool mute)
+{
+    return SetMicMuteSync(mute);
+}
+
+void AudioVolumeGroupManagerImpl::SetMicrophoneVolumeMutePromise(bool mute)
+{
+    return SetMicMuteSync(mute);
 }
 
 void AudioVolumeGroupManagerImpl::SetMicMuteSync(bool mute)
@@ -288,6 +358,16 @@ bool AudioVolumeGroupManagerImpl::IsPersistentMicMute()
     }
     isPersistentMicMute = audioGroupMngr_->GetPersistentMicMuteState();
     return isPersistentMicMute;
+}
+
+bool AudioVolumeGroupManagerImpl::IsMicrophoneVolumeMuteAsync()
+{
+    return IsMicrophoneMuteSync();
+}
+
+bool AudioVolumeGroupManagerImpl::IsMicrophoneVolumeMutePromise()
+{
+    return IsMicrophoneMuteSync();
 }
 
 bool AudioVolumeGroupManagerImpl::IsMicrophoneMuteSync()

@@ -464,6 +464,16 @@ AudioState AudioCapturerImpl::GetState()
     return TaiheAudioEnum::ToTaiheAudioState(state);
 }
 
+void AudioCapturerImpl::StartAsync()
+{
+    return StartSync();
+}
+
+void AudioCapturerImpl::StartPromise()
+{
+    return StartSync();
+}
+
 void AudioCapturerImpl::StartSync()
 {
     if (audioCapturer_ == nullptr) {
@@ -484,6 +494,16 @@ void AudioCapturerImpl::StartSync()
     }
 }
 
+void AudioCapturerImpl::StopAsync()
+{
+    return StopSync();
+}
+
+void AudioCapturerImpl::StopPromise()
+{
+    return StopSync();
+}
+
 void AudioCapturerImpl::StopSync()
 {
     if (audioCapturer_ == nullptr) {
@@ -495,6 +515,16 @@ void AudioCapturerImpl::StopSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
+}
+
+void AudioCapturerImpl::ReleaseAsync()
+{
+    return ReleaseSync();
+}
+
+void AudioCapturerImpl::ReleasePromise()
+{
+    return ReleaseSync();
 }
 
 void AudioCapturerImpl::ReleaseSync()
@@ -524,6 +554,26 @@ int64_t AudioCapturerImpl::GetBufferSizeSync()
     return static_cast<int64_t>(bufferSize);
 }
 
+AudioCapturerInfo AudioCapturerImpl::GetCapturerInfoAsync()
+{
+    return GetCapturerInfoSync();
+}
+
+AudioCapturerInfo AudioCapturerImpl::GetCapturerInfoPromise()
+{
+    return GetCapturerInfoSync();
+}
+
+AudioCapturerInfo AudioCapturerImpl::GetAudioCapturerInfoAsync()
+{
+    return GetCapturerInfoSync();
+}
+
+AudioCapturerInfo AudioCapturerImpl::GetAudioCapturerInfoPromise()
+{
+    return GetCapturerInfoSync();
+}
+
 AudioCapturerInfo AudioCapturerImpl::GetCapturerInfoSync()
 {
     AudioCapturerInfo emptyAudioCapturerInfo {
@@ -542,6 +592,26 @@ AudioCapturerInfo AudioCapturerImpl::GetCapturerInfoSync()
     }
     AudioCapturerInfo result = TaiheParamUtils::ToTaiheCapturerInfo(capturerInfo);
     return result;
+}
+
+AudioStreamInfo AudioCapturerImpl::GetStreamInfoAsync()
+{
+    return GetStreamInfoSync();
+}
+
+AudioStreamInfo AudioCapturerImpl::GetStreamInfoPromise()
+{
+    return GetStreamInfoSync();
+}
+
+AudioStreamInfo AudioCapturerImpl::GetAudioStreamInfoAsync()
+{
+    return GetStreamInfoSync();
+}
+
+AudioStreamInfo AudioCapturerImpl::GetAudioStreamInfoPromise()
+{
+    return GetStreamInfoSync();
 }
 
 AudioStreamInfo AudioCapturerImpl::GetStreamInfoSync()
@@ -569,6 +639,16 @@ AudioStreamInfo AudioCapturerImpl::GetStreamInfoSync()
     return result;
 }
 
+int64_t AudioCapturerImpl::GetAudioStreamIdAsync()
+{
+    return GetAudioStreamIdSync();
+}
+
+int64_t AudioCapturerImpl::GetAudioStreamIdPromise()
+{
+    return GetAudioStreamIdSync();
+}
+
 int64_t AudioCapturerImpl::GetAudioStreamIdSync()
 {
     uint32_t audioStreamId = 0;
@@ -588,6 +668,16 @@ int64_t AudioCapturerImpl::GetAudioStreamIdSync()
         return audioStreamId;
     }
     return static_cast<int64_t>(audioStreamId);
+}
+
+int64_t AudioCapturerImpl::GetAudioTimeAsync()
+{
+    return GetAudioTimeSync();
+}
+
+int64_t AudioCapturerImpl::GetAudioTimePromise()
+{
+    return GetAudioTimeSync();
 }
 
 int64_t AudioCapturerImpl::GetAudioTimeSync()
@@ -764,6 +854,16 @@ void AudioCapturerImpl::RequestPlaybackCaptureStart(callback_view<void(PlaybackC
     std::thread([audioCapturer, playbackCaptureStartCallback]() {
         ExecutePlaybackCaptureStart(audioCapturer, playbackCaptureStartCallback);
     }).detach();
+}
+
+taihe::array<AudioDeviceDescriptor> AudioCapturerImpl::GetCurrentInputDevicesAsync()
+{
+    return GetCurrentInputDevices();
+}
+
+taihe::array<AudioDeviceDescriptor> AudioCapturerImpl::GetCurrentInputDevicesPromise()
+{
+    return GetCurrentInputDevices();
 }
 
 taihe::array<AudioDeviceDescriptor> AudioCapturerImpl::GetCurrentInputDevices()
@@ -1133,3 +1233,5 @@ AudioCapturerOrNull CreateAudioCapturerSync(AudioCapturerOptions const &options)
 } // namespace ANI::Audio
 
 TH_EXPORT_CPP_API_CreateAudioCapturerSync(ANI::Audio::CreateAudioCapturerSync);
+TH_EXPORT_CPP_API_CreateAudioCapturerPromise(ANI::Audio::CreateAudioCapturerSync);
+TH_EXPORT_CPP_API_CreateAudioCapturerAsync(ANI::Audio::CreateAudioCapturerSync);

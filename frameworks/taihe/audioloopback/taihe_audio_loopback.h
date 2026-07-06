@@ -38,9 +38,12 @@ public:
     static AudioLpback CreateAudioLoopbackWrapper(OHOS::AudioStandard::AudioLoopbackMode loopbackMode);
     static AudioLpback CreateGlobalAudioLoopbackWrapper(OHOS::AudioStandard::AudioLoopbackMode mode,
         OHOS::AudioStandard::LoopbackType type);
+    AudioLoopbackStatus GetStatusPromise();
     AudioLoopbackStatus GetStatusSync();
+    void SetVolumePromise(double volume);
     void SetVolumeSync(double volume);
     double GetVolume();
+    bool EnablePromise(bool enable);
     bool EnableSync(bool enable);
     array<AudioDevicePair> GetSupportedDevicePairs();
     AudioDevicePairOrNull GetPreferredDevicePair();

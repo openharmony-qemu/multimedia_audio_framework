@@ -132,6 +132,11 @@ bool AudioSpatializationManagerImpl::IsHeadTrackingSupportedForDevice(AudioDevic
     return isHeadTrackingSupportedForDevice;
 }
 
+void AudioSpatializationManagerImpl::SetSpatializationEnabledPromise(AudioDeviceDescriptor deviceDescriptor, bool enabled)
+{
+    return SetSpatializationEnabledSync(deviceDescriptor, enabled);
+}
+
 void AudioSpatializationManagerImpl::SetSpatializationEnabledSync(AudioDeviceDescriptor deviceDescriptor, bool enabled)
 {
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
@@ -199,6 +204,11 @@ bool AudioSpatializationManagerImpl::IsSpatializationEnabledForCurrentDevice()
     }
     isSpatializationEnabledForCurrentDevice = audioSpatializationMngr_->IsSpatializationEnabledForCurrentDevice();
     return isSpatializationEnabledForCurrentDevice;
+}
+
+void AudioSpatializationManagerImpl::SetHeadTrackingEnabledPromise(AudioDeviceDescriptor deviceDescriptor, bool enabled)
+{
+    return SetHeadTrackingEnabledSync(deviceDescriptor, enabled);
 }
 
 void AudioSpatializationManagerImpl::SetHeadTrackingEnabledSync(AudioDeviceDescriptor deviceDescriptor, bool enabled)

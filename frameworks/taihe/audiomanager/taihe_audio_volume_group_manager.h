@@ -30,19 +30,35 @@ public:
 
     static AudioVolumeGroupManager CreateAudioVolumeGroupManagerWrapper(int32_t groupId);
 
+    void SetVolumeAsync(AudioVolumeType volumeType, int32_t volume);
+    void SetVolumePromise(AudioVolumeType volumeType, int32_t volume);
     void SetVolumeSync(AudioVolumeType volumeType, int32_t volume);
     void SetVolumeWithFlagSync(AudioVolumeType volumeType, int32_t volume, int32_t flags);
     AudioVolumeType GetActiveVolumeTypeSync(int32_t uid);
+    int32_t GetVolumeAsync(AudioVolumeType volumeType);
+    int32_t GetVolumePromise(AudioVolumeType volumeType);
     int32_t GetVolumeSync(AudioVolumeType volumeType);
+    int32_t GetMinVolumeAsync(AudioVolumeType volumeType);
+    int32_t GetMinVolumePromise(AudioVolumeType volumeType);
     int32_t GetMinVolumeSync(AudioVolumeType volumeType);
+    int32_t GetMaxVolumeAsync(AudioVolumeType volumeType);
+    int32_t GetMaxVolumePromise(AudioVolumeType volumeType);
     int32_t GetMaxVolumeSync(AudioVolumeType volumeType);
     void MuteSync(AudioVolumeType volumeType, bool mute);
     bool IsMuteSync(AudioVolumeType volumeType);
+    void SetRingerModeAsync(AudioRingMode mode);
+    void SetRingerModePromise(AudioRingMode mode);
     void SetRingerModeSync(AudioRingMode mode);
+    AudioRingMode GetRingerModeAsync();
+    AudioRingMode GetRingerModePromise();
     AudioRingMode GetRingerModeSync();
+    void SetMicrophoneVolumeMuteAsync(bool mute);
+    void SetMicrophoneVolumeMutePromise(bool mute);
     void SetMicMuteSync(bool mute);
     void SetMicMutePersistentSync(bool mute, PolicyType type);
     bool IsPersistentMicMute();
+    bool IsMicrophoneVolumeMuteAsync();
+    bool IsMicrophoneVolumeMutePromise();
     bool IsMicrophoneMuteSync();
     void AdjustVolumeByStepSync(VolumeAdjustType adjustType);
     bool IsVolumeUnadjustable();

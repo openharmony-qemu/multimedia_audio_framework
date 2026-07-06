@@ -156,6 +156,16 @@ AudioRendererOrNull AudioRendererImpl::CreateAudioRendererWrapper(
     return AudioRendererOrNull::make_type_audioRenderer(make_holder<AudioRendererImpl, AudioRenderer>(impl));
 }
 
+void AudioRendererImpl::StartAsync()
+{
+    return StartSync();
+}
+
+void AudioRendererImpl::StartPromise()
+{
+    return StartSync();
+}
+
 void AudioRendererImpl::StartSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -167,6 +177,26 @@ void AudioRendererImpl::StartSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
+}
+
+int64_t AudioRendererImpl::GetAudioTimeAsync()
+{
+    return GetAudioTimeSync();
+}
+
+int64_t AudioRendererImpl::GetAudioTimePromise()
+{
+    return GetAudioTimeSync();
+}
+
+int64_t AudioRendererImpl::GetTimestampAsync()
+{
+    return GetAudioTimeSync();
+}
+
+int64_t AudioRendererImpl::GetTimestampPromise()
+{
+    return GetAudioTimeSync();
 }
 
 int64_t AudioRendererImpl::GetAudioTimeSync()
@@ -209,6 +239,16 @@ AudioTimestampInfo AudioRendererImpl::GetAudioTimestampInfoSync()
     return result;
 }
 
+void AudioRendererImpl::DrainAsync()
+{
+    return DrainSync();
+}
+
+void AudioRendererImpl::DrainPromise()
+{
+    return DrainSync();
+}
+
 void AudioRendererImpl::DrainSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -220,6 +260,16 @@ void AudioRendererImpl::DrainSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
+}
+
+void AudioRendererImpl::FlushAsync()
+{
+    return FlushSync();
+}
+
+void AudioRendererImpl::FlushPromise()
+{
+    return FlushSync();
 }
 
 void AudioRendererImpl::FlushSync()
@@ -235,6 +285,16 @@ void AudioRendererImpl::FlushSync()
     }
 }
 
+void AudioRendererImpl::PauseAsync()
+{
+    return PauseSync();
+}
+
+void AudioRendererImpl::PausePromise()
+{
+    return PauseSync();
+}
+
 void AudioRendererImpl::PauseSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -246,6 +306,16 @@ void AudioRendererImpl::PauseSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
+}
+
+void AudioRendererImpl::StopAsync()
+{
+    return StopSync();
+}
+
+void AudioRendererImpl::StopPromise()
+{
+    return StopSync();
 }
 
 void AudioRendererImpl::StopSync()
@@ -286,6 +356,16 @@ int64_t AudioRendererImpl::GetBufferSizeSync()
         return 0;
     }
     return static_cast<int64_t>(bufferSize);
+}
+
+int64_t AudioRendererImpl::GetAudioStreamIdAsync()
+{
+    return GetAudioStreamIdSync();
+}
+
+int64_t AudioRendererImpl::GetAudioStreamIdPromise()
+{
+    return GetAudioStreamIdSync();
 }
 
 int64_t AudioRendererImpl::GetAudioStreamIdSync()
@@ -336,6 +416,16 @@ double AudioRendererImpl::GetVolume()
     return volLevel;
 }
 
+AudioRendererInfo AudioRendererImpl::GetRendererInfoAsync()
+{
+    return GetRendererInfoSync();
+}
+
+AudioRendererInfo AudioRendererImpl::GetRendererInfoPromise()
+{
+    return GetRendererInfoSync();
+}
+
 AudioRendererInfo AudioRendererImpl::GetRendererInfoSync()
 {
     AudioRendererInfo emptyRendererInfo = {
@@ -355,6 +445,26 @@ AudioRendererInfo AudioRendererImpl::GetRendererInfoSync()
     }
     AudioRendererInfo result = TaiheParamUtils::ToTaiheRendererInfo(rendererInfo);
     return result;
+}
+
+AudioStreamInfo AudioRendererImpl::GetStreamInfoAsync()
+{
+    return GetStreamInfoSync();
+}
+
+AudioStreamInfo AudioRendererImpl::GetStreamInfoPromise()
+{
+    return GetStreamInfoSync();
+}
+
+AudioStreamInfo AudioRendererImpl::GetAudioStreamInfoAsync()
+{
+    return GetStreamInfoSync();
+}
+
+AudioStreamInfo AudioRendererImpl::GetAudioStreamInfoPromise()
+{
+    return GetStreamInfoSync();
 }
 
 AudioStreamInfo AudioRendererImpl::GetStreamInfoSync()
@@ -415,6 +525,16 @@ double AudioRendererImpl::GetMaxStreamVolumeSync()
     }
     double volLevel = audioRenderer_->GetMaxStreamVolume();
     return volLevel;
+}
+
+taihe::array<AudioDeviceDescriptor> AudioRendererImpl::GetCurrentOutputDevicesAsync()
+{
+    return GetCurrentOutputDevicesSync();
+}
+
+taihe::array<AudioDeviceDescriptor> AudioRendererImpl::GetCurrentOutputDevicesPromise()
+{
+    return GetCurrentOutputDevicesSync();
 }
 
 taihe::array<AudioDeviceDescriptor> AudioRendererImpl::GetCurrentOutputDevicesSync()
@@ -1247,3 +1367,5 @@ AudioRendererOrNull CreateAudioRendererSync(AudioRendererOptions const &options)
 } // namespace ANI::Audio
 
 TH_EXPORT_CPP_API_CreateAudioRendererSync(ANI::Audio::CreateAudioRendererSync);
+TH_EXPORT_CPP_API_CreateAudioRendererPromise(ANI::Audio::CreateAudioRendererSync);
+TH_EXPORT_CPP_API_CreateAudioRendererAsync(ANI::Audio::CreateAudioRendererSync);

@@ -47,6 +47,16 @@ AudioStreamManager AudioStreamManagerImpl::CreateStreamManagerWrapper()
     return make_holder<AudioStreamManagerImpl, AudioStreamManager>(nullptr);
 }
 
+array<AudioRendererChangeInfo> AudioStreamManagerImpl::GetCurrentAudioRendererInfoArrayAsync()
+{
+    return GetCurrentAudioRendererInfoArraySync();
+}
+
+array<AudioRendererChangeInfo> AudioStreamManagerImpl::GetCurrentAudioRendererInfoArrayPromise()
+{
+    return GetCurrentAudioRendererInfoArraySync();
+}
+
 array<AudioRendererChangeInfo> AudioStreamManagerImpl::GetCurrentAudioRendererInfoArraySync()
 {
     std::vector<AudioRendererChangeInfo> emptyResult;
@@ -62,6 +72,16 @@ array<AudioRendererChangeInfo> AudioStreamManagerImpl::GetCurrentAudioRendererIn
     return TaiheParamUtils::SetRendererChangeInfos(audioRendererChangeInfos);
 }
 
+array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerInfoArrayAsync()
+{
+    return GetCurrentAudioCapturerInfoArraySync();
+}
+
+array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerInfoArrayPromise()
+{
+    return GetCurrentAudioCapturerInfoArraySync();
+}
+
 array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerInfoArraySync()
 {
     std::vector<AudioCapturerChangeInfo> emptyResult;
@@ -75,6 +95,16 @@ array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerIn
         return array<AudioCapturerChangeInfo>(emptyResult);
     }
     return TaiheParamUtils::SetCapturerChangeInfos(audioCapturerChangeInfos);
+}
+
+array<AudioEffectMode> AudioStreamManagerImpl::GetAudioEffectInfoArrayAsync(StreamUsage usage)
+{
+    return GetAudioEffectInfoArraySync(usage);
+}
+
+array<AudioEffectMode> AudioStreamManagerImpl::GetAudioEffectInfoArrayPromise(StreamUsage usage)
+{
+    return GetAudioEffectInfoArraySync(usage);
 }
 
 array<AudioEffectMode> AudioStreamManagerImpl::GetAudioEffectInfoArraySync(StreamUsage usage)
@@ -105,6 +135,16 @@ array<AudioEffectMode> AudioStreamManagerImpl::GetAudioEffectInfoArraySync(Strea
         return array<AudioEffectMode>(emptyResult);
     }
     return TaiheParamUtils::SetEffectInfo(audioSceneEffectInfo);
+}
+
+bool AudioStreamManagerImpl::IsActiveAsync(AudioVolumeType volumeType)
+{
+    return IsActiveSync(volumeType);
+}
+
+bool AudioStreamManagerImpl::IsActivePromise(AudioVolumeType volumeType)
+{
+    return IsActiveSync(volumeType);
 }
 
 bool AudioStreamManagerImpl::IsActiveSync(AudioVolumeType volumeType)
