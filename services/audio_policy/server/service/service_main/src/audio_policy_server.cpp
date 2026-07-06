@@ -3428,8 +3428,6 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
 
     // Keep mute-hint state and bypass decision consistent with stream cleanup after tracker death.
     coreService_->ReEvaluateVoipBypassByAppMuteHint();
-    CHECK_AND_RETURN_LOG(eventEntry_ != nullptr, "eventEntry_ is nullptr");
-    eventEntry_->ReEvaluateVoipPrivacyMuteForCapturers("AudioPolicyServer::RegisteredTrackerClientDied");
 }
 
 void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
@@ -3688,8 +3686,6 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
         for (const auto &sessionID : sessionIDSet) {
             AudioServerProxy::GetInstance().SetLatestMuteState(sessionID, targetMuteState);
         }
-        server_->ReEvaluateVoipPrivacyMuteForCapturers(
-            "AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallback");
     }
 }
 
@@ -5402,10 +5398,10 @@ int32_t AudioPolicyServer::SetAudioSessionCapturerMuteHint(bool mute)
     return sessionService_.SetAudioSessionCapturerMuteHint(callerPid, mute);
 }
 
-void AudioPolicyServer::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)
+void AudioPolicyServer::SetStreamInterruptMute(uint32_t streamId, bool mute)
 {
     CHECK_AND_RETURN_LOG(eventEntry_ != nullptr, "eventEntry_ is nullptr");
-    eventEntry_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    eventEntry_->SetStreamInterruptMute(streamId, mute);
 }
 
 int32_t AudioPolicyServer::GetDefaultOutputDevice(int32_t &deviceType)
@@ -6147,8 +6143,7 @@ int32_t AudioPolicyServer::SetAudioSessionBehavior(const uint32_t behavior)
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     int32_t callerUid = IPCSkeleton::GetCallingUid();
-    int32_t ret = interruptService_->SetAudioSessionBehavior(callerPid, behavior, callerUid);
-    return ret;
+    return interruptService_->SetAudioSessionBehavior(callerPid, behavior, callerUid);
 }
 
 int32_t AudioPolicyServer::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
