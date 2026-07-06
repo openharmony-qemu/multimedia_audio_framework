@@ -343,22 +343,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     return descs;
 }
 
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesNoLock(FetchDeviceInfo &info)
-{
-    return FetchOutputDevicesInner(info);
-}
-
-AudioRouterCenter::ArbiterScope::ArbiterScope(AudioRouterCenter &center)
-    : center_(center), lock_(center.routerMutex_)
-{
-    center_.StartArbiterContext();
-}
-
-AudioRouterCenter::ArbiterScope::~ArbiterScope()
-{
-    center_.StopArbiterContext();
-}
-
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchMediaOutputDevices(FetchDeviceInfo &info)
 {
     std::lock_guard<std::mutex> lock(routerMutex_);
