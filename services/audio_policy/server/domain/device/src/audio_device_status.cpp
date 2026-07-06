@@ -576,6 +576,7 @@ int32_t AudioDeviceStatus::LoadDpModule(std::string deviceInfo)
         AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
         if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
             GetDPModuleInfo(moduleInfo, deviceInfo);
+            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_DP));
             if (moduleInfo.role == ROLE_SINK) {
                 AUDIO_INFO_LOG("save dp sink module info for cust param");
                 AudioCoreService::GetCoreService()->SetDpSinkModuleInfo(moduleInfo);
@@ -745,6 +746,7 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
         moduleInfo.bufferSize = to_string(bufferSize);
         moduleInfo.renderInIdleState = "1";
         moduleInfo.sinkLatency = "0";
+        moduleInfo.deviceType = std::to_string(static_cast<int32_t>(deviceType));
 
         // First unload the existing bt sink
         AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
