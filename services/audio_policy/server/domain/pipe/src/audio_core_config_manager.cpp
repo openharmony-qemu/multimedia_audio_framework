@@ -1109,6 +1109,13 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoFro
     AudioSampleFormat format = streamInfo.format;
     uint32_t sampleRate = static_cast<uint32_t>(streamInfo.samplingRate);
     AudioChannel channels = streamInfo.channels;
+#ifdef MULTI_BUS_ENABLE
+    for (auto &streamProp : info->streamPropInfos_) {
+        if (streamProp->channels_ == channels) {
+            return streamProp;
+        }
+    }
+#else
     for (auto &streamProp : info->streamPropInfos_) {
         if (streamProp->format_ == format &&
             streamProp->sampleRate_ == sampleRate &&
@@ -1116,6 +1123,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoFro
             return streamProp;
         }
     }
+#endif
     return nullptr;
 }
 
