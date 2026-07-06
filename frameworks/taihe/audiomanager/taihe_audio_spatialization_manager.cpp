@@ -132,7 +132,8 @@ bool AudioSpatializationManagerImpl::IsHeadTrackingSupportedForDevice(AudioDevic
     return isHeadTrackingSupportedForDevice;
 }
 
-void AudioSpatializationManagerImpl::SetSpatializationEnabledPromise(AudioDeviceDescriptor deviceDescriptor, bool enabled)
+void AudioSpatializationManagerImpl::SetSpatializationEnabledPromise(
+    AudioDeviceDescriptor deviceDescriptor, bool enabled)
 {
     return SetSpatializationEnabledSync(deviceDescriptor, enabled);
 }

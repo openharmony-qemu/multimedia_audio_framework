@@ -129,7 +129,8 @@ map<string, string> AudioManagerImpl::GetExtraParametersSync(string_view mainKey
     return kvpairs;
 }
 
-map<string, string> AudioManagerImpl::GetExtraParametersPromise(string_view mainKey, optional_view<array<string>> subKeys)
+map<string, string> AudioManagerImpl::GetExtraParametersPromise(
+    string_view mainKey, optional_view<array<string>> subKeys)
 {
     return GetExtraParametersSync(mainKey, subKeys);
 }
