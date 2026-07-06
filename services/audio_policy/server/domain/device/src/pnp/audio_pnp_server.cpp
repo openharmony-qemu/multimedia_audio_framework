@@ -79,6 +79,7 @@ bool AudioPnpServer::init(void)
     if (!socketThread_) {
         socketThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadWithSocket(); });
         pthread_setname_np(socketThread_->native_handle(), "OS_SocketEvent");
+        DetectAudioDevice();
     }
     if (!inputThread_) {
         inputThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadInput(); });
