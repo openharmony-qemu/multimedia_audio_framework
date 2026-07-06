@@ -318,6 +318,7 @@ int32_t RemoteAudioRenderSink::SetVolume(float left, float right)
 int32_t RemoteAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
 {
     AUDIO_INFO_LOG("RemoteAudioRenderSink::SetVolumeWithRamp in");
+    SetVolume(left, right);
     return SUCCESS;
 }
 
