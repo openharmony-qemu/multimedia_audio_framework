@@ -405,5 +405,7 @@ AudioLpback CreateGlobalAudioLoopbackSync(AudioLoopbackMode mode, bool isControl
 }
 } // namespace ANI::Audio
 
+TH_EXPORT_CPP_API_CreateAudioLoopbackPromise(ANI::Audio::CreateAudioLoopbackSync);
 TH_EXPORT_CPP_API_CreateAudioLoopbackSync(ANI::Audio::CreateAudioLoopbackSync);
+TH_EXPORT_CPP_API_CreateGlobalAudioLoopbackPromise(ANI::Audio::CreateGlobalAudioLoopbackSync);
 TH_EXPORT_CPP_API_CreateGlobalAudioLoopbackSync(ANI::Audio::CreateGlobalAudioLoopbackSync);

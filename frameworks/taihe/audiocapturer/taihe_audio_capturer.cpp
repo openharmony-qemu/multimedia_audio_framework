@@ -540,6 +540,16 @@ void AudioCapturerImpl::ReleaseSync()
     }
 }
 
+int64_t AudioCapturerImpl::GetBufferSizeAsync()
+{
+    return GetBufferSizeSync();
+}
+
+int64_t AudioCapturerImpl::GetBufferSizePromise()
+{
+    return GetBufferSizeSync();
+}
+
 int64_t AudioCapturerImpl::GetBufferSizeSync()
 {
     size_t bufferSize = 0;
@@ -560,16 +570,6 @@ AudioCapturerInfo AudioCapturerImpl::GetCapturerInfoAsync()
 }
 
 AudioCapturerInfo AudioCapturerImpl::GetCapturerInfoPromise()
-{
-    return GetCapturerInfoSync();
-}
-
-AudioCapturerInfo AudioCapturerImpl::GetAudioCapturerInfoAsync()
-{
-    return GetCapturerInfoSync();
-}
-
-AudioCapturerInfo AudioCapturerImpl::GetAudioCapturerInfoPromise()
 {
     return GetCapturerInfoSync();
 }
@@ -600,16 +600,6 @@ AudioStreamInfo AudioCapturerImpl::GetStreamInfoAsync()
 }
 
 AudioStreamInfo AudioCapturerImpl::GetStreamInfoPromise()
-{
-    return GetStreamInfoSync();
-}
-
-AudioStreamInfo AudioCapturerImpl::GetAudioStreamInfoAsync()
-{
-    return GetStreamInfoSync();
-}
-
-AudioStreamInfo AudioCapturerImpl::GetAudioStreamInfoPromise()
 {
     return GetStreamInfoSync();
 }
@@ -699,6 +689,11 @@ int64_t AudioCapturerImpl::GetAudioTimeSync()
     return resultTime;
 }
 
+AudioTimestampInfo AudioCapturerImpl::GetAudioTimestampInfoPromise()
+{
+    return GetAudioTimestampInfoSync();
+}
+
 AudioTimestampInfo AudioCapturerImpl::GetAudioTimestampInfoSync()
 {
     AudioTimestampInfo emptyTimestampInfo {
@@ -721,6 +716,11 @@ AudioTimestampInfo AudioCapturerImpl::GetAudioTimestampInfoSync()
     return result;
 }
 
+int64_t AudioCapturerImpl::GetOverflowCountPromise()
+{
+    return GetOverflowCountSync();
+}
+
 int64_t AudioCapturerImpl::GetOverflowCountSync()
 {
     int64_t retOverflowCount = 0;
@@ -730,6 +730,11 @@ int64_t AudioCapturerImpl::GetOverflowCountSync()
     }
     uint32_t overflowCount = audioCapturer_->GetOverflowCount();
     return static_cast<int64_t>(overflowCount);
+}
+
+void AudioCapturerImpl::SetWillMuteWhenInterruptedPromise(bool muteWhenInterrupted)
+{
+    return SetWillMuteWhenInterruptedSync(muteWhenInterrupted);
 }
 
 void AudioCapturerImpl::SetWillMuteWhenInterruptedSync(bool muteWhenInterrupted)
@@ -744,6 +749,11 @@ void AudioCapturerImpl::SetWillMuteWhenInterruptedSync(bool muteWhenInterrupted)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetWillMuteWhenInterrupted failed");
         return;
     }
+}
+
+void AudioCapturerImpl::SetMuteHintPromise(bool mute)
+{
+    return SetMuteHintSync(mute);
 }
 
 void AudioCapturerImpl::SetMuteHintSync(bool mute)
@@ -854,16 +864,6 @@ void AudioCapturerImpl::RequestPlaybackCaptureStart(callback_view<void(PlaybackC
     std::thread([audioCapturer, playbackCaptureStartCallback]() {
         ExecutePlaybackCaptureStart(audioCapturer, playbackCaptureStartCallback);
     }).detach();
-}
-
-taihe::array<AudioDeviceDescriptor> AudioCapturerImpl::GetCurrentInputDevicesAsync()
-{
-    return GetCurrentInputDevices();
-}
-
-taihe::array<AudioDeviceDescriptor> AudioCapturerImpl::GetCurrentInputDevicesPromise()
-{
-    return GetCurrentInputDevices();
 }
 
 taihe::array<AudioDeviceDescriptor> AudioCapturerImpl::GetCurrentInputDevices()
