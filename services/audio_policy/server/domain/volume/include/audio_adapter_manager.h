@@ -514,6 +514,8 @@ private:
     bool IsStreamTypeInUse(AudioStreamType streamType, std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsDirectRoute(uint32_t routeFlag) const;
     void UpdatePipeVolumeWhenVgsStatusChanged();
+    void SetPipeVolume(AudioVolumeType volumeType, std::shared_ptr<AudioDeviceDescriptor> device,
+        const std::unordered_set<AudioIOHandle>& pipeIds, VolumeValue volumeValue, float volumeDb);
     void UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
         std::shared_ptr<AudioDeviceDescriptor> device, const std::unordered_set<AudioIOHandle>& pipeIds,
         int32_t zoneId = 0);
