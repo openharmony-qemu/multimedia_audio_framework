@@ -1652,10 +1652,8 @@ napi_value NapiAudioRoutingManager::OnPreferredInputDeviceChangeByFilter(napi_en
     napi_value args[requireArgc] = { nullptr, nullptr };
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok && argc == requireArgc,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect number of parameters: expected 2 parameters"),
-        "status or argc error");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && argc == requireArgc, NapiAudioError::ThrowErrorAndReturn(env,
+        "incorrect number of parameters: expected 2 parameters", NAPI_ERR_INPUT_INVALID), "status or argc error");
 
     NapiAudioRoutingManager *napiRoutingMgr = nullptr;
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiRoutingMgr));
@@ -1664,32 +1662,33 @@ napi_value NapiAudioRoutingManager::OnPreferredInputDeviceChangeByFilter(napi_en
         NapiParamUtils::GetUndefinedValue(env), "Failed to retrieve audio routing manager napi instance.");
 
     CHECK_AND_RETURN_RET_LOG(NapiParamUtils::CheckArgType(env, args[PARAM0], napi_object),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of filter must be object"), "filter invalid");
+        NapiAudioError::ThrowErrorAndReturn(env,
+        "incorrect parameter types: The type of filter must be object", NAPI_ERR_INPUT_INVALID), "filter invalid");
 
     CHECK_AND_RETURN_RET_LOG(NapiParamUtils::CheckArgType(env, args[PARAM1], napi_function),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of callback must be function"), "callback invalid");
+        NapiAudioError::ThrowErrorAndReturn(env, "incorrect parameter types: The type of callback must be function",
+        NAPI_ERR_INPUT_INVALID), "callback invalid");
 
     CHECK_AND_RETURN_RET_LOG(GetNapiPrefInputDeviceChangeCb(args[PARAM1], napiRoutingMgr) == nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "Do not allow duplicate registration of the same callback"), "duplicate callback");
+        NapiAudioError::ThrowErrorAndReturn(env, "Do not allow duplicate registration of the same callback",
+        NAPI_ERR_INVALID_PARAM), "duplicate callback");
 
     sptr<AudioCapturerFilter> audioCapturerFilter = nullptr;
     status = NapiParamUtils::GetAudioCapturerFilter(env, audioCapturerFilter, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && audioCapturerFilter != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "Parameter verification failed. The audioCapturerFilter obj is NULL."), "filter parse error");
+        NapiAudioError::ThrowErrorAndReturn(env, "Parameter verification failed. The audioCapturerFilter obj is NULL.",
+        NAPI_ERR_INVALID_PARAM), "filter parse error");
 
     AudioCapturerInfo capturerInfo = audioCapturerFilter->capturerInfo;
     CHECK_AND_RETURN_RET_LOG(capturerInfo.sourceType != SourceType::SOURCE_TYPE_INVALID,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "Parameter verification failed. Your source in AudioCapturerInfo is invalid."), "invalid sourceType");
+        NapiAudioError::ThrowErrorAndReturn(env,
+        "Parameter verification failed. Your source in AudioCapturerInfo is invalid.",
+        NAPI_ERR_INVALID_PARAM), "invalid sourceType");
 
     std::shared_ptr<NapiAudioPreferredInputDeviceChangeCallback> cb =
         std::make_shared<NapiAudioPreferredInputDeviceChangeCallback>(env);
     CHECK_AND_RETURN_RET_LOG(cb != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY, "Memory allocation failed"), "no memory");
+        NapiAudioError::ThrowErrorAndReturn(env, "Memory allocation failed", NAPI_ERR_NO_MEMORY), "no memory");
 
     cb->SaveCallbackReference(args[PARAM1]);
     cb->CreatePreferredInTsfn(env);
@@ -1697,8 +1696,8 @@ napi_value NapiAudioRoutingManager::OnPreferredInputDeviceChangeByFilter(napi_en
     int32_t ret = napiRoutingMgr->audioRoutingMngr_->SetPreferredInputDeviceChangeCallback(
         capturerInfo, cb, audioCapturerFilter->uid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-        NapiAudioError::ThrowErrorAndReturn(env, ret,
-        "Registering Preferred Input Device By Filter Change Callback Failed"), "register failed");
+        NapiAudioError::ThrowErrorAndReturn(env,
+        "Registering Preferred Input Device By Filter Change Callback Failed", ret), "register failed");
 
     PreferredInputCallbackInfo callbackInfo = {audioCapturerFilter->uid, capturerInfo.sourceType};
     std::lock_guard<std::mutex> lock(napiRoutingMgr->preferredInputDeviceMutex_);
@@ -1726,8 +1725,8 @@ napi_value NapiAudioRoutingManager::OffPreferredInputDeviceChangeByFilter(napi_e
         napi_valuetype handler = napi_undefined;
         napi_typeof(env, args[PARAM0], &handler);
         if (handler != napi_function) {
-            NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
-                "incorrect parameter types: The type of callback must be function");
+            NapiAudioError::ThrowError(env,
+                "incorrect parameter types: The type of callback must be function", NAPI_ERR_INPUT_INVALID);
             return NapiParamUtils::GetUndefinedValue(env);
         }
         callback = args[PARAM0];
