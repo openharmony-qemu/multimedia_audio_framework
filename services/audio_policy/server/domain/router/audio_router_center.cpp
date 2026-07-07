@@ -735,7 +735,6 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectOutputStreamDevices(cons
 {
     std::vector<StreamDeviceInfo> outputDevices = CollectOutputStreamDevices(deviceInfo.bypassType);
     CHECK_AND_RETURN_RET(deviceInfo.streamUsage != STREAM_USAGE_UNKNOWN, outputDevices);
-    CHECK_AND_RETURN_RET(deviceInfo.streamId != INVALID_STREAM_ID, outputDevices);
 
     StreamDeviceInfo info;
     info.uid = deviceInfo.clientUID;
@@ -788,7 +787,6 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectInputStreamDevices(const
 {
     std::vector<StreamDeviceInfo> inputDevices = CollectInputStreamDevices();
     CHECK_AND_RETURN_RET(deviceInfo.sourceType != SOURCE_TYPE_INVALID, inputDevices);
-    CHECK_AND_RETURN_RET(deviceInfo.streamId != INVALID_STREAM_ID, inputDevices);
 
     StreamDeviceInfo info;
     info.uid = deviceInfo.clientUID;
