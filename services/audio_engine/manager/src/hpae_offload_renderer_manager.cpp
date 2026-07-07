@@ -392,11 +392,6 @@ void HpaeOffloadRendererManager::MaterializeSessionEffectFromAttachState(uint32_
             "attach-state cleared, ret=%{public}d", curSessionId, seRet);
         return;
     }
-    // Restart preheat if previous incarnation was active.
-    if (stOpt->lastSeStatus >= static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP)
-        && sessionEffectNode_ != nullptr) {
-        sessionEffectNode_->StartEffect();
-    }
     TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, curSessionId, state,
         OPERATION_SESSION_EFFECT_ENABLED);
     AUDIO_INFO_LOG("ConnectInputSession: SE materialized+ENABLED for session %{public}u", curSessionId);
@@ -1339,16 +1334,6 @@ void HpaeOffloadRendererManager::DetachSessionEffectNodeForReload()
     // Do NOT clear attach state — it must survive reload so ConnectInputSession can re-materialize.
     // Only reset the physical cache (node + sessionId).
     if (sessionEffectNode_ != nullptr) {
-        // Capture lastSeStatus before reset so MaterializeSessionEffectFromAttachState can restart
-        // preheat (mirrors DetachSessionEffectNodeForRefresh in hpae_renderer_manager_session_effect.cpp).
-        auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionEffectSessionId_);
-        if (sinkInputNode != nullptr && sinkInputNode->HasSessionEffectAttachState()) {
-            auto st = sinkInputNode->GetSessionEffectAttachState();
-            if (st.has_value()) {
-                st->lastSeStatus = static_cast<int32_t>(sessionEffectNode_->GetStatus());
-                sinkInputNode->SetSessionEffectAttachState(st.value());
-            }
-        }
         // Reload runs on SignalProcessThread after DisConnectInputSession has removed this node
         // from the processing chain, so DetachEffectForReload only resets local runtime state.
         sessionEffectNode_->DetachEffectForReload();

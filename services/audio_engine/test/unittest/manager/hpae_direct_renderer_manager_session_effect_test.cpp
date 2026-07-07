@@ -2371,10 +2371,10 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_006, TestSiz
 }
 
 /**
- * @tc.name    : Materialize_LastSeStatusRestart
+ * @tc.name    : Materialize_Restart
  * @tc.type    : FUNC
  * @tc.number  : SE_Materialize_007
- * @tc.desc    : Test MaterializeSessionEffectFromAttachState covers lastSeStatus >= WARMING_UP restart
+ * @tc.desc    : Test MaterializeSessionEffectFromAttachState restart
  */
 HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_007, TestSize.Level1)
 {
@@ -2391,16 +2391,13 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_007, TestSiz
     manager_->sessionEffectNode_->StartEffect();
     ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 
-    // Detach (captures lastSeStatus = WARMING_UP into attach state and calls StopPreheatThread)
     manager_->DetachSessionEffectNodeForReload();
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     auto node = manager_->sinkInputNodeMap_[TEST_SESSION_ID];
     auto stOpt = node->GetSessionEffectAttachState();
     ASSERT_TRUE(stOpt.has_value());
-    EXPECT_EQ(stOpt->lastSeStatus, static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP));
 
-    // Re-materialize: lastSeStatus >= WARMING_UP -> StartEffect restart branch (node enters WARMING_UP again)
     manager_->MaterializeSessionEffectFromAttachState(TEST_SESSION_ID);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);

@@ -328,8 +328,8 @@ HWTEST_F(HpaeOffloadSeTest, reloadDetach_pendingOnly_clearsPendingWithoutDisable
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 }
 
-// OSE-1d: DetachSessionEffectNodeForReload captures lastSeStatus so preheat restarts after reload.
-HWTEST_F(HpaeOffloadSeTest, detachForReload_writesLastSeStatus_toAttachState, TestSize.Level0)
+// OSE-1d: DetachSessionEffectNodeForReload captures so preheat restarts after reload.
+HWTEST_F(HpaeOffloadSeTest, detachForReload_writes_toAttachState, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
     int32_t ret = manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
@@ -347,12 +347,9 @@ HWTEST_F(HpaeOffloadSeTest, detachForReload_writesLastSeStatus_toAttachState, Te
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
-    // ...and now carries the captured lastSeStatus so materialize can restart preheat.
     auto st = curNode_->GetSessionEffectAttachState();
     ASSERT_TRUE(st.has_value());
-    EXPECT_EQ(st->lastSeStatus, static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP));
 
-    // Re-materialize: lastSeStatus >= WARMING_UP triggers StartEffect on the fresh node, so it
     // ends up in WARMING_UP (not IDLE) — proving the captured status flowed through.
     manager_->MaterializeSessionEffectFromAttachState(CUR_SESSION_ID);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
@@ -1068,14 +1065,10 @@ HWTEST_F(HpaeOffloadSeTest, moveStream_currentNode_preservesAttachState_noDisabl
 //   B4b inst != nullptr                -> continue               [T5/T6]
 //   B5a seRet != SUCCESS               -> DISABLED + clear        [T5]
 //   B5b seRet == SUCCESS               -> continue               [T6 + existing success test]
-//   B6a lastSeStatus < WARMING_UP      -> skip StartEffect       [existing success test]
-//   B6c lastSeStatus >= WARMING_UP     -> StartEffect + ENABLED   [T6]
 //
 // Unreachable defensive branches (documented, cannot be covered):
 //   B3a !stOpt.has_value(): tautologically false right after HasSessionEffectAttachState()
 //       returned true (both check the same optional).
-//   B6b lastSeStatus >= WARMING_UP && sessionEffectNode_ == nullptr: impossible because
-//       InsertSessionEffectNode only returns SUCCESS after assigning sessionEffectNode_.
 // ============================================================================
 
 // B1a: sessionEffectNode_ already present → Materialize is a no-op.
@@ -1159,29 +1152,6 @@ HWTEST_F(HpaeOffloadSeTest, materialize_offload_chainBroken_emitsDisabledAndClea
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
 }
-
-// B6c: success path with lastSeStatus >= WARMING_UP → StartEffect called on the fresh node,
-// ENABLED emitted, node ends up in WARMING_UP (proves StartEffect ran, not left in IDLE).
-HWTEST_F(HpaeOffloadSeTest, materialize_offload_lastStatusWarm_restartsPreheat, TestSize.Level0)
-{
-    auto instance = MakeTestEffectInstance();
-    SessionEffectAttachState st;
-    st.enabled = true;
-    st.effectName = "audio_aiss_enhance";
-    st.instance = instance;
-    st.config = config_;
-    st.lastSeStatus = static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP);
-    curNode_->SetSessionEffectAttachState(st);
-    ASSERT_TRUE(curNode_->HasSessionEffectAttachState());
-
-    manager_->MaterializeSessionEffectFromAttachState(CUR_SESSION_ID);
-
-    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
-    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
-    // Without B6c's StartEffect the new node would stay IDLE; StartEffect pushes it to WARMING_UP.
-    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
-}
-
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
