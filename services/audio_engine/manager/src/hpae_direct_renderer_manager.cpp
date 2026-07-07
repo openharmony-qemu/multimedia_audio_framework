@@ -333,7 +333,7 @@ void HpaeDirectRendererManager::CreateProcessNodes(uint32_t sessionId)
     }
     converterForGain_ = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, nodeInfo);
     converterForGain_->SetDownmixNormalization(false);
-    converterForLoudness_->RegisterCallback(this);
+    converterForGain_->RegisterCallback(this);
 }
 
 int32_t HpaeDirectRendererManager::CreateDirectNodes()
@@ -547,7 +547,7 @@ int32_t HpaeDirectRendererManager::Flush(uint32_t sessionId)
         }
 
         sinkOutputNode_->RenderSinkFlush();
-        
+
         // flush SE
         if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
             sessionEffectNode_->FlushEffect();
@@ -565,20 +565,6 @@ int32_t HpaeDirectRendererManager::Drain(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(node, "Drain not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Drain sessionId %{public}u", sessionId);
         node->Drain();
-        CHECK_AND_RETURN(curNode_ != nullptr && sessionId == curNode_->GetSessionId());
-
-        // flush converter nodes
-        if (converterForGain_ != nullptr) {
-            converterForGain_->FlushBuffers();
-        }
-        if (converterForOutput_ != nullptr) {
-            converterForOutput_->FlushBuffers();
-        }
-        // flush SE
-        if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
-            sessionEffectNode_->FlushEffect();
-        }
-
         if (node->GetState() != HPAE_SESSION_RUNNING) {
             TriggerCallback(
                 UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_DRAINED);
@@ -1389,8 +1375,9 @@ int32_t HpaeDirectRendererManager::CreateSessionEffect(uint32_t sessionId,
     CHECK_AND_RETURN_RET_LOG(
         !(curNode_ != nullptr && curNode_->GetSessionId() == sessionId && sessionEffectNode_ != nullptr),
         static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND),
-        "CreateSessionEffect: curNode already has materialized SE for session %{public}u",
-        sessionId);
+        "CreateSessionEffect: curNode already has materialized SE for session %{public}u", sessionId);
+    CHECK_AND_RETURN_RET_LOG(volumeSyncNode_ == nullptr, static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED),
+        "CreateSessionEffect: VOIP mode does not support SE for session %{public}u", sessionId);
 
     // Create accepted — persist the logical binding on the SinkInputNode
     if (node != nullptr) {
@@ -1404,15 +1391,6 @@ int32_t HpaeDirectRendererManager::CreateSessionEffect(uint32_t sessionId,
 
     // If session is curNode_ and chain is ready, materialize immediately
     if (curNode_ != nullptr && curNode_->GetSessionId() == sessionId) {
-        // VOIP mode does not support SE
-        if (volumeSyncNode_ != nullptr) {
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
-                OPERATION_SESSION_EFFECT_ENABLED);
-            AUDIO_WARNING_LOG("CreateSessionEffect: VOIP mode does not support SE for session %{public}u",
-                sessionId);
-            return static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED);
-        }
-
         if (converterForGain_ == nullptr || loudnessGainNode_ == nullptr) {
             // Chain not ready; attach state sits on node, will materialize in ConnectInputSession
             TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
