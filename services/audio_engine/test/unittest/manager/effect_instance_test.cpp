@@ -66,7 +66,11 @@ static int32_t CreateDegenerateIface(const AudioEffectDescriptor, AudioEffectHan
 {
     auto *iface = new AudioEffectInterface();  // value-init: all pointers null
     iface->command = DegenerateCommand;        // feedInput / getOutput intentionally left null
-    *handle = new AudioEffectInterface *(iface);
+    // AudioEffectHandle = AudioEffectInterface**, so allocate a pointer slot and store its
+    // address into *handle. Two-step form avoids the "new AudioEffectInterface *(iface)"
+    // misread (looks like deref); mirrors FakeAudioEffectLibEntry::FakeCreateEffect.
+    auto **handleSlot = new AudioEffectInterface *(iface);
+    *handle = handleSlot;
     return 0;
 }
 
@@ -116,7 +120,9 @@ HWTEST_F(EffectInstanceTest, release_setsStateIdle, TestSize.Level0)
     EXPECT_EQ(instance_->GetState(), EffectInstance::EffectState::IDLE);
 }
 
-// Release from ERROR state exercises EffectStateToString(ERROR) in the log
+// Smoke: Release() from ERROR state must not crash. The EffectStateToString(ERROR) branch
+// runs indirectly via Release()'s log line; the string is NOT asserted (the helper is a
+// trivial anonymous-namespace switch, not observable from the test).
 HWTEST_F(EffectInstanceTest, release_fromErrorState, TestSize.Level0)
 {
     instance_->Init("test_effect", config_);
@@ -127,7 +133,9 @@ HWTEST_F(EffectInstanceTest, release_fromErrorState, TestSize.Level0)
     EXPECT_EQ(instance_->GetState(), EffectInstance::EffectState::IDLE);
 }
 
-// Release from out-of-range state exercises EffectStateToString(default=UNKNOWN)
+// Smoke: Release() from an out-of-range state must not crash. The EffectStateToString
+// default(UNKNOWN) branch runs indirectly via the log line; string NOT asserted
+// (see release_fromErrorState for the rationale).
 HWTEST_F(EffectInstanceTest, release_fromUnknownState, TestSize.Level0)
 {
     instance_->Init("test_effect", config_);
@@ -331,6 +339,14 @@ HWTEST_F(EffectInstanceAlgoTest, readOutput_nullPtr_earlyReturns, TestSize.Level
     // ~EffectInstance() is a no-op; Release explicitly so the degenerate handle is freed
     // (the new AudioEffectInterface + new AudioEffectInterface* from CreateDegenerateIface).
     instance_->Release();
+}
+
+// DegenerateRelease's null-handle guard is defensive: EffectInstance never passes null
+// (Release() gates on hasHandle_ && effectHandle_ != nullptr), so the branch is only
+// reachable via a direct call. Pin it directly so the branch is honestly covered.
+HWTEST_F(EffectInstanceAlgoTest, degenerateRelease_nullHandle_returnsError, TestSize.Level0)
+{
+    EXPECT_EQ(DegenerateRelease(nullptr), -1);
 }
 
 // Release destroys handle when created with library
