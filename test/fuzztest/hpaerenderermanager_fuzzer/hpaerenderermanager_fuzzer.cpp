@@ -1090,14 +1090,13 @@ void SessionEffectLifecycleFuzzTest()
 
     uint32_t sessionId = streamInfo.sessionId;
     std::string effectName = "test_effect";
-    rendererManager->CreateSessionEffect(sessionId, effectName, nullptr, {});
+    rendererManager->PostCreateSessionEffect(sessionId, effectName, nullptr, {});
     WaitForMsgProcessing(rendererManager);
     rendererManager->HasSessionEffect(sessionId);
     int32_t type = GetData<int32_t>();
     float value = GetData<float>();
-    rendererManager->SetSessionEffectParameter(sessionId, type, value);
     rendererManager->PostSetSessionEffectParameter(sessionId, type, value);
-    rendererManager->DestroySessionEffect(sessionId);
+    rendererManager->PostDestroySessionEffect(sessionId);
     WaitForMsgProcessing(rendererManager);
     rendererManager->PostDestroySessionEffect(sessionId);
     WaitForMsgProcessing(rendererManager);
@@ -1121,11 +1120,11 @@ void SessionEffectInvalidSessionFuzzTest()
     std::string effectName = "test_effect";
 
     // Synchronous not-found / false branches:
-    rendererManager->CreateSessionEffect(invalidSessionId, effectName, nullptr, {});
-    rendererManager->DestroySessionEffect(invalidSessionId);
+    rendererManager->PostCreateSessionEffect(invalidSessionId, effectName, nullptr, {});
+    rendererManager->PostDestroySessionEffect(invalidSessionId);
     (void)rendererManager->HasSessionEffect(invalidSessionId);
     (void)rendererManager->IsValidSession(invalidSessionId);
-    rendererManager->SetSessionEffectParameter(invalidSessionId, type, value);
+    rendererManager->PostSetSessionEffectParameter(invalidSessionId, type, value);
 
     // Asynchronous Post* wrappers (dispatched to the signal-process thread):
     rendererManager->PostSetSessionEffectParameter(invalidSessionId, type, value);
