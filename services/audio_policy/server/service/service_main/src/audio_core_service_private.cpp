@@ -1855,34 +1855,68 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
     }
     shouldUpdateDeviceDueToDualTone_ = false;
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
-        !VolumeUtils::IsPCVolumeEnable() && !streamDesc->newDeviceDescs_.front()->isBTSupportWearDetectionEnable_) {
-        UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, pipeId);
+        !VolumeUtils::IsPCVolumeEnable()) {
+        HandleRingerOrAlarmerRoute(streamDesc, deviceType, pipeId);
     } else if (AudioCollaborativeService::GetAudioCollaborativeService().GetRealCollaborativeState() &&
         (streamDesc->isNearLinkCollaborationEnable_ || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
         CheckCollaborativeStreamRunning())) {
         // for collaboration, the route should be updated
         UpdateRouteForCollaboration(deviceType, pipeId);
     } else {
-        CHECK_AND_RETURN_LOG(streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID,
-            "remote device no need to update route");
-        if (isRingDualToneOnPrimarySpeaker_ && streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
-            std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
-            activeDevices.push_back(make_pair(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG));
-            activeDevices.push_back(make_pair(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
-            audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices, pipeId);
-            AUDIO_INFO_LOG("Update desc [%{public}d] with speaker on session [%{public}d]",
-                deviceType, streamDesc->sessionId_);
-            AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
-            if (!AudioCoreServiceUtils::IsDualStreamWhenRingDual(streamType) &&
-                pipeManager_ != nullptr && pipeManager_->IsOnPrimaryAdapter(streamDesc->sessionId_)) {
-                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamDesc->sessionId_, streamType));
-                audioPolicyManager_.SetDualStreamVolumeMute(streamDesc->sessionId_, true);
-            }
-            shouldUpdateDeviceDueToDualTone_ = true;
-        } else {
-            audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG,
-                pipeId, streamDesc->newDeviceDescs_.front()->networkId_);
+        HandleNormalOrDualToneRoute(streamDesc, deviceType, pipeId, streamUsage);
+    }
+}
+
+void AudioCoreService::HandleRingerOrAlarmerRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    InternalDeviceType deviceType, const uint32_t pipeId)
+{
+    if (!streamDesc->newDeviceDescs_.front()->isBTSupportWearDetectionEnable_) {
+        UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, pipeId);
+        return;
+    }
+
+    AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
+    std::shared_ptr<AudioDeviceDescriptor> frontDevice = streamDesc->newDeviceDescs_.front();
+    if (ringerMode != RINGER_MODE_NORMAL &&
+        IsRingerOrAlarmerDualDevicesRange(frontDevice->getType()) &&
+        frontDevice->getType() != DEVICE_TYPE_SPEAKER) {
+        audioPolicyManager_.SetDeviceNoMuteForRinger(frontDevice);
+        audioVolumeManager_.SetRingerModeMute(false);
+        if (audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(STREAM_RING) <
+            audioVolumeManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
+            audioVolumeManager_.SetDoubleRingVolumeDb(STREAM_RING,
+                audioVolumeManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
         }
+    } else {
+        audioPolicyManager_.ClearDeviceNoMuteForRinger();
+        audioVolumeManager_.SetRingerModeMute(true);
+    }
+    audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG,
+        pipeId, streamDesc->newDeviceDescs_.front()->networkId_);
+}
+
+void AudioCoreService::HandleNormalOrDualToneRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_LOG(streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID,
+        "remote device no need to update route");
+    if (isRingDualToneOnPrimarySpeaker_ && streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
+        activeDevices.push_back(make_pair(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG));
+        activeDevices.push_back(make_pair(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
+        audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices, pipeId);
+        AUDIO_INFO_LOG("Update desc [%{public}d] with speaker on session [%{public}d]",
+            deviceType, streamDesc->sessionId_);
+        AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
+        if (!AudioCoreServiceUtils::IsDualStreamWhenRingDual(streamType) &&
+            pipeManager_ != nullptr && pipeManager_->IsOnPrimaryAdapter(streamDesc->sessionId_)) {
+            streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamDesc->sessionId_, streamType));
+            audioPolicyManager_.SetDualStreamVolumeMute(streamDesc->sessionId_, true);
+        }
+        shouldUpdateDeviceDueToDualTone_ = true;
+    } else {
+        audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG,
+            pipeId, streamDesc->newDeviceDescs_.front()->networkId_);
     }
 }
 
