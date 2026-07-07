@@ -16,6 +16,7 @@
 #ifndef CAPTURER_CLOCK_MANAGER_H
 #define CAPTURER_CLOCK_MANAGER_H
 
+#include <atomic>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -41,6 +42,7 @@ private:
     std::map<uint32_t, std::shared_ptr<CapturerClock>> capturerClockPool_;
     std::map<uint32_t, std::shared_ptr<AudioSourceClock>> audioSrcClockPool_;
     std::mutex clockPoolMtx_;
+    std::atomic<int64_t> lastGetAudioSrcClockLogTime_ {0};
 };
 
 } // namespace AudioStandard
