@@ -21,8 +21,10 @@
 #include "audio_suite_log.h"
 #include "audio_utils.h"
 #include "download_manager.h"
+#ifndef AUDIOSUITE_SA_UT
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#endif
 #include "download_callback_proxy.h"
 #include "hisysevent.h"
 #include <fcntl.h>
@@ -39,11 +41,15 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 namespace {
+#ifndef AUDIOSUITE_SA_UT
     __attribute__((constructor)) void LibraryLoaded() {
     }
+#endif
 }
 
+#ifndef AUDIOSUITE_SA_UT
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioSuiteRomDownloadService, AudioSuiteRomDownloadService::SA_ID, true);
+#endif
 
 AudioSuiteRomDownloadService::AudioSuiteRomDownloadService(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate)
