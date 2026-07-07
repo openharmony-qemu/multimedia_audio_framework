@@ -504,7 +504,7 @@ private:
     void SetRemoteVolumeForPassThroughDevice(std::shared_ptr<AudioDeviceDescriptor> device, int32_t volumeLevel);
     void UpdateVolumeWhenPassThroughDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device);
     void RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
- 	    AudioVolumeType &volumeType);
+        AudioVolumeType &volumeType);
     void SaveSpecifiedDeviceVolumeInner(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType deviceType);
     void SaveSystemAppVolumeLevelToDb();

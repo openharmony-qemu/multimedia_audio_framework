@@ -1492,7 +1492,7 @@ bool CapturerInServer::CheckVoiceDownlinkPermission()
     return true;
 #endif
 }
- 	  
+
 void CapturerInServer::NotifySensitiveRecordPermit(const bool isPermitted)
 {
     AUDIO_INFO_LOG("Set sensitive record isPermitted: %{public}d", isPermitted);

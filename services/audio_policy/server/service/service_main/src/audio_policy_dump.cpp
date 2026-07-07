@@ -735,7 +735,7 @@ void AudioPolicyDump::RecordBootAnimationClientStateTime(const BootAnimationInfo
     idx = static_cast<size_t>(BootAnimationState::GET_BUNDLE_NAME);
     bootAnimationInfo_[idx] = info[idx];
     idx = static_cast<size_t>(BootAnimationState::VERIFY_PERMISSION_IN_CREATE);
- 	bootAnimationInfo_[idx] = info[idx];
+    bootAnimationInfo_[idx] = info[idx];
     idx = static_cast<size_t>(BootAnimationState::PREPARE_AUDIO_STREAM);
     bootAnimationInfo_[idx] = info[idx];
     idx = static_cast<size_t>(BootAnimationState::INIT_AUDIO_STREAM);

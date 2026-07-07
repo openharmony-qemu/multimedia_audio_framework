@@ -739,7 +739,7 @@ void HpaeTempEffectBuffer::SetTempBufferData(HpaePcmBuffer* buffer, float *tempO
         collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] = SMALL_SIGNAL_NUM;
     }
 }
- 	 
+
 void HpaeTempEffectBuffer::DoFadeOut(HpaePcmBuffer* buffer)
 {
     float *collOutPut = buffer->GetPcmDataBuffer();
@@ -847,13 +847,13 @@ HpaeTempEffectBuffer::~HpaeTempEffectBuffer()
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", keyValue);
     AUDIO_INFO_LOG("effectNode: UpdateNearLinkCollaborationStateToHdi, value: %{public}s", keyValue.c_str());
 }
- 	 
+
 void HpaeTempEffectBuffer::SetCollabDoFade(bool fadeOutState)
 {
     AUDIO_INFO_LOG("SetCollabDoFade: %{public}d", fadeOutState);
     effectCollabDoFadeOutState_ = fadeOutState;
 }
- 	 
+
 void HpaeTempEffectBuffer::SetStopRunningState(bool stopRunning)
 {
     AUDIO_INFO_LOG("SetStopRunningState: %{public}d", stopRunning);
