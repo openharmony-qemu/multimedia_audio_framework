@@ -320,6 +320,10 @@ HWTEST_F(EffectInstanceAlgoTest, feedInput_nullPtr_earlyReturns, TestSize.Level0
     int32_t ret = instance_->FeedInput(reinterpret_cast<const uint8_t *>(data), sizeof(data));
     EXPECT_EQ(ret, 0);                              // null-pointer guard returned 0
     EXPECT_EQ(instance_->GetInputLevel(), 0u);      // fedBytes_ untouched (no data consumed)
+
+    // ~EffectInstance() is a no-op; Release explicitly so the degenerate handle is freed
+    // (the new AudioEffectInterface + new AudioEffectInterface* from CreateNullFeedInput).
+    instance_->Release();
 }
 
 // ReadOutput early-returns 0 when the algo's getOutput pointer is null
@@ -331,6 +335,10 @@ HWTEST_F(EffectInstanceAlgoTest, readOutput_nullPtr_earlyReturns, TestSize.Level
     float out[4] = {};
     int32_t ret = instance_->ReadOutput(reinterpret_cast<uint8_t *>(out), sizeof(out));
     EXPECT_EQ(ret, 0);                              // null-pointer guard returned 0
+
+    // ~EffectInstance() is a no-op; Release explicitly so the degenerate handle is freed
+    // (the new AudioEffectInterface + new AudioEffectInterface* from CreateNullGetOutput).
+    instance_->Release();
 }
 
 // Release destroys handle when created with library
