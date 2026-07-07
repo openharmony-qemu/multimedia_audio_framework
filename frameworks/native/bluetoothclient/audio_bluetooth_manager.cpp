@@ -638,7 +638,6 @@ bool AudioHfpManager::IsRecognitionStatus()
 
 int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
-    auto scene = scene_.load();
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
         if (isVirtual) {
