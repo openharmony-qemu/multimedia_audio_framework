@@ -1302,21 +1302,17 @@ int32_t HpaeDirectRendererManager::RemoveSessionEffectNode()
         OPERATION_SESSION_EFFECT_DISABLED);
 
     // RewindHistoryBuffer: return unconsumed data (only SE latency)
-    if (latency > 0 && curNode_ != nullptr) {
-        curNode_->RewindHistoryBuffer(latency);
-    }
-
     AUDIO_INFO_LOG("RemoveSessionEffectNode: session %{public}u, latency=%{public}llu",
         sid, (unsigned long long)latency);
+    CHECK_AND_RETURN_RET(latency > 0 && curNode_ != nullptr, 0);
+    curNode_->RewindHistoryBuffer(latency);
     return 0;
 }
 
 void HpaeDirectRendererManager::MaterializeSessionEffectFromAttachState(uint32_t curSessionId)
 {
     // VOIP scene does not support SE
-    if (volumeSyncNode_ != nullptr) {
-        return;
-    }
+    CHECK_AND_RETURN(volumeSyncNode_ == nullptr);
 
     // Only when the physical SE node has not been created yet.
     if (sessionEffectNode_ != nullptr) {
@@ -1327,9 +1323,7 @@ void HpaeDirectRendererManager::MaterializeSessionEffectFromAttachState(uint32_t
         return;
     }
     auto stOpt = curSinkInput->GetSessionEffectAttachState();
-    if (!stOpt.has_value() || !stOpt->enabled) {
-        return;
-    }
+    CHECK_AND_RETURN(stOpt.has_value() && stOpt->enabled);
     auto inst = stOpt->instance.lock();
     HpaeSessionState state = curNode_->GetState();
     if (inst == nullptr) {
