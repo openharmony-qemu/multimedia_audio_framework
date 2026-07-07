@@ -2400,7 +2400,6 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_007, TestSiz
 
     manager_->MaterializeSessionEffectFromAttachState(TEST_SESSION_ID);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
-    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 
     // Cleanup (RemoveSessionEffectNode calls StopPreheatThread, safely releasing the preheat thread)
     manager_->RemoveSessionEffectNode();

@@ -236,10 +236,8 @@ HWTEST_F(RendererInServerExtUnitTest, OtherStreamEnqueue_SessionEffectSkip_001, 
 
     int32_t innerCapId = 1;
     uint32_t streamIndex = 0;
-    CaptureInfo captureInfo;
-    captureInfo.isInnerCapEnabled = true;
-    IStreamManager::GetDupPlaybackManager().CreateRender(processConfig, captureInfo.dupStream);
-    server->captureInfos_[innerCapId] = captureInfo;
+    server->captureInfos_[innerCapId].isInnerCapEnabled = true;
+    IStreamManager::GetDupPlaybackManager().CreateRender(processConfig, server->captureInfos_[innerCapId].dupStream);
     auto streamCallbacks = std::make_shared<StreamCallbacks>(streamIndex, server);
     server->innerCapIdToDupStreamCallbackMap_[innerCapId] = streamCallbacks;
     server->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() = AudioRingCache::Create(length);
