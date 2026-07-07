@@ -20,6 +20,8 @@
 #include <atomic>
 #include <limits>
 #include <unordered_map>
+#include <cstring>
+#include <algorithm>
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
@@ -41,6 +43,8 @@
 #include "audio_suite_tempo_pitch_node.h"
 #include "audio_suite_space_render_node.h"
 #include "audio_suite_hoa_render_node.h"
+#include "audio_suite_system_dialogue_enhance_node.h"
+#include "audio_suite_system_music_master_node.h"
 #include "stream_dfx_manager.h"
 
 namespace OHOS {
@@ -65,7 +69,9 @@ const std::unordered_map<AudioNodeType,
     {NODE_TYPE_AUDIO_SEPARATION, []() { return std::make_shared<AudioSuiteAissNode>(); }},
     {NODE_TYPE_TEMPO_PITCH, []() { return std::make_shared<AudioSuiteTempoPitchNode>(); }},
     {NODE_TYPE_SPACE_RENDER, []() { return std::make_shared<AudioSuiteSpaceRenderNode>(); }},
-    {NODE_TYPE_HOA_RENDER, []() { return std::make_shared<AudioSuiteHoaRenderNode>(); }}
+    {NODE_TYPE_HOA_RENDER, []() { return std::make_shared<AudioSuiteHoaRenderNode>(); }},
+    {NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE, []() { return std::make_shared<AudioSuiteSystemDialogueEnhanceNode>(); }},
+    {NODE_TYPE_SYSTEM_MUSIC_MASTER, []() { return std::make_shared<AudioSuiteSystemMusicMasterNode>(); }}
 };
 
 AudioSuitePipeline::AudioSuitePipeline(PipelineWorkMode mode)
@@ -375,6 +381,11 @@ int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
         AUDIO_ERR_LOG("node create node failed, current type node max num is %{public}u.",
             nodeCounts_[builder.nodeType]);
         return ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS;
+    }
+
+    if (builder.nodeType == NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE || builder.nodeType == NODE_TYPE_SYSTEM_MUSIC_MASTER) {
+        AUDIO_DEBUG_LOG("node create node type:%{public}d.", builder.nodeType);
+        return SUCCESS;
     }
 
     bool isSupported;
@@ -1161,6 +1172,32 @@ bool AudioSuitePipeline::CheckHoaRenderPreNode(uint32_t nodeId)
     return true;
 }
 
+bool AudioSuitePipeline::CheckSystemNodeConnection(uint32_t nodeId)
+{
+    auto nextConnIter = connections_.find(nodeId);
+    CHECK_AND_RETURN_RET_LOG(nextConnIter != connections_.end(), false, "Node not connected");
+
+    auto nextNodeIter = nodeMap_.find(nextConnIter->second);
+    CHECK_AND_RETURN_RET_LOG(nextNodeIter != nodeMap_.end() && nextNodeIter->second != nullptr,
+        false, "systemNode nextNode not found");
+
+    auto nextNode = nextNodeIter->second;
+    AudioNodeType nextNodeType = nextNode->GetNodeType();
+    CHECK_AND_RETURN_RET_LOG(nextNodeType == NODE_TYPE_OUTPUT, false,
+        "system node must connect to outputNode, but got type=%{public}d", nextNodeType);
+
+    auto connIter = reverseConnections_.find(nodeId);
+    CHECK_AND_RETURN_RET_LOG(connIter != reverseConnections_.end() && connIter->second.size() == 1, false,
+        "systemNode must have exactly one preNode");
+    auto preNodeIter = nodeMap_.find(connIter->second[0]);
+    CHECK_AND_RETURN_RET_LOG(preNodeIter != nodeMap_.end() && preNodeIter->second != nullptr,
+        false, "systemNode preNode not found");
+
+    AudioNodeType preNodeType = preNodeIter->second->GetNodeType();
+    CHECK_AND_RETURN_RET_LOG(preNodeType == NODE_TYPE_INPUT, false, "systemNode requires InputNode");
+    return true;
+}
+
 bool AudioSuitePipeline::CheckPipelineNode(uint32_t startNodeId)
 {
     std::queue<uint32_t> nodeQueue;
@@ -1201,6 +1238,9 @@ bool AudioSuitePipeline::CheckPipelineNode(uint32_t startNodeId)
         } else if (currentNodeType == NODE_TYPE_HOA_RENDER) {
             CHECK_AND_RETURN_RET_LOG(CheckHoaRenderPreNode(currentNodeId), false,
                 "HoaRenderNode preNode check failed");
+        } else if (nodeIter->second->IsSystemNodeType()) {
+            CHECK_AND_RETURN_RET_LOG(CheckSystemNodeConnection(currentNodeId), false,
+                "SystemNode check failed, nodeId:%{public}u.", currentNodeId);
         }
 
         for (uint32_t nextNodeId : connIter->second) {
@@ -1353,6 +1393,225 @@ const std::unordered_map<uint32_t, std::vector<uint32_t>> &AudioSuitePipeline::G
 AudioSuitePipelineState AudioSuitePipeline::GetCurrentPipelineState() const
 {
     return pipelineState_;
+}
+
+int32_t AudioSuitePipeline::MetaRenderFrame(AudioMetaFrame &metaFrame,
+    int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not MetaRenderFrame.");
+
+    auto request = [this, &metaFrame, responseAudioSize, responseMetaSize, finishedFlag]() {
+        if (pipelineState_ != PIPELINE_RUNNING) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT, BusinessScenario::RENDER,
+                               ERR_ILLEGAL_STATE),
+                "MetaRenderFrame failed, pipelineState state is not running.", true);
+            AUDIO_ERR_LOG("MetaRenderFrame failed, pipelineState state is not running.");
+            TriggerCallback(META_RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
+            return;
+        }
+
+        if (outputNode_ == nullptr) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_WRONG_AUDIO_EFFECT, OperationType::EDIT,
+                               BusinessScenario::RENDER, ERR_ILLEGAL_STATE),
+                "MetaRenderFrame failed, outputNode is nullptr.", true);
+            AUDIO_ERR_LOG("MetaRenderFrame failed, outputNode is nullptr.");
+            TriggerCallback(META_RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
+            return;
+        }
+
+        int32_t frameDuration = GetFrameDuration(metaFrame.audioDataSize, outputNode_->GetAudioNodeFormat());
+        auto startTime = std::chrono::steady_clock::now();
+
+        int32_t ret = outputNode_->DoProcess(metaFrame, responseAudioSize, responseMetaSize, finishedFlag);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("MetaRenderFrame, ret = %{public}d.", ret);
+            TriggerCallback(META_RENDER_FRAME, ret, id_);
+            return;
+        }
+
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckRenderFrameTime(frameDuration, static_cast<uint64_t>(processDuration));
+
+        TriggerCallback(META_RENDER_FRAME, SUCCESS, id_);
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t AudioSuitePipeline::SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not SetSystemNodeParam.");
+    auto request = [this, nodeId, param]() {
+        if (pipelineState_ != PIPELINE_STOPPED) {
+            AUDIO_ERR_LOG("SetSystemNodeParam failed, pipelineState status is not stopped.");
+            TriggerCallback(SET_SYSTEM_NODE_PARAM, ERR_ILLEGAL_STATE);
+            return;
+        }
+
+        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            AUDIO_ERR_LOG("SetSystemNodeParam failed, node id is invailed.");
+            TriggerCallback(SET_SYSTEM_NODE_PARAM, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        auto node = nodeMap_[nodeId];
+        if (node == nullptr) {
+            AUDIO_ERR_LOG("SetSystemNodeParam failed, node ptr nullptr.");
+            TriggerCallback(SET_SYSTEM_NODE_PARAM, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        AudioNodeType nodeType = node->GetNodeType();
+        if (nodeType != NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE && nodeType != NODE_TYPE_SYSTEM_MUSIC_MASTER) {
+            AUDIO_ERR_LOG("SetSystemNodeParam: node type not supported, type=%{public}d", nodeType);
+            TriggerCallback(SET_SYSTEM_NODE_PARAM, ERR_NOT_SUPPORTED);
+            return;
+        }
+
+        if (param.empty()) {
+            AUDIO_ERR_LOG("SetSystemNodeParam: param is empty");
+            TriggerCallback(SET_SYSTEM_NODE_PARAM, ERR_INVALID_PARAM);
+            return;
+        }
+
+        int32_t ret = node->SetSystemParam(const_cast<std::vector<uint8_t>&>(param));
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("SetSystemNodeParam failed, ret=%{public}d", ret);
+            TriggerCallback(SET_SYSTEM_NODE_PARAM, ret);
+            return;
+        }
+        TriggerCallback(SET_SYSTEM_NODE_PARAM, SUCCESS);
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t AudioSuitePipeline::GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not GetSystemNodeParam.");
+    auto request = [this, nodeId, &param]() {
+        if (pipelineState_ != PIPELINE_STOPPED) {
+            AUDIO_ERR_LOG("GetSystemNodeParam failed, pipelineState status is not stopped.");
+            TriggerCallback(GET_SYSTEM_NODE_PARAM, ERR_ILLEGAL_STATE);
+            return;
+        }
+
+        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            AUDIO_ERR_LOG("GetSystemNodeParam failed, node id is invailed.");
+            TriggerCallback(GET_SYSTEM_NODE_PARAM, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        auto node = nodeMap_[nodeId];
+        if (node == nullptr) {
+            AUDIO_ERR_LOG("GetSystemNodeParam failed, node ptr nullptr.");
+            TriggerCallback(GET_SYSTEM_NODE_PARAM, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        AudioNodeType nodeType = node->GetNodeType();
+        if (nodeType != NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE && nodeType != NODE_TYPE_SYSTEM_MUSIC_MASTER) {
+            AUDIO_ERR_LOG("GetSystemNodeParam: node type not supported, type=%{public}d", nodeType);
+            TriggerCallback(GET_SYSTEM_NODE_PARAM, ERR_NOT_SUPPORTED);
+            return;
+        }
+
+        int32_t ret = node->GetSystemParam(param);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("GetSystemNodeParam failed, ret=%{public}d", ret);
+            TriggerCallback(GET_SYSTEM_NODE_PARAM, ret);
+            return;
+        }
+        TriggerCallback(GET_SYSTEM_NODE_PARAM, SUCCESS);
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t AudioSuitePipeline::GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not GetSystemNodeInOutSize.");
+    auto request = [this, nodeId, &inSize, &outSize]() {
+        if (pipelineState_ != PIPELINE_STOPPED) {
+            AUDIO_ERR_LOG("GetSystemNodeInOutSize failed, pipelineState status is not stopped.");
+            TriggerCallback(GET_SYSTEM_NODE_INOUT_SIZE, ERR_ILLEGAL_STATE);
+            return;
+        }
+
+        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            AUDIO_ERR_LOG("GetSystemNodeInOutSize failed, node id is invailed.");
+            TriggerCallback(GET_SYSTEM_NODE_INOUT_SIZE, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        auto node = nodeMap_[nodeId];
+        if (node == nullptr) {
+            AUDIO_ERR_LOG("GetSystemNodeInOutSize failed, node ptr nullptr.");
+            TriggerCallback(GET_SYSTEM_NODE_INOUT_SIZE, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        AudioNodeType nodeType = node->GetNodeType();
+        if (nodeType != NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE && nodeType != NODE_TYPE_SYSTEM_MUSIC_MASTER) {
+            AUDIO_ERR_LOG("GetSystemNodeInOutSize: node type not supported, type=%{public}d", nodeType);
+            TriggerCallback(GET_SYSTEM_NODE_INOUT_SIZE, ERR_NOT_SUPPORTED);
+            return;
+        }
+
+        int32_t ret = node->GetInOutSize(inSize, outSize);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("GetSystemNodeInOutSize: GetInOutSize failed, ret=%{public}d", ret);
+            TriggerCallback(GET_SYSTEM_NODE_INOUT_SIZE, ret);
+            return;
+        }
+        TriggerCallback(GET_SYSTEM_NODE_INOUT_SIZE, SUCCESS);
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t AudioSuitePipeline::SetRequestMetaDataCallback(uint32_t nodeId,
+    std::shared_ptr<InputNodeRequestMetaDataCallBack> callback)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not SetRequestMetaDataCallback.");
+
+    auto request = [this, nodeId, callback]() {
+        if ((pipelineState_ == PIPELINE_RUNNING) &&
+            ((outputNode_ == nullptr) || (IsConnected(outputNode_->GetAudioNodeId(), nodeId)))) {
+            AUDIO_ERR_LOG("SetRequestMetaDataCallback failed, "
+                "pipeline status is running, nodeId:%{public}u is using.", nodeId);
+            TriggerCallback(SET_WRITEDATA_CALLBACK, ERR_ILLEGAL_STATE);
+            return;
+        }
+
+        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            AUDIO_ERR_LOG("SetRequestMetaDataCallback failed, node id is invailed.");
+            TriggerCallback(SET_WRITEDATA_CALLBACK, ERR_INVALID_PARAM);
+            return;
+        }
+
+        auto node = nodeMap_[nodeId];
+        if (node->GetNodeType() != NODE_TYPE_INPUT) {
+            AUDIO_ERR_LOG("SetRequestMetaDataCallback failed, node type must input type.");
+            TriggerCallback(SET_WRITEDATA_CALLBACK, ERR_INVALID_PARAM);
+            return;
+        }
+
+        node->SetRequestMetaDataCallback(callback);
+        TriggerCallback(SET_WRITEDATA_CALLBACK, SUCCESS);
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
 }
 
 }  // namespace AudioSuite

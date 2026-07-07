@@ -20,6 +20,7 @@
 #include "audio_client_tracker_callback_listener.h"
 #include "audio_effect.h"
 #include "audio_interrupt_callback.h"
+#include "audio_capturer.h"
 #include "iaudio_policy.h"
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_policy_client_stub_impl.h"
@@ -93,7 +94,7 @@ public:
     float GetSingleStreamVolume(int32_t streamId);
 
     int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t volumeFlag = 0);
 
     bool GetStreamMute(AudioVolumeType volumeType);
 
@@ -652,6 +653,8 @@ public:
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
 
+    int32_t SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes);
+
     ConverterConfig GetConverterConfig();
 
     bool IsHighResolutionExist();
@@ -814,6 +817,8 @@ public:
     int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
         int32_t volumeFlag, int32_t uid);
     int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
+    int32_t GetSystemVolumeDegreeWithDevice(AudioVolumeType volumeType, DeviceType deviceType,
+        std::string networkId = LOCAL_NETWORK_ID);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
     int32_t UpdateSafeVolumeByStrMode();
     int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(
@@ -821,7 +826,7 @@ public:
     int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
     AudioScene GetAudioSceneFromAllZones();
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
-    int32_t NotifyStreamSilentChange(uint32_t streamId);
+    int32_t NotifyStreamSilentChange(int32_t clientPid, uint32_t streamId);
     int32_t SetAudioSessionBehavior(const uint32_t behavior);
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
     int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,

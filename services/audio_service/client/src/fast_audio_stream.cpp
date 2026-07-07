@@ -1563,5 +1563,13 @@ int32_t FastAudioStream::ResetNotifyStreamSilentChangeFlag()
     return ERR_NOT_SUPPORTED;
 }
 
+void FastAudioStream::SetSensitiveRecordPermitCallback(
+    const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback)
+{
+    AUDIO_INFO_LOG("SetSensitiveRecordPermitCallback enter.");
+    CHECK_AND_RETURN_LOG(callback != nullptr, "Invalid null callback");
+    std::lock_guard<std::mutex> lock(sensitiveRecordPermitCallbackMutex_);
+    sensitiveRecordPermitCallback_ = callback;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,6 +122,7 @@ const std::map<SourceType, std::string> SOURCE_TYPE_MAP = {
     {SOURCE_TYPE_PLAYBACK_CAPTURE, "SOURCE_TYPE_PLAYBACK_CAPTURE"},
     {SOURCE_TYPE_WAKEUP, "SOURCE_TYPE_WAKEUP"},
     {SOURCE_TYPE_VOICE_CALL, "SOURCE_TYPE_VOICE_CALL"},
+    {SOURCE_TYPE_VOICE_DOWNLINK, "SOURCE_TYPE_VOICE_DOWNLINK"},
     {SOURCE_TYPE_VOICE_COMMUNICATION, "SOURCE_TYPE_VOICE_COMMUNICATION"},
     {SOURCE_TYPE_ULTRASONIC, "SOURCE_TYPE_ULTRASONIC"},
     {SOURCE_TYPE_VIRTUAL_CAPTURE, "SOURCE_TYPE_VIRTUAL_CAPTURE"},
@@ -343,7 +344,7 @@ const std::map<AudioSessionState, std::string> AUDIO_SESSION_STATE_MAP = {
     {AudioSessionState::SESSION_DEACTIVE, "SESSION_DEACTIVE"},
     {AudioSessionState::SESSION_RELEASED, "SESSION_RELEASED"},
 };
- 	 
+
 const std::map<AudioConcurrencyMode, std::string> AUDIO_CONCURRENCY_MODE_MAP = {
     {AudioConcurrencyMode::INVALID, "INVALID"},
     {AudioConcurrencyMode::DEFAULT, "DEFAULT"},
@@ -448,6 +449,7 @@ const RouteFlagEntry ROUTE_FLAG_ENTRIES[] = {
     {AUDIO_INPUT_FLAG_INTERPHONE, "INPUT_FLAG_INTERPHONE"},
     {AUDIO_INPUT_FLAG_LIVE, "INPUT_FLAG_LIVE"},
     {AUDIO_INPUT_FLAG_CAMCORDER, "INPUT_FLAG_CAMCORDER"},
+    {AUDIO_INPUT_FLAG_VOICE_MESSAGE, "INPUT_FLAG_VOICE_MESSAGE"},
 };
 
 std::string AudioRouteFlagToString(uint32_t routeFlag)

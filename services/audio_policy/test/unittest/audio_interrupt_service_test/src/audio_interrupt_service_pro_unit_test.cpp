@@ -1053,5 +1053,81 @@ HWTEST_F(AudioInterruptServiceUnitTest, UpdatePauseAudioFocusStrategy_004, TestS
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
 }
 
+/**
+* @tc.name  : Test SendInterruptEventCallback_003
+* @tc.number: SendInterruptEventCallback_003
+* @tc.desc  : Test SendInterruptEventCallback_003
+*/
+HWTEST_F(AudioInterruptServiceUnitTest, SendInterruptEventCallback_003, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+    audioInterruptService->dfxCollector_ = std::make_unique<AudioInterruptDfxCollector>();
+    ASSERT_NE(audioInterruptService->dfxCollector_, nullptr);
+    audioInterruptService->policyServer_ = new AudioPolicyServer(0);
+    ASSERT_NE(audioInterruptService->policyServer_, nullptr);
+    audioInterruptService->handler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioInterruptService->handler_, nullptr);
+
+    InterruptEventInternal interruptEvent;
+    uint32_t streamId = 10001;
+    uint32_t pid = 12345;
+    AudioInterrupt audioInterrupt;
+    interruptEvent.hintType = INTERRUPT_HINT_MUTE;
+    audioInterrupt.isAudioSessionInterrupt = true;
+    audioInterrupt.pid = pid;
+    audioInterruptService->suggestionPidRecords_[pid] = {};
+    audioInterruptService->SendInterruptEventCallback(interruptEvent, streamId, audioInterrupt);
+    EXPECT_EQ(audioInterruptService->suggestionPidRecords_.size(), 1);
+
+    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->SendInterruptEventCallback(interruptEvent, streamId, audioInterrupt);
+    EXPECT_EQ(audioInterruptService->suggestionPidRecords_.size(), 0);
+
+    interruptEvent.hintType = INTERRUPT_HINT_STOP;
+    audioInterruptService->suggestionPidRecords_[pid] = {};
+    audioInterruptService->SendInterruptEventCallback(interruptEvent, streamId, audioInterrupt);
+    EXPECT_EQ(audioInterruptService->suggestionPidRecords_.size(), 0);
+}
+
+/**
+* @tc.name  : Test SendInterruptEventCallback_004
+* @tc.number: SendInterruptEventCallback_004
+* @tc.desc  : Test SendInterruptEventCallback_004
+*/
+HWTEST_F(AudioInterruptServiceUnitTest, SendInterruptEventCallback_004, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+    audioInterruptService->dfxCollector_ = std::make_unique<AudioInterruptDfxCollector>();
+    ASSERT_NE(audioInterruptService->dfxCollector_, nullptr);
+    audioInterruptService->policyServer_ = new AudioPolicyServer(0);
+    ASSERT_NE(audioInterruptService->policyServer_, nullptr);
+    audioInterruptService->handler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioInterruptService->handler_, nullptr);
+
+    InterruptEventInternal interruptEvent;
+    uint32_t pid = 12345;
+    uint32_t streamId = 10001;
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    interruptEvent.hintType = INTERRUPT_HINT_RESUME;
+    audioInterruptService->suggestionStreamIdRecords_[pid] = {streamId};
+    audioInterruptService->SendInterruptEventCallback(interruptEvent, streamId, audioInterrupt);
+    EXPECT_EQ(audioInterruptService->suggestionStreamIdRecords_.size(), 1);
+
+    interruptEvent.hintType = INTERRUPT_HINT_MUTE;
+    audioInterruptService->SendInterruptEventCallback(interruptEvent, streamId, audioInterrupt);
+    EXPECT_EQ(audioInterruptService->suggestionStreamIdRecords_.size(), 1);
+
+    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->SendInterruptEventCallback(interruptEvent, streamId, audioInterrupt);
+    EXPECT_EQ(audioInterruptService->suggestionStreamIdRecords_.size(), 0);
+
+    interruptEvent.hintType = INTERRUPT_HINT_STOP;
+    audioInterruptService->SendInterruptEventCallback(interruptEvent, streamId, audioInterrupt);
+    EXPECT_EQ(audioInterruptService->suggestionStreamIdRecords_.size(), 0);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

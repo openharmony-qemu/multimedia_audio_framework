@@ -44,7 +44,9 @@ AudioSuiteCapabilities::AudioSuiteCapabilities()
         {NODE_TYPE_PURE_VOICE_CHANGE, [this](NodeParameter &np) { return LoadPureCapability(np); }},
         {NODE_TYPE_TEMPO_PITCH, [this](NodeParameter &np) { return LoadTempoPitchCapability(np); }},
         {NODE_TYPE_SPACE_RENDER, [this](NodeParameter &np) { return LoadSrCapability(np); }},
-        {NODE_TYPE_HOA_RENDER, [this](NodeParameter &np) { return LoadHoaRenderCapability(np); }}
+        {NODE_TYPE_HOA_RENDER, [this](NodeParameter &np) { return LoadHoaRenderCapability(np); }},
+        {NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE, [this](NodeParameter &np) { return LoadSystemNodeCapability(np); }},
+        {NODE_TYPE_SYSTEM_MUSIC_MASTER, [this](NodeParameter &np) { return LoadSystemNodeCapability(np); }},
     };
 }
 
@@ -284,6 +286,20 @@ int32_t AudioSuiteCapabilities::LoadHoaRenderCapability(NodeParameter &np)
     np.outFormat = SAMPLE_S32LE;
     np.supportedOnThisDevice = true;
     AUDIO_INFO_LOG("LoadHoaRenderCapability end.");
+    return SUCCESS;
+}
+
+int32_t AudioSuiteCapabilities::LoadSystemNodeCapability(NodeParameter &np)
+{
+    AUDIO_INFO_LOG("LoadSystemNodeCapability start.");
+    np.inSampleRate = SAMPLE_RATE_48000;
+    np.inChannels = CHANNEL_4;
+    np.inFormat = SAMPLE_S16LE;
+    np.outSampleRate = SAMPLE_RATE_48000;
+    np.outChannels = CHANNEL_4;
+    np.outFormat = SAMPLE_S16LE;
+    np.supportedOnThisDevice = true;
+    AUDIO_INFO_LOG("LoadSystemNodeCapability end.");
     return SUCCESS;
 }
 

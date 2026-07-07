@@ -141,6 +141,7 @@ public:
         bool audioSeparationEffectEnabled = false;
         int32_t zoneId = -1;
         int32_t forceUid_ = INVALID_UID;  // Force-send target uid, default INVALID_UID means no force
+        bool isPermitted;
     };
 
     struct RendererDeviceChangeEvent {
@@ -184,9 +185,11 @@ public:
     void AddDistributedRoutingRoleChangeCbsMap(int32_t clientId,
         const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveDistributedRoutingRoleChangeCbsMap(int32_t clientId);
-    bool SendDeviceChangedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    bool SendDeviceChangedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected,
+        const int32_t zoneId = 0);
     bool SendDeviceInfoUpdatedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
-    bool SendAvailableDeviceChange(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    bool SendAvailableDeviceChange(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected,
+        const int32_t zoneId = 0);
     bool SendMicrophoneBlockedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
         DeviceBlockStatus status);
     void HandleMicrophoneBlockedCallback(const AppExecFwk::InnerEvent::Pointer &event);
@@ -208,7 +211,7 @@ public:
         const AudioInterrupt &audioInterrupt);
     bool SendInterruptEventWithClientIdCallback(const InterruptEventInternal &interruptEvent,
         const int32_t &clientId);
-    bool SendPreferredOutputDeviceUpdated(int32_t forceUid = INVALID_UID);
+    bool SendPreferredOutputDeviceUpdated();
     bool SendPreferredInputDeviceUpdated();
     bool SendDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor,
         const CastType &type);
@@ -284,7 +287,7 @@ private:
     void HandleInterruptEventForAudioSession(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithStreamId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandlePreferredOutputDeviceUpdated(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandlePreferredOutputDeviceUpdated();
     void HandlePreferredInputDeviceUpdated();
     void HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
@@ -338,6 +341,7 @@ private:
     bool IsForceGetDevByVolumeType(int32_t uid);
     bool ShouldUseSystemPreferredDeviceForVolume(int32_t uid);
     bool IsForceGetZoneDevice(int32_t uid);
+    bool HasVolumeKeyEventCallbacks(int32_t clientPid);
     bool IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent);
     bool IsTargetZoneForVolumeKeyEvent(int32_t pid, int32_t zoneId);
     bool BuildStateChangedEvent(InterruptHint hintType, float &duckVolume,
@@ -347,17 +351,17 @@ private:
     bool CheckCallbackTokenId(
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors, uint32_t callbackTokenId);
     void CheckVolumeKeyEventForRSS(int32_t pid, VolumeEvent &volumeEvent);
+#ifdef MULTI_USER_ZONE
+    bool CheckCallbackVisibleMode(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescriptors,
+        int32_t pid, int32_t zoneId, bool isSystemService);
+#endif
 
     // Helper functions for reducing nesting depth in HandlePreferredOutput/InputDeviceUpdated
     void ProcessPreferredOutputDeviceForClient(int32_t clientPid,
-        const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, int32_t forceUid, std::stringstream &ss);
+        const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss);
     void ProcessPreferredInputDeviceForClient(int32_t clientPid,
     const std::shared_ptr<AudioPolicyClientHolder>& clientHolder, std::stringstream &ss);
     bool IsCallbackRegistered(int32_t clientPid, CallbackChange callbackType);
-    bool ShouldSkipDuplicateOutputCallback(int32_t clientPid, int32_t uid, StreamUsage streamUsage,
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices);
-    bool ShouldSkipDuplicateInputCallback(int32_t clientPid, int32_t uid, SourceType sourceType,
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &currentDevices);
     void ClearPreferredDeviceDedupCache(int32_t clientId, CallbackChange callbackchange);
 
     std::mutex runnerMutex_;
@@ -383,17 +387,6 @@ private:
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
     std::unordered_map<int32_t, int32_t> pidUidMap_;
     std::unordered_map<int32_t, std::vector<SystemVolumeFilter>> clientSystemVolumeFilterMap_;
-
-    // clientPid -> uid -> streamUsage -> devices
-    std::unordered_map<int32_t,
-        std::unordered_map<int32_t,
-            std::unordered_map<StreamUsage, std::vector<std::shared_ptr<AudioDeviceDescriptor>>>>>
-        lastSentOutputDeviceMap_;
-    // clientPid -> uid -> sourceType -> devices
-    std::unordered_map<int32_t,
-        std::unordered_map<int32_t,
-            std::unordered_map<SourceType, std::vector<std::shared_ptr<AudioDeviceDescriptor>>>>>
-        lastSentInputDeviceMap_;
 
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;
 };

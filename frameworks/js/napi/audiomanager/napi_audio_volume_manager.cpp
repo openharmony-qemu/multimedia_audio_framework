@@ -2095,19 +2095,19 @@ napi_value NapiAudioVolumeManager::GetActiveStreamsVolumeInfo(napi_env env, napi
     std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr is nullptr!");
-        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM,
-            "napiAudioVolumeManager or audioSystemMngr is nullptr!");
+        return NapiAudioError::ThrowErrorAndReturn(env,
+            "napiAudioVolumeManager or audioSystemMngr is nullptr!", NAPI_ERR_SYSTEM);
     }
     int32_t ret = napiAudioVolumeManager->audioSystemMngr_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
     CHECK_AND_RETURN_RET_LOG(ret != ERR_SYSTEM_PERMISSION_DENIED,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Not system app"), "Not system app");
+        NapiAudioError::ThrowErrorAndReturn(env, "Not system app", NAPI_ERR_PERMISSION_DENIED), "Not system app");
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "GetActiveStreamsVolumeInfo failure!"),
+        NapiAudioError::ThrowErrorAndReturn(env, "GetActiveStreamsVolumeInfo failure!", NAPI_ERR_SYSTEM),
         "GetActiveStreamsVolumeInfo failure!");
 
     napi_status status = NapiParamUtils::ToJsActiveStreamsVolumeInfo(env, activeStreamsVolumeInfo, result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "Convert activeStreamsVolumeInfo failed"),
+        NapiAudioError::ThrowErrorAndReturn(env, "Convert activeStreamsVolumeInfo failed", NAPI_ERR_SYSTEM),
         "Convert activeStreamsVolumeInfo failed");
     return result;
 }

@@ -296,6 +296,9 @@ const int32_t ERR_SAVE_HRTF_TIMEOUT = BASE_AUDIO_ERR_OFFSET - 76;
 /** Fail to save HRTF on disk. */
 const int32_t ERR_SAVE_HRTF_FAIL = BASE_AUDIO_ERR_OFFSET - 77;
 
+/** Audio Suite SA download failed */
+const int32_t ERR_AUDIO_SUITE_SA_DOWNLOAD_FAILED = BASE_AUDIO_ERR_OFFSET - 79;
+
 /** Ipc related error */
 const int32_t ERR_IPC = BASE_AUDIO_ERR_OFFSET - 100;
 

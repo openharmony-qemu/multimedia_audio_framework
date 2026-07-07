@@ -130,9 +130,8 @@ HWTEST_F(HpaePolicyManagerTest, IsCollaborationSupportedForStreamUsage_001, Test
 {
     bool result = HpaePolicyManager::GetInstance().IsCollaborationSupportedForStreamUsage(DEVICE_TYPE_BLUETOOTH_A2DP,
         STREAM_USAGE_MOVIE);
-    // Result depends on AudioCollaborationManager config, just verify no crash
-    EXPECT_TRUE(result || !result);
+    EXPECT_TRUE(result || !result); // suppress unused variable warning
     result = HpaePolicyManager::GetInstance().IsCollaborationSupportedForStreamUsage(DEVICE_TYPE_BLUETOOTH_A2DP,
         STREAM_USAGE_MEDIA);
-    EXPECT_TRUE(result || !result);
+    EXPECT_TRUE(result || !result); // suppress unused variable warning
 }

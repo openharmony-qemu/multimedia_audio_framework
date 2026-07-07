@@ -255,11 +255,11 @@ HWTEST_F(AudioInterruptCustomUnitTest, UpdateCustomFocusStrategy_04, TestSize.Le
 }
 
 /**
-* @tc.name  : Test UnprocessedCustomFocus.
-* @tc.number: UnprocessedCustomFocus_01
-* @tc.desc  : Test UnprocessedCustomFocus.
+* @tc.name  : Test UnprocessedSourceCustomFocus.
+* @tc.number: UnprocessedSourceCustomFocus_01
+* @tc.desc  : Test UnprocessedSourceCustomFocus.
 */
-HWTEST_F(AudioInterruptCustomUnitTest, UnprocessedCustomFocus_01, TestSize.Level1)
+HWTEST_F(AudioInterruptCustomUnitTest, UnprocessedSourceCustomFocus_01, TestSize.Level1)
 {
     AudioFocuState incomingState = PAUSE;
     InterruptEventInternal interruptEvent;
@@ -272,22 +272,22 @@ HWTEST_F(AudioInterruptCustomUnitTest, UnprocessedCustomFocus_01, TestSize.Level
 
     activeInterrupt.mixWithWakeUp = false;
     AudioInterruptCustom interruptCustom;
-    interruptCustom.UnprocessedCustomFocus(incomingInterrupt, activeInterrupt,
+    interruptCustom.UnprocessedSourceCustomFocus(incomingInterrupt, activeInterrupt,
     incomingState, interruptEvent);
     EXPECT_NE(incomingState, ACTIVE);
 
     activeInterrupt.mixWithWakeUp = true;
-    interruptCustom.UnprocessedCustomFocus(incomingInterrupt, activeInterrupt,
+    interruptCustom.UnprocessedSourceCustomFocus(incomingInterrupt, activeInterrupt,
     incomingState, interruptEvent);
     EXPECT_EQ(incomingState, ACTIVE);
 }
  	  
 /**
-* @tc.name  : Test UnprocessedCustomFocus.
-* @tc.number: UnprocessedCustomFocus_02
-* @tc.desc  : Test UnprocessedCustomFocus.
+* @tc.name  : Test UnprocessedSourceCustomFocus.
+* @tc.number: UnprocessedSourceCustomFocus_02
+* @tc.desc  : Test UnprocessedSourceCustomFocus.
 */
-HWTEST_F(AudioInterruptCustomUnitTest, UnprocessedCustomFocus_02, TestSize.Level1)
+HWTEST_F(AudioInterruptCustomUnitTest, UnprocessedSourceCustomFocus_02, TestSize.Level1)
 {
     AudioFocuState incomingState = PAUSE;
     InterruptEventInternal interruptEvent;
@@ -300,7 +300,7 @@ HWTEST_F(AudioInterruptCustomUnitTest, UnprocessedCustomFocus_02, TestSize.Level
     
     activeInterrupt.mixWithWakeUp = true;
     AudioInterruptCustom interruptCustom;
-    interruptCustom.UnprocessedCustomFocus(incomingInterrupt, activeInterrupt,
+    interruptCustom.UnprocessedSourceCustomFocus(incomingInterrupt, activeInterrupt,
     incomingState, interruptEvent);
     EXPECT_NE(incomingState, ACTIVE);
 }

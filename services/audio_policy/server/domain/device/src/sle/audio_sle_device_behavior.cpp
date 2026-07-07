@@ -43,7 +43,7 @@ int32_t AudioSleDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "Device desc is nullptr");
 
     std::variant<StreamUsage, SourceType> audioStreamConfig;
-    bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED && !streamDesc->isStandby_;
+    bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED && !streamDesc->isStandby_.load();
     bool isVoiceType = true;
     bool isLoopback = false;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
@@ -60,7 +60,6 @@ int32_t AudioSleDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
         AUDIO_INFO_LOG("Another nearlink device[%{public}s] is already activated",
             AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str());
         SleAudioDeviceManager::GetInstance().ResetSleStreamTypeCount(device);
-        return SUCCESS;
     }
 
     auto runDeviceActivationFlow = [&deviceDesc, &isRunning, &realUid, &isLoopback](auto &&config) -> int32_t {

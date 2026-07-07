@@ -63,6 +63,9 @@ public:
     int64_t GetOverflowCountSync();
     void SetWillMuteWhenInterruptedSync(bool muteWhenInterrupted);
     void SetMuteHintSync(bool mute);
+    void SetNoiseReductionMode(ohos::multimedia::audio::NoiseReductionMode noiseReductionMode);
+    ohos::multimedia::audio::NoiseReductionMode GetNoiseReductionMode();
+    taihe::array<ohos::multimedia::audio::NoiseReductionMode> GetSupportedNoiseReductionModes();
     void RequestPlaybackCaptureStart(callback_view<void(PlaybackCaptureStartState)> callback);
     taihe::array<AudioDeviceDescriptor> GetCurrentInputDevices();
     AudioCapturerChangeInfo GetCurrentAudioCapturerChangeInfo();

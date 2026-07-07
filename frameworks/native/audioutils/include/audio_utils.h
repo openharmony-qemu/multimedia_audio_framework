@@ -92,7 +92,7 @@ public:
 
     static size_t CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
         uint32_t sampleRate, uint32_t bytesPerSample);
-    
+
     static std::vector<std::string> SplitString(const std::string& str, char delimiter);
 
     static bool IsEnhancedRoutingSupported();
@@ -648,6 +648,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_PRIMARY_EXTRA_BT_NER = 20,
     HDI_CAPTURE_OFFSET_LIVE = 21,
     HDI_CAPTURE_OFFSET_CAMCORDER = 23,
+    HDI_CAPTURE_OFFSET_VOICE_MESSAGE = 24,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -674,6 +675,7 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI = 21,
     HDI_RENDER_OFFSET_REMOTE_MULTICHANNEL = 22,
     HDI_RENDER_OFFSET_VOICE_CALL_ASSISTANT = 23,
+    HDI_RENDER_OFFSET_HDMI = 24
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);

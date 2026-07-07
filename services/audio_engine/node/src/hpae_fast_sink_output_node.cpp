@@ -39,9 +39,11 @@ namespace {
     constexpr size_t MAX_TRANS_BUFFER_SIZE = 1 * 1024 * 1024; // 1M
     constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     constexpr int64_t AUDIO_NS_PER_US = 1000;
-    constexpr uint32_t WAIT_GET_POS_TIMEOUT_MS = 200;
+    constexpr uint32_t WAIT_GET_POS_TIMEOUT_MS = 1000;
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
     constexpr int64_t ULTRA_FAST_MINIMUM_AHEAD_TIME_NS = 3000000; // 3ms
+    constexpr uint32_t TIMESTAMP_SYNC_CNT_AT_START = 20; // sync timestamp for the first N spans
+    constexpr uint32_t TIMESTAMP_SYNC_CNT_INTERVAL = 40; // sync timestamp every N spans
 }
 
 HpaeFastSinkOutputNode::HpaeFastSinkOutputNode(HpaeNodeInfo &nodeInfo)
@@ -565,14 +567,36 @@ void HpaeFastSinkOutputNode::AsyncGetPosTime()
     }
     updatePosTimeThread_ = std::thread([this]() {
         while (!stopUpdateThread_.load()) {
+            std::unique_lock<std::mutex> lock(updateThreadLock_);
+            updateThreadCV_.wait_for(lock, std::chrono::milliseconds(WAIT_GET_POS_TIMEOUT_MS));
+            if (stopUpdateThread_.load()) {
+                break;
+            }
+            if (!isStarted_) {
+                UpdateVirtualDeviceHandleInfo();
+                continue;
+            }
             uint64_t frames = 0;
             int64_t nanoTime = 0;
             (void)GetDeviceHandleInfo(frames, nanoTime);
-            std::unique_lock<std::mutex> lock(updateThreadLock_);
-            updateThreadCV_.wait_for(lock, std::chrono::milliseconds(WAIT_GET_POS_TIMEOUT_MS),
-                [this]() { return stopUpdateThread_.load(); });
         }
     });
+}
+
+void HpaeFastSinkOutputNode::UpdateVirtualDeviceHandleInfo()
+{
+    int64_t currentNanoTime = ClockTime::GetCurNano();
+    CHECK_AND_RETURN_LOG(currentNanoTime > timeInNano_, "currentNanoTime: %{public}" PRId64"  "
+        ", timeInNano_: %{public}" PRId64" ", currentNanoTime, timeInNano_.load());
+    int64_t increasedTime = currentNanoTime - timeInNano_;
+    uint32_t sampleRate = sinkOutAttr_.sampleRate == 0 ? GetNodeInfo().samplingRate : sinkOutAttr_.sampleRate;
+    uint64_t increasedFrame = sampleRate / AUDIO_MS_PER_SECOND *
+        static_cast<uint64_t>(increasedTime) / AUDIO_US_PER_SECOND;
+    posInFrame_ += increasedFrame;
+    timeInNano_ += increasedFrame * AUDIO_US_PER_SECOND / sampleRate * AUDIO_MS_PER_SECOND;
+
+    Trace infoTrace("HpaeFastSinkOutputNode::UpdateVirtualDeviceHandleInfo posInFrame: " + std::to_string(posInFrame_) +
+        " incFrame: " + std::to_string(increasedFrame) + " timeInNano:  " + std::to_string(timeInNano_));
 }
 
 void HpaeFastSinkOutputNode::StopUpdateThread()
@@ -631,7 +655,6 @@ void HpaeFastSinkOutputNode::ReSyncPosition()
     timeInNano_.store(nanoTime);
     lastPredictWakeUpTime_ = 0;
     if (dstAudioBuffer_ != nullptr) {
-        dstAudioBuffer_->SetHandleInfo(frame, nanoTime);
         uint64_t nextWritePos = frame + dstSpanSizeInframe_;
         InitAudiobuffer(false);
         int32_t ret = dstAudioBuffer_->ResetCurReadWritePos(nextWritePos, nextWritePos, false);
@@ -656,15 +679,8 @@ bool HpaeFastSinkOutputNode::GetDeviceHandleInfo(uint64_t &frames, int64_t &nano
     nanoTime = timeSec * AUDIO_NS_PER_SECOND + timeNanoSec;
     Trace infoTrace("HpaeFastSinkOutputNode::GetDeviceHandleInfo frames=>" + std::to_string(frames) + " " +
         std::to_string(nanoTime) + " at " + std::to_string(ClockTime::GetCurNano()));
-    auto result = readTimeModel_.UpdataFrameStamp(frames, nanoTime);
-    if (result == NEED_MODIFY) {
-        readTimeModel_.ResetFrameStamp(frames, nanoTime);
-    }
     posInFrame_.store(frames);
     timeInNano_.store(nanoTime);
-    if (dstAudioBuffer_ != nullptr) {
-        dstAudioBuffer_->SetHandleInfo(frames, nanoTime);
-    }
     return true;
 }
 
@@ -673,9 +689,8 @@ bool HpaeFastSinkOutputNode::CheckAllBufferReady(int64_t checkTime, uint64_t cur
     if (dstAudioBuffer_ == nullptr) {
         return false;
     }
-    int64_t nextHdiReadTime = GetPredictNextReadTime(curWritePos);
-    int64_t predictWakeupTime = nextHdiReadTime - serverAheadReadTime_;
-    return predictWakeupTime <= checkTime;
+    // In plan: Register a callback to rendererInServer to obtain buffer status information
+    return true;
 }
 
 void HpaeFastSinkOutputNode::CheckTimeAndBufferReady(uint64_t &curWritePos, int64_t &wakeUpTime, int64_t &curTime)
@@ -698,6 +713,10 @@ bool HpaeFastSinkOutputNode::PrepareNextLoop(uint64_t curWritePos, int64_t &wake
     int64_t nextHdiReadTime = GetPredictNextReadTime(nextHandlePos);
     predictTrace.End();
     wakeUpTime = nextHdiReadTime - serverAheadReadTime_;
+    if (wakeUpTime <= ClockTime::GetCurNano()) {
+        wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION_NS;
+        AUDIO_ERR_LOG("hdi send wrong position time, nextHandlePos:%{public}" PRIu64, nextHandlePos);
+    }
     int32_t ret1 = dstAudioBuffer_->SetCurWriteFrame(nextHandlePos, false);
     int32_t ret2 = dstAudioBuffer_->SetCurReadFrame(nextHandlePos, false);
     CHECK_AND_RETURN_RET_LOG(ret1 == SUCCESS && ret2 == SUCCESS, false,
@@ -708,11 +727,26 @@ bool HpaeFastSinkOutputNode::PrepareNextLoop(uint64_t curWritePos, int64_t &wake
 
 int64_t HpaeFastSinkOutputNode::GetPredictNextReadTime(uint64_t posInFrame)
 {
-    int64_t predictWakeupTime = readTimeModel_.GetTimeOfPos(posInFrame);
-    if (predictWakeupTime <= 0) {
-        return ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION_NS;
+    Trace trace("HpaeFastSinkOutputNode::GetPredictNextRead");
+    uint64_t handleSpanCnt = posInFrame / dstSpanSizeInframe_;
+    if (handleSpanCnt < TIMESTAMP_SYNC_CNT_AT_START || handleSpanCnt % TIMESTAMP_SYNC_CNT_INTERVAL == 0) {
+        updateThreadCV_.notify_all();
     }
-    return predictWakeupTime;
+    uint64_t readFrame = 0;
+    int64_t readTime = 0;
+    if (readTimeModel_.GetFrameStamp(readFrame, readTime)) {
+        if (readFrame != posInFrame_) {
+            CheckPosTimeRes res = readTimeModel_.UpdateFrameStamp(posInFrame_, timeInNano_);
+            if (res == CHECK_FAILED) {
+                updateThreadCV_.notify_all();
+            } else if (res == NEED_MODIFY) {
+                needReSyncPosition_ = true;
+            }
+        }
+    }
+
+    int64_t nextHdiReadTime = readTimeModel_.GetTimeOfPos(posInFrame);
+    return nextHdiReadTime;
 }
 
 void HpaeFastSinkOutputNode::CheckWakeUpTime(int64_t &wakeUpTime)
@@ -978,7 +1012,7 @@ void HpaeFastSinkOutputNode::UpdateAmplitudeIfNeeded(BufferDesc &writeBuf)
 void HpaeFastSinkOutputNode::ZeroVolumeCheck(int32_t vol)
 {
     CHECK_AND_RETURN(sinkOutAttr_.audioStreamFlag != AUDIO_FLAG_VOIP_FAST);
-    if (currentOutputDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (GetDeviceClass() == "a2dp_fast") {
         return;
     }
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {

@@ -358,9 +358,16 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
         TransSinkInfoToNodeInfo(sinkInfo, rendererManagerMap_[audioModuleInfo.name], nodeInfo);
         sinkVirtualOutputNodeMap_[sinkInfo.sinkId]->ReloadNode(nodeInfo);
     }
+
+    if (sinkInfo.deviceName == MCH_SINK_NAME && isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
+        AUDIO_INFO_LOG("ReloadRenderManager MCH_Speaker, need set isCollaborationEnabled: %{public}d",
+            isCollaborationEnabled_);
+        sinkInfo.isCollaborationEnabled = isCollaborationEnabled_;
+    }
     rendererManagerMap_[audioModuleInfo.name]->ReloadRenderManager(sinkInfo, isReload);
     // Both primary and offload self-heal SE via attach-state on SinkInputNode.
     // No external replay needed — ConnectInputSession reads attach state and materializes.
+
     return SUCCESS;
 }
 
@@ -807,8 +814,10 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
             return;
         }
 
-        if (!SafeGetMap(rendererManagerMap_, name)) {
-            AUDIO_WARNING_LOG("sink: %{public}s not exist, do not change default sink", GetEncryptStr(name).c_str());
+        std::shared_ptr<IHpaeRendererManager> newRendererManager = GetRendererManagerByName(name);
+        if (newRendererManager == nullptr || !newRendererManager->IsInit()) {
+            AUDIO_WARNING_LOG("sink: %{public}s not exist or not init, do not change default sink",
+                GetEncryptStr(name).c_str());
             return;
         }
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(defaultSink_);
@@ -845,8 +854,9 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
             return;
         }
         
-        if (!SafeGetMap(capturerManagerMap_, name)) {
-            AUDIO_WARNING_LOG("source: %{public}s not exist, do not change default source", name.c_str());
+        std::shared_ptr<IHpaeCapturerManager> newCapturerManager = GetCapturerManagerByName(name);
+        if (newCapturerManager == nullptr || !newCapturerManager->IsInit()) {
+            AUDIO_WARNING_LOG("source: %{public}s not exist or not init, do not change default source", name.c_str());
             return;
         }
         std::shared_ptr<IHpaeCapturerManager> capturerManager = GetCapturerManagerByName(defaultSource_);
@@ -2856,6 +2866,7 @@ void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const Audio
         TransSinkInfoToNodeInfo(sinkInfo, rendererManager, nodeInfo);
         sinkOutputNode->ReloadNode(nodeInfo);
         rendererManager->ReloadRenderManager(sinkInfo, false);
+
         // Both primary and offload self-heal SE via attach-state on SinkInputNode.
         // No external replay needed — ConnectInputSession reads attach state and materializes.
     };

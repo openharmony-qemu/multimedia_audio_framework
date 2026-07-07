@@ -61,7 +61,7 @@ public:
     void Init(std::shared_ptr<AudioPolicyServerHandler> handler);
     void DeInit();
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,
-        const AudioStreamDeviceChangeReason reason, int32_t forceUid = INVALID_UID);
+        const AudioStreamDeviceChangeReason reason);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
         std::string &networkId, AudioSamplingRate &samplingRate, bool isFirstCreate = true);
@@ -149,6 +149,8 @@ private:
     bool IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         const int32_t sessionId);
     bool IsRingOverPlayback(AudioMode &mode, RendererState rendererState);
+
+    void UpdateDeviceAfterConnectAndAddtoList(std::shared_ptr<AudioDeviceDescriptor> audioDescriptor);
 
 private:
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;

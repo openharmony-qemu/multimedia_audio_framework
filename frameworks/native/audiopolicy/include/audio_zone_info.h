@@ -30,6 +30,9 @@ namespace AudioStandard {
 enum class AudioZoneChangeReason {
     UNKNOWN = 0,
     BIND_NEW_DEVICE = 1,
+    UNBIND_OLD_DEVICE,
+    OLD_DEVICE_UNAVAILABLE,
+    NEW_DEVICE_AVAILABLE,
     BIND_NEW_APP,
     UNBIND_APP,
 };
@@ -108,6 +111,7 @@ public:
     std::set<int32_t> uids_;
     std::set<uint32_t> streamIds_;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices_;
+    std::shared_ptr<AudioDeviceDescriptor> preferDevice_;
     int32_t initMode_;
     int32_t supportType_ = static_cast<int32_t>(AudioZoneSupportType::PLAY_AND_RECORD);
 
@@ -134,6 +138,9 @@ public:
                 return false;
             }
         }
+        if (!preferDevice_->Marshalling(parcel)) {
+            return false;
+        }
         return true;
     }
 
@@ -159,6 +166,7 @@ public:
             }
             devices_.emplace_back(device);
         }
+        preferDevice_ = std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel));
     }
 
     static AudioZoneDescriptor *Unmarshalling(Parcel &parcel)

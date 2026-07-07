@@ -23,6 +23,7 @@ ohos_unittest("audio_volume_change_unit_test") {
     "./include",
     "../../../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../services/audio_service/test/unittest/include",
     "../../../../../../services/audio_service/test/unittest/include"
   ]
 

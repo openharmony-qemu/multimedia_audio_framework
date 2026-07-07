@@ -286,18 +286,18 @@ public:
     virtual int32_t UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length) = 0;
 
     /**
-     * @brief Load Collaboration Config
-     *
-     * @return {@link true} if support, {@link false} otherwise
-     */
-    virtual void LoadCollaborationConfig() = 0;
-
-    /**
      * @brief IsStreamUsage Supported for given DeviceType
      *
      * @return {@link true} if support, {@link false} otherwise
      */
     virtual bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) NOT_SUPPORT_RET
+
+    /**
+     * @brief Load Collaboration Config
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual void LoadCollaborationConfig() = 0;
 
     virtual ~AudioServiceAdapter();
 };

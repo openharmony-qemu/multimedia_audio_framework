@@ -129,10 +129,6 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         return SUCCESS;
     }
     if (operation == UPDATE_SPANSIZE) {
-        int32_t ret = InitSharedBuffer();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer for UPDATE_SPANSIZE failed:%{public}d", ret);
-        AUDIO_INFO_LOG("UPDATE_SPANSIZE sessionId:%{public}u spanSizeInFrame:%{public}u cacheSizeInFrame:%{public}u",
-            sessionId_, spanSizeInFrame_, cacheSizeInFrame_.load());
         NotifyFastStatusChange(static_cast<FastStatus>(result));
         return SUCCESS;
     }
@@ -474,7 +470,7 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
 int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Renderer stream is released");
-    bufferSize = clientSpanSizeInByte_;
+    bufferSize = spanSizeInFrame_.load() * sizePerFrameInByte_;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         bufferSize = cbBufferSize_;
     }
@@ -492,7 +488,7 @@ int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Renderer stream is released");
     CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, ERR_ILLEGAL_STATE, "sizePerFrameInByte_ is 0!");
-    frameCount = spanSizeInFrame_;
+    frameCount = spanSizeInFrame_.load();
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         frameCount = cbBufferSize_ / sizePerFrameInByte_;
         if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
@@ -770,7 +766,7 @@ bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
 
 void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId)
 {
-    AUDIO_INFO_LOG("NotifyRouteUpdate: routeFlag=0x%{public}x networkId=%{public}s",
+    AUDIO_DEBUG_LOG("NotifyRouteUpdate: routeFlag=0x%{public}x networkId=%{public}s",
         routeFlag, networkId.c_str());
     
     // rendererFlags 更新已通过共享内存 pendingRouteFlag 传递
@@ -1782,7 +1778,7 @@ int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
         InitCallbackBuffer(bufferDurationInUs);
     }
     if (rendererInfo_.playerType == PLAYER_TYPE_TONE_PLAYER) {
-        SetCacheSize(TONE_PLAYER_CACHE_SIZE * spanSizeInFrame_);
+        SetCacheSize(TONE_PLAYER_CACHE_SIZE * spanSizeInFrame_.load());
     }
     return SUCCESS;
 }

@@ -6678,5 +6678,31 @@ HWTEST_F(AudioInterruptUnitTest, VerifyStreamType_001, TestSize.Level1)
     EXPECT_EQ(ret, false);
 }
 
+/**
+ * @tc.name  : Test IsStreamActive
+ * @tc.number: IsStreamActive_001
+ * @tc.desc  : Test IsStreamActive_001
+ */
+HWTEST_F(AudioInterruptUnitTest, IsStreamActive_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->zonesMap_.clear();
+
+    interruptServiceTest->zonesMap_[0] = nullptr;
+    EXPECT_FALSE(interruptServiceTest->IsStreamActive(10001));
+
+    interruptServiceTest->zonesMap_[1] = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt activeInterruptFirst;
+    activeInterruptFirst.streamId = 10001;
+    interruptServiceTest->zonesMap_[1]->audioFocusInfoList.emplace_back(activeInterruptFirst, ACTIVE);
+    EXPECT_FALSE(interruptServiceTest->IsStreamActive(10002));
+
+    AudioInterrupt activeInterruptSecond;
+    activeInterruptSecond.streamId = 10002;
+    interruptServiceTest->zonesMap_[1]->audioFocusInfoList.emplace_back(activeInterruptSecond, ACTIVE);
+    EXPECT_TRUE(interruptServiceTest->IsStreamActive(10002));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

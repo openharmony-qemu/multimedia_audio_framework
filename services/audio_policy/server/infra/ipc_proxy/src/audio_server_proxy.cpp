@@ -27,6 +27,7 @@
 #include "audio_policy_utils.h"
 #include "istandard_audio_service.h"
 #include "audio_router_select_strategy.h"
+#include "audio_stutter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -679,7 +680,7 @@ int32_t AudioServerProxy::GetPrivacyType(const uint32_t sessionId, AudioPrivacyT
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "error for audio server proxy null");
     int32_t ret = ERROR;
-    int32_t type;
+    int32_t type = 0;
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->GetPrivacyTypeAudioServer(sessionId, type, ret);
     IPCSkeleton::SetCallingIdentity(identity);
@@ -698,13 +699,13 @@ int32_t AudioServerProxy::SetNonInterruptMuteProxy(uint32_t sessionId, bool mute
     return ret;
 }
 
-std::string AudioServerProxy::GetRemoteAudioParameterProxy(const std::string& networkId)
+std::string AudioServerProxy::GetRemoteAudioParameterProxy(const std::string& networkId, const std::string& condition)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, "", "error for audio server proxy null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     std::string value = "";
-    gsp->GetRemoteAudioParameter(networkId, AUDIO_EXT_PARAM_KEY_CUSTOM, "", value);
+    gsp->GetRemoteAudioParameter(networkId, AUDIO_EXT_PARAM_KEY_CUSTOM, condition, value);
     IPCSkeleton::SetCallingIdentity(identity);
     return value;
 }
@@ -736,6 +737,27 @@ void AudioServerProxy::UnRegistAdapterManagerCallback(const std::string& network
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->UnRegistAdapterManagerCallback(networkId);
     IPCSkeleton::SetCallingIdentity(identity);
+}
+
+int32_t AudioServerProxy::RegisterDataTransferCallback(const sptr<IRemoteObject> &object)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->RegisterDataTransferCallback(object);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return ret;
+}
+
+int32_t AudioServerProxy::RegisterDataTransferMonitorParam(int32_t callbackId,
+    const DataTransferMonitorParam &param)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->RegisterDataTransferMonitorParam(callbackId, param);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return ret;
 }
 }
 }

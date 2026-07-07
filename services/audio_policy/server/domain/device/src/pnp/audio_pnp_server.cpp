@@ -79,6 +79,7 @@ bool AudioPnpServer::init(void)
     if (!socketThread_) {
         socketThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadWithSocket(); });
         pthread_setname_np(socketThread_->native_handle(), "OS_SocketEvent");
+        DetectAudioDevice();
     }
     if (!inputThread_) {
         inputThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadInput(); });
@@ -228,9 +229,24 @@ void AudioPnpServer::DetectAudioDevice()
     } else {
         AUDIO_INFO_LOG("Post audio devices not detected or detectino failed");
     }
-
+#ifdef HDMI_DETECT_ENABLE
+    DetectAudioHDMIDevice();
+#endif
     DetectAudioDpDevice();
     AUDIO_INFO_LOG("DetectAudioDevice Done");
+}
+
+void AudioPnpServer::DetectAudioHDMIDevice()
+{
+    AudioEvent audioEvent = {0};
+    int32_t ret = AudioSocketThread::DetectHDMIState(&audioEvent);
+    if ((ret == SUCCESS) && (audioEvent.eventType == AUDIO_DEVICE_ADD)) {
+        AUDIO_INFO_LOG("audio detect hdmi");
+        AudioSocketThread::UpdateDeviceState(audioEvent);
+        eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
+        CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid detect info");
+        OnPnpDeviceStatusChanged(eventInfo_);
+    }
 }
 
 void AudioPnpServer::DetectAudioDpDevice()

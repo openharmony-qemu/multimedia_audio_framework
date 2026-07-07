@@ -56,6 +56,27 @@ private:
     bool isStandbyOn_;
 };
 
+// Async action to notify silent state change
+class NotifySilentStateAction : public AsyncActionHandler::AsyncAction {
+public:
+    // For SetClientVolume: carry actual volume value
+    NotifySilentStateAction(uint32_t sessionId, bool isInSilentState, float volume)
+        : sessionId_(sessionId), isInSilentState_(isInSilentState),
+          volume_(volume), isMuteUpdate_(false) {}
+
+    // For SetSilentModeAndMixWithOthers: mute-only update, no volume value needed
+    NotifySilentStateAction(uint32_t sessionId, bool isInSilentState)
+        : sessionId_(sessionId), isInSilentState_(isInSilentState),
+          volume_(0.0f), isMuteUpdate_(true) {}
+
+    void Exec() override;
+private:
+    uint32_t sessionId_;
+    bool isInSilentState_;
+    float volume_;
+    bool isMuteUpdate_;
+};
+
 class StreamCallbacks : public IStatusCallback, public IWriteCallback {
 public:
     StreamCallbacks(uint32_t streamIndex, std::weak_ptr<RendererInServer> renderer);
@@ -289,6 +310,8 @@ private:
     void HandleStreamUnderrun();
     bool CheckIsUnderrun(uint64_t currentReadFrame, uint64_t currentWriteFrame);
     void ReleasePostProcess();
+
+    int32_t PostSilentAction(std::shared_ptr<AsyncActionHandler::AsyncAction> action);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -405,7 +428,7 @@ private:
     std::unordered_map<int32_t, std::atomic<size_t>> innerCapFirstWriteMap_;
     bool isNonStandardSampleRate_ = false;
     bool isWriteFirst_ = false;
-    bool isOffloadJankReport = false;
+    std::atomic<bool> isOffloadJankReport = false;
     std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 };
 } // namespace AudioStandard

@@ -461,26 +461,33 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId, bool isStandby)
         bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         node->SetState(HPAE_SESSION_PAUSED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_PAUSED);
-        if (sessionId == curNode_->GetSessionId()) {
-            if (isSessionEffectActive) {
-                sessionEffectNode_->PauseEffect();
-            }
-            DisConnectInputSession();
-            bool isRunningWithSink = state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr;
-            if (isRunningWithSink) {
-                sinkOutputNode_->StopStream();
-            }
-            if (isRunningWithSink && !isSessionEffectActive) {
-                uint64_t latency = 0;
-                OnRequestLatency(sessionId, latency);
-                OnRewindBuffer(sessionId, latency);
-                FlushPipelineNodes(sessionId);
-            }
-        }
+        TearDownCurrentNodePipeline(sessionId, state, isSessionEffectActive);
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeOffloadRendererManager::TearDownCurrentNodePipeline(uint32_t sessionId,
+    HpaeSessionState state, bool isSessionEffectActive)
+{
+    if (sessionId != curNode_->GetSessionId()) {
+        return;
+    }
+    if (isSessionEffectActive) {
+        sessionEffectNode_->PauseEffect();
+    }
+    DisConnectInputSession();
+    bool isRunningWithSink = state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr;
+    if (isRunningWithSink) {
+        sinkOutputNode_->StopStream(!isSessionEffectActive);
+    }
+    if (isRunningWithSink && !isSessionEffectActive) {
+        uint64_t latency = 0;
+        OnRequestLatency(sessionId, latency);
+        OnRewindBuffer(sessionId, latency);
+        FlushPipelineNodes(sessionId);
+    }
 }
 
 int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
@@ -552,15 +559,7 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
         bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         node->SetState(HPAE_SESSION_STOPPED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_STOPPED);
-        if (sessionId == curNode_->GetSessionId()) {
-            if (isSessionEffectActive) {
-                sessionEffectNode_->PauseEffect();
-            }
-            DisConnectInputSession();
-            if (state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
-                sinkOutputNode_->StopStream();
-            }
-        }
+        TearDownCurrentNodePipeline(sessionId, state, isSessionEffectActive);
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_STOPPED);
     };
     SendRequest(request, __func__);
@@ -1325,7 +1324,9 @@ bool HpaeOffloadRendererManager::StopOffloadSinkIfRunning()
     CHECK_AND_RETURN_RET(curNode_ != nullptr, false);
     CHECK_AND_RETURN_RET(curNode_->GetState() == HPAE_SESSION_RUNNING, false);
     CHECK_AND_RETURN_RET(sinkOutputNode_ != nullptr, false);
-    sinkOutputNode_->StopStream();
+    // Only flush HDI/DSP cache to prevent pop noise on SE insert/remove.
+    // Do NOT rewind the upstream history buffer; the SE pipeline handles buffering itself.
+    sinkOutputNode_->StopStream(false);
     return true;
 }
 

@@ -34,6 +34,7 @@
 #include "audio_bundle_manager.h"
 #include "audio_volume.h"
 #include "audio_router_select_strategy.h"
+#include "audio_zone_service.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -102,7 +103,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_VOICE_RECOGNITION_MIC),
     std::string(PRIMARY_RAW_AI_MIC),
     std::string(PRIMARY_INTERPHON_MIC),
-    std::string(PRIMARY_CAMCORDER)
+    std::string(PRIMARY_CAMCORDER),
+    std::string(PRIMARY_VOICE_MESSAGE_MIC)
 };
 
 static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
@@ -160,13 +162,13 @@ bool AudioDeviceCommon::IsRingerOrAlarmerDualDevicesRange(const InternalDeviceTy
 }
 
 void AudioDeviceCommon::OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,
-    const AudioStreamDeviceChangeReason reason, int32_t forceUid)
+    const AudioStreamDeviceChangeReason reason)
 {
     Trace trace("AudioDeviceCommon::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
     AUDIO_INFO_LOG("Start");
 
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated(forceUid);
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
         audioPolicyServerHandler_->SendAudioSessionDeviceChange(reason);
     }
     if (deviceDescriptor.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -339,6 +341,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Create device descriptor failed");
     audioDeviceManager_.RemoveNewDevice(devDesc);
+    AudioZoneService::GetInstance().UpdateZonePreferDeviceWhenDeviceDisConnect(devDesc);
     audioMicrophoneDescriptor_.RemoveMicrophoneDescriptor(devDesc);
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == updatedDesc.macAddress_) {
@@ -376,13 +379,11 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
 
     std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
-        make_shared<AudioDeviceDescriptor>(updatedDesc)};
+        make_shared<AudioDeviceDescriptor>(audioDescriptor)};
     AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
 
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-    if (updatedDesc.connectState_ != VIRTUAL_CONNECTED) {
-        AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
-    }
+    UpdateDeviceAfterConnectAndAddtoList(audioDescriptor);
     if (!NeedUpdatePreferredDevice(updatedDesc)) {
         return;
     }
@@ -401,6 +402,14 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID,
             "UpdateConnectedDevicesWhenConnectingForOutputDevice");
+    }
+}
+
+void AudioDeviceCommon::UpdateDeviceAfterConnectAndAddtoList(std::shared_ptr<AudioDeviceDescriptor> audioDescriptor)
+{
+    AudioZoneService::GetInstance().UpdateZonePreferDeviceWhenDeviceConnect();
+    if (audioDescriptor->connectState_ != VIRTUAL_CONNECTED) {
+        AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     }
 }
 

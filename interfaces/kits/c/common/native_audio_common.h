@@ -43,6 +43,7 @@
 #define NATIVE_AUDIO_COMMON_H
 
 #include <stdint.h>
+#include "stdbool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -155,6 +156,34 @@ typedef enum {
      */
     AUDIO_RINGER_MODE_NORMAL = 2,
 } OH_AudioRingerMode;
+
+/**
+* @brief Enumerates the noise reduction modes.
+*
+* @since 26.0.0
+*/
+typedef enum {
+    /**
+    * @brief Fidelity mode, no noise reduction.
+    *
+    * @since 26.0.0
+    */
+    AUDIO_NOISE_REDUCTION_MODE_FIDELITY = 0,
+
+    /**
+    * @brief Pure vocals mode, strong noise reduction.
+    *
+    * @since 26.0.0
+    */
+    AUDIO_NOISE_REDUCTION_MODE_PURE_VOCALS = 1,
+
+    /**
+    * @brief Standard mode, weak noise reduction.
+    *
+    * @since 26.0.0
+    */
+    AUDIO_NOISE_REDUCTION_MODE_STANDARD = 2,
+} OH_AudioNoiseReductionMode;
 
 #ifdef __cplusplus
 }

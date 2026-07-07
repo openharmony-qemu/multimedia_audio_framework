@@ -431,5 +431,25 @@ float AudioStreamChecker::GetVolume()
     std::lock_guard<std::mutex> lock(volumeLock_);
     return curVolume_;
 }
+
+void AudioStreamChecker::DataResume()
+{
+    std::lock_guard<std::recursive_mutex> lock(checkLock_);
+    for (size_t index = 0; index < checkParaVector_.size(); index++) {
+        auto para = checkParaVector_[index];
+        CHECK_AND_CONTINUE(para.para.needImmediateResumeNotify);
+        if (para.isMonitorMuteFrame && para.lastStatus != DATA_TRANS_RESUME) {
+            para.lastStatus = DATA_TRANS_RESUME;
+            AudioRendererDataTransferStateChangeInfo callbackInfo;
+            InitCallbackInfo(DATA_TRANS_RESUME, callbackInfo);
+            callbackInfo.badDataRatio[NO_DATA_TRANS] = 0;
+            callbackInfo.badDataRatio[SILENCE_DATA_TRANS] = 0;
+            AUDIO_DEBUG_LOG("Callback stream status, pid = %{public}d, callbackId = %{public}d",
+                para.pid, para.callbackId);
+            AudioStreamMonitor::GetInstance().OnCallback(para.pid, para.callbackId, callbackInfo);
+            CleanRecordData(para);
+        }
+    }
+}
 }
 }

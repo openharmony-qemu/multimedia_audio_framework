@@ -746,5 +746,104 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetProcessDeviceInfo_001, TestSize.
     ret = policyService.GetProcessDeviceInfo(config, lockFlag, deviceInfo);
     ASSERT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: GetMaxVolumeLevel_001
+ * @tc.desc  : Test GetMaxVolumeLevel interface.
+ */
+HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetMaxVolumeLevel_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    int32_t volumeType = 0; // 使用默认值
+    int32_t volumeLevel = 0;
+    int32_t deviceType = -1; // 使用默认值
+    int32_t ret = server->GetMaxVolumeLevel(volumeType, volumeLevel, deviceType);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_GE(volumeLevel, 0); // 期望最大音量级别 >= 0
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: GetRingerMode_001
+ * @tc.desc  : Test GetRingerMode interface.
+ */
+HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetRingerMode_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    int32_t ringMode = 0;
+    int32_t ret = server->GetRingerMode(ringMode);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_GE(ringMode, 0); // 期望值 >= 0
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: GetStreamMute_001
+ * @tc.desc  : Test GetStreamMute interface.
+ */
+HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetStreamMute_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    int32_t streamType = 0; // 使用默认值
+    bool mute = false;
+    int32_t ret = server->GetStreamMute(streamType, mute);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: IsStreamActive_001
+ * @tc.desc  : Test IsStreamActive interface.
+ */
+HWTEST_F(AudioPolicyServiceExtendedUnitTest, IsStreamActive_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    int32_t streamType = 0; // 使用默认值
+    bool active = false;
+    int32_t ret = server->IsStreamActive(streamType, active);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: GetSystemVolumeLevel_001
+ * @tc.desc  : Test GetSystemVolumeLevel interface.
+ */
+HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetSystemVolumeLevel_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    int32_t streamType = 0; // 使用默认值
+    int32_t uid = 0; // 使用默认值
+    int32_t volumeLevel = 0;
+    int32_t ret = server->GetSystemVolumeLevel(streamType, uid, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: GetDevices_001
+ * @tc.desc  : Test GetDevices interface.
+ */
+HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetDevices_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    int32_t deviceFlag = 0; // 使用默认值
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs;
+    int32_t ret = server->GetDevices(deviceFlag, deviceDescs);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

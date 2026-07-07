@@ -21,6 +21,7 @@
 
 #include "audio_errors.h"
 #include "hpae_process_cluster.h"
+#include "hpae_remote_device_class.h"
 #include "hpae_node_common.h"
 #include "audio_utils.h"
 #include "audio_engine_log.h"
@@ -277,10 +278,6 @@ int32_t HpaeProcessCluster::CheckNodes(uint32_t sessionId)
 {
     if (SafeGetMap(idConverterMap_, sessionId) && SafeGetMap(idLoudnessGainNodeMap_, sessionId) &&
         SafeGetMap(idGainMap_, sessionId)) {
-        AUDIO_INFO_LOG("SessionId %{public}u, Success check nodes in this processcluster: "
-            "converterNodeId %{public}u, loudnessGainNodeId %{public}u, gainNodeId %{public}u",
-            sessionId, idConverterMap_[sessionId]->GetNodeId(), idLoudnessGainNodeMap_[sessionId]->GetNodeId(),
-            idGainMap_[sessionId]->GetNodeId());
         return SUCCESS;
     }
     AUDIO_INFO_LOG("SessionId %{public}u, No nodes in this processcluster, cant connect or destroy", sessionId);
@@ -464,7 +461,8 @@ int32_t HpaeProcessCluster::AudioRendererRelease(HpaeNodeInfo &nodeInfo, const H
 
 bool HpaeProcessCluster::CheckNeedNotifyEffectNode(const HpaeSinkInfo &sinkInfo)
 {
-    if (sinkInfo.deviceClass == "remote" || sinkInfo.deviceName == "DP_MCH_speaker") {
+    if (IsRemoteDeviceClass(sinkInfo.deviceClass)
+        || sinkInfo.deviceName == "DP_MCH_speaker") {
         return false;
     }
 
@@ -676,6 +674,24 @@ void HpaeProcessCluster::SetDelayCountToEffectNode(int32_t delayCount)
         renderEffectNode_->SetDelayCountToEffectNode(delayCount);
     }
 
+    return;
+}
+
+void HpaeProcessCluster::SetCollabDoFade(bool fadeOutState)
+{
+    if (renderEffectNode_ != nullptr) {
+        renderEffectNode_->SetCollabDoFade(fadeOutState);
+    }
+ 	 
+    return;
+}
+
+void HpaeProcessCluster::SetStopRunningState(bool stopRunning)
+{
+    if (renderEffectNode_ != nullptr) {
+        renderEffectNode_->SetStopRunningState(stopRunning);
+    }
+ 	 
     return;
 }
 }  // namespace HPAE

@@ -270,10 +270,12 @@ int32_t RendererInClientInner::InitSharedBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "InitSharedBuffer failed, null ipcStream_.");
     uint64_t engineSize = 0;
-    int32_t ret = ipcStream_->ResolveBufferBaseAndGetServerSpanSize(clientBuffer_, spanSizeInFrame_, engineSize);
+    uint32_t spanSizeInFrame = 0;
+    int32_t ret = ipcStream_->ResolveBufferBaseAndGetServerSpanSize(clientBuffer_, spanSizeInFrame, engineSize);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret, "ResolveBuffer failed:%{public}d", ret);
-    cacheSizeInFrame_ = engineSize;
+    spanSizeInFrame_.store(spanSizeInFrame);
+    cacheSizeInFrame_.store(static_cast<uint32_t>(engineSize));
 
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -283,11 +285,11 @@ int32_t RendererInClientInner::InitSharedBuffer()
         ":%{public}d, byteSizePerFrame:%{public}u, sizePerFrameInByte_:%{public}zu", ret, byteSizePerFrame,
         sizePerFrameInByte_);
 
-    clientSpanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame;
+    clientSpanSizeInByte_.store(spanSizeInFrame * byteSizePerFrame);
 
     AUDIO_INFO_LOG("totalSizeInFrame_[%{public}u] spanSizeInFrame[%{public}u] sizePerFrameInByte_[%{public}zu]"
-        "clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
-        clientSpanSizeInByte_);
+        "clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame, sizePerFrameInByte_,
+        clientSpanSizeInByte_.load());
     if (rendererInfo_.isStatic) {
         CHECK_AND_RETURN_RET_LOG(CopyStaticBufferData() == SUCCESS, ERR_OPERATION_FAILED,
             "CopyStaticBufferData failed");
@@ -312,7 +314,8 @@ uint64_t RendererInClientInner::GetDefaultCallbackBufferDurationInUs() const
     }
     // For low-latency callback mode, the callback quantum should follow one server span.
     // cacheSizeInFrame_ comes from server engine size, which is typically span * 2.
-    uint32_t frameCount = spanSizeInFrame_ > 0 ? spanSizeInFrame_ : cacheSizeInFrame_.load();
+    uint32_t spanSize = spanSizeInFrame_.load();
+    uint32_t frameCount = spanSize > 0 ? spanSize : cacheSizeInFrame_.load();
     if (frameCount == 0) {
         return OLD_BUF_DURATION_IN_USEC;
     }
@@ -403,7 +406,8 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
 
 void RendererInClientInner::SetCacheSize(uint32_t cacheSizeInFrame)
 {
-    if (spanSizeInFrame_ == 0) {
+    uint32_t spanSizeInFrame = spanSizeInFrame_.load();
+    if (spanSizeInFrame == 0) {
         AUDIO_ERR_LOG("failed: spanSizeInFrame is invalid");
         return;
     }
@@ -416,9 +420,9 @@ void RendererInClientInner::SetCacheSize(uint32_t cacheSizeInFrame)
     int32_t ret = ipcStream_->CalculateCacheCount(cacheSizeInFrame, cacheCount);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("CalculateCacheCount failed: %{public}d", ret);
-        cacheCount = (cacheSizeInFrame + spanSizeInFrame_ - 1) / spanSizeInFrame_ + 1;
+        cacheCount = (cacheSizeInFrame + spanSizeInFrame - 1) / spanSizeInFrame + 1;
     }
-    cacheSizeInFrame_ = cacheCount * spanSizeInFrame_;
+    cacheSizeInFrame_.store(cacheCount * spanSizeInFrame);
     AUDIO_INFO_LOG("cacheCount:%{public}d cacheSizeInFrame:%{public}d", cacheCount, cacheSizeInFrame_.load());
 }
 
@@ -886,7 +890,7 @@ void RendererInClientInner::NotifyStreamSilentChange()
     CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && GetVolume() > 0.0f && volumeDataCount_ > 0);
     int64_t stamp = ClockTime::GetCurNano();
     Trace trace("RendererInClientInner::NotifyStreamSilentChange " + std::to_string(sessionId_));
-    AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
+    AudioPolicyManager::GetInstance().NotifyStreamSilentChange(clientPid_, sessionId_);
     needNotifyStreamSilentChange_.store(false);
     AUDIO_INFO_LOG("NotifyStreamSilentChange cost %{public}" PRId64 " ns", ClockTime::GetCurNano() - stamp);
 }
@@ -1507,9 +1511,9 @@ void RendererInClientInner::CheckAndProcessPendingSpanSize()
         spanSizeInFrame, engineSize, routeFlag);
 
     // Directly update the parameters without calling InitSharedBuffer (the buffer remains unchanged)
-    spanSizeInFrame_ = spanSizeInFrame;
-    clientSpanSizeInByte_ = spanSizeInFrame_ * sizePerFrameInByte_;
-    cacheSizeInFrame_ = engineSize;
+    spanSizeInFrame_.store(spanSizeInFrame);
+    clientSpanSizeInByte_.store(spanSizeInFrame * sizePerFrameInByte_);
+    cacheSizeInFrame_.store(static_cast<uint32_t>(engineSize));
 
     // Update rendererFlags (based on routeFlag)
     if (routeFlag != 0) {
@@ -1529,7 +1533,8 @@ void RendererInClientInner::CheckAndProcessPendingSpanSize()
     }
     AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}u "
         "rendererFlags:0x%{public}x",
-        spanSizeInFrame_, clientSpanSizeInByte_, cacheSizeInFrame_.load(), rendererInfo_.rendererFlags);
+        spanSizeInFrame_.load(), clientSpanSizeInByte_.load(), cacheSizeInFrame_.load(),
+        rendererInfo_.rendererFlags);
 }
 
 void RendererInClientInner::UpdateStreamState(State state)

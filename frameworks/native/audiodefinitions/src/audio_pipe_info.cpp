@@ -18,6 +18,8 @@
 
 #include "audio_pipe_info.h"
 
+#include <unordered_set>
+
 #include "audio_utils.h"
 
 namespace OHOS {
@@ -185,6 +187,19 @@ bool AudioPipeInfo::HasRunningStream()
 bool AudioPipeInfo::IsPipeMatch(const std::string adapterName, const uint32_t targetFlag)
 {
     return adapterName_ == adapterName && (routeFlag_ & targetFlag);
+}
+
+bool AudioPipeInfo::IsNormalSourcePipe(bool isEcFeatureEnable) const
+{
+    std::unordered_set<std::string> normalSourceModuleNames = {
+        BLUETOOTH_MIC,
+        PRIMARY_MIC,
+        VIRTUAL_AUDIO
+    };
+    if (isEcFeatureEnable) {
+        normalSourceModuleNames.insert(USB_MIC);
+    }
+    return normalSourceModuleNames.count(moduleInfo_.name) > 0;
 }
 } // AudioStandard
 } // namespace OHOS

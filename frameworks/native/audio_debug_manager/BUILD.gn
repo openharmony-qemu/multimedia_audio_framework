@@ -74,5 +74,8 @@ ohos_shared_library("audio_debug_manager") {
 
 group("audio_debug_manager_test") {
   testonly = true
-  deps = [ "./test/unittest:audio_debug_manager_aiut" ]
+  deps = [
+    "./test/aiut:audio_debug_manager_aiut",
+    "./test/unittest:audio_debug_manager_supplement",
+  ]
 }

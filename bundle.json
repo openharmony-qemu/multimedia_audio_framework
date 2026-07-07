@@ -29,6 +29,7 @@
         "features": [
           "audio_framework_feature_wired_audio",
           "audio_framework_feature_usb_audio",
+          "audio_framework_feature_hdmi_detect_audio",
           "audio_framework_feature_double_pnp_detect",
           "audio_framework_feature_dtmf_tone",
           "audio_framework_feature_detect_soundbox",
@@ -51,7 +52,8 @@
           "audio_framework_feature_multi_bus",
           "audio_framework_feature_source_period_size",
           "audio_framework_feature_input_independent_routing_rule",
-          "audio_framework_feature_multi_zone_volume"
+          "audio_framework_feature_multi_zone_volume",
+          "audio_framework_feature_multi_user_zone"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
@@ -136,6 +138,7 @@
             ],
             "service_group": [
               "//foundation/multimedia/audio_framework/sa_profile:audio_service_sa_profile",
+              "//foundation/multimedia/audio_framework/sa_profile:audio_suite_sa_profile",
               "//foundation/multimedia/audio_framework/services/audio_service:audio_service_packages",
               "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_packages",
               "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite_packages",
@@ -363,7 +366,8 @@
               "header": {
                 "header_files": [
                   "audio_suite_manager.h",
-                  "audio_format_converter.h"
+                  "audio_format_converter.h",
+                  "audio_suite_download_manager.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiosuite/include"
               }
@@ -386,6 +390,34 @@
                   "audio_proresampler_process.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/services/audio_engine/plugin/resample/include"
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_suite/idl:audio_suite_sa_client_idl_interface",
+              "header": {
+                "header_files": [
+                  "iaudio_suite_sa_service.h",
+                  "iupdate_engine_callback.h",
+                  "audio_suite_sa_types.h",
+                  "idownload_callback.h",
+                  "icloud_rom_download_callback.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/services/audio_suite/idl"
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_suite/idl:audio_suite_sa_server_idl_interface",
+              "header": {
+                "header_files": [
+                  "iaudio_suite_sa_service.h",
+                  "iupdate_engine_callback.h",
+                  "audio_suite_sa_types.h",
+                  "idownload_callback.h",
+                  "icloud_rom_download_callback.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/services/audio_suite/idl"
               }
             }
           ],

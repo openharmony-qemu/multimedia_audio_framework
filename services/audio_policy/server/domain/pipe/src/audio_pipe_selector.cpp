@@ -1201,6 +1201,8 @@ AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
         return PIPE_TYPE_IN_INTERPHONE;
     } else if (flag & AUDIO_INPUT_FLAG_CAMCORDER) {
         return PIPE_TYPE_IN_CAMCORDER;
+    } else if (flag & AUDIO_INPUT_FLAG_VOICE_MESSAGE) {
+        return PIPE_TYPE_IN_NORMAL_VOICE_MESSAGE;
     } else {
         return PIPE_TYPE_IN_NORMAL;
     }
@@ -1343,9 +1345,10 @@ bool AudioPipeSelector::ShouldAdjustConcedeAction(const std::shared_ptr<AudioStr
     CHECK_AND_RETURN_RET(IsUpdateActionForDeviceLevelHdPlay(existingStream, incomingStream), false);
     CHECK_AND_RETURN_RET(targetStream->GetRoute() != (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_DIRECT), false);
 
-    CHECK_AND_RETURN_RET((existingStream->GetRoute() & AUDIO_OUTPUT_FLAG_LOWPOWER) &&
+    CHECK_AND_RETURN_RET_LOG(!((existingStream->GetRoute() & AUDIO_OUTPUT_FLAG_LOWPOWER) &&
         existingStream->streamStatus_ != STREAM_STATUS_STARTED &&
-        incomingStream->GetRoute() == AUDIO_OUTPUT_FLAG_FAST, false);
+        incomingStream->GetRoute() == AUDIO_OUTPUT_FLAG_FAST), false,
+        "offload stream in non-running state, fast stream skip adjust.");
     return true;
 }
 
@@ -1525,6 +1528,12 @@ static void FillSpecialPipeInfoExtOther(AudioPipeInfo &info, std::shared_ptr<Ada
         info.moduleInfo_.lib = "libmodule-hdi-sink.z.so";
         info.moduleInfo_.name = "FastDpRendererSink";
         info.moduleInfo_.role = "sink";
+    } else if (pipeInfoPtr->name_ == "fast_usb_arm_input") {
+        info.moduleInfo_.className = "primary_mmap";
+        info.moduleInfo_.fileName = "usb_arm_fast_source_dump_file";
+        info.moduleInfo_.name = "FastUsbArmCapturerSource";
+        info.moduleInfo_.lib = "libmodule-hdi-source.z.so";
+        info.moduleInfo_.role = "source";
     }
 }
 

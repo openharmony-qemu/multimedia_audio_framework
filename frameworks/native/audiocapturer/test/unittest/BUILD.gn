@@ -113,11 +113,27 @@ ohos_unittest("audio_capturer_device_aiut") {
   external_deps = aiut_external_deps
 }
 
+ohos_unittest("audio_capturer_third_unit_test_aiut") {
+  testonly = true
+  module_out_path = audio_capturer_aiut_output_path
+  include_dirs = aiut_include_dirs
+  cflags = aiut_cflags
+  cflags_cc = [ "-std=c++20" ]
+  sources = [
+    "src/audio_capturer_third_unit_test.cpp",
+    "../../src/audio_capturer.cpp",
+    "../../src/audio_capturer_proxy_obj.cpp",
+  ]
+  deps = aiut_deps
+  external_deps = aiut_external_deps
+}
+
 group("audio_capturer_aiut") {
   testonly = true
   deps = [
     ":audio_capturer_native_aiut",
     ":audio_capturer_interrupt_aiut",
     ":audio_capturer_device_aiut",
+    ":audio_capturer_third_unit_test_aiut",
   ]
 }

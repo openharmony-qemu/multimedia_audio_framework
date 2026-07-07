@@ -19,11 +19,11 @@
 #include <memory>
 #include <vector>
 
-#include "audio_errors.h"
 #include "audio_stream_change_info.h"
 #include "microphone_descriptor.h"
 #include "timestamp.h"
 #include "audio_capturer_options.h"
+#include "audio_noise_reduction_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -215,6 +215,19 @@ public:
     virtual void OnPlaybackCaptureStartResult(PlaybackCaptureStartState state) = 0;
 };
 
+class AudioCapturerSensitiveRecordPermitCallback {
+public:
+    virtual ~AudioCapturerSensitiveRecordPermitCallback() = default;
+
+    /**
+     * Called when TTS playback finished event occurs.
+     *
+     * @param isPermitted Indicates whether TTS playback is finished.
+     * since 26
+     */
+    virtual void OnSensitiveRecordPermit(bool isPermitted) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio capturing.
  */
@@ -357,6 +370,18 @@ public:
      */
     virtual void SetFastStatusChangeCallback(
         const std::shared_ptr<AudioCapturerFastStatusChangeCallback> &callback) = 0;
+
+    /**
+     * @brief Set the TTS finished callback listener
+     *
+     * @since 26
+     */
+    virtual void SetSensitiveRecordPermitCallback(
+        const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback)
+    {
+        (void) callback;
+        return;
+    }
 
     /**
      * @brief Set the audio capturer playback capture start state callback listener
@@ -682,7 +707,7 @@ public:
     virtual int32_t SetCapturerMetaDataCallback(const std::shared_ptr<AudioCapturerMetaDataCallback> &callback)
     {
         (void)callback;
-        return ERR_NOT_SUPPORTED;
+        return 0;
     }
 
     /**
@@ -714,7 +739,7 @@ public:
         (void)processBufSize;
         (void)micInBufSize;
         (void)ecBufSize;
-        return ERR_NOT_SUPPORTED;
+        return 0;
     }
 
     /**
@@ -734,7 +759,7 @@ public:
         (void)processBufDesc;
         (void)micInBufDesc;
         (void)ecBufferDesc;
-        return ERR_NOT_SUPPORTED;
+        return 0;
     }
 
     /**
@@ -896,6 +921,24 @@ public:
     }
 
     virtual uint32_t GetOverflowCount() const = 0;
+
+    virtual int32_t SetNoiseReductionMode(NoiseReductionMode mode)
+    {
+        (void)mode;
+        return 0;
+    }
+
+    virtual int32_t GetNoiseReductionMode(NoiseReductionMode &mode)
+    {
+        (void)mode;
+        return 0;
+    }
+
+    virtual int32_t GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes)
+    {
+        (void)modes;
+        return 0;
+    }
 
     /**
      * @brief Select the input device for the current capturer.

@@ -19,6 +19,25 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioManagerInterruptCallbackImpl : public AudioInterruptCallback {
+public:
+    explicit AudioManagerInterruptCallbackImpl();
+    virtual ~AudioManagerInterruptCallbackImpl();
+    
+    /**
+     * Called when an interrupt is received.
+     *
+     * @param interruptAction Indicates the InterruptAction information needed by client.
+     * For details, refer InterruptAction struct in audio_info.h
+     * @since 7
+    */
+    void OnInterrupt(const InterruptEventInternal &interruptEvent) override;
+    void SaveCallback(const std::weak_ptr<AudioManagerCallback> &callback);
+private:
+    std::weak_ptr<AudioManagerCallback> callback_;
+    std::shared_ptr<AudioManagerCallback> cb_;
+};
+
 class AudioInterruptClientManager {
 public:
     static AudioInterruptClientManager &GetInstance();
@@ -158,6 +177,8 @@ private:
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
+    std::mutex audioFocusInfoCallbackMutex_;
+    std::mutex audioInterruptCallbackMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -151,6 +151,14 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
         return SUCCESS;
     }
 
+    if (operation == SENSITIVE_RECORD_PERMIT) {
+        std::lock_guard<std::mutex> lock(sensitiveRecordPermitCallbackMutex_);
+        if (sensitiveRecordPermitCallback_ != nullptr) {
+            sensitiveRecordPermitCallback_->OnSensitiveRecordPermit(result != 0);
+        }
+        return SUCCESS;
+    }
+
     AUDIO_INFO_LOG("OnOperationHandled() recv operation:%{public}d result:%{public}" PRId64".", operation, result);
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
@@ -1301,6 +1309,7 @@ int32_t CapturerInClientInner::Enqueue(const BufferDesc &bufDesc)
         AUDIO_ERR_LOG("Not supported, mode is not callback.");
         return ERR_INCORRECT_MODE;
     }
+    CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Invalid state: %{public}d", state_.load());
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
 
     if (bufDesc.bufLength != cbBufferSize_ || bufDesc.dataLength != cbBufferSize_) {
@@ -2477,6 +2486,14 @@ int32_t CapturerInClientInner::SetInMainThreadState(bool isInMainThread)
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CONFIG_ILLEGAL_STATE, "IpcStream is nullptr", true), "IpcStream is nullptr");
     return ipcStream_->SetInMainThreadState(isInMainThread);
+}
+
+void CapturerInClientInner::SetSensitiveRecordPermitCallback(
+    const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback)
+{
+    CHECK_AND_RETURN_LOG(callback != nullptr, "Invalid null callback");
+    std::lock_guard<std::mutex> lock(sensitiveRecordPermitCallbackMutex_);
+    sensitiveRecordPermitCallback_ = callback;
 }
 } // namespace AudioStandard
 } // namespace OHOS

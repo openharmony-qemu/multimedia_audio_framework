@@ -75,13 +75,15 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> filteredDescs;
         // remove abnormal device or excluded device
         for (const auto &desc : descs) {
-            CHECK_AND_CONTINUE(desc != nullptr);
+            CHECK_AND_CONTINUE(desc != nullptr &&
+                !AudioRouterSelectStrategy::GetInstance().IsDeviceTypeSkipped(desc->deviceType_));
             if (desc->exceptionFlag_ || !desc->isEnable_ ||
                 (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
                     (desc->connectState_ == SUSPEND_CONNECTED ||
                         AudioRouterSelectStrategy::GetInstance().GetScoExcluded())) ||
                 AudioRouterSelectStrategy::GetInstance().IsDeviceExcluded(desc, audioDevUsage) ||
-                !IsDeviceUsageSupported(audioDevUsage, desc)) {
+                !IsDeviceUsageSupported(audioDevUsage, desc) ||
+                IsNeedSilentControl(desc, streamUsage)) {
                 continue;
             }
             CHECK_AND_CONTINUE(!ExistSameRemoteCarWithA2DP(desc));
@@ -97,6 +99,33 @@ public:
             return std::move(filteredDescs.back());
         }
         return std::make_shared<AudioDeviceDescriptor>();
+    }
+
+    // Check whether stream usage is special (call-related): voice, video, or modem call
+    bool IsSpecialStreamUsage(StreamUsage streamUsage)
+    {
+        static const std::set<StreamUsage> specialStreamUsages = {
+            STREAM_USAGE_VOICE_COMMUNICATION,
+            STREAM_USAGE_VIDEO_COMMUNICATION,
+            STREAM_USAGE_VOICE_MODEM_COMMUNICATION
+        };
+        return specialStreamUsages.find(streamUsage) != specialStreamUsages.end();
+    }
+
+    // Check whether device needs silent control filtering: wireless + silent + non-special stream
+    bool IsNeedSilentControl(const std::shared_ptr<AudioDeviceDescriptor> &device, StreamUsage streamUsage)
+    {
+        CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is nullptr");
+        if (!AudioPolicyUtils::GetInstance().IsWirelessDevice(device->deviceType_)) {
+            return false;  // Non-wireless devices are not subject to silent control
+        }
+        if (!device->isSilent_) {
+            return false;  // Device is not silent, no need to filter
+        }
+        if (IsSpecialStreamUsage(streamUsage)) {
+            return false;  // Special call streams are not subject to silent control
+        }
+        return true;  // Wireless + silent + non-special = needs filtering
     }
 
     std::shared_ptr<AudioDeviceDescriptor> GetPairDevice(std::shared_ptr<AudioDeviceDescriptor> &targetDevice,

@@ -28,6 +28,7 @@
 #include "audio_stream_types.h"
 #include "audio_collaborative_manager.h"
 #include "audio_route_select_info.h"
+#include "audio_capturer.h"
 
 namespace OHOS {
 namespace AudioStandard {

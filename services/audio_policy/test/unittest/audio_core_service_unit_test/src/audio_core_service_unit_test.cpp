@@ -144,41 +144,6 @@ static std::shared_ptr<PipeStreamPropInfo> CreatePipeStreamPropInfoForDevice(
     return streamPropInfo;
 }
 
-static std::shared_ptr<AudioStreamDescriptor> CreateCapturerStreamDescriptorForVoipPrivacy(
-    uint32_t sessionId, SourceType sourceType, AudioStreamStatus status = STREAM_STATUS_STARTED,
-    int32_t callerPid = 0)
-{
-    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->sessionId_ = sessionId;
-    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
-    streamDesc->streamStatus_ = status;
-    streamDesc->capturerInfo_.sourceType = sourceType;
-    streamDesc->callerPid_ = callerPid;
-    streamDesc->appInfo_.appPid = callerPid;
-    return streamDesc;
-}
-
-static void AddCapturerStreamsToPipeManager(
-    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
-{
-    auto pipeManager = AudioPipeManager::GetPipeManager();
-    CHECK_AND_RETURN_LOG(pipeManager != nullptr, "pipeManager is nullptr");
-    pipeManager->curPipeList_.clear();
-
-    auto pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
-    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-    pipeInfo->streamDescriptors_ = streamDescs;
-    pipeManager->AddAudioPipeInfo(pipeInfo);
-}
-
-static void ClearCapturerStreamsFromPipeManager()
-{
-    auto pipeManager = AudioPipeManager::GetPipeManager();
-    CHECK_AND_RETURN_LOG(pipeManager != nullptr, "pipeManager is nullptr");
-    pipeManager->curPipeList_.clear();
-}
-
 void AudioCoreServiceUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest::SetUpTestCase start-end");
@@ -4328,7 +4293,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_030, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_032
+ * @tc.number: AudioCapturerSession_031
  * @tc.desc  : Test ReloadSourceForDeviceChange() for inputDeviceForReload_ valid
  */
 HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_031, TestSize.Level1)
@@ -4354,7 +4319,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_031, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_032
- * @tc.desc  : Test ReloadCaptureSessionSoftLink
+ * @tc.desc  : Test ClosePortAndEraseIOHandle clears soft link input pipe streams
  */
 HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_032, TestSize.Level1)
 {
@@ -4362,6 +4327,8 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_032, TestSize.Level1)
     EXPECT_NE(audioCoreService, nullptr);
     auto pipeManager = AudioPipeManager::GetPipeManager();
     EXPECT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+    AudioIOHandleMap::GetInstance().DeInit();
 
     auto pipeInfoOne = std::make_shared<AudioPipeInfo>();
     pipeInfoOne->name_ = "test_output_one";
@@ -4399,10 +4366,12 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_032, TestSize.Level1)
 
     auto ioRet = AudioIOHandleMap::GetInstance().ClosePortAndEraseIOHandle("test");
     EXPECT_EQ(ioRet, SUCCESS);
+    EXPECT_TRUE(pipeInfoThree->streamDescriptors_.empty());
 
     auto pipeRet = pipeManager->GetUnusedRecordPipe();
     EXPECT_EQ(pipeRet.size(), 0);
     pipeManager->curPipeList_.clear();
+    AudioIOHandleMap::GetInstance().DeInit();
 }
 
 /**
@@ -7530,7 +7499,7 @@ HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionRemoved_005, TestSize.Level1
 /**
 * @tc.name  : Test OnCapturerSessionAdded.
 * @tc.number: OnCapturerSessionAdded_002
-* @tc.desc  : Test only normal source sessions are cached in sessionSourceTypeMap_.
+* @tc.desc  : Test non-special source sessions are cached in sessionSourceTypeMap_.
 */
 HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionAdded_002, TestSize.Level1)
 {
@@ -7551,21 +7520,11 @@ HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionAdded_002, TestSize.Level1)
     EXPECT_EQ(coreService->OnCapturerSessionAdded(normalSessionId, sessionInfo, streamInfo), SUCCESS);
     EXPECT_EQ(coreService->sessionSourceTypeMap_.count(normalSessionId), 1);
 
-    sessionInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    uint64_t remoteCastSessionId = 610002;
-    EXPECT_EQ(coreService->OnCapturerSessionAdded(remoteCastSessionId, sessionInfo, streamInfo), SUCCESS);
-    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(remoteCastSessionId), 0);
-
-    sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    uint64_t wakeupSessionId = 610003;
-    EXPECT_EQ(coreService->OnCapturerSessionAdded(wakeupSessionId, sessionInfo, streamInfo), SUCCESS);
-    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(wakeupSessionId), 0);
-
     coreService->normalSourceOpened_ = SOURCE_TYPE_INVALID;
     sessionInfo.sourceType = SOURCE_TYPE_MIC;
     uint64_t normalNotOpenedSessionId = 610004;
     EXPECT_EQ(coreService->OnCapturerSessionAdded(normalNotOpenedSessionId, sessionInfo, streamInfo), SUCCESS);
-    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(normalNotOpenedSessionId), 0);
+    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(normalNotOpenedSessionId), 1);
 
     coreService->sessionSourceTypeMap_.clear();
     coreService->normalSourceOpened_ = SOURCE_TYPE_INVALID;
@@ -7574,7 +7533,7 @@ HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionAdded_002, TestSize.Level1)
 /**
 * @tc.name  : Test HasNormalTypeCapturerSession.
 * @tc.number: HasNormalTypeCapturerSession_002
-* @tc.desc  : Test null source strategy map still detects normal recording sessions.
+* @tc.desc  : Test normal source module detects normal recording sessions.
 */
 HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_002, TestSize.Level1)
 {
@@ -7582,10 +7541,8 @@ HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_002, TestSize.Le
     auto coreService = GetServerPtr()->coreService_;
     ASSERT_NE(coreService, nullptr);
 
-    auto oldSourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
-    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(nullptr);
-
     auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->moduleInfo_.name = PRIMARY_MIC;
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->audioMode_ = AUDIO_MODE_RECORD;
     streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
@@ -7593,14 +7550,12 @@ HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_002, TestSize.Le
 
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = {nullptr, pipe};
     EXPECT_TRUE(coreService->HasNormalTypeCapturerSession(pipeList));
-
-    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(oldSourceStrategyMap);
 }
 
 /**
 * @tc.name  : Test HasNormalTypeCapturerSession.
 * @tc.number: HasNormalTypeCapturerSession_003
-* @tc.desc  : Test non-recording, special source, null stream, and source strategy streams are ignored.
+* @tc.desc  : Test non-normal source modules are ignored.
 */
 HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_003, TestSize.Level1)
 {
@@ -7608,18 +7563,30 @@ HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_003, TestSize.Le
     auto coreService = GetServerPtr()->coreService_;
     ASSERT_NE(coreService, nullptr);
 
-    auto oldSourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
-    auto sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
-    sourceStrategyMap->emplace(SOURCE_TYPE_MIC, AudioSourceStrategyType {
-        "AUDIO_INPUT_MIC_TYPE",
-        "primary",
-        "primary_input",
-        AUDIO_INPUT_FLAG_NORMAL,
-        1
-    });
-    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(sourceStrategyMap);
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->moduleInfo_.name = "FastCapturerSource";
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    pipe->streamDescriptors_.push_back(streamDesc);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = {pipe};
+    EXPECT_FALSE(coreService->HasNormalTypeCapturerSession(pipeList));
+}
+
+/**
+* @tc.name  : Test HasNormalTypeCapturerSession.
+* @tc.number: HasNormalTypeCapturerSession_004
+* @tc.desc  : Test null stream, playback stream, and special source are ignored in normal source modules.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest HasNormalTypeCapturerSession_004 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
 
     auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->moduleInfo_.name = PRIMARY_MIC;
     pipe->streamDescriptors_.push_back(nullptr);
 
     auto playbackStream = std::make_shared<AudioStreamDescriptor>();
@@ -7632,15 +7599,42 @@ HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_003, TestSize.Le
     specialStream->capturerInfo_.sourceType = SOURCE_TYPE_REMOTE_CAST;
     pipe->streamDescriptors_.push_back(specialStream);
 
-    auto strategyStream = std::make_shared<AudioStreamDescriptor>();
-    strategyStream->audioMode_ = AUDIO_MODE_RECORD;
-    strategyStream->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
-    pipe->streamDescriptors_.push_back(strategyStream);
-
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = {pipe};
     EXPECT_FALSE(coreService->HasNormalTypeCapturerSession(pipeList));
 
-    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(oldSourceStrategyMap);
+    auto normalStream = std::make_shared<AudioStreamDescriptor>();
+    normalStream->audioMode_ = AUDIO_MODE_RECORD;
+    normalStream->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    pipe->streamDescriptors_.push_back(normalStream);
+    EXPECT_TRUE(coreService->HasNormalTypeCapturerSession(pipeList));
+}
+
+/**
+* @tc.name  : Test HasNormalTypeCapturerSession.
+* @tc.number: HasNormalTypeCapturerSession_005
+* @tc.desc  : Test USB mic session is ignored when EC is disabled.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest HasNormalTypeCapturerSession_005 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    pipe->moduleInfo_.name = USB_MIC;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    pipe->streamDescriptors_.push_back(streamDesc);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = {pipe};
+    bool originIsEcFeatureEnable = coreService->isEcFeatureEnable_;
+    coreService->isEcFeatureEnable_ = false;
+    EXPECT_FALSE(coreService->HasNormalTypeCapturerSession(pipeList));
+
+    coreService->isEcFeatureEnable_ = true;
+    EXPECT_TRUE(coreService->HasNormalTypeCapturerSession(pipeList));
+    coreService->isEcFeatureEnable_ = originIsEcFeatureEnable;
 }
 
 /**
@@ -7784,7 +7778,7 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_001, TestSize.Level1)
     auto pipeManager = AudioPipeManager::GetPipeManager();
     auto streamDescAfter = pipeManager->GetStreamDescById(sessionId);
     if (streamDescAfter != nullptr) {
-        EXPECT_EQ(streamDescAfter->isStandby_, true);
+        EXPECT_EQ(streamDescAfter->isStandby_.load(), true);
     }
 
     AudioPipeManager::GetPipeManager()->curPipeList_.clear();
@@ -7841,7 +7835,7 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_003, TestSize.Level1)
     auto pipeManager = AudioPipeManager::GetPipeManager();
     auto streamDescAfter = pipeManager->GetStreamDescById(sessionId);
     if (streamDescAfter != nullptr) {
-        EXPECT_EQ(streamDescAfter->isStandby_, false);
+        EXPECT_EQ(streamDescAfter->isStandby_.load(), false);
     }
 
     AudioPipeManager::GetPipeManager()->curPipeList_.clear();
@@ -8367,114 +8361,6 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyVoipPriorityLoweredByMute_004, TestSize
     EXPECT_EQ(audioCoreService->GetOpenedNormalSourceSessionId(), sentinelSessionId);
 
     pipeManager->curPipeList_.clear();
-}
-
-/**
- * @tc.name  : EvaluateActiveVoipPrivacyPresence_001
- * @tc.number: EvaluateActiveVoipPrivacyPresence_001
- * @tc.desc  : Test active VOIP detection with muted and no-privacy exceptions.
- */
-HWTEST_F(AudioCoreServiceUnitTest, EvaluateActiveVoipPrivacyPresence_001, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-
-    bool hasActiveVoipPrivacyCapturer = false;
-    auto activeVoip = CreateCapturerStreamDescriptorForVoipPrivacy(710105,
-        SOURCE_TYPE_VOICE_COMMUNICATION);
-    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
-        hasActiveVoipPrivacyCapturer);
-    EXPECT_TRUE(hasActiveVoipPrivacyCapturer);
-
-    hasActiveVoipPrivacyCapturer = true;
-    activeVoip->voipPriorityLowered_.store(true);
-    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
-        hasActiveVoipPrivacyCapturer);
-    EXPECT_FALSE(hasActiveVoipPrivacyCapturer);
-
-    hasActiveVoipPrivacyCapturer = false;
-    activeVoip->voipPriorityLowered_.store(false);
-    audioCoreService->EvaluateActiveVoipPrivacyPresence({activeVoip},
-        hasActiveVoipPrivacyCapturer);
-    EXPECT_FALSE(hasActiveVoipPrivacyCapturer);
-}
-
-/**
- * @tc.name  : ShouldMuteCapturerByVoipPrivacy_001
- * @tc.number: ShouldMuteCapturerByVoipPrivacy_001
- * @tc.desc  : Test mute target, no-active-voip and ultrasonic bypass branches.
- */
-HWTEST_F(AudioCoreServiceUnitTest, ShouldMuteCapturerByVoipPrivacy_001, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-
-    auto micStream = CreateCapturerStreamDescriptorForVoipPrivacy(710106, SOURCE_TYPE_MIC);
-    auto ultrasonicStream = CreateCapturerStreamDescriptorForVoipPrivacy(710107,
-        SOURCE_TYPE_ULTRASONIC);
-    auto voipStream = CreateCapturerStreamDescriptorForVoipPrivacy(710108,
-        SOURCE_TYPE_VOICE_COMMUNICATION);
-
-    EXPECT_TRUE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(micStream, true));
-    EXPECT_FALSE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(micStream, false));
-    EXPECT_FALSE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(ultrasonicStream, true));
-    EXPECT_FALSE(audioCoreService->ShouldMuteCapturerByVoipPrivacy(voipStream, true));
-}
-
-/**
- * @tc.name  : CollectSessionsToMuteByVoipPrivacy_001
- * @tc.number: CollectSessionsToMuteByVoipPrivacy_001
- * @tc.desc  : Test collecting mute target sessions under active VOIP.
- */
-HWTEST_F(AudioCoreServiceUnitTest, CollectSessionsToMuteByVoipPrivacy_001, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-
-    auto voipStream = CreateCapturerStreamDescriptorForVoipPrivacy(710109,
-        SOURCE_TYPE_VOICE_COMMUNICATION);
-    auto micStream = CreateCapturerStreamDescriptorForVoipPrivacy(710110, SOURCE_TYPE_MIC);
-    auto ultrasonicStream = CreateCapturerStreamDescriptorForVoipPrivacy(710111,
-        SOURCE_TYPE_ULTRASONIC);
-    auto wakeupStream = CreateCapturerStreamDescriptorForVoipPrivacy(710112,
-        SOURCE_TYPE_WAKEUP);
-
-    std::unordered_set<uint32_t> targetMuteSessions;
-    audioCoreService->CollectSessionsToMuteByVoipPrivacy(
-        {voipStream, micStream, ultrasonicStream, wakeupStream}, true, targetMuteSessions);
-
-    EXPECT_EQ(targetMuteSessions.count(voipStream->GetSessionId()), 0);
-    EXPECT_EQ(targetMuteSessions.count(micStream->GetSessionId()), 1);
-    EXPECT_EQ(targetMuteSessions.count(ultrasonicStream->GetSessionId()), 0);
-    EXPECT_EQ(targetMuteSessions.count(wakeupStream->GetSessionId()), 1);
-}
-
-/**
- * @tc.name  : ReEvaluateVoipPrivacyMuteForCapturers_001
- * @tc.number: ReEvaluateVoipPrivacyMuteForCapturers_001
- * @tc.desc  : Test reevaluate main flow with descriptor-only state and no mute target.
- */
-HWTEST_F(AudioCoreServiceUnitTest, ReEvaluateVoipPrivacyMuteForCapturers_001, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-
-    auto activeVoip = CreateCapturerStreamDescriptorForVoipPrivacy(710113,
-        SOURCE_TYPE_VOICE_COMMUNICATION);
-    auto pausedMic = CreateCapturerStreamDescriptorForVoipPrivacy(710114, SOURCE_TYPE_MIC,
-        STREAM_STATUS_PAUSED);
-    AddCapturerStreamsToPipeManager({activeVoip, pausedMic});
-
-    audioCoreService->ReEvaluateVoipPrivacyMuteForCapturers(
-        "AudioCoreServiceUnitTest::ReEvaluateVoipPrivacyMuteForCapturers_001");
-    EXPECT_FALSE(activeVoip->voipPrivacyMuted_.load());
-    EXPECT_FALSE(pausedMic->voipPrivacyMuted_.load());
-
-    audioCoreService->ReEvaluateVoipPrivacyMuteForCapturers(
-        "AudioCoreServiceUnitTest::ReEvaluateVoipPrivacyMuteForCapturers_001");
-    EXPECT_FALSE(activeVoip->voipPrivacyMuted_.load());
-
-    ClearCapturerStreamsFromPipeManager();
 }
 } // namespace AudioStandard
 } // namespace OHOS

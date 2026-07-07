@@ -177,7 +177,18 @@ const vector<std::string> gTestAudioParameterKeys = {
     "pm_kara",
     "pm_kara_code",
     "outdoor_mode",
+    "record_denoise_mode",
+    "record_denoise_mode_support",
     "test",
+};
+
+const vector<std::string> gTestAudioParameterValues = {
+    "",
+    "0",
+    "1",
+    "2",
+    "fidelity",
+    "fidelity,pure_voice,normal",
 };
 
 const vector<std::string> tetsNetworkId = {
@@ -232,6 +243,8 @@ static const vector<string> testKeys = {
     "getSmartPAPOWER",
     "show_RealTime_ChipModel",
     "perf_info",
+    "record_denoise_mode",
+    "record_denoise_mode_support",
 };
 
 static const vector<AudioScene> testAudioScenes = {
@@ -902,11 +915,12 @@ void AudioServerSetAudioParameterByKeyTest()
 {
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    if (gTestAudioParameterKeys.empty()) {
+    if (gTestAudioParameterKeys.empty() || gTestAudioParameterValues.empty()) {
         return;
     }
     uint32_t id = provider.ConsumeIntegral<uint32_t>() % gTestAudioParameterKeys.size();
-    audioServerPtr->SetAudioParameter(gTestAudioParameterKeys[id], "");
+    uint32_t valueId = provider.ConsumeIntegral<uint32_t>() % gTestAudioParameterValues.size();
+    audioServerPtr->SetAudioParameter(gTestAudioParameterKeys[id], gTestAudioParameterValues[valueId]);
 }
 
 void AudioServerGetExtraParametersTest()

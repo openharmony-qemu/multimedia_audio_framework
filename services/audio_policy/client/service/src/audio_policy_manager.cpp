@@ -543,14 +543,14 @@ int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType, int
 }
 
 int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy,
-    const DeviceType &deviceType)
+    const DeviceType &deviceType, int32_t volumeFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     if (isLegacy) {
         return gsp->SetStreamMuteLegacy(volumeType, mute, deviceType);
     }
-    return gsp->SetStreamMute(volumeType, mute, deviceType);
+    return gsp->SetStreamMute(volumeType, mute, deviceType, volumeFlag);
 }
 
 bool AudioPolicyManager::GetStreamMute(AudioVolumeType volumeType)
@@ -3876,6 +3876,17 @@ int32_t AudioPolicyManager::GetSystemVolumeDegree(AudioVolumeType volumeType, in
     return volumeDegree;
 }
 
+int32_t AudioPolicyManager::GetSystemVolumeDegreeWithDevice(AudioVolumeType volumeType, DeviceType deviceType,
+    std::string networkId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    int32_t volumeDegree = -1;
+    gsp->GetSystemVolumeDegreeWithDevice(volumeType, deviceType, networkId, volumeDegree);
+    return volumeDegree;
+}
+
 int32_t AudioPolicyManager::GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -3964,12 +3975,12 @@ AudioScene AudioPolicyManager::GetAudioSceneFromAllZones()
     return static_cast<AudioScene>(audioScene);
 }
 
-int32_t AudioPolicyManager::NotifyStreamSilentChange(uint32_t streamId)
+int32_t AudioPolicyManager::NotifyStreamSilentChange(int32_t clientPid, uint32_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    gsp->NotifyStreamSilentChange(streamId);
+    gsp->NotifyStreamSilentChange(clientPid, streamId);
     return SUCCESS;
 }
 

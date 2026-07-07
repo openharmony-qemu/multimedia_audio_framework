@@ -85,7 +85,7 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
     {DEVICE_TYPE_DP, {DP_CLASS, DP_MCH_CLASS}},
     {DEVICE_TYPE_FILE_SINK, {FILE_CLASS}},
     {DEVICE_TYPE_FILE_SOURCE, {FILE_CLASS}},
-    {DEVICE_TYPE_HDMI, {PRIMARY_CLASS, DP_CLASS, DP_MCH_CLASS}},
+    {DEVICE_TYPE_HDMI, {PRIMARY_CLASS, HDMI_CLASS, DP_CLASS, DP_MCH_CLASS}},
     {DEVICE_TYPE_ACCESSORY, {ACCESSORY_CLASS}},
     {DEVICE_TYPE_HEARING_AID, {HEARING_AID_CLASS}},
     {DEVICE_TYPE_LINE_DIGITAL, {PRIMARY_CLASS, DP_CLASS, DP_MCH_CLASS}},
@@ -1088,6 +1088,7 @@ bool AudioAdapterManager::SetSinkMute(const std::string &sinkName, bool isMute, 
         {BLUETOOTH_SPEAKER, A2DP_CLASS},
         {MCH_PRIMARY_SPEAKER, MCH_CLASS},
         {USB_SPEAKER, USB_CLASS},
+        {HDMI_SINK, HDMI_CLASS},
         {DP_SINK, DP_CLASS},
         {FILE_SINK, FILE_CLASS},
         {REMOTE_CAST_INNER_CAPTURER_SINK_NAME, REMOTE_CAST_INNER_CAPTURER_SINK_NAME},
@@ -1115,67 +1116,6 @@ bool AudioAdapterManager::SetSinkMute(const std::string &sinkName, bool isMute, 
     }
 
     return audioServiceAdapter_->SetSinkMute(sinkName, isMute, isSync);
-}
-
-int32_t AudioAdapterManager::SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name)
-{
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
-        "SelectDevice audio adapter null");
-    switch (deviceRole) {
-        case DeviceRole::INPUT_DEVICE:
-            return audioServiceAdapter_->SetDefaultSource(name);
-        case DeviceRole::OUTPUT_DEVICE: {
-            AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
-            return audioServiceAdapter_->SetDefaultSink(name);
-        }
-        default:
-            AUDIO_ERR_LOG("SelectDevice error deviceRole %{public}d", deviceRole);
-            return ERR_OPERATION_FAILED;
-    }
-    return SUCCESS;
-}
-
-int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
-    std::string name, bool active, DeviceFlag flag)
-{
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
-        "SetDeviceActive audio adapter null");
-
-    switch (deviceType) {
-        case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET: {
-            if (name == USB_SPEAKER) {
-                return audioServiceAdapter_->SetDefaultSink(name);
-            } else {
-                return audioServiceAdapter_->SetDefaultSource(name);
-            }
-        }
-        default: {
-            int32_t ret = SUCCESS;
-            int32_t errs[2]{SUCCESS, SUCCESS};
-            if (IsInputDevice(deviceType) && (flag & INPUT_DEVICES_FLAG)) {
-                AUDIO_INFO_LOG("SetDefaultSource %{public}d", deviceType);
-                errs[0] = audioServiceAdapter_->SetDefaultSource(name);
-                if (errs[0] != SUCCESS) {
-                    AUDIO_ERR_LOG("SetDefaultSource err: %{public}d", errs[0]);
-                    ret = errs[0];
-                }
-            }
-            if (IsOutputDevice(deviceType) && (flag & OUTPUT_DEVICES_FLAG)) {
-                AUDIO_INFO_LOG("SetDefaultSink %{public}d", deviceType);
-                errs[1] = audioServiceAdapter_->SetDefaultSink(name);
-                if (errs[1] != SUCCESS) {
-                    AUDIO_ERR_LOG("SetDefaultSink err: %{public}d", errs[1]);
-                    ret = errs[1];
-                }
-            }
-            // Ensure compatibility across different platforms and versions
-            if (errs[0] == SUCCESS || errs[1] == SUCCESS) {
-                return SUCCESS;
-            }
-            return ret;
-        }
-    }
-    return SUCCESS;
 }
 
 int32_t AudioAdapterManager::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
@@ -1574,6 +1514,11 @@ void AudioAdapterManager::GetSinkIdInfoAndIdType(
             idType = HDI_ID_TYPE_FAST;
             idInfo = HDI_ID_INFO_USB;
         }
+    } else if (pipeInfo->adapterName_ == "hdmi") {
+        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+            idType = HDI_ID_TYPE_FAST;
+            idInfo = HDI_ID_INFO_HDMI;
+        }
     }
 }
 
@@ -1617,6 +1562,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
         if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_CAMCORDER) {
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_CAMCORDER;
+        }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOICE_MESSAGE) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_VOICE_MESSAGE;
         }
     } else if (pipeInfo->adapterName_ == "primary_extra_capturer") {
         idType = HDI_ID_TYPE_PRIMARY;
@@ -2166,6 +2115,7 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
     if (!audioModuleInfo.OpenMicSpeaker.empty()) {
         attr.openMicSpeaker = static_cast<uint32_t>(std::stoul(audioModuleInfo.OpenMicSpeaker));
     }
+    attr.routeFlag = audioModuleInfo.routeFlag;
     attr.format = ParseSourceAudioSampleFormat(audioModuleInfo.format);
     if (!audioModuleInfo.rate.empty()) {
         attr.sampleRate = static_cast<uint32_t>(std::stoul(audioModuleInfo.rate));
@@ -3577,15 +3527,12 @@ void AudioAdapterManager::MdmMuteSwitchCallback(bool isMute)
     AUDIO_INFO_LOG("mdmMuteStatus = %{public}d", isMute);
     AudioMuteFactorManager& audioMuteFactorManager = AudioMuteFactorManager::GetInstance();
     audioMuteFactorManager.SetMdmMuteStatus(isMute);
-    for (auto &streamType : defaultVolumeTypeList_) {
-        if (streamType == STREAM_VOICE_CALL) {
-            auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_VOICE_CALL);
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            int32_t volumeLevel = GetStreamVolume(desc, streamType);
-            float volumeFloat = isMute ? 0 : GetSystemVolumeInDb(streamType, volumeLevel, desc->deviceType_);
-            AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, volumeFloat);
-        }
-    }
+    SendOffloadVolume();
+    auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_VOICE_CALL);
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    int32_t volumeLevel = GetStreamVolume(desc, STREAM_VOICE_CALL);
+    float volumeFloat = isMute ? 0 : GetSystemVolumeInDb(STREAM_VOICE_CALL, volumeLevel, desc->deviceType_);
+    AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(STREAM_VOICE_CALL, volumeFloat);
 }
 
 void AudioAdapterManager::RegisterAppIndividualVolumeEnableObserver()
@@ -4272,16 +4219,19 @@ void AudioAdapterManager::AdjustVolumeForSpecialDevice(std::shared_ptr<AudioDevi
     } else if (device->deviceType_ == DEVICE_TYPE_NEARLINK) {
         if (AudioVolumeManager::GetInstance().IsNearlinkKaraokeVolumeManaged(volumeType)) {
             volumeDb = volumeDb * 0.63957f;
-        } else if (volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) {
+        } else if ((volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) || VolumeUtils::IsPCVolumeEnable()) {
             isMuted = isAbsVolumeMuteNearlink_.load();
             volumeDb = isMuted ? 0.0f : 0.63957f;
         } else if (volumeType == STREAM_VOICE_CALL) {
             volumeDb = 1.0f;
         }
         return;
-    } else if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && IsVgsVolumeSupported() &&
-        volumeType == STREAM_VOICE_CALL) {
-        volumeDb = 1.0f;
+    } else if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && IsVgsVolumeSupported()) {
+        if (volumeType == STREAM_VOICE_CALL) {
+            volumeDb = 1.0f;
+        } else if (VolumeUtils::IsPCVolumeEnable()) {
+            volumeDb = 0.63957f;
+        }
     }
 }
 

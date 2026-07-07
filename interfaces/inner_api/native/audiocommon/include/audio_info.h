@@ -884,6 +884,8 @@ public:
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
     bool mixWithWakeUp = false;
     bool loopBackEffectEnabled = false;
+    std::string cellularRecordPhoneNum = "";
+    std::string cellularRecordToken = "";
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -907,7 +909,9 @@ public:
             parcel.WriteBool(isLoopback) &&
             parcel.WriteInt32(static_cast<int32_t>(loopbackMode)) &&
             parcel.WriteBool(mixWithWakeUp) &&
-            parcel.WriteBool(loopBackEffectEnabled);
+            parcel.WriteBool(loopBackEffectEnabled) &&
+            parcel.WriteString(cellularRecordPhoneNum) &&
+            parcel.WriteString(cellularRecordToken);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -925,6 +929,8 @@ public:
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         mixWithWakeUp = parcel.ReadBool();
         loopBackEffectEnabled = parcel.ReadBool();
+        cellularRecordPhoneNum = parcel.ReadString();
+        cellularRecordToken = parcel.ReadString();
     }
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
@@ -1672,6 +1678,8 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(static_cast<int32_t>(capturerInfo.loopbackMode));
         parcel.WriteBool(capturerInfo.mixWithWakeUp);
         parcel.WriteBool(capturerInfo.loopBackEffectEnabled);
+        parcel.WriteString(capturerInfo.cellularRecordPhoneNum);
+        parcel.WriteString(capturerInfo.cellularRecordToken);
 
         // streamType
         parcel.WriteInt32(streamType);
@@ -1738,6 +1746,8 @@ struct AudioProcessConfig : public Parcelable {
         config->capturerInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         config->capturerInfo.mixWithWakeUp = parcel.ReadBool();
         config->capturerInfo.loopBackEffectEnabled = parcel.ReadBool();
+        config->capturerInfo.cellularRecordPhoneNum = parcel.ReadString();
+        config->capturerInfo.cellularRecordToken = parcel.ReadString();
 
         // streamType
         config->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
@@ -2395,6 +2405,7 @@ struct FetchDeviceInfo : public Parcelable {
     RouterType bypassType = ROUTER_TYPE_NONE;
     uint32_t streamId = INVALID_STREAM_ID;
     SourceType sourceType = SOURCE_TYPE_INVALID;
+    bool isRunning = false;
 
     FetchDeviceInfo(StreamUsage streamUsage, StreamUsage preStreamUsage, int32_t clientUID,
         RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)

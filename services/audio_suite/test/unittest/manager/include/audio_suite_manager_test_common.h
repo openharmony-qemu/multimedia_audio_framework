@@ -119,6 +119,26 @@ public:
         isFinishPrintInfo_ = true;
         printInfoResult_ = result;
     }
+    void OnMetaRenderFrame(int32_t result, uint32_t pipelineId)
+    {
+        isFinishMetaRenderFrameMap_[pipelineId] = true;
+        metaRenderFrameResultMap_[pipelineId] = result;
+    }
+    void OnSetSystemNodeParam(int32_t result)
+    {
+        isFinishSetSystemNodeParam_ = true;
+        setSystemNodeParamResult_ = result;
+    }
+    void OnGetSystemNodeParam(int32_t result)
+    {
+        isFinishGetSystemNodeParam_ = true;
+        getSystemNodeParamResult_ = result;
+    }
+    void OnGetSystemNodeInOutSize(int32_t result)
+    {
+        isFinishGetSystemNodeInOutSize_ = true;
+        getSystemNodeInOutSizeResult_ = result;
+    }
 
 private:
     bool isFinishCreatePipeline_ = false;
@@ -158,10 +178,18 @@ private:
     int32_t setOptionsResult_ = 0;
     bool isFinishPrintInfo_ = false;
     int32_t printInfoResult_ = 0;
+    int32_t isFinishSetSystemNodeParam_ = false;
+    bool setSystemNodeParamResult_ = 0;
+    int32_t isFinishGetSystemNodeParam_ = false;
+    bool getSystemNodeParamResult_ = 0;
+    int32_t isFinishGetSystemNodeInOutSize_ = false;
+    bool getSystemNodeInOutSizeResult_ = 0;
     std::unordered_map<uint32_t, bool> isFinishRenderFrameMap_;
     std::unordered_map<uint32_t, int32_t> renderFrameResultMap_;
     std::unordered_map<uint32_t, bool> isFinishMultiRenderFrameMap_;
     std::unordered_map<uint32_t, int32_t> multiRenderFrameResultMap_;
+    std::unordered_map<uint32_t, bool> isFinishMetaRenderFrameMap_;
+    std::unordered_map<uint32_t, int32_t> metaRenderFrameResultMap_;
 };
 
 class AudioNodeTestImpl : public OHOS::AudioStandard::AudioSuite::AudioNode {

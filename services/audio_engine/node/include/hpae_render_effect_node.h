@@ -34,7 +34,8 @@ enum ModifyAudioEffectChainInfoReason {
 class HpaeTempEffectBuffer {
 public:
     HpaeTempEffectBuffer();
-    HpaeTempEffectBuffer(PcmBufferInfo pcmBufferInfo);
+    HpaeTempEffectBuffer(PcmBufferInfo pcmBufferInfo,
+        CollaborationState isCollaborationEnabled = COLLABORATION_CLOSE);
     ~HpaeTempEffectBuffer();
     void ChangeEffectDataForLatency(HpaePcmBuffer* buffer);
     bool DelayAlignmentForEffectNode(HpaePcmBuffer* buffer);
@@ -43,15 +44,23 @@ public:
     void FillSilenceFramesForEffectNode(int32_t latencyMs);
     void ReadDataDequeueRingCache(HpaePcmBuffer* buffer);
     void WriteDataEnqueueRingCache(HpaePcmBuffer* buffer);
+    void UpdateNearLinkCollaborationStateToHdi(CollaborationState isCollaborationEnabled);
+    void SetCollabDoFade(bool fadeOutState);
+    void SetStopRunningState(bool stopRunning);
 private:
     void SetSilenceData(HpaePcmBuffer* buffer);
+    void SetSilenceDataInAllChannel(HpaePcmBuffer* buffer);
     void SetTempBufferData(HpaePcmBuffer* buffer, float *tempOutPut);
+    void DoFadeOut(HpaePcmBuffer* buffer);
     bool enqueueRunning_ = false;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     int32_t enqueueCount_ = 1;
     uint64_t latency_  = 0; // in ms
     int32_t waitCountThreshold_ = 0;
     std::unique_ptr<HpaePcmBuffer> tempOutput_ = nullptr;
+    CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
+    bool effectCollabDoFadeOutState_ = false;
+    bool stopRunning_ = false;
 };
 
 class HpaeRenderEffectNode : public HpaePluginNode, public HpaeTempEffectBuffer {
@@ -72,6 +81,8 @@ public:
     int32_t AudioOffloadRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t AudioOffloadRendererRelease(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     void SetDelayCountToEffectNode(int32_t delayCount);
+    void SetCollabDoFade(bool fadeOutState);
+    void SetStopRunningState(bool stopRunning);
 protected:
     HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:

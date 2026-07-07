@@ -258,7 +258,6 @@ ohos_unittest("audio_zone_service_unit_test") {
   if (bluetooth_part_enable == true) {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
-
 }
 
 ohos_unittest("audio_zone_unit_test") {
@@ -424,6 +423,9 @@ ohos_unittest("audio_zone_unit_test") {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
 
+  if (audio_framework_feature_multi_zone_volume) {
+    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
+  }
 }
 
 ohos_unittest("audio_interrupt_service_unit_test") {
@@ -6914,7 +6916,7 @@ ohos_unittest("va_device_manager_test") {
   module_out_path = module_output_path
   include_dirs = ["./unittest/va_device_manager_test/include",
                   "../../audio_policy/server/domain/device/src/va",
-                  "../../../services/audio_service/unittest/include",
+                  "../../../services/audio_service/test/unittest/include",
                   "../../../frameworks",
                   "//foundation/multimedia/audio_framework/services/audio_service/test/unittest/include/",
   ]

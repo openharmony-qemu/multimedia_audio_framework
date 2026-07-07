@@ -540,8 +540,10 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSourceAttr_001, TestSize.Level1)
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     AudioModuleInfo info;
     info.channelLayout = "263"; // 263 = 100000111
+    info.routeFlag = AUDIO_INPUT_FLAG_AI;
     IAudioSourceAttr attr = audioAdapterManager->GetAudioSourceAttr(info);
     EXPECT_EQ(attr.channelLayout, 263); // 263 = 100000111
+    EXPECT_EQ(attr.routeFlag, AUDIO_INPUT_FLAG_AI);
 }
 
 /**
@@ -935,6 +937,26 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_009, TestSize.Lev
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
     EXPECT_EQ(idInfo, HDI_ID_INFO_CAMCORDER);
+}
+
+/**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: GetSourceIdInfoAndIdType_009_Ext01
+ * @tc.type: FUNC
+ * @tc.desc: Test voice message input flag maps to primary voice message HDI id info
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_009_Ext01, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::string idInfo;
+    HdiIdType idType = HDI_ID_TYPE_FAST;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_VOICE_MESSAGE;
+    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
+    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
+    EXPECT_EQ(idInfo, HDI_ID_INFO_VOICE_MESSAGE);
 }
 
 /**
@@ -1679,6 +1701,81 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateCollaborativeState_Close_001, TestSi
     auto &manager = AudioAdapterManager::GetInstance();
     int32_t ret = manager.UpdateCollaborativeState(COLLABORATION_CLOSE);
     EXPECT_TRUE(ret == SUCCESS || ret == ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name: Test AdjustVolumeForSpecialDevice_010
+ * @tc.desc: Test BLUETOOTH_SCO with VgsSupported and IsPCVolumeEnable true for STREAM_MUSIC
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_010, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    bool isMuted = false;
+    int32_t volumeLevel = TEST_VOLUME_LEVEL;
+    float volumeDb = TEST_VOLUME_DB;
+    VolumeUtils::SetPCVolumeEnable(true);
+    audioAdapterManager->isVgsVolumeSupported_ = true;
+    auto scoDevice = std::make_shared<AudioDeviceDescriptor>();
+    scoDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    scoDevice->networkId_ = LOCAL_NETWORK_ID;
+    audioAdapterManager->audioActiveDevice_.activeOutputDevices_.push_back(scoDevice);
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_MUSIC, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(volumeDb, ABS_VOLUME_DB_VALUE);
+    audioAdapterManager->audioActiveDevice_.activeOutputDevices_.clear();
+    audioAdapterManager->isVgsVolumeSupported_ = false;
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+
+/**
+ * @tc.name: Test AdjustVolumeForSpecialDevice_011
+ * @tc.desc: Test BLUETOOTH_SCO with VgsSupported and IsPCVolumeEnable false for STREAM_MUSIC
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_011, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    bool isMuted = false;
+    int32_t volumeLevel = TEST_VOLUME_LEVEL;
+    float volumeDb = TEST_VOLUME_DB;
+    VolumeUtils::SetPCVolumeEnable(false);
+    audioAdapterManager->isVgsVolumeSupported_ = true;
+    auto scoDevice = std::make_shared<AudioDeviceDescriptor>();
+    scoDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    scoDevice->networkId_ = LOCAL_NETWORK_ID;
+    audioAdapterManager->audioActiveDevice_.activeOutputDevices_.push_back(scoDevice);
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_MUSIC, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
+    audioAdapterManager->audioActiveDevice_.activeOutputDevices_.clear();
+    audioAdapterManager->isVgsVolumeSupported_ = false;
+}
+
+/**
+ * @tc.name: Test AdjustVolumeForSpecialDevice_012
+ * @tc.desc: Test BLUETOOTH_SCO with VgsSupported and STREAM_VOICE_CALL - unchanged behavior
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_012, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    bool isMuted = false;
+    int32_t volumeLevel = TEST_VOLUME_LEVEL;
+    float volumeDb = TEST_VOLUME_DB;
+    audioAdapterManager->isVgsVolumeSupported_ = true;
+    auto scoDevice = std::make_shared<AudioDeviceDescriptor>();
+    scoDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    scoDevice->networkId_ = LOCAL_NETWORK_ID;
+    audioAdapterManager->audioActiveDevice_.activeOutputDevices_.push_back(scoDevice);
+    audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_VOICE_CALL, isMuted, volumeLevel, volumeDb);
+    EXPECT_EQ(volumeDb, MAX_VOLUME_DB_VALUE);
+    audioAdapterManager->audioActiveDevice_.activeOutputDevices_.clear();
+    audioAdapterManager->isVgsVolumeSupported_ = false;
 }
 
 } // namespace AudioStandard

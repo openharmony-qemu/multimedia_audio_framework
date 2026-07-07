@@ -243,6 +243,12 @@ const std::map<std::string, int32_t> NapiAudioEnum::effectModeMap = {
     {"EFFECT_DEFAULT", EFFECT_DEFAULT}
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::noiseReductionModeMap = {
+    {"FIDELITY", NapiAudioEnum::NOISE_REDUCTION_MODE_FIDELITY},
+    {"PURE_VOCALS", NapiAudioEnum::NOISE_REDUCTION_MODE_PURE_VOCALS},
+    {"STANDARD", NapiAudioEnum::NOISE_REDUCTION_MODE_STANDARD},
+};
+
 const std::map<std::string, int32_t> NapiAudioEnum::audioPrivacyTypeMap = {
     {"PRIVACY_TYPE_PUBLIC", PRIVACY_TYPE_PUBLIC},
     {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE},
@@ -485,7 +491,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrNoiseSuppressionModeMap =
     {"TSE_DENOISE_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::TSE_DENOISE)},
     {"NORMAL_REG_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::NORMAL_REG)},
     {"PHONE_CALL_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::PHONE_CALL)},
-    {"TOPMIC_REG_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::TOPMIC_REG)}
+    {"TOPMIC_REG_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::TOPMIC_REG)},
+    {"SHIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::SHIELD)},
+    {"DISTANCE_REJECTION_SHIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::DISTANCE_REJECTION_SHIELD)},
+    {"DISTANCE_REJECTION_GENERAL", static_cast<int32_t>(AsrNoiseSuppressionMode::DISTANCE_REJECTION_GENERAL)}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
@@ -749,6 +758,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioState", CreateEnumObject(env, audioStateMap)),
         DECLARE_NAPI_PROPERTY("AudioSampleFormat", CreateEnumObject(env, audioSampleFormatMap)),
         DECLARE_NAPI_PROPERTY("AudioEffectMode", CreateEnumObject(env, effectModeMap)),
+        DECLARE_NAPI_PROPERTY("NoiseReductionMode", CreateEnumObject(env, noiseReductionModeMap)),
         DECLARE_NAPI_PROPERTY("AudioPrivacyType", CreateEnumObject(env, audioPrivacyTypeMap)),
         DECLARE_NAPI_PROPERTY("AudioVolumeType", CreateEnumObject(env, audioVolumeTypeMap)),
         DECLARE_NAPI_PROPERTY("DeviceFlag", CreateEnumObject(env, deviceFlagMap)),
@@ -1213,6 +1223,22 @@ bool NapiAudioEnum::IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode)
     switch (audioEffectMode) {
         case AudioEffectMode::EFFECT_NONE:
         case AudioEffectMode::EFFECT_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentNoiseReductionMode(int32_t noiseReductionMode)
+{
+    bool result = false;
+    switch (noiseReductionMode) {
+        case NOISE_REDUCTION_MODE_FIDELITY:
+        case NOISE_REDUCTION_MODE_PURE_VOCALS:
+        case NOISE_REDUCTION_MODE_STANDARD:
             result = true;
             break;
         default:

@@ -3498,5 +3498,35 @@ HWTEST(AudioServiceUnitTest, ReportPlaybackCaptureUserChoice, TestSize.Level1)
     EXPECT_EQ(result, ERROR);
     audioService->allCapturerMap_.clear();
 }
+
+/**
+ * @tc.name  : Test NotifySensitiveRecordPermit API
+ * @tc.type  : FUNC
+ * @tc.number: NotifySensitiveRecordPermit_001
+ * @tc.desc  : Test NotifySensitiveRecordPermit interface
+ */
+HWTEST(AudioServiceUnitTest, NotifySensitiveRecordPermit, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->NotifySensitiveRecordPermit(1, true);
+
+    audioService->allCapturerMap_.clear();
+    uint32_t sessionId = 100001;
+    std::shared_ptr<CapturerInServer> capturerInServer = nullptr;
+    audioService->allCapturerMap_.insert(std::make_pair(sessionId, capturerInServer));
+    audioService->NotifySensitiveRecordPermit(sessionId, true);
+
+    AudioProcessConfig processConfig;
+    sessionId = 100002;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    capturerInServer = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    audioService->allCapturerMap_.insert(std::make_pair(sessionId, capturerInServer));
+    audioService->NotifySensitiveRecordPermit(sessionId, true);
+    EXPECT_TRUE(capturerInServer->sensitiveRecordPermitted_);
+
+    audioService->allCapturerMap_.clear();
+}
 } // namespace AudioStandard
 } // namespace OHOS

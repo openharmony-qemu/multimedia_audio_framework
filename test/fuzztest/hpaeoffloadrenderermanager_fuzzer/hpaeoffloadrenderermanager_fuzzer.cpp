@@ -2275,17 +2275,17 @@ void HpaeOffloadRendererManagerCreateSessionEffectFuzzTest()
     auto stubInstance = std::make_shared<StubEffectInstance>();
 
     // Matched session: immediate InsertSessionEffectNode path (or chain-not-created guard).
-    offloadRendererManager->CreateSessionEffect(sessionId, effectName, stubInstance, config);
+    offloadRendererManager->PostCreateSessionEffect(sessionId, effectName, stubInstance, config);
     WaitForMsgProcessing(offloadRendererManager);
     // Repeat on the same session: ERR_SESSION_ALREADY_BOUND guard.
-    offloadRendererManager->CreateSessionEffect(sessionId, effectName, stubInstance, config);
+    offloadRendererManager->PostCreateSessionEffect(sessionId, effectName, stubInstance, config);
     WaitForMsgProcessing(offloadRendererManager);
     // Nullptr instance: drives CreateEffectWithInstance failure and its cleanup branch.
-    offloadRendererManager->CreateSessionEffect(sessionId, effectName, nullptr, config);
+    offloadRendererManager->PostCreateSessionEffect(sessionId, effectName, nullptr, config);
     WaitForMsgProcessing(offloadRendererManager);
     // Mismatched session: deferred pending-storage path (pendingSessionEffects_ map).
     uint32_t mismatchedId = sessionId + SESSION_ID_OFFSET_1;
-    offloadRendererManager->CreateSessionEffect(mismatchedId, effectName, stubInstance, config);
+    offloadRendererManager->PostCreateSessionEffect(mismatchedId, effectName, stubInstance, config);
     WaitForMsgProcessing(offloadRendererManager);
 
     offloadRendererManager->DeInit();
@@ -2310,18 +2310,18 @@ void HpaeOffloadRendererManagerDestroySessionEffectFuzzTest()
 
     AudioEffectConfig config;
     auto stubInstance = std::make_shared<StubEffectInstance>();
-    offloadRendererManager->CreateSessionEffect(sessionId,
+    offloadRendererManager->PostCreateSessionEffect(sessionId,
         GetFuzzString(SESSION_EFFECT_RAND_STRING_MAX_LEN), stubInstance, config);
     WaitForMsgProcessing(offloadRendererManager);
 
     // Remove the active SE node (RemoveSessionEffectNode crossfade + latency rewind).
-    offloadRendererManager->DestroySessionEffect(sessionId);
+    offloadRendererManager->PostDestroySessionEffect(sessionId);
     WaitForMsgProcessing(offloadRendererManager);
     // Double destroy: ERR_EFFECT_NOT_BOUND path.
-    offloadRendererManager->DestroySessionEffect(sessionId);
+    offloadRendererManager->PostDestroySessionEffect(sessionId);
     WaitForMsgProcessing(offloadRendererManager);
     // Destroy an unknown session id.
-    offloadRendererManager->DestroySessionEffect(GetData<uint32_t>());
+    offloadRendererManager->PostDestroySessionEffect(GetData<uint32_t>());
     WaitForMsgProcessing(offloadRendererManager);
 
     offloadRendererManager->DeInit();
@@ -2408,16 +2408,17 @@ void HpaeOffloadRendererManagerSetSessionEffectParameterFuzzTest()
 
     AudioEffectConfig config;
     auto stubInstance = std::make_shared<StubEffectInstance>();
-    offloadRendererManager->CreateSessionEffect(sessionId,
+    offloadRendererManager->PostCreateSessionEffect(sessionId,
         GetFuzzString(SESSION_EFFECT_RAND_STRING_MAX_LEN), stubInstance, config);
     WaitForMsgProcessing(offloadRendererManager);
 
     // Bound session: SetSessionEffectParameter forwards to the SE node (full int32 type range,
     // float value including NaN / inf produced by GetData).
-    offloadRendererManager->SetSessionEffectParameter(sessionId, GetData<int32_t>(), GetData<float>());
+    offloadRendererManager->PostSetSessionEffectParameter(sessionId, GetData<int32_t>(), GetData<float>());
     // Unbound session id: ERR_EFFECT_NOT_BOUND path.
-    offloadRendererManager->SetSessionEffectParameter(GetData<uint32_t>(), GetData<int32_t>(),
+    offloadRendererManager->PostSetSessionEffectParameter(GetData<uint32_t>(), GetData<int32_t>(),
         GetData<float>());
+    WaitForMsgProcessing(offloadRendererManager);
 
     offloadRendererManager->DeInit();
 }

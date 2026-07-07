@@ -23,6 +23,8 @@
 #include "util/id_handler.h"
 #include "manager/hdi_adapter_factory.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B8B
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -241,6 +243,9 @@ std::optional<std::string> HdiAdapterManager::GetAudioParameterByKey(HdiDeviceMa
     if (key.size() > strlen(MMI_PREFIX) && key.substr(0, strlen(MMI_PREFIX)) == MMI_PREFIX) {
         return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::MMI,
             key.substr(strlen(MMI_PREFIX), key.size() - strlen(MMI_PREFIX)));
+    }
+    if (key == "record_denoise_mode" || key == "record_denoise_mode_support") {
+        return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::NONE, key);
     }
     return std::nullopt;
 }

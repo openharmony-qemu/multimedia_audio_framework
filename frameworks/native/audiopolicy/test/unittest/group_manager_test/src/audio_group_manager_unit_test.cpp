@@ -880,5 +880,130 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetPersistentMicMuteState_
         EXPECT_EQ(isMutePersistent, true);
     }
 }
+
+/**
+* @tc.name  : Test SetVolume API with invalid volume
+* @tc.number: SetVolumeTest_Invalid_001
+* @tc.desc  : Test setting volume with invalid volume value (too high)
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_Invalid_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        // Test with volume > MAX_VOLUME
+        int32_t invalidVolume = MAX_VOL + 1;
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, invalidVolume);
+        EXPECT_NE(SUCCESS, ret);
+    }
+}
+
+/**
+* @tc.name  : Test SetVolume API with invalid volume
+* @tc.number: SetVolumeTest_Invalid_002
+* @tc.desc  : Test setting volume with invalid volume value (negative)
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetVolumeTest_Invalid_002, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        // Test with negative volume
+        int32_t invalidVolume = -1;
+        auto ret = audioGroupMngr_->SetVolume(AudioVolumeType::STREAM_RING, invalidVolume);
+        EXPECT_NE(SUCCESS, ret);
+    }
+}
+
+/**
+* @tc.name  : Test SetMute API with invalid parameters
+* @tc.number: SetMuteTest_Invalid_001
+* @tc.desc  : Test mute functionality with invalid stream type
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMuteTest_Invalid_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        // Test with invalid stream type
+        auto ret = audioGroupMngr_->SetMute(static_cast<AudioVolumeType>(-1), true);
+        EXPECT_NE(ret, SUCCESS);
+    }
+}
+
+/**
+* @tc.name  : Test AdjustVolumeByStep API with invalid parameters
+* @tc.number: AdjustVolumeByStep_Invalid_001
+* @tc.desc  : Test adjust volume with invalid step type
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, AdjustVolumeByStep_Invalid_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        // Test with invalid step type
+        auto ret = audioGroupMngr_->AdjustVolumeByStep(static_cast<VolumeAdjustType>(-1));
+        EXPECT_NE(ret, SUCCESS);
+    }
+}
+
+/**
+* @tc.name  : Test SetRingerMode API with invalid parameters
+* @tc.number: SetRingerMode_Invalid_001
+* @tc.desc  : Test set ringer mode with invalid mode
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetRingerMode_Invalid_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        // Test with invalid ringer mode
+        auto ret = audioGroupMngr_->SetRingerMode(static_cast<AudioRingerMode>(-1));
+        EXPECT_NE(ret, SUCCESS);
+    }
+}
+
+/**
+* @tc.name  : Test GetSystemVolumeInDb API with invalid parameters
+* @tc.number: GetSystemVolumeInDb_Invalid_001
+* @tc.desc  : Test get volume in db with invalid stream type
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, GetSystemVolumeInDb_Invalid_001, TestSize.Level0)
+{
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        // Test with invalid stream type
+        float db = audioGroupMngr_->GetSystemVolumeInDb(static_cast<AudioVolumeType>(-1), 3,
+                                                        DeviceType::DEVICE_TYPE_SPEAKER);
+        AUDIO_INFO_LOG("Get system volume in Db: %{public}f", db);
+        // Should return invalid dB value
+        EXPECT_LT(db, 0.0f);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

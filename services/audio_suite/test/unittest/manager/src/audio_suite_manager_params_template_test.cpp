@@ -54,15 +54,22 @@ public:
     MOCK_METHOD(int32_t, SetAudioFormat, (uint32_t nodeId, AudioFormat audioFormat));
     MOCK_METHOD(int32_t, SetRequestDataCallback, (uint32_t nodeId,
         std::shared_ptr<InputNodeRequestDataCallBack> callback));
+    MOCK_METHOD(int32_t, SetRequestMetaDataCallback, (uint32_t nodeId,
+        std::shared_ptr<InputNodeRequestMetaDataCallBack> callback));
     MOCK_METHOD(int32_t, ConnectNodes, (uint32_t srcNodeId, uint32_t destNodeId));
     MOCK_METHOD(int32_t, DisConnectNodes, (uint32_t srcNodeId, uint32_t destNodeId));
     MOCK_METHOD(int32_t, RenderFrame, (uint32_t pipelineId, uint8_t *audioData,
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag));
-    MOCK_METHOD(int32_t, MultiRenderFrame, (uint32_t pipelineId, AudioDataArray *audioDataArray,
-        int32_t *responseSize, bool *finishedFlag));
+    MOCK_METHOD(int32_t, MultiRenderFrame, (uint32_t pipelineId,
+        AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag));
+    MOCK_METHOD(int32_t, MetaRenderFrame, (uint32_t pipelineId, AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag));
     MOCK_METHOD(int32_t, SetOptions, (uint32_t nodeId, std::string name, std::string value));
     MOCK_METHOD(int32_t, GetOptions, (uint32_t nodeId, std::string name, std::string& value));
     MOCK_METHOD(int32_t, PrintInfo, (uint32_t pipelineId, int32_t fd));
+    MOCK_METHOD(int32_t, SetSystemNodeParam, (uint32_t nodeId, std::vector<uint8_t> &param));
+    MOCK_METHOD(int32_t, GetSystemNodeParam, (uint32_t nodeId, std::vector<uint8_t> &param));
+    MOCK_METHOD(int32_t, GetSystemNodeInOutSize, (uint32_t nodeId, uint32_t &inSize, uint32_t &outSize));
 };
 
 class AudioSuiteManagerParamsTemplateUnitTest : public testing::Test {

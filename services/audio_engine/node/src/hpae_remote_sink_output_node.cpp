@@ -192,18 +192,18 @@ void HpaeRemoteSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaeP
 #endif
 }
 
-int32_t HpaeRemoteSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId)
+int32_t HpaeRemoteSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass,
+    const std::string &deviceNetId)
 {
-    if (deviceNetId.empty()) {
-        renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, HDI_ID_INFO_DEFAULT, true);
-    } else {
-        renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, deviceNetId, true);
-    }
+    // Remote path must use deviceNetId (a valid distributed networkId), never macAddress,
+    // otherwise it would be treated as deviceNetworkId by RemoteAudioRenderSink and break routing.
+    const std::string &info = deviceNetId.empty() ? HDI_ID_INFO_DEFAULT : deviceNetId;
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info, true);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
-        AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, deviceNetId: %{public}s, renderId_: %{public}u",
+        AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, info: %{private}s, renderId_: %{public}u",
             deviceClass.c_str(),
-            deviceNetId.c_str(),
+            info.c_str(),
             renderId_);
         HdiAdapterManager::GetInstance().ReleaseId(renderId_);
         return ERROR;

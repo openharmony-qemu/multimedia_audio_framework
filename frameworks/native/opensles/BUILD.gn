@@ -38,6 +38,7 @@ if (!audio_framework_feature_opensl_es) {
   }
 } else {
   ohos_shared_library("opensles") {
+    branch_protector_ret = "pac_ret"
     sanitize = {
       cfi = true
       cfi_cross_dso = true

@@ -19,6 +19,9 @@
 #include "audio_zone.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_policy_utils.h"
+#include "audio_router_center.h"
+
 
 namespace OHOS {
 namespace AudioStandard {
@@ -197,6 +200,15 @@ AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
       zoneClientPid_(clientPid),
       context_(context)
 {
+    preferDevice_ = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
+}
+
+AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager)
+    : clientManager_(manager)
+{
+    zoneId_ = 0;
+    name_ = std::string(PRIMARY_ZONE_NAME);
+    preferDevice_ = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
 }
 
 int32_t AudioZone::GetId()
@@ -275,6 +287,7 @@ const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptorNoLock()
     descriptor->name_ = name_;
     descriptor->initMode_ = static_cast<int32_t>(context_.initMode_);
     descriptor->supportType_ = static_cast<int32_t>(context_.supportType_);
+    descriptor->preferDevice_ = preferDevice_;
     AUDIO_INFO_LOG("zone %{public}d init mode %{public}d", zoneId_, descriptor->initMode_);
 
     for (const auto &key : keys_) {
@@ -450,6 +463,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZone::FetchOutputDevice
     int32_t clientUid, const RouterType &bypassType)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
+#ifdef MULTI_USER_ZONE
+    return zoneRouter_.FetchOutputDevices(devices_);
+#else
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &device : devices_) {
         if (device.second && device.first->deviceRole_ == OUTPUT_DEVICE) {
@@ -458,11 +474,18 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZone::FetchOutputDevice
         }
     }
     return descs;
+#endif
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZone::GetAllOutputDevices()
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
+    return GetAllOutputDevicesInner();
+}
+
+// must be called with zoneMutex_ held
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZone::GetAllOutputDevicesInner()
+{
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     for (const auto &device : devices_) {
         if (device.first->deviceRole_ == OUTPUT_DEVICE) {
@@ -471,6 +494,20 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZone::GetAllOutputDevic
     }
     return devices;
 }
+
+#ifdef MULTI_USER_ZONE
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZone::GetAvailableDevices(DeviceRole deviceRole)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    for (const auto &device : devices_) {
+        CHECK_AND_CONTINUE((deviceRole == DEVICE_ROLE_NONE || device.first->deviceRole_ == deviceRole) &&
+            device.second);
+        devices.emplace_back(device.first);
+    }
+    return devices;
+}
+#endif
 
 std::unordered_set<DeviceType> AudioZone::GetAllOutputDeviceTypes()
 {
@@ -492,12 +529,16 @@ std::unordered_set<DeviceType> AudioZone::GetAllOutputDeviceTypesNoLock()
 std::shared_ptr<AudioDeviceDescriptor> AudioZone::FetchInputDevice(SourceType sourceType, int32_t clientUid)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
+#ifdef MULTI_USER_ZONE
+    return zoneRouter_.FetchInputDevice(devices_);
+#else
     for (const auto &device : devices_) {
         if (device.second && device.first->deviceRole_ == INPUT_DEVICE) {
             return device.first;
         }
     }
     return nullptr;
+#endif
 }
 
 int32_t AudioZone::EnableChangeReport(pid_t clientPid, bool enable)
@@ -596,7 +637,7 @@ bool AudioZone::CheckDeviceInZone(AudioDeviceDescriptor device)
     std::lock_guard<std::mutex> lock(zoneMutex_);
     for (const auto &it : devices_) {
         if (it.second && it.first->deviceType_ == device.deviceType_ &&
-            it.first->networkId_ == device.networkId_) {
+            it.first->networkId_ == device.networkId_ && it.first->macAddress_ == device.macAddress_) {
             return true;
         }
     }
@@ -636,5 +677,48 @@ std::shared_ptr<AudioDeviceDescriptor> AudioZone::GetDeviceDescriptor(DeviceType
     AUDIO_ERR_LOG("device not found, deviceType: %{public}d", type);
     return nullptr;
 }
+
+#ifdef MULTI_USER_ZONE
+bool AudioZone::UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &devDesc,
+    DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
+{
+    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "desc is nullptr");
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = GetAllOutputDevicesInner();
+    bool ret = AudioPolicyUtils::GetInstance().UpdateDevicesListInfo(devices, devDesc, updateCommand, reason);
+    CHECK_AND_RETURN_RET(updateCommand == ENABLE_UPDATE, ret);
+    for (auto &item : devices_) {
+        CHECK_AND_CONTINUE(item.first->IsSameDeviceDesc(*devDesc));
+        item.second = devDesc->isEnable_;
+        AUDIO_INFO_LOG("zoneId: %{public}d, deviceType: %{public}d, enable: %{public}d",
+            zoneId_, devDesc->deviceType_, item.second);
+    }
+    return ret;
+}
+#endif
+
+void AudioZone::UpdatePreferDevice(AudioZoneChangeReason reason)
+{
+#ifdef MULTI_USER_ZONE
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    auto newDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
+    if (zoneId_ == DEFAULT_ZONEID) {
+        FetchDeviceInfo info = {STREAM_USAGE_MUSIC, "UpdatePreferDevice For Default Zone"};
+        newDevice = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
+    } else {
+        auto zonepreferDesc = zoneRouter_.FetchOutputDevices(devices_);
+        if (!zonepreferDesc.empty() && zonepreferDesc.front() != nullptr) {
+            newDevice = zonepreferDesc.front();
+        }
+    }
+
+    if (preferDevice_ != nullptr && !preferDevice_->IsSameDeviceDescPtr(newDevice)) {
+        preferDevice_ = newDevice;
+        AUDIO_INFO_LOG("set zone %{public}d, preferdevice as %{public}s", zoneId_, preferDevice_->GetName().c_str());
+        SendZoneChangeEvent(reason);
+    }
+#endif
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

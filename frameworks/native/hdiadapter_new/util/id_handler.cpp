@@ -23,6 +23,8 @@
 #include "audio_utils.h"
 #include "audio_stream_enum.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B8B
 namespace OHOS {
 namespace AudioStandard {
 IdHandler &IdHandler::GetInstance(void)
@@ -54,7 +56,6 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
     uint32_t routeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(!deviceClass.empty(), HDI_INVALID_ID, "invalid device class");
-
     if (deviceClass == "primary") {
         if (routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
             return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE);
@@ -67,6 +68,8 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, info);
     } else if (deviceClass == "usb") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
+    } else if (deviceClass == "hdmi") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_HDMI);
     } else if (deviceClass == "dp") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DP);
     } else if (deviceClass == "dp_fast") {
@@ -119,7 +122,7 @@ uint32_t IdHandler::GetRenderIdByDeviceClassSub(const std::string &deviceClass, 
     } else if (deviceClass == "RemoteCastInnerCapturer") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     }
-    AUDIO_ERR_LOG("invalid param, deviceClass: %{public}s, info: %{public}s", deviceClass.c_str(), info.c_str());
+    AUDIO_ERR_LOG("invalid param, deviceClass: %{public}s, info: %{private}s", deviceClass.c_str(), info.c_str());
     return HDI_INVALID_ID;
 }
 
@@ -142,6 +145,8 @@ uint32_t IdHandler::GetIdForSolePipeSource(SourceType sourceType, uint32_t route
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE);
     } else if (routeFlag == AUDIO_INPUT_FLAG_CAMCORDER) {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_CAMCORDER);
+    } else if (routeFlag == AUDIO_INPUT_FLAG_VOICE_MESSAGE) {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_MESSAGE);
     }
     return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
 }
@@ -173,7 +178,16 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VA, HDI_ID_INFO_VA);
     } else if (deviceClass == "usb") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-    } else if (deviceClass == "a2dp") {
+    } else {
+        return GetCaptureIdByDeviceClassExt(deviceClass, sourceType, info, routeFlag);
+    }
+}
+
+
+uint32_t IdHandler::GetCaptureIdByDeviceClassExt(const std::string &deviceClass, const SourceType sourceType,
+    const std::string &info, uint32_t routeFlag)
+{
+    if (deviceClass == "a2dp") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT);
 #ifdef FEATURE_FILE_IO
     } else if (deviceClass == "file_io") {

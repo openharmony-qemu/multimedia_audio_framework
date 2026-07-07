@@ -199,6 +199,15 @@ void CoreServiceHandler::NotifySessionStandbyStatus(uint32_t sessionId, bool sta
     iCoreServiceProvider_->NotifySessionStandbyStatus(sessionId, standbyStatus);
 }
 
+bool CoreServiceHandler::IsSupportIndependentPipe()
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, false, "iCoreServiceProvider_ is nullptr");
+    bool support = false;
+    int32_t ret = iCoreServiceProvider_->IsSupportIndependentPipe(support);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "IsSupportIndependentPipe failed, ret:%{public}d", ret);
+    return support;
+}
+
 int32_t CoreServiceHandler::NotifyStreamStandby(int32_t pid, uint32_t streamId)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
@@ -208,7 +217,7 @@ int32_t CoreServiceHandler::NotifyStreamStandby(int32_t pid, uint32_t streamId)
         "NotifyStreamStandby ipc failed, ipcRet %{public}d", ipcRet);
     return ret;
 }
-
+ 
 int32_t CoreServiceHandler::NotifyStreamStandbyResume(int32_t pid, uint32_t streamId)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
@@ -219,19 +228,17 @@ int32_t CoreServiceHandler::NotifyStreamStandbyResume(int32_t pid, uint32_t stre
     return ret;
 }
 
-bool CoreServiceHandler::IsSupportIndependentPipe()
-{
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, false, "iCoreServiceProvider_ is nullptr");
-    bool support = false;
-    int32_t ret = iCoreServiceProvider_->IsSupportIndependentPipe(support);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "IsSupportIndependentPipe failed, ret:%{public}d", ret);
-    return support;
-}
-
 void CoreServiceHandler::NotifyDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable)
 {
     CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr");
     iCoreServiceProvider_->NotifyDeviceStateChange(networkId, static_cast<int32_t>(role), isAvailable);
+}
+
+// Notify silent state change
+void CoreServiceHandler::NotifySilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr");
+    iCoreServiceProvider_->NotifySilentStateChange(sessionId, isSilent);
 }
 } // namespace AudioStandard
 } // namespace OHOS

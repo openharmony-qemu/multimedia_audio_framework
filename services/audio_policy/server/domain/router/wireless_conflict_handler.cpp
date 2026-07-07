@@ -144,6 +144,14 @@ void WirelessConflictHandler::SetSelectedDevices(const std::vector<StreamDeviceI
     FindHighestPriorityDevice();
 }
 
+void WirelessConflictHandler::SetSelectedDevices(std::vector<StreamDeviceInfo> &&outputDevices,
+    std::vector<StreamDeviceInfo> &&inputDevices)
+{
+    outputStreamDevices_ = std::move(outputDevices);
+    inputStreamDevices_ = std::move(inputDevices);
+    FindHighestPriorityDevice();
+}
+
 void WirelessConflictHandler::ClearSelectedDevices()
 {
     outputStreamDevices_.clear();

@@ -36,10 +36,6 @@ using namespace testing::ext;
 using ::testing::_;
 using ::testing::Return;
 
-class MockSuiteNodeReadTapDataCallback : public SuiteNodeReadTapDataCallback {
-    MOCK_METHOD(void, OnReadTapDataCallback, (void*, int32_t), (override));
-};
-
 class AudioSuiteAissNodeTest : public testing::Test {
 public:
     void SetUp()

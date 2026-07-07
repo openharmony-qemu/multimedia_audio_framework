@@ -113,40 +113,37 @@ napi_value NapiAudioDeviceEnhanceManager::CreateDeviceEnhanceManagerWrapper(napi
     napi_value result = nullptr;
     napi_value constructor;
     napi_status status = napi_get_reference_value(env, g_deviceEnhanceManagerConstructor, &constructor);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiParamUtils::GetUndefinedValue(env),
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr,
         "napi_get_reference_value fail");
 
     status = napi_new_instance(env, constructor, 0, nullptr, &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiParamUtils::GetUndefinedValue(env),
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr,
         "napi_new_instance fail");
     return result;
 }
 
 napi_value NapiAudioDeviceEnhanceManager::IsEnhancedRoutingSupported(napi_env env, napi_callback_info info)
 {
+    bool supported = false;
     napi_value result = nullptr;
+    NapiParamUtils::SetValueBoolean(env, supported, result);
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     napi_value thisVar = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &thisVar, nullptr);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "napi_get_cb_info failed");
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
-        "invalid arguments");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "napi_get_cb_info failed");
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, result, "invalid arguments");
 
     NapiAudioDeviceEnhanceManager *obj = nullptr;
     status = napi_unwrap(env, thisVar, reinterpret_cast<void **>(&obj));
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok && obj != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "napi_unwrap failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && obj != nullptr, result, "napi_unwrap failed");
     ObjectRefMap objectGuard(obj);
     auto *napiManager = objectGuard.GetPtr();
     CHECK_AND_RETURN_RET_LOG(napiManager != nullptr && napiManager->audioDeviceEnhanceMngr_ != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "device enhance manager state is error");
+        result, "device enhance manager state is error");
 
-    bool supported = false;
     int32_t ret = napiManager->audioDeviceEnhanceMngr_->IsEnhancedRoutingSupported(supported);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
-        "IsEnhancedRoutingSupported failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "IsEnhancedRoutingSupported failed");
     NapiParamUtils::SetValueBoolean(env, supported, result);
     return result;
 }

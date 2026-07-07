@@ -35,6 +35,8 @@ public:
     bool Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType) override;
     void SetSelectedDevices(const std::vector<StreamDeviceInfo> &outputDevices,
         const std::vector<StreamDeviceInfo> &inputDevices);
+    void SetSelectedDevices(std::vector<StreamDeviceInfo> &&outputDevices,
+        std::vector<StreamDeviceInfo> &&inputDevices);
     void ClearSelectedDevices();
     std::shared_ptr<AudioDeviceDescriptor> GetHighestPriorityDevice() override;
 

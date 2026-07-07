@@ -17,6 +17,7 @@
 #endif
 
 #include "hpae_plugin_node.h"
+#include "hpae_node_common.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 
@@ -58,7 +59,7 @@ void HpaePluginNode::DoProcess()
         return;
     }
     Trace trace("[sceneType:" + std::to_string(GetSceneType()) + "]" + GetNodeName() + "::DoProcess is_silence");
-    outputStream_.WriteDataToOutput(&silenceData_);
+    outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
 }
 
 bool HpaePluginNode::Reset()

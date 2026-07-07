@@ -71,6 +71,11 @@ ohos_unittest("audio_device_status_extended_test") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../../../audio_policy:audio_policy_service_static",
   ]
+
+  defines = []
+  if (audio_framework_feature_multi_bus) {
+    defines += [ "MULTI_BUS_ENABLE" ]
+  }
 }
 
 ohos_unittest("audio_device_capability_unit_test") {

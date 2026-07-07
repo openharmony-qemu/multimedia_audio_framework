@@ -33,15 +33,20 @@ public:
     ~OHAudioSuiteNodeBuilder();
 
     OH_AudioSuite_Result SetFormat(OH_AudioFormat audioFormat);
+    OH_AudioSuite_Result SetFormat(OH_AudioSystemNodeFormat audioFormat);
     OH_AudioSuite_Result SetRequestDataCallback(OH_InputNode_RequestDataCallback callback, void *userData);
+    OH_AudioSuite_Result SetRequestMetaDataCallback(OH_InputNode_RequestMetaDataCallback callback, void *userData);
     OH_AudioSuite_Result SetNodeType(OH_AudioNode_Type type);
+    OH_AudioSuite_Result SetNodeType(OH_AudioNodeSystem_Type type);
     OH_AudioSuite_Result Reset();
 
     AudioNodeType GetNodeType() const;
     bool IsSetFormat() const;
     bool IsSetRequestDataCallback() const;
+    bool IsSetRequestMetaDataCallback() const;
     AudioFormat GetNodeFormat() const;
     OH_InputNode_RequestDataCallback GetRequestDataCallback() const;
+    OH_InputNode_RequestMetaDataCallback GetRequestMetaDataCallback() const;
     void *GetCallBackUserData() const;
 
 private:
@@ -50,10 +55,12 @@ private:
     bool setNodeFormat_ = false;
 
     OH_InputNode_RequestDataCallback requestDataCallBack_ = nullptr;
+    OH_InputNode_RequestMetaDataCallback requestMetaDataCallBack_ = nullptr;
     void *callBackUserData_ = nullptr;
 };
 
 bool CheckAudioFormat(OH_AudioFormat audioFormat);
+bool CheckAudioFormat(OH_AudioSystemNodeFormat audioFormat);
 bool IsHoaFormat(OH_AudioChannelLayout channelLayout);
 bool CheckHoaInputFormat(OH_AudioFormat audioFormat);
 

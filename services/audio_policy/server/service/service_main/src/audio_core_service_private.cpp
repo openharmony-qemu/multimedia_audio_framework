@@ -129,7 +129,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(PRIMARY_VOICE_RECOGNITION_MIC),
     std::string(PRIMARY_RAW_AI_MIC),
     std::string(PRIMARY_INTERPHON_MIC),
-    std::string(PRIMARY_CAMCORDER)
+    std::string(PRIMARY_CAMCORDER),
+    std::string(PRIMARY_VOICE_MESSAGE_MIC)
 };
 
 std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
@@ -1395,16 +1396,28 @@ bool AudioCoreService::IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamD
 
 /**
  * Determines whether UpdateOutputRoute should be invoked from MoveToNewOutputDevice.
- * Returns false only when the audio scene transitions from DEFAULT to RINGING,
- * because in that case UpdateOutputRoute is called from StartClient instead of MoveToNewOutputDevice.
+ * Returns false when the audio scene transitions from DEFAULT to RINGING and the stream
+ * remains on the same sink, because in that case UpdateOutputRoute is called from
+ * StartClient instead of MoveToNewOutputDevice to avoid redundant route updates.
  */
-bool AudioCoreService::ShouldUpdateOutputRoute(const AudioStreamDeviceChangeReasonExt reason)
+bool AudioCoreService::ShouldUpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     AudioScene lastAudioScene = audioSceneManager_.GetLastAudioScene();
     AudioScene audioScene = audioSceneManager_.GetAudioScene();
     bool isSceneChangedFromDefaultToRinging = (lastAudioScene == AUDIO_SCENE_DEFAULT) &&
         (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING);
-    return !(reason.IsSetAudioScene() && isSceneChangedFromDefaultToRinging);
+
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && !streamDesc->oldDeviceDescs_.empty() &&
+        !streamDesc->newDeviceDescs_.empty(), true, "Invalid streamDesc");
+    std::shared_ptr<AudioDeviceDescriptor> oldDesc = streamDesc->oldDeviceDescs_.front();
+    std::shared_ptr<AudioDeviceDescriptor> newDesc = streamDesc->newDeviceDescs_.front();
+    CHECK_AND_RETURN_RET(oldDesc != nullptr && newDesc != nullptr, true);
+    std::string oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(oldDesc, streamDesc->sessionId_);
+    std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(newDesc, streamDesc->sessionId_);
+    bool isSameSink = oldSinkName == newSinkName;
+
+    return !(reason.IsSetAudioScene() && isSceneChangedFromDefaultToRinging && isSameSink);
 }
 
 void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -1459,7 +1472,7 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
         "[MoveToNewOutputDevice]Move sink faild!");
 
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
-    bool shouldUpdateOutputRoute = ShouldUpdateOutputRoute(reason);
+    bool shouldUpdateOutputRoute = ShouldUpdateOutputRoute(streamDesc, reason);
     if (pipeManager_->GetUpdateRouteSupport() && shouldUpdateOutputRoute) {
         UpdateOutputRoute(streamDesc, pipeInfo->id_);
     }
@@ -1924,13 +1937,13 @@ AudioScene AudioCoreService::CalculatePipeAudioScene(uint32_t pipeId)
 }
 
 void AudioCoreService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,
-    const AudioStreamDeviceChangeReason reason, int32_t forceUid)
+    const AudioStreamDeviceChangeReason reason)
 {
     AUDIO_INFO_LOG("In");
     Trace trace("AudioCoreService::OnPreferredOutputDeviceUpdated:" + std::to_string(deviceDescriptor.deviceType_));
 
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated(forceUid);
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
         audioPolicyServerHandler_->SendAudioSessionDeviceChange(reason);
     }
     if (deviceDescriptor.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
@@ -2028,6 +2041,8 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
             AudioPolicyUtils::GetInstance().GetSinkName(*streamDesc->newDeviceDescs_.front(), sessionId) !=
             AudioPolicyUtils::GetInstance().GetSinkName(*streamDesc->newDeviceDescs_.back(), sessionId)) {
             AUDIO_INFO_LOG("set dual hal tone, reset primary sink to default before.");
+            audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG,
+                pipeManager_->QueryPipeIdBySessionId(sessionId));
             if (enableDualHalToneState_ && enableDualHalToneSessionId_ != sessionId) {
                 AUDIO_INFO_LOG("sesion changed, disable old dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
@@ -2234,17 +2249,6 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
         id = audioPolicyManager_.OpenAudioPort(pipeInfo, paIndex);
 
         AUDIO_INFO_LOG("routeFlag:%{public}d", pipeInfo->routeFlag_);
-        if ((audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)) == DEVICE_TYPE_MIC ||
-            audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)) == DEVICE_TYPE_ACCESSORY) &&
-            ((pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI) && (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_UNPROCESS) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_LIVE) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_ULTRASONIC) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_VOICE_RECOGNITION) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_RAW_AI) &&
-            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_INTERPHONE))) {
-            audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(GetRealUid(streamDesc)),
-                pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
-        }
     }
 
     CHECK_AND_RETURN_RET_LOG(id != HDI_INVALID_ID, OPEN_PORT_FAILURE,
@@ -3070,8 +3074,6 @@ void AudioCoreService::HandleSceneChangePreferredDevice(AudioScene audioScene, A
     if (audioScene == AUDIO_SCENE_DEFAULT && currentOutputDevice.IsRemoteDevice()) {
         OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::OVERRODE);
     }
-    OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN,
-        audioSceneManager_.GetAudioSceneOwnerUid());
 }
 
 void AudioCoreService::HandleAudioSceneVolumeChange(AudioScene audioScene, AudioScene lastAudioScene, int32_t uid)
@@ -3543,8 +3545,10 @@ void AudioCoreService::OnRemoteDeviceStatusUpdatedWhenNoRunningStream(std::share
     // with no running stream, update device status
     auto currentDesc = std::make_shared<AudioDeviceDescriptor>(audioRouterSelectStrategy_.Get1stCurrentOutputDevice());
     CHECK_AND_RETURN_LOG(currentDesc != nullptr && newDesc != nullptr, "desc is nullptr");
-    CHECK_AND_RETURN(currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX &&
-        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX);
+    CHECK_AND_RETURN((currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX &&
+        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX) ||
+        (currentDesc->dmDeviceType_ == DM_DEVICE_TYPE_MUSIC_HOST &&
+        newDesc->dmDeviceType_ != DM_DEVICE_TYPE_MUSIC_HOST));
     NotifyRemoteDeviceStatusUpdate(currentDesc);
 }
 
@@ -3564,8 +3568,10 @@ void AudioCoreService::OnRemoteDeviceStatusUpdated()
         oldDesc = streamDesc->oldDeviceDescs_.front();
         newDesc = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(oldDesc != nullptr && newDesc != nullptr);
-        CHECK_AND_CONTINUE(oldDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX ||
-            newDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX);
+        CHECK_AND_CONTINUE((oldDesc->dmDeviceType_ != DM_DEVICE_TYPE_WIFI_SOUNDBOX ||
+            newDesc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX) &&
+            (oldDesc->dmDeviceType_ != DM_DEVICE_TYPE_MUSIC_HOST ||
+            newDesc->dmDeviceType_ == DM_DEVICE_TYPE_MUSIC_HOST));
         isNeedUpdate = false;
     }
     CHECK_AND_RETURN(isNeedUpdate);
