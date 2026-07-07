@@ -354,6 +354,22 @@ HWTEST_F(EffectInstanceAlgoTest, release_destroysHandle, TestSize.Level0)
     EXPECT_EQ(instance_->GetState(), EffectInstance::EffectState::IDLE);
 }
 
+// Double Release is idempotent on the handle: releaseEffect is called exactly once,
+// so the second Release must NOT call it (guards against double-free if the
+// effectHandle_=nullptr / hasHandle_=false reset in Release() ever regresses).
+HWTEST_F(EffectInstanceAlgoTest, release_twice_callsReleaseEffectOnce, TestSize.Level0)
+{
+    auto lib = fake_.GetLibrary();
+    ASSERT_EQ(instance_->Init("test_effect", config_, &lib), 0);
+
+    instance_->Release();
+    EXPECT_EQ(fake_.GetReleaseCount(), 1u);   // first Release freed the handle
+
+    instance_->Release();
+    EXPECT_EQ(fake_.GetReleaseCount(), 1u);   // second Release is a no-op (hasHandle_ already false)
+    EXPECT_EQ(instance_->GetState(), EffectInstance::EffectState::IDLE);
+}
+
 // Init-Release cycle with library can repeat
 HWTEST_F(EffectInstanceAlgoTest, initReleaseCycle_withLib, TestSize.Level0)
 {
