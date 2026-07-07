@@ -485,6 +485,13 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             break;
         case OPERATION_SESSION_EFFECT_ENABLED:
             hasSessionEffect_.store(true);
+            // Session effect suspends inner capture (OtherStreamEnqueue skips it while
+            // hasSessionEffect_ is true). Flush the inner-capture buffers so consumers do not keep
+            // receiving audio captured before the effect was applied. Order matters: store(true)
+            // first to block new enqueues, then flush the backlog. A concurrent OtherStreamEnqueue
+            // that already passed the flag check will re-init (and re-clear) the ring buffer via
+            // InitDupBufferInner (innerCapFirstWriteMap_ is reset to 0), so no stale data remains.
+            FlushInnerCapStreams();
             break;
         case OPERATION_SESSION_EFFECT_DISABLED:
             hasSessionEffect_.store(false);
@@ -1766,6 +1773,9 @@ void RendererInServer::FlushInnerCapStreams()
             CHECK_AND_CONTINUE_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
                 "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", capInfo.first);
             innerCapFirstWriteMap_[capInfo.first].store(0);
+            auto &dupRingBuffer = innerCapIdToDupStreamCallbackMap_[capInfo.first]->GetDupRingBuffer();
+            CHECK_AND_CONTINUE(dupRingBuffer != nullptr && hasSessionEffect_);
+            dupRingBuffer->ResetBuffer();
         }
     }
 }

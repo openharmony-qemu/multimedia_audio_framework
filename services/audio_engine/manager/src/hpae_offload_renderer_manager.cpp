@@ -1206,10 +1206,9 @@ int32_t HpaeOffloadRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, A
         basicFormat.rate = SAMPLE_RATE_48000;
     }
     // When sessionEffect is enabled, force 48kHz dual channel
-    if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
-        basicFormat.rate = SAMPLE_RATE_48000;
-        basicFormat.audioChannelInfo.numChannels = STEREO;
-    }
+    CHECK_AND_RETURN_RET(sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId, SUCCESS);
+    basicFormat.rate = SAMPLE_RATE_48000;
+    basicFormat.audioChannelInfo.numChannels = STEREO;
     return SUCCESS;
 }
 

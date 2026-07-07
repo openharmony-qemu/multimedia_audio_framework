@@ -333,6 +333,7 @@ void HpaeDirectRendererManager::CreateProcessNodes(uint32_t sessionId)
     }
     converterForGain_ = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, nodeInfo);
     converterForGain_->SetDownmixNormalization(false);
+    converterForLoudness_->RegisterCallback(this);
 }
 
 int32_t HpaeDirectRendererManager::CreateDirectNodes()
@@ -379,9 +380,7 @@ int32_t HpaeDirectRendererManager::DestroyDirectNodes()
 
 int32_t HpaeDirectRendererManager::ConnectInputSession()
 {
-    if (curNode_->GetState() != HPAE_SESSION_RUNNING) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(curNode_->GetState() == HPAE_SESSION_RUNNING, SUCCESS);
     CHECK_AND_RETURN_RET_LOG(sinkOutputNode_->GetSinkState() != STREAM_MANAGER_NEW, ERROR,
         "sink output node is not init");
     // Connect nodes: sinkOutputNode <- converterForOutput <- [limiterNode]
@@ -1131,7 +1130,7 @@ void HpaeDirectRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &l
 int32_t HpaeDirectRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
 {
     CHECK_AND_RETURN_RET_LOG(loudnessGainNode_, ERROR,
-        "sessionId %{public}d, loudnessGainNode does not exist", sessionId);
+        "sessionId %{public}u, loudnessGainNode does not exist", sessionId);
     CHECK_AND_RETURN_RET_LOG(loudnessGainNode_->GetSessionId() == sessionId, ERROR,
         "loudness node sessionId does not match, sessionId %{public}u", sessionId);
 
