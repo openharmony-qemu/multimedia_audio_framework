@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 /**
- * @addtogroup AudioSuite
+ * @addtogroup OHAudioSuite
  * @{
  *
  * @brief Provide the definition of the C interface for the audio download manager module.
  *
  * @since 26.0.0
- * @version 1.0
  */
 /**
  * @file native_audio_suite_download_manager.h
@@ -28,7 +27,6 @@
  * @library libohaudiosuite.so
  * @kit AudioKit
  * @since 26.0.0
- * @version 1.0
  */
 #ifndef NATIVE_AUDIO_SUITE_DOWNLOAD_MANAGER_H
 #define NATIVE_AUDIO_SUITE_DOWNLOAD_MANAGER_H
@@ -107,7 +105,7 @@ typedef struct OH_AudioSuite_DownloadStatusInfoArray {
  * @systemapi
  * @since 26.0.0
  */
-typedef struct OH_AudioSuiteDownloadManagerStruct OH_AudioSuiteDownloadManager;
+typedef struct OH_AudioSuite_DownloadManagerStruct OH_AudioSuite_DownloadManager;
 
 /**
  * @brief Callback function for download status update.
@@ -128,7 +126,7 @@ typedef void (*OH_AudioSuite_DownloadCallback)(OH_AudioSuite_DownloadStatusInfoA
  *         </ul>
  * @since 26.0.0
  */
-int32_t OH_AudioSuite_GetDownloadManager(OH_AudioSuiteDownloadManager **downloadManager);
+int32_t OH_AudioSuite_GetDownloadManager(OH_AudioSuite_DownloadManager **downloadManager);
 
 /**
  * @brief Register download status callback.
@@ -144,7 +142,7 @@ int32_t OH_AudioSuite_GetDownloadManager(OH_AudioSuiteDownloadManager **download
  * @since 26.0.0
  */
 int32_t OH_AudioSuite_RegisterDownloadCallback(
-    OH_AudioSuiteDownloadManager *downloadManager, const OH_AudioSuite_DownloadCallback *callback);
+    OH_AudioSuite_DownloadManager *downloadManager, const OH_AudioSuite_DownloadCallback *callback);
 
 /**
  * @brief Unregister download status callback.
@@ -160,7 +158,7 @@ int32_t OH_AudioSuite_RegisterDownloadCallback(
  * @since 26.0.0
  */
 int32_t OH_AudioSuite_UnregisterDownloadCallback(
-    OH_AudioSuiteDownloadManager *downloadManager, const OH_AudioSuite_DownloadCallback *callback);
+    OH_AudioSuite_DownloadManager *downloadManager, const OH_AudioSuite_DownloadCallback *callback);
 
 /**
  * @brief Start downloading a feature.
@@ -176,7 +174,23 @@ int32_t OH_AudioSuite_UnregisterDownloadCallback(
  * @since 26.0.0
  */
 int32_t OH_AudioSuite_StartDownload(
-    OH_AudioSuiteDownloadManager *downloadManager, const char *featureName);
+    OH_AudioSuite_DownloadManager *downloadManager, const char *featureName);
+
+/**
+ * @brief Pause downloading a feature.
+ * @systemapi
+ * @param downloadManager Download manager handle.
+ * @param featureName Name of the feature to pause.
+ * @return <ul>
+ *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
+ *         <li>202 if a non-system application calls this system API.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SYSTEM} If IPC communication fails or the operation fails.</li>
+ *         </ul>
+ * @since 26.0.0
+ */
+int32_t OH_AudioSuite_PauseDownload(
+    OH_AudioSuite_DownloadManager *downloadManager, const char *featureName);
 
 /**
  * @brief Cancel downloading a feature.
@@ -193,7 +207,7 @@ int32_t OH_AudioSuite_StartDownload(
  * @since 26.0.0
  */
 int32_t OH_AudioSuite_CancelDownload(
-    OH_AudioSuiteDownloadManager *downloadManager, const char *featureName);
+    OH_AudioSuite_DownloadManager *downloadManager, const char *featureName);
 
 /**
  * @brief Start background downloading a feature.
@@ -209,7 +223,7 @@ int32_t OH_AudioSuite_CancelDownload(
  * @since 26.0.0
  */
 int32_t OH_AudioSuite_StartBackgroundDownload(
-    OH_AudioSuiteDownloadManager *downloadManager, const char *featureName);
+    OH_AudioSuite_DownloadManager *downloadManager, const char *featureName);
 
 /**
  * @brief Get download status of a feature.
@@ -226,11 +240,11 @@ int32_t OH_AudioSuite_StartBackgroundDownload(
  * @since 26.0.0
  */
 int32_t OH_AudioSuite_GetDownloadStatus(
-    OH_AudioSuiteDownloadManager *downloadManager, const char *featureName,
+    OH_AudioSuite_DownloadManager *downloadManager, const char *featureName,
     OH_AudioSuite_DownloadStatusInfo *status);
 
 /**
- * @brief Uninstall a cloud ROM feature.
+ * @brief Uninstall a downloaded feature.
  * @systemapi
  * @param downloadManager Download manager handle.
  * @param featureName Name of the feature to uninstall.
@@ -243,7 +257,7 @@ int32_t OH_AudioSuite_GetDownloadStatus(
  * @since 26.0.0
  */
 int32_t OH_AudioSuite_UninstallCloudRom(
-    OH_AudioSuiteDownloadManager *downloadManager, const char *featureName);
+    OH_AudioSuite_DownloadManager *downloadManager, const char *featureName);
 
 #ifdef __cplusplus
 }

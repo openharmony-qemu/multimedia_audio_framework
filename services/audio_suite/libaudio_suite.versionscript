@@ -14,22 +14,8 @@
 1.0 {
   global:
     *GetAudioSuiteManager*;
-    *AudioFormatConverter*;
-    *IAudioFormatConverter*;
-    *MixerProcessorManager*;
-    *MixerProcessor*;
-    *AudioSuiteSaClient*;
+    *Create*;
     *AudioSuiteDownloadManager*;
-    *AudioSuiteDownloadManager*GetInstance*;
-    *IAudioSuiteSaService*;
-    *AudioSuiteSaServiceProxy*;
-    *IDownloadCallback*;
-    *DownloadCallbackProxy*;
-    *DownloadCallbackStub*;
-    *BrokerDelegator*;
-    *delegator_*;
-    *AudioSuiteSaIdl*;
-    *DownloadCallback*;
   local:
     *;
 };

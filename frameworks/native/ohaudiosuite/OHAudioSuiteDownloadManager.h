@@ -18,7 +18,6 @@
 
 #include <mutex>
 #include <cstdint>
-#include <unordered_map>
 #include <memory>
 #include <string>
 #include "native_audio_suite_download_manager.h"
@@ -27,40 +26,28 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class OHAudioSuiteDownloadCallback;
+
 class OHAudioSuiteDownloadManager {
 public:
     ~OHAudioSuiteDownloadManager();
 
-    static OHAudioSuiteDownloadManager* GetInstance()
-    {
-        static OHAudioSuiteDownloadManager ohAudioSuiteDownloadManager;
-        return &ohAudioSuiteDownloadManager;
-    }
+    static OHAudioSuiteDownloadManager& GetInstance();
+    int32_t RegisterDownloadStatusCallback(const OH_AudioSuite_DownloadCallback callback);
+    int32_t UnregisterDownloadStatusCallback(const OH_AudioSuite_DownloadCallback callback);
+    int32_t StartDownload(const char *featureName);
+    int32_t PauseDownload(const char *featureName);
+    int32_t CancelDownload(const char *featureName);
+    int32_t StartBackgroundDownload(const char *featureName);
+    int32_t GetDownloadStatus(const char *featureName, OH_AudioSuite_DownloadStatusInfo *status);
+    int32_t UninstallCloudRom(const char *featureName);
 
-    int32_t StartDownload(const char *modelVersion);
-    int32_t RegisterDownloadCallback(const OH_AudioSuite_DownloadCallback* callback);
-    int32_t CancelDownload();
-    int32_t StartBackgroundDownload(const char *modelVersion);
-    int32_t GetDownloadStatus(OH_AudioSuite_DownloadStatusInfo *status, const char *modelVersion);
-    int32_t UninstallCloudRom(const char *modelVersion);
-    int32_t UnregisterDownloadCallback(const OH_AudioSuite_DownloadCallback* callback);
 private:
     OHAudioSuiteDownloadManager();
+
+    std::mutex downloadCbMutex_;
+    std::shared_ptr<OHAudioSuiteDownloadCallback> downloadStatusCallback_ = nullptr;
 };
-
-namespace AudioSuite {
-
-// 常量定义
-constexpr int32_t STATUS_ARRAY_SIZE = 1;
-constexpr int32_t CLOUD_ROM_STATUS_INIT = 0;
-constexpr int32_t CLOUD_ROM_STATUS_DOWNLOADING = 20;
-constexpr int32_t CLOUD_ROM_STATUS_DOWNLOAD_FAIL = 22;
-constexpr int32_t CLOUD_ROM_STATUS_DOWNLOAD_SUCCESS = 23;
-constexpr int32_t CLOUD_ROM_STATUS_ERROR = -1;
-
-class CDownloadCallbackAdapter;
-
-} // namespace AudioSuite
 
 } // namespace AudioStandard
 } // namespace OHOS

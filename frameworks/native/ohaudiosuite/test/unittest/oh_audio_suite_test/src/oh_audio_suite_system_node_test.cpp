@@ -26,6 +26,50 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+static int32_t RequestDataCallback(OH_AudioNode *audioNode, void *userData,
+    void *audioData, int32_t audioDataSize, bool *finished)
+{
+    (void)audioNode;
+    (void)userData;
+    (void)audioData;
+    (void)audioDataSize;
+    if (finished != nullptr) {
+        *finished = true;
+    }
+    return 1;
+}
+
+static void CreateNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode_Type type, OH_AudioNode **audioNode)
+{
+    OH_AudioNodeBuilder *builder = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteNodeBuilder_SetNodeType(builder, type);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    if ((type == INPUT_NODE_TYPE_DEFAULT) || (type == OUTPUT_NODE_TYPE_DEFAULT)) {
+        OH_AudioFormat audioFormat;
+        audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
+        audioFormat.channelCount = AudioChannel::STEREO;
+        audioFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+        audioFormat.sampleFormat = AUDIO_SAMPLE_U8;
+        ret = OH_AudioSuiteNodeBuilder_SetFormat(builder, audioFormat);
+        EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    }
+
+    if (type == INPUT_NODE_TYPE_DEFAULT) {
+        ret = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(builder, RequestDataCallback, nullptr);
+        EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    }
+
+    ret = OH_AudioSuiteEngine_CreateNode(pipeline, builder, audioNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
 /**
  * @tc.name  : Test OH_AudioSuiteNodeBuilderSystem_SetNodeType.
  * @tc.number: OH_AudioSuiteNodeBuilderSystem_SetNodeType_001
@@ -33,7 +77,8 @@ namespace AudioStandard {
  */
 HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteNodeBuilderSystem_SetNodeType_001, TestSize.Level0)
 {
-    int32_t ret = OH_AudioSuiteNodeBuilderSystem_SetNodeType(nullptr, EFFECT_NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE);
+    int32_t ret = OH_AudioSuiteNodeBuilderSystem_SetNodeType(
+        nullptr, OH_AUDIOSUITE_EFFECT_NODE_SYSTEM_TYPE_DIALOGUE_ENHANCE);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 }
 
@@ -48,7 +93,8 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteNodeBuilderSystem_SetNodeType_002,
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    int32_t ret2 = OH_AudioSuiteNodeBuilderSystem_SetNodeType(builder, EFFECT_NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE);
+    int32_t ret2 = OH_AudioSuiteNodeBuilderSystem_SetNodeType(
+        builder, OH_AUDIOSUITE_EFFECT_NODE_SYSTEM_TYPE_DIALOGUE_ENHANCE);
     EXPECT_EQ(ret2, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
@@ -66,7 +112,8 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteNodeBuilderSystem_SetNodeType_003,
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    int32_t ret2 = OH_AudioSuiteNodeBuilderSystem_SetNodeType(builder, EFFECT_NODE_TYPE_SYSTEM_MUSIC_MASTER);
+    int32_t ret2 = OH_AudioSuiteNodeBuilderSystem_SetNodeType(
+        builder, OH_AUDIOSUITE_EFFECT_NODE_SYSTEM_TYPE_VOICE_BEAUTIFIER);
     EXPECT_EQ(ret2, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
@@ -80,7 +127,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteNodeBuilderSystem_SetNodeType_003,
  */
 HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteNodeBuilderSystem_SetFormat_001, TestSize.Level0)
 {
-    OH_AudioSystemNodeFormat audioFormat = {};
+    OH_AudioSuite_SystemNodeFormat audioFormat = {};
     int32_t ret = OH_AudioSuiteNodeBuilderSystem_SetFormat(nullptr, audioFormat);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 }
@@ -96,7 +143,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteNodeBuilderSystem_SetFormat_002, T
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    OH_AudioSystemNodeFormat audioFormat = {};
+    OH_AudioSuite_SystemNodeFormat audioFormat = {};
     audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
     audioFormat.channelCount = 2;
     audioFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
@@ -121,7 +168,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteNodeBuilderSystem_SetFormat_003, T
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    OH_AudioSystemNodeFormat audioFormat = {};
+    OH_AudioSuite_SystemNodeFormat audioFormat = {};
     audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
     audioFormat.channelCount = 2;
     audioFormat.channelLayout = static_cast<OH_AudioChannelLayout>(9999);
@@ -146,7 +193,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteNodeBuilderSystem_SetFormat_004, T
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    OH_AudioSystemNodeFormat audioFormat = {};
+    OH_AudioSuite_SystemNodeFormat audioFormat = {};
     audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
     audioFormat.channelCount = 5;
     audioFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
@@ -171,7 +218,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteNodeBuilderSystem_SetFormat_005, T
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    OH_AudioSystemNodeFormat audioFormat = {};
+    OH_AudioSuite_SystemNodeFormat audioFormat = {};
     audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
     audioFormat.channelCount = 2;
     audioFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
@@ -192,7 +239,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteNodeBuilderSystem_SetFormat_005, T
  */
 HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngineSystem_SetAudioFormat_001, TestSize.Level0)
 {
-    OH_AudioSystemNodeFormat audioFormat = {};
+    OH_AudioSuite_SystemNodeFormat audioFormat = {};
     int32_t ret = OH_AudioSuiteEngineSystem_SetAudioFormat(nullptr, &audioFormat);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
 }
@@ -426,7 +473,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngineSystem_GetNodeInOutSize_003,
  */
 HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_MetaRenderFrame_001, TestSize.Level0)
 {
-    OH_AudioMetaFrame metaFrame = {};
+    OH_AudioSuite_MetaFrame metaFrame = {};
     int32_t responseAudioSize = 0;
     int32_t responseMetaSize = 0;
     bool finishedFlag = false;
@@ -476,7 +523,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_MetaRenderFrame_003, TestSi
     ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    OH_AudioMetaFrame metaFrame = {};
+    OH_AudioSuite_MetaFrame metaFrame = {};
     int32_t responseMetaSize = 0;
     bool finishedFlag = false;
     int32_t ret2 = OH_AudioSuiteEngine_MetaRenderFrame(
@@ -502,7 +549,7 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_MetaRenderFrame_004, TestSi
     ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    OH_AudioMetaFrame metaFrame = {};
+    OH_AudioSuite_MetaFrame metaFrame = {};
     int32_t responseAudioSize = 0;
     bool finishedFlag = false;
     int32_t ret2 = OH_AudioSuiteEngine_MetaRenderFrame(
@@ -528,12 +575,73 @@ HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_MetaRenderFrame_005, TestSi
     ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    OH_AudioMetaFrame metaFrame = {};
+    OH_AudioSuite_MetaFrame metaFrame = {};
     int32_t responseAudioSize = 0;
     int32_t responseMetaSize = 0;
     int32_t ret2 = OH_AudioSuiteEngine_MetaRenderFrame(
         pipeline, &metaFrame, &responseAudioSize, &responseMetaSize, nullptr);
     EXPECT_EQ(ret2, AUDIOSUITE_ERROR_INVALID_PARAM);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngineSystem_GetNodeInOutSize_004, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    OH_AudioNode *eqNodeOne = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNodeOne);
+
+    uint32_t inSize = 0;
+    uint32_t outSize = 0;
+    int32_t ret2 = OH_AudioSuiteEngineSystem_GetNodeInOutSize(eqNodeOne, &inSize, &outSize);
+    EXPECT_EQ(ret2, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngineSystem_GetNodeParam_004, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    OH_AudioNode *eqNodeOne = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNodeOne);
+
+    uint8_t inSize = 0;
+    int32_t ret2 = OH_AudioSuiteEngineSystem_GetNodeParam(eqNodeOne, &inSize, sizeof(inSize));
+    EXPECT_EQ(ret2, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+HWTEST_F(OHAudioSuiteEngineTest, OH_AudioSuiteEngineSystem_SetNodeParam_004, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    OH_AudioNode *eqNodeOne = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNodeOne);
+
+    uint8_t inSize = 0;
+    int32_t ret2 = OH_AudioSuiteEngineSystem_SetNodeParam(eqNodeOne, &inSize, sizeof(inSize));
+    EXPECT_EQ(ret2, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION);
 
     ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);

@@ -27,6 +27,6 @@ ohos_sa_profile("audio_suite_sa_profile") {
   sources = [
     "audio_suite_server.json",
   ]
- 
+
   part_name = "audio_framework"
 }
