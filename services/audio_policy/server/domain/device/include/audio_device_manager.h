@@ -104,11 +104,13 @@ public:
     AudioDevicePrivacyType GetDevicePrivacyType(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     int32_t GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool IsDeviceAvailable(AudioDeviceUsage audioDevUsage, const std::shared_ptr<AudioDeviceDescriptor> &desc);
-    void UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    void UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor, AudioPin hdiPin);
     // Update silent state for all connected wireless devices
     void UpdateAllWirelessDevicesSilentState();
     // Update wireless device silent state, only update when isSilent_ differs
     void UpdateWirelessDeviceSilentState(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+
+    bool HasWirelessDevicesConnected();
 
 private:
     AudioDeviceManager();

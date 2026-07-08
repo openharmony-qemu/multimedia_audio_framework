@@ -517,7 +517,8 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_INPUT_FLAG_INTERPHONE) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_INTERPHONE) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_VOICE_CALL_ASSISTANT) ||
-        (routeFlag & AUDIO_INPUT_FLAG_CAMCORDER)) {
+        (routeFlag & AUDIO_INPUT_FLAG_CAMCORDER) ||
+        (routeFlag & AUDIO_INPUT_FLAG_VOICE_MESSAGE)) {
         AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
         return true;
     }
@@ -968,14 +969,14 @@ std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetModemCommunicationSt
 std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetModemCommunicationStreamDesc()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    CHECK_AND_RETURN_RET_LOG(!modemCommunicationIdMap_.empty(), nullptr, "ModemCommunicationMap is empty!");
+    CHECK_AND_RETURN_RET(!modemCommunicationIdMap_.empty(), nullptr);
     return modemCommunicationIdMap_.begin()->second;
 }
 
 std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetModemCommunicationStreamDescCopy()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    CHECK_AND_RETURN_RET_LOG(!modemCommunicationIdMap_.empty(), nullptr, "ModemCommunicationMap is empty!");
+    CHECK_AND_RETURN_RET(!modemCommunicationIdMap_.empty(), nullptr);
     return std::make_shared<AudioStreamDescriptor>(modemCommunicationIdMap_.begin()->second);
 }
 

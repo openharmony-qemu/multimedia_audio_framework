@@ -42,6 +42,8 @@ ohos_shared_library("ohaudiosuite") {
     "../../../interfaces/kits/c/",
     "../../../interfaces/kits/c/common/",
     "../../../interfaces/kits/c/audio_suite/",
+    "../../../services/audio_suite/client/stub/include",
+    "../../../services/audio_suite/idl",
     "../../../services/audio_suite/client/utils/include",
     "../../../services/audio_service/common/include/dfx",
   ]
@@ -53,6 +55,7 @@ ohos_shared_library("ohaudiosuite") {
       "./OHAudioSuiteEngine.cpp",
       "./OHAudioSuiteNodeBuilder.cpp",
       "./OHAudioSuiteFormatConverter.cpp",
+      "./OHAudioSuiteDownloadManager.cpp",
     ]
 
   deps = [
@@ -70,6 +73,7 @@ ohos_shared_library("ohaudiosuite") {
     external_deps = [
       "c_utils:utils",
       "hilog:libhilog",
+      "ipc:ipc_single",
     ]
   }
 

@@ -1563,6 +1563,10 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
             idType = HDI_ID_TYPE_PRIMARY;
             idInfo = HDI_ID_INFO_CAMCORDER;
         }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOICE_MESSAGE) {
+            idType = HDI_ID_TYPE_PRIMARY;
+            idInfo = HDI_ID_INFO_VOICE_MESSAGE;
+        }
     } else if (pipeInfo->adapterName_ == "primary_extra_capturer") {
         idType = HDI_ID_TYPE_PRIMARY;
         idInfo = pipeInfo->moduleInfo_.name;
@@ -4215,16 +4219,19 @@ void AudioAdapterManager::AdjustVolumeForSpecialDevice(std::shared_ptr<AudioDevi
     } else if (device->deviceType_ == DEVICE_TYPE_NEARLINK) {
         if (AudioVolumeManager::GetInstance().IsNearlinkKaraokeVolumeManaged(volumeType)) {
             volumeDb = volumeDb * 0.63957f;
-        } else if (volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) {
+        } else if ((volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) || VolumeUtils::IsPCVolumeEnable()) {
             isMuted = isAbsVolumeMuteNearlink_.load();
             volumeDb = isMuted ? 0.0f : 0.63957f;
         } else if (volumeType == STREAM_VOICE_CALL) {
             volumeDb = 1.0f;
         }
         return;
-    } else if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && IsVgsVolumeSupported() &&
-        volumeType == STREAM_VOICE_CALL) {
-        volumeDb = 1.0f;
+    } else if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && IsVgsVolumeSupported()) {
+        if (volumeType == STREAM_VOICE_CALL) {
+            volumeDb = 1.0f;
+        } else if (VolumeUtils::IsPCVolumeEnable()) {
+            volumeDb = 0.63957f;
+        }
     }
 }
 

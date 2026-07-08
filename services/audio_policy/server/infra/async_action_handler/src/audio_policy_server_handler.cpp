@@ -1087,6 +1087,21 @@ void AudioPolicyServerHandler::ValidatePreferredOutputDeviceCallback(int32_t cli
     deviceDescs = tmpDeviceDescs;
 }
 
+bool AudioPolicyServerHandler::HasVolumeKeyEventCallbacks(int32_t clientPid)
+{
+    auto clientCallbacksIt = clientCallbacksMap_.find(clientPid);
+    if (clientCallbacksIt == clientCallbacksMap_.end()) {
+        return false;
+    }
+    auto &callbacks = clientCallbacksIt->second;
+    return (callbacks.count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&
+        callbacks[CALLBACK_SET_VOLUME_KEY_EVENT]) ||
+        (callbacks.count(CALLBACK_SYSTEM_VOLUME_CHANGE) > 0 &&
+        callbacks[CALLBACK_SYSTEM_VOLUME_CHANGE]) ||
+        (callbacks.count(CALLBACK_STREAM_VOLUME_CHANGE) > 0 &&
+        callbacks[CALLBACK_STREAM_VOLUME_CHANGE]);
+}
+
 bool AudioPolicyServerHandler::IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent)
 {
     CHECK_AND_RETURN_RET(volumeEvent.deviceType != DEVICE_TYPE_NONE, true);
@@ -1147,6 +1162,7 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             clientCallbacksMap_[it->first][CALLBACK_SYSTEM_VOLUME_CHANGE_BY_FILTER]) {
             NotifySystemVolumeChangeByFilter(it->first, volumeChangeCb, callbackVolumeEvent);
         }
+        CHECK_AND_CONTINUE(HasVolumeKeyEventCallbacks(it->first));
 #ifdef FEATURE_AUDIO_ZONE_VOLUME
         CHECK_AND_CONTINUE(IsTargetZoneForVolumeKeyEvent(it->first, eventContextObj->zoneId));
 #endif

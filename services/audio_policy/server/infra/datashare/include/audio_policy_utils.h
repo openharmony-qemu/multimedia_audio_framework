@@ -154,6 +154,7 @@ private:
 
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_;
+    std::unordered_map<std::string, bool> shouldUseSystemPreferredDeviceCache_;
 };
 
 }

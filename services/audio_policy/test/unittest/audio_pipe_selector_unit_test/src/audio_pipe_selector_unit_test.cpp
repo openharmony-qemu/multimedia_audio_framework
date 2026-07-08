@@ -306,6 +306,19 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_016, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetPipeType_017
+ * @tc.desc: Test voice message capture uses the voice message input pipe.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_017, TestSize.Level1)
+{
+    uint32_t flag = AUDIO_INPUT_FLAG_VOICE_MESSAGE;
+    AudioMode audioMode = AUDIO_MODE_RECORD;
+    AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
+    EXPECT_EQ(result, PIPE_TYPE_IN_NORMAL_VOICE_MESSAGE);
+}
+
+/**
  * @tc.name: GetAdapterNameByStreamDesc_001
  * @tc.desc: Test GetAdapterNameByStreamDesc when streamDesc is not nullptr and pipeInfoPtr
  *  and adapterInfoPtr are not nullptr.

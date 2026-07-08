@@ -30,29 +30,23 @@
 #include "audio_usage_strategy_parser.h"
 #include "wireless_conflict_handler.h"
 #include <mutex>
+#include <unordered_map>
 
 namespace OHOS {
 namespace AudioStandard {
 
 class AudioRouterCenter {
 public:
+    using InputDeviceMap = std::unordered_map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>>;
     static AudioRouterCenter& GetAudioRouterCenter()
     {
         static AudioRouterCenter audioRouterCenter;
         return audioRouterCenter;
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo &info);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesNoLock(FetchDeviceInfo &info);
-    class ArbiterScope {
-    public:
-        explicit ArbiterScope(AudioRouterCenter &center);
-        ~ArbiterScope();
-    private:
-        AudioRouterCenter &center_;
-        std::unique_lock<std::mutex> lock_;
-    };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(FetchDeviceInfo &info);
+    InputDeviceMap FetchInputDeviceForAllInputStreams(std::vector<FetchDeviceInfo> &infos);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
     bool isCallRenderRouter(StreamUsage streamUsage);
@@ -155,6 +149,7 @@ private:
         int32_t clientUID, RouterType &routerType, const uint32_t sessionID);
     shared_ptr<AudioDeviceDescriptor> FetchInputZoneDevice(SourceType sourceType, int32_t clientUID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesInner(FetchDeviceInfo &info);
+    std::shared_ptr<AudioDeviceDescriptor> FetchInputDeviceInner(FetchDeviceInfo &info);
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;
@@ -188,6 +183,7 @@ private:
     void StartArbiterContext(const FetchDeviceInfo &deviceInfo);
     void StartArbiterContext();
     void StopArbiterContext();
+    bool HasWirelessDevicesConnected();
     std::shared_ptr<WirelessConflictHandler> wirelessConflictHandler_;
     std::mutex routerMutex_;
 

@@ -1492,7 +1492,8 @@ bool AudioDeviceManager::IsDeviceAvailable(AudioDeviceUsage audioDevUsage,
     return false;
 }
 
-void AudioDeviceManager::UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
+void AudioDeviceManager::UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor,
+    AudioPin hdiPin)
 {
     CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "devDesc is nullptr");
     auto isPresent = [&deviceDescriptor](const shared_ptr<AudioDeviceDescriptor> &desc) {
@@ -1504,7 +1505,7 @@ void AudioDeviceManager::UpdateDeviceDescriptorByCapability(std::shared_ptr<Audi
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     CHECK_AND_RETURN_LOG(itr != connectedDevices_.end(), "Device not found");
-    AudioDeviceStatus::GetInstance().UpdateDeviceDescriptorByCapability(*(*itr));
+    AudioDeviceStatus::GetInstance().UpdateDeviceDescriptorByCapability(*(*itr), hdiPin);
 }
 
 void AudioDeviceManager::UpdateWirelessDeviceSilentState(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -1573,6 +1574,19 @@ bool AudioDeviceManager::CheckAllStreamsSilentOrStandByOnDevice()
         }
     }
     return hasRunningSilentStream ;
+}
+
+bool AudioDeviceManager::HasWirelessDevicesConnected()
+{
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (const auto &deviceDesc : connectedDevices_) {
+        CHECK_AND_CONTINUE(deviceDesc != nullptr);
+        if (AudioPolicyUtils::GetInstance().IsWirelessDevice(deviceDesc->deviceType_) &&
+            deviceDesc->connectState_ != VIRTUAL_CONNECTED) {
+            return true;
+        }
+    }
+    return false;
 }
 }
 }

@@ -20,6 +20,7 @@
 #include <cstdint>
 #include "audio_suite_node.h"
 #include "audio_suite_capabilities.h"
+#include "audio_suite_base.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,6 +43,8 @@ public:
     virtual int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) = 0;
     virtual int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<InputNodeRequestDataCallBack> callback) = 0;
+    virtual int32_t SetRequestMetaDataCallback(uint32_t nodeId,
+        std::shared_ptr<InputNodeRequestMetaDataCallBack> callback) = 0;
     virtual int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
     virtual int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
     virtual int32_t RenderFrame(
@@ -49,8 +52,13 @@ public:
     virtual int32_t MultiRenderFrame(
         uint8_t **audioDataArray, int32_t arraySize,
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) = 0;
+    virtual int32_t MetaRenderFrame(AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag) = 0;
     virtual int32_t SetOptions(uint32_t nodeId, std::string name, std::string value) = 0;
     virtual int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) = 0;
+    virtual int32_t SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) = 0;
+    virtual int32_t GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) = 0;
+    virtual int32_t GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize) = 0;
 
     virtual uint32_t GetPipelineId() = 0;
     virtual PipelineWorkMode GetWorkMode() = 0;

@@ -337,14 +337,16 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(
 /**
  * @brief Activate the audio session for the current pid application.
  * If {@link #OH_AudioSessionManager_SetScene} is called, it will take focus when calling this method.
+ * If you want to take focus again after {@link #OH_AudioSessionManager_DeactivateAudioSession} is called,
+ * you must call {@link #OH_AudioSessionManager_SetScene} again.
  *
  * @param audioSessionManager the {@link #OH_AudioSessionManager}
  * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
  * @param strategy pointer of {@link #OH_AudioSession_Strategy}
  * which is used for setting audio session strategy
- * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
- * or {@link #AUDIOCOMMON_REULT_INVALID_PARAM} if parameter validation fails
- * or {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state
+ * @return <ul><li>{@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds</li><li>
+ *    {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if parameter validation fails</li><li>
+ *    {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state</li></ul>
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession(
@@ -355,9 +357,9 @@ OH_AudioCommon_Result OH_AudioSessionManager_ActivateAudioSession(
  *
  * @param audioSessionManager the {@link #OH_AudioSessionManager}
  * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
- * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
- * or {@link #AUDIOCOMMON_REULT_INVALID_PARAM} if parameter validation fails
- * or {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state
+ * @return <ul><li>{@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds</li><li>
+ *    {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if parameter validation fails</li><li>
+ *    {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state</li></ul>
  * @since 12
  */
 OH_AudioCommon_Result OH_AudioSessionManager_DeactivateAudioSession(
@@ -631,11 +633,11 @@ OH_AudioCommon_Result OH_AudioSessionManager_GetSelectedMediaInputDevice(
     OH_AudioSessionManager *audioSessionManager, OH_AudioDeviceDescriptor **audioDeviceDescriptor);
 
 /**
- * @brief Sets the prefered record category with bluetooth and nearlink device.
+ * @brief Sets the preferred record category with bluetooth and nearlink device.
  *     The application can set this category before bluetooth and nearlink connected, and the system will
  *     prefer to use bluetooth and nearlink to record when the device connected.
  *     In scenarios where there are concurrent recording streams with higher priority,
- *     the actual input device used by the application may differ from the prefered one.
+ *     the actual input device used by the application may differ from the preferred one.
  *     The application can use {@link OH_AudioSessionManager_RegisterCurrentInputDeviceChangeCallback}
  *     to register a callback to listen for the actual input device.
  *
@@ -652,7 +654,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_SetBluetoothAndNearlinkPreferredRec
     OH_AudioSession_BluetoothAndNearlinkPreferredRecordCategory category);
 
 /**
- * @brief Gets the prefered record category with bluetooth and nearlink device.
+ * @brief Gets the preferred record category with bluetooth and nearlink device.
  *
  * @param audioSessionManager the {@link OH_AudioSessionManager} handle returned
  *     by {@link OH_AudioManager_GetAudioSessionManager}.

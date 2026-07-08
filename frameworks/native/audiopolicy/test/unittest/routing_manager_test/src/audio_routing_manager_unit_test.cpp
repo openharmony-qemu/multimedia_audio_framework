@@ -310,7 +310,6 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetDeviceConnectionSta
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     desc->deviceName_ = "Speaker_Out";
     desc->deviceRole_ = OUTPUT_DEVICE;
-
     bool isConnected = true;
     int32_t ret = AudioRoutingManager::GetInstance()->SetDeviceConnectionStatus(desc, isConnected);
     EXPECT_EQ(ERR_PERMISSION_DENIED, ret);

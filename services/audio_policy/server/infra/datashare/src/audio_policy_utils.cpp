@@ -75,6 +75,7 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {PRIMARY_RAW_AI_MIC, TYPE_PRIMARY},
     {PRIMARY_INTERPHON_MIC, TYPE_PRIMARY},
     {PRIMARY_CAMCORDER, TYPE_PRIMARY},
+    {PRIMARY_VOICE_MESSAGE_MIC, TYPE_PRIMARY},
 };
 
 std::set<DeviceType> AudioPolicyUtils::needDeclaredDevices = {
@@ -99,6 +100,7 @@ static inline const char* ResolvePrimaryMicPort(uint32_t routeFlag)
         case AUDIO_INPUT_FLAG_VOICE_RECOGNITION:return PRIMARY_VOICE_RECOGNITION_MIC;
         case AUDIO_INPUT_FLAG_RAW_AI:           return PRIMARY_RAW_AI_MIC;
         case AUDIO_INPUT_FLAG_CAMCORDER:        return PRIMARY_CAMCORDER;
+        case AUDIO_INPUT_FLAG_VOICE_MESSAGE:    return PRIMARY_VOICE_MESSAGE_MIC;
         case AUDIO_INPUT_FLAG_FAST:             return FAST_CAPTURER_SOURCE;
         case AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP: return FAST_VOIP_CAPTURER_SOURCE;
         default:                                return PRIMARY_MIC;
@@ -240,9 +242,16 @@ bool AudioPolicyUtils::IsSelectedByMediaController()
 bool AudioPolicyUtils::ShouldUseSystemPreferredDeviceForVolume(const std::string &bundleName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    auto it = shouldUseSystemPreferredDeviceCache_.find(bundleName);
+    if (it != shouldUseSystemPreferredDeviceCache_.end()) {
+        return it->second;
+    }
+    
     CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback_ != nullptr, false, "callback is nullptr");
     bool ret = false;
     audioClientInfoMgrCallback_->OnQueryUseSystemPreferredDeviceForVolume(bundleName, ret);
+
+    shouldUseSystemPreferredDeviceCache_[bundleName] = ret;
     return ret;
 }
 
@@ -589,6 +598,7 @@ std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string so
         {PRIMARY_VOICE_RECOGNITION_MIC, PRIMARY_CLASS},
         {PRIMARY_RAW_AI_MIC, PRIMARY_CLASS},
         {PRIMARY_CAMCORDER, PRIMARY_CLASS},
+        {PRIMARY_VOICE_MESSAGE_MIC, PRIMARY_CLASS},
     };
     std::string deviceClass = INVALID_CLASS;
     if (sourcePortStrToClassStrMap_.count(sourcePortName) > 0) {
@@ -861,7 +871,7 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
         || deviceName == PRIMARY_ULTRASONIC_MIC ||
         deviceName == PRIMARY_VOICE_RECOGNITION_MIC || deviceName == PRIMARY_RAW_AI_MIC ||
         deviceName == PRIMARY_INTERPHON_MIC || deviceName == PRIMARY_LIVE_MIC ||
-        deviceName == PRIMARY_CAMCORDER) {
+        deviceName == PRIMARY_CAMCORDER || deviceName == PRIMARY_VOICE_MESSAGE_MIC) {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;

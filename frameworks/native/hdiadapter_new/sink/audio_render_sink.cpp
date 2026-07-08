@@ -170,7 +170,6 @@ int32_t AudioRenderSink::Start(void)
     if (started_) {
         return SUCCESS;
     }
-    RefreshSpeakerDeviceForEnhancedRouting();
 
     int32_t ret = audioRender_->Start(audioRender_);
     if (ret != SUCCESS) {
@@ -186,14 +185,6 @@ int32_t AudioRenderSink::Start(void)
     playingAppManager_.Start();
 #endif
     return SUCCESS;
-}
-
-void AudioRenderSink::RefreshSpeakerDeviceForEnhancedRouting()
-{
-    if (halName_ == "primary" && Util::IsEnhancedRoutingSupported()) {
-        std::vector<DeviceType> speakerDevices = {DEVICE_TYPE_SPEAKER};
-        UpdateActiveDevice(speakerDevices);
-    }
 }
 
 int32_t AudioRenderSink::Stop(void)
@@ -223,7 +214,7 @@ int32_t AudioRenderSink::Stop(void)
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
     ChangePipeStatus(PIPE_STATUS_STANDBY);
-    if (halName_ == "primary" && Util::IsEnhancedRoutingSupported()) {
+    if (Util::IsEnhancedRoutingSupported()) {
         std::vector<DeviceType> noneDevices = {DEVICE_TYPE_NONE};
         UpdateActiveDevice(noneDevices);
     }
@@ -670,10 +661,6 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
     if (currentActiveDevice_ == outputDevices[0] && outputDevices.size() ==
         static_cast<uint32_t>(currentDevicesSize_) && !forceSetRouteFlag_) {
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
-        return SUCCESS;
-    }
-    if (currentScoExcludeFlag_) {
-        AUDIO_INFO_LOG("currentScoExcludeFlag is true.");
         return SUCCESS;
     }
     forceSetRouteFlag_ = false;

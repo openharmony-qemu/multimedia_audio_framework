@@ -1054,8 +1054,8 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
                 return SUCCESS_BUT_NOT_CONTINUE;
             }
 
-            UpdateDeviceDescriptorByCapability(*connDevDesc);
-            audioDeviceManager_.UpdateDeviceDescriptorByCapability(connDevDesc);
+            UpdateDeviceDescriptorByCapability(*connDevDesc, statusInfo.hdiPin);
+            audioDeviceManager_.UpdateDeviceDescriptorByCapability(connDevDesc, statusInfo.hdiPin);
             audioDeviceCommon_.OnPreferredOutputDeviceUpdated(connDevDesc, AudioStreamDeviceChangeReason::OVERRODE);
             AUDIO_INFO_LOG("Update capability, send preferred output device update");
             return SUCCESS_BUT_NOT_CONTINUE;
@@ -1067,7 +1067,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
             "DEVICE online but open audio device failed.");
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DEVICE online but open audio device failed.");
 
-        UpdateDeviceDescriptorByCapability(deviceDesc);
+        UpdateDeviceDescriptorByCapability(deviceDesc, statusInfo.hdiPin);
         audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(deviceDesc, descForCb);
 
         if (statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
@@ -1819,10 +1819,11 @@ uint32_t AudioDeviceStatus::GetPaIndexByPortName(const std::string &portName)
     return paIndex;
 }
 
-void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor &device)
+void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor &device, AudioPin hdiPin)
 {
+    std::string condition = "pin=" + std::to_string(static_cast<int32_t>(hdiPin));
     std::string remoteAudioParameter =
-        AudioServerProxy::GetInstance().GetRemoteAudioParameterProxy(device.networkId_);
+        AudioServerProxy::GetInstance().GetRemoteAudioParameterProxy(device.networkId_, condition);
     AUDIO_INFO_LOG("Get Remote AudioParameter: %{public}s", remoteAudioParameter.c_str());
     RemoteDeviceCapability capability;
     capability.FromJsonString(remoteAudioParameter);

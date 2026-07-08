@@ -39,7 +39,6 @@
 #include "audio_router_infra.h"
 #include "audio_route_select_info.h"
 #include "sco_audio_scene_manager.h"
-#include "audio_interrupt_custom.h"
 #include "audio_interrupt_service.h"
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
@@ -73,6 +72,8 @@ static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
 static const std::string PIPE_PRIMARY_INPUT_VOICE_RECOGNITION = "primary_input_voice_recognition";
 static constexpr uint32_t ONLY_SUPPORT_MMAP = 2;
+static constexpr uint32_t AUDIO_INPUT_VOICE_MESSAGE_TYPE = 1 << 18;
+static const AudioInputType hdiAudioVoiceMessageInputType = static_cast<AudioInputType>(AUDIO_INPUT_VOICE_MESSAGE_TYPE);
 static const std::string PIPE_PRIMARY_INPUT_CAMCORDER = "primary_input_camcorder";
 static const std::unordered_set<SourceType> VOIP_PRIVACY_MUTE_TARGET_SOURCES = {
     SOURCE_TYPE_LIVE,
@@ -180,6 +181,7 @@ const std::map<SourceType, AudioInputType> FWKTYPE_TO_HDITYPE_MAP = {
     { SOURCE_TYPE_UNPROCESSED, AUDIO_INPUT_RAW_TYPE },
     { SOURCE_TYPE_LIVE, AUDIO_INPUT_LIVE_TYPE },
     { SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT, AUDIO_INPUT_RAW_AI_TYPE},
+    { SOURCE_TYPE_VOICE_MESSAGE, hdiAudioVoiceMessageInputType},
 };
 
 static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
@@ -731,6 +733,7 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
 
     // Fetch pipe
     audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
+    audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
     ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
     networkId = streamDesc->newDeviceDescs_.front()->networkId_;
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
@@ -1472,7 +1475,7 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     return SUCCESS;
 }
 
-int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg opMsg)
+int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg opMsg, bool isInterrruptActive)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
         HILOG_COMM_ERROR("[StartClient]Call communication stream, directly return"));
@@ -1512,9 +1515,13 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg op
     CheckAndUpdateEffect(streamDesc);
     if (streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         ReloadCaptureSession(sessionId, SESSION_OPERATION_START);
-        ReEvaluateVoipPrivacyMuteForCapturers("AudioCoreService::StartClient");
         AudioRecordController::GetInstance().OnRecordStart(sessionId, streamDesc->GetRealUid(),
             streamDesc->callerPid_, streamDesc->GetSourceType());
+    }
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
+    if (!isInterrruptActive) {
+        AUDIO_INFO_LOG("Stream is not active interrupt for sessionId:%{public}u, muting stream", sessionId);
+        SetStreamInterruptMute(sessionId, true);
     }
     return SUCCESS;
 }
@@ -1569,7 +1576,6 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
         HandlePlaybackStoppingOperations(streamDesc, "PauseClient");
     }
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
-        ReEvaluateVoipPrivacyMuteForCapturers("AudioCoreService::PauseClient");
         AudioRecordController::GetInstance().OnRecordStop(sessionId, streamDesc->GetRealUid(),
             streamDesc->callerPid_, streamDesc->GetSourceType());
     }
@@ -1736,7 +1742,6 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
         HandlePlaybackStoppingOperations(streamDesc, "StopClient");
     }
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
-        ReEvaluateVoipPrivacyMuteForCapturers("AudioCoreService::StopClient");
         AudioRecordController::GetInstance().OnRecordStop(sessionId, streamDesc->GetRealUid(),
             streamDesc->callerPid_, streamDesc->GetSourceType());
     }
@@ -1785,7 +1790,6 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         AudioRecordController::GetInstance().OnRecordStop(sessionId, streamDesc->GetRealUid(),
             streamDesc->callerPid_, streamDesc->GetSourceType());
         ReloadCaptureSession(sessionId, SESSION_OPERATION_RELEASE);
-        ReEvaluateVoipPrivacyMuteForCapturers("AudioCoreService::ReleaseClient");
     }
 
     if (needRemoveFromMap) {
@@ -2642,6 +2646,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     if (outputStreamDescs.empty() && !pipeManager_->IsModemCommunicationIdExist() &&
         !CheckRingAndVoipStreamRunning()) {
         audioActiveDevice_.UpdateStreamDeviceMap("NoStreamInPipe");
+        audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
         CheckAndUpdateHearingAidCall(DEVICE_TYPE_NONE);
         return HandleFetchOutputWhenNoRunningStream(reason);
     }
@@ -2652,22 +2657,14 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     CheckRingAndVoipScene(reason);
 
     AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToRoute;
     for (auto &streamDesc : outputStreamDescs) {
-        UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute", streamsToRoute);
-    }
-
-    auto size = streamsToRoute.size();
-    {
-        AudioRouterCenter::ArbiterScope arbiterScope(audioRouterCenter_);
-        for (size_t i = 0; i < size; i++) {
-            UpdateStreamDevicesForStart(streamsToRoute[i], caller + "FetchOutputDeviceAndRoute");
-        }
+        UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute");
     }
     // todo fix
     HandleA2dpSuspendWhenFetch(reason, audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), outputStreamDescs);
     // this will update volume device map
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
+    audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
     // here will update volume must after UpdateStreamDeviceMap
     bool deviceUpdate = UpdateActiveDeviceAndVolumeBeforeMoveSession(outputStreamDescs, reason);
 
@@ -2779,6 +2776,24 @@ void AudioCoreService::HandleA2dpRestore()
     }
 }
 
+void AudioCoreService::PrepareInputFetchInfos(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs,
+    std::vector<FetchDeviceInfo> &infos)
+{
+    for (const auto &streamDesc : inputStreamDescs) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
+
+        streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+
+        FetchDeviceInfo info;
+        info.sourceType = streamDesc->capturerInfo_.sourceType;
+        info.clientUID = GetRealUid(streamDesc);
+        info.streamId = streamDesc->sessionId_;
+
+        infos.emplace_back(std::move(info));
+    }
+}
+
 int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const AudioStreamDeviceChangeReasonExt reason)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
@@ -2790,17 +2805,20 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
         return HandleFetchInputWhenNoRunningStream();
     }
 
+    std::vector<FetchDeviceInfo> infos;
+    PrepareInputFetchInfos(inputStreamDescs, infos);
+
+    AudioRouterCenter::InputDeviceMap inputDeviceDescs =
+        audioRouterCenter_.FetchInputDeviceForAllInputStreams(infos);
+
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     for (auto streamDesc : inputStreamDescs) {
-        streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
-        pipeManager_->UpdateNewDeviceDesc(streamDesc, {});
-        FetchDeviceInfo info;
-        info.sourceType = streamDesc->capturerInfo_.sourceType;
-        info.clientUID = GetRealUid(streamDesc);
-        info.streamId = streamDesc->sessionId_;
-        auto inputDeviceDesc = audioRouterCenter_.FetchInputDevice(info);
-        CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
+        auto it = inputDeviceDescs.find(streamDesc->sessionId_);
+        CHECK_AND_RETURN_RET_LOG(it != inputDeviceDescs.end() && it->second != nullptr,
+            ERR_INVALID_PARAM, "inputDeviceDesc is nullptr for session %{public}u", streamDesc->sessionId_);
+        std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc = it->second;
         pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
@@ -2976,155 +2994,15 @@ void AudioCoreService::ReEvaluateVoipBypassByAppMuteHint()
     audioEffectService_.EvaluateVoipBypassByAppMuteHint(currentCapturerInfos);
 }
 
-bool AudioCoreService::IsVoipPrivacyMuteCandidateSource(SourceType sourceType) const
+void AudioCoreService::SetStreamInterruptMute(uint32_t streamId, bool mute)
 {
-    bool isTarget = VOIP_PRIVACY_MUTE_TARGET_SOURCES.count(sourceType) > 0;
-    return isTarget;
+    audioPolicyManager_.SetSourceOutputStreamMuteByStreamId(static_cast<int32_t>(streamId), mute);
 }
 
-bool AudioCoreService::IsVoipPrivacyMuteBypassedForUltrasonic(SourceType sourceType) const
+bool AudioCoreService::IsStreamActive(uint32_t sessionId)
 {
-    AudioInterruptCustom interruptCustom;
-    bool isExempt = interruptCustom.IsUltrasonicConcurrentScene(SOURCE_TYPE_VOICE_COMMUNICATION, sourceType);
-    if (isExempt) {
-        return true;
-    }
-    return false;
-}
-
-bool AudioCoreService::ShouldMuteCapturerByVoipPrivacy(
-    const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    bool hasActiveVoipPrivacyCapturer) const
-{
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "VoipPrivacy streamDesc is nullptr");
-    uint32_t sessionId = streamDesc->GetSessionId();
-    SourceType sourceType = streamDesc->capturerInfo_.sourceType;
-    if (!IsVoipPrivacyMuteCandidateSource(sourceType)) {
-        return false;
-    }
-    if (!hasActiveVoipPrivacyCapturer) {
-        return false;
-    }
-    if (IsVoipPrivacyMuteBypassedForUltrasonic(sourceType)) {
-        return false;
-    }
-    return true;
-}
-
-void AudioCoreService::WriteVoipMutedCaptureStats(
-    const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool mute) const
-{
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
-    std::string appName = streamDesc->bundleName_;
-    if (appName.empty()) {
-        appName = AudioBundleManager::GetBundleNameFromUid(GetRealUid(streamDesc));
-    }
-    auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "MUTED_CAPTURE_STATS",
-        HiviewDFX::HiSysEvent::EventType::STATISTIC,
-        "APP_NAME", appName,
-        "STREAM_USAGE", static_cast<uint8_t>(streamDesc->capturerInfo_.sourceType),
-        "MUTE", mute);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Write event fail: MUTED_CAPTURE_STATS, ret:%{public}d", ret);
-    }
-}
-
-bool AudioCoreService::UpdateVoipPrivacyMuteForSession(
-    const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool mute)
-{
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false,
-        "streamDesc is nullptr");
-    uint32_t sessionId = streamDesc->GetSessionId();
-    int32_t ret = audioPolicyManager_.SetSourceOutputStreamMuteByStreamId(static_cast<int32_t>(sessionId), mute);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false,
-        "SetSourceOutputStreamMuteByStreamId failed, sessionId:%{public}u "
-        "mute:%{public}d, ret:%{public}d",
-        sessionId, mute, ret);
-    WriteVoipMutedCaptureStats(streamDesc, mute);
-    return true;
-}
-
-void AudioCoreService::EvaluateActiveVoipPrivacyPresence(
-    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
-    bool &hasActiveVoipPrivacyCapturer) const
-{
-    hasActiveVoipPrivacyCapturer = false;
-    for (const auto &streamDesc : allCapturerStreamDescs) {
-        if (streamDesc == nullptr || !streamDesc->IsRunning()) {
-            continue;
-        }
-        if (streamDesc->GetSourceType() != SOURCE_TYPE_VOICE_COMMUNICATION) {
-            continue;
-        }
-        uint32_t sessionId = streamDesc->GetSessionId();
-        bool voipMuted = streamDesc->voipPriorityLowered_.load();
-        AUDIO_INFO_LOG("sessionId:%{public}u voipMuted:%{public}d",
-            sessionId, voipMuted);
-        if (voipMuted) {
-            continue;
-        }
-
-        hasActiveVoipPrivacyCapturer = true;
-    }
-}
-
-void AudioCoreService::CollectSessionsToMuteByVoipPrivacy(
-    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
-    bool hasActiveVoipPrivacyCapturer,
-    std::unordered_set<uint32_t> &targetMuteSessions) const
-{
-    targetMuteSessions.clear();
-    for (const auto &streamDesc : allCapturerStreamDescs) {
-        if (streamDesc == nullptr || !streamDesc->IsRunning()) {
-            continue;
-        }
-
-        uint32_t sessionId = streamDesc->GetSessionId();
-        if (ShouldMuteCapturerByVoipPrivacy(streamDesc, hasActiveVoipPrivacyCapturer)) {
-            targetMuteSessions.insert(sessionId);
-            continue;
-        }
-    }
-}
-
-void AudioCoreService::SyncVoipPrivacyMuteState(
-    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
-    const std::unordered_set<uint32_t> &targetMuteSessions)
-{
-    for (const auto &streamDesc : allCapturerStreamDescs) {
-        if (streamDesc == nullptr) {
-            continue;
-        }
-        uint32_t sessionId = streamDesc->GetSessionId();
-        bool targetMute = targetMuteSessions.count(sessionId) > 0;
-        bool currentMute = streamDesc->voipPrivacyMuted_.load();
-        if (targetMute == currentMute) {
-            continue;
-        }
-        if (UpdateVoipPrivacyMuteForSession(streamDesc, targetMute)) {
-            streamDesc->voipPrivacyMuted_.store(targetMute);
-            AUDIO_INFO_LOG("update sessionId:%{public}u mute:%{public}d",
-                sessionId, targetMute);
-        }
-    }
-}
-
-void AudioCoreService::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)
-{
-    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr,
-        "pipeManager_ is nullptr");
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> allCapturerStreamDescs =
-        pipeManager_->GetAllCapturerStreamDescs();
-
-    bool hasActiveVoipPrivacyCapturer = false;
-    EvaluateActiveVoipPrivacyPresence(allCapturerStreamDescs, hasActiveVoipPrivacyCapturer);
-    AUDIO_INFO_LOG("reason:%{public}s descCount:%{public}zu hasActiveVoipPrivacyCapturer:%{public}d",
-        reason.c_str(), allCapturerStreamDescs.size(), hasActiveVoipPrivacyCapturer);
-
-    std::unordered_set<uint32_t> targetMuteSessions;
-    CollectSessionsToMuteByVoipPrivacy(allCapturerStreamDescs, hasActiveVoipPrivacyCapturer,
-        targetMuteSessions);
-    SyncVoipPrivacyMuteState(allCapturerStreamDescs, targetMuteSessions);
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, false, "interruptService_ is nullptr");
+    return interruptService_->IsStreamActive(sessionId);
 }
 
 void AudioCoreService::SetFirstScreenOn()
@@ -4257,6 +4135,9 @@ void AudioCoreService::GetTargetSourceTypeAndMatchingFlag(SourceType source,
             break;
         case SOURCE_TYPE_LIVE:
             targetSource = SOURCE_TYPE_LIVE;
+            break;
+        case SOURCE_TYPE_VOICE_MESSAGE:
+            targetSource = SOURCE_TYPE_VOICE_MESSAGE;
             break;
         default:
             targetSource = SOURCE_TYPE_MIC;

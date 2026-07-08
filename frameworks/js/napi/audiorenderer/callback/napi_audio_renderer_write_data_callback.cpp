@@ -68,6 +68,7 @@ void NapiRendererWriteDataCallback::AddCallbackReference(const std::string &call
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
+    napiRenderer_->isNotifyFromOff_.store(false);
 }
 
 void NapiRendererWriteDataCallback::CreateWriteDTsfn(napi_env env)
@@ -87,6 +88,10 @@ bool NapiRendererWriteDataCallback::GetWriteDTsfnFlag()
 
 void NapiRendererWriteDataCallback::RemoveCallbackReference(napi_env env, napi_value callback)
 {
+    std::unique_lock<std::mutex> writeCallbackLock(napiRenderer_->writeCallbackMutex_);
+    napiRenderer_->isNotifyFromOff_.store(true);
+    napiRenderer_->writeCallbackCv_.notify_all();
+    writeCallbackLock.unlock();
     std::lock_guard<std::mutex> lock(mutex_);
     bool isEquals = false;
     napi_value copyValue = nullptr;
@@ -157,8 +162,8 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(sptr<RendererW
     }
     std::unique_lock<std::mutex> writeCallbackLock(napiRenderer_->writeCallbackMutex_);
     bool ret = napiRenderer_->writeCallbackCv_.wait_for(writeCallbackLock,
-        std::chrono::milliseconds(WRITE_CALLBACK_TIMEOUT_IN_MS), [event] () {
-            return event->enqueued;
+        std::chrono::milliseconds(WRITE_CALLBACK_TIMEOUT_IN_MS), [event, this] () {
+            return event->enqueued || napiRenderer_->isNotifyFromOff_.load();
         });
     CHECK_AND_RETURN_LOG(ret, "Client OnWriteData operation timed out");
     writeCallbackLock.unlock();

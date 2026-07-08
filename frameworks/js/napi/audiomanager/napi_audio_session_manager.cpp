@@ -1283,7 +1283,7 @@ napi_value NapiAudioSessionMgr::SetMediaOutputDevice(napi_env env, napi_callback
     context->GetCbInfo(env, info, inputParser);
 
     if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INVALID_PARAM)) {
-        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 

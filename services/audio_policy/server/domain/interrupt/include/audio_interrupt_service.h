@@ -52,6 +52,13 @@ struct CachedFocusInfo {
     AudioInterrupt interrupt;
 };
 
+struct MuteFocusInfo {
+    uint32_t currStreamId;
+    uint32_t incomingStreamId;
+    AudioInterrupt interrupt;
+    InterruptEventInternal interruptEvent;
+};
+
 class AudioPolicyServerHandler;
 class AudioPolicyServer;
 
@@ -140,6 +147,9 @@ public:
     int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId);
     int32_t UpdateStreamFocusStateToStandby(int32_t pid, uint32_t streamId);
     int32_t UpdateStreamFocusStateToActive(int32_t pid, uint32_t streamId);
+    bool IsStreamActive(uint32_t streamId);
+    void SetStreamInterruptMute(const InterruptEventInternal &interruptEvent,
+        const uint32_t &streamId, const AudioInterrupt &audioInterrupt);
 
 private:
     int32_t FindAndUpdateFocusState(uint32_t streamId, AudioFocuState focuState);
@@ -291,6 +301,7 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive, bool &removeFocusInfo);
     void SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
         const uint32_t &streamId, const AudioInterrupt &audioInterrupt);
+    void CollectInterruptDfx(const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt);
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activeInterrupt);
     bool UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType,
         int32_t zoneId = ZONEID_DEFAULT, bool notFromInterrupt = true);
@@ -404,6 +415,7 @@ private:
     void PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId);
     void RemoveStreamIdSuggestionRecord(int32_t streamId);
     void RemovePidSuggestionRecord(int32_t pid);
+    void RemoveSuggestionRecord(const AudioInterrupt &audioInterrupt);
     bool HasMuteSuggestionRecord(uint32_t streamId);
     void SendUnMuteSuggestionInterruptEvent(uint32_t streamId);
     void DelayRemoveMuteSuggestionRecord(uint32_t streamId);
@@ -418,8 +430,7 @@ private:
     void MuteCheckFocusStrategy(AudioFocusEntry &focusEntry,
         const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt,
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
-    void DelayRemoveMuteCheckRecord(uint32_t currentPid);
-    void RemoveMuteCheckRecord(uint32_t currentPid);
+    void RemoveMuteCheckRecord(const AudioInterrupt &audioInterrupt);
     void ResetInterruptMuteState(const AudioInterrupt &audioInterrupt);
     bool IsActiveInjectFocusExist(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
     void AudioSessionStateChangeCallbackEvent(const int32_t zoneId, const int32_t callerPid,
@@ -453,7 +464,7 @@ private:
     std::map<uint32_t, std::unordered_set<int32_t>> suggestionStreamIdRecords_;
     std::map<uint32_t, std::unordered_set<int32_t>> suggestionPidRecords_;
 
-    std::map<uint32_t, std::list<std::pair<AudioInterrupt, AudioFocuState>>> muteAudioFocus_;
+    std::map<uint32_t, std::list<MuteFocusInfo>> muteAudioFocus_;
 
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;

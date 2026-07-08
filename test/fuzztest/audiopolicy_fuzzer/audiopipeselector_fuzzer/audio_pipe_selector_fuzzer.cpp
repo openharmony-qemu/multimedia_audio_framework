@@ -92,6 +92,12 @@ const std::vector<AudioFlag> g_audioFlags = {
     AUDIO_INPUT_FLAG_AI,
     AUDIO_INPUT_FLAG_ULTRASONIC,
     AUDIO_INPUT_FLAG_UNPROCESS,
+    AUDIO_INPUT_FLAG_LIVE,
+    AUDIO_INPUT_FLAG_VOICE_RECOGNITION,
+    AUDIO_INPUT_FLAG_RAW_AI,
+    AUDIO_INPUT_FLAG_INTERPHONE,
+    AUDIO_INPUT_FLAG_CAMCORDER,
+    AUDIO_INPUT_FLAG_VOICE_MESSAGE,
 };
 
 const std::vector<AudioSampleFormat> g_sampleFormats = {
@@ -129,6 +135,7 @@ const std::vector<SourceType> g_sourceTypes = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
     SOURCE_TYPE_VOICE_COMMUNICATION,
     SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_UNPROCESSED,
 };
 
@@ -140,6 +147,7 @@ const std::vector<StreamUsage> g_streamUsages = {
     STREAM_USAGE_MOVIE,
     STREAM_USAGE_GAME,
     STREAM_USAGE_VIDEO_COMMUNICATION,
+    STREAM_USAGE_VOICE_MESSAGE,
 };
 
 const std::vector<AudioPipeAction> g_pipeActions = {

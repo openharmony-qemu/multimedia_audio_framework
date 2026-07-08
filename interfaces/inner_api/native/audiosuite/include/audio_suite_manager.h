@@ -29,10 +29,10 @@ public:
     virtual int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) = 0;
 };
 
-class SuiteNodeReadTapDataCallback {
+class InputNodeRequestMetaDataCallBack {
 public:
-    virtual ~SuiteNodeReadTapDataCallback() = default;
-    virtual void OnReadTapDataCallback(void *audioData, int32_t audioDataSize) = 0;
+    virtual ~InputNodeRequestMetaDataCallBack() = default;
+    virtual int32_t OnRequestDataCallBack(AudioMetaFrame &metaFrame, int32_t* responseMetaDataSize, bool *finished) = 0;
 };
 
 class IAudioSuiteManager {
@@ -55,6 +55,8 @@ public:
     virtual int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) = 0;
     virtual int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<InputNodeRequestDataCallBack> callback) = 0;
+    virtual int32_t SetRequestMetaDataCallback(uint32_t nodeId,
+        std::shared_ptr<InputNodeRequestMetaDataCallBack> callback) = 0;
     virtual int32_t GetSoundFieldType(uint32_t nodeId, SoundFieldType &soundFieldType) = 0;
     virtual int32_t GetEqualizerFrequencyBandGains(uint32_t nodeId,
         AudioEqualizerFrequencyBandGains &frequencyBandGains) = 0;
@@ -67,6 +69,9 @@ public:
     virtual int32_t SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType) = 0;
     virtual int32_t SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType) = 0;
     virtual int32_t SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType voiceBeautifierType) = 0;
+    virtual int32_t SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) = 0;
+    virtual int32_t GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) = 0;
+    virtual int32_t GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize) = 0;
     virtual int32_t SetSpaceRenderPositionParams(uint32_t nodeId, AudioSpaceRenderPositionParams position) = 0;
     virtual int32_t GetSpaceRenderPositionParams(uint32_t nodeId, AudioSpaceRenderPositionParams &position) = 0;
     virtual int32_t SetSpaceRenderRotationParams(uint32_t nodeId, AudioSpaceRenderRotationParams rotation) = 0;
@@ -84,6 +89,8 @@ public:
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) = 0;
     virtual int32_t MultiRenderFrame(uint32_t pipelineId,
         AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag) = 0;
+    virtual int32_t MetaRenderFrame(uint32_t pipelineId, AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag) = 0;
     virtual int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool &isSupported) = 0;
     virtual int32_t PrintInfo(uint32_t pipelineId, int32_t fd) = 0;
 };

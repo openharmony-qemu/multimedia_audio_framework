@@ -20,10 +20,12 @@
 #include "capturer_clock_manager.h"
 #include <cinttypes>
 #include "audio_hdi_log.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
+static constexpr uint64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
 static CapturerClockManager g_captureClockMgrSingleton;
 
 CapturerClockManager &CapturerClockManager::GetInstance(void)
@@ -77,10 +79,13 @@ void CapturerClockManager::DeleteAudioSourceClock(uint32_t captureId)
 std::shared_ptr<AudioSourceClock> CapturerClockManager::GetAudioSourceClock(uint32_t captureId)
 {
     std::lock_guard<std::mutex> lock(clockPoolMtx_);
-    CHECK_AND_RETURN_RET_LOG(audioSrcClockPool_.find(captureId) != audioSrcClockPool_.end(), nullptr,
-        "fail, [%{public}u] is not existed!", captureId);
-
-    return audioSrcClockPool_[captureId];
+    auto it = audioSrcClockPool_.find(captureId);
+    if (it == audioSrcClockPool_.end()) {
+        AUDIO_LIMIT_INFO_LOG(ClockTime::CheckTimeInterval(lastGetAudioSrcClockLogTime_, PRINT_TIMESTAMP_INTERVAL_NS),
+            "fail, [%{public}u] is not existed!", captureId);
+        return nullptr;
+    }
+    return it->second;
 }
 
 } // namespace AudioStandard

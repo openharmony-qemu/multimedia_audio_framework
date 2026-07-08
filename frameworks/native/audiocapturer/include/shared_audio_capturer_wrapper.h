@@ -19,6 +19,7 @@
 #include "audio_capturer.h"
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
+#include "audio_noise_reduction_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -374,6 +375,21 @@ public:
     int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override
     {
         return sharedAudioCapturer_->SelectInputDevice(desc);
+    }
+
+    int32_t SetNoiseReductionMode(NoiseReductionMode mode) override
+    {
+        return sharedAudioCapturer_->SetNoiseReductionMode(mode);
+    }
+
+    int32_t GetNoiseReductionMode(NoiseReductionMode &mode) override
+    {
+        return sharedAudioCapturer_->GetNoiseReductionMode(mode);
+    }
+
+    int32_t GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes) override
+    {
+        return sharedAudioCapturer_->GetSupportedNoiseReductionModes(modes);
     }
 
     ~SharedCapturerWrapper() override = default;

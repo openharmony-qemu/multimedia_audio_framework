@@ -46,6 +46,11 @@ AudioInputNode::~AudioInputNode()
 
 int32_t AudioInputNode::Init()
 {
+    if (GetAudioNodeFormat().encodingType == ENCODING_METADATA) {
+        AUDIO_INFO_LOG("encodingType is metaData not init pcm buffer.");
+        return SUCCESS;
+    }
+
     InitFormatConverters();
     uint32_t doubleFrame = 2;
     PcmBufferFormat inPcmFormat = GetAudioNodeInPcmFormat();
@@ -131,7 +136,7 @@ int32_t AudioInputNode::SetRequestDataCallback(std::shared_ptr<InputNodeRequestD
 
 bool AudioInputNode::IsSetReadDataCallback()
 {
-    return reqDataCallback_ != nullptr;
+    return reqDataCallback_ != nullptr || reqMetaDataCallback_ != nullptr;
 }
 
 void AudioInputNode::SetAudioNodeFormat(AudioFormat audioFormat)
@@ -144,6 +149,16 @@ void AudioInputNode::SetAudioNodeFormat(AudioFormat audioFormat)
     AudioNode::SetAudioNodeFormat(audioFormat);
     DeInit();
     Init();
+
+    auto nextNodes = nextNodes_;
+    for (auto& weakNextNode : nextNodes) {
+        auto nextNode = weakNextNode.lock();
+        if (nextNode != nullptr) {
+            if (nextNode->IsSystemNodeType()) {
+                nextNode->UpdateInputFormat(audioFormat);
+            }
+        }
+    }
 }
 
 int32_t AudioInputNode::GetDataFromUser()
@@ -170,7 +185,6 @@ int32_t AudioInputNode::GetDataFromUser()
         while ((singleGetSize < inPcmData_.GetDataSize()) && (curTryCounts < REQUEST_DATA_TRY_COUNTS) && !isFinished) {
             int32_t getSize = reqDataCallback_->OnRequestDataCallBack(
                 inPcmData_.GetPcmData() + singleGetSize, inPcmData_.GetDataSize() - singleGetSize, &isFinished);
-
             ++curTryCounts;
             CHECK_AND_RETURN_RET_LOG((getSize >= 0) &&
                 (static_cast<uint32_t>(getSize) <= inPcmData_.GetDataSize() - singleGetSize),
@@ -212,6 +226,30 @@ int32_t AudioInputNode::GeneratePushBuffer()
 
     outPcmData_.SetIsFinished(GetAudioNodeDataFinishedFlag() && (cachedBuffer_.GetSize() == 0));
     WriteOutputData(&outPcmData_);
+    return SUCCESS;
+}
+
+void AudioInputNode::SetRequestMetaDataCallback(std::shared_ptr<InputNodeRequestMetaDataCallBack> callback)
+{
+    reqMetaDataCallback_ = callback;
+}
+
+int32_t AudioInputNode::DoProcess(AudioMetaFrame &metaFrame,
+    int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
+{
+    CHECK_AND_RETURN_RET_LOG(!GetAudioNodeDataFinishedFlag(), ERR_NOT_SUPPORTED,
+        "meta data inputNode data finished, nodeType:%{public}d, nodeId:%{public}u", GetNodeType(), GetAudioNodeId());
+    CHECK_AND_RETURN_RET_LOG(GetAudioNodeFormat().encodingType == ENCODING_METADATA, ERR_NOT_SUPPORTED,
+        "currentNode encodingType node metaData, nodeType:%{public}d, nodeId:%{public}u, encodingType:%{public}d",
+        GetNodeType(), GetAudioNodeId(), GetAudioNodeFormat().encodingType);
+    CHECK_AND_RETURN_RET_LOG(reqMetaDataCallback_ != nullptr, ERR_NOT_SUPPORTED,
+        "currentNode reqMetaDataCallback not set, nodeType:%{public}d, nodeId:%{public}u, encodingType:%{public}d",
+        GetNodeType(), GetAudioNodeId(), GetAudioNodeFormat().encodingType);
+
+    *responseAudioSize = reqMetaDataCallback_->OnRequestDataCallBack(metaFrame, responseMetaSize, finishedFlag);
+    AUDIO_INFO_LOG("OnRequestMetaDataCallBack  responseAudioSize:%{public}d, responseMetaSize:%{public}d",
+        *responseAudioSize, *responseMetaSize);
+    SetAudioNodeDataFinishedFlag(*finishedFlag);
     return SUCCESS;
 }
 

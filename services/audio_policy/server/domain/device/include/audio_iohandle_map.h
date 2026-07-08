@@ -68,7 +68,6 @@ public:
 private:
     AudioIOHandleMap() {}
     ~AudioIOHandleMap() {}
-
 private:
     std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 

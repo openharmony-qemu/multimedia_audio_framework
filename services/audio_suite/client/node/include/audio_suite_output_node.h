@@ -38,6 +38,8 @@ public:
     int32_t DoProcess(uint8_t *audioData, int32_t frameSize, int32_t *writeDataSize, bool *finished);
     int32_t DoProcess(uint8_t **audioDataArray, int32_t arraySize,
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);
+    virtual int32_t DoProcess(AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag) override;
 
 private:
     int32_t DoProcessParamCheck(uint8_t **audioDataArray, int32_t arraySize,

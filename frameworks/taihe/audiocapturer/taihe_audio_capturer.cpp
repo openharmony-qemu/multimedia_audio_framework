@@ -671,6 +671,75 @@ void AudioCapturerImpl::SetMuteHintSync(bool mute)
     }
 }
 
+void AudioCapturerImpl::SetNoiseReductionMode(ohos::multimedia::audio::NoiseReductionMode noiseReductionMode)
+{
+    int32_t modeValue = noiseReductionMode.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentNoiseReductionMode(modeValue)) {
+        AUDIO_ERR_LOG("get noiseReductionMode failed: %{public}d", modeValue);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of noiseReductionMode must be enum NoiseReductionMode");
+        return;
+    }
+    if (audioCapturer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        return;
+    }
+
+    int32_t ret = audioCapturer_->SetNoiseReductionMode(
+        static_cast<OHOS::AudioStandard::NoiseReductionMode>(modeValue));
+    if (ret == OHOS::AudioStandard::ERROR_INVALID_PARAM || ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "SetNoiseReductionMode failed");
+    } else if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED || ret == OHOS::AudioStandard::ERROR_UNSUPPORTED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED, "SetNoiseReductionMode failed");
+    } else if (ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE || ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "SetNoiseReductionMode failed");
+    } else if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetNoiseReductionMode failed");
+    }
+}
+
+ohos::multimedia::audio::NoiseReductionMode AudioCapturerImpl::GetNoiseReductionMode()
+{
+    if (audioCapturer_ == nullptr) {
+        AUDIO_ERR_LOG("GetNoiseReductionMode failed, audioCapturer_ is nullptr");
+        return ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY;
+    }
+
+    OHOS::AudioStandard::NoiseReductionMode noiseReductionMode =
+        OHOS::AudioStandard::NOISE_REDUCTION_MODE_FIDELITY;
+    int32_t ret = audioCapturer_->GetNoiseReductionMode(noiseReductionMode);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        AUDIO_ERR_LOG("GetNoiseReductionMode failed, ret=%{public}d", ret);
+        return ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY;
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentNoiseReductionMode(static_cast<int32_t>(noiseReductionMode))) {
+        AUDIO_ERR_LOG("GetNoiseReductionMode invalid mode: %{public}d", static_cast<int32_t>(noiseReductionMode));
+        return ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY;
+    }
+    return TaiheAudioEnum::ToTaiheNoiseReductionMode(noiseReductionMode);
+}
+
+taihe::array<ohos::multimedia::audio::NoiseReductionMode> AudioCapturerImpl::GetSupportedNoiseReductionModes()
+{
+    std::vector<ohos::multimedia::audio::NoiseReductionMode> result;
+    if (audioCapturer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
+        return taihe::array<ohos::multimedia::audio::NoiseReductionMode>(result);
+    }
+
+    std::vector<OHOS::AudioStandard::NoiseReductionMode> nativeModes;
+    int32_t ret = audioCapturer_->GetSupportedNoiseReductionModes(nativeModes);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetSupportedNoiseReductionModes failed");
+        return taihe::array<ohos::multimedia::audio::NoiseReductionMode>(result);
+    }
+
+    for (const auto &mode : nativeModes) {
+        result.emplace_back(TaiheAudioEnum::ToTaiheNoiseReductionMode(mode));
+    }
+    return taihe::array<ohos::multimedia::audio::NoiseReductionMode>(result);
+}
+
 void AudioCapturerImpl::RequestPlaybackCaptureStart(callback_view<void(PlaybackCaptureStartState)> callback)
 {
     if (audioCapturer_ == nullptr) {

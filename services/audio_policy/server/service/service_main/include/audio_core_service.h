@@ -153,7 +153,7 @@ public:
         void OnCheckActiveMusicTime(const std::string &reason) override;
         int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) override;
         void OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable) override;
-        void ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason);
+        void SetStreamInterruptMute(uint32_t streamId, bool mute);
 
         // IDeviceStatusObserver
         void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command) override;
@@ -351,7 +351,7 @@ public:
     void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
-    int32_t StartClient(uint32_t sessionId, SessionOperationMsg opMsg);
+    int32_t StartClient(uint32_t sessionId, SessionOperationMsg opMsg, bool isInterrruptActive);
     int32_t StartClientForPlayback(uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, SessionOperationMsg opMsg);
@@ -363,6 +363,8 @@ public:
     void NotifyStandbyStatus(uint32_t sessionId, bool standbyStatus);
     int32_t NotifyStreamStandby(int32_t pid, uint32_t streamId);
     int32_t NotifyStreamStandbyResume(int32_t pid, uint32_t streamId);
+    void SetStreamInterruptMute(uint32_t streamId, bool mute);
+    bool IsStreamActive(uint32_t streamId);
     // Notify silent state change
     void NotifySilentStateChange(uint32_t sessionId, bool isSilent);
     void NotifyDataTransSilentStateChange(uint32_t sessionId, bool isSilent);
@@ -500,7 +502,6 @@ public:
     int32_t CaptureConcurrentCheck(uint32_t sessionId);
     int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute);
     void ReEvaluateVoipBypassByAppMuteHint();
-    void ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason);
     void SetFirstScreenOn();
     bool IsDupDeviceChange(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void FetchOutputDupDevice(std::string caller, uint32_t sessionId,
@@ -680,6 +681,10 @@ private:
         const std::vector<SourceOutput>& sourceOutputs);
     std::vector<SourceOutput> GetSourceOutputs();
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId);
+    void HandleRingerOrAlarmerRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        InternalDeviceType deviceType, const uint32_t pipeId);
+    void HandleNormalOrDualToneRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage);
     void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const uint32_t pipeId);
     void UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
@@ -754,8 +759,8 @@ private:
     void SelectA2dpType(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     void UpdateStreamDevicesForCreate(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     void UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
-    void UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller,
-        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToRoute);
+    void PrepareInputFetchInfos(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs,
+        std::vector<FetchDeviceInfo> &infos);
     bool IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs);
     bool HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeReasonExt &reason,
         const AudioDeviceDescriptor &actived, const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams);
@@ -849,22 +854,6 @@ private:
     bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
     int32_t ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
     std::string GetEnhancePropByName(const AudioEffectPropertyArray &oldPropertyArray, const std::string &propName);
-    bool IsVoipPrivacyMuteCandidateSource(SourceType sourceType) const;
-    bool IsVoipPrivacyMuteBypassedForUltrasonic(SourceType sourceType) const;
-    bool ShouldMuteCapturerByVoipPrivacy(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        bool hasActiveVoipPrivacyCapturer) const;
-    void EvaluateActiveVoipPrivacyPresence(
-        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
-        bool &hasActiveVoipPrivacyCapturer) const;
-    void CollectSessionsToMuteByVoipPrivacy(
-        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
-        bool hasActiveVoipPrivacyCapturer,
-        std::unordered_set<uint32_t> &targetMuteSessions) const;
-    void SyncVoipPrivacyMuteState(
-        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &allCapturerStreamDescs,
-        const std::unordered_set<uint32_t> &targetMuteSessions);
-    bool UpdateVoipPrivacyMuteForSession(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool mute);
-    void WriteVoipMutedCaptureStats(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool mute) const;
 
     void CheckAndUpdateEffect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void OnVehiclePriorityChanged(bool enable);

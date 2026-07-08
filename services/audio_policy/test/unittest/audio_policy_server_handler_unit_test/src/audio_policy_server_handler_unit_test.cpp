@@ -1986,5 +1986,53 @@ HWTEST(AudioPolicyServerHandlerUnitTest, RemoveSystemVolumeChangeCallbackInfo_Li
     auto &filterList = handler->clientSystemVolumeFilterMap_[CLIENT_ID];
     EXPECT_EQ(filterList.size(), 1);
 }
+/**
+ * @tc.name  : HasVolumeKeyEventCallbacks_ClientPidNotFound
+ * @tc.number: HasVolumeKeyEventCallbacks_001
+ * @tc.desc  : Test HasVolumeKeyEventCallbacks returns false when clientPid not in clientCallbacksMap_
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HasVolumeKeyEventCallbacks_ClientPidNotFound, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    handler->clientCallbacksMap_.clear();
+
+    bool result = handler->HasVolumeKeyEventCallbacks(9999);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : HasVolumeKeyEventCallbacks_NoVolumeCallbacks
+ * @tc.number: HasVolumeKeyEventCallbacks_002
+ * @tc.desc  : Test HasVolumeKeyEventCallbacks returns false when clientPid in map but no volume callbacks
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HasVolumeKeyEventCallbacks_NoVolumeCallbacks, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    handler->clientCallbacksMap_.clear();
+    int32_t clientPid = 1000;
+    handler->clientCallbacksMap_[clientPid] = {};
+
+    bool result = handler->HasVolumeKeyEventCallbacks(clientPid);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : HasVolumeKeyEventCallbacks_WithVolumeKeyEventCallback
+ * @tc.number: HasVolumeKeyEventCallbacks_003
+ * @tc.desc  : Test HasVolumeKeyEventCallbacks returns true when CALLBACK_SET_VOLUME_KEY_EVENT is enabled
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HasVolumeKeyEventCallbacks_WithVolumeKeyEventCallback, TestSize.Level1)
+{
+    auto handler = std::make_shared<AudioPolicyServerHandler>();
+    handler->clientCallbacksMap_.clear();
+    int32_t clientPid = 1000;
+    handler->clientCallbacksMap_[clientPid][CALLBACK_SET_VOLUME_KEY_EVENT] = true;
+
+    bool result = handler->HasVolumeKeyEventCallbacks(clientPid);
+    EXPECT_TRUE(result);
+
+    handler->clientCallbacksMap_.clear();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -112,6 +112,12 @@ void AudioNode::RemovePreNode(const std::shared_ptr<AudioNode>& node)
         }), preNodes_.end());
 }
 
+bool AudioNode::IsSystemNodeType()
+{
+    return audioNodeInfo_.nodeType == NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE ||
+        audioNodeInfo_.nodeType == NODE_TYPE_SYSTEM_MUSIC_MASTER;
+}
+
 // Output data management methods
 int32_t AudioNode::WriteOutputData(AudioSuitePcmBuffer* data)
 {
@@ -134,7 +140,8 @@ std::vector<AudioSuitePcmBuffer*> AudioNode::PullOutputData(
     }
 
     CHECK_AND_RETURN_RET_LOG(outputData_.size() == formatConverters_.size(), {},
-        "outputData size (%zu) != formatConverters size (%zu)", outputData_.size(), formatConverters_.size());
+        "outputData size:%{public}zu != formatConverters size size:%{public}zu",
+        outputData_.size(), formatConverters_.size());
 
     std::vector<AudioSuitePcmBuffer*> outData;
     for (size_t idx = 0; idx < outputData_.size(); idx++) {
@@ -192,6 +199,19 @@ bool AudioNode::IsSetReadDataCallback()
     return false;
 }
 
+void AudioNode::SetRequestMetaDataCallback(std::shared_ptr<InputNodeRequestMetaDataCallBack> callback)
+{
+    AUDIO_ERR_LOG("SetRequestMetaDataCallback failed, node type = %{public}d not support.", GetNodeType());
+}
+
+void AudioNode::UpdateOutputFormat(AudioFormat audioFormat)
+{
+}
+
+void AudioNode::UpdateInputFormat(AudioFormat audioFormat)
+{
+}
+
 int32_t AudioNode::SetOptions(std::string name, std::string value)
 {
     return ERROR;
@@ -200,6 +220,23 @@ int32_t AudioNode::SetOptions(std::string name, std::string value)
 int32_t AudioNode::GetOptions(std::string name, std::string &value)
 {
     value = "";
+    return ERROR;
+}
+
+int32_t AudioNode::SetSystemParam(std::vector<uint8_t> &param)
+{
+    return ERROR;
+}
+
+int32_t AudioNode::GetSystemParam(std::vector<uint8_t> &param)
+{
+    return ERROR;
+}
+
+int32_t AudioNode::GetInOutSize(uint32_t &inSize, uint32_t &outSize)
+{
+    inSize = 0;
+    outSize = 0;
     return ERROR;
 }
 
@@ -334,6 +371,20 @@ uint32_t AudioNode::GenerateAudioNodeId()
 int32_t AudioNode::PrintNodeInfo(std::string &nodeInfo)
 {
     return ERROR;
+}
+
+void AudioNode::Prepare()
+{
+    AUDIO_WARNING_LOG("Prepare failed, nodeType:%{public}d, nodeId:%{public}u not support.",
+        GetNodeType(), GetAudioNodeId());
+}
+
+int32_t AudioNode::DoProcess(AudioMetaFrame &metaFrame,
+    int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
+{
+    AUDIO_ERR_LOG("meta data DoProcess failed, nodeType:%{public}d, nodeId:%{public}u not support.",
+        GetNodeType(), GetAudioNodeId());
+    return ERR_NOT_SUPPORTED;
 }
 
 }  // namespace AudioSuite

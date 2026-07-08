@@ -58,6 +58,8 @@ public:
     virtual int32_t Init();
     virtual int32_t DeInit();
     virtual int32_t DoProcess(uint32_t needDataLength) = 0;
+    virtual int32_t DoProcess(AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag);
     // for Flush node
     virtual int32_t Flush() = 0;
     virtual int32_t Connect(const std::shared_ptr<AudioNode> &preNode) = 0;
@@ -67,12 +69,18 @@ public:
     virtual void ReadPreNodeData(PcmBufferFormat outFormat, bool needConvert, uint32_t needDataLength);
     virtual int32_t SetRequestDataCallback(std::shared_ptr<InputNodeRequestDataCallBack> callback);
     virtual bool IsSetReadDataCallback();
+    virtual void SetRequestMetaDataCallback(std::shared_ptr<InputNodeRequestMetaDataCallBack> callback);
     virtual int32_t SetOptions(std::string name, std::string value);
     virtual int32_t GetOptions(std::string name, std::string &value);
+    virtual int32_t SetSystemParam(std::vector<uint8_t> &param);
+    virtual int32_t GetSystemParam(std::vector<uint8_t> &param);
+    virtual int32_t GetInOutSize(uint32_t &inSize, uint32_t &outSize);
     virtual AudioNodeInfo& GetAudioNodeInfo();
     virtual void SetAudioNodeInfo(const AudioNodeInfo& audioNodeInfo);
     virtual void SetAudioNodeId(uint32_t nodeId);
     virtual void SetAudioNodeFormat(AudioFormat audioFormat);
+    virtual void UpdateOutputFormat(AudioFormat audioFormat);
+    virtual void UpdateInputFormat(AudioFormat audioFormat);
     virtual void SetAudioNodeVolume(float volume);
     virtual void SetAudioNodeDataFinishedFlag(bool finishedFlag);
     virtual bool GetAudioNodeDataFinishedFlag();
@@ -92,6 +100,7 @@ public:
     virtual void SetAudioNodeWorkMode(PipelineWorkMode workMode);
     virtual PipelineWorkMode GetAudioNodeWorkMode();
     virtual int32_t PrintNodeInfo(std::string &nodeInfo);
+    virtual void Prepare();
     std::vector<AudioSuitePcmBuffer*> PullOutputData(
         PcmBufferFormat outFormat, bool needConvert, uint32_t needDataLength);
     // Connection management
@@ -99,6 +108,7 @@ public:
     void RemoveNextNode(const std::shared_ptr<AudioNode>& node);
     void AddPreNode(const std::shared_ptr<AudioNode>& node);
     void RemovePreNode(const std::shared_ptr<AudioNode>& node);
+    bool IsSystemNodeType();
 
 protected:
     // Output data management

@@ -20,7 +20,15 @@ group("audio_suite_packages") {
     ":audio_pcm_process",
     ":audio_suite",
     ":audio_suite_capabilities",
+    ":audio_suite_init",
   ]
+
+  if (audio_framework_feature_audiosuite_support) {
+    deps += [
+        ":audio_suite_sa_service",
+        "../../sa_profile:audio_suite_sa_profile",
+      ]
+  }
 }
 
 config("audio_suite_public_config") {
@@ -36,6 +44,7 @@ config("audio_suite_public_config") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiosuite/include",
     "../../interfaces/inner_api/native/audiomanager/include",
+    "../../interfaces/kits/c/common",
   ]
 
   cflags_cc = [
@@ -45,6 +54,13 @@ config("audio_suite_public_config") {
   ]
 
   ldflags = [ "-Wl" ]
+}
+
+# Audio Suite SA IDL 头文件配置
+config("audio_suite_sa_idl_support") {
+  include_dirs = [
+    "${target_gen_dir}",
+  ]
 }
 
 audio_ohos_library("audio_suite") {
@@ -63,16 +79,25 @@ audio_ohos_library("audio_suite") {
   public_configs = [ ":audio_suite_public_config" ]
 
   if (audio_framework_feature_audiosuite_support || audio_framework_feature_audiosuite_format_convert_support) {
+    public_configs += [
+      ":audio_suite_sa_idl_support",
+      "idl:audio_suite_sa_idl_config",
+    ]
     include_dirs = [
       "client/manager/include",
       "client/converter/include",
+      "client/stub/include",
       "../../frameworks/native/audioutils/include",
       "../../frameworks/native/audioschedule/include",
+      "../../frameworks/native/offlineaudioeffect/include",
+      "../../interfaces/inner_api/native/offlineaudioeffect/include",
       "../audio_engine/buffer",
       "../audio_engine/plugin/resample/include",
       "../audio_service/common/include/limiter",
       "../../interfaces/inner_api/native/audiocommon/include/",
+      "../../interfaces/kits/c/audio_suite/",
       "../audio_service/common/include/dfx",
+      "${target_gen_dir}",
     ]
 
     sources = []
@@ -81,7 +106,10 @@ audio_ohos_library("audio_suite") {
         "client/manager/src/audio_suite_engine.cpp",
         "client/manager/src/audio_suite_manager.cpp",
         "client/manager/src/audio_suite_pipeline.cpp",
+        "client/manager/src/audio_suite_client_download_manager.cpp",
+        "client/manager/src/audio_suite_client_policy.cpp",
         "client/manager/src/audio_suite_mixer_processor.cpp",
+        "client/stub/src/download_callback_stub_impl.cpp",
         "client/node/src/audio_suite_input_node.cpp",
         "client/node/src/audio_suite_output_node.cpp",
         "client/node/src/audio_suite_process_node.cpp",
@@ -96,6 +124,7 @@ audio_ohos_library("audio_suite") {
         "client/node/src/audio_suite_space_render_node.cpp",
         "client/node/src/audio_suite_hoa_render_node.cpp",
         "client/node/src/audio_suite_mixer_processor_node.cpp",
+        "client/node/src/audio_suite_system_node.cpp",
         "client/utils/src/audio_suite_manager_thread.cpp",
         "client/utils/src/audio_suite_common.cpp",
         "client/utils/src/audio_suite_algo_interface.cpp",
@@ -132,11 +161,14 @@ audio_ohos_library("audio_suite") {
       "../audio_engine:audio_engine_plugins",
       "../../frameworks/native/audioutils:audio_utils",
       "../../frameworks/native/audioschedule:audio_schedule",
+      "../../frameworks/native/offlineaudioeffect:offline_audio_effect",
       "../audio_service:audio_common",
       "../../frameworks/native/audioutils:audio_xml_utils",
       "../audio_service:audio_engine_manager",
       "../audio_service:audio_policy_manager",
       "../audio_service:audio_client",
+      "idl:audio_suite_sa_client_idl_interface",
+      "idl:audio_suite_sa_server_idl_interface",
     ]
 
     external_deps = [
@@ -204,11 +236,84 @@ audio_ohos_library("audio_pcm_process") {
   part_name = "audio_framework"
 }
 
+# Audio Suite SA 服务端
+if (audio_framework_feature_audiosuite_support) {
+  audio_ohos_library("audio_suite_sa_service") {
+    stack_protector_ret = true
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
+    install_enable = true
+ 
+    defines = []
+ 
+    public_configs = [
+      "idl:audio_suite_sa_idl_config",
+    ]
+ 
+    include_dirs = [
+      "server/audio_suite_policy/include",
+      "server/manager/include",
+      "client/utils/include",
+      "client/node/include",
+      "idl",
+      "../../interfaces/inner_api/native/audiocommon/include",
+      "../../interfaces/inner_api/native/audiosuite/include",
+      "../../frameworks/native/audioutils/include",
+      "../audio_service/common/include",
+      "${target_gen_dir}",
+    ]
+ 
+    sources = [
+      "server/audio_suite_policy/src/audio_suite_rom_download_service.cpp",
+      "server/manager/src/download_manager.cpp",
+    ]
+ 
+    deps = [
+      ":audio_suite",
+      "../../frameworks/native/audioutils:audio_utils",
+      "../audio_service:audio_common",
+      "idl:audio_suite_sa_server_idl_interface",
+      "idl:audio_suite_sa_client_idl_interface",
+      "idl:audio_suite_sa_idl_headers",
+    ]
+ 
+    external_deps = [
+      "c_utils:utils",
+      "hilog:libhilog",
+      "ipc:ipc_core",
+      "samgr:samgr_proxy",
+      "safwk:system_ability_fwk",
+      "hisysevent:libhisysevent",
+      "hitrace:hitrace_meter",
+      "access_token:libaccesstoken_sdk",
+      "access_token:libnativetoken_shared",
+      "access_token:libtokensetproc_shared",
+      "init:libbegetutil",
+    ]
+ 
+    subsystem_name = "multimedia"
+    part_name = "audio_framework"
+  }
+}
 
 ohos_prebuilt_etc("audio_suite_capabilities") {
   source = "client/config/file/audio_suite_capabilities.xml"
 
   subsystem_name = "multimedia"
   relative_install_dir = "audio"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_suite_init") {
+  source = "etc/audio_suite_server.cfg"
+  relative_install_dir = "init"
+  subsystem_name = "multimedia"
   part_name = "audio_framework"
 }

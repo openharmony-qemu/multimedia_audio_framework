@@ -90,7 +90,7 @@ public:
     void TriggerDeviceInfoUpdatedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devChangeDesc);
     void NotifyPreferredDeviceSet(PreferredType preferredType,
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller);
-    void UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor &device);
+    void UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor &device, AudioPin hdiPin);
     void HandleDeviceStateChange(std::shared_ptr<AudioDeviceDescriptor> desc, bool isAvailable);
 
 private:

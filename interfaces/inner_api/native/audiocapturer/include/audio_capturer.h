@@ -23,6 +23,7 @@
 #include "microphone_descriptor.h"
 #include "timestamp.h"
 #include "audio_capturer_options.h"
+#include "audio_noise_reduction_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -920,6 +921,24 @@ public:
     }
 
     virtual uint32_t GetOverflowCount() const = 0;
+
+    virtual int32_t SetNoiseReductionMode(NoiseReductionMode mode)
+    {
+        (void)mode;
+        return 0;
+    }
+
+    virtual int32_t GetNoiseReductionMode(NoiseReductionMode &mode)
+    {
+        (void)mode;
+        return 0;
+    }
+
+    virtual int32_t GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes)
+    {
+        (void)modes;
+        return 0;
+    }
 
     /**
      * @brief Select the input device for the current capturer.

@@ -17,6 +17,7 @@
 #include "audio_server_proxy.h"
 #include <atomic>
 #include <fuzzer/FuzzedDataProvider.h>
+#include <string>
 #include <vector>
 using namespace std;
 
@@ -131,6 +132,43 @@ const vector<StreamUsage> g_testStreamUsages = {
     STREAM_USAGE_VOICE_RINGTONE,
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
     STREAM_USAGE_MAX,
+};
+
+const vector<AudioFlag> g_testInputRouteFlags = {
+    AUDIO_INPUT_FLAG_NORMAL,
+    AUDIO_INPUT_FLAG_FAST,
+    static_cast<AudioFlag>(AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP),
+    AUDIO_INPUT_FLAG_AI,
+    AUDIO_INPUT_FLAG_UNPROCESS,
+    AUDIO_INPUT_FLAG_ULTRASONIC,
+    AUDIO_INPUT_FLAG_LIVE,
+    AUDIO_INPUT_FLAG_VOICE_RECOGNITION,
+    AUDIO_INPUT_FLAG_RAW_AI,
+    AUDIO_INPUT_FLAG_INTERPHONE,
+    AUDIO_INPUT_FLAG_CAMCORDER,
+    AUDIO_INPUT_FLAG_VOICE_MESSAGE,
+};
+
+const vector<HdiIdType> g_testHdiIdTypes = {
+    HDI_ID_TYPE_PRIMARY,
+    HDI_ID_TYPE_FAST,
+    HDI_ID_TYPE_AI,
+    HDI_ID_TYPE_NUM,
+};
+
+const vector<string> g_testAdapterNames = {
+    "primary",
+    "primary_extra_capturer",
+    "usb",
+    "remote",
+    "error",
+};
+
+const vector<string> g_testSourceModuleNames = {
+    "Built_in_mic",
+    "Built_in_voice_message",
+    "Built_in_typec",
+    "Built_in_bt",
 };
 
 void AudioVolumeManagerSaveSpecifiedDeviceVolumeFuzzTest(FuzzedDataProvider& fdp)
@@ -267,6 +305,22 @@ void AudioVolumeManagerUpdateSinkArgsFuzzTest(FuzzedDataProvider& fdp)
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     CHECK_AND_RETURN(audioAdapterManager != nullptr);
     audioAdapterManager->UpdateSinkArgs(info, ret);
+}
+
+void AudioVolumeManagerGetSourceIdInfoAndIdTypeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    pipeInfo->adapterName_ = PickValue(fdp, g_testAdapterNames);
+    pipeInfo->moduleInfo_.name = PickValue(fdp, g_testSourceModuleNames);
+    pipeInfo->routeFlag_ = PickValue(fdp, g_testInputRouteFlags);
+
+    std::string idInfo = fdp.ConsumeRandomLengthString(32);
+    HdiIdType idType = PickValue(fdp, g_testHdiIdTypes);
+    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
 }
 
 void AudioVolumeManagerInitVolumeMapFuzzTest(FuzzedDataProvider& fdp)
@@ -625,6 +679,7 @@ void Test(FuzzedDataProvider& fdp)
     AudioVolumeManagerOpenNotPaAudioPortFuzzTest,
     AudioVolumeManagerUpdateVolumeForLowLatencyFuzzTest,
     AudioVolumeManagerUpdateSinkArgsFuzzTest,
+    AudioVolumeManagerGetSourceIdInfoAndIdTypeFuzzTest,
     AudioVolumeManagerUpdateSafeVolumeFuzzTest,
     AudioVolumeManagerInitVolumeMapFuzzTest,
     AudioVolumeManagerInitRingerModeFuzzTest,

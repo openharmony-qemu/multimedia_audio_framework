@@ -20,6 +20,8 @@
 #include "shared_audio_capturer_wrapper.h"
 #include "audio_errors.h"
 
+#include <vector>
+
 using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
@@ -60,6 +62,46 @@ public:
 class TestInputDeviceChangeCallback : public AudioCapturerDeviceChangeCallback {
 public:
     void OnStateChange(const AudioDeviceDescriptor &deviceInfo) override {}
+};
+
+class TestNoiseReductionCapturer : public AudioCapturerPrivate {
+public:
+    TestNoiseReductionCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    int32_t SetNoiseReductionMode(NoiseReductionMode mode) override
+    {
+        mode_ = mode;
+        return setRet_;
+    }
+
+    int32_t GetNoiseReductionMode(NoiseReductionMode &mode) override
+    {
+        mode = mode_;
+        return getRet_;
+    }
+
+    int32_t GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode> &modes) override
+    {
+        modes = supportedModes_;
+        return getSupportedRet_;
+    }
+
+    void SetReturnValues(int32_t setRet, int32_t getRet, int32_t getSupportedRet)
+    {
+        setRet_ = setRet;
+        getRet_ = getRet;
+        getSupportedRet_ = getSupportedRet;
+    }
+
+private:
+    int32_t setRet_ = SUCCESS;
+    int32_t getRet_ = SUCCESS;
+    int32_t getSupportedRet_ = SUCCESS;
+    NoiseReductionMode mode_ = NOISE_REDUCTION_MODE_FIDELITY;
+    std::vector<NoiseReductionMode> supportedModes_ = {
+        NOISE_REDUCTION_MODE_FIDELITY,
+        NOISE_REDUCTION_MODE_STANDARD,
+    };
 };
 
 // ==================== AudioCapturerCallbackAiut ====================
@@ -710,6 +752,46 @@ HWTEST_F(SharedAudioCapturerWrapperAiut, SharedCapturerWrapper_StartPlaybackCapt
     int32_t ret = wrapper->StartPlaybackCapture();
     AIUT_EXPECT_EQ_INFO_LOG(ret, 0,
         "wrapper StartPlaybackCapture should return 0, ret=%d", ret);
+}
+
+/**
+ * @tc.name  : Test noise reduction API delegation
+ * @tc.number: SharedCapturerWrapper_NoiseReduction_001
+ * @tc.desc  : Test noise reduction APIs delegate to the inner capturer.
+ */
+HWTEST_F(SharedAudioCapturerWrapperAiut, SharedCapturerWrapper_NoiseReduction_001, TestSize.Level0)
+{
+    AIUT_INFO_LOG("entry");
+    auto innerCapturer = std::make_shared<TestNoiseReductionCapturer>();
+    AIUT_ASSERT_NE_INFO_LOG(innerCapturer, nullptr, "innerCapturer is null");
+    auto wrapper = std::make_shared<SharedCapturerWrapper>(innerCapturer);
+    AIUT_ASSERT_NE_INFO_LOG(wrapper, nullptr, "wrapper is null");
+
+    int32_t ret = wrapper->SetNoiseReductionMode(NOISE_REDUCTION_MODE_STANDARD);
+    AIUT_EXPECT_EQ_INFO_LOG(ret, SUCCESS, "SetNoiseReductionMode should succeed, ret=%d", ret);
+
+    NoiseReductionMode mode = NOISE_REDUCTION_MODE_FIDELITY;
+    ret = wrapper->GetNoiseReductionMode(mode);
+    AIUT_EXPECT_EQ_INFO_LOG(ret, SUCCESS, "GetNoiseReductionMode should succeed, ret=%d", ret);
+    AIUT_EXPECT_EQ_INFO_LOG(mode, NOISE_REDUCTION_MODE_STANDARD,
+        "mode should be STANDARD, mode=%d", static_cast<int32_t>(mode));
+
+    std::vector<NoiseReductionMode> modes;
+    ret = wrapper->GetSupportedNoiseReductionModes(modes);
+    AIUT_EXPECT_EQ_INFO_LOG(ret, SUCCESS, "GetSupportedNoiseReductionModes should succeed, ret=%d", ret);
+    AIUT_ASSERT_EQ_INFO_LOG(modes.size(), static_cast<size_t>(2), "supported modes size mismatch");
+    AIUT_EXPECT_EQ_INFO_LOG(modes[0], NOISE_REDUCTION_MODE_FIDELITY,
+        "first mode should be FIDELITY, mode=%d", static_cast<int32_t>(modes[0]));
+    AIUT_EXPECT_EQ_INFO_LOG(modes[1], NOISE_REDUCTION_MODE_STANDARD,
+        "second mode should be STANDARD, mode=%d", static_cast<int32_t>(modes[1]));
+
+    innerCapturer->SetReturnValues(ERR_INVALID_PARAM, ERR_ILLEGAL_STATE, ERROR);
+    ret = wrapper->SetNoiseReductionMode(NOISE_REDUCTION_MODE_FIDELITY);
+    AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_INVALID_PARAM, "SetNoiseReductionMode should forward error, ret=%d", ret);
+    ret = wrapper->GetNoiseReductionMode(mode);
+    AIUT_EXPECT_EQ_INFO_LOG(ret, ERR_ILLEGAL_STATE, "GetNoiseReductionMode should forward error, ret=%d", ret);
+    ret = wrapper->GetSupportedNoiseReductionModes(modes);
+    AIUT_EXPECT_EQ_INFO_LOG(ret, ERROR, "GetSupportedNoiseReductionModes should forward error, ret=%d", ret);
 }
 
 } // namespace AudioStandard

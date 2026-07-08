@@ -60,6 +60,8 @@ public:
     int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override;
     int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<InputNodeRequestDataCallBack> callback) override;
+    int32_t SetRequestMetaDataCallback(uint32_t nodeId,
+        std::shared_ptr<InputNodeRequestMetaDataCallBack> callback) override;
     int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t RenderFrame(uint32_t pipelineId,
@@ -67,6 +69,8 @@ public:
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) override;
     int32_t MultiRenderFrame(uint32_t pipelineId,
         AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag) override;
+    int32_t MetaRenderFrame(uint32_t pipelineId, AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag) override;
     int32_t SetEqualizerFrequencyBandGains(
         uint32_t nodeId, AudioEqualizerFrequencyBandGains frequencyBandGains) override;
     int32_t SetSpaceRenderPositionParams(
@@ -92,6 +96,9 @@ public:
         AudioEqualizerFrequencyBandGains &frequencyBandGains) override;
     int32_t GetVoiceBeautifierType(uint32_t nodeId,
         VoiceBeautifierType &voiceBeautifierType) override;
+    int32_t SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) override;
+    int32_t GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) override;
+    int32_t GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize) override;
     int32_t IsNodeTypeSupported(AudioNodeType nodeType, bool &isSupported) override;
     int32_t PrintInfo(uint32_t pipelineId, int32_t fd) override;
 
@@ -111,8 +118,12 @@ public:
     void OnDisConnectNodes(int32_t result) override;
     void OnRenderFrame(int32_t result, uint32_t pipelineId) override;
     void OnMultiRenderFrame(int32_t result, uint32_t pipelineId) override;
+    void OnMetaRenderFrame(int32_t result, uint32_t pipelineId) override;
     void OnGetOptions(int32_t result) override;
     void OnSetOptions(int32_t result) override;
+    void OnSetSystemNodeParam(int32_t result) override;
+    void OnGetSystemNodeParam(int32_t result) override;
+    void OnGetSystemNodeInOutSize(int32_t result) override;
     void OnPrintInfo(int32_t result) override;
 
 private:
@@ -175,6 +186,14 @@ private:
     std::unordered_map<uint32_t, int32_t> renderFrameResultMap_;
     std::unordered_map<uint32_t, bool> isFinishMultiRenderFrameMap_;
     std::unordered_map<uint32_t, int32_t> multiRenderFrameResultMap_;
+    std::unordered_map<uint32_t, bool> isFinishMetaRenderFrameMap_;
+    std::unordered_map<uint32_t, int32_t> metaRenderFrameResultMap_;
+    bool isFinishSetSystemNodeParam_ = false;
+    int32_t setSystemNodeParamResult_ = 0;
+    bool isFinishGetSystemNodeParam_ = false;
+    int32_t getSystemNodeParamResult_ = 0;
+    bool isFinishGetSystemNodeInOutSize_ = false;
+    int32_t getSystemNodeInOutSizeResult_ = 0;
 };
 
 // tool

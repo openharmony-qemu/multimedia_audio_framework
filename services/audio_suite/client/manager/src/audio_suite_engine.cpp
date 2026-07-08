@@ -52,8 +52,12 @@ AudioSuiteEngine::AudioSuiteEngine(AudioSuiteManagerCallback& callback)
     RegisterHandler(DISCONNECT_NODES, &AudioSuiteEngine::HandleDisConnectNodes);
     RegisterHandler(RENDER_FRAME, &AudioSuiteEngine::HandleRenderFrame);
     RegisterHandler(MULTI_RENDER_FRAME, &AudioSuiteEngine::HandleMultiRenderFrame);
+    RegisterHandler(META_RENDER_FRAME, &AudioSuiteEngine::HandleMetaRenderFrame);
     RegisterHandler(GET_OPTIONS, &AudioSuiteEngine::HandleGetOptions);
     RegisterHandler(SET_OPTIONS, &AudioSuiteEngine::HandleSetOptions);
+    RegisterHandler(SET_SYSTEM_NODE_PARAM, &AudioSuiteEngine::HandleSetSystemNodeParam);
+    RegisterHandler(GET_SYSTEM_NODE_PARAM, &AudioSuiteEngine::HandleGetSystemNodeParam);
+    RegisterHandler(GET_SYSTEM_NODE_INOUT_SIZE, &AudioSuiteEngine::HandleGetSystemNodeInOutSize);
     RegisterHandler(PRINT_INFO, &AudioSuiteEngine::HandlePrintInfo);
 
     AUDIO_INFO_LOG("AudioEditEngine Create");
@@ -531,6 +535,45 @@ int32_t AudioSuiteEngine::SetRequestDataCallback(uint32_t nodeId,
     return SUCCESS;
 }
 
+int32_t AudioSuiteEngine::SetRequestMetaDataCallback(uint32_t nodeId,
+    std::shared_ptr<InputNodeRequestMetaDataCallBack> callback)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not SetRequestMetaDataCallback.");
+
+    auto request = [this, nodeId, callback]() {
+        AUDIO_DEBUG_LOG("SetRequestMetaDataCallback enter");
+        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            AUDIO_ERR_LOG("engine SetRequestMetaDataCallback node failed, node id=%{public}d is invailed.", nodeId);
+            managerCallback_.OnWriteDataCallback(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        auto pipelineId = nodeMap_[nodeId];
+        if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            AUDIO_ERR_LOG("engine SetRequestMetaDataCallback node failed, node id=%{public}d is invailed.", nodeId);
+            managerCallback_.OnWriteDataCallback(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        auto pipeline = pipelineMap_[pipelineId];
+        if (pipeline == nullptr) {
+            AUDIO_ERR_LOG("pipeline SetRequestMetaDataCallback node failed, pipeline is nullptr.");
+            managerCallback_.OnWriteDataCallback(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        int32_t ret = pipeline->SetRequestMetaDataCallback(nodeId, callback);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("pipeline SetRequestMetaDataCallback node failed, ret = %{public}d.", ret);
+            managerCallback_.OnWriteDataCallback(ret);
+            return;
+        }
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t AudioSuiteEngine::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
 {
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not ConnectNodes.");
@@ -681,6 +724,30 @@ int32_t AudioSuiteEngine::MultiRenderFrame(uint32_t pipelineId,
     return SUCCESS;
 }
 
+int32_t AudioSuiteEngine::MetaRenderFrame(uint32_t pipelineId, AudioMetaFrame &metaFrame,
+    int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not MetaRenderFrame.");
+    auto request = [this, pipelineId, metaFrame, responseAudioSize, responseMetaSize, finishedFlag]() {
+        if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            AUDIO_ERR_LOG("engine MetaRenderFrame failed, pipeline id is invailed.");
+            managerCallback_.OnMetaRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, pipelineId);
+            return;
+        }
+        std::shared_ptr<IAudioSuitePipeline> pipeline = pipelineMap_[pipelineId];
+        if (pipeline == nullptr) {
+            AUDIO_ERR_LOG("engine MetaRenderFrame failed, pipeline is nullptr.");
+            managerCallback_.OnMetaRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, pipelineId);
+            return;
+        }
+        pipeline->MetaRenderFrame(
+            const_cast<AudioMetaFrame&>(metaFrame), responseAudioSize, responseMetaSize, finishedFlag);
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t AudioSuiteEngine::SetOptions(uint32_t nodeId, std::string name, std::string value)
 {
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not SetOptions.");
@@ -753,6 +820,117 @@ int32_t AudioSuiteEngine::GetOptions(uint32_t nodeId, std::string name, std::str
             managerCallback_.OnGetOptions(ret);
             return;
         }
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteEngine::SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not SetSystemNodeParam.");
+    auto request = [this, nodeId, param]() mutable {
+        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            AUDIO_ERR_LOG("engine SetSystemNodeParam failed, node id is invailed.");
+            managerCallback_.OnSetSystemNodeParam(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        auto pipelineId = nodeMap_[nodeId];
+        if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            AUDIO_ERR_LOG("engine SetSystemNodeParam failed, pipeline id is invailed.");
+            managerCallback_.OnSetSystemNodeParam(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            return;
+        }
+
+        auto pipeline = pipelineMap_[pipelineId];
+        if (pipeline == nullptr) {
+            AUDIO_ERR_LOG("engine SetSystemNodeParam failed, pipeline is nullptr.");
+            managerCallback_.OnSetSystemNodeParam(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            return;
+        }
+
+        int32_t ret = pipeline->SetSystemNodeParam(nodeId, param);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("engine SetSystemNodeParam failed, ret = %{public}d.", ret);
+            managerCallback_.OnSetSystemNodeParam(ret);
+            return;
+        }
+        managerCallback_.OnSetSystemNodeParam(SUCCESS);
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteEngine::GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not GetSystemNodeParam.");
+    auto request = [this, nodeId, param]() mutable {
+        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            AUDIO_ERR_LOG("engine GetSystemNodeParam failed, node id is invailed.");
+            managerCallback_.OnGetSystemNodeParam(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        auto pipelineId = nodeMap_[nodeId];
+        if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            AUDIO_ERR_LOG("engine GetSystemNodeParam failed, pipeline id is invailed.");
+            managerCallback_.OnGetSystemNodeParam(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            return;
+        }
+
+        auto pipeline = pipelineMap_[pipelineId];
+        if (pipeline == nullptr) {
+            AUDIO_ERR_LOG("engine GetSystemNodeParam failed, pipeline is nullptr.");
+            managerCallback_.OnGetSystemNodeParam(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            return;
+        }
+
+        int32_t ret = pipeline->GetSystemNodeParam(nodeId, param);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("engine GetSystemNodeParam failed, ret = %{public}d.", ret);
+            managerCallback_.OnGetSystemNodeParam(ret);
+            return;
+        }
+        managerCallback_.OnGetSystemNodeParam(SUCCESS);
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteEngine::GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize)
+{
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not GetSystemNodeInOutSize.");
+    auto request = [this, nodeId, &inSize, &outSize]() {
+        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            AUDIO_ERR_LOG("engine GetSystemNodeInOutSize failed, node id is invailed.");
+            managerCallback_.OnGetSystemNodeInOutSize(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        auto pipelineId = nodeMap_[nodeId];
+        if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            AUDIO_ERR_LOG("engine GetSystemNodeInOutSize failed, pipeline id is invailed.");
+            managerCallback_.OnGetSystemNodeInOutSize(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            return;
+        }
+
+        auto pipeline = pipelineMap_[pipelineId];
+        if (pipeline == nullptr) {
+            AUDIO_ERR_LOG("engine GetSystemNodeInOutSize failed, pipeline is nullptr.");
+            managerCallback_.OnGetSystemNodeInOutSize(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            return;
+        }
+
+        int32_t ret = pipeline->GetSystemNodeInOutSize(nodeId, inSize, outSize);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("engine GetSystemNodeInOutSize failed, ret = %{public}d.", ret);
+            managerCallback_.OnGetSystemNodeInOutSize(ret);
+            return;
+        }
+        managerCallback_.OnGetSystemNodeInOutSize(SUCCESS);
     };
 
     SendRequest(request, __func__);
@@ -856,6 +1034,11 @@ void AudioSuiteEngine::HandleMultiRenderFrame(int32_t result, uint32_t pipelineI
     managerCallback_.OnMultiRenderFrame(result, pipelineId);
 }
 
+void AudioSuiteEngine::HandleMetaRenderFrame(int32_t result, uint32_t pipelineId)
+{
+    managerCallback_.OnMetaRenderFrame(result, pipelineId);
+}
+
 void AudioSuiteEngine::HandleGetOptions(int32_t result)
 {
     managerCallback_.OnGetOptions(result);
@@ -864,6 +1047,21 @@ void AudioSuiteEngine::HandleGetOptions(int32_t result)
 void AudioSuiteEngine::HandleSetOptions(int32_t result)
 {
     managerCallback_.OnSetOptions(result);
+}
+
+void AudioSuiteEngine::HandleSetSystemNodeParam(int32_t result)
+{
+    managerCallback_.OnSetSystemNodeParam(result);
+}
+
+void AudioSuiteEngine::HandleGetSystemNodeParam(int32_t result)
+{
+    managerCallback_.OnGetSystemNodeParam(result);
+}
+
+void AudioSuiteEngine::HandleGetSystemNodeInOutSize(int32_t result)
+{
+    managerCallback_.OnGetSystemNodeInOutSize(result);
 }
 
 int32_t AudioSuiteEngine::PrintInfo(uint32_t pipelineId, int32_t fd)
