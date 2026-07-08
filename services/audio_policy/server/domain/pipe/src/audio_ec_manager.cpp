@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t MS_PER_S = 1000;
-static const unsigned int BUFFER_CALC_20MS = 20;
+static const unsigned int BUFFER_CALC_20MS = 20 * SOURCE_PERIOD_SIZE;
 const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 static const char* PIPE_PRIMARY_OUTPUT = "primary_output";
