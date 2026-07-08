@@ -454,7 +454,8 @@ int32_t HpaeFastSinkOutputNode::GetAdapterBufferInfo()
     return SUCCESS;
 }
 
-void HpaeFastSinkOutputNode::InitTransBuffer() //todo
+// renderFrameData_ is in heap, and can be accessed much more faster than dstAudioBuffer_
+void HpaeFastSinkOutputNode::InitTransBuffer()
 {
     dstSpanSizeInByte_ = static_cast<size_t>(dstSpanSizeInframe_) * dstByteSizePerFrame_;
     if (dstSpanSizeInByte_ == 0 || dstSpanSizeInByte_ > MAX_TRANS_BUFFER_SIZE) {
@@ -804,47 +805,62 @@ bool HpaeFastSinkOutputNode::GetRenderFrameDataInner(HpaePcmBuffer *&pcmBuffer)
     return true;
 }
 
+void HpaeFastSinkOutputNode::ProcessVolumeAndDfx(BufferDesc &transBuf)
+{
+    CheckPlaySignal(transBuf.buffer, transBuf.dataLength);
+    VolumeTools::DfxOperation(transBuf, GetDfxStreamInfo(), logUtilsTag_, volumeDataCount_);
+    ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(transBuf, GetDfxStreamInfo().format,
+        GetDfxStreamInfo().channels);
+    int32_t vol = channelVolumes.channel == 0 ? 0 : std::accumulate(channelVolumes.volStart,
+        channelVolumes.volStart + channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel;
+    vol = isExistLoopback_ ? 1 : vol;
+    ZeroVolumeCheck(vol);
+    UpdateSilentState(transBuf.buffer, transBuf.dataLength);
+    UpdateAmplitudeIfNeeded(transBuf);
+}
+
 int32_t HpaeFastSinkOutputNode::WriteToDeviceBuffer(HpaePcmBuffer *pcmBuffer, uint64_t curWritePos)
 {
     CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_ILLEGAL_STATE, "dstAudioBuffer_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(dstSpanSizeInByte_ > 0, ERR_INVALID_PARAM, "dstSpanSizeInByte_ is invalid");
     CHECK_AND_RETURN_RET_LOG(pcmBuffer != nullptr, ERR_INVALID_PARAM, "pcmBuffer is nullptr");
 
+    // renderFrameData_ is in heap, can be accessed much faster than dstAudioBuffer_ (DSP mmap memory without MMU).
+    // Do volume and other read-heavy works on heap buffer, then copy once to DSP buffer.
+    size_t writeSize = std::min(validRenderDataLen_, dstSpanSizeInByte_);
+    CHECK_AND_RETURN_RET_LOG(writeSize > 0, ERR_INVALID_PARAM, "writeSize is invalid");
+    if (writeSize < dstSpanSizeInByte_) {
+        AUDIO_WARNING_LOG("WriteToDeviceBuffer short frame, "
+            "sessionId:%{public}u valid:%{public}zu span:%{public}zu",
+            GetSessionId(), writeSize, dstSpanSizeInByte_);
+    }
+
+    if (switchDevicesMute_) {
+        std::fill(renderFrameData_.begin(), renderFrameData_.end(), 0);
+    }
+
+    BufferDesc transBuf = {};
+    transBuf.buffer = reinterpret_cast<uint8_t *>(renderFrameData_.data());
+    transBuf.dataLength = dstSpanSizeInByte_;
+    transBuf.bufLength = dstSpanSizeInByte_;
+
+    // do volume and read-heavy works on heap buffer
+    ProcessVolumeAndDfx(transBuf);
+
+    // do memcpy|write work: single copy from heap to DSP buffer
     BufferDesc writeBuf = {};
     int32_t ret = dstAudioBuffer_->GetWriteBuffer(curWritePos, writeBuf);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetWriteBuffer failed");
-
-    size_t writeSize = std::min(validRenderDataLen_, writeBuf.bufLength);
-    if (writeSize == 0) {
-        return ERR_INVALID_PARAM;
-    }
-    if (switchDevicesMute_) {
-        ret = memset_s(writeBuf.buffer, writeBuf.bufLength, 0, writeBuf.bufLength);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memset_s for switch mute failed");
-    } else {
-        ret = memcpy_s(writeBuf.buffer, writeBuf.bufLength, renderFrameData_.data(), writeSize);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memcpy_s failed");
-        if (writeSize < writeBuf.bufLength) {
-            size_t remainingSize = writeBuf.bufLength - writeSize;
-            ret = memset_s(writeBuf.buffer + writeSize, remainingSize, 0, remainingSize);
-            CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memset_s failed");
-            AUDIO_WARNING_LOG("WriteToDeviceBuffer short frame, "
-                "sessionId:%{public}u valid:%{public}zu span:%{public}zu",
-                GetSessionId(), writeSize, writeBuf.bufLength);
-        }
+    size_t copySize = std::min(transBuf.bufLength, writeBuf.bufLength);
+    ret = memcpy_s(writeBuf.buffer, writeBuf.bufLength, transBuf.buffer, copySize);
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memcpy_s failed");
+    if (copySize < writeBuf.bufLength) {
+        size_t remainingSize = writeBuf.bufLength - copySize;
+        ret = memset_s(writeBuf.buffer + copySize, remainingSize, 0, remainingSize);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memset_s failed");
     }
     writeBuf.dataLength = writeBuf.bufLength;
-    CheckPlaySignal(writeBuf.buffer, writeBuf.dataLength);
-    VolumeTools::DfxOperation(writeBuf, GetDfxStreamInfo(), logUtilsTag_, volumeDataCount_);
-    ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(writeBuf, GetDfxStreamInfo().format,
-        GetDfxStreamInfo().channels);
-    int32_t vol = channelVolumes.channel == 0 ? 0 : std::accumulate(channelVolumes.volStart,
-        channelVolumes.volStart + channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel;
-    vol = isExistLoopback_ ? 1 : vol;
-    ZeroVolumeCheck(vol);
-    UpdateSilentState(writeBuf.buffer, writeBuf.dataLength);
-    UpdateAmplitudeIfNeeded(writeBuf);
-    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(writeBuf.buffer), writeBuf.dataLength);
+    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(transBuf.buffer), transBuf.dataLength);
 
     lastWriteTime_ = ClockTime::GetCurNano();
     return SUCCESS;
