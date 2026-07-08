@@ -211,6 +211,10 @@ void CapturerInClientInner::SetClientDeviceId(const std::string &deviceId)
 
 int32_t CapturerInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
+    if (JudgeFastStreamByCapturerAttr()) {
+        AUDIO_ERR_LOG("%{public}s: not supported", logUtilsTag_.c_str());
+        return ERR_NOT_SUPPORTED;
+    }
 #ifdef HAS_FEATURE_INNERCAPTURER
     AUDIO_INFO_LOG("client set %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE,
@@ -2107,6 +2111,8 @@ uint32_t CapturerInClientInner::GetRendererSamplingRate()
 
 int32_t CapturerInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 {
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByCapturerAttr(), ERR_NOT_SUPPORTED,
+        "%{public}s: not supported", logUtilsTag_.c_str());
     // bufferSizeInMsec is checked between 5ms and 20ms.
     bufferSizeInMsec_ = bufferSizeInMsec;
     AUDIO_INFO_LOG("SetBufferSizeInMsec to %{public}d", bufferSizeInMsec_);
@@ -2484,6 +2490,8 @@ int32_t CapturerInClientInner::ResetNotifyStreamSilentChangeFlag()
 
 int32_t CapturerInClientInner::SetInMainThreadState(bool isInMainThread)
 {
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByCapturerAttr(), ERR_NOT_SUPPORTED,
+        "%{public}s: not supported", logUtilsTag_.c_str());
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CONFIG_ILLEGAL_STATE, "IpcStream is nullptr", true), "IpcStream is nullptr");
@@ -2496,6 +2504,74 @@ void CapturerInClientInner::SetSensitiveRecordPermitCallback(
     CHECK_AND_RETURN_LOG(callback != nullptr, "Invalid null callback");
     std::lock_guard<std::mutex> lock(sensitiveRecordPermitCallbackMutex_);
     sensitiveRecordPermitCallback_ = callback;
+}
+
+bool CapturerInClientInner::CheckCapturerAttrInfoFromSpan(CapturerAttrInfo &attr)
+{
+    AUDIO_DEBUG_LOG("CheckCapturerAttrInfoFromSpan enter, sessionId:%{public}u", sessionId_);
+
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientBuffer_ is nullptr");
+
+    uint64_t spanSize = clientBuffer_->GetAndClearPendingSpanSize(attr.engineSize, attr.routeFlag);
+    if (spanSize == 0) {
+        AUDIO_DEBUG_LOG("No capturerAttr change");
+        return false;
+    }
+
+    attr.spanSizeInFrame = static_cast<uint32_t>(spanSize);
+
+    AUDIO_INFO_LOG("Check capturerAttr: spanSize:%{public}u engineSize:%{public}" PRIu64 " routeFlag:0x%{public}x",
+        attr.spanSizeInFrame, attr.engineSize, attr.routeFlag);
+    return true;
+}
+
+void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrInfo &attr)
+{
+    Trace trace("RefreshCapturerAttrInfoFromSpan spanSize:" + std::to_string(attr.spanSizeInFrame) +
+        " engineSize:" + std::to_string(attr.engineSize) + " routeFlag:" + std::to_string(attr.routeFlag));
+    const uint32_t MIN_SPAN_SIZE = 32;
+    const uint32_t MAX_SPAN_SIZE = 8192;
+    if (attr.spanSizeInFrame >= MIN_SPAN_SIZE && attr.spanSizeInFrame <= MAX_SPAN_SIZE) {
+        spanSizeInFrame_ = attr.spanSizeInFrame;
+        clientSpanSizeInByte_ = spanSizeInFrame_ * sizePerFrameInByte_;
+    } else {
+        AUDIO_ERR_LOG("Invalid span size %{public}u, skip update", attr.spanSizeInFrame);
+    }
+    cacheSizeInByte_ = attr.engineSize;
+    if (attr.routeFlag != 0) {
+        capturerInfo_.capturerFlags = static_cast<int32_t>(attr.routeFlag);
+        if ((attr.routeFlag & AUDIO_INPUT_FLAG_FAST) == 0) {
+            AUDIO_INFO_LOG("NotifyFastStatusChange to NORMAL, sessionId:%{public}u", sessionId_);
+            NotifyFastStatusChange(FASTSTATUS_NORMAL);
+        } else if (attr.routeFlag & AUDIO_INPUT_FLAG_VOIP) {
+            AUDIO_INFO_LOG("NotifyFastStatusChange to FAST for VOIP, sessionId:%{public}u", sessionId_);
+            NotifyFastStatusChange(FASTSTATUS_FAST);
+        } else {
+            AUDIO_INFO_LOG("NotifyFastStatusChange to FAST, sessionId:%{public}u", sessionId_);
+            NotifyFastStatusChange(FASTSTATUS_FAST);
+        }
+        AUDIO_INFO_LOG("Updated capturerFlags to 0x%{public}x", capturerInfo_.capturerFlags);
+    }
+    AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}zu "
+        "capturerFlags:0x%{public}x",
+        spanSizeInFrame_, clientSpanSizeInByte_, cacheSizeInByte_, capturerInfo_.capturerFlags);
+}
+
+bool CapturerInClientInner::SyncCapturerAttrFromSpan()
+{
+    CapturerAttrInfo attr;
+    CHECK_AND_RETURN_RET_LOG(CheckCapturerAttrInfoFromSpan(attr), false, "No capturerAttr to refresh");
+    RefreshCapturerAttrInfoFromSpan(attr);
+    return true;
+}
+
+bool CapturerInClientInner::JudgeFastStreamByCapturerAttr()
+{
+    SyncCapturerAttrFromSpan();
+    bool isFast = (fastStatus_ == FASTSTATUS_FAST);
+    AUDIO_DEBUG_LOG("isFast:%{public}d, fastStatus:%{public}d, sessionId:%{public}u",
+        isFast, static_cast<int32_t>(fastStatus_), sessionId_);
+    return isFast;
 }
 } // namespace AudioStandard
 } // namespace OHOS
