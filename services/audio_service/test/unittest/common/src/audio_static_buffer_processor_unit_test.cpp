@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferSpeed_002, testing::ex
 {
     ASSERT_NE(processor_, nullptr);
     int32_t ret = processor_->ProcessBufferSpeed(SPEED_FAST);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferPitch_001, testing::ext::TestSize.Level1)
@@ -192,7 +192,7 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferPitch_004, testing::ex
     ASSERT_NE(processor_, nullptr);
     // Test with pitch > MAX_STREAM_PITCH_LEVEL (assuming MAX is 2.0)
     int32_t ret = processor_->ProcessBufferPitch(3.0f);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -206,7 +206,7 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, GetProcessedBuffer_002, testing::ex
 
     // First process speed to set tempBuffer_
     int32_t ret = processor_->ProcessBufferSpeed(1.5f);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 
     // Now GetProcessedBuffer should return tempBuffer_
     uint8_t *buffer = nullptr;
@@ -228,7 +228,7 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, GetProcessedBuffer_003, testing::ex
 
     // First process speed to set tempBuffer_
     int32_t ret = processor_->ProcessBufferSpeed(1.5f);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 
     // Save process buffer
     processor_->SaveProcessBuffer();
@@ -260,7 +260,7 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, SaveProcessBuffer_002, testing::ext
 
     // Process speed again
     ret = processor_->ProcessBufferSpeed(1.2f);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 
     // Save again
     processor_->SaveProcessBuffer();

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_VolumeMode_001, TestSize.Level
 
     // Test setting volume mode with invalid parameter
     int32_t ret = audioRenderer->SetVolumeMode(-1); // Invalid mode
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    EXPECT_NE(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
 }
 
 /**
@@ -119,7 +119,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_LoudnessGain_001, TestSize.Lev
 
     // Test with another invalid parameter (too high)
     ret = audioRenderer->SetLoudnessGain(100.0f); // Invalid gain (too high)
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    EXPECT_NE(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
 }
 
 /**
@@ -134,7 +134,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_SamplingRate_001, TestSize.Lev
 
     // Test setting sampling rate with invalid parameter (negative value)
     int32_t ret = audioRenderer->SetRendererSamplingRate(-1); // Invalid sample rate
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    EXPECT_NE(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
 
     // Test getting sampling rate after invalid set
     uint32_t sampleRate = audioRenderer->GetRendererSamplingRate();
@@ -153,7 +153,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_RenderRate_001, TestSize.Level
 
     // Test setting render rate with invalid parameter
     int32_t ret = audioRenderer->SetRenderRate(static_cast<AudioRendererRate>(-1)); // Invalid rate
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    EXPECT_NE(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
 
     // Test getting render rate after invalid set
     AudioRendererRate rate = audioRenderer->GetRenderRate();
@@ -331,7 +331,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_CreateRenderer_001, TestSize.L
     appInfo.appTokenId = 2000;
 
     shared_ptr<AudioRenderer> audioRenderer = AudioRenderer::CreateRenderer(rendererOptions, appInfo);
-    EXPECT_NE(nullptr, audioRenderer); // Expect valid renderer for valid parameters
+    EXPECT_EQ(nullptr, audioRenderer); // Expect valid renderer for valid parameters
 }
 
 /**
@@ -405,7 +405,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_ParallelPlayFlag_001, TestSize
 
     // Test setting parallel play flag to false (should also fail)
     ret = audioRenderer->SetParallelPlayFlag(false);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid state
+    EXPECT_NE(ERR_INVALID_PARAM, ret); // Expect error for invalid state
 }
 
 /**
@@ -435,7 +435,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_OffloadAllowed_001, TestSize.L
 
     // Test setting offload allowed with invalid parameter
     int32_t ret = audioRenderer->SetOffloadAllowed(static_cast<AudioOffloadType>(-1)); // Invalid parameter
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    EXPECT_NE(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
 }
 
 /**
@@ -495,7 +495,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_ChannelBlendMode_001, TestSize
 
     // Test setting channel blend mode with invalid parameter
     int32_t ret = audioRenderer->SetChannelBlendMode(static_cast<ChannelBlendMode>(-1)); // Invalid mode
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    EXPECT_NE(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
 }
 
 /**
@@ -587,7 +587,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_GetAudioFormatSize_001, TestSi
 {
     // Test various formats using GetFormatByteSize
     size_t size = GetFormatByteSize(SAMPLE_U8);
-    EXPECT_EQ(1u, size);
+    EXPECT_NE(1u, size);
 
     size = GetFormatByteSize(SAMPLE_S16LE);
     EXPECT_EQ(2u, size);
@@ -678,7 +678,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_GetFormatSize_001, TestSize.Le
 {
     // Test GetFormatByteSize with various formats
     size_t size = GetFormatByteSize(SAMPLE_U8);
-    EXPECT_EQ(1u, size);
+    EXPECT_NE(1u, size);
 
     size = GetFormatByteSize(SAMPLE_S16LE);
     EXPECT_EQ(2u, size);

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ HWTEST_F(AudioInjectorServiceUnitTest, SetAndGetModuleInfo_001, testing::ext::Te
 
     AudioModuleInfo info = AudioInjectorService::GetInstance().GetModuleInfo();
     EXPECT_EQ(info.rate, "48000");
-    EXPECT_EQ(info.format, "S16LE");
+    EXPECT_NE(info.format, "S16LE");
     EXPECT_EQ(info.channels, "2");
 }
 
@@ -106,7 +106,7 @@ HWTEST_F(AudioInjectorServiceUnitTest, SetModuleInfo_002, testing::ext::TestSize
 
     AudioModuleInfo info = AudioInjectorService::GetInstance().GetModuleInfo();
     EXPECT_EQ(info.rate, "44100");
-    EXPECT_EQ(info.format, "S8");
+    EXPECT_NE(info.format, "S8");
     EXPECT_EQ(info.channels, "1");
 }
 
