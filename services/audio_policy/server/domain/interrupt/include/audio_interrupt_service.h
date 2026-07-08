@@ -468,7 +468,7 @@ private:
     std::map<uint32_t, std::unordered_set<int32_t>> suggestionPidRecords_;
 
     std::map<uint32_t, std::list<MuteFocusInfo>> muteAudioFocus_;
-    std::set<uint32_t> pendingDeferredUnmuteStreamIds_;
+    std::set<uint32_t> deferredResumeStreamIds_;
 
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;

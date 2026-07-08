@@ -1129,5 +1129,30 @@ HWTEST_F(AudioInterruptServiceUnitTest, SendInterruptEventCallback_004, TestSize
     EXPECT_EQ(audioInterruptService->suggestionStreamIdRecords_.size(), 0);
 }
 
+/**
+* @tc.name  : Test ProcessFocusListIteration_001
+* @tc.number: ProcessFocusListIteration_001
+* @tc.desc  : Test ProcessFocusListIteration_001
+*/
+HWTEST_F(AudioInterruptServiceUnitTest, ProcessFocusListIteration_001, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+ 
+    int32_t zoneId = 0;
+    uint32_t streamId = 10001;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList;
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = streamId;
+    audioInterrupt.behaviorFlags_.muteWhenInterruptFlag = true;
+    audioFocusInfoList.push_back({audioInterrupt, AudioFocuState::MUTED});
+    newAudioFocuInfoList.push_back({audioInterrupt, AudioFocuState::ACTIVE});
+    audioInterruptService->deferredResumeStreamIds_.insert(streamId);
+ 
+    bool ret = audioInterruptService->ProcessFocusListIteration(zoneId, false,
+        audioFocusInfoList, newAudioFocuInfoList, false, false);
+    EXPECT_FALSE(ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

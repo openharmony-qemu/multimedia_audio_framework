@@ -3499,17 +3499,14 @@ bool AudioInterruptService::ScheduleDeferredUnmuteOrResume(AudioFocuState oldSta
     CHECK_AND_RETURN_RET(!isDeferredCheck, false);
 
     uint32_t streamId = audioInterrupt.streamId;
-    CHECK_AND_RETURN_RET(pendingDeferredUnmuteStreamIds_.find(streamId) == pendingDeferredUnmuteStreamIds_.end(),
+    CHECK_AND_RETURN_RET(deferredResumeStreamIds_.find(streamId) == deferredResumeStreamIds_.end(),
         true, "StreamId %{public}u already pending deferred unmute/resume, skip", streamId);
 
-    pendingDeferredUnmuteStreamIds_.insert(streamId);
+    deferredResumeStreamIds_.insert(streamId);
     auto audioInterruptService = shared_from_this();
     auto checkTask = [audioInterruptService, streamId, zoneId] {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        CHECK_AND_CALL_FUNC_RETURN_LOG(audioInterruptService != nullptr,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
-                SESSION_STOP_NULL_POINTER, "audioInterruptService is nullptr", false),
-            "audioInterruptService is nullptr");
+        CHECK_AND_RETURN_LOG(audioInterruptService != nullptr, "audioInterruptService is nullptr");
         audioInterruptService->DeferredUnmuteOrResumeCheck(streamId, zoneId);
     };
     std::thread(checkTask).detach();
@@ -3520,7 +3517,7 @@ bool AudioInterruptService::ScheduleDeferredUnmuteOrResume(AudioFocuState oldSta
 void AudioInterruptService::DeferredUnmuteOrResumeCheck(uint32_t streamId, int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    pendingDeferredUnmuteStreamIds_.erase(streamId);
+    deferredResumeStreamIds_.erase(streamId);
     ResumeAudioFocusList(zoneId, false, true);
 }
 
