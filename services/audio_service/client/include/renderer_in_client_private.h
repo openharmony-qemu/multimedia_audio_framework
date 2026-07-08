@@ -263,6 +263,12 @@ public:
         return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
     }
 
+    void UpdateLogTag()
+    {
+        logUtilsTag_ = "[" + std::to_string(sessionId_) + "]" +
+            (IsFastStream() ? "Fast" : "Normal") + "Renderer";
+    }
+
     bool IsUltraFastStream() const
     {
         return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
@@ -270,7 +276,13 @@ public:
 
     void SetupFastStreamThreadPriority();
 
-    void CheckAndProcessPendingSpanSize();
+    bool SyncRendererAttrFromSpan();
+
+    bool JudgeFastStreamByRendererAttr();
+
+    bool CheckRendererAttrInfoFromSpan(RendererAttrInfo &attr);
+
+    void RefreshRendererAttrInfoFromSpan(const RendererAttrInfo &attr);
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -280,6 +292,8 @@ private:
     int32_t DeinitIpcStream();
 
     int32_t InitIpcStream();
+    void CreateAndRetryAudioProcess(const AudioProcessConfig &config,
+        const sptr<IStandardAudioService> &gasp, AudioPlaybackCaptureConfig &playbackConfig);
 
     void InitDFXOperaiton();
 
