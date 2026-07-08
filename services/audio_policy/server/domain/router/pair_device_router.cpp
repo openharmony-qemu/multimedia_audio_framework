@@ -48,7 +48,7 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetCallCaptureDevice(SourceT
     std::shared_ptr<AudioDeviceDescriptor> pairDevice = desc->pairDeviceDescriptor_;
     bool isScoStateConnect = Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
     if (pairDevice != nullptr && pairDevice->connectState_ != SUSPEND_CONNECTED && !pairDevice->exceptionFlag_ &&
-        (pairDevice->isEnable_ || isScoStateConnect)) {
+        (pairDevice->isEnable_ || isScoStateConnect) && (pairDevice->connectState_ != SIMULATED_CONNECTED)) {
         AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType, clientUID,
             pairDevice->deviceType_);
         return make_shared<AudioDeviceDescriptor>(*pairDevice);
