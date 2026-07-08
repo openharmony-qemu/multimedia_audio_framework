@@ -235,6 +235,7 @@ void AudioPnpServer::DetectAudioDevice()
     DetectAudioHDMIDevice();
 #endif
     DetectAudioDpDevice();
+    DetectAudioHdmiMipiDevice();
     AUDIO_INFO_LOG("DetectAudioDevice Done");
 }
 
@@ -262,6 +263,28 @@ void AudioPnpServer::DetectAudioDpDevice()
         CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid detect info");
         OnPnpDeviceStatusChanged(eventInfo_);
     }
+}
+
+void AudioPnpServer::DetectAudioHdmiMipiDevice()
+{
+    string hdmiPath{HDMI_PATH};
+    string text = ReadTextFile(hdmiPath + "/state");
+    CHECK_AND_RETURN(!text.empty() && text[0] == '1');
+    text = ReadTextFile(hdmiPath + "/name");
+    CHECK_AND_RETURN(!text.empty());
+
+    string name = GetField(text, "device_port", ',');
+    name = name.empty() ? text : name;
+    AUDIO_INFO_LOG("HDMI found. name=%{public}s", name.c_str());
+    AudioEvent audioEvent {
+        .eventType = AUDIO_DEVICE_ADD,
+        .deviceType = PNP_DEVICE_HDMI_DEVICE,
+        .name = name,
+        .address = name.empty() ? "0" : name.substr(name.length() - 1),
+        .deviceRole = DeviceRole::OUTPUT_DEVICE,
+    };
+    string info = GetAudioEventInfo(audioEvent);
+    OnPnpDeviceStatusChanged(info);
 }
 
 void AudioPnpServer::StopPnpServer()
