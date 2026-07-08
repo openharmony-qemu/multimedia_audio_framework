@@ -1110,8 +1110,14 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoFro
     uint32_t sampleRate = static_cast<uint32_t>(streamInfo.samplingRate);
     AudioChannel channels = streamInfo.channels;
 #ifdef MULTI_BUS_ENABLE
-    for (auto &streamProp : info->streamPropInfos_) {
+    for (const auto &streamProp : info->streamPropInfos_) {
         if (streamProp->channels_ == channels) {
+            return streamProp;
+        }
+    }
+    for (const auto &streamProp : info->streamPropInfos_) {
+        if (streamProp->channels_ > AudioCahnnel::STEREO &&
+            channels > AudioCahnnel::STEREO) {
             return streamProp;
         }
     }
