@@ -579,7 +579,7 @@ ohos_unittest("audio_volume_unit_test") {
 }
 
 ohos_unittest("audio_pitch_processor_unit_test") {
-  module_out_path = "audio_framework/audio_framework_common/pitch_processor"
+  module_out_path = "audio_framework/audio_route_common"
 
   configs = [ ":module_private_config" ]
 

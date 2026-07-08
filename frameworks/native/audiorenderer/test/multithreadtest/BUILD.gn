@@ -14,11 +14,11 @@
 import("//build/test.gni")
 import("//foundation/multimedia/audio_framework/config.gni")
 
-module_output_path =
-    "audio_framework/audio_framework_route/audio_renderer_multitest"
+renderer_module_output_path =
+    "audio_framework/audio_route_renderer/audio_renderer_multitest"
 
 ohos_unittest("audio_renderer_multi_test") {
-  module_out_path = module_output_path
+  module_out_path = renderer_module_output_path
   include_dirs = [
     "./include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
