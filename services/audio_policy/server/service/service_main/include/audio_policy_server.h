@@ -162,6 +162,8 @@ public:
     int32_t GetSystemVolumeInDb(int32_t volumeType, int32_t volumeLevel,
         int32_t deviceType, float &volume) override;
 
+    int32_t SetVolumeControlPriority(const std::vector<int32_t> &priorities, int32_t &result) override;
+
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
 
     void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc);

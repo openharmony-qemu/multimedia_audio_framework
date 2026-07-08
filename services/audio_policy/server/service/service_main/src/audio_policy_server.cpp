@@ -1525,6 +1525,41 @@ int32_t AudioPolicyServer::GetSystemVolumeInDb(int32_t volumeTypeIn,
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetVolumeControlPriority(const std::vector<int32_t> &prioritiesIn, int32_t &result)
+{
+    int32_t size = prioritiesIn.size();
+    AUDIO_INFO_LOG("priorities.size() [%{public}d]", size);
+
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission!");
+        result = ERR_PERMISSION_DENIED;
+        return SUCCESS;
+    }
+    std::unordered_map<AudioVolumeType, int32_t> volumeTypePriorities;
+    int32_t prioritiy = 0;
+    for (auto volumeTypeIn : prioritiesIn) {
+        AudioVolumeType volumeType = static_cast<AudioVolumeType>(volumeTypeIn);
+        if (!AudioVolumeUtils::GetInstance().IsVolumeTypeValid(volumeType)) {
+            result = ERR_INVALID_PARAM;
+            return SUCCESS;
+        }
+        if (volumeTypePriorities.count(volumeType) > 0) {
+            AUDIO_ERR_LOG("The volume type [%{public}d] already exists!", volumeType);
+            result = ERR_INVALID_PARAM;
+            return SUCCESS;
+        }
+        volumeTypePriorities[volumeType] = prioritiy;
+        prioritiy++;
+    }
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        result = ERR_OPERATION_FAILED;
+        return SUCCESS;
+    }
+    result = interruptService_->SetVolumeControlPriority(volumeTypePriorities);
+    return SUCCESS;
+}
+
 // deprecated since api 9.
 int32_t AudioPolicyServer::SetStreamMuteLegacy(int32_t streamTypeIn, bool mute, int32_t deviceTypeIn)
 {

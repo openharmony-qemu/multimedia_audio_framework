@@ -1129,5 +1129,104 @@ HWTEST_F(AudioInterruptServiceUnitTest, SendInterruptEventCallback_004, TestSize
     EXPECT_EQ(audioInterruptService->suggestionStreamIdRecords_.size(), 0);
 }
 
+/**
+ * @tc.name  : Test SetVolumeControlPriority.
+ * @tc.number: SetVolumeControlPriority_001
+ * @tc.desc  : Test SetVolumeControlPriority with valid priorities map.
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_001, TestSize.Level1)
+{
+    ASSERT_NE(audioInterruptService_, nullptr);
+    std::unordered_map<AudioVolumeType, int32_t> priorities;
+    priorities[STREAM_MUSIC] = 0;
+    priorities[STREAM_VOICE_CALL] = 1;
+    priorities[STREAM_RING] = 2;
+    int32_t ret = audioInterruptService_->SetVolumeControlPriority(priorities);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 3);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_MUSIC], 0);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_VOICE_CALL], 1);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_RING], 2);
+}
+
+/**
+ * @tc.name  : Test SetVolumeControlPriority.
+ * @tc.number: SetVolumeControlPriority_002
+ * @tc.desc  : Test SetVolumeControlPriority with single priority.
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_002, TestSize.Level1)
+{
+    ASSERT_NE(audioInterruptService_, nullptr);
+    std::unordered_map<AudioVolumeType, int32_t> priorities;
+    priorities[STREAM_MUSIC] = 0;
+    int32_t ret = audioInterruptService_->SetVolumeControlPriority(priorities);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 1);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_MUSIC], 0);
+}
+
+/**
+ * @tc.name  : Test SetVolumeControlPriority.
+ * @tc.number: SetVolumeControlPriority_003
+ * @tc.desc  : Test SetVolumeControlPriority with empty priorities.
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_003, TestSize.Level1)
+{
+    ASSERT_NE(audioInterruptService_, nullptr);
+    std::unordered_map<AudioVolumeType, int32_t> priorities;
+    int32_t ret = audioInterruptService_->SetVolumeControlPriority(priorities);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test SetVolumeControlPriority.
+ * @tc.number: SetVolumeControlPriority_004
+ * @tc.desc  : Test SetVolumeControlPriority replaces previous priorities.
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_004, TestSize.Level1)
+{
+    ASSERT_NE(audioInterruptService_, nullptr);
+    std::unordered_map<AudioVolumeType, int32_t> priorities1;
+    priorities1[STREAM_MUSIC] = 0;
+    priorities1[STREAM_VOICE_CALL] = 1;
+    int32_t ret = audioInterruptService_->SetVolumeControlPriority(priorities1);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 2);
+
+    std::unordered_map<AudioVolumeType, int32_t> priorities2;
+    priorities2[STREAM_RING] = 0;
+    priorities2[STREAM_ALARM] = 1;
+    ret = audioInterruptService_->SetVolumeControlPriority(priorities2);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 2);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.count(STREAM_MUSIC), 0);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_RING], 0);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_ALARM], 1);
+}
+
+/**
+ * @tc.name  : Test SetVolumeControlPriority.
+ * @tc.number: SetVolumeControlPriority_005
+ * @tc.desc  : Test SetVolumeControlPriority with all valid volume types.
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_005, TestSize.Level1)
+{
+    ASSERT_NE(audioInterruptService_, nullptr);
+    std::unordered_map<AudioVolumeType, int32_t> priorities;
+    priorities[STREAM_VOICE_CALL] = 0;
+    priorities[STREAM_MUSIC] = 1;
+    priorities[STREAM_RING] = 2;
+    priorities[STREAM_VOICE_ASSISTANT] = 3;
+    priorities[STREAM_ALARM] = 4;
+    priorities[STREAM_NOTIFICATION] = 5;
+    priorities[STREAM_SYSTEM] = 6;
+    priorities[STREAM_ACCESSIBILITY] = 7;
+    priorities[STREAM_ULTRASONIC] = 8;
+    priorities[STREAM_NAVIGATION] = 9;
+    int32_t ret = audioInterruptService_->SetVolumeControlPriority(priorities);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 10);
+}
 } // namespace AudioStandard
 } // namespace OHOS

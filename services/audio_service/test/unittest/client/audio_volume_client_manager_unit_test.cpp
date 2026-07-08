@@ -1036,5 +1036,99 @@ HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeWithDevice_003, TestSize.Level
     EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_INTERNAL_FORCE_STOP, volumeLevel, deviceType),
         ERR_NOT_SUPPORTED);
 }
+
+/**
+* @tc.name   : Test SetVolumeControlPriority API
+* @tc.number : SetVolumeControlPriority_001
+* @tc.desc   : Test SetVolumeControlPriority with valid priorities
+*/
+HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeControlPriority_001, TestSize.Level1)
+{
+    GetPermission();
+    std::vector<AudioVolumeType> priorities = {STREAM_MUSIC, STREAM_VOICE_CALL, STREAM_RING};
+    int32_t result = AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name   : Test SetVolumeControlPriority API
+* @tc.number : SetVolumeControlPriority_002
+* @tc.desc   : Test SetVolumeControlPriority with single priority
+*/
+HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeControlPriority_002, TestSize.Level1)
+{
+    GetPermission();
+    std::vector<AudioVolumeType> priorities = {STREAM_MUSIC};
+    int32_t result = AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name   : Test SetVolumeControlPriority API
+* @tc.number : SetVolumeControlPriority_003
+* @tc.desc   : Test SetVolumeControlPriority with empty priorities
+*/
+HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeControlPriority_003, TestSize.Level1)
+{
+    GetPermission();
+    std::vector<AudioVolumeType> priorities = {};
+    int32_t result = AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name   : Test SetVolumeControlPriority API
+* @tc.number : SetVolumeControlPriority_004
+* @tc.desc   : Test SetVolumeControlPriority with duplicate volume types
+*/
+HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeControlPriority_004, TestSize.Level1)
+{
+    GetPermission();
+    std::vector<AudioVolumeType> priorities = {STREAM_MUSIC, STREAM_MUSIC};
+    int32_t result = AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name   : Test SetVolumeControlPriority API
+* @tc.number : SetVolumeControlPriority_005
+* @tc.desc   : Test SetVolumeControlPriority with invalid volume type
+*/
+HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeControlPriority_005, TestSize.Level1)
+{
+    GetPermission();
+    std::vector<AudioVolumeType> priorities = {STREAM_DEFAULT};
+    int32_t result = AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name   : Test SetVolumeControlPriority API
+* @tc.number : SetVolumeControlPriority_006
+* @tc.desc   : Test SetVolumeControlPriority with multiple valid types and an invalid type
+*/
+HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeControlPriority_006, TestSize.Level1)
+{
+    GetPermission();
+    std::vector<AudioVolumeType> priorities = {STREAM_MUSIC, STREAM_VOICE_CALL,
+        static_cast<AudioVolumeType>(99999)};
+    int32_t result = AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name   : Test SetVolumeControlPriority API
+* @tc.number : SetVolumeControlPriority_007
+* @tc.desc   : Test SetVolumeControlPriority with all valid volume types
+*/
+HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeControlPriority_007, TestSize.Level1)
+{
+    GetPermission();
+    std::vector<AudioVolumeType> priorities = {STREAM_VOICE_CALL, STREAM_MUSIC, STREAM_RING,
+        STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_NOTIFICATION, STREAM_SYSTEM,
+        STREAM_ACCESSIBILITY, STREAM_ULTRASONIC, STREAM_NAVIGATION};
+    int32_t result = AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

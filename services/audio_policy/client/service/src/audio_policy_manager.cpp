@@ -1851,6 +1851,20 @@ float AudioPolicyManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_
     return ret == SUCCESS ? out : static_cast<float>(ERR_INVALID_PARAM);
 }
 
+int32_t AudioPolicyManager::SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    int32_t result = SUCCESS;
+    std::vector<int32_t> prioritiesIn;
+    for (auto type : priorities) {
+        int32_t volumeTypeIn = static_cast<int32_t>(type);
+        prioritiesIn.emplace_back(volumeTypeIn);
+    }
+    gsp->SetVolumeControlPriority(prioritiesIn, result);
+    return result;
+}
+
 int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
