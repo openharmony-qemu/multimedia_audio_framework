@@ -96,6 +96,7 @@ static const int64_t COLLABORATIVE_STATE_CHANGE_MUTE_SINK_PORT_US = 200000; // 2
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_SEC = 10;
 static const int32_t WAIT_MULTICHANNL_CLOSE_TIME_SEC = 5;
+static const int32_t WAIT_PRIMARY_EXTRA_CLOSE_TIME_SEC = 5;
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 inline static const std::string EMPTY_ADDRESS{"00:00:00:00:00:00"};
 inline static const std::string NULL_ADDRESS{""};
@@ -111,6 +112,7 @@ static const std::unordered_set<uid_t> skipAddSessionIdUidSet_ = {
     MCU_UID,
     TV_SERVICE_UID
 };
+
 static const std::set<std::string> supportUltraFastBundleSet_ = {
 };
 }
@@ -262,6 +264,17 @@ void AudioCoreService::UpdateMultiChannelState(std::shared_ptr<AudioPipeInfo> pi
     multiChannelCloseCondition_.notify_all();
 }
 
+void AudioCoreService::UpdatePrimaryExtraState(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0);
+    CHECK_AND_RETURN(pipeInfo->moduleInfo_.className == "primary_extra");
+    {
+        std::lock_guard<std::mutex> lock(primaryExtraCloseMutex_);
+        isPrimaryExtraOpenedMap_[pipeInfo->name_] = true;
+    }
+    primaryExtraCloseCondition_.notify_all();
+}
+
 void AudioCoreService::CheckAndUpdateOffloadEnableForStream(
     OffloadAction action, std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t ioHandle)
 {
@@ -356,6 +369,7 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         UpdateOffloadState(pipeInfo);
         UpdateMultiChannelState(pipeInfo);
+        UpdatePrimaryExtraState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
@@ -889,6 +903,7 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
         UpdateOffloadState(pipeInfo);
         UpdateMultiChannelState(pipeInfo);
+        UpdatePrimaryExtraState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
@@ -1118,6 +1133,11 @@ void AudioCoreService::RemoveUnusedPipe()
             }
             pipeInfo->isCollaborationEnable_ = false;
             UpdateNearLinkCollaborativeState(false);
+        } else if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_NORMAL) &&
+            pipeInfo->moduleInfo_.className == "primary_extra") {
+            DelayReleasePrimaryExtraPipe(pipeInfo->id_, pipeInfo->paIndex_, pipeInfo->name_,
+                pipeInfo->moduleInfo_.name);
+            continue;
         }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
@@ -2705,6 +2725,34 @@ int32_t AudioCoreService::ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paI
     }
     CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
     return GetEventEntry()->ReleaseMultiChannelPipe(id, paIndex);
+}
+
+void AudioCoreService::DelayReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex,
+    const std::string &pipeName, const std::string &moduleName)
+{
+    AUDIO_INFO_LOG("In");
+    std::lock_guard<std::mutex> lock(primaryExtraCloseMutex_);
+    CHECK_AND_RETURN_LOG(!isPrimaryExtraInReleaseMap_[pipeName], "PrimaryExtra is releasing");
+    isPrimaryExtraInReleaseMap_[pipeName] = true;
+    isPrimaryExtraOpenedMap_[pipeName] = false;
+    auto unloadThreadFunc = [this, id, paIndex, pipeName, moduleName] {
+        this->ReleasePrimaryExtraPipe(id, paIndex, pipeName, moduleName);
+    };
+    std::thread unloadThread(unloadThreadFunc);
+    unloadThread.detach();
+}
+
+int32_t AudioCoreService::ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex,
+    const std::string &pipeName, const std::string &moduleName)
+{
+    AUDIO_INFO_LOG("[ReleasePrimaryExtraPipe]unload primary_extra module");
+    {
+        std::unique_lock<std::mutex> lock(primaryExtraCloseMutex_);
+        primaryExtraCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_PRIMARY_EXTRA_CLOSE_TIME_SEC),
+            [this, &pipeName] () { return isPrimaryExtraOpenedMap_[pipeName]; });
+    }
+    CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
+    return GetEventEntry()->ReleasePrimaryExtraPipe(id, paIndex, pipeName, moduleName);
 }
 
 void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
