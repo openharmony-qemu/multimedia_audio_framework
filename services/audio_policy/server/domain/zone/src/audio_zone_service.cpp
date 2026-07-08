@@ -1163,19 +1163,20 @@ void AudioZoneService::UpdateContextForAudioZone(int32_t zoneId, const AudioZone
 
 void AudioZoneService::NotifyStreamSilentChange(int32_t callerPid, uint32_t streamId)
 {
-    CHECK_AND_CALL_FUNC_RETURN(zoneClientManager_ != nullptr && interruptService_ != nullptr,
-        AUDIO_INFO_LOG("zoneClientManager or interruptService is nullptr"));
-
-    std::shared_ptr<AudioInterruptService> tmp = interruptService_;
-    CHECK_AND_CALL_FUNC_RETURN(tmp != nullptr,
-        AUDIO_INFO_LOG("interruptService_ tmp is nullptr"));
+    std::shared_ptr<AudioInterruptService> tmp = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        CHECK_AND_RETURN_LOG(zoneClientManager_ != nullptr && interruptService_ != nullptr,
+            "zoneClientManager or interruptService is nullptr");
+        tmp = interruptService_;
+    }
+    CHECK_AND_RETURN_LOG(tmp != nullptr, "interruptService_ tmp is nullptr");
 
     int32_t zoneId = tmp->FindAudioZoneByStreamId(streamId);
     JUDGE_AND_INFO_LOG(zoneId != 0, "NotifyStreamSilentChange of zone %{public}d", zoneId);
     CHECK_AND_CALL_FUNC_RETURN(CheckIsZoneValid(zoneId),
         AUDIO_INFO_LOG("zone id %{public}d is not valid", zoneId));
 
-    std::lock_guard<std::mutex> lock(zoneMutex_);
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         tmp, zoneClientManager_, AudioZoneInterruptReason::REMOTE_INJECT);
     if (tmp->NotifyStreamSilentChange(callerPid, streamId)) {
