@@ -1018,6 +1018,7 @@ struct AudioCapturerInfo {
 enum AudioPlaybackCaptureMode: i32 {
   MODE_DEFAULT = 0,
   MODE_MEDIA = 1,
+  MODE_ONLY_VOIP = 16384,
   MODE_EXCLUDING_SELF = 32768,
 }
 
@@ -1026,6 +1027,7 @@ struct AudioCapturerOptions {
   capturerInfo: AudioCapturerInfo;
   preferredInputDevice: Optional<AudioDeviceDescriptor>;
   @optional playbackCaptureMode: Optional<AudioPlaybackCaptureMode>;
+  @optional playbackCaptureUid: Optional<i32>;
 }
 
 enum PlaybackCaptureStartState: i32 {

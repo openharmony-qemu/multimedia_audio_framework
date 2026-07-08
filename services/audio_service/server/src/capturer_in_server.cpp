@@ -1142,7 +1142,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     AUDIO_INFO_LOG("Client using config: %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
 
     for (auto &usg : config.filterOptions.usages) {
-        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
+        if (usg != STREAM_USAGE_VOICE_COMMUNICATION && usg != STREAM_USAGE_VIDEO_COMMUNICATION) {
             continue;
         }
 
@@ -1216,8 +1216,8 @@ int32_t CapturerInServer::RequestUserPrivacyAuthority(uint32_t sessionId)
             RECORD_CALLBACK_ILLEGAL_STATE, "IStreamListener is nullptr", false),
         "IStreamListener is nullptr");
 
-    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION,
-        IPCSkeleton::GetCallingTokenID())) {
+    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID()) ||
+        PermissionUtil::VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
         hasRequestUserPrivacyAuthority_ = true;
         stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
         AUDIO_INFO_LOG("Has static permission, granted");
