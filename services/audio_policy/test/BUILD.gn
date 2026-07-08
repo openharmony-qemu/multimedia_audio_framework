@@ -4004,6 +4004,16 @@ ohos_unittest("audio_ec_manager_unit_test") {
     "../../../frameworks/native/audioutils:audio_utils",
   ]
 
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines = [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines = [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
+
     sanitize = {
     cfi = true
     cfi_cross_dso = true
