@@ -78,7 +78,6 @@ namespace {
     constexpr int32_t PRO_AUDIO_ENGINE_FLAG = 1;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
-    const int32_t DUP_SESSION_EFFECT_LEN = 4000; // 4000 -> 4000ms
     const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
     const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
@@ -94,22 +93,18 @@ namespace {
     constexpr int32_t SILENT_TYPE_MUTE_SESSION = 1;
     constexpr int32_t FIRST_SOUND_BUFFER = 1;
 
-    size_t GetDupBufferLenMs(bool offloadEnable, bool hasSessionEffect)
+    size_t GetDupBufferLenMs(bool offloadEnable)
     {
         if (offloadEnable) {
             return DUP_OFFLOAD_LEN;
         }
-        if (hasSessionEffect) {
-            return std::max(DUP_COMMON_LEN, DUP_SESSION_EFFECT_LEN);
-        }
         return DUP_COMMON_LEN;
     }
 
-    size_t CalculateDupTotalSizeInFrame(size_t spanSizeInFrame, size_t byteSizePerFrame, bool offloadEnable,
-        bool hasSessionEffect)
+    size_t CalculateDupTotalSizeInFrame(size_t spanSizeInFrame, size_t byteSizePerFrame, bool offloadEnable)
     {
         size_t dupTotalSizeInFrame = spanSizeInFrame *
-            (GetDupBufferLenMs(offloadEnable, hasSessionEffect) / DUP_DEFAULT_LEN);
+            (GetDupBufferLenMs(offloadEnable) / DUP_DEFAULT_LEN);
         if (byteSizePerFrame != 0 && dupTotalSizeInFrame > MAX_INNERCAP_BUFFER_SIZE / byteSizePerFrame) {
             dupTotalSizeInFrame = MAX_INNERCAP_BUFFER_SIZE / byteSizePerFrame;
         }
@@ -491,9 +486,13 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             break;
         case OPERATION_SESSION_EFFECT_ENABLED:
             hasSessionEffect_.store(true);
-            if (engineFlag == PRO_AUDIO_ENGINE_FLAG) {
-                ReConfigDupStreamCallback();
-            }
+            // Session effect suspends inner capture (OtherStreamEnqueue skips it while
+            // hasSessionEffect_ is true). Flush the inner-capture buffers so consumers do not keep
+            // receiving audio captured before the effect was applied. Order matters: store(true)
+            // first to block new enqueues, then flush the backlog. A concurrent OtherStreamEnqueue
+            // that already passed the flag check will re-init (and re-clear) the ring buffer via
+            // InitDupBufferInner (innerCapFirstWriteMap_ is reset to 0), so no stale data remains.
+            FlushInnerCapStreams();
             break;
         case OPERATION_SESSION_EFFECT_DISABLED:
             hasSessionEffect_.store(false);
@@ -571,7 +570,7 @@ void RendererInServer::OnStatusUpdateSubs(IOperation operation)
 void RendererInServer::ReConfigDupStreamCallback()
 {
     size_t dupTotalSizeInFrameTemp = CalculateDupTotalSizeInFrame(dupSpanSizeInFrame_, dupByteSizePerFrame_,
-        offloadEnable_, hasSessionEffect_.load());
+        offloadEnable_);
 
     AUDIO_INFO_LOG("dupTotalSizeInFrameTemp: %{public}zu, dupTotalSizeInFrame_: %{public}zu",
         dupTotalSizeInFrameTemp, dupTotalSizeInFrame_);
@@ -1160,7 +1159,7 @@ int32_t RendererInServer::WriteDataInStaticMode(int8_t *inputData, size_t reques
 
 void RendererInServer::OtherStreamEnqueue(const BufferDesc &bufferDesc)
 {
-    {
+    if (!hasSessionEffect_.load()) {
         // for inner capture
         std::lock_guard<std::mutex> captureLock(dupMutex_);
         for (auto &capInfo : captureInfos_) {
@@ -1781,6 +1780,9 @@ void RendererInServer::FlushInnerCapStreams()
             CHECK_AND_CONTINUE_LOG(innerCapIdToDupStreamCallbackMap_[capInfo.first] != nullptr,
                 "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", capInfo.first);
             innerCapFirstWriteMap_[capInfo.first].store(0);
+            auto &dupRingBuffer = innerCapIdToDupStreamCallbackMap_[capInfo.first]->GetDupRingBuffer();
+            CHECK_AND_CONTINUE(dupRingBuffer != nullptr && hasSessionEffect_);
+            dupRingBuffer->ResetBuffer();
         }
     }
 }
@@ -3047,7 +3049,7 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
         return ERR_INVALID_PARAM;
     }
     dupTotalSizeInFrame_ = CalculateDupTotalSizeInFrame(dupSpanSizeInFrame_, dupByteSizePerFrame_,
-        offloadEnable_, hasSessionEffect_.load());
+        offloadEnable_);
     dupSpanSizeInByte_ = dupSpanSizeInFrame_ * dupByteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(dupSpanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config dup buffer failed");
     AUDIO_INFO_LOG("dupTotalSizeInFrame_: %{public}zu, dupSpanSizeInFrame_: %{public}zu,"
