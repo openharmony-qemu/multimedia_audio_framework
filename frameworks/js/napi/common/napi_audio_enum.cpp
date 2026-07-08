@@ -1603,7 +1603,7 @@ int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_INTERPHONE:
             return NapiAudioEnum::USAGE_INTERPHONE;
         case StreamUsage::STREAM_USAGE_VOICE_ASSISTANT_SYSTEM:
-            return NapiAudioEnum::STREAM_USAGE_VOICE_ASSISTANT_SYSTEM;
+            return NapiAudioEnum::USAGE_VOICE_ASSISTANT_SYSTEM;
 #ifdef MULTI_ALARM_LEVEL
         case StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
             return NapiAudioEnum::USAGE_ANNOUNCEMENT;
