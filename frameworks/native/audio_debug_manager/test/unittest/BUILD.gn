@@ -14,8 +14,7 @@
 import("//build/test.gni")
 import("../../../../../config.gni")
 
-# Module output path for supplementary standard GTest targets
-audio_debug_manager_supplement_output_path = "audio_framework/audio_debug_manager_supplement"
+module_output_path = "audio_framework/audio_framework_route/audio_debug_manager"
 
 # Common includes and flags for standard GTest
 _supplement_include_dirs = [
@@ -51,7 +50,7 @@ _supplement_external_deps = [
 
 ohos_unittest("audio_debug_manager_unit_test") {
   testonly = true
-  module_out_path = audio_debug_manager_supplement_output_path
+  module_out_path = module_output_path
 
   include_dirs = _supplement_include_dirs
   cflags = _supplement_cflags
@@ -70,7 +69,7 @@ ohos_unittest("audio_debug_manager_unit_test") {
 
 ohos_unittest("audio_debug_manager_unit_test_b") {
   testonly = true
-  module_out_path = audio_debug_manager_supplement_output_path
+  module_out_path = module_output_path
 
   include_dirs = _supplement_include_dirs
   cflags = _supplement_cflags
