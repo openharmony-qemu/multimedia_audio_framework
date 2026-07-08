@@ -14,11 +14,11 @@
 import("//build/test.gni")
 import("../../../../../../config.gni")
 
-module_output_path = "audio_framework/audio_framework_route/audio_renderer"
+renderer_module_output_path = "audio_framework/audio_route_renderer/audio_renderer"
 
 ohos_unittest("audio_renderer_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = renderer_module_output_path
   include_dirs = [
     "./include",
     "../../../src",
@@ -77,7 +77,7 @@ ohos_unittest("audio_renderer_unit_test") {
 
 ohos_unittest("audio_fast_renderer_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = renderer_module_output_path
   include_dirs = [
     "./include",
     "../../../../audiorenderer/include",
@@ -128,7 +128,7 @@ ohos_unittest("audio_fast_renderer_unit_test") {
 
 ohos_unittest("renderer_capture_interrupt_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = renderer_module_output_path
   include_dirs = [
     "./include",
     "../../../include",
@@ -179,7 +179,7 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
 
 ohos_unittest("capture_renderer_interrupt_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = renderer_module_output_path
   include_dirs = [
     "./include",
     "../../../include",
@@ -225,7 +225,7 @@ ohos_unittest("capture_renderer_interrupt_unit_test") {
 
 ohos_unittest("audio_renderer_proxy_obj_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = renderer_module_output_path
   include_dirs = [
     "../../../../audiorenderer/include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
@@ -269,7 +269,7 @@ ohos_unittest("audio_renderer_proxy_obj_unit_test") {
 
 ohos_unittest("renderer_in_client_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = renderer_module_output_path
   include_dirs = [
     "./include",
     "../../../../audiorenderer/include",
@@ -320,7 +320,7 @@ ohos_unittest("renderer_in_client_unit_test") {
 
 ohos_unittest("renderer_in_client_second_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = renderer_module_output_path
   include_dirs = [
     "./include",
     "../../../../audiorenderer/include",
@@ -372,7 +372,7 @@ ohos_unittest("renderer_in_client_second_unit_test") {
 
 ohos_unittest("audio_renderer_firstFrame_mock_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = renderer_module_output_path
   include_dirs = [
     "./include",
     "../../../src",
@@ -428,7 +428,7 @@ ohos_unittest("audio_renderer_firstFrame_mock_test") {
 
 ohos_unittest("audio_renderer_extra_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = renderer_module_output_path
   include_dirs = [
     "./include",
     "../../../src",
