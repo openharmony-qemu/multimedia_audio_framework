@@ -4782,18 +4782,18 @@ int32_t AudioPolicyServer::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t 
     return AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);
 }
 
-int32_t AudioPolicyServer::PauseAudioFocusForExtAudioZone()
+int32_t AudioPolicyServer::PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "No system permission");
-    return AudioZoneService::GetInstance().PauseAudioFocusForExtAudioZone();
+    return AudioZoneService::GetInstance().PauseAudioFocusForExtAudioZone(zoneIds);
 }
 
-int32_t AudioPolicyServer::ResumeAudioFocusForExtAudioZone()
+int32_t AudioPolicyServer::ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "No system permission");
-    return AudioZoneService::GetInstance().ResumeAudioFocusForExtAudioZone();
+    return AudioZoneService::GetInstance().ResumeAudioFocusForExtAudioZone(zoneIds);
 }
 
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)

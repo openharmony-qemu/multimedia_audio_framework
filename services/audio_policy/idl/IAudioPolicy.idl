@@ -363,8 +363,8 @@ interface IAudioPolicy {
     void SetSystemVolumeChangeCallbackInfo([in] SystemVolumeFilter filter);
     void RemoveSystemVolumeChangeCallbackInfo([in] SystemVolumeFilter filter);
     void RemoveAllSystemVolumeChangeCallbackInfo();
-    void PauseAudioFocusForExtAudioZone();
-    void ResumeAudioFocusForExtAudioZone();
+    void PauseAudioFocusForExtAudioZone([in] List<int> zoneIds);
+    void ResumeAudioFocusForExtAudioZone([in] List<int> zoneIds);
     void EnableSystemRecordController([in] boolean show, [in] SystemRecordControllerConfig config);
     void GetSystemVolumeDegreeWithDevice([in] int volumeType, [in] int deviceType,
         [in] String networkId, [out] int volumeDegree);
