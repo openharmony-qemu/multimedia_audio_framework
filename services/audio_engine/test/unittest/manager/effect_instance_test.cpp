@@ -40,6 +40,53 @@ static AudioEffectConfig MakeTestConfig()
     return config;
 }
 
+// --- Degenerate-library helpers: cover the null feedInput / getOutput guards ---
+// EffectInstance only checks feedInput/getOutput/command; process is never called.
+
+// No-op command so Init()'s SET_CONFIG call won't dereference a null pointer.
+static int32_t DegenerateCommand(AudioEffectHandle, uint32_t, AudioEffectTransInfo *, AudioEffectTransInfo *)
+{
+    return 0;
+}
+
+static int32_t DegenerateRelease(AudioEffectHandle handle)
+{
+    if (handle == nullptr) {
+        return -1;
+    }
+    delete *handle;
+    delete handle;
+    return 0;
+}
+
+// Single degenerate factory: yields an interface whose command is set (so Init's
+// SET_CONFIG call won't crash) but feedInput AND getOutput are both null. Each guard
+// test (FeedInput / ReadOutput) only checks its own pointer, so one iface covers both.
+static int32_t CreateDegenerateIface(const AudioEffectDescriptor, AudioEffectHandle *handle)
+{
+    auto *iface = new AudioEffectInterface();  // value-init: all pointers null
+    iface->command = DegenerateCommand;        // feedInput / getOutput intentionally left null
+    // AudioEffectHandle = AudioEffectInterface**, so allocate a pointer slot and store its
+    // address into *handle. Two-step form avoids the "new AudioEffectInterface *(iface)"
+    // misread (looks like deref); mirrors FakeAudioEffectLibEntry::FakeCreateEffect.
+    auto **handleSlot = new AudioEffectInterface *(iface);
+    *handle = handleSlot;
+    return 0;
+}
+
+static AudioEffectLibrary MakeDegenerateLib()
+{
+    return AudioEffectLibrary{
+        .version = 1,
+        .name = "DegenerateLib",
+        .implementor = "Test",
+        .checkEffect = nullptr,
+        .createEffect = CreateDegenerateIface,
+        .releaseEffect = DegenerateRelease,
+        .supportEffect = nullptr,
+    };
+}
+
 class EffectInstanceTest : public ::testing::Test {
 protected:
     void SetUp() override
@@ -68,6 +115,34 @@ HWTEST_F(EffectInstanceTest, init_setsStateActive, TestSize.Level0)
 HWTEST_F(EffectInstanceTest, release_setsStateIdle, TestSize.Level0)
 {
     instance_->Init("test_effect", config_);
+    int32_t ret = instance_->Release();
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_EQ(instance_->GetState(), EffectInstance::EffectState::IDLE);
+}
+
+// Smoke: Release() from ERROR state must not crash. The EffectStateToString(ERROR) branch
+// runs indirectly via Release()'s log line; the string is NOT asserted (the helper is a
+// trivial anonymous-namespace switch, not observable from the test).
+HWTEST_F(EffectInstanceTest, release_fromErrorState, TestSize.Level0)
+{
+    instance_->Init("test_effect", config_);
+    instance_->SetState(EffectInstance::EffectState::ERROR);
+
+    int32_t ret = instance_->Release();
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_EQ(instance_->GetState(), EffectInstance::EffectState::IDLE);
+}
+
+// Smoke: Release() from an out-of-range state must not crash. The EffectStateToString
+// default(UNKNOWN) branch runs indirectly via the log line; string NOT asserted
+// (see release_fromErrorState for the rationale).
+HWTEST_F(EffectInstanceTest, release_fromUnknownState, TestSize.Level0)
+{
+    instance_->Init("test_effect", config_);
+    // Cast an out-of-range value to force the default branch of the switch.
+    constexpr auto kInvalidState = static_cast<EffectInstance::EffectState>(0xFF);
+    instance_->SetState(kInvalidState);
+
     int32_t ret = instance_->Release();
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     EXPECT_EQ(instance_->GetState(), EffectInstance::EffectState::IDLE);
@@ -223,6 +298,57 @@ HWTEST_F(EffectInstanceAlgoTest, init_noLib_phase1Behavior, TestSize.Level0)
     EXPECT_EQ(fake_.GetCreateCount(), 0u);
 }
 
+// Init with nullptr library pointer covers the lib==nullptr branch of the 3-arg overload
+HWTEST_F(EffectInstanceAlgoTest, init_nullLib_phase1Behavior, TestSize.Level0)
+{
+    int32_t ret = instance_->Init("test_effect", config_, nullptr);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(instance_->GetState(), EffectInstance::EffectState::ACTIVE);
+    EXPECT_EQ(fake_.GetCreateCount(), 0u);          // no handle created
+    EXPECT_EQ(instance_->GetPreheatFrames(), 0u);   // hasHandle_ stays false
+}
+
+// FeedInput early-returns 0 when the algo's feedInput pointer is null
+HWTEST_F(EffectInstanceAlgoTest, feedInput_nullPtr_earlyReturns, TestSize.Level0)
+{
+    auto lib = MakeDegenerateLib();
+    ASSERT_EQ(instance_->Init("test_effect", config_, &lib), 0);
+
+    float data[4] = {1.0f, 2.0f, 3.0f, 4.0f};
+    int32_t ret = instance_->FeedInput(reinterpret_cast<const uint8_t *>(data), sizeof(data));
+    EXPECT_EQ(ret, 0);                              // null-pointer guard returned 0
+    EXPECT_EQ(instance_->GetInputLevel(), 0u);      // fedBytes_ untouched (no data consumed)
+    EXPECT_EQ(instance_->GetStatsForTest().processErrors, 0);  // guard short-circuits before any stat update
+
+    // ~EffectInstance() is a no-op; Release explicitly so the degenerate handle is freed
+    // (the new AudioEffectInterface + new AudioEffectInterface* from CreateDegenerateIface).
+    instance_->Release();
+}
+
+// ReadOutput early-returns 0 when the algo's getOutput pointer is null
+HWTEST_F(EffectInstanceAlgoTest, readOutput_nullPtr_earlyReturns, TestSize.Level0)
+{
+    auto lib = MakeDegenerateLib();
+    ASSERT_EQ(instance_->Init("test_effect", config_, &lib), 0);
+
+    float out[4] = {};
+    int32_t ret = instance_->ReadOutput(reinterpret_cast<uint8_t *>(out), sizeof(out));
+    EXPECT_EQ(ret, 0);                              // null-pointer guard returned 0
+    EXPECT_EQ(instance_->GetStatsForTest().processErrors, 0);  // guard short-circuits before any stat update
+
+    // ~EffectInstance() is a no-op; Release explicitly so the degenerate handle is freed
+    // (the new AudioEffectInterface + new AudioEffectInterface* from CreateDegenerateIface).
+    instance_->Release();
+}
+
+// DegenerateRelease's null-handle guard is defensive: EffectInstance never passes null
+// (Release() gates on hasHandle_ && effectHandle_ != nullptr), so the branch is only
+// reachable via a direct call. Pin it directly so the branch is honestly covered.
+HWTEST_F(EffectInstanceAlgoTest, degenerateRelease_nullHandle_returnsError, TestSize.Level0)
+{
+    EXPECT_EQ(DegenerateRelease(nullptr), -1);
+}
+
 // Release destroys handle when created with library
 HWTEST_F(EffectInstanceAlgoTest, release_destroysHandle, TestSize.Level0)
 {
@@ -233,6 +359,22 @@ HWTEST_F(EffectInstanceAlgoTest, release_destroysHandle, TestSize.Level0)
 
     instance_->Release();
     EXPECT_EQ(fake_.GetReleaseCount(), 1u);
+    EXPECT_EQ(instance_->GetState(), EffectInstance::EffectState::IDLE);
+}
+
+// Double Release is idempotent on the handle: releaseEffect is called exactly once,
+// so the second Release must NOT call it (guards against double-free if the
+// effectHandle_=nullptr / hasHandle_=false reset in Release() ever regresses).
+HWTEST_F(EffectInstanceAlgoTest, release_twice_callsReleaseEffectOnce, TestSize.Level0)
+{
+    auto lib = fake_.GetLibrary();
+    ASSERT_EQ(instance_->Init("test_effect", config_, &lib), 0);
+
+    instance_->Release();
+    EXPECT_EQ(fake_.GetReleaseCount(), 1u);   // first Release freed the handle
+
+    instance_->Release();
+    EXPECT_EQ(fake_.GetReleaseCount(), 1u);   // second Release is a no-op (hasHandle_ already false)
     EXPECT_EQ(instance_->GetState(), EffectInstance::EffectState::IDLE);
 }
 
