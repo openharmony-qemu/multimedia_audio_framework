@@ -216,5 +216,34 @@ HWTEST(OHAudioBufferUnitTest, PendingSpanSizeMultipleOperations_001, TestSize.Le
     EXPECT_FALSE(buffer->HasPendingSpanSize());
 }
 
+HWTEST(OHAudioBufferUnitTest, UpdateSpanBasicInfo_001, TestSize.Level1)
+{
+    auto buffer = OHAudioBuffer::CreateFromLocal(1024, 256, 4);
+    ASSERT_NE(buffer, nullptr);
+
+    constexpr uint64_t spanSize = 128;
+    constexpr uint64_t totalSizeInFrame = 512;
+    constexpr uint64_t byteSizePerFrame = 8;
+    buffer->UpdateSpanBasicInfo(spanSize, totalSizeInFrame, byteSizePerFrame);
+
+    EXPECT_EQ(buffer->spanBasicInfo_.spanSizeInFrame_, static_cast<uint32_t>(spanSize));
+    EXPECT_EQ(buffer->spanBasicInfo_.spanSizeInByte_, static_cast<size_t>(spanSize * byteSizePerFrame));
+    EXPECT_EQ(buffer->spanBasicInfo_.spanConut_, static_cast<uint32_t>(totalSizeInFrame / spanSize));
+}
+
+HWTEST(OHAudioBufferUnitTest, UpdateSpanBasicInfo_002, TestSize.Level1)
+{
+    auto buffer = OHAudioBuffer::CreateFromLocal(1024, 256, 4);
+    ASSERT_NE(buffer, nullptr);
+
+    constexpr uint64_t totalSizeInFrame = 512;
+    constexpr uint64_t byteSizePerFrame = 8;
+    buffer->UpdateSpanBasicInfo(0, totalSizeInFrame, byteSizePerFrame);
+
+    EXPECT_EQ(buffer->spanBasicInfo_.spanSizeInFrame_, 0);
+    EXPECT_EQ(buffer->spanBasicInfo_.spanSizeInByte_, 0);
+    EXPECT_EQ(buffer->spanBasicInfo_.spanConut_, 0);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

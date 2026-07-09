@@ -339,6 +339,15 @@ void HpaeSourceOutputNode::SetPcEnableState(int32_t val)
 {
     PC_ENABLE_STATE = val;
 }
+
+void HpaeSourceOutputNode::SetNodeInfo(HpaeNodeInfo &nodeInfo)
+{
+    if (nodeInfo.frameLen != GetNodeInfo().frameLen) {
+        sourceOutputData_.resize(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
+        interleveData_.resize(nodeInfo.frameLen * nodeInfo.channels);
+    }
+    HpaeNode::SetNodeInfo(nodeInfo);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

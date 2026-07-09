@@ -420,6 +420,7 @@ public:
     uint64_t GetAndClearPendingSpanSize(uint64_t &engineSize, uint32_t &routeFlag);
     bool HasPendingSpanSize() const;
     void ClearPendingSpanSize();
+    void UpdateSpanBasicInfo(uint64_t spanSize, uint64_t totalSizeInFrame, uint64_t byteSizePerFrame);
 
 private:
     int32_t Init(int dataFd, int infoFd);

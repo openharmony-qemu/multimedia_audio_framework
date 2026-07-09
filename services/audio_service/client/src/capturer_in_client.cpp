@@ -1248,6 +1248,7 @@ bool CapturerInClientInner::ReadCallbackFunc()
     if (!WaitForRunning()) {
         return true;
     }
+    SyncCapturerAttrFromSpan();
 
     // If client didn't call GetBufferDesc/Enqueue in OnReadData, pop will block here.
     BufferDesc temp = cbBufferQueue_.Pop();
@@ -1444,6 +1445,7 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
 {
     Trace trace("CapturerInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
+    SyncCapturerAttrFromSpan();
     if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
         SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
             RECORD_START_ILLEGAL_STATE, "Start failed Illegal state", true, state_);
@@ -1888,7 +1890,7 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
 int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
 {
     Trace trace("CapturerInClientInner::Read " + std::to_string(userSize));
-
+    SyncCapturerAttrFromSpan();
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(userSize < MAX_CLIENT_READ_SIZE && userSize > 0,
         ERR_INVALID_PARAM,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -2539,19 +2541,22 @@ void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrIn
     }
     cacheSizeInByte_ = attr.engineSize;
     if (attr.routeFlag != 0) {
-        capturerInfo_.capturerFlags = static_cast<int32_t>(attr.routeFlag);
         if ((attr.routeFlag & AUDIO_INPUT_FLAG_FAST) == 0) {
             AUDIO_INFO_LOG("NotifyFastStatusChange to NORMAL, sessionId:%{public}u", sessionId_);
+            capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
             NotifyFastStatusChange(FASTSTATUS_NORMAL);
         } else if (attr.routeFlag & AUDIO_INPUT_FLAG_VOIP) {
             AUDIO_INFO_LOG("NotifyFastStatusChange to FAST for VOIP, sessionId:%{public}u", sessionId_);
+            capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
             NotifyFastStatusChange(FASTSTATUS_FAST);
         } else {
             AUDIO_INFO_LOG("NotifyFastStatusChange to FAST, sessionId:%{public}u", sessionId_);
+            capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
             NotifyFastStatusChange(FASTSTATUS_FAST);
         }
         AUDIO_INFO_LOG("Updated capturerFlags to 0x%{public}x", capturerInfo_.capturerFlags);
     }
+    clientBuffer_->UpdateSpanBasicInfo(spanSizeInFrame_, cacheSizeInByte_, sizePerFrameInByte_);
     AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}zu "
         "capturerFlags:0x%{public}x",
         spanSizeInFrame_, clientSpanSizeInByte_, cacheSizeInByte_, capturerInfo_.capturerFlags);

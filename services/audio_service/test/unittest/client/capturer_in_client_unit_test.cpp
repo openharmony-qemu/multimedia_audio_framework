@@ -2781,6 +2781,8 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_InvalidSize_001
     capturerInClientInner->sizePerFrameInByte_ = 4;
     capturerInClientInner->spanSizeInFrame_ = 480;
     capturerInClientInner->clientSpanSizeInByte_ = 1920;
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(1920, 480, 4);
+    ASSERT_NE(capturerInClientInner->clientBuffer_, nullptr);
 
     CapturerAttrInfo attr;
     attr.spanSizeInFrame = 16; // below MIN_SPAN_SIZE(32), invalid
@@ -2793,8 +2795,7 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_InvalidSize_001
     EXPECT_EQ(capturerInClientInner->clientSpanSizeInByte_, 1920);
     // engineSize and routeFlag should still be updated
     EXPECT_EQ(capturerInClientInner->cacheSizeInByte_, 1920);
-    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags,
-        static_cast<int32_t>(AUDIO_INPUT_FLAG_FAST));
+    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags, AUDIO_FLAG_MMAP);
 }
 
 /**
@@ -2808,6 +2809,8 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_FastFlag_001, T
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->sizePerFrameInByte_ = 4;
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(1920, 480, 4);
+    ASSERT_NE(capturerInClientInner->clientBuffer_, nullptr);
 
     CapturerAttrInfo attr;
     attr.spanSizeInFrame = 960;
@@ -2817,8 +2820,10 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_FastFlag_001, T
     capturerInClientInner->RefreshCapturerAttrInfoFromSpan(attr);
     EXPECT_EQ(capturerInClientInner->spanSizeInFrame_, 960);
     EXPECT_EQ(capturerInClientInner->clientSpanSizeInByte_, 3840);
-    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags,
-        static_cast<int32_t>(AUDIO_INPUT_FLAG_FAST));
+    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags, AUDIO_FLAG_MMAP);
+    EXPECT_EQ(capturerInClientInner->clientBuffer_->spanBasicInfo_.spanSizeInFrame_, attr.spanSizeInFrame);
+    EXPECT_EQ(capturerInClientInner->clientBuffer_->spanBasicInfo_.spanSizeInByte_,
+        attr.spanSizeInFrame * capturerInClientInner->sizePerFrameInByte_);
 }
 
 /**
@@ -2832,6 +2837,8 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_VoipFlag_001, T
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->sizePerFrameInByte_ = 4;
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(960, 480, 4);
+    ASSERT_NE(capturerInClientInner->clientBuffer_, nullptr);
 
     CapturerAttrInfo attr;
     attr.spanSizeInFrame = 480;
@@ -2839,8 +2846,7 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_VoipFlag_001, T
     attr.routeFlag = AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP;
 
     capturerInClientInner->RefreshCapturerAttrInfoFromSpan(attr);
-    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags,
-        static_cast<int32_t>(AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP));
+    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags, AUDIO_FLAG_VOIP_FAST);
 }
 
 /**
@@ -2854,6 +2860,8 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_NormalFlag_001,
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->sizePerFrameInByte_ = 4;
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(960, 480, 4);
+    ASSERT_NE(capturerInClientInner->clientBuffer_, nullptr);
 
     CapturerAttrInfo attr;
     attr.spanSizeInFrame = 480;
@@ -2861,8 +2869,7 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_NormalFlag_001,
     attr.routeFlag = AUDIO_INPUT_FLAG_NORMAL;
 
     capturerInClientInner->RefreshCapturerAttrInfoFromSpan(attr);
-    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags,
-        static_cast<int32_t>(AUDIO_INPUT_FLAG_NORMAL));
+    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags, AUDIO_FLAG_NORMAL);
 }
 
 /**
@@ -2876,7 +2883,9 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_ZeroFlag_001, T
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->sizePerFrameInByte_ = 4;
-    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_INPUT_FLAG_NORMAL;
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(960, 480, 4);
+    ASSERT_NE(capturerInClientInner->clientBuffer_, nullptr);
 
     CapturerAttrInfo attr;
     attr.spanSizeInFrame = 480;
@@ -2885,7 +2894,7 @@ HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_ZeroFlag_001, T
 
     capturerInClientInner->RefreshCapturerAttrInfoFromSpan(attr);
     EXPECT_EQ(capturerInClientInner->spanSizeInFrame_, 480);
-    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags, AUDIO_INPUT_FLAG_NORMAL);
+    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags, AUDIO_FLAG_NORMAL);
 }
 
 /**
