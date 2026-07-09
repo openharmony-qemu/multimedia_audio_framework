@@ -40,6 +40,7 @@ ohos_unittest("audio_capturer_unit_test") {
   cflags_cc += [ "-fno-access-control" ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "ipc:ipc_core",
     "c_utils:utils",
     "hilog:libhilog",
@@ -89,6 +90,7 @@ ohos_unittest("inner_capturer_unit_test") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
   ]
@@ -124,6 +126,7 @@ ohos_unittest("audio_fast_capturer_unit_test") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
   ]

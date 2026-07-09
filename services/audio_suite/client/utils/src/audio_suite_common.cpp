@@ -17,6 +17,7 @@
 #include "audio_suite_common.h"
 #include "audio_suite_log.h"
 #include "audio_errors.h"
+#include "securec.h"
 #include <sstream>
 #include <charconv>
 

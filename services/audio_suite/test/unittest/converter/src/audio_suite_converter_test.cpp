@@ -26,6 +26,7 @@
 #include <sstream>
 #include <cstring>
 #include <numeric>
+#include "securec.h"
 
 using namespace testing::ext;
 

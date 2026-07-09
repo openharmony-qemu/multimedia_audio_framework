@@ -29,6 +29,7 @@
 #include "audio_suite_serializer.h"
 #include "audio_hms_space_render_api.h"
 #include "audio_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

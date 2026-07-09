@@ -29,6 +29,7 @@
 #include "audio_performance_monitor.h"
 #include "audio_performance_monitor_c.h"
 #include "../fuzz_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

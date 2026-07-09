@@ -15,6 +15,7 @@
 
 #include "renderer_in_server_third_unit_test.h"
 #include "pro_renderer_stream_impl.h"
+#include "securec.h"
 
 using namespace testing::ext;
 

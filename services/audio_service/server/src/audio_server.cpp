@@ -77,6 +77,7 @@
 #include "audio_system_load_listener.h"
 #ifdef FEATURE_CALL_MANAGER
 #include "call_manager_client.h"
+#include "securec.h"
 #endif
 #ifdef SUPPORT_OLD_ENGINE
 #define PA

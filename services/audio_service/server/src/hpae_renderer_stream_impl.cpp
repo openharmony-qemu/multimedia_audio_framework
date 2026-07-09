@@ -41,6 +41,7 @@
 #include "audio_sink_latency_fetcher.h"
 #include "boot_animation_state_info.h"
 #include "util/id_handler.h"
+#include "securec.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 

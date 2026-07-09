@@ -38,6 +38,7 @@
 #include "capturer_clock_manager.h"
 #include "audio_utils.h"
 #include "audio_stream_enum.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

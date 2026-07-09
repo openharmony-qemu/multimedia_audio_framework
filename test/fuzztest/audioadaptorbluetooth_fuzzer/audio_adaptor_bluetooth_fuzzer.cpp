@@ -26,6 +26,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "sink/i_audio_render_sink.h"
 #include "audio_device_info.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -43,6 +43,7 @@
 #include "audio_effect_volume.h"
 #include "bluetooth_host.h"
 #include "audio_router_select_strategy.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -60,6 +60,7 @@
 #include "stream_dfx_manager.h"
 #include "audio_record_controller.h"
 #include "ipc_skeleton.h"
+#include "securec.h"
 
 
 #undef LOG_DOMAIN

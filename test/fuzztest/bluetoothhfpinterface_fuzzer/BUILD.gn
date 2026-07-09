@@ -45,6 +45,7 @@ ohos_fuzztest("BluetoothHfpInterfaceFuzzTest") {
     "../../../frameworks/native/audioutils:audio_utils",
   ]
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "access_token:libaccesstoken_sdk",
     "bluetooth:btframework",
     "c_utils:utils",

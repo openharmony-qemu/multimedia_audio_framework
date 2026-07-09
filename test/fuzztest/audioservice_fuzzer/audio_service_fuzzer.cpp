@@ -19,6 +19,7 @@
 #include "audio_service.h"
 #include "audio_thread_task.h"
 #include "pro_renderer_stream_impl.h"
+#include "securec.h"
 
 using namespace std;
 

@@ -18,6 +18,7 @@
 #include "audio_zone_client_manager.h"
 #include "audio_zone_service.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 using namespace std;
 
 namespace OHOS {

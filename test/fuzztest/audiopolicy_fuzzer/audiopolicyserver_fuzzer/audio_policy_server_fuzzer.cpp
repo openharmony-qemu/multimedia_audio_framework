@@ -35,6 +35,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "util/id_handler.h"
 #include "bluetooth_host.h"
+#include "securec.h"
 
 using namespace std;
 

@@ -30,6 +30,7 @@
 #include "audio_utils.h"
 #include "volume_tools.h"
 #include "audio_volume.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

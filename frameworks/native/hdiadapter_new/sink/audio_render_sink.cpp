@@ -33,6 +33,7 @@
 #include "adapter/i_device_manager.h"
 #include "audio_stream_enum.h"
 #include "audio_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

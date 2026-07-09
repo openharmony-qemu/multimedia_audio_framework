@@ -25,6 +25,7 @@
 #include "audio_suite_common.h"
 #include "audio_suite_mixer_processor_node.h"
 #include "hpae_format_convert.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

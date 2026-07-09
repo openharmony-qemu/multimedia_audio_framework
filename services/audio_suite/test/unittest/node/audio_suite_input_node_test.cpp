@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 #include "audio_errors.h"
 #include "audio_suite_input_node.h"
+#include "securec.h"
 
 using namespace OHOS;
 using namespace AudioStandard;

@@ -21,6 +21,7 @@
 #include "hpae_loudness_gain_node.h"
 #include "test_case_common.h"
 #include "audio_errors.h"
+#include "securec.h"
 
 using namespace OHOS;
 using namespace AudioStandard;

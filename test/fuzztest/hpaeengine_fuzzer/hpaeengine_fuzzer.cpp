@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <thread>
 #include <chrono>
+#include "securec.h"
 #include "audio_info.h"
 #include "id_handler.h"
 #include "hdi_adapter_manager.h"

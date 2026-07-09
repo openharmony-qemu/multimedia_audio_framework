@@ -28,6 +28,7 @@
 #include "native_audio_suite_base.h"
 #include "native_audio_common.h"
 #include "audio_suite_sa_types.h"
+#include "securec.h"
 
 using OHOS::AudioStandard::OHAudioSuiteDownloadManager;
 

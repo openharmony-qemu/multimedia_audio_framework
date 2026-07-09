@@ -28,6 +28,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "audio_stream_enum.h"
+#include "securec.h"
 
 namespace {
 const std::string DEFAULT_NAME = "multichannel";

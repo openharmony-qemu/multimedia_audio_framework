@@ -16,6 +16,7 @@
 #include "audio_log.h"
 #include "audio_microphone_descriptor.h"
 #include "audio_router_map.h"
+#include "securec.h"
 
 using namespace std;
 

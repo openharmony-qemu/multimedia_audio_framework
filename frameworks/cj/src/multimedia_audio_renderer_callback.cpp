@@ -16,6 +16,7 @@
 #include "multimedia_audio_renderer_callback.h"
 
 #include "multimedia_audio_common.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

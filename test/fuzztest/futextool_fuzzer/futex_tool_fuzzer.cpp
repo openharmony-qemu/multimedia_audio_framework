@@ -44,6 +44,7 @@
 #include "audio_effect_volume.h"
 #include "futex_tool.h"
 #include "format_converter.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

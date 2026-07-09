@@ -25,6 +25,7 @@
 #include "hpae_virtual_capturer_manager.h"
 #include "hpae_source_output_node.h"
 #include "audio_engine_log.h"
+#include "securec.h"
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
 

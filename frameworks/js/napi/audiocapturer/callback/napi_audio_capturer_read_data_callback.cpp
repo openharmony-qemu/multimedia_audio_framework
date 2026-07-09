@@ -24,6 +24,7 @@
 #include <cstring>
 #include <memory>
 #include <new>
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

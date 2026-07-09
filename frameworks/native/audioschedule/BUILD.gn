@@ -45,6 +45,7 @@ ohos_shared_library("audio_schedule") {
   deps = [ "../audioutils:audio_utils" ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
@@ -93,6 +94,7 @@ ohos_unittest("audioschedule_unit_test") {
   defines = []
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "googletest:gmock",
     "googletest:gtest",
     "hilog:libhilog",

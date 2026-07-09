@@ -38,6 +38,7 @@
 #include "audio_info.h"
 #include "bluetooth_host.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

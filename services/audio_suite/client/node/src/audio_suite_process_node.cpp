@@ -24,6 +24,7 @@
 #include "media_monitor_manager.h"
 #include "media_monitor_info.h"
 #include "audio_suite_log.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
