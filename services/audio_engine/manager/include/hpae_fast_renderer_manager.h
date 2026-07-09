@@ -134,6 +134,7 @@ private:
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
     int32_t InitSinkInner(bool isReload = false);
+    int32_t StartFastSinkAfterInit();
     void UpdateAppsUid();
     void RemoveNodeFromMap(uint32_t sessionId);
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
