@@ -503,6 +503,7 @@ public:
     int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute);
     void ReEvaluateVoipBypassByAppMuteHint();
     void SetFirstScreenOn();
+    bool IsFirstScreenOn() const { return isFirstScreenOn_.load(); }
     bool IsDupDeviceChange(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void FetchOutputDupDevice(std::string caller, uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
@@ -972,7 +973,7 @@ private:
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
     };
-    bool isFirstScreenOn_ = false;
+    std::atomic<bool> isFirstScreenOn_ = false;
     bool isCreateProcess_ = false;
     std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
     std::unordered_map<uint32_t, SourceType> sessionSourceTypeMap_;
