@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -133,7 +133,9 @@ int32_t HpaeFastRendererManager::DisConnectInputCluster(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(sinkInputNode != nullptr, ERROR, "node not found");
     auto gainNode = SafeGetMap(gainNodeMap_, sessionId);
     auto converter = SafeGetMap(converterNodeMap_, sessionId);
-
+    CHECK_AND_RETURN_RET_LOG(gainNode != nullptr, ERROR, "gainNode not found");
+    CHECK_AND_RETURN_RET_LOG(converter != nullptr, ERROR, "converter not found");
+    CHECK_AND_RETURN_RET_LOG(mixerNode_ != nullptr, ERROR, "mixerNode_ not found");
     converter->DisConnect(sinkInputNode);
     gainNode->DisConnect(converter);
     mixerNode_->DisConnect(gainNode);
@@ -222,7 +224,7 @@ void HpaeFastRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSink
     }
     const auto outNodeInfo = sinkOutputNode_->GetNodeInfo();
     bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
-    AUDIO_INFO_LOG("[FinishMode] session:%{public}u sinkSpanUpdated:%{public}d inputFrameLenAdjusted:%{public}d "
+    AUDIO_INFO_LOG("[FinishMove] session:%{public}u sinkSpanUpdated:%{public}d inputFrameLenAdjusted:%{public}d "
         "newFrameLen:%{public}u", sessionId, spanSizeUpdated, frameLenAdjusted, nodeInfo.frameLen);
     node->SetNodeInfo(nodeInfo);
     node->SetIsLowLatency(true);
