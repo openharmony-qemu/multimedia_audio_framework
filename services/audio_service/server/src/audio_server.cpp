@@ -164,6 +164,7 @@ constexpr int64_t RENDER_DETECTION_CYCLE_NS = 10000000000;
 constexpr int32_t RENDER_BAD_FRAMES_RATIO = 100;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
+constexpr uint32_t PLAYBACK_CAPTURE_MODE_ONLY_VOIP = 0x4000;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -2580,6 +2581,10 @@ bool AudioServer::HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
     const AudioPlaybackCaptureConfig &filterConfig)
 {
     if (resetConfig.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        if (filterConfig.filterOptions.playbackCaptureMode == PLAYBACK_CAPTURE_MODE_ONLY_VOIP) {
+            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), false,
+                "Check permission failed, no system permission");
+        }
         int32_t innerCapId = 0;
         if (InnerCheckCaptureLimit(filterConfig, innerCapId) == SUCCESS) {
             resetConfig.innerCapId = innerCapId;

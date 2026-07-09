@@ -1177,6 +1177,7 @@ struct CaptureFilterOptions {
     FilterMode pidFilterMode {FilterMode::INCLUDE};
     bool capturePrivatePrivacyStreams = false;
     int32_t playbackCaptureUid = PLAYBACKCAPTURER_RECORD_ALL;
+    int32_t playbackCaptureMode = 0;
 
     CaptureFilterOptions() = default;
     CaptureFilterOptions(const std::vector<StreamUsage> &usage, FilterMode uFilterMode,
@@ -1197,7 +1198,8 @@ struct CaptureFilterOptions {
         return (filter.usages == usages && filter.usageFilterMode == usageFilterMode
             && filter.pids == pids && filter.pidFilterMode == pidFilterMode
             && filter.capturePrivatePrivacyStreams == capturePrivatePrivacyStreams &&
-            filter.playbackCaptureUid == playbackCaptureUid);
+            filter.playbackCaptureUid == playbackCaptureUid &&
+            filter.playbackCaptureMode == playbackCaptureMode);
     }
 };
 
@@ -1245,6 +1247,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
         parcel.WriteUint32(filterOptions.pidFilterMode);
         parcel.WriteBool(filterOptions.capturePrivatePrivacyStreams);
         parcel.WriteInt32(filterOptions.playbackCaptureUid);
+        parcel.WriteInt32(filterOptions.playbackCaptureMode);
 
         // silentCapture
         parcel.WriteBool(silentCapture);
@@ -1257,6 +1260,7 @@ private:
     {
         config->filterOptions.capturePrivatePrivacyStreams = parcel.ReadBool();
         config->filterOptions.playbackCaptureUid = parcel.ReadInt32();
+        config->filterOptions.playbackCaptureMode = parcel.ReadInt32();
         // silentCapture
         config->silentCapture = parcel.ReadBool();
         config->isModernInnerCapturer = parcel.ReadBool();

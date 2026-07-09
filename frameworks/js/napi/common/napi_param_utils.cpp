@@ -954,6 +954,7 @@ static napi_status GetPlaybackCaptureMode(const napi_env &env, AudioCapturerOpti
 
     opts->capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
     InitPlaybackCaptureConfig(opts->playbackCaptureConfig, static_cast<uint32_t>(mode));
+    opts->playbackCaptureConfig.filterOptions.playbackCaptureMode = mode;
     bool hasPlaybackCaptureUid = false;
     napi_status status = napi_has_named_property(env, in, "playbackCaptureUid", &hasPlaybackCaptureUid);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetPlaybackCaptureMode has playbackCaptureUid failed");

@@ -251,6 +251,7 @@ static int32_t GetPlaybackCaptureMode(OHOS::AudioStandard::AudioCapturerOptions 
 
     opts->capturerInfo.sourceType = OHOS::AudioStandard::SOURCE_TYPE_PLAYBACK_CAPTURE;
     InitPlaybackCaptureConfig(opts->playbackCaptureConfig, static_cast<uint32_t>(mode));
+    opts->playbackCaptureConfig.filterOptions.playbackCaptureMode = mode;
     CHECK_AND_RETURN_RET(options.playbackCaptureUid.has_value(), AUDIO_OK);
     opts->playbackCaptureConfig.filterOptions.playbackCaptureUid = options.playbackCaptureUid.value();
     return AUDIO_OK;
