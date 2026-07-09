@@ -337,12 +337,12 @@ int32_t AudioSuiteSystemNode::DoProcess(AudioMetaFrame &metaFrame,
     AUDIO_DEBUG_LOG("inputDataSize:%{public}d, metaDataSize:%{public}d", responseInAudioSize, *((int32_t *)ptr));
     ptr += META_DATA_LEN_SIZE;
     errno_t err = memcpy_s(ptr, inData_.size() - META_DATA_LEN_SIZE, metaFrame_.metaData, responseInMetaSize);
-    CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memcpy_s meta data failed, ret=%{public}d, size=%{public}u, "
+    CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memcpy_s meta data failed, ret=%{public}d, size=%{public}zu, "
         "count=%{public}d", err, inData_.size() - META_DATA_LEN_SIZE, responseInMetaSize);
     ptr += responseInMetaSize;
     err = memcpy_s(ptr, inData_.size() - META_DATA_LEN_SIZE - responseInMetaSize,
         metaFrame_.audioData, responseInAudioSize);
-    CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memcpy_s audio data failed, ret=%{public}d, size=%{public}u, "
+    CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memcpy_s audio data failed, ret=%{public}d, size=%{public}zu, "
         "count=%{public}d", err, inData_.size() - META_DATA_LEN_SIZE - responseInMetaSize, responseInAudioSize);
     
     ret = effectChain_->Process(inData_.data(), inputDataSize, outData_.data(), outData_.size());
@@ -351,7 +351,7 @@ int32_t AudioSuiteSystemNode::DoProcess(AudioMetaFrame &metaFrame,
     *responseMetaSize = *((int32_t *)ptr);
     ptr += META_DATA_LEN_SIZE;
     *responseAudioSize = static_cast<int32_t>(outAudioDataSize_);
-    AUDIO_DEBUG_LOG("output outsize:%{public}u, audio data:%{public}d, metaDataSize:%{public}d",
+    AUDIO_DEBUG_LOG("output outsize:%{public}zu, audio data:%{public}d, metaDataSize:%{public}d",
         outData_.size(), *responseAudioSize, *responseMetaSize);
     CHECK_AND_RETURN_RET_LOG(static_cast<int>(outData_.size()) >= *responseMetaSize +
         META_DATA_LEN_SIZE + *responseAudioSize, ERR_INVALID_PARAM, "responseMetaSize error");
