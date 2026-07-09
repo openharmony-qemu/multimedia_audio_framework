@@ -696,7 +696,12 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo()
         AudioPipeRole currentRole = PIPE_ROLE_NONE;
         for (auto &pipeInfo : adapterInfoIt.second->pipeInfos) {
 #ifdef MULTI_BUS_ENABLE
-            CHECK_AND_CONTINUE(!pipeInfo->paProp_.busAddress_.empty());
+            if (adapterInfoIt.first == AudioAdapterType::TYPE_PRIMARY) {
+                (void)currentRole;
+                CHECK_AND_CONTINUE(!pipeInfo->paProp_.busAddress_.empty());
+            } else {
+                CHECK_AND_CONTINUE(currentRole != pipeInfo->role_);
+            }
 #else
             CHECK_AND_CONTINUE(currentRole != pipeInfo->role_);
 #endif

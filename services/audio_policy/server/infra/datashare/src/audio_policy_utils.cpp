@@ -478,6 +478,13 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
 {
     if (desc.networkId_ == LOCAL_NETWORK_ID) {
 #ifdef MULTI_BUS_ENABLE
+        if (desc.deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO ||
+            desc.deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP ||
+            desc.deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+            AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+            streamCollector_.GetPipeType(sessionId, pipeType);
+            return GetSinkPortName(desc.deviceType_, pipeType);
+        }
         return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
 #else
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
@@ -493,6 +500,13 @@ std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor>
 {
     if (desc->networkId_ == LOCAL_NETWORK_ID) {
 #ifdef MULTI_BUS_ENABLE
+        if (desc->deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO ||
+            desc->deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP ||
+            desc->deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+            AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+            streamCollector_.GetPipeType(sessionId, pipeType);
+            return GetSinkPortName(desc->deviceType_, pipeType);
+        }
         return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
 #else
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;

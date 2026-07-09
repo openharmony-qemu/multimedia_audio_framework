@@ -24,6 +24,7 @@
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
 #include "audio_core_service.h"
+#include "audio_bus_selector.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
@@ -781,7 +782,7 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
 {
     // Vehicle system scenario enter
     CHECK_AND_RETURN_LOG(desc != nullptr, "StreamDesc is null, none streamProp");
-    if (desc->audioMode_ == AUDIO_MODE_RECORD) {
+    if (desc->audioMode_ == AUDIO_MODE_RECORD || !AudioBusSelector::GetBusSelector().IsSpeaker(desc)) {
         GetStreamPropInfo(desc, info);
         return;
     }

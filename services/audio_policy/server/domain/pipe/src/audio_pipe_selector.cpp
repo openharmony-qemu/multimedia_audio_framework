@@ -665,10 +665,13 @@ void AudioPipeSelector::HandleFindMatchPipe(
     std::vector<std::shared_ptr<AudioPipeInfo>>::iterator &matchPipeIter)
 {
 #ifdef MULTI_BUS_ENABLE
-    std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
+    if (AudioBusSelector::GetBusSelector().IsSpeaker(streamDesc)) {
+        std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
         // Vehicle system scenario enter.
-    HandleFindBusPipe(busAddresses, newPipeInfoList, streamDesc, matchPipeIter);
-#else
+        HandleFindBusPipe(busAddresses, newPipeInfoList, streamDesc, matchPipeIter);
+        return;
+    }
+#endif
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     std::string streamDescAdapterName{};
     std::string pipeName{};
@@ -689,7 +692,6 @@ void AudioPipeSelector::HandleFindMatchPipe(
                                  [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
                                      return IsPipeMatch(streamDesc, newPipeInfo, streamDescAdapterName, pipeName);
                                 });
-#endif
 }
 
 // add streamDescs to prefer newPipe based on final routeFlag, create newPipe if needed
@@ -1870,6 +1872,9 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
                         pipeInfo->audioStreamInfo_.samplingRate, streamPropInfo->sampleRate_);
 
 #ifdef MULTI_BUS_ENABLE
+        if (!AudioBusSelector::GetBusSelector().IsSpeaker(streamDesc)) {
+            CHECK_AND_CONTINUE(IsPipeMatch(streamDesc, pipeInfo, adapterInfoPtr->adapterName, pipeInfoPtr->name_));
+        }
         CHECK_AND_CONTINUE(pipeInfo->adapterName_ == adapterInfoPtr->adapterName &&
                                pipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
                                pipeInfo->audioStreamInfo_.channels == streamPropInfo->channels_);
@@ -1982,6 +1987,9 @@ bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor>
     // Use networkId to distinguish multiple remote devices that may exist
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
 #ifdef MULTI_BUS_ENABLE
+    if (!AudioBusSelector::GetBusSelector().IsSpeaker(streamDesc)) {
+       CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID, true);
+    }
     CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->macAddress_ != pipeInfo->moduleInfo_.busAddress, true);
 #endif
     CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID, true);
