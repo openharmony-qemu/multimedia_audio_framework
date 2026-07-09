@@ -1216,7 +1216,7 @@ int32_t CapturerInServer::RequestUserPrivacyAuthority(uint32_t sessionId)
             RECORD_CALLBACK_ILLEGAL_STATE, "IStreamListener is nullptr", false),
         "IStreamListener is nullptr");
 
-    Security::AccessToken::AccessTokenID tokenId = IPCSkeleton::GetCallingTokenID();
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, tokenId) ||
         PermissionUtil::VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, tokenId)) {
         hasRequestUserPrivacyAuthority_ = true;
