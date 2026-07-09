@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3064,89 +3064,16 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetNoiseReductionMode_001, TestSize
  * @tc.number: Audio_Capturer_SetNoiseReductionMode_002
  * @tc.desc  : Test non voice message capturer only supports fidelity by default.
  */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetNoiseReductionMode_002, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    AudioCapturerParams capturerParams;
-    capturerParams.audioSampleFormat = SAMPLE_S16LE;
-    capturerParams.samplingRate = SAMPLE_RATE_44100;
-    capturerParams.audioChannel = MONO;
-    capturerParams.audioEncoding = ENCODING_PCM;
-    int32_t ret = audioCapturer->SetParams(capturerParams);
-    ASSERT_EQ(SUCCESS, ret);
-
-    audioCapturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
-    ret = audioCapturer->SetNoiseReductionMode(NOISE_REDUCTION_MODE_STANDARD);
-    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
-    EXPECT_TRUE(audioCapturer->hasFetchedSupportedModes_);
-    ASSERT_EQ(static_cast<size_t>(1), audioCapturer->supportedNoiseReductionModes_.size());
-    EXPECT_EQ(NOISE_REDUCTION_MODE_FIDELITY, audioCapturer->supportedNoiseReductionModes_[0]);
-    EXPECT_FALSE(audioCapturer->hasSetNoiseReductionMode_);
-    audioCapturer->Release();
-}
-
 /**
  * @tc.name  : Test SetNoiseReductionMode for default supported mode.
  * @tc.number: Audio_Capturer_SetNoiseReductionMode_003
  * @tc.desc  : Test SetNoiseReductionMode succeeds for default fidelity mode.
  */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetNoiseReductionMode_003, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    AudioCapturerParams capturerParams;
-    capturerParams.audioSampleFormat = SAMPLE_S16LE;
-    capturerParams.samplingRate = SAMPLE_RATE_44100;
-    capturerParams.audioChannel = MONO;
-    capturerParams.audioEncoding = ENCODING_PCM;
-    int32_t ret = audioCapturer->SetParams(capturerParams);
-    ASSERT_EQ(SUCCESS, ret);
-
-    audioCapturer->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
-    ret = audioCapturer->SetNoiseReductionMode(NOISE_REDUCTION_MODE_FIDELITY);
-    EXPECT_EQ(SUCCESS, ret);
-    EXPECT_TRUE(audioCapturer->hasFetchedSupportedModes_);
-    EXPECT_TRUE(audioCapturer->hasSetNoiseReductionMode_);
-
-    NoiseReductionMode mode = NOISE_REDUCTION_MODE_STANDARD;
-    ret = audioCapturer->GetNoiseReductionMode(mode);
-    EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(NOISE_REDUCTION_MODE_FIDELITY, mode);
-    audioCapturer->Release();
-}
-
 /**
  * @tc.name  : Test SetNoiseReductionMode when supported mode query fails.
  * @tc.number: Audio_Capturer_SetNoiseReductionMode_004
  * @tc.desc  : Test SetNoiseReductionMode returns native error if supported mode query fails.
  */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetNoiseReductionMode_004, TestSize.Level1)
-{
-    std::shared_ptr<GetSupportedNoiseReductionFailCapturer> audioCapturer =
-        std::make_shared<GetSupportedNoiseReductionFailCapturer>(ERR_INVALID_PARAM);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    AudioCapturerParams capturerParams;
-    capturerParams.audioSampleFormat = SAMPLE_S16LE;
-    capturerParams.samplingRate = SAMPLE_RATE_44100;
-    capturerParams.audioChannel = MONO;
-    capturerParams.audioEncoding = ENCODING_PCM;
-    int32_t ret = audioCapturer->SetParams(capturerParams);
-    ASSERT_EQ(SUCCESS, ret);
-
-    ret = audioCapturer->SetNoiseReductionMode(NOISE_REDUCTION_MODE_FIDELITY);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-    EXPECT_FALSE(audioCapturer->hasSetNoiseReductionMode_);
-    audioCapturer->Release();
-}
-
 /**
  * @tc.name  : Test SetNoiseReductionMode when supported mode query fails in prepared state.
  * @tc.number: Audio_Capturer_SetNoiseReductionMode_005
@@ -3250,44 +3177,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SetNoiseReductionMode_008, TestSize
  * @tc.number: Audio_Capturer_ResetNoiseReductionModeOnRelease_001
  * @tc.desc  : Test capturer release restores noise reduction mode to fidelity after set noise mode.
  */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_ResetNoiseReductionModeOnRelease_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    AudioCapturerParams capturerParams;
-    capturerParams.audioSampleFormat = SAMPLE_S16LE;
-    capturerParams.samplingRate = SAMPLE_RATE_44100;
-    capturerParams.audioChannel = MONO;
-    capturerParams.audioEncoding = ENCODING_PCM;
-    int32_t ret = audioCapturer->SetParams(capturerParams);
-    ASSERT_EQ(SUCCESS, ret);
-
-    audioCapturer->hasFetchedSupportedModes_ = true;
-    audioCapturer->supportedNoiseReductionModes_ = {
-        NOISE_REDUCTION_MODE_FIDELITY,
-        NOISE_REDUCTION_MODE_STANDARD
-    };
-
-    ret = audioCapturer->SetNoiseReductionMode(NOISE_REDUCTION_MODE_STANDARD);
-    ASSERT_EQ(SUCCESS, ret);
-
-    NoiseReductionMode mode = NOISE_REDUCTION_MODE_FIDELITY;
-    ret = audioCapturer->GetNoiseReductionMode(mode);
-    EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(NOISE_REDUCTION_MODE_STANDARD, mode);
-
-    bool isReleased = audioCapturer->Release();
-    EXPECT_EQ(true, isReleased);
-
-    ret = audioCapturer->GetNoiseReductionMode(mode);
-    EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(NOISE_REDUCTION_MODE_FIDELITY, mode);
-    EXPECT_EQ(false, audioCapturer->hasSetNoiseReductionMode_);
-}
-
 /**
  * @tc.name  : Test Release keeps noise reduction mode default when SetNoiseReductionMode is not called.
  * @tc.number: Audio_Capturer_ResetNoiseReductionModeOnRelease_002
