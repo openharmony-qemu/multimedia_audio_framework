@@ -683,6 +683,20 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToGroupInfo(
     }
 }
 
+bool AudioPolicyConfigParser::ValidatePipeInfo(AudioAdapterType adapterType, uint32_t currentRole,
+                                               const AdapterPipeInfo &pipeInfo)
+{
+#ifdef MULTI_BUS_ENABLE
+    if (adapterType == AudioAdapterType::TYPE_PRIMARY) {
+        return !pipeInfo.paProp_.busAddress_.empty();
+    } else {
+        return currentRole != pipeInfo.role_;
+    }
+#else
+    return currentRole != pipeInfo.role_;
+#endif
+}
+
 void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo()
 {
     AudioPolicyConfigData &config = AudioPolicyConfigData::GetInstance();
@@ -695,16 +709,9 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo()
 
         AudioPipeRole currentRole = PIPE_ROLE_NONE;
         for (auto &pipeInfo : adapterInfoIt.second->pipeInfos) {
-#ifdef MULTI_BUS_ENABLE
-            if (adapterInfoIt.first == AudioAdapterType::TYPE_PRIMARY) {
-                (void)currentRole;
-                CHECK_AND_CONTINUE(!pipeInfo->paProp_.busAddress_.empty());
-            } else {
-                CHECK_AND_CONTINUE(currentRole != pipeInfo->role_);
+            if (!ValidatePipeInfo(adapterInfoIt.first, currentRole, *pipeInfo)) {
+                continue;
             }
-#else
-            CHECK_AND_CONTINUE(currentRole != pipeInfo->role_);
-#endif
             currentRole = pipeInfo->role_;
             CHECK_AND_CONTINUE_LOG(pipeInfo->name_.find(MODULE_SINK_OFFLOAD) == std::string::npos,
                 "skip offload out sink.");

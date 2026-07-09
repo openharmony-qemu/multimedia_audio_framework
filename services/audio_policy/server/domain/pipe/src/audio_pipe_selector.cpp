@@ -666,7 +666,8 @@ void AudioPipeSelector::HandleFindMatchPipe(
 {
 #ifdef MULTI_BUS_ENABLE
     if (AudioBusSelector::GetBusSelector().IsSpeaker(streamDesc)) {
-        std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
+        std::vector<std::string> busAddresses =
+            AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
         // Vehicle system scenario enter.
         HandleFindBusPipe(busAddresses, newPipeInfoList, streamDesc, matchPipeIter);
         return;
@@ -1988,7 +1989,7 @@ bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor>
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
 #ifdef MULTI_BUS_ENABLE
     if (!AudioBusSelector::GetBusSelector().IsSpeaker(streamDesc)) {
-       CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID, true);
+        CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID, true);
     }
     CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->macAddress_ != pipeInfo->moduleInfo_.busAddress, true);
 #endif
