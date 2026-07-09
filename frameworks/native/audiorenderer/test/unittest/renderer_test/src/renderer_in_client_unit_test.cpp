@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -485,7 +485,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_007, TestSize.Level1
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
 
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
-
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -1307,7 +1306,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_045, TestSize.Level1
     ptrRendererInClientInner->curStreamParams_.samplingRate = 1;
     ptrRendererInClientInner->offloadStartReadPos_ = 0;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
-
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -1345,7 +1343,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_046, TestSize.Level1
     ptrRendererInClientInner->curStreamParams_.samplingRate = 1;
     ptrRendererInClientInner->offloadStartReadPos_ = 0;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
-
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -1383,7 +1380,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_047, TestSize.Level1
     ptrRendererInClientInner->curStreamParams_.samplingRate = 1;
     ptrRendererInClientInner->offloadStartReadPos_ = 1;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
-
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -3130,9 +3126,8 @@ HWTEST(RendererInClientInnerUnitTest, CheckStaticAndOperate_001, TestSize.Level4
 {
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
-
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     ptrRendererInClientInner->rendererInfo_.isStatic = true;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 0, 0);
     ptrRendererInClientInner->clientBuffer_->SetStaticMode(true);
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
@@ -4024,7 +4019,6 @@ HWTEST(RendererInClientNewUnitTest, GetFastStatus_Normal_001, TestSize.Level1)
 HWTEST(RendererInClientNewUnitTest, SyncRendererAttrFromSpan_NoPending_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 100;
     uint32_t byteSizePerFrame = 4;
     rendererInClientInner->clientBuffer_ =
@@ -4044,7 +4038,6 @@ HWTEST(RendererInClientNewUnitTest, SyncRendererAttrFromSpan_NoPending_001, Test
 HWTEST(RendererInClientNewUnitTest, SyncRendererAttrFromSpan_VoipFlag_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 100;
     uint32_t byteSizePerFrame = 4;
     rendererInClientInner->clientBuffer_ =
@@ -4101,7 +4094,6 @@ HWTEST(RendererInClientNewUnitTest, CheckRendererAttrInfoFromSpan_NullBuffer_001
 HWTEST(RendererInClientNewUnitTest, CheckRendererAttrInfoFromSpan_NoPending_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     rendererInClientInner->clientBuffer_ =
         OHAudioBufferBase::CreateFromLocal(100, 4);
 
@@ -4119,7 +4111,6 @@ HWTEST(RendererInClientNewUnitTest, CheckRendererAttrInfoFromSpan_NoPending_001,
 HWTEST(RendererInClientNewUnitTest, CheckRendererAttrInfoFromSpan_Valid_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     rendererInClientInner->clientBuffer_ =
         OHAudioBufferBase::CreateFromLocal(100, 4);
 
@@ -4257,7 +4248,6 @@ HWTEST(RendererInClientNewUnitTest, RefreshRendererAttrInfoFromSpan_ZeroFlag_001
 HWTEST(RendererInClientNewUnitTest, JudgeFastStreamByRendererAttr_Fast_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     rendererInClientInner->clientBuffer_ =
         OHAudioBufferBase::CreateFromLocal(100, 4);
     rendererInClientInner->sizePerFrameInByte_ = 4;
@@ -4277,7 +4267,6 @@ HWTEST(RendererInClientNewUnitTest, JudgeFastStreamByRendererAttr_Fast_001, Test
 HWTEST(RendererInClientNewUnitTest, JudgeFastStreamByRendererAttr_Normal_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     rendererInClientInner->clientBuffer_ =
         OHAudioBufferBase::CreateFromLocal(100, 4);
 
@@ -5021,7 +5010,6 @@ HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_002, TestSize.Level1
 HWTEST(RendererInClientPublicNewUnitTest, OnOperationHandled_UpdateSpanSize_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     rendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(100, 4);
     rendererInClientInner->ipcStream_ = new IpcStreamMock();
     int32_t notifyCount = 0;
