@@ -1216,8 +1216,9 @@ int32_t CapturerInServer::RequestUserPrivacyAuthority(uint32_t sessionId)
             RECORD_CALLBACK_ILLEGAL_STATE, "IStreamListener is nullptr", false),
         "IStreamListener is nullptr");
 
-    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID()) ||
-        PermissionUtil::VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
+    Security::AccessToken::AccessTokenID tokenId = IPCSkeleton::GetCallingTokenID();
+    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, tokenId) ||
+        PermissionUtil::VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, tokenId)) {
         hasRequestUserPrivacyAuthority_ = true;
         stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
         AUDIO_INFO_LOG("Has static permission, granted");
