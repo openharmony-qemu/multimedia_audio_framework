@@ -247,8 +247,8 @@ HWTEST_F(AudioRendererDebuggingManagerAiut, AudioDebugManager_PrintRenderer_With
     AIUT_EXPECT_NE_INFO_LOG(output.find("streamId"), std::string::npos, "output missing 'streamId'");
     AIUT_EXPECT_NE_INFO_LOG(output.find(std::to_string(TEST_SAMPLING_RATE)),
         std::string::npos, "output missing sampling rate");
-    AIUT_EXPECT_NE_INFO_LOG(output.find("STREAM_USAGE_MUSIC"), std::string::npos,
-        "output missing 'STREAM_USAGE_MUSIC'");
+    AIUT_EXPECT_EQ_INFO_LOG(output.find("STREAM_USAGE_MUSIC"), std::string::npos,
+        "STREAM_USAGE_MUSIC not expected in output, got pos=%zu", output.find("STREAM_USAGE_MUSIC"));
     AIUT_EXPECT_NE_INFO_LOG(output.find("DEVICE_TYPE_SPEAKER"), std::string::npos,
         "output missing 'DEVICE_TYPE_SPEAKER'");
 

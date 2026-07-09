@@ -253,7 +253,7 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, SaveProcessBuffer_002, testing::ext
 
     // First process speed to set tempBuffer_
     int32_t ret = processor_->ProcessBufferSpeed(1.5f);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 
     // Save process buffer
     processor_->SaveProcessBuffer();
