@@ -96,7 +96,7 @@ private:
     bool IsSessionDefaultDeviceEnabled();
     bool IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &streamUsage);
     int32_t callerPid_;
-    int32_t callerUid_;
+    int32_t callerUid_{SYSTEM_UID};
     bool needToFetch_ = false;
     AudioSessionStrategy strategy_ {AudioConcurrencyMode::INVALID};
     AudioSessionStateMonitor &audioSessionStateMonitor_;
