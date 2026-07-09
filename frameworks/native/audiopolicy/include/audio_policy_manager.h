@@ -626,9 +626,9 @@ public:
 
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId);
 
-    int32_t PauseAudioFocusForExtAudioZone();
+    int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
 
-    int32_t ResumeAudioFocusForExtAudioZone();
+    int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
 
     void SetZoneDeviceVisible(bool visible);
 

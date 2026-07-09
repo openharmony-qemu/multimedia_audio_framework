@@ -1645,15 +1645,17 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     return SUCCESS;
 }
 
-int32_t AudioInterruptService::PauseAudioFocusForExtAudioZone()
+int32_t AudioInterruptService::PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    for (auto &[zoneId, audioInterruptZone] : zonesMap_) {
+    for (auto zoneId : zoneIds) {
         CHECK_AND_CONTINUE_LOG(zoneId != ZONEID_DEFAULT, "skip default audio zone");
-        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
-        for (auto iter = audioInterruptZone->audioFocusInfoList.begin();
-            iter != audioInterruptZone->audioFocusInfoList.end(); ++iter) {
+        auto itZone = zonesMap_.find(zoneId);
+        CHECK_AND_CONTINUE_LOG(itZone != zonesMap_.end(), "zone %{public}d is not found", zoneId);
+        CHECK_AND_CONTINUE_LOG(itZone->second != nullptr, "audioInterruptZone is nullptr");
+        for (auto iter = itZone->second->audioFocusInfoList.begin();
+            iter != itZone->second->audioFocusInfoList.end(); ++iter) {
             CHECK_AND_CONTINUE(IsAudioStreamActive(iter->second));
             bool removeFocusInfo = false;
             SendInterruptEvent(iter->second, AudioFocuState::PAUSE, iter, removeFocusInfo);
@@ -1664,12 +1666,15 @@ int32_t AudioInterruptService::PauseAudioFocusForExtAudioZone()
     return SUCCESS;
 }
 
-int32_t AudioInterruptService::ResumeAudioFocusForExtAudioZone()
+int32_t AudioInterruptService::ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (const auto &[zoneId, audioInterruptZone] : zonesMap_) {
-        CHECK_AND_CONTINUE(zoneId != ZONEID_DEFAULT);
-        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
+
+    for (auto zoneId : zoneIds) {
+        CHECK_AND_CONTINUE_LOG(zoneId != ZONEID_DEFAULT, "skip default audio zone");
+        auto itZone = zonesMap_.find(zoneId);
+        CHECK_AND_CONTINUE_LOG(itZone != zonesMap_.end(), "zone %{public}d is not found", zoneId);
+        CHECK_AND_CONTINUE_LOG(itZone->second != nullptr, "audioInterruptZone is nullptr");
         AUDIO_INFO_LOG("[ZoneFocus]resume audio focus list for zone %{public}d", zoneId);
         ResumeAudioFocusList(zoneId, false);
     }
