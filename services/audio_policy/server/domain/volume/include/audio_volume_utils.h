@@ -44,7 +44,7 @@ static const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
     // the ring and alarm are classified into the music group.
     // the music volume becomes abnormal when the db value of music is modified.
     STREAM_MUSIC,
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     STREAM_NAVIGATION,
 #endif
 };
@@ -70,7 +70,7 @@ static inline const std::vector<AudioStreamType> BASE_VOLUME_TYPE_LIST = {
     STREAM_EMERGENCY,
 #endif
 
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     STREAM_NAVIGATION,
 #endif
 };
@@ -92,7 +92,7 @@ static inline const std::vector<AudioStreamType> PC_VOLUME_TYPE_LIST = {
     // the ring and alarm are classified into the music group.
     // the music volume becomes abnormal when the db value of music is modified.
     STREAM_MUSIC,
-#ifdef FEATURE_AUDIO_ZONE
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
     STREAM_NAVIGATION,
 #endif
 };
