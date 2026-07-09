@@ -1014,6 +1014,28 @@ napi_status NapiParamUtils::GetCapturerSubStreamOptions(
     return napi_ok;
 }
 
+static napi_status GetPreferredInputDevice(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
+{
+    bool hasPreferredInputDevice = false;
+    napi_status status = napi_has_named_property(env, in, "preferredInputDevice", &hasPreferredInputDevice);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "has preferInputDevice failed");
+    if (!hasPreferredInputDevice) {
+        AUDIO_INFO_LOG("ParseCapturerOptions, without preferredInputDevice");
+        return napi_ok;
+    }
+
+    napi_value result = nullptr;
+    status = napi_get_named_property(env, in, "preferredInputDevice", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get preferInputDevice failed");
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    bool argTransFlag = false;
+    status = NapiParamUtils::GetAudioDeviceDescriptor(env, device, argTransFlag, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse PreferInputDevice failed");
+    CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
+    opts->preferredInputDevice = device;
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
 {
     napi_value result = nullptr;
@@ -1031,19 +1053,31 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     status = GetCapturerInfo(env, &(opts->capturerInfo), result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerInfo failed");
 
-    status = napi_get_named_property(env, in, "preferredInputDevice", &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get preferInputDevice failed");
-    auto device = std::make_shared<AudioDeviceDescriptor>();
-    bool argTransFlag = false;
-    status = GetAudioDeviceDescriptor(env, device, argTransFlag, result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse PreferInputDevice failed");
-    CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
-    opts->preferredInputDevice = device;
+    status = GetPreferredInputDevice(env, opts, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse preferredInputDevice failed");
 
     status = GetCapturerSubStreamOptions(env, opts, in);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerSubStreamOptions failed");
 
     return GetPlaybackCaptureMode(env, opts, in);
+}
+
+napi_status NapiParamUtils::GetCapturerMicInConfig(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
+{
+    napi_value result = nullptr;
+    napi_status status = napi_get_named_property(env, in, "capturerInfo", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get capturerInfo name failed");
+
+    status = GetCapturerInfo(env, &(opts->capturerInfo), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerInfo failed");
+
+    status = GetPreferredInputDevice(env, opts, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse preferredInputDevice failed");
+
+    status = GetCapturerSubStreamOptions(env, opts, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerSubStreamOptions failed");
+
+    return napi_ok;
 }
 
 napi_status NapiParamUtils::SetAudioCapturerChangeInfoDescriptors(const napi_env &env,
