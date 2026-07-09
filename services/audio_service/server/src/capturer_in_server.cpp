@@ -309,7 +309,7 @@ void CapturerInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStr
     }
 
     if (capturerFlags != processConfig_.capturerInfo.capturerFlags) {
-        CHECK_AND_RETURN_LOG(stateListener != nullptr, "RefreshServerBufferForSpanSizeUpdate: stateListener is nullptr");
+        CHECK_AND_RETURN_LOG(stateListener != nullptr, "RefreshServerBufferForSpanSizeUpdate:stateListener is nullptr");
         AUDIO_INFO_LOG("Update processConfig_.capturerInfo.capturerFlags from %{public}u to %{public}u",
             processConfig_.capturerInfo.capturerFlags, capturerFlags);
         processConfig_.capturerInfo.capturerFlags = capturerFlags;
