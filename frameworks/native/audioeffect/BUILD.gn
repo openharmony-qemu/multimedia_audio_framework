@@ -126,6 +126,7 @@ audio_ohos_library("audio_effect") {
 }
 
 ohos_static_library("audio_effect_integration") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
