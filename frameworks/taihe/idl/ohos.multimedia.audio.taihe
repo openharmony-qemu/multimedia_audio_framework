@@ -353,14 +353,18 @@ struct ActiveStreamVolumeInfo {
 }
 
 interface AudioManager {
-  @gen_promise("setExtraParameters")
+  @promise @rename("setExtraParameters")
+  SetExtraParametersPromise(mainKey: String, kvpairs: @record Map<String, String>): void;
   SetExtraParametersSync(mainKey: String, kvpairs: @record Map<String, String>): void;
 
-  @gen_promise("getExtraParameters")
+  @promise @rename("getExtraParameters")
+  GetExtraParametersPromise(mainKey: String, subKeys: Optional<Array<String>>): @record Map<String, String>;
   GetExtraParametersSync(mainKey: String, subKeys: Optional<Array<String>>): @record Map<String, String>;
 
-  @gen_async("setAudioScene")
-  @gen_promise("setAudioScene")
+  @async @rename("setAudioScene")
+  SetAudioSceneAsync(scene: AudioScene): void;
+  @promise @rename("setAudioScene")
+  SetAudioScenePromise(scene: AudioScene): void;
   SetAudioSceneSync(scene: AudioScene): void;
 
   GetVolumeManager(): AudioVolumeManager;
@@ -373,11 +377,14 @@ interface AudioManager {
   GetDeviceEnhanceManager(): AudioDeviceEnhanceManager;
   GetDebuggingManager(): AudioDebuggingManager;
 
-  @gen_promise("disableSafeMediaVolume")
+  @promise @rename("disableSafeMediaVolume")
+  DisableSafeMediaVolumePromise(): void;
   DisableSafeMediaVolumeSync(): void;
 
-  @gen_async("getAudioScene")
-  @gen_promise("getAudioScene")
+  @async @rename("getAudioScene")
+  GetAudioSceneAsync(): AudioScene;
+  @promise @rename("getAudioScene")
+  GetAudioScenePromise(): AudioScene;
   GetAudioSceneSync(): AudioScene;
 
   OnAudioSceneChange(callback: (data: AudioScene) => void): void;
@@ -405,49 +412,69 @@ struct DeviceBlockStatusInfo {
 }
 
 interface AudioRoutingManager {
-  @gen_async("getDevices")
-  @gen_promise("getDevices")
+  @async @rename("getDevices")
+  GetDevicesAsync(deviceFlag: DeviceFlag): Array<AudioDeviceDescriptor>;
+  @promise @rename("getDevices")
+  GetDevicesPromise(deviceFlag: DeviceFlag): Array<AudioDeviceDescriptor>;
   GetDevicesSync(deviceFlag: DeviceFlag): Array<AudioDeviceDescriptor>;
 
   GetAvailableDevices(deviceUsage: DeviceUsage): Array<AudioDeviceDescriptor>;
   GetExcludedDevices(deviceUsage: DeviceUsage): Array<AudioDeviceDescriptor>;
 
-  @gen_async("selectOutputDevice")
-  @gen_promise("selectOutputDevice")
+  @async @rename("selectOutputDevice")
+  SelectOutputDeviceAsync(outputAudioDevices: Array<AudioDeviceDescriptor>): void;
+  @promise @rename("selectOutputDevice")
+  SelectOutputDevicePromise(outputAudioDevices: Array<AudioDeviceDescriptor>): void;
   SelectOutputDeviceSync(outputAudioDevices: Array<AudioDeviceDescriptor>): void;
 
-  @gen_async("setCommunicationDevice")
-  @gen_promise("setCommunicationDevice")
+  @async @rename("setCommunicationDevice")
+  SetCommunicationDeviceAsync(deviceType: CommunicationDeviceType, active: bool);
+  @promise @rename("setCommunicationDevice")
+  SetCommunicationDevicePromise(deviceType: CommunicationDeviceType, active: bool);
   SetCommunicationDeviceSync(deviceType: CommunicationDeviceType, active: bool);
 
-  @gen_async("isCommunicationDeviceActive")
-  @gen_promise("isCommunicationDeviceActive")
+  @async @rename("isCommunicationDeviceActive")
+  IsCommunicationDeviceActiveAsync(deviceType: CommunicationDeviceType): bool;
+  @promise @rename("isCommunicationDeviceActive")
+  IsCommunicationDeviceActivePromise(deviceType: CommunicationDeviceType): bool;
   IsCommunicationDeviceActiveSync(deviceType: CommunicationDeviceType): bool;
 
-  @gen_async("selectOutputDeviceByFilter")
-  @gen_promise("selectOutputDeviceByFilter")
+  @async @rename("selectOutputDeviceByFilter")
+  SelectOutputDeviceByFilterAsync(filter: AudioRendererFilter, outputAudioDevices: Array<AudioDeviceDescriptor>): void;
+  @promise @rename("selectOutputDeviceByFilter")
+  SelectOutputDeviceByFilterPromise(filter: AudioRendererFilter, outputAudioDevices: Array<AudioDeviceDescriptor>): void;
   @overload("SelectOutputDeviceByFilterSync")
   SelectOutputDeviceByFilterSync(filter: AudioRendererFilter, outputAudioDevices: Array<AudioDeviceDescriptor>): void;
 
-  @gen_promise("selectOutputDeviceByFilter")
+  @promise @rename("selectOutputDeviceByFilter")
+  SelectOutputDeviceByFilterWithStrategyPromise(filter: AudioRendererFilter,
+    outputAudioDevices: Array<AudioDeviceDescriptor>, strategy: AudioDevcieSelectStrategy): void;
   @overload("SelectOutputDeviceByFilterSync")
   SelectOutputDeviceByFilterWithStrategySync(filter: AudioRendererFilter,
     outputAudioDevices: Array<AudioDeviceDescriptor>, strategy: AudioDevcieSelectStrategy): void;
 
-  @gen_async("restoreOutputDeviceByFilter")
-  @gen_promise("restoreOutputDeviceByFilter")
+  @async @rename("restoreOutputDeviceByFilter")
+  RestoreOutputDeviceByFilterAsync(filter: AudioRendererFilter): void;
+  @promise @rename("restoreOutputDeviceByFilter")
+  RestoreOutputDeviceByFilterPromise(filter: AudioRendererFilter): void;
   RestoreOutputDeviceByFilterSync(filter: AudioRendererFilter): void;
 
-  @gen_async("selectInputDevice")
-  @gen_promise("selectInputDevice")
+  @async @rename("selectInputDevice")
+  SelectInputDeviceAsync(inputAudioDevices: Array<AudioDeviceDescriptor>): void;
+  @promise @rename("selectInputDevice")
+  SelectInputDevicePromise(inputAudioDevices: Array<AudioDeviceDescriptor>): void;
   SelectInputDeviceSync(inputAudioDevices: Array<AudioDeviceDescriptor>): void;
 
-  @gen_async("getPreferOutputDeviceForRendererInfo")
-  @gen_promise("getPreferOutputDeviceForRendererInfo")
+  @async @rename("getPreferOutputDeviceForRendererInfo")
+  GetPreferredOutputDeviceForRendererInfoAsync(rendererInfo: AudioRendererInfo): Array<AudioDeviceDescriptor>;
+  @promise @rename("getPreferOutputDeviceForRendererInfo")
+  GetPreferredOutputDeviceForRendererInfoPromise(rendererInfo: AudioRendererInfo): Array<AudioDeviceDescriptor>;
   GetPreferredOutputDeviceForRendererInfoSync(rendererInfo: AudioRendererInfo): Array<AudioDeviceDescriptor>;
 
-  @gen_async("getPreferredInputDeviceForCapturerInfo")
-  @gen_promise("getPreferredInputDeviceForCapturerInfo")
+  @async @rename("getPreferredInputDeviceForCapturerInfo")
+  GetPreferredInputDeviceForCapturerInfoAsync(capturerInfo: AudioCapturerInfo): Array<AudioDeviceDescriptor>;
+  @promise @rename("getPreferredInputDeviceForCapturerInfo")
+  GetPreferredInputDeviceForCapturerInfoPromise(capturerInfo: AudioCapturerInfo): Array<AudioDeviceDescriptor>;
   GetPreferredInputDeviceForCapturerInfoSync(capturerInfo: AudioCapturerInfo): Array<AudioDeviceDescriptor>;
 
   GetPreferredInputDeviceByFilter(filter: AudioCapturerFilter): Array<AudioDeviceDescriptor>;
@@ -456,22 +483,28 @@ interface AudioRoutingManager {
 
   DeclareDeviceTypesCompatibility(deviceTypes: Array<DeviceType>): void;
 
-  @gen_promise("selectInputDeviceByFilter")
+  @promise @rename("selectInputDeviceByFilter")
+  SelectInputDeviceByFilterPromise(filter: AudioCapturerFilter, inputAudioDevices: Array<AudioDeviceDescriptor>): void;
   SelectInputDeviceByFilterSync(filter: AudioCapturerFilter, inputAudioDevices: Array<AudioDeviceDescriptor>): void;
 
-  @gen_promise("isMicBlockDetectionSupported")
+  @promise @rename("isMicBlockDetectionSupported")
+  IsMicBlockDetectionSupportedPromise(): bool;
   IsMicBlockDetectionSupportedSync(): bool;
 
-  @gen_promise("excludeOutputDevices")
+  @promise @rename("excludeOutputDevices")
+  ExcludeOutputDevicesPromise(usage: DeviceUsage, devices: Array<AudioDeviceDescriptor>): void;
   ExcludeOutputDevicesSync(usage: DeviceUsage, devices: Array<AudioDeviceDescriptor>): void;
 
-  @gen_promise("unexcludeOutputDevices")
+  @promise @rename("unexcludeOutputDevices")
+  UnexcludeOutputDevicesWithUsageAndDevicesPromise(usage: DeviceUsage, devices: Array<AudioDeviceDescriptor>): void;
   UnexcludeOutputDevicesWithUsageAndDevices(usage: DeviceUsage, devices: Array<AudioDeviceDescriptor>): void;
 
-  @gen_promise("unexcludeOutputDevices")
+  @promise @rename("unexcludeOutputDevices")
+  UnexcludeOutputDevicesWithUsagePromise(usage: DeviceUsage): void;
   UnexcludeOutputDevicesWithUsage(usage: DeviceUsage): void;
 
-  @gen_promise("getActiveOutputDeviceDescriptors")
+  @promise @rename("getActiveOutputDeviceDescriptors")
+  GetActiveOutputDeviceDescriptorsPromise(): Array<AudioDeviceDescriptor>;
   GetActiveOutputDeviceDescriptorsSync(): Array<AudioDeviceDescriptor>;
 
   OnPreferredInputDeviceChangeForCapturerInfo(capturerInfo: AudioCapturerInfo, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
@@ -490,20 +523,28 @@ interface AudioRoutingManager {
 }
 
 interface AudioStreamManager {
-  @gen_async("getCurrentAudioRendererInfoArray")
-  @gen_promise("getCurrentAudioRendererInfoArray")
+  @async @rename("getCurrentAudioRendererInfoArray")
+  GetCurrentAudioRendererInfoArrayAsync(): Array<AudioRendererChangeInfo>;
+  @promise @rename("getCurrentAudioRendererInfoArray")
+  GetCurrentAudioRendererInfoArrayPromise(): Array<AudioRendererChangeInfo>;
   GetCurrentAudioRendererInfoArraySync(): Array<AudioRendererChangeInfo>;
 
-  @gen_async("getCurrentAudioCapturerInfoArray")
-  @gen_promise("getCurrentAudioCapturerInfoArray")
+  @async @rename("getCurrentAudioCapturerInfoArray")
+  GetCurrentAudioCapturerInfoArrayAsync(): Array<AudioCapturerChangeInfo>;
+  @promise @rename("getCurrentAudioCapturerInfoArray")
+  GetCurrentAudioCapturerInfoArrayPromise(): Array<AudioCapturerChangeInfo>;
   GetCurrentAudioCapturerInfoArraySync(): Array<AudioCapturerChangeInfo>;
 
-  @gen_async("getAudioEffectInfoArray")
-  @gen_promise("getAudioEffectInfoArray")
+  @async @rename("getAudioEffectInfoArray")
+  GetAudioEffectInfoArrayAsync(usage: StreamUsage): Array<AudioEffectMode>;
+  @promise @rename("getAudioEffectInfoArray")
+  GetAudioEffectInfoArrayPromise(usage: StreamUsage): Array<AudioEffectMode>;
   GetAudioEffectInfoArraySync(usage: StreamUsage): Array<AudioEffectMode>;
 
-  @gen_async("isActive")
-  @gen_promise("isActive")
+  @async @rename("isActive")
+  IsActiveAsync(volumeType: AudioVolumeType): bool;
+  @promise @rename("isActive")
+  IsActivePromise(volumeType: AudioVolumeType): bool;
   IsActiveSync(volumeType: AudioVolumeType): bool;
 
   IsStreamActive(streamUsage: StreamUsage): bool;
@@ -534,30 +575,40 @@ interface AudioStreamManager {
 }
 
 interface AudioVolumeManager {
-  @gen_async("getVolumeGroupInfos")
-  @gen_promise("getVolumeGroupInfos")
+  @async @rename("getVolumeGroupInfos")
+  GetVolumeGroupInfosAsync(networkId: String): Array<VolumeGroupInfo>;
+  @promise @rename("getVolumeGroupInfos")
+  GetVolumeGroupInfosPromise(networkId: String): Array<VolumeGroupInfo>;
   GetVolumeGroupInfosSync(networkId: String): Array<VolumeGroupInfo>;
 
-  @gen_async("getVolumeGroupManager")
-  @gen_promise("getVolumeGroupManager")
+  @async @rename("getVolumeGroupManager")
+  GetVolumeGroupManagerAsync(groupId: i32): AudioVolumeGroupManager;
+  @promise @rename("getVolumeGroupManager")
+  GetVolumeGroupManagerPromise(groupId: i32): AudioVolumeGroupManager;
   GetVolumeGroupManagerSync(groupId: i32): AudioVolumeGroupManager;
 
-  @gen_promise("getAppVolumePercentageForUid")
+  @promise @rename("getAppVolumePercentageForUid")
+  GetAppVolumePercentageForUidPromise(uid: i32): i32;
   GetAppVolumePercentageForUidSync(uid: i32): i32;
 
-  @gen_promise("setAppVolumePercentageForUid")
+  @promise @rename("setAppVolumePercentageForUid")
+  SetAppVolumePercentageForUidPromise(uid: i32, volume: i32): void;
   SetAppVolumePercentageForUidSync(uid: i32, volume: i32): void;
 
-  @gen_promise("isAppVolumeMutedForUid")
+  @promise @rename("isAppVolumeMutedForUid")
+  IsAppVolumeMutedForUidPromise(uid: i32, owned: bool): bool;
   IsAppVolumeMutedForUidSync(uid: i32, owned: bool): bool;
 
-  @gen_promise("setAppVolumeMutedForUid")
+  @promise @rename("setAppVolumeMutedForUid")
+  SetAppVolumeMutedForUidPromise(uid: i32, muted: bool): void;
   SetAppVolumeMutedForUidSync(uid: i32, muted: bool): void;
 
-  @gen_promise("getAppVolumePercentage")
+  @promise @rename("getAppVolumePercentage")
+  GetAppVolumePercentagePromise(): i32;
   GetAppVolumePercentageSync(): i32;
 
-  @gen_promise("setAppVolumePercentage")
+  @promise @rename("setAppVolumePercentage")
+  SetAppVolumePercentagePromise(volume: i32): void;
   SetAppVolumePercentageSync(volume: i32): void;
 
   GetSystemVolume(volumeType: AudioVolumeType): i32;
@@ -588,14 +639,16 @@ interface AudioVolumeManager {
 
   GetSystemVolumeByUid(volumeType: AudioVolumeType, callingUid: i32): i32;
 
-  @gen_promise("setSystemVolumeByUid")
+  @promise @rename("setSystemVolumeByUid")
+  SetSystemVolumeByUidPromise(volumeType: AudioVolumeType, volume: i32, callingUid: i32): void;
   SetSystemVolumeByUidSync(volumeType: AudioVolumeType, volume: i32, callingUid: i32): void;
 
   ForceVolumeKeyControlType(volumeType: AudioVolumeType, duration: i32): void;
 
   GetSystemVolumePercentage(volumeType: AudioVolumeType): i32;
 
-  @gen_promise("setSystemVolumePercentage")
+  @promise @rename("setSystemVolumePercentage")
+  SetSystemVolumePercentagePromise(volumeType: AudioVolumeType, percentage: i32): void;
   SetSystemVolumePercentageSync(volumeType: AudioVolumeType, percentage: i32): void;
 
   GetActiveStreamsVolumeInfo(): Array<ActiveStreamVolumeInfo>;
@@ -622,57 +675,80 @@ interface AudioVolumeManager {
 }
 
 interface AudioVolumeGroupManager {
-  @gen_async("setVolume")
-  @gen_promise("setVolume")
+  @async @rename("setVolume")
+  SetVolumeAsync(volumeType: AudioVolumeType, volume: i32): void;
+  @promise @rename("setVolume")
+  SetVolumePromise(volumeType: AudioVolumeType, volume: i32): void;
   SetVolumeSync(volumeType: AudioVolumeType, volume: i32): void;
 
-  @gen_promise("setVolumeWithFlag")
+  @promise @rename("setVolumeWithFlag")
+  SetVolumeWithFlagPromise(volumeType: AudioVolumeType, volume: i32, flags: i32): void;
   SetVolumeWithFlagSync(volumeType: AudioVolumeType, volume: i32, flags: i32): void;
 
   GetActiveVolumeTypeSync(uid: i32): AudioVolumeType;
 
-  @gen_async("getVolume")
-  @gen_promise("getVolume")
+  @async @rename("getVolume")
+  GetVolumeAsync(volumeType: AudioVolumeType): i32;
+  @promise @rename("getVolume")
+  GetVolumePromise(volumeType: AudioVolumeType): i32;
   GetVolumeSync(volumeType: AudioVolumeType): i32;
 
-  @gen_async("getMinVolume")
-  @gen_promise("getMinVolume")
+  @async @rename("getMinVolume")
+  GetMinVolumeAsync(volumeType: AudioVolumeType): i32;
+  @promise @rename("getMinVolume")
+  GetMinVolumePromise(volumeType: AudioVolumeType): i32;
   GetMinVolumeSync(volumeType: AudioVolumeType): i32;
 
-  @gen_async("getMaxVolume")
-  @gen_promise("getMaxVolume")
+  @async @rename("getMaxVolume")
+  GetMaxVolumeAsync(volumeType: AudioVolumeType): i32;
+  @promise @rename("getMaxVolume")
+  GetMaxVolumePromise(volumeType: AudioVolumeType): i32;
   GetMaxVolumeSync(volumeType: AudioVolumeType): i32;
 
-  @gen_async("mute")
-  @gen_promise("mute")
+  @async @rename("mute")
+  MuteAsync(volumeType: AudioVolumeType, mute: bool): void;
+  @promise @rename("mute")
+  MutePromise(volumeType: AudioVolumeType, mute: bool): void;
   MuteSync(volumeType: AudioVolumeType, mute: bool): void;
 
-  @gen_async("isMute")
-  @gen_promise("isMute")
+  @async @rename("isMute")
+  IsMuteAsync(volumeType: AudioVolumeType): bool;
+  @promise @rename("isMute")
+  IsMutePromise(volumeType: AudioVolumeType): bool;
   IsMuteSync(volumeType: AudioVolumeType): bool;
 
-  @gen_async("setRingerMode")
-  @gen_promise("setRingerMode")
+  @async @rename("setRingerMode")
+  SetRingerModeAsync(mode: AudioRingMode): void;
+  @promise @rename("setRingerMode")
+  SetRingerModePromise(mode: AudioRingMode): void;
   SetRingerModeSync(mode: AudioRingMode): void;
 
-  @gen_async("getRingerMode")
-  @gen_promise("getRingerMode")
+  @async @rename("getRingerMode")
+  GetRingerModeAsync(): AudioRingMode;
+  @promise @rename("getRingerMode")
+  GetRingerModePromise(): AudioRingMode;
   GetRingerModeSync(): AudioRingMode;
 
-  @gen_promise("setMicMute")
+  @promise @rename("setMicMute")
+  SetMicMutePromise(mute: bool): void;
   SetMicMuteSync(mute: bool): void;
 
-  @gen_promise("setMicMutePersistent")
+  @promise @rename("setMicMutePersistent")
+  SetMicMutePersistentPromise(mute: bool, type: PolicyType): void;
   SetMicMutePersistentSync(mute: bool, type: PolicyType): void;
 
   IsPersistentMicMute(): bool;
 
-  @gen_async("isMicrophoneMute")
-  @gen_promise("isMicrophoneMute")
+  @async @rename("isMicrophoneMute")
+  IsMicrophoneMuteAsync(): bool;
+  @promise @rename("isMicrophoneMute")
+  IsMicrophoneMutePromise(): bool;
   IsMicrophoneMuteSync(): bool;
 
-  @gen_async("adjustVolumeByStep")
-  @gen_promise("adjustVolumeByStep")
+  @async @rename("adjustVolumeByStep")
+  AdjustVolumeByStepAsync(adjustType: VolumeAdjustType): void;
+  @promise @rename("adjustVolumeByStep")
+  AdjustVolumeByStepPromise(adjustType: VolumeAdjustType): void;
   AdjustVolumeByStepSync(adjustType: VolumeAdjustType): void;
 
   OnRingerModeChange(callback: (data: AudioRingMode) => void): void;
@@ -683,18 +759,24 @@ interface AudioVolumeGroupManager {
 
   IsVolumeUnadjustable(): bool;
 
-  @gen_async("adjustSystemVolumeByStep")
-  @gen_promise("adjustSystemVolumeByStep")
+  @async @rename("adjustSystemVolumeByStep")
+  AdjustSystemVolumeByStepAsync(volumeType: AudioVolumeType, adjustType: VolumeAdjustType): void;
+  @promise @rename("adjustSystemVolumeByStep")
+  AdjustSystemVolumeByStepPromise(volumeType: AudioVolumeType, adjustType: VolumeAdjustType): void;
   AdjustSystemVolumeByStepSync(volumeType: AudioVolumeType, adjustType: VolumeAdjustType): void;
 
-  @gen_async("getSystemVolumeInDb")
-  @gen_promise("getSystemVolumeInDb")
+  @async @rename("getSystemVolumeInDb")
+  GetSystemVolumeInDbAsync(volumeType: AudioVolumeType, volumeLevel: i32, device: DeviceType): f64;
+  @promise @rename("getSystemVolumeInDb")
+  GetSystemVolumeInDbPromise(volumeType: AudioVolumeType, volumeLevel: i32, device: DeviceType): f64;
   GetSystemVolumeInDbSync(volumeType: AudioVolumeType, volumeLevel: i32, device: DeviceType): f64;
 
-  @gen_promise("getMaxAmplitudeForInputDevice")
+  @promise @rename("getMaxAmplitudeForInputDevice")
+  GetMaxAmplitudeForInputDevicePromise(inputDevice: AudioDeviceDescriptor): f64;
   GetMaxAmplitudeForInputDeviceSync(inputDevice: AudioDeviceDescriptor): f64;
 
-  @gen_promise("getMaxAmplitudeForOutputDevice")
+  @promise @rename("getMaxAmplitudeForOutputDevice")
+  GetMaxAmplitudeForOutputDevicePromise(inputDevice: AudioDeviceDescriptor): f64;
   GetMaxAmplitudeForOutputDeviceSync(inputDevice: AudioDeviceDescriptor): f64;
 }
 
@@ -834,20 +916,28 @@ enum ToneType: i32 {
 }
 
 interface TonePlayer {
-  @gen_async("load")
-  @gen_promise("load")
+  @async @rename("load")
+  LoadAsync(type: ToneType): void;
+  @promise @rename("load")
+  LoadPromise(type: ToneType): void;
   LoadSync(type: ToneType): void;
 
-  @gen_async("release")
-  @gen_promise("release")
+  @async @rename("release")
+  ReleaseAsync(): void;
+  @promise @rename("release")
+  ReleasePromise(): void;
   ReleaseSync(): void;
 
-  @gen_async("stop")
-  @gen_promise("stop")
+  @async @rename("stop")
+  StopAsync(): void;
+  @promise @rename("stop")
+  StopPromise(): void;
   StopSync(): void;
 
-  @gen_async("start")
-  @gen_promise("start")
+  @async @rename("start")
+  StartAsync(): void;
+  @promise @rename("start")
+  StartPromise(): void;
   StartSync(): void;
 }
 
@@ -925,10 +1015,12 @@ struct CurrentInputDeviceChangedEvent {
 }
 
 interface AudioSessionManager {
-  @gen_promise("activateAudioSession")
+  @promise @rename("activateAudioSession")
+  ActivateAudioSessionPromise(strategy: AudioSessionStrategy): void;
   ActivateAudioSessionSync(strategy: AudioSessionStrategy): void;
 
-  @gen_promise("deactivateAudioSession")
+  @promise @rename("deactivateAudioSession")
+  DeactivateAudioSessionPromise(): void;
   DeactivateAudioSessionSync(): void;
 
   IsAudioSessionActivated(): bool;
@@ -939,29 +1031,35 @@ interface AudioSessionManager {
 
   SetAudioSessionScene(scene: AudioSessionScene): void;
 
-  @gen_promise("setDefaultOutputDevice")
+  @promise @rename("setDefaultOutputDevice")
+  SetDefaultOutputDevicePromise(deviceType: DeviceType): void;
   SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
 
-  @gen_promise("setMediaOutputDevice")
+  @promise @rename("setMediaOutputDevice")
+  SetMediaOutputDevicePromise(deviceType: DeviceType): void;
   SetMediaOutputDeviceSync(deviceType: DeviceType): void;
 
   EnableMuteSuggestionWhenMixWithOthers(enable: bool): void;
-  @gen_promise("setCapturerMuteHint")
+  @promise @rename("setCapturerMuteHint")
+  SetCapturerMuteHintPromise(mute: bool): void;
   SetCapturerMuteHintSync(mute: bool): void;
 
   SetAudioSessionBehavior(behavior: i32): void;
 
   GetAvailableDevices(deviceUsage: DeviceUsage): Array<AudioDeviceDescriptor>;
 
-  @gen_promise("selectMediaInputDevice")
+  @promise @rename("selectMediaInputDevice")
+  SelectMediaInputDevicePromise(inputAudioDevice: AudioDeviceDescriptor): void;
   SelectMediaInputDeviceSync(inputAudioDevice: AudioDeviceDescriptor): void;
 
   GetSelectedMediaInputDevice(): AudioDeviceDescriptor;
 
-  @gen_promise("clearSelectedMediaInputDevice")
+  @promise @rename("clearSelectedMediaInputDevice")
+  ClearSelectedMediaInputDevicePromise(): void;
   ClearSelectedMediaInputDeviceSync(): void;
 
-  @gen_promise("setBluetoothAndNearlinkPreferredRecordCategory")
+  @promise @rename("setBluetoothAndNearlinkPreferredRecordCategory")
+  SetBluetoothAndNearlinkPreferredRecordCategoryPromise(category: BluetoothAndNearlinkPreferredRecordCategory): void;
   SetBluetoothAndNearlinkPreferredRecordCategorySync(category: BluetoothAndNearlinkPreferredRecordCategory): void;
 
   GetBluetoothAndNearlinkPreferredRecordCategory(): BluetoothAndNearlinkPreferredRecordCategory;
@@ -1039,48 +1137,68 @@ interface AudioCapturer {
 
   GetImplPtr(): i64;
 
-  @gen_async("start")
-  @gen_promise("start")
+  @async @rename("start")
+  StartAsync(): void;
+  @promise @rename("start")
+  StartPromise(): void;
   StartSync(): void;
 
-  @gen_async("stop")
-  @gen_promise("stop")
+  @async @rename("stop")
+  StopAsync(): void;
+  @promise @rename("stop")
+  StopPromise(): void;
   StopSync(): void;
 
-  @gen_async("release")
-  @gen_promise("release")
+  @async @rename("release")
+  ReleaseAsync(): void;
+  @promise @rename("release")
+  ReleasePromise(): void;
   ReleaseSync(): void;
 
-  @gen_async("getBufferSize")
-  @gen_promise("getBufferSize")
+  @async @rename("getBufferSize")
+  GetBufferSizeAsync(): i64;
+  @promise @rename("getBufferSize")
+  GetBufferSizePromise(): i64;
   GetBufferSizeSync(): i64;
 
-  @gen_async("getCapturerInfo")
-  @gen_promise("getCapturerInfo")
+  @async @rename("getCapturerInfo")
+  GetCapturerInfoAsync(): AudioCapturerInfo;
+  @promise @rename("getCapturerInfo")
+  GetCapturerInfoPromise(): AudioCapturerInfo;
   GetCapturerInfoSync(): AudioCapturerInfo;
 
-  @gen_async("getStreamInfo")
-  @gen_promise("getStreamInfo")
+  @async @rename("getStreamInfo")
+  GetStreamInfoAsync(): AudioStreamInfo;
+  @promise @rename("getStreamInfo")
+  GetStreamInfoPromise(): AudioStreamInfo;
   GetStreamInfoSync(): AudioStreamInfo;
 
-  @gen_async("getAudioStreamId")
-  @gen_promise("getAudioStreamId")
+  @async @rename("getAudioStreamId")
+  GetAudioStreamIdAsync(): i64;
+  @promise @rename("getAudioStreamId")
+  GetAudioStreamIdPromise(): i64;
   GetAudioStreamIdSync(): i64;
 
-  @gen_async("getAudioTime")
-  @gen_promise("getAudioTime")
+  @async @rename("getAudioTime")
+  GetAudioTimeAsync(): i64;
+  @promise @rename("getAudioTime")
+  GetAudioTimePromise(): i64;
   GetAudioTimeSync(): i64;
 
-  @gen_promise("getAudioTimestampInfo")
+  @promise @rename("getAudioTimestampInfo")
+  GetAudioTimestampInfoPromise(): AudioTimestampInfo;
   GetAudioTimestampInfoSync(): AudioTimestampInfo;
 
-  @gen_promise("getOverflowCount")
+  @promise @rename("getOverflowCount")
+  GetOverflowCountPromise(): i64;
   GetOverflowCountSync(): i64;
 
-  @gen_promise("setWillMuteWhenInterrupted")
+  @promise @rename("setWillMuteWhenInterrupted")
+  SetWillMuteWhenInterruptedPromise(muteWhenInterrupted: bool): void;
   SetWillMuteWhenInterruptedSync(muteWhenInterrupted: bool): void;
 
-  @gen_promise("setMuteHint")
+  @promise @rename("setMuteHint")
+  SetMuteHintPromise(mute: bool): void;
   SetMuteHintSync(mute: bool): void;
   SetNoiseReductionMode(noiseReductionMode: NoiseReductionMode): void;
 
@@ -1139,73 +1257,104 @@ interface AudioRenderer {
   @get GetState(): AudioState;
 
   GetImplPtr(): i64;
-  @gen_async("getRendererInfo")
-  @gen_promise("getRendererInfo")
+  @async @rename("getRendererInfo")
+  GetRendererInfoAsync(): AudioRendererInfo;
+  @promise @rename("getRendererInfo")
+  GetRendererInfoPromise(): AudioRendererInfo;
   GetRendererInfoSync(): AudioRendererInfo;
 
-  @gen_async("getStreamInfo")
-  @gen_promise("getStreamInfo")
+  @async @rename("getStreamInfo")
+  GetStreamInfoAsync(): AudioStreamInfo;
+  @promise @rename("getStreamInfo")
+  GetStreamInfoPromise(): AudioStreamInfo;
   GetStreamInfoSync(): AudioStreamInfo;
 
-  @gen_async("getAudioStreamId")
-  @gen_promise("getAudioStreamId")
+  @async @rename("getAudioStreamId")
+  GetAudioStreamIdAsync(): i64;
+  @promise @rename("getAudioStreamId")
+  GetAudioStreamIdPromise(): i64;
   GetAudioStreamIdSync(): i64;
 
-  @gen_async("getAudioEffectMode")
-  @gen_promise("getAudioEffectMode")
+  @async @rename("getAudioEffectMode")
+  GetAudioEffectModeAsync(): AudioEffectMode;
+  @promise @rename("getAudioEffectMode")
+  GetAudioEffectModePromise(): AudioEffectMode;
   GetAudioEffectModeSync(): AudioEffectMode;
 
-  @gen_async("setAudioEffectMode")
-  @gen_promise("setAudioEffectMode")
+  @async @rename("setAudioEffectMode")
+  SetAudioEffectModeAsync(mode: AudioEffectMode): void;
+  @promise @rename("setAudioEffectMode")
+  SetAudioEffectModePromise(mode: AudioEffectMode): void;
   SetAudioEffectModeSync(mode: AudioEffectMode): void;
 
-  @gen_async("start")
-  @gen_promise("start")
+  @async @rename("start")
+  StartAsync(): void;
+  @promise @rename("start")
+  StartPromise(): void;
   StartSync(): void;
 
-  @gen_async("getAudioTime")
-  @gen_promise("getAudioTime")
+  @async @rename("getAudioTime")
+  GetAudioTimeAsync(): i64;
+  @promise @rename("getAudioTime")
+  GetAudioTimePromise(): i64;
   GetAudioTimeSync(): i64;
 
-  @gen_promise("getAudioTimestampInfo")
+  @promise @rename("getAudioTimestampInfo")
+  GetAudioTimestampInfoPromise(): AudioTimestampInfo;
   GetAudioTimestampInfoSync(): AudioTimestampInfo;
 
-  @gen_async("drain")
-  @gen_promise("drain")
+  @async @rename("drain")
+  DrainAsync(): void;
+  @promise @rename("drain")
+  DrainPromise(): void;
   DrainSync(): void;
 
-  @gen_promise("flush")
+  @promise @rename("flush")
+  FlushPromise(): void;
   FlushSync(): void;
 
-  @gen_async("pause")
-  @gen_promise("pause")
+  @async @rename("pause")
+  PauseAsync(): void;
+  @promise @rename("pause")
+  PausePromise(): void;
   PauseSync(): void;
 
-  @gen_async("stop")
-  @gen_promise("stop")
+  @async @rename("stop")
+  StopAsync(): void;
+  @promise @rename("stop")
+  StopPromise(): void;
   StopSync(): void;
 
-  @gen_async("release")
-  @gen_promise("release")
+  @async @rename("release")
+  ReleaseAsync(): void;
+  @promise @rename("release")
+  ReleasePromise(): void;
   ReleaseSync(): void;
 
-  @gen_async("getBufferSize")
-  @gen_promise("getBufferSize")
+  @async @rename("getBufferSize")
+  GetBufferSizeAsync(): i64;
+  @promise @rename("getBufferSize")
+  GetBufferSizePromise(): i64;
   GetBufferSizeSync(): i64;
 
   SetSpeed(speed: f64): void;
 
   GetSpeed(): f64;
 
-  @gen_async("setInterruptMode")
-  @gen_promise("setInterruptMode")
+  @async @rename("setInterruptMode")
+  SetInterruptModeAsync(mode: InterruptMode): void;
+  @promise @rename("setInterruptMode")
+  SetInterruptModePromise(mode: InterruptMode): void;
   SetInterruptModeSync(mode: InterruptMode): void;
 
-  @gen_async("setVolume")
-  @gen_promise("setVolume")
+  @async @rename("setVolume")
+  SetVolumeAsync(volume: f64): void;
+  @promise @rename("setVolume")
+  SetVolumePromise(volume: f64): void;
   SetVolumeSync(volume: f64): void;
 
-  @gen_promise("setTarget")
+  @promise @rename("setTarget")
+  SetTargetPromise(target: RenderTarget): void;
   SetTargetSync(target: RenderTarget): void;
 
   GetTarget(): RenderTarget;
@@ -1214,20 +1363,28 @@ interface AudioRenderer {
 
   SetVolumeWithRamp(volume: f64, duration: i32): void;
 
-  @gen_async("getMinStreamVolume")
-  @gen_promise("getMinStreamVolume")
+  @async @rename("getMinStreamVolume")
+  GetMinStreamVolumeAsync(): f64;
+  @promise @rename("getMinStreamVolume")
+  GetMinStreamVolumePromise(): f64;
   GetMinStreamVolumeSync(): f64;
 
-  @gen_async("getMaxStreamVolume")
-  @gen_promise("getMaxStreamVolume")
+  @async @rename("getMaxStreamVolume")
+  GetMaxStreamVolumeAsync(): f64;
+  @promise @rename("getMaxStreamVolume")
+  GetMaxStreamVolumePromise(): f64;
   GetMaxStreamVolumeSync(): f64;
 
-  @gen_async("getUnderflowCount")
-  @gen_promise("getUnderflowCount")
+  @async @rename("getUnderflowCount")
+  GetUnderflowCountAsync(): i64;
+  @promise @rename("getUnderflowCount")
+  GetUnderflowCountPromise(): i64;
   GetUnderflowCountSync(): i64;
 
-  @gen_async("getCurrentOutputDevices")
-  @gen_promise("getCurrentOutputDevices")
+  @async @rename("getCurrentOutputDevices")
+  GetCurrentOutputDevicesAsync(): Array<AudioDeviceDescriptor>;
+  @promise @rename("getCurrentOutputDevices")
+  GetCurrentOutputDevicesPromise(): Array<AudioDeviceDescriptor>;
   GetCurrentOutputDevicesSync(): Array<AudioDeviceDescriptor>;
 
   SetChannelBlendMode(mode: ChannelBlendMode): void;
@@ -1236,10 +1393,12 @@ interface AudioRenderer {
 
   GetSilentModeAndMixWithOthers(): bool;
 
-  @gen_promise("setDefaultOutputDevice")
+  @promise @rename("setDefaultOutputDevice")
+  SetDefaultOutputDevicePromise(deviceType: DeviceType): void;
   SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
 
-  @gen_promise("setLoudnessGain")
+  @promise @rename("setLoudnessGain")
+  SetLoudnessGainPromise(loudnessGain: f64): void;
   SetLoudnessGainSync(loudnessGain: f64): void;
 
   GetLoudnessGain(): f64;
@@ -1357,24 +1516,30 @@ union AudioCapturerOrNull {
   type_audioCapturer: AudioCapturer;
   type_null: @null unit;
 }
-@gen_async("createAudioCapturer")
-@gen_promise("createAudioCapturer")
+@async @rename("createAudioCapturer")
+function CreateAudioCapturerAsync(options: AudioCapturerOptions): AudioCapturerOrNull;
+@promise @rename("createAudioCapturer")
+function CreateAudioCapturerPromise(options: AudioCapturerOptions): AudioCapturerOrNull;
 function CreateAudioCapturerSync(options: AudioCapturerOptions): AudioCapturerOrNull;
 
 union AudioRendererOrNull {
   type_audioRenderer: AudioRenderer;
   type_null: @null unit;
 }
-@gen_async("createAudioRenderer")
-@gen_promise("createAudioRenderer")
+@async @rename("createAudioRenderer")
+function CreateAudioRendererAsync(options: AudioRendererOptions): AudioRendererOrNull;
+@promise @rename("createAudioRenderer")
+function CreateAudioRendererPromise(options: AudioRendererOptions): AudioRendererOrNull;
 function CreateAudioRendererSync(options: AudioRendererOptions): AudioRendererOrNull;
 
 union TonePlayerOrNull {
   type_tonePlayer: TonePlayer;
   type_null: @null unit;
 }
-@gen_async("createTonePlayer")
-@gen_promise("createTonePlayer")
+@async @rename("createTonePlayer")
+function CreateTonePlayerAsync(options: AudioRendererInfo): TonePlayerOrNull;
+@promise @rename("createTonePlayer")
+function CreateTonePlayerPromise(options: AudioRendererInfo): TonePlayerOrNull;
 function CreateTonePlayerSync(options: AudioRendererInfo): TonePlayerOrNull;
 
 struct AudioSpatialEnabledStateForDevice {
@@ -1389,13 +1554,15 @@ interface AudioSpatializationManager {
   IsHeadTrackingSupported(): bool;
   IsHeadTrackingSupportedForDevice(deviceDescriptor: AudioDeviceDescriptor): bool;
 
-  @gen_promise("setSpatializationEnabled")
+  @promise @rename("setSpatializationEnabled")
+  SetSpatializationEnabledPromise(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
   SetSpatializationEnabledSync(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
 
   IsSpatializationEnabled(deviceDescriptor: AudioDeviceDescriptor): bool;
   IsSpatializationEnabledForCurrentDevice(): bool;
 
-  @gen_promise("setHeadTrackingEnabled")
+  @promise @rename("setHeadTrackingEnabled")
+  SetHeadTrackingEnabledPromise(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
   SetHeadTrackingEnabledSync(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
 
   IsHeadTrackingEnabled(deviceDescriptor: AudioDeviceDescriptor): bool;
@@ -1485,10 +1652,12 @@ union AudioDevicePairOrNull {
 interface AudioLoopback {
   GetImplPtr(): i64;
 
-  @gen_promise("getStatus")
+  @promise @rename("getStatus")
+  GetStatusPromise(): AudioLoopbackStatus;
   GetStatusSync(): AudioLoopbackStatus;
 
-  @gen_promise("setVolume")
+  @promise @rename("setVolume")
+  SetVolumePromise(volume: f64): void;
   SetVolumeSync(volume: f64): void;
 
   GetVolume(): f64;
@@ -1497,7 +1666,8 @@ interface AudioLoopback {
 
   GetPreferredDevicePair(): AudioDevicePairOrNull;
 
-  @gen_promise("enable")
+  @promise @rename("enable")
+  EnablePromise(enable: bool): bool;
   EnableSync(enable: bool): bool;
 
   SetReverbPreset(preset: AudioLoopbackReverbPreset): bool;
@@ -1517,10 +1687,12 @@ union AudioLpback {
   type_null: @null unit;
 }
 
-@gen_promise("createAudioLoopback")
+@promise @rename("createAudioLoopback")
+function CreateAudioLoopbackPromise(mode: AudioLoopbackMode): AudioLpback;
 function CreateAudioLoopbackSync(mode: AudioLoopbackMode): AudioLpback;
 
-@gen_promise("createGlobalAudioLoopback")
+@promise @rename("createGlobalAudioLoopback")
+function CreateGlobalAudioLoopbackPromise(mode: AudioLoopbackMode, isController: bool): AudioLpback;
 function CreateGlobalAudioLoopbackSync(mode: AudioLoopbackMode, isController: bool): AudioLpback;
 
 interface AudioCollaborativeManager {
@@ -1530,24 +1702,30 @@ interface AudioCollaborativeManager {
 
   IsCollaborativePlaybackEnabledForDevice(deviceDescriptor: AudioDeviceDescriptor): bool;
 
-  @gen_promise("setCollaborativePlaybackEnabledForDevice")
+  @promise @rename("setCollaborativePlaybackEnabledForDevice")
+  SetCollaborativePlaybackEnabledForDevicePromise(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
   SetCollaborativePlaybackEnabledForDeviceSync(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
 }
 
 interface AudioDeviceEnhanceManager {
-  @gen_promise("IsEnhancedRoutingSupported")
+  @promise @rename("IsEnhancedRoutingSupported")
+  IsEnhancedRoutingSupportedPromise(): bool;
   IsEnhancedRoutingSupported(): bool;
 
-  @gen_promise("selectOutputDevice")
+  @promise @rename("selectOutputDevice")
+  SelectOutputDevicePromise(deviceDescriptor: AudioDeviceDescriptor): void;
   SelectOutputDeviceSync(deviceDescriptor: AudioDeviceDescriptor): void;
 
-  @gen_promise("selectOutputDeviceForAudioRenderer")
+  @promise @rename("selectOutputDeviceForAudioRenderer")
+  SelectOutputDeviceForAudioRendererPromise(renderer: AudioRenderer, deviceDescriptor: AudioDeviceDescriptor): void;
   SelectOutputDeviceForAudioRendererSync(renderer: AudioRenderer, deviceDescriptor: AudioDeviceDescriptor): void;
 
-  @gen_promise("selectInputDevice")
+  @promise @rename("selectInputDevice")
+  SelectInputDevicePromise(deviceDescriptor: AudioDeviceDescriptor): void;
   SelectInputDeviceSync(deviceDescriptor: AudioDeviceDescriptor): void;
 
-  @gen_promise("selectInputDeviceForAudioCapturer")
+  @promise @rename("selectInputDeviceForAudioCapturer")
+  SelectInputDeviceForAudioCapturerPromise(capturer: AudioCapturer, deviceDescriptor: AudioDeviceDescriptor): void;
   SelectInputDeviceForAudioCapturerSync(capturer: AudioCapturer, deviceDescriptor: AudioDeviceDescriptor): void;
 }
 

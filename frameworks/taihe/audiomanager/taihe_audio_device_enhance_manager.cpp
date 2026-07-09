@@ -48,6 +48,11 @@ AudioDeviceEnhanceManager AudioDeviceEnhanceManagerImpl::CreateDeviceEnhanceMana
     return make_holder<AudioDeviceEnhanceManagerImpl, AudioDeviceEnhanceManager>(nullptr);
 }
 
+bool AudioDeviceEnhanceManagerImpl::IsEnhancedRoutingSupportedPromise()
+{
+    return IsEnhancedRoutingSupported();
+}
+
 bool AudioDeviceEnhanceManagerImpl::IsEnhancedRoutingSupported()
 {
     bool supported = false;
@@ -61,6 +66,11 @@ bool AudioDeviceEnhanceManagerImpl::IsEnhancedRoutingSupported()
         return false;
     }
     return supported;
+}
+
+void AudioDeviceEnhanceManagerImpl::SelectOutputDevicePromise(AudioDeviceDescriptor deviceDescriptor)
+{
+    return SelectOutputDeviceSync(deviceDescriptor);
 }
 
 void AudioDeviceEnhanceManagerImpl::SelectOutputDeviceSync(AudioDeviceDescriptor deviceDescriptor)
@@ -82,6 +92,12 @@ void AudioDeviceEnhanceManagerImpl::SelectOutputDeviceSync(AudioDeviceDescriptor
         }
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDevice failed");
     }
+}
+
+void AudioDeviceEnhanceManagerImpl::SelectOutputDeviceForAudioRendererPromise(
+    weak::AudioRenderer renderer, AudioDeviceDescriptor deviceDescriptor)
+{
+    return SelectOutputDeviceForAudioRendererSync(renderer, deviceDescriptor);
 }
 
 void AudioDeviceEnhanceManagerImpl::SelectOutputDeviceForAudioRendererSync(
@@ -117,6 +133,11 @@ void AudioDeviceEnhanceManagerImpl::SelectOutputDeviceForAudioRendererSync(
     }
 }
 
+void AudioDeviceEnhanceManagerImpl::SelectInputDevicePromise(AudioDeviceDescriptor deviceDescriptor)
+{
+    return SelectInputDeviceSync(deviceDescriptor);
+}
+
 void AudioDeviceEnhanceManagerImpl::SelectInputDeviceSync(AudioDeviceDescriptor deviceDescriptor)
 {
     std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> selectedAudioDevice =
@@ -136,6 +157,12 @@ void AudioDeviceEnhanceManagerImpl::SelectInputDeviceSync(AudioDeviceDescriptor 
         }
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectInputDevice failed");
     }
+}
+
+void AudioDeviceEnhanceManagerImpl::SelectInputDeviceForAudioCapturerPromise(
+    weak::AudioCapturer capturer, AudioDeviceDescriptor deviceDescriptor)
+{
+    return SelectInputDeviceForAudioCapturerSync(capturer, deviceDescriptor);
 }
 
 void AudioDeviceEnhanceManagerImpl::SelectInputDeviceForAudioCapturerSync(

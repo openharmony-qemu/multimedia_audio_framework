@@ -56,6 +56,16 @@ TonePlayerOrNull TonePlayerImpl::CreateTonePlayerWrapper(
     return TonePlayerOrNull::make_type_tonePlayer(make_holder<TonePlayerImpl, TonePlayer>(tonePlayer));
 }
 
+void TonePlayerImpl::LoadAsync(ToneType type)
+{
+    return LoadSync(type);
+}
+
+void TonePlayerImpl::LoadPromise(ToneType type)
+{
+    return LoadSync(type);
+}
+
 void TonePlayerImpl::LoadSync(ToneType type)
 {
     int32_t toneType = static_cast<int32_t>(type);
@@ -67,6 +77,16 @@ void TonePlayerImpl::LoadSync(ToneType type)
     if (!isTrue) {
         TaiheAudioError::ThrowError(TAIHE_ERR_SYSTEM);
     }
+}
+
+void TonePlayerImpl::ReleaseAsync()
+{
+    return ReleaseSync();
+}
+
+void TonePlayerImpl::ReleasePromise()
+{
+    return ReleaseSync();
 }
 
 void TonePlayerImpl::ReleaseSync()
@@ -81,6 +101,16 @@ void TonePlayerImpl::ReleaseSync()
     }
 }
 
+void TonePlayerImpl::StopAsync()
+{
+    return StopSync();
+}
+
+void TonePlayerImpl::StopPromise()
+{
+    return StopSync();
+}
+
 void TonePlayerImpl::StopSync()
 {
     if (tonePlayer_ == nullptr) {
@@ -91,6 +121,16 @@ void TonePlayerImpl::StopSync()
     if (!isTrue) {
         TaiheAudioError::ThrowError(TAIHE_ERR_SYSTEM);
     }
+}
+
+void TonePlayerImpl::StartAsync()
+{
+    return StartSync();
+}
+
+void TonePlayerImpl::StartPromise()
+{
+    return StartSync();
 }
 
 void TonePlayerImpl::StartSync()
@@ -126,3 +166,5 @@ TonePlayerOrNull CreateTonePlayerSync(AudioRendererInfo const &options)
 } // namespace ANI::Audio
 
 TH_EXPORT_CPP_API_CreateTonePlayerSync(ANI::Audio::CreateTonePlayerSync);
+TH_EXPORT_CPP_API_CreateTonePlayerPromise(ANI::Audio::CreateTonePlayerSync);
+TH_EXPORT_CPP_API_CreateTonePlayerAsync(ANI::Audio::CreateTonePlayerSync);

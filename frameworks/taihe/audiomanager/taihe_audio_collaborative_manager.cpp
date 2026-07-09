@@ -133,6 +133,12 @@ bool AudioCollaborativeManagerImpl::IsCollaborativePlaybackEnabledForDevice(Audi
     return isCollaborativeEnabled;
 }
 
+void AudioCollaborativeManagerImpl::SetCollaborativePlaybackEnabledForDevicePromise(
+    AudioDeviceDescriptor deviceDescriptor, bool enabled)
+{
+    return SetCollaborativePlaybackEnabledForDeviceSync(deviceDescriptor, enabled);
+}
+
 void AudioCollaborativeManagerImpl::SetCollaborativePlaybackEnabledForDeviceSync(
     AudioDeviceDescriptor deviceDescriptor, bool enabled)
 {

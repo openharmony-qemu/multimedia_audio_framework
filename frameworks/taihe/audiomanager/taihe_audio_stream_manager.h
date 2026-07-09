@@ -36,9 +36,17 @@ public:
 
     static AudioStreamManager CreateStreamManagerWrapper();
 
+    array<AudioRendererChangeInfo> GetCurrentAudioRendererInfoArrayAsync();
+    array<AudioRendererChangeInfo> GetCurrentAudioRendererInfoArrayPromise();
     array<AudioRendererChangeInfo> GetCurrentAudioRendererInfoArraySync();
+    array<AudioCapturerChangeInfo> GetCurrentAudioCapturerInfoArrayAsync();
+    array<AudioCapturerChangeInfo> GetCurrentAudioCapturerInfoArrayPromise();
     array<AudioCapturerChangeInfo> GetCurrentAudioCapturerInfoArraySync();
+    array<AudioEffectMode> GetAudioEffectInfoArrayAsync(StreamUsage usage);
+    array<AudioEffectMode> GetAudioEffectInfoArrayPromise(StreamUsage usage);
     array<AudioEffectMode> GetAudioEffectInfoArraySync(StreamUsage usage);
+    bool IsActiveAsync(AudioVolumeType volumeType);
+    bool IsActivePromise(AudioVolumeType volumeType);
     bool IsActiveSync(AudioVolumeType volumeType);
     bool IsStreamActive(StreamUsage streamUsage);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);

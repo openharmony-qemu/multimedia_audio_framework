@@ -38,29 +38,58 @@ public:
     static AudioRoutingManager CreateRoutingManagerWrapper();
 
 #if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
+    bool IsMicBlockDetectionSupportedPromise();
     bool IsMicBlockDetectionSupportedSync();
 #endif
+    array<AudioDeviceDescriptor> GetDevicesAsync(DeviceFlag deviceFlag);
+    array<AudioDeviceDescriptor> GetDevicesPromise(DeviceFlag deviceFlag);
     array<AudioDeviceDescriptor> GetDevicesSync(DeviceFlag deviceFlag);
     array<AudioDeviceDescriptor> GetAvailableDevices(DeviceUsage usage);
     array<AudioDeviceDescriptor> GetExcludedDevices(DeviceUsage usage);
+    array<AudioDeviceDescriptor> GetPreferredOutputDeviceForRendererInfoAsync(AudioRendererInfo const &rendererInfo);
+    array<AudioDeviceDescriptor> GetPreferredOutputDeviceForRendererInfoPromise(AudioRendererInfo const &rendererInfo);
     array<AudioDeviceDescriptor> GetPreferredOutputDeviceForRendererInfoSync(AudioRendererInfo const &rendererInfo);
+    array<AudioDeviceDescriptor> GetPreferredInputDeviceForCapturerInfoAsync(AudioCapturerInfo const &capturerInfo);
+    array<AudioDeviceDescriptor> GetPreferredInputDeviceForCapturerInfoPromise(AudioCapturerInfo const &capturerInfo);
     array<AudioDeviceDescriptor> GetPreferredInputDeviceForCapturerInfoSync(AudioCapturerInfo const &capturerInfo);
+    void SelectOutputDeviceAsync(array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDevicePromise(array_view<AudioDeviceDescriptor> outputAudioDevices);
     void SelectOutputDeviceSync(array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceByFilterAsync(AudioRendererFilter const &filter,
+        array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceByFilterPromise(AudioRendererFilter const &filter,
+        array_view<AudioDeviceDescriptor> outputAudioDevices);
     void SelectOutputDeviceByFilterSync(AudioRendererFilter const &filter,
         array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceByFilterWithStrategyPromise(AudioRendererFilter const &filter,
+        array_view<AudioDeviceDescriptor> outputAudioDevices, AudioDevcieSelectStrategy strategy);
     void SelectOutputDeviceByFilterWithStrategySync(AudioRendererFilter const &filter,
         array_view<AudioDeviceDescriptor> outputAudioDevices, AudioDevcieSelectStrategy strategy);
+    void RestoreOutputDeviceByFilterAsync(AudioRendererFilter const &filter);
+    void RestoreOutputDeviceByFilterPromise(AudioRendererFilter const &filter);
     void RestoreOutputDeviceByFilterSync(AudioRendererFilter const &filter);
     array<AudioDeviceDescriptor> GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter);
     array<AudioDeviceDescriptor> GetPreferredOutputDeviceByFilter(AudioRendererFilter const &filter);
+    void SelectInputDeviceByFilterPromise(AudioCapturerFilter const &filter,
+        array_view<AudioDeviceDescriptor> inputAudioDevices);
     void SelectInputDeviceByFilterSync(AudioCapturerFilter const &filter,
         array_view<AudioDeviceDescriptor> inputAudioDevices);
+    void SelectInputDeviceAsync(array_view<AudioDeviceDescriptor> inputAudioDevices);
+    void SelectInputDevicePromise(array_view<AudioDeviceDescriptor> inputAudioDevices);
     void SelectInputDeviceSync(array_view<AudioDeviceDescriptor> inputAudioDevices);
+    void SetCommunicationDeviceAsync(CommunicationDeviceType deviceType, bool active);
+    void SetCommunicationDevicePromise(CommunicationDeviceType deviceType, bool active);
     void SetCommunicationDeviceSync(CommunicationDeviceType deviceType, bool active);
+    bool IsCommunicationDeviceActiveAsync(CommunicationDeviceType deviceType);
+    bool IsCommunicationDeviceActivePromise(CommunicationDeviceType deviceType);
     bool IsCommunicationDeviceActiveSync(CommunicationDeviceType deviceType);
+    void ExcludeOutputDevicesPromise(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices);
     void ExcludeOutputDevicesSync(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices);
+    void UnexcludeOutputDevicesWithUsageAndDevicesPromise(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices);
     void UnexcludeOutputDevicesWithUsageAndDevices(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices);
+    void UnexcludeOutputDevicesWithUsagePromise(DeviceUsage usage);
     void UnexcludeOutputDevicesWithUsage(DeviceUsage usage);
+    array<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptorsPromise();
     array<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptorsSync();
     void DeclareDeviceTypesCompatibility(array_view<DeviceType> deviceTypes);
     void OnPreferredInputDeviceChangeForCapturerInfo(AudioCapturerInfo const &capturerInfo,
