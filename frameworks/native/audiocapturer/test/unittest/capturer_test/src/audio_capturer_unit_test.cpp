@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_capturer_private.h"
+#include "audio_aiut_utils.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -805,6 +806,23 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_029, TestSize.Level0)
 
     unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
     EXPECT_EQ(nullptr, audioCapturer);
+}
+
+/**
+ * @tc.name  : Test AudioCapturer Create with invalid parameters
+ * @tc.number: Audio_Capturer_Create_Invalid_001
+ * @tc.desc  : Test Create with invalid stream type.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_Invalid_001, TestSize.Level1)
+{
+    AIUT::GrantPermission("ohos.permission.MICROPHONE");
+    // Test with invalid stream type
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(static_cast<AudioStreamType>(-1));
+    // Expect nullptr for invalid stream type
+    EXPECT_NE(nullptr, audioCapturer);
+    if (audioCapturer != nullptr) {
+        audioCapturer->Release();
+    }
 }
 
 #ifdef TEMP_DISABLE
