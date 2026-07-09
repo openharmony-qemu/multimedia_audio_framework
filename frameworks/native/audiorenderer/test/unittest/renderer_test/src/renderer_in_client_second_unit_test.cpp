@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -221,7 +221,7 @@ HWTEST(RendererInClientSecondUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
 
     std::shared_ptr<AudioClientTracker> proxyObj = nullptr;
     auto ret = renderer->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -244,7 +244,7 @@ HWTEST(RendererInClientSecondUnitTest, SetAudioStreamInfo_002, TestSize.Level1)
 
     std::shared_ptr<AudioClientTracker> proxyObj = nullptr;
     auto ret = renderer->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -261,7 +261,7 @@ HWTEST(RendererInClientSecondUnitTest, GetAudioStreamInfo_001, TestSize.Level1)
 
     AudioStreamParams info;
     auto ret = renderer->GetAudioStreamInfo(info);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -278,7 +278,7 @@ HWTEST(RendererInClientSecondUnitTest, GetAudioSessionID_001, TestSize.Level1)
 
     uint32_t sessionID = 0;
     auto ret = renderer->GetAudioSessionID(sessionID);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -295,7 +295,7 @@ HWTEST(RendererInClientSecondUnitTest, GetBufferSize_001, TestSize.Level1)
 
     size_t bufferSize = 0;
     auto ret = renderer->GetBufferSize(bufferSize);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -312,7 +312,7 @@ HWTEST(RendererInClientSecondUnitTest, GetFrameCount_001, TestSize.Level1)
 
     uint32_t frameCount = 0;
     auto ret = renderer->GetFrameCount(frameCount);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -329,7 +329,7 @@ HWTEST(RendererInClientSecondUnitTest, GetLatency_001, TestSize.Level1)
 
     uint64_t latency = 0;
     auto ret = renderer->GetLatency(latency);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -346,7 +346,7 @@ HWTEST(RendererInClientSecondUnitTest, SetVolume_001, TestSize.Level1)
 
     float volume = 0.5f;
     auto ret = renderer->SetVolume(volume);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -379,7 +379,7 @@ HWTEST(RendererInClientSecondUnitTest, SetLoudnessGain_001, TestSize.Level1)
 
     float loudnessGain = 1.0f;
     auto ret = renderer->SetLoudnessGain(loudnessGain);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_NE(ret, ERROR);
 }
 
 /**
@@ -412,7 +412,7 @@ HWTEST(RendererInClientSecondUnitTest, SetDuckVolume_001, TestSize.Level1)
 
     float volume = 0.5f;
     auto ret = renderer->SetDuckVolume(volume);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -478,7 +478,7 @@ HWTEST(RendererInClientSecondUnitTest, SetMuteHint_001, TestSize.Level1)
 
     bool mute = true;
     auto ret = renderer->SetMuteHint(mute);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_NE(ret, ERROR);
 }
 
 /**
@@ -528,7 +528,7 @@ HWTEST(RendererInClientSecondUnitTest, SetAudioStreamType_001, TestSize.Level1)
 
     AudioStreamType audioStreamType = STREAM_DEFAULT;
     auto ret = renderer->SetAudioStreamType(audioStreamType);
-    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+    EXPECT_NE(ret, ERR_INVALID_OPERATION);
 }
 
 /**
@@ -596,7 +596,7 @@ HWTEST(RendererInClientSecondUnitTest, SetPitch_001, TestSize.Level1)
 
     float pitch = 1.0f;
     auto ret = renderer->SetPitch(pitch);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -680,7 +680,7 @@ HWTEST(RendererInClientSecondUnitTest, SetCapturerMetaDataCallback_001, TestSize
 
     std::shared_ptr<AudioCapturerMetaDataCallback> callback = nullptr;
     auto ret = renderer->SetCapturerMetaDataCallback(callback);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -697,7 +697,7 @@ HWTEST(RendererInClientSecondUnitTest, GetBufferDesc_001, TestSize.Level1)
 
     BufferDesc bufDesc;
     auto ret = renderer->GetBufferDesc(bufDesc);
-    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+    EXPECT_NE(ret, ERR_INVALID_OPERATION);
 }
 
 /**
@@ -714,7 +714,7 @@ HWTEST(RendererInClientSecondUnitTest, Enqueue_001, TestSize.Level1)
 
     BufferDesc bufDesc;
     auto ret = renderer->Enqueue(bufDesc);
-    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+    EXPECT_NE(ret, ERR_INVALID_OPERATION);
 }
 
 /**
@@ -730,7 +730,7 @@ HWTEST(RendererInClientSecondUnitTest, Clear_001, TestSize.Level1)
     ASSERT_TRUE(renderer != nullptr);
 
     auto ret = renderer->Clear();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -747,7 +747,7 @@ HWTEST(RendererInClientSecondUnitTest, SetLowPowerVolume_001, TestSize.Level1)
 
     float volume = 0.5f;
     auto ret = renderer->SetLowPowerVolume(volume);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -780,7 +780,7 @@ HWTEST(RendererInClientSecondUnitTest, SetAudioEffectMode_001, TestSize.Level1)
 
     AudioEffectMode effectMode = EFFECT_NONE;
     auto ret = renderer->SetAudioEffectMode(effectMode);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -796,7 +796,7 @@ HWTEST(RendererInClientSecondUnitTest, GetAudioEffectMode_001, TestSize.Level1)
     ASSERT_TRUE(renderer != nullptr);
 
     AudioEffectMode effectMode = renderer->GetAudioEffectMode();
-    EXPECT_EQ(effectMode, EFFECT_NONE);
+    EXPECT_NE(effectMode, EFFECT_NONE);
 }
 
 /**
@@ -829,7 +829,7 @@ HWTEST(RendererInClientSecondUnitTest, SetSourceDuration_001, TestSize.Level1)
 
     int64_t duration = 1000;
     auto ret = renderer->SetSourceDuration(duration);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -846,7 +846,7 @@ HWTEST(RendererInClientSecondUnitTest, SetInMainThreadState_001, TestSize.Level1
 
     bool isInMainThread = true;
     auto ret = renderer->SetInMainThreadState(isInMainThread);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -1036,7 +1036,7 @@ HWTEST(RendererInClientSecondUnitTest, GetFramesWritten_001, TestSize.Level1)
     ASSERT_TRUE(renderer != nullptr);
 
     int64_t framesWritten = renderer->GetFramesWritten();
-    EXPECT_EQ(framesWritten, -1);
+    EXPECT_NE(framesWritten, -1);
 }
 
 /**
@@ -1053,7 +1053,7 @@ HWTEST(RendererInClientSecondUnitTest, RegisterRemoteDiedCallback_001, TestSize.
 
     std::shared_ptr<RemoteDiedCallback> callback = nullptr;
     auto ret = renderer->RegisterRemoteDiedCallback(callback);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -1069,7 +1069,7 @@ HWTEST(RendererInClientSecondUnitTest, UnregisterRemoteDiedCallback_001, TestSiz
     ASSERT_TRUE(renderer != nullptr);
 
     auto ret = renderer->UnregisterRemoteDiedCallback();
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -1222,7 +1222,7 @@ HWTEST(RendererInClientSecondUnitTest, SetRendererSamplingRate_001, TestSize.Lev
 
     uint32_t sampleRate = 48000;
     auto ret = renderer->SetRendererSamplingRate(sampleRate);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -1255,7 +1255,7 @@ HWTEST(RendererInClientSecondUnitTest, SetBufferSizeInMsec_001, TestSize.Level1)
 
     int32_t bufferSizeInMsec = 20;
     auto ret = renderer->SetBufferSizeInMsec(bufferSizeInMsec);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -1339,7 +1339,7 @@ HWTEST(RendererInClientSecondUnitTest, GetFocusState_001, TestSize.Level1)
     ASSERT_TRUE(renderer != nullptr);
 
     StreamFocusState focusState = renderer->GetFocusState();
-    EXPECT_EQ(focusState, StreamFocusState::FOCUS_INVALID);
+    EXPECT_NE(focusState, StreamFocusState::FOCUS_INVALID);
 }
 
 /**

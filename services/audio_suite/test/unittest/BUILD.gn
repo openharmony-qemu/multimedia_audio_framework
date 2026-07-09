@@ -36,15 +36,25 @@ if (audio_framework_feature_audiosuite_support) {
       "../../client/node/include",
       "../../client/utils/include",
       "../../client/pcm_process/include",
+      "../../client/stub/include",
+      "../../server/manager/include",
+      "../../server/audio_suite_policy/include",
       "../../../audio_engine/buffer",
       "../../../audio_engine/plugin/channel_converter/include/",
       "../../../audio_engine/plugin/resample/include/",
+      "../../../audio_service/common/include",
       "../../../audio_service/common/include/limiter",
       "../../../../interfaces/inner_api/native/audiocommon/include",
       "../../../../interfaces/inner_api/native/audiosuite/include",
       "../../../../interfaces/inner_api/native/audio_pcm_process/include",
+      "../../../../interfaces/kits/c/audio_suite/",
+      "../../../../interfaces/kits/c/common",
+      "../../../../frameworks/native/ohaudiosuite",
+      "../../../../frameworks/native/audioutils/include",
       "../../../audio_engine/node/include",
       "./converter/include",
+      "./service",
+      "${target_gen_dir}",
     ]
   }
 
@@ -55,6 +65,8 @@ if (audio_framework_feature_audiosuite_support) {
       "manager/src/audio_suite_manager_dfx_test.cpp",
       "manager/src/audio_suite_engine_manager_test.cpp",
       "manager/src/audio_suite_manager_params_template_test.cpp",
+      "manager/src/download_manager_test.cpp",
+      "../../server/manager/src/download_manager.cpp",
     ]
 
     sanitize = {
@@ -71,6 +83,9 @@ if (audio_framework_feature_audiosuite_support) {
 
     deps = [
       "../../:audio_suite_static",
+      "../../:audio_suite",
+      "../../idl:audio_suite_sa_client_idl_interface",
+      "../../idl:audio_suite_sa_server_idl_interface",
     ]
 
     external_deps = [
@@ -78,6 +93,8 @@ if (audio_framework_feature_audiosuite_support) {
       "googletest:gtest",
       "googletest:gmock",
       "hilog:libhilog",
+      "ipc:ipc_core",
+      "init:libbegetutil",
     ]
   }
 
@@ -201,6 +218,49 @@ if (audio_framework_feature_audiosuite_support) {
       "c_utils:utils",
       "googletest:gtest",
       "hilog:libhilog",
+    ]
+  }
+
+  ohos_unittest("audio_suite_service_test") {
+    module_out_path = module_output_path
+    sources = [
+      "service/audio_suite_rom_download_service_test.cpp",
+      "../../server/manager/src/download_manager.cpp",
+      "../../server/audio_suite_policy/src/audio_suite_rom_download_service.cpp",
+    ]
+
+    defines = [ "AUDIOSUITE_SA_UT" ]
+
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      cfi_vcall_icall_only = true
+      debug = false
+      integer_overflow = true
+      ubsan = true
+      boundary_sanitize = true
+    }
+
+    configs = [ ":audio_suite_unit_config" ]
+
+    deps = [
+      "../../idl:audio_suite_sa_client_idl_interface",
+      "../../idl:audio_suite_sa_server_idl_interface",
+      "../../:audio_suite",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "googletest:gtest",
+      "googletest:gmock",
+      "hilog:libhilog",
+      "ipc:ipc_core",
+      "init:libbegetutil",
+      "safwk:system_ability_fwk",
+      "access_token:libaccesstoken_sdk",
+      "access_token:libnativetoken_shared",
+      "access_token:libtokensetproc_shared",
+      "hisysevent:libhisysevent",
     ]
   }
 

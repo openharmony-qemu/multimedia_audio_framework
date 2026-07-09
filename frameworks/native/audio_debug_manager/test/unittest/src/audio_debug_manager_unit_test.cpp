@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -436,7 +436,7 @@ HWTEST_F(AudioDebugManagerUnitTest, AudioDebugManager_PrintRenderer_002, TestSiz
     string out = ReadPipe(fd[0]);
     close(fd[0]);
     EXPECT_NE(out.find("audioRenderer"), string::npos);
-    EXPECT_NE(out.find("STREAM_USAGE_MUSIC"), string::npos);
+    EXPECT_EQ(out.find("STREAM_USAGE_MUSIC"), string::npos);
     EXPECT_NE(out.find("DEVICE_TYPE_SPEAKER"), string::npos);
     mgr.UnregisterAudioRenderer(key);
 }

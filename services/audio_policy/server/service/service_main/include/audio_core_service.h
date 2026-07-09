@@ -682,7 +682,7 @@ private:
     std::vector<SourceOutput> GetSourceOutputs();
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId);
     void HandleRingerOrAlarmerRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        InternalDeviceType deviceType, const uint32_t pipeId);
+        InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage);
     void HandleNormalOrDualToneRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage);
     void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc,

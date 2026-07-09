@@ -197,6 +197,7 @@ void AudioArmDeviceBehavior::UpdateArmModuleInfo(const std::shared_ptr<AudioDevi
     }
     
     moduleInfo.macAddress = deviceDesc->GetMacAddress();
+    moduleInfo.deviceType = std::to_string(static_cast<int32_t>(deviceDesc->deviceType_));
 }
 
 int32_t AudioArmDeviceBehavior::ProcessModuleActivation(

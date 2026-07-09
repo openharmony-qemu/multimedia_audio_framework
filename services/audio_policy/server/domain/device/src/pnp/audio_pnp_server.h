@@ -58,6 +58,7 @@ private:
     void DetectAudioDevice();
     void DetectAudioHDMIDevice();
     void DetectAudioDpDevice();
+    void DetectAudioHdmiMipiDevice();
 };
 
 std::string GetAudioEventInfo(const AudioEvent audioEvent);

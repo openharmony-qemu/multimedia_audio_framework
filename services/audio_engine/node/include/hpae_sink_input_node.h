@@ -39,7 +39,6 @@ struct SessionEffectAttachState {
     std::string effectName;
     std::weak_ptr<IEffectInstance> instance;
     AudioEffectConfig config;
-    int32_t lastSeStatus = 0;   // HpaeSessionEffectNode::STATUS as int. 0 = IDLE/unknown.
 };
 
 class HpaeSinkInputNode : public OutputNode<HpaePcmBuffer *> {

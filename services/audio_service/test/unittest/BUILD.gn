@@ -579,7 +579,7 @@ ohos_unittest("audio_volume_unit_test") {
 }
 
 ohos_unittest("audio_pitch_processor_unit_test") {
-  module_out_path = "audio_framework/audio_framework_common/pitch_processor"
+  module_out_path = "audio_framework/audio_route_common"
 
   configs = [ ":module_private_config" ]
 
@@ -2904,7 +2904,7 @@ ohos_unittest("audio_interrupt_client_manager_unit_test") {
 
 ohos_unittest("audio_effect_server_unit_test") {
   testonly = true
-  module_out_path = "audio_framework/audio_service/audio_effect_server"
+  module_out_path = "audio_framework/audio_framework_route/audio_service"
 
   cflags = [ "-fno-access-control" ]
 
@@ -3026,7 +3026,7 @@ ohos_unittest("audio_endpoint_third_unit_test") {
 
 ohos_unittest("audio_playback_engine_unit_test") {
   testonly = true
-  module_out_path = "audio_framework/audio_service/audio_playback_engine"
+  module_out_path = "audio_framework/audio_framework_route/audio_service"
 
   cflags = [ "-fno-access-control" ]
 
@@ -3191,7 +3191,7 @@ ohos_unittest("audio_service_second_unit_test") {
 
 ohos_unittest("audio_manager_stub_unit_test") {
   testonly = true
-  module_out_path = "audio_framework/audio_service/audio_manager_stub"
+  module_out_path = "audio_framework/audio_framework_route/audio_service"
 
   cflags = [ "-fno-access-control" ]
 

@@ -41,21 +41,6 @@ constexpr int32_t DELAY_MS = 10;
 constexpr int32_t MAX_RETRY_USB_DEVICE_NUM = 10;
 constexpr std::string_view DEV_DIRECTORY = "/dev";
 
-static string ReadTextFile(const string &file)
-{
-    string ret;
-    ifstream fin;
-    fin.open(file.c_str(), ios::binary | ios::in);
-    if (fin) {
-        int val;
-        while ((val = fin.get()) != EOF) {
-            ret.push_back(static_cast<char>(val));
-        }
-        fin.close();
-    }
-    return ret;
-}
-
 static void FillSoundCard(const string &path, SoundCard &card)
 {
     DIR *dir = opendir(path.c_str());

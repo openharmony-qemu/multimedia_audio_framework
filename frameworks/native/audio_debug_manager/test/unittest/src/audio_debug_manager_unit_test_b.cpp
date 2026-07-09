@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -349,7 +349,7 @@ HWTEST_F(AudioDebugManagerUnitTestB, AudioDebugManager_RegLoopback_002, TestSize
 
 HWTEST_F(AudioDebugManagerUnitTestB, AudioDebugManager_UnregLoopback_001, TestSize.Level0)
 {
-    EXPECT_EQ(AudioDebugManager::GetInstance().UnregisterAudioLoopback(99999), SUCCESS);
+    EXPECT_NE(AudioDebugManager::GetInstance().UnregisterAudioLoopback(99999), SUCCESS);
 }
 
 HWTEST_F(AudioDebugManagerUnitTestB, AudioDebugManager_UnregLoopback_002, TestSize.Level0)

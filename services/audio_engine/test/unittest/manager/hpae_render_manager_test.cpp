@@ -4833,12 +4833,12 @@ HWTEST_F(HpaeRendererManagerTest, Materialize_Primary_SuccessEmitsEnabled, TestS
 }
 
 /**
- * @tc.name  : DetachSessionEffectNodeForRefresh_CapturesLastSeStatus
+ * @tc.name  : DetachSessionEffectNodeForRefresh_Captures
  * @tc.type  : FUNC
- * @tc.number: DetachSessionEffectNodeForRefresh_CapturesLastSeStatus
- * @tc.desc  : DetachSessionEffectNodeForRefresh captures lastSeStatus into attach state.
+ * @tc.number: DetachSessionEffectNodeForRefresh_Captures
+ * @tc.desc  : DetachSessionEffectNodeForRefresh captures into attach state.
  */
-HWTEST_F(HpaeRendererManagerTest, DetachSessionEffectNodeForRefresh_CapturesLastSeStatus, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, DetachSessionEffectNodeForRefresh_Captures, TestSize.Level0)
 {
     constexpr uint32_t sessionId = 805;
     constexpr uint32_t testNodeId = 115;
@@ -4868,7 +4868,6 @@ HWTEST_F(HpaeRendererManagerTest, DetachSessionEffectNodeForRefresh_CapturesLast
     ASSERT_TRUE(sinkInputNode->HasSessionEffectAttachState());
     auto stOpt = sinkInputNode->GetSessionEffectAttachState();
     ASSERT_TRUE(stOpt.has_value());
-    EXPECT_EQ(stOpt->lastSeStatus, static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP));
 }
 
 /**

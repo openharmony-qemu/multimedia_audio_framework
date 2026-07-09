@@ -89,9 +89,11 @@ void AudioFastRendererUnitTest::TearDownTestCase(void)
 {
     // input testsuit teardown step，teardown invoked after all testcases
     g_isInit = false;
-    GetRenderPtr()->Stop();
-    GetRenderPtr()->Release();
-    GetRenderPtr()->Stop();
+    if (GetRenderPtr() != nullptr) {
+        GetRenderPtr()->Stop();
+        GetRenderPtr()->Release();
+        GetRenderPtr()->Stop();
+    }
 }
 
 void AudioFastRendererUnitTest::SetUp(void)

@@ -673,13 +673,6 @@ void HpaeRendererManager::MaterializeSessionEffectFromAttachState(uint32_t sessi
     int32_t ret = processCluster->CreateSessionEffectNode(sessionId, st->effectName, inst, st->config);
     if (ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS) ||
         ret == static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND)) {
-        // Restart preheat if previous incarnation was active.
-        if (st->lastSeStatus >= static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP)) {
-            auto seNode = processCluster->GetSessionEffectNode(sessionId);
-            if (seNode != nullptr) {
-                seNode->StartEffect();
-            }
-        }
         auto sessionIt = sessionNodeMap_.find(sessionId);
         HpaeSessionState sessionState = (sessionIt != sessionNodeMap_.end())
             ? sessionIt->second.state : HPAE_SESSION_NEW;

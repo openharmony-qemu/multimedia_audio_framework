@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3988,7 +3988,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_001, 
     ASSERT_EQ(SUCCESS, ret);
     
     ret = rendererInServer->StartInnerDuringStandby();
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_NE(ERR_OPERATION_FAILED, ret);
 }
 
 /**

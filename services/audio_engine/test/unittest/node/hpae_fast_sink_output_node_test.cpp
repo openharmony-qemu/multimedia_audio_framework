@@ -1392,6 +1392,8 @@ HWTEST_F(HpaeFastSinkOutputNodeTest, writeToDeviceBuffer_GetWriteBufferFail_001,
     bufInfo.frameLen = DEFAULT_FRAME_LEN;
     bufInfo.rate = DEFAULT_SAMPLE_RATE;
     auto pcmBuffer = std::make_unique<HpaePcmBuffer>(bufInfo);
+    // Set validRenderDataLen_ so writeSize check passes and GetWriteBuffer is reached
+    fastNode_->validRenderDataLen_ = fastNode_->dstSpanSizeInByte_;
     // Use a very large writePos that exceeds buffer bounds to cause GetWriteBuffer to fail
     uint64_t invalidPos = static_cast<uint64_t>(-1);
     EXPECT_NE(fastNode_->WriteToDeviceBuffer(pcmBuffer.get(), invalidPos), SUCCESS);
