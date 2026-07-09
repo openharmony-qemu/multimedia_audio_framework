@@ -2043,12 +2043,7 @@ void AudioPipeSelector::MatchCollaborativePipe(const std::shared_ptr<PipeStreamP
     AUDIO_INFO_LOG("MatchCollaborativePipe isCollaborationEnable_ old:%{public}d, new:%{public}d",
         pipeInfo->isCollaborationEnable_, streamPropInfo->isCollaborationEnable_);
 
-    pipeInfo->moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
-    pipeInfo->moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
-    pipeInfo->moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_));
-    pipeInfo->moduleInfo_.channelLayout = std::to_string(streamPropInfo->channelLayout_);
-    pipeInfo->moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
-    pipeInfo->isCollaborationEnable_ = streamPropInfo->isCollaborationEnable_;
+    UpdatePipeInfoFromStreamProp(streamDesc, streamPropInfo, *pipeInfo);
 
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
 }
