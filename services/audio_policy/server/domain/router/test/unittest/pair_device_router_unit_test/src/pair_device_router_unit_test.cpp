@@ -189,19 +189,5 @@ HWTEST(PairDeviceRouterUnitTest, PairDeviceRouter_009, TestSize.Level4)
     ASSERT_NE(dev, nullptr);
 }
 
-constexpr int32_t TEST_DEVICE_ID = 1001;
-static AudioDeviceDescriptor& CurrentActiveDevice()
-{
-    auto descs = AudioRouterSelectStrategy::GetInstance().GetCurrentOutputDevice(SYSTEM_UID);
-    auto desc = descs.empty() || !descs.back() ? make_shared<AudioDeviceDescriptor>() : descs.back();
-    if (desc->deviceId_ == 0) {
-        desc->deviceId_ = TEST_DEVICE_ID;
-        AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
-        AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
-    }
-    desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(desc->deviceId_);
-    return *desc;
-}
-
 } // namespace AudioStandard
 } // namespace OHOS
