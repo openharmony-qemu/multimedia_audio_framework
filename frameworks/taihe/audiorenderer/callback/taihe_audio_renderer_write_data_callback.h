@@ -16,6 +16,8 @@
 #ifndef TAIHE_AUDIO_RENDERER_WRITE_DATA_CALLBACK_H
 #define TAIHE_AUDIO_RENDERER_WRITE_DATA_CALLBACK_H
 
+#include <optional>
+
 #include "event_handler.h"
 #include "taihe_audio_renderer.h"
 #include "taihe_audio_renderer_callback.h"
@@ -26,7 +28,7 @@ using namespace ohos::multimedia::audio;
 class TaiheRendererWriteDataCallback : public OHOS::AudioStandard::AudioRendererWriteCallback,
     public std::enable_shared_from_this<TaiheRendererWriteDataCallback> {
 public:
-    explicit TaiheRendererWriteDataCallback(AudioRendererImpl *taiheRenderer);
+    TaiheRendererWriteDataCallback(AudioRendererImpl *taiheRenderer, size_t bufferSize);
     virtual ~TaiheRendererWriteDataCallback();
     void OnWriteData(size_t length) override;
 
@@ -39,16 +41,25 @@ private:
         std::string callbackName = "unknown";
         OHOS::AudioStandard::BufferDesc bufDesc {};
         AudioRendererImpl *rendererTaiheObj;
+        bool enqueued = false;
     };
 
-    static void SafeJsCallbackWriteDataWork(RendererWriteDataJsCallback *event);
-    void OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb);
-    static void CheckWriteDataCallbackResult(OHOS::AudioStandard::BufferDesc &bufDesc, AudioDataCallbackResult result);
+    static void SafeJsCallbackWriteDataWork(RendererWriteDataJsCallback &event);
+    static std::optional<AudioRendererWriteDataCallbackResult> CallWriteDataCallback(
+        RendererWriteDataJsCallback &event);
+    static void CopyWriteDataCallbackBuffer(OHOS::AudioStandard::BufferDesc &bufDesc,
+        const taihe::array<uint8_t> &data);
+    void OnJsRendererWriteDataCallback(const std::shared_ptr<RendererWriteDataJsCallback> &jsCb);
+    bool WaitForWriteDataCallbackComplete(const std::shared_ptr<RendererWriteDataJsCallback> &jsCb);
+    static void CheckWriteDataCallbackResult(OHOS::AudioStandard::BufferDesc &bufDesc,
+        AudioDataCallbackResult result);
 
     std::mutex mutex_;
     std::shared_ptr<AutoRef> rendererWriteDataCallback_ = nullptr;
     AudioRendererImpl *taiheRenderer_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
+    const size_t bufferSize_ = 0;
+    const std::unique_ptr<uint8_t[]> callbackBuffer_ = nullptr;
 
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
     static vector<AudioRendererImpl*> activeRenderers_;

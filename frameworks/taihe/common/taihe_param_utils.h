@@ -156,6 +156,14 @@ public:
             std::make_shared<taihe::callback<AudioDataCallbackResult(E)>>(callback);
         return std::reinterpret_pointer_cast<uintptr_t>(taiheCallback);
     }
+
+    static std::shared_ptr<uintptr_t> TypeCallback(
+        callback_view<AudioRendererWriteDataCallbackResult(int32_t)> callback)
+    {
+        std::shared_ptr<taihe::callback<AudioRendererWriteDataCallbackResult(int32_t)>> taiheCallback =
+            std::make_shared<taihe::callback<AudioRendererWriteDataCallbackResult(int32_t)>>(callback);
+        return std::reinterpret_pointer_cast<uintptr_t>(taiheCallback);
+    }
 };
 } // namespace ANI::Audio
 
