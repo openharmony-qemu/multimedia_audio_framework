@@ -782,8 +782,8 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
 {
     // Vehicle system scenario enter
     CHECK_AND_RETURN_LOG(desc != nullptr, "StreamDesc is null, none streamProp");
-    auto deviceType = desc->GetMainNewDeviceType();
-    if (desc->audioMode_ == AUDIO_MODE_RECORD || !AudioPolicyUtils::GetInstance().IsMultiBusDevice(deviceType)) {
+    if (desc->audioMode_ == AUDIO_MODE_RECORD ||
+        !AudioPolicyUtils::GetInstance().IsMultiBusDevice(desc->GetMainNewDeviceType())) {
         GetStreamPropInfo(desc, info);
         return;
     }
