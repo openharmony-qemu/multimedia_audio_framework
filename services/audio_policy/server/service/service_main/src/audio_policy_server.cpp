@@ -5994,6 +5994,8 @@ int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, 
 
 int32_t AudioPolicyServer::SelectPrivateDevice(int32_t devType, const std::string &macAddress)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     eventEntry_->OnPrivacyDeviceSelected(static_cast<DeviceType>(devType), macAddress, "Nearlink");
     return SUCCESS;
 }
@@ -6001,6 +6003,8 @@ int32_t AudioPolicyServer::SelectPrivateDevice(int32_t devType, const std::strin
 int32_t AudioPolicyServer::ForceSelectDevice(int32_t devType, const std::string &macAddress,
     const sptr<AudioRendererFilter> &filter)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     eventEntry_->OnForcedDeviceSelected(static_cast<DeviceType>(devType), macAddress, filter, "Nearlink");
     return SUCCESS;
 }
