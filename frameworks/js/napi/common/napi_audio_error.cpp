@@ -43,13 +43,13 @@ napi_status NapiAudioError::ThrowError(napi_env env, const char *napiMessage, in
     return napi_ok;
 }
 
-void NapiAudioError::ThrowError(napi_env env, int32_t code)
+void NapiAudioError::ThrowErrorDoNotUse(napi_env env, int32_t code)
 {
     std::string messageValue = GetMessageByCode(code);
     napi_throw_error(env, (std::to_string(code)).c_str(), messageValue.c_str());
 }
 
-void NapiAudioError::ThrowError(napi_env env, int32_t code, const std::string &errMessage)
+void NapiAudioError::ThrowErrorDoNotUse(napi_env env, int32_t code, const std::string &errMessage)
 {
     std::string messageValue;
     if (code == NAPI_ERR_INVALID_PARAM || code == NAPI_ERR_INPUT_INVALID) {
@@ -60,17 +60,15 @@ void NapiAudioError::ThrowError(napi_env env, int32_t code, const std::string &e
     napi_throw_error(env, (std::to_string(code)).c_str(), messageValue.c_str());
 }
 
-napi_value NapiAudioError::ThrowErrorAndReturn(napi_env env, int32_t errCode)
+napi_value NapiAudioError::ThrowErrorAndReturnDoNotUse(napi_env env, int32_t errCode)
 {
-    ThrowError(env, errCode);
+    ThrowErrorDoNotUse(env, errCode);
     return nullptr;
 }
 
-// Deprecated: error code returned as string type,
-// use ThrowErrorAndReturn(env, napiMessage, napiCode) which returns number type instead
-napi_value NapiAudioError::ThrowErrorAndReturn(napi_env env, int32_t errCode, const std::string &errMessage)
+napi_value NapiAudioError::ThrowErrorAndReturnDoNotUse(napi_env env, int32_t errCode, const std::string &errMessage)
 {
-    ThrowError(env, errCode, errMessage);
+    ThrowErrorDoNotUse(env, errCode, errMessage);
     return nullptr;
 }
 
