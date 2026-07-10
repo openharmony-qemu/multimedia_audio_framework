@@ -3245,7 +3245,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     streamDesc->rendererInfo_.streamUsage;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-    if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_.load()) {
+    if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
         devices = std::vector<std::shared_ptr<AudioDeviceDescriptor>> {
             AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice()
         };
