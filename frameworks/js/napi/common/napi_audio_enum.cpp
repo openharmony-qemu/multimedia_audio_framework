@@ -332,6 +332,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::playbackCaptureStartStateMap
 const std::map<std::string, int32_t> NapiAudioEnum::playbackCaptureModeMap = {
     {"MODE_DEFAULT", 0x0},
     {"MODE_MEDIA", 0x1},
+    {"MODE_ONLY_VOIP", 0x4000},
     {"MODE_EXCLUDING_SELF", 0x8000},
 };
 

@@ -61,12 +61,13 @@ const std::vector<OHOS::AudioStandard::DeviceType> DEVICE_TYPE_SET = {
 
 constexpr uint32_t PLAYBACK_CAPTURE_MODE_DEFAULT = 0x0;
 constexpr uint32_t PLAYBACK_CAPTURE_MODE_MEDIA = 0x1;
+constexpr uint32_t PLAYBACK_CAPTURE_MODE_ONLY_VOIP = 0x4000;
 constexpr uint32_t PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF = 0x8000;
 
 bool IsValidPlaybackCaptureMode(uint32_t mode)
 {
     return mode == PLAYBACK_CAPTURE_MODE_DEFAULT || mode == PLAYBACK_CAPTURE_MODE_MEDIA ||
-        mode == PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF ||
+        mode == PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF || mode == PLAYBACK_CAPTURE_MODE_ONLY_VOIP ||
         mode == (PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF | PLAYBACK_CAPTURE_MODE_MEDIA);
 }
 
@@ -76,7 +77,13 @@ void InitPlaybackCaptureConfig(OHOS::AudioStandard::AudioPlaybackCaptureConfig &
     auto &filterOptions = config.filterOptions;
     filterOptions.usageFilterMode = OHOS::AudioStandard::FilterMode::INCLUDE;
     filterOptions.pidFilterMode = OHOS::AudioStandard::FilterMode::INCLUDE;
+    config.isModernInnerCapturer = true;
 
+    if (mode == PLAYBACK_CAPTURE_MODE_ONLY_VOIP) {
+        filterOptions.usages.push_back(OHOS::AudioStandard::STREAM_USAGE_VOICE_COMMUNICATION);
+        filterOptions.usages.push_back(OHOS::AudioStandard::STREAM_USAGE_VIDEO_COMMUNICATION);
+        return;
+    }
     filterOptions.usages.push_back(OHOS::AudioStandard::STREAM_USAGE_UNKNOWN);
     filterOptions.usages.push_back(OHOS::AudioStandard::STREAM_USAGE_MEDIA);
     filterOptions.usages.push_back(OHOS::AudioStandard::STREAM_USAGE_MUSIC);
@@ -94,7 +101,6 @@ void InitPlaybackCaptureConfig(OHOS::AudioStandard::AudioPlaybackCaptureConfig &
         filterOptions.pids.push_back(getpid());
         filterOptions.pidFilterMode = OHOS::AudioStandard::FilterMode::EXCLUDE;
     }
-    config.isModernInnerCapturer = true;
 }
 const std::unordered_map<OHOS::AudioStandard::AudioSamplingRate, AudioSamplingRate> gNativeToAniAudioSamplingRate = {
     {OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_8000, AudioSamplingRate::key_t::SAMPLE_RATE_8000},
@@ -245,6 +251,9 @@ static int32_t GetPlaybackCaptureMode(OHOS::AudioStandard::AudioCapturerOptions 
 
     opts->capturerInfo.sourceType = OHOS::AudioStandard::SOURCE_TYPE_PLAYBACK_CAPTURE;
     InitPlaybackCaptureConfig(opts->playbackCaptureConfig, static_cast<uint32_t>(mode));
+    opts->playbackCaptureConfig.filterOptions.playbackCaptureMode = mode;
+    CHECK_AND_RETURN_RET(options.playbackCaptureUid.has_value(), AUDIO_OK);
+    opts->playbackCaptureConfig.filterOptions.playbackCaptureUid = options.playbackCaptureUid.value();
     return AUDIO_OK;
 }
 
