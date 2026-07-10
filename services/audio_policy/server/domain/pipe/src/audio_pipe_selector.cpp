@@ -1952,7 +1952,7 @@ void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStream
     info.moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(streamPropInfo->channelLayout_));
     info.moduleInfo_.channelLayout = std::to_string(streamPropInfo->channelLayout_);
     info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
-
+    info.isCollaborationEnable_ = streamPropInfo->isCollaborationEnable_;
     if (!streamDesc->newDeviceDescs_.empty()) {
         UpdateMouleInfoWitchDevice(streamDesc->newDeviceDescs_[0], info.moduleInfo_);
     }
@@ -2042,7 +2042,9 @@ void AudioPipeSelector::MatchCollaborativePipe(const std::shared_ptr<PipeStreamP
 
     AUDIO_INFO_LOG("MatchCollaborativePipe isCollaborationEnable_ old:%{public}d, new:%{public}d",
         pipeInfo->isCollaborationEnable_, streamPropInfo->isCollaborationEnable_);
-    ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, *pipeInfo);
+
+    UpdatePipeInfoFromStreamProp(streamDesc, streamPropInfo, *pipeInfo);
+
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
 }
 } // namespace AudioStandard
