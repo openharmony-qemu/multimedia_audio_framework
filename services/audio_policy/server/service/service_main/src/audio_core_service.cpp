@@ -1791,6 +1791,10 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         pipeManager_->RemoveSwitchStream(sessionId);
     }
 
+    if (!isFirstScreenOn_.load()) {
+        AUDIO_ERR_LOG("Did not receive screen-on broadcast, force set isFirstScreenOn_ to true as fallback");
+        isFirstScreenOn_.store(true);
+    }
     return SUCCESS;
 }
 
@@ -3002,7 +3006,7 @@ bool AudioCoreService::IsStreamActive(uint32_t sessionId)
 
 void AudioCoreService::SetFirstScreenOn()
 {
-    isFirstScreenOn_ = true;
+    isFirstScreenOn_.store(true);
 }
 
 bool AudioCoreService::IsA2dpOffloadStream(uint sessionId)
