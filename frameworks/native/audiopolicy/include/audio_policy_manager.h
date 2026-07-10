@@ -443,6 +443,8 @@ public:
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
+    int32_t SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities);
+
     int32_t GetMaxRendererInstances();
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);

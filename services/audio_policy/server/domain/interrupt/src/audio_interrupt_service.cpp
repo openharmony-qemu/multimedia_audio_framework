@@ -191,6 +191,8 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     interruptCustom_ = std::make_unique<AudioInterruptCustom>();
     interruptDfx_ = std::make_shared<AudioInterruptDfx>();
     interruptStrategy_ = std::make_unique<AudioInterruptStrategy>();
+
+    volumeTypePriorities_ = DEFAULT_STREAM_PRIORITY;
 }
 
 void AudioInterruptService::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
@@ -1696,8 +1698,8 @@ int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId, const
 
 int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
 {
-    if (DEFAULT_STREAM_PRIORITY.find(streamType) != DEFAULT_STREAM_PRIORITY.end()) {
-        return DEFAULT_STREAM_PRIORITY.at(streamType);
+    if (volumeTypePriorities_.find(streamType) != volumeTypePriorities_.end()) {
+        return volumeTypePriorities_.at(streamType);
     }
     return STREAM_DEFAULT_PRIORITY;
 }
@@ -1719,6 +1721,15 @@ AudioVolumeType AudioInterruptService::GetHighestPriorityVolumeTypeFromStreams(
     }
 
     return VolumeUtils::GetVolumeTypeFromStreamType(targetStreamType);
+}
+
+int32_t AudioInterruptService::SetVolumeControlPriority(const std::unordered_map<AudioVolumeType, int32_t> &priorities)
+{
+    int32_t size = priorities.size();
+    AUDIO_INFO_LOG("priorities.size() [%{public}d]", size);
+
+    volumeTypePriorities_ = priorities;
+    return SUCCESS;
 }
 
 int32_t AudioInterruptService::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType)

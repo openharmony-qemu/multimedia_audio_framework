@@ -290,6 +290,17 @@ public:
     float GetVolumeInUnitOfDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType device);
 
     /**
+     * @brief Set volume type control priority.
+     *
+     * @param priorities a volume type list which indicates the priority order of volume control.
+     * The position that is further forward has a higher priority.
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 26
+     */
+    int32_t SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities);
+
+    /**
      * @brief Set global microphone mute state.
      *
      * @param mute Specifies whether the Microphone is muted.
