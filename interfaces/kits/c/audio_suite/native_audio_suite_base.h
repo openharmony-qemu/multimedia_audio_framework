@@ -193,20 +193,20 @@ typedef enum {
  * @systemapi
  * @since 26.0.0
  */
-typedef enum {
+typedef enum OH_AudioSuite_SystemNodeType {
     /**
-     * Dialogue Algo Effect Node.
+     * Dialogue Algo System Effect Node.
      *
      * @since 26.0.0
      */
-    EFFECT_NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE = 301,
+    OH_AUDIOSUITE_EFFECT_NODE_SYSTEM_TYPE_DIALOGUE_ENHANCE = 301,
     /**
-     * Music Mastering Effect Node.
+     * Voice Beautifier System Effect Node.
      *
      * @since 26.0.0
      */
-    EFFECT_NODE_TYPE_SYSTEM_MUSIC_MASTER = 302,
-} OH_AudioNodeSystem_Type;
+    OH_AUDIOSUITE_EFFECT_NODE_SYSTEM_TYPE_VOICE_BEAUTIFIER = 302,
+} OH_AudioSuite_SystemNodeType;
 
 /**
  * @brief Define pipeline work mode
@@ -511,7 +511,7 @@ typedef struct OH_AudioFormat {
  * @systemapi
  * @since 26.0.0
  */
-typedef struct OH_AudioSystemNodeFormat {
+typedef struct OH_AudioSuite_SystemNodeFormat {
     /**
      * @brief Audio sampling rate.
      *
@@ -542,7 +542,7 @@ typedef struct OH_AudioSystemNodeFormat {
      * @since 26.0.0
      */
     OH_Audio_SampleFormat sampleFormat;
-} OH_AudioSystemNodeFormat;
+} OH_AudioSuite_SystemNodeFormat;
 
 /**
  * @brief Define the audio data array structure.
@@ -577,7 +577,7 @@ typedef struct OH_AudioDataArray {
  * @systemapi
  * @since 26.0.0
  */
-typedef struct OH_AudioMetaFrame {
+typedef struct OH_AudioSuite_MetaFrame {
     /**
      * @brief Audio data pointer.
      *
@@ -585,7 +585,7 @@ typedef struct OH_AudioMetaFrame {
      */
     void* audioData;
     /**
-     * @brief Request audio data size.
+     * @brief Audio data size.
      *
      * @since 26.0.0
      */
@@ -597,12 +597,12 @@ typedef struct OH_AudioMetaFrame {
      */
     void* metaData;
     /**
-     * @brief Request meta data size.
+     * @brief Meta data size.
      *
      * @since 26.0.0
      */
     int32_t metaDataSize;
-} OH_AudioMetaFrame;
+} OH_AudioSuite_MetaFrame;
 
 /**
  * @brief Define the sound field type.

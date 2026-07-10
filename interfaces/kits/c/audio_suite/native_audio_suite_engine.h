@@ -229,21 +229,19 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_MultiRenderFrame(OH_AudioSuitePipeline*
 /**
  * @brief The application uses this interface for audio data and meta data processing.
  *
- * This interface is similar to {@link OH_AudioSuiteEngine_MetaRenderFrame},
- * but uses the {@link OH_AudioMetaFrame} structure to pass audio data and meta data.
  * The application needs to set the audioData and metaData pointers in the metaFrame structure,
- * as well as the request sizes (audioDataSize and metaDataSize).
+ * as well as the data sizes (audioDataSize and metaDataSize).
  * The actual sizes of the processed data will be returned through responseAudioSize and responseMetaSize.
- * Note: The responseAudioDataSize and responseMetaDataSize fields in metaFrame are not used in this function.
  *
  * @systemapi
- * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline.
+ * @param audioSuitePipeline Reference created by {@link OH_AudioSuiteEngine_CreatePipeline}.
  * @param metaFrame Pointer to audio meta data frame structure.
- * @param responseAudioSize Size of audio data the system really write, unit is byte.
- * @param responseMetaSize Size of meta data the system really write, unit is byte.
- * @param finishedFlag This flag is used to indicate user whether all data processing has been completed.
+ * @param responseAudioSize Size of audio data the interface really write, unit is byte.
+ * @param responseMetaSize Size of meta data the interface really write, unit is byte.
+ * @param finishedFlag This flag is used to indicate to the user whether all data processing has been completed.
  * @return <ul>
  *         <li>{@link #AUDIOSUITE_SUCCESS} if execution succeeds.</li>
+ *         <li>202 if a non-system application calls this system API.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is nullptr or not valid value.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_PIPELINE_NOT_EXIST}
  *             if pipeline does not exist or has already been destroyed.</li>
@@ -255,7 +253,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_MultiRenderFrame(OH_AudioSuitePipeline*
  * @since 26.0.0
  */
 int32_t OH_AudioSuiteEngine_MetaRenderFrame(OH_AudioSuitePipeline* audioSuitePipeline,
-    OH_AudioMetaFrame* metaFrame, int32_t* responseAudioSize, int32_t* responseMetaSize, bool* finishedFlag);
+    OH_AudioSuite_MetaFrame* metaFrame, int32_t* responseAudioSize, int32_t* responseMetaSize, bool* finishedFlag);
 
 /**
  * @brief Create an audio node builder which can be used to create an audio node
@@ -320,20 +318,18 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetNodeType(OH_AudioNodeBuilder* b
 /**
  * @brief Set the audio node type to be created by the builder.
  *
- * When creating a node, other parameters are validated based on the node type,
- * so this method needs to be executed for all types of nodes.
- *
  * @systemapi
- * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create.
- * @param type Audio system node type. {@link OH_AudioNodeSystem_Type}
+ * @param builder Reference created by {@link OH_AudioSuiteNodeBuilder_Create}.
+ * @param type Audio system node type. {@link OH_AudioSuite_SystemNodeType}
  * @return <ul>
  *         <li>{@link #AUDIOSUITE_SUCCESS} if execution succeeds.</li>
+ *         <li>202 if a non-system application calls this system API.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. builder is nullptr, e.t.c.</li>
  *         </ul>
  * @since 26.0.0
  */
 int32_t OH_AudioSuiteNodeBuilderSystem_SetNodeType(
-    OH_AudioNodeBuilder* builder, OH_AudioNodeSystem_Type type);
+    OH_AudioNodeBuilder* builder, OH_AudioSuite_SystemNodeType type);
 
 /**
  * @brief Set the audio format supported by the node.
@@ -357,24 +353,19 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetFormat(OH_AudioNodeBuilder* bui
 /**
  * @brief Set the audio format supported by the node.
  *
- * For {@link INPUT_NODE_TYPE_DEFAULT},
- * the set audioFormat is used to specify the format in which the application writes data.
- * For {@link OUTPUT_NODE_TYPE_DEFAULT},
- * the set audioFormat is used to specify the format in which the application ultimately wants to retrieve the data.
- * Other types of nodes do not support this setting.
- *
  * @systemapi
- * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create.
+ * @param builder Reference created by {@link OH_AudioSuiteNodeBuilder_Create}.
  * @param audioFormat audio node format.
  * @return <ul>
  *         <li>{@link #AUDIOSUITE_SUCCESS} if execution succeeds.</li>
+ *         <li>202 if a non-system application calls this system API.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. builder is nullptr, e.t.c.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT} if an unsupported format is set in audioFormat.</li>
  *         </ul>
  * @since 26.0.0
  */
 int32_t OH_AudioSuiteNodeBuilderSystem_SetFormat(
-    OH_AudioNodeBuilder* builder, OH_AudioSystemNodeFormat audioFormat);
+    OH_AudioNodeBuilder* builder, OH_AudioSuite_SystemNodeFormat audioFormat);
 
 /**
  * @brief Callback function of request data, Only {@link INPUT_NODE_TYPE_DEFAULT} support this setting.
@@ -422,43 +413,34 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetRequestDataCallback(
 /**
  * @brief Callback function of request meta data, Only {@link INPUT_NODE_TYPE_DEFAULT} support this setting.
  *
- * This function allows the application to write partial audio data and meta data.
- * The application should fill the data according to metaFrame->audioDataSize and metaFrame->metaDataSize.
- * The audio data size is returned through the function return value.
- * The meta data size is returned through responseMetaDataSize parameter.
- * When all the data from the application has been passed to the pipeline through the callback,
- * the application should set finished to true in the last callback.
- * When finished is set to true, the pipeline will no longer call this interface to obtain data from the application.
+ * Each time the application or user invokes {@link OH_AudioSuiteEngine_MetaRenderFrame},
+ * the callback is triggered once.
  *
  * @systemapi
  * @param audioNode AudioNode where this callback occurs.
  * @param userData User data which is passed by user.
  * @param metaFrame Pointer to audio meta data frame structure.
  * @param responseMetaDataSize Size of meta data the application really write, unit is byte.
- * @param finished This boolean value indicates that all data
- *        of the application has been consumed since last execute {@link OH_AudioSuiteEngine_StartPipeline}.
+ * @param finished This Boolean value indicates whether all audio data was successfully written.
  * @return <ul>
  *         <li>Length of the valid audio data that has written into audioData buffer.
- *             The return value must be in range of
- *             [0, metaFrame->audioDataSize]. If the return value is less than 0,
- *             the system changes it to 0. And, if the return value is
- *             greater than metaFrame->audioDataSize, the system changes it to metaFrame->audioDataSize.</li>
+ *             The return value must be in range of [0, metaFrame->audioDataSize].</li>
  *         </ul>
  * @since 26.0.0
  */
 typedef int32_t (*OH_InputNode_RequestMetaDataCallback)(OH_AudioNode* audioNode, void* userData,
-    OH_AudioMetaFrame* metaFrame, int32_t* responseMetaDataSize, bool* finished);
+    OH_AudioSuite_MetaFrame* metaFrame, int32_t* responseMetaDataSize, bool* finished);
 
 /**
  * @brief Set input node request meta data callback with frame structure,
  * Only {@link INPUT_NODE_TYPE_DEFAULT} support this setting.
  * @systemapi
- *
- * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create.
+ * @param builder Reference created by {@link OH_AudioSuiteNodeBuilder_Create}.
  * @param callback Callback to functions that will write audio data and meta data.
  * @param userData Pointer to an application data structure that will be passed to the callback functions.
  * @return <ul>
  *         <li>{@link #AUDIOSUITE_SUCCESS} if execution succeeds.</li>
+ *         <li>202 if a non-system application calls this system API.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. builder is nullptr, e.t.c.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_TIMEOUT} if an operation times out before completion.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_SYSTEM} if the system has other abnormalities.</li>
@@ -581,11 +563,11 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetAudioFormat(OH_AudioNode* audioNode,
  * @brief Set the audio format for input and output nodes, specify the audio format of the audio source for
  * the input node, or specify the target audio format for the output node.
  * @systemapi
- *
- * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param audioNode Reference created by {@link OH_AudioSuiteEngine_CreateNode}.
  * @param audioFormat Audio Format.
  * @return <ul>
  *         <li>{@link #AUDIOSUITE_SUCCESS} if execution succeeds.</li>
+ *         <li>202 if a non-system application calls this system API.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is nullptr.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if the audioNode is an effect node.</li>
@@ -597,7 +579,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetAudioFormat(OH_AudioNode* audioNode,
  * @since 26.0.0
  */
 int32_t OH_AudioSuiteEngineSystem_SetAudioFormat(
-    OH_AudioNode* audioNode, OH_AudioSystemNodeFormat* audioFormat);
+    OH_AudioNode* audioNode, OH_AudioSuite_SystemNodeFormat* audioFormat);
 
 /**
  * @brief Executing the connect command will link two nodes in sequence.
@@ -1014,12 +996,12 @@ OH_AudioSuite_Result OH_AudioSuite_PrintInfo(
 /**
  * @brief Set param of system node.
  * @systemapi
- *
- * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param audioNode Reference created by {@link OH_AudioSuiteEngine_CreateNode}.
  * @param param Parameter buffer.
  * @param paramSize Parameter buffer size.
  * @return <ul>
  *         <li>{@link #AUDIOSUITE_SUCCESS} if execution succeeds.</li>
+ *         <li>202 if a non-system application calls this system API.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a system node.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.</li>
@@ -1034,12 +1016,12 @@ int32_t OH_AudioSuiteEngineSystem_SetNodeParam(
 /**
  * @brief Get param of system node.
  * @systemapi
- *
- * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param audioNode Reference created by {@link OH_AudioSuiteEngine_CreateNode}.
  * @param param Parameter buffer.
  * @param paramSize Parameter buffer size.
  * @return <ul>
  *         <li>{@link #AUDIOSUITE_SUCCESS} if execution succeeds.</li>
+ *         <li>202 if a non-system application calls this system API.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a system node.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.</li>
@@ -1054,12 +1036,12 @@ int32_t OH_AudioSuiteEngineSystem_GetNodeParam(
 /**
  * @brief Get input and output frame size of system node.
  * @systemapi
- *
- * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode.
+ * @param audioNode Reference created by {@link OH_AudioSuiteEngine_CreateNode}.
  * @param inSize Input frame size, unit is byte.
  * @param outSize Output frame size, unit is byte.
  * @return <ul>
  *         <li>{@link #AUDIOSUITE_SUCCESS} if execution succeeds.</li>
+ *         <li>202 if a non-system application calls this system API.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_NODE_NOT_EXIST} if audioNode does not exist or has been destroyed.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION} if audioNode is not a system node.</li>
  *         <li>{@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode is nullptr, e.t.c.</li>

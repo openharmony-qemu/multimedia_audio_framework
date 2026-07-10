@@ -77,7 +77,7 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetNodeType(
 }
 
 int32_t OH_AudioSuiteNodeBuilderSystem_SetNodeType(
-    OH_AudioNodeBuilder* builder, OH_AudioNodeSystem_Type type)
+    OH_AudioNodeBuilder* builder, OH_AudioSuite_SystemNodeType type)
 {
     OHAudioSuiteNodeBuilder *nodeBuilder = ConvertAudioSuitBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(nodeBuilder != nullptr,
@@ -96,7 +96,7 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetFormat(OH_AudioNodeBuilder *bui
 }
 
 int32_t OH_AudioSuiteNodeBuilderSystem_SetFormat(
-    OH_AudioNodeBuilder* builder, OH_AudioSystemNodeFormat audioFormat)
+    OH_AudioNodeBuilder* builder, OH_AudioSuite_SystemNodeFormat audioFormat)
 {
     OHAudioSuiteNodeBuilder *nodeBuilder = ConvertAudioSuitBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(nodeBuilder != nullptr,
@@ -275,7 +275,7 @@ bool CheckAudioFormat(OH_AudioFormat audioFormat)
         CheckAudioFormat(audioFormat.samplingRate, audioFormat.sampleFormat, audioFormat.encodingType);
 }
 
-bool CheckAudioFormat(OH_AudioSystemNodeFormat audioFormat)
+bool CheckAudioFormat(OH_AudioSuite_SystemNodeFormat audioFormat)
 {
     AUDIO_INFO_LOG("Check samplingRate:%{public}d, sampleFormat:%{public}d, encoding:%{public}d, "
         "channelCount:%{public}d, channelLayout:%{public}" PRIu64, audioFormat.samplingRate,
@@ -315,7 +315,7 @@ OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioFormat audioForm
     return AUDIOSUITE_SUCCESS;
 }
 
-OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioSystemNodeFormat audioFormat)
+OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioSuite_SystemNodeFormat audioFormat)
 {
     CHECK_AND_RETURN_RET_LOG(CheckAudioFormat(audioFormat), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
         "SetFormat failed AudioFormat invalid, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
@@ -360,7 +360,7 @@ OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetNodeType(OH_AudioNode_Type type
     return AUDIOSUITE_SUCCESS;
 }
 
-OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetNodeType(OH_AudioNodeSystem_Type type)
+OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetNodeType(OH_AudioSuite_SystemNodeType type)
 {
     CHECK_AND_RETURN_RET_LOG(
         NODETYPE_TOSTRING_MAP.find(static_cast<AudioNodeType>(type)) != NODETYPE_TOSTRING_MAP.end(),
