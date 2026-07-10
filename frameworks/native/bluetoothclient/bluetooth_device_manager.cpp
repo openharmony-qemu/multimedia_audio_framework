@@ -150,7 +150,16 @@ DeviceCategory GetDeviceCategory(const BluetoothRemoteDevice &device, DeviceCate
         bluetoothCategory;
 }
 
-bool IsBTDeviceStateEnable(const BluetoothRemoteDevice &device)
+bool IsHfpDeviceStateEnable(const BluetoothRemoteDevice &device)
+{
+    uint8_t a2dpState;
+    uint8_t hfpState;
+    int32_t ret = BluetoothAudioManager::GetInstance().GetProfileStatus(device, a2dpState, hfpState);
+    AUDIO_INFO_LOG("return value: %{public}d, a2dpState: %{public}d, hfpState: %{public}d", ret, a2dpState, hfpState);
+    return (ret == SUCCESS && hfpState == DEVICE_DISABLE) ? false : true;
+}
+
+bool IsA2dpDeviceStateEnable(const BluetoothRemoteDevice &device)
 {
     uint8_t a2dpState;
     uint8_t hfpState;
@@ -258,7 +267,7 @@ AudioDeviceDescriptor MediaBluetoothDeviceManager::HandleConnectDeviceInner(cons
             desc.deviceCategory_ = BT_HEADPHONE;
             break;
     }
-    desc.isEnable_ = IsBTDeviceStateEnable(device);
+    desc.isEnable_ = IsA2dpDeviceStateEnable(device);
     return desc;
 }
 
@@ -309,7 +318,7 @@ void MediaBluetoothDeviceManager::HandleWearDevice(const BluetoothRemoteDevice &
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceCategory_ = GetDeviceCategory(device, BT_HEADPHONE);
-    desc.isEnable_ = IsBTDeviceStateEnable(device);
+    desc.isEnable_ = IsA2dpDeviceStateEnable(device);
     std::lock_guard<std::mutex> observerLock(g_observerLock);
     if (g_deviceObserver != nullptr) {
         g_deviceObserver->OnDeviceInfoUpdated(desc, DeviceInfoUpdateCommand::CATEGORY_UPDATE);
@@ -851,7 +860,7 @@ AudioDeviceDescriptor HfpBluetoothDeviceManager::HandleConnectDeviceInner(const 
             desc.deviceCategory_ = BT_HEADPHONE;
             break;
     }
-    desc.isEnable_ = IsBTDeviceStateEnable(device);
+    desc.isEnable_ = IsHfpDeviceStateEnable(device);
     return desc;
 }
 
@@ -903,7 +912,7 @@ void HfpBluetoothDeviceManager::HandleWearDevice(const BluetoothRemoteDevice &de
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceCategory_ = GetDeviceCategory(device, BT_HEADPHONE);
-    desc.isEnable_ = IsBTDeviceStateEnable(device);
+    desc.isEnable_ = IsHfpDeviceStateEnable(device);
     OnDeviceCategoryUpdated(device, desc);
 }
 
