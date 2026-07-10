@@ -945,6 +945,7 @@ private:
         const AudioSessionStrategy &strategy, const bool isStandalone, const bool stateChangeCallbackFlag = false,
         int32_t callerUid = INVALID_UID);
     bool IsScreenOnAdjustVolume();
+    void WaitForScreenOnAndSetFirstScreenOn();
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
     int32_t VerifyUidAndPid(const int32_t uid, const int32_t pid);
     void FillDeviceTokenId(std::shared_ptr<AudioDeviceDescriptor> device);

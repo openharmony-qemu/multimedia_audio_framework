@@ -110,6 +110,8 @@ constexpr int32_t DEFAULT_ZONE_ID = 0;
 constexpr int32_t RESTORE_INFO_LOCK_TIMEOUT_MS = 1000; // 1000ms
 constexpr int32_t MAX_RETRIES = 5;
 constexpr int32_t RETRY_INTERVAL_SECONDS_S = 3; // 3 s
+constexpr int32_t SCREEN_ON_QUERY_INTERVAL_MS = 5000; // 5s
+constexpr int32_t SCREEN_ON_QUERY_MAX_TIMES = 3; // 15s / 5s = 3 queries
 constexpr int32_t MAX_RESULT_FOR_VOLUME_KEY = 60000;
 
 // system sound path
@@ -349,11 +351,49 @@ void AudioPolicyServer::OnStart()
     if (getpid() > FIRST_SCREEN_ON_PID) {
         coreService_->SetFirstScreenOn();
     }
+    WaitForScreenOnAndSetFirstScreenOn();
     // Restart to reload the volume.
     DlopenUtils::DeInit();
     DfxMsgManager::GetInstance().Init();
     RecordBootStateTime(AudioPolicyServerBootState::END, ClockTime::GetCurMilli());
     AUDIO_INFO_LOG("Audio policy server start end");
+}
+
+void AudioPolicyServer::WaitForScreenOnAndSetFirstScreenOn()
+{
+    if (!VolumeUtils::IsPCVolumeEnable()) {
+        return;
+    }
+
+    CHECK_AND_RETURN_LOG(coreService_, "coreService_ is nullptr");
+
+    std::thread([this]() {
+        pthread_setname_np(pthread_self(), "OS_FirstScreenOn");
+        for (int32_t i = 0; i < SCREEN_ON_QUERY_MAX_TIMES; i++) {
+            if (i > 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(SCREEN_ON_QUERY_INTERVAL_MS));
+            }
+            // Check if SCREEN_ON broadcast already received and SetFirstScreenOn already called
+            if (coreService_->IsFirstScreenOn()) {
+                return;
+            }
+            bool isScreenOn = PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
+            AUDIO_INFO_LOG("Check screen on status, attempt %{public}d/%{public}d, result: %{public}d",
+                i + 1, SCREEN_ON_QUERY_MAX_TIMES, isScreenOn);
+            if (isScreenOn) {
+                coreService_->SetFirstScreenOn();
+                AUDIO_INFO_LOG("Screen is on, SetFirstScreenOn called");
+                return;
+            }
+        }
+        // All queries failed, check before force execute
+        if (coreService_->IsFirstScreenOn()) {
+            return;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(SCREEN_ON_QUERY_INTERVAL_MS));
+        coreService_->SetFirstScreenOn();
+        AUDIO_INFO_LOG("Force SetFirstScreenOn after %{public}d attempts failed", SCREEN_ON_QUERY_MAX_TIMES);
+    }).detach();
 }
 
 void AudioPolicyServer::AddSystemAbilityListeners()
