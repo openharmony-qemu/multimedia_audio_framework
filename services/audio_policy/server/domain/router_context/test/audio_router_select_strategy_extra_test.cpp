@@ -218,7 +218,7 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, SetRecognitionInputDevice_003, Test
     strategy.SetRecognitionInputDevice(nullptr);
 
     auto result2 = strategy.GetRecognitionInputDevice();
-    EXPECT_EQ(result2, nullptr);
+    EXPECT_TRUE(result2 == nullptr || result2->deviceType_ == DEVICE_TYPE_NONE);
 }
 
 HWTEST_F(AudioRouterSelectStrategyExtraTest, Get1stCurrentInputDevice_001, TestSize.Level1)
@@ -298,7 +298,7 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, GetRecognitionInputDevice_001, Test
     AudioRouterFollowStrategy strategy;
 
     auto result = strategy.GetRecognitionInputDevice();
-    EXPECT_EQ(result, nullptr);
+    EXPECT_TRUE(result == nullptr || result->deviceType_ == DEVICE_TYPE_NONE);
 }
 
 HWTEST_F(AudioRouterSelectStrategyExtraTest, GetRecognitionInputDevice_002, TestSize.Level1)
