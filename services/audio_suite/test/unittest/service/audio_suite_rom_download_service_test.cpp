@@ -62,6 +62,20 @@ public:
         }
     }
 
+    void InitUnloadHandler()
+    {
+        std::lock_guard<std::mutex> lock(service->eventMutex_);
+        service->unloadRunner_ = AppExecFwk::EventRunner::Create("AudioSuiteSaUnloadRunner");
+        service->unloadHandler_ = std::make_shared<AppExecFwk::EventHandler>(service->unloadRunner_);
+    }
+
+    void InitUnloadHandlerOn(TestAudioSuiteRomDownloadService *svc)
+    {
+        std::lock_guard<std::mutex> lock(svc->eventMutex_);
+        svc->unloadRunner_ = AppExecFwk::EventRunner::Create("AudioSuiteSaUnloadRunner");
+        svc->unloadHandler_ = std::make_shared<AppExecFwk::EventHandler>(svc->unloadRunner_);
+    }
+
     std::unique_ptr<TestAudioSuiteRomDownloadService> service;
 };
 
@@ -218,6 +232,61 @@ HWTEST_F(AudioSuiteRomDownloadServiceTest, DumpTest, TestSize.Level0)
         EXPECT_EQ(ret, 0);
         close(fd);
     }
+}
+
+HWTEST_F(AudioSuiteRomDownloadServiceTest, GetDownloadStatusNoManagerTest, TestSize.Level0)
+{
+    service->downloadManager_ = nullptr;
+    DownloadStatus status;
+    ErrCode result = SUCCESS;
+    ErrCode ret = service->GetDownloadStatus(status, "v1", result);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(result, ERR_NOT_STARTED);
+}
+
+HWTEST_F(AudioSuiteRomDownloadServiceTest, OnStartCreatesUnloadHandlerTest, TestSize.Level0)
+{
+    EXPECT_EQ(service->unloadRunner_, nullptr);
+    EXPECT_EQ(service->unloadHandler_, nullptr);
+    InitUnloadHandler();
+    EXPECT_NE(service->unloadRunner_, nullptr);
+    EXPECT_NE(service->unloadHandler_, nullptr);
+}
+
+HWTEST_F(AudioSuiteRomDownloadServiceTest, DestructorCleanUpTest, TestSize.Level0)
+{
+    auto svc = std::make_unique<TestAudioSuiteRomDownloadService>();
+    InitUnloadHandlerOn(svc.get());
+    EXPECT_NE(svc->unloadRunner_, nullptr);
+    EXPECT_NE(svc->unloadHandler_, nullptr);
+    svc.reset();
+}
+
+HWTEST_F(AudioSuiteRomDownloadServiceTest, PostDelayUnloadTaskNullHandlerTest, TestSize.Level0)
+{
+    service->unloadHandler_ = nullptr;
+    service->PostDelayUnloadTask();
+    EXPECT_EQ(service->unloadHandler_, nullptr);
+}
+
+
+HWTEST_F(AudioSuiteRomDownloadServiceTest, ShouldExtendUnloadTimerNoDownloadingTaskTest, TestSize.Level0)
+{
+    bool result = service->ShouldExtendUnloadTimer();
+    EXPECT_FALSE(result);
+}
+
+HWTEST_F(AudioSuiteRomDownloadServiceTest, ShouldExtendUnloadTimerNullDownloadManagerTest, TestSize.Level0)
+{
+    service->downloadManager_ = nullptr;
+    bool result = service->ShouldExtendUnloadTimer();
+    EXPECT_FALSE(result);
+}
+
+HWTEST_F(AudioSuiteRomDownloadServiceTest, HasRegisteredCallbackAlwaysFalseTest, TestSize.Level0)
+{
+    bool result = service->HasRegisteredCallback();
+    EXPECT_FALSE(result);
 }
 
 } // namespace AudioSuite

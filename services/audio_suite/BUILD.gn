@@ -290,6 +290,7 @@ if (audio_framework_feature_audiosuite_support) {
       "ipc:ipc_core",
       "samgr:samgr_proxy",
       "safwk:system_ability_fwk",
+      "eventhandler:libeventhandler",
       "hisysevent:libhisysevent",
       "hitrace:hitrace_meter",
       "access_token:libaccesstoken_sdk",

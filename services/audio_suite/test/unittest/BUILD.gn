@@ -261,6 +261,7 @@ if (audio_framework_feature_audiosuite_support) {
       "access_token:libnativetoken_shared",
       "access_token:libtokensetproc_shared",
       "hisysevent:libhisysevent",
+      "eventhandler:libeventhandler",
     ]
   }
 
