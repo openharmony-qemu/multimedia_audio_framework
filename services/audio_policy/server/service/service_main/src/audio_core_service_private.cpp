@@ -254,12 +254,13 @@ void AudioCoreService::UpdateMultiChannelState(std::shared_ptr<AudioPipeInfo> pi
 {
     CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0 &&
         pipeInfo->streamDescriptors_[0] != nullptr);
-    CHECK_AND_RETURN(pipeInfo->isCollaborationEnable_ && pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER);
+    CHECK_AND_RETURN(pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER);
+    isMultiChannelOpened_.store(true);
+    multiChannelCloseCondition_.notify_all();
+    CHECK_AND_RETURN(pipeInfo->isCollaborationEnable_);
     audioPolicyManager_.UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN);
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(pipeInfo->streamDescriptors_[0]->GetMainNewDeviceType());
     UpdateNearLinkCollaborativeState(true);
-    isMultiChannelOpened_.store(true);
-    multiChannelCloseCondition_.notify_all();
 }
 
 void AudioCoreService::CheckAndUpdateOffloadEnableForStream(
