@@ -1280,8 +1280,7 @@ bool AudioPolicyUtils::IsMultiBusDevice(DeviceType deviceType)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
         deviceType == DEVICE_TYPE_BLUETOOTH_SCO ||
-        deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN)
-    {
+        deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         return false;
     }
     return true;
