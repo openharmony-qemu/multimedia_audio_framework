@@ -270,7 +270,7 @@ void AudioPnpServer::DetectAudioHdmiMipiDevice()
     string hdmiPath{HDMI_PATH};
     string text = ReadTextFile(hdmiPath + "/state");
     CHECK_AND_RETURN(!text.empty() && text[0] == '1');
-    text = ReadTextFile(hdmiPath + "/name");
+    text = Trim(ReadTextFile(hdmiPath + "/name"));
     CHECK_AND_RETURN(!text.empty());
 
     string name = GetField(text, "device_port", ',');

@@ -1606,6 +1606,24 @@ std::string ReadTextFile(const std::string &file)
     return ret;
 }
 
+std::string Trim(const std::string &str)
+{
+    static const std::set<char> WHITE_SPACE{' ', '\r', '\n', '\t'};
+    size_t pos = 0;
+    size_t end = str.length();
+    for (; pos < end; pos++) {
+        if (WHITE_SPACE.find(str[pos]) == WHITE_SPACE.end()) {
+            break;
+        }
+    }
+    for (; end > pos; end--) {
+        if (WHITE_SPACE.find(str[end - 1]) == WHITE_SPACE.end()) {
+            break;
+        }
+    }
+    return str.substr(pos, end - pos);
+}
+
 int32_t GetFormatByteSize(int32_t format)
 {
     int32_t formatByteSize;

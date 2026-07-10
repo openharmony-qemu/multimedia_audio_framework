@@ -18,9 +18,7 @@
 
 #include "audio_usb_manager.h"
 
-#include <sstream>
 #include <dirent.h>
-#include <fstream>
 #include <filesystem>
 #include <thread>
 
@@ -59,24 +57,6 @@ static void FillSoundCard(const string &path, SoundCard &card)
         }
     }
     closedir(dir);
-}
-
-static string Trim(const string &str)
-{
-    static const set<char> WHITE_SPACE {' ', '\r', '\n', '\t'};
-    size_t pos = 0;
-    size_t end = str.length();
-    for (; pos < end; pos++) {
-        if (WHITE_SPACE.find(str[pos]) == WHITE_SPACE.end()) {
-            break;
-        }
-    }
-    for (; end > pos; end--) {
-        if (WHITE_SPACE.find(str[end - 1]) == WHITE_SPACE.end()) {
-            break;
-        }
-    }
-    return str.substr(pos, end - pos);
 }
 
 static bool IsAllDigits(std::string_view sv) noexcept
