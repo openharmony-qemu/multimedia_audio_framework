@@ -78,6 +78,7 @@ public:
         USAGE_ANNOUNCEMENT = 22,
         USAGE_EMERGENCY = 23,
         USAGE_INTERPHONE = 24,
+        USAGE_VOICE_ASSISTANT_SYSTEM = 27,
         USAGE_MAX = 100
     };
 
