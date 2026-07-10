@@ -795,7 +795,6 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
         newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
-    AUDIO_INFO_LOG("DeviceType: %{public}d, DeviceRole: %{public}d", deviceInfo->type_, deviceInfo->role_);
 
     std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = deviceInfo->adapterInfo_.lock();
     CHECK_AND_RETURN_LOG(adapterInfoPtr != nullptr, "Find adapter info failed, none streamProp");
