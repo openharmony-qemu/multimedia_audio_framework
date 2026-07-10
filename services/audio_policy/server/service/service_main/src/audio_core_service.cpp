@@ -95,7 +95,8 @@ static const std::set<AudioSamplingRate> DIRECT_SUPPORTED_SAMPLE_RATES = {
 
 static const std::set<AudioSampleFormat> DIRECT_SUPPORTED_FORMATS = {
     SAMPLE_S24LE,
-    SAMPLE_S32LE
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
 };
 
 static const std::vector<DeviceType> MIC_REF_DEVICES = {
