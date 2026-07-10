@@ -664,8 +664,10 @@ void AudioPipeSelector::HandleFindMatchPipe(
     const std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> &streamDescToOldPipeInfo,
     std::vector<std::shared_ptr<AudioPipeInfo>>::iterator &matchPipeIter)
 {
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
 #ifdef MULTI_BUS_ENABLE
-    if (AudioBusSelector::GetBusSelector().IsSpeaker(streamDesc)) {
+    auto deviceType = streamDesc->GetMainNewDeviceType();
+    if (AudioPolicyUtils::GetInstance().IsMultiBusDevice(deviceType)) {
         std::vector<std::string> busAddresses =
             AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(streamDesc);
         // Vehicle system scenario enter.
@@ -673,7 +675,6 @@ void AudioPipeSelector::HandleFindMatchPipe(
         return;
     }
 #endif
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     std::string streamDescAdapterName{};
     std::string pipeName{};
     GetAdapterNameByStreamDesc(streamDesc, streamDescAdapterName, pipeName);
@@ -1873,7 +1874,8 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
                         pipeInfo->audioStreamInfo_.samplingRate, streamPropInfo->sampleRate_);
 
 #ifdef MULTI_BUS_ENABLE
-        if (!AudioBusSelector::GetBusSelector().IsSpeaker(streamDesc)) {
+        auto deviceType = streamDesc->GetMainNewDeviceType();
+        if (!AudioPolicyUtils::GetInstance().IsMultiBusDevice(deviceType)) {
             CHECK_AND_CONTINUE(IsPipeMatch(streamDesc, pipeInfo, adapterInfoPtr->adapterName, pipeInfoPtr->name_));
         }
         CHECK_AND_CONTINUE(pipeInfo->adapterName_ == adapterInfoPtr->adapterName &&
@@ -1988,7 +1990,8 @@ bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor>
     // Use networkId to distinguish multiple remote devices that may exist
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
 #ifdef MULTI_BUS_ENABLE
-    if (!AudioBusSelector::GetBusSelector().IsSpeaker(streamDesc)) {
+    auto deviceType = streamDesc->GetMainNewDeviceType();
+    if (!AudioPolicyUtils::GetInstance().IsMultiBusDevice(deviceType)) {
         CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID, true);
     }
     CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->macAddress_ != pipeInfo->moduleInfo_.busAddress, true);

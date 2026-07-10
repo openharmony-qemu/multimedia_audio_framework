@@ -126,6 +126,7 @@ public:
     bool UpdateDeviceUsage(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
         const std::shared_ptr<AudioDeviceDescriptor> &devDesc, AudioStreamDeviceChangeReasonExt &reason);
     void UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc);
+    bool IsMultiBusDevice(DeviceType deviceType);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),

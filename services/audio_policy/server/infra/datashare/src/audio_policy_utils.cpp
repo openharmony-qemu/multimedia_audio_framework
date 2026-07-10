@@ -478,19 +478,13 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
 {
     if (desc.networkId_ == LOCAL_NETWORK_ID) {
 #ifdef MULTI_BUS_ENABLE
-        if (desc.deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO ||
-            desc.deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP ||
-            desc.deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-            AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-            streamCollector_.GetPipeType(sessionId, pipeType);
-            return GetSinkPortName(desc.deviceType_, pipeType);
+        if (IsMultiBusDevice(desc.getType())) {
+            return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
         }
-        return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
-#else
+#endif
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
         return GetSinkPortName(desc.deviceType_, pipeType);
-#endif
     } else {
         return GetRemoteModuleName(desc.networkId_, desc.deviceRole_);
     }
@@ -500,19 +494,13 @@ std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor>
 {
     if (desc->networkId_ == LOCAL_NETWORK_ID) {
 #ifdef MULTI_BUS_ENABLE
-        if (desc->deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO ||
-            desc->deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP ||
-            desc->deviceType_ == DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-            AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-            streamCollector_.GetPipeType(sessionId, pipeType);
-            return GetSinkPortName(desc->deviceType_, pipeType);
+        if (IsMultiBusDevice(desc->getType())) {
+            return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
         }
-        return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
-#else
+#endif
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
         return GetSinkPortName(desc->deviceType_, pipeType);
-#endif
     } else {
         return GetRemoteModuleName(desc->networkId_, desc->deviceRole_);
     }
@@ -1286,6 +1274,17 @@ void AudioPolicyUtils::UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc)
     } else {
         desc.connectTimeStamp_ = GetCurrentTimeMS();
     }
+}
+
+bool AudioPolicyUtils::IsMultiBusDevice(DeviceType deviceType)
+{
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        deviceType == DEVICE_TYPE_BLUETOOTH_SCO ||
+        deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN)
+    {
+        return false;
+    }
+    return true;
 }
 
 } // namespace AudioStandard
