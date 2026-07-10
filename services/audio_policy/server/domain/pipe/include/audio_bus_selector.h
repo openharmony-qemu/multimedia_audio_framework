@@ -35,7 +35,6 @@ public:
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
     std::vector<std::string> GetBusAddressesByStreamDesc(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     std::string GetSinkNameByStreamId(int32_t streamId);
-    bool IsSpeaker(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
 private:
     AudioBusSelector(AudioZoneService &audioZoneService, const std::shared_ptr<AudioPipeManager> &audioPipeManager)

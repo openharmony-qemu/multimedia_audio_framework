@@ -132,21 +132,5 @@ std::string AudioBusSelector::GetSinkNameByStreamId(int32_t streamId)
     }
     return PORT_NONE;
 }
-
-bool AudioBusSelector::IsSpeaker(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
-{
-    if (!streamDesc) {
-        AUDIO_ERR_LOG("streamDesc is null, default speaker.");
-        return true;
-    }
-    auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
-    if (deviceDesc != nullptr && (deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-                                  deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
-                                  deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN)) {
-        return false;
-    }
-    return true;
-}
-
 }
 }
