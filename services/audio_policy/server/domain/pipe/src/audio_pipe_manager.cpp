@@ -1414,11 +1414,8 @@ bool AudioPipeManager::HasRunningNormalCapturerStream(DeviceType type)
         for (auto &desc : pipeInfo->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
-                (desc->capturerInfo_.sourceType == SOURCE_TYPE_MIC ||
-                 desc->capturerInfo_.sourceType == SOURCE_TYPE_WAKEUP ||
-                 desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_MESSAGE ||
-                 desc->capturerInfo_.sourceType == SOURCE_TYPE_CAMCORDER ||
-                 desc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED) &&
+                (desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_RECOGNITION &&
+                 desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
                 ((type == DEVICE_TYPE_NONE) ||
                  (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
                   desc->newDeviceDescs_[0]->deviceType_ == type))) {
