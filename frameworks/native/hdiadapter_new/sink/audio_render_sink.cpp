@@ -40,7 +40,6 @@ namespace {
 const int64_t RENDER_FRAME_LIMIT = 50; // 50ms
 const int64_t RENDER_FRAME_REPORT_LIMIT = 100000000; // 100ms
 static constexpr uint32_t AUDIO_TTS = 11;
-static constexpr uint32_t AUDIO_D2D = 12;
 
 const std::unordered_map<std::string, HdiRenderOffset> HALNAME_TO_HDI_OFFSET = {
     {HDI_ID_INFO_USB, HDI_RENDER_OFFSET_USB},
@@ -947,9 +946,6 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     param.interleaved = true;
     param.streamId = static_cast<int32_t>(GetUniqueId());
     param.type = AUDIO_IN_MEDIA;
-    if (attr_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
-        param.type = static_cast<AudioCategory>(AUDIO_D2D);
-    }
     param.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     param.isBigEndian = false;
     param.isSignedData = true;
