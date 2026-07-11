@@ -2330,19 +2330,6 @@ int32_t AudioPolicyServer::IsDeviceActive(int32_t deviceType, bool &active)
 int32_t AudioPolicyServer::GetActiveOutputDevice(int32_t &deviceType)
 {
     deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (Util::IsEnhancedRoutingSupported()) {
-        AudioRendererInfo rendererInfo = {};
-        rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-        auto coreService = AudioCoreService::GetCoreService();
-        CHECK_AND_RETURN_RET_LOG(coreService != nullptr, deviceType, "AudioCoreService is null");
-        auto eventEntry = coreService->GetEventEntry();
-        CHECK_AND_RETURN_RET_LOG(eventEntry != nullptr, deviceType, "EventEntry is null");
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-            eventEntry->GetPreferredOutputDeviceDescriptors(rendererInfo, SYSTEM_UID, LOCAL_NETWORK_ID);
-        CHECK_AND_RETURN_RET_LOG(!preferredDeviceList.empty(), deviceType, "preferred device list is empty");
-        CHECK_AND_RETURN_RET_LOG(preferredDeviceList.front() != nullptr, deviceType, "preferred device is null");
-        deviceType = preferredDeviceList.front()->deviceType_;
-    }
     return SUCCESS;
 }
 
