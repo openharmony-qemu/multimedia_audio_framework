@@ -14,40 +14,22 @@
  */
 
 package OHOS.AudioStandard.AudioSuite;
-
 import AudioSuiteSaTypes;
-
 sequenceable OHOS.IRemoteObject;
 
-// UpdateEngine 回调接口
-// audio_policy_ext 实现此接口，audio_suite 调用此接口来访问 UpdateEngine
 interface IUpdateEngineCallback {
-    // 获取新版本信息
     [ipccode 1] int GetFeatureNewVersion([in] CheckCondition checkCondition,
         [in] FeatureInfo[] featureInfos,
         [out] CloudRomCheckResult newVersionInfos);
-
-    // 获取特性状态
     [ipccode 2] int GetFeatureStatus([in] FeatureInfo[] featureInfos,
         [out] StatusInfoResult statusInfos);
-
-    // 下载并安装
     [ipccode 3] int DownloadAndInstall([in] DownloadCondition downloadCondition,
         [in] FeatureInfo[] featureInfos,
         [out] BusinessError businessError);
-
-    // 暂停下载
-    [ipccode 4] int PauseDownloadCloudRom([in] PauseCondition pauseCondition,
-        [in] FeatureInfo[] featureInfos,
+    [ipccode 4] int CancelCloudRom([in] FeatureInfo[] featureInfos,
         [out] BusinessError businessError);
-
-    // 卸载云 ROM
     [ipccode 5] int UninstallCloudRom([in] FeatureInfo[] featureInfos,
         [out] BusinessError businessError);
-
-    // 注册云 ROM 下载回调
     [ipccode 6] int RegisterCloudRomCallback([in] IRemoteObject object);
-
-    // 注销云 ROM 下载回调
     [ipccode 7] int UnregisterCloudRomCallback();
 };

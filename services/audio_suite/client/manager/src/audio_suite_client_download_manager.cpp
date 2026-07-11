@@ -61,10 +61,10 @@ int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& version)
     return AudioSuiteClientPolicy::GetInstance().StartDownload(version);
 }
 
-int32_t AudioSuiteDownloadManagerImpl::CancelDownload()
+int32_t AudioSuiteDownloadManagerImpl::CancelDownload(const std::string& version)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::CancelDownload");
-    return AudioSuiteClientPolicy::GetInstance().CancelDownload();
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::CancelDownload, version=%{public}s", version.c_str());
+    return AudioSuiteClientPolicy::GetInstance().CancelDownload(version);
 }
 
 int32_t AudioSuiteDownloadManagerImpl::StartBackgroundDownload(const std::string& version)

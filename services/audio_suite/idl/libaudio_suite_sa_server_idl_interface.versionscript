@@ -11,32 +11,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Audio Suite SA 服务端 IDL 接口库版本脚本
-# 确保导出 Stub 类和接口相关的所有符号
-
 1.0 {
   global:
-    # IAudioSuiteSaService 接口符号
+    # IAudioSuiteSaService
     *IAudioSuiteSaService*;
     *AudioSuiteSaServiceProxy*;
     *AudioSuiteSaServiceStub*;
 
-    # IUpdateEngineCallback 接口符号
+    # IUpdateEngineCallback
     *IUpdateEngineCallback*;
     *UpdateEngineCallbackProxy*;
     *UpdateEngineCallbackStub*;
 
-    # IDownloadCallback 接口符号
+    # IDownloadCallback
     *IDownloadCallback*;
     *DownloadCallbackProxy*;
     *DownloadCallbackStub*;
 
-    # ICloudRomDownloadCallback 接口符号
+    # ICloudRomDownloadCallback
     *ICloudRomDownloadCallback*;
     *CloudRomDownloadCallbackProxy*;
     *CloudRomDownloadCallbackStub*;
 
-    # AudioSuiteSaTypes 类型符号
+    # AudioSuiteSaTypes
     *AudioSuiteSaTypes*;
     *SharedMemoryInfo*;
     *DownloadStatus*;
@@ -54,23 +51,21 @@
     *PauseCondition*;
     *CloudRomCallback*;
 
-    # GetDescriptor 符号（iface_cast 需要）
+    # GetDescriptor
     *GetDescriptor*;
 
-    # OnRemoteRequest 符号（IPC 需要）
+    # OnRemoteRequest
     *OnRemoteRequest*;
 
-    # AsObject 符号
+    # AsObject
     *AsObject*;
 
-    # QueryInterface 符号
+    # QueryInterface
     *QueryInterface*;
 
-    # vtable 和 VTT 符号（虚函数表）
+    # vtable 和 VTT
     *vtable*;
     *VTT*;
-
-    # 类型信息符号
     *typeinfo*;
 
   local:
