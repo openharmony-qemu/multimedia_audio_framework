@@ -95,6 +95,7 @@ if (audio_framework_feature_audiosuite_support) {
       "hilog:libhilog",
       "ipc:ipc_core",
       "init:libbegetutil",
+      "bounds_checking_function:libsec_shared",
     ]
   }
 
@@ -143,6 +144,7 @@ if (audio_framework_feature_audiosuite_support) {
       "googletest:gtest",
       "googletest:gmock",
       "hilog:libhilog",
+      "bounds_checking_function:libsec_shared",
     ]
     resource_config_file = "./resource/ohos_test.xml"
   }
@@ -186,6 +188,7 @@ if (audio_framework_feature_audiosuite_support) {
       "c_utils:utils",
       "googletest:gtest",
       "hilog:libhilog",
+      "bounds_checking_function:libsec_shared",
     ]
     resource_config_file = "./resource/ohos_test.xml"
   }
@@ -218,6 +221,7 @@ if (audio_framework_feature_audiosuite_support) {
       "c_utils:utils",
       "googletest:gtest",
       "hilog:libhilog",
+      "bounds_checking_function:libsec_shared",
     ]
   }
 
@@ -262,6 +266,7 @@ if (audio_framework_feature_audiosuite_support) {
       "access_token:libtokensetproc_shared",
       "hisysevent:libhisysevent",
       "eventhandler:libeventhandler",
+      "bounds_checking_function:libsec_shared",
     ]
   }
 
@@ -292,6 +297,7 @@ if (audio_framework_feature_audiosuite_support) {
     external_deps = [
       "c_utils:utils",
       "hilog:libhilog",
+      "bounds_checking_function:libsec_shared",
     ]
 
     part_name = "audio_framework"
