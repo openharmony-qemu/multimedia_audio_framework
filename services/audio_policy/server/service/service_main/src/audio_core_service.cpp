@@ -1489,8 +1489,10 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg op
     ForceStopInterphoneStreamsIfNecessary(streamDesc);
     CheckAndSleepBeforeRingDeviceSet(streamDesc);
     pipeManager_->StartClient(sessionId);
-    // Update all wireless devices silent state after stream started
-    audioDeviceManager_.RestoreWirelessDeviceSilentState();
+    if (!pipeManager_->IsStreamSilent(sessionId)) {
+        // Update all wireless devices silent state after stream started
+        audioDeviceManager_.RestoreWirelessDeviceSilentState();
+    }
     CHECK_AND_CALL_FUNC_RETURN_RET(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[StartClient]newDeviceDescs_ is empty"));
     // [Capturer NOTE 1.0] be careful device may be changed.
