@@ -762,11 +762,11 @@ int32_t HpaeSessionEffectNode::FeedPaddingInput(size_t byteLen)
         return 0;
     }
 
-    // Feed in 960-frame (20ms @ 48kHz) chunks to match the algorithm's per-frame capacity.
-    constexpr size_t PADDING_FRAME_LEN = 960;
+    uint32_t sampleRate = audioConfig_.inputCfg.samplingRate;
+    size_t paddingFrameLen = static_cast<size_t>(CalculateFrameLenBySampleRate(sampleRate));
     size_t channels = audioConfig_.inputCfg.channels;
     size_t chunkByteLen = 0;
-    CHECK_AND_RETURN_RET_LOG((GetPcmByteLen(PADDING_FRAME_LEN, channels, chunkByteLen) && chunkByteLen != 0), -1,
+    CHECK_AND_RETURN_RET_LOG((GetPcmByteLen(paddingFrameLen, channels, chunkByteLen) && chunkByteLen != 0), -1,
         "FeedPaddingInput invalid chunk: channels=%{public}u", audioConfig_.inputCfg.channels);
     std::vector<uint8_t> padding(chunkByteLen, 0);
     size_t remaining = byteLen;
