@@ -762,14 +762,25 @@ int32_t HpaeSessionEffectNode::FeedPaddingInput(size_t byteLen)
         return 0;
     }
 
-    std::vector<uint8_t> padding(byteLen, 0);
-    int32_t ret = effectInstance_->FeedInput(padding.data(), byteLen);
-    if (ret != 0) {
-        AUDIO_WARNING_LOG("FeedPaddingInput failed: %{public}d", ret);
-        stats_.processErrors++;
-        return ret;
+    uint32_t sampleRate = audioConfig_.inputCfg.samplingRate;
+    size_t paddingFrameLen = static_cast<size_t>(CalculateFrameLenBySampleRate(sampleRate));
+    size_t channels = audioConfig_.inputCfg.channels;
+    size_t chunkByteLen = 0;
+    CHECK_AND_RETURN_RET_LOG((GetPcmByteLen(paddingFrameLen, channels, chunkByteLen) && chunkByteLen != 0), -1,
+        "FeedPaddingInput invalid chunk: channels=%{public}u", audioConfig_.inputCfg.channels);
+    std::vector<uint8_t> padding(chunkByteLen, 0);
+    size_t remaining = byteLen;
+    while (remaining > 0) {
+        size_t cur = std::min(remaining, chunkByteLen);
+        int32_t ret = effectInstance_->FeedInput(padding.data(), cur);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("FeedPaddingInput failed: %{public}d", ret);
+            stats_.processErrors++;
+            return ret;
+        }
+        paddingBytesIn_ += cur;
+        remaining -= cur;
     }
-    paddingBytesIn_ += byteLen;
     return 0;
 }
 
