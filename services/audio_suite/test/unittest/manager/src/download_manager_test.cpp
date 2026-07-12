@@ -123,7 +123,7 @@ HWTEST_F(DownloadManagerTest, StartDownloadEmptyVersionTest, TestSize.Level0)
 
 HWTEST_F(DownloadManagerTest, CancelDownloadIdleTest, TestSize.Level0)
 {
-    int32_t ret = manager->CancelDownload();
+    int32_t ret = manager->CancelDownload("v1");
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
@@ -133,7 +133,7 @@ HWTEST_F(DownloadManagerTest, CancelDownloadWaitingTest, TestSize.Level0)
     manager->currentVersion_ = "v1";
     manager->cancelRequested_ = false;
     manager->isDownloading_ = false;
-    int32_t ret = manager->CancelDownload();
+    int32_t ret = manager->CancelDownload("v1");
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(manager->downloadState_.load(), DownloadState::DOWNLOAD_CANCELLED);
 }
