@@ -288,7 +288,7 @@ void AudioAdapterManager::LoadVolumeValueMapFromDb()
     };
 
     for (auto deviceType : DEVICE_TYPE_LIST_FOR_EACH_GROUP) {
-        auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
+        auto desc = audioConnectedDevice_.GetOutputDeviceByDeviceType(deviceType);
         volumeDataMaintainer_.SaveLoadFlagToMap(desc, VolumeKeyType::LEVEL, false);
         volumeDataMaintainer_.SaveLoadFlagToMap(desc, VolumeKeyType::MUTE, false);
         UpdateVolumeWhenDeviceConnect(desc);
