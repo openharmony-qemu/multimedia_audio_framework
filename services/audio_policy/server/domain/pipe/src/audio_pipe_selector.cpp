@@ -715,7 +715,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
         } else if (streamDesc->IsRemoteCastStream()) {
             newPipeIter = std::find_if(newPipeInfoList.begin(), newPipeInfoList.end(),
                 [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
-                    return newPipeInfo->adapterName_ == REMOTE_CAST_INNER_CAPTURER_SINK_NAME;
+                    return newPipeInfo->name_ == REMOTE_CAST_INNER_CAPTURER_SINK_NAME;
                 });
         } else {
             HandleFindMatchPipe(newPipeInfoList, streamDesc, streamDescToOldPipeInfo, newPipeIter);
