@@ -4161,6 +4161,24 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     return SUCCESS;
 }
 
+void AudioAdapterManager::SetPipeVolume(AudioVolumeType volumeType,
+    std::shared_ptr<AudioDeviceDescriptor> device, const std::unordered_set<AudioIOHandle>& pipeIds,
+    VolumeValue volumeValue, float volumeDb)
+{
+    std::lock_guard<std::mutex> lock(audioVolumeMutex_);
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
+    for (auto pipeId : pipeIds) {
+        PipeVolume pipeVolume(pipeId, volumeType, volumeDb,
+            volumeValue.volumeLevel_, volumeValue.mute_);
+        audioVolume->SetPipeVolume(pipeVolume);
+        AUDIO_INFO_LOG("pipeId:%{public}d volumeType:%{public}d volumeDb:%{public}f volumeLevel:%{public}d \
+            volumeDegree:%{public}d device:%{public}s",
+            pipeId, volumeType, volumeDb, volumeValue.volumeLevel_,
+            volumeValue.volumeDegree_, device->GetName().c_str());
+    }
+}
+
 void AudioAdapterManager::UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
     std::shared_ptr<AudioDeviceDescriptor> device, const std::unordered_set<AudioIOHandle>& pipeIds, int32_t zoneId)
 {
@@ -4169,9 +4187,13 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
     auto desc = audioActiveDevice_.GetDeviceForVolume();
     CHECK_AND_RETURN_LOG(desc != nullptr, "active device desc is null");
     AudioVolume::GetInstance()->SetCurrentActiveDevice(desc->deviceType_);
-    CHECK_AND_RETURN_LOG(device->volumeBehavior_.controlMode != PASS_THROUGH_MODE,
-        "device is in pass-through mode");
-    CHECK_AND_RETURN_LOG(device->volumeBehavior_.controlMode != HILINK_MODE, "device is in hi-link mode");
+    if (device->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
+        device->volumeBehavior_.controlMode == HILINK_MODE) {
+        VolumeValue volumeValue{GetMaxVolumeLevel(volumeType, device->deviceType_), MAX_VOLUME_DEGREE, false};
+        SetPipeVolume(volumeType, device, pipeIds, volumeValue, 1.0f);
+        SendOffloadVolume();
+        return;
+    }
 
     bool isMuted = GetStreamMuteForVolumeSet(device, volumeType);
     int32_t volumeLevel = GetStreamVolumeInternal(device, volumeType) * (isMuted ? 0 : 1);
@@ -4192,18 +4214,8 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
 #ifdef FEATURE_AUDIO_ZONE_VOLUME
     ApplySystemVolumeProxy(zoneId, device, isMuted, volumeDb);
 #endif
-    std::lock_guard<std::mutex> lock2(audioVolumeMutex_);
-    auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
-    
-    for (auto pipeId : pipeIds) {
-        PipeVolume pipeVolume(pipeId, volumeType, volumeDb, volumeLevel, isMuted);
-        audioVolume->SetPipeVolume(pipeVolume);
-        AUDIO_INFO_LOG("pipeId:%{public}d volumeType:%{public}d volumeDb:%{public}f volumeLevel:%{public}d \
-            volumeDegree:%{public}d device:%{public}s",
-            pipeId, volumeType, volumeDb, volumeLevel, volumeDegree, device->GetName().c_str());
-    }
-
+    VolumeValue volumeValue{volumeLevel, volumeDegree, isMuted};
+    SetPipeVolume(volumeType, device, pipeIds, volumeValue, volumeDb);
     SendOffloadVolume();
 }
 
