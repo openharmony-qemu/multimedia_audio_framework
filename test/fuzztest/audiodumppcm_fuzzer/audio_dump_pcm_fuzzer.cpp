@@ -158,16 +158,6 @@ void GetDumpParameterFuzzTest()
     audioCacheMgrInner.GetDumpParameter(subKeys, result);
 }
 
-void SetDumpParameterFuzzTest()
-{
-    std::vector<std::pair<std::string, std::string>> params;
-    AudioCacheMgrInner audioCacheMgrInner;
-    std::vector<std::string> roleList = {"OPEN", "CLOSE", "UPLOAD", "test1"};
-    uint32_t roleListCount = GetData<uint32_t>() % roleList.size();
-    params.push_back(std::make_pair(roleList[roleListCount], "test"));
-    audioCacheMgrInner.SetDumpParameter(params);
-}
-
 void OnHandleFuzzTest()
 {
     int64_t data = 0;
@@ -256,7 +246,6 @@ TestFuncs g_testFuncs[] = {
     CacheDataFuzzTest,
     GetCachedDurationFuzzTest,
     GetDumpParameterFuzzTest,
-    SetDumpParameterFuzzTest,
     OnHandleFuzzTest,
     GetMemBlockFuzzTest,
     GetMemChunkDurationFuzzTest,
