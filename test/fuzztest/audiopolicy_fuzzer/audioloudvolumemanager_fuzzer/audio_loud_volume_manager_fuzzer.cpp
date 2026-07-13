@@ -27,6 +27,7 @@
 #include "audio_policy_manager_factory.h"
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
+#include "securec.h"
 #endif
 
 namespace OHOS {

@@ -66,6 +66,7 @@ ohos_fuzztest("AudioPolicyServerSecondFuzzTest") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "ability_base:want",
     "ability_runtime:extension_manager",
     "ability_runtime:wantagent_innerkits",

@@ -23,6 +23,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "manager/hdi_adapter_manager.h"
+#include "securec.h"
 
 using namespace OHOS::HDI::DistributedAudio::Audio::V2_0;
 

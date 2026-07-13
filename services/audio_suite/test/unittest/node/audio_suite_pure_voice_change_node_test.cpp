@@ -29,6 +29,7 @@
 #include "audio_suite_unittest_tools.h"
 #include "audio_voicemorphing_api.h"
 #include "audio_suite_log.h"
+#include "securec.h"
 
 using namespace OHOS;
 using namespace AudioStandard;

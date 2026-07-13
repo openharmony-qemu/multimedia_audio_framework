@@ -14,6 +14,7 @@
  */
 
 #include "audio_device_status_extended_test.h"
+#include "securec.h"
 
 using namespace testing::ext;
 

@@ -40,6 +40,7 @@
 #include "napi_audio_renderer_write_data_callback.h"
 #include "napi_audio_renderer_device_change_callback.h"
 #include "napi_audio_renderer_policy_service_died_callback.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

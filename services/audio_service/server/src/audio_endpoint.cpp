@@ -40,6 +40,7 @@
 #include "simd_utils.h"
 #include "audio_mute_factor_manager.h"
 #include "audio_endpoint_sink_adapter.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

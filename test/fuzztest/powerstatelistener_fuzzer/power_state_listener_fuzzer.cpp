@@ -43,6 +43,7 @@
 #include "audio_spatialization_service.h"
 #include "suspend/sync_sleep_callback_ipc_interface_code.h"
 #include "hibernate/sync_hibernate_callback_ipc_interface_code.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -20,6 +20,7 @@
 #include "hpae_pcm_process.h"
 #include "simd_utils.h"
 #include "audio_engine_log.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

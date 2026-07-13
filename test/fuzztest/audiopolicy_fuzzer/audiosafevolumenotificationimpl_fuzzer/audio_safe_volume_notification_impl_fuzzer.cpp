@@ -21,6 +21,7 @@
 #include "audio_safe_volume_notification_impl.h"
 #include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 
 using namespace std;
 

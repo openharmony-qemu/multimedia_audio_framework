@@ -34,6 +34,7 @@
 #include "hpae_info.h"
 #include "audio_utils.h"
 #include "oh_audio_buffer.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

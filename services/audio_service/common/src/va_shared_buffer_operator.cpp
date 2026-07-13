@@ -19,6 +19,7 @@
 #include "va_shared_buffer_operator.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

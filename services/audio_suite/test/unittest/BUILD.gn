@@ -89,6 +89,7 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "googletest:gtest",
       "googletest:gmock",
@@ -140,6 +141,7 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "googletest:gtest",
       "googletest:gmock",
@@ -185,6 +187,7 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "googletest:gtest",
       "hilog:libhilog",
@@ -218,6 +221,7 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "googletest:gtest",
       "hilog:libhilog",
@@ -295,6 +299,7 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "hilog:libhilog",
       "bounds_checking_function:libsec_shared",

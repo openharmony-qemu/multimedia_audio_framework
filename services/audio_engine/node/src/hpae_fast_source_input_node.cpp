@@ -29,6 +29,7 @@
 #include "oh_audio_buffer.h"
 #include "volume_tools.h"
 #include "audio_stream_enum.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

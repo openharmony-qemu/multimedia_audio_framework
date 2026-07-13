@@ -25,6 +25,7 @@
 #include "hpae_node_common.h"
 #include "audio_engine_log.h"
 #include "stream_dfx_manager.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -20,6 +20,7 @@
 #include <thread>
 #include <mutex>
 #include <memory>
+#include "securec.h"
 
 using namespace std;
 

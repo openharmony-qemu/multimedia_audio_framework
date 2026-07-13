@@ -48,6 +48,7 @@
 #include "audio_dump_pcm_private.h"
 #include "audio_zone_service.h"
 #include "../fuzz_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -27,6 +27,7 @@
 #include "OHAudioSuiteNodeBuilder.h"
 #include "audio_suite_capabilities.h"
 #include "stream_dfx_manager.h"
+#include "securec.h"
 
 using OHOS::AudioStandard::OHAudioSuiteEngine;
 using OHOS::AudioStandard::OHAudioSuitePipeline;

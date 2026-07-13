@@ -23,6 +23,7 @@
 #include "audio_policy_manager.h"
 #include "audio_renderer_private.h"
 #include "audio_stream_enum.h"
+#include "securec.h"
 
 using namespace std;
 using namespace std::chrono;

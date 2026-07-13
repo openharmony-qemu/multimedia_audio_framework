@@ -42,6 +42,7 @@
 #include "hpae_renderer_manager.h"
 #include "hpae_sink_input_node.h"
 #include "i_hpae_renderer_manager.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

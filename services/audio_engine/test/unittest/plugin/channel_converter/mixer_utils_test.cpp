@@ -14,6 +14,7 @@
 */
 
 #include <gtest/gtest.h>
+#include "securec.h"
 #include "mixer_utils.h"
 
 using namespace testing::ext;

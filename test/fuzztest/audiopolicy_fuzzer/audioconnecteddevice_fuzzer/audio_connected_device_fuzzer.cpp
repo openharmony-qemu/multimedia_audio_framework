@@ -37,6 +37,7 @@
 #include "hpae_manager.h"
 #include "audio_info.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

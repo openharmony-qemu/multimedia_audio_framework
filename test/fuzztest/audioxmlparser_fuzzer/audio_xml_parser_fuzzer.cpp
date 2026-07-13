@@ -49,6 +49,7 @@
 #include "audio_zone_service.h"
 #include "audio_xml_parser.h"
 #include "../fuzz_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

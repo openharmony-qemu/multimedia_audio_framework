@@ -22,6 +22,7 @@
 #include "audio_suite_log.h"
 #include "audio_suite_serializer.h"
 #include "audio_suite_tempo_pitch_algo_interface_impl.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

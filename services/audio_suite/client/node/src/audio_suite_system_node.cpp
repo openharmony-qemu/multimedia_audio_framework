@@ -19,6 +19,7 @@
 #include <cinttypes>
 #include "audio_suite_system_node.h"
 #include "audio_suite_log.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

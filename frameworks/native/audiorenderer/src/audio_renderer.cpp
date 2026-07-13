@@ -41,6 +41,7 @@
 #include "audio_device_info.h"
 #include "boot_animation_state_info.h"
 #include "stream_dfx_manager.h"
+#include "securec.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83

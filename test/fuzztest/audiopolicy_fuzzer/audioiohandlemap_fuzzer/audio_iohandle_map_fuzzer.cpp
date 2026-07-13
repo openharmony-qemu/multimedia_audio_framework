@@ -18,6 +18,7 @@
 #include "audio_module_info.h"
 #include "audio_pipe_info.h"
 #include "audio_device_info.h"
+#include "securec.h"
 
 using namespace std;
 

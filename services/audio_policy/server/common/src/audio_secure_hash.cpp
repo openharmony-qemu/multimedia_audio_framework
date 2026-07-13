@@ -19,6 +19,7 @@
 #include <cstdlib>  // for size_t
 #include "audio_utils.h"
 #include "audio_log.h"
+#include "securec.h"
 
 // bit operations
 #define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n)))) // rotate right

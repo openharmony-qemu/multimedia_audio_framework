@@ -24,6 +24,7 @@
 #include "hpae_node_common.h"
 #include "audio_engine_log.h"
 #include "parameters.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

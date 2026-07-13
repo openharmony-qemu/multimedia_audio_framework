@@ -30,6 +30,7 @@
 #include "audio_info.h"
 #include "hpae_info.h"
 #include "microphone_descriptor.h"
+#include "securec.h"
 using namespace std;
 
 namespace OHOS {

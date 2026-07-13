@@ -46,6 +46,7 @@
 #include "format_converter.h"
 #include "audio_dump_pcm.h"
 #include "audio_dump_pcm_private.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

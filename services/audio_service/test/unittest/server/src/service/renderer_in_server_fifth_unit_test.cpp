@@ -29,6 +29,7 @@
 #include <cstring>
 #include <memory>
 #include <shared_mutex>
+#include "securec.h"
 
 using namespace testing::ext;
 using namespace OHOS::AudioStandard;

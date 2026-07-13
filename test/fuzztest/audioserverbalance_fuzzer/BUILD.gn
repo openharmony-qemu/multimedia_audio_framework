@@ -41,6 +41,7 @@ ohos_fuzztest("AudioServerBalanceFuzzTest") {
     "../../../services/audio_service/idl:audio_framework_interface",
   ]
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "eventhandler:libeventhandler",

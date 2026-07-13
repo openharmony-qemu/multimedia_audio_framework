@@ -23,6 +23,7 @@
 #include <thread>
 #include <vector>
 
+#include "securec.h"
 #include "audio_effect.h"
 
 namespace OHOS {

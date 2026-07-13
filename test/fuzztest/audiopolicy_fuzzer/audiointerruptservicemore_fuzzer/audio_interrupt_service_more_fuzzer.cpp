@@ -28,6 +28,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "util/id_handler.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 using namespace std;
 
 namespace OHOS {

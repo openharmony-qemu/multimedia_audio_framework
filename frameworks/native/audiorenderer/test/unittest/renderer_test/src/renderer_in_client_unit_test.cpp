@@ -26,6 +26,7 @@
 #include "audio_stream_enum.h"
 #include "parameter.h"
 #include "iipc_stream.h"
+#include "securec.h"
 
 
 using namespace testing::ext;

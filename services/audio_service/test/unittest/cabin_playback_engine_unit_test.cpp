@@ -22,6 +22,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "pro_renderer_stream_impl.h"
 #include  "parameter.h"
+#include "securec.h"
 
 using namespace testing::ext;
 namespace OHOS {

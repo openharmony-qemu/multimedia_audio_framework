@@ -47,6 +47,7 @@ deps = [
 "../../../services/audio_suite:audio_suite_static",
 ]
 external_deps = [
+"bounds_checking_function:libsec_shared",
 "c_utils:utils",
 "hilog:libhilog",
 ]
