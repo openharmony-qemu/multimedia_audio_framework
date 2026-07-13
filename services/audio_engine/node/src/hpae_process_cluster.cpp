@@ -113,7 +113,6 @@ std::shared_ptr<HpaeNode> HpaeProcessCluster::GetSharedInstance()
     if (renderEffectNode_ != nullptr) {
         return renderEffectNode_;
     }
-    AUDIO_INFO_LOG("mixerNode_ id: %{public}u", mixerNode_->GetNodeId());
     return mixerNode_;
 }
 

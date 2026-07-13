@@ -475,30 +475,19 @@ bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo
 
 void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo)
 {
-    AUDIO_INFO_LOG("rate: %{public}s ch: %{public}s buffersize: %{public}s",
-        audioModuleInfo.rate.c_str(),
-        audioModuleInfo.channels.c_str(),
-        audioModuleInfo.bufferSize.c_str());
-    AUDIO_INFO_LOG("format: %{public}s name: %{public}s  lib: %{public}s",
-        audioModuleInfo.format.c_str(),
-        audioModuleInfo.name.c_str(),
-        audioModuleInfo.lib.c_str());
-    AUDIO_INFO_LOG("deviceType: %{public}s  className: %{public}s  adapterName: %{public}s",
-        audioModuleInfo.deviceType.c_str(),
-        audioModuleInfo.className.c_str(),
-        audioModuleInfo.adapterName.c_str());
-    AUDIO_INFO_LOG("OpenMicSpeaker: %{public}s networkId: %{public}s fileName: %{public}s",
-        audioModuleInfo.OpenMicSpeaker.c_str(),
-        audioModuleInfo.networkId.c_str(),
-        audioModuleInfo.fileName.c_str());
-    AUDIO_INFO_LOG("fixedLatency: %{public}s sinkLatency: %{public}s renderInIdleState: %{public}s",
-        audioModuleInfo.fixedLatency.c_str(),
-        audioModuleInfo.sinkLatency.c_str(),
-        audioModuleInfo.renderInIdleState.c_str());
-    AUDIO_INFO_LOG("sceneName: %{public}s sourceType: %{public}s offloadEnable: %{public}s",
-        audioModuleInfo.sceneName.c_str(),
-        audioModuleInfo.sourceType.c_str(),
-        audioModuleInfo.offloadEnable.c_str());
+    AUDIO_INFO_LOG("rate: %{public}s ch: %{public}s buffersize: %{public}s "
+        "format: %{public}s name: %{public}s  lib: %{public}s "
+        "deviceType: %{public}s  className: %{public}s  adapterName: %{public}s "
+        "OpenMicSpeaker: %{public}s networkId: %{public}s fileName: %{public}s "
+        "fixedLatency: %{public}s sinkLatency: %{public}s renderInIdleState: %{public}s "
+        "sceneName: %{public}s sourceType: %{public}s offloadEnable: %{public}s",
+        audioModuleInfo.rate.c_str(), audioModuleInfo.channels.c_str(), audioModuleInfo.bufferSize.c_str(),
+        audioModuleInfo.format.c_str(), audioModuleInfo.name.c_str(), audioModuleInfo.lib.c_str(),
+        audioModuleInfo.deviceType.c_str(), audioModuleInfo.className.c_str(), audioModuleInfo.adapterName.c_str(),
+        audioModuleInfo.OpenMicSpeaker.c_str(), audioModuleInfo.networkId.c_str(), audioModuleInfo.fileName.c_str(),
+        audioModuleInfo.fixedLatency.c_str(), audioModuleInfo.sinkLatency.c_str(),
+        audioModuleInfo.renderInIdleState.c_str(),
+        audioModuleInfo.sceneName.c_str(), audioModuleInfo.sourceType.c_str(), audioModuleInfo.offloadEnable.c_str());
 }
 
 std::string TransFormatFromEnumToString(AudioSampleFormat format)
