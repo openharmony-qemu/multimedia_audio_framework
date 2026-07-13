@@ -132,7 +132,7 @@ bool BackgroundDownload::IsWifiConnected()
     NetManagerStandard::NetAllCapabilities netAllCap;
     NetManagerStandard::NetConnClient::GetInstance().GetNetCapabilities(handle, netAllCap);
     const std::set<NetManagerStandard::NetBearType> &types = netAllCap.bearerTypes_;
-    AUDIO_INFO_LOG("The current network status is %{public}lu", types.count(NetManagerStandard::BEARER_WIFI));
+    AUDIO_DEBUG_LOG("The current network status is %{public}lu", types.count(NetManagerStandard::BEARER_WIFI));
     return types.count(NetManagerStandard::BEARER_WIFI);
 #else
     return true;
@@ -148,7 +148,7 @@ bool BackgroundDownload::IsBatteryConditionMet()
 
     bool isCharging = (chargeState == PowerMgr::BatteryChargeState::CHARGE_STATE_ENABLE ||
                        chargeState == PowerMgr::BatteryChargeState::CHARGE_STATE_FULL);
-    AUDIO_INFO_LOG("Current power level is %{public}d", capacity);
+    AUDIO_DEBUG_LOG("Current power level is %{public}d", capacity);
     return capacity > BACKGROUND_DOWNLOAD_BATTERY_LEVEL && isCharging;
 #else
     return true;
@@ -159,7 +159,7 @@ bool BackgroundDownload::IsScreenLocked()
 {
 #if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_SCREENLOCK_MANAGER)
     auto screenLockMgr = OHOS::ScreenLock::ScreenLockManager::GetInstance();
-    AUDIO_INFO_LOG("The current screen status is %{public}d", screenLockMgr->IsScreenLocked());
+    AUDIO_DEBUG_LOG("The current screen status is %{public}d", screenLockMgr->IsScreenLocked());
     return screenLockMgr->IsScreenLocked();
 #else
     return true;
