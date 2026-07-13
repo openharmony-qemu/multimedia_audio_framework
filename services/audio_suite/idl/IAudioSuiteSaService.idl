@@ -23,16 +23,14 @@ sequenceable OHOS.IRemoteObject;
 sequenceable audio_info..OHOS.AudioStandard.AudioStreamInfo;
 
 interface IAudioSuiteSaService {
-    // 云 ROM 下载接口
     [ipccode 1] int RegisterDownloadCallback([in] IRemoteObject object);
     [ipccode 2] int StartDownload([in] String version);
-    [ipccode 3] int CancelDownload();
+    [ipccode 3] int CancelDownload([in] String version);
     [ipccode 4] int StartBackgroundDownload([in] String version);
     [ipccode 5] int GetDownloadStatus([out] DownloadStatus status, [in] String version);
     [ipccode 6] int UninstallCloudRom([in] String version);
     [ipccode 7] int UnregisterDownloadCallback();
 
-    // UpdateEngine 回调注册接口
     [ipccode 8] int RegisterUpdateEngineCallback([in] IRemoteObject object);
     [ipccode 9] int UnregisterUpdateEngineCallback();
 };

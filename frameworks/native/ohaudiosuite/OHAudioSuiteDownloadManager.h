@@ -39,7 +39,7 @@ public:
 
     int32_t StartDownload(const char *modelVersion);
     int32_t RegisterDownloadCallback(const OH_AudioSuite_DownloadCallback* callback);
-    int32_t CancelDownload();
+    int32_t CancelDownload(const char *modelVersion);
     int32_t StartBackgroundDownload(const char *modelVersion);
     int32_t GetDownloadStatus(OH_AudioSuite_DownloadStatusInfo *status, const char *modelVersion);
     int32_t UninstallCloudRom(const char *modelVersion);

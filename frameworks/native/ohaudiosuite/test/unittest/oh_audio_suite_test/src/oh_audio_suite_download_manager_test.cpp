@@ -43,7 +43,7 @@ HWTEST_F(OHAudioSuiteDownloadManagerNullTest, StartDownloadNullManager, TestSize
 
 HWTEST_F(OHAudioSuiteDownloadManagerNullTest, StartDownloadNullVersion, TestSize.Level0)
 {
-    OH_AudioSuiteDownloadManager *manager = nullptr;
+    OH_AudioSuite_DownloadManager *manager = nullptr;
     OH_AudioSuite_GetDownloadManager(&manager);
     if (manager != nullptr) {
         int32_t ret = OH_AudioSuite_StartDownload(manager, nullptr);
@@ -65,7 +65,7 @@ HWTEST_F(OHAudioSuiteDownloadManagerNullTest, StartBackgroundDownloadNullManager
 
 HWTEST_F(OHAudioSuiteDownloadManagerNullTest, StartBackgroundDownloadNullVersion, TestSize.Level0)
 {
-    OH_AudioSuiteDownloadManager *manager = nullptr;
+    OH_AudioSuite_DownloadManager *manager = nullptr;
     OH_AudioSuite_GetDownloadManager(&manager);
     if (manager != nullptr) {
         int32_t ret = OH_AudioSuite_StartBackgroundDownload(manager, nullptr);
@@ -82,7 +82,7 @@ HWTEST_F(OHAudioSuiteDownloadManagerNullTest, GetDownloadStatusNullManager, Test
 
 HWTEST_F(OHAudioSuiteDownloadManagerNullTest, GetDownloadStatusNullStatus, TestSize.Level0)
 {
-    OH_AudioSuiteDownloadManager *manager = nullptr;
+    OH_AudioSuite_DownloadManager *manager = nullptr;
     OH_AudioSuite_GetDownloadManager(&manager);
     if (manager != nullptr) {
         int32_t ret = OH_AudioSuite_GetDownloadStatus(manager, "v1", nullptr);
@@ -98,7 +98,7 @@ HWTEST_F(OHAudioSuiteDownloadManagerNullTest, UninstallCloudRomNullManager, Test
 
 HWTEST_F(OHAudioSuiteDownloadManagerNullTest, UninstallCloudRomNullVersion, TestSize.Level0)
 {
-    OH_AudioSuiteDownloadManager *manager = nullptr;
+    OH_AudioSuite_DownloadManager *manager = nullptr;
     OH_AudioSuite_GetDownloadManager(&manager);
     if (manager != nullptr) {
         int32_t ret = OH_AudioSuite_UninstallCloudRom(manager, nullptr);
