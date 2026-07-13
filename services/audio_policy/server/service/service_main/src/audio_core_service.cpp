@@ -1476,7 +1476,7 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     return SUCCESS;
 }
 
-int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg opMsg, bool isInterrruptActive)
+int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg opMsg, bool isInterruptActive)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
         HILOG_COMM_ERROR("[StartClient]Call communication stream, directly return"));
@@ -1522,9 +1522,11 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg op
             streamDesc->callerPid_, streamDesc->GetSourceType());
     }
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
-    if (!isInterrruptActive) {
+    if (!isInterruptActive) {
         AUDIO_INFO_LOG("Stream is not active interrupt for sessionId:%{public}u, muting stream", sessionId);
         SetStreamInterruptMute(sessionId, true);
+    } else {
+        SetStreamInterruptMute(sessionId, false);
     }
     return SUCCESS;
 }

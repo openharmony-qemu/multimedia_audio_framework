@@ -143,16 +143,16 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
     AudioXCollie audioXCollie("EventEntry::UpdateSessionOperation", TIMEOUT_CORE_ENTRY_S,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
-    bool isInterrruptActive = false;
+    bool isInterruptActive = false;
     if (operation == SESSION_OPERATION_START) {
-        isInterrruptActive = coreService_->IsStreamActive(sessionId);
+        isInterruptActive = coreService_->IsStreamActive(sessionId);
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     HILOG_COMM_INFO("[UpdateSessionOperation]withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
         sessionId, SessionOperationToString(operation), SessionOperationMsgToString(opMsg));
     switch (operation) {
         case SESSION_OPERATION_START:
-            return coreService_->StartClient(sessionId, opMsg, isInterrruptActive);
+            return coreService_->StartClient(sessionId, opMsg, isInterruptActive);
         case SESSION_OPERATION_PAUSE:
             return coreService_->PauseClient(sessionId);
         case SESSION_OPERATION_STANDBY:
