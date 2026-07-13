@@ -147,7 +147,7 @@ void ChannelConverter::SetDownmixNormalization(bool normalizing)
 {
     downmixNormalizing_ = normalizing;
     CHECK_AND_RETURN(inChannelInfo_.numChannels > outChannelInfo_.numChannels);
-    AUDIO_INFO_LOG("channelConverter is at upmix state, need to set normalization for upmix")
+    AUDIO_INFO_LOG("channelConverter is at upmix state, need to set normalization for upmix");
     downMixer_.SetNormalization(downmixNormalizing_);
     downMixer_.GetDownMixTable(mixTable_);
 }
