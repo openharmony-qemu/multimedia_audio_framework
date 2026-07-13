@@ -162,6 +162,7 @@ void AudioRouterIndependentStrategy::UpdateCurrentOutputDevice(int32_t uid,
         !devices.empty() && devices[0] ? devices[0]->deviceId_ : 0);
     auto simpleDevices = ConvertDeviceToSimple(devices);
     AudioRouterInfra::GetInstance().UpdateCurrentOutputDevice(uid, simpleDevices);
+    AudioRouterInfra::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, simpleDevices);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterIndependentStrategy::GetCurrentOutputDevice(int32_t uid)
@@ -182,6 +183,7 @@ void AudioRouterIndependentStrategy::UpdateCurrentInputDevice(int32_t uid,
         !devices.empty() && devices[0] ? devices[0]->deviceId_ : 0);
     auto simpleDevices = ConvertDeviceToSimple(devices);
     AudioRouterInfra::GetInstance().UpdateCurrentInputDevice(uid, simpleDevices);
+    AudioRouterInfra::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, simpleDevices);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterIndependentStrategy::GetCurrentInputDevice(int32_t uid)
