@@ -146,8 +146,8 @@ void ChannelConverter::GetMixTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNEL
 void ChannelConverter::SetDownmixNormalization(bool normalizing)
 {
     downmixNormalizing_ = normalizing;
-    CHECK_AND_RETURN_LOG(inChannelInfo_.numChannels > outChannelInfo_.numChannels,
-        "channelConverter is at upmix state, no need to set normalization for upmix");
+    CHECK_AND_RETURN(inChannelInfo_.numChannels > outChannelInfo_.numChannels);
+    AUDIO_INFO_LOG("channelConverter is at upmix state, need to set normalization for upmix")
     downMixer_.SetNormalization(downmixNormalizing_);
     downMixer_.GetDownMixTable(mixTable_);
 }
@@ -231,7 +231,6 @@ void ChannelConverter::UpmixGainAttenuation()
         }
         outChMsk ^= outBit;
     }
-    AUDIO_INFO_LOG("upmix coef take effect:%{public}f", upmixCoef_);
 }
 
 } // HPAE
