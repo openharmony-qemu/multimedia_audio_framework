@@ -71,6 +71,9 @@ public:
     void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
         const list<DevicePrivacyInfo> &deviceInfos, const std::shared_ptr<AudioDeviceDescriptor> &dev,
         std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void AddAvailableDevicesByUsageAndPrivacy(AudioDeviceUsage usage,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &resultDevices);
     vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
         const std::string &macAddress);
     vector<shared_ptr<AudioDeviceDescriptor>> GetConnectedDevicesByTypesAndRole(

@@ -121,4 +121,9 @@ ohos_unittest("audio_policy_manager_device_unit_test") {
     "../../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../audio_policy:audio_policy_service_static",
   ]
+
+  defines = []
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+  }
 }
