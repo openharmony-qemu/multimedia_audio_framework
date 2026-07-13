@@ -443,13 +443,11 @@ interface AudioRoutingManager {
   SelectOutputDeviceByFilterAsync(filter: AudioRendererFilter, outputAudioDevices: Array<AudioDeviceDescriptor>): void;
   @promise @rename("selectOutputDeviceByFilter")
   SelectOutputDeviceByFilterPromise(filter: AudioRendererFilter, outputAudioDevices: Array<AudioDeviceDescriptor>): void;
-  @overload("SelectOutputDeviceByFilterSync")
   SelectOutputDeviceByFilterSync(filter: AudioRendererFilter, outputAudioDevices: Array<AudioDeviceDescriptor>): void;
 
   @promise @rename("selectOutputDeviceByFilter")
   SelectOutputDeviceByFilterWithStrategyPromise(filter: AudioRendererFilter,
     outputAudioDevices: Array<AudioDeviceDescriptor>, strategy: AudioDevcieSelectStrategy): void;
-  @overload("SelectOutputDeviceByFilterSync")
   SelectOutputDeviceByFilterWithStrategySync(filter: AudioRendererFilter,
     outputAudioDevices: Array<AudioDeviceDescriptor>, strategy: AudioDevcieSelectStrategy): void;
 
