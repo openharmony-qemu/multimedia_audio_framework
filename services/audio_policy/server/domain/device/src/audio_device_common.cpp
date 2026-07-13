@@ -341,7 +341,6 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Create device descriptor failed");
     audioDeviceManager_.RemoveNewDevice(devDesc);
-    AudioZoneService::GetInstance().UpdateZonePreferDeviceWhenDeviceDisConnect(devDesc);
     audioMicrophoneDescriptor_.RemoveMicrophoneDescriptor(devDesc);
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == updatedDesc.macAddress_) {
