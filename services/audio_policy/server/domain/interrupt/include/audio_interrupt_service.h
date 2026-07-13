@@ -129,8 +129,8 @@ public:
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const std::string &deviceTag,
         const AudioFocusList &interrupts);
-    int32_t PauseAudioFocusForExtAudioZone();
-    int32_t ResumeAudioFocusForExtAudioZone();
+    int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
+    int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,
         AudioFocusList &focusInfoList);
@@ -179,6 +179,7 @@ public:
     void OnUserUnlocked();
     void SetUserId(const int32_t newId, const int32_t oldId);
     bool NotifyStreamSilentChange(int32_t callerPid, uint32_t streamId);
+    int32_t SetVolumeControlPriority(const std::unordered_map<AudioVolumeType, int32_t> &priorities);
     int32_t GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     std::future<void> stopFuture_;
 
@@ -486,6 +487,7 @@ private:
 
     // settingsdata members
     AudioStreamType defaultVolumeType_ = STREAM_MUSIC;
+    std::unordered_map<AudioVolumeType, int32_t> volumeTypePriorities_;
 
     std::mutex audioServerProxyMutex_;
     std::unordered_set<uint32_t> mutedGameSessionId_;

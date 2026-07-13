@@ -39,15 +39,20 @@ public:
 
     static AudioSessionManager CreateSessionManagerWrapper();
 
+    void ActivateAudioSessionPromise(AudioSessionStrategy const &strategy);
     void ActivateAudioSessionSync(AudioSessionStrategy const &strategy);
+    void DeactivateAudioSessionPromise();
     void DeactivateAudioSessionSync();
     bool IsAudioSessionActivated();
     bool IsOtherMediaPlaying();
     DeviceType GetDefaultOutputDevice();
+    void SetDefaultOutputDevicePromise(DeviceType deviceType);
     void SetDefaultOutputDeviceSync(DeviceType deviceType);
+    void SetMediaOutputDevicePromise(DeviceType deviceType);
     void SetMediaOutputDeviceSync(DeviceType deviceType);
     void SetAudioSessionScene(AudioSessionScene scene);
     void EnableMuteSuggestionWhenMixWithOthers(bool enable);
+    void SetCapturerMuteHintPromise(bool mute);
     void SetCapturerMuteHintSync(bool mute);
     void SetAudioSessionBehavior(const uint32_t behavior);
     void OnAudioSessionDeactivated(callback_view<void(AudioSessionDeactivatedEvent const&)> callback);
@@ -56,10 +61,13 @@ public:
     void OffAudioSessionDeactivated(optional_view<callback<void(AudioSessionDeactivatedEvent const&)>> callback);
     void OffAudioSessionStateChanged(optional_view<callback<void(AudioSessionStateChangedEvent const&)>> callback);
     void OffCurrentOutputDeviceChanged(optional_view<callback<void(CurrentOutputDeviceChangedEvent const&)>> callback);
+    void SelectMediaInputDevicePromise(AudioDeviceDescriptor const& inputAudioDevice);
     void SelectMediaInputDeviceSync(AudioDeviceDescriptor const& inputAudioDevice);
     array<AudioDeviceDescriptor> GetAvailableDevices(DeviceUsage deviceUsage);
     AudioDeviceDescriptor GetSelectedMediaInputDevice();
+    void ClearSelectedMediaInputDevicePromise();
     void ClearSelectedMediaInputDeviceSync();
+    void SetBluetoothAndNearlinkPreferredRecordCategoryPromise(BluetoothAndNearlinkPreferredRecordCategory category);
     void SetBluetoothAndNearlinkPreferredRecordCategorySync(BluetoothAndNearlinkPreferredRecordCategory category);
     BluetoothAndNearlinkPreferredRecordCategory GetBluetoothAndNearlinkPreferredRecordCategory();
     void OnCurrentInputDeviceChanged(callback_view<void(CurrentInputDeviceChangedEvent const& data)> callback);

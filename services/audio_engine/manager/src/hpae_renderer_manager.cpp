@@ -447,9 +447,12 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
         AUDIO_INFO_LOG("DestroyStream sessionId %{public}u", sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Release not find sessionId %{public}u", sessionId);
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
+        HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RELEASED);
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RELEASED);
+        if (HasSessionEffect(sessionId)) {
+            sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
+        }
         DeleteInputSession(sessionId);
         isNeedInitEffectBufferFlagMap_.erase(sessionId);
         UpdateClusterStreamInfo(sceneType);
@@ -673,13 +676,6 @@ void HpaeRendererManager::MaterializeSessionEffectFromAttachState(uint32_t sessi
     int32_t ret = processCluster->CreateSessionEffectNode(sessionId, st->effectName, inst, st->config);
     if (ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS) ||
         ret == static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND)) {
-        // Restart preheat if previous incarnation was active.
-        if (st->lastSeStatus >= static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP)) {
-            auto seNode = processCluster->GetSessionEffectNode(sessionId);
-            if (seNode != nullptr) {
-                seNode->StartEffect();
-            }
-        }
         auto sessionIt = sessionNodeMap_.find(sessionId);
         HpaeSessionState sessionState = (sessionIt != sessionNodeMap_.end())
             ? sessionIt->second.state : HPAE_SESSION_NEW;
@@ -1123,7 +1119,7 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
             "Stop not find sessionId %{public}u", sessionId);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
-            if (HasSessionEffect(sessionId) && SafeGetMap(sceneClusterMap_, sceneType)) {
+            if (HasSessionEffect(sessionId)) {
                 sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
             }
             DisConnectInputSession(sessionId);

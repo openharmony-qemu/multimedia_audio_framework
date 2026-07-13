@@ -384,6 +384,13 @@ float AudioVolumeClientManager::GetVolumeInUnitOfDb(AudioVolumeType volumeType, 
     return AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType, volumeLevel, device);
 }
 
+int32_t AudioVolumeClientManager::SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities)
+{
+    int32_t size = priorities.size();
+    AUDIO_INFO_LOG("priorities.size() [%{public}d]", size);
+    return AudioPolicyManager::GetInstance().SetVolumeControlPriority(priorities);
+}
+
 int32_t AudioVolumeClientManager::SetMicrophoneMute(bool isMute)
 {
     return AudioPolicyManager::GetInstance().SetMicrophoneMute(isMute);

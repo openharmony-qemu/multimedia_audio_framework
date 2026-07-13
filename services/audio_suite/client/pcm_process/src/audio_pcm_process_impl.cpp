@@ -22,7 +22,6 @@
 #include "audio_suite_log.h"
 #include "audio_suite_common.h"
 #include <cstring>
-#include <securec.h>
 
 using namespace OHOS::AudioStandard;
 using namespace OHOS::AudioStandard::AudioSuite;

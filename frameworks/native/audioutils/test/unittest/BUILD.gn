@@ -13,7 +13,7 @@
 
 import("//build/test.gni")
 import("../../../../../config.gni")
-module_output_path = "audio_framework/audio_framework_route/audio_utils"
+route_common_module_output_path = "audio_framework/audio_route_common/audio_utils"
 
 group("unit_test_group") {
   testonly = true
@@ -34,7 +34,7 @@ group("unit_test_group") {
 }
 
 ohos_unittest("audio_utils_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = route_common_module_output_path
   include_dirs = [
     "../../include",
     "../../../../../interfaces/inner_api/native/audiocommon/include/",
@@ -73,7 +73,7 @@ ohos_unittest("audio_utils_unit_test") {
 }
 
 ohos_unittest("audio_sink_latency_fetcher_test") {
-  module_out_path = module_output_path
+  module_out_path = route_common_module_output_path
   include_dirs = [
     "../../include",
     "../../../../../interfaces/inner_api/native/audiocommon/include/",
@@ -95,7 +95,7 @@ ohos_unittest("audio_sink_latency_fetcher_test") {
 }
 
 ohos_unittest("audio_utils_plus_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = route_common_module_output_path
   include_dirs = [
     "../../include",
     "../../../../../interfaces/inner_api/native/audiocommon/include/",
@@ -129,7 +129,7 @@ ohos_unittest("audio_utils_plus_unit_test") {
 }
 
 ohos_unittest("audio_utils_pro_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = route_common_module_output_path
   include_dirs = [
     "../../include",
     "../../../../../interfaces/inner_api/native/audiocommon/include/",
@@ -161,7 +161,7 @@ ohos_unittest("audio_utils_pro_unit_test") {
 }
 
 ohos_unittest("audio_speed_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = route_common_module_output_path
   include_dirs = [
     "../../include",
     "../../../../../interfaces/inner_api/native/audiocommon/include/",
@@ -194,7 +194,7 @@ ohos_unittest("audio_speed_unit_test") {
 
 ohos_unittest("audio_utils_third_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = route_common_module_output_path
   include_dirs = [
     "./include",
     "../../include",
@@ -235,7 +235,7 @@ ohos_unittest("audio_utils_third_unit_test") {
 }
 
 ohos_unittest("async_action_handler_test") {
-  module_out_path = module_output_path
+  module_out_path = route_common_module_output_path
 
   include_dirs = [
     "../../include",
@@ -263,7 +263,7 @@ ohos_unittest("async_action_handler_test") {
 }
 
 ohos_unittest("audio_bundle_manager_test") {
-  module_out_path = module_output_path
+  module_out_path = route_common_module_output_path
 
   include_dirs = [
     "../../include",
@@ -327,7 +327,7 @@ if (sonic_enable == true) {
 
 ohos_unittest("audio_utils_container_aiut") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = route_common_module_output_path
   include_dirs = _aiut_include_dirs
   cflags = _aiut_cflags
   cflags_cc = [ "-std=c++20" ]
@@ -340,7 +340,7 @@ ohos_unittest("audio_utils_container_aiut") {
 
 ohos_unittest("audio_utils_dfx_aiut") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = route_common_module_output_path
   include_dirs = _aiut_include_dirs
   cflags = _aiut_cflags
   cflags_cc = [ "-std=c++20" ]
@@ -353,7 +353,7 @@ ohos_unittest("audio_utils_dfx_aiut") {
 
 ohos_unittest("audio_utils_misc_aiut") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = route_common_module_output_path
   include_dirs = _aiut_include_dirs
   cflags = _aiut_cflags
   cflags_cc = [ "-std=c++20" ]

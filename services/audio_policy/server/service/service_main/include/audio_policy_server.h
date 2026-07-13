@@ -162,6 +162,8 @@ public:
     int32_t GetSystemVolumeInDb(int32_t volumeType, int32_t volumeLevel,
         int32_t deviceType, float &volume) override;
 
+    int32_t SetVolumeControlPriority(const std::vector<int32_t> &priorities, int32_t &result) override;
+
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
 
     void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc);
@@ -584,9 +586,9 @@ public:
 
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
 
-    int32_t PauseAudioFocusForExtAudioZone() override;
+    int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
-    int32_t ResumeAudioFocusForExtAudioZone() override;
+    int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
     int32_t SetZoneDeviceVisible(bool visible) override;
 

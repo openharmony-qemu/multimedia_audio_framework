@@ -16,7 +16,6 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeSoftLink"
 #endif
-
 #include "hpae_soft_link.h"
 #ifdef ENABLE_HOOK_PCM
 #include <thread>
@@ -159,13 +158,13 @@ int32_t HpaeSoftLink::GetDeviceInfo()
                 BusinessScenario::CREATE, ERR_OPERATION_FAILED),
             "get device info timeout", false),
         "get device info timeout");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(*retGetSink == SUCCESS, ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(retGetSink, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
                 BusinessScenario::QUERY, ERR_OPERATION_FAILED),
             "get sink info failed", false),
         "get sink info failed");
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(*retGetSource == SUCCESS, ERROR,
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(retGetSource, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::GENERAL,
                 BusinessScenario::QUERY, ERR_OPERATION_FAILED),

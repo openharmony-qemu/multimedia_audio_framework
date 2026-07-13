@@ -576,6 +576,7 @@ int32_t AudioDeviceStatus::LoadDpModule(std::string deviceInfo)
         AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
         if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
             GetDPModuleInfo(moduleInfo, deviceInfo);
+            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_DP));
             if (moduleInfo.role == ROLE_SINK) {
                 AUDIO_INFO_LOG("save dp sink module info for cust param");
                 AudioCoreService::GetCoreService()->SetDpSinkModuleInfo(moduleInfo);
@@ -745,6 +746,7 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
         moduleInfo.bufferSize = to_string(bufferSize);
         moduleInfo.renderInIdleState = "1";
         moduleInfo.sinkLatency = "0";
+        moduleInfo.deviceType = std::to_string(static_cast<int32_t>(deviceType));
 
         // First unload the existing bt sink
         AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
@@ -1470,13 +1472,6 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
         GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_, command, desc.deviceCategory_,
         desc.connectState_, desc.isEnable_, desc.deviceUsage_);
 
-    // Update silent state on wireless device status change: triggered when device is enabled or usage changes
-    if (AudioPolicyUtils::GetInstance().IsWirelessDevice(desc.deviceType_)) {
-        if ((command == ENABLE_UPDATE && desc.isEnable_) || command == USAGE_UPDATE) {
-            audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
-        }
-    }
-
     std::string portNeedClose = "";
     uint32_t oldPaIndex = OPEN_PORT_FAILURE;
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
@@ -1499,6 +1494,13 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     if (isStatusUpdated) {
         OnPreferredStateUpdated(desc, command, reason);
     }
+
+    // Update silent state on wireless device status change: triggered when device is enabled or usage changes
+    if (isManagerUpdated && ((command == ENABLE_UPDATE && desc.isEnable_) ||
+            (command == USAGE_UPDATE && (desc.deviceUsage_ & DeviceUsage::MEDIA)))) {
+        audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
+    }
+
 #ifdef BLUETOOTH_ENABLE
     ClearActiveHfpDevice(desc, command, reason);
 #endif

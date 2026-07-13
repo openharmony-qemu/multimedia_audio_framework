@@ -16,6 +16,7 @@
 #define AUDIO_CORE_SERVICE_H
 #include <atomic>
 #include <condition_variable>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <unordered_set>
@@ -238,6 +239,8 @@ public:
         int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
         int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
         int32_t ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex);
+        int32_t ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
+            const std::string &moduleName);
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
         int32_t StartInjection(uint32_t sessionId) override;
         void RemoveIdForInjector(uint32_t streamId) override;
@@ -681,6 +684,10 @@ private:
         const std::vector<SourceOutput>& sourceOutputs);
     std::vector<SourceOutput> GetSourceOutputs();
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t pipeId);
+    void HandleRingerOrAlarmerRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage);
+    void HandleNormalOrDualToneRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage);
     void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const uint32_t pipeId);
     void UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
@@ -721,6 +728,11 @@ private:
     int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
     void DelayReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex);
     int32_t ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex);
+    void DelayReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
+        const std::string &moduleName);
+    int32_t ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
+        const std::string &moduleName);
+    void UpdatePrimaryExtraState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     bool HandleMuteBeforeDeviceSwitch(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -955,6 +967,12 @@ private:
     std::condition_variable multiChannelCloseCondition_;
     std::mutex multiChannelCloseMutex_;
 
+    // primary_extra delay release
+    std::mutex primaryExtraCloseMutex_;
+    std::condition_variable primaryExtraCloseCondition_;
+    std::map<std::string, bool> isPrimaryExtraOpenedMap_;
+    std::map<std::string, bool> isPrimaryExtraInReleaseMap_;
+
     // route update callback
     std::unordered_map<uint32_t, RouteUpdateCallbackInfo> routeUpdateCallback_;
     std::mutex routeUpdateCallbackMutex_;
@@ -968,7 +986,7 @@ private:
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
     };
-    bool isFirstScreenOn_ = false;
+    std::atomic<bool> isFirstScreenOn_ = false;
     bool isCreateProcess_ = false;
     std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
     std::unordered_map<uint32_t, SourceType> sessionSourceTypeMap_;

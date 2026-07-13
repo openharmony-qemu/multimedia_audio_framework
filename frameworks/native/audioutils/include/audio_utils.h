@@ -439,6 +439,8 @@ auto SafeGetMap(const std::map<Key, std::shared_ptr<T>>& map, Key key)
 
 std::string GetTime();
 std::string GetField(const std::string &src, const char* field, const char sep);
+std::string ReadTextFile(const std::string &file);
+std::string Trim(const std::string &str);
 int32_t GetFormatByteSize(int32_t format);
 
 struct SignalDetectAgent {

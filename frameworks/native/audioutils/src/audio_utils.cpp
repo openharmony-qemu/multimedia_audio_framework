@@ -20,6 +20,7 @@
 #include <cinttypes>
 #include <ctime>
 #include <sstream>
+#include <fstream>
 #include <ostream>
 #include <climits>
 #include <thread>
@@ -1588,6 +1589,39 @@ std::string GetField(const std::string &src, const char* field, const char sep)
     pos += str.length();
     auto end = src.find(sep, pos);
     return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
+}
+
+std::string ReadTextFile(const std::string &file)
+{
+    std::string ret;
+    std::ifstream fin;
+    fin.open(file.c_str(), std::ios::binary | std::ios::in);
+    if (fin) {
+        int val;
+        while ((val = fin.get()) != EOF) {
+            ret.push_back(static_cast<char>(val));
+        }
+        fin.close();
+    }
+    return ret;
+}
+
+std::string Trim(const std::string &str)
+{
+    static const std::set<char> WHITE_SPACE{' ', '\r', '\n', '\t'};
+    size_t pos = 0;
+    size_t end = str.length();
+    for (; pos < end; pos++) {
+        if (WHITE_SPACE.find(str[pos]) == WHITE_SPACE.end()) {
+            break;
+        }
+    }
+    for (; end > pos; end--) {
+        if (WHITE_SPACE.find(str[end - 1]) == WHITE_SPACE.end()) {
+            break;
+        }
+    }
+    return str.substr(pos, end - pos);
 }
 
 int32_t GetFormatByteSize(int32_t format)

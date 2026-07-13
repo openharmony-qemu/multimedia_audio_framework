@@ -443,6 +443,8 @@ public:
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
 
+    int32_t SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities);
+
     int32_t GetMaxRendererInstances();
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig);
@@ -626,9 +628,9 @@ public:
 
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId);
 
-    int32_t PauseAudioFocusForExtAudioZone();
+    int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
 
-    int32_t ResumeAudioFocusForExtAudioZone();
+    int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
 
     void SetZoneDeviceVisible(bool visible);
 

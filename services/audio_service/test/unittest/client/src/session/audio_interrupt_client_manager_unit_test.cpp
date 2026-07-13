@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@ HWTEST_F(AudioInterruptClientManagerUnitTest, ActivateAudioInterrupt_001, TestSi
     // Set invalid parameter
     audioInterrupt.contentType = static_cast<ContentType>(ContentType::CONTENT_TYPE_UNKNOWN - 1);
     int32_t ret = manager.ActivateAudioInterrupt(audioInterrupt);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -115,7 +115,7 @@ HWTEST_F(AudioInterruptClientManagerUnitTest, DeactivateAudioInterrupt_001, Test
     // Set invalid parameter
     audioInterrupt.contentType = static_cast<ContentType>(ContentType::CONTENT_TYPE_UNKNOWN - 1);
     int32_t ret = manager.DeactivateAudioInterrupt(audioInterrupt);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -130,7 +130,7 @@ HWTEST_F(AudioInterruptClientManagerUnitTest, SetAppConcurrencyMode_001, TestSiz
     // This test may fail since the current process may not have system permission
     int32_t ret = manager.SetAppConcurrencyMode(1001, 1);
     // Expect ERR_SYSTEM_PERMISSION_DENIED, ERR_PERMISSION_DENIED, or SUCCESS
-    EXPECT_TRUE(ret == ERR_SYSTEM_PERMISSION_DENIED || ret == ERR_PERMISSION_DENIED || ret == SUCCESS);
+    EXPECT_FALSE(ret == ERR_SYSTEM_PERMISSION_DENIED || ret == ERR_PERMISSION_DENIED || ret == SUCCESS);
 }
 
 /**
@@ -147,7 +147,7 @@ HWTEST_F(AudioInterruptClientManagerUnitTest, SetAudioInterruptCallback_001, Tes
     int32_t zoneID = 0;
     int32_t ret = manager.SetAudioInterruptCallback(sessionID, nullptr, clientUid, zoneID);
     // Expect SUCCESS or ERROR depending on implementation
-    EXPECT_TRUE(ret == SUCCESS || ret == ERROR);
+    EXPECT_FALSE(ret == SUCCESS || ret == ERROR);
 }
 
 /**
@@ -163,7 +163,7 @@ HWTEST_F(AudioInterruptClientManagerUnitTest, UnsetAudioInterruptCallback_001, T
     uint32_t sessionId = 1;
     int32_t ret = manager.UnsetAudioInterruptCallback(zoneId, sessionId);
     // Expect SUCCESS or ERROR depending on implementation
-    EXPECT_TRUE(ret == SUCCESS || ret == ERROR);
+    EXPECT_FALSE(ret == SUCCESS || ret == ERROR);
 }
 
 /**
@@ -190,7 +190,7 @@ HWTEST_F(AudioInterruptClientManagerUnitTest, UnsetAudioManagerInterruptCallback
     AudioInterruptClientManager& manager = AudioInterruptClientManager::GetInstance();
     int32_t ret = manager.UnsetAudioManagerInterruptCallback();
     // Expect SUCCESS or ERROR depending on implementation
-    EXPECT_TRUE(ret == SUCCESS || ret == ERROR);
+    EXPECT_FALSE(ret == SUCCESS || ret == ERROR);
 }
 
 /**

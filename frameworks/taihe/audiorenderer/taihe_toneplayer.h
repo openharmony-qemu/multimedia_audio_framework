@@ -40,9 +40,17 @@ public:
     static TonePlayerOrNull CreateTonePlayerWrapper(std::unique_ptr<OHOS::AudioStandard::AudioRendererInfo>
         rendererInfo);
 
+    void LoadAsync(ToneType type);
+    void LoadPromise(ToneType type);
     void LoadSync(ToneType type);
+    void ReleaseAsync();
+    void ReleasePromise();
     void ReleaseSync();
+    void StopAsync();
+    void StopPromise();
     void StopSync();
+    void StartAsync();
+    void StartPromise();
     void StartSync();
     std::shared_ptr<OHOS::AudioStandard::TonePlayer> tonePlayer_;
 

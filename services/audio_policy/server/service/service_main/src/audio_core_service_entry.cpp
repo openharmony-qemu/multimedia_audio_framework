@@ -759,6 +759,27 @@ int32_t AudioCoreService::EventEntry::ReleaseMultiChannelPipe(AudioIOHandle id, 
     return SUCCESS;
 }
 
+int32_t AudioCoreService::EventEntry::ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex,
+    const std::string &pipeName, const std::string &moduleName)
+{
+    CHECK_AND_RETURN_RET_LOG(coreService_, ERR_INVALID_PARAM, "coreService_ is nullptr");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    std::lock_guard<std::mutex> primaryLock(coreService_->primaryExtraCloseMutex_);
+    if (coreService_->isPrimaryExtraOpenedMap_[pipeName]) {
+        coreService_->isPrimaryExtraInReleaseMap_[pipeName] = false;
+        AUDIO_INFO_LOG("primary_extra %{public}s restart", pipeName.c_str());
+        return ERROR;
+    }
+    AUDIO_INFO_LOG("Close %{public}s pipe hdi port id: %{public}u, index %{public}u", pipeName.c_str(), id, paIndex);
+    coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
+    CHECK_AND_RETURN_RET_LOG(coreService_->pipeManager_, ERROR, "pipeManager_ is nullptr");
+    coreService_->pipeManager_->RemoveAudioPipeInfo(id);
+    coreService_->audioIOHandleMap_.DelIOHandleInfo(moduleName);
+    coreService_->isPrimaryExtraInReleaseMap_[pipeName] = false;
+    coreService_->audioPolicyManager_.RemoveAudioPipeVolume(id);
+    return SUCCESS;
+}
+
 int32_t AudioCoreService::EventEntry::SetRendererTarget(RenderTarget target, RenderTarget lastTarget,
     uint32_t sessionId)
 {

@@ -708,5 +708,33 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_021, TestSize.Level4)
     auto dev = router.GetCallCaptureDevice(static_cast<SourceType>(0), 108, 208);
     ASSERT_NE(dev, nullptr);
 }
+
+/**
+ * @tc.name  : Test PairDeviceRouter.
+ * @tc.number: DecideRingRenderDevices_022
+ * @tc.desc  : Test PairDeviceRouter GetCallCaptureDevice interface with SIMULATED_CONNECTED.
+ */
+HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_022, TestSize.Level4)
+{
+    auto pairDev = std::make_shared<AudioDeviceDescriptor>();
+    pairDev->deviceId_ = 1;
+    pairDev->pairDeviceDescriptor_ = std::make_shared<AudioDeviceDescriptor>();
+    pairDev->pairDeviceDescriptor_->connectState_ = SIMULATED_CONNECTED;
+    pairDev->pairDeviceDescriptor_->exceptionFlag_ = false;
+    pairDev->pairDeviceDescriptor_->isEnable_ = true;
+    pairDev->pairDeviceDescriptor_->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
+    CurrentActiveDevice().deviceId_ = 1;
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.push_back(pairDev);
+
+    auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(pairDev->deviceId_);
+    EXPECT_NE(desc, nullptr);
+
+    PairDeviceRouter router;
+    auto dev = router.GetCallCaptureDevice(static_cast<SourceType>(0), 108, 208);
+    ASSERT_NE(dev, nullptr);
+    EXPECT_NE(dev->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+}
 } // namespace AudioStandard
 } // namespace OHOS

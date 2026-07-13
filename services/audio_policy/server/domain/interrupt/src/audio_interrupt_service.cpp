@@ -191,6 +191,8 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     interruptCustom_ = std::make_unique<AudioInterruptCustom>();
     interruptDfx_ = std::make_shared<AudioInterruptDfx>();
     interruptStrategy_ = std::make_unique<AudioInterruptStrategy>();
+
+    volumeTypePriorities_ = DEFAULT_STREAM_PRIORITY;
 }
 
 void AudioInterruptService::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
@@ -1645,15 +1647,17 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     return SUCCESS;
 }
 
-int32_t AudioInterruptService::PauseAudioFocusForExtAudioZone()
+int32_t AudioInterruptService::PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    for (auto &[zoneId, audioInterruptZone] : zonesMap_) {
+    for (auto zoneId : zoneIds) {
         CHECK_AND_CONTINUE_LOG(zoneId != ZONEID_DEFAULT, "skip default audio zone");
-        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
-        for (auto iter = audioInterruptZone->audioFocusInfoList.begin();
-            iter != audioInterruptZone->audioFocusInfoList.end(); ++iter) {
+        auto itZone = zonesMap_.find(zoneId);
+        CHECK_AND_CONTINUE_LOG(itZone != zonesMap_.end(), "zone %{public}d is not found", zoneId);
+        CHECK_AND_CONTINUE_LOG(itZone->second != nullptr, "audioInterruptZone is nullptr");
+        for (auto iter = itZone->second->audioFocusInfoList.begin();
+            iter != itZone->second->audioFocusInfoList.end(); ++iter) {
             CHECK_AND_CONTINUE(IsAudioStreamActive(iter->second));
             bool removeFocusInfo = false;
             SendInterruptEvent(iter->second, AudioFocuState::PAUSE, iter, removeFocusInfo);
@@ -1664,12 +1668,15 @@ int32_t AudioInterruptService::PauseAudioFocusForExtAudioZone()
     return SUCCESS;
 }
 
-int32_t AudioInterruptService::ResumeAudioFocusForExtAudioZone()
+int32_t AudioInterruptService::ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (const auto &[zoneId, audioInterruptZone] : zonesMap_) {
-        CHECK_AND_CONTINUE(zoneId != ZONEID_DEFAULT);
-        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
+
+    for (auto zoneId : zoneIds) {
+        CHECK_AND_CONTINUE_LOG(zoneId != ZONEID_DEFAULT, "skip default audio zone");
+        auto itZone = zonesMap_.find(zoneId);
+        CHECK_AND_CONTINUE_LOG(itZone != zonesMap_.end(), "zone %{public}d is not found", zoneId);
+        CHECK_AND_CONTINUE_LOG(itZone->second != nullptr, "audioInterruptZone is nullptr");
         AUDIO_INFO_LOG("[ZoneFocus]resume audio focus list for zone %{public}d", zoneId);
         ResumeAudioFocusList(zoneId, false);
     }
@@ -1691,8 +1698,8 @@ int32_t AudioInterruptService::GetAudioFocusInfoList(const int32_t zoneId, const
 
 int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
 {
-    if (DEFAULT_STREAM_PRIORITY.find(streamType) != DEFAULT_STREAM_PRIORITY.end()) {
-        return DEFAULT_STREAM_PRIORITY.at(streamType);
+    if (volumeTypePriorities_.find(streamType) != volumeTypePriorities_.end()) {
+        return volumeTypePriorities_.at(streamType);
     }
     return STREAM_DEFAULT_PRIORITY;
 }
@@ -1714,6 +1721,15 @@ AudioVolumeType AudioInterruptService::GetHighestPriorityVolumeTypeFromStreams(
     }
 
     return VolumeUtils::GetVolumeTypeFromStreamType(targetStreamType);
+}
+
+int32_t AudioInterruptService::SetVolumeControlPriority(const std::unordered_map<AudioVolumeType, int32_t> &priorities)
+{
+    int32_t size = priorities.size();
+    AUDIO_INFO_LOG("priorities.size() [%{public}d]", size);
+
+    volumeTypePriorities_ = priorities;
+    return SUCCESS;
 }
 
 int32_t AudioInterruptService::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType)

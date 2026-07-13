@@ -59,6 +59,8 @@ bool AudioPolicyManager::IsEnhancedRoutingSupported()
 
 int32_t AudioPolicyManager::SelectPrivateDevice(DeviceType devType, const std::string &macAddress)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->SelectPrivateDevice(devType, macAddress);
@@ -67,6 +69,8 @@ int32_t AudioPolicyManager::SelectPrivateDevice(DeviceType devType, const std::s
 int32_t AudioPolicyManager::ForceSelectDevice(DeviceType devType, const std::string &macAddress,
     sptr<AudioRendererFilter> filter)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->ForceSelectDevice(devType, macAddress, filter);
@@ -496,14 +500,6 @@ int32_t AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback(
         int32_t targetUid = (uid == INVALID_UID) ? static_cast<int32_t>(getuid()) : uid;
         audioPolicyClientStubCB_->RemovePreferredOutputDeviceChangeCallback(targetUid, rendererInfo.streamUsage,
             callback);
-        // Remove matching entry from rendererInfosWithUid_
-        auto it = std::find_if(rendererInfosWithUid_.begin(), rendererInfosWithUid_.end(),
-            [&rendererInfo, targetUid](const std::pair<AudioRendererInfo, int32_t> &item) {
-                return item.first.streamUsage == rendererInfo.streamUsage && item.second == targetUid;
-            });
-        if (it != rendererInfosWithUid_.end()) {
-            rendererInfosWithUid_.erase(it);
-        }
         if (audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize() == 0) {
             callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, false, false);
@@ -523,14 +519,6 @@ int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback(
         int32_t targetUid = (uid == INVALID_UID) ? static_cast<int32_t>(getuid()) : uid;
         audioPolicyClientStubCB_->RemovePreferredInputDeviceChangeCallback(targetUid, capturerInfo.sourceType,
             callback);
-        // Remove matching entry from capturerInfosWithUid_
-        auto it = std::find_if(capturerInfosWithUid_.begin(), capturerInfosWithUid_.end(),
-            [&capturerInfo, targetUid](const std::pair<AudioCapturerInfo, int32_t> &item) {
-                return item.first.sourceType == capturerInfo.sourceType && item.second == targetUid;
-            });
-        if (it != capturerInfosWithUid_.end()) {
-            capturerInfosWithUid_.erase(it);
-        }
         if (audioPolicyClientStubCB_->GetPreferredInputDeviceChangeCallbackSize() == 0) {
             callbackChangeInfos_[CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE, false);

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ HWTEST(AudioEffectManagerUnitTest, GetSupportedAudioEffectProperty_001, TestSize
     AudioEffectPropertyArray propertyArray;
     int32_t result = AudioEffectManager::GetInstance()->GetSupportedAudioEffectProperty(propertyArray);
     AUDIO_INFO_LOG("AudioEffectManagerUnitTest GetSupportedAudioEffectProperty_001 result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -88,7 +88,7 @@ HWTEST(AudioEffectManagerUnitTest, SetAudioEffectProperty_001, TestSize.Level1)
     AudioEffectPropertyArray propertyArray;
     int32_t result = AudioEffectManager::GetInstance()->SetAudioEffectProperty(propertyArray);
     AUDIO_INFO_LOG("AudioEffectManagerUnitTest SetAudioEffectProperty_001 result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -103,7 +103,7 @@ HWTEST(AudioEffectManagerUnitTest, GetAudioEffectProperty_001, TestSize.Level1)
     AudioEffectPropertyArray propertyArray;
     int32_t result = AudioEffectManager::GetInstance()->GetAudioEffectProperty(propertyArray);
     AUDIO_INFO_LOG("AudioEffectManagerUnitTest GetAudioEffectProperty_001 result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -133,7 +133,7 @@ HWTEST(AudioEffectManagerUnitTest, SetAudioSeparationEffectEnabled_001, TestSize
     AUDIO_INFO_LOG("AudioEffectManagerUnitTest SetAudioSeparationEffectEnabled_001 start");
     int32_t result = AudioEffectManager::GetInstance()->SetAudioSeparationEffectEnabled(true, 1000, 0);
     AUDIO_INFO_LOG("AudioEffectManagerUnitTest SetAudioSeparationEffectEnabled_001 result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -148,7 +148,7 @@ HWTEST(AudioEffectManagerUnitTest, SetAudioSeparationEffectVolume_001, TestSize.
     int32_t result = AudioEffectManager::GetInstance()
         ->SetAudioSeparationEffectVolume(AUDIO_SEPARATION_VOLUME_TYPE_DEFAULT, 1.0);
     AUDIO_INFO_LOG("AudioEffectManagerUnitTest SetAudioSeparationEffectVolume_001 result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**

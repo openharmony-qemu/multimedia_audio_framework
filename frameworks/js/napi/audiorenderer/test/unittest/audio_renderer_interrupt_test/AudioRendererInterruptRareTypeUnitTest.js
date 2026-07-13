@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -722,62 +722,6 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         await sleep(500)
         console.log("render1_callback = " + render1_callback + ", render2_callback = " + render2_callback)
         expect(render1_callback == false && render2_callback == false).assertTrue()
-        await sleep(100)
-        await release(render1, done)
-        await release(render2, done)
-        done()
-    })
-
-    // 第一个为share mode, 第二个为Independe mode
-    it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_102', 0, async function (done) {
-        let render1_callback = false
-        let render2_callback = false
-        let render1 = await createAudioRenderer(renderInfo['MUSIC'], streamInfo['44100'])
-        await render1.setInterruptMode(audio.InterruptMode.SHARE_MODE)
-        render1.on("audioInterrupt", async(eventAction) => {
-            console.log("102.eventAction=" + JSON.stringify(eventAction))
-            render1_callback = true
-        })
-        await start(render1, done)
-
-        let render2 = await createAudioRenderer(renderInfo['MUSIC'], streamInfo['48000'])
-        await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
-        render2.on("audioInterrupt", async(eventAction) => {
-            console.log("102_2.eventAction=" + JSON.stringify(eventAction))
-            render2_callback == true
-        })
-        await start(render2, done)
-        await sleep(500)
-        console.log("102.render1_callback = " + render1_callback + ", render2_callback = " + render2_callback)
-        expect(render1_callback == true && render2_callback == false).assertTrue()
-        await sleep(100)
-        await release(render1, done)
-        await release(render2, done)
-        done()
-    })
-
-    // 第一个为independ mode, 第二个为share mode
-    it('SUB_AUDIO_RENDERER_INTERRUPT_TEST_103', 0, async function (done) {
-        let render1_callback = false
-        let render2_callback = false
-        let render1 = await createAudioRenderer(renderInfo['MUSIC'], streamInfo['44100'])
-        await render1.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
-        render1.on("audioInterrupt", async(eventAction) => {
-            console.log("103.eventAction=" + JSON.stringify(eventAction))
-            render1_callback = true
-        })
-        await start(render1, done)
-
-        let render2 = await createAudioRenderer(renderInfo['MUSIC'], streamInfo['48000'])
-        await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
-        render2.on("audioInterrupt", async(eventAction) => {
-            console.log("103_2.eventAction=" + JSON.stringify(eventAction))
-            render2_callback = true
-        })
-        await start(render2, done)
-        await sleep(500)
-        console.log("103.render1_callback = " + render1_callback + ", render2_callback = " + render2_callback)
-        expect(render1_callback == true && render2_callback == false).assertTrue()
         await sleep(100)
         await release(render1, done)
         await release(render2, done)

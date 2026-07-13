@@ -31,11 +31,18 @@ public:
     ~AudioDeviceEnhanceManagerImpl();
 
     static AudioDeviceEnhanceManager CreateDeviceEnhanceManagerWrapper();
+    bool IsEnhancedRoutingSupportedPromise();
     bool IsEnhancedRoutingSupported();
+    void SelectOutputDevicePromise(AudioDeviceDescriptor deviceDescriptor);
     void SelectOutputDeviceSync(AudioDeviceDescriptor deviceDescriptor);
+    void SelectOutputDeviceForAudioRendererPromise(
+        weak::AudioRenderer renderer, AudioDeviceDescriptor deviceDescriptor);
     void SelectOutputDeviceForAudioRendererSync(
         weak::AudioRenderer renderer, AudioDeviceDescriptor deviceDescriptor);
+    void SelectInputDevicePromise(AudioDeviceDescriptor deviceDescriptor);
     void SelectInputDeviceSync(AudioDeviceDescriptor deviceDescriptor);
+    void SelectInputDeviceForAudioCapturerPromise(
+        weak::AudioCapturer capturer, AudioDeviceDescriptor deviceDescriptor);
     void SelectInputDeviceForAudioCapturerSync(
         weak::AudioCapturer capturer, AudioDeviceDescriptor deviceDescriptor);
 private:

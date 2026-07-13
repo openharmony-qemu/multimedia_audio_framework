@@ -18,6 +18,7 @@
 #include "audio_format_converter_impl.h"
 #include "audio_suite_log.h"
 #include "audio_suite_unittest_tools.h"
+#include <securec.h>
 #include <fstream>
 #include <thread>
 #include <atomic>

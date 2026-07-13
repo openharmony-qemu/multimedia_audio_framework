@@ -116,16 +116,7 @@ void HpaeRendererManager::DetachSessionEffectNodeForRefresh(uint32_t sessionId, 
         static_cast<int32_t>(oldSceneType));
     CHECK_AND_RETURN_LOG(processCluster->HasSessionEffectNode(sessionId),
         "DetachSessionEffectNodeForRefresh: no SE node for session %{public}u", sessionId);
-    // Capture lastSeStatus before destroy so materialize can restart preheat.
-    auto seNode = processCluster->GetSessionEffectNode(sessionId);
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
-    if (seNode != nullptr && sinkInputNode != nullptr && sinkInputNode->HasSessionEffectAttachState()) {
-        auto st = sinkInputNode->GetSessionEffectAttachState();
-        if (st.has_value()) {
-            st->lastSeStatus = static_cast<int32_t>(seNode->GetStatus());
-            sinkInputNode->SetSessionEffectAttachState(st.value());
-        }
-    }
     uint64_t latency = 0;
     int32_t ret = processCluster->DestroySessionEffectNode(sessionId, latency);
     CHECK_AND_RETURN_LOG(ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS),

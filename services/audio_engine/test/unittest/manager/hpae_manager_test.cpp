@@ -84,6 +84,28 @@ void WaitForMsgProcessing(std::shared_ptr<HpaeManager> &hpaeManager)
     EXPECT_EQ(waitCount < waitCountThd, true);
 }
 
+void WaitForMsgProcessingStable(std::shared_ptr<HpaeManager> &hpaeManager)
+{
+    int waitCount = 0;
+    int stableIdleCount = 0;
+    const int waitCountThd = 150;
+    const int stableIdleCountThd = 5;
+    while (waitCount < waitCountThd) {
+        if (hpaeManager->IsMsgProcessing()) {
+            stableIdleCount = 0;
+        } else {
+            stableIdleCount++;
+            if (stableIdleCount >= stableIdleCountThd) {
+                return;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
+        waitCount++;
+    }
+    EXPECT_EQ(hpaeManager->IsMsgProcessing(), false);
+    EXPECT_GE(stableIdleCount, stableIdleCountThd);
+}
+
 AudioModuleInfo GetSinkAudioModeInfo(std::string name = "Speaker_File")
 {
     AudioModuleInfo audioModuleInfo;
@@ -2627,34 +2649,34 @@ HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_EnableDisableRoundTrip, TestSize.Le
     AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     hpaeManager_->SetDefaultSink(audioModuleInfo.name);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
 
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
     hpaeManager_->CreateStream(streamInfo);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
 
     // Start the stream so SignalProcessThread is active and cluster has converter/gain nodes
     hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
 
     // Enable AISS — should succeed (Bind + async PostCreateSessionEffect)
     int32_t ret = hpaeManager_->SetAissEnabledSync(streamInfo.sessionId, true);
     EXPECT_EQ(ret, SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
     // Give async PostCreateSessionEffect time to execute on SignalProcessThread
     usleep(100000); // 100ms
 
     // Disable AISS — should succeed (async PostDestroySessionEffect + Unbind)
     ret = hpaeManager_->SetAissEnabledSync(streamInfo.sessionId, false);
     EXPECT_EQ(ret, SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
     usleep(100000); // 100ms
 
     // Cleanup
     hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
     EXPECT_EQ(hpaeManager_->CloseOutAudioPort("Speaker_File"), SUCCESS);
     hpaeManager_->DeInit();
 }

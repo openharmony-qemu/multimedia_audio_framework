@@ -153,7 +153,7 @@ napi_value NapiAudioDeviceEnhanceManager::SelectOutputDevice(napi_env env, napi_
     auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SelectOutputDevice failed : no memory");
-        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "allocate memory failed", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -193,7 +193,7 @@ napi_value NapiAudioDeviceEnhanceManager::SelectInputDevice(napi_env env, napi_c
     auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SelectInputDevice failed : no memory");
-        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "allocate memory failed", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -233,7 +233,7 @@ napi_value NapiAudioDeviceEnhanceManager::SelectOutputDeviceForAudioRenderer(nap
     auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SelectOutputDeviceForAudioRenderer failed : no memory");
-        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "allocate memory failed", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -276,7 +276,7 @@ napi_value NapiAudioDeviceEnhanceManager::SelectInputDeviceForAudioCapturer(napi
     auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SelectInputDeviceForAudioCapturer failed : no memory");
-        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "allocate memory failed", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -316,13 +316,13 @@ napi_value NapiAudioDeviceEnhanceManager::SelectInputDeviceForAudioCapturer(napi
 
 napi_value NapiAudioDeviceEnhanceManager::GetSoundCardInfo(napi_env env, napi_callback_info info)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), NapiAudioError::ThrowErrorAndReturn(
+        env, "not system app", NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     auto context = std::make_shared<AudioDeviceEnhanceManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("GetSoundCardInfo failed : no memory");
-        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "allocate memory failed", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 

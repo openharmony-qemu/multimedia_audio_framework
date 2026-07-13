@@ -54,6 +54,7 @@ public:
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
     void TriggerAppsUidUpdate() override;
     uint32_t GetRouteFlag() const noexcept override;
+    int32_t UpdateSpanSize(uint32_t spanSizeInFrame);
 
 private:
 

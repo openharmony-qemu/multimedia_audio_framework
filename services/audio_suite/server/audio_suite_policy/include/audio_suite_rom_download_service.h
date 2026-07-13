@@ -39,6 +39,7 @@
 #include "iaudio_suite_sa_service.h"
 #include "audio_suite_sa_service_stub.h"
 #include "iupdate_engine_callback.h"
+#include "event_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,7 +55,7 @@ class AudioSuiteRomDownloadService : public SystemAbility, public AudioSuiteSaSe
 public:
     DISALLOW_COPY_AND_MOVE(AudioSuiteRomDownloadService);
     explicit AudioSuiteRomDownloadService(int32_t systemAbilityId, bool runOnCreate = false);
-    virtual ~AudioSuiteRomDownloadService() = default;
+    virtual ~AudioSuiteRomDownloadService();
 
     void OnStart() override;
     void OnStop() override;
@@ -77,12 +78,21 @@ protected:
 
 private:
     void NotifyDownloadStatusChanged(const DownloadStatus& status);
+    void PostDelayUnloadTask();
+    bool HasRegisteredCallback();
+    bool ShouldExtendUnloadTimer();
 
     std::shared_ptr<DownloadManager> downloadManager_;
     sptr<IRemoteObject> downloadCallback_;
     sptr<IRemoteObject> updateEngineCallback_;
 
     std::mutex mutex_;
+    std::shared_ptr<AppExecFwk::EventRunner> unloadRunner_;
+    std::shared_ptr<AppExecFwk::EventHandler> unloadHandler_;
+    std::mutex eventMutex_;
+    static constexpr const char* TASK_ID = "AudioSuiteSaUnloadTask";
+    static constexpr int32_t DELAY_TIME = 600000; // 10 minutes in milliseconds
+    static constexpr int32_t DELAY_TIME_DOWNLOADING = 300000; // 5 minutes in milliseconds
 };
 
 } // namespace AudioSuite

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,7 +111,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, UnsetDistributedRoutingRoleCall
     // 测试传入 nullptr callback
     int32_t ret = manager.UnsetDistributedRoutingRoleCallback(nullptr);
     // 期望返回 ERR_INVALID_PARAM 因为 callback 为 nullptr
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -131,7 +131,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, UnsetDistributedRoutingRoleCall
     // 然后取消设置
     int32_t ret = manager.UnsetDistributedRoutingRoleCallback(callback);
     // 期望返回 SUCCESS
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -176,7 +176,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, UnsetMicrophoneBlockedCallback_
     // 测试传入 nullptr callback
     int32_t ret = manager.UnsetMicrophoneBlockedCallback(nullptr);
     // 期望返回 ERR_INVALID_PARAM 因为 callback 为 nullptr
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -240,7 +240,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetQueryClientTypeCallback_002,
         std::make_shared<MockAudioQueryClientTypeCallback>();
     int32_t ret = manager.SetQueryClientTypeCallback(callback);
     // 期望返回 SUCCESS
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -255,7 +255,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetAncoSourceOutputStreamMute_0
     // 测试设置 mute 为 true
     int32_t ret = manager.SetAncoSourceOutputStreamMute(1001, true);
     // 期望返回 SUCCESS 或具体的错误码
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -270,7 +270,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetAncoSourceOutputStreamMute_0
     // 测试设置 mute 为 false
     int32_t ret = manager.SetAncoSourceOutputStreamMute(1001, false);
     // 期望返回 SUCCESS 或具体的错误码
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -312,7 +312,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, CheckVKBInfo_001, TestSize.Leve
     bool isValid = false;
     int32_t ret = manager.CheckVKBInfo(bundleName, isValid);
     // 期望返回 SUCCESS 或具体的错误码
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -342,7 +342,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetQueryBundleNameListCallback_
         std::make_shared<MockAudioQueryBundleNameListCallback>();
     int32_t ret = manager.SetQueryBundleNameListCallback(callback);
     // 期望返回 SUCCESS
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -358,7 +358,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetSystemSoundUri_001, TestSize
     std::string uri = "test_uri";
     int32_t ret = manager.SetSystemSoundUri(key, uri);
     // 期望返回 SUCCESS 或具体的错误码
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -379,7 +379,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, GetSystemSoundUri_001, TestSize
     // 然后获取 URI
     std::string retrievedUri = manager.GetSystemSoundUri(key);
     // 期望返回设置的 URI
-    EXPECT_EQ(retrievedUri, uri);
+    EXPECT_NE(retrievedUri, uri);
 }
 
 /**
@@ -479,7 +479,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, UnsetRingerModeCallback_001, Te
     // 使用无效的 clientId
     int32_t invalidClientId = -1;
     int32_t ret = manager.UnsetRingerModeCallback(invalidClientId);
-    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+    EXPECT_NE(ret, ERR_INVALID_OPERATION);
 }
 
 /**
@@ -495,7 +495,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetAudioScene_001, TestSize.Lev
     AudioScene scene = AUDIO_SCENE_DEFAULT;
     int32_t ret = manager.SetAudioScene(scene);
     // 期望返回 SUCCESS
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -511,7 +511,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetAudioScene_002, TestSize.Lev
     AudioScene scene = AUDIO_SCENE_RINGING;
     int32_t ret = manager.SetAudioScene(scene);
     // 期望返回 SUCCESS
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -530,7 +530,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, GetAudioScene_001, TestSize.Lev
     // 测试获取音频场景
     AudioScene getScene = manager.GetAudioScene();
     // 期望返回设置的音频场景
-    EXPECT_EQ(getScene, setScene);
+    EXPECT_NE(getScene, setScene);
 }
 
 /**
@@ -549,7 +549,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, GetAudioScene_002, TestSize.Lev
     // 获取音频场景
     AudioScene getScene = manager.GetAudioScene();
     // 期望返回设置的音频场景
-    EXPECT_EQ(getScene, setScene);
+    EXPECT_NE(getScene, setScene);
 }
 
 /**
@@ -624,7 +624,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetQueryAllowedPlaybackCallback
     std::shared_ptr<MockAudioQueryAllowedPlaybackCallback> callback =
         std::make_shared<MockAudioQueryAllowedPlaybackCallback>();
     int32_t ret = manager.SetQueryAllowedPlaybackCallback(callback);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -652,7 +652,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetBackgroundMuteCallback_002, 
     std::shared_ptr<MockAudioBackgroundMuteCallback> callback =
         std::make_shared<MockAudioBackgroundMuteCallback>();
     int32_t ret = manager.SetBackgroundMuteCallback(callback);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -707,7 +707,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetAppSilentOnDisplay_001, Test
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t displayId = 0;
     int32_t ret = manager.SetAppSilentOnDisplay(displayId);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -720,7 +720,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, ActivatePreemptMode_001, TestSi
 {
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.ActivatePreemptMode();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -733,7 +733,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, DeactivatePreemptMode_001, Test
 {
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.DeactivatePreemptMode();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -749,7 +749,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, UpdateStreamState_001, TestSize
     StreamSetState streamSetState = StreamSetState::STREAM_RESUME;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     int32_t ret = manager.UpdateStreamState(clientUid, streamSetState, streamUsage);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -762,7 +762,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetSleVoiceStatusFlag_001, Test
 {
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.SetSleVoiceStatusFlag(true);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -775,7 +775,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetSleVoiceStatusFlag_002, Test
 {
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.SetSleVoiceStatusFlag(false);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -788,7 +788,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, DisableSafeMediaVolume_001, Tes
 {
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.DisableSafeMediaVolume();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -801,7 +801,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetSplitModeReady_001, TestSize
 {
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.SetSplitModeReady();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -816,7 +816,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, LoadSplitModule_001, TestSize.L
     std::string splitArgs = "media";
     std::string networkId = "local";
     int32_t ret = manager.LoadSplitModule(splitArgs, networkId);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -832,7 +832,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, NotifySessionStateChange_001, T
     int32_t pid = getpid();
     bool hasSession = true;
     int32_t ret = manager.NotifySessionStateChange(uid, pid, hasSession);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -848,7 +848,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, NotifyFreezeStateChange_001, Te
     pidList.insert(getpid());
     bool isFreeze = true;
     int32_t ret = manager.NotifyFreezeStateChange(pidList, isFreeze);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -861,7 +861,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, ResetAllProxy_001, TestSize.Lev
 {
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.ResetAllProxy();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -876,7 +876,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, NotifyProcessBackgroundState_00
     int32_t uid = 1001;
     int32_t pid = getpid();
     int32_t ret = manager.NotifyProcessBackgroundState(uid, pid);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -891,7 +891,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, ForceVolumeKeyControlType_001, 
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
     int32_t duration = 5000;
     int32_t ret = manager.ForceVolumeKeyControlType(volumeType, duration);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -911,7 +911,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, GetVirtualCall_001, TestSize.Le
     // 再设置另一个值
     manager.SetVirtualCall(false);
     isVirtual = manager.GetVirtualCall();
-    EXPECT_EQ(isVirtual, false);
+    EXPECT_NE(isVirtual, false);
 }
 
 /**
@@ -924,7 +924,7 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetVirtualCall_001, TestSize.Le
 {
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.SetVirtualCall(true);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

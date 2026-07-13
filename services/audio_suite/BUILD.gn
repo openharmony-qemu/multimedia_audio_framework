@@ -175,6 +175,7 @@ audio_ohos_library("audio_suite") {
       "c_utils:utils",
       "hilog:libhilog",
       "ipc:ipc_single",
+      "bounds_checking_function:libsec_shared",
       "media_foundation:media_monitor_client",
       "media_foundation:media_monitor_common",
       "samgr:samgr_proxy",
@@ -227,6 +228,7 @@ audio_ohos_library("audio_pcm_process") {
     external_deps = [
       "c_utils:utils",
       "hilog:libhilog",
+      "bounds_checking_function:libsec_shared",
     ]
   }
 
@@ -290,12 +292,14 @@ if (audio_framework_feature_audiosuite_support) {
       "ipc:ipc_core",
       "samgr:samgr_proxy",
       "safwk:system_ability_fwk",
+      "eventhandler:libeventhandler",
       "hisysevent:libhisysevent",
       "hitrace:hitrace_meter",
       "access_token:libaccesstoken_sdk",
       "access_token:libnativetoken_shared",
       "access_token:libtokensetproc_shared",
       "init:libbegetutil",
+      "bounds_checking_function:libsec_shared",
     ]
  
     subsystem_name = "multimedia"
