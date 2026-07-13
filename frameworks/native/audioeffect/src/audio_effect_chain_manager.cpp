@@ -2910,14 +2910,10 @@ int32_t AudioEffectChainManager::UpdatePersonalizedSpatializationStateInner(
     AUDIO_INFO_LOG("UpdatePersonalizedSpatializationState: %{public}d change to %{public}d",
         personalizedSpatializationEnabled_, personalizedSpatializationEnabled);
     personalizedSpatializationEnabled_ = personalizedSpatializationEnabled;
-    if (btOffloadSupported_ == false) {
+    if (btOffloadEnabled_ == false) {
         ret = UpdatePersonalizedSpatializationEnabledToChains();
     } else {
-        if (btOffloadEnabled_ == false) {
-            ret = UpdatePersonalizedSpatializationEnabledToChains();
-        } else {
-            ret = UpdatePersonalizedSpatializationEnabledToHdi();
-        }
+        ret = UpdatePersonalizedSpatializationEnabledToHdi();
     }
     if (ret != SUCCESS && personalizedSpatializationEnabled == true) {
         personalizedSpatializationEnabled_ = false;
