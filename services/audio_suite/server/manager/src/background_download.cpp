@@ -18,13 +18,29 @@
 #endif
 
 #include "background_download.h"
-#include "net_conn_client.h"
 #include "audio_suite_log.h"
 #include "common_event_support.h"
+
+#if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_NET_MANAGER)
+#include "net_conn_client.h"
+#endif
+ 
+#if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_BATTERY_MANAGER)
+#include "battery_info.h"
+#include "battery_srv_client.h"
+#endif
+ 
+#if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_SCREENLOCK_MANAGER)
+#include "screenlock_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
+
+#if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_BATTERY_MANAGER)
+static constexpr int32_t BACKGROUND_DOWNLOAD_BATTERY_LEVEL = 50;
+#endif
 
 BackgroundDownload::EventSubscriber::EventSubscriber(BackgroundDownload& monitor,
     const EventFwk::CommonEventSubscribeInfo& subscribeInfo)
@@ -107,26 +123,47 @@ bool BackgroundDownload::AreConditionsMet()
 
 bool BackgroundDownload::IsWifiConnected()
 {
+#if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_NET_MANAGER)
     NetManagerStandard::NetHandle handle;
     int32_t ret = NetManagerStandard::NetConnClient::GetInstance().GetDefaultNet(handle);
     if (ret != 0) {
         return false;
     }
-
     NetManagerStandard::NetAllCapabilities netAllCap;
     NetManagerStandard::NetConnClient::GetInstance().GetNetCapabilities(handle, netAllCap);
-    const std::set<NetManagerStandard::NetBearType>& types = netAllCap.bearerTypes_;
+    const std::set<NetManagerStandard::NetBearType> &types = netAllCap.bearerTypes_;
+    AUDIO_INFO_LOG("The current network status is %{public}lu", types.count(NetManagerStandard::BEARER_WIFI));
     return types.count(NetManagerStandard::BEARER_WIFI);
+#else
+    return true;
+#endif
 }
 
 bool BackgroundDownload::IsBatteryConditionMet()
 {
+#if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_BATTERY_MANAGER)
+    auto &batteryService = OHOS::PowerMgr::BatterySrvClient::GetInstance();
+    uint32_t capacity = batteryService.GetCapacity();
+    PowerMgr::BatteryChargeState chargeState = batteryService.GetChargingStatus();
+
+    bool isCharging = (chargeState == PowerMgr::BatteryChargeState::CHARGE_STATE_ENABLE ||
+                       chargeState == PowerMgr::BatteryChargeState::CHARGE_STATE_FULL);
+    AUDIO_INFO_LOG("Current power level is %{public}d", capacity);
+    return capacity > BACKGROUND_DOWNLOAD_BATTERY_LEVEL && isCharging;
+#else
     return true;
+#endif
 }
 
 bool BackgroundDownload::IsScreenLocked()
 {
+#if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_SCREENLOCK_MANAGER)
+    auto screenLockMgr = OHOS::ScreenLock::ScreenLockManager::GetInstance();
+    AUDIO_INFO_LOG("The current screen status is %{public}d", screenLockMgr->IsScreenLocked());
+    return screenLockMgr->IsScreenLocked();
+#else
     return true;
+#endif
 }
 
 void BackgroundDownload::AddToPendingQueue(const std::string& version)
