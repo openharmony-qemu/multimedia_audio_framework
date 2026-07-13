@@ -112,6 +112,10 @@ ohos_shared_library("audio_utils") {
     defines += [ "IS_EMULATOR" ]
   }
 
+  if (audio_framework_feature_multi_bus) {
+    defines += [ "MULTI_BUS_ENABLE" ]
+  }
+
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"

@@ -684,10 +684,12 @@ bool PermissionUtil::NeedVerifyBackgroundCapture(int32_t callingUid, SourceType 
 bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId)
 {
     Trace trace("PermissionUtil::VerifyBackgroundCapture");
+#ifndef MULTI_BUS_ENABLE
     if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
         AUDIO_INFO_LOG("system app recording");
         return true;
     }
+#endif
 
     bool ret = Security::AccessToken::PrivacyKit::IsAllowedUsingPermission(tokenId, MICROPHONE_PERMISSION);
     if (!ret) {
