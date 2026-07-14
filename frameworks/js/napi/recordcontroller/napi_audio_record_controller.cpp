@@ -234,9 +234,8 @@ napi_value NapiAudioRecordController::OnSystemRecordControllerEnabledChange(napi
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
 
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"));
 
     const size_t minArgc = ARGS_ONE;
     size_t argc = ARGS_TWO;
@@ -306,9 +305,8 @@ napi_value NapiAudioRecordController::OffSystemRecordControllerEnabledChange(nap
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
 
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
-        "No system permission");
+    CHECK_AND_RETURN_RET(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"));
 
     size_t argc = ARGS_TWO;
     napi_value args[ARGS_TWO] = {nullptr, nullptr};
