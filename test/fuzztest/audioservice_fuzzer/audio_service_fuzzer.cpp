@@ -221,21 +221,21 @@ void AudioServiceGetStandbyStatusFuzzTest()
 #endif
 
 #ifdef HAS_FEATURE_INNERCAPTURER
-void AudioServiceCheckInnerCapForRendererFuzzTest() 
-{ 
-    shared_ptr<AudioService> audioService = make_shared<AudioService>(); 
+void AudioServiceCheckInnerCapForRendererFuzzTest()
+{
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
-        return; 
-    } 
-    AudioProcessConfig processConfig; 
-    uint32_t sessionId = GetData<uint32_t>(); 
-    std::shared_ptr<StreamListenerHolder> streamListenerHolder = 
-        std::make_shared<StreamListenerHolder>(); 
-    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder; 
-    std::shared_ptr<RendererInServer> rendererInServer = 
-        std::make_shared<RendererInServer>(processConfig, streamListener); 
-    std::shared_ptr<RendererInServer> renderer = rendererInServer; 
-    audioService->CheckInnerCapForRenderer(sessionId, renderer); 
+        return;
+    }
+    AudioProcessConfig processConfig;
+    uint32_t sessionId = GetData<uint32_t>();
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+    audioService->CheckInnerCapForRenderer(sessionId, renderer);
 }
 void AudioServiceGetDeviceInfoForProcessFuzzTest()
 {
