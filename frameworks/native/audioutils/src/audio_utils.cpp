@@ -215,7 +215,8 @@ bool Util::IsBackgroundSourceType(const SourceType sourceType)
 
 bool Util::IsScoSupportSource(const SourceType sourceType)
 {
-    return sourceType == SOURCE_TYPE_VOICE_RECOGNITION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
+    return sourceType == SOURCE_TYPE_VOICE_RECOGNITION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION ||
+        sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
 }
 
 bool Util::IsDualToneStreamType(const AudioStreamType streamType)
