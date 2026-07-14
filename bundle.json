@@ -95,6 +95,7 @@
             "kv_store",
             "libxml2",
             "napi",
+            "node",
             "os_account",
             "power_manager",
             "resource_management",
