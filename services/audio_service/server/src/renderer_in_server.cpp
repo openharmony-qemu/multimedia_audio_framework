@@ -2106,12 +2106,6 @@ int32_t RendererInServer::GetSpeedPosition(uint64_t &framePos, uint64_t &timesta
 int32_t RendererInServer::GetLatency(uint64_t &latency)
 {
     std::unique_lock<std::mutex> lock(statusLock_);
-    int32_t enableNewRoute = 0;
-    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-    if (managerType_ == DIRECT_PLAYBACK && enableNewRoute != 0) {
-        latency = IStreamManager::GetPlaybackManager(managerType_).GetLatency();
-        return SUCCESS;
-    }
     if (stream_ == nullptr) {
         AUDIO_ERR_LOG("stream_ is nullptr");
         return ERR_OPERATION_FAILED;

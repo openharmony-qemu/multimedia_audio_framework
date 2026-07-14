@@ -2451,26 +2451,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         return remoteObject;
     }
 
-#ifdef SUPPORT_LOW_LATENCY
-    sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(config);
-    if (process == nullptr) {
-        if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-            AudioService::GetInstance()->CleanAppUseNumMap(appUid);
-        }
-        HILOG_COMM_ERROR("[CreateAudioStream]GetAudioProcess failed.");
-        return nullptr;
-    }
-    AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
-    if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
-        AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(config.audioMode);
-    }
-    sptr<IRemoteObject> remoteObject= process->AsObject();
-    pipeInfoGuard->SetReleaseFlag(false);
-    return remoteObject;
-#else
     HILOG_COMM_ERROR("[CreateAudioStream]GetAudioProcess failed.");
     return nullptr;
-#endif
 }
 
 int32_t AudioServer::CheckAndWaitAudioPolicyReady()
@@ -2630,21 +2612,7 @@ int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &co
 
 bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
 {
-    int32_t enableNewRoute = 0;
-    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-    if (enableNewRoute != 1) {
-        return true;
-    }
-    if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-        return config.rendererInfo.rendererFlags == AUDIO_FLAG_NORMAL ||
-            config.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT ||
-            config.rendererInfo.rendererFlags == AUDIO_FLAG_DIRECT ||
-            config.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT;
-    } else if (config.audioMode == AUDIO_MODE_RECORD) {
-        return config.capturerInfo.capturerFlags == AUDIO_FLAG_NORMAL;
-    }
-
-    return false;
+    return true;
 }
 
 int32_t AudioServer::CheckRemoteDeviceState(const std::string &networkId, int32_t deviceRole, bool isStartDevice)
@@ -3845,17 +3813,6 @@ int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate,
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     int32_t ret = ERROR; //if is not low latency, should return error
-#ifdef SUPPORT_LOW_LATENCY
-    auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
-    CHECK_AND_RETURN_RET_LOG(ptr != nullptr, ERROR, "endpoint not exist!");
-    ret = ptr->AddCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "add injector fail!");
-    AudioModuleInfo info = AudioInjectorService::GetInstance().GetModuleInfo();
-    rate = info.rate;
-    format = info.format;
-    channels = info.channels;
-    bufferSize = info.bufferSize;
-#endif
     return ret;
 }
 
@@ -3863,12 +3820,6 @@ int32_t AudioServer::RemoveCaptureInjector(uint32_t sinkPortidx)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     int32_t ret = ERROR; //if is not low latency, should return error
-#ifdef SUPPORT_LOW_LATENCY
-    auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
-    CHECK_AND_RETURN_RET_LOG(ptr != nullptr, ERROR, "endpoint not exist!");
-    ret = ptr->RemoveCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "remove injector fail!");
-#endif
     return ret;
 }
 
