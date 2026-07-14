@@ -22,7 +22,6 @@
 #include "audio_errors.h"
 #include "gtest/gtest.h"
 #include "audio_renderer.h"
-#include "fast_audio_stream.h"
 #include "audio_renderer_private.h"
 
 namespace OHOS {
