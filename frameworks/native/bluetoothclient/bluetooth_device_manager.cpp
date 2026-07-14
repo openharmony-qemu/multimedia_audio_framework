@@ -243,7 +243,7 @@ AudioDeviceDescriptor MediaBluetoothDeviceManager::HandleConnectDeviceInner(cons
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceCategory_ = bluetoothCategory;
-    desc.isBTSupportWearDetectionEnable_ = true;
+    desc.isSupportWearDetectionEnable_ = true;
     switch (bluetoothCategory) {
         case BT_GLASSES:
         case BT_HEADPHONE:
@@ -490,8 +490,8 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
     device.GetDeviceName(deviceName, false);
     desc.dmDeviceInfo_ = deviceName;
     AUDIO_WARNING_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address\
-        is %{public}s, category is %{public}d, isBTSupportWearDetectionEnable_ is %{public}d", deviceStatus,
-        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.isBTSupportWearDetectionEnable_);
+        is %{public}s, category is %{public}d, isSupportWearDetectionEnable_ is %{public}d", deviceStatus,
+        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.isSupportWearDetectionEnable_);
     {
         std::lock_guard<std::mutex> deviceMapLock(g_a2dpDeviceMapLock);
         if (deviceStatus == DeviceStatus::ADD) {
@@ -842,7 +842,7 @@ AudioDeviceDescriptor HfpBluetoothDeviceManager::HandleConnectDeviceInner(const 
             if (IsBTWearDetectionEnable(device)) {
                 AddDeviceInConfigVector(device, negativeDevices_);
                 desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
-                desc.isBTSupportWearDetectionEnable_ = true;
+                desc.isSupportWearDetectionEnable_ = true;
             } else {
                 AddDeviceInConfigVector(device, privacyDevices_);
             }
@@ -1102,8 +1102,8 @@ void HfpBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemoteD
     device.GetDeviceName(deviceName, false);
     desc.dmDeviceInfo_ = deviceName;
     AUDIO_WARNING_LOG("hfpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address\
-        is %{public}s, category is %{public}d, isBTSupportWearDetectionEnable_ is %{public}d", deviceStatus,
-        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.isBTSupportWearDetectionEnable_);
+        is %{public}s, category is %{public}d, isSupportWearDetectionEnable_ is %{public}d", deviceStatus,
+        GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_, desc.isSupportWearDetectionEnable_);
     {
         std::lock_guard<std::mutex> deviceMapLock(g_hfpDeviceMapLock);
         if (deviceStatus == DeviceStatus::ADD) {
