@@ -73,6 +73,11 @@ struct SessionEffectInfo {
     DeviceType deviceType = DEVICE_TYPE_INVALID;
 };
 
+struct ChannelOverrideValue {
+    uint32_t inputChannels = DEFAULT_NUM_CHANNEL;
+    uint64_t inputChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
+};
+
 struct EffectBufferAttr {
     float *bufIn;
     float *bufOut;
@@ -128,6 +133,11 @@ public:
     int32_t UpdateMultichannelConfig(const std::string &sceneType);
     int32_t UpdateMultichannelConfig(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);
+    int32_t SetChannelOverride(const std::string &sceneType, uint32_t inputChannels, uint64_t inputChannelLayout);
+    int32_t SetChannelOverride(const std::string &sceneType, DeviceType deviceType, uint32_t renderId,
+        uint32_t inputChannels, uint64_t inputChannelLayout);
+    int32_t ClearChannelOverride(const std::string &sceneType);
+    int32_t ClearChannelOverride(const std::string &sceneType, DeviceType deviceType, uint32_t renderId);
     int32_t InitAudioEffectChainDynamic(const std::string &sceneType);
     int32_t InitAudioEffectChainDynamic(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);
@@ -251,6 +261,13 @@ private:
     int32_t UpdateMultichannelConfigInner(const std::string &sceneType);
     int32_t UpdateMultichannelConfigInner(const std::string &sceneType,
         DeviceType deviceType, uint32_t renderId);
+    bool ConsultChannelOverride(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
+    bool ConsultChannelOverride(const std::string &sceneType, DeviceType deviceType, uint32_t renderId,
+        uint32_t &channels, uint64_t &channelLayout);
+    // Consult channel override by route key: self key first, then any peer route key that shares the
+    // same AudioEffectChain instance (shared-chain equivalence class). Returns false when the chain for
+    // `key` has not been created yet (defensive: override must not apply to a non-existent chain).
+    bool ConsultChannelOverrideByKey(const std::string &key, uint32_t &channels, uint64_t &channelLayout);
     int32_t UpdateSpatializationStateInner(AudioSpatializationState spatializationState);
     int32_t SetHdiParam(const AudioEffectScene &sceneType);
     int32_t ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
@@ -278,6 +295,7 @@ private:
     std::set<std::string> sessionIDSet_;
     std::map<std::string, std::set<std::string>> sceneTypeToSessionIDMap_;
     std::map<std::string, SessionEffectInfo> sessionIDToEffectInfoMap_;
+    std::map<std::string, ChannelOverrideValue> channelOverrideMap_;
     std::map<std::string, int32_t> sceneTypeToEffectChainCountBackupMap_;
     std::set<std::string> sceneTypeToSpecialEffectSet_;
     std::map<uint32_t, std::set<std::string>> renderIdToEffectChainKeysMap_;

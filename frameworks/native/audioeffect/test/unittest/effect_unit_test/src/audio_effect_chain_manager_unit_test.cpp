@@ -6091,5 +6091,136 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateEffectBtOffloadSupported_Callback_
 
     mgr->ResetInfo();
 }
+
+/**
+* @tc.name   : Test SetChannelOverride / ClearChannelOverride keyed by chain scene
+* @tc.number : ChannelOverride_SetClearPlain
+* @tc.desc   : SetChannelOverride resolves routeKey -> chain -> chain.sceneType_ as the override key,
+*              so the chain must exist first (a prior chain stores sceneType_ == sceneType). Clear erases
+*              by the same scene key.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ChannelOverride_SetClearPlain, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->channelOverrideMap_.clear();
+
+    std::string sceneType = "SCENE_MOVIE";
+    std::string routeKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
+    auto chain = AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+    ASSERT_NE(chain, nullptr);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[routeKey] = chain;
+    std::string sceneKey = sceneType; // prior chain: GetSceneType() == sceneType
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(sceneKey), 0u);
+
+    AudioEffectChainManager::GetInstance()->SetChannelOverride(sceneType, STEREO, CH_LAYOUT_STEREO);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(sceneKey), 1u);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_[sceneKey].inputChannels,
+        static_cast<uint32_t>(STEREO));
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_[sceneKey].inputChannelLayout,
+        static_cast<uint64_t>(CH_LAYOUT_STEREO));
+
+    AudioEffectChainManager::GetInstance()->ClearChannelOverride(sceneType);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(sceneKey), 0u);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test UpdateMultichannelConfig consult override (scenes 1, 2)
+* @tc.number : ChannelOverride_ConsultForces2ch
+* @tc.desc   : Scene1: set override(2ch) -> consult hits -> ioBufferConfig_.inputCfg.channels==2.
+*              Scene2: clear override -> recompute via FindMaxEffectChannels (DEFAULT_INFO).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ChannelOverride_ConsultForces2ch, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->channelOverrideMap_.clear();
+    std::string sceneType = "SCENE_MOVIE";
+    std::string key = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
+    auto chain = AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+    ASSERT_NE(chain, nullptr);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[key] = chain;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd("s8ch", DEFAULT_INFO); // DEFAULT_INFO.channels=2
+
+    // 场景1: set override(2ch) -> consult 命中 -> ioBufferConfig_.inputCfg.channels==2
+    AudioEffectChainManager::GetInstance()->SetChannelOverride(sceneType, STEREO, CH_LAYOUT_STEREO);
+    AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(sceneType);
+    uint32_t inCh = 0;
+    uint64_t inLayout = 0;
+    chain->GetInputChannelInfo(inCh, inLayout);
+    EXPECT_EQ(inCh, static_cast<uint32_t>(STEREO));
+    EXPECT_EQ(inLayout, static_cast<uint64_t>(CH_LAYOUT_STEREO));
+
+    // 场景2: clear override -> 回到 FindMaxEffectChannels(DEFAULT_INFO)
+    AudioEffectChainManager::GetInstance()->ClearChannelOverride(sceneType);
+    AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(sceneType);
+    chain->GetInputChannelInfo(inCh, inLayout);
+    EXPECT_EQ(inCh, DEFAULT_INFO.channels);
+    EXPECT_EQ(inLayout, DEFAULT_INFO.channelLayout);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test per-scene override isolation (scene 5)
+* @tc.number : ChannelOverride_IsolatedPerScene
+* @tc.desc   : Override set on sceneA must not affect sceneB's recompute (FindMaxEffectChannels path).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ChannelOverride_IsolatedPerScene, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->channelOverrideMap_.clear();
+    std::string sceneA = "SCENE_MOVIE";
+    std::string sceneB = "SCENE_MUSIC";
+    auto chainA = AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneA, true);
+    auto chainB = AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneB, true);
+    ASSERT_NE(chainA, nullptr);
+    ASSERT_NE(chainB, nullptr);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneA + "_&_DEVICE_TYPE_SPEAKER"] = chainA;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneB + "_&_DEVICE_TYPE_SPEAKER"] = chainB;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd("sA", DEFAULT_INFO);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd("sB", DEFAULT_INFO);
+
+    // 只对 sceneA 设 override，sceneB 不应被影响
+    AudioEffectChainManager::GetInstance()->SetChannelOverride(sceneA, STEREO, CH_LAYOUT_STEREO);
+    AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(sceneB);
+    uint32_t inCh = 0;
+    uint64_t inLayout = 0;
+    chainB->GetInputChannelInfo(inCh, inLayout);
+    EXPECT_EQ(inCh, DEFAULT_INFO.channels); // 未 override，走 FindMaxEffectChannels
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ResetInfo clears channelOverrideMap_ (scene 9)
+* @tc.number : ChannelOverride_ResetInfoClearsMap
+* @tc.desc   : ResetInfo must clear all entries in channelOverrideMap_ (held under dynamicMutex_).
+*              SetChannelOverride needs the chain to exist first to store by chain scene.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ChannelOverride_ResetInfoClearsMap, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->channelOverrideMap_.clear();
+    std::string sceneType = "SCENE_MOVIE";
+    std::string routeKey = "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER";
+    auto chain = AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
+    ASSERT_NE(chain, nullptr);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[routeKey] = chain;
+    AudioEffectChainManager::GetInstance()->SetChannelOverride(sceneType, STEREO, CH_LAYOUT_STEREO);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.size(), 1u);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.size(), 0u);
+}
 } // namespace AudioStandard
 } // namespace OHOS

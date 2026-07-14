@@ -322,6 +322,59 @@ HpaeProcessorType HpaeRendererManager::GetConnectedProcessorType(uint32_t sessio
     return node->connectedProcessorType_;
 }
 
+std::optional<HpaeRendererManager::ChannelOverrideRoute>
+    HpaeRendererManager::BuildChannelOverrideRouteFromProcessorType(HpaeProcessorType sceneType) const
+{
+    if (sceneType == HPAE_SCENE_EFFECT_NONE) {
+        return std::nullopt;
+    }
+    ChannelOverrideRoute route;
+    route.sceneType = TransProcessorTypeToSceneType(sceneType);
+    route.deviceType = renderDeviceType_;
+    route.renderId = renderId_;
+    return route;
+}
+
+std::optional<HpaeRendererManager::ChannelOverrideRoute>
+    HpaeRendererManager::BuildChannelOverrideRoute(uint32_t sessionId) const
+{
+    return BuildChannelOverrideRouteFromProcessorType(GetProcessorType(sessionId));
+}
+
+void HpaeRendererManager::SetChannelOverrideForRoute(const ChannelOverrideRoute &route)
+{
+    if (Util::IsEnhancedRoutingSupported()) {
+        AudioEffectChainManager::GetInstance()->SetChannelOverride(
+            route.sceneType, route.deviceType, route.renderId, STEREO, CH_LAYOUT_STEREO);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(
+            route.sceneType, route.deviceType, route.renderId);
+    } else {
+        AudioEffectChainManager::GetInstance()->SetChannelOverride(route.sceneType, STEREO, CH_LAYOUT_STEREO);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(route.sceneType);
+    }
+}
+
+void HpaeRendererManager::ClearChannelOverrideForRoute(const ChannelOverrideRoute &route)
+{
+    if (Util::IsEnhancedRoutingSupported()) {
+        AudioEffectChainManager::GetInstance()->ClearChannelOverride(
+            route.sceneType, route.deviceType, route.renderId);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(
+            route.sceneType, route.deviceType, route.renderId);
+    } else {
+        AudioEffectChainManager::GetInstance()->ClearChannelOverride(route.sceneType);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(route.sceneType);
+    }
+}
+
+void HpaeRendererManager::OnSessionEffectMaterialized(uint32_t sessionId)
+{
+    auto route = BuildChannelOverrideRoute(sessionId);
+    if (route.has_value()) {
+        SetChannelOverrideForRoute(route.value());
+    }
+}
+
 void HpaeRendererManager::DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo)
 {
     auto processCluster = SafeGetMap(sceneClusterMap_, nodeInfo.sceneType);
@@ -393,7 +446,11 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
     } else if (node->connectedProcessorType_ != GetProcessorType(nodeInfo.sessionId) &&
         node->GetState() == HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("sessionId: %{public}u need to refresh %{public}d", nodeInfo.sessionId, processClusterDecision);
+        auto oldRoute = BuildChannelOverrideRouteFromProcessorType(node->connectedProcessorType_);
         DetachSessionEffectNodeForRefresh(nodeInfo.sessionId, node->connectedProcessorType_);
+        if (oldRoute.has_value()) {
+            ClearChannelOverrideForRoute(oldRoute.value());
+        }
         DisConnectInputSession(nodeInfo.sessionId);
         ConnectInputSession(nodeInfo.sessionId);
     }
@@ -464,6 +521,7 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId,
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSession");
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
     CHECK_AND_RETURN_RET(sinkInputNode != nullptr, SUCCESS);
+    auto route = BuildChannelOverrideRoute(sessionId);
     auto sessionIt = sessionNodeMap_.find(sessionId);
     HpaeSessionState sessionState = sinkInputNode->GetState();
     if (sessionIt != sessionNodeMap_.end()) {
@@ -485,6 +543,9 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId,
     RendererState state = inputState == HPAE_SESSION_RELEASED ? RENDERER_INVALID : RENDERER_RELEASED;
     NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
     TransNodeInfoForCollaboration(sinkInputNodeMap_[sessionId]->GetNodeInfo(), COLLABORATION_CLOSE);
+    if (route.has_value()) {
+        ClearChannelOverrideForRoute(route.value());
+    }
     sinkInputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
     return SUCCESS;
@@ -686,6 +747,7 @@ void HpaeRendererManager::MaterializeSessionEffectFromAttachState(uint32_t sessi
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionState,
             OPERATION_SESSION_EFFECT_ENABLED);
         AUDIO_INFO_LOG("[SE::RendererManager] AttachState materialized+ENABLED sessionId=%{public}u", sessionId);
+        OnSessionEffectMaterialized(sessionId);
     } else {
         HandleSessionEffectMaterializeFailure(sessionId, ret, sinkInputNode);
     }

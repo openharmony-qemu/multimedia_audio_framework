@@ -231,6 +231,7 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
         idConverterMap_[sessionId]->DisConnect(preNode);
         auto seNode = SafeGetMap(idSessionEffectMap_, sessionId);
         if (seNode) {
+            seNode->PauseEffect();
             idLoudnessGainNodeMap_[sessionId]->DisConnect(seNode);
         } else {
             idLoudnessGainNodeMap_[sessionId]->DisConnect(idConverterMap_[sessionId]);

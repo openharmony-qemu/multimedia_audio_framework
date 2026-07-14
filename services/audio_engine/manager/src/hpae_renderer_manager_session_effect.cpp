@@ -64,12 +64,17 @@ int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::
         AUDIO_INFO_LOG("[SE::RendererManager] CreateSessionEffect sessionId=%{public}u", sessionId);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, it->second.state,
             OPERATION_SESSION_EFFECT_ENABLED);
+        OnSessionEffectMaterialized(sessionId);
     }
     return ret;
 }
 
 int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
 {
+    // Route via GetProcessorType to match the key used at override-set time
+    // (OnSessionEffectMaterialized); cluster lookup below uses GetConnectedProcessorType
+    // for a different purpose (find cluster to destroy). Both are intentional.
+    auto route = BuildChannelOverrideRoute(sessionId);
     auto it = sessionNodeMap_.find(sessionId);
     if (it == sessionNodeMap_.end()) {
         AUDIO_WARNING_LOG("DestroySessionEffect: session %{public}u not found", sessionId);
@@ -85,7 +90,11 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
     uint64_t latency = 0;
     int32_t ret = processCluster->DestroySessionEffectNode(sessionId, latency);
     if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
-        AUDIO_WARNING_LOG("DestroySessionEffect failed for session %{public}u, ret %{public}d", sessionId, ret);
+        // SE node destroy failed: SE may still be processing. Preserve the channel override
+        // to keep the chain at 2ch consistent with the (possibly still-active) SE path,
+        // avoiding a reverse mismatch where the chain reverts to Mch while SE expects 2ch.
+        AUDIO_WARNING_LOG("DestroySessionEffect: DestroySessionEffectNode failed ret=%{public}d; "
+            "channel override preserved sessionId=%{public}u (SE may still process, keep chain 2ch)", ret, sessionId);
         return ret;
     }
 
@@ -99,6 +108,9 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
         }
         sinkInputNode->ClearSessionEffectAttachState();
         AUDIO_INFO_LOG("[SE::RendererManager] AttachState cleared sessionId=%{public}u", sessionId);
+    }
+    if (route.has_value()) {
+        ClearChannelOverrideForRoute(route.value());
     }
     AUDIO_INFO_LOG("[SE::RendererManager] DestroySessionEffect sessionId=%{public}u", sessionId);
     TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, it->second.state,
@@ -144,6 +156,10 @@ void HpaeRendererManager::HandleSessionEffectMaterializeFailure(uint32_t session
     HpaeSessionState sessionState = (sessionIt != sessionNodeMap_.end())
         ? sessionIt->second.state : HPAE_SESSION_NEW;
     sinkInputNode->ClearSessionEffectAttachState();
+    auto route = BuildChannelOverrideRoute(sessionId);
+    if (route.has_value()) {
+        ClearChannelOverrideForRoute(route.value());
+    }
     TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionState,
         OPERATION_SESSION_EFFECT_DISABLED);
     AUDIO_WARNING_LOG("[SE::RendererManager] Materialize failure permanent, attach-state cleared, "
