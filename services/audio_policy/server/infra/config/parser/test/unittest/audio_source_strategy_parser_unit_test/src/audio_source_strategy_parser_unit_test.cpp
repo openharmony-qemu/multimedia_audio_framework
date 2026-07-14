@@ -15,6 +15,7 @@
 #define GET_ONE_CFG_FILE GetOneCfgFileMock
 char *GetOneCfgFileMock(const char *pathSuffix, char *buf, unsigned int bufLength);
 #include "audio_source_strategy_parser_unit_test.h"
+#include "securec.h"
 #undef GET_ONE_CFG_FILE
  
 char *GetOneCfgFileMock(const char *pathSuffix, char *buf, unsigned int bufLength)

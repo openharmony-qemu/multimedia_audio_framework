@@ -24,6 +24,7 @@
 #include "audio_engine_log.h"
 #include "audio_proresampler.h"
 #include "audio_stream_info.h"
+#include "securec.h"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

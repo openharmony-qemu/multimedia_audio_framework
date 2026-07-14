@@ -555,8 +555,7 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId, bool needI
 
 void HpaeRendererManager::DisConnectCoBufferFromDeleteProcessCluster(HpaeProcessorType sceneType)
 {
-    CHECK_AND_RETURN_LOG(sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr,
-        "no need DisConnect CoBufferNode, sceneType: %{public}d", static_cast<int32_t>(sceneType));
+    CHECK_AND_RETURN(sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr);
     CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType), "sceneCluster is nullptr, sceneType: %{public}d",
         static_cast<int32_t>(sceneType));
     CHECK_AND_RETURN_LOG(sceneClusterMap_[sceneType]->GetPreOutNum() == 0, "no DisConnect, GetPreOutNum: %{public}d",
@@ -925,8 +924,7 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
 
 void HpaeRendererManager::DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType)
 {
-    CHECK_AND_RETURN_LOG(sceneType == HPAE_SCENE_COLLABORATIVE,
-        "no need DisConnect CoBufferNode, sceneType: %{public}d", static_cast<int32_t>(sceneType));
+    CHECK_AND_RETURN(sceneType == HPAE_SCENE_COLLABORATIVE);
     if (hpaeCoBufferNode_ != nullptr) {
         hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
         hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);

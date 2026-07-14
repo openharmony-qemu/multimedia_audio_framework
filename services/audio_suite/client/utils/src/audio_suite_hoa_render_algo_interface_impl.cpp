@@ -22,6 +22,7 @@
 #include "audio_suite_log.h"
 #include "audio_suite_hoa_render_algo_interface_impl.h"
 #include "audio_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

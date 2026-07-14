@@ -14,6 +14,7 @@
  */
 
 #include <fstream>
+#include "securec.h"
 #include "audio_input_thread.h"
 #include "audio_log.h"
 #include "audio_pnp_server.h"

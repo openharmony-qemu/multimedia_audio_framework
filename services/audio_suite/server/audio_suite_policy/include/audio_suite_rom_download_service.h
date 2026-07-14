@@ -63,7 +63,7 @@ public:
 
     ErrCode RegisterDownloadCallback(const sptr<IRemoteObject> &callback, ErrCode &result) override;
     ErrCode StartDownload(const std::string &version, ErrCode &result) override;
-    ErrCode CancelDownload(ErrCode &result) override;
+    ErrCode CancelDownload(const std::string &version, ErrCode &result) override;
     ErrCode StartBackgroundDownload(const std::string &version, ErrCode &result) override;
     ErrCode GetDownloadStatus(DownloadStatus &status, const std::string& version, ErrCode &result) override;
     ErrCode UninstallCloudRom(const std::string &version, ErrCode &result) override;
@@ -90,9 +90,6 @@ private:
     std::shared_ptr<AppExecFwk::EventRunner> unloadRunner_;
     std::shared_ptr<AppExecFwk::EventHandler> unloadHandler_;
     std::mutex eventMutex_;
-    static constexpr const char* TASK_ID = "AudioSuiteSaUnloadTask";
-    static constexpr int32_t DELAY_TIME = 600000; // 10 minutes in milliseconds
-    static constexpr int32_t DELAY_TIME_DOWNLOADING = 300000; // 5 minutes in milliseconds
 };
 
 } // namespace AudioSuite

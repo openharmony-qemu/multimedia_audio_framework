@@ -67,6 +67,7 @@ if (audio_framework_feature_audiosuite_support) {
       "manager/src/audio_suite_manager_params_template_test.cpp",
       "manager/src/download_manager_test.cpp",
       "../../server/manager/src/download_manager.cpp",
+      "../../server/manager/src/background_download.cpp",
     ]
 
     sanitize = {
@@ -89,6 +90,7 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "googletest:gtest",
       "googletest:gmock",
@@ -96,6 +98,8 @@ if (audio_framework_feature_audiosuite_support) {
       "ipc:ipc_core",
       "init:libbegetutil",
       "bounds_checking_function:libsec_shared",
+      "netmanager_base:net_conn_manager_if",
+      "common_event_service:cesfwk_innerkits",
     ]
   }
 
@@ -140,6 +144,7 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "googletest:gtest",
       "googletest:gmock",
@@ -185,6 +190,7 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "googletest:gtest",
       "hilog:libhilog",
@@ -218,6 +224,7 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "googletest:gtest",
       "hilog:libhilog",
@@ -231,6 +238,7 @@ if (audio_framework_feature_audiosuite_support) {
       "service/audio_suite_rom_download_service_test.cpp",
       "../../server/manager/src/download_manager.cpp",
       "../../server/audio_suite_policy/src/audio_suite_rom_download_service.cpp",
+      "../../server/manager/src/background_download.cpp",
     ]
 
     defines = [ "AUDIOSUITE_SA_UT" ]
@@ -267,6 +275,8 @@ if (audio_framework_feature_audiosuite_support) {
       "hisysevent:libhisysevent",
       "eventhandler:libeventhandler",
       "bounds_checking_function:libsec_shared",
+      "netmanager_base:net_conn_manager_if",
+      "common_event_service:cesfwk_innerkits",
     ]
   }
 
@@ -295,6 +305,7 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "hilog:libhilog",
       "bounds_checking_function:libsec_shared",

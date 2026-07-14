@@ -64,6 +64,7 @@
             "ability_runtime",
             "access_token",
             "accessibility",
+            "battery_manager",
             "bluetooth",
             "bundle_framework",
             "background_task_mgr",
@@ -95,6 +96,7 @@
             "kv_store",
             "libxml2",
             "napi",
+            "netmanager_base",
             "node",
             "os_account",
             "power_manager",
@@ -105,6 +107,7 @@
             "sensor",
             "bounds_checking_function",
             "sonic",
+            "screenlock_mgr",
             "pulseaudio",
             "libuv",
             "libxml2",
@@ -120,7 +123,8 @@
             "call_manager",
             "icu",
             "json",
-            "ets_frontend"
+            "ets_frontend",
+            "taihe_ffi_gen"
           ],
           "third_party": []
         },

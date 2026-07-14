@@ -26,6 +26,7 @@
 #include "token_setproc.h"
 #include "access_token.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -16,6 +16,7 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
+#include "securec.h"
 #include "audio_info.h"
 #include "audio_injector_service.h"
 #include "common/hdi_adapter_info.h"

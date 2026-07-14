@@ -41,6 +41,7 @@
 #include "hpae_no_lock_queue.h"
 #include "i_standard_audio_zone_client.h"
 #include "i_standard_audio_zone_client_fuzzer.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

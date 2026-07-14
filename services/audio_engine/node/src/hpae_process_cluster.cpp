@@ -113,7 +113,6 @@ std::shared_ptr<HpaeNode> HpaeProcessCluster::GetSharedInstance()
     if (renderEffectNode_ != nullptr) {
         return renderEffectNode_;
     }
-    AUDIO_INFO_LOG("mixerNode_ id: %{public}u", mixerNode_->GetNodeId());
     return mixerNode_;
 }
 
@@ -682,7 +681,7 @@ void HpaeProcessCluster::SetCollabDoFade(bool fadeOutState)
     if (renderEffectNode_ != nullptr) {
         renderEffectNode_->SetCollabDoFade(fadeOutState);
     }
- 	 
+
     return;
 }
 
@@ -691,7 +690,7 @@ void HpaeProcessCluster::SetStopRunningState(bool stopRunning)
     if (renderEffectNode_ != nullptr) {
         renderEffectNode_->SetStopRunningState(stopRunning);
     }
- 	 
+
     return;
 }
 }  // namespace HPAE

@@ -45,6 +45,7 @@ ohos_fuzztest("AudioServerCallbackFuzzTest") {
     ]
   }
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "ipc:ipc_single",

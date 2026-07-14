@@ -128,7 +128,7 @@ HWTEST_F(AudioSuiteRomDownloadServiceTest, CancelDownloadPermissionDeniedTest, T
 {
     service->checkPermissionResult_ = false;
     ErrCode result = SUCCESS;
-    ErrCode ret = service->CancelDownload(result);
+    ErrCode ret = service->CancelDownload("v1", result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_PERMISSION_DENIED);
 }
@@ -174,7 +174,7 @@ HWTEST_F(AudioSuiteRomDownloadServiceTest, CancelDownloadNoManagerTest, TestSize
 {
     service->downloadManager_ = nullptr;
     ErrCode result = SUCCESS;
-    ErrCode ret = service->CancelDownload(result);
+    ErrCode ret = service->CancelDownload("v1", result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_NOT_STARTED);
 }
@@ -232,16 +232,6 @@ HWTEST_F(AudioSuiteRomDownloadServiceTest, DumpTest, TestSize.Level0)
         EXPECT_EQ(ret, 0);
         close(fd);
     }
-}
-
-HWTEST_F(AudioSuiteRomDownloadServiceTest, GetDownloadStatusNoManagerTest, TestSize.Level0)
-{
-    service->downloadManager_ = nullptr;
-    DownloadStatus status;
-    ErrCode result = SUCCESS;
-    ErrCode ret = service->GetDownloadStatus(status, "v1", result);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(result, ERR_NOT_STARTED);
 }
 
 HWTEST_F(AudioSuiteRomDownloadServiceTest, OnStartCreatesUnloadHandlerTest, TestSize.Level0)

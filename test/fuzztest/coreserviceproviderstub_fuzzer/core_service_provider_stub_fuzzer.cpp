@@ -24,6 +24,7 @@
 #include "core_service_provider_stub.h"
 #include "audio_core_service.h"
 #include "../fuzz_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

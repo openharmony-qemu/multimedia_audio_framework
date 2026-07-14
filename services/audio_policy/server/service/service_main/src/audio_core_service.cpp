@@ -733,7 +733,7 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     }
 
     // Fetch pipe
-    audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
+    audioActiveDevice_.UpdateStreamDeviceMapForOutput("CreateRendererClient");
     audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
     ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
     networkId = streamDesc->newDeviceDescs_.front()->networkId_;
@@ -811,6 +811,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     UpdateRecordStreamInfo(streamDesc);
     AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",
         streamDesc->audioFlag_, sessionId);
+    audioActiveDevice_.UpdateStreamDeviceMapForInput("CreateCapturerClient");
 
     // Fetch pipe
     ret = FetchCapturerPipeAndExecute(streamDesc, audioFlag, sessionId);
@@ -1476,7 +1477,7 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     return SUCCESS;
 }
 
-int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg opMsg, bool isInterrruptActive)
+int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg opMsg, bool isInterruptActive)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
         HILOG_COMM_ERROR("[StartClient]Call communication stream, directly return"));
@@ -1522,9 +1523,11 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg op
             streamDesc->callerPid_, streamDesc->GetSourceType());
     }
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
-    if (!isInterrruptActive) {
+    if (!isInterruptActive) {
         AUDIO_INFO_LOG("Stream is not active interrupt for sessionId:%{public}u, muting stream", sessionId);
         SetStreamInterruptMute(sessionId, true);
+    } else {
+        SetStreamInterruptMute(sessionId, false);
     }
     return SUCCESS;
 }
@@ -2647,7 +2650,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
 
     if (outputStreamDescs.empty() && !pipeManager_->IsModemCommunicationIdExist() &&
         !CheckRingAndVoipStreamRunning()) {
-        audioActiveDevice_.UpdateStreamDeviceMap("NoStreamInPipe");
+        audioActiveDevice_.UpdateStreamDeviceMapForOutput("NoStreamInPipe");
         audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
         CheckAndUpdateHearingAidCall(DEVICE_TYPE_NONE);
         return HandleFetchOutputWhenNoRunningStream(reason);
@@ -2665,7 +2668,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     // todo fix
     HandleA2dpSuspendWhenFetch(reason, audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), outputStreamDescs);
     // this will update volume device map
-    audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
+    audioActiveDevice_.UpdateStreamDeviceMapForOutput("FetchOutputDeviceAndRoute");
     audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
     // here will update volume must after UpdateStreamDeviceMap
     bool deviceUpdate = UpdateActiveDeviceAndVolumeBeforeMoveSession(outputStreamDescs, reason);
@@ -2804,6 +2807,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
         AudioRouterInfra::GetInstance().AppendSkippedDeviceTypes(audioDeviceManager_.GetConnDevicesStr()).c_str());
 
     if (inputStreamDescs.empty()) {
+        audioActiveDevice_.UpdateStreamDeviceMapForInput("fetchInputDevice NoRunningStream");
         return HandleFetchInputWhenNoRunningStream();
     }
 
@@ -2846,6 +2850,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
             needUpdateActiveDevice = false;
         }
     }
+    audioActiveDevice_.UpdateStreamDeviceMapForInput("fetchInputDevice");
     if (isUpdateActiveDevice) {
         // networkId is not used.
         OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), "", reason);

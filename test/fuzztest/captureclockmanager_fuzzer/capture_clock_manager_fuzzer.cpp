@@ -39,6 +39,7 @@
 #include "capturer_clock.h"
 #include "capturer_clock_manager.h"
 #include "../fuzz_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

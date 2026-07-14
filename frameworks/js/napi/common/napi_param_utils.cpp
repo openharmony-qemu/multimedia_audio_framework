@@ -20,6 +20,7 @@
 #include "napi_audio_enum.h"
 #include "audio_effect.h"
 #include <unistd.h>
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

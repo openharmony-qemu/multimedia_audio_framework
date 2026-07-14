@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <atomic>
 #include <thread>
+#include "securec.h"
 #include "audio_policy_manager.h"
 #include "sle_audio_device_manager.h"
 #include <fuzzer/FuzzedDataProvider.h>

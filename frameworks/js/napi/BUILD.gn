@@ -152,6 +152,7 @@ ohos_shared_library("audio") {
     "ability_runtime:napi_base_context",
     "ability_runtime:napi_common",
     "ability_runtime:wantagent_innerkits",
+    "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "c_utils:utils",
     "eventhandler:libeventhandler",

@@ -29,6 +29,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "audio_stream_enum.h"
 #include "util/hdi_dfx_utils.h"
+#include "securec.h"
 
 constexpr int32_t MAX_AUXILIARY_BUFFERSIZE = 32768;
 

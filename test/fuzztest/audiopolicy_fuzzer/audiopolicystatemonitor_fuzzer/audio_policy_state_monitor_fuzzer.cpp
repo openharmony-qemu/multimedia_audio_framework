@@ -40,6 +40,7 @@
 #include "hpae_policy_manager.h"
 #include "audio_policy_state_monitor.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

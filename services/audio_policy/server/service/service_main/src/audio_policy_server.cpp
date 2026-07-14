@@ -60,6 +60,7 @@
 #include "stream_dfx_manager.h"
 #include "audio_record_controller.h"
 #include "ipc_skeleton.h"
+#include "securec.h"
 
 
 #undef LOG_DOMAIN
@@ -6157,6 +6158,9 @@ bool AudioPolicyServer::IsPublishCalled() const
 
 int32_t AudioPolicyServer::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
 {
+    AUDIO_INFO_LOG("enter");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     return AudioPipeSelector::GetPipeSelector()->SetCustomAudioMix(zoneName, audioMixes);
 }
 

@@ -323,11 +323,11 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
-    if (audioDeviceRefinerCb_ != nullptr &&
-        !NeedSkipSelectAudioOutputDeviceRefined(bak.streamUsage, descs)) {
+    if (audioDeviceRefinerCb_ != nullptr && !NeedSkipSelectAudioOutputDeviceRefined(bak.streamUsage, descs)) {
         bak.routerType = routerType;
         audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, bak);
     }
+    info.routerType = routerType;
     PostProcessOutPutDeviceLog(descs, bak, routerType, info);
     AudioPolicyDump::GetInstance().RecordBootStateTime(BootAnimationState::FETCH_OUTPUT_DEVICES, clientUID,
         ClockTime::GetCurMilli());

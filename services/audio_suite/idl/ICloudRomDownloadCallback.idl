@@ -16,8 +16,6 @@
 package OHOS.AudioStandard.AudioSuite;
 import AudioSuiteSaTypes;
 
-// 云 ROM 下载进度回调接口
-// audio_suite 创建此接口，用于接收来自 audio_policy_ext 的云 ROM 下载进度
 interface ICloudRomDownloadCallback {
     [oneway] void OnCloudRomCallback([in] CloudRomCallback cloudRomData);
 };

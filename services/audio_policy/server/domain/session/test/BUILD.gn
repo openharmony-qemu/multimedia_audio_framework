@@ -53,6 +53,7 @@ ohos_unittest("audio_session_new_unit_test") {
   }
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bluetooth:btframework",
     "c_utils:utils",
     "data_share:datashare_common",

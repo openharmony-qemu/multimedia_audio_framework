@@ -41,6 +41,7 @@ ohos_fuzztest("DeviceInitCallbackFuzzTest") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "ability_base:configuration",
     "ability_runtime:wantagent_innerkits",
     "background_task_mgr:bgtaskmgr_innerkits",

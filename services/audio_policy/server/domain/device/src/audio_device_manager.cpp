@@ -966,6 +966,20 @@ void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usa
     }
 }
 
+void AudioDeviceManager::AddAvailableDevicesByUsageAndPrivacy(AudioDeviceUsage usage,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &resultDevices)
+{
+    for (const auto &dev : devices) {
+        CHECK_AND_CONTINUE_LOG(dev != nullptr, "dev is null from devices");
+        for (const auto &devicePrivacy : devicePrivacyMaps_) {
+            const list<DevicePrivacyInfo> &deviceInfos = devicePrivacy.second;
+            std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(*dev);
+            GetAvailableDevicesWithUsage(usage, deviceInfos, desc, resultDevices);
+        }
+    }
+}
+
 void AudioDeviceManager::GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
     vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
@@ -1068,17 +1082,7 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
     std::vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
     GetDefaultAvailableDevicesByUsage(usage, audioDeviceDescriptors);
     GetRemoteAvailableDevicesByUsage(usage, audioDeviceDescriptors);
-    for (const auto &dev : connectedDevices_) {
-        if (dev == nullptr) {
-            AUDIO_INFO_LOG("dev is null from connectedDevices_");
-            continue;
-        }
-        for (const auto &devicePrivacy : devicePrivacyMaps_) {
-            list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
-            std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(*dev);
-            GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);
-        }
-    }
+    AddAvailableDevicesByUsageAndPrivacy(usage, connectedDevices_, audioDeviceDescriptors);
     // If there are distributed devices, place them at a higher priority in the sorting order.
     if (remoteInfoNetworkId_ != "" && remoteInfoDeviceType_ != DEVICE_TYPE_DEFAULT) {
         ReorderAudioDevices(audioDeviceDescriptors, remoteInfoNetworkId_, remoteInfoDeviceType_);

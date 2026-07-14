@@ -41,6 +41,7 @@ ohos_fuzztest("OfflineAudioEffectServerChainFuzzTest") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
     "hilog:libhilog",

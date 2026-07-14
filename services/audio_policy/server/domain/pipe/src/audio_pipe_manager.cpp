@@ -695,6 +695,7 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
             tmp->callerUid_ = desc->callerUid_;
             tmp->callerPid_ = desc->callerPid_;
             tmp->streamStatus_ = desc->streamStatus_;
+            tmp->bundleName_ = desc->bundleName_;
             streamDescs.push_back(tmp);
             CHECK_AND_CONTINUE(!tmp->newDeviceDescs_.empty() && tmp->newDeviceDescs_.front() != nullptr);
             tmp->newDeviceDescs_.front()->hasStreamRunning_ = false;

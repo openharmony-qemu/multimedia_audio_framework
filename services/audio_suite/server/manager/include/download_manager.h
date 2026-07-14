@@ -29,6 +29,7 @@
 #include "iupdate_engine_callback.h"
 #include "cloud_rom_download_callback_impl.h"
 #include "syspara/parameters.h"
+#include "background_download.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,7 +55,7 @@ public:
     int32_t StartDownload(const std::string& version);
 
     // 取消下载
-    int32_t CancelDownload();
+    int32_t CancelDownload(const std::string& version);
 
     // 开始后台下载
     int32_t StartBackgroundDownload(const std::string& version);
@@ -116,7 +117,7 @@ private:
     bool DownloadAndInstallViaCallback(const std::string &version);
 
     // 新增：通过回调取消下载
-    int32_t PauseDownloadCloudRomViaCallback(const std::string &version);
+    int32_t CancelDownloadCloudRomViaCallback(const std::string &version);
 
     // 新增：通过回调卸载云 ROM
     int32_t UninstallCloudRomViaCallback(const std::string& version);
@@ -140,6 +141,15 @@ private:
     // GetRemoteInfoViaCallback 辅助函数
     bool GetRemoteInfoFromProxy(const sptr<IUpdateEngineCallback>& proxy,
         const std::string& version);
+
+    // 条件监听器
+    std::shared_ptr<BackgroundDownload> conditionMonitor_;
+
+    // 处理条件满足回调
+    void OnDownloadConditionsMet();
+
+    // 从待下载队列开始下载
+    int32_t StartDownloadFromPendingQueue();
 
     std::mutex mutex_;
 

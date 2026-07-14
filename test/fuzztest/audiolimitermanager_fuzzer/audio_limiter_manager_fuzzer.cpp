@@ -33,6 +33,7 @@
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
 #include "audio_limiter_manager.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

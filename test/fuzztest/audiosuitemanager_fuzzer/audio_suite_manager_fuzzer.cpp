@@ -17,6 +17,7 @@
 #include "../fuzz_utils.h"
 #include "native_audio_suite_base.h"
 #include "OHAudioSuiteEngine.h"
+#include "securec.h"
 
 using namespace std;
 

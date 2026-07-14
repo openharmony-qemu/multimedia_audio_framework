@@ -27,6 +27,7 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "access_token.h"
+#include "securec.h"
 using namespace std;
 
 namespace OHOS {

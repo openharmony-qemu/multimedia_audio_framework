@@ -40,6 +40,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
+static constexpr const char* TASK_ID = "AudioSuiteSaUnloadTask";
+static constexpr int32_t DELAY_TIME = 300000; // 5 minutes in milliseconds
 namespace {
 #ifndef AUDIOSUITE_SA_UT
     __attribute__((constructor)) void LibraryLoaded() {
@@ -228,9 +230,9 @@ ErrCode AudioSuiteRomDownloadService::StartDownload(const std::string& version, 
     return SUCCESS;
 }
 
-ErrCode AudioSuiteRomDownloadService::CancelDownload(ErrCode& result)
+ErrCode AudioSuiteRomDownloadService::CancelDownload(const std::string& version, ErrCode& result)
 {
-    AUDIO_INFO_LOG("AudioSuiteRomDownloadService::CancelDownload");
+    AUDIO_INFO_LOG("AudioSuiteRomDownloadService::CancelDownload, version=%{public}s", version.c_str());
     PostDelayUnloadTask();
 
     if (!CheckPermission()) {
@@ -245,7 +247,7 @@ ErrCode AudioSuiteRomDownloadService::CancelDownload(ErrCode& result)
         return SUCCESS;
     }
  
-    result = downloadManager_->CancelDownload();
+    result = downloadManager_->CancelDownload(version);
     if (result != SUCCESS) {
         AUDIO_ERR_LOG("CancelDownload failed, error=%{public}d", result);
     }
@@ -392,7 +394,7 @@ void AudioSuiteRomDownloadService::PostDelayUnloadTask()
 #endif
             };
             unloadHandler_->RemoveTask(TASK_ID);
-            unloadHandler_->PostTask(extendedTask, TASK_ID, DELAY_TIME_DOWNLOADING);
+            unloadHandler_->PostTask(extendedTask, TASK_ID, DELAY_TIME);
             return;
         }
 
@@ -409,7 +411,8 @@ void AudioSuiteRomDownloadService::PostDelayUnloadTask()
 
 bool AudioSuiteRomDownloadService::HasRegisteredCallback()
 {
-    return false;
+    std::lock_guard<std::mutex> lock(mutex_);
+    return downloadCallback_ != nullptr;
 }
 
 } // namespace AudioSuite

@@ -26,6 +26,7 @@
 #include "test_case_common.h"
 #include "hpae_audio_service_dump_callback_unit_test.h"
 #include "hpae_capturer_manager.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

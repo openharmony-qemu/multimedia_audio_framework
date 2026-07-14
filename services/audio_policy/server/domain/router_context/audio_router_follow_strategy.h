@@ -64,7 +64,7 @@ private:
         int32_t uid, BluetoothAndNearlinkPreferredRecordCategory &category, SourceType sourceType);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetCallOutputDeviceByUid(int32_t uid);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetMediaInputDeviceByPriority(int32_t uid,
- 	    BluetoothAndNearlinkPreferredRecordCategory &category, bool isSystemSelectActive);
+        BluetoothAndNearlinkPreferredRecordCategory &category, bool isSystemSelectActive);
     void ClearCallOutputDevice(int32_t uid, uint32_t streamId);
     void RefreshCallOutputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);

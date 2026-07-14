@@ -36,6 +36,7 @@ ohos_unittest("audio_policy_unit_test") {
     "-fno-access-control",
   ]
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
     "access_token:libtokensetproc_shared",

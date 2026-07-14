@@ -354,7 +354,7 @@ public:
     void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
-    int32_t StartClient(uint32_t sessionId, SessionOperationMsg opMsg, bool isInterrruptActive);
+    int32_t StartClient(uint32_t sessionId, SessionOperationMsg opMsg, bool isInterruptActive);
     int32_t StartClientForPlayback(uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, SessionOperationMsg opMsg);

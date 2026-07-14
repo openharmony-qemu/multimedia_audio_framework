@@ -21,6 +21,7 @@
 #include "audio_suite_voice_beautifier_node.h"
 #include "audio_suite_log.h"
 #include "audio_suite_base.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

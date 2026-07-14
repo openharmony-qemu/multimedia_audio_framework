@@ -41,6 +41,7 @@
 #include "hpae_sink_input_node.h"
 #include "i_hpae_renderer_manager.h"
 #include "i_stream.h" // IOperation enum, used directly by FUZZ_OPERATIONS
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

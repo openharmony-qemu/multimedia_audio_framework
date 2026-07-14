@@ -426,6 +426,10 @@ ohos_unittest("audio_zone_unit_test") {
   if (audio_framework_feature_multi_zone_volume) {
     defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
   }
+
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+  }
 }
 
 ohos_unittest("audio_interrupt_service_unit_test") {

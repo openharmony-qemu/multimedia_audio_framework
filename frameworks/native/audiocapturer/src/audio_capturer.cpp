@@ -39,6 +39,7 @@
 #include "audio_debug_info.h"
 #include "audio_debug_callback.h"
 #include "stream_dfx_manager.h"
+#include "securec.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82

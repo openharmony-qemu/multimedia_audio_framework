@@ -96,7 +96,7 @@ static const std::map<std::pair<SourceType, SourceType>,
     {{SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_WAKEUP }, {ACTIVE, INTERRUPT_HINT_NONE}},
     {{SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_VOICE_RECOGNITION }, {ACTIVE, INTERRUPT_HINT_NONE}}
 };
- 	  
+
 void AudioInterruptCustom::UnprocessedSourceCustomFocus(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
 {

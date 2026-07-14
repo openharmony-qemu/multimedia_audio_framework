@@ -847,6 +847,9 @@ std::string AudioDeviceDescriptor::GetName()
     if (networkId_ != LOCAL_NETWORK_ID && deviceType_ == DEVICE_TYPE_SPEAKER) {
         return "DMSDP";
     }
+    if (networkId_ != LOCAL_NETWORK_ID && deviceType_ == DEVICE_TYPE_MIC) {
+        return "Remote_Mic";
+    }
     return GetDeviceTypeString();
 }
 

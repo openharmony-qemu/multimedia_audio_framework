@@ -51,7 +51,7 @@ public:
 
     virtual int32_t RegisterDownloadCallback(std::shared_ptr<IDownloadCallbackListener> callback) = 0;
     virtual int32_t StartDownload(const std::string& version) = 0;
-    virtual int32_t CancelDownload() = 0;
+    virtual int32_t CancelDownload(const std::string& version) = 0;
     virtual int32_t StartBackgroundDownload(const std::string& version) = 0;
     virtual int32_t GetDownloadStatus(DownloadStatus& status, const std::string& version) = 0;
     virtual int32_t UninstallCloudRom(const std::string& version) = 0;
