@@ -34,7 +34,6 @@ static size_t g_pos;
 const size_t THRESHOLD = 10;
 typedef void (*TestPtr)();
 constexpr size_t MAX_RANDOM_STRING_LENGTH = 128;
-constexpr size_t MAX_STOP_AUDIO_TYPE = 3;
 
 const vector<AudioStreamType> g_testAudioStreamTypes = {
     STREAM_DEFAULT,
