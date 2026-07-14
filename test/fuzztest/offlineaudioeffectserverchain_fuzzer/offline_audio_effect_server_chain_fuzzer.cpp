@@ -16,6 +16,7 @@
 #include <securec.h>
 
 #include "offline_audio_effect_server_chain.h"
+#include "audio_errors.h"
 #include "../fuzz_utils.h"
 
 namespace OHOS {
@@ -28,6 +29,11 @@ const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 // SetParam/GetParam reject payloads whose size is >= this value; keep in sync with the engine.
 const size_t PARAM_MAX_SIZE = 4096;
 const size_t PARAM_OVERFLOW_RANGE = 1024;
+// Audio I/O buffer size for the real-chain Prepare/Process path (>= inSize/outSize so the
+// Process size checks pass). uint32_t to match inBufferSize_/outBufferSize_.
+constexpr uint32_t PROCESS_BUFFER_SIZE = 4096;
+// Minimal inSize/outSize for Process: 1 byte / S16LE(2 bytes) -> frameCount 0 -> EffectProcess no-op.
+constexpr uint32_t MIN_PROCESS_IO_SIZE = 1;
 
 typedef void (*TestFuncs)();
 
@@ -179,6 +185,58 @@ void ParamBoundaryFuzzTest()
     serverChain->GetParam(hugeParam); // rejected: size >= PARAM_MAX_SIZE (lines 230-231)
 }
 
+// Drive the controller_-non-null success paths. Every other test builds the chain with
+// "serverChain", which is not a real effect name, so Create() fails at the chainName_
+// lookup (offline_audio_effect_server_chain.cpp:156) and controller_ stays null --
+// leaving the success bodies of Create/SetConfig/SetParam/GetParam/Prepare/Process/
+// Release (and GetByteSize) uncovered. Here we first retrieve the real effect names
+// registered with the HAL, build the chain with a real name so Create() succeeds, then
+// run the full success path. No-op when no effect is registered (chainNames empty), so
+// it stays safe on hosts without an effect HAL.
+void OfflineAudioEffectRealChainSuccessFuzzTest()
+{
+    vector<string> chainNames;
+    OfflineAudioEffectServerChain::GetOfflineAudioEffectChains(chainNames);
+    CHECK_AND_RETURN(!chainNames.empty());
+    shared_ptr<OfflineAudioEffectServerChain> serverChain =
+        make_shared<OfflineAudioEffectServerChain>(chainNames[0]);
+    CHECK_AND_RETURN(serverChain != nullptr);
+    if (serverChain->Create() != SUCCESS) { // controller_ stays null if CreateEffectController fails
+        return;
+    }
+
+    AudioStreamInfo inInfo;
+    inInfo.samplingRate = SAMPLE_RATE_48000;
+    inInfo.channels = STEREO;
+    inInfo.format = SAMPLE_S16LE;
+    AudioStreamInfo outInfo = inInfo;
+    serverChain->SetConfig(inInfo, outInfo); // SendCommand SET_CONFIG + GetByteSize
+
+    vector<uint8_t> param;
+    param.push_back(g_fuzzUtils.GetData<uint8_t>());
+    serverChain->SetParam(param); // SendCommand SET_PARAM
+
+    shared_ptr<AudioSharedMemory> bufferIn = AudioSharedMemory::CreateFromLocal(PROCESS_BUFFER_SIZE, "bufIn");
+    shared_ptr<AudioSharedMemory> bufferOut = AudioSharedMemory::CreateFromLocal(PROCESS_BUFFER_SIZE, "bufOut");
+    serverChain->Prepare(bufferIn, bufferOut); // controller_ non-null -> SendCommand RESET
+
+    uint32_t inBufSize = 0;
+    uint32_t outBufSize = 0;
+    serverChain->GetEffectBufferSize(inBufSize, outBufSize);
+    (void)inBufSize; // called for coverage; values intentionally unused
+    (void)outBufSize;
+
+    // Ensure Process size checks pass so the EffectProcess body is reached even if
+    // SetConfig's SET_CONFIG was rejected by the effect (which leaves inBufferSize_ = 0).
+    serverChain->inBufferSize_ = PROCESS_BUFFER_SIZE;
+    serverChain->outBufferSize_ = PROCESS_BUFFER_SIZE;
+    serverChain->Process(MIN_PROCESS_IO_SIZE, MIN_PROCESS_IO_SIZE); // EffectProcess + memcpy + WriteDumpFile
+
+    vector<uint8_t> outParam;
+    serverChain->GetParam(outParam); // SendCommand GET_PARAM
+    serverChain->Release(); // DestroyEffectController
+}
+
 vector<TestFuncs> g_testFuncs = {
     OfflineAudioEffectServerChainInitDumpFuzzTest,
     OfflineAudioEffectServerChainCreateFuzzTest,
@@ -192,6 +250,7 @@ vector<TestFuncs> g_testFuncs = {
     OfflineAudioEffectGetParamFuzzTest,
     OfflineAudioEffectFullLifecycleFuzzTest,
     ParamBoundaryFuzzTest,
+    OfflineAudioEffectRealChainSuccessFuzzTest,
 };
 
 } // namespace AudioStandard
