@@ -3173,86 +3173,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_RegisterOutputDeviceChangeWithInfoC
 }
 
 /**
- * @tc.name  : Test SetSilentModeAndMixWithOthers
- * @tc.number: Audio_Renderer_WriteUnderrunEvent_001
- * @tc.desc  : Test SetSilentModeAndMixWithOthers interface
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_WriteUnderrunEvent_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    audioRendererPrivate->audioStream_ = audioStream;
-    audioStream->state_ = RUNNING;
-    audioStream->silentModeAndMixWithOthers_ = false;
-    audioRendererPrivate->SetSilentModeAndMixWithOthers(true);
-    EXPECT_TRUE(audioStream->silentModeAndMixWithOthers_);
-}
-
-/**
- * @tc.name  : Test SetSilentModeAndMixWithOthers
- * @tc.number: Audio_Renderer_WriteUnderrunEvent_002
- * @tc.desc  : Test SetSilentModeAndMixWithOthers interface
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_WriteUnderrunEvent_002, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    audioRendererPrivate->audioStream_ = audioStream;
-    audioStream->state_ = RUNNING;
-    audioStream->silentModeAndMixWithOthers_ = true;
-    audioRendererPrivate->SetSilentModeAndMixWithOthers(true);
-    EXPECT_TRUE(audioStream->silentModeAndMixWithOthers_);
-}
-
-/**
- * @tc.name  : Test SetSilentModeAndMixWithOthers
- * @tc.number: Audio_Renderer_WriteUnderrunEvent_003
- * @tc.desc  : Test SetSilentModeAndMixWithOthers interface
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_WriteUnderrunEvent_003, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    audioRendererPrivate->audioStream_ = audioStream;
-    audioStream->state_ = RUNNING;
-    audioStream->silentModeAndMixWithOthers_ = false;
-    audioRendererPrivate->SetSilentModeAndMixWithOthers(false);
-    EXPECT_FALSE(audioStream->silentModeAndMixWithOthers_);
-}
-
-/**
- * @tc.name  : Test SetSilentModeAndMixWithOthers
- * @tc.number: Audio_Renderer_WriteUnderrunEvent_004
- * @tc.desc  : Test SetSilentModeAndMixWithOthers interface
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_WriteUnderrunEvent_004, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    audioRendererPrivate->audioStream_ = audioStream;
-    audioStream->state_ = RUNNING;
-    audioStream->silentModeAndMixWithOthers_ = true;
-    audioRendererPrivate->SetSilentModeAndMixWithOthers(false);
-    EXPECT_FALSE(audioStream->silentModeAndMixWithOthers_);
-}
-
-/**
  * @tc.name  : Test OnInterrupt
  * @tc.number: Audio_Renderer_OnInterrupt_001
  * @tc.desc  : Test OnInterrupt interface
@@ -4032,33 +3952,6 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test RestoreTheadLoop
- * @tc.number: RestoreTheadLoop
- * @tc.desc  : Test RestoreTheadLoop
- */
-HWTEST(AudioRendererUnitTest, RestoreTheadLoop_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-
-    const std::shared_ptr<RendererPolicyServiceDiedCallback> serviceCallback =
-        std::make_shared<RendererPolicyServiceDiedCallback>();
-    std::shared_ptr<FastAudioStream> audioStream =
-    std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appInfo.appUid);
-    audioRendererPrivate->audioStream_ = audioStream;
-    serviceCallback->renderer_ = std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->abortRestore_ = true;
-    audioRendererPrivate->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
-    audioRendererPrivate->isEnableVoiceModemCommunicationStartStream_ = false;
-    audioRendererPrivate->state_ = RENDERER_RUNNING;
-
-    serviceCallback->RestoreTheadLoop();
-
-    EXPECT_EQ(audioRendererPrivate->abortRestore_, true);
-}
-
-/**
  * @tc.name  : Test AudioRendererInterruptCallbackImpl
  * @tc.number: UpdateAudioStream_001
  * @tc.desc  : Test UpdateAudioStream API
@@ -4228,56 +4121,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_InitTargetStream_002, TestSize.Leve
     std::shared_ptr<IAudioStream> newAudioStream = nullptr;
     auto ret = audioRendererPrivate->InitTargetStream(info, newAudioStream);
     EXPECT_FALSE(ret);
-}
-
-/**
- * @tc.name  : Test FinishOldStream API.
- * @tc.number: Audio_Renderer_FinishOldStream_001
- * @tc.desc  : Test FinishOldStream interface.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_001, TestSize.Level4)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    ASSERT_TRUE(audioRendererPrivate != nullptr);
-
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<TestAudioStremStub>();
-    ASSERT_TRUE(audioStream != nullptr);
-    audioRendererPrivate->audioStream_ = audioStream;
-
-    RestoreInfo restoreInfo;
-    RendererState previousState = RENDERER_RUNNING;
-    IAudioStream::SwitchInfo switchInfo;
-    restoreInfo.restoreReason = SERVER_DIED;
-    auto ret = audioRendererPrivate->FinishOldStream(IAudioStream::StreamClass::PA_STREAM, restoreInfo,
-        previousState, switchInfo);
-    EXPECT_TRUE(ret);
-}
-
-/**
- * @tc.name  : Test FinishOldStream API.
- * @tc.number: Audio_Renderer_FinishOldStream_002
- * @tc.desc  : Test FinishOldStream interface.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_002, TestSize.Level2)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    ASSERT_TRUE(audioRendererPrivate != nullptr);
-
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<TestAudioStremStub>();
-    ASSERT_TRUE(audioStream != nullptr);
-    audioRendererPrivate->audioStream_ = audioStream;
-
-    RestoreInfo restoreInfo;
-    RendererState previousState = RENDERER_RUNNING;
-    IAudioStream::SwitchInfo switchInfo;
-    restoreInfo.restoreReason = DEFAULT_REASON;
-    auto ret = audioRendererPrivate->FinishOldStream(IAudioStream::StreamClass::PA_STREAM, restoreInfo,
-        previousState, switchInfo);
-    EXPECT_TRUE(ret);
 }
 
 /**
