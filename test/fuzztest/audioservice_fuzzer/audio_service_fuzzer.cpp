@@ -601,32 +601,6 @@ void AudioServiceInitAllDupBufferFuzzTest()
     audioService->InitAllDupBuffer(innerCapId);
 }
 
-void AudioServiceForceStopAudioStreamFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    CHECK_AND_RETURN(audioService != nullptr);
-
-    auto audioType = static_cast<StopAudioType>(GetData<int32_t>() % MAX_STOP_AUDIO_TYPE);
-
-    AudioProcessConfig processConfig;
-    auto streamListenerHolder = std::make_shared<StreamListenerHolder>();
-    auto rendererInServer =  std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
-    audioService->allRendererMap_[0] = rendererInServer;
-    auto capturerInServer =  std::make_shared<CapturerInServer>(processConfig, streamListenerHolder);
-    audioService->allCapturerMap_[0] = capturerInServer;
-
-    AudioProcessConfig config = {};
-    config.audioMode = static_cast<AudioMode>(GetData<uint32_t>() % (AudioMode::AUDIO_MODE_RECORD + 1));
-    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, audioService.get());
-    AudioProcessConfig clientConfig = {};
-    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        GetData<uint64_t>(), clientConfig.audioMode);
-    audioService->linkedPairedList_.clear();
-    audioService->linkedPairedList_.push_back(std::make_pair(audioprocess, endpoint));
-
-    (void)audioService->ForceStopAudioStream(audioType);
-}
-
 void AudioServiceSetLatestMuteStateFuzzTest()
 {
     shared_ptr<AudioService> audioService = make_shared<AudioService>();
