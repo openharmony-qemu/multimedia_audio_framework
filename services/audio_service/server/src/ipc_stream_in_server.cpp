@@ -361,10 +361,15 @@ int32_t IpcStreamInServer::GetRate(int32_t &rate)
     return ERR_OPERATION_FAILED;
 }
 
- int32_t IpcStreamInServer::SetTarget(int32_t target, int32_t &ret)
+int32_t IpcStreamInServer::SetTarget(int32_t target, int32_t targetUid, uint32_t targetStreamId, int32_t &ret)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        rendererInServer_->SetTarget(static_cast<RenderTarget>(target), ret);
+        ret = ERROR;
+        int32_t result = rendererInServer_->SetTarget(static_cast<RenderTarget>(target),
+            targetUid, targetStreamId, ret);
+        if (result != SUCCESS && ret == ERROR) {
+            ret = result;
+        }
         return SUCCESS;
     }
     AUDIO_ERR_LOG("SetTarget failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));

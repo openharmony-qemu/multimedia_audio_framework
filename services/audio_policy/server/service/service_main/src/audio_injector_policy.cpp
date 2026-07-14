@@ -108,11 +108,14 @@ int32_t AudioInjectorPolicy::RemoveStreamDescriptor(uint32_t renderId)
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     AUDIO_INFO_LOG("Injector:: renderId: %{public}u", renderId);
     rendererStreamMap_.erase(renderId);
+    rendererMuteStreamMap_.erase(renderId);
+    rendererTargetUidMap_.erase(renderId);
+    rendererTargetStreamIdMap_.erase(renderId);
+    injectorStreamIds_.erase(renderId);
     if (rendererStreamMap_.size() == 0) {
         RemoveCaptureInjectorInner(false);
     }
-    rendererMuteStreamMap_.erase(renderId);
-    injectorStreamIds_.erase(renderId);
+    ResetInjectorModeIfNeeded();
     return SUCCESS;
 }
 
@@ -176,10 +179,84 @@ void AudioInjectorPolicy::SetVoipType(VoipType type)
     voipType_ = type;
 }
 
+void AudioInjectorPolicy::ResetInjectorModeIfNeeded()
+{
+    if (injectorStreamIds_.empty() && rendererStreamMap_.empty() && rendererTargetStreamIdMap_.empty()) {
+        injectorWorkMode_ = INJECTOR_MODE_NONE;
+        activeTargetUid_ = INVALID_UID;
+        activeTargetStreamId_ = INVALID_STREAM_ID;
+    }
+}
+
+int32_t AudioInjectorPolicy::PrepareLegacyRenderer(uint32_t renderId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    CHECK_AND_RETURN_RET_LOG(injectorWorkMode_ != INJECTOR_MODE_STREAM_ID_TARGET, ERR_NOT_SUPPORTED,
+        "Injector::precise target mode is active");
+    injectorWorkMode_ = INJECTOR_MODE_LEGACY_TARGET;
+    rendererTargetUidMap_.erase(renderId);
+    rendererTargetStreamIdMap_.erase(renderId);
+    injectorStreamIds_.insert(renderId);
+    return SUCCESS;
+}
+
+int32_t AudioInjectorPolicy::PreparePreciseRenderer(uint32_t renderId, int32_t targetUid, uint32_t targetStreamId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    CHECK_AND_RETURN_RET_LOG(targetUid >= 0, ERR_INVALID_PARAM, "Injector::invalid targetUid");
+    CHECK_AND_RETURN_RET_LOG(ValidStreamId(targetStreamId), ERR_INVALID_PARAM,
+        "Injector::invalid targetStreamId");
+    CHECK_AND_RETURN_RET_LOG(injectorWorkMode_ != INJECTOR_MODE_LEGACY_TARGET, ERR_NOT_SUPPORTED,
+        "Injector::legacy target mode is active");
+    if (injectorWorkMode_ == INJECTOR_MODE_STREAM_ID_TARGET &&
+        (activeTargetUid_ != targetUid || activeTargetStreamId_ != targetStreamId)) {
+        AUDIO_ERR_LOG("Injector::only one precise target stream is supported");
+        return ERR_NOT_SUPPORTED;
+    }
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
+    VoipType type = NO_VOIP;
+    int32_t ret = ERR_INVALID_PARAM;
+    auto pipe = FindCaptureVoipPipeByTarget(pipeManager_->GetPipeList(), targetUid, targetStreamId, type, ret);
+    CHECK_AND_RETURN_RET_LOG(pipe != nullptr, ret, "Injector::target capturer is invalid: %{public}d", ret);
+    (void)pipe;
+    injectorWorkMode_ = INJECTOR_MODE_STREAM_ID_TARGET;
+    activeTargetUid_ = targetUid;
+    activeTargetStreamId_ = targetStreamId;
+    rendererTargetUidMap_[renderId] = targetUid;
+    rendererTargetStreamIdMap_[renderId] = targetStreamId;
+    injectorStreamIds_.insert(renderId);
+    return SUCCESS;
+}
+
+void AudioInjectorPolicy::ClearRendererTarget(uint32_t renderId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    rendererTargetUidMap_.erase(renderId);
+    rendererTargetStreamIdMap_.erase(renderId);
+    injectorStreamIds_.erase(renderId);
+    ResetInjectorModeIfNeeded();
+}
+
+bool AudioInjectorPolicy::IsPreciseRenderer(uint32_t renderId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    return rendererTargetStreamIdMap_.count(renderId) > 0;
+}
+
 void AudioInjectorPolicy::ReleaseCaptureInjector()
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "Injector::pipeManager_ is null");
+    if (injectorWorkMode_ == INJECTOR_MODE_STREAM_ID_TARGET) {
+        VoipType type = NO_VOIP;
+        int32_t ret = ERR_INVALID_PARAM;
+        auto pipe = FindCaptureVoipPipeByTarget(pipeManager_->GetPipeList(), activeTargetUid_,
+            activeTargetStreamId_, type, ret);
+        if (pipe == nullptr) {
+            RemoveCaptureInjectorByTargetStreamInner(true);
+        }
+        return;
+    }
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamVec = {};
     auto pipeList = pipeManager_->GetPipeList();
     for (auto it = pipeList.rbegin(); it != pipeList.rend(); ++it) {
@@ -204,6 +281,10 @@ void AudioInjectorPolicy::RebuildCaptureInjector(uint32_t streamId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     if (!isOpened_) {
+        return;
+    }
+    if (injectorWorkMode_ == INJECTOR_MODE_STREAM_ID_TARGET) {
+        RebuildCaptureInjectorByTargetStream(streamId);
         return;
     }
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamVec = {};
@@ -247,6 +328,26 @@ void AudioInjectorPolicy::RebuildCaptureInjector(uint32_t streamId)
     AddCaptureInjectorInner();
 }
 
+void AudioInjectorPolicy::RebuildCaptureInjectorByTargetStream(uint32_t streamId)
+{
+    CHECK_AND_RETURN_LOG(streamId == activeTargetStreamId_, "Injector::not active target stream");
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "Injector::pipeManager_ is null");
+    VoipType type = NO_VOIP;
+    int32_t ret = ERR_INVALID_PARAM;
+    auto pipe = FindCaptureVoipPipeByTarget(pipeManager_->GetPipeList(), activeTargetUid_,
+        activeTargetStreamId_, type, ret);
+    if (pipe == nullptr) {
+        RemoveCaptureInjectorByTargetStreamInner(true);
+        return;
+    }
+    if (!isConnected_ || pipe->paIndex_ != capturePortIdx_ || type != voipType_) {
+        RemoveCaptureInjectorByTargetStreamInner(true);
+        capturePortIdx_ = pipe->paIndex_;
+        voipType_ = type;
+        AddCaptureInjectorByTargetStreamInner(activeTargetStreamId_);
+    }
+}
+
 bool AudioInjectorPolicy::HasRunningVoipStream(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamVec)
 {
     for (const auto &stream : streamVec) {
@@ -265,6 +366,9 @@ int32_t AudioInjectorPolicy::AddCaptureInjector()
 
 int32_t AudioInjectorPolicy::AddCaptureInjectorInner()
 {
+    if (injectorWorkMode_ == INJECTOR_MODE_STREAM_ID_TARGET) {
+        return AddCaptureInjectorByTargetStreamInner(activeTargetStreamId_);
+    }
     if (!isConnected_) {
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
         int32_t enableNewRoute = 0;
@@ -282,6 +386,43 @@ int32_t AudioInjectorPolicy::AddCaptureInjectorInner()
     }
     return SUCCESS;
 }
+
+int32_t AudioInjectorPolicy::AddCaptureInjectorByTargetStream(uint32_t renderId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    auto targetUidIt = rendererTargetUidMap_.find(renderId);
+    auto targetStreamIdIt = rendererTargetStreamIdMap_.find(renderId);
+    CHECK_AND_RETURN_RET_LOG(targetUidIt != rendererTargetUidMap_.end() &&
+        targetStreamIdIt != rendererTargetStreamIdMap_.end(), ERR_INVALID_PARAM,
+        "Injector::renderer has no precise target");
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
+    VoipType type = NO_VOIP;
+    int32_t ret = ERR_INVALID_PARAM;
+    auto pipe = FindCaptureVoipPipeByTarget(pipeManager_->GetPipeList(), targetUidIt->second,
+        targetStreamIdIt->second, type, ret);
+    CHECK_AND_RETURN_RET_LOG(pipe != nullptr, ret, "Injector::target capturer is invalid: %{public}d", ret);
+    capturePortIdx_ = pipe->paIndex_;
+    voipType_ = type;
+    activeTargetUid_ = targetUidIt->second;
+    activeTargetStreamId_ = targetStreamIdIt->second;
+    return AddCaptureInjectorByTargetStreamInner(targetStreamIdIt->second);
+}
+
+int32_t AudioInjectorPolicy::AddCaptureInjectorByTargetStreamInner(uint32_t targetStreamId)
+{
+    if (!isConnected_) {
+        CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
+        CHECK_AND_RETURN_RET_LOG(ValidStreamId(targetStreamId), ERR_INVALID_PARAM,
+            "Injector::targetStreamId is invalid");
+        audioPolicyManager_.AddCaptureInjectorByTargetStream(renderPortIdx_, capturePortIdx_,
+            SOURCE_TYPE_VOICE_COMMUNICATION, targetStreamId);
+        if (voipType_ == FAST_VOIP) {
+            UpdateAudioInfo(moduleInfo_);
+        }
+        isConnected_ = true;
+    }
+    return SUCCESS;
+}
     
 int32_t AudioInjectorPolicy::RemoveCaptureInjector(bool noCapturer)
 {
@@ -291,6 +432,9 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjector(bool noCapturer)
 
 int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
 {
+    if (injectorWorkMode_ == INJECTOR_MODE_STREAM_ID_TARGET) {
+        return RemoveCaptureInjectorByTargetStreamInner(noCapturer);
+    }
     bool flag = (rendererStreamMap_.size() == 0 || noCapturer);
     if (isConnected_ && flag) {
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
@@ -311,6 +455,23 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
         }
     }
     // release capturer stream does not require executing Deinit();
+    if (!noCapturer) {
+        DeInit();
+    }
+    return SUCCESS;
+}
+
+int32_t AudioInjectorPolicy::RemoveCaptureInjectorByTargetStreamInner(bool noCapturer)
+{
+    bool flag = (rendererStreamMap_.size() == 0 || noCapturer);
+    if (isConnected_ && flag) {
+        CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
+        audioPolicyManager_.RemoveCaptureInjectorByTargetStream(renderPortIdx_, capturePortIdx_,
+            SOURCE_TYPE_VOICE_COMMUNICATION, activeTargetStreamId_);
+        isConnected_ = false;
+        capturePortIdx_ = HDI_INVALID_ID;
+        voipType_ = NO_VOIP;
+    }
     if (!noCapturer) {
         DeInit();
     }
@@ -343,6 +504,48 @@ std::shared_ptr<AudioPipeInfo> AudioInjectorPolicy::FindCaptureVoipPipe(
     return voipPipe;
 }
 
+std::shared_ptr<AudioPipeInfo> AudioInjectorPolicy::FindCaptureVoipPipeByTarget(
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, int32_t targetUid, uint32_t targetStreamId,
+    VoipType &type, int32_t &ret)
+{
+    ret = ERR_INVALID_PARAM;
+    for (const auto &pipe : pipeInfos) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "Injector::pipeInfo is nullptr");
+        for (const auto &stream : pipe->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(stream != nullptr, "Injector::stream is nullptr");
+            CHECK_AND_CONTINUE(stream->sessionId_ == targetStreamId);
+            CHECK_AND_RETURN_RET_LOG(stream->IsRecording() && pipe->pipeRole_ == PIPE_ROLE_INPUT, nullptr,
+                "Injector::target stream is not a capture stream");
+            CHECK_AND_RETURN_RET_LOG(stream->GetRealUid() == targetUid, nullptr,
+                "Injector::target uid mismatch");
+            if (stream->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
+                ret = ERR_NOT_SUPPORTED;
+                AUDIO_ERR_LOG("Injector::target source type is not voice communication");
+                return nullptr;
+            }
+            if (!stream->IsRunning()) {
+                ret = ERR_ILLEGAL_STATE;
+                AUDIO_ERR_LOG("Injector::target capturer is not running");
+                return nullptr;
+            }
+            if (stream->routeFlag_ & AUDIO_INPUT_FLAG_NORMAL) {
+                type = NORMAL_VOIP;
+                ret = SUCCESS;
+                return pipe;
+            }
+            if (stream->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP)) {
+                type = FAST_VOIP;
+                ret = SUCCESS;
+                return pipe;
+            }
+            ret = ERR_NOT_SUPPORTED;
+            AUDIO_ERR_LOG("Injector::target route flag is not supported");
+            return nullptr;
+        }
+    }
+    return nullptr;
+}
+
 std::shared_ptr<AudioPipeInfo> AudioInjectorPolicy::FindPipeByStreamId(
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, VoipType &type, uint32_t &streamId)
 {
@@ -371,6 +574,18 @@ void AudioInjectorPolicy::FetchCapDeviceInjectPreProc(
     if (!isOpened_) {
         return;
     }
+    if (injectorWorkMode_ == INJECTOR_MODE_STREAM_ID_TARGET) {
+        VoipType type = NO_VOIP;
+        int32_t ret = ERR_INVALID_PARAM;
+        std::shared_ptr<AudioPipeInfo> tempPipe = FindCaptureVoipPipeByTarget(pipeInfos, activeTargetUid_,
+            activeTargetStreamId_, type, ret);
+        if (tempPipe == nullptr || tempPipe->paIndex_ != capturePortIdx_ || type != voipType_) {
+            RemoveCaptureInjectorByTargetStreamInner(true);
+            removeFlag = true;
+            streamId = activeTargetStreamId_;
+        }
+        return;
+    }
     VoipType type = VoipType::NO_VOIP;
     std::shared_ptr<AudioPipeInfo> tempPipe = FindCaptureVoipPipe(pipeInfos, streamId);
     if (tempPipe != nullptr && tempPipe->paIndex_ != capturePortIdx_) {
@@ -386,6 +601,18 @@ void AudioInjectorPolicy::FetchCapDeviceInjectPostProc(
     if (!isOpened_) {
         return;
     }
+    if (injectorWorkMode_ == INJECTOR_MODE_STREAM_ID_TARGET) {
+        CHECK_AND_RETURN(removeFlag);
+        VoipType type = NO_VOIP;
+        int32_t ret = ERR_INVALID_PARAM;
+        std::shared_ptr<AudioPipeInfo> tempPipe = FindCaptureVoipPipeByTarget(pipeInfos, activeTargetUid_,
+            activeTargetStreamId_, type, ret);
+        CHECK_AND_RETURN_LOG(tempPipe != nullptr, "Injector::precise target pipe not found");
+        capturePortIdx_ = tempPipe->paIndex_;
+        voipType_ = type;
+        AddCaptureInjectorByTargetStreamInner(activeTargetStreamId_);
+        return;
+    }
     VoipType type = VoipType::NO_VOIP;
     std::shared_ptr<AudioPipeInfo> tempPipe = FindPipeByStreamId(pipeInfos, type, streamId);
     if (tempPipe != nullptr && removeFlag) {
@@ -398,6 +625,7 @@ void AudioInjectorPolicy::FetchCapDeviceInjectPostProc(
 void AudioInjectorPolicy::AddInjectorStreamId(const uint32_t streamId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
+    CHECK_AND_RETURN(injectorWorkMode_ != INJECTOR_MODE_STREAM_ID_TARGET);
     injectorStreamIds_.insert(streamId);
 }
 
@@ -405,6 +633,7 @@ void AudioInjectorPolicy::DeleteInjectorStreamId(const uint32_t streamId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     injectorStreamIds_.erase(streamId);
+    ResetInjectorModeIfNeeded();
 }
 
 bool AudioInjectorPolicy::IsActivateInterruptStreamId(const uint32_t streamId)

@@ -28,6 +28,8 @@
 #include "hpae_source_process_cluster.h"
 #include "hpae_no_lock_queue.h"
 #include "i_hpae_capturer_manager.h"
+#include "hpae_audio_format_converter_node.h"
+#include "hpae_mixer_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -81,6 +83,10 @@ public:
         const SourceType &sourceType) override;
     int32_t RemoveCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
         const SourceType &sourceType) override;
+    int32_t AddCaptureInjectorByTargetStream(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
+        const SourceType &sourceType, uint32_t targetStreamId) override;
+    int32_t RemoveCaptureInjectorByTargetStream(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
+        const SourceType &sourceType, uint32_t targetStreamId) override;
     void TriggerAppsUidUpdate(uint32_t sessionId) override;
     int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) override;
 private:
@@ -92,6 +98,7 @@ private:
     void ConnectProcessClusterWithMicRef(HpaeProcessorType &sceneType);
     int32_t ConnectOutputSession(uint32_t sessionId);
     int32_t DisConnectOutputSession(uint32_t sessionId);
+    void RestoreTargetInjectorIfNeeded(uint32_t sessionId);
     void DisConnectSceneClusterFromSourceInputCluster(HpaeProcessorType &sceneType);
     void SetSessionState(uint32_t sessionId, HpaeSessionState capturerState);
     int32_t PrepareCapturerEc(HpaeNodeInfo &ecNodeInfo);
@@ -121,12 +128,22 @@ private:
     void StopInterphoneSourceIfNeeded();
 
 private:
+    struct TargetInjectorNodeInfo {
+        std::shared_ptr<HpaeMixerNode> mixerNode = nullptr;
+        std::shared_ptr<HpaeSourceOutputNode> sourceOutputNode = nullptr;
+        std::shared_ptr<OutputNode<HpaePcmBuffer*>> upstreamNode = nullptr;
+        HpaeNodeInfo targetNodeInfo = {};
+        std::unordered_map<std::shared_ptr<OutputNode<HpaePcmBuffer*>>,
+            std::shared_ptr<HpaeAudioFormatConverterNode>> injectorConverterNodeMap = {};
+    };
+
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::unordered_map<uint32_t, HpaeCapturerSessionInfo> sessionNodeMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeSourceProcessCluster>> sceneClusterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSourceOutputNode>> sourceOutputNodeMap_;
     std::unordered_map<HpaeSourceInputNodeType, std::shared_ptr<HpaeSourceInputCluster>> sourceInputClusterMap_;
+    std::unordered_map<uint32_t, TargetInjectorNodeInfo> targetInjectorNodeMap_;
 
     HpaeSourceInputNodeType mainMicType_;
     std::atomic<bool> isInit_ = false;

@@ -2915,6 +2915,52 @@ void HpaeManager::RemoveCaptureInjector(
     SendRequest(request, __func__);
 }
 
+void HpaeManager::AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, const SourceType &sourceType, uint32_t targetStreamId)
+{
+    auto request = [this, sinkPortIndex, sourcePortIndex, sourceType, targetStreamId] {
+        AUDIO_INFO_LOG("add injection from sink[%{public}u] to source[%{public}u], targetStreamId[%{public}u]",
+            sinkPortIndex, sourcePortIndex, targetStreamId);
+        CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
+            "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
+        std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
+        auto rendererManager = SafeGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
+        CHECK_AND_RETURN_LOG(rendererManager, "sink[%{public}s] is in wrong state",
+            sinkIdSinkNameMap_[sinkPortIndex].c_str());
+        CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
+            "sourcePortIndex[%{public}u] not exit", sourcePortIndex);
+        auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
+        CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
+            sourceIdSourceNameMap_[sourcePortIndex].c_str());
+        capturerManager->AddCaptureInjectorByTargetStream(sinkVirtualOutputNodeMap_[sinkPortIndex],
+            sourceType, targetStreamId);
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, const SourceType &sourceType, uint32_t targetStreamId)
+{
+    auto request = [this, sinkPortIndex, sourcePortIndex, sourceType, targetStreamId] {
+        AUDIO_INFO_LOG("remove injection from sink[%{public}u] to source[%{public}u], targetStreamId[%{public}u]",
+            sinkPortIndex, sourcePortIndex, targetStreamId);
+        CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
+            "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
+        std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
+        auto rendererManager = SafeGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
+        CHECK_AND_RETURN_LOG(rendererManager, "sink[%{public}s] is in wrong state",
+            GetEncryptStr(sinkIdSinkNameMap_[sinkPortIndex]).c_str());
+        CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
+            "sourcePortIndex[%{public}u] not exit", sourcePortIndex);
+        auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
+        CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
+            sourceIdSourceNameMap_[sourcePortIndex].c_str());
+        capturerManager->RemoveCaptureInjectorByTargetStream(sinkVirtualOutputNodeMap_[sinkPortIndex],
+            sourceType, targetStreamId);
+    };
+    SendRequest(request, __func__);
+}
+
 int32_t HpaeManager::PeekAudioData(
     const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
 {

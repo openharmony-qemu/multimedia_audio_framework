@@ -69,7 +69,8 @@ interface IIpcStream {
     void ResolveBufferBaseAndGetServerSpanSize([out] sharedptr<OHAudioBufferBase> buffer,
         [out] unsigned int spanSizeInFrame, [out] unsigned long engineTotalSizeInFrame);
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
-    void SetTarget([in] int target, [out] int ret); //SetRenderTarget
+    void SetTarget([in] int target, [in] int targetUid, [in] unsigned int targetStreamId,
+        [out] int ret); //SetRenderTarget
     void SetRebuildFlag();
     void SetLoopTimes([in] long bufferLoopTimes);
     void GetLatencyWithFlag([out] unsigned long latency, [in] unsigned int flag);
