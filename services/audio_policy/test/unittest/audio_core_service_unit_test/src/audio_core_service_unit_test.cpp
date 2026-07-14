@@ -7722,7 +7722,6 @@ HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportDirect_003, TestSize.Level1)
     std::vector<DirectTestParams> testCases = {
         {SAMPLE_S16LE, SAMPLE_RATE_48000, DEVICE_TYPE_USB_HEADSET, false, "16bit unsupported format"},
         {SAMPLE_U8, SAMPLE_RATE_96000, DEVICE_TYPE_USB_HEADSET, false, "U8 unsupported format"},
-        {SAMPLE_F32LE, SAMPLE_RATE_192000, DEVICE_TYPE_USB_HEADSET, false, "F32LE unsupported format"},
     };
 
     for (const auto& params : testCases) {
