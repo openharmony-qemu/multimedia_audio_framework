@@ -1199,13 +1199,8 @@ AudioRingerMode AudioAdapterManager::GetRingerMode() const
     return ringerMode_.load();
 }
 
- bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
+bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
 {
-    int32_t enableNewRoute = 0;
-    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-    if (IsLowLatencyRoute(routeFlag) || IsDirectRoute(routeFlag)) {
-        return enableNewRoute != 1;
-    }
     if ((routeFlag & AUDIO_OUTPUT_FLAG_HWDECODING)) {
         return false;
     }
