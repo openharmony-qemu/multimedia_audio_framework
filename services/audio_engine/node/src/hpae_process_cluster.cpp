@@ -681,7 +681,7 @@ void HpaeProcessCluster::SetCollabDoFade(bool fadeOutState)
     if (renderEffectNode_ != nullptr) {
         renderEffectNode_->SetCollabDoFade(fadeOutState);
     }
- 	 
+
     return;
 }
 
@@ -690,7 +690,7 @@ void HpaeProcessCluster::SetStopRunningState(bool stopRunning)
     if (renderEffectNode_ != nullptr) {
         renderEffectNode_->SetStopRunningState(stopRunning);
     }
- 	 
+
     return;
 }
 }  // namespace HPAE

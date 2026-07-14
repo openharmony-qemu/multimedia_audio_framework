@@ -1298,7 +1298,7 @@ bool AudioPipeSelector::GetIncomingStreamPriority(const std::shared_ptr<AudioStr
     const std::shared_ptr<AudioStreamDescriptor> &incomingStream)
 {
     // When two music streams need to be played on remote offload, select multi-channel audio source, or source with a
- 	// higher sampling rate.
+    // higher sampling rate.
     CHECK_AND_RETURN_RET(existingStream != nullptr && incomingStream != nullptr, false);
     CHECK_AND_RETURN_RET(existingStream->IsRunningOffload() && incomingStream->IsRunningOffload(), false);
     CHECK_AND_RETURN_RET(existingStream->IsDeviceRemote() && incomingStream->IsDeviceRemote(), false);

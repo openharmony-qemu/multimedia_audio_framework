@@ -892,8 +892,13 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZoneService::FetchOutpu
     std::lock_guard<std::mutex> lock(zoneMutex_);
     auto zone = FindZone(zoneId);
     CHECK_AND_RETURN_RET_LOG(zone != nullptr, devices, "zone id %{public}d is not found", zoneId);
-
-    return zone->FetchOutputDevices(streamUsage, clientUid, bypassType);
+    auto res = zone->FetchOutputDevices(streamUsage, clientUid, bypassType);
+    if (!res.empty() && res.front() != nullptr) {
+        AUDIO_INFO_LOG("fetchoutputdevice from zone %{public}d, usage:%{public}d, client:%{public}d," \
+            "router:%{public}d desc:%{public}s",
+            zoneId, streamUsage, clientUid, bypassType, res.front()->GetName().c_str());
+    }
+    return res;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZoneService::GetAllOutputDevices(int32_t zoneId)
