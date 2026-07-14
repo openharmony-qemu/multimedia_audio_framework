@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#include "audio_endpoint.h"
-#include "audio_endpoint_private.h"
 #include "audio_resource_service.h"
 #include "audio_service.h"
 #include "audio_thread_task.h"
@@ -28,7 +26,6 @@ namespace AudioStandard {
 
 const int32_t NUM_2 = 2;
 const int32_t AUDIOCHANNELSIZE = 17;
-const int32_t ENDPOINTTYPESIZE = 4;
 const int32_t SAVE_FOREGROUND_LIST_NUM = 11;
 static const std::string THREAD_NAME = "FuzzTestThreadName";
 static const uint8_t* RAW_DATA = nullptr;
@@ -201,39 +198,6 @@ std::string GetData<std::string>()
 }
 
 #ifdef SUPPORT_LOW_LATENCY
-void AudioServiceOnProcessReleaseFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioService == nullptr) {
-        return;
-    }
-    static const vector<AudioEncodingType> testAudioEncodingTypes = {
-        ENCODING_INVALID,
-        ENCODING_PCM,
-        ENCODING_AUDIOVIVID,
-        ENCODING_EAC3,
-    };
-    AudioProcessConfig config = {};
-    config.privacyType = static_cast<AudioPrivacyType>(GetData<uint32_t>() % NUM_2);
-    config.audioMode = static_cast<AudioMode>(GetData<uint32_t>() % NUM_2);
-    config.streamType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
-    config.streamInfo.channels = static_cast<AudioChannel>(GetData<uint32_t>() % AUDIOCHANNELSIZE);
-    config.streamInfo.samplingRate = g_testAudioSamplingRates[GetData<uint32_t>() % g_testAudioSamplingRates.size()];
-    config.streamInfo.format = g_testAudioSampleFormats[GetData<uint32_t>() % g_testAudioSampleFormats.size()];
-    config.streamInfo.encoding = testAudioEncodingTypes[GetData<uint32_t>() % testAudioEncodingTypes.size()];
-    auto audioProcess = audioService->GetAudioProcess(config);
-    bool isSwitchStream = GetData<bool>();
-    audioService->OnProcessRelease(audioProcess, isSwitchStream);
-}
-
-void AudioServiceReleaseProcessFuzzTest()
-{
-    AudioService *audioService = AudioService::GetInstance();
-    std::string endpointName = "test";
-    int32_t delayTime = GetData<int32_t>();
-    audioService->ReleaseProcess(endpointName, delayTime);
-}
-
 void AudioServiceGetStandbyStatusFuzzTest()
 {
     uint32_t sessionId = GetData<uint32_t>();
@@ -254,194 +218,9 @@ void AudioServiceGetStandbyStatusFuzzTest()
     audioService->allRendererMap_[sessionId] = std::weak_ptr<RendererInServer>{};
     audioService->GetStandbyStatus(sessionId, isStandby, enterStandbyTime);
 }
-
-void AudioServiceDelayCallReleaseEndpointFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    CHECK_AND_RETURN(audioService != nullptr);
-    std::string endpointName = "testendpoint";
-    audioService->releasingEndpointSet_.clear();
-    audioService->DelayCallReleaseEndpoint(endpointName);
-
-    audioService->releasingEndpointSet_.insert(endpointName);
-    AudioProcessConfig clientConfig = {};
-    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(
-        static_cast<AudioEndpoint::EndpointType>(GetData<uint32_t>() %
-        (AudioEndpoint::EndpointType::TYPE_VOIP_MMAP + 1)), GetData<uint64_t>(), clientConfig.audioMode);
-    audioService->endpointList_[endpointName] = endpoint;
-    audioService->DelayCallReleaseEndpoint(endpointName);
-}
-
-void AudioServiceGetAudioEndpointForDeviceFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    CHECK_AND_RETURN(audioService != nullptr);
-    AudioEndpointConfig endpointConfig;
-    bool isVoipStream = GetData<bool>();
-
-    audioService->endpointList_.clear();
-    audioService->GetAudioEndpointForDevice(endpointConfig, isVoipStream);
-
-    AudioProcessConfig clientConfig = {};
-    std::shared_ptr<AudioEndpointInner> audioEndpointPtr = std::make_shared<AudioEndpointInner>(
-        static_cast<AudioEndpoint::EndpointType>(GetData<uint32_t>() %
-        (AudioEndpoint::EndpointType::TYPE_VOIP_MMAP + 1)), GetData<uint64_t>(), clientConfig.audioMode);
-    audioEndpointPtr->deviceInfo_.deviceRole_ = g_testDeviceRole[GetData<uint32_t>() % g_testDeviceRole.size()];
-    int32_t endpointFlag = isVoipStream ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
-    audioService->endpointList_[AudioEndpoint::GenerateEndpointKey(endpointConfig.deviceInfo, endpointFlag)] =
-        audioEndpointPtr;
-    audioService->GetAudioEndpointForDevice(endpointConfig, isVoipStream);
-
-    AudioStreamInfo audioStreamInfo;
-    endpointConfig.streamInfo = audioStreamInfo;
-    audioService->GetAudioEndpointForDevice(endpointConfig, isVoipStream);
-}
-
-void AudioServiceHandleProcessInserverDualStreamDisableInnerFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    CHECK_AND_RETURN(audioService != nullptr);
-    AudioProcessConfig clientConfig = {};
-    std::shared_ptr<AudioEndpointInner> audioEndpointPtr = std::make_shared<AudioEndpointInner>(
-        static_cast<AudioEndpoint::EndpointType>(GetData<uint32_t>() %
-        (AudioEndpoint::EndpointType::TYPE_VOIP_MMAP + 1)), GetData<uint64_t>(), clientConfig.audioMode);
-    CHECK_AND_RETURN(audioEndpointPtr != nullptr);
-    audioService->HandleProcessInserverDualStreamDisableInner(*audioEndpointPtr);
-}
-
-void AudioServiceHandleProcessInserverDualStreamEnableInnerFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    CHECK_AND_RETURN(audioService != nullptr);
-    AudioProcessConfig clientConfig = {};
-    std::shared_ptr<AudioEndpointInner> audioEndpointPtr = std::make_shared<AudioEndpointInner>(
-        static_cast<AudioEndpoint::EndpointType>(GetData<uint32_t>() %
-        (AudioEndpoint::EndpointType::TYPE_VOIP_MMAP + 1)), GetData<uint64_t>(), clientConfig.audioMode);
-    CHECK_AND_RETURN(audioEndpointPtr != nullptr);
-
-    std::string dupSinkName;
-    for (size_t i = 0; i < GetData<int32_t>() % MAX_RANDOM_STRING_LENGTH; ++i) {
-        dupSinkName += GetData<char>();
-    }
-
-    audioService->HandleProcessInserverDualStreamEnableInner(*audioEndpointPtr, dupSinkName);
-}
-
-void AudioServiceGetEndPointByTypeFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    CHECK_AND_RETURN(audioService != nullptr);
-
-    auto type = static_cast<AudioEndpoint::EndpointType>(GetData<uint32_t>() %
-        (AudioEndpoint::EndpointType::TYPE_VOIP_MMAP + 1));
-
-    audioService->GetEndPointByType(type);
-}
-
 #endif
 
 #ifdef HAS_FEATURE_INNERCAPTURER
-void AudioServiceCheckInnerCapForRendererFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioService == nullptr) {
-        return;
-    }
-    AudioProcessConfig processConfig;
-    uint32_t sessionId = GetData<uint32_t>();
-    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
-        std::make_shared<StreamListenerHolder>();
-    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
-    std::shared_ptr<RendererInServer> rendererInServer =
-        std::make_shared<RendererInServer>(processConfig, streamListener);
-    std::shared_ptr<RendererInServer> renderer = rendererInServer;
-    audioService->CheckInnerCapForRenderer(sessionId, renderer);
-}
-
-void AudioServiceCheckInnerCapForProcessFuzzTest()
-{
-    AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::string adapterName = "";
-    bool isUltraFast = false;
-    AudioEndpointConfig endpointConfig = {
-        .deviceInfo = deviceInfo,
-        .streamInfo = audioStreamInfo,
-        .adapterName = adapterName,
-        .audioMode = config.audioMode,
-        .streamType = config.streamType,
-        .isUltraFast = isUltraFast
-    };
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
-    AudioProcessConfig configProcess = {};
-    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
-        AudioService::GetInstance());
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
-        return;
-    }
-    audioService->CheckInnerCapForProcess(audioProcess, audioEndpointPtr);
-}
-
-void AudioServiceLinkProcessToEndpointFuzzTest()
-{
-    AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::string adapterName = "";
-    bool isUltraFast = false;
-    AudioEndpointConfig endpointConfig = {
-        .deviceInfo = deviceInfo,
-        .streamInfo = audioStreamInfo,
-        .adapterName = adapterName,
-        .audioMode = config.audioMode,
-        .streamType = config.streamType,
-        .isUltraFast = isUltraFast
-    };
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
-    AudioProcessConfig configProcess = {};
-    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
-        AudioService::GetInstance());
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
-        return;
-    }
-    audioService->LinkProcessToEndpoint(audioProcess, audioEndpointPtr);
-}
-
-void AudioServiceUnlinkProcessToEndpointFuzzTest()
-{
-    AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::string adapterName = "";
-    bool isUltraFast = false;
-    AudioEndpointConfig endpointConfig = {
-        .deviceInfo = deviceInfo,
-        .streamInfo = audioStreamInfo,
-        .adapterName = adapterName,
-        .audioMode = config.audioMode,
-        .streamType = config.streamType,
-        .isUltraFast = isUltraFast
-    };
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
-    AudioProcessConfig configProcess = {};
-    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
-        AudioService::GetInstance());
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
-        return;
-    }
-    audioService->UnlinkProcessToEndpoint(audioProcess, audioEndpointPtr);
-}
-
 void AudioServiceGetDeviceInfoForProcessFuzzTest()
 {
     shared_ptr<AudioService> audioService = make_shared<AudioService>();
@@ -459,38 +238,6 @@ void AudioServiceGetDeviceInfoForProcessFuzzTest()
     AudioStreamInfo info;
     bool isUltraFast = false;
     audioService->GetDeviceInfoForProcess(config, info, isUltraFast);
-}
-
-void AudioServiceGetMaxAmplitudeFuzzTest()
-{
-    AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::string adapterName = "";
-    bool isUltraFast = false;
-    AudioEndpointConfig endpointConfig = {
-        .deviceInfo = deviceInfo,
-        .streamInfo = audioStreamInfo,
-        .adapterName = adapterName,
-        .audioMode = config.audioMode,
-        .streamType = config.streamType,
-        .isUltraFast = isUltraFast
-    };
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
-    AudioProcessConfig configProcess = {};
-    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
-        AudioService::GetInstance());
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
-        return;
-    }
-    bool isOutputDevice = GetData<bool>();
-
-    audioService->linkedPairedList_.clear();
-    audioService->linkedPairedList_.push_back(make_pair(audioProcess, audioEndpointPtr));
-    audioService->GetMaxAmplitude(isOutputDevice);
 }
 
 void AudioServiceGetCapturerBySessionIDFuzzTest()
@@ -543,22 +290,6 @@ void AudioServiceCheckShouldCapFuzzTest()
 
 #endif // HAS_FEATURE_INNERCAPTURER
 
-void AudioServiceGetReleaseDelayTimeFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioService == nullptr) {
-        return;
-    }
-    AudioProcessConfig clientConfig = {};
-    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(
-        static_cast<AudioEndpoint::EndpointType>(GetData<uint32_t>() % ENDPOINTTYPESIZE),
-        GetData<uint64_t>(), clientConfig.audioMode);
-    endpoint->deviceInfo_.deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    bool isSwitchStream = GetData<bool>();
-    bool isRecord = GetData<bool>();
-    audioService->GetReleaseDelayTime(endpoint, isSwitchStream, isRecord);
-}
-
 void AudioServiceRemoveIdFromMuteControlSetFuzzTest()
 {
     shared_ptr<AudioService> audioService = make_shared<AudioService>();
@@ -605,20 +336,6 @@ void AudioServiceCheckCaptureSessionMuteStateFuzzTest()
         std::make_shared<CapturerInServer>(processConfig, streamListener);
     std::shared_ptr<CapturerInServer> capturer = capturerInServer;
     audioService->CheckCaptureSessionMuteState(sessionId, capturer);
-}
-
-void AudioServiceCheckFastSessionMuteStateFuzzTest()
-{
-    AudioProcessConfig processConfig;
-    uint32_t sessionId = GetData<uint32_t>();
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioService == nullptr) {
-        return;
-    }
-    audioService->UpdateMuteControlSet(sessionId, true);
-
-    sptr<AudioProcessInServer> audioprocess = AudioProcessInServer::Create(processConfig, audioService.get());
-    audioService->CheckFastSessionMuteState(sessionId, audioprocess);
 }
 
 void AudioServiceIsMuteSwitchStreamFuzzTest()
@@ -774,65 +491,6 @@ void AudioServiceShouldBeInnerCapFuzzTest()
     audioService->ShouldBeInnerCap(rendererConfig, beCapIds);
 }
 
-void AudioServiceCheckDisableFastInnerFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioService == nullptr) {
-        return;
-    }
-
-    AudioProcessConfig clientConfig = {};
-    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        GetData<uint64_t>(), clientConfig.audioMode);
-    audioService->CheckDisableFastInner(endpoint);
-}
-
-void AudioServiceFilterAllFastProcessFuzzTest()
-{
-    static const vector<DeviceRole> g_testDeviceTypes = {
-        DEVICE_ROLE_NONE,
-        INPUT_DEVICE,
-        OUTPUT_DEVICE,
-        DEVICE_ROLE_MAX,
-    };
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioService == nullptr) {
-        return;
-    }
-    AudioProcessConfig config = {};
-    config.audioMode = static_cast<AudioMode>(GetData<uint32_t>() % NUM_2);
-    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, audioService.get());
-    AudioProcessConfig clientConfig = {};
-    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        GetData<uint64_t>(), clientConfig.audioMode);
-    endpoint->deviceInfo_.deviceRole_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    audioService->linkedPairedList_.clear();
-    audioService->linkedPairedList_.push_back(std::make_pair(audioprocess, endpoint));
-
-    audioService->endpointList_.clear();
-    audioService->endpointList_.insert(std::make_pair("endpoint", endpoint));
-    audioService->FilterAllFastProcess();
-}
-
-void AudioServiceHandleFastCaptureFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioService == nullptr) {
-        return;
-    }
-    audioService->filteredRendererMap_.clear();
-
-    std::set<int32_t> captureIds = {1};
-    AudioProcessConfig config = {};
-    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, audioService.get());
-
-    AudioProcessConfig clientConfig = {};
-    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        GetData<uint64_t>(), clientConfig.audioMode);
-
-    audioService->HandleFastCapture(captureIds, audioprocess, endpoint);
-}
-
 void AudioServiceOnUpdateInnerCapListFuzzTest()
 {
     shared_ptr<AudioService> audioService = make_shared<AudioService>();
@@ -854,7 +512,6 @@ void AudioServiceOnUpdateInnerCapListFuzzTest()
     rendererVector.push_back(renderer);
     int32_t innerCapId = GetData<int32_t>();
     audioService->filteredRendererMap_.clear();
-    audioService->endpointList_.clear();
     audioService->filteredRendererMap_.insert(std::make_pair(innerCapId, rendererVector));
     audioService->OnUpdateInnerCapList(innerCapId);
 }
@@ -903,81 +560,6 @@ void AudioServiceDisableDualToneListFuzzTest()
 
     int32_t sessionId = GetData<int32_t>();
     audioService->DisableDualStream(sessionId);
-}
-
-void AudioServiceNotifyStreamVolumeChangedFuzzTest()
-{
-    AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::string adapterName = "";
-    bool isUltraFast = false;
-    AudioEndpointConfig endpointConfig = {
-        .deviceInfo = deviceInfo,
-        .streamInfo = audioStreamInfo,
-        .adapterName = adapterName,
-        .audioMode = config.audioMode,
-        .streamType = config.streamType,
-        .isUltraFast = isUltraFast
-    };
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
-    AudioProcessConfig configProcess = {};
-    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
-        AudioService::GetInstance());
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioEndpointPtr == nullptr || audioService == nullptr) {
-        return;
-    }
-    float volume = GetData<float>();
-
-    audioService->endpointList_.insert(make_pair("testendpoint", audioEndpointPtr));
-    AudioStreamType streamType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
-    audioService->NotifyStreamVolumeChanged(streamType, volume);
-}
-
-void AudioServiceDumpFuzzTest()
-{
-    AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::string adapterName = "";
-    bool isUltraFast = false;
-    AudioEndpointConfig endpointConfig = {
-        .deviceInfo = deviceInfo,
-        .streamInfo = audioStreamInfo,
-        .adapterName = adapterName,
-        .audioMode = config.audioMode,
-        .streamType = config.streamType,
-        .isUltraFast = isUltraFast
-    };
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(false, endpointConfig);
-    AudioProcessConfig configProcess = {};
-    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
-        AudioService::GetInstance());
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
-        return;
-    }
-    std::string dumpString = "abcdefg";
-    AudioPlaybackCaptureConfig playbackCaptureConfig;
-    audioService->workingConfigs_.insert(make_pair(GetData<int32_t>(), playbackCaptureConfig));
-    config.audioMode = static_cast<AudioMode>(GetData<uint32_t>() % NUM_2);
-    std::shared_ptr<AudioEndpointInner> endpointInner = std::make_shared<AudioEndpointInner>(
-        AudioEndpoint::TYPE_VOIP_MMAP, GetData<uint64_t>(), config.audioMode);
-    audioService->linkedPairedList_.clear();
-    audioService->linkedPairedList_.push_back(std::make_pair(audioProcess, endpointInner));
-    audioService->endpointList_.clear();
-    audioService->endpointList_.insert(make_pair("testendpoint", audioEndpointPtr));
-    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
-        std::make_shared<StreamListenerHolder>();
-    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
-    std::shared_ptr<RendererInServer> renderer = std::make_shared<RendererInServer>(config, streamListener);
-    audioService->allRendererMap_.insert(std::make_pair(GetData<int32_t>(), renderer));
-    audioService->Dump(dumpString);
 }
 
 void AudioServiceGetCreatedAudioStreamMostUidFuzzTest()
@@ -1217,47 +799,6 @@ void AudioServiceIsExceedingMaxStreamCntPerUidFuzzTest()
     audioService->IsExceedingMaxStreamCntPerUid(callingUid, appUid, maxStreamCntPerUid);
 }
 
-void AudioServiceRestoreSessionFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    uint32_t sessionId = GetData<uint32_t>();
-    RestoreInfo restoreInfo;
-    audioService->allRendererMap_.clear();
-    audioService->allCapturerMap_.clear();
-    audioService->linkedPairedList_.clear();
-    audioService->RestoreSession(sessionId, restoreInfo);
-
-    AudioProcessConfig processConfig;
-    auto streamListenerHolder = std::make_shared<StreamListenerHolder>();
-    auto rendererInServer =  std::make_shared<RendererInServer>(processConfig, streamListenerHolder);
-    AudioBufferHolder bufferHolder;
-    uint32_t totalSize = GetData<uint32_t>();
-    uint32_t byteSize = GetData<uint32_t>();
-    rendererInServer->audioServerBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSize, byteSize);
-    audioService->allRendererMap_[sessionId] = rendererInServer;
-    audioService->RestoreSession(sessionId, restoreInfo);
-
-    audioService->allRendererMap_.clear();
-    auto capturerInServer =  std::make_shared<CapturerInServer>(processConfig, streamListenerHolder);
-    uint32_t spanSize = GetData<uint32_t>();
-    capturerInServer->audioServerBuffer_ = make_shared<OHAudioBuffer>(bufferHolder, totalSize, spanSize, byteSize);
-    audioService->allCapturerMap_[sessionId] = capturerInServer;
-    audioService->RestoreSession(sessionId, restoreInfo);
-
-    audioService->allRendererMap_.clear();
-    audioService->allCapturerMap_.clear();
-    AudioProcessConfig config = {};
-    config.audioMode = static_cast<AudioMode>(GetData<uint32_t>() % (AudioMode::AUDIO_MODE_RECORD + 1));
-    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, audioService.get());
-    audioprocess->processBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSize, byteSize);
-    AudioProcessConfig clientConfig = {};
-    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        GetData<uint64_t>(), clientConfig.audioMode);
-    audioService->linkedPairedList_.clear();
-    audioService->linkedPairedList_.push_back(std::make_pair(audioprocess, endpoint));
-    audioService->RestoreSession(sessionId, restoreInfo);
-}
-
 void AudioServiceGetSystemVolumeForWorkgroupFuzzTest()
 {
     shared_ptr<AudioService> audioService = make_shared<AudioService>();
@@ -1288,20 +829,14 @@ void AudioServiceRenderersCheckForAudioWorkgroupFuzzTest()
 TestPtr g_testPtrs[] = {
 #ifdef HAS_FEATURE_INNERCAPTURER
     AudioServiceCheckInnerCapForRendererFuzzTest,
-    AudioServiceCheckInnerCapForProcessFuzzTest,
-    AudioServiceLinkProcessToEndpointFuzzTest,
-    AudioServiceUnlinkProcessToEndpointFuzzTest,
     AudioServiceGetDeviceInfoForProcessFuzzTest,
-    AudioServiceGetMaxAmplitudeFuzzTest,
     AudioServiceGetCapturerBySessionIDFuzzTest,
     AudioServiceSetOffloadModeFuzzTest,
     AudioServiceCheckShouldCapFuzzTest,
 #endif
-    AudioServiceGetReleaseDelayTimeFuzzTest,
     AudioServiceRemoveIdFromMuteControlSetFuzzTest,
     AudioServiceCheckRenderSessionMuteStateFuzzTest,
     AudioServiceCheckCaptureSessionMuteStateFuzzTest,
-    AudioServiceCheckFastSessionMuteStateFuzzTest,
     AudioServiceIsMuteSwitchStreamFuzzTest,
     AudioServiceInsertRendererFuzzTest,
     AudioServiceSaveForegroundListFuzzTest,
@@ -1312,14 +847,9 @@ TestPtr g_testPtrs[] = {
     AudioServiceInsertCapturerFuzzTest,
     AudioServiceAddFilteredRenderFuzzTest,
     AudioServiceShouldBeInnerCapFuzzTest,
-    AudioServiceCheckDisableFastInnerFuzzTest,
-    AudioServiceFilterAllFastProcessFuzzTest,
-    AudioServiceHandleFastCaptureFuzzTest,
     AudioServiceOnUpdateInnerCapListFuzzTest,
     AudioServiceEnableDualToneListFuzzTest,
     AudioServiceDisableDualToneListFuzzTest,
-    AudioServiceNotifyStreamVolumeChangedFuzzTest,
-    AudioServiceDumpFuzzTest,
     AudioServiceGetCreatedAudioStreamMostUidFuzzTest,
     AudioServiceInitAllDupBufferFuzzTest,
     AudioServiceForceStopAudioStreamFuzzTest,
@@ -1336,19 +866,8 @@ TestPtr g_testPtrs[] = {
     AudioServiceSetDecMaxLoopbackStreamCntFuzzTest,
     AudioServiceGetCurrentRendererStreamCntFuzzTest,
     AudioServiceIsExceedingMaxStreamCntPerUidFuzzTest,
-    AudioServiceRestoreSessionFuzzTest,
     AudioServiceGetSystemVolumeForWorkgroupFuzzTest,
     AudioServiceRenderersCheckForAudioWorkgroupFuzzTest,
-#ifdef SUPPORT_LOW_LATENCY
-    AudioServiceGetEndPointByTypeFuzzTest,
-    AudioServiceOnProcessReleaseFuzzTest,
-    AudioServiceReleaseProcessFuzzTest,
-    AudioServiceGetStandbyStatusFuzzTest,
-    AudioServiceDelayCallReleaseEndpointFuzzTest,
-    AudioServiceGetAudioEndpointForDeviceFuzzTest,
-    AudioServiceHandleProcessInserverDualStreamDisableInnerFuzzTest,
-    AudioServiceHandleProcessInserverDualStreamEnableInnerFuzzTest,
-#endif
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
