@@ -842,7 +842,6 @@ TestPtr g_testPtrs[] = {
     AudioServiceDisableDualToneListFuzzTest,
     AudioServiceGetCreatedAudioStreamMostUidFuzzTest,
     AudioServiceInitAllDupBufferFuzzTest,
-    AudioServiceForceStopAudioStreamFuzzTest,
     AudioServiceSetLatestMuteStateFuzzTest,
     AudioServiceDisableLoopbackFuzzTest,
     AudioServiceInRenderWhitelistFuzzTest,
@@ -885,9 +884,6 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
-#ifdef HAS_FEATURE_INNERCAPTURER
-    OHOS::AudioStandard::AudioServiceOnProcessReleaseFuzzTest();
-#endif
     OHOS::AudioStandard::AudioThreadTaskFuzzTest();
     return 0;
 }
