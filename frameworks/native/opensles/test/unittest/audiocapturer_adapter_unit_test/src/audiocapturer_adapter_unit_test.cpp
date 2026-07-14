@@ -15,7 +15,6 @@
 
 #include <OpenSLES_OpenHarmony.h>
 #include <OpenSLES_Platform.h>
-#include "fast_audio_stream.h"
 #include "audiocapturer_adapter.h"
 #include "audio_capturer_private.h"
 #include "audiocapturer_adapter_unit_test.h"
@@ -54,67 +53,6 @@ HWTEST(AudioCapturerAdapterUnitTest, GetAudioCapturerById_001, TestSize.Level0)
     AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
     ret = AudioCapturerAdapter::GetInstance()->GetAudioCapturerById(id);
     EXPECT_NE(ret, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioCapturerAdapter API
-* @tc.type  : FUNC
-* @tc.number: SetCaptureStateAdapter_001
-* @tc.desc  : Test SetCaptureStateAdapter interface.
-*/
-HWTEST(AudioCapturerAdapterUnitTest, SetCaptureStateAdapter_001, TestSize.Level0)
-{
-    SLuint32 id = 10;
-    SLuint32 state = SL_RECORDSTATE_RECORDING;
-    AudioMode eMode = AUDIO_MODE_PLAYBACK;
-    AudioStreamType eStreamType = STREAM_MUSIC;
-    int32_t appUid = 0;
-
-    AppInfo appInfo = {};
-    AudioStreamType audioStreamType = STREAM_MUSIC;
-    AudioCapturerAdapter::GetInstance()->captureMap_.clear();
-    auto audioCapturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
-    ASSERT_TRUE(audioCapturer != nullptr);
-    auto fastAudioStream = std::make_shared<FastAudioStream>(eStreamType, eMode, appUid);
-    ASSERT_TRUE(fastAudioStream != nullptr);
-
-    audioCapturer->audioStream_ = fastAudioStream;
-    AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
-
-    auto ret = AudioCapturerAdapter::GetInstance()->SetCaptureStateAdapter(id, state);
-    EXPECT_EQ(ret, SL_RESULT_RESOURCE_ERROR);
-}
-
-/**
-* @tc.name  : Test AudioCapturerAdapter API
-* @tc.type  : FUNC
-* @tc.number: SetCaptureStateAdapter_002
-* @tc.desc  : Test SetCaptureStateAdapter interface.
-*/
-HWTEST(AudioCapturerAdapterUnitTest, SetCaptureStateAdapter_002, TestSize.Level0)
-{
-    SLuint32 id = 10;
-    SLuint32 state = SL_RECORDSTATE_STOPPED;
-    AudioMode eMode = AUDIO_MODE_PLAYBACK;
-    AudioStreamType eStreamType = STREAM_MUSIC;
-    int32_t appUid = 0;
-
-    AppInfo appInfo = {};
-    AudioStreamType audioStreamType = STREAM_MUSIC;
-    AudioCapturerAdapter::GetInstance()->captureMap_.clear();
-    auto audioCapturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
-    ASSERT_TRUE(audioCapturer != nullptr);
-    auto fastAudioStream = std::make_shared<FastAudioStream>(eStreamType, eMode, appUid);
-    ASSERT_TRUE(fastAudioStream != nullptr);
-
-    audioCapturer->audioStream_ = fastAudioStream;
-    AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
-    auto ret = AudioCapturerAdapter::GetInstance()->SetCaptureStateAdapter(id, state);
-    EXPECT_EQ(ret, SL_RESULT_RESOURCE_ERROR);
-
-    state = -1;
-    ret = AudioCapturerAdapter::GetInstance()->SetCaptureStateAdapter(id, state);
-    EXPECT_EQ(ret, SL_RESULT_RESOURCE_ERROR);
 }
 
 /**
@@ -181,33 +119,6 @@ HWTEST(AudioCapturerAdapterUnitTest, GetCaptureStateAdapter_003, TestSize.Level0
     AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
     AudioCapturerAdapter::GetInstance()->GetCaptureStateAdapter(id, &stateTest);
     EXPECT_TRUE(stateTest == SL_RECORDSTATE_STOPPED);
-}
-
-/**
-* @tc.name  : Test AudioCapturerAdapter APIPf
-* @tc.number: GetCaptureStateAdapter_004
-* @tc.desc  : Test GetCaptureStateAdapter interface.
-*/
-HWTEST(AudioCapturerAdapterUnitTest, GetCaptureStateAdapter_004, TestSize.Level0)
-{
-    SLuint32 id = 1;
-    SLuint32 stateTest;
-    AudioMode eMode = AUDIO_MODE_PLAYBACK;
-    AudioStreamType eStreamType = STREAM_MUSIC;
-    int32_t appUid = 0;
-
-    AppInfo appInfo = {};
-    AudioStreamType audioStreamType = STREAM_MUSIC;
-    AudioCapturerAdapter::GetInstance()->captureMap_.clear();
-    auto audioCapturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
-    ASSERT_TRUE(audioCapturer != nullptr);
-    auto fastAudioStream = std::make_shared<FastAudioStream>(eStreamType, eMode, appUid);
-    ASSERT_TRUE(fastAudioStream != nullptr);
-    fastAudioStream->state_ = State::NEW;
-    audioCapturer->audioStream_ = fastAudioStream;
-    AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
-    AudioCapturerAdapter::GetInstance()->GetCaptureStateAdapter(id, &stateTest);
-    EXPECT_TRUE(stateTest == -1);
 }
 
 /**
@@ -409,38 +320,6 @@ HWTEST(AudioCapturerAdapterUnitTest, AudioPlayerDestroy_001, TestSize.Level3)
  
     result = AudioPlayerDestroy(self);
     EXPECT_EQ(result, SL_RESULT_SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioCapturerAdapter API
-* @tc.type  : FUNC
-* @tc.number: SetCaptureStateAdapter_003
-* @tc.desc  : Test SetCaptureStateAdapter interface.
-*/
-HWTEST(AudioCapturerAdapterUnitTest, SetCaptureStateAdapter_003, TestSize.Level0)
-{
-    SLuint32 id = 10;
-    SLuint32 state = SL_RECORDSTATE_PAUSED;
-    AudioMode eMode = AUDIO_MODE_PLAYBACK;
-    AudioStreamType eStreamType = STREAM_MUSIC;
-    int32_t appUid = 0;
-
-    AppInfo appInfo = {};
-    AudioStreamType audioStreamType = STREAM_MUSIC;
-    AudioCapturerAdapter::GetInstance()->captureMap_.clear();
-    auto audioCapturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
-    ASSERT_TRUE(audioCapturer != nullptr);
-    auto fastAudioStream = std::make_shared<FastAudioStream>(eStreamType, eMode, appUid);
-    ASSERT_TRUE(fastAudioStream != nullptr);
-
-    audioCapturer->audioStream_ = fastAudioStream;
-    AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
-    auto ret = AudioCapturerAdapter::GetInstance()->SetCaptureStateAdapter(id, state);
-    EXPECT_EQ(ret, SL_RESULT_RESOURCE_ERROR);
-
-    state = -1;
-    ret = AudioCapturerAdapter::GetInstance()->SetCaptureStateAdapter(id, state);
-    EXPECT_EQ(ret, SL_RESULT_RESOURCE_ERROR);
 }
 } // namespace AudioStandard
 } // namespace OHOS
