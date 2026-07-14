@@ -125,7 +125,7 @@ int32_t AudioZoneService::GetAudioZoneForApp(const std::vector<int32_t> &userIds
             return item.second != nullptr && item.second->GetUserId() == userId;
         };
         auto itZone = std::find_if(zoneMaps_.begin(), zoneMaps_.end(), findZone);
-        retUserIds.emplace_back(itZone != zoneMaps_.end() ? userId : 0);
+        retUserIds.emplace_back(itZone != zoneMaps_.end() ? userId : zoneMaps_[DEFAULT_ZONEID]->GetUserId());
         retUserIdsStr += std::to_string(retUserIds.back()) + ",";
     }
     AUDIO_INFO_LOG("userIds: %{public}s, retUserIds: %{public}s", userIdsStr.c_str(), retUserIdsStr.c_str());
