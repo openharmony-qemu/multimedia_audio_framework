@@ -565,7 +565,7 @@ napi_value NapiAudioCapturer::CreateMicInAudioCapturer(napi_env env, napi_callba
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
             NAPI_ERR_INVALID_PARAM);
-        context->status = NapiParamUtils::GetCapturerOptions(env, &context->capturerOptions, argv[PARAM0]);
+        context->status = NapiParamUtils::GetCapturerMicInConfig(env, &context->capturerOptions, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "CreateMicInAudioCapturer failed",
             NAPI_ERR_INVALID_PARAM);
     };
