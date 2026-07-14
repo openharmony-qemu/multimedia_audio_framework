@@ -97,6 +97,7 @@
             "libxml2",
             "napi",
             "netmanager_base",
+            "node",
             "os_account",
             "power_manager",
             "resource_management",
