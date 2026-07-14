@@ -339,21 +339,6 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_034, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetStreamCallback API
- * @tc.type  : FUNC
- * @tc.number: SetStreamCallback_001
- * @tc.desc  : Test SetStreamCallback_001
- */
-HWTEST(AudioCapturerUnitTest, SetStreamCallback_001, TestSize.Level1)
-{
-    FastAudioStream fastAudioStream(AudioStreamType::STREAM_MUSIC,
-        AudioMode::AUDIO_MODE_RECORD, 0);
-    std::shared_ptr<AudioStreamCallback> callback = nullptr;
-    int32_t ret = fastAudioStream.SetStreamCallback(callback);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
  * @tc.name  : Test NoNeedNotifyEvent
  * @tc.type  : FUNC
  * @tc.number: NoNeedNotifyEvent_001

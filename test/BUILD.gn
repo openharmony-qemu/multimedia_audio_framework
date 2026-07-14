@@ -188,6 +188,18 @@ group("audio_unit_test") {
       "../services/audio_service/test/unittest:direct_playback_engine_unit_test",
       "../services/audio_service/test/unittest:none_mix_engine_unit_test",
     ]
+    
+    if (audio_framework_feature_low_latency) { 
+      deps += [ 
+        "../services/audio_service/test/unittest:audio_process_in_client_unit_test", 
+        "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_plus_unit_test", 
+        "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_unit_test", 
+        "../services/audio_service/test/unittest:audio_process_in_client_second_unit_test", 
+        "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_fast_capturer_unit_test", 
+        "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_fast_renderer_unit_test", 
+        "../services/audio_service/test/unittest:audio_process_in_server_unit_test", 
+      ] 
+    }
   }
 
   if (audio_framework_feature_low_latency) {
