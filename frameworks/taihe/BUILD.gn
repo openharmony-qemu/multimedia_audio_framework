@@ -62,6 +62,8 @@ taihe_shared_library("audio_taihe") {
     "audiomanager/callback",
     "audioloopback",
     "audioloopback/callback",
+    "recordcontroller",
+    "recordcontroller/callback",
     "../../interfaces/inner_api/native/audio_debug_manager/include",
   ]
 
@@ -123,6 +125,9 @@ taihe_shared_library("audio_taihe") {
     "common/taihe_audio_error.cpp",
     "common/taihe_dfx_utils.cpp",
     "common/taihe_param_utils.cpp",
+    "recordcontroller/callback/taihe_audio_record_controller_callback.cpp",
+    "recordcontroller/callback/taihe_audio_record_controller_callback_inner.cpp",
+    "recordcontroller/taihe_audio_record_controller.cpp",
     "src/ani_constructor.cpp",
   ]
 
