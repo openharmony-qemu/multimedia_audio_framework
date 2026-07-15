@@ -2281,6 +2281,13 @@ void AudioEffectChainManager::WaitAndReleaseEffectChain(const std::string &scene
     if (sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] == 0) {
         sceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
+        // Clear the override keyed by this chain's scene (consistent with Set/ClearChannelOverride).
+        auto &sceneChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+        if (sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] !=
+            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] &&
+            sceneChain != nullptr) {
+            channelOverrideMap_.erase(sceneChain->GetSceneType());
+        }
         if (ret == SUCCESS && sceneTypeToEffectChainCountMap_.count(defaultSceneTypeAndDeviceKey) &&
             sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] == 0 &&
             sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] ==
@@ -2293,13 +2300,6 @@ void AudioEffectChainManager::WaitAndReleaseEffectChain(const std::string &scene
             }
             sceneTypeToEffectChainMap_.erase(defaultSceneTypeAndDeviceKey);
             AUDIO_INFO_LOG("default effect chain is released");
-        }
-        // Clear the override keyed by this chain's scene (consistent with Set/ClearChannelOverride).
-        auto &sceneChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-        if (sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] !=
-            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] &&
-            sceneChain != nullptr) {
-            channelOverrideMap_.erase(sceneChain->GetSceneType());
         }
         sceneTypeToEffectChainMap_.erase(sceneTypeAndDeviceKey);
         AUDIO_INFO_LOG("sceneTypeAndDeviceKey [%{public}s] is being released", sceneTypeAndDeviceKey.c_str());
