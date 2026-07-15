@@ -35,7 +35,6 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-const int32_t RENDERER_FLAGS = 0;
 #ifdef HAS_FEATURE_INNERCAPTURER
 const int32_t MEDIA_SERVICE_UID = 1013;
 #endif
