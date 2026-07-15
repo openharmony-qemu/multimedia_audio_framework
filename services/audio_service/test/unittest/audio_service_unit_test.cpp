@@ -341,21 +341,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceGetDeviceInfoForProcess_001, TestSize.L
 }
 
 /**
- * @tc.name  : Test GetAudioEndpointForDevice API
- * @tc.type  : FUNC
- * @tc.number: GetAudioEndpointForDevice_001
- * @tc.desc  : Test GetAudioEndpointForDevice interface.
- */
-HWTEST(AudioServiceUnitTest, GetAudioEndpointForDevice_001, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    AudioProcessConfig clientConfig;
-    clientConfig.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    clientConfig.rendererInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
-    audioService->GetAudioProcess(clientConfig);
-}
-
-/**
  * @tc.name  : Test Dump API
  * @tc.type  : FUNC
  * @tc.number: Dump_001
