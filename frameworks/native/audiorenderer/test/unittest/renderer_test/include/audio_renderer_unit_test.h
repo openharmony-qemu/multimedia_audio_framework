@@ -22,7 +22,7 @@
 #include "audio_errors.h"
 #include "gtest/gtest.h"
 #include "audio_renderer.h"
-#include "fast_audio_stream.h"
+#include "audio_capturer.h"
 
 
 namespace OHOS {
@@ -109,38 +109,6 @@ public:
 class StaticBufferEventCallbackTest : public StaticBufferEventCallback {
 public:
     void OnStaticBufferEvent(StaticBufferEventId eventId) override {}
-};
-
-class TestAudioStremStub : public FastAudioStream {
-public:
-    TestAudioStremStub() : FastAudioStream(AudioStreamType::STREAM_MUSIC,
-        AudioMode::AUDIO_MODE_PLAYBACK, 0) {}
-    uint32_t GetOverflowCount() override { return RenderUT::g_writeOverflowNum; }
-    State GetState() override { return state_; }
-    bool StopAudioStream() override { return true; }
-    bool StartAudioStream(StateChangeCmdType cmdType,
-        AudioStreamDeviceChangeReasonExt reason) override { return true; }
-    bool ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce) override { return true; }
-    RestoreStatus CheckRestoreStatus() override { return restoreStatus_; };
-    RestoreStatus SetRestoreStatus(RestoreStatus status) override
-    {
-        restoreStatus_ = status;
-        return restoreStatus_;
-    };
-    int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj,
-        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override { return SUCCESS; }
-    void GetRestoreInfo(RestoreInfo &restoreInfo) override {};
-    float GetDuckVolume() override { return RenderUT::DUCK_VOLUME; }
-    int32_t SetDuckVolume(float volume) override { return SUCCESS; }
-    void SetFastStatusChangeCallback(const std::function<void(FastStatus)> &callback) override
-    {
-        fastStatusChangeCallback_ = callback;
-    }
-
-    State state_ = State::RUNNING;
-    RestoreStatus restoreStatus_ = NO_NEED_FOR_RESTORE;
-    std::function<void(FastStatus)> fastStatusChangeCallback_;
 };
 
 class RendererFastStatusChangeCallbackTest : public AudioRendererFastStatusChangeCallback {

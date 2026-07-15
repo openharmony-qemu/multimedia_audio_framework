@@ -21,7 +21,6 @@
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_server.h"
 #include "message_parcel.h"
-#include "audio_process_in_client.h"
 #include "audio_param_parser.h"
 #include "audio_process_config.h"
 #include "ipc_stream_in_server.h"
