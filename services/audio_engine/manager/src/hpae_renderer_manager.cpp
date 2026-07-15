@@ -1733,6 +1733,12 @@ void HpaeRendererManager::UpdateProcessClusterConnection(uint32_t sessionId, int
         AUDIO_INFO_LOG("no need to update the sceneType %{public}d", sceneType);
         return;
     }
+    HpaeProcessorType connectedSceneType = GetConnectedProcessorType(sessionId);
+    auto oldRoute = BuildChannelOverrideRouteFromProcessorType(connectedSceneType);
+    DetachSessionEffectNodeForRefresh(sessionId, connectedSceneType);
+    if (oldRoute.has_value()) {
+        ClearChannelOverrideForRoute(oldRoute.value());
+    }
     DisConnectInputSession(sessionId);
     ConnectInputSession(sessionId);
 }

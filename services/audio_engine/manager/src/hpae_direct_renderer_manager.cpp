@@ -761,8 +761,8 @@ int32_t HpaeDirectRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkI
         Trace trace("HpaeDirectRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
         AUDIO_INFO_LOG("reload direct");
         if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
-            DisConnectInputSession();
             DetachSessionEffectNodeForReload();  // Detach SE but keep attach state for reload
+            DisConnectInputSession();
             DestroyDirectNodes();
         }
         StopOuputNode();

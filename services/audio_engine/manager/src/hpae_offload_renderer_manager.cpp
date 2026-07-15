@@ -722,8 +722,8 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
         Trace trace("HpaeOffloadRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
         AUDIO_INFO_LOG("reload offload");
         if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
-            DisConnectInputSession();
             DetachSessionEffectNodeForReload();
+            DisConnectInputSession();
             if (sinkOutputNode_ != nullptr) {
                 sinkOutputNode_->StopStream();
             }
