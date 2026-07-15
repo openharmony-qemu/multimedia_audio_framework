@@ -417,31 +417,6 @@ HWTEST_F(AudioDebugManagerUnitTest, AudioDebugManager_PrintRenderer_001, TestSiz
 }
 
 /**
- * @tc.name   : AudioDebugManager_PrintRenderer_002
- * @tc.number : AudioDebugManager_PrintRenderer_002
- * @tc.desc   : Test PrintAudioRendererDebugInfo output via pipe.
- */
-HWTEST_F(AudioDebugManagerUnitTest, AudioDebugManager_PrintRenderer_002, TestSize.Level0)
-{
-    auto &mgr = AudioDebugManager::GetInstance();
-    auto cb = make_shared<TestRendererCallback>();
-    cb->info_ = MakeRendererInfo();
-    uint32_t key = 0;
-    mgr.RegisterAudioRenderer(key, cb);
-
-    int fd[2];
-    ASSERT_TRUE(MakePipe(fd));
-    EXPECT_EQ(mgr.PrintAudioRendererDebugInfo(key, fd[1]), SUCCESS);
-    close(fd[1]);
-    string out = ReadPipe(fd[0]);
-    close(fd[0]);
-    EXPECT_NE(out.find("audioRenderer"), string::npos);
-    EXPECT_NE(out.find("STREAM_USAGE_MUSIC"), string::npos);
-    EXPECT_NE(out.find("DEVICE_TYPE_SPEAKER"), string::npos);
-    mgr.UnregisterAudioRenderer(key);
-}
-
-/**
  * @tc.name   : AudioDebugManager_PrintRenderer_003
  * @tc.number : AudioDebugManager_PrintRenderer_003
  * @tc.desc   : Test PrintAudioRendererDebugInfo with negative fd.

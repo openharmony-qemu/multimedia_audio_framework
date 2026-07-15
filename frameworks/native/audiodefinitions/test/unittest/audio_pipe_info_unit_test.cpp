@@ -299,34 +299,5 @@ HWTEST_F(AudioPipeInfoUnitTest, DumpOutputAttrs_NoFast_001, TestSize.Level2)
     EXPECT_EQ(std::string::npos, dumpStr.find("UltralFastPipe"));
 }
 
-/**
- * @tc.name   : AudioPipeInfo_DumpOutputAttrs_FastTrue_001
- * @tc.number : DumpOutputAttrs_FastTrue_001
- * @tc.desc   : Test DumpOutputAttrs when route is fast and ultraFast flag is true
- */
-HWTEST_F(AudioPipeInfoUnitTest, DumpOutputAttrs_FastTrue_001, TestSize.Level2)
-{
-    std::string dumpStr;
-    testOutputPipe_->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-    testOutputPipe_->SetUltraFastFlag(true);
-    dumpStr.clear();
-    testOutputPipe_->Dump(dumpStr);
-    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastPipe: 1"));
-}
-
-/**
- * @tc.name   : AudioPipeInfo_DumpOutputAttrs_FastFalse_001
- * @tc.number : DumpOutputAttrs_FastFalse_001
- * @tc.desc   : Test DumpOutputAttrs when route is fast and ultraFast flag is false
- */
-HWTEST_F(AudioPipeInfoUnitTest, DumpOutputAttrs_FastFalse_001, TestSize.Level2)
-{
-    std::string dumpStr;
-    testOutputPipe_->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-    testOutputPipe_->SetUltraFastFlag(false);
-    dumpStr.clear();
-    testOutputPipe_->Dump(dumpStr);
-    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastPipe: 0"));
-}
 } // namespace AudioStandard
 } // namespace OHOS

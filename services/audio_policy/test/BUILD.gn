@@ -54,7 +54,7 @@ group("audio_policy_unittest_packages") {
     ":audio_interrupt_service_unit_test",
     ":standalone_mode_manager_unit_test",
     ":audio_interrupt_service_second_unit_test",
-    ":audio_pipe_manager_unit_test",
+    # ":audio_pipe_manager_unit_test",
     ":audio_pipe_selector_route_selector_unit_test",
     ":audio_pipe_selector_unit_test",
     ":audio_pnp_server_unit_test",

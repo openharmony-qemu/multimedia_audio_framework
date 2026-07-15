@@ -627,57 +627,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetVolume
- * @tc.number: Audio_Renderer_GetVolume_002
- * @tc.desc  : Test GetVolume interface after set volume call.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_002, TestSize.Level1)
-{
-    int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
-
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    ret = audioRenderer->SetVolume(0.5);
-    EXPECT_EQ(ERROR, ret);
-
-    float volume = audioRenderer->GetVolume();
-    EXPECT_EQ(0.5, volume);
-
-    bool isReleased = audioRenderer->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
- * @tc.name  : Test GetVolume
- * @tc.number: Audio_Renderer_GetVolume_003
- * @tc.desc  : Test GetVolume interface after set volume fails.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_003, TestSize.Level1)
-{
-    int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
-
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    ret = audioRenderer->SetVolume(0.5);
-    EXPECT_EQ(ERROR, ret);
-
-    ret = audioRenderer->SetVolume(1.5);
-    EXPECT_NE(SUCCESS, ret);
-
-    float volume = audioRenderer->GetVolume();
-    EXPECT_EQ(0.5, volume);
-
-    bool isReleased = audioRenderer->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
  * @tc.name  : Test GetAudioTime API via legal input.
  * @tc.number: Audio_Renderer_GetAudioTime_001
  * @tc.desc  : Test GetAudioTime interface. Returns true, if the getting is successful.

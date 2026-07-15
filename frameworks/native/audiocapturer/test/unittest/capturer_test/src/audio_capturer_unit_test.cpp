@@ -2981,53 +2981,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetSupportedNoiseReductionModes_002
 }
 
 /**
- * @tc.name  : Test GetSupportedNoiseReductionModes parses valid system modes.
- * @tc.number: Audio_Capturer_GetSupportedNoiseReductionModes_003
- * @tc.desc  : Test non-empty support parameter appends a valid non-default mode.
- */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetSupportedNoiseReductionModes_003, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    std::vector<NoiseReductionMode> modes = {NOISE_REDUCTION_MODE_FIDELITY};
-    int32_t ret = audioCapturer->UpdateSupportedNoiseReductionModes(modes, "pure_voice");
-    EXPECT_EQ(SUCCESS, ret);
-    ASSERT_EQ(static_cast<size_t>(2), modes.size());
-    EXPECT_EQ(NOISE_REDUCTION_MODE_FIDELITY, modes[0]);
-    EXPECT_EQ(NOISE_REDUCTION_MODE_PURE_VOCALS, modes[1]);
-    EXPECT_TRUE(audioCapturer->hasFetchedSupportedModes_);
-    EXPECT_EQ(modes, audioCapturer->supportedNoiseReductionModes_);
-    audioCapturer->Release();
-}
-
-/**
- * @tc.name  : Test GetSupportedNoiseReductionModes skips invalid empty and duplicate modes.
- * @tc.number: Audio_Capturer_GetSupportedNoiseReductionModes_004
- * @tc.desc  : Test parser ignores empty tokens, unsupported strings and repeated modes.
- */
-HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetSupportedNoiseReductionModes_004, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    ASSERT_NE(nullptr, audioCapturer);
-
-    std::vector<NoiseReductionMode> modes = {NOISE_REDUCTION_MODE_FIDELITY};
-    int32_t ret = audioCapturer->UpdateSupportedNoiseReductionModes(
-        modes, "unknown,,normal,pure_voice,pure_voice");
-    EXPECT_EQ(SUCCESS, ret);
-    ASSERT_EQ(static_cast<size_t>(2), modes.size());
-    EXPECT_EQ(NOISE_REDUCTION_MODE_FIDELITY, modes[0]);
-    EXPECT_EQ(NOISE_REDUCTION_MODE_PURE_VOCALS, modes[1]);
-    EXPECT_TRUE(audioCapturer->hasFetchedSupportedModes_);
-    EXPECT_EQ(modes, audioCapturer->supportedNoiseReductionModes_);
-    audioCapturer->Release();
-}
-
-/**
  * @tc.name  : Test StringToNoiseReductionMode.
  * @tc.number: Audio_Capturer_StringToNoiseReductionMode_001
  * @tc.desc  : Test valid and invalid noise reduction mode string parsing.

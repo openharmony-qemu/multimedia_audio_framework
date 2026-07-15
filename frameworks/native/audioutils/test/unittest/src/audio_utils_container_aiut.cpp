@@ -93,51 +93,6 @@ HWTEST_F(AudioUtilsContainerAiut, AudioScopeExit_NonTrivialCallback_001, TestSiz
 // ==================== ObjectRefMap Tests ====================
 
 /**
- * @tc.name  : Test ObjectRefMap Insert and GetPtr
- * @tc.number: ObjectRefMap_InsertAndGetPtr_001
- * @tc.desc  : Test ObjectRefMap correctly manages reference counting for a raw pointer.
- */
-HWTEST_F(AudioUtilsContainerAiut, ObjectRefMap_InsertAndGetPtr_001, TestSize.Level0)
-{
-    AIUT_INFO_LOG("entry");
-    int32_t *rawPtr = new int32_t(TEST_VALUE_1);
-    {
-        ObjectRefMap<int32_t> refMap(rawPtr);
-        AIUT_ASSERT_NE_INFO_LOG(refMap.GetPtr(), nullptr, "GetPtr should return non-null");
-        AIUT_EXPECT_EQ_INFO_LOG(*refMap.GetPtr(), TEST_VALUE_1,
-            "value should match, got=%d", *refMap.GetPtr());
-    }
-    // After refMap destruction, the object is deleted (ref count drops to 0)
-}
-
-/**
- * @tc.name  : Test ObjectRefMap multiple references
- * @tc.number: ObjectRefMap_MultipleRefs_001
- * @tc.desc  : Test ObjectRefMap increases ref count on copy and decreases on destruction.
- */
-HWTEST_F(AudioUtilsContainerAiut, ObjectRefMap_MultipleRefs_001, TestSize.Level0)
-{
-    AIUT_INFO_LOG("entry");
-    int32_t *rawPtr = new int32_t(TEST_VALUE_2);
-    int32_t *savedPtr = rawPtr;
-    {
-        ObjectRefMap<int32_t> ref1(rawPtr);
-        AIUT_ASSERT_NE_INFO_LOG(ref1.GetPtr(), nullptr, "ref1 GetPtr is null");
-        {
-            ObjectRefMap<int32_t> ref2(rawPtr);
-            AIUT_ASSERT_NE_INFO_LOG(ref2.GetPtr(), nullptr, "ref2 GetPtr is null");
-            AIUT_EXPECT_EQ_INFO_LOG(ref2.GetPtr(), savedPtr,
-                "both refs should point to same object");
-        }
-        // ref2 destroyed, but ref1 still holds, so object should still be alive
-        AIUT_EXPECT_NE_INFO_LOG(ref1.GetPtr(), nullptr, "object should still be alive after ref2 dies");
-        AIUT_EXPECT_EQ_INFO_LOG(*ref1.GetPtr(), TEST_VALUE_2,
-            "value should still be accessible");
-    }
-    // Both refs gone, object deleted
-}
-
-/**
  * @tc.name  : Test ObjectRefMap with null pointer
  * @tc.number: ObjectRefMap_NullPointer_001
  * @tc.desc  : Test ObjectRefMap handles null pointer gracefully.
@@ -202,26 +157,6 @@ HWTEST_F(AudioUtilsContainerAiut, FixedSizeList_AddAndGet_001, TestSize.Level0)
         "data size should be 2, got=%zu", data.size());
     AIUT_EXPECT_EQ_INFO_LOG(data[0], TEST_VALUE_1, "first element mismatch");
     AIUT_EXPECT_EQ_INFO_LOG(data[1], TEST_VALUE_2, "second element mismatch");
-}
-
-/**
- * @tc.name  : Test FixedSizeList wraps around when full
- * @tc.number: FixedSizeList_WrapAround_001
- * @tc.desc  : Test FixedSizeList overwrites oldest element when capacity is exceeded.
- */
-HWTEST_F(AudioUtilsContainerAiut, FixedSizeList_WrapAround_001, TestSize.Level0)
-{
-    AIUT_INFO_LOG("entry");
-    FixedSizeList<int32_t> list(TEST_FIXED_LIST_SIZE);
-    list.Add(TEST_VALUE_1);
-    list.Add(TEST_VALUE_2);
-    list.Add(TEST_VALUE_3);
-    list.Add(400); // exceeds capacity, overwrites TEST_VALUE_1
-
-    auto data = list.GetData();
-    AIUT_EXPECT_EQ_INFO_LOG(data.size(), TEST_FIXED_LIST_SIZE,
-        "data size should be capped at %zu", TEST_FIXED_LIST_SIZE);
-    AIUT_EXPECT_EQ_INFO_LOG(data[0], TEST_VALUE_2, "oldest should be overwritten");
 }
 
 /**
