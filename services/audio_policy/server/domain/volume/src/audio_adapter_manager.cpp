@@ -35,6 +35,7 @@
 #include "audio_manager_listener_stub_impl.h"
 #include "audio_format_utils.h"
 #include "audio_bundle_manager.h"
+#include "os_account_subprofile_client.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -241,6 +242,12 @@ void AudioAdapterManager::InitKVStoreInternal()
 void AudioAdapterManager::HandleKvData(bool isFirstBoot)
 {
     AUDIO_INFO_LOG("firstBoot %{public}d", isFirstBoot);
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+    int32_t subProfileId = -1;
+    AccountSA::OsAccountSubProfileClient::GetInstance().GetOsAccountForegroundSubProfileId(subProfileId);
+    volumeDataMaintainer_.SetCurrentSubspaceId(subProfileId);
+    AUDIO_INFO_LOG("Initial subspaceId: %{public}d", subProfileId);
+#endif
     InitVolumeMap(isFirstBoot);
     InitRingerMode(isFirstBoot);
     InitMuteStatusMap(isFirstBoot);
@@ -3312,6 +3319,13 @@ void AudioAdapterManager::SetAbsVolumeMuteNearlink(bool mute)
 void AudioAdapterManager::NotifyAccountsChanged(const int &id)
 {
     AUDIO_INFO_LOG("start reload the kv data, current id:%{public}d", id);
+    UpdateVolumeDataForUserSwitch();
+}
+
+void AudioAdapterManager::UpdateVolumeDataForUserSwitch()
+{
+    AUDIO_INFO_LOG("UpdateVolumeDataForUserSwitch");
+    UpdateSubProfileId();
     AudioRingerMode ringerMode = ringerMode_.load();
     volumeDataMaintainer_.GetRingerMode(ringerMode);
     ringerMode_.store(ringerMode);
@@ -3321,6 +3335,43 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
     DealDoNotDisturbStatus();
     DealDoNotDisturbStatusWhiteList();
     HandleAppIndividualVolumeSettingChanged();
+}
+
+void AudioAdapterManager::NotifySubProfileChanged()
+{
+    AUDIO_INFO_LOG("NotifySubProfileChanged");
+    UpdateVolumeDataForUserSwitch();
+}
+
+void AudioAdapterManager::UpdateSubProfileId()
+{
+    std::vector<int> ids;
+    ErrCode result = AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
+    if (result != ERR_OK) {
+        AUDIO_WARNING_LOG("QueryActiveOsAccountIds failed, result: %{public}d", result);
+        return;
+    }
+    if (ids.empty()) {
+        AUDIO_WARNING_LOG("QueryActiveOsAccountIds returned empty ids");
+        return;
+    }
+    AUDIO_INFO_LOG("size: %{public}zu", ids.size());
+    int32_t newSubProfileId = -1;
+    ErrCode ret = AccountSA::OsAccountSubProfileClient::GetInstance()
+        .GetOsAccountForegroundSubProfileId(ids[0], newSubProfileId);
+    if (ret != ERR_OK) {
+        AUDIO_WARNING_LOG("GetOsAccountForegroundSubProfileId failed, ret: %{public}d", ret);
+        return;
+    }
+    int32_t currentSubspaceId = volumeDataMaintainer_.GetCurrentSubspaceId();
+    if (newSubProfileId == currentSubspaceId) {
+        AUDIO_INFO_LOG("SubProfileId not changed, current: %{public}d, new: %{public}d",
+            currentSubspaceId, newSubProfileId);
+        return;
+    }
+    AUDIO_INFO_LOG("SubProfileId changed from %{public}d to %{public}d",
+        currentSubspaceId, newSubProfileId);
+    volumeDataMaintainer_.SetCurrentSubspaceId(newSubProfileId);
 }
 
 void AudioAdapterManager::MuteMediaWhenAccountsChanged()

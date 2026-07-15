@@ -4474,7 +4474,10 @@ ohos_unittest("audio_adapter_manager_ext_unit_test") {
     "-fno-access-control",
   ]
 
-  sources = [ "./unittest/audio_adapter_manager_unit_test/src/audio_adapter_manager_ext_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_adapter_manager_unit_test/src/audio_adapter_manager_ext_unit_test.cpp",
+    "./unittest/audio_adapter_manager_unit_test/src/mock_os_account.cpp",
+  ]
 
   deps = [
     "../../../frameworks/native/audiodefinitions:audio_definitions",

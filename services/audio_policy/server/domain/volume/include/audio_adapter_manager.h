@@ -236,6 +236,9 @@ public:
     int32_t GetStreamVolume(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, AudioStreamType streamType);
 
     void NotifyAccountsChanged(const int &id);
+    void NotifySubProfileChanged();
+    void UpdateVolumeDataForUserSwitch();
+    void UpdateSubProfileId();
 
     void MuteMediaWhenAccountsChanged();
 
