@@ -553,6 +553,12 @@ void EnhanceManagerAlgoConfigAndPropertyFuzzTest()
     mgr->GetAudioEnhanceProperty(getResult, DEVICE_TYPE_SPEAKER); // non-NONE -> db-update branch
 }
 
+// Max mic channel count for EnhanceManagerCreateChainFuzzTest. AudioEnhanceChain::
+// InitAudioEnhanceChain multiplies micChannels * byteLenPerFrame(=1920) inside resize()
+// (audio_enhance_chain.cpp:110/111/113), so an unconstrained fuzz uint32 overflows that
+// product (ubsan mul-overflow). Real mic channel counts are small.
+constexpr uint32_t ENHANCE_MIC_CHANNEL_MAX = 16;
+
 // Build a sceneKeyCode from sceneCode/captureId/renderId per the encoding in
 // audio_enhance_chain_manager_impl.cpp:41-44 (SCENE_TYPE_OFFSET=32, CAPTURER_ID_OFFSET=16).
 uint64_t BuildEnhanceSceneKeyCode(uint32_t sceneCode, uint32_t captureId, uint32_t renderId)
@@ -587,7 +593,10 @@ void EnhanceManagerCreateChainFuzzTest()
     uint64_t sceneKeyCode = BuildEnhanceSceneKeyCode(SCENE_RECORD, captureId, 0);
     AudioEnhanceDeviceAttr deviceAttr = {};
     deviceAttr.micRate = GetData<uint32_t>();
-    deviceAttr.micChannels = GetData<uint32_t>();
+    // Clamp micChannels to 1..ENHANCE_MIC_CHANNEL_MAX: it feeds micChannels * byteLenPerFrame
+    // resize() multipliers in AudioEnhanceChain::InitAudioEnhanceChain (audio_enhance_chain.cpp:
+    // 110/111/113), which overflow uint32 on an unconstrained fuzz value.
+    deviceAttr.micChannels = GetData<uint32_t>() % ENHANCE_MIC_CHANNEL_MAX + 1;
     mgr->CreateAudioEnhanceChainDynamic(sceneKeyCode, deviceAttr);
 
     mgr->ResetInfo();

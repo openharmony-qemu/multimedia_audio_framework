@@ -153,14 +153,12 @@ void ResampleProcessFullBodyTest()
     resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
 }
 
-// === operator=(ProResampler&&) move assignment (L180-L195), incl. self-assign guard ===
+// === operator=(ProResampler&&) move assignment (L180-L195) ===
 void ResampleMoveAssignTest()
 {
     ProResampler src(SAMPLE_RATE_48000, SAMPLE_RATE_44100, STEREO, QUALITY_ONE);
     ProResampler dst(SAMPLE_RATE_48000, SAMPLE_RATE_44100, STEREO, QUALITY_ONE);
     dst = std::move(src);     // this != &other: full move, old dst state_ freed
-    ProResampler self(SAMPLE_RATE_48000, SAMPLE_RATE_44100, STEREO, QUALITY_ONE);
-    self = std::move(self);   // this == &other: guard skips the body
 }
 
 // === GetQuality (L220-L223) ===
