@@ -257,16 +257,16 @@ public:
     virtual void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) = 0;
     virtual void AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
-        const SourceType &sourceType, uint32_t targetStreamId)
+        uint32_t targetStreamId)
     {
         (void)targetStreamId;
-        AddCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
+        AddCaptureInjector(sinkPortIndex, sourcePortIndex, SOURCE_TYPE_VOICE_COMMUNICATION);
     }
     virtual void RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
-        const uint32_t &sourcePortIndex, const SourceType &sourceType, uint32_t targetStreamId)
+        const uint32_t &sourcePortIndex, uint32_t targetStreamId)
     {
         (void)targetStreamId;
-        RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
+        RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, SOURCE_TYPE_VOICE_COMMUNICATION);
     }
     virtual void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) = 0;
     /**

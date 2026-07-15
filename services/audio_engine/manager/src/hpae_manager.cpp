@@ -2916,9 +2916,9 @@ void HpaeManager::RemoveCaptureInjector(
 }
 
 void HpaeManager::AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
-    const uint32_t &sourcePortIndex, const SourceType &sourceType, uint32_t targetStreamId)
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
 {
-    auto request = [this, sinkPortIndex, sourcePortIndex, sourceType, targetStreamId] {
+    auto request = [this, sinkPortIndex, sourcePortIndex, targetStreamId] {
         AUDIO_INFO_LOG("add injection from sink[%{public}u] to source[%{public}u], targetStreamId[%{public}u]",
             sinkPortIndex, sourcePortIndex, targetStreamId);
         CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
@@ -2933,15 +2933,15 @@ void HpaeManager::AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex
         CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
             sourceIdSourceNameMap_[sourcePortIndex].c_str());
         capturerManager->AddCaptureInjectorByTargetStream(sinkVirtualOutputNodeMap_[sinkPortIndex],
-            sourceType, targetStreamId);
+            targetStreamId);
     };
     SendRequest(request, __func__);
 }
 
 void HpaeManager::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
-    const uint32_t &sourcePortIndex, const SourceType &sourceType, uint32_t targetStreamId)
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
 {
-    auto request = [this, sinkPortIndex, sourcePortIndex, sourceType, targetStreamId] {
+    auto request = [this, sinkPortIndex, sourcePortIndex, targetStreamId] {
         AUDIO_INFO_LOG("remove injection from sink[%{public}u] to source[%{public}u], targetStreamId[%{public}u]",
             sinkPortIndex, sourcePortIndex, targetStreamId);
         CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
@@ -2956,7 +2956,7 @@ void HpaeManager::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIn
         CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
             sourceIdSourceNameMap_[sourcePortIndex].c_str());
         capturerManager->RemoveCaptureInjectorByTargetStream(sinkVirtualOutputNodeMap_[sinkPortIndex],
-            sourceType, targetStreamId);
+            targetStreamId);
     };
     SendRequest(request, __func__);
 }

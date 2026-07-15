@@ -49,6 +49,7 @@ public:
     uint32_t GetTokenId();
     void SetMute(bool isMute);
     bool GetMute();
+    void SetInjectorState(bool isInjector);
     static int32_t GetPcEnableState();
     static void SetPcEnableState(int32_t val);
     void SetNodeInfo(HpaeNodeInfo &nodeInfo) override;
@@ -70,6 +71,7 @@ private:
     int32_t appUid_ = -1;
     uint32_t tokenId_ = 0;
     bool isMute_;
+    bool isInjector_ = false;
     std::unique_ptr<AudioHighPassFilter> highpassFilter_;
     int32_t filterChannelCount_;
     bool isSupportHighpassFilter_;

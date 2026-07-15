@@ -68,20 +68,16 @@ public:
     virtual int32_t RemoveCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
         const SourceType &sourceType) = 0;
     virtual int32_t AddCaptureInjectorByTargetStream(
-        const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType,
-        uint32_t targetStreamId)
+        const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
     {
         (void)sinkOutputNode;
-        (void)sourceType;
         (void)targetStreamId;
         return ERR_NOT_SUPPORTED;
     }
     virtual int32_t RemoveCaptureInjectorByTargetStream(
-        const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType,
-        uint32_t targetStreamId)
+        const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
     {
         (void)sinkOutputNode;
-        (void)sourceType;
         (void)targetStreamId;
         return ERR_NOT_SUPPORTED;
     }

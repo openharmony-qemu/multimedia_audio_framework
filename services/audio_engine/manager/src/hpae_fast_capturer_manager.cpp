@@ -92,7 +92,6 @@ int32_t HpaeFastCapturerManager::CreateOutputSession(const HpaeStreamInfo &strea
 
 int32_t HpaeFastCapturerManager::DeleteSessionNodes(uint32_t sessionId)
 {
-    RestoreTargetInjectorIfNeeded(sessionId);
     converterNodeMap_.erase(sessionId);
     return SUCCESS;
 }
@@ -110,7 +109,6 @@ int32_t HpaeFastCapturerManager::ConnectOutputSession(uint32_t sessionId)
 
 int32_t HpaeFastCapturerManager::DisConnectOutputSession(uint32_t sessionId)
 {
-    RestoreTargetInjectorIfNeeded(sessionId);
     auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, sessionId);
     auto converter = SafeGetMap(converterNodeMap_, sessionId);
     CHECK_AND_RETURN_RET_LOG(sourceOutputNode != nullptr && converter != nullptr && mixerNode_ != nullptr, ERROR,
@@ -264,33 +262,7 @@ int32_t HpaeFastCapturerManager::DeInit(bool isMoveDefault)
         std::vector<uint32_t> ids;
         MoveAllStreamToNewSource(name, ids, MOVE_ALL);
     }
-    targetInjectorNodeMap_.clear();
     return SUCCESS;
-}
-
-void HpaeFastCapturerManager::RestoreTargetInjectorIfNeeded(uint32_t sessionId)
-{
-    auto targetIt = targetInjectorNodeMap_.find(sessionId);
-    CHECK_AND_RETURN(targetIt != targetInjectorNodeMap_.end());
-    auto &targetInfo = targetIt->second;
-    if (targetInfo.mixerNode != nullptr) {
-        for (const auto &[sinkOutputNode, converter] : targetInfo.injectorConverterNodeMap) {
-            if (converter != nullptr) {
-                converter->DisConnect(sinkOutputNode);
-                targetInfo.mixerNode->DisConnect(converter);
-            } else {
-                targetInfo.mixerNode->DisConnect(sinkOutputNode);
-            }
-        }
-        if (targetInfo.sourceOutputNode != nullptr && targetInfo.targetConverterNode != nullptr &&
-            mixerNode_ != nullptr) {
-            targetInfo.sourceOutputNode->DisConnect(targetInfo.targetConverterNode);
-            targetInfo.targetConverterNode->DisConnect(targetInfo.mixerNode);
-            targetInfo.targetConverterNode->Connect(mixerNode_);
-            targetInfo.sourceOutputNode->Connect(targetInfo.targetConverterNode);
-        }
-    }
-    targetInjectorNodeMap_.erase(targetIt);
 }
 
 bool HpaeFastCapturerManager::IsInit()
@@ -769,77 +741,45 @@ int32_t HpaeFastCapturerManager::RemoveCaptureInjector(
 }
 
 int32_t HpaeFastCapturerManager::AddCaptureInjectorByTargetStream(
-    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType,
-    uint32_t targetStreamId)
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
 {
-    auto request = [this, sinkOutputNode, sourceType, targetStreamId] {
-        (void)sourceType;
+    auto request = [this, sinkOutputNode, targetStreamId] {
         Trace trace("HpaeFastCapturerManager::AddCaptureInjectorByTargetStream");
         AUDIO_INFO_LOG("add capture injector to target stream %{public}u", targetStreamId);
         CHECK_AND_RETURN_LOG(sinkOutputNode != nullptr, "sinkOutputNode is nullptr");
         auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
-        auto targetConverter = SafeGetMap(converterNodeMap_, targetStreamId);
-        CHECK_AND_RETURN_LOG(sourceOutputNode != nullptr && targetConverter != nullptr && mixerNode_ != nullptr,
-            "target node is not ready");
+        CHECK_AND_RETURN_LOG(sourceOutputNode != nullptr, "target sourceOutputNode is nullptr");
 
-        auto &targetInfo = targetInjectorNodeMap_[targetStreamId];
-        if (targetInfo.mixerNode == nullptr) {
-            HpaeNodeInfo mixerNodeInfo = mixerNode_->GetNodeInfo();
-            targetInfo.mixerNode = std::make_shared<HpaeMixerNode>(mixerNodeInfo);
-            targetInfo.sourceOutputNode = sourceOutputNode;
-            targetInfo.targetConverterNode = targetConverter;
-            sourceOutputNode->DisConnect(targetConverter);
-            targetConverter->DisConnect(mixerNode_);
-            targetInfo.mixerNode->Connect(mixerNode_);
-            targetConverter->Connect(targetInfo.mixerNode);
-            sourceOutputNode->Connect(targetConverter);
-        }
-
-        HpaeNodeInfo sinkNodeInfo = sinkOutputNode->GetNodeInfo();
-        HpaeNodeInfo targetMixerNodeInfo = targetInfo.mixerNode->GetNodeInfo();
-        if (CheckHpaeNodeInfoIsSame(sinkNodeInfo, targetMixerNodeInfo) &&
-            targetInfo.injectorConverterNodeMap.count(sinkOutputNode) == 0) {
-            targetInfo.injectorConverterNodeMap[sinkOutputNode] = nullptr;
-            targetInfo.mixerNode->Connect(sinkOutputNode);
-        } else if (targetInfo.injectorConverterNodeMap.count(sinkOutputNode) == 0) {
-            auto converter = std::make_shared<HpaeAudioFormatConverterNode>(sinkNodeInfo, targetMixerNodeInfo);
-            targetInfo.injectorConverterNodeMap[sinkOutputNode] = converter;
-            targetInfo.mixerNode->Connect(converter);
-            converter->Connect(sinkOutputNode);
-        }
+        // Dual-upstream: keep original converter/mixer upstream, add injector converter as the
+        // second upstream, tagged INJECTOR so GetAndValidateOutput picks it.
+        auto converter = std::make_shared<HpaeAudioFormatConverterNode>(
+            sinkOutputNode->GetNodeInfo(), sourceOutputNode->GetNodeInfo());
+        converter->SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_INJECTOR);
+        sourceOutputNode->Connect(converter);
+        converter->Connect(sinkOutputNode);
+        sourceOutputNode->SetInjectorState(true);
+        injectorFmtConverterNodeMap_[sinkOutputNode] = converter;
     };
     SendRequest(request, __func__);
     return SUCCESS;
 }
 
 int32_t HpaeFastCapturerManager::RemoveCaptureInjectorByTargetStream(
-    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType,
-    uint32_t targetStreamId)
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
 {
-    auto request = [this, sinkOutputNode, sourceType, targetStreamId] {
-        (void)sourceType;
+    auto request = [this, sinkOutputNode, targetStreamId] {
         Trace trace("HpaeFastCapturerManager::RemoveCaptureInjectorByTargetStream");
         AUDIO_INFO_LOG("remove capture injector from target stream %{public}u", targetStreamId);
         CHECK_AND_RETURN_LOG(sinkOutputNode != nullptr, "sinkOutputNode is nullptr");
-        auto targetIt = targetInjectorNodeMap_.find(targetStreamId);
-        CHECK_AND_RETURN_LOG(targetIt != targetInjectorNodeMap_.end(), "target stream not in injector map");
-        auto &targetInfo = targetIt->second;
-        CHECK_AND_RETURN_LOG(targetInfo.mixerNode != nullptr, "target mixer is nullptr");
-
-        HpaeNodeInfo sinkNodeInfo = sinkOutputNode->GetNodeInfo();
-        HpaeNodeInfo targetMixerNodeInfo = targetInfo.mixerNode->GetNodeInfo();
-        if (CheckHpaeNodeInfoIsSame(sinkNodeInfo, targetMixerNodeInfo)) {
-            targetInfo.mixerNode->DisConnect(sinkOutputNode);
-            targetInfo.injectorConverterNodeMap.erase(sinkOutputNode);
-        } else if (auto converter = SafeGetMap(targetInfo.injectorConverterNodeMap, sinkOutputNode)) {
-            converter->DisConnect(sinkOutputNode);
-            targetInfo.mixerNode->DisConnect(converter);
-            targetInfo.injectorConverterNodeMap.erase(sinkOutputNode);
+        auto converter = SafeGetMap(injectorFmtConverterNodeMap_, sinkOutputNode);
+        CHECK_AND_RETURN_LOG(converter != nullptr, "injector converter not exist for sinkOutputNode");
+        auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
+        if (sourceOutputNode != nullptr) {
+            sourceOutputNode->DisConnect(converter);
+            sourceOutputNode->SetInjectorState(false);
         }
-
-        if (targetInfo.injectorConverterNodeMap.empty()) {
-            RestoreTargetInjectorIfNeeded(targetStreamId);
-        }
+        converter->DisConnect(sinkOutputNode);
+        injectorFmtConverterNodeMap_.erase(sinkOutputNode);
     };
     SendRequest(request, __func__);
     return SUCCESS;

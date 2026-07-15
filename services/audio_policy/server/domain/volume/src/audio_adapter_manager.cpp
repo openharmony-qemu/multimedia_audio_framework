@@ -3652,18 +3652,17 @@ void AudioAdapterManager::RemoveCaptureInjector(const uint32_t &sinkPortIndex, c
 }
 
 void AudioAdapterManager::AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
-    const uint32_t &sourcePortIndex, const SourceType &sourceType, uint32_t targetStreamId)
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
 {
     CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "ServiceAdapter is null");
-    audioServiceAdapter_->AddCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex, sourceType, targetStreamId);
+    audioServiceAdapter_->AddCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex, targetStreamId);
 }
 
 void AudioAdapterManager::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
-    const uint32_t &sourcePortIndex, const SourceType &sourceType, uint32_t targetStreamId)
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
 {
     CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "ServiceAdapter is null");
-    audioServiceAdapter_->RemoveCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex, sourceType,
-        targetStreamId);
+    audioServiceAdapter_->RemoveCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex, targetStreamId);
 }
 
 void AudioAdapterManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo)

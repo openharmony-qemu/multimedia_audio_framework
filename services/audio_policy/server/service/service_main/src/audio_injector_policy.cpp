@@ -414,8 +414,7 @@ int32_t AudioInjectorPolicy::AddCaptureInjectorByTargetStreamInner(uint32_t targ
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
         CHECK_AND_RETURN_RET_LOG(ValidStreamId(targetStreamId), ERR_INVALID_PARAM,
             "Injector::targetStreamId is invalid");
-        audioPolicyManager_.AddCaptureInjectorByTargetStream(renderPortIdx_, capturePortIdx_,
-            SOURCE_TYPE_VOICE_COMMUNICATION, targetStreamId);
+        audioPolicyManager_.AddCaptureInjectorByTargetStream(renderPortIdx_, capturePortIdx_, targetStreamId);
         if (voipType_ == FAST_VOIP) {
             UpdateAudioInfo(moduleInfo_);
         }
@@ -467,7 +466,7 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjectorByTargetStreamInner(bool noCap
     if (isConnected_ && flag) {
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
         audioPolicyManager_.RemoveCaptureInjectorByTargetStream(renderPortIdx_, capturePortIdx_,
-            SOURCE_TYPE_VOICE_COMMUNICATION, activeTargetStreamId_);
+            activeTargetStreamId_);
         isConnected_ = false;
         capturePortIdx_ = HDI_INVALID_ID;
         voipType_ = NO_VOIP;

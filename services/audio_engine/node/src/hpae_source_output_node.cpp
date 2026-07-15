@@ -129,11 +129,29 @@ HpaePcmBuffer *HpaeSourceOutputNode::GetAndValidateOutput()
         AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), data read is empty", GetSessionId());
         return nullptr;
     }
-    HpaePcmBuffer *outputData = outputVec.front();
+    HpaePcmBuffer *outputData = nullptr;
+    if (isInjector_) {
+        for (auto *buffer : outputVec) {
+            if (buffer != nullptr && buffer->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_INJECTOR) {
+                outputData = buffer;
+                break;
+            }
+        }
+    } else {
+        outputData = outputVec.front();
+    }
+    if (outputData == nullptr) {
+        return nullptr;
+    }
     if (!outputData->IsValid() && GetNodeInfo().sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         return nullptr;
     }
     return outputData;
+}
+
+void HpaeSourceOutputNode::SetInjectorState(bool isInjector)
+{
+    isInjector_ = isInjector;
 }
 
 void HpaeSourceOutputNode::ProcessAudioData(HpaePcmBuffer *outputData)

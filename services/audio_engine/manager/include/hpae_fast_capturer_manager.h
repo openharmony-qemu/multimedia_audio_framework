@@ -83,9 +83,9 @@ public:
     int32_t RemoveCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
         const SourceType &sourceType) override;
     int32_t AddCaptureInjectorByTargetStream(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
-        const SourceType &sourceType, uint32_t targetStreamId) override;
+        uint32_t targetStreamId) override;
     int32_t RemoveCaptureInjectorByTargetStream(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
-        const SourceType &sourceType, uint32_t targetStreamId) override;
+        uint32_t targetStreamId) override;
     void TriggerAppsUidUpdate(uint32_t sessionId) override;
     int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) override;
 
@@ -99,7 +99,6 @@ private:
     int32_t DeleteSessionNodes(uint32_t sessionId);
     int32_t ConnectOutputSession(uint32_t sessionId);
     int32_t DisConnectOutputSession(uint32_t sessionId);
-    void RestoreTargetInjectorIfNeeded(uint32_t sessionId);
     int32_t DeleteOutputSession(uint32_t sessionId);
     void AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveInfo, bool isConnect = true);
     void MoveAllStreamToNewSource(const std::string &sourceName,
@@ -112,14 +111,6 @@ private:
         uint32_t appUid = INVALID_UID, bool mute = false);
     void StopOutputNode();
 
-    struct TargetInjectorNodeInfo {
-        std::shared_ptr<HpaeMixerNode> mixerNode = nullptr;
-        std::shared_ptr<HpaeSourceOutputNode> sourceOutputNode = nullptr;
-        std::shared_ptr<HpaeAudioFormatConverterNode> targetConverterNode = nullptr;
-        std::unordered_map<std::shared_ptr<OutputNode<HpaePcmBuffer*>>,
-            std::shared_ptr<HpaeAudioFormatConverterNode>> injectorConverterNodeMap = {};
-    };
-
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::unordered_map<uint32_t, HpaeCapturerSessionInfo> sessionNodeMap_;
@@ -127,7 +118,6 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> converterNodeMap_;
     std::unordered_map<std::shared_ptr<OutputNode<HpaePcmBuffer*>>,
         std::shared_ptr<HpaeAudioFormatConverterNode>> injectorFmtConverterNodeMap_;
-    std::unordered_map<uint32_t, TargetInjectorNodeInfo> targetInjectorNodeMap_;
     std::shared_ptr<HpaeFastSourceInputNode> sourceInputNode_ = nullptr;
     std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;
 

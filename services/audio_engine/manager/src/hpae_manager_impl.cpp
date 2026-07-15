@@ -959,17 +959,17 @@ void HpaeManagerImpl::RemoveCaptureInjector(
 }
 
 void HpaeManagerImpl::AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
-    const uint32_t &sourcePortIndex, const SourceType &sourceType, uint32_t targetStreamId)
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->AddCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex, sourceType, targetStreamId);
+    manager_->AddCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex, targetStreamId);
 }
 
 void HpaeManagerImpl::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
-    const uint32_t &sourcePortIndex, const SourceType &sourceType, uint32_t targetStreamId)
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->RemoveCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex, sourceType, targetStreamId);
+    manager_->RemoveCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex, targetStreamId);
 }
 
 int32_t HpaeManagerImpl::PeekAudioData(

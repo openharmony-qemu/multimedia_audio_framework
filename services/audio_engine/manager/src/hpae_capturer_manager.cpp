@@ -210,7 +210,6 @@ void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProce
 int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId, bool keepSessionMaps)
 {
     AUDIO_INFO_LOG("delete output node:%{public}d, source name:%{public}s", sessionId, sourceInfo_.deviceClass.c_str());
-    RestoreTargetInjectorIfNeeded(sessionId);
     auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, sessionId);
     if (!sourceOutputNode) {
         NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE, sessionId, CAPTURER_INVALID);
@@ -466,7 +465,6 @@ int32_t HpaeCapturerManager::Start(uint32_t sessionId)
 
 int32_t HpaeCapturerManager::DisConnectOutputSession(uint32_t sessionId)
 {
-    RestoreTargetInjectorIfNeeded(sessionId);
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     if (sceneType != HPAE_SCENE_EFFECT_NONE && SafeGetMap(sceneClusterMap_, sceneType)) {
         // 1. Disconnect SourceOutputNode and ResampleNode
@@ -1003,34 +1001,8 @@ int32_t HpaeCapturerManager::DeInit(bool isMoveDefault)
         AUDIO_INFO_LOG("move all source to default source");
         MoveAllStreamToNewSource(name, ids, MOVE_ALL);
     }
-    targetInjectorNodeMap_.clear();
     sourceInputClusterMap_.clear();
     return SUCCESS;
-}
-
-void HpaeCapturerManager::RestoreTargetInjectorIfNeeded(uint32_t sessionId)
-{
-    auto targetIt = targetInjectorNodeMap_.find(sessionId);
-    CHECK_AND_RETURN(targetIt != targetInjectorNodeMap_.end());
-    auto &targetInfo = targetIt->second;
-    if (targetInfo.mixerNode != nullptr) {
-        for (const auto &[sinkOutputNode, converter] : targetInfo.injectorConverterNodeMap) {
-            if (converter != nullptr) {
-                converter->DisConnect(sinkOutputNode);
-                targetInfo.mixerNode->DisConnect(converter);
-            } else {
-                targetInfo.mixerNode->DisConnect(sinkOutputNode);
-            }
-        }
-        if (targetInfo.sourceOutputNode != nullptr && targetInfo.upstreamNode != nullptr) {
-            targetInfo.sourceOutputNode->DisConnect(targetInfo.mixerNode);
-            targetInfo.sourceOutputNode->ConnectWithInfo(targetInfo.upstreamNode, targetInfo.targetNodeInfo);
-        }
-    }
-    targetInjectorNodeMap_.erase(targetIt);
-    auto inputCluster = SafeGetMap(sourceInputClusterMap_, mainMicType_);
-    CHECK_AND_RETURN(inputCluster != nullptr);
-    inputCluster->SetInjectState(!targetInjectorNodeMap_.empty());
 }
 
 bool HpaeCapturerManager::DeactivateThread()
@@ -1348,50 +1320,25 @@ int32_t HpaeCapturerManager::RemoveCaptureInjector(const std::shared_ptr<OutputN
 }
 
 int32_t HpaeCapturerManager::AddCaptureInjectorByTargetStream(
-    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType,
-    uint32_t targetStreamId)
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
 {
-    auto request = [this, sinkOutputNode, sourceType, targetStreamId] {
-        (void)sourceType;
+    auto request = [this, sinkOutputNode, targetStreamId] {
         Trace trace("HpaeCapturerManager::AddCaptureInjectorByTargetStream");
         AUDIO_INFO_LOG("add capture injector to target stream %{public}u", targetStreamId);
         CHECK_AND_RETURN_LOG(sinkOutputNode != nullptr, "sinkOutputNode is nullptr");
         auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
         CHECK_AND_RETURN_LOG(sourceOutputNode != nullptr, "target sourceOutputNode is nullptr");
-        auto sessionIt = sessionNodeMap_.find(targetStreamId);
-        CHECK_AND_RETURN_LOG(sessionIt != sessionNodeMap_.end(), "target session is not found");
 
-        auto &targetInfo = targetInjectorNodeMap_[targetStreamId];
-        if (targetInfo.mixerNode == nullptr) {
-            HpaeProcessorType sceneType = sessionIt->second.sceneType;
-            std::shared_ptr<OutputNode<HpaePcmBuffer*>> upstreamNode = nullptr;
-            if (sceneType != HPAE_SCENE_EFFECT_NONE && SafeGetMap(sceneClusterMap_, sceneType)) {
-                upstreamNode = sceneClusterMap_[sceneType];
-            } else {
-                upstreamNode = SafeGetMap(sourceInputClusterMap_, mainMicType_);
-            }
-            CHECK_AND_RETURN_LOG(upstreamNode != nullptr, "target upstream node is nullptr");
-            targetInfo.sourceOutputNode = sourceOutputNode;
-            targetInfo.upstreamNode = upstreamNode;
-            targetInfo.targetNodeInfo = sourceOutputNode->GetNodeInfo();
-            sourceOutputNode->DisConnectWithInfo(upstreamNode, targetInfo.targetNodeInfo);
-            targetInfo.mixerNode = std::make_shared<HpaeMixerNode>(targetInfo.targetNodeInfo);
-            targetInfo.mixerNode->ConnectWithInfo(upstreamNode, targetInfo.targetNodeInfo);
-            sourceOutputNode->Connect(targetInfo.mixerNode);
-        }
-
-        HpaeNodeInfo sinkNodeInfo = sinkOutputNode->GetNodeInfo();
-        HpaeNodeInfo mixerNodeInfo = targetInfo.mixerNode->GetNodeInfo();
-        if (CheckHpaeNodeInfoIsSame(sinkNodeInfo, mixerNodeInfo) &&
-            targetInfo.injectorConverterNodeMap.count(sinkOutputNode) == 0) {
-            targetInfo.injectorConverterNodeMap[sinkOutputNode] = nullptr;
-            targetInfo.mixerNode->Connect(sinkOutputNode);
-        } else if (targetInfo.injectorConverterNodeMap.count(sinkOutputNode) == 0) {
-            auto converter = std::make_shared<HpaeAudioFormatConverterNode>(sinkNodeInfo, mixerNodeInfo);
-            targetInfo.injectorConverterNodeMap[sinkOutputNode] = converter;
-            targetInfo.mixerNode->Connect(converter);
-            converter->Connect(sinkOutputNode);
-        }
+        // Dual-upstream: keep original mic/sceneCluster upstream, add injector converter as the
+        // second upstream. converterOutput is tagged INJECTOR so GetAndValidateOutput picks it
+        // (plain Connect is used, so converter.ConnectWithInfo will NOT overwrite the tag).
+        auto converter = std::make_shared<HpaeAudioFormatConverterNode>(
+            sinkOutputNode->GetNodeInfo(), sourceOutputNode->GetNodeInfo());
+        converter->SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_INJECTOR);
+        sourceOutputNode->Connect(converter);
+        converter->Connect(sinkOutputNode);
+        sourceOutputNode->SetInjectorState(true);
+        injectorFmtConverterNodeMap_[sinkOutputNode] = converter;
         auto inputCluster = SafeGetMap(sourceInputClusterMap_, mainMicType_);
         CHECK_AND_RETURN_LOG(inputCluster != nullptr, "mainMic is nullptr, set inject state failed");
         inputCluster->SetInjectState(true);
@@ -1401,33 +1348,24 @@ int32_t HpaeCapturerManager::AddCaptureInjectorByTargetStream(
 }
 
 int32_t HpaeCapturerManager::RemoveCaptureInjectorByTargetStream(
-    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType,
-    uint32_t targetStreamId)
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
 {
-    auto request = [this, sinkOutputNode, sourceType, targetStreamId] {
-        (void)sourceType;
+    auto request = [this, sinkOutputNode, targetStreamId] {
         Trace trace("HpaeCapturerManager::RemoveCaptureInjectorByTargetStream");
         AUDIO_INFO_LOG("remove capture injector from target stream %{public}u", targetStreamId);
         CHECK_AND_RETURN_LOG(sinkOutputNode != nullptr, "sinkOutputNode is nullptr");
-        auto targetIt = targetInjectorNodeMap_.find(targetStreamId);
-        CHECK_AND_RETURN_LOG(targetIt != targetInjectorNodeMap_.end(), "target stream not in injector map");
-        auto &targetInfo = targetIt->second;
-        CHECK_AND_RETURN_LOG(targetInfo.mixerNode != nullptr, "target mixer is nullptr");
-
-        HpaeNodeInfo sinkNodeInfo = sinkOutputNode->GetNodeInfo();
-        HpaeNodeInfo mixerNodeInfo = targetInfo.mixerNode->GetNodeInfo();
-        if (CheckHpaeNodeInfoIsSame(sinkNodeInfo, mixerNodeInfo)) {
-            targetInfo.mixerNode->DisConnect(sinkOutputNode);
-            targetInfo.injectorConverterNodeMap.erase(sinkOutputNode);
-        } else if (auto converter = SafeGetMap(targetInfo.injectorConverterNodeMap, sinkOutputNode)) {
-            converter->DisConnect(sinkOutputNode);
-            targetInfo.mixerNode->DisConnect(converter);
-            targetInfo.injectorConverterNodeMap.erase(sinkOutputNode);
+        auto converter = SafeGetMap(injectorFmtConverterNodeMap_, sinkOutputNode);
+        CHECK_AND_RETURN_LOG(converter != nullptr, "injector converter not exist for sinkOutputNode");
+        auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
+        if (sourceOutputNode != nullptr) {
+            sourceOutputNode->DisConnect(converter);
+            sourceOutputNode->SetInjectorState(false);
         }
-
-        if (targetInfo.injectorConverterNodeMap.empty()) {
-            RestoreTargetInjectorIfNeeded(targetStreamId);
-        }
+        converter->DisConnect(sinkOutputNode);
+        injectorFmtConverterNodeMap_.erase(sinkOutputNode);
+        auto inputCluster = SafeGetMap(sourceInputClusterMap_, mainMicType_);
+        CHECK_AND_RETURN_LOG(inputCluster != nullptr, "mainMic is nullptr, remove inject state failed");
+        inputCluster->SetInjectState(false);
     };
     SendRequest(request, __func__);
     return SUCCESS;
