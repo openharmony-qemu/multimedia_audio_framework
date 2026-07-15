@@ -243,13 +243,13 @@ AudioDeviceDescriptor MediaBluetoothDeviceManager::HandleConnectDeviceInner(cons
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceCategory_ = bluetoothCategory;
-    desc.isSupportWearDetectionEnable_ = true;
     switch (bluetoothCategory) {
         case BT_GLASSES:
         case BT_HEADPHONE:
             if (IsBTWearDetectionEnable(device)) {
                 AddDeviceInConfigVector(device, negativeDevices_);
                 desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
+                desc.isSupportWearDetectionEnable_ = true;
             } else {
                 AddDeviceInConfigVector(device, privacyDevices_);
             }
