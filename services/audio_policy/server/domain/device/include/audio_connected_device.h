@@ -58,6 +58,8 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType);
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress);
+    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
+        DeviceRole deviceRole);
     void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType);
@@ -79,6 +81,8 @@ public:
     void RegisterNameMonitorHelper();
     bool IsEmpty();
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceByDeviceType(DeviceType type,
+        std::string networkId = LOCAL_NETWORK_ID);
+    std::shared_ptr<AudioDeviceDescriptor> GetOutputDeviceByDeviceType(DeviceType type,
         std::string networkId = LOCAL_NETWORK_ID);
     std::unordered_set<DeviceType> GetAllOutputDeviceTypes();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAllOutputDevices();

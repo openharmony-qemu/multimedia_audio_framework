@@ -165,6 +165,25 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceB
     return nullptr;
 }
 
+std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceByType(
+    std::string networkId, DeviceType deviceType, DeviceRole deviceRole)
+{
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    auto isPresent = [&networkId, &deviceType, &deviceRole] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+        if (deviceType == desc->deviceType_ && networkId == desc->networkId_ &&
+            deviceRole == desc->deviceRole_) {
+            return true;
+        }
+        return false;
+    };
+    auto it = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    if (it != connectedDevices_.end()) {
+        return *it;
+    }
+    return nullptr;
+}
+
 void AudioConnectedDevice::GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
     std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
 {
@@ -521,6 +540,24 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetDeviceByDeviceTy
     CHECK_AND_RETURN_RET_LOG(type != DEVICE_TYPE_NONE, defaultOutputDevice_, "device type is none");
     CHECK_AND_RETURN_RET_LOG(!IsEmpty(), defaultOutputDevice_, "no device connected");
     std::shared_ptr<AudioDeviceDescriptor> device = GetConnectedDeviceByType(networkId, type);
+    CHECK_AND_RETURN_RET(device == nullptr, device);
+
+    device = AudioZoneService::GetInstance().GetDeviceDescriptor(type, networkId);
+    CHECK_AND_RETURN_RET(device == nullptr, device);
+
+    device = std::make_shared<AudioDeviceDescriptor>(type, OUTPUT_DEVICE);
+    device->networkId_ = networkId;
+    AUDIO_ERR_LOG("Get device failed, make new %{public}s", device->GetName().c_str());
+    return device;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetOutputDeviceByDeviceType(DeviceType type,
+    std::string networkId)
+{
+    CHECK_AND_RETURN_RET_LOG(type != DEVICE_TYPE_NONE, defaultOutputDevice_, "device type is none");
+    CHECK_AND_RETURN_RET_LOG(!IsEmpty(), defaultOutputDevice_, "no device connected");
+    std::shared_ptr<AudioDeviceDescriptor> device = GetConnectedDeviceByType(networkId, type,
+        OUTPUT_DEVICE);
     CHECK_AND_RETURN_RET(device == nullptr, device);
 
     device = AudioZoneService::GetInstance().GetDeviceDescriptor(type, networkId);
