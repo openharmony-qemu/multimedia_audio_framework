@@ -317,7 +317,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     AudioStreamType eStreamType, int32_t appUid)
 {
     Trace trace("IAudioStream::GetRecordStream");
-    if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
+    if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM || streamClass == PA_STREAM) {
         HILOG_COMM_INFO("[GetRecordStream]Create capturer in client for record stream");
         return CapturerInClient::GetInstance(eStreamType, appUid);
     }
