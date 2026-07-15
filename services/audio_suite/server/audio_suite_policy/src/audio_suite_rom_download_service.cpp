@@ -42,12 +42,6 @@ namespace AudioSuite {
 
 static constexpr const char* TASK_ID = "AudioSuiteSaUnloadTask";
 static constexpr int32_t DELAY_TIME = 300000; // 5 minutes in milliseconds
-namespace {
-#ifndef AUDIOSUITE_SA_UT
-    __attribute__((constructor)) void LibraryLoaded() {
-    }
-#endif
-}
 
 #ifndef AUDIOSUITE_SA_UT
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioSuiteRomDownloadService, AudioSuiteRomDownloadService::SA_ID, true);
@@ -118,14 +112,6 @@ void AudioSuiteRomDownloadService::OnStop()
     downloadCallback_ = nullptr;
     updateEngineCallback_ = nullptr;
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService: OnStop completed");
-}
-
-int32_t AudioSuiteRomDownloadService::Dump(int32_t fd, const std::vector<std::u16string>& args)
-{
-    AUDIO_INFO_LOG("AudioSuiteRomDownloadService::Dump");
-    dprintf(fd, "AudioSuiteRomDownloadService:");
-    dprintf(fd, "SA ID: %d", AudioSuiteRomDownloadService::SA_ID);
-    return 0;
 }
 
 ErrCode AudioSuiteRomDownloadService::RegisterDownloadCallback(const sptr<IRemoteObject>& callback, ErrCode& result)
