@@ -259,7 +259,7 @@ public:
     HdPlaybackMode hdPlaybackMode_ = HD_NOT_SUPPORTED;
     bool isSupportRemoteMultichannel_ = true;
     uint32_t deviceTokenId_ = 0;
-    bool isBTSupportWearDetectionEnable_ = false;
+    bool isSupportWearDetectionEnable_ = false;
     bool isSupportMultiZone_ = false;
     VisibleMode visibleMode_ = GLOBAL_VISIBLE;
 
