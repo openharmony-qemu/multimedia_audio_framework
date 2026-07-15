@@ -953,8 +953,8 @@ void AudioPolicyServer::SubscribeOsAccountSubProfileChangeEvents()
 {
     AUDIO_INFO_LOG("SubscribeOsAccountSubProfileChangeEvents start");
     if (subProfileObserver_ == nullptr) {
-        std::set<AccountSA::DistributedAccountSubProfileEventType> types = {
-            AccountSA::DistributedAccountSubProfileEventType::SWITCHED
+        std::set<AccountSA::OsAccountSubProfileEventType> types = {
+            AccountSA::OsAccountSubProfileEventType::SWITCHED
         };
         subProfileObserver_ = std::make_shared<AudioSubProfileObserver>(this);
         ErrCode errCode = AccountSA::OsAccountSubProfileClient::GetInstance()

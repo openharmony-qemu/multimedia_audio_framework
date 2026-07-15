@@ -62,7 +62,7 @@
 #include "boot_animation_state_info.h"
 #include "audio_loopback_manager.h"
 #include "os_account_subprofile_client.h"
-#include "distributed_account_subscribe_callback.h"
+#include "os_account_sub_profile_subscribe_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1075,7 +1075,7 @@ private:
     AudioPolicyServer *audioPolicyServer_;
 };
 
-class AudioSubProfileObserver : public AccountSA::DistributedAccountSubscribeCallback {
+class AudioSubProfileObserver : public AccountSA::OsAccountSubProfileSubscribeCallback {
 public:
     explicit AudioSubProfileObserver(AudioPolicyServer *audioPolicyServer)
         : audioPolicyServer_(audioPolicyServer) {}
@@ -1085,13 +1085,13 @@ public:
         AUDIO_WARNING_LOG("Destructor AudioSubProfileObserver");
     }
 
-    void OnSubProfileAccountsChanged(
-        const AccountSA::DistributedAccountSubProfileEventData &eventData) override
+    void OnSubProfileChanged(
+        const AccountSA::SubProfileEventData &eventData) override
     {
-        AUDIO_INFO_LOG("OnSubProfileAccountsChanged received, type: %{public}d, osAccountId: %{public}d,"
+        AUDIO_INFO_LOG("OnSubProfileChanged received, type: %{public}d, osAccountId: %{public}d,"
             " subspaceId: %{public}d, previousSubspaceId: %{public}d",
             static_cast<int32_t>(eventData.type_), eventData.osAccountId_,
-            eventData.subspaceId_, eventData.previousSubspaceId_);
+            eventData.subProfileId_, eventData.previousSubProfileId_);
         if (audioPolicyServer_ != nullptr) {
             audioPolicyServer_->NotifySubProfileChanged();
         }
