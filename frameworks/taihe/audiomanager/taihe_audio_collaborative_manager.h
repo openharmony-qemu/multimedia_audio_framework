@@ -35,7 +35,6 @@ public:
     bool IsCollaborativePlaybackSupported();
     bool IsCollaborativePlaybackSupportedForDevice(AudioDeviceDescriptor deviceDescriptor);
     bool IsCollaborativePlaybackEnabledForDevice(AudioDeviceDescriptor deviceDescriptor);
-    void SetCollaborativePlaybackEnabledForDevicePromise(AudioDeviceDescriptor deviceDescriptor, bool enabled);
     void SetCollaborativePlaybackEnabledForDeviceSync(AudioDeviceDescriptor deviceDescriptor, bool enabled);
 
     OHOS::AudioStandard::AudioCollaborativeManager *audioCollaborativeMngr_;

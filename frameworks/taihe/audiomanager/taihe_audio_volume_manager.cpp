@@ -47,16 +47,6 @@ AudioVolumeManagerImpl::~AudioVolumeManagerImpl()
     AUDIO_DEBUG_LOG("AudioVolumeManagerImpl::~AudioVolumeManagerImpl()");
 }
 
-array<VolumeGroupInfo> AudioVolumeManagerImpl::GetVolumeGroupInfosAsync(string_view networkId)
-{
-    return GetVolumeGroupInfosSync(networkId);
-}
-
-array<VolumeGroupInfo> AudioVolumeManagerImpl::GetVolumeGroupInfosPromise(string_view networkId)
-{
-    return GetVolumeGroupInfosSync(networkId);
-}
-
 array<VolumeGroupInfo> AudioVolumeManagerImpl::GetVolumeGroupInfosSync(string_view networkId)
 {
     std::string innerNetworkId = std::string(networkId);
@@ -69,11 +59,6 @@ array<VolumeGroupInfo> AudioVolumeManagerImpl::GetVolumeGroupInfosSync(string_vi
     int32_t ret = audioSystemMngr_->GetVolumeGroups(innerNetworkId, volumeGroupInfos);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, array<VolumeGroupInfo>(emptyResult), "GetVolumeGroups failure!");
     return TaiheParamUtils::SetVolumeGroupInfos(volumeGroupInfos);
-}
-
-int32_t AudioVolumeManagerImpl::GetAppVolumePercentageForUidPromise(int32_t uid)
-{
-    return GetAppVolumePercentageForUidSync(uid);
 }
 
 int32_t AudioVolumeManagerImpl::GetAppVolumePercentageForUidSync(int32_t uid)
@@ -96,11 +81,6 @@ int32_t AudioVolumeManagerImpl::GetAppVolumePercentageForUidSync(int32_t uid)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
         return volPercent;
     }
-}
-
-void AudioVolumeManagerImpl::SetAppVolumePercentageForUidPromise(int32_t uid, int32_t volume)
-{
-    return SetAppVolumePercentageForUidSync(uid, volume);
 }
 
 void AudioVolumeManagerImpl::SetAppVolumePercentageForUidSync(int32_t uid, int32_t volume)
@@ -132,11 +112,6 @@ void AudioVolumeManagerImpl::SetAppVolumePercentageForUidSync(int32_t uid, int32
     }
 }
 
-bool AudioVolumeManagerImpl::IsAppVolumeMutedForUidPromise(int32_t uid, bool owned)
-{
-    return IsAppVolumeMutedForUidSync(uid, owned);
-}
-
 bool AudioVolumeManagerImpl::IsAppVolumeMutedForUidSync(int32_t uid, bool owned)
 {
     int32_t appUid = uid;
@@ -158,11 +133,6 @@ bool AudioVolumeManagerImpl::IsAppVolumeMutedForUidSync(int32_t uid, bool owned)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
         return isMute;
     }
-}
-
-void AudioVolumeManagerImpl::SetAppVolumeMutedForUidPromise(int32_t uid, bool muted)
-{
-    return SetAppVolumeMutedForUidSync(uid, muted);
 }
 
 void AudioVolumeManagerImpl::SetAppVolumeMutedForUidSync(int32_t uid, bool muted)
@@ -187,11 +157,6 @@ void AudioVolumeManagerImpl::SetAppVolumeMutedForUidSync(int32_t uid, bool muted
     }
 }
 
-int32_t AudioVolumeManagerImpl::GetAppVolumePercentagePromise()
-{
-    return GetAppVolumePercentageSync();
-}
-
 int32_t AudioVolumeManagerImpl::GetAppVolumePercentageSync()
 {
     int32_t volLevel = 0;
@@ -206,11 +171,6 @@ int32_t AudioVolumeManagerImpl::GetAppVolumePercentageSync()
     } else {
         return volLevel;
     }
-}
-
-void AudioVolumeManagerImpl::SetAppVolumePercentagePromise(int32_t volume)
-{
-    return SetAppVolumePercentageSync(volume);
 }
 
 void AudioVolumeManagerImpl::SetAppVolumePercentageSync(int32_t volume)
@@ -598,11 +558,6 @@ int32_t AudioVolumeManagerImpl::GetSystemVolumeByUid(AudioVolumeType volumeType,
     return volLevel;
 }
 
-void AudioVolumeManagerImpl::SetSystemVolumeByUidPromise(AudioVolumeType volumeType, int32_t volume, int32_t callingUid)
-{
-    return SetSystemVolumeByUidSync(volumeType, volume, callingUid);
-}
-
 void AudioVolumeManagerImpl::SetSystemVolumeByUidSync(AudioVolumeType volumeType, int32_t volume, int32_t callingUid)
 {
     int32_t volType = volumeType.get_value();
@@ -659,16 +614,6 @@ AudioVolumeManager AudioVolumeManagerImpl::CreateVolumeManagerWrapper()
     }
     TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioVolMngrImpl is nullptr");
     return make_holder<AudioVolumeManagerImpl, AudioVolumeManager>(nullptr);
-}
-
-AudioVolumeGroupManager AudioVolumeManagerImpl::GetVolumeGroupManagerAsync(int32_t groupId)
-{
-    return GetVolumeGroupManagerSync(groupId);
-}
-
-AudioVolumeGroupManager AudioVolumeManagerImpl::GetVolumeGroupManagerPromise(int32_t groupId)
-{
-    return GetVolumeGroupManagerSync(groupId);
 }
 
 AudioVolumeGroupManager AudioVolumeManagerImpl::GetVolumeGroupManagerSync(int32_t groupId)
@@ -1216,11 +1161,6 @@ int32_t AudioVolumeManagerImpl::GetSystemVolumePercentage(AudioVolumeType volume
 
     int32_t systemVolume = audioSystemMngr_->GetVolumeDegree(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
     return systemVolume;
-}
-
-void AudioVolumeManagerImpl::SetSystemVolumePercentagePromise(AudioVolumeType volumeType, int32_t percentage)
-{
-    return SetSystemVolumePercentageSync(volumeType, percentage);
 }
 
 void AudioVolumeManagerImpl::SetSystemVolumePercentageSync(AudioVolumeType volumeType, int32_t percentage)

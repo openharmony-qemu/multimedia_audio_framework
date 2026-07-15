@@ -148,16 +148,6 @@ AudioRendererOrNull AudioRendererImpl::CreateAudioRendererWrapper(
 #endif
 }
 
-void AudioRendererImpl::StartAsync()
-{
-    return StartSync();
-}
-
-void AudioRendererImpl::StartPromise()
-{
-    return StartSync();
-}
-
 void AudioRendererImpl::StartSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -169,16 +159,6 @@ void AudioRendererImpl::StartSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
-}
-
-int64_t AudioRendererImpl::GetAudioTimeAsync()
-{
-    return GetAudioTimeSync();
-}
-
-int64_t AudioRendererImpl::GetAudioTimePromise()
-{
-    return GetAudioTimeSync();
 }
 
 int64_t AudioRendererImpl::GetAudioTimeSync()
@@ -197,11 +177,6 @@ int64_t AudioRendererImpl::GetAudioTimeSync()
     uint64_t time = static_cast<uint64_t>(timestamp.time.tv_nsec) +
         static_cast<uint64_t>(timestamp.time.tv_sec) * SEC_TO_NANOSECOND;
     return static_cast<int64_t>(time);
-}
-
-AudioTimestampInfo AudioRendererImpl::GetAudioTimestampInfoPromise()
-{
-    return GetAudioTimestampInfoSync();
 }
 
 AudioTimestampInfo AudioRendererImpl::GetAudioTimestampInfoSync()
@@ -226,16 +201,6 @@ AudioTimestampInfo AudioRendererImpl::GetAudioTimestampInfoSync()
     return result;
 }
 
-void AudioRendererImpl::DrainAsync()
-{
-    return DrainSync();
-}
-
-void AudioRendererImpl::DrainPromise()
-{
-    return DrainSync();
-}
-
 void AudioRendererImpl::DrainSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -247,11 +212,6 @@ void AudioRendererImpl::DrainSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
-}
-
-void AudioRendererImpl::FlushPromise()
-{
-    return FlushSync();
 }
 
 void AudioRendererImpl::FlushSync()
@@ -267,16 +227,6 @@ void AudioRendererImpl::FlushSync()
     }
 }
 
-void AudioRendererImpl::PauseAsync()
-{
-    return PauseSync();
-}
-
-void AudioRendererImpl::PausePromise()
-{
-    return PauseSync();
-}
-
 void AudioRendererImpl::PauseSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -288,16 +238,6 @@ void AudioRendererImpl::PauseSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
-}
-
-void AudioRendererImpl::StopAsync()
-{
-    return StopSync();
-}
-
-void AudioRendererImpl::StopPromise()
-{
-    return StopSync();
 }
 
 void AudioRendererImpl::StopSync()
@@ -313,16 +253,6 @@ void AudioRendererImpl::StopSync()
     }
 }
 
-void AudioRendererImpl::ReleaseAsync()
-{
-    return ReleaseSync();
-}
-
-void AudioRendererImpl::ReleasePromise()
-{
-    return ReleaseSync();
-}
-
 void AudioRendererImpl::ReleaseSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -334,16 +264,6 @@ void AudioRendererImpl::ReleaseSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
-}
-
-int64_t AudioRendererImpl::GetBufferSizeAsync()
-{
-    return GetBufferSizeSync();
-}
-
-int64_t AudioRendererImpl::GetBufferSizePromise()
-{
-    return GetBufferSizeSync();
 }
 
 int64_t AudioRendererImpl::GetBufferSizeSync()
@@ -358,16 +278,6 @@ int64_t AudioRendererImpl::GetBufferSizeSync()
         return 0;
     }
     return static_cast<int64_t>(bufferSize);
-}
-
-int64_t AudioRendererImpl::GetAudioStreamIdAsync()
-{
-    return GetAudioStreamIdSync();
-}
-
-int64_t AudioRendererImpl::GetAudioStreamIdPromise()
-{
-    return GetAudioStreamIdSync();
 }
 
 int64_t AudioRendererImpl::GetAudioStreamIdSync()
@@ -389,16 +299,6 @@ int64_t AudioRendererImpl::GetAudioStreamIdSync()
         return audioStreamId;
     }
     return static_cast<int64_t>(audioStreamId);
-}
-
-void AudioRendererImpl::SetVolumeAsync(double volume)
-{
-    return SetVolumeSync(volume);
-}
-
-void AudioRendererImpl::SetVolumePromise(double volume)
-{
-    return SetVolumeSync(volume);
 }
 
 void AudioRendererImpl::SetVolumeSync(double volume)
@@ -428,16 +328,6 @@ double AudioRendererImpl::GetVolume()
     return volLevel;
 }
 
-AudioRendererInfo AudioRendererImpl::GetRendererInfoAsync()
-{
-    return GetRendererInfoSync();
-}
-
-AudioRendererInfo AudioRendererImpl::GetRendererInfoPromise()
-{
-    return GetRendererInfoSync();
-}
-
 AudioRendererInfo AudioRendererImpl::GetRendererInfoSync()
 {
     AudioRendererInfo emptyRendererInfo = {
@@ -457,16 +347,6 @@ AudioRendererInfo AudioRendererImpl::GetRendererInfoSync()
     }
     AudioRendererInfo result = TaiheParamUtils::ToTaiheRendererInfo(rendererInfo);
     return result;
-}
-
-AudioStreamInfo AudioRendererImpl::GetStreamInfoAsync()
-{
-    return GetStreamInfoSync();
-}
-
-AudioStreamInfo AudioRendererImpl::GetStreamInfoPromise()
-{
-    return GetStreamInfoSync();
 }
 
 AudioStreamInfo AudioRendererImpl::GetStreamInfoSync()
@@ -494,16 +374,6 @@ AudioStreamInfo AudioRendererImpl::GetStreamInfoSync()
     return result;
 }
 
-void AudioRendererImpl::SetInterruptModeAsync(InterruptMode mode)
-{
-    return SetInterruptModeSync(mode);
-}
-
-void AudioRendererImpl::SetInterruptModePromise(InterruptMode mode)
-{
-    return SetInterruptModeSync(mode);
-}
-
 void AudioRendererImpl::SetInterruptModeSync(InterruptMode mode)
 {
     if (audioRenderer_ == nullptr) {
@@ -519,16 +389,6 @@ void AudioRendererImpl::SetInterruptModeSync(InterruptMode mode)
     audioRenderer_->SetInterruptMode(TaiheAudioEnum::GetNativeInterruptMode(interruptMode));
 }
 
-double AudioRendererImpl::GetMinStreamVolumeAsync()
-{
-    return GetMinStreamVolumeSync();
-}
-
-double AudioRendererImpl::GetMinStreamVolumePromise()
-{
-    return GetMinStreamVolumeSync();
-}
-
 double AudioRendererImpl::GetMinStreamVolumeSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -539,16 +399,6 @@ double AudioRendererImpl::GetMinStreamVolumeSync()
     return volLevel;
 }
 
-double AudioRendererImpl::GetMaxStreamVolumeAsync()
-{
-    return GetMaxStreamVolumeSync();
-}
-
-double AudioRendererImpl::GetMaxStreamVolumePromise()
-{
-    return GetMaxStreamVolumeSync();
-}
-
 double AudioRendererImpl::GetMaxStreamVolumeSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -557,16 +407,6 @@ double AudioRendererImpl::GetMaxStreamVolumeSync()
     }
     double volLevel = audioRenderer_->GetMaxStreamVolume();
     return volLevel;
-}
-
-taihe::array<AudioDeviceDescriptor> AudioRendererImpl::GetCurrentOutputDevicesAsync()
-{
-    return GetCurrentOutputDevicesSync();
-}
-
-taihe::array<AudioDeviceDescriptor> AudioRendererImpl::GetCurrentOutputDevicesPromise()
-{
-    return GetCurrentOutputDevicesSync();
 }
 
 taihe::array<AudioDeviceDescriptor> AudioRendererImpl::GetCurrentOutputDevicesSync()
@@ -584,16 +424,6 @@ taihe::array<AudioDeviceDescriptor> AudioRendererImpl::GetCurrentOutputDevicesSy
     return TaiheParamUtils::SetValueDeviceInfo(deviceInfo);
 }
 
-int64_t AudioRendererImpl::GetUnderflowCountAsync()
-{
-    return GetUnderflowCountSync();
-}
-
-int64_t AudioRendererImpl::GetUnderflowCountPromise()
-{
-    return GetUnderflowCountSync();
-}
-
 int64_t AudioRendererImpl::GetUnderflowCountSync()
 {
     uint32_t underflowCount = 0;
@@ -605,16 +435,6 @@ int64_t AudioRendererImpl::GetUnderflowCountSync()
     return static_cast<int64_t>(underflowCount);
 }
 
-AudioEffectMode AudioRendererImpl::GetAudioEffectModeAsync()
-{
-    return GetAudioEffectModeSync();
-}
-
-AudioEffectMode AudioRendererImpl::GetAudioEffectModePromise()
-{
-    return GetAudioEffectModeSync();
-}
-
 AudioEffectMode AudioRendererImpl::GetAudioEffectModeSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -622,16 +442,6 @@ AudioEffectMode AudioRendererImpl::GetAudioEffectModeSync()
         return AudioEffectMode::key_t::EFFECT_NONE;
     }
     return TaiheAudioEnum::ToTaiheAudioEffectMode(audioRenderer_->GetAudioEffectMode());
-}
-
-void AudioRendererImpl::SetAudioEffectModeAsync(AudioEffectMode mode)
-{
-    return SetAudioEffectModeSync(mode);
-}
-
-void AudioRendererImpl::SetAudioEffectModePromise(AudioEffectMode mode)
-{
-    return SetAudioEffectModeSync(mode);
 }
 
 void AudioRendererImpl::SetAudioEffectModeSync(AudioEffectMode mode)
@@ -724,11 +534,6 @@ double AudioRendererImpl::GetSpeed()
     return ret;
 }
 
-void AudioRendererImpl::SetTargetPromise(RenderTarget target)
-{
-    return SetTargetSync(target);
-}
-
 void AudioRendererImpl::SetTargetSync(RenderTarget target)
 {
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
@@ -809,11 +614,6 @@ bool AudioRendererImpl::GetSilentModeAndMixWithOthers()
     return on;
 }
 
-void AudioRendererImpl::SetDefaultOutputDevicePromise(DeviceType deviceType)
-{
-    return SetDefaultOutputDeviceSync(deviceType);
-}
-
 void AudioRendererImpl::SetDefaultOutputDeviceSync(DeviceType deviceType)
 {
     if (audioRenderer_ == nullptr) {
@@ -833,11 +633,6 @@ void AudioRendererImpl::SetDefaultOutputDeviceSync(DeviceType deviceType)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "SetDefaultOutputDevice failure!");
         return;
     }
-}
-
-void AudioRendererImpl::SetLoudnessGainPromise(double loudnessGain)
-{
-    return SetLoudnessGainSync(loudnessGain);
 }
 
 void AudioRendererImpl::SetLoudnessGainSync(double loudnessGain)
@@ -1451,5 +1246,3 @@ AudioRendererOrNull CreateAudioRendererSync(AudioRendererOptions const &options)
 } // namespace ANI::Audio
 
 TH_EXPORT_CPP_API_CreateAudioRendererSync(ANI::Audio::CreateAudioRendererSync);
-TH_EXPORT_CPP_API_CreateAudioRendererPromise(ANI::Audio::CreateAudioRendererSync);
-TH_EXPORT_CPP_API_CreateAudioRendererAsync(ANI::Audio::CreateAudioRendererSync);
