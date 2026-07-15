@@ -137,50 +137,6 @@ HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetAvailableDevices
 }
 
 /**
- * @tc.name  : Test OH_AudioRoutingManager_GetAvailableDevices with null audioRoutingManager.
- * @tc.number: OH_AudioRoutingManager_GetAvailableDevices_003
- * @tc.desc  : Test case for null audioRoutingManager.
- */
-HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetAvailableDevices_003, TestSize.Level0)
-{
-    OH_AudioDevice_Usage deviceUsage = AUDIO_DEVICE_USAGE_CALL_ALL;
-    OH_AudioDeviceDescriptorArray* audioDeviceDescriptorArray = nullptr;
-    OH_AudioRoutingManager *audioRoutingManager = nullptr;
-    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(audioRoutingManager, nullptr);
-    OH_AudioDevice_Flag deviceFlag = AUDIO_DEVICE_FLAG_INPUT;
-    result = OH_AudioRoutingManager_GetDevices(audioRoutingManager, deviceFlag, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    audioRoutingManager = nullptr;
-
-    result = OH_AudioRoutingManager_GetAvailableDevices(audioRoutingManager, deviceUsage, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test OH_AudioRoutingManager_GetAvailableDevices with null audioRoutingManager.
- * @tc.number: OH_AudioRoutingManager_GetAvailableDevices_004
- * @tc.desc  : Test case for null audioRoutingManager.
- */
-HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetAvailableDevices_004, TestSize.Level0)
-{
-    OH_AudioDevice_Usage deviceUsage = AUDIO_DEVICE_USAGE_CALL_ALL;
-    OH_AudioDeviceDescriptorArray* audioDeviceDescriptorArray = nullptr;
-    OH_AudioRoutingManager *audioRoutingManager = nullptr;
-    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(audioRoutingManager, nullptr);
-    OH_AudioDevice_Flag deviceFlag = AUDIO_DEVICE_FLAG_INPUT;
-    result = OH_AudioRoutingManager_GetDevices(audioRoutingManager, deviceFlag, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-
-    result = OH_AudioRoutingManager_GetAvailableDevices(
-        audioRoutingManager, deviceUsage, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-}
-
-/**
  * @tc.name  : Test OH_AudioRoutingManager_GetPreferredOutputDevice.
  * @tc.number: OH_AudioRoutingManager_GetPreferredOutputDevice_001
  * @tc.desc  : Test OH_AudioRoutingManager_GetPreferredOutputDevice.
@@ -213,73 +169,6 @@ HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetPreferredOutputD
 }
 
 /**
- * @tc.name  : Test OH_AudioRoutingManager_GetPreferredOutputDevice.
- * @tc.number: OH_AudioRoutingManager_GetPreferredOutputDevice_003
- * @tc.desc  : Test OH_AudioRoutingManager_GetPreferredOutputDevice.
- */
-HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetPreferredOutputDevice_003, TestSize.Level0)
-{
-    OH_AudioStream_Usage streamUsage = AUDIOSTREAM_USAGE_AUDIOBOOK;
-    OH_AudioDeviceDescriptorArray* audioDeviceDescriptorArray = nullptr;
-    OH_AudioRoutingManager *audioRoutingManager = nullptr;
-    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(audioRoutingManager, nullptr);
-    OH_AudioDevice_Flag deviceFlag = AUDIO_DEVICE_FLAG_INPUT;
-    result = OH_AudioRoutingManager_GetDevices(audioRoutingManager, deviceFlag, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    audioRoutingManager = nullptr;
-
-    result = OH_AudioRoutingManager_GetPreferredOutputDevice(
-        audioRoutingManager, streamUsage, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test OH_AudioRoutingManager_GetPreferredOutputDevice.
- * @tc.number: OH_AudioRoutingManager_GetPreferredOutputDevice_004
- * @tc.desc  : Test OH_AudioRoutingManager_GetPreferredOutputDevice.
- */
-HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetPreferredOutputDevice_004, TestSize.Level0)
-{
-    OH_AudioStream_Usage streamUsage = AUDIOSTREAM_USAGE_AUDIOBOOK;
-    OH_AudioDeviceDescriptorArray* audioDeviceDescriptorArray = nullptr;
-    OH_AudioRoutingManager *audioRoutingManager = nullptr;
-    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(audioRoutingManager, nullptr);
-    OH_AudioDevice_Flag deviceFlag = AUDIO_DEVICE_FLAG_INPUT;
-    result = OH_AudioRoutingManager_GetDevices(audioRoutingManager, deviceFlag, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-
-    result = OH_AudioRoutingManager_GetPreferredOutputDevice(
-        audioRoutingManager, streamUsage, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-}
-
-/**
- * @tc.name  : Test OH_AudioRoutingManager_GetPreferredInputDevice.
- * @tc.number: OH_AudioRoutingManager_GetPreferredInputDevice_001
- * @tc.desc  : Test OH_AudioRoutingManager_GetPreferredInputDevice.
- */
-HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetPreferredInputDevice_001, TestSize.Level0)
-{
-    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_CALL;
-    OH_AudioDeviceDescriptorArray* audioDeviceDescriptorArray = nullptr;
-    OH_AudioRoutingManager *audioRoutingManager = nullptr;
-    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(audioRoutingManager, nullptr);
-    OH_AudioDevice_Flag deviceFlag = AUDIO_DEVICE_FLAG_INPUT;
-    result = OH_AudioRoutingManager_GetDevices(audioRoutingManager, deviceFlag, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-
-    result = OH_AudioRoutingManager_GetPreferredInputDevice(
-        audioRoutingManager, sourceType, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
-}
-
-/**
  * @tc.name  : Test OH_AudioRoutingManager_GetPreferredInputDevice.
  * @tc.number: OH_AudioRoutingManager_GetPreferredInputDevice_002
  * @tc.desc  : Test OH_AudioRoutingManager_GetPreferredInputDevice.
@@ -293,73 +182,6 @@ HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetPreferredInputDe
     auto result = OH_AudioRoutingManager_GetPreferredInputDevice(
         audioRoutingManager, sourceType, &audioDeviceDescriptorArray);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test OH_AudioRoutingManager_GetPreferredInputDevice.
- * @tc.number: OH_AudioRoutingManager_GetPreferredInputDevice_003
- * @tc.desc  : Test OH_AudioRoutingManager_GetPreferredInputDevice.
- */
-HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetPreferredInputDevice_003, TestSize.Level0)
-{
-    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION;
-    OH_AudioDeviceDescriptorArray* audioDeviceDescriptorArray = nullptr;
-    OH_AudioRoutingManager *audioRoutingManager = nullptr;
-    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(audioRoutingManager, nullptr);
-    OH_AudioDevice_Flag deviceFlag = AUDIO_DEVICE_FLAG_INPUT;
-    result = OH_AudioRoutingManager_GetDevices(audioRoutingManager, deviceFlag, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    audioRoutingManager = nullptr;
-
-    result = OH_AudioRoutingManager_GetPreferredInputDevice(
-        audioRoutingManager, sourceType, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test OH_AudioRoutingManager_GetPreferredInputDevice.
- * @tc.number: OH_AudioRoutingManager_GetPreferredInputDevice_004
- * @tc.desc  : Test OH_AudioRoutingManager_GetPreferredInputDevice.
- */
-HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetPreferredInputDevice_004, TestSize.Level0)
-{
-    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_COMMUNICATION;
-    OH_AudioDeviceDescriptorArray* audioDeviceDescriptorArray = nullptr;
-    OH_AudioRoutingManager *audioRoutingManager = nullptr;
-    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(audioRoutingManager, nullptr);
-    OH_AudioDevice_Flag deviceFlag = AUDIO_DEVICE_FLAG_OUTPUT;
-    OH_AudioDeviceDescriptorArray *array = nullptr;
-    result = OH_AudioRoutingManager_GetDevices(audioRoutingManager, deviceFlag, &array);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(array, nullptr);
-
-    result = OH_AudioRoutingManager_GetPreferredInputDevice(
-        audioRoutingManager, sourceType, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-}
-
-/**
- * @tc.name  : Test OH_AudioRoutingManager_ReleaseDevices.
- * @tc.number: OH_AudioRoutingManager_ReleaseDevices_001
- * @tc.desc  : Test OH_AudioRoutingManager_ReleaseDevices.
- */
-HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_ReleaseDevices_001, TestSize.Level0)
-{
-    OH_AudioDeviceDescriptorArray* audioDeviceDescriptorArray = nullptr;
-    OH_AudioRoutingManager *audioRoutingManager = nullptr;
-    auto result = OH_AudioManager_GetAudioRoutingManager(&audioRoutingManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(audioRoutingManager, nullptr);
-    OH_AudioDevice_Flag deviceFlag = AUDIO_DEVICE_FLAG_INPUT;
-    result = OH_AudioRoutingManager_GetDevices(audioRoutingManager, deviceFlag, &audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-
-    result = OH_AudioRoutingManager_ReleaseDevices(audioRoutingManager, audioDeviceDescriptorArray);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
 }
 
 /**

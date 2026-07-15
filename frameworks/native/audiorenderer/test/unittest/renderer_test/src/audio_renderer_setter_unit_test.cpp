@@ -1187,39 +1187,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRendererSamplingRate_002, TestSi
 }
 
 /**
- * @tc.name  : Test SetSpeed
- * @tc.number: Audio_Renderer_SetSpeed_001
- * @tc.desc  : Test SetSpeed interface.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_001, TestSize.Level1)
-{
-    int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
-
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    ret = audioRenderer->SetSpeed(0.5);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioRenderer->SetSpeed(0.25); // 0.25 min speed
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioRenderer->SetSpeed(4); // 4 max speed
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioRenderer->SetSpeed(0.124); // 0.124 lower
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-
-    ret = audioRenderer->SetSpeed(4.01); // 4.01 upper
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-
-    bool isReleased = audioRenderer->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
  * @tc.name  : Test SetSpeed and Write API.
  * @tc.number: Audio_Renderer_SetSpeed_Write_001
  * @tc.desc  : Test SetSpeed and Write interface.

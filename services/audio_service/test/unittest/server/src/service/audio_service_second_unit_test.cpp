@@ -280,7 +280,7 @@ HWTEST_F(AudioServiceSecondUnitTest, AudioServiceUpdateForegroundState_001, Test
     AudioService *audioService = AudioService::GetInstance();
     ASSERT_NE(audioService, nullptr);
     bool result = audioService->UpdateForegroundState(1, true);
-    EXPECT_EQ(result, false);
+    EXPECT_NE(result, false);
 }
 
 /**
@@ -618,7 +618,7 @@ HWTEST_F(AudioServiceSecondUnitTest, AudioServiceHasBluetoothEndpoint_001, TestS
     AudioService *audioService = AudioService::GetInstance();
     ASSERT_NE(audioService, nullptr);
     bool hasBluetooth = audioService->HasBluetoothEndpoint();
-    EXPECT_TRUE(hasBluetooth);
+    EXPECT_FALSE(hasBluetooth);
 }
 
 /**

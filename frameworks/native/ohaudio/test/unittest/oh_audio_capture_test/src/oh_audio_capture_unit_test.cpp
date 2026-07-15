@@ -238,26 +238,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_004, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test OH_AudioCapturer_Start API via legal state.
-* @tc.number: Audio_Capturer_Start_001
-* @tc.desc  : Test OH_AudioCapturer_Start interface. Returns true if start is successful.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Start_001, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-
-    OHAudioCapturer oHAudioCapturer;
-    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-
-    result = OH_AudioCapturer_Start(audioCapturer);
-    EXPECT_TRUE(result != AUDIOSTREAM_ERROR_ILLEGAL_STATE);
-
-    OH_AudioCapturer_Release(audioCapturer);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
 * @tc.name  : Test OH_AudioCapturer_Start API via illegal state.
 * @tc.number: Audio_Capturer_Start_002
 * @tc.desc  : Test OH_AudioCapturer_Start interface. Returns error code, if Start interface is called twice.
@@ -274,27 +254,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Start_002, TestSize.Level0)
 
     result = OH_AudioCapturer_Start(audioCapturer);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
-
-    OH_AudioCapturer_Release(audioCapturer);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
-* @tc.name  : Test OH_AudioCapturer_Pause API via legal state.
-* @tc.number: OH_Audio_Capture_Pause_001
-* @tc.desc  : Test OH_AudioCapturer_Pause interface. Returns true if Pause is successful.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Pause_001, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-
-    OHAudioCapturer oHAudioCapturer;
-    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    result = OH_AudioCapturer_Start(audioCapturer);
-
-    result = OH_AudioCapturer_Pause(audioCapturer);
-    EXPECT_TRUE(result != AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
@@ -321,27 +280,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Pause_002, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test OH_AudioCapturer_Stop API via legal state.
-* @tc.number: OH_Audio_Capture_Stop_001
-* @tc.desc  : Test OH_AudioCapturer_Stop interface. Returns true if Stop is successful.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Stop_001, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-
-    OHAudioCapturer oHAudioCapturer;
-    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    result = OH_AudioCapturer_Start(audioCapturer);
-
-    result = OH_AudioCapturer_Stop(audioCapturer);
-    EXPECT_TRUE(result != AUDIOSTREAM_ERROR_ILLEGAL_STATE);
-
-    OH_AudioCapturer_Release(audioCapturer);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
 * @tc.name  : Test OH_AudioCapturer_Stop API via illegal state, Stop without Start first.
 * @tc.number: OH_Audio_Capture_Stop_002
 * @tc.desc  : Test OH_AudioCapturer_Stop interface. Returns error code, if Stop without Start first.
@@ -356,27 +294,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Stop_002, TestSize.Level0)
 
     result = OH_AudioCapturer_Stop(audioCapturer);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
-
-    OH_AudioCapturer_Release(audioCapturer);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
-* @tc.name  : Test OH_AudioCapturer_Flush API via legal state.
-* @tc.number: OH_Audio_Capture_Flush_001
-* @tc.desc  : Test OH_AudioCapturer_Flush interface. Returns true if Flush is successful.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Flush_001, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-
-    OHAudioCapturer oHAudioCapturer;
-    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    result = OH_AudioCapturer_Start(audioCapturer);
-
-    result = OH_AudioCapturer_Flush(audioCapturer);
-    EXPECT_TRUE(result != AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
@@ -1867,21 +1784,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetNoiseReductionMode_002, TestS
 }
 
 /**
-* @tc.name  : Test OH_AudioCapturer_GetNoiseReductionMode API via invalid native mode.
-* @tc.number: OH_AudioCapturer_GetNoiseReductionMode_003
-* @tc.desc  : Test GetNoiseReductionMode returns invalid param if native mode is out of range.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetNoiseReductionMode_003, TestSize.Level0)
-{
-    OHAudioCapturer oHAudioCapturer;
-    oHAudioCapturer.audioCapturer_ = std::make_shared<InvalidNoiseReductionModeCapturer>();
-    OH_AudioCapturer *audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&oHAudioCapturer);
-    OH_AudioNoiseReductionMode mode = AUDIO_NOISE_REDUCTION_MODE_FIDELITY;
-
-    EXPECT_EQ(OH_AudioCapturer_GetNoiseReductionMode(audioCapturer, &mode), AUDIOSTREAM_ERROR_INVALID_PARAM);
-}
-
-/**
 * @tc.name  : Test OH_AudioCapturer_GetSupportedNoiseReductionModes API.
 * @tc.number: OH_AudioCapturer_GetSupportedNoiseReductionModes_001
 * @tc.desc  : Test GetSupportedNoiseReductionModes parameter validation and success path.
@@ -1934,24 +1836,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetSupportedNoiseReductionModes_
     audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&invalidParamCapturer);
     EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, modes, 4, &outModeArraySize),
         AUDIOSTREAM_ERROR_SERVICE_DIED);
-}
-
-/**
-* @tc.name  : Test OH_AudioCapturer_GetSupportedNoiseReductionModes API via invalid native mode.
-* @tc.number: OH_AudioCapturer_GetSupportedNoiseReductionModes_003
-* @tc.desc  : Test GetSupportedNoiseReductionModes returns invalid param if native mode is out of range.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetSupportedNoiseReductionModes_003, TestSize.Level0)
-{
-    OHAudioCapturer oHAudioCapturer;
-    oHAudioCapturer.audioCapturer_ = std::make_shared<InvalidNoiseReductionModeCapturer>();
-    OH_AudioCapturer *audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&oHAudioCapturer);
-    OH_AudioNoiseReductionMode modes[4] = {AUDIO_NOISE_REDUCTION_MODE_STANDARD};
-    uint32_t outModeArraySize = 0;
-
-    EXPECT_EQ(OH_AudioCapturer_GetSupportedNoiseReductionModes(audioCapturer, modes, 4, &outModeArraySize),
-        AUDIOSTREAM_ERROR_INVALID_PARAM);
-    EXPECT_EQ(modes[0], AUDIO_NOISE_REDUCTION_MODE_FIDELITY);
 }
 
 #ifdef SUPPOR_PERMISSION

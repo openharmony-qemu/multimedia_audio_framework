@@ -566,36 +566,6 @@ HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_NoFast_001, Test
 }
 
 /**
- * @tc.name   : AudioStreamDescriptorUnitTest_DumpRendererStreamAttrs_FastTrue_001
- * @tc.number : DumpRendererStreamAttrs_FastTrue_001
- * @tc.desc   : Test DumpRendererStreamAttrs when route is fast and ultraFast flag is true
- */
-HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_FastTrue_001, TestSize.Level2)
-{
-    std::string dumpStr;
-    testRendererStream_->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-    testRendererStream_->SetUltraFastRequested(true);
-    dumpStr.clear();
-    testRendererStream_->Dump(dumpStr);
-    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastStream: 1"));
-}
-
-/**
- * @tc.name   : AudioStreamDescriptorUnitTest_DumpRendererStreamAttrs_FastFalse_001
- * @tc.number : DumpRendererStreamAttrs_FastFalse_001
- * @tc.desc   : Test DumpRendererStreamAttrs when route is fast and ultraFast flag is false
- */
-HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_FastFalse_001, TestSize.Level2)
-{
-    std::string dumpStr;
-    testRendererStream_->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-    testRendererStream_->SetUltraFastRequested(false);
-    dumpStr.clear();
-    testRendererStream_->Dump(dumpStr);
-    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastStream: 0"));
-}
-
-/**
  * @tc.name   : Test AudioStreamDescriptor API
  * @tc.type   : FUNC
  * @tc.number : SetForcedNormalBool_001

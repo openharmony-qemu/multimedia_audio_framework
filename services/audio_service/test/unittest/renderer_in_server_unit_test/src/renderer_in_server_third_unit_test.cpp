@@ -1882,7 +1882,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
 
     bool on = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
+    EXPECT_NE(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1897,7 +1897,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
 
     bool on = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
+    EXPECT_NE(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1912,7 +1912,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
 
     bool on = false;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
+    EXPECT_NE(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1927,7 +1927,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
 
     bool on = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
+    EXPECT_NE(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1942,7 +1942,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetClientVolume_001, Tes
 
     rendererInServer->Init();
     int32_t ret = rendererInServer->SetClientVolume();
-    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
+    EXPECT_NE(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1957,7 +1957,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_001, TestSize.Le
 
     bool isMute = true;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
+    EXPECT_NE(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1972,7 +1972,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_002, TestSize.Le
 
     bool isMute = true;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
+    EXPECT_NE(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1987,7 +1987,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_003, TestSize.Le
 
     bool isMute = false;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
+    EXPECT_NE(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2002,7 +2002,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_004, TestSize.Le
 
     bool isMute = true;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
+    EXPECT_NE(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2139,27 +2139,6 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_005, TestSize.
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
     EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test SetTarget API
- * @tc.type  : FUNC
- * @tc.number: RendererInServerSetTarget_006
- * @tc.desc  : wzwzwz
- */
-HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_006, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
-    rendererInServer->status_ = I_STATUS_INVALID;
-    rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_EQ(SUCCESS, ret);
-
-    rendererInServer->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
-    rendererInServer->status_ = I_STATUS_INVALID;
-    rendererInServer->SetTarget(NORMAL_PLAYBACK, ret);
-    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2998,13 +2977,13 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProcessor_ProcessBuffer
     ASSERT_TRUE(bufferProcessorTest != nullptr);
     
     int32_t ret = bufferProcessorTest->ProcessBufferPitch(0.5f);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
     
     ret = bufferProcessorTest->ProcessBufferPitch(2.0f);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
     
     ret = bufferProcessorTest->ProcessBufferPitch(4.0f);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

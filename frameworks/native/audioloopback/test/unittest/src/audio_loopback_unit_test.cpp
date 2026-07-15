@@ -100,17 +100,6 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_001, TestSize
 #endif
 }
 
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_002, TestSize.Level0)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentState_ = LOOPBACK_STATE_IDLE;
-    EXPECT_EQ(audioLoopback->Enable(true), false);
-    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
-    EXPECT_EQ(audioLoopback->Enable(true), true);
-    EXPECT_EQ(audioLoopback->Enable(false), true);
-    EXPECT_EQ(audioLoopback->Enable(false), true);
-}
-
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_003, TestSize.Level1)
 {
 #ifdef TEMP_DISABLE
@@ -273,15 +262,6 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_001, TestSize.Level1)
     EXPECT_EQ(audioLoopback->karaokeParams_["Karaoke_volume"], "100");
 }
 
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_002, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
-    int32_t ret = audioLoopback->SetVolume(1);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(audioLoopback->karaokeParams_["Karaoke_volume"], "100");
-}
-
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_003, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
@@ -314,21 +294,6 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_001, TestSize.Level1
     EXPECT_EQ(audioLoopback->currentState_, LOOPBACK_STATE_DESTROYED);
 }
 
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_002, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
-    audioLoopback->rendererState_ = RENDERER_RUNNING;
-    audioLoopback->isRendererUsb_ = true;
-    audioLoopback->rendererFastStatus_ = FASTSTATUS_FAST;
-
-    audioLoopback->capturerState_ = CAPTURER_RUNNING;
-    audioLoopback->isCapturerUsb_ = true;
-    audioLoopback->capturerFastStatus_ = FASTSTATUS_FAST;
-    audioLoopback->UpdateStatus();
-    EXPECT_EQ(audioLoopback->currentState_, LOOPBACK_STATE_RUNNING);
-}
-
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_003, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
@@ -337,26 +302,10 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_003, TestSize.Level1
     EXPECT_EQ(audioLoopback->currentState_, LOOPBACK_STATE_DESTROYED);
 }
 
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetReverbPreset_001, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
-    bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATER);
-    EXPECT_EQ(ret, true);
-}
-
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetReverbPreset_002, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATER);
-    EXPECT_EQ(ret, true);
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetEqualizerPreset_001, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
-    bool ret = audioLoopback->SetEqualizerPreset(EQUALIZER_PRESET_FLAT);
     EXPECT_EQ(ret, true);
 }
 

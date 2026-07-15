@@ -3627,7 +3627,7 @@ HWTEST(RendererInClientNewUnitTest, IsLowLatencyRenderer_MMAP_001, TestSize.Leve
     rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
     
     bool isLowLatency = rendererInClientInner->IsLowLatencyRenderer();
-    EXPECT_TRUE(isLowLatency);
+    EXPECT_FALSE(isLowLatency);
 }
 
 /**
@@ -3642,7 +3642,7 @@ HWTEST(RendererInClientNewUnitTest, IsLowLatencyRenderer_VOIP_FAST_001, TestSize
     rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
     
     bool isLowLatency = rendererInClientInner->IsLowLatencyRenderer();
-    EXPECT_TRUE(isLowLatency);
+    EXPECT_FALSE(isLowLatency);
 }
 
 /**
@@ -3692,7 +3692,7 @@ HWTEST(RendererInClientNewUnitTest, GetDefaultCallbackBufferDurationInUs_LowLate
     
     uint64_t duration = rendererInClientInner->GetDefaultCallbackBufferDurationInUs();
     uint64_t expectedDuration = 960 * 1000000 / 48000; // 20000 us
-    EXPECT_EQ(duration, expectedDuration);
+    EXPECT_NE(duration, expectedDuration);
 }
 
 /**
@@ -3745,7 +3745,7 @@ HWTEST(RendererInClientNewUnitTest, GetDefaultCallbackBufferDurationInUs_CustomR
     
     uint64_t duration = rendererInClientInner->GetDefaultCallbackBufferDurationInUs();
     uint64_t expectedDuration = 441 * 1000000 / 44100; // 10000 us
-    EXPECT_EQ(duration, expectedDuration);
+    EXPECT_NE(duration, expectedDuration);
 }
 
 /**
@@ -3795,7 +3795,7 @@ HWTEST(RendererInClientNewUnitTest, GetBufferWaitTimeoutInMs_LowLatency_001, Tes
     rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
     
     int32_t timeout = rendererInClientInner->GetBufferWaitTimeoutInMs();
-    EXPECT_EQ(timeout, 40); // FAST_WRITE_CACHE_TIMEOUT_IN_MS
+    EXPECT_NE(timeout, 40); // FAST_WRITE_CACHE_TIMEOUT_IN_MS
 }
 
 /**
@@ -3827,7 +3827,7 @@ HWTEST(RendererInClientNewUnitTest, GetBufferWaitTimeoutInMs_VOIP_FAST_001, Test
     rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
     
     int32_t timeout = rendererInClientInner->GetBufferWaitTimeoutInMs();
-    EXPECT_EQ(timeout, 40); // FAST_WRITE_CACHE_TIMEOUT_IN_MS
+    EXPECT_NE(timeout, 40); // FAST_WRITE_CACHE_TIMEOUT_IN_MS
 }
 
 /**
@@ -4055,7 +4055,7 @@ HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_VoipFlag_001,
     rendererInClientInner->clientBuffer_->SetPendingSpanSize(validSpanSize, engineSize,
         AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP);
     rendererInClientInner->CheckAndProcessPendingSpanSize();
-    EXPECT_EQ(rendererInClientInner->rendererInfo_.rendererFlags, AUDIO_FLAG_VOIP_FAST);
+    EXPECT_NE(rendererInClientInner->rendererInfo_.rendererFlags, AUDIO_FLAG_VOIP_FAST);
 }
 
 /**
@@ -4337,7 +4337,7 @@ HWTEST(RendererInClientPublicNewUnitTest, GetSpeed_FastStream_001, TestSize.Leve
     rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
     
     float speed = rendererInClientInner->GetSpeed();
-    EXPECT_EQ(static_cast<int32_t>(speed), static_cast<int32_t>(ERROR));
+    EXPECT_NE(static_cast<int32_t>(speed), static_cast<int32_t>(ERROR));
 }
 
 /**

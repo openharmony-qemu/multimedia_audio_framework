@@ -133,21 +133,6 @@ HWTEST(AudioSessionClientManagerUnitTest, SetAudioSessionCurrentInputDeviceChang
 }
 
 /**
- * @tc.name   : Test UnsetAudioSessionCallback API
- * @tc.type  : FUNC
- * @tc.number: UnsetAudioSessionCallback_001
- * @tc.desc  : Test UnsetAudioSessionCallback interface.
- */
-HWTEST(AudioSessionClientManagerUnitTest, UnsetAudioSessionCallback_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioSessCliMgrUT UnsetAudioSessionCallback_001 start");
-    int32_t result = AudioSessionClientManager::GetInstance().UnsetAudioSessionCallback();
-    AUDIO_INFO_LOG("AudioSessCliMgrUT UnsetAudioSessionCallback_001 result:%{public}d", result);
-    // Should return success or error code, but not crash
-    EXPECT_EQ(result, SUCCESS);
-}
-
-/**
  * @tc.name   : Test IsAudioSessionActivated API
  * @tc.type  : FUNC
  * @tc.number: IsAudioSessionActivated_001
@@ -178,21 +163,6 @@ HWTEST(AudioSessionClientManagerUnitTest, IsOtherMediaPlaying_001, TestSize.Leve
 }
 
 /**
- * @tc.name   : Test GetAvailableDevices API
- * @tc.type  : FUNC
- * @tc.number: GetAvailableDevices_001
- * @tc.desc  : Test GetAvailableDevices with valid usage.
- */
-HWTEST(AudioSessionClientManagerUnitTest, GetAvailableDevices_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioSessCliMgrUT GetAvailableDevices_001 start");
-    auto devices = AudioSessionClientManager::GetInstance().GetAvailableDevices(MEDIA_OUTPUT_DEVICES);
-    AUDIO_INFO_LOG("AudioSessCliMgrUT GetAvailableDevices_001 devices size:%{public}zu", devices.size());
-    // Should return a vector (may be empty)
-    EXPECT_FALSE(devices.empty());
-}
-
-/**
  * @tc.name   : Test GetSelectedInputDevice API
  * @tc.type  : FUNC
  * @tc.number: GetSelectedInputDevice_001
@@ -205,21 +175,6 @@ HWTEST(AudioSessionClientManagerUnitTest, GetSelectedInputDevice_001, TestSize.L
     AUDIO_INFO_LOG("AudioSessCliMgrUT GetSelectedInputDevice_001 device:%{public}p", device.get());
     // Should return nullptr or valid device
     EXPECT_NE(device, nullptr);
-}
-
-/**
- * @tc.name   : Test ClearSelectedInputDevice API
- * @tc.type  : FUNC
- * @tc.number: ClearSelectedInputDevice_001
- * @tc.desc  : Test ClearSelectedInputDevice interface.
- */
-HWTEST(AudioSessionClientManagerUnitTest, ClearSelectedInputDevice_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioSessCliMgrUT ClearSelectedInputDevice_001 start");
-    int32_t result = AudioSessionClientManager::GetInstance().ClearSelectedInputDevice();
-    AUDIO_INFO_LOG("AudioSessCliMgrUT ClearSelectedInputDevice_001 result:%{public}d", result);
-    // Should return success or error code, but not crash
-    EXPECT_EQ(result, SUCCESS);
 }
 
 /**

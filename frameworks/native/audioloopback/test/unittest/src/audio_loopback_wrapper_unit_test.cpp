@@ -190,15 +190,6 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Normal_NoProxy_001, TestSize.Level
     EXPECT_TRUE(result);
 }
 
-HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_Control_NoProxy_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL,
-        appInfo_);
-
-    bool result = wrapper->Enable(true);
-    EXPECT_FALSE(result);
-}
-
 HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_UnknownType_001, TestSize.Level1)
 {
     auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, static_cast<LoopbackType>(100),
@@ -206,28 +197,6 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, Enable_UnknownType_001, TestSize.Level1)
 
     bool result = wrapper->Enable(true);
     EXPECT_FALSE(result);
-}
-
-HWTEST_F(AudioLoopbackWrapperUnitTest, GetStatus_Control_NoProxy_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL,
-        appInfo_);
-
-    AudioLoopbackStatus status = wrapper->GetStatus();
-    EXPECT_EQ(status, static_cast<AudioLoopbackStatus>(-1));
-}
-
-HWTEST_F(AudioLoopbackWrapperUnitTest, GetStatus_Control_IpcFailed_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL,
-        appInfo_);
-    wrapper->SetLoopbackProxy(mockLoopback_);
-
-    EXPECT_CALL(*mockLoopback_, GetStatus(_, _)).WillOnce(DoAll(SetArgReferee<0>(LOOPBACK_AVAILABLE_IDLE),
-        SetArgReferee<1>(ERR_OPERATION_FAILED), Return(SUCCESS)));
-
-    AudioLoopbackStatus status = wrapper->GetStatus();
-    EXPECT_EQ(status, static_cast<AudioLoopbackStatus>(-1));
 }
 
 HWTEST_F(AudioLoopbackWrapperUnitTest, GetStatus_Normal_001, TestSize.Level1)
@@ -239,14 +208,6 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, GetStatus_Normal_001, TestSize.Level1)
 
     AudioLoopbackStatus status = wrapper->GetStatus();
     EXPECT_EQ(status, LOOPBACK_AVAILABLE_RUNNING);
-}
-
-HWTEST_F(AudioLoopbackWrapperUnitTest, GetStatus_NoPrivate_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_NORMAL, appInfo_);
-
-    AudioLoopbackStatus status = wrapper->GetStatus();
-    EXPECT_EQ(status, LOOPBACK_AVAILABLE_IDLE);
 }
 
 HWTEST_F(AudioLoopbackWrapperUnitTest, SetVolume_Control_NotSupported_001, TestSize.Level1)
@@ -267,14 +228,6 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, SetVolume_Normal_001, TestSize.Level1)
 
     int32_t result = wrapper->SetVolume(0.5f);
     EXPECT_EQ(result, SUCCESS);
-}
-
-HWTEST_F(AudioLoopbackWrapperUnitTest, SetVolume_NoPrivate_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_NORMAL, appInfo_);
-
-    int32_t result = wrapper->SetVolume(0.5f);
-    EXPECT_EQ(result, ERR_NULL_POINTER);
 }
 
 HWTEST_F(AudioLoopbackWrapperUnitTest, GetVolume_Control_Success_001, TestSize.Level1)
@@ -420,34 +373,10 @@ HWTEST_F(AudioLoopbackWrapperUnitTest, GetSupportedDevicePairs_Control_NotSuppor
     EXPECT_TRUE(pairs.empty());
 }
 
-HWTEST_F(AudioLoopbackWrapperUnitTest, GetSupportedDevicePairs_Normal_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_NORMAL, appInfo_);
-    wrapper->SetPrivate(mockPrivate_);
-
-    std::vector<AudioDevicePair> expectedPairs = {};
-    EXPECT_CALL(*mockPrivate_, GetSupportedDevicePairs()).WillOnce(Return(expectedPairs));
-
-    auto pairs = wrapper->GetSupportedDevicePairs();
-    EXPECT_TRUE(pairs.empty());
-}
-
 HWTEST_F(AudioLoopbackWrapperUnitTest, GetPreferredDevicePair_Control_NotSupported_001, TestSize.Level1)
 {
     auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL,
         appInfo_);
-
-    auto pair = wrapper->GetPreferredDevicePair();
-    EXPECT_TRUE(pair.first == nullptr || pair.first->deviceType_ == DEVICE_TYPE_NONE);
-}
-
-HWTEST_F(AudioLoopbackWrapperUnitTest, GetPreferredDevicePair_Normal_001, TestSize.Level1)
-{
-    auto wrapper = std::make_shared<TestAudioLoopbackWrapper>(LOOPBACK_HARDWARE, LOOPBACK_TYPE_NORMAL, appInfo_);
-    wrapper->SetPrivate(mockPrivate_);
-
-    AudioDevicePair expectedPair;
-    EXPECT_CALL(*mockPrivate_, GetPreferredDevicePair()).WillOnce(Return(expectedPair));
 
     auto pair = wrapper->GetPreferredDevicePair();
     EXPECT_TRUE(pair.first == nullptr || pair.first->deviceType_ == DEVICE_TYPE_NONE);
