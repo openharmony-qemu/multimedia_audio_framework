@@ -400,8 +400,19 @@ int32_t HpaeFastRendererManager::InitSinkInner(bool isReload)
             }
         }
     });
+    StartFastSinkAfterInit();
+    return SUCCESS;
+}
+
+int32_t HpaeFastRendererManager::StartFastSinkAfterInit()
+{
     // Creating only without starting/stopping can lead to power consumption issues.
     // After starting here, the data thread will trigger the delay stop for fast sink.
+    // Skip start for a2dp_fast to avoid Bluetooth dual-connection loop preemption issues.
+    CHECK_AND_RETURN_RET_LOG(sinkOutputNode_->GetDeviceClass() != "a2dp_fast", SUCCESS,
+        "skip start fast sink after init for a2dp_fast");
+    AUDIO_INFO_LOG("start fast sink after init, deviceClass:%{public}s",
+        sinkOutputNode_->GetDeviceClass().c_str());
     sinkOutputNode_->RenderSinkStart();
     return SUCCESS;
 }

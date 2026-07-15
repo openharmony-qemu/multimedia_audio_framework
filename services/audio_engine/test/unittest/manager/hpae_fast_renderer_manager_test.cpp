@@ -2712,3 +2712,43 @@ HWTEST_F(HpaeFastRendererManagerTest, onNodeStatusUpdate_WithSession_001, TestSi
     EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
     WaitForMsgProcessing(fastManager_);
 }
+
+// ==================== InitSinkInner a2dp_fast skip RenderSinkStart tests ====================
+
+/**
+ * @tc.name  : initSinkInner_A2dpFastSkipStart_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_141
+ * @tc.desc  : Test InitSinkInner skips RenderSinkStart for a2dp_fast device class
+ * @tc.owner : audio_route_fast
+ */
+HWTEST_F(HpaeFastRendererManagerTest, initSinkInner_A2dpFastSkipStart_001, TestSize.Level1)
+{
+    HpaeSinkInfo a2dpSinkInfo = GetFastSinkInfo("a2dp_fast");
+    auto a2dpManager = std::make_shared<HpaeFastRendererManager>(a2dpSinkInfo);
+    EXPECT_EQ(a2dpManager->Init(), SUCCESS);
+    WaitForMsgProcessing(a2dpManager);
+    ASSERT_NE(a2dpManager->sinkOutputNode_, nullptr);
+    EXPECT_EQ(a2dpManager->sinkOutputNode_->GetDeviceClass(), "a2dp_fast");
+    // RenderSinkStart should be skipped for a2dp_fast
+    EXPECT_NE(a2dpManager->sinkOutputNode_->GetSinkState(), STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(a2dpManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(a2dpManager);
+}
+
+/**
+ * @tc.name  : initSinkInner_NonA2dpFastStart_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_142
+ * @tc.desc  : Test InitSinkInner calls RenderSinkStart for non-a2dp_fast device class
+ * @tc.owner : audio_route_fast
+ */
+HWTEST_F(HpaeFastRendererManagerTest, initSinkInner_NonA2dpFastStart_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    ASSERT_NE(fastManager_->sinkOutputNode_, nullptr);
+    EXPECT_NE(fastManager_->sinkOutputNode_->GetDeviceClass(), "a2dp_fast");
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
