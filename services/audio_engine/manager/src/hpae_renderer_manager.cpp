@@ -446,11 +446,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
     } else if (node->connectedProcessorType_ != GetProcessorType(nodeInfo.sessionId) &&
         node->GetState() == HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("sessionId: %{public}u need to refresh %{public}d", nodeInfo.sessionId, processClusterDecision);
-        auto oldRoute = BuildChannelOverrideRouteFromProcessorType(node->connectedProcessorType_);
         DetachSessionEffectNodeForRefresh(nodeInfo.sessionId, node->connectedProcessorType_);
-        if (oldRoute.has_value()) {
-            ClearChannelOverrideForRoute(oldRoute.value());
-        }
         DisConnectInputSession(nodeInfo.sessionId);
         ConnectInputSession(nodeInfo.sessionId);
     }
@@ -521,7 +517,6 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId,
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSession");
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
     CHECK_AND_RETURN_RET(sinkInputNode != nullptr, SUCCESS);
-    auto route = BuildChannelOverrideRoute(sessionId);
     auto sessionIt = sessionNodeMap_.find(sessionId);
     HpaeSessionState sessionState = sinkInputNode->GetState();
     if (sessionIt != sessionNodeMap_.end()) {
@@ -543,9 +538,6 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId,
     RendererState state = inputState == HPAE_SESSION_RELEASED ? RENDERER_INVALID : RENDERER_RELEASED;
     NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
     TransNodeInfoForCollaboration(sinkInputNodeMap_[sessionId]->GetNodeInfo(), COLLABORATION_CLOSE);
-    if (route.has_value()) {
-        ClearChannelOverrideForRoute(route.value());
-    }
     sinkInputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
     return SUCCESS;
@@ -602,6 +594,12 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId, bool needI
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneTypeToDestroyNodes), ERROR,
         "SessionId %{public}u, sceneCluster processorType %{public}d not exist, cant destroy nodes",
         sessionId, sceneTypeToDestroyNodes);
+    
+    auto route = BuildChannelOverrideRouteFromProcessorType(sceneTypeToDestroyNodes);
+    if (route.has_value() && sceneClusterMap_[sceneTypeToDestroyNodes]->HasSessionEffectNode(sessionId)) {
+        ClearChannelOverrideForRoute(route.value());
+    }
+
     if (sceneClusterMap_[sceneTypeToDestroyNodes]->DestroyNodes(sessionId, mode) != SUCCESS) {
         AUDIO_INFO_LOG("SessionId %{public}d, Nodes not found in sceneCluster processorType %{public}d,"
             "try to destroy nodes by traverse sceneCluster", sessionId, sceneTypeToDestroyNodes);
@@ -1802,11 +1800,7 @@ void HpaeRendererManager::UpdateProcessClusterConnection(uint32_t sessionId, int
         return;
     }
     HpaeProcessorType connectedSceneType = GetConnectedProcessorType(sessionId);
-    auto oldRoute = BuildChannelOverrideRouteFromProcessorType(connectedSceneType);
     DetachSessionEffectNodeForRefresh(sessionId, connectedSceneType);
-    if (oldRoute.has_value()) {
-        ClearChannelOverrideForRoute(oldRoute.value());
-    }
     DisConnectInputSession(sessionId);
     ConnectInputSession(sessionId);
 }

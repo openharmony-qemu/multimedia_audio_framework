@@ -142,6 +142,10 @@ void HpaeRendererManager::DetachSessionEffectNodeForRefresh(uint32_t sessionId, 
     int32_t ret = processCluster->DestroySessionEffectNode(sessionId, latency);
     CHECK_AND_RETURN_LOG(ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS),
         "DetachSessionEffectNodeForRefresh: destroy failed session %{public}u ret %{public}d", sessionId, ret);
+    auto oldRoute = BuildChannelOverrideRouteFromProcessorType(oldSceneType);
+    if (oldRoute.has_value()) {
+        ClearChannelOverrideForRoute(oldRoute.value());
+    }
     AUDIO_INFO_LOG("[SE::RendererManager] Detached SE node for refresh sessionId=%{public}u oldSceneType=%{public}d",
         sessionId, static_cast<int32_t>(oldSceneType));
     CHECK_AND_RETURN(latency > 0 && sinkInputNode != nullptr);
