@@ -550,7 +550,7 @@ int32_t AudioVolumeManager::HandleA2dpAbsVolume(AudioStreamType streamType, cons
 int32_t AudioVolumeManager::HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
     DeviceType curOutputDeviceType)
 {
-    auto desc = audioActiveDevice_.GetDeviceForVolume();
+    auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "desc is nullptr");
     std::string nearlinkDevice = desc->macAddress_;
     if (nearlinkDevice.empty()) {
