@@ -468,6 +468,7 @@ int32_t HpaeDirectRendererManager::DisConnectInputSession(bool isStandby)
     // Do NOT DropEffect here — that happens in DeleteInputSession after this returns.
     if (sessionEffectNode_ != nullptr && loudnessGainNode_ != nullptr
         && converterForGain_ != nullptr) {
+        sessionEffectNode_->PauseEffect();
         loudnessGainNode_->DisConnect(sessionEffectNode_);
         sessionEffectNode_->DisConnect(converterForGain_);
     } else if (loudnessGainNode_ != nullptr && converterForGain_ != nullptr) {
@@ -510,11 +511,7 @@ int32_t HpaeDirectRendererManager::Pause(uint32_t sessionId, bool isStandby)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Pause not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Pause sessionId %{public}u isStandby %{public}d", sessionId, isStandby);
-        bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         if (curNode_ != nullptr && sessionId == curNode_->GetSessionId()) {
-            if (isSessionEffectActive) {
-                sessionEffectNode_->PauseEffect();
-            }
             if (!SetSessionFade(sessionId, OPERATION_PAUSED, isStandby)) {
                 DisConnectInputSession(isStandby);
             }
@@ -581,11 +578,7 @@ int32_t HpaeDirectRendererManager::Stop(uint32_t sessionId)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Stop not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Stop sessionId %{public}u", sessionId);
-        bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         if (curNode_ != nullptr && sessionId == curNode_->GetSessionId()) {
-            if (isSessionEffectActive) {
-                sessionEffectNode_->PauseEffect();
-            }
             if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
                 DisConnectInputSession();
             }
@@ -761,8 +754,8 @@ int32_t HpaeDirectRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkI
         Trace trace("HpaeDirectRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
         AUDIO_INFO_LOG("reload direct");
         if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
-            DetachSessionEffectNodeForReload();  // Detach SE but keep attach state for reload
             DisConnectInputSession();
+            DetachSessionEffectNodeForReload();  // Detach SE but keep attach state for reload
             DestroyDirectNodes();
         }
         StopOuputNode();

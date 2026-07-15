@@ -425,6 +425,7 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     // Do NOT DropEffect here — that happens in DeleteInputSession after this returns.
     if (sessionEffectNode_ != nullptr && loudnessGainNode_ != nullptr
         && converterForLoudness_ != nullptr) {
+        sessionEffectNode_->PauseEffect();
         loudnessGainNode_->DisConnect(sessionEffectNode_);
         sessionEffectNode_->DisConnect(converterForLoudness_);
     } else if (loudnessGainNode_ != nullptr && converterForLoudness_ != nullptr) {
@@ -468,9 +469,6 @@ void HpaeOffloadRendererManager::TearDownCurrentNodePipeline(uint32_t sessionId,
 {
     if (sessionId != curNode_->GetSessionId()) {
         return;
-    }
-    if (isSessionEffectActive) {
-        sessionEffectNode_->PauseEffect();
     }
     DisConnectInputSession();
     bool isRunningWithSink = state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr;
@@ -722,8 +720,8 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
         Trace trace("HpaeOffloadRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
         AUDIO_INFO_LOG("reload offload");
         if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
-            DetachSessionEffectNodeForReload();
             DisConnectInputSession();
+            DetachSessionEffectNodeForReload();
             if (sinkOutputNode_ != nullptr) {
                 sinkOutputNode_->StopStream();
             }
