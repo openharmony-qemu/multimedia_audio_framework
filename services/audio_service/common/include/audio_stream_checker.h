@@ -82,8 +82,7 @@ private:
     std::recursive_mutex checkLock_;
     std::recursive_mutex backgroundStateLock_;
     AudioProcessConfig streamConfig_;
-    std::mutex volumeLock_;
-    float curVolume_ = 1.0f;
+    std::atomic<float> curVolume_ = 1.0f;
     float preVolume_ = 1.0f;
 };
 }
