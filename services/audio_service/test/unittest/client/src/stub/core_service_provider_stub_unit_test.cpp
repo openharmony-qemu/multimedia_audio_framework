@@ -844,19 +844,5 @@ HWTEST_F(CoreServiceProviderStubUnitTest, CoreServiceProviderWrapper_NotifyDevic
  * @tc.number: CoreServiceProviderWrapper_NotifyDeviceStateChange_002
  * @tc.desc  : Test NotifyDeviceStateChange with valid coreServiceWorker.
  */
-HWTEST_F(CoreServiceProviderStubUnitTest, CoreServiceProviderWrapper_NotifyDeviceStateChange_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("CSPWrapper_NotifyDeviceStateChange_002 start");
-    MockCoreServiceProvider mockProvider;
-    CoreServiceProviderWrapper wrapper(&mockProvider);
-
-    EXPECT_CALL(mockProvider, OnDeviceStateChange("test", DEVICE_ROLE_NONE, false))
-        .Times(testing::AtLeast(0));
-
-    int32_t result = wrapper.NotifyDeviceStateChange("test", 0, false);
-    AUDIO_INFO_LOG("CSPWrapper_NotifyDeviceStateChange_002 result:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

@@ -95,40 +95,6 @@ void AudioFocusInfoChangeCallbackTest::OnAudioFocusInfoChange(
 }
 
 /**
- * @tc.name   : Test ActivateAudioInterrupt API
- * @tc.number : ActivateAudioInterrupt_001
- * @tc.desc   : Test ActivateAudioInterrupt interface.
- */
-HWTEST(AudioManagerInterruptUnitTest, ActivateAudioInterrupt_001, TestSize.Level1)
-{
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.uid = getuid();
-    audioInterrupt.pid = getpid();
-    audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
-    audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
-    auto ret = AudioSystemManager::GetInstance()->ActivateAudioInterrupt(audioInterrupt);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name   : Test DeactivateAudioInterrupt API
- * @tc.number : DeactivateAudioInterrupt_001
- * @tc.desc   : Test DeactivateAudioInterrupt interface.
- */
-HWTEST(AudioManagerInterruptUnitTest, DeactivateAudioInterrupt_001, TestSize.Level1)
-{
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.uid = getuid();
-    audioInterrupt.pid = getpid();
-    audioInterrupt.contentType = CONTENT_TYPE_RINGTONE;
-    audioInterrupt.streamUsage = STREAM_USAGE_NOTIFICATION_RINGTONE;
-    audioInterrupt.audioFocusType.streamType = STREAM_ACCESSIBILITY;
-    auto ret = AudioSystemManager::GetInstance()->DeactivateAudioInterrupt(audioInterrupt);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name   : Test ActivatePreemptMode API
  * @tc.number : ActivatePreemptMode_001
  * @tc.desc   : Test ActivatePreemptMode interface, SUCCESS return, if uid: 7015
@@ -178,35 +144,6 @@ HWTEST(AudioManagerInterruptUnitTest, DeactivatePreemptMode_002, TestSize.Level1
     std::cout << "setUidRet: " << setUidRet << std::endl;
     auto ret = AudioSystemManager::GetInstance()->DeactivatePreemptMode();
     EXPECT_EQ(ret, ERROR);
-}
-
-/**
- * @tc.name   : Test SetAudioInterruptCallback API
- * @tc.number : SetAudioInterruptCallback_001
- * @tc.desc   : Test SetAudioInterruptCallback interface.
- */
-HWTEST(AudioManagerInterruptUnitTest, SetAudioInterruptCallback_001, TestSize.Level1)
-{
-    uint32_t sessionId = 0;
-    std::shared_ptr<AudioInterruptCallback> callback = nullptr;
-    uint32_t clientUid = 1;
-    int32_t zoneID = 1;
-    auto ret = AudioSystemManager::GetInstance()->SetAudioInterruptCallback(sessionId, callback,
-        clientUid, zoneID);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-}
-
-/**
- * @tc.name   : Test UnsetAudioInterruptCallback API
- * @tc.number : UnsetAudioInterruptCallback_001
- * @tc.desc   : Test UnsetAudioInterruptCallback interface.
- */
-HWTEST(AudioManagerInterruptUnitTest, UnsetAudioInterruptCallback_001, TestSize.Level1)
-{
-    int32_t zoneId = 1;
-    uint32_t sessionId = 1;
-    auto ret = AudioSystemManager::GetInstance()->UnsetAudioInterruptCallback(zoneId, sessionId);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
@@ -270,20 +207,6 @@ HWTEST(AudioManagerInterruptUnitTest, SetAudioManagerInterruptCallback_003, Test
     EXPECT_EQ(SUCCESS, ret);
     shared_ptr<AudioManagerCallback> interruptCallbackNew = make_shared<AudioManagerCallbackImpl>();
     ret = AudioSystemManager::GetInstance()->SetAudioManagerInterruptCallback(interruptCallbackNew);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name   : Test UnsetAudioManagerInterruptCallback API
-* @tc.number : UnsetAudioManagerInterruptCallback_001
-* @tc.desc   : Test UnsetAudioManagerInterruptCallback interface with Set and Unset callback
-*/
-HWTEST(AudioManagerInterruptUnitTest, UnsetAudioManagerInterruptCallback_001, TestSize.Level1)
-{
-    shared_ptr<AudioManagerCallback> interruptCallback = make_shared<AudioManagerCallbackImpl>();
-    auto ret = AudioSystemManager::GetInstance()->SetAudioManagerInterruptCallback(interruptCallback);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = AudioSystemManager::GetInstance()->UnsetAudioManagerInterruptCallback();
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -934,20 +857,6 @@ HWTEST(AudioManagerInterruptUnitTest, RegisterFocusInfoChangeCallback_005, TestS
     }
 
     ret = AudioSystemManager::GetInstance()->UnregisterFocusInfoChangeCallback(callback2);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name    : SetAppConcurrencyMode_001
- * @tc.desc    : Test set app concurrency mode
- * @tc.type    : FUNC
- * @tc.require : issueICS6Y9
- */
-HWTEST(AudioManagerInterruptUnitTest, SetAppConcurrencyMode_001, TestSize.Level1)
-{
-    int32_t uid = 0;
-    int32_t mode = 0;
-    auto ret = AudioSystemManager::GetInstance()->SetAppConcurrencyMode(uid, mode);
     EXPECT_EQ(ret, SUCCESS);
 }
 

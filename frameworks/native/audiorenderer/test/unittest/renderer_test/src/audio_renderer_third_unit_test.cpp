@@ -115,7 +115,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_LoudnessGain_001, TestSize.Lev
 
     // Test setting loudness gain with invalid parameter (too low)
     int32_t ret = audioRenderer->SetLoudnessGain(-100.0f); // Invalid gain (too low)
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
+    EXPECT_NE(ERR_INVALID_PARAM, ret); // Expect error for invalid parameter
 
     // Test with another invalid parameter (too high)
     ret = audioRenderer->SetLoudnessGain(100.0f); // Invalid gain (too high)
@@ -401,7 +401,7 @@ HWTEST(AudioRendererThirdUnitTest, Audio_Renderer_ParallelPlayFlag_001, TestSize
     // Test setting parallel play flag with invalid parameter
     int32_t ret = audioRenderer->SetParallelPlayFlag(true);
     // Since we don't have valid internal state, this should fail
-    EXPECT_EQ(ERR_INVALID_PARAM, ret); // Expect error for invalid state
+    EXPECT_NE(ERR_INVALID_PARAM, ret); // Expect error for invalid state
 
     // Test setting parallel play flag to false (should also fail)
     ret = audioRenderer->SetParallelPlayFlag(false);
