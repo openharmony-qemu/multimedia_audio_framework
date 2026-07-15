@@ -450,6 +450,7 @@ private:
         const AudioInterrupt &incomingInterrupt);
     bool CheckAudioConcurrencyForInterrupt(const AudioInterrupt &activeInterrupt,
         const AudioInterrupt &incomingInterrupt);
+    int32_t FindAudioZoneByStreamIdInternal(const uint32_t streamId);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
