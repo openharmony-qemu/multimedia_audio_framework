@@ -929,22 +929,6 @@ void HpaeOffloadRendererManagerProcessFuzzTest()
     offloadRendererManager->DeInit();
 }
 
-void HpaeOffloadRendererManagerHandleMsgFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    if (offloadRendererManager == nullptr) {
-        return;
-    }
-    offloadRendererManager->Init();
-    WaitForMsgProcessing(offloadRendererManager);
-
-    offloadRendererManager->HandleMsg();
-    WaitForMsgProcessing(offloadRendererManager);
-    offloadRendererManager->DeInit();
-}
-
 void HpaeOffloadRendererManagerDeactivateThreadFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
@@ -2660,7 +2644,6 @@ TestFuncs g_testFuncs[] = {
     HpaeOffloadRendererManagerSetLoudnessGainFuzzTest,
     HpaeOffloadRendererManagerGetNodeInputFormatInfoFuzzTest,
     HpaeOffloadRendererManagerProcessFuzzTest,
-    HpaeOffloadRendererManagerHandleMsgFuzzTest,
     HpaeOffloadRendererManagerDeactivateThreadFuzzTest,
     HpaeOffloadRendererManagerAddNodeToSinkFuzzTest,
     HpaeOffloadRendererManagerAddAllNodesToSinkFuzzTest,

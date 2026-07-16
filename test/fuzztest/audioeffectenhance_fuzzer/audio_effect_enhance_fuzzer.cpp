@@ -65,6 +65,49 @@ EffectChainManagerParam DEFAULT_EFFECT_CHAIN_MANAGER_PARAM{
     {{"effect1", "property1"}, {"effect4", "property5"}, {"effect1", "property4"}}
 };
 
+// ENHANCE-specific Init config for AudioEnhanceChainManagerImpl (Plan A+, no faked
+// AudioEffectLibrary). sceneType "SCENE_RECORD"/"SCENE_VOIP_UP" are the values of
+// AudioEnhanceScene::SCENE_RECORD(=1)/SCENE_VOIP_UP(=0) (audio_effect.h:485/484) in the
+// GetEnhanceSupportedSceneType() whitelist (audio_effect_map.cpp:43-44). The
+// chainConfigInfoMap_ keys "SCENE_RECORD_&_ENHANCE_DEFAULT"/"SCENE_VOIP_UP_&_ENHANCE_DEFAULT"
+// match the fallback lookup in GetEnhanceNamesBySceneCode
+// (audio_enhance_chain_manager_impl.cpp:335). capturerDevice DEVICE_TYPE_MIC is in the
+// GetSupportedDeviceType() whitelist (audio_device_type.cpp:36) so ParseSceneKeyCode succeeds.
+// Non-empty libList (entries with null audioEffectLibHandle) lets FindEnhanceLib match
+// (:78) so InitAudioEnhanceChainManager fills enhanceConfigInfoMap_ (:184-189),
+// AddAudioEnhanceChainHandles resolves each enhance (:391-395), and
+// SetRelateWithDevicePropForEnhance's VOIP_UP inner loop (:110-119) sets relateWithDevice.
+// The null libHandle still makes CreateAllEnhanceModule return ERROR
+// (audio_enhance_chain.cpp:383-386), so CreateAudioEnhanceChainDynamic keeps the failure
+// path -- no chain enters ChainPool.
+shared_ptr<AudioEffectLibEntry> MakeFakeEnhanceLibEntry(const string &libName,
+    const vector<string> &effectNames)
+{
+    auto entry = make_shared<AudioEffectLibEntry>();
+    entry->libraryName = libName;
+    entry->effectName = effectNames;
+    entry->audioEffectLibHandle = nullptr;
+    return entry;
+}
+
+vector<EffectChain> ENHANCE_EFFECT_CHAINS = {
+    {"ENHANCECHAIN_RECORD", {"enhance_record"}, ""},
+    {"ENHANCECHAIN_VOIP", {"enhance_voip"}, ""},
+};
+vector<shared_ptr<AudioEffectLibEntry>> ENHANCE_LIBRARY_LIST = {
+    MakeFakeEnhanceLibEntry("fake_lib_record", {"enhance_record"}),
+    MakeFakeEnhanceLibEntry("fake_lib_voip", {"enhance_voip"}),
+};
+
+EffectChainManagerParam ENHANCE_CHAIN_MANAGER_PARAM{
+    DEFAULT_MAX_EXTRA_NUM,
+    "SCENE_DEFAULT",
+    {},
+    {{"SCENE_RECORD_&_ENHANCE_DEFAULT", "ENHANCECHAIN_RECORD"},
+        {"SCENE_VOIP_UP_&_ENHANCE_DEFAULT", "ENHANCECHAIN_VOIP"}},
+    {{"enhance_record", "default_prop"}, {"enhance_voip", "voip_prop"}},
+};
+
 /*
 * describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
 * tips: only support basic type
@@ -509,6 +552,138 @@ void EnhanceManagerAlgoConfigAndPropertyFuzzTest()
     mgr->GetAudioEnhanceProperty(getResult, DEVICE_TYPE_SPEAKER); // non-NONE -> db-update branch
 }
 
+// Max mic channel count for EnhanceManagerCreateChainFuzzTest. AudioEnhanceChain::
+// InitAudioEnhanceChain multiplies micChannels * byteLenPerFrame(=1920) inside resize()
+// (audio_enhance_chain.cpp:110/111/113), so an unconstrained fuzz uint32 overflows that
+// product (ubsan mul-overflow). Real mic channel counts are small.
+constexpr uint32_t ENHANCE_MIC_CHANNEL_MAX = 16;
+
+// Bit offsets for sceneKeyCode encoding, mirroring the anonymous-namespace
+// constants in audio_enhance_chain_manager_impl.cpp:41-42 (not exported, so
+// redefined here). sceneKeyCode = sceneCode<<SCENE_TYPE_OFFSET |
+// captureId<<CAPTURER_ID_OFFSET | renderId.
+constexpr uint32_t SCENE_TYPE_OFFSET = 32;
+constexpr uint32_t CAPTURER_ID_OFFSET = 16;
+
+// Build a sceneKeyCode from sceneCode/captureId/renderId per the encoding in
+// audio_enhance_chain_manager_impl.cpp:41-44.
+uint64_t BuildEnhanceSceneKeyCode(uint32_t sceneCode, uint32_t captureId, uint32_t renderId)
+{
+    return (static_cast<uint64_t>(sceneCode) << SCENE_TYPE_OFFSET) |
+           (static_cast<uint64_t>(captureId) << CAPTURER_ID_OFFSET) |
+           static_cast<uint64_t>(renderId);
+}
+
+// Covers CreateAudioEnhanceChainDynamic (282-316) and its private callees:
+// CreateEnhanceChainInner (346-382, NORMAL_SCENE path), GetEnhanceNamesBySceneCode
+// (318-344, both specific-device miss at 333-334 and no-device hit at 336-337),
+// ParseSceneKeyCode (199-246, success path), GetThreadHandlerByScene (248-268, create
+// path), AddAudioEnhanceChainHandles (384-407, nullptr libHandle -> ERROR at 404),
+// ReleaseThreadHandlerByScene (270-280, erase path at 278). With empty libList the
+// chain is not added to ChainPool, so CreateAudioEnhanceChainDynamic takes the failure
+// path (306-310) and ResetInfo fully restores singleton state.
+void EnhanceManagerCreateChainFuzzTest()
+{
+    AudioEnhanceChainManager *mgr = AudioEnhanceChainManager::GetInstance();
+    if (mgr == nullptr) {
+        return;
+    }
+    mgr->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS, ENHANCE_CHAIN_MANAGER_PARAM,
+        ENHANCE_LIBRARY_LIST);
+
+    // Register captureId -> DEVICE_TYPE_MIC so ParseSceneKeyCode resolves it (216-222).
+    uint32_t captureId = GetData<uint32_t>() & 0xFFFF;
+    mgr->SetInputDevice(captureId, DEVICE_TYPE_MIC);
+
+    // sceneCode = SCENE_RECORD (1) is in GetEnhanceSupportedSceneType() whitelist.
+    uint64_t sceneKeyCode = BuildEnhanceSceneKeyCode(SCENE_RECORD, captureId, 0);
+    AudioEnhanceDeviceAttr deviceAttr = {};
+    deviceAttr.micRate = GetData<uint32_t>();
+    // Clamp micChannels to 1..ENHANCE_MIC_CHANNEL_MAX: it feeds micChannels * byteLenPerFrame
+    // resize() multipliers in AudioEnhanceChain::InitAudioEnhanceChain (audio_enhance_chain.cpp:
+    // 110/111/113), which overflow uint32 on an unconstrained fuzz value.
+    deviceAttr.micChannels = GetData<uint32_t>() % ENHANCE_MIC_CHANNEL_MAX + 1;
+    mgr->CreateAudioEnhanceChainDynamic(sceneKeyCode, deviceAttr);
+
+    mgr->ResetInfo();
+}
+
+// Covers UpdateExtraSceneType (661-695) across all branches and the SendFoldStateToChain
+// (697-705) / SendPowerStateToChain (707-715) entry points. ChainPool is empty so the
+// send-to-chain loop bodies do not run, but enhancePara_.foldState/powerState are set
+// (680, 687). FOLD_STATE_EXPAND(1)..FOLD_STATE_MIDDLE(3) and power range [0,100] come
+// from audio_effect.h:80-82 and BATTERY_CAPACITY (impl.cpp:46).
+void EnhanceManagerUpdateExtraSceneTypeFuzzTest()
+{
+    AudioEnhanceChainManager *mgr = AudioEnhanceChainManager::GetInstance();
+    if (mgr == nullptr) {
+        return;
+    }
+    const std::string mainkey = "device_status";
+
+    // fold_state valid range [FOLD_STATE_EXPAND, FOLD_STATE_MIDDLE].
+    uint32_t foldSpan = FOLD_STATE_MIDDLE - FOLD_STATE_EXPAND + 1; // 3
+    uint32_t foldVal = FOLD_STATE_EXPAND + (GetData<uint32_t>() % foldSpan); // 1..3
+    mgr->UpdateExtraSceneType(mainkey, "fold_state", std::to_string(foldVal));
+
+    // power_state valid range [0, BATTERY_CAPACITY(100)].
+    const uint32_t batteryCapacity = 100;
+    uint32_t powerVal = GetData<uint32_t>() % (batteryCapacity + 1); // 0..100
+    mgr->UpdateExtraSceneType(mainkey, "power_state", std::to_string(powerVal));
+
+    // empty string -> early return (665-668).
+    mgr->UpdateExtraSceneType(mainkey, "fold_state", "");
+
+    // non-numeric -> from_chars fails -> return (670-673).
+    mgr->UpdateExtraSceneType(mainkey, "power_state", "abc");
+
+    // out-of-range fold (4 > FOLD_STATE_MIDDLE) -> else branch (690-694).
+    mgr->UpdateExtraSceneType(mainkey, "fold_state", "4");
+
+    // out-of-range power (101 > batteryCapacity) -> else branch.
+    mgr->UpdateExtraSceneType(mainkey, "power_state", "101");
+
+    // mismatched mainkey/subkey -> else branch.
+    mgr->UpdateExtraSceneType("wrong_key", "wrong_sub", "5");
+
+    mgr->ResetInfo();
+}
+
+// Covers SetInputDevice (489-534): first registration (495-499), same-device early
+// return (500-503), different-device update path (505-533) which triggers
+// UpdatePropertyAndSendToAlgo (474-487), and out-of-whitelist device -> ERROR
+// (508-512). DEVICE_TYPE_MIC/SPEAKER are in GetSupportedDeviceType() whitelist
+// (audio_device_type.cpp:36,30). Init populates enhancePropertyMap_ so the
+// UpdatePropertyAndSendToAlgo loop (478-485) iterates (ChainPool empty -> inner
+// chain loop skipped). ResetInfo restores state.
+void EnhanceManagerSetInputDeviceCoreFuzzTest()
+{
+    AudioEnhanceChainManager *mgr = AudioEnhanceChainManager::GetInstance();
+    if (mgr == nullptr) {
+        return;
+    }
+    mgr->InitAudioEnhanceChainManager(ENHANCE_EFFECT_CHAINS, ENHANCE_CHAIN_MANAGER_PARAM,
+        ENHANCE_LIBRARY_LIST);
+
+    uint32_t captureId = GetData<uint32_t>() & 0xFFFF;
+
+    // Branch 1: captureId absent -> insert + return SUCCESS (495-499).
+    mgr->SetInputDevice(captureId, DEVICE_TYPE_MIC);
+
+    // Branch 2: same device -> early return SUCCESS (500-503).
+    mgr->SetInputDevice(captureId, DEVICE_TYPE_MIC);
+
+    // Branch 3: different device (SPEAKER, in whitelist) -> update + UpdatePropertyAndSendToAlgo.
+    mgr->SetInputDevice(captureId, DEVICE_TYPE_SPEAKER);
+
+    // Branch 4: device not in GetSupportedDeviceType() whitelist -> return ERROR (508-512).
+    const int32_t outOfRangeDevice = 200;
+    DeviceType invalidDevice = static_cast<DeviceType>(outOfRangeDevice);
+    mgr->SetInputDevice(captureId, invalidDevice);
+
+    mgr->ResetInfo();
+}
+
 using FuzzFunc = decltype(AudioEffectChainEnhanceFuzzTest);
 FuzzFunc *g_fuzzFuncs[] = {
     AudioEffectChainEnhanceFuzzTest,
@@ -532,6 +707,9 @@ FuzzFunc *g_fuzzFuncs[] = {
     AudioEnhanceMuteStateFuzzTest,
     EnhanceManagerInitFuzzTest,
     EnhanceManagerAlgoConfigAndPropertyFuzzTest,
+    EnhanceManagerCreateChainFuzzTest,
+    EnhanceManagerUpdateExtraSceneTypeFuzzTest,
+    EnhanceManagerSetInputDeviceCoreFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
