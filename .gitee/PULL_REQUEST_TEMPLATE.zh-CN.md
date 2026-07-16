@@ -35,7 +35,7 @@
 | SA新增idl接口，必须同时新增fuzz用例，并进行fuzz测试                        |Y/N/NA|
 | 类反序列化结果用于内存申请、数组长度、循环条件前，必须进行合法性校验          |Y/N/NA|
 | 新增动态共享库或可执行文件是否开启硬件PAC（gn文件配置 branch_protector_ret = "pac_ret"）  |Y/N/NA|
-| 新增动态共享库或可执行文件是否开启前向CFI（gn文件配置 cfi = true, cfi_cross_dso = true）     |Y/N/NA|
+| 新增动态共享库或可执行文件是否开启前向CFI（gn文件配置 cfi = true, cfi_cross_dso = true, debug = false）  |Y/N/NA|
 
 **XTS Result**:
 
