@@ -411,8 +411,6 @@ private:
     int32_t ProcessActiveStreamFocus(std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
         const AudioInterrupt &incomingInterrupt, AudioFocuState &incomingState,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);
-    void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
-        const AudioInterrupt &activeInterrupt, int32_t reason);
     void PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId);
     void RemoveStreamIdSuggestionRecord(int32_t streamId);
     void RemovePidSuggestionRecord(int32_t pid);
