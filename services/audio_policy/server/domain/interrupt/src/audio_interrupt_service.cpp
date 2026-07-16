@@ -859,6 +859,10 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
         if (concurrencyMode == AudioConcurrencyMode::SILENT ||
             concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
             AUDIO_INFO_LOG("incoming stream is explicitly SILENT or MIX_WITH_OTHERS.");
+            if (incomingInterrupt.uid == AUDIO_ID &&
+            !(AudioSessionService::IsSameTypeForAudioSession(
+                incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType)))
+                return false;
             return true;
         }
     }
@@ -905,6 +909,10 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
         if (concurrencyMode == AudioConcurrencyMode::SILENT ||
             concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
             AUDIO_INFO_LOG("active stream is explicitly SILENT or MIX_WITH_OTHERS.");
+            if (activeInterrupt.uid == AUDIO_ID &&
+            !(AudioSessionService::IsSameTypeForAudioSession(
+                incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType)))
+                return false;
             return true;
         }
     }
