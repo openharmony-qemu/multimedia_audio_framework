@@ -86,8 +86,6 @@ AudioEffectChain::AudioEffectChain(std::string scene)
     ioBufferConfig_.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     ioBufferConfig_.outputCfg.format = DATA_FORMAT_F32;
     ioBufferConfig_.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    AUDIO_INFO_LOG("[EffectChain] ctor scene=%{public}s inputCfg.channels=%{public}u",
-        sceneType_.c_str(), ioBufferConfig_.inputCfg.channels);
     dumpNameIn_ = "dump_effect_in_" + scene + "_"
         + std::to_string(ioBufferConfig_.inputCfg.samplingRate) + "_"
         + std::to_string(ioBufferConfig_.inputCfg.channels) + "_4_"
