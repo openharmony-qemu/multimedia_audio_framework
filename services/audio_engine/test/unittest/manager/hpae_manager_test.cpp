@@ -3095,4 +3095,138 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource003, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->CloseInAudioPort(srcB.name), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 }
+
+/**
+ * @tc.name  : UpdateBypassSpatializationForStereo_StateTransition_001
+ * @tc.desc  : UpdateBypassSpatializationForStereo flips bypassSpatializationForStereo_ when the
+ *             incoming value differs from the cached one.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateBypassSpatializationForStereo_StateTransition_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    // Fresh manager defaults to false.
+    hpaeManager_->bypassSpatializationForStereo_ = false;
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = false;
+
+    hpaeManager_->UpdateBypassSpatializationForStereo(true);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    hpaeManager_->UpdateBypassSpatializationForStereo(false);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, false);
+}
+
+/**
+ * @tc.name  : UpdateBypassSpatializationForStereo_SameValueNoFlip_002
+ * @tc.desc  : Calling UpdateBypassSpatializationForStereo with the same value as the cached one
+ *             keeps bypassSpatializationForStereo_ unchanged.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateBypassSpatializationForStereo_SameValueNoFlip_002, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    hpaeManager_->bypassSpatializationForStereo_ = true;
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = false;
+
+    hpaeManager_->UpdateBypassSpatializationForStereo(true);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    hpaeManager_->bypassSpatializationForStereo_ = false;
+    hpaeManager_->UpdateBypassSpatializationForStereo(false);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, false);
+}
+
+/**
+ * @tc.name  : UpdateBypassSpatializationForStereo_AdaptiveRenderingGates_003
+ * @tc.desc  : bypassSpatializationForStereo_ always caches the raw bypass flag, but downstream value
+ *             passed to HpaePolicyManager is (bypass && adaptiveSpatialRenderingEnabled_). Toggling
+ *             adaptiveSpatialRenderingEnabled_ changes only the downstream propagation, not the cached
+ *             flag once it has been settled.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateBypassSpatializationForStereo_AdaptiveRenderingGates_003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    // adaptiveSpatialRenderingEnabled_ == false: cached flag still tracks raw bypass.
+    hpaeManager_->bypassSpatializationForStereo_ = false;
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = false;
+    hpaeManager_->UpdateBypassSpatializationForStereo(true);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    // Enable adaptive rendering afterwards; cached flag must remain true without a new call.
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = true;
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    // Disabling bypass again flips the cached flag regardless of adaptive state.
+    hpaeManager_->UpdateBypassSpatializationForStereo(false);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, false);
+}
+
+/**
+ * @tc.name  : HandleBypassSpatializationForStereo_AsyncDispatch_004
+ * @tc.desc  : HandleBypassSpatializationForStereo posts UpdateBypassSpatializationForStereo onto the
+ *             manager thread; after WaitForMsgProcessing the cached flag reflects the request.
+ */
+HWTEST_F(HpaeManagerUnitTest, HandleBypassSpatializationForStereo_AsyncDispatch_004, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    hpaeManager_->bypassSpatializationForStereo_ = false;
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = false;
+
+    hpaeManager_->HandleBypassSpatializationForStereo(true);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    hpaeManager_->HandleBypassSpatializationForStereo(false);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, false);
+}
+
+/**
+ * @tc.name  : UpdateSpatializationState_RefreshesAdaptiveThenBypass_005
+ * @tc.desc  : UpdateSpatializationState copies adaptiveSpatialRenderingEnabled from the incoming
+ *             state and re-runs UpdateBypassSpatializationForStereo with the cached bypass flag, so
+ *             the cached flag survives while adaptive state tracks the request.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateSpatializationState_RefreshesAdaptiveThenBypass_005, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    hpaeManager_->bypassSpatializationForStereo_ = true;
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = false;
+
+    AudioSpatializationState stateInfo;
+    stateInfo.spatializationEnabled = false;
+    stateInfo.headTrackingEnabled = false;
+    stateInfo.adaptiveSpatialRenderingEnabled = true;
+    ASSERT_EQ(hpaeManager_->UpdateSpatializationState(stateInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    EXPECT_EQ(hpaeManager_->adaptiveSpatialRenderingEnabled_, true);
+    // Cached bypass flag must survive the UpdateSpatializationState-triggered re-run.
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    // Now flip adaptive off via the same path.
+    stateInfo.adaptiveSpatialRenderingEnabled = false;
+    ASSERT_EQ(hpaeManager_->UpdateSpatializationState(stateInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->adaptiveSpatialRenderingEnabled_, false);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+}
 }  // namespace
