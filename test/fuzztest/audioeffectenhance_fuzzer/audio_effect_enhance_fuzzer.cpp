@@ -559,12 +559,19 @@ void EnhanceManagerAlgoConfigAndPropertyFuzzTest()
 // product (ubsan mul-overflow). Real mic channel counts are small.
 constexpr uint32_t ENHANCE_MIC_CHANNEL_MAX = 16;
 
+// Bit offsets for sceneKeyCode encoding, mirroring the anonymous-namespace
+// constants in audio_enhance_chain_manager_impl.cpp:41-42 (not exported, so
+// redefined here). sceneKeyCode = sceneCode<<SCENE_TYPE_OFFSET |
+// captureId<<CAPTURER_ID_OFFSET | renderId.
+constexpr uint32_t SCENE_TYPE_OFFSET = 32;
+constexpr uint32_t CAPTURER_ID_OFFSET = 16;
+
 // Build a sceneKeyCode from sceneCode/captureId/renderId per the encoding in
-// audio_enhance_chain_manager_impl.cpp:41-44 (SCENE_TYPE_OFFSET=32, CAPTURER_ID_OFFSET=16).
+// audio_enhance_chain_manager_impl.cpp:41-44.
 uint64_t BuildEnhanceSceneKeyCode(uint32_t sceneCode, uint32_t captureId, uint32_t renderId)
 {
-    return (static_cast<uint64_t>(sceneCode) << 32) |
-           (static_cast<uint64_t>(captureId) << 16) |
+    return (static_cast<uint64_t>(sceneCode) << SCENE_TYPE_OFFSET) |
+           (static_cast<uint64_t>(captureId) << CAPTURER_ID_OFFSET) |
            static_cast<uint64_t>(renderId);
 }
 

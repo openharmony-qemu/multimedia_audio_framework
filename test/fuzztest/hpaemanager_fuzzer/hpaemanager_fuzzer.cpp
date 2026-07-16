@@ -54,7 +54,7 @@ using namespace OHOS::AudioStandard::HPAE;
 //     SendRequest/OnNodeStatusUpdate/OnRequestLatency/OnNotifyQueue/
 //     IsRunning/IsMsgProcessing/GetMsgCount from the fuzz main thread.
 //   - Session Effect: only Post* (async) variants, never the sync trio.
-//   - -fno-access-control is used only for the atexit cleanup hook, never to
+//   - -fno-access-control is used only for the cleanup guard body, never to
 //     reach into worker-only methods.
 // ---------------------------------------------------------------------------
 
@@ -115,6 +115,9 @@ T ConsumeEnum(FuzzedDataProvider &fdp)
 // Read a bounded fuzz string char-by-char (avoids std::string(char, n)).
 string FuzzString(FuzzedDataProvider &fdp, uint8_t maxLen)
 {
+    if (maxLen == 0) {
+        return {};  // guard modulo-by-zero; current callers all pass MAX_NAME_LENGTH (64)
+    }
     string result;
     size_t len = fdp.ConsumeIntegral<uint8_t>() % maxLen;
     for (size_t i = 0; i < len; i++) {
@@ -282,8 +285,23 @@ void CreateStreamOnCapturer(shared_ptr<HpaeCapturerManager> &mgr, FuzzedDataProv
 }
 
 // ===========================================================================
-// HpaeManager singleton (C-class tests) + atexit cleanup
+// HpaeManager singleton (C-class tests) + RAII cleanup
 // ===========================================================================
+
+// Defined below (after GetFuzzHpaeManager): stops residual sub-manager workers.
+void AtExitCleanup();
+
+// RAII replacement for atexit(AtExitCleanup). Declared as a function-local
+// static inside GetFuzzHpaeManager AFTER the manager shared_ptr, so by reverse
+// construction order (well-defined within one function, unlike cross-TU globals)
+// its destructor runs BEFORE the manager is destroyed. This keeps the original
+// guarantee -- workers are DeactivateThread'd while HpaeManager is still alive --
+// without atexit, whose hook may not run and runs at an unspecified point
+// relative to other TUs' static destruction.
+class HpaeFuzzCleanupGuard {
+public:
+    ~HpaeFuzzCleanupGuard() { AtExitCleanup(); }
+};
 
 // Reuse ONE HpaeManager for the whole fuzz run. Per-iteration Init/DeInit
 // triggers a teardown join deadlock (~HpaeManager -> DeInit -> worker join
@@ -300,6 +318,9 @@ shared_ptr<HpaeManager> GetFuzzHpaeManager()
     // a null weak_ptr. The stub is process-lifetime static so the weak_ptr stays valid.
     static const auto serviceCb = make_shared<FuzzHpaeServiceCallback>();
     [[maybe_unused]] static const bool registered = (manager->RegisterSerivceCallback(serviceCb), true);
+    // Constructed after `manager`: by reverse order it destructs first, stopping
+    // workers before the manager's own destruction. See HpaeFuzzCleanupGuard.
+    static const HpaeFuzzCleanupGuard cleanupGuard;
     return manager;
 }
 
@@ -310,7 +331,8 @@ shared_ptr<HpaeSinkInputNode> MakeSinkInputNode()
     return make_shared<HpaeSinkInputNode>(nodeInfo);
 }
 
-// atexit hook: stop residual sub-manager workers BEFORE static destruction.
+// Cleanup guard body (run by ~HpaeFuzzCleanupGuard before the manager's own
+// static destruction): stop residual sub-manager workers.
 // Calls DeactivateThread (not DeInit) to avoid the join deadlock that would
 // occur if the worker is parked in condition_.wait during static teardown.
 // -fno-access-control lets us reach the private maps for cleanup only.
@@ -1566,15 +1588,6 @@ void Test(FuzzedDataProvider &fdp)
     func(fdp);
 }
 
-void Init()
-{
-    static bool registered = false;
-    if (!registered) {
-        registered = true;
-        atexit(AtExitCleanup);
-    }
-}
-
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -1586,11 +1599,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     }
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
-    return 0;
-}
-
-extern "C" int LLVMFuzzerInitialize(const uint8_t *data, size_t size)
-{
-    OHOS::AudioStandard::Init();
     return 0;
 }

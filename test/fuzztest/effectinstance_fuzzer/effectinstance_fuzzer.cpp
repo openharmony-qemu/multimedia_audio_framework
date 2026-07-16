@@ -35,7 +35,6 @@ static size_t g_dataSize = 0;
 static size_t g_pos = 0;
 
 // --- Constants ---
-
 // AudioBufferConfig.samplingRate and .channels are uint32_t (audio_effect.h).
 constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
 constexpr uint32_t DEFAULT_CHANNEL_COUNT = 2;
@@ -102,14 +101,12 @@ AudioEffectConfig GetFuzzConfig()
     return config;
 }
 
-// ===========================================================================
 // Test 1: Init all code paths.
 // Covers:
 //   - Init(name, config) 2-arg overload (L47-55)
 //   - Init(name, config, nullptr) lib==nullptr early return (L63-66)
 //   - Init(name, config, &lib) createEffect success + SET_CONFIG (L73-97)
 //   - SetCreateFail(true) -> createEffect failure (L74-77)
-// ===========================================================================
 void InitAllPathsFuzzTest()
 {
     std::string effectName = GetFuzzString(EFFECT_NAME_MAX_LEN);
@@ -151,7 +148,6 @@ void InitAllPathsFuzzTest()
     }
 }
 
-// ===========================================================================
 // Test 2: FeedInput all code paths.
 // Covers:
 //   - null data early return (L175)
@@ -162,7 +158,6 @@ void InitAllPathsFuzzTest()
 //   - failure: processErrors++ (L196)
 //   - threshold report: stats_.ToString() + stats_.Reset() (L205-208)
 //     Also covers se_process_stats.h ToString() via product path.
-// ===========================================================================
 void FeedInputPathsFuzzTest()
 {
     std::string effectName = GetFuzzString(EFFECT_NAME_MAX_LEN);
@@ -264,7 +259,6 @@ void FeedInputPathsFuzzTest()
     }
 }
 
-// ===========================================================================
 // Test 3: ReadOutput + SkipStaleFrames all code paths.
 // Covers:
 //   - null buf early return (L233)
@@ -275,7 +269,6 @@ void FeedInputPathsFuzzTest()
 //   - SkipStaleFrames success: getOutput returns data (L227)
 //   - getOutput success: framesOutput accumulation (L263)
 //   - getOutput failure: processErrors++ (L259)
-// ===========================================================================
 void ReadOutputPathsFuzzTest()
 {
     std::string effectName = GetFuzzString(EFFECT_NAME_MAX_LEN);
@@ -386,7 +379,6 @@ void ReadOutputPathsFuzzTest()
     }
 }
 
-// ===========================================================================
 // Test 4: Command methods (StopEffect, Flush, SetParameter, GetPreheatFrames).
 // Covers:
 //   - StopEffect hasHandle_ path (L281-285) + !hasHandle_ early return
@@ -395,7 +387,6 @@ void ReadOutputPathsFuzzTest()
 //   - SetParameter hasHandle_ path (L305-316) + !hasHandle_ early return
 //   - GetPreheatFrames first call (L324-336) + cached (L321-323)
 //     + !hasHandle_ early return (L324-326)
-// ===========================================================================
 void CommandMethodsFuzzTest()
 {
     std::string effectName = GetFuzzString(EFFECT_NAME_MAX_LEN);
@@ -446,7 +437,6 @@ void CommandMethodsFuzzTest()
     }
 }
 
-// ===========================================================================
 // Test 5: Lifecycle, state transitions, and EffectStateToString coverage.
 // Covers:
 //   - ClearBuffers (L273-277)
@@ -458,7 +448,6 @@ void CommandMethodsFuzzTest()
 //     GetEffectName, GetAudioConfig, GetReleaseGeneration,
 //     GetPendingTaskId/SetPendingTaskId, GetInputLevel
 //   - Release with hasHandle_=true (L104-108) + hasHandle_=false
-// ===========================================================================
 void LifecycleAndStateFuzzTest()
 {
     std::string effectName = GetFuzzString(EFFECT_NAME_MAX_LEN);

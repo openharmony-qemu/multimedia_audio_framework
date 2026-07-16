@@ -205,8 +205,8 @@ void ResampleErrCodeToStringTest()
 // scalerPhase branch for mono / stereo / multichannel, plus the GainCompensation loop body.
 void ResampleGainCorrectionPathTest()
 {
-    static const uint32_t GAIN_CHANNELS[] = {MONO, STEREO, CHANNEL_6};
-    for (uint32_t ch : GAIN_CHANNELS) {
+    static const uint32_t gainChannels[] = {MONO, STEREO, CHANNEL_6};
+    for (uint32_t ch : gainChannels) {
         ProResampler resampler(SAMPLE_RATE_11025, SAMPLE_RATE_192000, ch, QUALITY_LEVEL_TEN);
         uint32_t inFrameLen = SAMPLE_RATE_11025 * FRAME_LEN_20MS / MS_PER_SECOND;   // 220
         uint32_t outFrameLen = SAMPLE_RATE_192000 * FRAME_LEN_20MS / MS_PER_SECOND; // 3840
