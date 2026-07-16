@@ -345,6 +345,7 @@ int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasi
     // SessionEffectNode (AISS) requires 48kHz input
     if (SafeGetMap(idSessionEffectMap_, sessionId)) {
         basicFormat.rate = SAMPLE_RATE_48000;
+        basicFormat.audioChannelInfo.numChannels = STEREO;
     }
     return ret;
 }
