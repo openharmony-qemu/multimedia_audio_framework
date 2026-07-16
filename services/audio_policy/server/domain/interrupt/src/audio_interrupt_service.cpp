@@ -822,7 +822,13 @@ bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInter
 bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
-    if (incomingInterrupt.independentStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
+    if (IsIndependentStrategyValid(incomingInterrupt)) {
+        auto independentConcurrencyMode = incomingInterrupt.independentStrategy.concurrencyMode;
+        if (independentConcurrencyMode != AudioConcurrencyMode::MIX_WITH_OTHERS) {
+            AUDIO_INFO_LOG("The independent concurrencyMode mode incoming stream is %{public}d",
+                static_cast<int32_t>(independentConcurrencyMode));
+            return false;
+        }
         if (IsIncomingStreamLowPriority(focusEntry)) {
             bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
                 incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
@@ -868,7 +874,13 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
 bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
-    if (activeInterrupt.independentStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
+    if (IsIndependentStrategyValid(activeInterrupt)) {
+        auto independentConcurrencyMode = activeInterrupt.independentStrategy.concurrencyMode;
+        if (independentConcurrencyMode != AudioConcurrencyMode::MIX_WITH_OTHERS) {
+            AUDIO_INFO_LOG("The independent concurrencyMode mode active stream is %{public}d",
+                static_cast<int32_t>(independentConcurrencyMode));
+            return false;
+        }
         if (IsActiveStreamLowPriority(focusEntry)) {
             bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
                 incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
@@ -919,7 +931,8 @@ bool AudioInterruptService::IsIncomingStreamLowPriority(const AudioFocusEntry &f
     if (focusEntry.actionOn == INCOMING) {
         if (focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
             focusEntry.hintType == INTERRUPT_HINT_STOP ||
-            focusEntry.hintType == INTERRUPT_HINT_DUCK) {
+            focusEntry.hintType == INTERRUPT_HINT_DUCK ||
+            focusEntry.hintType == INTERRUPT_HINT_MUTE) {
             return true;
         }
     }
@@ -931,7 +944,8 @@ bool AudioInterruptService::IsActiveStreamLowPriority(const AudioFocusEntry &foc
     if (focusEntry.actionOn == CURRENT) {
         if (focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
             focusEntry.hintType == INTERRUPT_HINT_STOP ||
-            focusEntry.hintType == INTERRUPT_HINT_DUCK) {
+            focusEntry.hintType == INTERRUPT_HINT_DUCK ||
+            focusEntry.hintType == INTERRUPT_HINT_MUTE) {
             return true;
         }
     }
@@ -2029,7 +2043,7 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
     AudioConcurrencyMode concurrencyMode = incomingInterrupt.sessionStrategy.concurrencyMode;
     if (focusEntry.actionOn == CURRENT) {
         bool modeUpdate = false;
-        if (incomingInterrupt.independentStrategy.concurrencyMode != AudioConcurrencyMode::INVALID) {
+        if (IsIndependentStrategyValid(incomingInterrupt)) {
             concurrencyMode = incomingInterrupt.independentStrategy.concurrencyMode;
             modeUpdate = true;
         } else if (sessionService_.IsAudioSessionActivated(incomingInterrupt.pid)) {
@@ -3045,7 +3059,8 @@ bool AudioInterruptService::CheckNeedPlaceHolder(const AudioInterrupt &audioInte
             audioInterrupt.audioFocusType.streamType != STREAM_DEFAULT &&
             !sessionService_.ShouldExcludeStreamType(audioInterrupt) &&
             sessionService_.IsAudioRendererEmpty(audioInterrupt.pid) &&
-            !HadVoipStatus(audioInterrupt, audioFocusInfoList);
+            !HadVoipStatus(audioInterrupt, audioFocusInfoList) &&
+            !IsIndependentStrategyValid(audioInterrupt);
     }
     return needPlaceHolder;
 }

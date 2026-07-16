@@ -628,5 +628,12 @@ void AudioInterruptService::SetStreamInterruptMute(const InterruptEventInternal 
         policyServer_->SetStreamInterruptMute(streamId, false);
     }
 }
+
+bool AudioInterruptService::IsIndependentStrategyValid(const AudioInterrupt &interrupt)
+{
+    auto concurrencyMode = interrupt.independentStrategy.concurrencyMode;
+    return concurrencyMode != AudioConcurrencyMode::INVALID &&
+        concurrencyMode != AudioConcurrencyMode::DEFAULT;
+}
 }
 } // namespace OHOS
