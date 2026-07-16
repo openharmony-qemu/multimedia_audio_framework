@@ -2283,7 +2283,8 @@ void AudioEffectChainManager::WaitAndReleaseEffectChain(const std::string &scene
         sceneTypeToEffectChainCountMap_.erase(sceneTypeAndDeviceKey);
         // Clear the override keyed by this chain's scene (consistent with Set/ClearChannelOverride).
         auto &sceneChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-        if (sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] !=
+        if (sceneTypeToEffectChainCountMap_.count(defaultSceneTypeAndDeviceKey) &&
+            sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] !=
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] &&
             sceneChain != nullptr) {
             channelOverrideMap_.erase(sceneChain->GetSceneType());

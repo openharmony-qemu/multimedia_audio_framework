@@ -346,6 +346,7 @@ int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasi
     if (SafeGetMap(idSessionEffectMap_, sessionId)) {
         basicFormat.rate = SAMPLE_RATE_48000;
         basicFormat.audioChannelInfo.numChannels = STEREO;
+        basicFormat.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
     }
     return ret;
 }
