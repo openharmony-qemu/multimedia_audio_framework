@@ -217,6 +217,7 @@ std::string AudioZoneService::GetZoneNameById(int32_t zoneId)
 int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
+    std::shared_ptr<AudioZone> zonePtr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         auto zone = FindZone(zoneId);
@@ -224,8 +225,11 @@ int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
 
         int ret = zone->AddDeviceDescriptor(devices);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "bind device to zone failed");
-        zone->UpdatePreferDevice(AudioZoneChangeReason::BIND_NEW_DEVICE);
+        zonePtr = zone;
     }
+
+    CHECK_AND_RETURN_RET_LOG(zonePtr != nullptr, ERROR, "zonePtr is nullptr");
+    zonePtr->UpdatePreferDevice(AudioZoneChangeReason::BIND_NEW_DEVICE);
 
     for (auto device : devices) {
 #ifdef FEATURE_AUDIO_ZONE_VOLUME
@@ -265,10 +269,12 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> toGlobalDevices;
+    std::shared_ptr<AudioZone> zonePtr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         auto zone = FindZone(zoneId);
         CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
+        zonePtr = zone;
 
         for (auto it : devices) {
             CHECK_AND_CONTINUE_LOG(it != nullptr, "device is nullptr");
@@ -281,8 +287,11 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
             toGlobalDevices.push_back(it);
         }
         zone->RemoveDeviceDescriptor(devices);
-        zone->UpdatePreferDevice(AudioZoneChangeReason::UNBIND_OLD_DEVICE);
     }
+
+    CHECK_AND_RETURN_RET_LOG(zonePtr != nullptr, ERROR, "zonePtr is nullptr");
+    zonePtr->UpdatePreferDevice(AudioZoneChangeReason::UNBIND_OLD_DEVICE);
+
     // maybe whether or not add unbind devices to global is specified by caller
     for (auto it : toGlobalDevices) {
         CHECK_AND_CONTINUE_LOG(it != nullptr && !it->isSupportMultiZone_,
@@ -295,17 +304,25 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
 void AudioZoneService::MoveDeviceToGlobalFromZones(std::shared_ptr<AudioDeviceDescriptor> device)
 {
     bool findDeviceInZone = false;
+    std::list<std::shared_ptr<AudioZone>> zones;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         for (auto &zoneMap : zoneMaps_) {
             CHECK_AND_CONTINUE_LOG(zoneMap.second != nullptr, "zone is nullptr");
             CHECK_AND_CONTINUE(zoneMap.second->IsDeviceConnect(device));
+            zones.push_back(zoneMap.second);
 
             vector<std::shared_ptr<AudioDeviceDescriptor>> devices = {device};
             zoneMap.second->RemoveDeviceDescriptor(devices);
             findDeviceInZone = true;
         }
     }
+
+    for (auto it : zones) {
+        CHECK_AND_CONTINUE(it != nullptr);
+        it->UpdatePreferDevice(AudioZoneChangeReason::OLD_DEVICE_UNAVAILABLE);
+    }
+
     CHECK_AND_RETURN(findDeviceInZone);
     AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(device);
     AudioConnectedDevice::GetInstance().AddConnectedDevice(device);
@@ -1303,28 +1320,17 @@ void AudioZoneService::OnSessionTimeout(const int32_t pid)
     }
 }
 
-void AudioZoneService::UpdateZonePreferDeviceWhenDeviceDisConnect(std::shared_ptr<AudioDeviceDescriptor> device)
-{
-    std::lock_guard<std::mutex> lock(zoneMutex_);
-    for (const auto& [zoneId, zonePtr] : zoneMaps_) {
-        CHECK_AND_CONTINUE(zonePtr != nullptr && zonePtr->CheckDeviceInZone(device));
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-        devices.push_back(device);
-        zonePtr->RemoveDeviceDescriptor(devices);
-        zonePtr->UpdatePreferDevice(AudioZoneChangeReason::OLD_DEVICE_UNAVAILABLE);
-    }
-    CHECK_AND_RETURN_LOG(zoneMaps_.find(DEFAULT_ZONEID) != zoneMaps_.end() && zoneMaps_[DEFAULT_ZONEID] != nullptr,
-        "default zone is nullptr");
-    zoneMaps_[DEFAULT_ZONEID]->UpdatePreferDevice(AudioZoneChangeReason::OLD_DEVICE_UNAVAILABLE);
-}
-
 void AudioZoneService::UpdateZonePreferDeviceWhenDeviceConnect()
 {
-    std::lock_guard<std::mutex> lock(zoneMutex_);
-    CHECK_AND_RETURN_LOG(zoneMaps_.find(DEFAULT_ZONEID) != zoneMaps_.end() && zoneMaps_[DEFAULT_ZONEID] != nullptr,
-        "default zone is nullptr");
-    zoneMaps_[DEFAULT_ZONEID]->UpdatePreferDevice(AudioZoneChangeReason::NEW_DEVICE_AVAILABLE);
+    std::shared_ptr<AudioZone> zonePtr = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        CHECK_AND_RETURN_LOG(zoneMaps_.find(DEFAULT_ZONEID) != zoneMaps_.end() && zoneMaps_[DEFAULT_ZONEID] != nullptr,
+            "default zone is nullptr");
+        zonePtr = zoneMaps_[DEFAULT_ZONEID];
+    }
+    CHECK_AND_RETURN_LOG(zonePtr != nullptr, "default zone is nullptr");
+    zonePtr->UpdatePreferDevice(AudioZoneChangeReason::NEW_DEVICE_AVAILABLE);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
