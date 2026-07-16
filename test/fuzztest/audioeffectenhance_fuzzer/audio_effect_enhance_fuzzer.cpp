@@ -73,7 +73,6 @@ EffectChainManagerParam DEFAULT_EFFECT_CHAIN_MANAGER_PARAM{
 // match the fallback lookup in GetEnhanceNamesBySceneCode
 // (audio_enhance_chain_manager_impl.cpp:335). capturerDevice DEVICE_TYPE_MIC is in the
 // GetSupportedDeviceType() whitelist (audio_device_type.cpp:36) so ParseSceneKeyCode succeeds.
-//
 // Non-empty libList (entries with null audioEffectLibHandle) lets FindEnhanceLib match
 // (:78) so InitAudioEnhanceChainManager fills enhanceConfigInfoMap_ (:184-189),
 // AddAudioEnhanceChainHandles resolves each enhance (:391-395), and

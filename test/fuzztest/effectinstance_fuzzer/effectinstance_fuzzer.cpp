@@ -438,7 +438,6 @@ void CommandMethodsFuzzTest()
 }
 
 // Test 5: Lifecycle, state transitions, and EffectStateToString coverage.
-// Covers:
 //   - ClearBuffers (L273-277)
 //   - TriggerProcess (L288-291)
 //   - MarkPendingRelease (L127-134)
