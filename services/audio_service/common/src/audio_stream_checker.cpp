@@ -149,28 +149,28 @@ void AudioStreamChecker::OnRemoteAppDied(const int32_t pid)
 
 void AudioStreamChecker::CheckVolume()
 {
-    float tmpVolume = curVolume_.load();
-    if (VolumeTools::IsZeroVolume(tmpVolume) && !VolumeTools::IsZeroVolume(preVolume_)) {
+    float currentVolume = curVolume_.load();
+    if (VolumeTools::IsZeroVolume(currentVolume) && !VolumeTools::IsZeroVolume(preVolume_)) {
         AUDIO_INFO_LOG("sessionId %{public}u change to mute", streamConfig_.originalSessionId);
-        std::unique_lock<std::recursive_mutex> lock1(checkLock_);
+        std::unique_lock<std::recursive_mutex> muteCallbackLock(checkLock_);
         for (size_t index = 0; index < checkParaVector_.size(); index++) {
             AudioStreamMonitor::GetInstance().OnMuteCallback(checkParaVector_[index].pid,
                 checkParaVector_[index].callbackId, streamConfig_.appInfo.appUid,
                 streamConfig_.originalSessionId, true);
         }
-        lock1.unlock();
+        muteCallbackLock.unlock();
     }
-    if (!VolumeTools::IsZeroVolume(tmpVolume) && VolumeTools::IsZeroVolume(preVolume_)) {
+    if (!VolumeTools::IsZeroVolume(currentVolume) && VolumeTools::IsZeroVolume(preVolume_)) {
         AUDIO_INFO_LOG("sessionId %{public}u change to unmute", streamConfig_.originalSessionId);
-        std::unique_lock<std::recursive_mutex> lock2(checkLock_);
+        std::unique_lock<std::recursive_mutex> unmuteCallbackLock(checkLock_);
         for (size_t index = 0; index < checkParaVector_.size(); index++) {
             AudioStreamMonitor::GetInstance().OnMuteCallback(checkParaVector_[index].pid,
                 checkParaVector_[index].callbackId, streamConfig_.appInfo.appUid,
                 streamConfig_.originalSessionId, false);
         }
-        lock2.unlock();
+        unmuteCallbackLock.unlock();
     }
-    preVolume_ = tmpVolume;
+    preVolume_ = currentVolume;
 }
 
 void AudioStreamChecker::MonitorCheckFrame()
