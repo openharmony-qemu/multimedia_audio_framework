@@ -13,10 +13,8 @@
  * limitations under the License.
  */
 
-#include <chrono>
 #include <functional>
 #include <iostream>
-#include <thread>
 #include <vector>
 #include "hpae_delayed_task_queue.h"
 #include "../fuzz_utils.h"
@@ -38,8 +36,11 @@ const uint64_t DELAY_MS_SHORT = 100;          // short distinct delay (cancel/in
 const uint64_t DELAY_MS_MEDIUM = 200;         // medium distinct delay (cancel/insert)
 const uint64_t LONG_DELAY_MS = 60000;         // 60s, always "not expired" within a test
 const uint64_t INVALID_TASK_ID = 999999;      // sentinel id that was never posted
-const uint64_t EXPIRY_SETTLE_MS = 2;          // sleep so a 0-ms task is expired by ProcessExpiredTasks
-
+// A 0-delay task's deadline == post-time steady_clock now; the very next
+// ProcessExpiredTasks/GetNextDelayMs already observes now >= deadline (tens of
+// ns elapse across the calls at nanosecond clock resolution), so no sleep is
+// needed to reach the expired branch. Keeping the fuzzer sleep-free preserves
+// libFuzzer execs/s throughput (sleep_for(2ms) x N dominated each dispatch).
 // Post several tasks with varied delays. Covers PostDelayedTask's insert-position
 // branches: insert-at-front (new deadline <= existing) and insert-after (loop
 // advances while it->deadline <= deadline), plus nextId_ increment.
@@ -76,11 +77,9 @@ void ProcessExpiredTasksFuzzTest()
     q.ProcessExpiredTasks(); // empty -> while body skipped
 
     q.PostDelayedTask(0, []() {}); // expired, real task
-    std::this_thread::sleep_for(std::chrono::milliseconds(EXPIRY_SETTLE_MS));
     q.ProcessExpiredTasks();       // runs the task
 
     q.PostDelayedTask(0, std::function<void()>()); // expired, null task
-    std::this_thread::sleep_for(std::chrono::milliseconds(EXPIRY_SETTLE_MS));
     q.ProcessExpiredTasks();       // entry.task false -> skip call
 
     q.PostDelayedTask(LONG_DELAY_MS, []() {}); // not expired
@@ -95,7 +94,6 @@ void GetNextDelayMsFuzzTest()
     (void)q.GetNextDelayMs(); // empty -> 0
 
     q.PostDelayedTask(0, []() {});
-    std::this_thread::sleep_for(std::chrono::milliseconds(EXPIRY_SETTLE_MS));
     (void)q.GetNextDelayMs(); // expired -> 1
 
     q.CancelAll();
@@ -158,7 +156,6 @@ void ProcessMultipleExpiredFuzzTest()
     (void)q.PostDelayedTask(0, []() {});
     (void)q.PostDelayedTask(0, []() {});
     (void)q.PostDelayedTask(0, []() {});
-    std::this_thread::sleep_for(std::chrono::milliseconds(EXPIRY_SETTLE_MS));
     q.ProcessExpiredTasks(); // while pops all 3 expired entries in one pass
 
     // While condition false path: a long-delay task stays at the front, so the
@@ -182,12 +179,10 @@ void FullLifecycleAllBranchesFuzzTest()
 
     // Expired real task: entry.task true -> task() runs.
     (void)q.PostDelayedTask(0, []() {});
-    std::this_thread::sleep_for(std::chrono::milliseconds(EXPIRY_SETTLE_MS));
     q.ProcessExpiredTasks();
 
     // Expired null task: entry.task false -> call skipped, no crash.
     (void)q.PostDelayedTask(0, std::function<void()>());
-    std::this_thread::sleep_for(std::chrono::milliseconds(EXPIRY_SETTLE_MS));
     q.ProcessExpiredTasks();
 
     // Future task -> GetNextDelayMs returns remaining (> 1).
@@ -196,7 +191,6 @@ void FullLifecycleAllBranchesFuzzTest()
 
     // Just-passed task -> GetNextDelayMs returns 1 (remaining <= 0 branch).
     (void)q.PostDelayedTask(0, []() {});
-    std::this_thread::sleep_for(std::chrono::milliseconds(EXPIRY_SETTLE_MS));
     (void)q.GetNextDelayMs();
 
     // Cancel a present id (found -> erase + return) and an absent id (loop ends).

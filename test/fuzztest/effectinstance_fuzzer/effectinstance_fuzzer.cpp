@@ -203,7 +203,12 @@ void FeedInputPathsFuzzTest()
         auto inst = std::make_shared<EffectInstance>();
         AudioEffectLibrary lib = fake.GetLibrary();
         inst->Init(effectName, config, &lib);
-        (*inst->effectHandle_)->feedInput = nullptr;
+        // Init's return isn't checked; guard the -fno-access-control deref against a
+        // future where Init leaves effectHandle_ unpopulated. FeedInput itself null-
+        // checks hasHandle_/effectHandle_ at L178; this raw poke bypasses that guard.
+        if (inst->effectHandle_ != nullptr && *inst->effectHandle_ != nullptr) {
+            (*inst->effectHandle_)->feedInput = nullptr;
+        }
         uint8_t frame[STEREO_FLOAT_FRAME_BYTES] = {0};
         inst->FeedInput(frame, sizeof(frame)); // L182 early return
         inst->Release();
@@ -311,7 +316,9 @@ void ReadOutputPathsFuzzTest()
             auto inst = std::make_shared<EffectInstance>();
             AudioEffectLibrary lib = fake.GetLibrary();
             inst->Init(effectName, config, &lib);
-            (*inst->effectHandle_)->getOutput = nullptr;
+            if (inst->effectHandle_ != nullptr && *inst->effectHandle_ != nullptr) {
+                (*inst->effectHandle_)->getOutput = nullptr;
+            }
             uint8_t buf[OUTPUT_BUF_BYTES] = {0};
             inst->ReadOutput(buf, sizeof(buf)); // L240 early return
             inst->Release();

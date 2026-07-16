@@ -218,6 +218,13 @@ void OfflineAudioEffectRealChainSuccessFuzzTest()
 
     shared_ptr<AudioSharedMemory> bufferIn = AudioSharedMemory::CreateFromLocal(PROCESS_BUFFER_SIZE, "bufIn");
     shared_ptr<AudioSharedMemory> bufferOut = AudioSharedMemory::CreateFromLocal(PROCESS_BUFFER_SIZE, "bufOut");
+    // CreateFromLocal may return nullptr on shared-memory alloc failure. Bail out so the
+    // later Process runs the intended success path (EffectProcess body) instead of its
+    // nullptr ERROR branch. Process already null-checks serverBufferIn_/Out_, so this is
+    // coverage hygiene for the success path, not a crash guard.
+    if (bufferIn == nullptr || bufferOut == nullptr) {
+        return;
+    }
     serverChain->Prepare(bufferIn, bufferOut); // controller_ non-null -> SendCommand RESET
 
     uint32_t inBufSize = 0;
