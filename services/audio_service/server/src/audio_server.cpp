@@ -1239,7 +1239,7 @@ int32_t AudioServer::SetCommonExtraParameters(const std::string &key,
 
     std::string value;
     bool isParamValid = ProcessKeyValuePairs(key, kvpairs, mainKeyIt->second, value);
-    CHECK_AND_RETURN_RET_LOG(isParamValid, ERR_INVALID_PARAM, "invalid subkey or value");
+    CHECK_AND_RETURN_RET(isParamValid, ERR_INVALID_PARAM);
 
     return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary", "", value);
 }
@@ -1775,9 +1775,6 @@ int32_t AudioServer::OffloadSetVolume(float volume, uint32_t renderId)
 int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag,
     int32_t phoneCallSceneType)
 {
-    AUDIO_INFO_LOG("Scene: %{public}d, a2dpOffloadFlag: %{public}d, "
-        "scoExcludeFlag: %{public}d, phoneCallSceneType: %{public}d",
-        audioScene, a2dpOffloadFlag, scoExcludeFlag, phoneCallSceneType);
     AudioScene audioSceneIn = static_cast<AudioScene>(audioScene);
     CHECK_AND_RETURN_RET_LOG(audioSceneIn > AUDIO_SCENE_INVALID && audioSceneIn < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "param is invalid");
@@ -2056,7 +2053,6 @@ int32_t AudioServer::SetAudioBalanceStatus()
 {
     bool inPhoneScene = (audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT);
     bool isAudioBalanceEnabled = (!inPhoneScene) && (!isEarpiece_);
-    AUDIO_INFO_LOG("isAudioBalanceEnabled: %{public}d", isAudioBalanceEnabled);
     return SetAudioBalanceValueInner(isAudioBalanceEnabled, audioBalanceValue_);
 }
 
@@ -2071,6 +2067,7 @@ int32_t AudioServer::SetAudioBalanceValue(float audioBalance)
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
     bool inPhoneScene = (audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT);
     bool isAudioBalanceEnabled = (!inPhoneScene) && (!isEarpiece_);
+    AUDIO_INFO_LOG("isAudioBalanceEnabled: %{public}d", isAudioBalanceEnabled);
     return SetAudioBalanceValueInner(isAudioBalanceEnabled, audioBalance);
 }
 

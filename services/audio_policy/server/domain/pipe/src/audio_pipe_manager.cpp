@@ -573,7 +573,6 @@ std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
             if (desc->sessionId_ != sessionId) {
                 continue;
             }
-            AUDIO_INFO_LOG("adapter name: %{public}s", pipeInfo->GetAdapterName().c_str());
             return pipeInfo->GetAdapterName();
         }
     }
