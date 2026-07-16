@@ -140,6 +140,8 @@ public:
         const std::vector<OHOS::AudioStandard::ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
     static ActiveStreamVolumeInfo ToTaiheActiveStreamVolumeInfo(
         const OHOS::AudioStandard::ActiveStreamVolumeInfo &src);
+    static SystemRecordControllerChangeInfo ToTaiheSystemRecordControllerChangeInfo(
+        const OHOS::AudioStandard::SystemRecordControllerChangeInfo &changeInfo);
 
     template<typename E>
     static std::shared_ptr<uintptr_t> TypeCallback(callback_view<void(E)> callback)
