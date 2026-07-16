@@ -102,7 +102,6 @@ AudioEffectConfig GetFuzzConfig()
 }
 
 // Test 1: Init all code paths.
-// Covers:
 //   - Init(name, config) 2-arg overload (L47-55)
 //   - Init(name, config, nullptr) lib==nullptr early return (L63-66)
 //   - Init(name, config, &lib) createEffect success + SET_CONFIG (L73-97)
@@ -149,7 +148,6 @@ void InitAllPathsFuzzTest()
 }
 
 // Test 2: FeedInput all code paths.
-// Covers:
 //   - null data early return (L175)
 //   - len==0 early return (L175)
 //   - !hasHandle_ early return (L178)
@@ -260,7 +258,6 @@ void FeedInputPathsFuzzTest()
 }
 
 // Test 3: ReadOutput + SkipStaleFrames all code paths.
-// Covers:
 //   - null buf early return (L233)
 //   - len==0 early return (L233)
 //   - !hasHandle_ early return (L236)
@@ -380,7 +377,6 @@ void ReadOutputPathsFuzzTest()
 }
 
 // Test 4: Command methods (StopEffect, Flush, SetParameter, GetPreheatFrames).
-// Covers:
 //   - StopEffect hasHandle_ path (L281-285) + !hasHandle_ early return
 //   - Flush hasHandle_ path (L296-300) + !hasHandle_ early return
 //   - Flush with SetFlushFail -> command returns -1
