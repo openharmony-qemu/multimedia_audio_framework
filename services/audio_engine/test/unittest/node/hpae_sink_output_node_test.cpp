@@ -2634,16 +2634,20 @@ HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_ErrorReturn_002, TestSize.Level
     auto mockSink = std::make_shared<MockAudioRenderSink>();
     hpaeSinkOutputNode->audioRendererSink_ = mockSink;
     
+    // IsInited is consumed twice: RenderSinkInit (false -> proceeds to Init) and
+    // RenderSinkStart (true -> passes the pre-Start check). All EXPECT_CALLs must
+    // precede RenderSinkInit, otherwise the Init-time IsInited is an uninteresting
+    // call and only one of the two expectations is satisfied.
+    EXPECT_CALL(*mockSink, IsInited())
+        .WillOnce(Return(false))
+        .WillOnce(Return(true));
     EXPECT_CALL(*mockSink, Init(_)).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockSink, Start()).WillOnce(Return(ERR_OPERATION_FAILED));
+
     IAudioSinkAttr attr;
     attr.adapterName = "primary";
     int32_t result = hpaeSinkOutputNode->RenderSinkInit(attr);
     EXPECT_EQ(result, SUCCESS);
-
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
-
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
-    EXPECT_CALL(*mockSink, Start()).WillOnce(Return(ERR_OPERATION_FAILED));
 
     result = hpaeSinkOutputNode->RenderSinkStart();
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
