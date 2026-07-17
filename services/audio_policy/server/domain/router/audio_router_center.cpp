@@ -47,7 +47,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
     for (auto &router : mediaRenderRouters_) {
         RouterType usedType = router->GetRouterType();
         if (bypassTypeSet.count(usedType)) {
-            AUDIO_INFO_LOG("Fetch media render device bypass %{public}d", usedType);
+            AUDIO_INFO_LOG("bypass %{public}d", usedType);
             continue;
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID, streamId);
@@ -210,7 +210,6 @@ bool AudioRouterCenter::NeedSkipSelectAudioOutputDeviceRefined(StreamUsage strea
     if (descs.front()->deviceType_ == DEVICE_TYPE_SPEAKER) {
         return false;
     }
-    AUDIO_INFO_LOG("Don't add ring ext device when ringer mode is not normal and no speaker added");
     return true;
 }
 
@@ -417,8 +416,6 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
     StreamUsage callStreamUsage =
                 AudioPipeManager::GetPipeManager()->GetLastestRunningCallStreamUsage();
     bool isVoipStream = AudioStreamCollector::GetAudioStreamCollector().IsCallStreamUsage(callStreamUsage);
-    AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, audioScene:%{public}d, isVoipStream:%{public}d.",
-        info.streamUsage, audioScene, isVoipStream);
     if (Util::IsEnhancedRoutingSupported()) {
         descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType);
     } else if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
