@@ -1548,14 +1548,19 @@ void AudioDeviceManager::UpdateAllWirelessDevicesSilentState()
     }
 }
 
-void AudioDeviceManager::RestoreWirelessDeviceSilentState()
+bool AudioDeviceManager::RestoreWirelessDeviceSilentState()
 {
+    bool isStatusUpdated = false;
+    bool areAllRunningStreamsSilent = CheckAllStreamsSilentOrStandByOnDevice();
+    CHECK_AND_RETURN_RET(!areAllRunningStreamsSilent, isStatusUpdated);
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (auto &desc : connectedDevices_) {
         if (desc != nullptr && desc->isSilent_) {
             desc->isSilent_ = false;
+            isStatusUpdated = true;
         }
     }
+    return isStatusUpdated;
 }
 
 // Check whether all output streams are silent or standby
