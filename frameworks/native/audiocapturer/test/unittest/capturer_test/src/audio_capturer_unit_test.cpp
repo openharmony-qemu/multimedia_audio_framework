@@ -809,6 +809,17 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_029, TestSize.Level0)
 }
 
 /**
+ * @tc.name  : Test capturer create error report filter.
+ * @tc.number: Audio_Capturer_ShouldReportCreateError_001
+ * @tc.desc  : Test permission denied create failures are not reported as create error stats.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_ShouldReportCreateError_001, TestSize.Level0)
+{
+    EXPECT_FALSE(AudioCapturer::ShouldReportCapturerCreateError(ERR_PERMISSION_DENIED));
+    EXPECT_TRUE(AudioCapturer::ShouldReportCapturerCreateError(ERR_OPERATION_FAILED));
+}
+
+/**
  * @tc.name  : Test AudioCapturer Create with invalid parameters
  * @tc.number: Audio_Capturer_Create_Invalid_001
  * @tc.desc  : Test Create with invalid stream type.
