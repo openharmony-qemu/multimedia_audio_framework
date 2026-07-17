@@ -2462,8 +2462,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-        bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
-        if (!isRecord) {
+        if (!audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
             UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
         }
         shouldReturnSuccess = true;
