@@ -568,7 +568,7 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
 
     if (isConnect && phoneCallSceneType == SCENE_TYPE_TRANSFER) {
         ret = SetPhoneCallSceneType(phoneCallSceneType);
-        CHECK_AND_CONTINUE_LOG(ret == SUCCESS, "SetPhoneCallSceneType failed, ret=%{public}d", ret);
+        JUDGE_AND_ERR_LOG(ret != SUCCESS, "SetPhoneCallSceneType failed, ret=%{public}d", ret);
         currentPhoneCallSceneType_ = phoneCallSceneType;
     }
 
@@ -600,7 +600,7 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
 
     if (isDisconnect && currentPhoneCallSceneType_ == SCENE_TYPE_TRANSFER) {
         ret = SetPhoneCallSceneType(SCENE_TYPE_MODEM);
-        CHECK_AND_CONTINUE_LOG(ret == SUCCESS, "SetPhoneCallSceneType reset failed, ret=%{public}d", ret);
+        JUDGE_AND_ERR_LOG(ret != SUCCESS, "SetPhoneCallSceneType reset failed, ret=%{public}d", ret);
         currentPhoneCallSceneType_ = SCENE_TYPE_MODEM;
     }
 
