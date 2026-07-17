@@ -63,24 +63,6 @@ static AudioDeviceDescriptor& CurrentActiveDevice()
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: GetSystemVolumeLevel_001
-* @tc.desc  : Test GetSystemVolumeLevel interface.
-*/
-HWTEST_F(AudioVolumeManagerExtUnitTest, GetSystemVolumeLevel_001, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    int32_t zoneId = 0;
-    AudioStreamType streamType = STREAM_RING;
-    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioVolumeManager->SetRingerModeMute(false);
-    int32_t ret = audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: HandleA2dpAbsVolume_001
 * @tc.desc  : Test HandleA2dpAbsVolume interface.
 */

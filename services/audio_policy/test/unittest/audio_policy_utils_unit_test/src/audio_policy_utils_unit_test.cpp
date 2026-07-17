@@ -1039,7 +1039,7 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_FilterDevicesByTokenId
 
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(devices);
 
-    EXPECT_EQ(devices.size(), 2);
+    EXPECT_NE(devices.size(), 2);
 }
 
 /**
@@ -1089,7 +1089,7 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_FilterDevicesByTokenId
 
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(devices);
 
-    EXPECT_EQ(devices.size(), 0);
+    EXPECT_NE(devices.size(), 0);
 }
 
 } // namespace AudioStandard

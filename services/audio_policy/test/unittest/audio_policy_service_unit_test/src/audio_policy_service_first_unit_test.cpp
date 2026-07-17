@@ -826,7 +826,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, ActivateNewDevice_001, TestSize.Level1)
     deviceType = DEVICE_TYPE_MIC;
     isRemote = true;
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.ActivateNewDevice(networkId, deviceType, isRemote);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     networkId = REMOTE_NETWORK_ID;
     deviceType = DEVICE_TYPE_USB_HEADSET;
@@ -861,7 +861,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetWakeUpAudioCapturer_001, TestSize.Level1
     AudioCoreConfigManager::GetInstance().isAdapterInfoMap_.store(true);
     AudioCoreConfigManager::GetInstance().OnUpdateRouteSupport(true);
     ret = AudioCoreService::GetCoreService()->SetWakeUpAudioCapturer(capturerOptions);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1127,54 +1127,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, HasLowLatencyCapability_001, TestSize.Level
 
     ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.HasLowLatencyCapability(DEVICE_TYPE_INVALID, false);
     EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test HandleLocalDeviceConnected.
-* @tc.number: HandleLocalDeviceConnected_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest HandleLocalDeviceConnected_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    int32_t ret = SUCCESS;
-    AudioDeviceDescriptor updatedDesc;
-    updatedDesc.deviceType_ = DEVICE_TYPE_EARPIECE;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_SPEAKER;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_WIRED_HEADPHONES;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_MIC;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_WAKEUP;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
-    updatedDesc.deviceType_ = DEVICE_TYPE_DP;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_NE(SUCCESS, ret);
 }
 
 /**

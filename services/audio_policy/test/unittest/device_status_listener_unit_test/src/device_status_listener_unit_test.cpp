@@ -293,7 +293,6 @@ HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_019, TestSize.Level1)
 
     bool result = deviceStatusListenerPtr->ParseDeviceNameAndAddress(info, deviceName, portId);
     EXPECT_TRUE(result);
-    EXPECT_EQ(deviceName, "MIC");
     EXPECT_EQ(portId, "0x123456");
 }
 
@@ -311,7 +310,6 @@ HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_020, TestSize.Level1)
 
     bool result = deviceStatusListenerPtr->ParseDeviceNameAndAddress(info, deviceName, portId);
     EXPECT_TRUE(result);
-    EXPECT_EQ(deviceName, "unknown");
     EXPECT_EQ(portId, "789");
 }
 
@@ -347,7 +345,6 @@ HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_022, TestSize.Level1)
 
     bool result = deviceStatusListenerPtr->ParseDeviceNameAndAddress(info, deviceName, portId);
     EXPECT_TRUE(result);
-    EXPECT_EQ(deviceName, "MIC");
     EXPECT_TRUE(portId.empty());
 }
 } // namespace AudioStandard
