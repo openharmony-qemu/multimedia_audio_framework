@@ -865,11 +865,8 @@ int32_t AudioEffectChainManager::SetChannelOverride(const std::string &sceneType
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     std::string routeKey = sceneType + "_&_" + GetDeviceTypeName();
     auto chainIt = sceneTypeToEffectChainMap_.find(routeKey);
-    if (chainIt == sceneTypeToEffectChainMap_.end() || chainIt->second == nullptr) {
-        AUDIO_WARNING_LOG("chain not created for routeKey=%{public}s; "
-            "cannot resolve chain scene, override not stored", routeKey.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(chainIt != sceneTypeToEffectChainMap_.end() && chainIt->second != nullptr, ERROR,
+        "chain not created for routeKey=%{public}s cannot resolve chain scene, override not stored", routeKey.c_str());
     std::string scene = chainIt->second->GetSceneType();
     channelOverrideMap_[scene] = ChannelOverrideValue{inputChannels, inputChannelLayout};
     AUDIO_INFO_LOG("sceneType=%{public}s routeKey=%{public}s -> scene=%{public}s "
@@ -884,11 +881,8 @@ int32_t AudioEffectChainManager::SetChannelOverride(const std::string &sceneType
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     std::string routeKey = GenerateEffectChainKey(sceneType, deviceType, renderId);
     auto chainIt = sceneTypeToEffectChainMap_.find(routeKey);
-    if (chainIt == sceneTypeToEffectChainMap_.end() || chainIt->second == nullptr) {
-        AUDIO_WARNING_LOG("chain not created for routeKey=%{public}s; "
-            "cannot resolve chain scene, override not stored", routeKey.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(chainIt != sceneTypeToEffectChainMap_.end() && chainIt->second != nullptr, ERROR,
+        "chain not created for routeKey=%{public}s cannot resolve chain scene, override not stored", routeKey.c_str());
     std::string scene = chainIt->second->GetSceneType();
     channelOverrideMap_[scene] = ChannelOverrideValue{inputChannels, inputChannelLayout};
     AUDIO_INFO_LOG("sceneType=%{public}s device=%{public}d renderId=%{public}u "
@@ -903,11 +897,8 @@ int32_t AudioEffectChainManager::ClearChannelOverride(const std::string &sceneTy
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     std::string routeKey = sceneType + "_&_" + GetDeviceTypeName();
     auto chainIt = sceneTypeToEffectChainMap_.find(routeKey);
-    if (chainIt == sceneTypeToEffectChainMap_.end() || chainIt->second == nullptr) {
-        AUDIO_WARNING_LOG("chain not created for routeKey=%{public}s; "
-            "cannot resolve chain scene, skip", routeKey.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(chainIt != sceneTypeToEffectChainMap_.end() && chainIt->second != nullptr, ERROR,
+        "chain not created for routeKey=%{public}s cannot resolve chain scene, skip", routeKey.c_str());
     std::string scene = chainIt->second->GetSceneType();
     channelOverrideMap_.erase(scene);
     AUDIO_INFO_LOG("sceneType=%{public}s routeKey=%{public}s -> scene=%{public}s",
@@ -921,11 +912,8 @@ int32_t AudioEffectChainManager::ClearChannelOverride(const std::string &sceneTy
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     std::string routeKey = GenerateEffectChainKey(sceneType, deviceType, renderId);
     auto chainIt = sceneTypeToEffectChainMap_.find(routeKey);
-    if (chainIt == sceneTypeToEffectChainMap_.end() || chainIt->second == nullptr) {
-        AUDIO_WARNING_LOG("chain not created for routeKey=%{public}s; "
-            "cannot resolve chain scene, skip", routeKey.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(chainIt != sceneTypeToEffectChainMap_.end() && chainIt->second != nullptr, ERROR,
+        "chain not created for routeKey=%{public}s cannot resolve chain scene, skip", routeKey.c_str());
     std::string scene = chainIt->second->GetSceneType();
     channelOverrideMap_.erase(scene);
     AUDIO_INFO_LOG("sceneType=%{public}s device=%{public}d renderId=%{public}u "
@@ -956,14 +944,10 @@ bool AudioEffectChainManager::ConsultChannelOverrideByKey(const std::string &key
     // once maxEffectChainCount_ is reached) all resolve to the same chain scene, so an override stored
     // by SetChannelOverride (which also keys by chain scene) is consistently visible to all of them.
     auto chainIt = sceneTypeToEffectChainMap_.find(key);
-    if (chainIt == sceneTypeToEffectChainMap_.end() || chainIt->second == nullptr) {
-        return false;
-    }
+    CHECK_AND_RETURN_RET(chainIt != sceneTypeToEffectChainMap_.end() && chainIt->second != nullptr, false);
     std::string scene = chainIt->second->GetSceneType();
     auto it = channelOverrideMap_.find(scene);
-    if (it == channelOverrideMap_.end()) {
-        return false;
-    }
+    CHECK_AND_RETURN_RET(it != channelOverrideMap_.end(), false);
     channels = it->second.inputChannels;
     channelLayout = it->second.inputChannelLayout;
     return true;

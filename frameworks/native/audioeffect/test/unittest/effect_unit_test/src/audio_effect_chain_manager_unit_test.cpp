@@ -6222,5 +6222,49 @@ HWTEST(AudioEffectChainManagerUnitTest, ChannelOverride_ResetInfoClearsMap, Test
     AudioEffectChainManager::GetInstance()->ResetInfo();
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.size(), 0u);
 }
+/**
+* @tc.name   : Test enhanced UpdateMultichannelConfig consult override (line 2451 if/else)
+* @tc.number : ChannelOverride_EnhancedConsultForces2ch
+* @tc.desc   : Enhanced route (sceneType+deviceType+renderId): set override(2ch) -> consult hits
+*              (if-branch) -> chain.inputCfg.channels==2; clear override -> recompute via
+*              FindMaxEffectChannels (else-branch).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ChannelOverride_EnhancedConsultForces2ch, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->channelOverrideMap_.clear();
+    string sceneType = "SCENE_MOVIE";
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    uint32_t renderId = 100;
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType, deviceType, renderId);
+    string routeKey = AudioEffectChainManager::GetInstance()->GenerateEffectChainKey(
+        sceneType, deviceType, renderId);
+    auto chain = AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[routeKey];
+    ASSERT_NE(chain, nullptr);
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd("sEnh", DEFAULT_INFO);
+
+    // if-branch: enhanced override(2ch) set -> consult hits -> chain forced to STEREO.
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->SetChannelOverride(
+        sceneType, deviceType, renderId, STEREO, CH_LAYOUT_STEREO), SUCCESS);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(
+        sceneType, deviceType, renderId), SUCCESS);
+    uint32_t inCh = 0;
+    uint64_t inLayout = 0;
+    chain->GetInputChannelInfo(inCh, inLayout);
+    EXPECT_EQ(inCh, static_cast<uint32_t>(STEREO));
+
+    // else-branch: clear override -> recompute via FindMaxEffectChannels(DEFAULT_INFO).
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->ClearChannelOverride(
+        sceneType, deviceType, renderId), SUCCESS);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(
+        sceneType, deviceType, renderId), SUCCESS);
+    chain->GetInputChannelInfo(inCh, inLayout);
+    EXPECT_EQ(inCh, DEFAULT_INFO.channels);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
 } // namespace AudioStandard
 } // namespace OHOS
