@@ -1120,6 +1120,7 @@ int32_t HpaeDirectRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, Au
     if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
         basicFormat.rate = SAMPLE_RATE_48000;
         basicFormat.audioChannelInfo.numChannels = STEREO;
+        basicFormat.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
     }
     return SUCCESS;
 }
