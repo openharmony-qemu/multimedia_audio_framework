@@ -1176,6 +1176,13 @@ bool TaiheAudioEnum::IsValidSourceType(int32_t intValue)
     }
 }
 
+bool TaiheAudioEnum::IsLegalInputArgumentRecordControllerSourceType(int32_t sourceType)
+{
+    return sourceType == OHOS::AudioStandard::SourceType::SOURCE_TYPE_MIC ||
+        sourceType == OHOS::AudioStandard::SourceType::SOURCE_TYPE_CAMCORDER ||
+        sourceType == OHOS::AudioStandard::SourceType::SOURCE_TYPE_LIVE;
+}
+
 bool TaiheAudioEnum::IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category)
 {
     bool result = false;

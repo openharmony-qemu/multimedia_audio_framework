@@ -269,14 +269,9 @@ int32_t AudioInjectorPolicy::AddCaptureInjectorInner()
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
         int32_t enableNewRoute = 0;
         GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-        if (voipType_ == NORMAL_VOIP || enableNewRoute != 1) {
+        if (voipType_ == NORMAL_VOIP || voipType_ == FAST_VOIP) {
             audioPolicyManager_.AddCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);
-            isConnected_ = true;
-        } else if (voipType_ == FAST_VOIP) {
-            int32_t ret = audioPolicyManager_.AddCaptureInjector();
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Injector::FAST_VOIP AddCaptureInjector failed");
-            UpdateAudioInfo(moduleInfo_);
             isConnected_ = true;
         }
     }
@@ -294,17 +289,9 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
     bool flag = (rendererStreamMap_.size() == 0 || noCapturer);
     if (isConnected_ && flag) {
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
-        int32_t enableNewRoute = 0;
-        GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-        if (voipType_ == NORMAL_VOIP || enableNewRoute != 1) {
+        if (voipType_ == NORMAL_VOIP || voipType_ == FAST_VOIP) {
             audioPolicyManager_.RemoveCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);
-            isConnected_ = false;
-            capturePortIdx_ = HDI_INVALID_ID;
-            voipType_ = NO_VOIP;
-        } else if (voipType_ == FAST_VOIP) {
-            int32_t ret = audioPolicyManager_.RemoveCaptureInjector();
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Injector::FAST_VOIP RemoveCaptureInjector failed");
             isConnected_ = false;
             capturePortIdx_ = HDI_INVALID_ID;
             voipType_ = NO_VOIP;

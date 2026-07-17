@@ -205,37 +205,6 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
     return SUCCESS;
 }
 
-void AudioInterruptService::ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
-    const AudioInterrupt &activeInterrupt, int32_t reason)
-{
-    CHECK_AND_CALL_FUNC_RETURN_LOG(incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
-        activeInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_INTERRUPT_START_INVALID_PARAM, "not recording, source type is invalid", false),
-        "not recording");
-    AUDIO_INFO_LOG("recording failed to start, incoming: sourceType %{public}d pid %{public}d uid %{public}d"\
-        "active: sourceType %{public}d pid %{public}d uid %{public}d",
-        incomingInterrupt.audioFocusType.sourceType, incomingInterrupt.pid, incomingInterrupt.uid,
-        activeInterrupt.audioFocusType.sourceType, activeInterrupt.pid, activeInterrupt.uid);
-
-    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::RECORD_ERROR,
-        Media::MediaMonitor::EventType::FAULT_EVENT);
-    CHECK_AND_CALL_FUNC_RETURN_LOG(bean != nullptr,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_INTERRUPT_CALLBACK_NULL_POINTER, "bean is nullptr", false),
-        "bean is nullptr");
-
-    bean->Add("INCOMING_SOURCE", incomingInterrupt.audioFocusType.sourceType);
-    bean->Add("INCOMING_PID", incomingInterrupt.pid);
-    bean->Add("INCOMING_UID", incomingInterrupt.uid);
-    bean->Add("ACTIVE_SOURCE", activeInterrupt.audioFocusType.sourceType);
-    bean->Add("ACTIVE_PID", activeInterrupt.pid);
-    bean->Add("ACTIVE_UID", activeInterrupt.uid);
-    bean->Add("REASON", reason);
-    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-}
-
 bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const AudioCapturerInfo &capturerInfo)
 {
     if (isPreemptMode_) {

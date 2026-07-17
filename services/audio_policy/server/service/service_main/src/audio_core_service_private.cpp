@@ -882,9 +882,9 @@ bool AudioCoreService::IsStreamSupportMmap(std::shared_ptr<AudioStreamDescriptor
 
 int32_t AudioCoreService::FetchDeviceAndRoute(std::string caller, const AudioStreamDeviceChangeReasonExt reason)
 {
-    int32_t ret = FetchOutputDeviceAndRoute(caller + "FetchDeviceAndRoute", reason);
+    int32_t ret = FetchOutputDeviceAndRoute(caller, reason);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fetch output device failed");
-    return FetchInputDeviceAndRoute(caller + "FetchDeviceAndRoute", reason);
+    return FetchInputDeviceAndRoute(caller, reason);
 }
 
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -1891,7 +1891,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
 void AudioCoreService::HandleRingerOrAlarmerRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     InternalDeviceType deviceType, const uint32_t pipeId, StreamUsage streamUsage)
 {
-    if (!streamDesc->newDeviceDescs_.front()->isBTSupportWearDetectionEnable_ ||
+    if (!streamDesc->newDeviceDescs_.front()->isSupportWearDetectionEnable_ ||
         streamUsage == STREAM_USAGE_ALARM) {
         UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc, pipeId);
         return;

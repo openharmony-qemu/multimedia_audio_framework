@@ -39,8 +39,7 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     : inRate_(inRate), outRate_(outRate), channels_(channels), quality_(quality),
     expectedOutFrameLen_(outRate_ * FRAME_LEN_20MS / MS_PER_SECOND)
 {
-    CHECK_AND_RETURN_LOG(inRate != outRate,
-        "input and output rate of ProResampler should be different! Same Rate: %{public}d", inRate);
+    CHECK_AND_RETURN(inRate != outRate);
     
     CHECK_AND_RETURN_LOG((inRate_ >= MIN_SAMPLE_RATE) && (inRate_ <= MAX_SAMPLE_RATE) &&
         (outRate_ >= MIN_SAMPLE_RATE) && (outRate_ <= MAX_SAMPLE_RATE),

@@ -1586,8 +1586,6 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
         }
     };
     SendRequest(request, __func__);
-    AUDIO_INFO_LOG("defaultSink_ is %{public}s defaultSource_ is %{public}s streamClassType %{public}u",
-        defaultSink_.c_str(), defaultSource_.c_str(), streamInfo.streamClassType);
     return SUCCESS;
 }
 
@@ -2131,7 +2129,6 @@ int32_t HpaeManager::GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &str
 int32_t HpaeManager::SetClientVolume(uint32_t sessionId, float volume)
 {
     auto request = [this, sessionId, volume]() {
-        AUDIO_INFO_LOG("SetClientVolume sessionId %{public}u %{public}f", sessionId, volume);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
                 "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
@@ -3348,14 +3345,15 @@ float HpaeManager::GetMaxAmplitude()
 
 void HpaeManager::UpdateBypassSpatializationForStereo(bool bypass)
 {
-    bypassSpatializationForStereo_ = bypass;
-    AUDIO_INFO_LOG("HpaeManager::UpdateBypassSpatializationForStereo %{public}d", bypass);
+    if (bypassSpatializationForStereo_ != bypass) {
+        bypassSpatializationForStereo_ = bypass;
+        AUDIO_INFO_LOG("HpaeManager::UpdateBypassSpatializationForStereo %{public}d", bypass);
+    }
     HpaePolicyManager::GetInstance().SetBypassSpatializationForStereo(bypass && adaptiveSpatialRenderingEnabled_);
 }
  
 void HpaeManager::HandleBypassSpatializationForStereo(bool bypass)
 {
-    AUDIO_INFO_LOG("HpaeManager::HandleBypassSpatializationForStereo %{public}d", bypass);
     auto request = [this, bypass]() {
         UpdateBypassSpatializationForStereo(bypass);
     };

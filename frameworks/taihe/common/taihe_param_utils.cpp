@@ -1068,4 +1068,15 @@ ActiveStreamVolumeInfo TaiheParamUtils::ToTaiheActiveStreamVolumeInfo(
     };
     return activeStreamVolumeInfo;
 }
+
+SystemRecordControllerChangeInfo TaiheParamUtils::ToTaiheSystemRecordControllerChangeInfo(
+    const OHOS::AudioStandard::SystemRecordControllerChangeInfo &changeInfo)
+{
+    SystemRecordControllerChangeInfo result = {
+        .enabled = changeInfo.enabled,
+        .uid = changeInfo.uid,
+        .sourceType = TaiheAudioEnum::ToTaiheSourceType(changeInfo.sourceType),
+    };
+    return result;
+}
 } // namespace ANI::Audio

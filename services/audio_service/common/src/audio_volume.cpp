@@ -1033,7 +1033,7 @@ void AudioVolume::SetScoActive(bool isActive)
 
 void AudioVolume::SetCurrentActiveDevice(DeviceType currentActiveDevice)
 {
-    AUDIO_INFO_LOG("SetCurrentActiveDevice %{public}d", currentActiveDevice);
+    AUDIO_DEBUG_LOG("SetCurrentActiveDevice %{public}d", currentActiveDevice);
     currentActiveDevice_ = currentActiveDevice;
 }
 

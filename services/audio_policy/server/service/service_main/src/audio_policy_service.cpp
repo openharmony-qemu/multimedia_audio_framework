@@ -945,6 +945,11 @@ void AudioPolicyService::NotifyAccountsChanged(const int &id)
     AudioServerProxy::GetInstance().NotifyAccountsChanged();
 }
 
+void AudioPolicyService::NotifySubProfileChanged()
+{
+    audioPolicyManager_.NotifySubProfileChanged();
+}
+
 void AudioPolicyService::MuteMediaWhenAccountsChanged()
 {
     audioPolicyManager_.MuteMediaWhenAccountsChanged();

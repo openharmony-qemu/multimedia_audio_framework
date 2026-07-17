@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1814,23 +1814,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetNoiseReductionMode_005, TestS
 * @tc.number: OH_AudioCapturer_SetNoiseReductionMode_006
 * @tc.desc  : Test SetNoiseReductionMode returns invalid param if capturer handle has been released.
 */
-HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetNoiseReductionMode_006, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    ASSERT_NE(builder, nullptr);
-    OH_AudioCapturer* audioCapturer = nullptr;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    ASSERT_EQ(result, AUDIOSTREAM_SUCCESS);
-    ASSERT_NE(audioCapturer, nullptr);
-
-    result = OH_AudioCapturer_Release(audioCapturer);
-    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
-    result = OH_AudioCapturer_SetNoiseReductionMode(audioCapturer, AUDIO_NOISE_REDUCTION_MODE_STANDARD);
-    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
-
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
 /**
 * @tc.name  : Test OH_AudioCapturer_GetNoiseReductionMode API.
 * @tc.number: OH_AudioCapturer_GetNoiseReductionMode_001

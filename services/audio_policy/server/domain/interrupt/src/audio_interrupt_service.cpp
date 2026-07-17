@@ -859,6 +859,10 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
         if (concurrencyMode == AudioConcurrencyMode::SILENT ||
             concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
             AUDIO_INFO_LOG("incoming stream is explicitly SILENT or MIX_WITH_OTHERS.");
+            if (incomingInterrupt.uid == AUDIO_ID &&
+            !(AudioSessionService::IsSameTypeForAudioSession(
+                incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType)))
+                return false;
             return true;
         }
     }
@@ -905,6 +909,10 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
         if (concurrencyMode == AudioConcurrencyMode::SILENT ||
             concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
             AUDIO_INFO_LOG("active stream is explicitly SILENT or MIX_WITH_OTHERS.");
+            if (activeInterrupt.uid == AUDIO_ID &&
+            !(AudioSessionService::IsSameTypeForAudioSession(
+                incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType)))
+                return false;
             return true;
         }
     }
@@ -2544,10 +2552,6 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator activeInterrupt = audioFocusInfoList.end();
     int32_t res = ProcessActiveStreamFocus(audioFocusInfoList, incomingInterrupt, incomingState, activeInterrupt);
-    if ((incomingState >= PAUSE || res != SUCCESS) && activeInterrupt != audioFocusInfoList.end()) {
-        ReportRecordGetFocusFail(incomingInterrupt, activeInterrupt->first,
-            res == SUCCESS ? RECORD_ERROR_GET_FOCUS_FAIL : RECORD_ERROR_NO_FOCUS_CFG);
-    }
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(res == SUCCESS, res,
         HILOG_COMM_ERROR("[ProcessFocusEntry]ProcessActiveStreamFocus fail"),
         StreamDfxManager::GetInstance().SendAudioErrorEvent(incomingInterrupt.uid,
