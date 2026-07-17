@@ -1718,5 +1718,207 @@ HWTEST_F(AudioCaptureSourceUnitTest, DestructorCaptureThreadJoinable_001, TestSi
     captureSource = nullptr;
     EXPECT_EQ(captureSource, nullptr);
 }
+/**
+ * @tc.name   : Test SetAudioScene with phoneCallSceneType transfer connect
+ * @tc.number : SetAudioScene_PhoneCallConnect_001
+ * @tc.desc   : Test SetAudioScene when connecting phone call with SCENE_TYPE_TRANSFER
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_PhoneCallConnect_001, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_TRANSFER);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test SetAudioScene with phoneCallSceneType modem connect (should not call SetPhoneCallSceneType)
+ * @tc.number : SetAudioScene_PhoneCallConnect_002
+ * @tc.desc   : Test SetAudioScene when connecting phone call with SCENE_TYPE_MODEM (normal call, no transfer)
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_PhoneCallConnect_002, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_MODEM);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test SetAudioScene with phoneCallSceneType invalid connect
+ * @tc.number : SetAudioScene_PhoneCallConnect_003
+ * @tc.desc   : Test SetAudioScene when connecting phone call with SCENE_TYPE_INVALID
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_PhoneCallConnect_003, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_INVALID);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test SetAudioScene disconnect with transfer reset
+ * @tc.number : SetAudioScene_PhoneCallDisconnect_001
+ * @tc.desc   : Test SetAudioScene disconnect from phone call after transfer, should reset to SCENE_TYPE_MODEM
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_PhoneCallDisconnect_001, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_TRANSFER);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test SetAudioScene disconnect with modem (should not call SetPhoneCallSceneType on disconnect)
+ * @tc.number : SetAudioScene_PhoneCallDisconnect_002
+ * @tc.desc   : Test SetAudioScene disconnect from normal phone call (MODEM), should not reset scene type
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_PhoneCallDisconnect_002, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_MODEM);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test SetAudioScene full transfer flow
+ * @tc.number : SetAudioScene_TransferFullFlow_001
+ * @tc.desc   : Test full transfer flow: connect with TRANSFER -> disconnect reset to MODEM
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_TransferFullFlow_001, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_TRANSFER);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_MODEM);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test SetAudioScene with invalid audio scene
+ * @tc.number : SetAudioScene_InvalidScene_001
+ * @tc.desc   : Test SetAudioScene with invalid audio scene parameter
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_InvalidScene_001, TestSize.Level1)
+{
+    auto source = std::make_shared<AudioCaptureSource>(10014, "primary");
+    ASSERT_NE(source, nullptr);
+    int32_t ret = source->SetAudioScene(AUDIO_SCENE_MAX, false, SCENE_TYPE_TRANSFER);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name   : Test SetPhoneCallSceneType directly
+ * @tc.number : SetPhoneCallSceneType_001
+ * @tc.desc   : Test SetPhoneCallSceneType with deviceManager null handling
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetPhoneCallSceneType_001, TestSize.Level1)
+{
+    auto source = std::make_shared<AudioCaptureSource>(10015, "primary");
+    ASSERT_NE(source, nullptr);
+    source->adapterNameCase_ = "primary";
+    int32_t ret = source->SetPhoneCallSceneType(SCENE_TYPE_TRANSFER);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test SetAudioScene connect+disconnect repeated with different scene types
+ * @tc.number : SetAudioScene_RepeatedConnectDisconnect_001
+ * @tc.desc   : Test SetAudioScene repeated connect/disconnect with transfer and modem types
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_RepeatedConnectDisconnect_001, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_TRANSFER);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_TRANSFER);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test SetAudioScene connect with SetPhoneCallSceneType failure does not block
+ * @tc.number : SetAudioScene_ConnectNoBlock_001
+ * @tc.desc   : Test SetAudioScene connect with TRANSFER when SetPhoneCallSceneType fails, should not block SelectScene
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_ConnectNoBlock_001, TestSize.Level1)
+{
+    auto source = std::make_shared<AudioCaptureSource>(10016, "primary");
+    ASSERT_NE(source, nullptr);
+    source->adapterNameCase_ = "primary";
+    source->currentAudioScene_ = AUDIO_SCENE_DEFAULT;
+    int32_t ret = source->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false, SCENE_TYPE_TRANSFER);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(source->currentPhoneCallSceneType_, SCENE_TYPE_TRANSFER);
+}
+
+/**
+ * @tc.name   : Test SetAudioScene disconnect with SetPhoneCallSceneType reset failure does not block
+ * @tc.number : SetAudioScene_DisconnectNoBlock_001
+ * @tc.desc   : Test SetAudioScene disconnect when currentPhoneCallSceneType_ is TRANSFER,
+ *              SetPhoneCallSceneType reset fails but does not block subsequent flow
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_DisconnectNoBlock_001, TestSize.Level1)
+{
+    auto source = std::make_shared<AudioCaptureSource>(10017, "primary");
+    ASSERT_NE(source, nullptr);
+    source->adapterNameCase_ = "primary";
+    source->currentAudioScene_ = AUDIO_SCENE_PHONE_CALL;
+    source->currentPhoneCallSceneType_ = SCENE_TYPE_TRANSFER;
+    int32_t ret = source->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(source->currentAudioScene_, AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(source->currentPhoneCallSceneType_, SCENE_TYPE_MODEM);
+}
+
+/**
+ * @tc.name   : Test SetAudioScene disconnect when currentPhoneCallSceneType_ is MODEM should not reset
+ * @tc.number : SetAudioScene_DisconnectModemNoReset_001
+ * @tc.desc   : Test SetAudioScene disconnect from MODEM call should not call SetPhoneCallSceneType
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_DisconnectModemNoReset_001, TestSize.Level1)
+{
+    auto source = std::make_shared<AudioCaptureSource>(10018, "primary");
+    ASSERT_NE(source, nullptr);
+    source->adapterNameCase_ = "primary";
+    source->currentAudioScene_ = AUDIO_SCENE_PHONE_CALL;
+    source->currentPhoneCallSceneType_ = SCENE_TYPE_MODEM;
+    int32_t ret = source->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+    EXPECT_EQ(source->currentAudioScene_, AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(source->currentPhoneCallSceneType_, SCENE_TYPE_MODEM);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

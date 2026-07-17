@@ -801,9 +801,13 @@ int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExclude
     bool isDisconnect = (audioScene == AUDIO_SCENE_DEFAULT && currentAudioScene_ == AUDIO_SCENE_PHONE_CALL);
 
     int32_t ret = SUCCESS;
-    if (isConnect && phoneCallSceneType != SCENE_TYPE_INVALID) {
+
+    if (isConnect && phoneCallSceneType == SCENE_TYPE_TRANSFER) {
         ret = SetPhoneCallSceneType(phoneCallSceneType);
-        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("SetPhoneCallSceneType failed, ret=%{public}d", ret);
+        }
+        currentPhoneCallSceneType_ = phoneCallSceneType;
     }
 
     if (!scoExcludeFlag && (audioScene != currentAudioScene_ || currentScoExcludeFlag_)) {
@@ -819,9 +823,12 @@ int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExclude
         currentAudioScene_ = audioScene;
     }
 
-    if (isDisconnect) {
+    if (isDisconnect && currentPhoneCallSceneType_ == SCENE_TYPE_TRANSFER) {
         ret = SetPhoneCallSceneType(SCENE_TYPE_MODEM);
-        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("SetPhoneCallSceneType reset failed, ret=%{public}d", ret);
+        }
+        currentPhoneCallSceneType_ = SCENE_TYPE_MODEM;
     }
 
     return SUCCESS;

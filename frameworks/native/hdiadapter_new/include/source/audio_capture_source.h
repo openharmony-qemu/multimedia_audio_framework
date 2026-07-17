@@ -208,6 +208,7 @@ private:
     std::string ecDumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
+    int32_t currentPhoneCallSceneType_ = SCENE_TYPE_MODEM;
     bool currentScoExcludeFlag_ = false;
     std::atomic<bool> muteState_ = false;
     std::string address_ = "";
