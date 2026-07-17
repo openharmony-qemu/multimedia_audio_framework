@@ -235,8 +235,7 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     AudioDeviceDescriptor audioDeviceDescriptor = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
     std::shared_ptr<AudioDeviceDescriptor> descPtr =
         std::make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
-    if ((isUpdateActiveDevice && audioDeviceManager_.IsDeviceConnected(descPtr)) ||
-        (descPtr != nullptr && descPtr->IsRemote())) {
+    if (isUpdateActiveDevice && audioDeviceManager_.IsDeviceConnected(descPtr)) {
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor, reason);
     }
     return isUpdateActiveDevice;
@@ -2495,6 +2494,9 @@ bool AudioCoreService::IsOffloadAllowedForUid(uint32_t uid) const
 int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStreamDeviceChangeReasonExt reason)
 {
     FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "HandleFetchOutputWhenNoRunningStream" };
+    if (audioRouterCenter_.IsMediaFollowCallStrategy(audioSceneManager_.GetAudioScene(true))) {
+        info.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    }
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), ERROR, "descs is empty");
     AudioDeviceDescriptor tmpOutputDeviceDesc = audioRouterSelectStrategy_.Get1stCurrentOutputDevice();
