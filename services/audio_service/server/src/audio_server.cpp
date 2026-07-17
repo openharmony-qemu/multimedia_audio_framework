@@ -2286,6 +2286,10 @@ bool AudioServer::CheckStreamInfoFormat(const AudioProcessConfig &config)
         return false;
     }
 
+    CHECK_AND_RETURN_RET_LOG(config.streamInfo.customSampleRate == 0 ||
+        Util::IsCustomSampleRateValid(config.streamInfo.customSampleRate), false,
+        "Check format failed invalid customSampleRate:%{public}u", config.streamInfo.customSampleRate);
+
     if (NotContain(AUDIO_SUPPORTED_FORMATS, config.streamInfo.format)) {
         AUDIO_ERR_LOG("Check format failed invalid format:%{public}d", config.streamInfo.format);
         return false;
