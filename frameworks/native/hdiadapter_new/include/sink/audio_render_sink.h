@@ -125,6 +125,8 @@ private:
     int32_t SetSinkMuteForSwitchDeviceWithoutHdiVolume(bool mute);
     bool SetPlayingAppNameParam(const std::string &param);
 
+    void CheckActiveDeviceValidForStart();
+
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -185,6 +187,9 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+    // Sticky last non-NONE device; never overwritten with NONE so Start can restore it
+    // when upper layer hasn't re-pushed a device yet.
+    DeviceType lastValidActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     bool currentScoExcludeFlag_ = false;
     int32_t currentPhoneCallSceneType_ = SCENE_TYPE_MODEM;
