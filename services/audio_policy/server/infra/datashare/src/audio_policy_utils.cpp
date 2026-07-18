@@ -87,7 +87,8 @@ std::set<DeviceType> AudioPolicyUtils::needDeclaredDevices = {
 std::map<DeviceType, std::string> AudioPolicyUtils::deviceMsmd = {
     {DEVICE_TYPE_USB_HEADSET, PRIMARY_TYPEC_CLASS},
     {DEVICE_TYPE_NEARLINK_IN, PRIMARY_BT_CLASS},
-    {DEVICE_TYPE_BLUETOOTH_SCO, PRIMARY_BT_CLASS}
+    {DEVICE_TYPE_BLUETOOTH_SCO, PRIMARY_BT_CLASS},
+    {DEVICE_TYPE_WIRED_HEADSET, PRIMARY_WIRED_CLASS}
 };
 
 static inline const char* ResolvePrimaryMicPort(uint32_t routeFlag)
