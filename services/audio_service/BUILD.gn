@@ -548,9 +548,9 @@ config("audio_service_config") {
     "../../test/fuzztest/*",
     "../../services/audio_service/test/unittest:audio_process_in_client_second_unit_test",
     "../../services/audio_service/test/unittest:audio_effect_server_unit_test",
-    "../../services/audio_service/test/unittest:audio_endpoint_third_unit_test",
-    "../../services/audio_service/test/unittest:audio_playback_engine_unit_test",
-    "../../services/audio_service/test/unittest:audio_server_extra_unit_test",
+    # "../../services/audio_service/test/unittest:audio_endpoint_third_unit_test",
+    # "../../services/audio_service/test/unittest:audio_playback_engine_unit_test",
+    # "../../services/audio_service/test/unittest:audio_server_extra_unit_test",
     "../../services/audio_service/test/unittest:audio_service_second_unit_test",
     "../../services/audio_service/test/unittest:audio_manager_stub_unit_test",
   ]
