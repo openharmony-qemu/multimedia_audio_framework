@@ -35,23 +35,13 @@ public:
 
     static AudioVolumeManager CreateVolumeManagerWrapper();
 
-    array<VolumeGroupInfo> GetVolumeGroupInfosAsync(string_view networkId);
-    array<VolumeGroupInfo> GetVolumeGroupInfosPromise(string_view networkId);
     array<VolumeGroupInfo> GetVolumeGroupInfosSync(string_view networkId);
-    int32_t GetAppVolumePercentageForUidPromise(int32_t uid);
     int32_t GetAppVolumePercentageForUidSync(int32_t uid);
-    void SetAppVolumePercentageForUidPromise(int32_t uid, int32_t volume);
     void SetAppVolumePercentageForUidSync(int32_t uid, int32_t volume);
-    bool IsAppVolumeMutedForUidPromise(int32_t uid, bool owned);
     bool IsAppVolumeMutedForUidSync(int32_t uid, bool owned);
-    void SetAppVolumeMutedForUidPromise(int32_t uid, bool muted);
     void SetAppVolumeMutedForUidSync(int32_t uid, bool muted);
-    int32_t GetAppVolumePercentagePromise();
     int32_t GetAppVolumePercentageSync();
-    void SetAppVolumePercentagePromise(int32_t volume);
     void SetAppVolumePercentageSync(int32_t volume);
-    AudioVolumeGroupManager GetVolumeGroupManagerAsync(int32_t groupId);
-    AudioVolumeGroupManager GetVolumeGroupManagerPromise(int32_t groupId);
     AudioVolumeGroupManager GetVolumeGroupManagerSync(int32_t groupId);
     int32_t GetSystemVolume(AudioVolumeType volumeType);
     int32_t GetMinSystemVolume(AudioVolumeType volumeType);
@@ -67,7 +57,6 @@ public:
     bool IsSystemMuted(AudioVolumeType volumeType);
     bool IsSystemMutedForStream(StreamUsage streamUsage);
     int32_t GetSystemVolumeByUid(AudioVolumeType volumeType, int32_t callingUid);
-    void SetSystemVolumeByUidPromise(AudioVolumeType volumeType, int32_t volume, int32_t callingUid);
     void SetSystemVolumeByUidSync(AudioVolumeType volumeType, int32_t volume, int32_t callingUid);
     void ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
     void OnVolumeChange(callback_view<void(VolumeEvent const&)> callback);
@@ -83,7 +72,6 @@ public:
     void OffSystemVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
     void OffStreamVolumeChange(optional_view<callback<void(StreamVolumeEvent const&)>> callback);
     int32_t GetSystemVolumePercentage(AudioVolumeType volumeType);
-    void SetSystemVolumePercentagePromise(AudioVolumeType volumeType, int32_t percentage);
     void SetSystemVolumePercentageSync(AudioVolumeType volumeType, int32_t percentage);
     int32_t GetMinSystemVolumePercentage(AudioVolumeType volumeType);
     array<ActiveStreamVolumeInfo> GetActiveStreamsVolumeInfo();

@@ -36,11 +36,9 @@ public:
     bool IsSpatializationSupportedForDevice(AudioDeviceDescriptor deviceDescriptor);
     bool IsHeadTrackingSupported();
     bool IsHeadTrackingSupportedForDevice(AudioDeviceDescriptor deviceDescriptor);
-    void SetSpatializationEnabledPromise(AudioDeviceDescriptor deviceDescriptor, bool enabled);
     void SetSpatializationEnabledSync(AudioDeviceDescriptor deviceDescriptor, bool enabled);
     bool IsSpatializationEnabled(AudioDeviceDescriptor deviceDescriptor);
     bool IsSpatializationEnabledForCurrentDevice();
-    void SetHeadTrackingEnabledPromise(AudioDeviceDescriptor deviceDescriptor, bool enabled);
     void SetHeadTrackingEnabledSync(AudioDeviceDescriptor deviceDescriptor, bool enabled);
     bool IsHeadTrackingEnabled(AudioDeviceDescriptor deviceDescriptor);
     void UpdateSpatialDeviceState(AudioSpatialDeviceState spatialDeviceState);

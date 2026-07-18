@@ -149,11 +149,6 @@ AudioLpback AudioLoopbackImpl::CreateGlobalAudioLoopbackWrapper(OHOS::AudioStand
     return AudioLpback::make_type_audioLpback(make_holder<AudioLoopbackImpl, AudioLoopback>(impl));
 }
 
-AudioLoopbackStatus AudioLoopbackImpl::GetStatusPromise()
-{
-    return GetStatusSync();
-}
-
 AudioLoopbackStatus AudioLoopbackImpl::GetStatusSync()
 {
     if (loopback_ == nullptr) {
@@ -161,11 +156,6 @@ AudioLoopbackStatus AudioLoopbackImpl::GetStatusSync()
         return AudioLoopbackStatus::key_t::UNAVAILABLE_DEVICE;
     }
     return TaiheAudioEnum::ToTaiheAudioLoopbackStatus(loopback_->GetStatus());
-}
-
-void AudioLoopbackImpl::SetVolumePromise(double volume)
-{
-    return SetVolumeSync(volume);
 }
 
 void AudioLoopbackImpl::SetVolumeSync(double volume)
@@ -227,11 +217,6 @@ double AudioLoopbackImpl::GetVolume()
         return 0.0;
     }
     return static_cast<double>(loopback_->GetVolume());
-}
-
-bool AudioLoopbackImpl::EnablePromise(bool enable)
-{
-    return EnableSync(enable);
 }
 
 bool AudioLoopbackImpl::EnableSync(bool enable)
@@ -405,7 +390,5 @@ AudioLpback CreateGlobalAudioLoopbackSync(AudioLoopbackMode mode, bool isControl
 }
 } // namespace ANI::Audio
 
-TH_EXPORT_CPP_API_CreateAudioLoopbackPromise(ANI::Audio::CreateAudioLoopbackSync);
 TH_EXPORT_CPP_API_CreateAudioLoopbackSync(ANI::Audio::CreateAudioLoopbackSync);
-TH_EXPORT_CPP_API_CreateGlobalAudioLoopbackPromise(ANI::Audio::CreateGlobalAudioLoopbackSync);
 TH_EXPORT_CPP_API_CreateGlobalAudioLoopbackSync(ANI::Audio::CreateGlobalAudioLoopbackSync);

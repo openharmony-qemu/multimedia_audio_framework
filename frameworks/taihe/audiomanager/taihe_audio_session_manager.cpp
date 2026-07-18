@@ -50,11 +50,6 @@ AudioSessionManager AudioSessionManagerImpl::CreateSessionManagerWrapper()
     return make_holder<AudioSessionManagerImpl, AudioSessionManager>(audioSessionMngrImpl);
 }
 
-void AudioSessionManagerImpl::ActivateAudioSessionPromise(AudioSessionStrategy const &strategy)
-{
-    return ActivateAudioSessionSync(strategy);
-}
-
 void AudioSessionManagerImpl::ActivateAudioSessionSync(AudioSessionStrategy const &strategy)
 {
     OHOS::AudioStandard::AudioSessionStrategy audioSessionStrategy;
@@ -72,11 +67,6 @@ void AudioSessionManagerImpl::ActivateAudioSessionSync(AudioSessionStrategy cons
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. ActivateAudioSession fail.");
         return;
     }
-}
-
-void AudioSessionManagerImpl::DeactivateAudioSessionPromise()
-{
-    return DeactivateAudioSessionSync();
 }
 
 void AudioSessionManagerImpl::DeactivateAudioSessionSync()
@@ -125,11 +115,6 @@ DeviceType AudioSessionManagerImpl::GetDefaultOutputDevice()
     return TaiheAudioEnum::ToTaiheDeviceType(deviceType);
 }
 
-void AudioSessionManagerImpl::SetDefaultOutputDevicePromise(DeviceType deviceType)
-{
-    return SetDefaultOutputDeviceSync(deviceType);
-}
-
 void AudioSessionManagerImpl::SetDefaultOutputDeviceSync(DeviceType deviceType)
 {
     if (audioSessionMngr_ == nullptr) {
@@ -150,11 +135,6 @@ void AudioSessionManagerImpl::SetDefaultOutputDeviceSync(DeviceType deviceType)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
         return;
     }
-}
-
-void AudioSessionManagerImpl::SetMediaOutputDevicePromise(DeviceType deviceType)
-{
-    return SetMediaOutputDeviceSync(deviceType);
 }
 
 void AudioSessionManagerImpl::SetMediaOutputDeviceSync(DeviceType deviceType)
@@ -222,11 +202,6 @@ void AudioSessionManagerImpl::EnableMuteSuggestionWhenMixWithOthers(bool enable)
         AUDIO_ERR_LOG("EnableMuteSuggestionWhenMixWithOthers Failed, ret = %{public}d", ret);
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
     }
-}
-
-void AudioSessionManagerImpl::SetCapturerMuteHintPromise(bool mute)
-{
-    return SetCapturerMuteHintSync(mute);
 }
 
 void AudioSessionManagerImpl::SetCapturerMuteHintSync(bool mute)
@@ -619,11 +594,6 @@ std::shared_ptr<TaiheAudioSessionDeviceCallback> AudioSessionManagerImpl::GetAud
     return cb;
 }
 
-void AudioSessionManagerImpl::SelectMediaInputDevicePromise(AudioDeviceDescriptor const& inputAudioDevice)
-{
-    return SelectMediaInputDeviceSync(inputAudioDevice);
-}
-
 void AudioSessionManagerImpl::SelectMediaInputDeviceSync(AudioDeviceDescriptor const& inputAudioDevice)
 {
     bool bArgTransFlag = true;
@@ -692,11 +662,6 @@ AudioDeviceDescriptor AudioSessionManagerImpl::GetSelectedMediaInputDevice()
     return TaiheParamUtils::SetDeviceDescriptor(descriptor);
 }
 
-void AudioSessionManagerImpl::ClearSelectedMediaInputDevicePromise()
-{
-    return ClearSelectedMediaInputDeviceSync();
-}
-
 void AudioSessionManagerImpl::ClearSelectedMediaInputDeviceSync()
 {
     if (audioSessionMngr_ == nullptr) {
@@ -710,12 +675,6 @@ void AudioSessionManagerImpl::ClearSelectedMediaInputDeviceSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Set app volume fail.");
         return;
     }
-}
-
-void AudioSessionManagerImpl::SetBluetoothAndNearlinkPreferredRecordCategoryPromise(
-    BluetoothAndNearlinkPreferredRecordCategory category)
-{
-    return SetBluetoothAndNearlinkPreferredRecordCategorySync(category);
 }
 
 void AudioSessionManagerImpl::SetBluetoothAndNearlinkPreferredRecordCategorySync(

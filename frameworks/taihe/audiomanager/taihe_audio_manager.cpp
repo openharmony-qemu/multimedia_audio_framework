@@ -89,11 +89,6 @@ void AudioManagerImpl::SetExtraParametersSync(string_view mainKey, map_view<stri
     return;
 }
 
-void AudioManagerImpl::SetExtraParametersPromise(string_view mainKey, map_view<string, string> kvpairs)
-{
-    return SetExtraParametersSync(mainKey, kvpairs);
-}
-
 map<string, string> AudioManagerImpl::GetExtraParametersSync(string_view mainKey, optional_view<array<string>> subKeys)
 {
     map<string, string> kvpairs;
@@ -129,12 +124,6 @@ map<string, string> AudioManagerImpl::GetExtraParametersSync(string_view mainKey
     return kvpairs;
 }
 
-map<string, string> AudioManagerImpl::GetExtraParametersPromise(
-    string_view mainKey, optional_view<array<string>> subKeys)
-{
-    return GetExtraParametersSync(mainKey, subKeys);
-}
-
 void AudioManagerImpl::SetAudioSceneSync(AudioScene scene)
 {
     int32_t sceneInner = scene.get_value();
@@ -147,21 +136,6 @@ void AudioManagerImpl::SetAudioSceneSync(AudioScene scene)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetAudioScene failed");
         return;
     }
-}
-
-void AudioManagerImpl::SetAudioScenePromise(AudioScene scene)
-{
-    return SetAudioSceneSync(scene);
-}
-
-void AudioManagerImpl::SetAudioSceneAsync(AudioScene scene)
-{
-    return SetAudioSceneSync(scene);
-}
-
-void AudioManagerImpl::DisableSafeMediaVolumePromise()
-{
-    return DisableSafeMediaVolumeSync();
 }
 
 void AudioManagerImpl::DisableSafeMediaVolumeSync()
@@ -228,16 +202,6 @@ AudioDebuggingManager AudioManagerImpl::GetDebuggingManager()
 AudioRecordingManager AudioManagerImpl::GetRecordingManager()
 {
     return AudioRecordingManagerImpl::CreateRecordingManagerWrapper();
-}
-
-AudioScene AudioManagerImpl::GetAudioSceneAsync()
-{
-    return GetAudioSceneSync();
-}
-
-AudioScene AudioManagerImpl::GetAudioScenePromise()
-{
-    return GetAudioSceneSync();
 }
 
 AudioScene AudioManagerImpl::GetAudioSceneSync()

@@ -34,14 +34,9 @@ public:
     explicit AudioManagerImpl(std::shared_ptr<AudioManagerImpl> obj);
     ~AudioManagerImpl();
 
-    void SetExtraParametersPromise(string_view mainKey, map_view<string, string> kvpairs);
     void SetExtraParametersSync(string_view mainKey, map_view<string, string> kvpairs);
-    map<string, string> GetExtraParametersPromise(string_view mainKey, optional_view<array<string>> subKeys);
     map<string, string> GetExtraParametersSync(string_view mainKey, optional_view<array<string>> subKeys);
-    void SetAudioScenePromise(AudioScene scene);
-    void SetAudioSceneAsync(AudioScene scene);
     void SetAudioSceneSync(AudioScene scene);
-    void DisableSafeMediaVolumePromise();
     void DisableSafeMediaVolumeSync();
 
     AudioVolumeManager GetVolumeManager();
@@ -49,8 +44,6 @@ public:
     AudioRoutingManager GetRoutingManager();
     AudioSessionManager GetSessionManager();
     AudioEffectManager GetEffectManager();
-    AudioScene GetAudioSceneAsync();
-    AudioScene GetAudioScenePromise();
     AudioScene GetAudioSceneSync();
     AudioSpatializationManager GetSpatializationManager();
     AudioCollaborativeManager GetCollaborativeManager();
