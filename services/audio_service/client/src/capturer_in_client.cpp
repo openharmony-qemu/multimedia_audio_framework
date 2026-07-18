@@ -1514,7 +1514,7 @@ int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
     gasp->RequestUserPrivacyAuthority(sessionId);
  
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
-    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS * 5), [this] {
+    callServerCV_.wait(waitLock, [this] {
         return notifiedOperation_ == USER_PRIVACY_AUTHORITY; // will be false when got notified.
     });
     Operation operation = notifiedOperation_;
@@ -1526,8 +1526,8 @@ int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CALLBACK_ILLEGAL_STATE, "playbackCaptureStartCallback_ is nullptr", true));
     if (operation != USER_PRIVACY_AUTHORITY) {
-        AUDIO_ERR_LOG("authorization failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
-            (!stopWaiting ? "timeout" : "no timeout"), operation, result);
+        AUDIO_ERR_LOG("authorization failed: Operation:%{public}d result:%{public}" PRId64".",
+            operation, result);
         playbackCaptureStartCallback_->OnPlaybackCaptureStartResult(START_STATE_FAILED);
         return ERROR;
     }

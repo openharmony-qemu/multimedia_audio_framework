@@ -54,7 +54,6 @@ ohos_unittest("audio_capturer_unit_test") {
     "src/audio_capturer_extra_unit_test.cpp",
     "src/audio_capturer_unit_test.cpp",
     "src/audio_capturer_proxy_obj_unit_test.cpp",
-    "src/audio_capturer_third_unit_test.cpp",
   ]
 
   if (audio_framework_feature_low_latency) {

@@ -613,10 +613,10 @@ int32_t HpaeRendererManager::UpdateClusterStreamInfo(HpaeProcessorType sceneType
         }
     }
     if (updateNode == nullptr) {
-        AUDIO_INFO_LOG("no need to update the stream info");
         return SUCCESS;
     }
     CHECK_AND_RETURN_RET_LOG(outputCluster_ != nullptr, ERR_NULL_POINTER, "outputCluster_ is nullptr");
+    AUDIO_INFO_LOG("update the stream info");
     outputCluster_->UpdateStreamInfo(updateNode);
     return SUCCESS;
 }
@@ -2102,7 +2102,6 @@ void HpaeRendererManager::SetCollDelayCount()
 void HpaeRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
-        AUDIO_INFO_LOG("deviceClass: %{public}s", sinkInfo_.deviceClass.c_str());
         CHECK_AND_RETURN(IsRemoteDevice());
         appsUid_.clear();
         for (const auto &sinkInputNodePair : sinkInputNodeMap_) {

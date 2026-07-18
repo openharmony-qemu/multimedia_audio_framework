@@ -20,6 +20,7 @@
 #include "audio_policy_interface.h"
 #include "audio_system_manager.h"
 #include "taihe_audio_volume_key_event.h"
+#include "taihe_audio_record_controller.h"
 
 namespace ANI::Audio {
 using namespace taihe;
@@ -48,6 +49,7 @@ public:
     AudioCollaborativeManager GetCollaborativeManager();
     AudioDeviceEnhanceManager GetDeviceEnhanceManager();
     AudioDebuggingManager GetDebuggingManager();
+    AudioRecordingManager GetRecordingManager();
     void OnAudioSceneChange(callback_view<void(AudioScene data)> callback);
     void OffAudioSceneChange(optional_view<callback<void(AudioScene data)>> callback);
 

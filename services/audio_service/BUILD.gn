@@ -272,7 +272,6 @@ ohos_shared_library("audio_stream_client") {
   }
 
   sources = [
-    "client/src/audio_process_in_client.cpp",
     "client/src/audio_spatial_channel_converter.cpp",
     "client/src/audio_stream_tracker.cpp",
     "client/src/capturer_in_client.cpp",
@@ -282,10 +281,6 @@ ohos_shared_library("audio_stream_client") {
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
   ]
-
-  if (audio_framework_feature_low_latency) {
-    sources += [ "client/src/fast_audio_stream.cpp" ]
-  }
 
   public_configs = [
     ":audio_client_public_config",
@@ -538,17 +533,12 @@ ohos_prebuilt_etc("audio_server_init") {
 config("audio_service_config") {
   visibility = [ ":*" ]
   visibility += [
-    "../../services/audio_service/test/unittest:audio_process_in_client_unit_test",
     "../../services/audio_service/test/unittest:capturer_in_server_unit_test",
-    "../../services/audio_service/test/unittest/audio_endpoint_unit_test",
-    "../../services/audio_service/test/unittest/audio_endpoint_plus_unit_test",
     "../../services/audio_service/test/unittest/audio_server_unit_test",
     "../../services/audio_service/test/unittest/hw_decoding_stream_unit_test",
     "../../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test",
     "../../test/fuzztest/*",
-    "../../services/audio_service/test/unittest:audio_process_in_client_second_unit_test",
     "../../services/audio_service/test/unittest:audio_effect_server_unit_test",
-    "../../services/audio_service/test/unittest:audio_endpoint_third_unit_test",
     "../../services/audio_service/test/unittest:audio_playback_engine_unit_test",
     "../../services/audio_service/test/unittest:audio_server_extra_unit_test",
     "../../services/audio_service/test/unittest:audio_service_second_unit_test",
@@ -652,15 +642,6 @@ audio_ohos_library("audio_process_service") {
       "server/src/pa_adapter_manager.cpp",
       "server/src/pa_capturer_stream_impl.cpp",
       "server/src/pa_renderer_stream_impl.cpp",
-    ]
-  }
-
-  if (audio_framework_feature_low_latency) {
-    sources += [
-      "server/src/audio_endpoint.cpp",
-      "server/src/audio_endpoint_performance.cpp",
-      "server/src/audio_process_in_server.cpp",
-      "server/src/audio_endpoint_sink_adapter.cpp",
     ]
   }
 
@@ -981,46 +962,6 @@ group("audio_service_test_packages") {
     ":audio_engine_client_manager_test",
     "../../frameworks/native/hdiadapter_new:hdi_monitor_test",
   ]
-
-  if (audio_framework_feature_low_latency) {
-    deps += [ ":audio_process_client_test" ]
-  }
-}
-
-ohos_executable("audio_process_client_test") {
-  install_enable = false
-
-  include_dirs = [
-    "../../frameworks/native/audiostream/include",
-    "../../frameworks/native/audioutils/include",
-    "../../interfaces/inner_api/native/audiocommon/include",
-    "client/include",
-    "../audio_policy/server/include",
-  ]
-
-  sources = [ "test/example/audio_process_client_test.cpp" ]
-
-  deps = [
-    ":audio_client",
-    ":audio_engine_manager",
-    ":audio_policy_manager",
-    ":audio_stream_client",
-    "../audio_policy:audio_foundation",
-    "./../../frameworks/native/audioutils:audio_utils",
-  ]
-
-  external_deps = [
-    "bounds_checking_function:libsec_shared",
-    "ipc:ipc_core",
-    "c_utils:utils",
-    "hilog:libhilog",
-    "init:libbegetutil",
-    "eventhandler:libeventhandler",
-    "samgr:samgr_proxy",
-  ]
-
-  part_name = "audio_framework"
-  subsystem_name = "multimedia"
 }
 
 ohos_executable("audio_hdi_device_test") {

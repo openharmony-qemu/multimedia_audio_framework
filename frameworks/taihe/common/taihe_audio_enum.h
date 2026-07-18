@@ -142,6 +142,7 @@ public:
     static bool IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode);
     static bool IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset);
     static bool IsLegalInputArgumentAudioLoopbackEqualizerPreset(int32_t preset);
+    static bool IsLegalInputArgumentRecordControllerSourceType(int32_t sourceType);
 
     static ConnectType ToTaiheConnectType(OHOS::AudioStandard::ConnectType type);
     static DeviceRole ToTaiheDeviceRole(OHOS::AudioStandard::DeviceRole type);

@@ -700,12 +700,13 @@ bool AudioZone::UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescripto
 void AudioZone::UpdatePreferDevice(AudioZoneChangeReason reason)
 {
 #ifdef MULTI_USER_ZONE
-    std::lock_guard<std::mutex> lock(zoneMutex_);
     auto newDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     if (zoneId_ == DEFAULT_ZONEID) {
         FetchDeviceInfo info = {STREAM_USAGE_MUSIC, "UpdatePreferDevice For Default Zone"};
         newDevice = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
-    } else {
+    }
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    if (zoneId_ != DEFAULT_ZONEID) {
         auto zonepreferDesc = zoneRouter_.FetchOutputDevices(devices_);
         if (!zonepreferDesc.empty() && zonepreferDesc.front() != nullptr) {
             newDevice = zonepreferDesc.front();

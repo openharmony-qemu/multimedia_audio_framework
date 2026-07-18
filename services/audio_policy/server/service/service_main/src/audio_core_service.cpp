@@ -1643,9 +1643,11 @@ void AudioCoreService::NotifySilentStateChange(uint32_t sessionId, bool isSilent
     bool isSilentChanged = pipeManager_->SetMuteSilentState(sessionId, isSilent);
     if (isSilentChanged && !isSilent) {
         AUDIO_INFO_LOG("NotifySilentStateChange: session %{public}u, isSilent %{public}d", sessionId, isSilent);
-        audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
-        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
-        TriggerFetchDevice(reason);
+        bool isStatusUpdated = audioDeviceManager_.RestoreWirelessDeviceSilentState();
+        if (isStatusUpdated) {
+            AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE;
+            TriggerFetchDevice(reason);
+        }
     }
 }
 
@@ -1656,9 +1658,11 @@ void AudioCoreService::NotifyDataTransSilentStateChange(uint32_t sessionId, bool
     if (isSilentChanged && !isSilent) {
         AUDIO_INFO_LOG("NotifyDataTransSilentStateChange: session %{public}u, isSilent %{public}d",
             sessionId, isSilent);
-        audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
-        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
-        TriggerFetchDevice(reason);
+        bool isStatusUpdated = audioDeviceManager_.RestoreWirelessDeviceSilentState();
+        if (isStatusUpdated) {
+            AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE;
+            TriggerFetchDevice(reason);
+        }
     }
 }
 

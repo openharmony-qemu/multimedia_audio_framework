@@ -423,6 +423,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
         case SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN:
             SubscribeOsAccountChangeEvents();
+            SubscribeOsAccountSubProfileChangeEvents();
             break;
         case COMMON_EVENT_SERVICE_ID:
             SubscribeCommonEventExecute();
@@ -945,6 +946,23 @@ void AudioPolicyServer::SubscribeOsAccountChangeEvents()
         AUDIO_INFO_LOG("account observer register success");
     } else {
         AUDIO_ERR_LOG("account observer register already");
+    }
+}
+
+void AudioPolicyServer::SubscribeOsAccountSubProfileChangeEvents()
+{
+    AUDIO_INFO_LOG("SubscribeOsAccountSubProfileChangeEvents start");
+    if (subProfileObserver_ == nullptr) {
+        std::set<AccountSA::OsAccountSubProfileEventType> types = {
+            AccountSA::OsAccountSubProfileEventType::SWITCHED
+        };
+        subProfileObserver_ = std::make_shared<AudioSubProfileObserver>(this);
+        ErrCode errCode = AccountSA::OsAccountSubProfileClient::GetInstance()
+            .SubscribeOsAccountSubProfileEvents(types, subProfileObserver_);
+        CHECK_AND_RETURN_LOG(errCode == ERR_OK, "sub-profile observer register fail");
+        AUDIO_INFO_LOG("sub-profile observer register success");
+    } else {
+        AUDIO_ERR_LOG("sub-profile observer register already");
     }
 }
 
@@ -5169,6 +5187,12 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id, const int &oldId)
     audioPolicyService_.NotifyAccountsChanged(id);
     SendVolumeKeyEventToRssWhenAccountsChanged();
     RegisterDefaultVolumeTypeListener();
+}
+
+void AudioPolicyServer::NotifySubProfileChanged()
+{
+    AUDIO_INFO_LOG("NotifySubProfileChanged received");
+    audioPolicyService_.NotifySubProfileChanged();
 }
 
 void AudioPolicyServer::CheckHibernateState(bool hibernate)

@@ -139,6 +139,9 @@ public:
         AudioStreamType streamType, VolumeKeyType keyType = VolumeKeyType::LEVEL);
     std::string GetMuteKey(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
     std::string GetZoneKey(int32_t zoneId);
+    std::string GetSubspaceKey(int32_t zoneId);
+    void SetCurrentSubspaceId(int32_t subspaceId);
+    int32_t GetCurrentSubspaceId();
     void SetVolumeList(std::vector<AudioStreamType> volumeList);
 
     void InitZoneVolumeMap(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> device);
@@ -208,6 +211,7 @@ private:
     ffrt::mutex volumeForDbMutex_;
     ffrt::mutex volumeForMapMutex_;
     ffrt::mutex loadFlagMutex_;
+    ffrt::mutex subspaceMutex_;
 
     AudioActiveDevice& audioActiveDevice_;
     AudioConnectedDevice& audioConnectedDevice_;
@@ -231,6 +235,7 @@ private:
     std::unordered_map<DeviceType, std::unordered_map<AudioStreamType, int32_t>> deviceTypeToSystemVolumeForEffectMap_;
     bool isDataShareReady_ = false;
     bool hasRegisterCloned_ = false;
+    int32_t currentSubspaceId_ = -1;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -20,6 +20,7 @@ namespace AudioStandard {
 namespace IntegrationMCR {
 class IAudioMcrMixer {
 public:
+    virtual ~IAudioMcrMixer() = default;
     virtual int32_t InitMixer(AudioChannelLayout mode, int32_t channels) = 0;
     virtual int32_t Apply(const int32_t &frameLength, float *input, float *output) = 0;
 };

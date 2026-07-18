@@ -12,22 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "hpaemanager_fuzzer.h"
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <string>
 #include <thread>
 #include <chrono>
-#include <cstdio>
-#include <fstream>
-#include <streambuf>
-#include <algorithm>
-#include <unistd.h>
 #include <limits>
 #include <cmath>
+#include <cstdlib>
 #include "audio_errors.h"
 #include "test_case_common.h"
 #include "hpae_capturer_manager.h"
+#include "hpae_renderer_manager.h"
 #include "hpae_node_common.h"
 
 namespace OHOS {
@@ -35,2861 +33,1481 @@ namespace AudioStandard {
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
 
+// ---------------------------------------------------------------------------
+// Design rationale (two UAF root causes fixed):
+//
+// 1. worker-only violation: the old fuzzer called Handle*/Enqueue*/Invoke*/
+//    OnXxx from the fuzz main thread, racing the HpaeNoLockQueue and the
+//    bare (un-synchronized) maps/lists that are only safe on the worker
+//    thread. All such test cases have been removed.
+//
+// 2. heavy singleton lifecycle: the old fuzzer ran every stream operation on
+//    a single process-lifetime HpaeManager singleton. Each CreateStream
+//    spawned a SignalProcessThread worker that accumulated across rounds and
+//    collided with the static IdHandler destructor at exit. Stream operations
+//    are now fuzzed on independently constructed HpaeRendererManager /
+//    HpaeCapturerManager sub-objects (construct -> Init -> public-API ->
+//    destructor), so each worker is born and dies within one test case.
+//
+// Thread safety rules enforced below:
+//   - NEVER call Handle*/Process/Enqueue*/Dequeue*/Invoke*/InvokeSync/
+//     SendRequest/OnNodeStatusUpdate/OnRequestLatency/OnNotifyQueue/
+//     IsRunning/IsMsgProcessing/GetMsgCount from the fuzz main thread.
+//   - Session Effect: only Post* (async) variants, never the sync trio.
+//   - -fno-access-control is used only for the cleanup guard body, never to
+//     reach into worker-only methods.
+// ---------------------------------------------------------------------------
+
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 
-// Named constants for magic numbers (replaces magic values used throughout the code)
+// Named constants replacing magic numbers throughout the fuzzer.
 constexpr uint8_t MAX_NAME_LENGTH = 64;
-constexpr uint16_t MAX_DUMP_LENGTH = 256;  // Use uint16_t as 256 exceeds uint8_t range (0-255)
 constexpr uint8_t MAX_ARRAY_SIZE_SMALL = 5;
-constexpr uint8_t MAX_ARRAY_SIZE_MEDIUM = 10;
-constexpr uint8_t ENUM_IOPERATION_COUNT = 14;
-constexpr uint8_t ENUM_HPAESESSIONSTATE_COUNT = 9;
 constexpr uint8_t ENUM_HPAESTREAMCLASSTYPE_COUNT = 3;
-constexpr uint8_t ENUM_MOVESESSIONTYPE_COUNT = 4;
-constexpr uint8_t ENUM_HPAEMSGCODE_COUNT = 12;
-constexpr uint8_t ENUM_SOURCETYPE_COUNT = 20; // Includes -1 offset (SOURCE_TYPE_MAX = 19)
-constexpr uint8_t ENUM_HPAEPROCESSORTYPE_COUNT = 28; // Includes valid range 0-26
-// Out-of-range value (255) cast into enum types to exercise invalid-enum branches.
 constexpr int32_t INVALID_ENUM_VALUE = 255;
-// Even/odd modulus used to alternate between two enum values.
 constexpr uint8_t BINARY_CHOICE_MOD = 2;
 
-// FuzzedDataProvider::ConsumeIntegral<T> requires an integral T (static_assert), so enums
-// must be consumed as their underlying int and cast back. Mirrors the sibling-fuzzer pattern.
+// Worker-wait constants for sub-manager Init synchronization.
+constexpr int32_t MAX_INIT_WAIT_LOOPS = 10;
+constexpr int32_t INIT_WAIT_SLEEP_MS = 20;
+constexpr int32_t INIT_SETTLE_SLEEP_MS = 40;
+
+// AISS / vocal-ratio boundary constants.
+constexpr float VOCAL_RATIO_MIN = 0.0f;
+constexpr float VOCAL_RATIO_MID = 0.5f;
+constexpr float VOCAL_RATIO_MAX = 1.0f;
+constexpr float VOCAL_RATIO_NEG = -1.0f;
+constexpr float VOCAL_RATIO_OVER = 2.0f;
+constexpr uint8_t ENUM_COLLABORATIONSTATE_COUNT = 3;
+constexpr uint8_t ENUM_SPATIALIZATION_SCENE_TYPE_COUNT = 4;
+
+// Supported audio parameter vectors for constructing valid sub-managers.
+const vector<AudioSamplingRate> SUPPORTED_SAMPLE_RATES {
+    SAMPLE_RATE_8000,
+    SAMPLE_RATE_16000,
+    SAMPLE_RATE_32000,
+    SAMPLE_RATE_44100,
+    SAMPLE_RATE_48000,
+};
+
+const vector<AudioChannel> SUPPORTED_CHANNELS {
+    MONO,
+    STEREO,
+};
+
+const vector<AudioSampleFormat> SUPPORTED_FORMATS {
+    SAMPLE_U8,
+    SAMPLE_S16LE,
+    SAMPLE_S24LE,
+    SAMPLE_S32LE,
+    SAMPLE_F32LE,
+};
+
+// FuzzedDataProvider::ConsumeIntegral<T> requires an integral T, so enums
+// must be consumed as int32_t and cast back.
 template <typename T>
 T ConsumeEnum(FuzzedDataProvider &fdp)
 {
     return static_cast<T>(fdp.ConsumeIntegral<int32_t>());
 }
 
-// HpaeSinkInputNode has no default ctor (requires HpaeNodeInfo); build one for tests.
-std::shared_ptr<HpaeSinkInputNode> MakeSinkInputNode()
+// Read a bounded fuzz string char-by-char (avoids std::string(char, n)).
+string FuzzString(FuzzedDataProvider &fdp, uint8_t maxLen)
 {
-    HpaeNodeInfo nodeInfo;
-    return std::make_shared<HpaeSinkInputNode>(nodeInfo);
-}
-
-// Reuse ONE HpaeManager for the whole fuzz run. Per-iteration Init/DeInit triggers a
-// teardown join deadlock: ~HpaeManager -> DeInit -> worker thread join while the worker
-// is parked in Run()->condition_.wait (see memory: hpae-manager-deinit-join-deadlock).
-// So Init once here and NEVER DeInit per iteration — the manager lives until process exit.
-std::shared_ptr<HpaeManager> GetFuzzHpaeManager()
-{
-    static const auto manager = [] {
-        auto m = std::make_shared<HpaeManager>();
-        m->Init();
-        return m;
-    }();
-    return manager;
-}
-
-// Test function creation helper
-std::shared_ptr<HpaeManager> CreateHpaeManager()
-{
-    auto hpaeManager = std::make_shared<HpaeManager>();
-    if (hpaeManager == nullptr) {
-        return nullptr;
+    if (maxLen == 0) {
+        return {};  // guard modulo-by-zero; current callers all pass MAX_NAME_LENGTH (64)
     }
-    // Init() is only called for tests that require initialized state
-    return hpaeManager;
+    string result;
+    size_t len = fdp.ConsumeIntegral<uint8_t>() % maxLen;
+    for (size_t i = 0; i < len; i++) {
+        result += fdp.ConsumeIntegral<char>();
+    }
+    return result;
 }
 
-static void InitSourceInfo(HpaeSourceInfo &sourceInfo, FuzzedDataProvider& fdp)
+// ===========================================================================
+// Sub-object helpers (B-class tests)
+// ===========================================================================
+
+HpaeSinkInfo MakeFuzzSinkInfo(FuzzedDataProvider &fdp)
 {
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.sinkId = fdp.ConsumeIntegral<uint32_t>();
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_SINK_NAME;
+    sinkInfo.filePath = "";
+    sinkInfo.deviceName = FuzzString(fdp, MAX_NAME_LENGTH);
+    sinkInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sinkInfo.samplingRate =
+        SUPPORTED_SAMPLE_RATES[fdp.ConsumeIntegral<uint8_t>() % SUPPORTED_SAMPLE_RATES.size()];
+    sinkInfo.format =
+        SUPPORTED_FORMATS[fdp.ConsumeIntegral<uint8_t>() % SUPPORTED_FORMATS.size()];
+    sinkInfo.channels =
+        SUPPORTED_CHANNELS[fdp.ConsumeIntegral<uint8_t>() % SUPPORTED_CHANNELS.size()];
+    sinkInfo.suspendTime = fdp.ConsumeIntegral<uint32_t>();
+    sinkInfo.channelLayout = fdp.ConsumeIntegral<uint64_t>();
+    sinkInfo.deviceType = fdp.ConsumeIntegral<int32_t>();
+    sinkInfo.volume = fdp.ConsumeFloatingPoint<float>();
+    sinkInfo.openMicSpeaker = fdp.ConsumeIntegral<uint32_t>();
+    sinkInfo.renderInIdleState = fdp.ConsumeIntegral<uint32_t>();
+    sinkInfo.sourceType = fdp.ConsumeIntegral<uint32_t>();
+    sinkInfo.offloadEnable = fdp.ConsumeIntegral<uint32_t>();
+    sinkInfo.fixedLatency = fdp.ConsumeIntegral<uint32_t>();
+    sinkInfo.sinkLatency = fdp.ConsumeIntegral<uint32_t>();
+    sinkInfo.splitMode = FuzzString(fdp, MAX_NAME_LENGTH);
+    sinkInfo.needEmptyChunk = fdp.ConsumeIntegral<uint8_t>() != 0;
+    sinkInfo.auxSinkEnable = fdp.ConsumeIntegral<uint8_t>() != 0;
+    return sinkInfo;
+}
+
+HpaeSourceInfo MakeFuzzSourceInfo(FuzzedDataProvider &fdp)
+{
+    HpaeSourceInfo sourceInfo;
     sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
-    sourceInfo.filePath = "";  // Use empty path for fuzzer testing (no dependency on external file)
-
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-    sourceInfo.format = SAMPLE_S16LE;
+    sourceInfo.filePath = "";
+    sourceInfo.samplingRate =
+        SUPPORTED_SAMPLE_RATES[fdp.ConsumeIntegral<uint8_t>() % SUPPORTED_SAMPLE_RATES.size()];
+    sourceInfo.channels =
+        SUPPORTED_CHANNELS[fdp.ConsumeIntegral<uint8_t>() % SUPPORTED_CHANNELS.size()];
+    sourceInfo.format =
+        SUPPORTED_FORMATS[fdp.ConsumeIntegral<uint8_t>() % SUPPORTED_FORMATS.size()];
     sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
     sourceInfo.ecType = HPAE_EC_TYPE_NONE;
     sourceInfo.micRef = HPAE_REF_OFF;
+    sourceInfo.deviceName = FuzzString(fdp, MAX_NAME_LENGTH);
+    return sourceInfo;
 }
 
-static void InitStreamInfo(HpaeStreamInfo &streamInfo, FuzzedDataProvider& fdp)
+HpaeStreamInfo MakeFuzzStreamInfo(FuzzedDataProvider &fdp)
 {
+    HpaeStreamInfo streamInfo;
     streamInfo.sessionId = fdp.ConsumeIntegral<uint32_t>();
     streamInfo.streamType = ConsumeEnum<AudioStreamType>(fdp);
-    streamInfo.samplingRate = ConsumeEnum<AudioSamplingRate>(fdp);
-    streamInfo.format = ConsumeEnum<AudioSampleFormat>(fdp);
-    streamInfo.channels = ConsumeEnum<AudioChannel>(fdp);
+    streamInfo.samplingRate =
+        SUPPORTED_SAMPLE_RATES[fdp.ConsumeIntegral<uint8_t>() % SUPPORTED_SAMPLE_RATES.size()];
+    streamInfo.format =
+        SUPPORTED_FORMATS[fdp.ConsumeIntegral<uint8_t>() % SUPPORTED_FORMATS.size()];
+    streamInfo.channels =
+        SUPPORTED_CHANNELS[fdp.ConsumeIntegral<uint8_t>() % SUPPORTED_CHANNELS.size()];
     streamInfo.sourceType = ConsumeEnum<SourceType>(fdp);
-    streamInfo.streamClassType = ConsumeEnum<HpaeStreamClassType>(fdp);
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.pipeType = ConsumeEnum<AudioPipeType>(fdp);
     streamInfo.fadeType = ConsumeEnum<FadeType>(fdp);
     streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
     streamInfo.uid = fdp.ConsumeIntegral<int32_t>();
     streamInfo.pid = fdp.ConsumeIntegral<int32_t>();
-
-    // Use ConsumeBytes for device name
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    std::vector<uint8_t> nameBytes = fdp.ConsumeBytes<uint8_t>(nameLen);
-    streamInfo.deviceName = std::string(nameBytes.begin(), nameBytes.end());
+    streamInfo.deviceName = FuzzString(fdp, MAX_NAME_LENGTH);
+    return streamInfo;
 }
 
-void UploadDumpSourceInfoFuzzTest(FuzzedDataProvider& fdp)
+// Give the worker thread time to drain the Init request. Uses only IsInit()
+// (a public atomic read) plus sleep — never calls worker-only methods.
+void WaitForRendererInit(shared_ptr<HpaeRendererManager> &mgr)
 {
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo, fdp);
-    std::shared_ptr<IHpaeCapturerManager> capturerManager =
-        std::make_shared<HpaeCapturerManager>(sourceInfo);
-    std::string deviceName = "";
-    if (capturerManager == nullptr) {
+    if (mgr == nullptr) {
         return;
     }
-    capturerManager->UploadDumpSourceInfo(deviceName);
+    for (int32_t i = 0; i < MAX_INIT_WAIT_LOOPS; i++) {
+        if (mgr->IsInit()) {
+            break;
+        }
+        this_thread::sleep_for(chrono::milliseconds(INIT_WAIT_SLEEP_MS));
+    }
+    this_thread::sleep_for(chrono::milliseconds(INIT_SETTLE_SLEEP_MS));
 }
 
-void StopAudioPortFuzzTest(FuzzedDataProvider& fdp)
+void WaitForCapturerInit(shared_ptr<HpaeCapturerManager> &mgr)
+{
+    if (mgr == nullptr) {
+        return;
+    }
+    for (int32_t i = 0; i < MAX_INIT_WAIT_LOOPS; i++) {
+        if (mgr->IsInit()) {
+            break;
+        }
+        this_thread::sleep_for(chrono::milliseconds(INIT_WAIT_SLEEP_MS));
+    }
+    this_thread::sleep_for(chrono::milliseconds(INIT_SETTLE_SLEEP_MS));
+}
+
+// Construct + Init a renderer sub-object. Worker is bounded to the returned
+// shared_ptr's lifetime — when it goes out of scope the destructor calls
+// DeInit -> DeactivateThread -> join, cleanly stopping the worker.
+shared_ptr<HpaeRendererManager> MakeFuzzRendererManager(FuzzedDataProvider &fdp)
+{
+    HpaeSinkInfo sinkInfo = MakeFuzzSinkInfo(fdp);
+    auto mgr = make_shared<HpaeRendererManager>(sinkInfo);
+    if (mgr == nullptr) {
+        return nullptr;
+    }
+    mgr->Init();
+    WaitForRendererInit(mgr);
+    return mgr;
+}
+
+shared_ptr<HpaeCapturerManager> MakeFuzzCapturerManager(FuzzedDataProvider &fdp)
+{
+    HpaeSourceInfo sourceInfo = MakeFuzzSourceInfo(fdp);
+    auto mgr = make_shared<HpaeCapturerManager>(sourceInfo);
+    if (mgr == nullptr) {
+        return nullptr;
+    }
+    mgr->Init();
+    WaitForCapturerInit(mgr);
+    return mgr;
+}
+
+// Create a stream on an already-Init'd renderer so subsequent stream
+// operations (Start/Stop/SetRate/...) have a session to act on.
+void CreateStreamOnRenderer(shared_ptr<HpaeRendererManager> &mgr, FuzzedDataProvider &fdp)
+{
+    if (mgr == nullptr) {
+        return;
+    }
+    HpaeStreamInfo streamInfo = MakeFuzzStreamInfo(fdp);
+    mgr->CreateStream(streamInfo);
+    this_thread::sleep_for(chrono::milliseconds(INIT_SETTLE_SLEEP_MS));
+}
+
+void CreateStreamOnCapturer(shared_ptr<HpaeCapturerManager> &mgr, FuzzedDataProvider &fdp)
+{
+    if (mgr == nullptr) {
+        return;
+    }
+    HpaeStreamInfo streamInfo = MakeFuzzStreamInfo(fdp);
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
+    mgr->CreateStream(streamInfo);
+    this_thread::sleep_for(chrono::milliseconds(INIT_SETTLE_SLEEP_MS));
+}
+
+// ===========================================================================
+// HpaeManager singleton (C-class tests) + RAII cleanup
+// ===========================================================================
+
+// Defined below (after GetFuzzHpaeManager): stops residual sub-manager workers.
+void AtExitCleanup();
+
+// RAII replacement for atexit(AtExitCleanup). Declared as a function-local
+// static inside GetFuzzHpaeManager AFTER the manager shared_ptr, so by reverse
+// construction order (well-defined within one function, unlike cross-TU globals)
+// its destructor runs BEFORE the manager is destroyed. This keeps the original
+// guarantee -- workers are DeactivateThread'd while HpaeManager is still alive --
+// without atexit, whose hook may not run and runs at an unspecified point
+// relative to other TUs' static destruction.
+class HpaeFuzzCleanupGuard {
+public:
+    ~HpaeFuzzCleanupGuard() { AtExitCleanup(); }
+};
+
+// Reuse ONE HpaeManager for the whole fuzz run. Per-iteration Init/DeInit
+// triggers a teardown join deadlock (~HpaeManager -> DeInit -> worker join
+// while the worker is parked in Run()->condition_.wait).
+shared_ptr<HpaeManager> GetFuzzHpaeManager()
+{
+    static const auto manager = [] {
+        auto m = make_shared<HpaeManager>();
+        m->Init();
+        return m;
+    }();
+    // Register a no-op service callback stub so HpaeManager APIs that dereference
+    // serviceCallback_ (e.g. MoveToPreferSink -> OnOpenAudioPortCb) do not crash on
+    // a null weak_ptr. The stub is process-lifetime static so the weak_ptr stays valid.
+    static const auto serviceCb = make_shared<FuzzHpaeServiceCallback>();
+    [[maybe_unused]] static const bool registered = (manager->RegisterSerivceCallback(serviceCb), true);
+    // Constructed after `manager`: by reverse order it destructs first, stopping
+    // workers before the manager's own destruction. See HpaeFuzzCleanupGuard.
+    static const HpaeFuzzCleanupGuard cleanupGuard;
+    return manager;
+}
+
+// HpaeSinkInputNode has no default ctor (requires HpaeNodeInfo); build one.
+shared_ptr<HpaeSinkInputNode> MakeSinkInputNode()
+{
+    HpaeNodeInfo nodeInfo;
+    return make_shared<HpaeSinkInputNode>(nodeInfo);
+}
+
+// Cleanup guard body (run by ~HpaeFuzzCleanupGuard before the manager's own
+// static destruction): stop residual sub-manager workers.
+// Calls DeactivateThread (not DeInit) to avoid the join deadlock that would
+// occur if the worker is parked in condition_.wait during static teardown.
+// -fno-access-control lets us reach the private maps for cleanup only.
+void AtExitCleanup()
+{
+    auto mgr = GetFuzzHpaeManager();
+    if (mgr == nullptr) {
+        return;
+    }
+    for (auto &[name, rendererMgr] : mgr->rendererManagerMap_) {
+        if (rendererMgr != nullptr) {
+            rendererMgr->DeactivateThread();
+        }
+    }
+    for (auto &[name, capturerMgr] : mgr->capturerManagerMap_) {
+        if (capturerMgr != nullptr) {
+            capturerMgr->DeactivateThread();
+        }
+    }
+}
+
+// ===========================================================================
+// C-class tests: HpaeManager process-level operations (singleton).
+// These do NOT spawn stream-level workers and do not call worker-only
+// methods from the fuzz main thread.
+// ===========================================================================
+
+void GetAllSinksFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    std::string audioPortName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    std::vector<uint8_t> nameBytes = fdp.ConsumeBytes<uint8_t>(nameLen);
-    audioPortName = std::string(nameBytes.begin(), nameBytes.end());
-
-    hpaeManager->StopAudioPort(audioPortName);
-}
-
-void SetSourceOutputMuteFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    int32_t uid = fdp.ConsumeIntegral<int32_t>();
-    bool isMute = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    hpaeManager->SetSourceOutputMute(uid, isMute);
-}
-
-void GetAllSinksFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
     hpaeManager->GetAllSinks();
 }
 
-void DeInitFuzzTest(FuzzedDataProvider& fdp)
+void DumpAllAvailableDeviceFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    // DeInit() skipped: shared fuzz manager lives for the whole run (per-iter teardown
-    // join deadlock; see memory hpae-manager-deinit-join-deadlock).
-
-    // DeInit() skipped: shared fuzz manager lives for the whole run (per-iter teardown
-    // join deadlock; see memory hpae-manager-deinit-join-deadlock).
-}
-
-void ReloadRenderManagerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    AudioModuleInfo audioModuleInfo;
-
-    // Fix: Use loop to read module name from fuzzer data instead of std::string(char, size_t)
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.name += fdp.ConsumeIntegral<char>();
-    }
-
-    nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.lib += fdp.ConsumeIntegral<char>();
-    }
-
-    nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.adapterName += fdp.ConsumeIntegral<char>();
-    }
-
-    bool isReload = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.sinkId = fdp.ConsumeIntegral<uint32_t>();
-    sinkInfo.samplingRate = ConsumeEnum<AudioSamplingRate>(fdp);
-    sinkInfo.channels = ConsumeEnum<AudioChannel>(fdp);
-    sinkInfo.format = ConsumeEnum<AudioSampleFormat>(fdp);
-    sinkInfo.adapterName = audioModuleInfo.adapterName;
-    sinkInfo.deviceClass = audioModuleInfo.name;
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->ReloadRenderManager(audioModuleInfo, isReload);
-    }
-}
-
-void CreateRendererManagerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    AudioModuleInfo audioModuleInfo;
-    audioModuleInfo.name = "TestSink_" + std::to_string(fdp.ConsumeIntegral<uint32_t>());
-    audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
-
-    // Fix: Use loop to read adapter name from fuzzer data instead of std::string(char, size_t)
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.adapterName += fdp.ConsumeIntegral<char>();
-    }
-
-    uint32_t sinkSourceIndex = fdp.ConsumeIntegral<uint32_t>();
-    bool isReload = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->CreateRendererManager(audioModuleInfo, sinkSourceIndex, isReload);
-    }
-}
-
-void CreateCaptureManagerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo, fdp);
-    sourceInfo.sourceType = static_cast<SourceType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_SOURCETYPE_COUNT);
-    uint32_t sinkSourceIndex = fdp.ConsumeIntegral<uint32_t>();
-    bool isReload = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->CreateCaptureManager(sourceInfo, sinkSourceIndex, isReload);
-    }
-}
-
-void DumpAllAvailableDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
     hpaeManager->DumpAllAvailableDevice();
 }
 
-void DumpSinkInputsInfoFuzzTest(FuzzedDataProvider& fdp)
+void DumpSinkInputsInfoFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     hpaeManager->DumpSinkInputsInfo();
 }
 
-void DumpSourceOutputsInfoFuzzTest(FuzzedDataProvider& fdp)
+void DumpSourceOutputsInfoFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     hpaeManager->DumpSourceOutputsInfo();
 }
 
-void AddPreferSinkForDefaultChangeFuzzTest(FuzzedDataProvider& fdp)
+void SetDefaultSinkFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    bool isAdd = fdp.ConsumeIntegral<uint8_t>() != 0;
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->AddPreferSinkForDefaultChange(isAdd, sinkName);
-    }
+    hpaeManager->SetDefaultSink(FuzzString(fdp, MAX_NAME_LENGTH));
 }
 
-void CloseOutAudioPortFuzzTest(FuzzedDataProvider& fdp)
+void SetDefaultSinkWithEmptyNameFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->CloseOutAudioPort(sinkName);
-    }
+    hpaeManager->SetDefaultSink("");
 }
 
-void CloseInAudioPortFuzzTest(FuzzedDataProvider& fdp)
+void SetDefaultSourceFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    std::string sourceName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sourceName += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->CloseInAudioPort(sourceName);
-    }
+    hpaeManager->SetDefaultSource(FuzzString(fdp, MAX_NAME_LENGTH));
 }
 
-void SetDefaultSinkFuzzTest(FuzzedDataProvider& fdp)
+void SetDefaultSourceWithEmptyNameFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    std::string name;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        name += fdp.ConsumeIntegral<char>();
-    }
-
-    hpaeManager->SetDefaultSink(name);
+    hpaeManager->SetDefaultSource("");
 }
 
-void SetDefaultSourceFuzzTest(FuzzedDataProvider& fdp)
+void GetAllSinkInputsFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    std::string name;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        name += fdp.ConsumeIntegral<char>();
-    }
-
-    hpaeManager->SetDefaultSource(name);
-}
-
-void GetAllSinkInputsFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
     hpaeManager->GetAllSinkInputs();
 }
 
-void GetAllSourceOutputsFuzzTest(FuzzedDataProvider& fdp)
+void GetAllSourceOutputsFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     hpaeManager->GetAllSourceOutputs();
 }
 
-void MoveSourceOutputByIndexOrNameFuzzTest(FuzzedDataProvider& fdp)
+void MoveSourceOutputByIndexOrNameFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     uint32_t sourceOutputId = fdp.ConsumeIntegral<uint32_t>();
     uint32_t sourceIndex = fdp.ConsumeIntegral<uint32_t>();
-    std::string sourceName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sourceName += fdp.ConsumeIntegral<char>();
-    }
+    hpaeManager->MoveSourceOutputByIndexOrName(
+        sourceOutputId, sourceIndex, FuzzString(fdp, MAX_NAME_LENGTH));
+}
 
+void MoveSourceOutputWithNonExistentSourceFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    uint32_t sourceOutputId = fdp.ConsumeIntegral<uint32_t>();
+    uint32_t sourceIndex = fdp.ConsumeIntegral<uint32_t>();
+    string sourceName = "NonExistent_" + to_string(fdp.ConsumeIntegral<uint32_t>());
     hpaeManager->MoveSourceOutputByIndexOrName(sourceOutputId, sourceIndex, sourceName);
 }
 
-void CheckMoveSinkInputFuzzTest(FuzzedDataProvider& fdp)
+void MoveSinkInputByIndexOrNameFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    uint32_t sinkInputId = fdp.ConsumeIntegral<uint32_t>();
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->CheckMoveSinkInput(sinkInputId, sinkName);
-    }
-}
-
-void MoveSinkInputByIndexOrNameFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
     uint32_t sinkInputId = fdp.ConsumeIntegral<uint32_t>();
     uint32_t sinkIndex = fdp.ConsumeIntegral<uint32_t>();
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
+    hpaeManager->MoveSinkInputByIndexOrName(
+        sinkInputId, sinkIndex, FuzzString(fdp, MAX_NAME_LENGTH));
+}
 
+void MoveSinkInputWithNonExistentSinkFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    uint32_t sinkInputId = fdp.ConsumeIntegral<uint32_t>();
+    uint32_t sinkIndex = fdp.ConsumeIntegral<uint32_t>();
+    string sinkName = "NonExistent_" + to_string(fdp.ConsumeIntegral<uint32_t>());
     hpaeManager->MoveSinkInputByIndexOrName(sinkInputId, sinkIndex, sinkName);
 }
 
-void IsMovingSinkStateChangeFuzzTest(FuzzedDataProvider& fdp)
+void SetSinkMuteFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    auto sinkInputNode = MakeSinkInputNode();
-    if (sinkInputNode == nullptr) {
-        return;
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->MovingSinkStateChange(sessionId, sinkInputNode);
-    }
-}
-
-void HandleMoveSinkInputFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    auto sinkInputNode = MakeSinkInputNode();
-    if (sinkInputNode == nullptr) {
-        return;
-    }
-
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleMoveSinkInput(sinkInputNode, sinkName);
-    }
-}
-
-void HandleMoveSourceOutputFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeCaptureMoveInfo moveInfo;
-    moveInfo.sessionId = fdp.ConsumeIntegral<uint32_t>();
-    moveInfo.sessionInfo.state =
-        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-
-    std::string sourceName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sourceName += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleMoveSourceOutput(moveInfo, sourceName);
-    }
-}
-
-void HandleMoveAllSourceOutputsFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::vector<HpaeCaptureMoveInfo> moveInfos;
-    size_t infoCount = fdp.ConsumeIntegral<uint8_t>() % MAX_ARRAY_SIZE_MEDIUM;
-    for (size_t i = 0; i < infoCount; i++) {
-        HpaeCaptureMoveInfo info;
-        info.sessionId = fdp.ConsumeIntegral<uint32_t>();
-        info.sessionInfo.state =
-            static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-        moveInfos.push_back(info);
-    }
-
-    std::string sourceName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sourceName += fdp.ConsumeIntegral<char>();
-    }
-
-    MoveSessionType moveType =
-        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESESSIONTYPE_COUNT);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleMoveAllSourceOutputs(moveInfos, sourceName, moveType);
-    }
-}
-
-void HandleMoveSessionFailedFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    MoveSessionType moveType =
-        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESESSIONTYPE_COUNT);
-
-    std::string name;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        name += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleMoveSessionFailed(streamClassType, sessionId, moveType, name);
-    }
-}
-
-void HandleUpdateStatusFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    HpaeSessionState status =
-        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-    IOperation operation = static_cast<IOperation>(fdp.ConsumeIntegral<uint8_t>() % ENUM_IOPERATION_COUNT);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleUpdateStatus(streamClassType, sessionId, status, operation);
-    }
-}
-
-void HandleDumpSinkInfoFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string deviceName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        deviceName += fdp.ConsumeIntegral<char>();
-    }
-
-    std::string dumpStr;
-    size_t dumpLen = fdp.ConsumeIntegral<uint8_t>() % MAX_DUMP_LENGTH;
-    for (size_t i = 0; i < dumpLen; i++) {
-        dumpStr += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleDumpSinkInfo(deviceName, dumpStr);
-    }
-}
-
-void HandleInitDeviceResultFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string deviceName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        deviceName += fdp.ConsumeIntegral<char>();
-    }
-
-    int32_t result = fdp.ConsumeIntegral<int32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleInitDeviceResult(deviceName, result);
-    }
-}
-
-void EnqueuePendingTransitionFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    HpaeSessionState state =
-        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-    IOperation operation = static_cast<IOperation>(fdp.ConsumeIntegral<uint8_t>() % ENUM_IOPERATION_COUNT);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->EnqueuePendingTransition(sessionId, state, operation);
-    }
-}
-
-void CreateStreamFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamInfo streamInfo;
-    InitStreamInfo(streamInfo, fdp);
-
-    hpaeManager->CreateStream(streamInfo);
-}
-
-void AddStreamToCollectionFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamInfo streamInfo;
-    InitStreamInfo(streamInfo, fdp);
-
-    std::string name;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        name += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->AddStreamToCollection(streamInfo, name);
-    }
-}
-
-void DestroyCaptureFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->DestroyCapture(sessionId);
-    }
-}
-
-void SetMovingStreamStateFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    HpaeSessionState status =
-        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-    HpaeSessionState state =
-        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-    IOperation operation = static_cast<IOperation>(fdp.ConsumeIntegral<uint8_t>() % ENUM_IOPERATION_COUNT);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->SetMovingStreamState(streamType, sessionId, status, state, operation);
-    }
-}
-
-void DestroyStreamFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    hpaeManager->DestroyStream(streamClassType, sessionId);
-}
-
-void ShouldNotSkipProcessFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->ShouldNotSkipProcess(streamType, sessionId);
-    }
-}
-
-void StartFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    hpaeManager->Start(streamClassType, sessionId);
-}
-
-void PauseFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    hpaeManager->Pause(streamClassType, sessionId);
-}
-
-void DrainFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    hpaeManager->Drain(streamClassType, sessionId);
-}
-
-void StopFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    hpaeManager->Stop(streamClassType, sessionId);
-}
-
-void ReleaseFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    hpaeManager->Release(streamClassType, sessionId);
-}
-
-// DisConnectInputClusterFuzzTest removed: HpaeSourceInputCluster has no DisConnectInputCluster method
-// and no default constructor (requires HpaeNodeInfo parameter)
-
-void OnDisConnectProcessClusterFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    // Use abs to ensure a non-negative value for enum generation
-    HpaeProcessorType sceneType =
-        static_cast<HpaeProcessorType>(std::abs(fdp.ConsumeIntegral<int32_t>() % ENUM_HPAEPROCESSORTYPE_COUNT));
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        // Route through HpaeManager to the real HpaeRendererManager override. The INodeCallback
-        // base body is empty, so instantiating it directly would never exercise real code.
-        auto rendererManager = hpaeManager->GetRendererManagerById(sessionId);
-        if (rendererManager != nullptr) {
-            (void)rendererManager->OnDisConnectProcessCluster(sceneType);
-        }
-    }
-}
-
-// DisConnectOutputClusterFuzzTest removed: HpaeSinkOutputCluster class does not exist
-// and the method name is incorrect (should be DisConnect())
-
-void DisConnectCoBufferFromOnDisConnectProcessClusterFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    auto coBufferNode = std::make_shared<HpaeCoBufferNode>();
-    if (coBufferNode == nullptr) {
-        return;
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleDisConnectCoBufferNode(coBufferNode);
-    }
-}
-
-// DerefenceInputClusterFuzzTest removed: HpaeSourceInputCluster has no DereferenceInputCluster method
-// and no default constructor (requires HpaeNodeInfo parameter)
-
-void HandleMoveAllSinkInputsFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
-    size_t nodeCount = fdp.ConsumeIntegral<uint8_t>() % MAX_ARRAY_SIZE_SMALL;
-    for (size_t i = 0; i < nodeCount; i++) {
-        auto node = MakeSinkInputNode();
-        if (node != nullptr) {
-            sinkInputs.push_back(node);
-        }
-    }
-
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
-
-    MoveSessionType moveType =
-        static_cast<MoveSessionType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_MOVESESSIONTYPE_COUNT);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleMoveAllSinkInputs(sinkInputs, sinkName, moveType);
-    }
-}
-
-void GetPerferSinkInputsFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
-    size_t nodeCount = fdp.ConsumeIntegral<uint8_t>() % MAX_ARRAY_SIZE_SMALL;
-    for (size_t i = 0; i < nodeCount; i++) {
-        auto node = MakeSinkInputNode();
-        if (node != nullptr) {
-            sinkInputs.push_back(node);
-        }
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->GetPerferSinkInputs(sinkInputs);
-    }
-}
-
-void GetUsedMoveInfosFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::vector<HpaeCaptureMoveInfo> moveInfos;
-    size_t infoCount = fdp.ConsumeIntegral<uint8_t>() % MAX_ARRAY_SIZE_SMALL;
-    for (size_t i = 0; i < infoCount; i++) {
-        HpaeCaptureMoveInfo info;
-        info.sessionId = fdp.ConsumeIntegral<uint32_t>();
-        info.sessionInfo.state =
-            static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-        moveInfos.push_back(info);
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->GetUsedMoveInfos(moveInfos);
-    }
-}
-
-void InvokeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeMsgCode cmdID = static_cast<HpaeMsgCode>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAEMSGCODE_COUNT);
-
-    int32_t argValue = fdp.ConsumeIntegral<int32_t>();
-    std::any args = argValue;
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->Invoke(cmdID, args);
-    }
-}
-
-void InvokeSyncFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeMsgCode cmdID = static_cast<HpaeMsgCode>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAEMSGCODE_COUNT);
-
-    int32_t argValue = fdp.ConsumeIntegral<int32_t>();
-    std::any args = argValue;
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->InvokeSync(cmdID, args);
-    }
-}
-
-void GetMsgCountFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    (void)hpaeManager->GetMsgCount();
-}
-
-void IsRunningFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    (void)hpaeManager->IsRunning();
-}
-
-void IsMsgProcessingFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    (void)hpaeManager->IsMsgProcessing();
-}
-
-void SendRequestFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->SendRequest([] {}, __func__);
-    }
-}
-
-void FlushFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    hpaeManager->Flush(streamClassType, sessionId);
-}
-
-void StartWithSyncIdFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    int32_t syncId = fdp.ConsumeIntegral<int32_t>();
-
-    hpaeManager->StartWithSyncId(streamClassType, sessionId, syncId);
-}
-
-void DequeuePendingTransitionFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->DequeuePendingTransition(sessionId);
-    }
-}
-
-void RegisterStatusCallbackFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    std::weak_ptr<IStreamStatusCallback> callback;
-    (void)hpaeManager->RegisterStatusCallback(streamClassType, sessionId, callback);
-}
-
-void RegisterReadCallbackFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    std::weak_ptr<ICapturerStreamCallback> callback;
-    (void)hpaeManager->RegisterReadCallback(sessionId, callback);
-}
-
-void GetSourceOutputInfoFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    HpaeStreamInfo streamInfo;
-    InitStreamInfo(streamInfo, fdp);
-
-    (void)hpaeManager->GetSourceOutputInfo(sessionId, streamInfo);
-}
-
-void SetClientVolumeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    float volume = fdp.ConsumeFloatingPoint<float>();
-
-    hpaeManager->SetClientVolume(sessionId, volume);
-}
-
-void SetVolumeWithNanInfinityFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    float volume = fdp.ConsumeFloatingPoint<float>();
-
-    hpaeManager->SetClientVolume(sessionId, volume);
-}
-
-void SetLoudnessGainFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    float loudnessGain = fdp.ConsumeFloatingPoint<float>();
-
-    hpaeManager->SetLoudnessGain(sessionId, loudnessGain);
-}
-
-void SetRateFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    int32_t rate = fdp.ConsumeIntegral<int32_t>();
-
-    hpaeManager->SetRate(sessionId, rate);
-}
-
-void SetAudioEffectModeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    int32_t effectMode = fdp.ConsumeIntegral<int32_t>();
-
-    hpaeManager->SetAudioEffectMode(sessionId, effectMode);
-}
-
-void GetAudioEffectModeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    int32_t effectMode = 0;
-    (void)hpaeManager->GetAudioEffectMode(sessionId, effectMode);
-}
-
-void SetPrivacyTypeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    int32_t privacyType = fdp.ConsumeIntegral<int32_t>();
-
-    hpaeManager->SetPrivacyType(sessionId, privacyType);
-}
-
-void GetPrivacyTypeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    int32_t privacyType = 0;
-    (void)hpaeManager->GetPrivacyType(sessionId, privacyType);
-}
-
-void RegisterWriteCallbackFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    std::weak_ptr<IStreamCallback> callback;
-    (void)hpaeManager->RegisterWriteCallback(sessionId, callback);
-}
-
-void SetOffloadPolicyFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    int32_t state = fdp.ConsumeIntegral<int32_t>();
-
-    hpaeManager->SetOffloadPolicy(sessionId, state);
-}
-
-void GetWritableSizeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    (void)hpaeManager->GetWritableSize(sessionId);
-}
-
-void UpdateSpatializationStateFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    bool spatializationEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
-    bool headTrackingEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    hpaeManager->UpdateSpatializationState(sessionId, spatializationEnabled, headTrackingEnabled);
-}
-
-void UpdateMaxLengthFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    uint32_t maxLength = fdp.ConsumeIntegral<uint32_t>();
-
-    hpaeManager->UpdateMaxLength(sessionId, maxLength);
-}
-
-void SetOffloadRenderCallbackTypeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    int32_t type = fdp.ConsumeIntegral<int32_t>();
-
-    hpaeManager->SetOffloadRenderCallbackType(sessionId, type);
-}
-
-void SetSpeedFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    float speed = fdp.ConsumeFloatingPoint<float>();
-
-    hpaeManager->SetSpeed(sessionId, speed);
-}
-
-void SetSpeedWithNanInfinityFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    float speed = fdp.ConsumeFloatingPoint<float>();
-
-    hpaeManager->SetSpeed(sessionId, speed);
-}
-
-void SetSinkMuteFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
-
     bool isMute = fdp.ConsumeIntegral<uint8_t>() != 0;
     bool isSync = fdp.ConsumeIntegral<uint8_t>() != 0;
+    hpaeManager->SetSinkMute(FuzzString(fdp, MAX_NAME_LENGTH), isMute, isSync);
+}
 
+void SetSinkMuteWithNonExistentSinkFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    string sinkName = "NonExistent_" + to_string(fdp.ConsumeIntegral<uint32_t>());
+    bool isMute = fdp.ConsumeIntegral<uint8_t>() != 0;
+    bool isSync = fdp.ConsumeIntegral<uint8_t>() != 0;
     hpaeManager->SetSinkMute(sinkName, isMute, isSync);
 }
 
-void SuspendAudioDeviceFuzzTest(FuzzedDataProvider& fdp)
+void SetSinkMuteForSwitchDeviceFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    std::string audioPortName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioPortName += fdp.ConsumeIntegral<char>();
-    }
-
-    bool isSuspend = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    hpaeManager->SuspendAudioDevice(audioPortName, isSuspend);
+    hpaeManager->SetSinkMuteForSwitchDevice(
+        FuzzString(fdp, MAX_NAME_LENGTH), fdp.ConsumeIntegral<uint8_t>() != 0);
 }
 
-void OpenAudioPortInnerFuzzTest(FuzzedDataProvider& fdp)
+void SuspendAudioDeviceFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
+    string portName = FuzzString(fdp, MAX_NAME_LENGTH);
+    hpaeManager->SuspendAudioDevice(portName, fdp.ConsumeIntegral<uint8_t>() != 0);
+}
 
-    AudioModuleInfo audioModuleInfo;
-
-    // Fix: Use loop to read module info from fuzzer data instead of std::string(char, size_t)
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.name += fdp.ConsumeIntegral<char>();
+void StopAudioPortFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
     }
+    hpaeManager->StopAudioPort(FuzzString(fdp, MAX_NAME_LENGTH));
+}
 
-    nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.lib += fdp.ConsumeIntegral<char>();
+void StopAudioPortWithNonExistentPortFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
     }
+    string portName = "NonExistent_" + to_string(fdp.ConsumeIntegral<uint32_t>());
+    hpaeManager->StopAudioPort(portName);
+}
 
-    nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.adapterName += fdp.ConsumeIntegral<char>();
+void SetSourceOutputMuteFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
     }
+    int32_t uid = fdp.ConsumeIntegral<int32_t>();
+    hpaeManager->SetSourceOutputMute(uid, fdp.ConsumeIntegral<uint8_t>() != 0);
+}
 
+void SetSourceOutputMuteByStreamIdFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    int32_t sessionId = fdp.ConsumeIntegral<int32_t>();
     if (hpaeManager->IsInit()) {
-        (void)hpaeManager->OpenAudioPortInner(audioModuleInfo);
+        (void)hpaeManager->SetSourceOutputMuteByStreamId(
+            sessionId, fdp.ConsumeIntegral<uint8_t>() != 0);
     }
 }
 
-void OpenOutputAudioPortFuzzTest(FuzzedDataProvider& fdp)
+void TriggerAppsUidUpdateFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    AudioModuleInfo audioModuleInfo;
-
-    // Fix: Use loop to read module info from fuzzer data instead of std::string(char, size_t)
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.name += fdp.ConsumeIntegral<char>();
-    }
-
-    nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.lib += fdp.ConsumeIntegral<char>();
-    }
-
-    nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.adapterName += fdp.ConsumeIntegral<char>();
-    }
-
-    uint32_t sinkSourceIndex = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->OpenOutputAudioPort(audioModuleInfo, sinkSourceIndex);
-    }
-}
-
-void OpenInputAudioPortFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    AudioModuleInfo audioModuleInfo;
-
-    // Fix: Use loop to read module info from fuzzer data instead of std::string(char, size_t)
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.name += fdp.ConsumeIntegral<char>();
-    }
-
-    nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.lib += fdp.ConsumeIntegral<char>();
-    }
-
-    nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.adapterName += fdp.ConsumeIntegral<char>();
-    }
-
-    uint32_t sinkSourceIndex = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->OpenInputAudioPort(audioModuleInfo, sinkSourceIndex);
-    }
-}
-
-void OpenVirtualAudioPortFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    AudioModuleInfo audioModuleInfo;
-
-    // Fix: Use loop to read module info from fuzzer data instead of std::string(char, size_t)
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.name += fdp.ConsumeIntegral<char>();
-    }
-
-    nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.lib += fdp.ConsumeIntegral<char>();
-    }
-
-    nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        audioModuleInfo.adapterName += fdp.ConsumeIntegral<char>();
-    }
-
-    uint32_t sinkSourceIndex = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->OpenVirtualAudioPort(audioModuleInfo, sinkSourceIndex);
-    }
-}
-
-void CreateCoreSourceManagerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->CreateCoreSourceManager();
-    }
-}
-
-void CreateStreamForCapInnerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamInfo streamInfo;
-    InitStreamInfo(streamInfo, fdp);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->CreateStreamForCapInner(streamInfo);
-    }
-}
-
-void MoveToPreferSinkFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string name;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        name += fdp.ConsumeIntegral<char>();
-    }
-
-    std::shared_ptr<AudioServiceHpaeCallback> serviceCallback = std::make_shared<FuzzHpaeServiceCallback>();
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->MoveToPreferSink(name, serviceCallback);
-    }
-}
-
-void HandleRendererManagerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
-
-    HpaeStreamInfo streamInfo;
-    InitStreamInfo(streamInfo, fdp);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleRendererManager(sinkName, streamInfo);
-    }
-}
-
-void HandleConnectCoBufferNodeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    auto coBufferNode = std::make_shared<HpaeCoBufferNode>();
-    if (coBufferNode == nullptr) {
-        return;
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleConnectCoBufferNode(coBufferNode);
-    }
-}
-
-void HandleInitSourceResultFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    SourceType sourceType = static_cast<SourceType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_SOURCETYPE_COUNT);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleInitSourceResult(sourceType);
-    }
-}
-
-void GetRendererManagerByIdFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
+    HpaeStreamClassType streamType = static_cast<HpaeStreamClassType>(
+        fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
     if (hpaeManager->IsInit()) {
-        (void)hpaeManager->GetRendererManagerById(sessionId);
+        (void)hpaeManager->TriggerAppsUidUpdate(streamType, sessionId);
     }
 }
 
-void GetCapturerManagerByIdFuzzTest(FuzzedDataProvider& fdp)
+void LoadEffectLiveFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->GetCapturerManagerById(sessionId);
-    }
-}
-
-void GetRendererManagerByNameFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->GetRendererManagerByName(sinkName);
-    }
-}
-
-void GetCapturerManagerByNameFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string sourceName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sourceName += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->GetCapturerManagerByName(sourceName);
-    }
-}
-
-void UpdateStatusFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::weak_ptr<IStreamStatusCallback> callback;
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    IOperation operation = static_cast<IOperation>(fdp.ConsumeIntegral<uint8_t>() % ENUM_IOPERATION_COUNT);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->UpdateStatus(callback, operation, sessionId);
-    }
-}
-
-void DeleteRendererManagerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string name;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        name += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->DeleteRendererManager(name);
-    }
-}
-
-void DeleteCaptureManagerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string name;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        name += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->DeleteCaptureManager(name);
-    }
-}
-
-void DeleteAudioportFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string name;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        name += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->DeleteAudioport(name);
-    }
-}
-
-void GetAllRenderSessionFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string name;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        name += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->GetAllRenderSession(name);
-    }
-}
-
-void GetAllCaptureSessionFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string name;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        name += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->GetAllCaptureSession(name);
-    }
-}
-
-void GetAuxiliaryRendererManagerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->GetAuxiliaryRendererManager();
-    }
-}
-
-void OnCallbackOpenOrReloadFailedFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    bool isReload = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->OnCallbackOpenOrReloadFailed(isReload);
-    }
-}
-
-void HandleDumpSourceInfoFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string deviceName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        deviceName += fdp.ConsumeIntegral<char>();
-    }
-
-    std::string dumpStr;
-    size_t dumpLen = fdp.ConsumeIntegral<uint8_t>() % MAX_DUMP_LENGTH;
-    for (size_t i = 0; i < dumpLen; i++) {
-        dumpStr += fdp.ConsumeIntegral<char>();
-    }
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleDumpSourceInfo(deviceName, dumpStr);
-    }
-}
-
-void HandleReloadDeviceResultFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string deviceName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        deviceName += fdp.ConsumeIntegral<char>();
-    }
-
-    int32_t result = fdp.ConsumeIntegral<int32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleReloadDeviceResult(deviceName, result);
-    }
-}
-
-void TriggerAppsUidUpdateFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->TriggerAppsUidUpdate(streamClassType, sessionId);
-    }
-}
-
-void TransStreamInfoToStreamDumpInfoFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::unordered_map<uint32_t, HpaeSessionInfo> idStreamInfoMap;
-    size_t mapSize = fdp.ConsumeIntegral<uint8_t>() % MAX_ARRAY_SIZE_SMALL;
-    for (size_t i = 0; i < mapSize; i++) {
-        HpaeSessionInfo sessionInfo;
-        sessionInfo.state = static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-        idStreamInfoMap[fdp.ConsumeIntegral<uint32_t>()] = sessionInfo;
-    }
-
-    std::vector<HpaeInputOutputInfo> inputOutputs;
-
-    if (hpaeManager->IsInit()) {
-        (void)TransStreamInfoToStreamDumpInfo(idStreamInfoMap, inputOutputs);
-    }
-}
-
-void LoadEffectLiveFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
     if (hpaeManager->IsInit()) {
         (void)hpaeManager->LoadEffectLive();
     }
 }
 
-void UpdateStatusCallbackFuzzTest(FuzzedDataProvider& fdp)
+void UpdateCollaborativeStateFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    std::weak_ptr<IStreamStatusCallback> callback;
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->UpdateStatus(callback, OPERATION_STARTED, sessionId);
-    }
-}
-
-void HandleInitDeviceResultMultipleCallsFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    // Fix: Use loop to read device name from fuzzer data instead of std::string(char, size_t)
-    std::string deviceName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        deviceName += fdp.ConsumeIntegral<char>();
-    }
-    int32_t result1 = fdp.ConsumeIntegral<int32_t>();
-    int32_t result2 = fdp.ConsumeIntegral<int32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->HandleInitDeviceResult(deviceName, result1);
-        (void)hpaeManager->HandleInitDeviceResult(deviceName, result2);
-    }
-}
-
-void CreateStreamWithInvalidEnumFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamInfo streamInfo;
-    InitStreamInfo(streamInfo, fdp);
-    streamInfo.streamType = static_cast<AudioStreamType>(INVALID_ENUM_VALUE);
-    streamInfo.sourceType = static_cast<SourceType>(INVALID_ENUM_VALUE);
-    streamInfo.streamClassType = static_cast<HpaeStreamClassType>(INVALID_ENUM_VALUE);
-
-    hpaeManager->CreateStream(streamInfo);
-}
-
-void StartStopStartSequenceFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->Start(streamClassType, sessionId);
-        (void)hpaeManager->Stop(streamClassType, sessionId);
-        (void)hpaeManager->Start(streamClassType, sessionId);
-    }
-}
-
-void PauseDrainPauseSequenceFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->Pause(streamClassType, sessionId);
-        (void)hpaeManager->Drain(streamClassType, sessionId);
-        (void)hpaeManager->Pause(streamClassType, sessionId);
-    }
-}
-
-void ReleaseWithoutStartFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->Release(streamClassType, sessionId);
-    }
-}
-
-void SetSpeedWithExtremeValuesFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    float extremeSpeeds[] = {0.0f, -1.0f, 1.0f, 10.0f, 100.0f};
-    float speed = extremeSpeeds[fdp.ConsumeIntegral<uint8_t>() % MAX_ARRAY_SIZE_SMALL];
-
-    hpaeManager->SetSpeed(sessionId, speed);
-}
-
-void SetVolumeWithExtremeValuesFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    float extremeVolumes[] = {0.0f, -1.0f, 0.5f, 1.0f, 2.0f, 10.0f};
-    float volume =
-        extremeVolumes[fdp.ConsumeIntegral<uint8_t>() % (sizeof(extremeVolumes) / sizeof(extremeVolumes[0]))];
-
-    hpaeManager->SetClientVolume(sessionId, volume);
-}
-
-void SetRateWithInvalidValueFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-
-    int32_t rate = fdp.ConsumeIntegral<int32_t>();
-
-    hpaeManager->SetRate(sessionId, rate);
-}
-
-void MoveSinkInputWithNonExistentSinkFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sinkInputId = fdp.ConsumeIntegral<uint32_t>();
-    uint32_t sinkIndex = fdp.ConsumeIntegral<uint32_t>();
-    std::string sinkName = "NonExistentSink_" + std::to_string(fdp.ConsumeIntegral<uint32_t>());
-
-    hpaeManager->MoveSinkInputByIndexOrName(sinkInputId, sinkIndex, sinkName);
-}
-
-void MoveSourceOutputWithNonExistentSourceFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sourceOutputId = fdp.ConsumeIntegral<uint32_t>();
-    uint32_t sourceIndex = fdp.ConsumeIntegral<uint32_t>();
-    std::string sourceName = "NonExistentSource_" + std::to_string(fdp.ConsumeIntegral<uint32_t>());
-
-    hpaeManager->MoveSourceOutputByIndexOrName(sourceOutputId, sourceIndex, sourceName);
-}
-
-void SetDefaultSinkWithEmptyNameFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string emptyName;
-
-    hpaeManager->SetDefaultSink(emptyName);
-}
-
-void SetDefaultSourceWithEmptyNameFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string emptyName;
-
-    hpaeManager->SetDefaultSource(emptyName);
-}
-
-void SetSinkMuteWithNonExistentSinkFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string nonExistentSink = "NonExistentSink_" + std::to_string(fdp.ConsumeIntegral<uint32_t>());
-    bool isMute = fdp.ConsumeIntegral<uint8_t>() != 0;
-    bool isSync = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    hpaeManager->SetSinkMute(nonExistentSink, isMute, isSync);
-}
-
-void StopAudioPortWithNonExistentPortFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string nonExistentPort = "NonExistentPort_" + std::to_string(fdp.ConsumeIntegral<uint32_t>());
-
-    hpaeManager->StopAudioPort(nonExistentPort);
-}
-
-void CloseOutAudioPortWithNonExistentSinkFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    std::string nonExistentSink = "NonExistentSink_" + std::to_string(fdp.ConsumeIntegral<uint32_t>());
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->CloseOutAudioPort(nonExistentSink);
-    }
-}
-
-void MultipleDeInitCallsFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    // DeInit() skipped: shared fuzz manager lives for the whole run (per-iter teardown
-    // join deadlock; see memory hpae-manager-deinit-join-deadlock).
-    // DeInit() skipped: shared fuzz manager lives for the whole run (per-iter teardown
-    // join deadlock; see memory hpae-manager-deinit-join-deadlock).
-}
-
-void InitTwiceFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    // Init() skipped: shared fuzz manager is already initialized in GetFuzzHpaeManager().
-}
-
-// ----------------------------------------------------------------------------
-// Supplemental cases: real-tuple Invoke paths, AISS sync trio, collaboration
-// state machine, GetSinkInfoByIdx/GetSourceInfoByIdx, span/route queries,
-// spatialization cluster, and trivial pass-through getters.
-// ----------------------------------------------------------------------------
-
-// Named constants for AISS / vocal ratio boundary values (no magic numbers).
-constexpr float VOCAL_RATIO_MIN = 0.0f;
-constexpr float VOCAL_RATIO_MID = 0.5f;
-constexpr float VOCAL_RATIO_MAX = 1.0f;
-constexpr float VOCAL_RATIO_NEG = -1.0f;
-constexpr float VOCAL_RATIO_OVER = 2.0f;
-constexpr uint8_t ENUM_COLLABORATIONSTATE_COUNT = 3;       // CLOSE / BT / NEARLINK
-constexpr uint8_t ENUM_SPATIALIZATION_SCENE_TYPE_COUNT = 4; // DEFAULT..AUDIOBOOK
-constexpr uint8_t ENUM_MSGCODE_TOTAL = 14;                  // UPDATE_STATUS..INIT_SOURCE_RESULT
-
-// P0-1a: Invoke UPDATE_STATUS with a real matching tuple so the handler
-// is reached instead of the "type mismatched" early-return path.
-void InvokeUpdateStatusRealTupleFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    HpaeSessionState status =
-        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-    IOperation operation = static_cast<IOperation>(fdp.ConsumeIntegral<uint8_t>() % ENUM_IOPERATION_COUNT);
-
-    std::any args = std::tuple<HpaeStreamClassType, uint32_t, HpaeSessionState, IOperation>(
-        streamClassType, sessionId, status, operation);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->Invoke(UPDATE_STATUS, args);
-    }
-}
-
-// P0-1b: Invoke MOVE_SINK_INPUT with a real matching tuple (sinkInputNode shared_ptr).
-void InvokeMoveSinkInputRealTupleFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    auto sinkInputNode = MakeSinkInputNode();
-    if (sinkInputNode == nullptr) {
-        return;
-    }
-    std::string sinkName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sinkName += fdp.ConsumeIntegral<char>();
-    }
-
-    std::any args =
-        std::tuple<std::shared_ptr<HpaeSinkInputNode>, std::string>(sinkInputNode, sinkName);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->Invoke(MOVE_SINK_INPUT, args);
-    }
-}
-
-// P0-1c: Invoke MOVE_SOURCE_OUTPUT with a real matching tuple.
-void InvokeMoveSourceOutputRealTupleFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeCaptureMoveInfo moveInfo;
-    moveInfo.sessionId = fdp.ConsumeIntegral<uint32_t>();
-    moveInfo.sessionInfo.state =
-        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-
-    std::string sourceName;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        sourceName += fdp.ConsumeIntegral<char>();
-    }
-
-    std::any args = std::tuple<HpaeCaptureMoveInfo, std::string>(moveInfo, sourceName);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->Invoke(MOVE_SOURCE_OUTPUT, args);
-    }
-}
-
-// P0-1d: Invoke across the full registered cmdID range plus out-of-range
-// values (both well-typed and mismatched-typed payloads) to exercise the
-// dispatch switch and the "not found" log branch.
-void InvokeAcrossFullCmdRangeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    // Fuzz cmdID across the full enum range and beyond (out-of-range paths).
-    int32_t rawCmd = fdp.ConsumeIntegral<int32_t>();
-    HpaeMsgCode cmdID = static_cast<HpaeMsgCode>(std::abs(rawCmd) % (ENUM_MSGCODE_TOTAL + 1));
-
-    // Mismatched payload (int32_t) -> every non-UPDATE_STATUS handler logs
-    // "type mismatched"; this intentionally exercises that early-return.
-    int32_t argValue = fdp.ConsumeIntegral<int32_t>();
-    std::any args = argValue;
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->Invoke(cmdID, args);
-    }
-}
-
-// P0-1e: InvokeSync with UPDATE_STATUS real tuple (SendRequestSync code path).
-void InvokeSyncUpdateStatusRealTupleFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    HpaeSessionState status =
-        static_cast<HpaeSessionState>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESESSIONSTATE_COUNT);
-    IOperation operation = static_cast<IOperation>(fdp.ConsumeIntegral<uint8_t>() % ENUM_IOPERATION_COUNT);
-
-    std::any args = std::tuple<HpaeStreamClassType, uint32_t, HpaeSessionState, IOperation>(
-        streamClassType, sessionId, status, operation);
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->InvokeSync(UPDATE_STATUS, args);
-    }
-}
-
-// P0-2a: SetAissEnabledSync over session-id boundaries.
-void SetAissEnabledSyncFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    bool enabled = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->SetAissEnabledSync(sessionId, enabled);
-    }
-}
-
-// P0-2b: SetAissEnabledByUidSync over uid boundaries.
-void SetAissEnabledByUidSyncFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    int32_t uid = fdp.ConsumeIntegral<int32_t>();
-    bool enabled = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->SetAissEnabledByUidSync(uid, enabled);
-    }
-}
-
-// P0-2c: SetVocalRatioSync with explicit boundary values including NaN/+inf
-// to exercise the [0,1] clamp and IEEE754 edge cases.
-void SetVocalRatioSyncBoundaryFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
-    const float boundaries[] = {
-        VOCAL_RATIO_MIN, VOCAL_RATIO_MID, VOCAL_RATIO_MAX,
-        VOCAL_RATIO_NEG, VOCAL_RATIO_OVER,
-        std::numeric_limits<float>::quiet_NaN(),
-        std::numeric_limits<float>::infinity(),
-    };
-    const uint8_t boundaryCount = sizeof(boundaries) / sizeof(boundaries[0]);
-    float ratio = boundaries[fdp.ConsumeIntegral<uint8_t>() % boundaryCount];
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->SetVocalRatioSync(ratio);
-    }
-}
-
-// P1-3a: UpdateCollaborativeState with each valid value plus out-of-range.
-void UpdateCollaborativeStateFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto hpaeManager = GetFuzzHpaeManager();
-    if (hpaeManager == nullptr) {
-        return;
-    }
-
     uint8_t pick = fdp.ConsumeIntegral<uint8_t>();
     CollaborationState state = (pick % BINARY_CHOICE_MOD == 0)
         ? static_cast<CollaborationState>(pick % ENUM_COLLABORATIONSTATE_COUNT)
-        : static_cast<CollaborationState>(pick);  // deliberately out-of-range
-
+        : static_cast<CollaborationState>(pick);
     if (hpaeManager->IsInit()) {
         (void)hpaeManager->UpdateCollaborativeState(state);
     }
 }
 
-// P1-3b: UpdateCollaborativeProductId with empty / 64-char / fuzzed bytes.
-void UpdateCollaborativeProductIdFuzzTest(FuzzedDataProvider& fdp)
+void UpdateCollaborativeProductIdFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    std::string productId;
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < nameLen; i++) {
-        productId += fdp.ConsumeIntegral<char>();
-    }
-
     if (hpaeManager->IsInit()) {
-        (void)hpaeManager->UpdateCollaborativeProductId(productId);
+        (void)hpaeManager->UpdateCollaborativeProductId(FuzzString(fdp, MAX_NAME_LENGTH));
     }
 }
 
-// P1-3c: LoadCollaborationConfig pass-through.
-void LoadCollaborationConfigFuzzTest(FuzzedDataProvider& fdp)
+void LoadCollaborationConfigFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     if (hpaeManager->IsInit()) {
         hpaeManager->LoadCollaborationConfig();
     }
 }
 
-// P1-3d: IsCollaborationSupportedForStreamUsage across fuzzed StreamUsage.
-void IsCollaborationSupportedForStreamUsageFuzzTest(FuzzedDataProvider& fdp)
+void IsCollaborationSupportedForStreamUsageFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     StreamUsage streamUsage = ConsumeEnum<StreamUsage>(fdp);
-
     if (hpaeManager->IsInit()) {
         DeviceType deviceType = ConsumeEnum<DeviceType>(fdp);
         (void)hpaeManager->IsCollaborationSupportedForStreamUsage(deviceType, streamUsage);
     }
 }
 
-// Helper lambda factory for Get*InfoByIdx callbacks (removed: unused;
-// each Get*InfoByIdx test uses its own inline lambda to match its type).
-
-// P1-4a: GetSinkInfoByIdx across idx boundaries (-1, 0, valid, INT32_MAX).
-void GetSinkInfoByIdxFuzzTest(FuzzedDataProvider& fdp)
+void GetSinkInfoByIdxFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     int32_t sinkIdx = fdp.ConsumeIntegral<int32_t>();
     auto callback = [](const HpaeSinkInfo &sinkInfo, int32_t result) {
         (void)sinkInfo;
         (void)result;
     };
-
     if (hpaeManager->IsInit()) {
         (void)hpaeManager->GetSinkInfoByIdx(sinkIdx, callback);
     }
 }
 
-// P1-4b: GetSourceInfoByIdx across idx boundaries.
-void GetSourceInfoByIdxFuzzTest(FuzzedDataProvider& fdp)
+void GetSourceInfoByIdxFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     int32_t sourceIdx = fdp.ConsumeIntegral<int32_t>();
     auto callback = [](const HpaeSourceInfo &sourceInfo, int32_t result) {
         (void)sourceInfo;
         (void)result;
     };
-
     if (hpaeManager->IsInit()) {
         (void)hpaeManager->GetSourceInfoByIdx(sourceIdx, callback);
     }
 }
 
-// P1-5a: GetStreamSpanSize with valid + invalid (streamClassType, sessionId).
-void GetStreamSpanSizeFuzzTest(FuzzedDataProvider& fdp)
+void GetStreamSpanSizeFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamType = static_cast<HpaeStreamClassType>(
+        fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     uint32_t spanSizeInFrame = 0;
-
     if (hpaeManager->IsInit()) {
-        (void)hpaeManager->GetStreamSpanSize(streamClassType, sessionId, spanSizeInFrame);
+        (void)hpaeManager->GetStreamSpanSize(streamType, sessionId, spanSizeInFrame);
     }
 }
 
-// P1-5b: GetStreamRouteFlag with valid + invalid pairs.
-void GetStreamRouteFlagFuzzTest(FuzzedDataProvider& fdp)
+void GetStreamRouteFlagFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    HpaeStreamClassType streamClassType =
-        static_cast<HpaeStreamClassType>(fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    HpaeStreamClassType streamType = static_cast<HpaeStreamClassType>(
+        fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     uint32_t routeFlag = 0;
-
     if (hpaeManager->IsInit()) {
-        (void)hpaeManager->GetStreamRouteFlag(streamClassType, sessionId, routeFlag);
+        (void)hpaeManager->GetStreamRouteFlag(streamType, sessionId, routeFlag);
     }
 }
 
-// P2-6: SetSourceOutputMuteByStreamId (mirrors existing SetSourceOutputMute).
-void SetSourceOutputMuteByStreamIdFuzzTest(FuzzedDataProvider& fdp)
+void RegisterStatusCallbackFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    int32_t sessionId = fdp.ConsumeIntegral<int32_t>();
-    bool isMute = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->SetSourceOutputMuteByStreamId(sessionId, isMute);
-    }
+    HpaeStreamClassType streamType = static_cast<HpaeStreamClassType>(
+        fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    weak_ptr<IStreamStatusCallback> callback;
+    (void)hpaeManager->RegisterStatusCallback(streamType, sessionId, callback);
 }
 
-// P2-7a: UpdateSpatializationState(AudioSpatializationState) overload.
-void UpdateSpatializationStateStructFuzzTest(FuzzedDataProvider& fdp)
+void GetSourceOutputInfoFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    AudioSpatializationState state;
-    state.spatializationEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
-    state.headTrackingEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
-    state.adaptiveSpatialRenderingEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
-    state.personalizedSpatializationEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
-
-    if (hpaeManager->IsInit()) {
-        (void)hpaeManager->UpdateSpatializationState(state);
-    }
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    HpaeStreamInfo streamInfo = MakeFuzzStreamInfo(fdp);
+    (void)hpaeManager->GetSourceOutputInfo(sessionId, streamInfo);
 }
 
-// P2-7b: SetSpatializationSceneType over valid + out-of-range enum.
-void SetSpatializationSceneTypeFuzzTest(FuzzedDataProvider& fdp)
+void SetOffloadRenderCallbackTypeFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    hpaeManager->SetOffloadRenderCallbackType(sessionId, fdp.ConsumeIntegral<int32_t>());
+}
 
+void SetSpatializationSceneTypeFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
     uint8_t pick = fdp.ConsumeIntegral<uint8_t>();
     AudioSpatializationSceneType sceneType = (pick % BINARY_CHOICE_MOD == 0)
-        ? static_cast<AudioSpatializationSceneType>(pick % ENUM_SPATIALIZATION_SCENE_TYPE_COUNT)
-        : static_cast<AudioSpatializationSceneType>(pick);  // out-of-range
-
+        ? static_cast<AudioSpatializationSceneType>(
+              pick % ENUM_SPATIALIZATION_SCENE_TYPE_COUNT)
+        : static_cast<AudioSpatializationSceneType>(pick);
     if (hpaeManager->IsInit()) {
         (void)hpaeManager->SetSpatializationSceneType(sceneType);
     }
 }
 
-// P2-7c: EffectRotationUpdate with fuzzed rotation state.
-void EffectRotationUpdateFuzzTest(FuzzedDataProvider& fdp)
+void EffectRotationUpdateFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    uint32_t rotationState = fdp.ConsumeIntegral<uint32_t>();
-
     if (hpaeManager->IsInit()) {
-        (void)hpaeManager->EffectRotationUpdate(rotationState);
+        (void)hpaeManager->EffectRotationUpdate(fdp.ConsumeIntegral<uint32_t>());
     }
 }
 
-// P2-7d: SetEffectSystemVolume pass-through.
-void SetEffectSystemVolumeFuzzTest(FuzzedDataProvider& fdp)
+void SetEffectSystemVolumeFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    int32_t systemVolumeType = fdp.ConsumeIntegral<int32_t>();
-    float systemVolume = fdp.ConsumeFloatingPoint<float>();
-
     if (hpaeManager->IsInit()) {
-        (void)hpaeManager->SetEffectSystemVolume(systemVolumeType, systemVolume);
+        (void)hpaeManager->SetEffectSystemVolume(
+            fdp.ConsumeIntegral<int32_t>(), fdp.ConsumeFloatingPoint<float>());
     }
 }
 
-// P2-7e: SetAbsVolumeStateToEffect pass-through.
-void SetAbsVolumeStateToEffectFuzzTest(FuzzedDataProvider& fdp)
+void SetAbsVolumeStateToEffectFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    bool absVolumeState = fdp.ConsumeIntegral<uint8_t>() != 0;
-
     if (hpaeManager->IsInit()) {
-        (void)hpaeManager->SetAbsVolumeStateToEffect(absVolumeState);
+        (void)hpaeManager->SetAbsVolumeStateToEffect(fdp.ConsumeIntegral<uint8_t>() != 0);
     }
 }
 
-// P2-7f: UpdateParamExtra with fuzzed mainkey/subkey/value strings.
-void UpdateParamExtraFuzzTest(FuzzedDataProvider& fdp)
+void UpdateParamExtraFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    std::string mainkey;
-    size_t mkLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < mkLen; i++) {
-        mainkey += fdp.ConsumeIntegral<char>();
-    }
-    std::string subkey;
-    size_t skLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < skLen; i++) {
-        subkey += fdp.ConsumeIntegral<char>();
-    }
-    std::string value;
-    size_t vLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    for (size_t i = 0; i < vLen; i++) {
-        value += fdp.ConsumeIntegral<char>();
-    }
-
     if (hpaeManager->IsInit()) {
-        hpaeManager->UpdateParamExtra(mainkey, subkey, value);
+        hpaeManager->UpdateParamExtra(
+            FuzzString(fdp, MAX_NAME_LENGTH), FuzzString(fdp, MAX_NAME_LENGTH),
+            FuzzString(fdp, MAX_NAME_LENGTH));
     }
 }
 
-// P2-8a: GetMaxAmplitude trivial pass-through.
-void GetMaxAmplitudeFuzzTest(FuzzedDataProvider& fdp)
+void GetMaxAmplitudeFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     if (hpaeManager->IsInit()) {
         (void)hpaeManager->GetMaxAmplitude();
     }
 }
 
-// P2-8b: SetAppsEnhanceMuteState over fuzzed sessionId + bool.
-void SetAppsEnhanceMuteStateFuzzTest(FuzzedDataProvider& fdp)
+void SetAppsEnhanceMuteStateFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
-    bool isMute = fdp.ConsumeIntegral<uint8_t>() != 0;
-
     if (hpaeManager->IsInit()) {
-        (void)hpaeManager->SetAppsEnhanceMuteState(sessionId, isMute);
+        (void)hpaeManager->SetAppsEnhanceMuteState(sessionId, fdp.ConsumeIntegral<uint8_t>() != 0);
     }
 }
 
-// P2-8c: IsChannelLayoutSupportedForDspEffect over fuzzed layout.
-void IsChannelLayoutSupportedForDspEffectFuzzTest(FuzzedDataProvider& fdp)
+void IsChannelLayoutSupportedForDspEffectFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     AudioChannelLayout channelLayout = ConsumeEnum<AudioChannelLayout>(fdp);
-
     if (hpaeManager->IsInit()) {
         (void)hpaeManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
     }
 }
 
-// Main test function that selects and runs a test
-// === Remaining-gap coverage: HRTF fd, device/volume setters ===
-
-void UpdatePersonalizedHRTFBinFuzzTest(FuzzedDataProvider& fdp)
+void UpdatePersonalizedHRTFBinFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    // Restrict fd to invalid sentinels: a real valid fd could corrupt unrelated file
-    // state downstream in HpaePolicyManager (read/lseek on the descriptor).
-    int32_t fd = fdp.PickValueInArray({ -1, std::numeric_limits<int32_t>::max() });
+    // Restrict fd to invalid sentinels to avoid corrupting file state.
+    int32_t fd = fdp.PickValueInArray({-1, numeric_limits<int32_t>::max()});
     long length = fdp.ConsumeIntegral<long>();
     hpaeManager->UpdatePersonalizedHRTFBin(fd, length);
-
-    // DeInit() skipped: shared fuzz manager lives for the whole run (per-iter teardown
-    // join deadlock; see memory hpae-manager-deinit-join-deadlock).
 }
 
-void SetOutputDeviceSinkFuzzTest(FuzzedDataProvider& fdp)
+void SetOutputDeviceSinkFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     int32_t device = fdp.ConsumeIntegral<int32_t>();
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    std::vector<uint8_t> nameBytes = fdp.ConsumeBytes<uint8_t>(nameLen);
-    std::string sinkName(nameBytes.begin(), nameBytes.end());
-    hpaeManager->SetOutputDeviceSink(device, sinkName);
-
-    // DeInit() skipped: shared fuzz manager lives for the whole run (per-iter teardown
-    // join deadlock; see memory hpae-manager-deinit-join-deadlock).
+    hpaeManager->SetOutputDeviceSink(device, FuzzString(fdp, MAX_NAME_LENGTH));
 }
 
-void SetVolumeInfoFuzzTest(FuzzedDataProvider& fdp)
+void SetVolumeInfoFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    // AudioVolumeType is a typedef of AudioStreamType; consume the underlying enum.
     AudioStreamType volumeType = ConsumeEnum<AudioStreamType>(fdp);
-    float systemVol = fdp.ConsumeFloatingPoint<float>();
-    hpaeManager->SetVolumeInfo(volumeType, systemVol);
-
-    // DeInit() skipped: shared fuzz manager lives for the whole run (per-iter teardown
-    // join deadlock; see memory hpae-manager-deinit-join-deadlock).
+    hpaeManager->SetVolumeInfo(volumeType, fdp.ConsumeFloatingPoint<float>());
 }
 
-void HandleBypassSpatializationForStereoFuzzTest(FuzzedDataProvider& fdp)
+void HandleBypassSpatializationForStereoFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     hpaeManager->HandleBypassSpatializationForStereo(fdp.ConsumeIntegral<uint8_t>() != 0);
-
-    // DeInit() skipped: shared fuzz manager lives for the whole run (per-iter teardown
-    // join deadlock; see memory hpae-manager-deinit-join-deadlock).
 }
 
-void SetAuxiliarySinkEnableFuzzTest(FuzzedDataProvider& fdp)
+void SetAuxiliarySinkEnableFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
     hpaeManager->SetAuxiliarySinkEnable(fdp.ConsumeIntegral<uint8_t>() != 0);
-
-    // DeInit() skipped: shared fuzz manager lives for the whole run (per-iter teardown
-    // join deadlock; see memory hpae-manager-deinit-join-deadlock).
 }
 
-void SetSinkMuteForSwitchDeviceFuzzTest(FuzzedDataProvider& fdp)
+void SetAissEnabledSyncFuzzTest(FuzzedDataProvider &fdp)
 {
     auto hpaeManager = GetFuzzHpaeManager();
     if (hpaeManager == nullptr) {
         return;
     }
-
-    size_t nameLen = fdp.ConsumeIntegral<uint8_t>() % MAX_NAME_LENGTH;
-    std::vector<uint8_t> nameBytes = fdp.ConsumeBytes<uint8_t>(nameLen);
-    std::string deviceClass(nameBytes.begin(), nameBytes.end());
-    hpaeManager->SetSinkMuteForSwitchDevice(deviceClass, fdp.ConsumeIntegral<uint8_t>() != 0);
-
-    // DeInit() skipped: shared fuzz manager lives for the whole run (per-iter teardown
-    // join deadlock; see memory hpae-manager-deinit-join-deadlock).
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    if (hpaeManager->IsInit()) {
+        (void)hpaeManager->SetAissEnabledSync(sessionId, fdp.ConsumeIntegral<uint8_t>() != 0);
+    }
 }
 
-void Test(FuzzedDataProvider& fdp)
+void SetAissEnabledByUidSyncFuzzTest(FuzzedDataProvider &fdp)
 {
-    auto func = fdp.PickValueInArray({
-        UploadDumpSourceInfoFuzzTest,
-        StopAudioPortFuzzTest,
-        SetSourceOutputMuteFuzzTest,
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    int32_t uid = fdp.ConsumeIntegral<int32_t>();
+    if (hpaeManager->IsInit()) {
+        (void)hpaeManager->SetAissEnabledByUidSync(uid, fdp.ConsumeIntegral<uint8_t>() != 0);
+    }
+}
+
+void SetVocalRatioSyncBoundaryFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    const float boundaries[] = {
+        VOCAL_RATIO_MIN, VOCAL_RATIO_MID, VOCAL_RATIO_MAX,
+        VOCAL_RATIO_NEG, VOCAL_RATIO_OVER,
+        numeric_limits<float>::quiet_NaN(),
+        numeric_limits<float>::infinity(),
+    };
+    const uint8_t count = sizeof(boundaries) / sizeof(boundaries[0]);
+    float ratio = boundaries[fdp.ConsumeIntegral<uint8_t>() % count];
+    if (hpaeManager->IsInit()) {
+        (void)hpaeManager->SetVocalRatioSync(ratio);
+    }
+}
+
+void UpdateSpatializationStateStructFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    AudioSpatializationState state;
+    state.spatializationEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
+    state.headTrackingEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
+    state.adaptiveSpatialRenderingEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
+    state.personalizedSpatializationEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
+    if (hpaeManager->IsInit()) {
+        (void)hpaeManager->UpdateSpatializationState(state);
+    }
+}
+
+// ===========================================================================
+// B-class tests: HpaeRendererManager sub-object (independent lifecycle).
+// Each test constructs + Inits + operates + destructs. The worker thread
+// is bounded to the test case scope — no cross-round accumulation.
+// ===========================================================================
+
+void RendererCreateStreamFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    HpaeStreamInfo streamInfo = MakeFuzzStreamInfo(fdp);
+    (void)mgr->CreateStream(streamInfo);
+}
+
+void RendererCreateStreamWithInvalidEnumFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    HpaeStreamInfo streamInfo = MakeFuzzStreamInfo(fdp);
+    streamInfo.streamType = static_cast<AudioStreamType>(INVALID_ENUM_VALUE);
+    streamInfo.sourceType = static_cast<SourceType>(INVALID_ENUM_VALUE);
+    streamInfo.streamClassType = static_cast<HpaeStreamClassType>(INVALID_ENUM_VALUE);
+    (void)mgr->CreateStream(streamInfo);
+}
+
+void RendererDestroyStreamFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->DestroyStream(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererStartFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->Start(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererStartWithSyncIdFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    int32_t syncId = fdp.ConsumeIntegral<int32_t>();
+    (void)mgr->StartWithSyncId(sessionId, syncId);
+}
+
+void RendererStartStopStartSequenceFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    (void)mgr->Start(sessionId);
+    (void)mgr->Stop(sessionId);
+    (void)mgr->Start(sessionId);
+}
+
+void RendererStopFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->Stop(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererPauseFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->Pause(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererPauseDrainPauseSequenceFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    (void)mgr->Pause(sessionId);
+    (void)mgr->Drain(sessionId);
+    (void)mgr->Pause(sessionId);
+}
+
+void RendererDrainFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->Drain(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererFlushFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->Flush(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererReleaseFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->Release(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererReleaseWithoutStartFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    (void)mgr->Release(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererSetClientVolumeFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->SetClientVolume(fdp.ConsumeIntegral<uint32_t>(),
+        fdp.ConsumeFloatingPoint<float>());
+}
+
+void RendererSetVolumeWithExtremeValuesFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    const float extremes[] = {0.0f, -1.0f, 0.5f, 1.0f, 2.0f, 10.0f};
+    const uint8_t count = sizeof(extremes) / sizeof(extremes[0]);
+    float volume = extremes[fdp.ConsumeIntegral<uint8_t>() % count];
+    (void)mgr->SetClientVolume(fdp.ConsumeIntegral<uint32_t>(), volume);
+}
+
+void RendererSetVolumeWithNanInfinityFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->SetClientVolume(fdp.ConsumeIntegral<uint32_t>(),
+        fdp.ConsumeFloatingPoint<float>());
+}
+
+void RendererSetRateFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->SetRate(fdp.ConsumeIntegral<uint32_t>(), fdp.ConsumeIntegral<int32_t>());
+}
+
+void RendererSetRateWithInvalidValueFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    int32_t rate = fdp.PickValueInArray({
+        numeric_limits<int32_t>::min(), 0, -1, numeric_limits<int32_t>::max()});
+    (void)mgr->SetRate(fdp.ConsumeIntegral<uint32_t>(), rate);
+}
+
+void RendererSetSpeedFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    mgr->SetSpeed(fdp.ConsumeIntegral<uint32_t>(), fdp.ConsumeFloatingPoint<float>());
+}
+
+void RendererSetSpeedWithExtremeValuesFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    const float speeds[] = {0.0f, -1.0f, 1.0f, 10.0f, 100.0f};
+    float speed = speeds[fdp.ConsumeIntegral<uint8_t>() % MAX_ARRAY_SIZE_SMALL];
+    mgr->SetSpeed(fdp.ConsumeIntegral<uint32_t>(), speed);
+}
+
+void RendererSetSpeedWithNanInfinityFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    mgr->SetSpeed(fdp.ConsumeIntegral<uint32_t>(), fdp.ConsumeFloatingPoint<float>());
+}
+
+void RendererSetAudioEffectModeFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->SetAudioEffectMode(fdp.ConsumeIntegral<uint32_t>(),
+        fdp.ConsumeIntegral<int32_t>());
+}
+
+void RendererGetAudioEffectModeFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    int32_t effectMode = 0;
+    (void)mgr->GetAudioEffectMode(fdp.ConsumeIntegral<uint32_t>(), effectMode);
+}
+
+void RendererSetPrivacyTypeFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->SetPrivacyType(fdp.ConsumeIntegral<uint32_t>(),
+        fdp.ConsumeIntegral<int32_t>());
+}
+
+void RendererGetPrivacyTypeFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    int32_t privacyType = 0;
+    (void)mgr->GetPrivacyType(fdp.ConsumeIntegral<uint32_t>(), privacyType);
+}
+
+void RendererRegisterWriteCallbackFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    weak_ptr<IStreamCallback> callback;
+    (void)mgr->RegisterWriteCallback(fdp.ConsumeIntegral<uint32_t>(), callback);
+}
+
+void RendererRegisterReadCallbackFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    weak_ptr<ICapturerStreamCallback> callback;
+    (void)mgr->RegisterReadCallback(fdp.ConsumeIntegral<uint32_t>(), callback);
+}
+
+void RendererUpdateSpatializationStateFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    bool spatializationEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
+    bool headTrackingEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
+    (void)mgr->UpdateSpatializationState(sessionId, spatializationEnabled, headTrackingEnabled);
+}
+
+void RendererUpdateMaxLengthFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->UpdateMaxLength(fdp.ConsumeIntegral<uint32_t>(),
+        fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererSetOffloadPolicyFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->SetOffloadPolicy(fdp.ConsumeIntegral<uint32_t>(),
+        fdp.ConsumeIntegral<int32_t>());
+}
+
+void RendererGetWritableSizeFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->GetWritableSize(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererSetLoudnessGainFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->SetLoudnessGain(fdp.ConsumeIntegral<uint32_t>(),
+        fdp.ConsumeFloatingPoint<float>());
+}
+
+// Session Effect: only Post* (async) variants — the header explicitly says
+// the sync trio "must be called from SignalProcessThread".
+void RendererPostCreateSessionEffectFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    string effectName = FuzzString(fdp, MAX_NAME_LENGTH);
+    shared_ptr<IEffectInstance> instance = nullptr;
+    AudioEffectConfig config;
+    mgr->PostCreateSessionEffect(sessionId, effectName, instance, config);
+}
+
+void RendererPostDestroySessionEffectFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    mgr->PostDestroySessionEffect(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererPostSetSessionEffectParameterFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    int32_t type = fdp.ConsumeIntegral<int32_t>();
+    float value = fdp.ConsumeFloatingPoint<float>();
+    mgr->PostSetSessionEffectParameter(sessionId, type, value);
+}
+
+void RendererHasSessionEffectFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->HasSessionEffect(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void RendererIsValidSessionFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzRendererManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnRenderer(mgr, fdp);
+    (void)mgr->IsValidSession(fdp.ConsumeIntegral<uint32_t>());
+}
+
+// ===========================================================================
+// B-class tests: HpaeCapturerManager sub-object (independent lifecycle).
+// ===========================================================================
+
+void CapturerCreateStreamFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzCapturerManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    HpaeStreamInfo streamInfo = MakeFuzzStreamInfo(fdp);
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
+    (void)mgr->CreateStream(streamInfo);
+}
+
+void CapturerStartFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzCapturerManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnCapturer(mgr, fdp);
+    (void)mgr->Start(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void CapturerStopFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzCapturerManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnCapturer(mgr, fdp);
+    (void)mgr->Stop(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void CapturerPauseFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzCapturerManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnCapturer(mgr, fdp);
+    (void)mgr->Pause(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void CapturerFlushFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzCapturerManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnCapturer(mgr, fdp);
+    (void)mgr->Flush(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void CapturerReleaseFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzCapturerManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnCapturer(mgr, fdp);
+    (void)mgr->Release(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void CapturerDestroyStreamFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzCapturerManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnCapturer(mgr, fdp);
+    (void)mgr->DestroyStream(fdp.ConsumeIntegral<uint32_t>());
+}
+
+void CapturerRegisterReadCallbackFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzCapturerManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnCapturer(mgr, fdp);
+    weak_ptr<ICapturerStreamCallback> callback;
+    (void)mgr->RegisterReadCallback(fdp.ConsumeIntegral<uint32_t>(), callback);
+}
+
+void CapturerSetAppsEnhanceMuteStateFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto mgr = MakeFuzzCapturerManager(fdp);
+    if (mgr == nullptr) {
+        return;
+    }
+    CreateStreamOnCapturer(mgr, fdp);
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    (void)mgr->SetAppsEnhanceMuteState(sessionId, fdp.ConsumeIntegral<uint8_t>() != 0);
+}
+
+// ===========================================================================
+// Main dispatch
+// ===========================================================================
+
+using FuzzFunc = void (*)(FuzzedDataProvider &);
+
+void Test(FuzzedDataProvider &fdp)
+{
+    auto func = fdp.PickValueInArray<FuzzFunc>({
+        // --- C-class: HpaeManager singleton (process-level) ---
         GetAllSinksFuzzTest,
-        DeInitFuzzTest,
-        ReloadRenderManagerFuzzTest,
-        CreateRendererManagerFuzzTest,
-        CreateCaptureManagerFuzzTest,
         DumpAllAvailableDeviceFuzzTest,
         DumpSinkInputsInfoFuzzTest,
         DumpSourceOutputsInfoFuzzTest,
-        AddPreferSinkForDefaultChangeFuzzTest,
-        CloseOutAudioPortFuzzTest,
-        CloseInAudioPortFuzzTest,
         SetDefaultSinkFuzzTest,
+        SetDefaultSinkWithEmptyNameFuzzTest,
         SetDefaultSourceFuzzTest,
+        SetDefaultSourceWithEmptyNameFuzzTest,
         GetAllSinkInputsFuzzTest,
         GetAllSourceOutputsFuzzTest,
         MoveSourceOutputByIndexOrNameFuzzTest,
-        CheckMoveSinkInputFuzzTest,
-        MoveSinkInputByIndexOrNameFuzzTest,
-        IsMovingSinkStateChangeFuzzTest,
-        HandleMoveSinkInputFuzzTest,
-        HandleMoveSourceOutputFuzzTest,
-        HandleMoveAllSourceOutputsFuzzTest,
-        HandleMoveSessionFailedFuzzTest,
-        HandleUpdateStatusFuzzTest,
-        HandleDumpSinkInfoFuzzTest,
-        HandleInitDeviceResultFuzzTest,
-        EnqueuePendingTransitionFuzzTest,
-        CreateStreamFuzzTest,
-        AddStreamToCollectionFuzzTest,
-        DestroyCaptureFuzzTest,
-        SetMovingStreamStateFuzzTest,
-        DestroyStreamFuzzTest,
-        ShouldNotSkipProcessFuzzTest,
-        StartFuzzTest,
-        PauseFuzzTest,
-        DrainFuzzTest,
-        StopFuzzTest,
-        ReleaseFuzzTest,
-        OnDisConnectProcessClusterFuzzTest,
-        DisConnectCoBufferFromOnDisConnectProcessClusterFuzzTest,
-        HandleMoveAllSinkInputsFuzzTest,
-        GetPerferSinkInputsFuzzTest,
-        GetUsedMoveInfosFuzzTest,
-        InvokeFuzzTest,
-        InvokeSyncFuzzTest,
-        GetMsgCountFuzzTest,
-        IsRunningFuzzTest,
-        IsMsgProcessingFuzzTest,
-        SendRequestFuzzTest,
-        FlushFuzzTest,
-        StartWithSyncIdFuzzTest,
-        DequeuePendingTransitionFuzzTest,
-        RegisterStatusCallbackFuzzTest,
-        RegisterReadCallbackFuzzTest,
-        GetSourceOutputInfoFuzzTest,
-        SetClientVolumeFuzzTest,
-        SetVolumeWithNanInfinityFuzzTest,
-        SetLoudnessGainFuzzTest,
-        SetRateFuzzTest,
-        SetAudioEffectModeFuzzTest,
-        GetAudioEffectModeFuzzTest,
-        SetPrivacyTypeFuzzTest,
-        GetPrivacyTypeFuzzTest,
-        RegisterWriteCallbackFuzzTest,
-        SetOffloadPolicyFuzzTest,
-        GetWritableSizeFuzzTest,
-        UpdateSpatializationStateFuzzTest,
-        UpdateMaxLengthFuzzTest,
-        SetOffloadRenderCallbackTypeFuzzTest,
-        SetSpeedFuzzTest,
-        SetSpeedWithNanInfinityFuzzTest,
-        SetSinkMuteFuzzTest,
-        SuspendAudioDeviceFuzzTest,
-        OpenAudioPortInnerFuzzTest,
-        OpenOutputAudioPortFuzzTest,
-        OpenInputAudioPortFuzzTest,
-        OpenVirtualAudioPortFuzzTest,
-        CreateCoreSourceManagerFuzzTest,
-        CreateStreamForCapInnerFuzzTest,
-        MoveToPreferSinkFuzzTest,
-        HandleRendererManagerFuzzTest,
-        HandleConnectCoBufferNodeFuzzTest,
-        HandleInitSourceResultFuzzTest,
-        GetRendererManagerByIdFuzzTest,
-        GetCapturerManagerByIdFuzzTest,
-        GetRendererManagerByNameFuzzTest,
-        GetCapturerManagerByNameFuzzTest,
-        UpdateStatusFuzzTest,
-        DeleteRendererManagerFuzzTest,
-        DeleteCaptureManagerFuzzTest,
-        DeleteAudioportFuzzTest,
-        GetAllRenderSessionFuzzTest,
-        GetAllCaptureSessionFuzzTest,
-        GetAuxiliaryRendererManagerFuzzTest,
-        OnCallbackOpenOrReloadFailedFuzzTest,
-        HandleDumpSourceInfoFuzzTest,
-        HandleReloadDeviceResultFuzzTest,
-        TriggerAppsUidUpdateFuzzTest,
-        TransStreamInfoToStreamDumpInfoFuzzTest,
-        LoadEffectLiveFuzzTest,
-        UpdateStatusCallbackFuzzTest,
-        HandleInitDeviceResultMultipleCallsFuzzTest,
-        CreateStreamWithInvalidEnumFuzzTest,
-        StartStopStartSequenceFuzzTest,
-        PauseDrainPauseSequenceFuzzTest,
-        ReleaseWithoutStartFuzzTest,
-        SetSpeedWithExtremeValuesFuzzTest,
-        SetVolumeWithExtremeValuesFuzzTest,
-        SetRateWithInvalidValueFuzzTest,
-        MoveSinkInputWithNonExistentSinkFuzzTest,
         MoveSourceOutputWithNonExistentSourceFuzzTest,
-        SetDefaultSinkWithEmptyNameFuzzTest,
-        SetDefaultSourceWithEmptyNameFuzzTest,
+        MoveSinkInputByIndexOrNameFuzzTest,
+        MoveSinkInputWithNonExistentSinkFuzzTest,
+        SetSinkMuteFuzzTest,
         SetSinkMuteWithNonExistentSinkFuzzTest,
+        SetSinkMuteForSwitchDeviceFuzzTest,
+        SuspendAudioDeviceFuzzTest,
+        StopAudioPortFuzzTest,
         StopAudioPortWithNonExistentPortFuzzTest,
-        CloseOutAudioPortWithNonExistentSinkFuzzTest,
-        MultipleDeInitCallsFuzzTest,
-        InitTwiceFuzzTest,
-        // --- supplemental cases (added) ---
-        InvokeUpdateStatusRealTupleFuzzTest,
-        InvokeMoveSinkInputRealTupleFuzzTest,
-        InvokeMoveSourceOutputRealTupleFuzzTest,
-        InvokeAcrossFullCmdRangeFuzzTest,
-        InvokeSyncUpdateStatusRealTupleFuzzTest,
-        SetAissEnabledSyncFuzzTest,
-        SetAissEnabledByUidSyncFuzzTest,
-        SetVocalRatioSyncBoundaryFuzzTest,
+        SetSourceOutputMuteFuzzTest,
+        SetSourceOutputMuteByStreamIdFuzzTest,
+        TriggerAppsUidUpdateFuzzTest,
+        LoadEffectLiveFuzzTest,
         UpdateCollaborativeStateFuzzTest,
         UpdateCollaborativeProductIdFuzzTest,
         LoadCollaborationConfigFuzzTest,
@@ -2898,8 +1516,9 @@ void Test(FuzzedDataProvider& fdp)
         GetSourceInfoByIdxFuzzTest,
         GetStreamSpanSizeFuzzTest,
         GetStreamRouteFlagFuzzTest,
-        SetSourceOutputMuteByStreamIdFuzzTest,
-        UpdateSpatializationStateStructFuzzTest,
+        RegisterStatusCallbackFuzzTest,
+        GetSourceOutputInfoFuzzTest,
+        SetOffloadRenderCallbackTypeFuzzTest,
         SetSpatializationSceneTypeFuzzTest,
         EffectRotationUpdateFuzzTest,
         SetEffectSystemVolumeFuzzTest,
@@ -2908,38 +1527,77 @@ void Test(FuzzedDataProvider& fdp)
         GetMaxAmplitudeFuzzTest,
         SetAppsEnhanceMuteStateFuzzTest,
         IsChannelLayoutSupportedForDspEffectFuzzTest,
-        // Round-N supplemental coverage: HRTF fd, device/volume setters.
         UpdatePersonalizedHRTFBinFuzzTest,
         SetOutputDeviceSinkFuzzTest,
         SetVolumeInfoFuzzTest,
         HandleBypassSpatializationForStereoFuzzTest,
         SetAuxiliarySinkEnableFuzzTest,
-        SetSinkMuteForSwitchDeviceFuzzTest,
+        SetAissEnabledSyncFuzzTest,
+        SetAissEnabledByUidSyncFuzzTest,
+        SetVocalRatioSyncBoundaryFuzzTest,
+        UpdateSpatializationStateStructFuzzTest,
+        // --- B-class: HpaeRendererManager sub-object ---
+        RendererCreateStreamFuzzTest,
+        RendererCreateStreamWithInvalidEnumFuzzTest,
+        RendererDestroyStreamFuzzTest,
+        RendererStartFuzzTest,
+        RendererStartWithSyncIdFuzzTest,
+        RendererStartStopStartSequenceFuzzTest,
+        RendererStopFuzzTest,
+        RendererPauseFuzzTest,
+        RendererPauseDrainPauseSequenceFuzzTest,
+        RendererDrainFuzzTest,
+        RendererFlushFuzzTest,
+        RendererReleaseFuzzTest,
+        RendererReleaseWithoutStartFuzzTest,
+        RendererSetClientVolumeFuzzTest,
+        RendererSetVolumeWithExtremeValuesFuzzTest,
+        RendererSetVolumeWithNanInfinityFuzzTest,
+        RendererSetRateFuzzTest,
+        RendererSetRateWithInvalidValueFuzzTest,
+        RendererSetSpeedFuzzTest,
+        RendererSetSpeedWithExtremeValuesFuzzTest,
+        RendererSetSpeedWithNanInfinityFuzzTest,
+        RendererSetAudioEffectModeFuzzTest,
+        RendererGetAudioEffectModeFuzzTest,
+        RendererSetPrivacyTypeFuzzTest,
+        RendererGetPrivacyTypeFuzzTest,
+        RendererRegisterWriteCallbackFuzzTest,
+        RendererRegisterReadCallbackFuzzTest,
+        RendererUpdateSpatializationStateFuzzTest,
+        RendererUpdateMaxLengthFuzzTest,
+        RendererSetOffloadPolicyFuzzTest,
+        RendererGetWritableSizeFuzzTest,
+        RendererSetLoudnessGainFuzzTest,
+        RendererPostCreateSessionEffectFuzzTest,
+        RendererPostDestroySessionEffectFuzzTest,
+        RendererPostSetSessionEffectParameterFuzzTest,
+        RendererHasSessionEffectFuzzTest,
+        RendererIsValidSessionFuzzTest,
+        // --- B-class: HpaeCapturerManager sub-object ---
+        CapturerCreateStreamFuzzTest,
+        CapturerStartFuzzTest,
+        CapturerStopFuzzTest,
+        CapturerPauseFuzzTest,
+        CapturerFlushFuzzTest,
+        CapturerReleaseFuzzTest,
+        CapturerDestroyStreamFuzzTest,
+        CapturerRegisterReadCallbackFuzzTest,
+        CapturerSetAppsEnhanceMuteStateFuzzTest,
     });
     func(fdp);
-}
-
-void Init()
-{
-    // Initialization code (if needed)
 }
 
 } // namespace AudioStandard
 } // namespace OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
         return 0;
     }
     FuzzedDataProvider fdp(data, size);
     OHOS::AudioStandard::Test(fdp);
-    return 0;
-}
-
-extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
-{
-    OHOS::AudioStandard::Init();
     return 0;
 }

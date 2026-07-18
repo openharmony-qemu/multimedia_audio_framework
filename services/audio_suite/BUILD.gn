@@ -46,17 +46,8 @@ config("audio_suite_public_config") {
     "../../interfaces/inner_api/native/audiomanager/include",
     "../../interfaces/kits/c/common",
   ]
-
-  cflags_cc = [
-    "-Wall",
-    "-Werror",
-    "-Os",
-  ]
-
-  ldflags = [ "-Wl" ]
 }
 
-# Audio Suite SA IDL 头文件配置
 config("audio_suite_sa_idl_support") {
   include_dirs = [
     "${target_gen_dir}",
@@ -83,6 +74,27 @@ audio_ohos_library("audio_suite") {
       ":audio_suite_sa_idl_support",
       "idl:audio_suite_sa_idl_config",
     ]
+
+    cflags_cc = [
+      "-Wall",
+      "-Werror",
+      "-Os",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-fvisibility-inlines-hidden",
+      "-fno-ident",
+      "-fno-exceptions",
+      "-fno-rtti",
+    ]
+
+    ldflags = [
+      "-flto=full",
+      "-Wl,-gc-sections",
+      "-Wl,--exclude-libs,ALL",
+      "-Wl,--hash-style=gnu",
+      "-Wl,--strip-debug",
+    ]
+
     include_dirs = [
       "client/manager/include",
       "client/converter/include",
@@ -239,10 +251,9 @@ audio_ohos_library("audio_pcm_process") {
   part_name = "audio_framework"
 }
 
-# Audio Suite SA 服务端
 if (audio_framework_feature_audiosuite_support) {
   audio_ohos_library("audio_suite_sa_service") {
-    stack_protector_ret = true
+    branch_protector_ret = "pac_ret"
     sanitize = {
       cfi = true
       cfi_cross_dso = true
@@ -253,6 +264,25 @@ if (audio_framework_feature_audiosuite_support) {
       boundary_sanitize = true
     }
     install_enable = true
+
+    cflags_cc = [
+      "-Werror",
+      "-Os",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-fvisibility-inlines-hidden",
+      "-fno-ident",
+      "-fno-exceptions",
+      "-fno-rtti",
+    ]
+
+    ldflags = [
+      "-flto=full",
+      "-Wl,-gc-sections",
+      "-Wl,--exclude-libs,ALL",
+      "-Wl,--hash-style=gnu",
+      "-Wl,--strip-debug",
+    ]
  
     defines = []
  
@@ -278,6 +308,8 @@ if (audio_framework_feature_audiosuite_support) {
       "server/manager/src/download_manager.cpp",
       "server/manager/src/background_download.cpp",
     ]
+
+    shlib_type = "sa"
  
     deps = [
       ":audio_suite",

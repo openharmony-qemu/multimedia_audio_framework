@@ -372,6 +372,7 @@ interface AudioManager {
   GetCollaborativeManager(): AudioCollaborativeManager;
   GetDeviceEnhanceManager(): AudioDeviceEnhanceManager;
   GetDebuggingManager(): AudioDebuggingManager;
+  GetRecordingManager(): AudioRecordingManager;
 
   @gen_promise("disableSafeMediaVolume")
   DisableSafeMediaVolumeSync(): void;
@@ -1594,6 +1595,25 @@ interface AudioDeviceEnhanceManager {
 
   @gen_promise("selectInputDeviceForAudioCapturer")
   SelectInputDeviceForAudioCapturerSync(capturer: AudioCapturer, deviceDescriptor: AudioDeviceDescriptor): void;
+}
+
+struct SystemRecordControllerConfig {
+  sourceType: SourceType;
+}
+
+struct SystemRecordControllerChangeInfo {
+  enabled: bool;
+  uid: i32;
+  sourceType: SourceType;
+}
+
+interface AudioRecordingManager {
+  @promise @rename("enableSystemRecordController")
+  EnableSystemRecordControllerPromise(show: bool, config: SystemRecordControllerConfig): void;
+  EnableSystemRecordControllerSync(show: bool, config: SystemRecordControllerConfig): void;
+
+  OnSystemRecordControllerEnabledChange(callback: (data: SystemRecordControllerChangeInfo) => void): void;
+  OffSystemRecordControllerEnabledChange(callback: Optional<(data: SystemRecordControllerChangeInfo) => void>): void;
 }
 
 interface AudioDebuggingManager {

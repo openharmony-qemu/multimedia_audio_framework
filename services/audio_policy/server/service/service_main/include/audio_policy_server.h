@@ -61,6 +61,8 @@
 #include "audio_pipe_selector.h"
 #include "boot_animation_state_info.h"
 #include "audio_loopback_manager.h"
+#include "os_account_subprofile_client.h"
+#include "os_account_sub_profile_subscribe_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -70,6 +72,7 @@ class AudioInterruptService;
 class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
+class AudioSubProfileObserver;
 
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyStub,
@@ -764,6 +767,7 @@ public:
     int32_t SetHighResolutionExist(bool highResExist) override;
 
     void NotifyAccountsChanged(const int &id, const int &oldId);
+    void NotifySubProfileChanged();
     void SendVolumeKeyEventToRssWhenAccountsChanged();
 
     // for hidump
@@ -898,6 +902,7 @@ private:
 #endif
     void AddAudioServiceOnStart();
     void SubscribeOsAccountChangeEvents();
+    void SubscribeOsAccountSubProfileChangeEvents();
     void SubscribePowerStateChangeEvents();
     void SubscribeCommonEvent(const std::string event);
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
@@ -1028,6 +1033,7 @@ private:
     std::map<std::u16string, DumpFunc> dumpFuncMap;
     pid_t lastMicMuteSettingPid_ = 0;
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
+    std::shared_ptr<AudioSubProfileObserver> subProfileObserver_ = nullptr;
 
     int32_t micRefEnableState_ = 0;
     int32_t sessionIdByRemote_ = -1;
@@ -1066,6 +1072,31 @@ public:
     }
 private:
     static constexpr int32_t LOCAL_USER_ID = 100;
+    AudioPolicyServer *audioPolicyServer_;
+};
+
+class AudioSubProfileObserver : public AccountSA::OsAccountSubProfileSubscribeCallback {
+public:
+    explicit AudioSubProfileObserver(AudioPolicyServer *audioPolicyServer)
+        : audioPolicyServer_(audioPolicyServer) {}
+
+    virtual ~AudioSubProfileObserver()
+    {
+        AUDIO_WARNING_LOG("Destructor AudioSubProfileObserver");
+    }
+
+    void OnSubProfileChanged(
+        const AccountSA::SubProfileEventData &eventData) override
+    {
+        AUDIO_INFO_LOG("OnSubProfileChanged received, type: %{public}d, osAccountId: %{public}d,"
+            " subspaceId: %{public}d, previousSubspaceId: %{public}d",
+            static_cast<int32_t>(eventData.type_), eventData.osAccountId_,
+            eventData.subProfileId_, eventData.previousSubProfileId_);
+        if (audioPolicyServer_ != nullptr) {
+            audioPolicyServer_->NotifySubProfileChanged();
+        }
+    }
+private:
     AudioPolicyServer *audioPolicyServer_;
 };
 

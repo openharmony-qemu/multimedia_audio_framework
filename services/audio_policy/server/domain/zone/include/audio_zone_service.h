@@ -141,7 +141,6 @@ public:
     // interfaces of SessionTimeOutCallback
     void OnSessionTimeout(const int32_t pid) override;
     void UpdateZonePreferDeviceWhenDeviceConnect();
-    void UpdateZonePreferDeviceWhenDeviceDisConnect(std::shared_ptr<AudioDeviceDescriptor> device);
 
 private:
     AudioZoneService()

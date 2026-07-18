@@ -1120,17 +1120,14 @@ void SessionEffectInvalidSessionFuzzTest()
     float value = GetData<float>();
     std::string effectName = "test_effect";
 
-    // Synchronous not-found / false branches:
+    // All Session Effect calls go through the async Post* variants (dispatched to
+    // the signal-process thread); with an unbound sessionId they hit the not-found
+    // / false early-return branches. HasSessionEffect/IsValidSession are read-only.
     rendererManager->PostCreateSessionEffect(invalidSessionId, effectName, nullptr, {});
     rendererManager->PostDestroySessionEffect(invalidSessionId);
     (void)rendererManager->HasSessionEffect(invalidSessionId);
     (void)rendererManager->IsValidSession(invalidSessionId);
     rendererManager->PostSetSessionEffectParameter(invalidSessionId, type, value);
-
-    // Asynchronous Post* wrappers (dispatched to the signal-process thread):
-    rendererManager->PostSetSessionEffectParameter(invalidSessionId, type, value);
-    rendererManager->PostCreateSessionEffect(invalidSessionId, effectName, nullptr, {});
-    rendererManager->PostDestroySessionEffect(invalidSessionId);
     WaitForMsgProcessing(rendererManager);
     rendererManager->DeInit();
 }

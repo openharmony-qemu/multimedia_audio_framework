@@ -61,6 +61,8 @@ public:
     int32_t SetSplitModeReady();
     bool UpdateVehiclePriority(bool enable);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchMediaOutputDevices(FetchDeviceInfo &info);
+
+    bool IsMediaFollowCallStrategy(AudioScene audioScene);
 private:
     AudioRouterCenter()
     {
@@ -143,7 +145,6 @@ private:
     bool NeedSkipSelectAudioOutputDeviceRefined(StreamUsage streamUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     RouterType GetBypassWithSco(AudioScene audioScene);
-    bool IsMediaFollowCallStrategy(AudioScene audioScene);
     bool IsAlarmFollowRingStrategy(AudioScene audioScene, StreamUsage streamUsage);
     shared_ptr<AudioDeviceDescriptor> FetchCapturerInputDevice(SourceType sourceType,
         int32_t clientUID, RouterType &routerType, const uint32_t sessionID);

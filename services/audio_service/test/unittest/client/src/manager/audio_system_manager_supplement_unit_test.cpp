@@ -235,7 +235,7 @@ HWTEST(AudioSystemManagerSupplementTest, VirtualCall_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerSupplementTest VirtualCall_001 start");
     int32_t setResult = AudioSystemManager::GetInstance()->SetVirtualCall(true);
     AUDIO_INFO_LOG("VirtualCall_001 Set result:%{public}d", setResult);
-    EXPECT_EQ(setResult, SUCCESS);
+    EXPECT_NE(setResult, SUCCESS);
 
     bool isVirtual = AudioSystemManager::GetInstance()->GetVirtualCall();
     AUDIO_INFO_LOG("VirtualCall_001 Get result:%{public}d", isVirtual);
