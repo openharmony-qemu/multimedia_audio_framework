@@ -74,6 +74,8 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
         {AudioStreamType::STREAM_CAMCORDER, SourceType::SOURCE_TYPE_INVALID, true}},
     {"STREAM_INTERPHONE",
         {AudioStreamType::STREAM_INTERPHONE, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_VOICE_ASSISTANT_SYSTEM",
+        {AudioStreamType::STREAM_VOICE_ASSISTANT_SYSTEM, SourceType::SOURCE_TYPE_INVALID, true}},
 #ifdef MULTI_ALARM_LEVEL
     {"STREAM_ANNOUNCEMENT",
         {AudioStreamType::STREAM_ANNOUNCEMENT, SourceType::SOURCE_TYPE_INVALID, true}},
