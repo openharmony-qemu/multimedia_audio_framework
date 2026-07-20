@@ -2601,9 +2601,6 @@ HWTEST_F(AudioVolumeUnitTest, GetVolumeSharedPtr_004, TestSize.Level1)
     VolumeValues volumes;
     float volume = audioVolumeTest->GetVolume(streamVolumePtr, pipeVolumePtr, &volumes);
     
-    float expectedStreamVolume = 0.8f * 0.9f;
-    float expectedTotalVolume = expectedStreamVolume * 0.7f;
-    
     EXPECT_GT(volume, 0.0f);
     
     audioVolumeTest->RemoveStreamVolume(sessionId);
