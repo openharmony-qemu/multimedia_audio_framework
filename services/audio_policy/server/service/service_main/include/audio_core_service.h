@@ -1026,7 +1026,7 @@ public:
         const AudioRendererDataTransferStateChangeInfo &info) override;
 
     void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
-        const uint32_t &sessionId, const bool &isMuted) override;
+        const uint32_t &sessionId, const bool &isMuted) override {}
 
 private:
     std::shared_ptr<AsyncActionHandler> asyncHandler_;
