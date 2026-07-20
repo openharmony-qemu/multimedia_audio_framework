@@ -62,6 +62,24 @@ constexpr uint32_t INVALID_ID = 99999;
 constexpr uint32_t LOUDNESS_GAIN = 1.0f;
 constexpr uint32_t DEFAULT_SESSIONID_NUM_FIRST = 100000;
 
+std::vector<EffectChain> DEFAULT_EFFECT_CHAINS = {
+    {"EFFECTCHAIN_SPK_MUSIC", {"apply1", "apply2", "apply3"}, ""},
+    {"EFFECTCHAIN_BT_MUSIC", {}, ""}
+};
+
+EffectChainManagerParam DEFAULT_EFFECT_CHAIN_MANAGER_PARAM{
+    3,
+    "SCENE_DEFAULT",
+    {},
+    {{"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
+        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"},
+        {"SCENE_EXTRA_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
+        {"SCENE_OTHER_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"}},
+    {{"effect1", "property1"}, {"effect4", "property5"}, {"effect1", "property4"}}
+};
+
+std::vector<std::shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
+
 static HpaeSinkInfo GetSinkInfo()
 {
     HpaeSinkInfo sinkInfo;
@@ -5019,15 +5037,15 @@ HWTEST_F(HpaeRendererManagerTest, IsRemoteDevice_LocalClass_001, TestSize.Level1
 // then write/erase channelOverrideMap_, so a chain for the scene must exist.
 // InjectOverrideChain() injects a minimal AudioEffectChain(sceneType) (its ctor
 // sets sceneType_ and loads no effect lib) to make those writes observable.
-// Each case clears channelOverrideMap_ up front and calls ResetInfo() on exit.
+// Assertions go through ConsultChannelOverride (same routeKey -> chain -> scene
+// resolution Set/Clear use) instead of reading the private channelOverrideMap_.
+// Each case calls ResetInfo() on exit.
 // ===========================================================================
-static void InjectOverrideChain(const std::string &sceneType)
+void InjectOverrideChain(const std::string &sceneType)
 {
-    auto *mgr = AudioEffectChainManager::GetInstance();
-    mgr->deviceType_ = DEVICE_TYPE_SPEAKER;
-    mgr->channelOverrideMap_.clear();
-    std::string routeKey = sceneType + "_&_" + mgr->GetDeviceTypeName();
-    mgr->sceneTypeToEffectChainMap_[routeKey] = std::make_shared<AudioEffectChain>(sceneType);
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+   AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
 }
 
 // SetChannelOverrideForRoute: plain (non-enhanced) else-branch writes the override.
@@ -5039,11 +5057,11 @@ HWTEST_F(HpaeRendererManagerTest, ChannelOverride_SetForRoute_PlainBranchWritesM
     HpaeRendererManager::ChannelOverrideRoute route{scene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(route);
 
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 1u);
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_[scene].inputChannels,
-        static_cast<uint32_t>(STEREO));
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_[scene].inputChannelLayout,
-        static_cast<uint64_t>(CH_LAYOUT_STEREO));
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));
+    EXPECT_EQ(layout, static_cast<uint64_t>(CH_LAYOUT_STEREO));
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -5056,10 +5074,14 @@ HWTEST_F(HpaeRendererManagerTest, ChannelOverride_ClearForRoute_PlainBranchErase
 
     HpaeRendererManager::ChannelOverrideRoute route{scene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(route);
-    ASSERT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 1u);
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));   // override applied
 
     hpaeRendererManager_->ClearChannelOverrideForRoute(route);
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 0u);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -5067,11 +5089,15 @@ HWTEST_F(HpaeRendererManagerTest, ChannelOverride_ClearForRoute_PlainBranchErase
 // OnSessionEffectMaterialized: NONE scene -> route nullopt -> no Set (false branch).
 HWTEST_F(HpaeRendererManagerTest, OnSessionEffectMaterialized_NoneSceneIsNoOp, TestSize.Level1)
 {
-    AudioEffectChainManager::GetInstance()->channelOverrideMap_.clear();
-    // Absent session: GetProcessorType returns HPAE_SCENE_EFFECT_NONE -> route nullopt.
+    const std::string probeScene = TransProcessorTypeToSceneType(HPAE_SCENE_EFFECT_NONE); // "SCENE_EXTRA"
+    InjectOverrideChain(probeScene);
     uint32_t absentSession = 88881;
     hpaeRendererManager_->OnSessionEffectMaterialized(absentSession);
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.size(), 0u);
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(probeScene, channels, layout),
+        SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -5095,7 +5121,10 @@ HWTEST_F(HpaeRendererManagerTest, OnSessionEffectMaterialized_SplitSceneWritesOv
     InjectOverrideChain(scene);
 
     hpaeRendererManager_->OnSessionEffectMaterialized(sessionId);
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 1u);
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));   // split scene -> route has_value -> Set applied
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -5124,10 +5153,16 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_NoneSceneNoClearOverride,
     InjectOverrideChain(otherScene);
     HpaeRendererManager::ChannelOverrideRoute setRoute{otherScene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(setRoute);
-    ASSERT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(otherScene), 1u);
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(otherScene, channels, layout),
+        SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));   // override applied
 
     EXPECT_EQ(hpaeRendererManager_->DeleteProcessCluster(sessionId), SUCCESS);
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(otherScene), 1u);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(otherScene, channels, layout),
+        SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));   // NONE route -> no Clear -> override retained
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -5155,11 +5190,15 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_NoClearWithoutSessionEffe
     InjectOverrideChain(scene);
     HpaeRendererManager::ChannelOverrideRoute setRoute{scene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(setRoute);
-    ASSERT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 1u);
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));   // override applied
 
     EXPECT_EQ(hpaeRendererManager_->DeleteProcessCluster(sessionId), SUCCESS);
     // route valid but no SE node -> Clear short-circuited -> override retained.
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 1u);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -5191,11 +5230,15 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_ClearsOverrideWithSession
     InjectOverrideChain(scene);
     HpaeRendererManager::ChannelOverrideRoute setRoute{scene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(setRoute);
-    ASSERT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 1u);
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));   // override applied
 
     EXPECT_EQ(hpaeRendererManager_->DeleteProcessCluster(sessionId), SUCCESS);
     // route valid AND SE node present -> Clear taken -> override erased.
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 0u);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -5255,10 +5298,14 @@ HWTEST_F(HpaeRendererManagerTest, HandleSessionEffectMaterializeFailure_ClearsOv
 
     HpaeRendererManager::ChannelOverrideRoute setRoute{scene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(setRoute);
-    ASSERT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 1u);
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));   // override applied
 
     hpaeRendererManager_->HandleSessionEffectMaterializeFailure(sessionId, -1, node);
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 0u);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -5273,14 +5320,20 @@ HWTEST_F(HpaeRendererManagerTest, HandleSessionEffectMaterializeFailure_NoneScen
     InjectOverrideChain(otherScene);
     HpaeRendererManager::ChannelOverrideRoute setRoute{otherScene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(setRoute);
-    ASSERT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(otherScene), 1u);
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(otherScene, channels, layout),
+        SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));   // override applied
 
     auto callback = std::make_shared<StatusCallbackRecorder>();
     hpaeRendererManager_->RegisterSendMsgCallback(callback);
 
     hpaeRendererManager_->HandleSessionEffectMaterializeFailure(absentSession, -1, node);
     // route nullopt -> Clear skipped -> otherScene override retained.
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(otherScene), 1u);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(otherScene, channels, layout),
+        SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -5307,13 +5360,17 @@ HWTEST_F(HpaeRendererManagerTest, DestroySessionEffect_ClearsOverride_SplitScene
 
     EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    // CreateSessionEffect -> OnSessionEffectMaterialized -> SetChannelOverrideForRoute writes override.
-    ASSERT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 1u);
+    // CreateSessionEffect -> OnSessionEffectMaterialized -> SetChannelOverrideForRoute -> override applied.
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));
 
     EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     // route has_value -> ClearChannelOverrideForRoute -> override erased.
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 0u);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -5339,11 +5396,15 @@ HWTEST_F(HpaeRendererManagerTest, DetachSessionEffectNodeForRefresh_ClearsOverri
 
     EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    ASSERT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 1u);
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));   // CreateSessionEffect auto-applied override
 
     hpaeRendererManager_->DetachSessionEffectNodeForRefresh(sessionId, HPAE_SCENE_SPLIT_MEDIA);
     // oldRoute(split) has_value -> ClearChannelOverrideForRoute -> override erased.
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(scene), 0u);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO));
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
