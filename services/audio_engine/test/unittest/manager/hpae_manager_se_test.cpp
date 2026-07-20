@@ -1521,31 +1521,6 @@ HWTEST_F(HpaeManagerSeE2eTest, ChannelOverride_RematerializeSuccessSmoke, TestSi
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.size(), 0u);
 }
 
-// ---------------------------------------------------------------------------
-// --- ChannelOverride clear old route on refresh route migration (Task B6, scenario 11a) ---
-//
-// Same fixture limitation as Task B2/B3/B4/B5: AudioEffectChainManager is NOT init'd and
-// SetupStreamWithSE sets sessionNodeMap_.sceneType = HPAE_SCENE_EFFECT_NONE, so
-// GetProcessorType(TEST_SESSION_ID) returns NONE and BuildChannelOverrideRoute returns nullopt.
-// To assert scenario 11a (refresh route migration: old route's override cleared, new route's
-// override set) we must additionally construct a route MIGRATION (sceneType change between
-// connectedProcessorType_ and GetProcessorType) on a RUNNING, SE-armed chain — the fixture does
-// not arm real effect chains, so a positive "old key cleared / new key set" assertion cannot hold
-// here. Two complementary cases:
-//   1) DISABLED_ChannelOverride_RouteMigrationClearsOldSetsNew — the intended map-state assertion
-//      (skipped by gtest; needs a route-migration test seam/E2E environment: a non-NONE scene
-//      whose effect chain is armed, plus a way to flip the effective sceneType so
-//      connectedProcessorType_ != GetProcessorType at HPAE_SESSION_RUNNING). Covers scenario 11a:
-//      old route cleared by the new BuildChannelOverrideRouteFromProcessorType(connectedProcessorType_)
-//      + ClearChannelOverrideForRoute hook; new route set by ConnectInputSession ->
-//      MaterializeSessionEffectFromAttachState success branch (Task B5).
-//   2) ChannelOverride_RouteMigrationNoneSmoke — drives the real refresh route-migration path
-//      (RefreshProcessClusterByDeviceInner migration branch) directly under the NONE scene. With
-//      connectedProcessorType_ = NONE the old route resolves to nullopt, so the new clear hook
-//      must short-circuit without touching the singleton (no crash, map stays empty). Protects
-//      the new oldRoute-capture + ClearChannelOverrideForRoute call against regressions on the
-//      NONE branch.
-
 HWTEST_F(HpaeManagerSeE2eTest, DISABLED_ChannelOverride_RouteMigrationClearsOldSetsNew, TestSize.Level1)
 {
     // Scenario 11a: refresh route migration (sceneType change). The migration branch clears the
@@ -1564,18 +1539,6 @@ HWTEST_F(HpaeManagerSeE2eTest, DISABLED_ChannelOverride_RouteMigrationClearsOldS
     ASSERT_TRUE(oldRoute.has_value());
     std::string oldKey = oldRoute->sceneType + "_&_" + "DEVICE_TYPE_SPEAKER";
     ASSERT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(oldKey), 1u);
-
-    // Trigger route migration: make connectedProcessorType_ != GetProcessorType(sessionId) on a
-    // RUNNING session. RefreshProcessClusterByDeviceInner migration branch then:
-    //   - captures oldRoute from node->connectedProcessorType_ (OLD scene, pre-migration)
-    //   - DetachSessionEffectNodeForRefresh
-    //   - clears oldRoute's override key  <-- Task B6 new hook
-    //   - DisConnectInputSession + ConnectInputSession
-    //     (ConnectInputSession -> MaterializeSessionEffectFromAttachState success branch sets the
-    //      NEW route's override via OnSessionEffectMaterialized, Task B5)
-    // TriggerRouteMigration(TEST_SESSION_ID);  // test seam: flip effective sceneType at RUNNING
-    // rendererManager_->RefreshProcessClusterByDevice();
-    // ProcessRmMessages();
 
     // OLD route's override key must be cleared by the Task B6 hook.
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->channelOverrideMap_.count(oldKey), 0u);

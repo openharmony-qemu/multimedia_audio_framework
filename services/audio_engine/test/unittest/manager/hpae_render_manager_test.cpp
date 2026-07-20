@@ -5021,31 +5021,12 @@ HWTEST_F(HpaeRendererManagerTest, IsRemoteDevice_LocalClass_001, TestSize.Level1
     ASSERT_NE(mgr, nullptr);
     EXPECT_EQ(mgr->IsRemoteDevice(), false);
 }
-// ===========================================================================
-// ChannelOverride branch coverage for hpae_renderer_manager.cpp:
-//   - SetChannelOverrideForRoute / ClearChannelOverrideForRoute: the plain
-//     (non-enhanced) else-branch. The enhanced if-branch is gated on
-//     Util::IsEnhancedRoutingSupported(), a process-cached sysparam that
-//     defaults to false in the unit-test environment and cannot be flipped at
-//     runtime, so that branch is intentionally not covered here (consistent
-//     with the DISABLED_ convention in hpae_manager_se_test.cpp).
-//   - OnSessionEffectMaterialized: route.has_value() true / false.
-//   - DeleteProcessCluster: route.has_value() && HasSessionEffectNode(sessionId).
-//
-// AudioEffectChainManager is a process-wide singleton. SetChannelOverride /
-// ClearChannelOverride resolve routeKey -> chain -> chain.sceneType and only
-// then write/erase channelOverrideMap_, so a chain for the scene must exist.
-// InjectOverrideChain() injects a minimal AudioEffectChain(sceneType) (its ctor
-// sets sceneType_ and loads no effect lib) to make those writes observable.
-// Assertions go through ConsultChannelOverride (same routeKey -> chain -> scene
-// resolution Set/Clear use) instead of reading the private channelOverrideMap_.
-// Each case calls ResetInfo() on exit.
-// ===========================================================================
+
 void InjectOverrideChain(const std::string &sceneType)
 {
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-   AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
 }
 
 // SetChannelOverrideForRoute: plain (non-enhanced) else-branch writes the override.

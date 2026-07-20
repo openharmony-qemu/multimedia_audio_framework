@@ -322,8 +322,8 @@ HpaeProcessorType HpaeRendererManager::GetConnectedProcessorType(uint32_t sessio
     return node->connectedProcessorType_;
 }
 
-std::optional<HpaeRendererManager::ChannelOverrideRoute>
-    HpaeRendererManager::BuildChannelOverrideRouteFromProcessorType(HpaeProcessorType sceneType) const
+std::optional<ChannelOverrideRoute> HpaeRendererManager::BuildChannelOverrideRouteFromProcessorType(
+    HpaeProcessorType sceneType) const
 {
     if (sceneType == HPAE_SCENE_EFFECT_NONE) {
         return std::nullopt;
@@ -335,8 +335,7 @@ std::optional<HpaeRendererManager::ChannelOverrideRoute>
     return route;
 }
 
-std::optional<HpaeRendererManager::ChannelOverrideRoute>
-    HpaeRendererManager::BuildChannelOverrideRoute(uint32_t sessionId) const
+std::optional<ChannelOverrideRoute> HaeRendererManager::BuildChannelOverrideRoute(uint32_t sessionId) const
 {
     return BuildChannelOverrideRouteFromProcessorType(GetProcessorType(sessionId));
 }
