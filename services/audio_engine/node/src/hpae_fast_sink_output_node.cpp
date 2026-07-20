@@ -96,6 +96,7 @@ void HpaeFastSinkOutputNode::DoProcess()
         reSyncTrace.End();
         needReSyncPosition_ = false;
         curTime = ClockTime::GetCurNano();
+        return;
     }
 
     CheckTimeAndBufferReady(curWritePos, wakeUpTime, curTime);
@@ -658,6 +659,18 @@ void HpaeFastSinkOutputNode::ReSyncPosition()
     lastPredictWakeUpTime_ = 0;
     if (dstAudioBuffer_ != nullptr) {
         uint64_t nextWritePos = frame + dstSpanSizeInframe_;
+        // DSP will read next frame at nanoTime + spanDuration_; ensure at least 1ms margin
+        // before DSP's next read, otherwise fwk write may fall behind DSP read.
+        int64_t curTime = ClockTime::GetCurNano();
+        int64_t nextDspReadTime = nanoTime + spanDuration_;
+        int64_t timeToNextDspRead = nextDspReadTime - curTime;
+        if (timeToNextDspRead < MIN_TIME_TO_NEXT_DSP_READ_NS) {
+            AUDIO_WARNING_LOG("DSP next read time is too close to current time, nanoTime:"
+                "%{public}" PRId64 " curTime:%{public}" PRId64
+                " nextDspReadTime(us):%{public}" PRId64,
+                nanoTime, curTime, nextDspReadTime / AUDIO_NS_PER_US);
+            nextWritePos += dstSpanSizeInframe_;
+        }
         InitAudiobuffer(false);
         int32_t ret = dstAudioBuffer_->ResetCurReadWritePos(nextWritePos, nextWritePos, false);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "ResetCurReadWritePos failed.");

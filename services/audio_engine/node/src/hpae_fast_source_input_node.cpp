@@ -85,6 +85,7 @@ void HpaeFastSourceInputNode::DoProcess()
         CHECK_AND_RETURN_LOG(ResetReadPosition(), "ResetReadPosition failed");
         reSyncTrace.End();
         needReSyncPosition_ = false;
+        return;
     }
 
     uint64_t handlePos = srcAudioBuffer_->GetCurWriteFrame();
