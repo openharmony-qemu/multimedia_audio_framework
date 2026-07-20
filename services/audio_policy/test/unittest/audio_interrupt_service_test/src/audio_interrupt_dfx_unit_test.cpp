@@ -152,6 +152,12 @@ HWTEST_F(AudioInterruptDfxUnitTest, CheckShortInterruptEvent_001, TestSize.Level
     interruptDfx->CheckShortInterruptEvent(streamId);
     ret = interruptDfx->audioInterruptCheckInfo_[streamId].errorEvents.front().errorInfo;
     EXPECT_EQ(ret, "");
+
+    interruptCheckInfo.isMuteStream = true;
+    interruptDfx->audioInterruptCheckInfo_[streamId] = interruptCheckInfo;
+    interruptDfx->CheckShortInterruptEvent(streamId);
+    ret = interruptDfx->audioInterruptCheckInfo_[streamId].errorEvents.front().errorInfo;
+    EXPECT_EQ(ret, "");
 }
 } // namespace AudioStandard
 } // namespace OHOS
