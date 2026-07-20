@@ -823,7 +823,6 @@ void HpaeCapturerManager::StopOuputNode()
     if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
         sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceDeInit();
     }
-    sourceInputClusterMap_.clear();
 }
 
 int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceInfo, bool isReload)
@@ -848,6 +847,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
         for (const auto &it : moveInfos) {
             DeleteOutputSession(it.sessionId, true);
         }
+        sourceInputClusterMap_.clear();
         sourceInfo_ = sourceInfo;
         int32_t ret = InitCapturerManager();
         if (ret != SUCCESS) {
