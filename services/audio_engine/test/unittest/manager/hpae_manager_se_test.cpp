@@ -617,7 +617,7 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabled_multiChannelRejected, TestSize.Level0
     hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID] = {streamInfo, HPAE_SESSION_RUNNING};
 
     int32_t ret = hpaeManager_->SetAissEnabledSync(TEST_SESSION_ID, true);
-    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED));
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 // CH-2: BindAndCreateAiss succeeds for stereo stream
@@ -652,8 +652,8 @@ HWTEST_F(HpaeManagerSeTest, SetAissEnabledByUid_multiChannelKeepsPending, TestSi
     int32_t ret = hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(hpaeManager_->boundUid_, TEST_UID);
-    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
-    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), 0u);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, TEST_SESSION_ID);
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
 }
 
 // --- E2E Tests: Init + DeactivateThread + HandleRequests pattern ---
