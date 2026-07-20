@@ -155,6 +155,19 @@ static const sptr<IAudioPolicy> RecoverAndGetAudioPolicyManagerProxy()
     return gsp;
 }
 
+sptr<IRemoteObject> AudioPolicyManager::GetAudioPolicyClientStubObject()
+{
+    std::unique_lock<std::mutex> lock(registerCallbackMutex_);
+    if (audioPolicyClientStubCB_ == nullptr) {
+        audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+        CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, nullptr,
+            "audioPolicyClientStubCB_ is nullptr");
+    }
+    sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "audioPolicyClientStubCB_->AsObject is nullptr");
+    return object;
+}
+
 int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp)
 {
     AudioXCollie audioXCollie("AudioPolicyManager::RegisterPolicyCallbackClientFunc", TIME_OUT_SECONDS,
@@ -3629,7 +3642,7 @@ float AudioPolicyManager::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t
     float volume = -1;
     int32_t ret = gsp->GetVolumeInDbByStream(static_cast<int32_t>(streamUsage), volumeLevel,
         static_cast<int32_t>(deviceType), volume);
-    return ret == SUCCESS ? volume : ERR_INVALID_PARAM;
+    return ret == SUCCESS ? volume : static_cast<float>(ERR_INVALID_PARAM);
 }
 
 std::vector<AudioVolumeType> AudioPolicyManager::GetSupportedAudioVolumeTypes()
@@ -4110,7 +4123,9 @@ int32_t AudioPolicyManager::EnableSystemRecordController(bool show, const System
     }
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    int32_t ret = gsp->EnableSystemRecordController(show, config);
+    sptr<IRemoteObject> object = GetAudioPolicyClientStubObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "audio policy client stub object is NULL.");
+    int32_t ret = gsp->EnableSystemRecordController(show, config, object);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "EnableSystemRecordController failed");
     return SUCCESS;
 }

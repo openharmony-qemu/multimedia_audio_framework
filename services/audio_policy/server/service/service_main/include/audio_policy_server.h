@@ -821,7 +821,8 @@ public:
     int32_t IsAudioSeparationEffectSupported(bool &ret) override;
     int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId) override;
     int32_t SetAudioSeparationEffectVolume(int32_t type, double volume) override;
-    int32_t EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config) override;
+    int32_t EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config,
+        const sptr<IRemoteObject> &object) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;

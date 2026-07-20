@@ -6302,10 +6302,19 @@ int32_t AudioPolicyServer::DestroyLoopback(int32_t type, int32_t &ret)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config)
+int32_t AudioPolicyServer::EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config,
+    const sptr<IRemoteObject> &object)
 {
     int32_t uid = IPCSkeleton::GetCallingUid();
     int32_t pid = IPCSkeleton::GetCallingPid();
+    if (show) {
+        sptr<AudioServerDeathRecipient> recipient = new AudioServerDeathRecipient(pid, uid);
+        CHECK_AND_RETURN_RET_LOG(recipient && object, ERR_INVALID_PARAM, "recipient/remote object is null");
+        recipient->SetNotifyCb([](pid_t pid, pid_t uid) {
+            AudioRecordController::GetInstance().OnAppDied(uid, pid);
+        });
+        object->AddDeathRecipient(recipient);
+    }
     return AudioRecordController::GetInstance().EnableSystemRecordController(show, config, uid, pid);
 }
 } // namespace AudioStandard
