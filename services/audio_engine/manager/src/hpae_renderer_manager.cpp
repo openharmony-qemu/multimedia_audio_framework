@@ -335,7 +335,7 @@ std::optional<ChannelOverrideRoute> HpaeRendererManager::BuildChannelOverrideRou
     return route;
 }
 
-std::optional<ChannelOverrideRoute> HaeRendererManager::BuildChannelOverrideRoute(uint32_t sessionId) const
+std::optional<ChannelOverrideRoute> HpaeRendererManager::BuildChannelOverrideRoute(uint32_t sessionId) const
 {
     return BuildChannelOverrideRouteFromProcessorType(GetProcessorType(sessionId));
 }
