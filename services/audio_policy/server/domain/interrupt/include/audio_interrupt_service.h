@@ -332,6 +332,7 @@ private:
         const AudioFocusEntry &focusEntry);
     bool CanMixForIncomingSession(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         const AudioFocusEntry &focusEntry);
+    bool IsIndependentStrategyValid(const AudioInterrupt &interrupt);
     bool CanMixForActiveSession(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         const AudioFocusEntry &focusEntry);
     bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
