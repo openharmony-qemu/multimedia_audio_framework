@@ -5035,7 +5035,7 @@ HWTEST_F(HpaeRendererManagerTest, ChannelOverride_SetForRoute_PlainBranchWritesM
     const std::string scene = "SCENE_MOVIE";
     InjectOverrideChain(scene);
 
-    HpaeRendererManager::ChannelOverrideRoute route{scene, DEVICE_TYPE_SPEAKER, 0};
+    ChannelOverrideRoute route{scene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(route);
 
     uint32_t channels = 0;
@@ -5053,7 +5053,7 @@ HWTEST_F(HpaeRendererManagerTest, ChannelOverride_ClearForRoute_PlainBranchErase
     const std::string scene = "SCENE_MOVIE";
     InjectOverrideChain(scene);
 
-    HpaeRendererManager::ChannelOverrideRoute route{scene, DEVICE_TYPE_SPEAKER, 0};
+    ChannelOverrideRoute route{scene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(route);
     uint32_t channels = 0;
     uint64_t layout = 0;
@@ -5132,7 +5132,7 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_NoneSceneNoClearOverride,
     // Pre-set an unrelated-scene override; the NONE route must leave it untouched.
     const std::string otherScene = "SCENE_OTHER";
     InjectOverrideChain(otherScene);
-    HpaeRendererManager::ChannelOverrideRoute setRoute{otherScene, DEVICE_TYPE_SPEAKER, 0};
+    ChannelOverrideRoute setRoute{otherScene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(setRoute);
     uint32_t channels = 0;
     uint64_t layout = 0;
@@ -5169,7 +5169,7 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_NoClearWithoutSessionEffe
 
     std::string scene = TransProcessorTypeToSceneType(HPAE_SCENE_SPLIT_MEDIA); // "SCENE_EXTRA"
     InjectOverrideChain(scene);
-    HpaeRendererManager::ChannelOverrideRoute setRoute{scene, DEVICE_TYPE_SPEAKER, 0};
+    ChannelOverrideRoute setRoute{scene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(setRoute);
     uint32_t channels = 0;
     uint64_t layout = 0;
@@ -5209,7 +5209,7 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_ClearsOverrideWithSession
 
     std::string scene = TransProcessorTypeToSceneType(HPAE_SCENE_SPLIT_MEDIA); // "SCENE_EXTRA"
     InjectOverrideChain(scene);
-    HpaeRendererManager::ChannelOverrideRoute setRoute{scene, DEVICE_TYPE_SPEAKER, 0};
+    ChannelOverrideRoute setRoute{scene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(setRoute);
     uint32_t channels = 0;
     uint64_t layout = 0;
@@ -5277,7 +5277,7 @@ HWTEST_F(HpaeRendererManagerTest, HandleSessionEffectMaterializeFailure_ClearsOv
     auto callback = std::make_shared<StatusCallbackRecorder>();
     hpaeRendererManager_->RegisterSendMsgCallback(callback);
 
-    HpaeRendererManager::ChannelOverrideRoute setRoute{scene, DEVICE_TYPE_SPEAKER, 0};
+    ChannelOverrideRoute setRoute{scene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(setRoute);
     uint32_t channels = 0;
     uint64_t layout = 0;
@@ -5299,7 +5299,7 @@ HWTEST_F(HpaeRendererManagerTest, HandleSessionEffectMaterializeFailure_NoneScen
 
     const std::string otherScene = "SCENE_OTHER";
     InjectOverrideChain(otherScene);
-    HpaeRendererManager::ChannelOverrideRoute setRoute{otherScene, DEVICE_TYPE_SPEAKER, 0};
+    ChannelOverrideRoute setRoute{otherScene, DEVICE_TYPE_SPEAKER, 0};
     hpaeRendererManager_->SetChannelOverrideForRoute(setRoute);
     uint32_t channels = 0;
     uint64_t layout = 0;
