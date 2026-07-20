@@ -36,7 +36,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
 class HpaeRendererManager : public IHpaeRendererManager {
 public:
     HpaeRendererManager(HpaeSinkInfo &sinkInfo);
@@ -160,11 +159,6 @@ private:
     bool CheckIsStreamRunning();
     HpaeProcessorType GetProcessorType(uint32_t sessionId) const;
     HpaeProcessorType GetConnectedProcessorType(uint32_t sessionId) const;
-    struct ChannelOverrideRoute {
-        std::string sceneType;
-        DeviceType deviceType;
-        uint32_t renderId;
-    };
     std::optional<ChannelOverrideRoute> BuildChannelOverrideRoute(uint32_t sessionId) const;
     std::optional<ChannelOverrideRoute> BuildChannelOverrideRouteFromProcessorType(
         HpaeProcessorType sceneType) const;
