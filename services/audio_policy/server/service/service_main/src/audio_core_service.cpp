@@ -1677,16 +1677,6 @@ void SilentStreamDataTransferCallback::OnDataTransferStateChange(const int32_t &
     });
 }
 
-void SilentStreamDataTransferCallback::OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
-    const uint32_t &sessionId, const bool &isMuted)
-{
-    CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "asyncHandler_ is nullptr");
-    asyncHandler_->PostAsyncAction({
-        .action = std::make_shared<NotifyMuteSilentStateAction>(sessionId, isMuted),
-        .priority = AsyncActionHandler::ActionPriority::IMMEDIATE
-    });
-}
-
 void RegisterSilentStreamCallbackAction::Exec()
 {
     auto callback = std::make_shared<SilentStreamDataTransferCallback>(asyncHandler_, eventEntry_);
