@@ -276,6 +276,12 @@ bool Util::IsEnhancedRoutingSupported()
     return isEnhancedRoutingSupported;
 }
 
+bool Util::IsCustomSampleRateValid(uint32_t customSampleRate)
+{
+    return (customSampleRate >= SAMPLE_RATE_8000 && customSampleRate <= SAMPLE_RATE_384000 &&
+        customSampleRate % SAMPLE_RATE_RESOLUTION_10 == 0) || customSampleRate == SAMPLE_RATE_11025;
+}
+
 WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
 {
     startTimeNs_ = ClockTime::GetCurNano();

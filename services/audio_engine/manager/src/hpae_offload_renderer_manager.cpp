@@ -425,6 +425,7 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     // Do NOT DropEffect here — that happens in DeleteInputSession after this returns.
     if (sessionEffectNode_ != nullptr && loudnessGainNode_ != nullptr
         && converterForLoudness_ != nullptr) {
+        sessionEffectNode_->PauseEffect();
         loudnessGainNode_->DisConnect(sessionEffectNode_);
         sessionEffectNode_->DisConnect(converterForLoudness_);
     } else if (loudnessGainNode_ != nullptr && converterForLoudness_ != nullptr) {
@@ -468,9 +469,6 @@ void HpaeOffloadRendererManager::TearDownCurrentNodePipeline(uint32_t sessionId,
 {
     if (sessionId != curNode_->GetSessionId()) {
         return;
-    }
-    if (isSessionEffectActive) {
-        sessionEffectNode_->PauseEffect();
     }
     DisConnectInputSession();
     bool isRunningWithSink = state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr;
@@ -1204,6 +1202,7 @@ int32_t HpaeOffloadRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, A
     CHECK_AND_RETURN_RET(sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId, SUCCESS);
     basicFormat.rate = SAMPLE_RATE_48000;
     basicFormat.audioChannelInfo.numChannels = STEREO;
+    basicFormat.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
     return SUCCESS;
 }
 
