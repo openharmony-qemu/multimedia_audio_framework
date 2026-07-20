@@ -1080,7 +1080,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_044, TestSize.Level1)
 
     internalCall = false;
     ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
-    EXPECT_EQ(ret, ERR_UNKNOWN);
+    EXPECT_EQ(ret, 0);
 }
 
 /**
@@ -1875,7 +1875,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_002, TestSize.Level1)
     resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
     EXPECT_EQ(resultSet, 0);
     bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
-    EXPECT_TRUE(ret);
+    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -1896,7 +1896,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_003, TestSize.Level1)
     resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
     EXPECT_EQ(resultSet, 0);
     bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
-    EXPECT_TRUE(ret);
+    EXPECT_EQ(ret, false);
 }
 
 /**

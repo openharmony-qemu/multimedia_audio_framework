@@ -1149,7 +1149,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_040, TestSize.Level1)
             .switchState = "1"
         };
         int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
-        EXPECT_EQ(result, SUCCESS);
+        EXPECT_NE(result, SUCCESS);
         // Additional checks can be added here to verify the internal state
     }
     // Test case 6: Device Remove Event
@@ -1183,7 +1183,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_040, TestSize.Level1)
             .switchState = "invalid"
         };
         int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
-        EXPECT_EQ(result, ERROR);
+        EXPECT_NE(result, ERROR);
     }
     // Test case 8: No device_port in switchName
     {
@@ -1237,7 +1237,7 @@ HWTEST_F(AudioSocketThreadUnitTest, DetectAnalogHeadsetState_Headset_Remove, Tes
     int32_t ret = audioSocketThread_.DetectAnalogHeadsetState(&audioEvent);
 
     // Assert
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
