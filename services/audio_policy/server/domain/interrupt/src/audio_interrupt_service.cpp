@@ -3352,7 +3352,8 @@ bool AudioInterruptService::IsHandleIter(
     std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterNew, bool isExistActiveInjectFocus)
 {
     // When distributed focus sync, at most only one focus can be restored as active.
-    if (iterNew->first.deviceTag != "" && iterNew->second == ACTIVE && isExistActiveInjectFocus) {
+    if (iterNew->first.deviceTag != "" && isExistActiveInjectFocus &&
+        iterNew->second == ACTIVE && oldState == PAUSE) {
         ++iterActive;
         ++iterNew;
         return true;
