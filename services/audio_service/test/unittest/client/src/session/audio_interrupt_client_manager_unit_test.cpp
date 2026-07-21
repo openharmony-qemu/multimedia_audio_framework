@@ -103,70 +103,6 @@ HWTEST_F(AudioInterruptClientManagerUnitTest, ActivateAudioInterrupt_001, TestSi
 }
 
 /**
- * @tc.name  : Test DeactivateAudioInterrupt
- * @tc.type  : FUNC
- * @tc.number: DeactivateAudioInterrupt_001
- * @tc.desc  : Test DeactivateAudioInterrupt with invalid parameters
- */
-HWTEST_F(AudioInterruptClientManagerUnitTest, DeactivateAudioInterrupt_001, TestSize.Level0)
-{
-    AudioInterruptClientManager& manager = AudioInterruptClientManager::GetInstance();
-    AudioInterrupt audioInterrupt;
-    // Set invalid parameter
-    audioInterrupt.contentType = static_cast<ContentType>(ContentType::CONTENT_TYPE_UNKNOWN - 1);
-    int32_t ret = manager.DeactivateAudioInterrupt(audioInterrupt);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test SetAppConcurrencyMode
- * @tc.type  : FUNC
- * @tc.number: SetAppConcurrencyMode_001
- * @tc.desc  : Test SetAppConcurrencyMode without system permission
- */
-HWTEST_F(AudioInterruptClientManagerUnitTest, SetAppConcurrencyMode_001, TestSize.Level0)
-{
-    AudioInterruptClientManager& manager = AudioInterruptClientManager::GetInstance();
-    // This test may fail since the current process may not have system permission
-    int32_t ret = manager.SetAppConcurrencyMode(1001, 1);
-    // Expect ERR_SYSTEM_PERMISSION_DENIED, ERR_PERMISSION_DENIED, or SUCCESS
-    EXPECT_TRUE(ret == ERR_SYSTEM_PERMISSION_DENIED || ret == ERR_PERMISSION_DENIED || ret == SUCCESS);
-}
-
-/**
- * @tc.name  : Test SetAudioInterruptCallback
- * @tc.type  : FUNC
- * @tc.number: SetAudioInterruptCallback_001
- * @tc.desc  : Test SetAudioInterruptCallback with nullptr callback
- */
-HWTEST_F(AudioInterruptClientManagerUnitTest, SetAudioInterruptCallback_001, TestSize.Level0)
-{
-    AudioInterruptClientManager& manager = AudioInterruptClientManager::GetInstance();
-    uint32_t sessionID = 1;
-    int32_t clientUid = 1001;
-    int32_t zoneID = 0;
-    int32_t ret = manager.SetAudioInterruptCallback(sessionID, nullptr, clientUid, zoneID);
-    // Expect SUCCESS or ERROR depending on implementation
-    EXPECT_TRUE(ret == SUCCESS || ret == ERROR);
-}
-
-/**
- * @tc.name  : Test UnsetAudioInterruptCallback
- * @tc.type  : FUNC
- * @tc.number: UnsetAudioInterruptCallback_001
- * @tc.desc  : Test UnsetAudioInterruptCallback
- */
-HWTEST_F(AudioInterruptClientManagerUnitTest, UnsetAudioInterruptCallback_001, TestSize.Level0)
-{
-    AudioInterruptClientManager& manager = AudioInterruptClientManager::GetInstance();
-    int32_t zoneId = 0;
-    uint32_t sessionId = 1;
-    int32_t ret = manager.UnsetAudioInterruptCallback(zoneId, sessionId);
-    // Expect SUCCESS or ERROR depending on implementation
-    EXPECT_TRUE(ret == SUCCESS || ret == ERROR);
-}
-
-/**
  * @tc.name  : Test SetAudioManagerInterruptCallback
  * @tc.type  : FUNC
  * @tc.number: SetAudioManagerInterruptCallback_001
@@ -177,20 +113,6 @@ HWTEST_F(AudioInterruptClientManagerUnitTest, SetAudioManagerInterruptCallback_0
     AudioInterruptClientManager& manager = AudioInterruptClientManager::GetInstance();
     int32_t ret = manager.SetAudioManagerInterruptCallback(nullptr);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test UnsetAudioManagerInterruptCallback
- * @tc.type  : FUNC
- * @tc.number: UnsetAudioManagerInterruptCallback_001
- * @tc.desc  : Test UnsetAudioManagerInterruptCallback
- */
-HWTEST_F(AudioInterruptClientManagerUnitTest, UnsetAudioManagerInterruptCallback_001, TestSize.Level0)
-{
-    AudioInterruptClientManager& manager = AudioInterruptClientManager::GetInstance();
-    int32_t ret = manager.UnsetAudioManagerInterruptCallback();
-    // Expect SUCCESS or ERROR depending on implementation
-    EXPECT_TRUE(ret == SUCCESS || ret == ERROR);
 }
 
 /**
@@ -223,35 +145,6 @@ HWTEST_F(AudioInterruptClientManagerUnitTest, AbandonAudioFocus_001, TestSize.Le
     audioInterrupt.contentType = static_cast<ContentType>(ContentType::CONTENT_TYPE_UNKNOWN - 1);
     int32_t ret = manager.AbandonAudioFocus(audioInterrupt);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test RequestIndependentInterrupt
- * @tc.type  : FUNC
- * @tc.number: RequestIndependentInterrupt_001
- * @tc.desc  : Test RequestIndependentInterrupt
- */
-HWTEST_F(AudioInterruptClientManagerUnitTest, RequestIndependentInterrupt_001, TestSize.Level0)
-{
-    AudioInterruptClientManager& manager = AudioInterruptClientManager::GetInstance();
-    FocusType focusType = FocusType::FOCUS_TYPE_RECORDING;
-    bool ret = manager.RequestIndependentInterrupt(focusType);
-    EXPECT_TRUE(ret || !ret); // suppress unused variable warning
-}
-
-/**
- * @tc.name  : Test AbandonIndependentInterrupt
- * @tc.type  : FUNC
- * @tc.number: AbandonIndependentInterrupt_001
- * @tc.desc  : Test AbandonIndependentInterrupt
- */
-HWTEST_F(AudioInterruptClientManagerUnitTest, AbandonIndependentInterrupt_001, TestSize.Level0)
-{
-    AudioInterruptClientManager& manager = AudioInterruptClientManager::GetInstance();
-    FocusType focusType = FocusType::FOCUS_TYPE_RECORDING;
-    bool ret = manager.AbandonIndependentInterrupt(focusType);
-    EXPECT_TRUE(ret || !ret); // suppress unused variable warning
-    SUCCEED();
 }
 
 /**

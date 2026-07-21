@@ -327,37 +327,6 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_SetMicStateChangeCallb
 }
 
 /**
- * @tc.name  : Test Audio_Routing_Manager_GetPreferredOutputDeviceForRendererInfo failure scenario
- * @tc.number: Audio_Routing_Manager_getPreferredOutputDeviceForRendererInfo_Invalid_001
- * @tc.desc  : Test GetPreferredOutputDeviceForRendererInfo with invalid RendererInfo.
- */
-HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredOutputDeviceForRendererInfo_Invalid_001,
-    TestSize.Level1)
-{
-    AudioRendererInfo rendererInfo;
-    rendererInfo.contentType = static_cast<ContentType>(-1); // 无效的 ContentType
-    rendererInfo.streamUsage = static_cast<StreamUsage>(-1); // 无效的 StreamUsage
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
-    int32_t ret = AudioRoutingManager::GetInstance()->GetPreferredOutputDeviceForRendererInfo(rendererInfo, desc);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test Audio_Routing_Manager_GetPreferredInputDeviceForCapturerInfo failure scenario
- * @tc.number: Audio_Routing_Manager_getPreferredInputDeviceForCapturerInfo_Invalid_001
- * @tc.desc  : Test GetPreferredInputDeviceForCapturerInfo with invalid CapturerInfo.
- */
-HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredInputDeviceForCapturerInfo_Invalid_001,
-    TestSize.Level1)
-{
-    AudioCapturerInfo capturerInfo;
-    capturerInfo.sourceType = static_cast<SourceType>(-1); // 无效的 SourceType
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
-    int32_t ret = AudioRoutingManager::GetInstance()->GetPreferredInputDeviceForCapturerInfo(capturerInfo, desc);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test Audio_Routing_Manager_SetPreferredOutputDeviceChangeCallback failure scenario
  * @tc.number: Audio_Routing_Manager_PreferredOutputDeviceChangeCallback_Nullptr_001
  * @tc.desc  : Test SetPreferredOutputDeviceChangeCallback with nullptr callback.

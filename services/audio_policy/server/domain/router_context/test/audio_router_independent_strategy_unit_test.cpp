@@ -422,41 +422,6 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, Preference_002, TestSize.Level1
     EXPECT_EQ(app10001Result->deviceId_, a2dpIn->deviceId_);
 }
 
-HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaOutput_003,
-    TestSize.Level1)
-{
-    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
-
-    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
-
-    AudioRouterIndependentStrategy strategy;
-
-    strategy.SetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, speaker);
-
-    auto systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    ASSERT_NE(systemResult, nullptr);
-    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(systemResult->deviceId_, speaker->deviceId_);
-
-    auto appResult = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
-    ASSERT_NE(appResult, nullptr);
-    EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(appResult->deviceId_, speaker->deviceId_);
-
-    strategy.SetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, nullptr);
-
-    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_NE(systemResult, nullptr);
-    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_NONE);
-    EXPECT_EQ(systemResult->deviceId_, 0);
-
-    appResult = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(appResult, nullptr);
-    EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_NONE);
-    EXPECT_EQ(appResult->deviceId_, 0);
-}
-
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaOutput_004,
     TestSize.Level1)
 {

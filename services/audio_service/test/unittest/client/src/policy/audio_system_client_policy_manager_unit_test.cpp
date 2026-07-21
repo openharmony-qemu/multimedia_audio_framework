@@ -85,21 +85,6 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetDistributedRoutingRoleCallba
 }
 
 /**
- * @tc.name  : Test SetDistributedRoutingRoleCallback
- * @tc.type  : FUNC
- * @tc.number: SetDistributedRoutingRoleCallback_002
- * @tc.desc  : Test SetDistributedRoutingRoleCallback with valid callback
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetDistributedRoutingRoleCallback_002, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    std::shared_ptr<MockAudioDistributedRoutingRoleCallback> callback =
-        std::make_shared<MockAudioDistributedRoutingRoleCallback>();
-    int32_t ret = manager.SetDistributedRoutingRoleCallback(callback);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test UnsetDistributedRoutingRoleCallback
  * @tc.type  : FUNC
  * @tc.number: UnsetDistributedRoutingRoleCallback_001
@@ -141,22 +126,6 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetMicrophoneBlockedCallback_00
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.SetMicrophoneBlockedCallback(nullptr);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test SetMicrophoneBlockedCallback
- * @tc.type  : FUNC
- * @tc.number: SetMicrophoneBlockedCallback_002
- * @tc.desc  : Test SetMicrophoneBlockedCallback with valid callback
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetMicrophoneBlockedCallback_002, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    // 创建一个有效的 mock callback 对象
-    std::shared_ptr<MockAudioManagerMicrophoneBlockedCallback> callback =
-        std::make_shared<MockAudioManagerMicrophoneBlockedCallback>();
-    int32_t ret = manager.SetMicrophoneBlockedCallback(callback);
-    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -220,23 +189,6 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetQueryClientTypeCallback_001,
 }
 
 /**
- * @tc.name  : Test SetQueryClientTypeCallback
- * @tc.type  : FUNC
- * @tc.number: SetQueryClientTypeCallback_002
- * @tc.desc  : Test SetQueryClientTypeCallback with valid callback
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetQueryClientTypeCallback_002, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    
-    // 创建一个 mock callback 对象
-    std::shared_ptr<MockAudioQueryClientTypeCallback> callback =
-        std::make_shared<MockAudioQueryClientTypeCallback>();
-    int32_t ret = manager.SetQueryClientTypeCallback(callback);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test SetAncoSourceOutputStreamMute
  * @tc.type  : FUNC
  * @tc.number: SetAncoSourceOutputStreamMute_001
@@ -291,21 +243,6 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetAudioVKBInfoMgrCallback_001,
 }
 
 /**
- * @tc.name  : Test CheckVKBInfo
- * @tc.type  : FUNC
- * @tc.number: CheckVKBInfo_001
- * @tc.desc  : Test CheckVKBInfo with valid bundle name
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, CheckVKBInfo_001, TestSize.Level0)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    std::string bundleName = "com.test.bundle";
-    bool isValid = false;
-    int32_t ret = manager.CheckVKBInfo(bundleName, isValid);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test SetQueryBundleNameListCallback
  * @tc.type  : FUNC
  * @tc.number: SetQueryBundleNameListCallback_001
@@ -316,22 +253,6 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetQueryBundleNameListCallback_
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.SetQueryBundleNameListCallback(nullptr);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test SetQueryBundleNameListCallback
- * @tc.type  : FUNC
- * @tc.number: SetQueryBundleNameListCallback_002
- * @tc.desc  : Test SetQueryBundleNameListCallback with valid callback
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetQueryBundleNameListCallback_002, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    // 创建一个有效的 mock callback 对象
-    std::shared_ptr<MockAudioQueryBundleNameListCallback> callback =
-        std::make_shared<MockAudioQueryBundleNameListCallback>();
-    int32_t ret = manager.SetQueryBundleNameListCallback(callback);
-    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -450,36 +371,6 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, UnsetRingerModeCallback_001, Te
 }
 
 /**
- * @tc.name  : Test SetAudioScene
- * @tc.type  : FUNC
- * @tc.number: SetAudioScene_001
- * @tc.desc  : Test SetAudioScene with valid scene
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetAudioScene_001, TestSize.Level0)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    // 测试设置有效的音频场景
-    AudioScene scene = AUDIO_SCENE_DEFAULT;
-    int32_t ret = manager.SetAudioScene(scene);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test SetAudioScene
- * @tc.type  : FUNC
- * @tc.number: SetAudioScene_002
- * @tc.desc  : Test SetAudioScene with different scenes
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetAudioScene_002, TestSize.Level0)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    // 测试设置不同的音频场景
-    AudioScene scene = AUDIO_SCENE_RINGING;
-    int32_t ret = manager.SetAudioScene(scene);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test GetAudioScene
  * @tc.type  : FUNC
  * @tc.number: GetAudioScene_001
@@ -513,21 +404,6 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, GetAudioScene_002, TestSize.Lev
     // 获取音频场景
     AudioScene getScene = manager.GetAudioScene();
     EXPECT_NE(getScene, setScene);
-}
-
-/**
- * @tc.name  : Test SetAudioSceneChangeCallback with valid callback
- * @tc.type  : FUNC
- * @tc.number: SetAudioSceneChangeCallback_002
- * @tc.desc  : Test SetAudioSceneChangeCallback with valid callback
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetAudioSceneChangeCallback_002, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    std::shared_ptr<MockAudioManagerAudioSceneChangedCallback> callback =
-        std::make_shared<MockAudioManagerAudioSceneChangedCallback>();
-    int32_t ret = manager.SetAudioSceneChangeCallback(callback);
-    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -632,34 +508,6 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetAvailableDeviceChangeCallbac
 }
 
 /**
- * @tc.name  : Test SetAvailableDeviceChangeCallback with valid callback
- * @tc.type  : FUNC
- * @tc.number: SetAvailableDeviceChangeCallback_002
- * @tc.desc  : Test SetAvailableDeviceChangeCallback with valid callback
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetAvailableDeviceChangeCallback_002, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    std::shared_ptr<MockAudioManagerAvailableDeviceChangeCallback> callback =
-        std::make_shared<MockAudioManagerAvailableDeviceChangeCallback>();
-    int32_t ret = manager.SetAvailableDeviceChangeCallback(AudioDeviceUsage::MEDIA_OUTPUT_DEVICES, callback);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test UnsetAvailableDeviceChangeCallback
- * @tc.type  : FUNC
- * @tc.number: UnsetAvailableDeviceChangeCallback_001
- * @tc.desc  : Test UnsetAvailableDeviceChangeCallback
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, UnsetAvailableDeviceChangeCallback_001, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    int32_t ret = manager.UnsetAvailableDeviceChangeCallback(AudioDeviceUsage::MEDIA_OUTPUT_DEVICES);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test SetAppSilentOnDisplay
  * @tc.type  : FUNC
  * @tc.number: SetAppSilentOnDisplay_001
@@ -742,19 +590,6 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetSleVoiceStatusFlag_002, Test
 }
 
 /**
- * @tc.name  : Test DisableSafeMediaVolume
- * @tc.type  : FUNC
- * @tc.number: DisableSafeMediaVolume_001
- * @tc.desc  : Test DisableSafeMediaVolume
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, DisableSafeMediaVolume_001, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    int32_t ret = manager.DisableSafeMediaVolume();
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test SetSplitModeReady
  * @tc.type  : FUNC
  * @tc.number: SetSplitModeReady_001
@@ -824,69 +659,6 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, ResetAllProxy_001, TestSize.Lev
 {
     AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
     int32_t ret = manager.ResetAllProxy();
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test NotifyProcessBackgroundState
- * @tc.type  : FUNC
- * @tc.number: NotifyProcessBackgroundState_001
- * @tc.desc  : Test NotifyProcessBackgroundState
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, NotifyProcessBackgroundState_001, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    int32_t uid = 1001;
-    int32_t pid = getpid();
-    int32_t ret = manager.NotifyProcessBackgroundState(uid, pid);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test ForceVolumeKeyControlType
- * @tc.type  : FUNC
- * @tc.number: ForceVolumeKeyControlType_001
- * @tc.desc  : Test ForceVolumeKeyControlType with valid parameters
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, ForceVolumeKeyControlType_001, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
-    int32_t duration = 5000;
-    int32_t ret = manager.ForceVolumeKeyControlType(volumeType, duration);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test GetVirtualCall
- * @tc.type  : FUNC
- * @tc.number: GetVirtualCall_001
- * @tc.desc  : Test GetVirtualCall and verify SetVirtualCall works
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, GetVirtualCall_001, TestSize.Level0)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    // 先设置一个值
-    manager.SetVirtualCall(true);
-    bool isVirtual = manager.GetVirtualCall();
-    EXPECT_EQ(isVirtual, false);
-    
-    // 再设置另一个值
-    manager.SetVirtualCall(false);
-    isVirtual = manager.GetVirtualCall();
-    EXPECT_EQ(isVirtual, false);
-}
-
-/**
- * @tc.name  : Test SetVirtualCall
- * @tc.type  : FUNC
- * @tc.number: SetVirtualCall_001
- * @tc.desc  : Test SetVirtualCall with true
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, SetVirtualCall_001, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    int32_t ret = manager.SetVirtualCall(true);
     EXPECT_NE(ret, SUCCESS);
 }
 

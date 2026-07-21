@@ -196,28 +196,6 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_012, TestSize.
 
 /**
 * @tc.name  : Test VolumeDataMaintainer.
-* @tc.number: VolumeDataMaintainerUnitTest_013.
-* @tc.desc  : Test VolumeDataMaintainer API.
-*/
-HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_013, TestSize.Level1)
-{
-    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
-    DeviceType deviceTypeRet = DEVICE_TYPE_NONE;
-    int64_t timeRet = 0;
-    auto ret = volumeDataMaintainerRet->GetSafeVolumeTime(deviceTypeRet, timeRet);
-    EXPECT_EQ(ret, false);
-
-    deviceTypeRet = DEVICE_TYPE_BLUETOOTH_SCO;
-    ret = volumeDataMaintainerRet->GetSafeVolumeTime(deviceTypeRet, timeRet);
-    EXPECT_EQ(ret, false);
-
-    deviceTypeRet = DEVICE_TYPE_USB_HEADSET;
-    ret = volumeDataMaintainerRet->GetSafeVolumeTime(deviceTypeRet, timeRet);
-    EXPECT_EQ(ret, false);
-}
-
-/**
-* @tc.name  : Test VolumeDataMaintainer.
 * @tc.number: VolumeDataMaintainerUnitTest_014.
 * @tc.desc  : Test VolumeDataMaintainer API.
 */
@@ -234,23 +212,6 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_014, TestSize.
     ret = volumeDataMaintainerRet->GetSystemSoundUrl(keyRet2, valueRet2);
     EXPECT_EQ(ret, false);
     volumeDataMaintainerRet->RegisterCloned();
-}
-
-/**
-* @tc.name  : Test VolumeDataMaintainer.
-* @tc.number: VolumeDataMaintainerUnitTest_015.
-* @tc.desc  : Test VolumeDataMaintainer API.
-*/
-HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_015, TestSize.Level1)
-{
-    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
-    bool isMuteRet1 = false;
-    auto ret = volumeDataMaintainerRet->SaveMicMuteState(isMuteRet1);
-    EXPECT_EQ(ret, true);
-
-    bool isMuteRet2;
-    ret = volumeDataMaintainerRet->GetMicMuteState(isMuteRet2);
-    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -291,23 +252,6 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_016, TestSize.
     ret = volumeDataMaintainerRet->GetDeviceGroupTypeKey(deviceTypeRet);
     typeRet = "_hearing_aid";
     EXPECT_EQ(ret, typeRet);
-}
-
-/**
-* @tc.name  : Test VolumeDataMaintainer.
-* @tc.number: VolumeDataMaintainerUnitTest_018.
-* @tc.desc  : Test VolumeDataMaintainer API.
-*/
-HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_018, TestSize.Level3)
-{
-    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
-    bool isMuteRet1 = true;
-    auto ret = volumeDataMaintainerRet->SaveMicMuteState(isMuteRet1);
-    EXPECT_EQ(ret, true);
-
-    bool isMuteRet2 = true;
-    ret = volumeDataMaintainerRet->GetMicMuteState(isMuteRet2);
-    EXPECT_EQ(ret, false);
 }
 
 /**

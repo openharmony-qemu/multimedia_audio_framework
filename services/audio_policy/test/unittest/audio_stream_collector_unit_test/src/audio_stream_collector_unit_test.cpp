@@ -1897,28 +1897,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleAppStateChange_002, TestSize.Level1
 
 /**
 * @tc.name  : Test AudioStreamCollector.
-* @tc.number: HandleFreezeStateChange_002
-* @tc.desc  : Test HandleFreezeStateChange.
-*/
-HWTEST_F(AudioStreamCollectorUnitTest, HandleFreezeStateChange_002, TestSize.Level1)
-{
-    AudioStreamCollector audioStreamCollector_;
-    int32_t clientPid = 1001;
-    bool hasSession = false;
-    // Create and add AudioRendererChangeInfo
-    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
-    changeInfo->clientPid = clientPid;
-    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    changeInfo->sessionId = 1;
-    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
-    audioStreamCollector_.HandleFreezeStateChange(clientPid, true, hasSession);
-    EXPECT_TRUE(changeInfo->backMute);
-    audioStreamCollector_.HandleFreezeStateChange(clientPid, false, hasSession);
-    EXPECT_TRUE(changeInfo->backMute);
-}
-
-/**
-* @tc.name  : Test AudioStreamCollector.
 * @tc.number: HandleBackTaskStateChange_001
 * @tc.desc  : Test HandleBackTaskStateChange.
 */

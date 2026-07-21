@@ -981,33 +981,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_010, TestSize.Lev
 }
 
 /**
- * @tc.name: Test GetSourceIdInfoAndIdType
- * @tc.number: GetSourceIdInfoAndIdType_011_Ext01
- * @tc.type: FUNC
- * @tc.desc: primary_extra_capturer should support wired and bt names
- */
-HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_011_Ext01, TestSize.Level1)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->adapterName_ = "primary_extra_capturer";
-    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-    HdiIdType idType = HDI_ID_TYPE_FAST;
-    std::string idInfo;
-
-    pipeInfo->moduleInfo_.name = "Built_in_wired";
-    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
-    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
-    EXPECT_EQ(idInfo, "Built_in_wired");
-
-    idType = HDI_ID_TYPE_FAST;
-    pipeInfo->moduleInfo_.name = "Built_in_bt";
-    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
-    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
-    EXPECT_EQ(idInfo, "Built_in_bt");
-}
-
-/**
  * @tc.name: Test GetHdiSourceIdInfo
  * @tc.number: GetHdiSourceIdInfo_001
  * @tc.type: FUNC

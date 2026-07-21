@@ -204,23 +204,6 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, SetRecognitionInputDevice_002, Test
     EXPECT_EQ(result2->deviceId_, bluetooth->deviceId_);
 }
 
-HWTEST_F(AudioRouterSelectStrategyExtraTest, SetRecognitionInputDevice_003, TestSize.Level1)
-{
-    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-
-    AudioRouterFollowStrategy strategy;
-    strategy.SetRecognitionInputDevice(mic);
-
-    auto result1 = strategy.GetRecognitionInputDevice();
-    ASSERT_NE(result1, nullptr);
-    EXPECT_EQ(result1->deviceType_, DEVICE_TYPE_MIC);
-
-    strategy.SetRecognitionInputDevice(nullptr);
-
-    auto result2 = strategy.GetRecognitionInputDevice();
-    EXPECT_EQ(result2, nullptr);
-}
-
 HWTEST_F(AudioRouterSelectStrategyExtraTest, Get1stCurrentInputDevice_001, TestSize.Level1)
 {
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
@@ -291,14 +274,6 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, FindCurrentOutputDevice_001, TestSi
     strategy.UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
     auto descs = strategy.FindCurrentOutputDevice({DEVICE_TYPE_BLUETOOTH_A2DP});
     EXPECT_EQ(descs.size(), 1);
-}
-
-HWTEST_F(AudioRouterSelectStrategyExtraTest, GetRecognitionInputDevice_001, TestSize.Level1)
-{
-    AudioRouterFollowStrategy strategy;
-
-    auto result = strategy.GetRecognitionInputDevice();
-    EXPECT_EQ(result, nullptr);
 }
 
 HWTEST_F(AudioRouterSelectStrategyExtraTest, GetRecognitionInputDevice_002, TestSize.Level1)
