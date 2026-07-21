@@ -366,6 +366,12 @@ public:
         return streamId > other.streamId || pid > other.pid || uid > other.uid;
     }
 
+    bool IsSameAudioInterrupt(const AudioInterrupt &audioInterrupt) const
+    {
+        return streamId == audioInterrupt.streamId &&
+            deviceTag == audioInterrupt.deviceTag;
+    }
+
     static bool Marshalling(Parcel &parcel, const AudioInterrupt &interrupt)
     {
         bool res = parcel.WriteInt32(static_cast<int32_t>(interrupt.streamUsage));

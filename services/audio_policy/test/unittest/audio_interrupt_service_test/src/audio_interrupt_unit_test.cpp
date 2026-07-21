@@ -6741,5 +6741,43 @@ HWTEST_F(AudioInterruptUnitTest, IsStreamActive_001, TestSize.Level1)
     EXPECT_TRUE(interruptServiceTest->IsStreamActive(10002));
 }
 
+/**
+ * @tc.name  : Test RemoveAudioZoneInterrupts with deviceTag
+ * @tc.number: RemoveAudioZoneInterrupts_001
+ * @tc.desc  : Test RemoveAudioZoneInterrupts_001 not call RemoveStreamInfo when deviceTag is not empty
+ */
+HWTEST_F(AudioInterruptUnitTest, RemoveAudioZoneInterrupts_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = 100;
+    audioInterrupt.deviceTag = "DEVICE_A";
+    audioInterrupt.pid = 1001;
+    interruptServiceTest->zonesMap_[0]->audioFocusInfoList.emplace_back(audioInterrupt, ACTIVE);
+
+    AudioInterrupt audioInterrupt2;
+    audioInterrupt2.streamId = 200;
+    audioInterrupt2.deviceTag = "";
+    audioInterrupt2.pid = 1002;
+    interruptServiceTest->zonesMap_[0]->audioFocusInfoList.emplace_back(audioInterrupt2, ACTIVE);
+
+    interruptServiceTest->sessionService_.sessionMap_[1002] = std::make_shared<AudioSession>(
+        1002, AudioSessionStrategy(), audioSessionStateMonitor_);
+
+    AudioFocusIterator focusIter;
+    auto it1 = interruptServiceTest->zonesMap_[0]->audioFocusInfoList.begin();
+    auto it2 = std::next(it1);
+    focusIter.push_back(it1);
+    focusIter.push_back(it2);
+
+    interruptServiceTest->zoneManager_.service_ = interruptServiceTest.get();
+    interruptServiceTest->zoneManager_.RemoveAudioZoneInterrupts(0, focusIter);
+
+    EXPECT_EQ(interruptServiceTest->sessionService_.sessionMap_.size(), 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS
