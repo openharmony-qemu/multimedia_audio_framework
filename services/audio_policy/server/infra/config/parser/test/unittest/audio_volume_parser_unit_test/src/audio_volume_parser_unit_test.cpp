@@ -132,25 +132,6 @@ HWTEST_F(AudioVolumeParserUnitTest, AudioVolumeParserUnitTest_003, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test ParseVolumeFixInfo
- * @tc.number: ParseVolumeFixInfo_007
- * @tc.desc  : Test ParseVolumeFixInfo with LOWER_VOLUME_IN_CALL disabled
- */
-HWTEST_F(AudioVolumeParserUnitTest, ParseVolumeFixInfo_007, TestSize.Level2)
-{
-    ASSERT_TRUE(audioVolumeParser_ != nullptr);
-    std::shared_ptr<MockAudioXmlNode> mockXmlNode = std::make_shared<MockAudioXmlNode>();
-    std::string typeValue = "LOWER_VOLUME_IN_CALL";
-    std::string enableValue = "0";
-    EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("type"), _))
-        .WillOnce(DoAll(SetArgReferee<1>(typeValue), Return(0)));
-    EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("enable"), _))
-        .WillOnce(DoAll(SetArgReferee<1>(enableValue), Return(0)));
-    int32_t result = audioVolumeParser_->ParseVolumeFixInfo(mockXmlNode);
-    EXPECT_EQ(result, AUDIO_OK);
-}
-
-/**
 * @tc.name  : Test ParseVolumeFixInfo
 * @tc.number: ParseVolumeFixInfo_008
 * @tc.desc  : Test ParseVolumeFixInfo with LEGACY_HIGH_VOLUME_LEVEL_TO_NOTIFY

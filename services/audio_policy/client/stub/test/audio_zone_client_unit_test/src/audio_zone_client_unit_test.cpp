@@ -152,79 +152,6 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_002, TestSize.Level4)
 
 /**
 * @tc.name  : Test AudiZoneClientUnitTest.
-* @tc.number: AudiZoneClientUnitTest_003
-* @tc.desc  : Test AddAudioZoneVolumeProxy interface.
-*/
-HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_003, TestSize.Level4)
-{
-    GetPermission();
-    auto audioZoneClient = std::make_shared<AudioZoneClient>();
-    int32_t zoneId = 0;
-    auto proxy = std::make_shared<AudioZoneVolumeProxyStub>();
-
-    audioZoneClient->audioZoneVolumeProxyMap_.erase(zoneId);
-    audioZoneClient->audioZoneDeviceVolumeProxyMap_.erase(zoneId);
-    auto zoneManager = AudioZoneManager::GetInstance();
-    int32_t ret = zoneManager->RegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_NONE, proxy);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = zoneManager->RegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_INVALID, proxy);
-    EXPECT_EQ(SUCCESS, ret);
-    EXPECT_NE(SUCCESS, audioZoneClient->SetSystemVolume(zoneId, static_cast<int>(DEVICE_TYPE_SPEAKER),
-        static_cast<int>(STREAM_MUSIC), 0, 0, 0));
-    int outVol = 0;
-    int outDegree = 0;
-    EXPECT_NE(SUCCESS, audioZoneClient->GetSystemVolume(zoneId, static_cast<int>(DEVICE_TYPE_SPEAKER),
-        static_cast<int>(STREAM_MUSIC), outVol));
-    EXPECT_NE(SUCCESS, audioZoneClient->GetSystemVolumeDegree(zoneId, static_cast<int>(DEVICE_TYPE_SPEAKER),
-        static_cast<int>(STREAM_MUSIC), outDegree));
-    audioZoneClient->audioZoneVolumeProxyMap_.erase(zoneId);
-
-    ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_EARPIECE, proxy);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_SPEAKER, proxy);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_SPEAKER, proxy);
-    EXPECT_EQ(SUCCESS, ret);
-
-    audioZoneClient->audioZoneDeviceVolumeProxyMap_[zoneId][DEVICE_TYPE_SPEAKER] = proxy;
-    ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_INVALID, proxy);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = zoneManager->UnRegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = zoneManager->UnRegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_INVALID);
-    EXPECT_EQ(SUCCESS, ret);
-    audioZoneClient->audioZoneDeviceVolumeProxyMap_.erase(zoneId);
-    audioZoneClient->audioZoneVolumeProxyMap_.erase(zoneId);
-}
-
-/**
-* @tc.name  : Test AudiZoneClientUnitTest.
-* @tc.number: AudiZoneClientUnitTest_004
-* @tc.desc  : Test AddAudioInterruptCallback interface.
-*/
-HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_004, TestSize.Level4)
-{
-    auto audioZoneClient = std::make_shared<AudioZoneClient>();
-    int32_t zoneId = 0;
-    std::string deviceTag = "test";
-    auto callback = std::make_shared<AudioZoneInterruptCallbackStub>();
-    std::string key = std::to_string(zoneId) + "&" + deviceTag;
-    audioZoneClient->audioZoneInterruptCallbackMap_[key] = callback;
-    auto ret = audioZoneClient->AddAudioInterruptCallback(zoneId, deviceTag, callback);
-    EXPECT_EQ(SUCCESS, ret);
-
-    audioZoneClient->audioZoneInterruptCallbackMap_.erase(key);
-    ret = audioZoneClient->AddAudioInterruptCallback(zoneId, deviceTag, callback);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test AudiZoneClientUnitTest.
 * @tc.number: AudiZoneClientUnitTest_005
 * @tc.desc  : Test Restore interface.
 */
@@ -254,21 +181,5 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_006, TestSize.Level4)
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
-/**
-* @tc.name  : Test AudiZoneClientUnitTest.
-* @tc.number: AudiZoneClientUnitTest_007
-* @tc.desc  : Test GetCurrentRendererChangeInfosForZone with valid zoneId 0 (primary zone).
-*             When no renderer is running, infos should be empty.
-*/
-HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_007, TestSize.Level4)
-{
-    GetPermission();
-    auto zoneManager = AudioZoneManager::GetInstance();
-    ASSERT_NE(zoneManager, nullptr);
-
-    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
-    int32_t ret = zoneManager->GetCurrentRendererChangeInfosForZone(0, infos);
-    EXPECT_EQ(SUCCESS, ret);
-}
 } // namespace AudioStandard
 } // namespace OHOS

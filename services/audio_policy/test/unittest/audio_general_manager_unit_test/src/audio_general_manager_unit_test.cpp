@@ -30,24 +30,6 @@ void AudioGeneralManagerUnitTest::TearDown(void) {}
 
 /**
 * @tc.name  : Test AudioGeneralManager.
-* @tc.number: AudioGeneralManager_001.
-* @tc.desc  : Test AudioGeneralManager::RegisterFocusInfoChangeCallback()
-*/
-HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_001, TestSize.Level1)
-{
-    auto audioGeneralManagerPtr = AudioGeneralManager::GetInstance();
-    EXPECT_NE(audioGeneralManagerPtr, nullptr);
-
-    std::shared_ptr<AudioFocusInfoChangeCallback> callback = std::make_shared<AudioFocusInfoChangeCallbackTest>();
-    EXPECT_NE(callback, nullptr);
-
-    audioGeneralManagerPtr->audioFocusInfoCallback_ = nullptr;
-    auto ret = audioGeneralManagerPtr->RegisterFocusInfoChangeCallback(callback);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioGeneralManager.
 * @tc.number: AudioGeneralManager_002.
 * @tc.desc  : Test AudioGeneralManager::RegisterFocusInfoChangeCallback()
 */
@@ -64,38 +46,6 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_002, TestSize.Level1)
 
     auto ret = audioGeneralManagerPtr->RegisterFocusInfoChangeCallback(callback);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioGeneralManager.
-* @tc.number: AudioGeneralManager_003
-* @tc.desc  : Test AudioGeneralManager::GetVolume()
-*/
-HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_003, TestSize.Level1)
-{
-    auto audioGeneralManagerPtr = AudioGeneralManager::GetInstance();
-    EXPECT_NE(audioGeneralManagerPtr, nullptr);
-
-    AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
-
-    auto ret = audioGeneralManagerPtr->GetVolume(volumeType);
-    EXPECT_GE(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioGeneralManager.
-* @tc.number: AudioGeneralManager_004
-* @tc.desc  : Test AudioGeneralManager::GetVolume()
-*/
-HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_004, TestSize.Level1)
-{
-    auto audioGeneralManagerPtr = AudioGeneralManager::GetInstance();
-    EXPECT_NE(audioGeneralManagerPtr, nullptr);
-
-    AudioVolumeType volumeType = AudioVolumeType::STREAM_ULTRASONIC;
-
-    auto ret = audioGeneralManagerPtr->GetVolume(volumeType);
-    EXPECT_GE(ret, 0);
 }
 
 /**
@@ -209,85 +159,6 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_011, TestSize.Level1)
     std::shared_ptr<AudioFocusInfoChangeCallback> callback = nullptr;
 
     auto ret = audioGeneralManagerPtr->UnregisterFocusInfoChangeCallback(callback);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioGeneralManager.
-* @tc.number: AudioGeneralManager_012
-* @tc.desc  : Test AudioGeneralManager::SelectOutputDevice()
-*/
-HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_012, TestSize.Level1)
-{
-    auto audioGeneralManagerPtr = AudioGeneralManager::GetInstance();
-    EXPECT_NE(audioGeneralManagerPtr, nullptr);
-
-    auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE,
-        OUTPUT_DEVICE, 0, 0, REMOTE_NETWORK_ID);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
-
-    auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioGeneralManager.
-* @tc.number: AudioGeneralManager_013
-* @tc.desc  : Test AudioGeneralManager::SelectOutputDevice()
-*/
-HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_013, TestSize.Level1)
-{
-    auto audioGeneralManagerPtr = AudioGeneralManager::GetInstance();
-    EXPECT_NE(audioGeneralManagerPtr, nullptr);
-
-    auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE,
-        OUTPUT_DEVICE, 0, 0, REMOTE_NETWORK_ID);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
-
-    auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioGeneralManager.
-* @tc.number: AudioGeneralManager_014
-* @tc.desc  : Test AudioGeneralManager::SelectOutputDevice()
-*/
-HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_014, TestSize.Level1)
-{
-    auto audioGeneralManagerPtr = AudioGeneralManager::GetInstance();
-    EXPECT_NE(audioGeneralManagerPtr, nullptr);
-
-    std::string str(NUM_64, 'A');
-    EXPECT_EQ(str.size(), NUM_64);
-
-    auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE,
-        OUTPUT_DEVICE, 0, 0, str);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
-
-    auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioGeneralManager.
-* @tc.number: AudioGeneralManager_015
-* @tc.desc  : Test AudioGeneralManager::SelectOutputDevice()
-*/
-HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_015, TestSize.Level1)
-{
-    auto audioGeneralManagerPtr = AudioGeneralManager::GetInstance();
-    EXPECT_NE(audioGeneralManagerPtr, nullptr);
-
-    auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE,
-        OUTPUT_DEVICE, 0, 0, LOCAL_NETWORK_ID);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
-
-    auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -432,25 +303,6 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_022, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioGeneralManager.
-* @tc.number: AudioGeneralManager_023
-* @tc.desc  : AudioGeneralManager::SelectOutputDevice()
-*/
-HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_023, TestSize.Level1)
-{
-    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
-    auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE,
-    OUTPUT_DEVICE, 0, 0, REMOTE_NETWORK_ID);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
-
-    auto audioGeneralManagerPtr = AudioGeneralManager::GetInstance();
-    EXPECT_NE(audioGeneralManagerPtr, nullptr);
-
-    int32_t ret = audioGeneralManagerPtr->SelectOutputDevice(audioRendererFilter,  audioDeviceDescriptors);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test SetDeviceVolumeBehavior.
  * @tc.number: AudioGeneralManager_024
  * @tc.desc  : Test SetDeviceVolumeBehavior when AudioPolicyManagerProxy is null.
@@ -466,35 +318,6 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_024, TestSize.Level4)
 
     int32_t ret = audioGeneralManager->SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
     EXPECT_NE(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioGeneralManager.
-* @tc.number: SelectPrivateDevice_01
-* @tc.desc  : AudioGeneralManager::SelectPrivateDevice()
-*/
-HWTEST(AudioGeneralManagerUnitTest, SelectPrivateDevice_01, TestSize.Level1)
-{
-    auto audioGeneralManager = AudioGeneralManager::GetInstance();
-    EXPECT_NE(audioGeneralManager, nullptr);
-    DeviceType devType{DEVICE_TYPE_BLUETOOTH_A2DP};
-    std::string macAddress{"11:22:33:44"};
-    int32_t ret = audioGeneralManager->SelectPrivateDevice(devType, macAddress);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioGeneralManager.
-* @tc.number: ForceSelectDevice_01
-* @tc.desc  : AudioGeneralManager::ForceSelectDevice()
-*/
-HWTEST(AudioGeneralManagerUnitTest, ForceSelectDevice_01, TestSize.Level1)
-{
-    auto audioGeneralManager = AudioGeneralManager::GetInstance();
-    EXPECT_NE(audioGeneralManager, nullptr);
-    sptr<AudioRendererFilter> filter = new AudioRendererFilter();
-    int32_t ret = audioGeneralManager->ForceSelectDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:11", filter);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

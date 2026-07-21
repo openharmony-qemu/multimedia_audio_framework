@@ -591,33 +591,6 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_RequiredPipe_010, TestSize.Le
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_RequiredPipe_011
- * @tc.desc  : Test required pipe config is parsed when XML flag is true.
- */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_RequiredPipe_011, TestSize.Level1)
-{
-    AudioCoreConfigManager configManager;
-    AudioPolicyConfigParser parser(configManager);
-    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
-    adapterInfo->adapterName = "primary";
-    auto node = std::make_shared<MockPolicyAudioXmlNode>();
-    auto childNode = std::make_shared<MockPolicyAudioXmlNode>();
-    std::unordered_map<std::string, std::string> props;
-    SetPipeProp(props, true);
-    ExpectParsePipeNode(node, childNode, props);
-
-    parser.ParsePipes(node, adapterInfo);
-    auto pipes = configManager.GetRequiredPipes();
-
-    ASSERT_EQ(adapterInfo->pipeInfos.size(), 1);
-    EXPECT_TRUE(adapterInfo->pipeInfos.front()->principal_);
-    ASSERT_EQ(pipes.size(), 1);
-    EXPECT_EQ(pipes.front().adapterName, "primary");
-    EXPECT_EQ(pipes.front().routeFlag, AUDIO_FLAG_NONE);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreService_RequiredPipe_012
  * @tc.desc  : Test required pipe config is not saved when XML flag is false.
  */

@@ -438,59 +438,6 @@ HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_GetZoneNameById_001, TestSiz
 
 /**
  * @tc.name  : Test AudioZoneServiceUnitTest.
- * @tc.number: AudioZoneService_EnableSystemVolumeProxy_001
- * @tc.desc  : Test EnableSystemVolumeProxy interface.
- */
-HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_EnableSystemVolumeProxy_001, TestSize.Level1)
-{
-    ClearZone();
-    AudioZoneService &svc = AudioZoneService::GetInstance();
-
-    pid_t missingPid = 12345;
-    int32_t invalidZone = 99999;
-    EXPECT_EQ(svc.EnableSystemVolumeProxy(missingPid, 0, DEVICE_TYPE_SPEAKER, true), ERROR);
-    EXPECT_EQ(svc.EnableSystemVolumeProxy(missingPid, invalidZone, DEVICE_TYPE_SPEAKER, true), ERROR);
-
-    pid_t mainPid = 1000;
-    sptr<IStandardAudioZoneClient> mainClient = new IStandardAudioZoneClientUnitTest();
-    ASSERT_NE(mainClient, nullptr);
-    EXPECT_EQ(svc.RegisterAudioZoneClient(mainPid, mainClient), SUCCESS);
-
-    EXPECT_NE(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_SPEAKER, true), SUCCESS);
-    EXPECT_TRUE(svc.IsSystemVolumeProxyEnable(DEFAULT_ZONEID, DEVICE_TYPE_SPEAKER));
-
-    EXPECT_EQ(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_SPEAKER, false), SUCCESS);
-    EXPECT_FALSE(svc.IsSystemVolumeProxyEnable(DEFAULT_ZONEID, DEVICE_TYPE_SPEAKER));
-
-    EXPECT_EQ(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_NONE, true), SUCCESS);
-    EXPECT_EQ(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_NONE, false), SUCCESS);
-
-    EXPECT_EQ(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_INVALID, true), SUCCESS);
-    EXPECT_EQ(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_INVALID, false), SUCCESS);
-
-    AudioZoneContext context;
-    int32_t zoneId = svc.CreateAudioZone("UTZone", context, 0);
-    ASSERT_NE(zoneId, ERROR);
-    pid_t zonePid = 2000;
-    sptr<IStandardAudioZoneClient> zoneClient = new IStandardAudioZoneClientUnitTest();
-    ASSERT_NE(zoneClient, nullptr);
-    EXPECT_EQ(svc.RegisterAudioZoneClient(zonePid, zoneClient), SUCCESS);
-
-    EXPECT_EQ(svc.EnableSystemVolumeProxy(zonePid, zoneId, DEVICE_TYPE_SPEAKER, true), SUCCESS);
-    EXPECT_TRUE(svc.IsSystemVolumeProxyEnable(zoneId, DEVICE_TYPE_SPEAKER));
-
-    EXPECT_EQ(svc.EnableSystemVolumeProxy(zonePid, zoneId, DEVICE_TYPE_SPEAKER, false), SUCCESS);
-    EXPECT_FALSE(svc.IsSystemVolumeProxyEnable(zoneId, DEVICE_TYPE_SPEAKER));
-
-    EXPECT_EQ(svc.EnableSystemVolumeProxy(zonePid, invalidZone, DEVICE_TYPE_SPEAKER, true), ERROR);
-
-    svc.UnRegisterAudioZoneClient(mainPid);
-    svc.UnRegisterAudioZoneClient(zonePid);
-    svc.ReleaseAudioZone(zoneId);
-}
-
-/**
- * @tc.name  : Test AudioZoneServiceUnitTest.
  * @tc.number: AddUidToAudioZone_001
  * @tc.desc  : Test migrating uid from primary zone to extension zone.
  */

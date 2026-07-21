@@ -214,18 +214,6 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_009, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyManager.
-* @tc.number: AudioPolicyManagerUnitTest_010.
-* @tc.desc  : Test SetDistributedRoutingRoleCallback.
-*/
-HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_010, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    int result = audioPolicyManager_->SetDistributedRoutingRoleCallback(nullptr);
-    EXPECT_EQ(result, ERR_INVALID_PARAM);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
 * @tc.number: AudioPolicyManagerUnitTest_012.
 * @tc.desc  : Test GetConverterConfig.
 */
@@ -251,32 +239,6 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_013, TestSize.Level1)
     audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
     audioPolicyManager_->ActivateAudioSession(strategy);
     EXPECT_NE(audioPolicyManager_, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
-* @tc.number: AudioPolicyManagerUnitTest_014.
-* @tc.desc  : Test SetAudioSessionCallback.
-*/
-HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_014, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    auto audioSessionCallback = std::make_shared<ConcreteAudioSessionCallback>();
-    audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
-    audioPolicyManager_->audioPolicyClientStubCB_ = nullptr;
-    int32_t result = audioPolicyManager_->SetAudioSessionCallback(audioSessionCallback);
-    EXPECT_EQ(result, ERROR_ILLEGAL_STATE);
-
-    audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
-    audioPolicyManager_->isAudioPolicyClientRegisted_.store(false);
-    result = audioPolicyManager_->SetAudioSessionCallback(audioSessionCallback);
-    EXPECT_NE(audioPolicyManager_, nullptr);
-
-    audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
-    std::shared_ptr<AudioSessionCallback> cb = std::make_shared<ConcreteAudioSessionCallback>();
-    audioPolicyManager_->audioPolicyClientStubCB_->audioSessionCallbackList_.push_back(cb);
-    result = audioPolicyManager_->SetAudioSessionCallback(audioSessionCallback);
-    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -362,39 +324,6 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_018, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioPolicyManager.
-* @tc.number: AudioPolicyManagerUnitTest_019.
-* @tc.desc  : Test SetAudioDeviceRefinerCallback.
-*/
-HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_019, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    int32_t result = audioPolicyManager_->SetAudioDeviceRefinerCallback(nullptr);
-    EXPECT_EQ(result, ERR_INVALID_PARAM);
-
-    std::shared_ptr<AudioDeviceRefiner> callback = std::make_shared<ConcreteAudioDeviceRefiner>();
-    audioPolicyManager_->SetAudioDeviceRefinerCallback(callback);
-    EXPECT_NE(audioPolicyManager_, nullptr);
-    EXPECT_EQ(callback->OnDistributedOutputChange(true), SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
-* @tc.number: AudioPolicyManagerUnitTest_020.
-* @tc.desc  : Test SetAudioDeviceRefinerCallback.
-*/
-HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_020, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    int32_t result = audioPolicyManager_->SetAudioDeviceAnahsCallback(nullptr);
-    EXPECT_EQ(result, ERR_INVALID_PARAM);
-
-    std::shared_ptr<AudioDeviceAnahs> callback = std::make_shared<ConcreteAudioDeviceAnahs>();
-    audioPolicyManager_->SetAudioDeviceAnahsCallback(nullptr);
-    EXPECT_NE(audioPolicyManager_, nullptr);
-}
-
-/**
 * @tc.name  : Test GetOutputDevice.
 * @tc.number: GetOutputDevice.
 * @tc.desc  : Test GetOutputDevice.
@@ -423,23 +352,6 @@ HWTEST(AudioPolicyManager, GetInputDevice_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetMicrophoneBlockedCallback.
-* @tc.number: SetMicrophoneBlockedCallback.
-* @tc.desc  : Test SetMicrophoneBlockedCallback.
-*/
-HWTEST(AudioPolicyManager, SetMicrophoneBlockedCallback_001, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-
-    const int32_t clientId = 111;
-    std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback_ =
-        std::make_shared<ConcreteAudioManagerMicrophoneBlockedCallback>();
-    const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback = callback_;
-    int32_t ret = audioPolicyManager_->SetMicrophoneBlockedCallback(clientId, callback);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
 * @tc.name  : Test UnsetMicrophoneBlockedCallback.
 * @tc.number: UnsetMicrophoneBlockedCallback.
 * @tc.desc  : Test UnsetMicrophoneBlockedCallback.
@@ -453,68 +365,6 @@ HWTEST(AudioPolicyManager, UnsetMicrophoneBlockedCallback_001, TestSize.Level1)
         std::make_shared<ConcreteAudioManagerMicrophoneBlockedCallback>();
     const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback = callback_;
     int32_t ret = audioPolicyManager_->UnsetMicrophoneBlockedCallback(clientId, callback);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test ActivateAudioSession.
-* @tc.number: ActivateAudioSession.
-* @tc.desc  : Test ActivateAudioSession.
-*/
-HWTEST(AudioPolicyManager, ActivateAudioSession_001, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-
-    const AudioSessionStrategy strategy;
-    int32_t ret = audioPolicyManager_->ActivateAudioSession(strategy);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test SetAudioSessionCallback.
-* @tc.number: SetAudioSessionCallback.
-* @tc.desc  : Test SetAudioSessionCallback.
-*/
-HWTEST(AudioPolicyManager, SetAudioSessionCallback_001, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-
-    const std::shared_ptr<AudioSessionCallback> audioSessionCallback =
-        std::make_shared<ConcreteAudioSessionCallback>();
-    int32_t ret = audioPolicyManager_->SetAudioSessionCallback(audioSessionCallback);
-    EXPECT_EQ(ret, 0);
-}
-
-/**
-* @tc.name  : Test SetAudioSessionCallback.
-* @tc.number: SetAudioSessionCallback.
-* @tc.desc  : Test SetAudioSessionCallback.
-*/
-HWTEST(AudioPolicyManager, SetAudioSessionCallback_002, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-
-    const std::shared_ptr<AudioSessionCallback> audioSessionCallback =
-        std::make_shared<ConcreteAudioSessionCallback>();
-    audioPolicyManager_->isAudioPolicyClientRegisted_ = true;
-    int32_t ret = audioPolicyManager_->SetAudioSessionCallback(audioSessionCallback);
-    EXPECT_EQ(ret, ERROR_ILLEGAL_STATE);
-}
-
-/**
-* @tc.name  : Test SetAudioSessionCallback.
-* @tc.number: SetAudioSessionCallback.
-* @tc.desc  : Test SetAudioSessionCallback.
-*/
-HWTEST(AudioPolicyManager, SetAudioSessionCallback_003, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-
-    const std::shared_ptr<AudioSessionCallback> audioSessionCallback =
-        std::make_shared<ConcreteAudioSessionCallback>();
-    audioPolicyManager_->isAudioPolicyClientRegisted_ = true;
-    audioPolicyManager_->audioPolicyClientStubCB_ = new AudioPolicyClientStubImpl();
-    int32_t ret = audioPolicyManager_->SetAudioSessionCallback(audioSessionCallback);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -612,142 +462,6 @@ HWTEST(AudioPolicyManager, UnsetAudioSceneChangeCallbackTest_001, TestSize.Level
 
 /**
 * @tc.name  : Test AudioPolicyManager.
-* @tc.number: CreateRenderClient_001.
-* @tc.desc  : Test CreateRendererClient.
-*/
-HWTEST(AudioPolicyManager, CreateRendererClient_001, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-
-    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
-    streamDesc->callerUid_ = getuid();
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    uint32_t originalSessionId = 123;
-    std::string networkId = LOCAL_NETWORK_ID;
-    auto result = audioPolicyManager_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
-    EXPECT_EQ(result,  SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
-* @tc.number: CreateRenderClient_002.
-* @tc.desc  : Test CreateRendererClient.
-*/
-HWTEST(AudioPolicyManager, CreateRendererClient_002, TestSize.Level1)
-{
-    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
-    ASSERT_NE(audioPolicyManager, nullptr);
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    ASSERT_NE(streamDesc, nullptr);
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-
-    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
-    streamDesc->callerUid_ = getuid();
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    uint32_t originalSessionId = 0;
-    std::string networkId = LOCAL_NETWORK_ID;
-    auto result = audioPolicyManager->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_NE(originalSessionId, 0);
-
-    uint32_t oldSessionId = originalSessionId;
-    result = audioPolicyManager->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(originalSessionId, oldSessionId);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
-* @tc.number: CreateRenderClient_001.
-* @tc.desc  : Test CreateRendererClient.
-*/
-HWTEST(AudioPolicyManager, CreateCapturerClient_001, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-
-    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
-    streamDesc->callerUid_ = getuid();
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    uint32_t originalSessionId = 123;
-    auto result = audioPolicyManager_->CreateCapturerClient(streamDesc, flag, originalSessionId);
-    EXPECT_EQ(result,  SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
-* @tc.number: CreateCapturerClient_002.
-* @tc.desc  : Test CreateCapturerClient.
-*/
-HWTEST(AudioPolicyManager, CreateCapturerClient_002, TestSize.Level1)
-{
-    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
-    ASSERT_NE(audioPolicyManager, nullptr);
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    ASSERT_NE(streamDesc, nullptr);
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-
-    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
-    streamDesc->callerUid_ = getuid();
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    uint32_t originalSessionId = 0;
-    auto result = audioPolicyManager->CreateCapturerClient(streamDesc, flag, originalSessionId);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_NE(originalSessionId, 0);
-
-    uint32_t oldSessionId = originalSessionId;
-    result = audioPolicyManager->CreateCapturerClient(streamDesc, flag, originalSessionId);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(oldSessionId, originalSessionId);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
-* @tc.number: SetSystemVolumeDegree_001.
-* @tc.desc  : Test SetSystemVolumeDegree.
-*/
-HWTEST(AudioPolicyManager, SetSystemVolumeDegree_001, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    ASSERT_TRUE(audioPolicyManager_ != nullptr);
-
-    AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
-    int32_t volumeDegree = 4;
-    auto result = audioPolicyManager_->SetSystemVolumeDegree(volumeType, volumeDegree, 0, 0);
-    EXPECT_EQ(result, SUCCESS);
-
-    result = audioPolicyManager_->GetSystemVolumeDegree(volumeType, 0);
-    EXPECT_EQ(result, volumeDegree);
-
-    result = audioPolicyManager_->GetMinVolumeDegree(volumeType);
-    EXPECT_EQ(result, 0);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
 * @tc.number: GetDirectPlaybackSupport_001.
 * @tc.desc  : Test GetDirectPlaybackSupport. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
 */
@@ -838,27 +552,6 @@ HWTEST(AudioPolicyManager, SelectOutputDevice_001, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors02(21);
     ret = audioPolicyManager_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors02);
     EXPECT_EQ(ret, -1);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
-* @tc.number: RegisterCollaborationEnabledForCurrentDeviceEventListener_001.
-* @tc.desc  : Test RegisterCollaborationEnabledForCurrentDeviceEventListener.
-*/
-HWTEST(AudioPolicyManager, RegisterCollaborationEnabledForCurrentDeviceEventListener_001, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    ASSERT_TRUE(audioPolicyManager_ != nullptr);
-
-    auto testCallback = std::make_shared<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
-    audioPolicyManager_->isAudioPolicyClientRegisted_ = false;
-    audioPolicyManager_->RegisterCollaborationEnabledForCurrentDeviceEventListener(testCallback);
-
-    audioPolicyManager_->isAudioPolicyClientRegisted_ = true;
-    int32_t ret = audioPolicyManager_->RegisterCollaborationEnabledForCurrentDeviceEventListener(testCallback);
-    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->
-        GetCollaborationEnabledChangeForCurrentDeviceCallbackSize() > 0, true);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

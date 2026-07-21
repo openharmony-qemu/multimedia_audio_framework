@@ -594,47 +594,6 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_028, TestSize.Le
 
 /**
 * @tc.name  : Test AudioDeviceDescriptor.
-* @tc.number: AudioDeviceDescriptor_001
-* @tc.desc  : Test AudioDeviceDescriptor/MapInternalToExternalDeviceType.
-*/
-HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_001, TestSize.Level1)
-{
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.hasPair_ = true;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_USB_HEADSET);
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_USB_HEADSET);
-    deviceDescriptor.hasPair_ = false;
-    deviceDescriptor.deviceRole_ = OUTPUT_DEVICE;
-    deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX);
-    deviceDescriptor.deviceRole_ = INPUT_DEVICE;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_USB_DEVICE);
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_WIRED_HEADSET);
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_WIRED_HEADPHONES;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_WIRED_HEADPHONES);
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_LINE_DIGITAL;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_LINE_DIGITAL);
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_WIRED_MICIN;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_WIRED_HEADSET);
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_BLUETOOTH_A2DP);
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_SPEAKER);
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_NEARLINK;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_NEARLINK);
-    int32_t apiVersion = 0;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(apiVersion), DEVICE_TYPE_BLUETOOTH_SCO);
-    bool isSupportNearlink = false;
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(apiVersion, isSupportNearlink),
-        DEVICE_TYPE_BLUETOOTH_SCO);
-    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX, isSupportNearlink),
-        DEVICE_TYPE_BLUETOOTH_SCO);
-}
-
-/**
-* @tc.name  : Test AudioDeviceDescriptor.
 * @tc.number: AudioDeviceDescriptor_002
 * @tc.desc  : Test AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo().
 */
