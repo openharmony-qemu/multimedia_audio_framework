@@ -698,6 +698,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     for (auto usage : usages) {
         FetchDeviceInfo info = {usage, "GetDeviceForVolumeByStreamType"};
+        info.isRunning = true;
         devices.push_back(AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front());
     }
     SortDevicesByPriority(devices);
@@ -728,6 +729,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Str
         }
     }
     FetchDeviceInfo info = {usage, "GetDeviceForVolumeByStreamUsage"};
+    info.isRunning = true;
     return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
 }
 
@@ -772,6 +774,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
         }
     }
     FetchDeviceInfo info = {STREAM_USAGE_MUSIC, "GetDeviceForVolumeByTopPriority"};
+    info.isRunning = true;
     return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
 }
 
