@@ -2961,6 +2961,25 @@ void HpaeManager::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIn
     SendRequest(request, __func__);
 }
 
+void HpaeManager::SetCaptureInjectorMuteByTargetStream(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId, bool isMute)
+{
+    auto request = [this, sinkPortIndex, sourcePortIndex, targetStreamId, isMute] {
+        AUDIO_INFO_LOG("set injector mute sink[%{public}u] source[%{public}u] "
+            "targetStreamId[%{public}u] isMute[%{public}d]",
+            sinkPortIndex, sourcePortIndex, targetStreamId, isMute);
+        CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
+            "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
+        std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
+        CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
+            "sourcePortIndex[%{public}u] not exit", sourcePortIndex);
+        auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
+        CHECK_AND_RETURN_LOG(capturerManager, "source is in wrong state");
+        capturerManager->SetCaptureInjectorMuteByTargetStream(targetStreamId, isMute);
+    };
+    SendRequest(request, __func__);
+}
+
 int32_t HpaeManager::PeekAudioData(
     const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
 {

@@ -81,6 +81,12 @@ public:
         (void)targetStreamId;
         return ERR_NOT_SUPPORTED;
     }
+    virtual int32_t SetCaptureInjectorMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+    {
+        (void)targetStreamId;
+        (void)isMute;
+        return ERR_NOT_SUPPORTED;
+    }
     virtual void TriggerAppsUidUpdate(uint32_t sessionId) { return; };
     virtual int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) { return 0; };
     static bool AdjustFrameLen(HpaeNodeInfo &inNodeInfo, const HpaeNodeInfo &outNodeInfo);

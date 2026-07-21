@@ -758,6 +758,7 @@ int32_t HpaeFastCapturerManager::AddCaptureInjectorByTargetStream(
         sourceOutputNode->Connect(converter);
         converter->Connect(sinkOutputNode);
         sourceOutputNode->SetInjectorState(true);
+        sourceOutputNode->SetupAudioLimiter();
         injectorFmtConverterNodeMap_[sinkOutputNode] = converter;
     };
     SendRequest(request, __func__);
@@ -777,9 +778,26 @@ int32_t HpaeFastCapturerManager::RemoveCaptureInjectorByTargetStream(
         if (sourceOutputNode != nullptr) {
             sourceOutputNode->DisConnect(converter);
             sourceOutputNode->SetInjectorState(false);
+            sourceOutputNode->SetInjectorMute(false);
+            sourceOutputNode->ResetAudioLimiter();
         }
         converter->DisConnect(sinkOutputNode);
         injectorFmtConverterNodeMap_.erase(sinkOutputNode);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeFastCapturerManager::SetCaptureInjectorMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+{
+    auto request = [this, targetStreamId, isMute] {
+        Trace trace("HpaeFastCapturerManager::SetCaptureInjectorMuteByTargetStream");
+        AUDIO_INFO_LOG("set capture injector mute targetStreamId %{public}u isMute %{public}d",
+            targetStreamId, isMute);
+        auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
+        CHECK_AND_RETURN_LOG(sourceOutputNode != nullptr,
+            "targetStreamId[%{public}u] sourceOutputNode not exist", targetStreamId);
+        sourceOutputNode->SetInjectorMute(isMute);
     };
     SendRequest(request, __func__);
     return SUCCESS;

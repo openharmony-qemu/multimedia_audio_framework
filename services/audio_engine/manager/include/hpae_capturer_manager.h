@@ -87,6 +87,7 @@ public:
         uint32_t targetStreamId) override;
     int32_t RemoveCaptureInjectorByTargetStream(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
         uint32_t targetStreamId) override;
+    int32_t SetCaptureInjectorMuteByTargetStream(uint32_t targetStreamId, bool isMute) override;
     void TriggerAppsUidUpdate(uint32_t sessionId) override;
     int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) override;
 private:
