@@ -432,7 +432,7 @@ void AudioVolumeManagerHandleRingerModeFuzzTest(FuzzedDataProvider& fdp)
     AudioRingerMode ringMode = PickValue(fdp, testAudioRingerModers);
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     CHECK_AND_RETURN(audioAdapterManager != nullptr);
-    audioAdapterManager->HandleRingerMode(ringMode);
+    audioAdapterManager->SaveRingerMode(ringMode);
 }
 
 void AudioVolumeManagerUpdateVolumeMapIndexFuzzTest(FuzzedDataProvider& fdp)

@@ -386,7 +386,7 @@ void AudioAdapterManager::SaveNotificationVolumeToLocal(std::shared_ptr<AudioDev
     // use STREAM_NOTIFICATION on phone and use STREAM_SYSTEM on PC.
     bool isRightVolumeType = VolumeUtils::IsPCVolumeEnable() ?
         (audioVolumeMap == STREAM_SYSTEM) : (audioVolumeMap == STREAM_NOTIFICATION);
-    if (isRightVolumeType && device->deviceType_ == DEVICE_TYPE_SPEAKER) {
+    if (isRightVolumeType) {
         int32_t volumeLevel =
             GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
         // To keep the startup volume consistent between the new and old versions, still use "ringtonevolume".
@@ -722,14 +722,8 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
     SaveVolumeToDbAsync(desc, streamType, volumeLevel);
 }
 
-void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
+void AudioAdapterManager::SaveRingerMode(AudioRingerMode ringerMode)
 {
-    auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_NOTIFICATION);
-    int32_t muteFactor = (ringerMode != RINGER_MODE_NORMAL) ? 0 : 1;
-    int32_t volumeLevel = volumeDataMaintainer_.LoadVolumeFromMap(desc, STREAM_NOTIFICATION) * muteFactor;
-    // Save volume in local prop for bootanimation
-    SaveNotificationVolumeToLocal(desc, STREAM_NOTIFICATION, volumeLevel);
-
     volumeDataMaintainer_.SaveRingerMode(ringerMode);
 }
 
