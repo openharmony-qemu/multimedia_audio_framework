@@ -493,6 +493,21 @@ void HpaeRendererStreamImpl::NotifyFirstStreamData()
     firstStreamDataCv_.notify_all();
 }
 
+void HpaeRendererStreamImpl::NotifyFirstFrameConsumedOnce()
+{
+    auto statusCallback = statusCallback_.lock();
+    if (!statusCallback) {
+        // Stream tearing down: do not consume the pending gate on a dead callback.
+        return;
+    }
+    bool expected = true;
+    if (!firstFramePending_.compare_exchange_strong(expected, false)) {
+        // Not armed, or already notified in this Start cycle.
+        return;
+    }
+    statusCallback->OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED);
+}
+
 int32_t HpaeRendererStreamImpl::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
 {
     uint64_t retLatency = 0;
@@ -697,6 +712,11 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
         ResetSinkLatencyFetcher(callBackStreamInfo);
     }
     NotifyFirstStreamData();
+    // History buffer already holds data and will be consumed by this formal pull
+    // (needData == false). This is a valid first-frame consumption trigger.
+    if (callBackStreamInfo.isPullData && !callBackStreamInfo.needData) {
+        NotifyFirstFrameConsumedOnce();
+    }
     CHECK_AND_RETURN_RET(callBackStreamInfo.needData, SUCCESS);
     CHECK_AND_RETURN_RET_LOG(sendDataEnabled_.load(), ERR_OPERATION_FAILED,
         "Send data disabled, sessionId %{public}u", streamIndex_);
@@ -719,6 +739,10 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
             writeCallback->OnWriteDataNoWake(callBackStreamInfo.inputData, requestDataLen) :
             writeCallback->OnWriteData(callBackStreamInfo.inputData, requestDataLen);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+        // Non-zero media data obtained from the client; notify first-frame fallback once.
+        if (callBackStreamInfo.isPullData && callBackStreamInfo.requestDataLen > 0) {
+            NotifyFirstFrameConsumedOnce();
+        }
         noWaitDataFlag_ = true;
         size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
         CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
@@ -726,8 +750,13 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
         Trace trace("HpaeRendererStreamImpl::underrun mute frames " + std::to_string(mutePaddingFrames));
         AUDIO_INFO_LOG("Padding mute frames %{public}zu, sessionId %{public}u", mutePaddingFrames, streamIndex_);
     } else { // write buffer
-        return WriteDataFromRingBuffer(callBackStreamInfo.forceData,
+        int32_t writeRet = WriteDataFromRingBuffer(callBackStreamInfo.forceData,
             callBackStreamInfo.inputData, callBackStreamInfo.requestDataLen);
+        // SUCCESS implies non-zero media data was dequeued from the ring buffer.
+        if (callBackStreamInfo.isPullData && writeRet == SUCCESS) {
+            NotifyFirstFrameConsumedOnce();
+        }
+        return writeRet;
     }
     return SUCCESS;
 }
@@ -1054,9 +1083,20 @@ void HpaeRendererStreamImpl::OnStatusUpdate(IOperation operation, uint32_t strea
         ret = UpdateSpanSize(spanSizeInFrame);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "UpdateSpanSize failed:%{public}d", ret);
     }
+    // Disarm the first-frame fallback before forwarding lifecycle teardown, so any
+    // residual OnStreamData arriving after Pause/Stop/Release cannot fire it.
+    if (operation == OPERATION_PAUSED || operation == OPERATION_STOPPED ||
+        operation == OPERATION_RELEASED) {
+        firstFramePending_.store(false);
+    }
     auto statusCallback = statusCallback_.lock();
     if (statusCallback) {
         statusCallback->OnStatusUpdate(operation);
+    }
+    // Arm only after the Started event has been forwarded, so the client Start status
+    // notification enters the existing IPC chain before any first-frame fallback.
+    if (operation == OPERATION_STARTED) {
+        firstFramePending_.store(true);
     }
 }
 

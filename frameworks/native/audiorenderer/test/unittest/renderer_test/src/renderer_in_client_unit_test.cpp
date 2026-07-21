@@ -4858,9 +4858,94 @@ HWTEST(RendererInClientPublicNewUnitTest, OnFirstFrameWriting_002, TestSize.Leve
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
     rendererInClientInner->ipcStream_ = nullptr;
-    
+
     rendererInClientInner->OnFirstFrameWriting();
     EXPECT_TRUE(true);
+}
+
+// Counting first-frame callback: records how many times OnFirstFrameWriting fires and
+// the delivered latency, so the client-side once-gate (plan §6.5 / §8.4) can be asserted.
+class CountingFirstFrameCallback : public AudioRendererFirstFrameWritingCallback {
+public:
+    void OnFirstFrameWriting(uint64_t latency) override
+    {
+        ++count;
+        lastLatency = latency;
+    }
+    int count = 0;
+    uint64_t lastLatency = 0;
+};
+
+// Server (HPAE) event first, then a Write-path trigger: only one callback, in ms units.
+HWTEST(RendererInClientPublicNewUnitTest, FirstFrameWriting_ServerEventThenWrite_Once, TestSize.Level1)
+{
+    auto r = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto cb = std::make_shared<CountingFirstFrameCallback>();
+    r->firstFrameWritingCb_ = cb;
+    r->state_ = RUNNING;
+    r->hasFirstFrameWrited_ = false;
+
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 1);
+    EXPECT_GT(cb->lastLatency, 0u); // latency still delivered in the existing ms scale
+
+    // Later Write-path trigger and a repeat server event must not fire again.
+    r->NotifyFirstFrameWritingOnce();
+    EXPECT_EQ(cb->count, 1);
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 1);
+}
+
+// Write-path trigger first, then the server event: still only one callback.
+HWTEST(RendererInClientPublicNewUnitTest, FirstFrameWriting_WriteThenServerEvent_Once, TestSize.Level1)
+{
+    auto r = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto cb = std::make_shared<CountingFirstFrameCallback>();
+    r->firstFrameWritingCb_ = cb;
+    r->state_ = RUNNING;
+    r->hasFirstFrameWrited_ = false;
+
+    r->NotifyFirstFrameWritingOnce(); // Write path wins
+    EXPECT_EQ(cb->count, 1);
+
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 1); // server event does not fire a second time
+}
+
+// A server event arriving while not RUNNING is dropped, and must not consume the gate.
+HWTEST(RendererInClientPublicNewUnitTest, FirstFrameWriting_NotRunning_NoFire, TestSize.Level1)
+{
+    auto r = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto cb = std::make_shared<CountingFirstFrameCallback>();
+    r->firstFrameWritingCb_ = cb;
+    r->state_ = PAUSED; // not RUNNING
+    r->hasFirstFrameWrited_ = false;
+
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 0); // dropped, once-gate untouched
+
+    // Once RUNNING, a fresh server event still fires exactly once.
+    r->state_ = RUNNING;
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 1);
+}
+
+// The next Start resets the once-gate, so the callback can fire again in the new cycle.
+HWTEST(RendererInClientPublicNewUnitTest, FirstFrameWriting_NextStartResetsGate, TestSize.Level1)
+{
+    auto r = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto cb = std::make_shared<CountingFirstFrameCallback>();
+    r->firstFrameWritingCb_ = cb;
+    r->state_ = RUNNING;
+    r->hasFirstFrameWrited_ = false;
+
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 1);
+
+    // StartAudioStream resets hasFirstFrameWrited_ = false; simulate that reset.
+    r->hasFirstFrameWrited_ = false;
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 2); // fires again in the new Start cycle
 }
 
 /**

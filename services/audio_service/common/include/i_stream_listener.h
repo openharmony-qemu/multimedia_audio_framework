@@ -36,6 +36,7 @@ enum Operation : int32_t {
     USER_PRIVACY_AUTHORITY,
     UPDATE_SPANSIZE,
     SENSITIVE_RECORD_PERMIT,
+    FIRST_FRAME_CONSUMED,
     MAX_OPERATION_CODE // in plan add underrun overflow
 };
 class IStreamListener {

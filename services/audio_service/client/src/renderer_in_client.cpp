@@ -888,7 +888,7 @@ void RendererInClientInner::FirstFrameProcess()
         ipcStream_->RegisterThreadPriority(gettid(), bundleName, METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
     }
 
-    if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
+    NotifyFirstFrameWritingOnce();
 }
 
 void RendererInClientInner::NotifyStreamSilentChange()
@@ -1459,7 +1459,7 @@ void RendererInClientInner::CheckOperations()
     }
     if (clientBuffer_->IsFirstFrame()) {
         clientBuffer_->SetIsFirstFrame(false);
-        OnFirstFrameWriting();
+        NotifyFirstFrameWritingOnce();
     }
 }
 

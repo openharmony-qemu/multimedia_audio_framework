@@ -494,6 +494,42 @@ HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_IsPullDataFalse, TestSize.Lev
     EXPECT_EQ(result, SUCCESS);
 }
 
+// Verifies the isPullData field: formal pulls are marked true, info-sync calls
+// (registration / migration / rewind) are marked false, and a formal pull that will
+// consume the history buffer yields isPullData==true && needData==false. The HPAE
+// first-frame-consumed fallback relies on this marking (plan §6.1 / §8.1).
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_IsPullDataMarking, TestSize.Level0) {
+    // 1. GetDataFromSharedBuffer() is a formal pull -> isPullData == true.
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
+        .WillOnce([&](AudioCallBackStreamInfo& info) {
+            EXPECT_TRUE(info.isPullData);
+            return SUCCESS;
+        });
+    EXPECT_EQ(node_->GetDataFromSharedBuffer(), SUCCESS);
+
+    // 2. OnStreamInfoChange(false) (registration / migration / rewind) -> isPullData == false.
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
+        .WillOnce([&](AudioCallBackStreamInfo& info) {
+            EXPECT_FALSE(info.isPullData);
+            return SUCCESS;
+        });
+    EXPECT_EQ(node_->OnStreamInfoChange(false), SUCCESS);
+
+    // 3. Formal pull with history buffer data -> isPullData == true && needData == false
+    //    (history buffer will be consumed by this pull, no client data needed).
+    AddFrameToBuffer(node_->historyBuffer_);
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
+        .WillOnce([&](AudioCallBackStreamInfo& info) {
+            EXPECT_TRUE(info.isPullData);
+            EXPECT_FALSE(info.needData);
+            return SUCCESS;
+        });
+    EXPECT_EQ(node_->OnStreamInfoChange(true), SUCCESS);
+}
+
 /**
  * @tc.name  : FaultCode_OnStreamInfoChange_WriteCallbackNull
  * @tc.type  : FUNC

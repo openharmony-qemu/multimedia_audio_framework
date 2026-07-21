@@ -289,6 +289,61 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdate_001, TestSize.
     EXPECT_EQ(I_STATUS_IDLE, rendererInServer->status_);
 }
 
+// Non-gmock IStreamListener fake that records the last forwarded operation, so the
+// HPAE first-frame-consumed forwarding can be asserted without pulling gmock into
+// this test target (plan §8.3).
+class RecordingStreamListener : public IStreamListener {
+public:
+    int32_t OnOperationHandled(Operation operation, int64_t result) override
+    {
+        lastOp = operation;
+        lastResult = result;
+        ++callCount;
+        return SUCCESS;
+    }
+    Operation lastOp = MAX_OPERATION_CODE;
+    int64_t lastResult = -1;
+    int32_t callCount = 0;
+};
+
+// OPERATION_FIRST_FRAME_CONSUMED is forwarded to the listener as
+// OnOperationHandled(FIRST_FRAME_CONSUMED, 0) and does NOT change renderer lifecycle status.
+HWTEST_F(RendererInServerUnitTest, RendererInServer_FirstFrameConsumed_Forwarded, TestSize.Level1)
+{
+    AudioStreamInfo streamInfoFF(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(streamInfoFF);
+    auto recListener = std::make_shared<RecordingStreamListener>();
+    std::weak_ptr<IStreamListener> weakListener = recListener;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, weakListener);
+    ASSERT_EQ(rendererInServer->Init(), SUCCESS);
+
+    IStatus statusBefore = rendererInServer->status_;
+    rendererInServer->OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED);
+    EXPECT_EQ(recListener->callCount, 1);
+    EXPECT_EQ(recListener->lastOp, FIRST_FRAME_CONSUMED);
+    EXPECT_EQ(recListener->lastResult, 0);
+    EXPECT_EQ(rendererInServer->status_, statusBefore); // lifecycle status unchanged
+}
+
+// When the stream listener has gone away, the event must return safely without crashing.
+HWTEST_F(RendererInServerUnitTest, RendererInServer_FirstFrameConsumed_NullListener_SafeReturn, TestSize.Level1)
+{
+    AudioStreamInfo streamInfoFF(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(streamInfoFF);
+    std::weak_ptr<IStreamListener> dangling;
+    {
+        auto recListener = std::make_shared<RecordingStreamListener>();
+        dangling = recListener;
+        rendererInServer = std::make_shared<RendererInServer>(processConfig, dangling);
+        ASSERT_EQ(rendererInServer->Init(), SUCCESS);
+    } // recListener destroyed -> weak ptr dangles
+    IStatus statusBefore = rendererInServer->status_;
+    rendererInServer->OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED); // safe return, no crash
+    EXPECT_EQ(rendererInServer->status_, statusBefore);
+}
+
 /**
  * @tc.name  : Test OnStatusUpdate API
  * @tc.type  : FUNC

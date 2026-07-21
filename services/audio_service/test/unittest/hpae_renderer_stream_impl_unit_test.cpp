@@ -58,6 +58,12 @@ public:
     MOCK_METHOD(int32_t, GetAvailableSize, (size_t &length), (override));
 };
 
+class MockStatusCallback : public IStatusCallback {
+public:
+    MOCK_METHOD(void, OnStatusUpdate, (IOperation operation), (override));
+    ~MockStatusCallback() override = default;
+};
+
 class HpaeRendererStreamUnitTest : public ::testing::Test {
 public:
     void SetUp();
@@ -1304,6 +1310,196 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_037, TestSize.Level1)
     EXPECT_TRUE(unit->noWaitDataFlag_);
     EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success even if not enough data
     EXPECT_TRUE(unit->noWaitDataFlag_);
+}
+
+// HPAE first-frame-consumed fallback (plan §6.2/§6.3/§8.2). Verifies the once-gate
+// lifecycle and the three trigger rules under callback mode.
+// Field order in AudioCallBackStreamInfo designated initializers below follows the
+// struct declaration order (needData, forceData, ..., isPullData) for -Werror safety.
+
+// Case 1: OnStreamData before STARTED must not notify (gate not armed).
+HWTEST_F(HpaeRendererStreamUnitTest, FirstFrameConsumed_BeforeStarted_NoNotify, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 1); // callback mode
+    auto mockCb = std::make_shared<MockStatusCallback>();
+    unit->statusCallback_ = mockCb;
+
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED)).Times(0);
+    AudioCallBackStreamInfo info = { .needData = false, .isPullData = true }; // history consumption
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS);
+}
+
+// Case 2: after STARTED, first history-buffer consumption notifies exactly once; a
+// second call does not repeat.
+HWTEST_F(HpaeRendererStreamUnitTest, FirstFrameConsumed_HistoryAfterStarted_Once, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 1);
+    auto mockCb = std::make_shared<MockStatusCallback>();
+    unit->statusCallback_ = mockCb;
+
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_STARTED)).Times(1);
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED)).Times(1); // exactly once
+
+    AudioCallBackStreamInfo info = { .needData = false, .isPullData = true };
+    unit->OnStatusUpdate(OPERATION_STARTED, 0); // arm
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // notify
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // pending consumed -> no repeat
+}
+
+// Case 3: after STARTED, a successful non-zero client fetch notifies once.
+HWTEST_F(HpaeRendererStreamUnitTest, FirstFrameConsumed_NonZeroDataAfterStarted_Once, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 1);
+    auto mockCb = std::make_shared<MockStatusCallback>();
+    unit->statusCallback_ = mockCb;
+    auto mockWriteCb = std::make_shared<MockWriteCallback>();
+    unit->writeCallback_ = mockWriteCb;
+
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_STARTED)).Times(1);
+    unit->OnStatusUpdate(OPERATION_STARTED, 0); // arm
+
+    std::vector<int8_t> buffer(2048, 1);
+    AudioCallBackStreamInfo info = {
+        .inputData = buffer.data(), .requestDataLen = 1024, .needData = true, .isPullData = true,
+    };
+    EXPECT_CALL(*mockWriteCb, GetAvailableSize(::testing::_))
+        .WillOnce(DoAll(SetArgReferee<0>(1024), Return(0)));
+    EXPECT_CALL(*mockWriteCb, OnWriteData(::testing::_, ::testing::_)).WillOnce(Return(0));
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED)).Times(1);
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS);
+}
+
+// Case 4: fetch failure, zero-length and mute-only padding must not notify.
+HWTEST_F(HpaeRendererStreamUnitTest, FirstFrameConsumed_FetchFailureAndZeroLength_NoNotify, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 1);
+    auto mockCb = std::make_shared<MockStatusCallback>();
+    unit->statusCallback_ = mockCb;
+    auto mockWriteCb = std::make_shared<MockWriteCallback>();
+    unit->writeCallback_ = mockWriteCb;
+
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_STARTED)).Times(1);
+    unit->OnStatusUpdate(OPERATION_STARTED, 0); // arm
+
+    std::vector<int8_t> buffer(2048, 1);
+
+    // (a) OnWriteData fails -> return before the notify, no first-frame.
+    AudioCallBackStreamInfo infoFail = {
+        .inputData = buffer.data(), .requestDataLen = 1024, .needData = true, .isPullData = true,
+    };
+    EXPECT_CALL(*mockWriteCb, GetAvailableSize(::testing::_))
+        .WillOnce(DoAll(SetArgReferee<0>(1024), Return(0)));
+    EXPECT_CALL(*mockWriteCb, OnWriteData(::testing::_, ::testing::_)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED)).Times(0);
+    EXPECT_NE(unit->OnStreamData(infoFail), SUCCESS);
+
+    // (b) mute-only padding (available 0, forceData false) -> zero delivered length, no notify.
+    AudioCallBackStreamInfo infoZero = {
+        .inputData = buffer.data(), .requestDataLen = 1024, .needData = true, .forceData = false,
+        .isPullData = true,
+    };
+    EXPECT_CALL(*mockWriteCb, GetAvailableSize(::testing::_)).WillOnce(DoAll(SetArgReferee<0>(0), Return(0)));
+    EXPECT_CALL(*mockWriteCb, OnWriteData(::testing::_, ::testing::_)).WillOnce(Return(0));
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED)).Times(0);
+    EXPECT_EQ(unit->OnStreamData(infoZero), SUCCESS);
+}
+
+// Case 5: isPullData == false (info-sync call) must not notify even on a successful fetch.
+HWTEST_F(HpaeRendererStreamUnitTest, FirstFrameConsumed_IsPullDataFalse_NoNotify, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 1);
+    auto mockCb = std::make_shared<MockStatusCallback>();
+    unit->statusCallback_ = mockCb;
+    auto mockWriteCb = std::make_shared<MockWriteCallback>();
+    unit->writeCallback_ = mockWriteCb;
+
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_STARTED)).Times(1);
+    unit->OnStatusUpdate(OPERATION_STARTED, 0); // arm
+
+    std::vector<int8_t> buffer(2048, 1);
+    AudioCallBackStreamInfo info = {
+        .inputData = buffer.data(), .requestDataLen = 1024, .needData = true, .isPullData = false,
+    };
+    EXPECT_CALL(*mockWriteCb, GetAvailableSize(::testing::_))
+        .WillOnce(DoAll(SetArgReferee<0>(1024), Return(0)));
+    EXPECT_CALL(*mockWriteCb, OnWriteData(::testing::_, ::testing::_)).WillOnce(Return(0));
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED)).Times(0);
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS);
+}
+
+// Case 6: after STOPPED (disarm), residual OnStreamData must not notify. PAUSED / RELEASED
+// share the same disarm branch in OnStatusUpdate.
+HWTEST_F(HpaeRendererStreamUnitTest, FirstFrameConsumed_AfterStop_NoNotify, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 1);
+    auto mockCb = std::make_shared<MockStatusCallback>();
+    unit->statusCallback_ = mockCb;
+
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_STARTED)).Times(1);
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_STOPPED)).Times(1);
+    unit->OnStatusUpdate(OPERATION_STARTED, 0); // arm
+    unit->OnStatusUpdate(OPERATION_STOPPED, 0); // disarm
+
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED)).Times(0);
+    AudioCallBackStreamInfo info = { .needData = false, .isPullData = true };
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS);
+}
+
+// Case 7: after Stop, a new STARTED re-arms and the fallback can notify once again.
+HWTEST_F(HpaeRendererStreamUnitTest, FirstFrameConsumed_RestartAfterStop_NotifiesAgain, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 1);
+    auto mockCb = std::make_shared<MockStatusCallback>();
+    unit->statusCallback_ = mockCb;
+
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_STARTED)).Times(2);
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_STOPPED)).Times(1);
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED)).Times(2); // one per cycle
+
+    AudioCallBackStreamInfo info = { .needData = false, .isPullData = true };
+    unit->OnStatusUpdate(OPERATION_STARTED, 0); // cycle 1 arm
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // notify #1
+    unit->OnStatusUpdate(OPERATION_STOPPED, 0); // disarm
+    unit->OnStatusUpdate(OPERATION_STARTED, 0); // cycle 2 arm
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // notify #2
+}
+
+// Case 8: an expired statusCallback_ must not crash and must not consume the pending
+// gate; a fresh callback can still receive the notification afterwards.
+HWTEST_F(HpaeRendererStreamUnitTest, FirstFrameConsumed_StatusCallbackExpired_NoConsume, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::string deviceName = "temp";
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, deviceName, 1);
+    auto mockCb = std::make_shared<MockStatusCallback>();
+    unit->statusCallback_ = mockCb;
+
+    EXPECT_CALL(*mockCb, OnStatusUpdate(OPERATION_STARTED)).Times(1);
+    unit->OnStatusUpdate(OPERATION_STARTED, 0); // arm
+
+    unit->statusCallback_.reset(); // weak ptr now dangles
+    AudioCallBackStreamInfo info = { .needData = false, .isPullData = true };
+    unit->OnStreamData(info); // lock() null -> return WITHOUT consuming pending (no crash)
+
+    // Pending survived: a newly installed callback still gets exactly one notification.
+    auto mockCb2 = std::make_shared<MockStatusCallback>();
+    unit->statusCallback_ = mockCb2;
+    EXPECT_CALL(*mockCb2, OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED)).Times(1);
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS);
 }
 
 /**

@@ -132,6 +132,15 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         NotifyFastStatusChange(static_cast<FastStatus>(result));
         return SUCCESS;
     }
+    if (operation == FIRST_FRAME_CONSUMED) {
+        // HPAE first-frame-consumed fallback: fire the existing first-frame callback via
+        // the shared once-gate only while RUNNING. Not a control operation: never enter
+        // callServerMutex_/callServerCV_, just return.
+        if (state_.load() == RUNNING) {
+            NotifyFirstFrameWritingOnce();
+        }
+        return SUCCESS;
+    }
 
     std::unique_lock<std::mutex> lock(callServerMutex_);
     notifiedOperation_ = operation;
@@ -752,6 +761,16 @@ void RendererInClientInner::OnFirstFrameWriting()
     }
     AUDIO_INFO_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
     cb->OnFirstFrameWriting(latency);
+}
+
+void RendererInClientInner::NotifyFirstFrameWritingOnce()
+{
+    // Client-side once-gate shared by the client Write path and the HPAE
+    // first-frame-consumed fallback. Whichever source wins the atomic exchange fires
+    // OnFirstFrameWriting() once per Start cycle.
+    if (!hasFirstFrameWrited_.exchange(true)) {
+        OnFirstFrameWriting();
+    }
 }
 
 bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
