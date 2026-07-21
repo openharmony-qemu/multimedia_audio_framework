@@ -199,7 +199,7 @@ private:
     bool FallbackToNormalStreamForGenerateNewStream(const RestoreInfo &restoreInfo,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, IAudioStream::SwitchInfo &switchInfo,
         std::shared_ptr<IAudioStream> &newAudioStream);
-    void HandleAudioInterruptWhenServerDied();
+    void HandleAudioInterruptWhenServerDied(CapturerState previousState);
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
     FastStatus GetFastStatusInner();
