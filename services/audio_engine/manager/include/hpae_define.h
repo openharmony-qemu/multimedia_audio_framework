@@ -84,6 +84,12 @@ enum class SessionEffectErrCode : int32_t {
 enum class EffectParameterType : int32_t {
     VOCAL_RATIO = 1,
 };
+
+struct ChannelOverrideRoute {
+    std::string sceneType;
+    DeviceType deviceType;
+    uint32_t renderId;
+};
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

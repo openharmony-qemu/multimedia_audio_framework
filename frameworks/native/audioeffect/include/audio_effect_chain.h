@@ -89,6 +89,7 @@ public:
     bool IsEffectChainFading();
     void SetFrontendAppType(const std::string &frontendAppType);
     void SetPersonalizedSpatializationEnabled(const bool &personalizedSpatializationEnabled);
+    const std::string& GetSceneType() const { return sceneType_; }
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();

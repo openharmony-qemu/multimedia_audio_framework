@@ -322,6 +322,58 @@ HpaeProcessorType HpaeRendererManager::GetConnectedProcessorType(uint32_t sessio
     return node->connectedProcessorType_;
 }
 
+std::optional<ChannelOverrideRoute> HpaeRendererManager::BuildChannelOverrideRouteFromProcessorType(
+    HpaeProcessorType sceneType) const
+{
+    if (sceneType == HPAE_SCENE_EFFECT_NONE) {
+        return std::nullopt;
+    }
+    ChannelOverrideRoute route;
+    route.sceneType = TransProcessorTypeToSceneType(sceneType);
+    route.deviceType = renderDeviceType_;
+    route.renderId = renderId_;
+    return route;
+}
+
+std::optional<ChannelOverrideRoute> HpaeRendererManager::BuildChannelOverrideRoute(uint32_t sessionId) const
+{
+    return BuildChannelOverrideRouteFromProcessorType(GetProcessorType(sessionId));
+}
+
+void HpaeRendererManager::SetChannelOverrideForRoute(const ChannelOverrideRoute &route)
+{
+    if (Util::IsEnhancedRoutingSupported()) {
+        AudioEffectChainManager::GetInstance()->SetChannelOverride(
+            route.sceneType, route.deviceType, route.renderId, STEREO, CH_LAYOUT_STEREO);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(
+            route.sceneType, route.deviceType, route.renderId);
+    } else {
+        AudioEffectChainManager::GetInstance()->SetChannelOverride(route.sceneType, STEREO, CH_LAYOUT_STEREO);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(route.sceneType);
+    }
+}
+
+void HpaeRendererManager::ClearChannelOverrideForRoute(const ChannelOverrideRoute &route)
+{
+    if (Util::IsEnhancedRoutingSupported()) {
+        AudioEffectChainManager::GetInstance()->ClearChannelOverride(
+            route.sceneType, route.deviceType, route.renderId);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(
+            route.sceneType, route.deviceType, route.renderId);
+    } else {
+        AudioEffectChainManager::GetInstance()->ClearChannelOverride(route.sceneType);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(route.sceneType);
+    }
+}
+
+void HpaeRendererManager::OnSessionEffectMaterialized(uint32_t sessionId)
+{
+    auto route = BuildChannelOverrideRoute(sessionId);
+    if (route.has_value()) {
+        SetChannelOverrideForRoute(route.value());
+    }
+}
+
 void HpaeRendererManager::DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo)
 {
     auto processCluster = SafeGetMap(sceneClusterMap_, nodeInfo.sceneType);
@@ -544,6 +596,12 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId, bool needI
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneTypeToDestroyNodes), ERROR,
         "SessionId %{public}u, sceneCluster processorType %{public}d not exist, cant destroy nodes",
         sessionId, sceneTypeToDestroyNodes);
+    
+    auto route = BuildChannelOverrideRouteFromProcessorType(sceneTypeToDestroyNodes);
+    if (route.has_value() && sceneClusterMap_[sceneTypeToDestroyNodes]->HasSessionEffectNode(sessionId)) {
+        ClearChannelOverrideForRoute(route.value());
+    }
+
     if (sceneClusterMap_[sceneTypeToDestroyNodes]->DestroyNodes(sessionId, mode) != SUCCESS) {
         AUDIO_INFO_LOG("SessionId %{public}d, Nodes not found in sceneCluster processorType %{public}d,"
             "try to destroy nodes by traverse sceneCluster", sessionId, sceneTypeToDestroyNodes);
@@ -681,6 +739,7 @@ void HpaeRendererManager::MaterializeSessionEffectFromAttachState(uint32_t sessi
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionState,
             OPERATION_SESSION_EFFECT_ENABLED);
         AUDIO_INFO_LOG("[SE::RendererManager] AttachState materialized+ENABLED sessionId=%{public}u", sessionId);
+        OnSessionEffectMaterialized(sessionId);
     } else {
         HandleSessionEffectMaterializeFailure(sessionId, ret, sinkInputNode);
     }
@@ -1733,6 +1792,8 @@ void HpaeRendererManager::UpdateProcessClusterConnection(uint32_t sessionId, int
         AUDIO_INFO_LOG("no need to update the sceneType %{public}d", sceneType);
         return;
     }
+    HpaeProcessorType connectedSceneType = GetConnectedProcessorType(sessionId);
+    DetachSessionEffectNodeForRefresh(sessionId, connectedSceneType);
     DisConnectInputSession(sessionId);
     ConnectInputSession(sessionId);
 }

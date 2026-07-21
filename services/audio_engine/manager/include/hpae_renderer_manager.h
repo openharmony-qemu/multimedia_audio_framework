@@ -21,6 +21,7 @@
 #include <string>
 #include <mutex>
 #include <shared_mutex>
+#include <optional>
 #include "hpae_signal_process_thread.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_process_cluster.h"
@@ -35,7 +36,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
 class HpaeRendererManager : public IHpaeRendererManager {
 public:
     HpaeRendererManager(HpaeSinkInfo &sinkInfo);
@@ -159,6 +159,12 @@ private:
     bool CheckIsStreamRunning();
     HpaeProcessorType GetProcessorType(uint32_t sessionId) const;
     HpaeProcessorType GetConnectedProcessorType(uint32_t sessionId) const;
+    std::optional<ChannelOverrideRoute> BuildChannelOverrideRoute(uint32_t sessionId) const;
+    std::optional<ChannelOverrideRoute> BuildChannelOverrideRouteFromProcessorType(
+        HpaeProcessorType sceneType) const;
+    void SetChannelOverrideForRoute(const ChannelOverrideRoute &route);
+    void ClearChannelOverrideForRoute(const ChannelOverrideRoute &route);
+    void OnSessionEffectMaterialized(uint32_t sessionId);
     HpaeProcessorType TransToProperSceneType(StreamUsage streamUsage, AudioEffectScene effectScene);
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
