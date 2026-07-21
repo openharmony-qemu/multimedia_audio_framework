@@ -94,6 +94,8 @@ private:
     void HandleOperationFlushed();
     void UpdateBufferTimeStamp(size_t readLen);
     void RebuildCaptureInjector();
+    void HandleBufferTimeStampAndFrame(uint64_t currentWriteFrame,
+        uint64_t nextWriteFrame, size_t bufLength);
     inline void CaptureConcurrentCheck(uint32_t streamIndex);
     void HandleOperationStopped(CapturerStage stage);
     void OnHandle(uint32_t code, int64_t data) override;

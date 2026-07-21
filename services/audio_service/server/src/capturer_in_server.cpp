@@ -492,6 +492,15 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     audioServerBuffer_->SetTimeStampInfo(curProcessPos_, timestamp);
 }
 
+// Handle buffer timestamp and frame information update
+void CapturerInServer::HandleBufferTimeStampAndFrame(uint64_t currentWriteFrame,
+    uint64_t nextWriteFrame, size_t bufLength)
+{
+    UpdateBufferTimeStamp(bufLength);
+    audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
+    audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
+}
+
 void CapturerInServer::RecordOverflowStatus(bool currentStatus)
 {
     if (currentStatus == true && currentStatus != lastOverflowStatus_.load()) {
@@ -574,13 +583,8 @@ void CapturerInServer::ReadData(size_t length)
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
             static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
     }
-
     uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
-    audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
-    audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
-
-    UpdateBufferTimeStamp(dstBuffer.bufLength);
-
+    HandleBufferTimeStampAndFrame(currentWriteFrame, nextWriteFrame, dstBuffer.bufLength);
     stream_->EnqueueBuffer(srcBuffer);
 }
 // LCOV_EXCL_STOP
@@ -662,12 +666,8 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
             static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength);
     }
-
     uint64_t nextWriteFrame = currentWriteFrame + spanSizeInFrame_;
-    audioServerBuffer_->SetCurWriteFrame(nextWriteFrame);
-    audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
-
-    UpdateBufferTimeStamp(dstBuffer.bufLength);
+    HandleBufferTimeStampAndFrame(currentWriteFrame, nextWriteFrame, dstBuffer.bufLength);
     audioStreamChecker_->RecordNormalFrame();
     return SUCCESS;
 }
