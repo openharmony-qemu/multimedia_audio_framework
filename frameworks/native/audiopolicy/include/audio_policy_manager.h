@@ -319,7 +319,7 @@ public:
 
     int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
-    
+
     int32_t SetAudioSessionCurrentInputDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> &deviceChangedCallback);
 
@@ -847,6 +847,7 @@ private:
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
+    sptr<IRemoteObject> GetAudioPolicyClientStubObject();
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable, bool block = true);
     int32_t SetCallbackStreamInfo(const CallbackChange &callbackChange);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = INVALID_UID);
