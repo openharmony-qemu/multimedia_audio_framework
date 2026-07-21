@@ -350,5 +350,17 @@ void AudioInterruptDfx::WriteInterruptOrSessionCallbackErrorEvent(int32_t usage,
     interruptError.errorInfo = "MisuseOfInterfaces";
     WriteAudioInterruptErrorEvent(interruptError);
 }
+
+void AudioInterruptDfx::AudioSessionTimeoutErrorEvent(const AudioInterrupt &audioInterrupt)
+{
+    AudioFocusErrorEvent interruptErrorEvent;
+    interruptErrorEvent.appName = AudioInterruptUtils::GetAudioInterruptBundleName(audioInterrupt);
+    if (audioInterrupt.isAudioSessionInterrupt) {
+        interruptErrorEvent.errorInfo = "V2Timeout";
+    } else {
+        interruptErrorEvent.errorInfo = "V1Timeout";
+    }
+    WriteAudioInterruptErrorEvent(interruptErrorEvent);
+}
 } // namespace AudioStandard
 } // namespace OHOS
