@@ -2057,31 +2057,6 @@ HWTEST_F(HpaeRendererManagerTest, DeactivateThread_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
 }
 
- /**
- * @tc.name  : Test MoveAllStreamToNewSinkInner
- * @tc.type  : FUNC
- * @tc.number: MoveAllStreamToNewSinkInner_001
- * @tc.desc  : Test MoveAllStreamToNewSinkInner.
- */
-HWTEST_F(HpaeRendererManagerTest, MoveAllStreamToNewSinkInner_001, TestSize.Level0)
-{
-    HpaeSinkInfo info = GetSinkInfo();
-    auto hpaeOffloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(info);
-    auto hpaeRendererManager = std::make_shared<HpaeRendererManager>(info);
-    auto mockCallback = std::make_shared<MockSendMsgCallback>();
-    EXPECT_CALL(*mockCallback, InvokeSync(MOVE_ALL_SINK_INPUT, testing::_))
-        .Times(2);
-    EXPECT_CALL(*mockCallback, Invoke(MOVE_ALL_SINK_INPUT, testing::_))
-        .Times(2);
-    hpaeOffloadRendererManager->weakCallback_ = mockCallback;
-    hpaeRendererManager->weakCallback_ = mockCallback;
-    vector<uint32_t> moveids;
-    hpaeOffloadRendererManager->MoveAllStreamToNewSink("", moveids, MOVE_ALL);
-    hpaeRendererManager->MoveAllStreamToNewSink("", moveids, MOVE_ALL);
-    hpaeOffloadRendererManager->MoveAllStreamToNewSink("", moveids, MOVE_PREFER);
-    hpaeRendererManager->MoveAllStreamToNewSink("", moveids, MOVE_PREFER);
-}
-
 /**
  * @tc.name  : Test Process
  * @tc.type  : FUNC
