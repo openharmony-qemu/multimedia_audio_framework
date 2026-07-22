@@ -1727,16 +1727,16 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
     const int32_t audioDeviceSelectMode)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERROR, "SelectOutputDevice: ptr exception");
+    if (!(IsEnhancedRoutingAvailableForSelectMode(audioDeviceSelectMode) &&
+        audioRendererFilter->uid == IPCSkeleton::GetCallingUid())) {
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             ERR_PLAY_DEVICE_SWITCH_PERMISSION_DENIED, "SelectOutputDevice: No system permission", false),
-        "SelectOutputDevice: No system permission");
-    if (!IsEnhancedRoutingAvailableForSelectMode(audioDeviceSelectMode)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
-            "SelectInputDevice: No system permission");
+            "SelectOutputDevice: No system permission");
     }
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRendererFilter != nullptr &&
-        !audioDeviceDescriptors.empty() && audioDeviceDescriptors[0] != nullptr, ERROR,
+
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!audioDeviceDescriptors.empty() && audioDeviceDescriptors[0] != nullptr, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             ERR_PLAY_DEVICE_SWITCH_NULL_POINTER, "SelectOutputDevice: null filter or selectedDesc", false),
         "SelectOutputDevice null filter or selectedDesc");
@@ -1788,8 +1788,9 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERROR, "SelectInputDevice: ptr exception");
-    if (!IsEnhancedRoutingAvailableForSelectMode(audioCapturerFilter->audioDeviceSelectMode)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+    if (!(IsEnhancedRoutingAvailableForSelectMode(audioCapturerFilter->audioDeviceSelectMode) &&
+        audioCapturerFilter->uid == IPCSkeleton::GetCallingUid())) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
             "SelectInputDevice: No system permission");
     }
 
