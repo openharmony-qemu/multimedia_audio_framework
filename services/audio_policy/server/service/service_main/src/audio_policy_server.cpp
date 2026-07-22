@@ -359,8 +359,11 @@ void AudioPolicyServer::OnStart()
 
 void AudioPolicyServer::AddSystemAbilityListeners()
 {
-    AddSystemAbilityListener(ACCESS_TOKEN_MANAGER_SERVICE_ID);
-    AddSystemAbilityListener(INPUT_METHOD_SYSTEM_ABILITY_ID);
+    /**
+     * NOTICE:
+     * If the listening SA has already started, it immediately runs a callback on the main thread.
+     * Don't randomly change the current listening order.
+     */
     AddSystemAbilityListener(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
@@ -377,6 +380,8 @@ void AudioPolicyServer::AddSystemAbilityListeners()
 #ifdef SUPPORT_USER_ACCOUNT
     AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
 #endif
+    AddSystemAbilityListener(ACCESS_TOKEN_MANAGER_SERVICE_ID);
+    AddSystemAbilityListener(INPUT_METHOD_SYSTEM_ABILITY_ID);
 }
 
 // Adds SA listeners that should be registered only after audioserver startup.
