@@ -31,14 +31,8 @@
 #include <iremote_object.h>
 #include "system_ability.h"
 #include "audio_errors.h"
-#include "audio_suite_pcm_buffer.h"
-#include "audio_suite_base.h"
-#include "audio_stream_info.h"
-#include "audio_suite_sa_types.h"
-#include "audio_shared_memory.h"
-#include "iaudio_suite_sa_service.h"
-#include "audio_suite_sa_service_stub.h"
-#include "iupdate_engine_callback.h"
+#include "audio_suite_types.h"
+#include "audio_suite_service_stub.h"
 #include "event_handler.h"
 
 namespace OHOS {
@@ -49,46 +43,44 @@ namespace AudioSuite {
 class DownloadManager;
 class ConditionMonitor;
 
-class AudioSuiteRomDownloadService : public SystemAbility, public AudioSuiteSaServiceStub  {
-    DECLARE_SYSTEM_ABILITY(AudioSuiteRomDownloadService);
+class AudioSuiteService : public SystemAbility, public AudioSuiteServiceStub  {
+    DECLARE_SYSTEM_ABILITY(AudioSuiteService);
 
 public:
-    DISALLOW_COPY_AND_MOVE(AudioSuiteRomDownloadService);
-    explicit AudioSuiteRomDownloadService(int32_t systemAbilityId, bool runOnCreate = false);
-    virtual ~AudioSuiteRomDownloadService();
+    DISALLOW_COPY_AND_MOVE(AudioSuiteService);
+    explicit AudioSuiteService(int32_t systemAbilityId, bool runOnCreate = false);
+    virtual ~AudioSuiteService();
 
     void OnStart() override;
     void OnStop() override;
 
-    ErrCode RegisterDownloadCallback(const sptr<IRemoteObject> &callback, ErrCode &result) override;
+    ErrCode RegisterDownloadStatusCallback(const sptr<IRemoteObject> &object, ErrCode &result) override;
+    ErrCode UnregisterDownloadStatusCallback(ErrCode& result) override;
     ErrCode StartDownload(const std::string &version, ErrCode &result) override;
+    ErrCode PauseDownload(const std::string& featureName, ErrCode& result) override;
     ErrCode CancelDownload(const std::string &version, ErrCode &result) override;
     ErrCode StartBackgroundDownload(const std::string &version, ErrCode &result) override;
-    ErrCode GetDownloadStatus(DownloadStatus &status, const std::string& version, ErrCode &result) override;
+    ErrCode GetDownloadStatus(
+        const std::string& version, AudioSuiteDownloadStatusInfo &status, ErrCode &result) override;
     ErrCode UninstallCloudRom(const std::string &version, ErrCode &result) override;
-    ErrCode UnregisterDownloadCallback(ErrCode& result) override;
-    ErrCode RegisterUpdateEngineCallback(const sptr<IRemoteObject> &callback, ErrCode &result) override;
-    ErrCode UnregisterUpdateEngineCallback(ErrCode& result) override;
 
-    static constexpr int32_t SA_ID = 3015;
+    ErrCode RegisterDownloadInterfaceCallback(const sptr<IRemoteObject> &object, ErrCode &result) override;
+    ErrCode UnregisterDownloadInterfaceCallback(ErrCode& result) override;
+    ErrCode OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status) override;
 
 protected:
-    virtual bool CheckPermission();
+    virtual bool CheckPermission(ErrCode &result);
 
 private:
-    void NotifyDownloadStatusChanged(const DownloadStatus& status);
     void PostDelayUnloadTask();
-    bool HasRegisteredCallback();
     bool ShouldExtendUnloadTimer();
 
-    std::shared_ptr<DownloadManager> downloadManager_;
-    sptr<IRemoteObject> downloadCallback_;
-    sptr<IRemoteObject> updateEngineCallback_;
-
     std::mutex mutex_;
+    DownloadManager &downloadManager_;
+
+    std::mutex eventMutex_;
     std::shared_ptr<AppExecFwk::EventRunner> unloadRunner_;
     std::shared_ptr<AppExecFwk::EventHandler> unloadHandler_;
-    std::mutex eventMutex_;
 };
 
 } // namespace AudioSuite

@@ -24,171 +24,76 @@
 #include <vector>
 #include <sstream>
 #include <condition_variable>
-#include "audio_suite_sa_types.h"
-#include "icloud_rom_download_callback.h"
-#include "iupdate_engine_callback.h"
-#include "cloud_rom_download_callback_impl.h"
+#include "singleton.h"
+#include "iremote_object.h"
+#include "nocopyable.h"
+#include "audio_suite_types.h"
 #include "syspara/parameters.h"
 #include "background_download.h"
+#include "iaudio_suite_status_callback.h"
+#include "iaudio_suite_download_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-// 常量定义
-static const int32_t CLOUD_ROM_NETTYPE = 2 | 4;  // WIFI
-static const int32_t CALLBACK_REGISTER_TIMEOUT_MS = 1000;  // 回调注册超时时间 1 秒
-
-// 下载管理器
 class DownloadManager {
+    DECLARE_SINGLETON(DownloadManager)
+
 public:
-    DownloadManager();
-    ~DownloadManager();
+    int32_t RegisterDownloadStatusCallback(const int32_t callerPid, const sptr<IRemoteObject>& object);
+    int32_t UnregisterDownloadStatusCallback(const int32_t callerPid);
+    int32_t StartDownload(const std::string& featureName);
+    int32_t PauseDownload(const std::string& featureName);
+    int32_t CancelDownload(const std::string& featureName);
+    int32_t StartBackgroundDownload(const std::string& featureName);
+    int32_t GetDownloadStatus(const std::string& featureName, AudioSuiteDownloadStatusInfo& status);
+    int32_t UninstallCloudRom(const std::string& featureName);
 
-    // 初始化下载管理器
-    int32_t Init();
+    int32_t SetUpdateEngineCallback(const sptr<IRemoteObject> object);
+    int32_t OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status);
 
-    // 释放下载管理器
-    int32_t Release();
-
-    // 开始下载
-    int32_t StartDownload(const std::string& version);
-
-    // 取消下载
-    int32_t CancelDownload(const std::string& version);
-
-    // 开始后台下载
-    int32_t StartBackgroundDownload(const std::string& version);
-
-    // 获取下载状态
-    int32_t GetDownloadStatus(DownloadStatus& status, const std::string& version);
-
-    // 注册下载状态变化回调
-    int32_t RegisterDownloadCallback(std::function<void(const DownloadStatus &)> callback);
-
-    int32_t UninstallCloudRom(const std::string& version);
-
-    // 设置 UpdateEngine 回调
-    void SetUpdateEngineCallback(const sptr<IRemoteObject>& updateEngineCallback);
-
-    // 等待回调注册完成（带超时）
-    bool WaitForCallbackRegistration(int timeoutMs = CALLBACK_REGISTER_TIMEOUT_MS);
-
-    // 处理云 ROM 回调（供 CloudRomDownloadCallbackImpl 调用）
-    ErrCode OnCloudRomCallback(const CloudRomCallback &cloudRomData);
-
-    // 注册云 ROM 回调
-    bool RegisterCallback();
+    int32_t HasDownloadingTask();
 
 private:
-    // 执行下载
-    int32_t DoDownload();
+    bool WaitForCallbackRegistration();
 
-    // 更新下载状态
-    void UpdateDownloadState(DownloadState state, int32_t errorCode = 0);
+    class AudioSuiteClientDeathRecipient : public IRemoteObject::DeathRecipient {
+    public:
+        explicit AudioSuiteClientDeathRecipient(int32_t callerPid);
+        virtual ~AudioSuiteClientDeathRecipient() = default;
+        DISALLOW_COPY_AND_MOVE(AudioSuiteClientDeathRecipient);
+        void OnRemoteDied(const wptr<IRemoteObject> &remote);
 
-    // 更新下载状态（内部使用，调用方已持有锁）
-    void UpdateDownloadStateInternal(DownloadState state, int32_t errorCode = 0);
+    private:
+        const int32_t callerPid_;
+    };
 
-    // 检查是否需要停止下载（条件不满足）
-    bool ShouldStopDownload();
+    class AudioServerDeathRecipient : public IRemoteObject::DeathRecipient {
+    public:
+        explicit AudioServerDeathRecipient() = default;
+        virtual ~AudioServerDeathRecipient() = default;
+        DISALLOW_COPY_AND_MOVE(AudioServerDeathRecipient);
+        void OnRemoteDied(const wptr<IRemoteObject> &remote);
+    };
 
-    // 通知下载状态变化
-    void NotifyDownloadStatusChanged(const DownloadStatus &status);
-
-    // 获取远程版本信息
-    bool GetRemoteInfo(const std::string &version, bool useCache = true);
-
-    // 下载并安装
-    bool DownloadAndInstall(const std::string &version);
-
-    // 注册云 ROM 下载回调到 audio_policy_ext
-    bool RegisterCloudRomDownloadCallback();
-
-    bool IsDownloaded(const std::string &modelName, bool useCache);
-
-    // 新增：通过回调获取远程信息
-    bool GetRemoteInfoViaCallback(const std::string &version, bool useCache);
-
-    // 新增：通过回调检查是否已下载
-    bool IsDownloadedViaCallback(const std::string &modelName, bool useCache);
-
-    // 新增：通过回调下载并安装
-    bool DownloadAndInstallViaCallback(const std::string &version);
-
-    // 新增：通过回调取消下载
-    int32_t CancelDownloadCloudRomViaCallback(const std::string &version);
-
-    // 新增：通过回调卸载云 ROM
-    int32_t UninstallCloudRomViaCallback(const std::string& version);
-
-    // GetDownloadStatus 辅助函数
-    sptr<IUpdateEngineCallback> GetUpdateEngineCallbackProxy();
-    int32_t GetFeatureStatusInfo(const sptr<IUpdateEngineCallback>& proxy,
-        const std::string& version, StatusInfo& statusInfo);
-    int32_t GetFeatureNewVersionInfo(const sptr<IUpdateEngineCallback>& proxy,
-        const std::string& version, CloudRomNewVersionInfo& versionInfo);
-    void FillDownloadStatus(DownloadStatus& status, const std::string& version,
-        const StatusInfo& statusInfo, const CloudRomNewVersionInfo& versionInfo);
-
-    // OnCloudRomCallback 辅助函数
-    void ProcessCloudRomStatus(const StatusInfo &info);
-    void HandleInstallSuccess(const StatusInfo &info);
-    void HandleDownloadFail(const StatusInfo &info);
-    void NotifyDownloadFailedAfterRetry();
-    void HandleDownloading(const StatusInfo &info);
-
-    // GetRemoteInfoViaCallback 辅助函数
-    bool GetRemoteInfoFromProxy(const sptr<IUpdateEngineCallback>& proxy,
-        const std::string& version);
-
-    // 条件监听器
-    std::shared_ptr<BackgroundDownload> conditionMonitor_;
-
-    // 处理条件满足回调
-    void OnDownloadConditionsMet();
-
-    // 从待下载队列开始下载
-    int32_t StartDownloadFromPendingQueue();
 
     std::mutex mutex_;
+    // for download status notice
+    std::mutex statusCallbacksMutex_;
+    std::unordered_map<int32_t, sptr<IAudioSuiteStatusCallback>> statusCallbacks_;
+    std::unordered_map<int32_t, sptr<AudioSuiteClientDeathRecipient>> deathRecipients_;
+    bool registerStatusCallback_ = false;
 
-    // 下载状态
-    std::atomic<DownloadState> downloadState_;
-    std::atomic<uint32_t> downloadProgress_;
-    std::string currentVersion_;
-    std::string romPath_;
-    int32_t errorCode_;
-    std::string errMessage_;
+    // for background download;
+    std::shared_ptr<BackgroundDownload> backgroundDownload_ = nullptr;
 
-    // 下载状态标志
-    std::atomic<bool> isDownloading_;
-    std::atomic<int> downloadRetryCount_;
-    std::atomic<bool> cancelRequested_;
-
-    // UpdateEngine 相关
-    std::string productVersion_;
-
-    // 回调函数
-    std::function<void(const DownloadStatus&)> downloadCallback_;
-
-    // UpdateEngine 回调接口（用于调用 audio_policy_ext）
-    sptr<IRemoteObject> updateEngineCallback_;
-    std::mutex updateEngineCallbackMutex_;
-
-    // 回调注册同步
-    std::atomic<bool> isCallbackRegistered_;
+    // for download Interface
+    std::mutex downloadInterfaceMutex_;
+    sptr<IAudioSuiteDownloadCallback> downloadCallback_ = nullptr;
+    std::atomic<bool> isDownloadCallbackRegistered_ = false;
     std::condition_variable callbackRegisteredCond_;
-    std::mutex callbackMutex_;
-
-    // 云 ROM 下载回调实现
-    sptr<CloudRomDownloadCallbackImpl> cloudRomDownloadCallback_;
-
-    // 云 ROM 回调处理互斥锁（防止并发回调）
-    std::mutex cloudRomCallbackMutex_;
-
-    // 是否为后台下载标志
-    std::atomic<bool> isBackgroundDownload_;
+    sptr<AudioServerDeathRecipient> audioServerdeathRecipient_ = nullptr;
 };
 
 } // namespace AudioSuite

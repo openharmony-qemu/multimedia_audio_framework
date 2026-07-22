@@ -36,71 +36,80 @@ AudioSuiteDownloadManagerImpl::~AudioSuiteDownloadManagerImpl()
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl destructor");
 }
 
-int32_t AudioSuiteDownloadManagerImpl::Init()
+int32_t AudioSuiteDownloadManagerImpl::RegisterDownloadStatusCallback(
+    std::shared_ptr<DownloadStatusCallback> callback)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::Init");
-    return AudioSuiteClientPolicy::GetInstance().Init();
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::RegisterDownloadStatusCallback");
+    return AudioSuiteClientPolicy::GetInstance().RegisterDownloadStatusCallback(callback);
 }
 
-int32_t AudioSuiteDownloadManagerImpl::RegisterDownloadCallback(
-    std::shared_ptr<IDownloadCallbackListener> callback)
+int32_t AudioSuiteDownloadManagerImpl::UnregisterDownloadStatusCallback()
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::RegisterDownloadCallback");
-    return AudioSuiteClientPolicy::GetInstance().RegisterDownloadCallback(callback);
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::UnregisterDownloadStatusCallback");
+    return AudioSuiteClientPolicy::GetInstance().UnregisterDownloadStatusCallback();
 }
 
-int32_t AudioSuiteDownloadManagerImpl::UnregisterDownloadCallback()
+int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& featureName)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::UnregisterDownloadCallback");
-    return AudioSuiteClientPolicy::GetInstance().UnregisterDownloadCallback();
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartDownload, featureName=%{public}s", featureName.c_str());
+    return AudioSuiteClientPolicy::GetInstance().StartDownload(featureName);
 }
 
-int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& version)
+int32_t AudioSuiteDownloadManagerImpl::PauseDownload(const std::string& featureName)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartDownload, version=%{public}s", version.c_str());
-    return AudioSuiteClientPolicy::GetInstance().StartDownload(version);
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::PauseDownload, featureName=%{public}s", featureName.c_str());
+    return AudioSuiteClientPolicy::GetInstance().PauseDownload(featureName);
 }
 
-int32_t AudioSuiteDownloadManagerImpl::CancelDownload(const std::string& version)
+int32_t AudioSuiteDownloadManagerImpl::CancelDownload(const std::string& featureName)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::CancelDownload, version=%{public}s", version.c_str());
-    return AudioSuiteClientPolicy::GetInstance().CancelDownload(version);
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::CancelDownload, featureName=%{public}s", featureName.c_str());
+    return AudioSuiteClientPolicy::GetInstance().CancelDownload(featureName);
 }
 
-int32_t AudioSuiteDownloadManagerImpl::StartBackgroundDownload(const std::string& version)
+int32_t AudioSuiteDownloadManagerImpl::StartBackgroundDownload(const std::string& featureName)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartBackgroundDownload, version=%{public}s",
-        version.c_str());
-    return AudioSuiteClientPolicy::GetInstance().StartBackgroundDownload(version);
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartBackgroundDownload, featureName=%{public}s",
+        featureName.c_str());
+    return AudioSuiteClientPolicy::GetInstance().StartBackgroundDownload(featureName);
 }
 
-int32_t AudioSuiteDownloadManagerImpl::GetDownloadStatus(DownloadStatus& status, const std::string& version)
+int32_t AudioSuiteDownloadManagerImpl::GetDownloadStatus(
+    const std::string& featureName, AudioSuiteDownloadStatusInfo& status)
 {
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::GetDownloadStatus");
-    return AudioSuiteClientPolicy::GetInstance().GetDownloadStatus(status, version);
+    return AudioSuiteClientPolicy::GetInstance().GetDownloadStatus(featureName, status);
 }
 
-int32_t AudioSuiteDownloadManagerImpl::UninstallCloudRom(const std::string& version)
+int32_t AudioSuiteDownloadManagerImpl::UninstallCloudRom(const std::string& featureName)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::UninstallCloudRom, version=%{public}s", version.c_str());
-    return AudioSuiteClientPolicy::GetInstance().UninstallCloudRom(version);
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::UninstallCloudRom, featureName=%{public}s", featureName.c_str());
+    return AudioSuiteClientPolicy::GetInstance().UninstallCloudRom(featureName);
 }
 
-static std::unique_ptr<AudioSuiteDownloadManagerImpl> g_managerInstance;
-static bool g_managerInitialized = false;
+int32_t AudioSuiteDownloadManagerImpl::RegisterDownloadInterfaceCallback(
+    const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback)
+{
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::RegisterDownloadInterfaceCallback");
+    return AudioSuiteClientPolicy::GetInstance().RegisterDownloadInterfaceCallback(callback);
+}
+
+int32_t AudioSuiteDownloadManagerImpl::UnregisterDownloadInterfaceCallback()
+{
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::UnregisterDownloadInterfaceCallback");
+    return AudioSuiteClientPolicy::GetInstance().UnregisterDownloadInterfaceCallback();
+}
+
+void AudioSuiteDownloadManagerImpl::OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status)
+{
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::OnDownloadStatusChanged");
+    AudioSuiteClientPolicy::GetInstance().OnDownloadStatusChanged(status);
+}
 
 AudioSuiteDownloadManager& AudioSuiteDownloadManager::GetInstance()
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManager::GetInstance");
-    if (!g_managerInitialized || g_managerInstance == nullptr) {
-        g_managerInstance = std::make_unique<AudioSuiteDownloadManagerImpl>();
-        if (g_managerInstance->Init() == SUCCESS) {
-            g_managerInitialized = true;
-        } else {
-            AUDIO_ERR_LOG("AudioSuiteDownloadManager initialization failed.");
-        }
-    }
-    return *g_managerInstance;
+    static AudioSuiteDownloadManagerImpl downloadManagerImpl;
+    return downloadManagerImpl;
 }
 
 }  // namespace AudioSuite

@@ -45,7 +45,7 @@ cflags_cc = [ "-std=c++20" ]
 
 deps = [
 "../../../services/audio_suite:audio_suite_static",
-"../../../services/audio_suite/idl:audio_suite_sa_idl_headers",
+"../../../services/audio_suite/idl:audio_suite_idl_headers",
 ]
 external_deps = [
 "bounds_checking_function:libsec_shared",

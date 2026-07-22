@@ -14,22 +14,16 @@
  */
 
 package OHOS.AudioStandard.AudioSuite;
-import AudioSuiteSaTypes;
-sequenceable OHOS.IRemoteObject;
+import AudioSuiteTypes;
 
-interface IUpdateEngineCallback {
-    [ipccode 1] int GetFeatureNewVersion([in] CheckCondition checkCondition,
-        [in] FeatureInfo[] featureInfos,
-        [out] CloudRomCheckResult newVersionInfos);
-    [ipccode 2] int GetFeatureStatus([in] FeatureInfo[] featureInfos,
-        [out] StatusInfoResult statusInfos);
-    [ipccode 3] int DownloadAndInstall([in] DownloadCondition downloadCondition,
-        [in] FeatureInfo[] featureInfos,
-        [out] BusinessError businessError);
-    [ipccode 4] int CancelCloudRom([in] FeatureInfo[] featureInfos,
-        [out] BusinessError businessError);
-    [ipccode 5] int UninstallCloudRom([in] FeatureInfo[] featureInfos,
-        [out] BusinessError businessError);
-    [ipccode 6] int RegisterCloudRomCallback([in] IRemoteObject object);
-    [ipccode 7] int UnregisterCloudRomCallback();
+interface IAudioSuiteDownloadCallback {
+    [ipccode 1] int GetFeatureNewVersion([in] String featureName, [out] AudioSuiteCloudRomVersionInfo newVersion);
+    int GetFeatureStatus([in] String featureName, [out] AudioSuiteDownloadStatusInfo statusInfos);
+    int DownloadAndInstall([in] boolean downloadCondition, [in] String featureName);
+    int PauseCloudRom([in] String featureName);
+    int CancelCloudRom([in] String featureName);
+    int UninstallCloudRom([in] String featureName);
+
+    int RegisterDownloadStatusCallback();
+    int UnregisterDownloadStatusCallback();
 };

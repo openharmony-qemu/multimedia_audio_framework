@@ -14,8 +14,8 @@
  */
 
 package OHOS.AudioStandard.AudioSuite;
-import AudioSuiteSaTypes;
+import AudioSuiteTypes;
 
-interface IDownloadCallback {
-    [oneway] void OnDownloadStatusChanged([in] DownloadStatus status);
+interface IAudioSuiteStatusCallback {
+    [ipccode 1, oneway] void OnDownloadStatusChanged([in] AudioSuiteDownloadStatusInfo[] status);
 };

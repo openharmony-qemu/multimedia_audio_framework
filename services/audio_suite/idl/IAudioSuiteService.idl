@@ -15,20 +15,21 @@
 
 package OHOS.AudioStandard.AudioSuite;
 
-import AudioSuiteSaTypes;
+import AudioSuiteTypes;
 
 sequenceable OHOS.IRemoteObject;
-sequenceable audio_info..OHOS.AudioStandard.AudioStreamInfo;
 
-interface IAudioSuiteSaService {
-    [ipccode 1] int RegisterDownloadCallback([in] IRemoteObject object);
-    [ipccode 2] int StartDownload([in] String version);
-    [ipccode 3] int CancelDownload([in] String version);
-    [ipccode 4] int StartBackgroundDownload([in] String version);
-    [ipccode 5] int GetDownloadStatus([out] DownloadStatus status, [in] String version);
-    [ipccode 6] int UninstallCloudRom([in] String version);
-    [ipccode 7] int UnregisterDownloadCallback();
+interface IAudioSuiteService {
+    [ipccode 1] int RegisterDownloadStatusCallback([in] IRemoteObject object);
+    int UnregisterDownloadStatusCallback();
+    int StartDownload([in] String version);
+    int PauseDownload([in] String version);
+    int CancelDownload([in] String version);
+    int StartBackgroundDownload([in] String version);
+    int GetDownloadStatus([in] String version, [out] AudioSuiteDownloadStatusInfo status);
+    int UninstallCloudRom([in] String version);
 
-    [ipccode 8] int RegisterUpdateEngineCallback([in] IRemoteObject object);
-    [ipccode 9] int UnregisterUpdateEngineCallback();
+    int RegisterDownloadInterfaceCallback([in] IRemoteObject object);
+    int UnregisterDownloadInterfaceCallback();
+    [oneway] void OnDownloadStatusChanged([in] AudioSuiteDownloadStatusInfo[] status);
 };

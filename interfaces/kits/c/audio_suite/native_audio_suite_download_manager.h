@@ -177,6 +177,22 @@ int32_t OH_AudioSuite_StartDownload(
     OH_AudioSuite_DownloadManager *downloadManager, const char *featureName);
 
 /**
+ * @brief Pause downloading a feature.
+ * @systemapi
+ * @param downloadManager Download manager handle.
+ * @param featureName Name of the feature to pause.
+ * @return <ul>
+ *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.</li>
+ *         <li>202 if a non-system application calls this system API.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} If downloadManager or featureName is nullptr.</li>
+ *         <li>{@link AUDIOCOMMON_RESULT_ERROR_SYSTEM} If IPC communication fails or the operation fails.</li>
+ *         </ul>
+ * @since 26.0.0
+ */
+int32_t OH_AudioSuite_PauseDownload(
+    OH_AudioSuite_DownloadManager *downloadManager, const char *featureName);
+
+/**
  * @brief Cancel downloading a feature.
  * @systemapi
  * @param downloadManager Download manager handle.

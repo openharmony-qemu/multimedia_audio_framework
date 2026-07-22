@@ -18,7 +18,6 @@
 #include "native_audio_suite_base.h"
 #include "OHAudioSuiteEngine.h"
 #include "audio_suite_download_manager.h"
-#include "audio_suite_sa_types.h"
 #include "securec.h"
 
 using namespace std;
@@ -40,17 +39,17 @@ static const uint32_t MAX_FEATURE_NAME_SIZE = 256;
 static bool g_downloadManagerInited = false;
 AudioSuite::AudioSuiteDownloadManager *g_downloadManager = nullptr;
 
-class DownloadCallbackListenerTestImpl : public AudioSuite::IDownloadCallbackListener {
+class DownloadStatusCallbackTestImpl : public AudioSuite::DownloadStatusCallback {
 public:
-    ~DownloadCallbackListenerTestImpl() = default;
-    void OnDownloadStatusChanged(const AudioSuite::DownloadStatus& status) override
+    ~DownloadStatusCallbackTestImpl() = default;
+    void OnDownloadStatusChanged(const std::vector<AudioSuite::AudioSuiteDownloadStatusInfo>& status) override
     {
-        (void)status;
+        return;
     }
 };
 
-std::shared_ptr<AudioSuite::IDownloadCallbackListener> g_downloadCallback =
-    std::make_shared<DownloadCallbackListenerTestImpl>();
+std::shared_ptr<AudioSuite::DownloadStatusCallback> g_downloadCallback =
+    std::make_shared<DownloadStatusCallbackTestImpl>();
 
 typedef void (*TestPtr)();
 
@@ -390,7 +389,7 @@ void AudioSuiteManagerRegisterDownloadCallbackFuzzTest()
     if (g_downloadManager == nullptr) {
         return;
     }
-    g_downloadManager->RegisterDownloadCallback(g_downloadCallback);
+    g_downloadManager->RegisterDownloadStatusCallback(g_downloadCallback);
 }
 
 void AudioSuiteManagerStartDownloadFuzzTest()
@@ -482,8 +481,8 @@ void AudioSuiteManagerGetDownloadStatusFuzzTest()
     } else {
         featureName[nameLen] = '\0';
     }
-    AudioSuite::DownloadStatus status;
-    g_downloadManager->GetDownloadStatus(status, std::string(featureName));
+    AudioSuite::AudioSuiteDownloadStatusInfo status;
+    g_downloadManager->GetDownloadStatus(std::string(featureName), status);
 }
 
 void AudioSuiteManagerUninstallCloudRomFuzzTest()
@@ -518,7 +517,7 @@ void AudioSuiteManagerUnregisterDownloadCallbackFuzzTest()
     if (g_downloadManager == nullptr) {
         return;
     }
-    g_downloadManager->UnregisterDownloadCallback();
+    g_downloadManager->UnregisterDownloadStatusCallback();
 }
 
 vector g_testFuncs = {

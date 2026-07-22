@@ -31,17 +31,14 @@ namespace AudioSuite {
 
 class BackgroundDownload {
 public:
-    BackgroundDownload(std::function<void()> callback);
+    BackgroundDownload(std::function<int32_t(const std::string&)> downloadFunction);
     ~BackgroundDownload();
 
     int32_t Init();
-    int32_t Release();
-    bool AreConditionsMet();
-
-    // 队列管理接口
-    void AddToPendingQueue(const std::string& version);
-    size_t GetPendingQueueSize();
-    bool PopNextPendingVersion(std::string& version);
+    static bool AreConditionsMet();
+    bool HasBackgroundDownloadTask();
+    int32_t AddFeature(const std::string& featureName);
+    void RemoveFeature(const std::string& featureName);
 
 private:
     class EventSubscriber : public EventFwk::CommonEventSubscriber {
@@ -53,19 +50,16 @@ private:
         BackgroundDownload& monitor_;
     };
 
-    bool IsWifiConnected();
-    bool IsScreenLocked();
-    bool IsBatteryConditionMet();
+    static bool IsWifiConnected();
+    static bool IsScreenLocked();
+    static bool IsBatteryConditionMet();
     void HandleEvent(const EventFwk::CommonEventData& data);
+    void Release();
 
     std::mutex mutex_;
-    std::atomic<bool> isInitialized_;
-    std::function<void()> conditionMetCallback_;
-    std::shared_ptr<EventSubscriber> subscriber_;
-
-    // 队列相关成员
     std::queue<std::string> pendingDownloadQueue_;
-    std::mutex queueMutex_;
+    std::shared_ptr<EventSubscriber> subscriber_ = nullptr;
+    std::function<int32_t(const std::string&)> downloadCallback_ = nullptr;
 };
 
 } // namespace AudioSuite
