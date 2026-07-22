@@ -338,19 +338,23 @@ int32_t OHAudioSuiteDownloadManager::UninstallCloudRom(const char *featureName)
     return AudioSuite::AudioSuiteDownloadManager::GetInstance().UninstallCloudRom(std::string(featureName));
 }
 
-int32_t OHAudioSuiteDownloadManager::GetDownloadStatus(
-     const char *featureName, OH_AudioSuite_DownloadStatusInfo *status)
+int32_t OHAudioSuiteDownloadManager::GetDownloadStatus(const char *featureName,
+                                                       OH_AudioSuite_DownloadStatusInfo *status)
 {
     AudioSuite::AudioSuiteDownloadStatusInfo audioSuiteStatus;
-    int32_t ret = AudioSuite::AudioSuiteDownloadManager::GetInstance().GetDownloadStatus(
-        std::string(featureName), audioSuiteStatus);
+    int32_t ret = AudioSuite::AudioSuiteDownloadManager::GetInstance().GetDownloadStatus(std::string(featureName),
+                                                                                         audioSuiteStatus);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetDownloadStatus failed, ret = %{public}d", ret);
 
-    auto res = strncpy_s(status->featureName, sizeof(status->featureName),
-        audioSuiteStatus.featureName.c_str(), audioSuiteStatus.featureName.length());
+    auto res = strncpy_s(status->featureName,
+                         sizeof(status->featureName),
+                         audioSuiteStatus.featureName.c_str(),
+                         audioSuiteStatus.featureName.length());
     CHECK_AND_RETURN_RET_LOG(res == EOK, ERROR, "strncpy_s failed, err = %{public}d", res);
-    res = strncpy_s(status->installPath, sizeof(status->installPath),
-        audioSuiteStatus.romPath.c_str(), audioSuiteStatus.romPath.length());
+    res = strncpy_s(status->installPath,
+                    sizeof(status->installPath),
+                    audioSuiteStatus.romPath.c_str(),
+                    audioSuiteStatus.romPath.length());
     CHECK_AND_RETURN_RET_LOG(res == EOK, ERROR, "strncpy_s failed, err = %{public}d", res);
     status->downloadStatus = static_cast<int32_t>(audioSuiteStatus.state);
     status->size = audioSuiteStatus.size;

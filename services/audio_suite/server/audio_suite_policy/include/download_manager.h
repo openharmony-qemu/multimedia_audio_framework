@@ -77,7 +77,6 @@ private:
         void OnRemoteDied(const wptr<IRemoteObject> &remote);
     };
 
-
     std::mutex mutex_;
     // for download status notice
     std::mutex statusCallbacksMutex_;

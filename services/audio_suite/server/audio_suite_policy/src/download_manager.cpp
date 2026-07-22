@@ -255,7 +255,6 @@ int32_t DownloadManager::RegisterDownloadStatusCallback(const int32_t callerPid,
         registerStatusCallback_ = true;
     }
 
-
     if (object != nullptr) {
         sptr<AudioSuiteClientDeathRecipient> deathRecipient =
             new(std::nothrow) AudioSuiteClientDeathRecipient(callerPid);

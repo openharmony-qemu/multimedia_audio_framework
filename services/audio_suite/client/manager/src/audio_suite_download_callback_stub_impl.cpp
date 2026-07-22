@@ -60,8 +60,9 @@ int32_t AudioSuiteDownloadCallbackStubImpl::GetFeatureNewVersion(
     return SUCCESS;
 }
 
-int32_t AudioSuiteDownloadCallbackStubImpl::GetFeatureStatus(
-        const std::string &featureInfos, AudioSuiteDownloadStatusInfo &statusInfos, int32_t &funcResult)
+int32_t AudioSuiteDownloadCallbackStubImpl::GetFeatureStatus(const std::string &featureInfos,
+                                                             AudioSuiteDownloadStatusInfo &statusInfos,
+                                                             int32_t &funcResult)
 {
     std::unique_lock lock(downloadCallback);
     std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback = downloadCallback_.lock();
@@ -72,7 +73,7 @@ int32_t AudioSuiteDownloadCallbackStubImpl::GetFeatureStatus(
 }
 
 int32_t AudioSuiteDownloadCallbackStubImpl::DownloadAndInstall(const bool downloadCondition,
-        const std::string &featureInfos, int32_t &funcResult)
+                                                               const std::string &featureInfos, int32_t &funcResult)
 {
     std::unique_lock lock(downloadCallback);
     std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback = downloadCallback_.lock();
@@ -92,13 +93,12 @@ int32_t AudioSuiteDownloadCallbackStubImpl::PauseCloudRom(const std::string &fea
     return ret;
 }
 
-int32_t AudioSuiteDownloadCallbackStubImpl::CancelCloudRom(
-        const std::string &featureInfos, int32_t &funcResult)
+int32_t AudioSuiteDownloadCallbackStubImpl::CancelCloudRom(const std::string &featureInfos, int32_t &funcResult)
 {
     std::unique_lock lock(downloadCallback);
     std::shared_ptr<AudioSuiteRomDownloadCallback> downloadCallback = downloadCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(downloadCallback != nullptr, ERR_INVALID_PARAM, "downloadCallback_ is nullptr");
- 
+
     int32_t ret = downloadCallback->CancelCloudRom(featureInfos, funcResult);
     return ret;
 }

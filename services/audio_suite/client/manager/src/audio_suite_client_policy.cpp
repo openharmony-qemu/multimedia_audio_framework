@@ -57,7 +57,6 @@ AudioSuiteClientPolicy::~AudioSuiteClientPolicy()
     }
 
     if (downloadCallbackStub_ != nullptr) {
-
         downloadCallbackStub_->ClearCallback();
         delete downloadCallbackStub_;
         downloadCallbackStub_ = nullptr;

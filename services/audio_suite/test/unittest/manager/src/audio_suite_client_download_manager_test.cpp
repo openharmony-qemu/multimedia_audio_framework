@@ -43,11 +43,14 @@ public:
 class MockAudioSuiteRomDownloadCallback : public AudioSuiteRomDownloadCallback {
 public:
     MOCK_METHOD(int32_t, GetFeatureNewVersion,
-        (const std::string featureName, AudioSuiteCloudRomVersionInfo &newfeatureNameInfos, int32_t &funcResult), (override));
+                (const std::string featureName, AudioSuiteCloudRomVersionInfo &newfeatureNameInfos,
+                 int32_t &funcResult),
+                (override));
     MOCK_METHOD(int32_t, GetFeatureStatus,
-        (const std::string featureName, AudioSuiteDownloadStatusInfo &statusInfos, int32_t &funcResult), (override));
+                (const std::string featureName, AudioSuiteDownloadStatusInfo &statusInfos, int32_t &funcResult),
+                (override));
     MOCK_METHOD(int32_t, DownloadAndInstall,
-        (const bool downloadCondition, const std::string featureName, int32_t &funcResult), (override));
+                (const bool downloadCondition, const std::string featureName, int32_t &funcResult), (override));
     MOCK_METHOD(int32_t, PauseCloudRom, (const std::string featureName, int32_t &funcResult), (override));
     MOCK_METHOD(int32_t, CancelCloudRom, (const std::string featureName, int32_t &funcResult), (override));
     MOCK_METHOD(int32_t, UninstallCloudRom, (const std::string featureName, int32_t &funcResult), (override));
