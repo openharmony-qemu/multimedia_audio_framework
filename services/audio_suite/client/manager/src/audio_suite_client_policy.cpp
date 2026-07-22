@@ -110,7 +110,7 @@ int32_t AudioSuiteClientPolicy::RegisterDownloadStatusCallback(std::shared_ptr<D
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     if (statusCallbackStub_ != nullptr) {
-        statusCallbackStub_->ClearCallback();  
+        statusCallbackStub_->ClearCallback();
         statusCallbackStub_ = nullptr;
     }
     statusCallbackStub_ = new(std::nothrow) AudioSuiteStatusCallbackStubImpl();
