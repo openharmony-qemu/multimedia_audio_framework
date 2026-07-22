@@ -139,8 +139,6 @@ bool BluetoothAudioRenderSink::IsSinkInited(void)
 {
     if (!sinkInited_) {
         AUDIO_ERR_LOG("sinkInited_ is false!");
-        HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ERR_NOT_STARTED, "Hdi not inited"
-            ":" + std::string(isBluetoothLowLatency_ ? "fast" : "normal"));
         return false;
     }
     return true;
