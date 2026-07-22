@@ -1440,7 +1440,8 @@ int32_t AudioCoreService::StartClientForPlayback(uint32_t sessionId,
     deviceDesc = streamDesc->GetMainNewDeviceDesc();
     CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr");
     CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
-    audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc, true, streamDesc);
+    audioPolicyManager_.UpdateVolumeForAllPipes();
+    audioVolumeManager_.SetVoiceCallVolumeOnDeviceSwitch(deviceDesc, true, streamDesc);
     if (pipeManager_->GetUpdateRouteSupport()) {
         UpdateOutputRoute(streamDesc, pipeManager_->QueryPipeIdBySessionId(sessionId));
     }
@@ -2669,7 +2670,9 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
 
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
     if (deviceUpdate) {
-        audioVolumeManager_.SetVolumeForSwitchDevice(audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), false);
+        audioPolicyManager_.UpdateVolumeForAllPipes();
+        audioVolumeManager_.SetVoiceCallVolumeOnDeviceSwitch(
+            audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), false);
     }
     UpdateModemRoute(modemDescs);
     if (IsNoRunningStream(outputStreamDescs)) {

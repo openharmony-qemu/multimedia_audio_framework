@@ -187,7 +187,7 @@ public:
     void UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
         bool connected, int32_t mappingId);
     void GetVolumeGroupInfo(std::vector<sptr<VolumeGroupInfo>>& volumeGroupInfos);
-    int32_t SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
+    int32_t SetVoiceCallVolumeOnDeviceSwitch(AudioDeviceDescriptor deviceDescriptor,
         bool enableSetVoiceCallVolume = true, std::shared_ptr<AudioStreamDescriptor> targetStream = nullptr);
 
     bool IsRingerModeMute();

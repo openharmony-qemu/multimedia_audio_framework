@@ -1271,7 +1271,8 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
         shared_ptr<AudioDeviceDescriptor> inDevice = audioDeviceManager_.GetCaptureDefaultDevice();
         audioRouterSelectStrategy_.UpdateCurrentInputDevice(SYSTEM_UID, {inDevice});
         AudioDeviceDescriptor curDevice = audioRouterSelectStrategy_.Get1stCurrentOutputDevice();
-        audioVolumeManager_.SetVolumeForSwitchDevice(curDevice);
+        audioPolicyManager_.UpdateVolumeForAllPipes();
+        audioVolumeManager_.SetVoiceCallVolumeOnDeviceSwitch(curDevice);
         OnPreferredDeviceUpdated(audioRouterSelectStrategy_.Get1stCurrentOutputDevice(),
             audioActiveDevice_.GetCurrentInputDeviceType(SYSTEM_UID));
         AddEarpiece();
