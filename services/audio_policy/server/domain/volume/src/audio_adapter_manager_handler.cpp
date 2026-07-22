@@ -93,7 +93,7 @@ void AudioAdapterManagerHandler::HandleUpdateRingerMode(const AppExecFwk::InnerE
 {
     std::shared_ptr<RingerModeEvent> eventContextObj = event->GetSharedObject<RingerModeEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    AudioPolicyManagerFactory::GetAudioPolicyManager().HandleRingerMode(eventContextObj->ringerMode_);
+    AudioPolicyManagerFactory::GetAudioPolicyManager().SaveRingerMode(eventContextObj->ringerMode_);
 }
 
 void AudioAdapterManagerHandler::ReleaseEventRunner()
