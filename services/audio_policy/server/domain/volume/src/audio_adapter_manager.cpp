@@ -1169,6 +1169,7 @@ void AudioAdapterManager::SaveSystemVolumeForSwitchDevice(std::shared_ptr<AudioD
 
 int32_t AudioAdapterManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
 {
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "audioServiceAdapter_ is null");
     return audioServiceAdapter_->MoveSinkInputByIndexOrName(sinkInputId, sinkIndex, sinkName);
 }
 
