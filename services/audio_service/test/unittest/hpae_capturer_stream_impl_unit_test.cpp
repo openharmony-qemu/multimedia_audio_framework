@@ -368,5 +368,67 @@ HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_017, TestSize.Level2)
     auto ret = capturerStreamImplRet->GetMinimumBufferSize(minBufferSize);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test UpdateSpanSize zero span
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSpanSize_Zero_001
+ * @tc.desc  : Test UpdateSpanSize returns invalid param when span size is zero.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, UpdateSpanSize_Zero_001, TestSize.Level1)
+{
+    auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
+    ASSERT_NE(capturerStreamImplRet, nullptr);
+    size_t oldSpanSize = capturerStreamImplRet->spanSizeInFrame_;
+    size_t oldMinBufferSize = capturerStreamImplRet->minBufferSize_;
+
+    int32_t ret = capturerStreamImplRet->UpdateSpanSize(0);
+
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(capturerStreamImplRet->spanSizeInFrame_, oldSpanSize);
+    EXPECT_EQ(capturerStreamImplRet->minBufferSize_, oldMinBufferSize);
+}
+
+/**
+ * @tc.name  : Test UpdateSpanSize unchanged span
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSpanSize_Unchanged_001
+ * @tc.desc  : Test UpdateSpanSize returns success without changing buffer size for unchanged span.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, UpdateSpanSize_Unchanged_001, TestSize.Level1)
+{
+    auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
+    ASSERT_NE(capturerStreamImplRet, nullptr);
+    size_t currentSpanSize = capturerStreamImplRet->spanSizeInFrame_;
+    size_t currentMinBufferSize = capturerStreamImplRet->minBufferSize_;
+
+    int32_t ret = capturerStreamImplRet->UpdateSpanSize(currentSpanSize);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(capturerStreamImplRet->spanSizeInFrame_, currentSpanSize);
+    EXPECT_EQ(capturerStreamImplRet->minBufferSize_, currentMinBufferSize);
+}
+
+/**
+ * @tc.name  : Test UpdateSpanSize changed span
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSpanSize_Changed_001
+ * @tc.desc  : Test UpdateSpanSize updates span size and minimum buffer size.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, UpdateSpanSize_Changed_001, TestSize.Level1)
+{
+    auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
+    ASSERT_NE(capturerStreamImplRet, nullptr);
+    size_t oldSpanSize = capturerStreamImplRet->spanSizeInFrame_;
+    size_t oldMinBufferSize = capturerStreamImplRet->minBufferSize_;
+    ASSERT_NE(oldSpanSize, 0);
+    constexpr uint32_t newSpanSize = 128;
+
+    int32_t ret = capturerStreamImplRet->UpdateSpanSize(newSpanSize);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(capturerStreamImplRet->spanSizeInFrame_, newSpanSize);
+    EXPECT_EQ(capturerStreamImplRet->minBufferSize_, oldMinBufferSize * newSpanSize / oldSpanSize);
+}
 }
 }

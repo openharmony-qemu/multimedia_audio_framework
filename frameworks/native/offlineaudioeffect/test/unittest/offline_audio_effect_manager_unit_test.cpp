@@ -29,6 +29,7 @@
 #include "v1_0/ieffect_control.h"
 #include "v1_0/ieffect_model.h"
 #include "audio_utils.h"
+#include "securec.h"
 
 using namespace testing::ext;
 using namespace testing;

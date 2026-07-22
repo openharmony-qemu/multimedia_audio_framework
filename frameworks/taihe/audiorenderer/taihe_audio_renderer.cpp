@@ -37,7 +37,6 @@
 #include "audio_errors.h"
 
 namespace ANI::Audio {
-std::unique_ptr<OHOS::AudioStandard::AudioRendererOptions> AudioRendererImpl::sRendererOptions_ = nullptr;
 std::mutex AudioRendererImpl::createMutex_;
 int32_t AudioRendererImpl::isConstructSuccess_ = OHOS::AudioStandard::SUCCESS;
 constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
@@ -68,20 +67,24 @@ static void UnregisterAudioRendererSingletonCallbackTemplate(std::shared_ptr<uin
 }
 
 AudioRendererImpl::AudioRendererImpl()
-    : audioRenderer_(nullptr), contentType_(OHOS::AudioStandard::ContentType::CONTENT_TYPE_MUSIC),
-    streamUsage_(OHOS::AudioStandard::StreamUsage::STREAM_USAGE_MEDIA) {}
+    : audioRenderer_(nullptr) {}
 
-AudioRendererImpl::AudioRendererImpl(std::shared_ptr<AudioRendererImpl> obj)
-    : audioRenderer_(nullptr), contentType_(OHOS::AudioStandard::ContentType::CONTENT_TYPE_MUSIC),
-    streamUsage_(OHOS::AudioStandard::StreamUsage::STREAM_USAGE_MEDIA)
-{
-    if (obj != nullptr) {
-        audioRenderer_ = obj->audioRenderer_;
-        contentType_ = obj->contentType_;
-        streamUsage_ = obj->streamUsage_;
-        callbackTaihe_ = obj->callbackTaihe_;
-    }
-}
+AudioRendererImpl::AudioRendererImpl(
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+    std::shared_ptr<OHOS::AudioStandard::AudioRenderer> audioRenderer,
+#else
+    std::unique_ptr<OHOS::AudioStandard::AudioRenderer> audioRenderer,
+#endif
+    std::shared_ptr<OHOS::AudioStandard::AudioRendererCallback> callback,
+    const OHOS::AudioStandard::AudioRendererOptions &rendererOptions)
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+    : audioRenderer_(audioRenderer),
+#else
+    : audioRenderer_(std::move(audioRenderer)),
+#endif
+    callbackTaihe_(callback),
+    rendererOptions_(rendererOptions)
+{}
 
 int64_t AudioRendererImpl::GetImplPtr()
 {
@@ -98,62 +101,51 @@ void AudioRendererImpl::CreateRendererFailed()
     AUDIO_ERR_LOG("Renderer Create failed %{public}d", AudioRendererImpl::isConstructSuccess_);
 }
 
-std::shared_ptr<AudioRendererImpl> AudioRendererImpl::CreateAudioRendererNativeObject()
-{
-    std::shared_ptr<AudioRendererImpl> audioRendererImpl = std::make_shared<AudioRendererImpl>();
-    CHECK_AND_RETURN_RET_LOG(audioRendererImpl != nullptr, nullptr, "No memory");
-    CHECK_AND_RETURN_RET_LOG(sRendererOptions_ != nullptr, nullptr, "sRendererOptions_ is nullptr");
-    audioRendererImpl->contentType_ = sRendererOptions_->rendererInfo.contentType;
-    audioRendererImpl->streamUsage_ = sRendererOptions_->rendererInfo.streamUsage;
-
-    OHOS::AudioStandard::AudioRendererOptions rendererOptions = *sRendererOptions_;
-    /* AudioRenderer not support other rendererFlags, only support flag 0 */
-    if (rendererOptions.rendererInfo.rendererFlags != 0) {
-        rendererOptions.rendererInfo.rendererFlags = 0;
-    }
-#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-    audioRendererImpl->audioRenderer_ = OHOS::AudioStandard::AudioRenderer::CreateRenderer(rendererOptions,
-        rendererOptions.appInfo);
-#else
-    std::string cacheDir = "";
-    audioRendererImpl->audioRenderer_ = OHOS::AudioStandard::AudioRenderer::Create(cacheDir, rendererOptions);
-#endif
-    if (audioRendererImpl->audioRenderer_ == nullptr) {
-        AUDIO_ERR_LOG("Renderer Create failed");
-        CreateRendererFailed();
-        return nullptr;
-    }
-
-    if (audioRendererImpl->streamUsage_ == OHOS::AudioStandard::STREAM_USAGE_UNKNOWN) {
-        audioRendererImpl->audioRenderer_->SetOffloadAllowed(false);
-    }
-
-    if (audioRendererImpl->audioRenderer_ != nullptr && audioRendererImpl->callbackTaihe_ == nullptr) {
-        audioRendererImpl->callbackTaihe_ = std::make_shared<TaiheAudioRendererCallback>();
-        CHECK_AND_RETURN_RET_LOG(audioRendererImpl->callbackTaihe_ != nullptr, audioRendererImpl, "No memory");
-        int32_t ret = audioRendererImpl->audioRenderer_->SetRendererCallback(audioRendererImpl->callbackTaihe_);
-        CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS,
-            audioRendererImpl, "Construct SetRendererCallback failed");
-    }
-    return audioRendererImpl;
-}
-
 AudioRendererOrNull AudioRendererImpl::CreateAudioRendererWrapper(
     OHOS::AudioStandard::AudioRendererOptions rendererOptions)
 {
     std::lock_guard<std::mutex> lock(createMutex_);
-    sRendererOptions_ = std::make_unique<OHOS::AudioStandard::AudioRendererOptions>();
-    if (sRendererOptions_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "sRendererOptions_ create failed");
+
+    /* AudioRenderer not support other rendererFlags, only support flag 0 */
+    if (rendererOptions.rendererInfo.rendererFlags != 0) {
+        rendererOptions.rendererInfo.rendererFlags = 0;
+    }
+    if (rendererOptions.rendererInfo.streamUsage == OHOS::AudioStandard::STREAM_USAGE_UNKNOWN) {
+        AUDIO_WARNING_LOG("stream usage is unknown, do not allow to use offload output");
+        rendererOptions.rendererInfo.isOffloadAllowed = false;
+    }
+    rendererOptions.rendererInfo.playerType = OHOS::AudioStandard::PLAYER_TYPE_ARKTS_AUDIO_RENDERER;
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+    auto audioRenderer = OHOS::AudioStandard::AudioRenderer::CreateRenderer(rendererOptions, rendererOptions.appInfo);
+#else
+    std::string cacheDir = "";
+    auto audioRenderer = OHOS::AudioStandard::AudioRenderer::Create(cacheDir, rendererOptions);
+#endif
+    if (audioRenderer == nullptr) {
+        AUDIO_ERR_LOG("Renderer Create failed");
+        CreateRendererFailed();
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "failed to CreateRenderer");
         return AudioRendererOrNull::make_type_null();
     }
-    *sRendererOptions_ = rendererOptions;
-    std::shared_ptr<AudioRendererImpl> impl = AudioRendererImpl::CreateAudioRendererNativeObject();
-    if (impl == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "failed to CreateAudioRendererNativeObject");
+
+    std::shared_ptr<TaiheAudioRendererCallback> callback = std::make_shared<TaiheAudioRendererCallback>();
+    if (callback == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "callback create failed");
         return AudioRendererOrNull::make_type_null();
     }
-    return AudioRendererOrNull::make_type_audioRenderer(make_holder<AudioRendererImpl, AudioRenderer>(impl));
+    int32_t ret = audioRenderer->SetRendererCallback(callback);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "Construct SetRendererCallback failed");
+        return AudioRendererOrNull::make_type_null();
+    }
+
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+    return AudioRendererOrNull::make_type_audioRenderer(
+        make_holder<AudioRendererImpl, AudioRenderer>(audioRenderer, callback, rendererOptions));
+#else
+    return AudioRendererOrNull::make_type_audioRenderer(
+        make_holder<AudioRendererImpl, AudioRenderer>(std::move(audioRenderer), callback, rendererOptions));
+#endif
 }
 
 void AudioRendererImpl::StartSync()
@@ -939,8 +931,14 @@ void AudioRendererImpl::RegisterRendererWriteDataCallback(std::shared_ptr<uintpt
         AUDIO_WARNING_LOG("writeData already subscribed. The old writeData function will be overwritten.");
     }
 
+    const auto &streamInfo = taiheRenderer->rendererOptions_.streamInfo;
+    uint32_t sampleRate = streamInfo.GetEffectiveSampleRate();
+    uint32_t bytesPerSample = streamInfo.channels * OHOS::AudioStandard::Util::GetSamplePerFrame(streamInfo.format);
+    size_t bufferSize = OHOS::AudioStandard::Util::CalculatePcmSizeFromDurationCeiling(
+        std::chrono::microseconds(OHOS::AudioStandard::MAX_CBBUF_IN_USEC), sampleRate, bytesPerSample);
+
     taiheRenderer->rendererWriteDataCallbackTaihe_ =
-        std::make_shared<TaiheRendererWriteDataCallback>(taiheRenderer);
+        std::make_shared<TaiheRendererWriteDataCallback>(taiheRenderer, bufferSize);
     taiheRenderer->audioRenderer_->SetRenderMode(OHOS::AudioStandard::RENDER_MODE_CALLBACK);
     CHECK_AND_RETURN_LOG(taiheRenderer->rendererWriteDataCallbackTaihe_ != nullptr, "writeDataCbTaihe_ is nullpur");
     int32_t ret = taiheRenderer->audioRenderer_->SetRendererWriteCallback(
@@ -1133,7 +1131,7 @@ void AudioRendererImpl::OnMarkReach(int64_t frame, callback_view<void(int64_t)> 
     RegisterPositionCallback(frame, cacheCallback, MARK_REACH_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OnWriteData(callback_view<AudioDataCallbackResult(array_view<uint8_t>)> callback)
+void AudioRendererImpl::OnWriteDataInner(callback_view<AudioRendererWriteDataCallbackResult(int32_t)> callback)
 {
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterRendererWriteDataCallback(cacheCallback, WRITE_DATA_CALLBACK_NAME, this);
@@ -1194,7 +1192,8 @@ void AudioRendererImpl::OffMarkReach(optional_view<callback<void(int64_t)>> call
     UnregisterPositionCallback(cacheCallback, MARK_REACH_CALLBACK_NAME, this);
 }
 
-void AudioRendererImpl::OffWriteData(optional_view<callback<AudioDataCallbackResult(array_view<uint8_t>)>> callback)
+void AudioRendererImpl::OffWriteDataInner(
+    optional_view<callback<AudioRendererWriteDataCallbackResult(int32_t)>> callback)
 {
     std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {

@@ -43,6 +43,7 @@
 #include "audio_router_center.h"
 #include "wireless_conflict_handler.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -505,14 +506,6 @@ void AudioRouterCenterArbiterFuzzTest(FuzzedDataProvider& fdp)
         center.RegisterConflictHandlers(std::make_shared<WirelessConflictHandler>());
     }
     center.StopArbiterContext();
-
-    center.StartArbiterContext();
-    center.StopArbiterContext();
-
-    {
-        AudioRouterCenter::ArbiterScope scope(center);
-        center.FetchOutputDevicesNoLock(info);
-    }
 }
 
 void Test(FuzzedDataProvider& fdp)

@@ -60,6 +60,7 @@
 #include "stream_dfx_manager.h"
 #include "audio_record_controller.h"
 #include "ipc_skeleton.h"
+#include "securec.h"
 
 
 #undef LOG_DOMAIN
@@ -422,6 +423,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
         case SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN:
             SubscribeOsAccountChangeEvents();
+            SubscribeOsAccountSubProfileChangeEvents();
             break;
         case COMMON_EVENT_SERVICE_ID:
             SubscribeCommonEventExecute();
@@ -944,6 +946,23 @@ void AudioPolicyServer::SubscribeOsAccountChangeEvents()
         AUDIO_INFO_LOG("account observer register success");
     } else {
         AUDIO_ERR_LOG("account observer register already");
+    }
+}
+
+void AudioPolicyServer::SubscribeOsAccountSubProfileChangeEvents()
+{
+    AUDIO_INFO_LOG("SubscribeOsAccountSubProfileChangeEvents start");
+    if (subProfileObserver_ == nullptr) {
+        std::set<AccountSA::OsAccountSubProfileEventType> types = {
+            AccountSA::OsAccountSubProfileEventType::SWITCHED
+        };
+        subProfileObserver_ = std::make_shared<AudioSubProfileObserver>(this);
+        ErrCode errCode = AccountSA::OsAccountSubProfileClient::GetInstance()
+            .SubscribeOsAccountSubProfileEvents(types, subProfileObserver_);
+        CHECK_AND_RETURN_LOG(errCode == ERR_OK, "sub-profile observer register fail");
+        AUDIO_INFO_LOG("sub-profile observer register success");
+    } else {
+        AUDIO_ERR_LOG("sub-profile observer register already");
     }
 }
 
@@ -1522,6 +1541,41 @@ int32_t AudioPolicyServer::GetSystemVolumeInDb(int32_t volumeTypeIn,
     }
 
     volume = audioPolicyManager_.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetVolumeControlPriority(const std::vector<int32_t> &prioritiesIn, int32_t &result)
+{
+    int32_t size = prioritiesIn.size();
+    AUDIO_INFO_LOG("priorities.size() [%{public}d]", size);
+
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission!");
+        result = ERR_PERMISSION_DENIED;
+        return SUCCESS;
+    }
+    std::unordered_map<AudioVolumeType, int32_t> volumeTypePriorities;
+    int32_t prioritiy = 0;
+    for (auto volumeTypeIn : prioritiesIn) {
+        AudioVolumeType volumeType = static_cast<AudioVolumeType>(volumeTypeIn);
+        if (!AudioVolumeUtils::GetInstance().IsVolumeTypeValid(volumeType)) {
+            result = ERR_INVALID_PARAM;
+            return SUCCESS;
+        }
+        if (volumeTypePriorities.count(volumeType) > 0) {
+            AUDIO_ERR_LOG("The volume type [%{public}d] already exists!", volumeType);
+            result = ERR_INVALID_PARAM;
+            return SUCCESS;
+        }
+        volumeTypePriorities[volumeType] = prioritiy;
+        prioritiy++;
+    }
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        result = ERR_OPERATION_FAILED;
+        return SUCCESS;
+    }
+    result = interruptService_->SetVolumeControlPriority(volumeTypePriorities);
     return SUCCESS;
 }
 
@@ -4782,18 +4836,18 @@ int32_t AudioPolicyServer::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t 
     return AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(zoneId, streamId);
 }
 
-int32_t AudioPolicyServer::PauseAudioFocusForExtAudioZone()
+int32_t AudioPolicyServer::PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "No system permission");
-    return AudioZoneService::GetInstance().PauseAudioFocusForExtAudioZone();
+    return AudioZoneService::GetInstance().PauseAudioFocusForExtAudioZone(zoneIds);
 }
 
-int32_t AudioPolicyServer::ResumeAudioFocusForExtAudioZone()
+int32_t AudioPolicyServer::ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "No system permission");
-    return AudioZoneService::GetInstance().ResumeAudioFocusForExtAudioZone();
+    return AudioZoneService::GetInstance().ResumeAudioFocusForExtAudioZone(zoneIds);
 }
 
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
@@ -5133,6 +5187,12 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id, const int &oldId)
     audioPolicyService_.NotifyAccountsChanged(id);
     SendVolumeKeyEventToRssWhenAccountsChanged();
     RegisterDefaultVolumeTypeListener();
+}
+
+void AudioPolicyServer::NotifySubProfileChanged()
+{
+    AUDIO_INFO_LOG("NotifySubProfileChanged received");
+    audioPolicyService_.NotifySubProfileChanged();
 }
 
 void AudioPolicyServer::CheckHibernateState(bool hibernate)
@@ -5994,6 +6054,8 @@ int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, 
 
 int32_t AudioPolicyServer::SelectPrivateDevice(int32_t devType, const std::string &macAddress)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     eventEntry_->OnPrivacyDeviceSelected(static_cast<DeviceType>(devType), macAddress, "Nearlink");
     return SUCCESS;
 }
@@ -6001,6 +6063,8 @@ int32_t AudioPolicyServer::SelectPrivateDevice(int32_t devType, const std::strin
 int32_t AudioPolicyServer::ForceSelectDevice(int32_t devType, const std::string &macAddress,
     const sptr<AudioRendererFilter> &filter)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     eventEntry_->OnForcedDeviceSelected(static_cast<DeviceType>(devType), macAddress, filter, "Nearlink");
     return SUCCESS;
 }
@@ -6118,6 +6182,9 @@ bool AudioPolicyServer::IsPublishCalled() const
 
 int32_t AudioPolicyServer::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
 {
+    AUDIO_INFO_LOG("enter");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     return AudioPipeSelector::GetPipeSelector()->SetCustomAudioMix(zoneName, audioMixes);
 }
 
@@ -6235,10 +6302,19 @@ int32_t AudioPolicyServer::DestroyLoopback(int32_t type, int32_t &ret)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config)
+int32_t AudioPolicyServer::EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config,
+    const sptr<IRemoteObject> &object)
 {
     int32_t uid = IPCSkeleton::GetCallingUid();
     int32_t pid = IPCSkeleton::GetCallingPid();
+    if (show) {
+        sptr<AudioServerDeathRecipient> recipient = new AudioServerDeathRecipient(pid, uid);
+        CHECK_AND_RETURN_RET_LOG(recipient && object, ERR_INVALID_PARAM, "recipient/remote object is null");
+        recipient->SetNotifyCb([](pid_t pid, pid_t uid) {
+            AudioRecordController::GetInstance().OnAppDied(uid, pid);
+        });
+        object->AddDeathRecipient(recipient);
+    }
     return AudioRecordController::GetInstance().EnableSystemRecordController(show, config, uid, pid);
 }
 } // namespace AudioStandard

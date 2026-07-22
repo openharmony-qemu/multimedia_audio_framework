@@ -41,6 +41,7 @@
 #include "hpae_sink_input_node.h"
 #include "i_hpae_renderer_manager.h"
 #include "i_stream.h" // IOperation enum, used directly by FUZZ_OPERATIONS
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1090,14 +1091,13 @@ void SessionEffectLifecycleFuzzTest()
 
     uint32_t sessionId = streamInfo.sessionId;
     std::string effectName = "test_effect";
-    rendererManager->CreateSessionEffect(sessionId, effectName, nullptr, {});
+    rendererManager->PostCreateSessionEffect(sessionId, effectName, nullptr, {});
     WaitForMsgProcessing(rendererManager);
     rendererManager->HasSessionEffect(sessionId);
     int32_t type = GetData<int32_t>();
     float value = GetData<float>();
-    rendererManager->SetSessionEffectParameter(sessionId, type, value);
     rendererManager->PostSetSessionEffectParameter(sessionId, type, value);
-    rendererManager->DestroySessionEffect(sessionId);
+    rendererManager->PostDestroySessionEffect(sessionId);
     WaitForMsgProcessing(rendererManager);
     rendererManager->PostDestroySessionEffect(sessionId);
     WaitForMsgProcessing(rendererManager);
@@ -1120,17 +1120,14 @@ void SessionEffectInvalidSessionFuzzTest()
     float value = GetData<float>();
     std::string effectName = "test_effect";
 
-    // Synchronous not-found / false branches:
-    rendererManager->CreateSessionEffect(invalidSessionId, effectName, nullptr, {});
-    rendererManager->DestroySessionEffect(invalidSessionId);
-    (void)rendererManager->HasSessionEffect(invalidSessionId);
-    (void)rendererManager->IsValidSession(invalidSessionId);
-    rendererManager->SetSessionEffectParameter(invalidSessionId, type, value);
-
-    // Asynchronous Post* wrappers (dispatched to the signal-process thread):
-    rendererManager->PostSetSessionEffectParameter(invalidSessionId, type, value);
+    // All Session Effect calls go through the async Post* variants (dispatched to
+    // the signal-process thread); with an unbound sessionId they hit the not-found
+    // / false early-return branches. HasSessionEffect/IsValidSession are read-only.
     rendererManager->PostCreateSessionEffect(invalidSessionId, effectName, nullptr, {});
     rendererManager->PostDestroySessionEffect(invalidSessionId);
+    (void)rendererManager->HasSessionEffect(invalidSessionId);
+    (void)rendererManager->IsValidSession(invalidSessionId);
+    rendererManager->PostSetSessionEffectParameter(invalidSessionId, type, value);
     WaitForMsgProcessing(rendererManager);
     rendererManager->DeInit();
 }

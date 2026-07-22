@@ -71,6 +71,9 @@ public:
     void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
         const list<DevicePrivacyInfo> &deviceInfos, const std::shared_ptr<AudioDeviceDescriptor> &dev,
         std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void AddAvailableDevicesByUsageAndPrivacy(AudioDeviceUsage usage,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &resultDevices);
     vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
         const std::string &macAddress);
     vector<shared_ptr<AudioDeviceDescriptor>> GetConnectedDevicesByTypesAndRole(
@@ -104,11 +107,12 @@ public:
     AudioDevicePrivacyType GetDevicePrivacyType(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     int32_t GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool IsDeviceAvailable(AudioDeviceUsage audioDevUsage, const std::shared_ptr<AudioDeviceDescriptor> &desc);
-    void UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    void UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor, AudioPin hdiPin);
     // Update silent state for all connected wireless devices
     void UpdateAllWirelessDevicesSilentState();
     // Update wireless device silent state, only update when isSilent_ differs
     void UpdateWirelessDeviceSilentState(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool RestoreWirelessDeviceSilentState();
 
     bool HasWirelessDevicesConnected();
 

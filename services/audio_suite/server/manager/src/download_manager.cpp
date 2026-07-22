@@ -38,23 +38,25 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-
 DownloadManager::DownloadManager()
-    : downloadState_(DownloadState::DOWNLOAD_IDLE),
-      downloadProgress_(0),
-      errorCode_(0),
-      isDownloading_(false),
-      downloadRetryCount_(0),
-      cancelRequested_(false),
-      isCallbackRegistered_(false),
-      isBackgroundDownload_(false)
+    : downloadState_(DownloadState::DOWNLOAD_IDLE), downloadProgress_(0), errorCode_(0), isDownloading_(false),
+      downloadRetryCount_(0), cancelRequested_(false), isCallbackRegistered_(false), isBackgroundDownload_(false)
 {
     AUDIO_INFO_LOG("DownloadManager constructor");
+
+    conditionMonitor_ = std::make_shared<BackgroundDownload>([this]() { OnDownloadConditionsMet(); });
+
+    conditionMonitor_->Init();
 }
 
 DownloadManager::~DownloadManager()
 {
     AUDIO_INFO_LOG("DownloadManager destructor");
+    
+    if (conditionMonitor_) {
+        conditionMonitor_->Release();
+    }
+    
     Release();
 }
 
@@ -78,7 +80,7 @@ int32_t DownloadManager::Release()
         if (isDownloading_) {
             std::string versionToCancel = currentVersion_;
             lock.unlock();
-            PauseDownloadCloudRomViaCallback(versionToCancel);
+            CancelDownloadCloudRomViaCallback(versionToCancel);
             lock.lock();
         }
     }
@@ -129,10 +131,14 @@ int32_t DownloadManager::StartDownload(const std::string& version)
     return SUCCESS;
 }
 
-int32_t DownloadManager::CancelDownload()
+int32_t DownloadManager::CancelDownload(const std::string& version)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("CancelDownload Start");
+    AUDIO_INFO_LOG("CancelDownload: version=%{public}s", version.c_str());
+    if (version.empty()) {
+        AUDIO_ERR_LOG("CancelDownload: version is empty");
+        return ERR_INVALID_PARAM;
+    }
 
     bool needCancel = false;
     std::string versionToCancel;
@@ -144,12 +150,12 @@ int32_t DownloadManager::CancelDownload()
 
     cancelRequested_ = true;
     needCancel = isDownloading_;
-    versionToCancel = currentVersion_;
+    versionToCancel = version;
 
     if (needCancel) {
-        int32_t ret = PauseDownloadCloudRomViaCallback(versionToCancel);
+        int32_t ret = CancelDownloadCloudRomViaCallback(versionToCancel);
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("CancelDownload: PauseDownloadCloudRomViaCallback failed, ret=%{public}d", ret);
+            AUDIO_ERR_LOG("CancelDownload: CancelDownloadCloudRomViaCallback failed, ret=%{public}d", ret);
             return ret;
         }
     }
@@ -176,16 +182,19 @@ int32_t DownloadManager::StartBackgroundDownload(const std::string& version)
         return ERR_OPERATION_FAILED;
     }
 
-    // 保存版本信息和条件监听器
-    currentVersion_ = version;
-    isBackgroundDownload_ = true;   // 后台下载
+    // 检查下载条件（WiFi + 电量）
+    if (!conditionMonitor_->AreConditionsMet()) {
+        AUDIO_INFO_LOG("Download conditions not met, adding to pending queue");
+        conditionMonitor_->AddToPendingQueue(version);
+        return 0;  // 返回成功，表示已加入待下载队列
+    }
 
-    // 重置状态
+    // 条件满足，直接开始下载
+    currentVersion_ = version;
+    isBackgroundDownload_ = true;
     downloadProgress_ = 0;
     errorCode_ = 0;
     cancelRequested_ = false;
-
-    // 更新状态为等待中
     UpdateDownloadState(DownloadState::DOWNLOAD_WAITING);
 
     int32_t ret = DoDownload();
@@ -340,6 +349,14 @@ void DownloadManager::FillDownloadStatus(DownloadStatus& status, const std::stri
         case CloudRomStatus::DOWNLOAD_FAIL:
         case CloudRomStatus::INSTALL_FAIL:
             status.state = DownloadState::DOWNLOAD_FAILED;
+            break;
+        case CloudRomStatus::CHECK_VERSION_SUCCESS: {
+            if (downloadState_ == DownloadState::DOWNLOAD_CANCELLED) {
+                status.state = DownloadState::DOWNLOAD_CANCELLED;
+            } else {
+                status.state = DownloadState::DOWNLOAD_IDLE;
+            }
+        }
             break;
         default:
             status.state = DownloadState::DOWNLOAD_IDLE;
@@ -530,7 +547,7 @@ void DownloadManager::ProcessCloudRomStatus(const StatusInfo &info)
 
 void DownloadManager::HandleInstallSuccess(const StatusInfo &info)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("version %{public}s install success", info.featureInfo.featureName.c_str());
     romPath_ = info.installPath + "/" + info.featureInfo.featureName;
     isDownloading_ = false;
@@ -544,6 +561,12 @@ void DownloadManager::HandleInstallSuccess(const StatusInfo &info)
     status.romPath = romPath_;
     status.errMessage = EMPTY_STRING;
     NotifyDownloadStatusChanged(status);
+
+    // 检查条件并继续处理队列
+    if (conditionMonitor_->AreConditionsMet() && conditionMonitor_->GetPendingQueueSize() > 0) {
+        lock.unlock();
+        StartDownloadFromPendingQueue();
+    }
 }
 
 void DownloadManager::HandleDownloadFail(const StatusInfo &info)
@@ -574,6 +597,11 @@ void DownloadManager::HandleDownloadFail(const StatusInfo &info)
         status.errorCode = errorCode_;
         status.errMessage = "Download failed";
         NotifyDownloadStatusChanged(status);
+
+        // 检查条件并继续处理队列
+        if (conditionMonitor_->AreConditionsMet() && conditionMonitor_->GetPendingQueueSize() > 0) {
+            StartDownloadFromPendingQueue();
+        }
     }
 }
 
@@ -832,7 +860,7 @@ bool DownloadManager::DownloadAndInstallViaCallback(const std::string &version)
 }
 
 // 新增：通过回调取消下载
-int32_t DownloadManager::PauseDownloadCloudRomViaCallback(const std::string &version)
+int32_t DownloadManager::CancelDownloadCloudRomViaCallback(const std::string &version)
 {
     sptr<IRemoteObject> callbackCopy;
     {
@@ -854,13 +882,12 @@ int32_t DownloadManager::PauseDownloadCloudRomViaCallback(const std::string &ver
     std::vector<FeatureInfo> featureInfos;
     featureInfos.emplace_back(FeatureInfo{.featureName = version, .info = EMPTY_STRING});
     BusinessError businessError;
-    PauseCondition pauseCondition = {EMPTY_STRING, false, EMPTY_STRING};
-    int32_t pauseRet = 0;
+    int32_t ret = 0;
     int32_t funcResult = 0;
-    pauseRet = proxy->PauseDownloadCloudRom(pauseCondition, featureInfos, businessError, funcResult);
-    if (pauseRet != SUCCESS || funcResult != SUCCESS || businessError.errorNum != 0) {
-        AUDIO_ERR_LOG("PauseDownloadCloudRom failed, ret=%{public}d, errorNum=%{public}d, errorMsg=%{public}s",
-            pauseRet, businessError.errorNum, businessError.message.c_str());
+    ret = proxy->CancelCloudRom(featureInfos, businessError, funcResult);
+    if (ret != SUCCESS || funcResult != SUCCESS || businessError.errorNum != 0) {
+        AUDIO_ERR_LOG("CancelCloudRom failed, ret=%{public}d, errorNum=%{public}d, errorMsg=%{public}s",
+            ret, businessError.errorNum, businessError.message.c_str());
         return ERR_OPERATION_FAILED;
     }
     return SUCCESS;
@@ -898,6 +925,46 @@ int32_t DownloadManager::UninstallCloudRomViaCallback(const std::string& version
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
+}
+
+void DownloadManager::OnDownloadConditionsMet()
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+
+    AUDIO_INFO_LOG("Download conditions met, checking pending queue");
+
+    if (downloadState_ != DownloadState::DOWNLOAD_IN_PROGRESS &&
+        conditionMonitor_->GetPendingQueueSize() > 0) {
+        lock.unlock();
+        StartDownloadFromPendingQueue();
+    }
+}
+
+int32_t DownloadManager::StartDownloadFromPendingQueue()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    std::string version;
+    if (!conditionMonitor_->PopNextPendingVersion(version)) {
+        AUDIO_ERR_LOG("Pending queue is empty");
+        return ERR_OPERATION_FAILED;
+    }
+
+    if (downloadState_ == DownloadState::DOWNLOAD_IN_PROGRESS) {
+        AUDIO_INFO_LOG("Download already in progress, skip");
+        return ERR_OPERATION_FAILED;
+    }
+
+    AUDIO_INFO_LOG("Starting download from pending queue: %{public}s", version.c_str());
+
+    currentVersion_ = version;
+    isBackgroundDownload_ = true;
+    downloadProgress_ = 0;
+    errorCode_ = 0;
+    cancelRequested_ = false;
+    UpdateDownloadState(DownloadState::DOWNLOAD_WAITING);
+
+    return DoDownload();
 }
 
 } // namespace AudioSuite

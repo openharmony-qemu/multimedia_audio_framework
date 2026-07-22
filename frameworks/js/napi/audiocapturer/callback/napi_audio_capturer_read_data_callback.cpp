@@ -24,6 +24,7 @@
 #include <cstring>
 #include <memory>
 #include <new>
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -100,6 +101,7 @@ void NapiCapturerReadDataCallback::AddCallbackReference(const std::string &callb
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
+    napiCapturer_->isNotifyFromOff_.store(false);
 }
 
 void NapiCapturerReadDataCallback::CreateReadDataTsfn(napi_env env)
@@ -133,6 +135,10 @@ bool NapiCapturerReadDataCallback::HasAnyCallbackReference()
 void NapiCapturerReadDataCallback::RemoveCallbackReference(napi_env env, napi_value callback,
     const std::string &callbackName)
 {
+    std::unique_lock<std::mutex> readCallbackLock(napiCapturer_->readCallbackMutex_);
+    napiCapturer_->isNotifyFromOff_.store(true);
+    napiCapturer_->readCallbackCv_.notify_all();
+    readCallbackLock.unlock();
     std::lock_guard<std::mutex> lock(mutex_);
     std::shared_ptr<AutoRef> targetCallback = nullptr;
     if (callbackName == READ_DATA_CALLBACK_NAME) {
@@ -298,8 +304,11 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
     std::unique_lock<std::mutex> readCallbackLock(napiCapturer_->readCallbackMutex_);
     bool isTimeout = !napiCapturer_->readCallbackCv_.wait_for(readCallbackLock,
         std::chrono::milliseconds(READ_CALLBACK_TIMEOUT_IN_MS), [this] {
-            return napiCapturer_->isFrameCallbackDone_.load();
+            return napiCapturer_->isFrameCallbackDone_.load() || napiCapturer_->isNotifyFromOff_.load();
         });
+    if (napiCapturer_->isNotifyFromOff_.load()) {
+        napiCapturer_->audioCapturer_->Enqueue(event->bufDesc);
+    }
     if (isTimeout) {
         AUDIO_ERR_LOG("Client OnReadData operation timed out");
     }

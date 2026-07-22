@@ -21,8 +21,10 @@
 #include "audio_suite_log.h"
 #include "audio_utils.h"
 #include "download_manager.h"
+#ifndef AUDIOSUITE_SA_UT
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#endif
 #include "download_callback_proxy.h"
 #include "hisysevent.h"
 #include <fcntl.h>
@@ -38,12 +40,12 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-namespace {
-    __attribute__((constructor)) void LibraryLoaded() {
-    }
-}
+static constexpr const char* TASK_ID = "AudioSuiteSaUnloadTask";
+static constexpr int32_t DELAY_TIME = 300000; // 5 minutes in milliseconds
 
+#ifndef AUDIOSUITE_SA_UT
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioSuiteRomDownloadService, AudioSuiteRomDownloadService::SA_ID, true);
+#endif
 
 AudioSuiteRomDownloadService::AudioSuiteRomDownloadService(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate)
@@ -51,8 +53,33 @@ AudioSuiteRomDownloadService::AudioSuiteRomDownloadService(int32_t systemAbility
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService constructor START, SA_ID: %{public}d", systemAbilityId);
 }
 
+AudioSuiteRomDownloadService::~AudioSuiteRomDownloadService()
+{
+    std::shared_ptr<AppExecFwk::EventRunner> runnerCopy;
+    {
+        std::lock_guard<std::mutex> lock(eventMutex_);
+        if (unloadHandler_ != nullptr) {
+            unloadHandler_->RemoveAllEvents();
+            unloadHandler_.reset();
+        }
+        runnerCopy = unloadRunner_;
+        unloadRunner_.reset();
+    }
+    if (runnerCopy != nullptr) {
+        runnerCopy->Stop();
+    }
+}
+
 void AudioSuiteRomDownloadService::OnStart()
 {
+    {
+        std::lock_guard<std::mutex> lock(eventMutex_);
+        unloadRunner_ = AppExecFwk::EventRunner::Create("AudioSuiteSaUnloadRunner");
+        CHECK_AND_RETURN_LOG(unloadRunner_ != nullptr, "Failed to create unload runner");
+        unloadHandler_ = std::make_shared<AppExecFwk::EventHandler>(unloadRunner_);
+        CHECK_AND_RETURN_LOG(unloadHandler_ != nullptr, "Failed to create unload handler");
+    }
+
     downloadManager_ = std::make_shared<DownloadManager>();
     if (downloadManager_) {
         downloadManager_->Init();
@@ -68,12 +95,14 @@ void AudioSuiteRomDownloadService::OnStart()
         AUDIO_ERR_LOG("AudioSuiteRomDownloadService: Publish failed");
         return;
     }
+    PostDelayUnloadTask();
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService: Publish success");
 }
 
 void AudioSuiteRomDownloadService::OnStop()
 {
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService::OnStop");
+
     std::lock_guard<std::mutex> lock(mutex_);
 
     if (downloadManager_) {
@@ -85,17 +114,10 @@ void AudioSuiteRomDownloadService::OnStop()
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService: OnStop completed");
 }
 
-int32_t AudioSuiteRomDownloadService::Dump(int32_t fd, const std::vector<std::u16string>& args)
-{
-    AUDIO_INFO_LOG("AudioSuiteRomDownloadService::Dump");
-    dprintf(fd, "AudioSuiteRomDownloadService:");
-    dprintf(fd, "SA ID: %d", AudioSuiteRomDownloadService::SA_ID);
-    return 0;
-}
-
 ErrCode AudioSuiteRomDownloadService::RegisterDownloadCallback(const sptr<IRemoteObject>& callback, ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService::RegisterDownloadCallback");
+    PostDelayUnloadTask();
 
     if (!CheckPermission()) {
         AUDIO_ERR_LOG("RegisterDownloadCallback: Permission check failed");
@@ -132,6 +154,7 @@ ErrCode AudioSuiteRomDownloadService::UnregisterDownloadCallback(ErrCode &result
 ErrCode AudioSuiteRomDownloadService::RegisterUpdateEngineCallback(const sptr<IRemoteObject>& callback, ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService::RegisterUpdateEngineCallback");
+    PostDelayUnloadTask();
 
     if (!CheckPermission()) {
         AUDIO_ERR_LOG("RegisterUpdateEngineCallback: Permission check failed");
@@ -172,6 +195,7 @@ ErrCode AudioSuiteRomDownloadService::UnregisterUpdateEngineCallback(ErrCode& re
 ErrCode AudioSuiteRomDownloadService::StartDownload(const std::string& version, ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService::StartDownload, version=%{public}s", version.c_str());
+    PostDelayUnloadTask();
 
     if (!CheckPermission()) {
         AUDIO_ERR_LOG("StartDownload: Permission check failed");
@@ -192,9 +216,10 @@ ErrCode AudioSuiteRomDownloadService::StartDownload(const std::string& version, 
     return SUCCESS;
 }
 
-ErrCode AudioSuiteRomDownloadService::CancelDownload(ErrCode& result)
+ErrCode AudioSuiteRomDownloadService::CancelDownload(const std::string& version, ErrCode& result)
 {
-    AUDIO_INFO_LOG("AudioSuiteRomDownloadService::CancelDownload");
+    AUDIO_INFO_LOG("AudioSuiteRomDownloadService::CancelDownload, version=%{public}s", version.c_str());
+    PostDelayUnloadTask();
 
     if (!CheckPermission()) {
         AUDIO_ERR_LOG("CancelDownload: Permission check failed");
@@ -208,7 +233,7 @@ ErrCode AudioSuiteRomDownloadService::CancelDownload(ErrCode& result)
         return SUCCESS;
     }
  
-    result = downloadManager_->CancelDownload();
+    result = downloadManager_->CancelDownload(version);
     if (result != SUCCESS) {
         AUDIO_ERR_LOG("CancelDownload failed, error=%{public}d", result);
     }
@@ -218,6 +243,7 @@ ErrCode AudioSuiteRomDownloadService::CancelDownload(ErrCode& result)
 ErrCode AudioSuiteRomDownloadService::StartBackgroundDownload(const std::string& version, ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService::StartBackgroundDownload, version=%{public}s", version.c_str());
+    PostDelayUnloadTask();
 
     if (!CheckPermission()) {
         AUDIO_ERR_LOG("StartBackgroundDownload: Permission check failed");
@@ -241,6 +267,7 @@ ErrCode AudioSuiteRomDownloadService::StartBackgroundDownload(const std::string&
 ErrCode AudioSuiteRomDownloadService::UninstallCloudRom(const std::string &version, ErrCode &result)
 {
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService::UninstallCloudRom");
+    PostDelayUnloadTask();
 
     if (!CheckPermission()) {
         AUDIO_ERR_LOG("UninstallCloudRom: Permission check failed");
@@ -265,6 +292,7 @@ ErrCode AudioSuiteRomDownloadService::GetDownloadStatus(
     DownloadStatus &status, const std::string &version, ErrCode &result)
 {
     AUDIO_INFO_LOG("AudioSuiteRomDownloadService::GetDownloadStatus");
+    PostDelayUnloadTask();
 
     if (!CheckPermission()) {
         AUDIO_ERR_LOG("GetDownloadStatus: Permission check failed");
@@ -315,6 +343,62 @@ void AudioSuiteRomDownloadService::NotifyDownloadStatusChanged(const DownloadSta
     callbackProxy->OnDownloadStatusChanged(status);
     AUDIO_DEBUG_LOG("NotifyDownloadStatusChanged: state=%{public}d, progress=%{public}u",
         static_cast<int32_t>(status.state), status.progress);
+}
+
+bool AudioSuiteRomDownloadService::ShouldExtendUnloadTimer()
+{
+    bool hasDownloadingTask = false;
+    bool hasRegisteredCallback = HasRegisteredCallback();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (downloadManager_ != nullptr) {
+            DownloadStatus status;
+            ErrCode ret = downloadManager_->GetDownloadStatus(status, "");
+            hasDownloadingTask = (ret == SUCCESS && status.state == DownloadState::DOWNLOAD_IN_PROGRESS);
+        }
+    }
+    AUDIO_INFO_LOG("ShouldExtendUnloadTimer: hasDownloadingTask=%{public}d, hasRegisteredCallback=%{public}d",
+        hasDownloadingTask, hasRegisteredCallback);
+    return hasDownloadingTask || hasRegisteredCallback;
+}
+
+void AudioSuiteRomDownloadService::PostDelayUnloadTask()
+{
+    std::lock_guard<std::mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(unloadHandler_ != nullptr, "PostDelayUnloadTask: unloadHandler_ is null");
+
+    auto task = [this]() {
+        if (ShouldExtendUnloadTimer()) {
+            std::lock_guard<std::mutex> lock(eventMutex_);
+            CHECK_AND_RETURN_LOG(unloadHandler_ != nullptr, "unloadHandler_ is null");
+            auto extendedTask = []() {
+#ifndef AUDIOSUITE_SA_UT
+                auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+                CHECK_AND_RETURN_LOG(samgrProxy != nullptr, "get samgr failed");
+                int32_t ret = samgrProxy->UnloadSystemAbility(AudioSuiteRomDownloadService::SA_ID);
+                CHECK_AND_RETURN_LOG(ret == SUCCESS, "unload system ability failed, ret=%{public}d", ret);
+#endif
+            };
+            unloadHandler_->RemoveTask(TASK_ID);
+            unloadHandler_->PostTask(extendedTask, TASK_ID, DELAY_TIME);
+            return;
+        }
+
+#ifndef AUDIOSUITE_SA_UT
+        auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        CHECK_AND_RETURN_LOG(samgrProxy != nullptr, "get samgr failed");
+        int32_t ret = samgrProxy->UnloadSystemAbility(AudioSuiteRomDownloadService::SA_ID);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "unload system ability failed, ret=%{public}d", ret);
+#endif
+    };
+    unloadHandler_->RemoveTask(TASK_ID);
+    unloadHandler_->PostTask(task, TASK_ID, DELAY_TIME);
+}
+
+bool AudioSuiteRomDownloadService::HasRegisteredCallback()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return downloadCallback_ != nullptr;
 }
 
 } // namespace AudioSuite

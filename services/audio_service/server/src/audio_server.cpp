@@ -77,6 +77,7 @@
 #include "audio_system_load_listener.h"
 #ifdef FEATURE_CALL_MANAGER
 #include "call_manager_client.h"
+#include "securec.h"
 #endif
 #ifdef SUPPORT_OLD_ENGINE
 #define PA
@@ -164,6 +165,20 @@ constexpr int64_t RENDER_DETECTION_CYCLE_NS = 10000000000;
 constexpr int32_t RENDER_BAD_FRAMES_RATIO = 100;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
+constexpr uint32_t PLAYBACK_CAPTURE_MODE_ONLY_VOIP = 0x4000;
+static bool IsOnlyVoipPlaybackCaptureUsages(const std::vector<StreamUsage> &usages)
+{
+    for (const auto &usage : usages) {
+        if (usage == STREAM_USAGE_VOICE_COMMUNICATION) {
+            continue;
+        }
+        if (usage == STREAM_USAGE_VIDEO_COMMUNICATION) {
+            continue;
+        }
+        return false;
+    }
+    return true;
+}
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -1224,7 +1239,7 @@ int32_t AudioServer::SetCommonExtraParameters(const std::string &key,
 
     std::string value;
     bool isParamValid = ProcessKeyValuePairs(key, kvpairs, mainKeyIt->second, value);
-    CHECK_AND_RETURN_RET_LOG(isParamValid, ERR_INVALID_PARAM, "invalid subkey or value");
+    CHECK_AND_RETURN_RET(isParamValid, ERR_INVALID_PARAM);
 
     return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary", "", value);
 }
@@ -1760,9 +1775,6 @@ int32_t AudioServer::OffloadSetVolume(float volume, uint32_t renderId)
 int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag,
     int32_t phoneCallSceneType)
 {
-    AUDIO_INFO_LOG("Scene: %{public}d, a2dpOffloadFlag: %{public}d, "
-        "scoExcludeFlag: %{public}d, phoneCallSceneType: %{public}d",
-        audioScene, a2dpOffloadFlag, scoExcludeFlag, phoneCallSceneType);
     AudioScene audioSceneIn = static_cast<AudioScene>(audioScene);
     CHECK_AND_RETURN_RET_LOG(audioSceneIn > AUDIO_SCENE_INVALID && audioSceneIn < AUDIO_SCENE_MAX,
         ERR_INVALID_PARAM, "param is invalid");
@@ -2041,7 +2053,6 @@ int32_t AudioServer::SetAudioBalanceStatus()
 {
     bool inPhoneScene = (audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT);
     bool isAudioBalanceEnabled = (!inPhoneScene) && (!isEarpiece_);
-    AUDIO_INFO_LOG("isAudioBalanceEnabled: %{public}d", isAudioBalanceEnabled);
     return SetAudioBalanceValueInner(isAudioBalanceEnabled, audioBalanceValue_);
 }
 
@@ -2056,6 +2067,7 @@ int32_t AudioServer::SetAudioBalanceValue(float audioBalance)
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
     bool inPhoneScene = (audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT);
     bool isAudioBalanceEnabled = (!inPhoneScene) && (!isEarpiece_);
+    AUDIO_INFO_LOG("isAudioBalanceEnabled: %{public}d", isAudioBalanceEnabled);
     return SetAudioBalanceValueInner(isAudioBalanceEnabled, audioBalance);
 }
 
@@ -2271,6 +2283,10 @@ bool AudioServer::CheckStreamInfoFormat(const AudioProcessConfig &config)
         return false;
     }
 
+    CHECK_AND_RETURN_RET_LOG(config.streamInfo.customSampleRate == 0 ||
+        Util::IsCustomSampleRateValid(config.streamInfo.customSampleRate), false,
+        "Check format failed invalid customSampleRate:%{public}u", config.streamInfo.customSampleRate);
+
     if (NotContain(AUDIO_SUPPORTED_FORMATS, config.streamInfo.format)) {
         AUDIO_ERR_LOG("Check format failed invalid format:%{public}d", config.streamInfo.format);
         return false;
@@ -2436,26 +2452,8 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         return remoteObject;
     }
 
-#ifdef SUPPORT_LOW_LATENCY
-    sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(config);
-    if (process == nullptr) {
-        if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-            AudioService::GetInstance()->CleanAppUseNumMap(appUid);
-        }
-        HILOG_COMM_ERROR("[CreateAudioStream]GetAudioProcess failed.");
-        return nullptr;
-    }
-    AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
-    if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
-        AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(config.audioMode);
-    }
-    sptr<IRemoteObject> remoteObject= process->AsObject();
-    pipeInfoGuard->SetReleaseFlag(false);
-    return remoteObject;
-#else
     HILOG_COMM_ERROR("[CreateAudioStream]GetAudioProcess failed.");
     return nullptr;
-#endif
 }
 
 int32_t AudioServer::CheckAndWaitAudioPolicyReady()
@@ -2580,6 +2578,12 @@ bool AudioServer::HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
     const AudioPlaybackCaptureConfig &filterConfig)
 {
     if (resetConfig.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        if (filterConfig.filterOptions.playbackCaptureMode == PLAYBACK_CAPTURE_MODE_ONLY_VOIP) {
+            CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), false,
+                "Check permission failed, no system permission");
+            CHECK_AND_RETURN_RET_LOG(IsOnlyVoipPlaybackCaptureUsages(filterConfig.filterOptions.usages), false,
+                "Check playback capture usages failed");
+        }
         int32_t innerCapId = 0;
         if (InnerCheckCaptureLimit(filterConfig, innerCapId) == SUCCESS) {
             resetConfig.innerCapId = innerCapId;
@@ -2609,21 +2613,7 @@ int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &co
 
 bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
 {
-    int32_t enableNewRoute = 0;
-    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-    if (enableNewRoute != 1) {
-        return true;
-    }
-    if (config.audioMode == AUDIO_MODE_PLAYBACK) {
-        return config.rendererInfo.rendererFlags == AUDIO_FLAG_NORMAL ||
-            config.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT ||
-            config.rendererInfo.rendererFlags == AUDIO_FLAG_DIRECT ||
-            config.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT;
-    } else if (config.audioMode == AUDIO_MODE_RECORD) {
-        return config.capturerInfo.capturerFlags == AUDIO_FLAG_NORMAL;
-    }
-
-    return false;
+    return true;
 }
 
 int32_t AudioServer::CheckRemoteDeviceState(const std::string &networkId, int32_t deviceRole, bool isStartDevice)
@@ -3824,17 +3814,6 @@ int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate,
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     int32_t ret = ERROR; //if is not low latency, should return error
-#ifdef SUPPORT_LOW_LATENCY
-    auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
-    CHECK_AND_RETURN_RET_LOG(ptr != nullptr, ERROR, "endpoint not exist!");
-    ret = ptr->AddCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "add injector fail!");
-    AudioModuleInfo info = AudioInjectorService::GetInstance().GetModuleInfo();
-    rate = info.rate;
-    format = info.format;
-    channels = info.channels;
-    bufferSize = info.bufferSize;
-#endif
     return ret;
 }
 
@@ -3842,12 +3821,6 @@ int32_t AudioServer::RemoveCaptureInjector(uint32_t sinkPortidx)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     int32_t ret = ERROR; //if is not low latency, should return error
-#ifdef SUPPORT_LOW_LATENCY
-    auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
-    CHECK_AND_RETURN_RET_LOG(ptr != nullptr, ERROR, "endpoint not exist!");
-    ret = ptr->RemoveCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "remove injector fail!");
-#endif
     return ret;
 }
 

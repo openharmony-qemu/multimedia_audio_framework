@@ -371,7 +371,6 @@ HWTEST(CapturerInClientUnitTest, OnMetaData_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     ASSERT_NE(capturerInClientInner, nullptr);
-
     std::vector<uint8_t> emptyMetadata;
     int32_t ret = capturerInClientInner->OnMetaData(emptyMetadata);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
@@ -427,6 +426,7 @@ HWTEST(CapturerInClientUnitTest, IpcStreamListenerImplOnMetaData_001, TestSize.L
 HWTEST(CapturerInClientUnitTest, NotifyFastStatusChange_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     int32_t notifyCount = 0;
     FastStatus notifiedStatus = FASTSTATUS_INVALID;
     capturerInClientInner->SetFastStatusChangeCallback([&notifyCount, &notifiedStatus] (FastStatus status) {
@@ -458,6 +458,7 @@ HWTEST(CapturerInClientUnitTest, NotifyFastStatusChange_001, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, OnOperationHandled_UpdateSpanSize_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     int32_t notifyCount = 0;
     FastStatus notifiedStatus = FASTSTATUS_INVALID;
     capturerInClientInner->SetFastStatusChangeCallback([&notifyCount, &notifiedStatus] (FastStatus status) {
@@ -2426,6 +2427,7 @@ HWTEST(CapturerInClientUnitTest, Read_002, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, SetMuteHint_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     Init(capturerInClientInner);
     capturerInClientInner->ipcStream_ = nullptr;
 
@@ -2442,6 +2444,7 @@ HWTEST(CapturerInClientUnitTest, SetMuteHint_001, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, SetMuteHint_002, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     Init(capturerInClientInner);
     capturerInClientInner->ipcStream_ = new IpcStreamTest();
 
@@ -2477,6 +2480,7 @@ HWTEST(CapturerInClientUnitTest, IsRestoreNeeded_001, TestSize.Level4)
 HWTEST(CapturerInClientUnitTest, ConstructConfig_MMAP_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->clientPid_ = 10;
     capturerInClientInner->clientUid_ = 10;
     capturerInClientInner->appTokenId_ = 10;
@@ -2496,6 +2500,7 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_MMAP_001, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, ConstructConfig_VOIP_FAST_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->clientPid_ = 10;
     capturerInClientInner->clientUid_ = 10;
     capturerInClientInner->appTokenId_ = 10;
@@ -2514,6 +2519,7 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_VOIP_FAST_001, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, ConstructConfig_InvalidFlag_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->clientPid_ = 10;
     capturerInClientInner->clientUid_ = 10;
     capturerInClientInner->streamParams_.channels = STEREO;
@@ -2529,6 +2535,7 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_InvalidFlag_001, TestSize.Level
 HWTEST(CapturerInClientUnitTest, GetStreamClass_MMAP_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
     
     IAudioStream::StreamClass streamClass = capturerInClientInner->GetStreamClass();
@@ -2538,6 +2545,7 @@ HWTEST(CapturerInClientUnitTest, GetStreamClass_MMAP_001, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, GetStreamClass_VOIP_FAST_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
     
     IAudioStream::StreamClass streamClass = capturerInClientInner->GetStreamClass();
@@ -2547,6 +2555,7 @@ HWTEST(CapturerInClientUnitTest, GetStreamClass_VOIP_FAST_001, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, GetStreamClass_NORMAL_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
     
     IAudioStream::StreamClass streamClass = capturerInClientInner->GetStreamClass();
@@ -2556,6 +2565,7 @@ HWTEST(CapturerInClientUnitTest, GetStreamClass_NORMAL_001, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, GetFastStatus_MMAP_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
     
     FastStatus status = capturerInClientInner->GetFastStatus();
@@ -2565,6 +2575,7 @@ HWTEST(CapturerInClientUnitTest, GetFastStatus_MMAP_001, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, GetFastStatus_VOIP_FAST_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
     
     FastStatus status = capturerInClientInner->GetFastStatus();
@@ -2574,6 +2585,7 @@ HWTEST(CapturerInClientUnitTest, GetFastStatus_VOIP_FAST_001, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, GetFastStatus_NORMAL_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
     
     FastStatus status = capturerInClientInner->GetFastStatus();
@@ -2583,6 +2595,7 @@ HWTEST(CapturerInClientUnitTest, GetFastStatus_NORMAL_001, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, InitDfxOperation_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->sessionId_ = 12345;
     capturerInClientInner->clientConfig_.streamInfo.samplingRate = SAMPLE_RATE_48000;
     capturerInClientInner->clientConfig_.streamInfo.customSampleRate = 0;
@@ -2598,6 +2611,7 @@ HWTEST(CapturerInClientUnitTest, InitDfxOperation_001, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, InitDfxOperation_002, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->sessionId_ = 12345;
     capturerInClientInner->clientConfig_.streamInfo.samplingRate = SAMPLE_RATE_48000;
     capturerInClientInner->clientConfig_.streamInfo.customSampleRate = SAMPLE_RATE_44100;
@@ -2613,6 +2627,7 @@ HWTEST(CapturerInClientUnitTest, InitDfxOperation_002, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, InitDfxOperation_003, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->sessionId_ = 12345;
     capturerInClientInner->clientConfig_.streamInfo.samplingRate = SAMPLE_RATE_48000;
     capturerInClientInner->clientConfig_.streamInfo.customSampleRate = 0;
@@ -2629,7 +2644,8 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_AllValidFlags_001, TestSize.Lev
 {
     auto initCapturer = []() {
         auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-        capturerInClientInner->clientPid_ = 10;
+    EXPECT_NE(capturerInClientInner, nullptr);
+    capturerInClientInner->clientPid_ = 10;
         capturerInClientInner->clientUid_ = 10;
         capturerInClientInner->appTokenId_ = 10;
         capturerInClientInner->fullTokenId_ = 10;
@@ -2661,6 +2677,7 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_AllValidFlags_001, TestSize.Lev
 HWTEST(CapturerInClientUnitTest, ConstructConfig_InvalidFlagsReset_001, TestSize.Level1)
 {
     auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
     capturerInClientInner->clientPid_ = 10;
     capturerInClientInner->clientUid_ = 10;
     capturerInClientInner->streamParams_.channels = STEREO;
@@ -2686,6 +2703,273 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_InvalidFlagsReset_001, TestSize
         AudioProcessConfig config = capturerInClientInner->ConstructConfig();
         EXPECT_EQ(config.capturerInfo.capturerFlags, AUDIO_FLAG_NORMAL);
     }
+}
+
+/**
+ * @tc.name  : Test CheckCapturerAttrInfoFromSpan with null buffer
+ * @tc.type  : FUNC
+ * @tc.number: CheckCapturerAttrInfoFromSpan_NullBuffer_001
+ * @tc.desc  : Test CheckCapturerAttrInfoFromSpan with null clientBuffer.
+ */
+HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_NullBuffer_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    capturerInClientInner->clientBuffer_ = nullptr;
+
+    CapturerAttrInfo attr;
+    bool ret = capturerInClientInner->CheckCapturerAttrInfoFromSpan(attr);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckCapturerAttrInfoFromSpan with no pending
+ * @tc.type  : FUNC
+ * @tc.number: CheckCapturerAttrInfoFromSpan_NoPending_001
+ * @tc.desc  : Test CheckCapturerAttrInfoFromSpan with no pending span.
+ */
+HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_NoPending_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    capturerInClientInner->clientBuffer_ =
+        OHAudioBuffer::CreateFromLocal(100, 100, 4);
+
+    CapturerAttrInfo attr;
+    bool ret = capturerInClientInner->CheckCapturerAttrInfoFromSpan(attr);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckCapturerAttrInfoFromSpan with valid pending
+ * @tc.type  : FUNC
+ * @tc.number: CheckCapturerAttrInfoFromSpan_Valid_001
+ * @tc.desc  : Test CheckCapturerAttrInfoFromSpan with valid pending span.
+ */
+HWTEST(CapturerInClientUnitTest, CheckCapturerAttrInfoFromSpan_Valid_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    capturerInClientInner->clientBuffer_ =
+        OHAudioBuffer::CreateFromLocal(100, 100, 4);
+
+    uint32_t validSpanSize = 960;
+    uint64_t engineSize = 1920;
+    capturerInClientInner->clientBuffer_->SetPendingSpanSize(validSpanSize, engineSize,
+        AUDIO_INPUT_FLAG_FAST);
+
+    CapturerAttrInfo attr;
+    bool ret = capturerInClientInner->CheckCapturerAttrInfoFromSpan(attr);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(attr.spanSizeInFrame, validSpanSize);
+    EXPECT_EQ(attr.engineSize, engineSize);
+    EXPECT_EQ(attr.routeFlag, AUDIO_INPUT_FLAG_FAST);
+}
+
+/**
+ * @tc.name  : Test RefreshCapturerAttrInfoFromSpan skips invalid span size
+ * @tc.type  : FUNC
+ * @tc.number: RefreshCapturerAttrInfoFromSpan_InvalidSize_001
+ * @tc.desc  : Test RefreshCapturerAttrInfoFromSpan skips invalid span size but updates other fields.
+ */
+HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_InvalidSize_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    capturerInClientInner->sizePerFrameInByte_ = 4;
+    capturerInClientInner->spanSizeInFrame_ = 480;
+    capturerInClientInner->clientSpanSizeInByte_ = 1920;
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(1920, 480, 4);
+    ASSERT_NE(capturerInClientInner->clientBuffer_, nullptr);
+
+    CapturerAttrInfo attr;
+    attr.spanSizeInFrame = 16; // below MIN_SPAN_SIZE(32), invalid
+    attr.engineSize = 1920;
+    attr.routeFlag = AUDIO_INPUT_FLAG_FAST;
+
+    capturerInClientInner->RefreshCapturerAttrInfoFromSpan(attr);
+    // spanSize should NOT be updated (invalid)
+    EXPECT_EQ(capturerInClientInner->spanSizeInFrame_, 480);
+    EXPECT_EQ(capturerInClientInner->clientSpanSizeInByte_, 1920);
+    // engineSize and routeFlag should still be updated
+    EXPECT_EQ(capturerInClientInner->cacheSizeInByte_, 1920);
+    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags, AUDIO_FLAG_MMAP);
+}
+
+/**
+ * @tc.name  : Test RefreshCapturerAttrInfoFromSpan with FAST flag
+ * @tc.type  : FUNC
+ * @tc.number: RefreshCapturerAttrInfoFromSpan_FastFlag_001
+ * @tc.desc  : Test RefreshCapturerAttrInfoFromSpan with INPUT FAST flag.
+ */
+HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_FastFlag_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    capturerInClientInner->sizePerFrameInByte_ = 4;
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(1920, 480, 4);
+    ASSERT_NE(capturerInClientInner->clientBuffer_, nullptr);
+
+    CapturerAttrInfo attr;
+    attr.spanSizeInFrame = 960;
+    attr.engineSize = 1920;
+    attr.routeFlag = AUDIO_INPUT_FLAG_FAST;
+
+    capturerInClientInner->RefreshCapturerAttrInfoFromSpan(attr);
+    EXPECT_EQ(capturerInClientInner->spanSizeInFrame_, 960);
+    EXPECT_EQ(capturerInClientInner->clientSpanSizeInByte_, 3840);
+    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags, AUDIO_FLAG_MMAP);
+    EXPECT_EQ(capturerInClientInner->clientBuffer_->spanBasicInfo_.spanSizeInFrame_, attr.spanSizeInFrame);
+    EXPECT_EQ(capturerInClientInner->clientBuffer_->spanBasicInfo_.spanSizeInByte_,
+        attr.spanSizeInFrame * capturerInClientInner->sizePerFrameInByte_);
+}
+
+/**
+ * @tc.name  : Test RefreshCapturerAttrInfoFromSpan with VOIP flag
+ * @tc.type  : FUNC
+ * @tc.number: RefreshCapturerAttrInfoFromSpan_VoipFlag_001
+ * @tc.desc  : Test RefreshCapturerAttrInfoFromSpan with VOIP+FAST flag.
+ */
+HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_VoipFlag_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    capturerInClientInner->sizePerFrameInByte_ = 4;
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(960, 480, 4);
+    ASSERT_NE(capturerInClientInner->clientBuffer_, nullptr);
+
+    CapturerAttrInfo attr;
+    attr.spanSizeInFrame = 480;
+    attr.engineSize = 960;
+    attr.routeFlag = AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP;
+
+    capturerInClientInner->RefreshCapturerAttrInfoFromSpan(attr);
+    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags, AUDIO_FLAG_VOIP_FAST);
+}
+
+/**
+ * @tc.name  : Test RefreshCapturerAttrInfoFromSpan with normal flag
+ * @tc.type  : FUNC
+ * @tc.number: RefreshCapturerAttrInfoFromSpan_NormalFlag_001
+ * @tc.desc  : Test RefreshCapturerAttrInfoFromSpan with non-FAST flag.
+ */
+HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_NormalFlag_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    capturerInClientInner->sizePerFrameInByte_ = 4;
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(960, 480, 4);
+    ASSERT_NE(capturerInClientInner->clientBuffer_, nullptr);
+
+    CapturerAttrInfo attr;
+    attr.spanSizeInFrame = 480;
+    attr.engineSize = 960;
+    attr.routeFlag = AUDIO_INPUT_FLAG_NORMAL;
+
+    capturerInClientInner->RefreshCapturerAttrInfoFromSpan(attr);
+    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags, AUDIO_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name  : Test RefreshCapturerAttrInfoFromSpan with zero routeFlag
+ * @tc.type  : FUNC
+ * @tc.number: RefreshCapturerAttrInfoFromSpan_ZeroFlag_001
+ * @tc.desc  : Test RefreshCapturerAttrInfoFromSpan with zero routeFlag.
+ */
+HWTEST(CapturerInClientUnitTest, RefreshCapturerAttrInfoFromSpan_ZeroFlag_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    capturerInClientInner->sizePerFrameInByte_ = 4;
+    capturerInClientInner->capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(960, 480, 4);
+    ASSERT_NE(capturerInClientInner->clientBuffer_, nullptr);
+
+    CapturerAttrInfo attr;
+    attr.spanSizeInFrame = 480;
+    attr.engineSize = 960;
+    attr.routeFlag = 0;
+
+    capturerInClientInner->RefreshCapturerAttrInfoFromSpan(attr);
+    EXPECT_EQ(capturerInClientInner->spanSizeInFrame_, 480);
+    EXPECT_EQ(capturerInClientInner->capturerInfo_.capturerFlags, AUDIO_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name  : Test SyncCapturerAttrFromSpan with no pending
+ * @tc.type  : FUNC
+ * @tc.number: SyncCapturerAttrFromSpan_NoPending_001
+ * @tc.desc  : Test SyncCapturerAttrFromSpan with no pending span.
+ */
+HWTEST(CapturerInClientUnitTest, SyncCapturerAttrFromSpan_NoPending_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    capturerInClientInner->clientBuffer_ =
+        OHAudioBuffer::CreateFromLocal(100, 100, 4);
+
+    bool ret = capturerInClientInner->SyncCapturerAttrFromSpan();
+    EXPECT_FALSE(ret);
+    EXPECT_EQ(capturerInClientInner->spanSizeInFrame_, 0);
+}
+
+/**
+ * @tc.name  : Test SyncCapturerAttrFromSpan with null buffer
+ * @tc.type  : FUNC
+ * @tc.number: SyncCapturerAttrFromSpan_NullBuffer_001
+ * @tc.desc  : Test SyncCapturerAttrFromSpan with null clientBuffer.
+ */
+HWTEST(CapturerInClientUnitTest, SyncCapturerAttrFromSpan_NullBuffer_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    capturerInClientInner->clientBuffer_ = nullptr;
+
+    bool ret = capturerInClientInner->SyncCapturerAttrFromSpan();
+    EXPECT_FALSE(ret);
+    EXPECT_EQ(capturerInClientInner->spanSizeInFrame_, 0);
+}
+
+/**
+ * @tc.name  : Test JudgeFastStreamByCapturerAttr with FAST flag
+ * @tc.type  : FUNC
+ * @tc.number: JudgeFastStreamByCapturerAttr_Fast_001
+ * @tc.desc  : Test JudgeFastStreamByCapturerAttr returns true with FAST flag.
+ */
+HWTEST(CapturerInClientUnitTest, JudgeFastStreamByCapturerAttr_Fast_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    capturerInClientInner->clientBuffer_ =
+        OHAudioBuffer::CreateFromLocal(100, 100, 4);
+    capturerInClientInner->sizePerFrameInByte_ = 4;
+
+    capturerInClientInner->clientBuffer_->SetPendingSpanSize(960, 1920, AUDIO_INPUT_FLAG_FAST);
+
+    bool ret = capturerInClientInner->JudgeFastStreamByCapturerAttr();
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test JudgeFastStreamByCapturerAttr without FAST flag
+ * @tc.type  : FUNC
+ * @tc.number: JudgeFastStreamByCapturerAttr_Normal_001
+ * @tc.desc  : Test JudgeFastStreamByCapturerAttr returns false without FAST flag.
+ */
+HWTEST(CapturerInClientUnitTest, JudgeFastStreamByCapturerAttr_Normal_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_NE(capturerInClientInner, nullptr);
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    capturerInClientInner->clientBuffer_ =
+        OHAudioBuffer::CreateFromLocal(100, 100, 4);
+
+    bool ret = capturerInClientInner->JudgeFastStreamByCapturerAttr();
+    EXPECT_FALSE(ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

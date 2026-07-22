@@ -966,6 +966,20 @@ void AudioDeviceManager::GetAvailableDevicesWithUsage(const AudioDeviceUsage usa
     }
 }
 
+void AudioDeviceManager::AddAvailableDevicesByUsageAndPrivacy(AudioDeviceUsage usage,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &resultDevices)
+{
+    for (const auto &dev : devices) {
+        CHECK_AND_CONTINUE_LOG(dev != nullptr, "dev is null from devices");
+        for (const auto &devicePrivacy : devicePrivacyMaps_) {
+            const list<DevicePrivacyInfo> &deviceInfos = devicePrivacy.second;
+            std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(*dev);
+            GetAvailableDevicesWithUsage(usage, deviceInfos, desc, resultDevices);
+        }
+    }
+}
+
 void AudioDeviceManager::GetDefaultAvailableDevicesByUsage(AudioDeviceUsage usage,
     vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
@@ -1068,17 +1082,7 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
     std::vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
     GetDefaultAvailableDevicesByUsage(usage, audioDeviceDescriptors);
     GetRemoteAvailableDevicesByUsage(usage, audioDeviceDescriptors);
-    for (const auto &dev : connectedDevices_) {
-        if (dev == nullptr) {
-            AUDIO_INFO_LOG("dev is null from connectedDevices_");
-            continue;
-        }
-        for (const auto &devicePrivacy : devicePrivacyMaps_) {
-            list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
-            std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(*dev);
-            GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);
-        }
-    }
+    AddAvailableDevicesByUsageAndPrivacy(usage, connectedDevices_, audioDeviceDescriptors);
     // If there are distributed devices, place them at a higher priority in the sorting order.
     if (remoteInfoNetworkId_ != "" && remoteInfoDeviceType_ != DEVICE_TYPE_DEFAULT) {
         ReorderAudioDevices(audioDeviceDescriptors, remoteInfoNetworkId_, remoteInfoDeviceType_);
@@ -1492,7 +1496,8 @@ bool AudioDeviceManager::IsDeviceAvailable(AudioDeviceUsage audioDevUsage,
     return false;
 }
 
-void AudioDeviceManager::UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
+void AudioDeviceManager::UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor,
+    AudioPin hdiPin)
 {
     CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "devDesc is nullptr");
     auto isPresent = [&deviceDescriptor](const shared_ptr<AudioDeviceDescriptor> &desc) {
@@ -1504,7 +1509,7 @@ void AudioDeviceManager::UpdateDeviceDescriptorByCapability(std::shared_ptr<Audi
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     CHECK_AND_RETURN_LOG(itr != connectedDevices_.end(), "Device not found");
-    AudioDeviceStatus::GetInstance().UpdateDeviceDescriptorByCapability(*(*itr));
+    AudioDeviceStatus::GetInstance().UpdateDeviceDescriptorByCapability(*(*itr), hdiPin);
 }
 
 void AudioDeviceManager::UpdateWirelessDeviceSilentState(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -1541,6 +1546,21 @@ void AudioDeviceManager::UpdateAllWirelessDevicesSilentState()
         devDesc->isSilent_ = isSilent;
         UpdateWirelessDeviceSilentState(devDesc);
     }
+}
+
+bool AudioDeviceManager::RestoreWirelessDeviceSilentState()
+{
+    bool isStatusUpdated = false;
+    bool areAllRunningStreamsSilent = CheckAllStreamsSilentOrStandByOnDevice();
+    CHECK_AND_RETURN_RET(!areAllRunningStreamsSilent, isStatusUpdated);
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (auto &desc : connectedDevices_) {
+        if (desc != nullptr && desc->isSilent_) {
+            desc->isSilent_ = false;
+            isStatusUpdated = true;
+        }
+    }
+    return isStatusUpdated;
 }
 
 // Check whether all output streams are silent or standby

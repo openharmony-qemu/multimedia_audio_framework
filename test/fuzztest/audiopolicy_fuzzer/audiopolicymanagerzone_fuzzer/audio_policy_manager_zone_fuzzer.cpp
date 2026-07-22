@@ -29,6 +29,7 @@
 #include "audio_device_descriptor.h"
 #include "audio_interrupt_info.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

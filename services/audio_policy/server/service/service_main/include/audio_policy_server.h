@@ -61,6 +61,8 @@
 #include "audio_pipe_selector.h"
 #include "boot_animation_state_info.h"
 #include "audio_loopback_manager.h"
+#include "os_account_subprofile_client.h"
+#include "os_account_sub_profile_subscribe_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -70,6 +72,7 @@ class AudioInterruptService;
 class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
+class AudioSubProfileObserver;
 
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyStub,
@@ -161,6 +164,8 @@ public:
 
     int32_t GetSystemVolumeInDb(int32_t volumeType, int32_t volumeLevel,
         int32_t deviceType, float &volume) override;
+
+    int32_t SetVolumeControlPriority(const std::vector<int32_t> &priorities, int32_t &result) override;
 
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
 
@@ -584,9 +589,9 @@ public:
 
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
 
-    int32_t PauseAudioFocusForExtAudioZone() override;
+    int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
-    int32_t ResumeAudioFocusForExtAudioZone() override;
+    int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
     int32_t SetZoneDeviceVisible(bool visible) override;
 
@@ -762,6 +767,7 @@ public:
     int32_t SetHighResolutionExist(bool highResExist) override;
 
     void NotifyAccountsChanged(const int &id, const int &oldId);
+    void NotifySubProfileChanged();
     void SendVolumeKeyEventToRssWhenAccountsChanged();
 
     // for hidump
@@ -815,7 +821,8 @@ public:
     int32_t IsAudioSeparationEffectSupported(bool &ret) override;
     int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId) override;
     int32_t SetAudioSeparationEffectVolume(int32_t type, double volume) override;
-    int32_t EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config) override;
+    int32_t EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config,
+        const sptr<IRemoteObject> &object) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
@@ -896,6 +903,7 @@ private:
 #endif
     void AddAudioServiceOnStart();
     void SubscribeOsAccountChangeEvents();
+    void SubscribeOsAccountSubProfileChangeEvents();
     void SubscribePowerStateChangeEvents();
     void SubscribeCommonEvent(const std::string event);
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
@@ -1026,6 +1034,7 @@ private:
     std::map<std::u16string, DumpFunc> dumpFuncMap;
     pid_t lastMicMuteSettingPid_ = 0;
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
+    std::shared_ptr<AudioSubProfileObserver> subProfileObserver_ = nullptr;
 
     int32_t micRefEnableState_ = 0;
     int32_t sessionIdByRemote_ = -1;
@@ -1064,6 +1073,31 @@ public:
     }
 private:
     static constexpr int32_t LOCAL_USER_ID = 100;
+    AudioPolicyServer *audioPolicyServer_;
+};
+
+class AudioSubProfileObserver : public AccountSA::OsAccountSubProfileSubscribeCallback {
+public:
+    explicit AudioSubProfileObserver(AudioPolicyServer *audioPolicyServer)
+        : audioPolicyServer_(audioPolicyServer) {}
+
+    virtual ~AudioSubProfileObserver()
+    {
+        AUDIO_WARNING_LOG("Destructor AudioSubProfileObserver");
+    }
+
+    void OnSubProfileChanged(
+        const AccountSA::SubProfileEventData &eventData) override
+    {
+        AUDIO_INFO_LOG("OnSubProfileChanged received, type: %{public}d, osAccountId: %{public}d,"
+            " subspaceId: %{public}d, previousSubspaceId: %{public}d",
+            static_cast<int32_t>(eventData.type_), eventData.osAccountId_,
+            eventData.subProfileId_, eventData.previousSubProfileId_);
+        if (audioPolicyServer_ != nullptr) {
+            audioPolicyServer_->NotifySubProfileChanged();
+        }
+    }
+private:
     AudioPolicyServer *audioPolicyServer_;
 };
 

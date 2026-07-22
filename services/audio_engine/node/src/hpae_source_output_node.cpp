@@ -24,6 +24,7 @@
 #include "hpae_node_common.h"
 #include "audio_engine_log.h"
 #include "parameters.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -338,6 +339,15 @@ int32_t HpaeSourceOutputNode::GetPcEnableState()
 void HpaeSourceOutputNode::SetPcEnableState(int32_t val)
 {
     PC_ENABLE_STATE = val;
+}
+
+void HpaeSourceOutputNode::SetNodeInfo(HpaeNodeInfo &nodeInfo)
+{
+    if (nodeInfo.frameLen != GetNodeInfo().frameLen) {
+        sourceOutputData_.resize(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
+        interleveData_.resize(nodeInfo.frameLen * nodeInfo.channels);
+    }
+    HpaeNode::SetNodeInfo(nodeInfo);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

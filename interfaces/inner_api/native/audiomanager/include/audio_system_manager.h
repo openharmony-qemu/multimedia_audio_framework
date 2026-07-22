@@ -292,6 +292,17 @@ public:
     bool IsStreamMute(AudioVolumeType volumeType) const;
 
     /**
+     * @brief Set volume type control priority.
+     *
+     * @param priorities a volume type list which indicates the priority order of volume control.
+     * The position that is further forward has a higher priority.
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 26
+     */
+    int32_t SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities);
+
+    /**
      * @brief get volume db value that system calculate by volume type, volume level and device type.
      *
      * @param volumeType audio volume type.

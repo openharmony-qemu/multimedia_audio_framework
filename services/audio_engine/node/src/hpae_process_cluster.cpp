@@ -113,7 +113,6 @@ std::shared_ptr<HpaeNode> HpaeProcessCluster::GetSharedInstance()
     if (renderEffectNode_ != nullptr) {
         return renderEffectNode_;
     }
-    AUDIO_INFO_LOG("mixerNode_ id: %{public}u", mixerNode_->GetNodeId());
     return mixerNode_;
 }
 
@@ -231,6 +230,7 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
         idConverterMap_[sessionId]->DisConnect(preNode);
         auto seNode = SafeGetMap(idSessionEffectMap_, sessionId);
         if (seNode) {
+            seNode->PauseEffect();
             idLoudnessGainNodeMap_[sessionId]->DisConnect(seNode);
         } else {
             idLoudnessGainNodeMap_[sessionId]->DisConnect(idConverterMap_[sessionId]);
@@ -344,6 +344,8 @@ int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasi
     // SessionEffectNode (AISS) requires 48kHz input
     if (SafeGetMap(idSessionEffectMap_, sessionId)) {
         basicFormat.rate = SAMPLE_RATE_48000;
+        basicFormat.audioChannelInfo.numChannels = STEREO;
+        basicFormat.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
     }
     return ret;
 }
@@ -682,7 +684,7 @@ void HpaeProcessCluster::SetCollabDoFade(bool fadeOutState)
     if (renderEffectNode_ != nullptr) {
         renderEffectNode_->SetCollabDoFade(fadeOutState);
     }
- 	 
+
     return;
 }
 
@@ -691,7 +693,7 @@ void HpaeProcessCluster::SetStopRunningState(bool stopRunning)
     if (renderEffectNode_ != nullptr) {
         renderEffectNode_->SetStopRunningState(stopRunning);
     }
- 	 
+
     return;
 }
 }  // namespace HPAE

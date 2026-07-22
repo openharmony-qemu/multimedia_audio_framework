@@ -39,6 +39,7 @@
 #include "iaudio_suite_sa_service.h"
 #include "audio_suite_sa_service_stub.h"
 #include "iupdate_engine_callback.h"
+#include "event_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,15 +55,14 @@ class AudioSuiteRomDownloadService : public SystemAbility, public AudioSuiteSaSe
 public:
     DISALLOW_COPY_AND_MOVE(AudioSuiteRomDownloadService);
     explicit AudioSuiteRomDownloadService(int32_t systemAbilityId, bool runOnCreate = false);
-    virtual ~AudioSuiteRomDownloadService() = default;
+    virtual ~AudioSuiteRomDownloadService();
 
     void OnStart() override;
     void OnStop() override;
-    int32_t Dump(int32_t fd, const std::vector<std::u16string>& args) override;
 
     ErrCode RegisterDownloadCallback(const sptr<IRemoteObject> &callback, ErrCode &result) override;
     ErrCode StartDownload(const std::string &version, ErrCode &result) override;
-    ErrCode CancelDownload(ErrCode &result) override;
+    ErrCode CancelDownload(const std::string &version, ErrCode &result) override;
     ErrCode StartBackgroundDownload(const std::string &version, ErrCode &result) override;
     ErrCode GetDownloadStatus(DownloadStatus &status, const std::string& version, ErrCode &result) override;
     ErrCode UninstallCloudRom(const std::string &version, ErrCode &result) override;
@@ -77,12 +77,18 @@ protected:
 
 private:
     void NotifyDownloadStatusChanged(const DownloadStatus& status);
+    void PostDelayUnloadTask();
+    bool HasRegisteredCallback();
+    bool ShouldExtendUnloadTimer();
 
     std::shared_ptr<DownloadManager> downloadManager_;
     sptr<IRemoteObject> downloadCallback_;
     sptr<IRemoteObject> updateEngineCallback_;
 
     std::mutex mutex_;
+    std::shared_ptr<AppExecFwk::EventRunner> unloadRunner_;
+    std::shared_ptr<AppExecFwk::EventHandler> unloadHandler_;
+    std::mutex eventMutex_;
 };
 
 } // namespace AudioSuite

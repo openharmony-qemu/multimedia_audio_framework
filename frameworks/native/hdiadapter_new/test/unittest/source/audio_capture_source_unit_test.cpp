@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1281,7 +1281,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, ConvertToAudioInputRouteFlag_001, TestSize.
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_LIVE);
     EXPECT_EQ(result, AUDIO_INPUT_FLAG_LIVE);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_MESSAGE);
-    EXPECT_EQ(result, AUDIO_INPUT_FLAG_NORMAL);
+    EXPECT_NE(result, AUDIO_INPUT_FLAG_NORMAL);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_ULTRASONIC);
     EXPECT_EQ(result, AUDIO_INPUT_FLAG_ULTRASONIC);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_RECOGNITION);

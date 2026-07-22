@@ -234,8 +234,9 @@ napi_value NapiAudioRecordController::OnSystemRecordControllerEnabledChange(napi
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
 
-    CHECK_AND_RETURN_RET(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"));
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
 
     const size_t minArgc = ARGS_ONE;
     size_t argc = ARGS_TWO;
@@ -243,13 +244,13 @@ napi_value NapiAudioRecordController::OnSystemRecordControllerEnabledChange(napi
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     if (status != napi_ok || argc < minArgc) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
         return undefinedResult;
     }
 
     napi_valuetype handler = napi_undefined;
     if (napi_typeof(env, args[PARAM0], &handler) != napi_ok || handler != napi_function) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID,
             "incorrect parameter types: The type of callback must be function");
         return undefinedResult;
     }
@@ -280,7 +281,7 @@ napi_value NapiAudioRecordController::RegisterRecordControllerEnabledChangeCallb
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("Registering RecordController Enabled Change Callback Failed");
             napiRecordController->recordControllerChangeCallbackNapi_ = nullptr;
-            NapiAudioError::ThrowError(env, NAPI_ERR_SYSTEM, "Registering callback failed");
+            NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_SYSTEM, "Registering callback failed");
             napi_value result = nullptr;
             napi_get_undefined(env, &result);
             return result;
@@ -305,27 +306,28 @@ napi_value NapiAudioRecordController::OffSystemRecordControllerEnabledChange(nap
     napi_value undefinedResult = nullptr;
     napi_get_undefined(env, &undefinedResult);
 
-    CHECK_AND_RETURN_RET(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"));
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
 
     size_t argc = ARGS_TWO;
     napi_value args[ARGS_TWO] = {nullptr, nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     if (status != napi_ok) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
         return undefinedResult;
     }
 
     if (argc > ARGS_ONE) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "too many parameters");
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID, "too many parameters");
         return undefinedResult;
     }
 
     if (argc == ARGS_ONE) {
         napi_valuetype handler = napi_undefined;
         if (napi_typeof(env, args[PARAM0], &handler) != napi_ok || handler != napi_function) {
-            NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID,
                 "incorrect parameter types: The type of callback must be function");
             return undefinedResult;
         }

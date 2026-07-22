@@ -47,7 +47,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
     for (auto &router : mediaRenderRouters_) {
         RouterType usedType = router->GetRouterType();
         if (bypassTypeSet.count(usedType)) {
-            AUDIO_INFO_LOG("Fetch media render device bypass %{public}d", usedType);
+            AUDIO_INFO_LOG("bypass %{public}d", usedType);
             continue;
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID, streamId);
@@ -210,7 +210,6 @@ bool AudioRouterCenter::NeedSkipSelectAudioOutputDeviceRefined(StreamUsage strea
     if (descs.front()->deviceType_ == DEVICE_TYPE_SPEAKER) {
         return false;
     }
-    AUDIO_INFO_LOG("Don't add ring ext device when ringer mode is not normal and no speaker added");
     return true;
 }
 
@@ -323,11 +322,11 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
-    if (audioDeviceRefinerCb_ != nullptr &&
-        !NeedSkipSelectAudioOutputDeviceRefined(bak.streamUsage, descs)) {
+    if (audioDeviceRefinerCb_ != nullptr && !NeedSkipSelectAudioOutputDeviceRefined(bak.streamUsage, descs)) {
         bak.routerType = routerType;
         audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, bak);
     }
+    info.routerType = routerType;
     PostProcessOutPutDeviceLog(descs, bak, routerType, info);
     AudioPolicyDump::GetInstance().RecordBootStateTime(BootAnimationState::FETCH_OUTPUT_DEVICES, clientUID,
         ClockTime::GetCurMilli());
@@ -341,22 +340,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     auto descs = FetchOutputDevicesInner(info);
     StopArbiterContext();
     return descs;
-}
-
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesNoLock(FetchDeviceInfo &info)
-{
-    return FetchOutputDevicesInner(info);
-}
-
-AudioRouterCenter::ArbiterScope::ArbiterScope(AudioRouterCenter &center)
-    : center_(center), lock_(center.routerMutex_)
-{
-    center_.StartArbiterContext();
-}
-
-AudioRouterCenter::ArbiterScope::~ArbiterScope()
-{
-    center_.StopArbiterContext();
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchMediaOutputDevices(FetchDeviceInfo &info)
@@ -433,8 +416,6 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
     StreamUsage callStreamUsage =
                 AudioPipeManager::GetPipeManager()->GetLastestRunningCallStreamUsage();
     bool isVoipStream = AudioStreamCollector::GetAudioStreamCollector().IsCallStreamUsage(callStreamUsage);
-    AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, audioScene:%{public}d, isVoipStream:%{public}d.",
-        info.streamUsage, audioScene, isVoipStream);
     if (Util::IsEnhancedRoutingSupported()) {
         descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType);
     } else if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
@@ -751,7 +732,6 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectOutputStreamDevices(cons
 {
     std::vector<StreamDeviceInfo> outputDevices = CollectOutputStreamDevices(deviceInfo.bypassType);
     CHECK_AND_RETURN_RET(deviceInfo.streamUsage != STREAM_USAGE_UNKNOWN, outputDevices);
-    CHECK_AND_RETURN_RET(deviceInfo.streamId != INVALID_STREAM_ID, outputDevices);
 
     StreamDeviceInfo info;
     info.uid = deviceInfo.clientUID;
@@ -804,7 +784,6 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectInputStreamDevices(const
 {
     std::vector<StreamDeviceInfo> inputDevices = CollectInputStreamDevices();
     CHECK_AND_RETURN_RET(deviceInfo.sourceType != SOURCE_TYPE_INVALID, inputDevices);
-    CHECK_AND_RETURN_RET(deviceInfo.streamId != INVALID_STREAM_ID, inputDevices);
 
     StreamDeviceInfo info;
     info.uid = deviceInfo.clientUID;

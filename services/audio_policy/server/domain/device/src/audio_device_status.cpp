@@ -576,6 +576,7 @@ int32_t AudioDeviceStatus::LoadDpModule(std::string deviceInfo)
         AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
         if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
             GetDPModuleInfo(moduleInfo, deviceInfo);
+            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_DP));
             if (moduleInfo.role == ROLE_SINK) {
                 AUDIO_INFO_LOG("save dp sink module info for cust param");
                 AudioCoreService::GetCoreService()->SetDpSinkModuleInfo(moduleInfo);
@@ -745,6 +746,7 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
         moduleInfo.bufferSize = to_string(bufferSize);
         moduleInfo.renderInIdleState = "1";
         moduleInfo.sinkLatency = "0";
+        moduleInfo.deviceType = std::to_string(static_cast<int32_t>(deviceType));
 
         // First unload the existing bt sink
         AUDIO_DEBUG_LOG("UnLoad existing a2dp module");
@@ -1054,8 +1056,8 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
                 return SUCCESS_BUT_NOT_CONTINUE;
             }
 
-            UpdateDeviceDescriptorByCapability(*connDevDesc);
-            audioDeviceManager_.UpdateDeviceDescriptorByCapability(connDevDesc);
+            UpdateDeviceDescriptorByCapability(*connDevDesc, statusInfo.hdiPin);
+            audioDeviceManager_.UpdateDeviceDescriptorByCapability(connDevDesc, statusInfo.hdiPin);
             audioDeviceCommon_.OnPreferredOutputDeviceUpdated(connDevDesc, AudioStreamDeviceChangeReason::OVERRODE);
             AUDIO_INFO_LOG("Update capability, send preferred output device update");
             return SUCCESS_BUT_NOT_CONTINUE;
@@ -1067,7 +1069,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
             "DEVICE online but open audio device failed.");
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DEVICE online but open audio device failed.");
 
-        UpdateDeviceDescriptorByCapability(deviceDesc);
+        UpdateDeviceDescriptorByCapability(deviceDesc, statusInfo.hdiPin);
         audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(deviceDesc, descForCb);
 
         if (statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
@@ -1470,13 +1472,6 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
         GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_, command, desc.deviceCategory_,
         desc.connectState_, desc.isEnable_, desc.deviceUsage_);
 
-    // Update silent state on wireless device status change: triggered when device is enabled or usage changes
-    if (AudioPolicyUtils::GetInstance().IsWirelessDevice(desc.deviceType_)) {
-        if ((command == ENABLE_UPDATE && desc.isEnable_) || command == USAGE_UPDATE) {
-            audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
-        }
-    }
-
     std::string portNeedClose = "";
     uint32_t oldPaIndex = OPEN_PORT_FAILURE;
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
@@ -1499,6 +1494,13 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     if (isStatusUpdated) {
         OnPreferredStateUpdated(desc, command, reason);
     }
+
+    // Update silent state on wireless device status change: triggered when device is enabled or usage changes
+    if (isManagerUpdated && ((command == ENABLE_UPDATE && desc.isEnable_) ||
+            (command == USAGE_UPDATE && (desc.deviceUsage_ & DeviceUsage::MEDIA)))) {
+        audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
+    }
+
 #ifdef BLUETOOTH_ENABLE
     ClearActiveHfpDevice(desc, command, reason);
 #endif
@@ -1819,10 +1821,11 @@ uint32_t AudioDeviceStatus::GetPaIndexByPortName(const std::string &portName)
     return paIndex;
 }
 
-void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor &device)
+void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor &device, AudioPin hdiPin)
 {
+    std::string condition = "pin=" + std::to_string(static_cast<int32_t>(hdiPin));
     std::string remoteAudioParameter =
-        AudioServerProxy::GetInstance().GetRemoteAudioParameterProxy(device.networkId_);
+        AudioServerProxy::GetInstance().GetRemoteAudioParameterProxy(device.networkId_, condition);
     AUDIO_INFO_LOG("Get Remote AudioParameter: %{public}s", remoteAudioParameter.c_str());
     RemoteDeviceCapability capability;
     capability.FromJsonString(remoteAudioParameter);

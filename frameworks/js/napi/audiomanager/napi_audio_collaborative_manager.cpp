@@ -177,12 +177,12 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackSupported(napi_
 {
     AUDIO_DEBUG_LOG("in");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     napi_value result = nullptr;
     size_t argc = PARAM0;
     auto *napiAudioCollaborativeManager = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID), "invalid arguments");
     CHECK_AND_RETURN_RET_LOG(napiAudioCollaborativeManager != nullptr, result,
         "napiAudioCollaborativeManager is nullptr");
@@ -200,7 +200,7 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackSupportedForDev
     AUDIO_INFO_LOG("in");
     napi_value result = nullptr;
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     bool isCollaborativeSupported = false;
     const size_t requireArgc = ARGS_ONE;
@@ -216,19 +216,19 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackSupportedForDev
         bool argTransFlag = true;
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, args[PARAM0], &valueType);
-        CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
+        CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
             NAPI_ERR_INPUT_INVALID,
             "incorrect parameter types: The type of deviceDescriptor must be object"), "invalid valueType");
 
         std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
         NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
-        CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env,
+        CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
             NAPI_ERR_INPUT_INVALID,
             "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
             "invalid parameter");
         if (!IsCollaborativePlaybackSupportedDeviceType(selectedAudioDevice->deviceType_) ||
             (selectedAudioDevice->connectState_ != CONNECTED)) {
-            NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+            NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INVALID_PARAM,
                 "invalid arguments, device is not A2DP, Nearlink, device is connected");
             return NapiParamUtils::GetUndefinedValue(env);
         }
@@ -236,7 +236,7 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackSupportedForDev
         isCollaborativeSupported = napiAudioCollaborativeManager->audioCollaborativeMngr_
             ->IsCollaborativePlaybackSupportedForDevice(selectedAudioDevice);
     } else {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "invalid arguments");
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID, "invalid arguments");
         return NapiParamUtils::GetUndefinedValue(env);
     }
     NapiParamUtils::SetValueBoolean(env, isCollaborativeSupported, result);
@@ -249,7 +249,7 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackEnabledForDevic
     AUDIO_INFO_LOG("in");
     napi_value result = nullptr;
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
 
     bool isCollaborativeEnabled = false;
     const size_t requireArgc = ARGS_ONE;
@@ -265,19 +265,19 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackEnabledForDevic
         bool argTransFlag = true;
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, args[PARAM0], &valueType);
-        CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
+        CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
             NAPI_ERR_INPUT_INVALID,
             "incorrect parameter types: The type of deviceDescriptor must be object"), "invalid valueType");
 
         std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
         NapiParamUtils::GetAudioDeviceDescriptor(env, selectedAudioDevice, argTransFlag, args[PARAM0]);
-        CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturn(env,
+        CHECK_AND_RETURN_RET_LOG(argTransFlag == true, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
             NAPI_ERR_INPUT_INVALID,
             "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor"),
             "invalid parameter");
         if (!IsCollaborativePlaybackSupportedDeviceType(selectedAudioDevice->deviceType_) ||
             (selectedAudioDevice->connectState_ != CONNECTED)) {
-            NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+            NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INVALID_PARAM,
                 "invalid arguments, device is not A2DP or device is connected");
             return NapiParamUtils::GetUndefinedValue(env);
         }
@@ -285,7 +285,7 @@ napi_value NapiAudioCollaborativeManager::IsCollaborativePlaybackEnabledForDevic
         isCollaborativeEnabled = napiAudioCollaborativeManager->audioCollaborativeMngr_
             ->IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice);
     } else {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "invalid arguments");
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INPUT_INVALID, "invalid arguments");
         return NapiParamUtils::GetUndefinedValue(env);
     }
     NapiParamUtils::SetValueBoolean(env, isCollaborativeEnabled, result);
@@ -296,7 +296,7 @@ napi_value NapiAudioCollaborativeManager::SetCollaborativePlaybackEnabledForDevi
     napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission.");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_PERMISSION_DENIED), "No system permission.");
 
     auto context = std::make_shared<AudioCollaborativeManagerAsyncContext>();
     if (context == nullptr) {
@@ -330,7 +330,7 @@ napi_value NapiAudioCollaborativeManager::SetCollaborativePlaybackEnabledForDevi
 
     context->GetCbInfo(env, info, inputParser);
     if (context->status != napi_ok) {
-        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowErrorDoNotUse(env, context->errCode, context->errMessage);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 

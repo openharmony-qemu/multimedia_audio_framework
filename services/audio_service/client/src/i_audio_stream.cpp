@@ -28,10 +28,6 @@
 #include "capturer_in_client.h"
 #include "renderer_in_client.h"
 
-#ifdef SUPPORT_LOW_LATENCY
-#include "fast_audio_stream.h"
-#endif
-
 namespace OHOS {
 namespace AudioStandard {
 const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_ = IAudioStream::CreateStreamMap();
@@ -134,12 +130,10 @@ void IAudioStream::CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>,
 
 int32_t IAudioStream::CheckRendererAudioStreamInfo(const AudioStreamParams info)
 {
-    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
-        !((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
-        (info.customSampleRate != 0 && IsCustomSampleRateValid(info.customSampleRate)))) {
-        AUDIO_ERR_LOG("Unsupported audio renderer parameter");
-        return ERR_NOT_SUPPORTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(IsFormatValid(info.format) && IsEncodingTypeValid(info.encoding) &&
+        ((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
+        (info.customSampleRate != 0 && Util::IsCustomSampleRateValid(info.customSampleRate))),
+        ERR_NOT_SUPPORTED, "Unsupported audio renderer parameter");
     CHECK_AND_RETURN_RET(IsPlaybackChannelRelatedInfoValid(info.encoding, info.channels, info.channelLayout),
         ERR_NOT_SUPPORTED);
     return SUCCESS;
@@ -310,27 +304,8 @@ std::shared_ptr<IAudioStream> IAudioStream::GetPlaybackStream(StreamClass stream
     AudioStreamType eStreamType, int32_t appUid)
 {
     Trace trace("IAudioStream::GetPlaybackStream");
-    if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
-#ifdef SUPPORT_LOW_LATENCY
-        int32_t enableNewRoute = 0;
-        GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-
-        if (enableNewRoute != 1) {
-            HILOG_COMM_INFO("[GetPlaybackStream]Create renderer in client for fast playback stream with new route");
-            return RendererInClient::GetInstance(eStreamType, appUid);
-        } else {
-            HILOG_COMM_INFO("[GetPlaybackStream]Create fast playback stream");
-            return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_PLAYBACK, appUid);
-        }
-#else
-        (void)params;
-        HILOG_COMM_INFO("[GetPlaybackStream]Unsupport create fast playback stream, so create ipc playback stream");
-        return RendererInClient::GetInstance(eStreamType, appUid);
-#endif
-    }
-
-    if (streamClass == PA_STREAM) {
-        AUDIO_INFO_LOG("Create ipc playback stream");
+    if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM || streamClass == PA_STREAM) {
+        HILOG_COMM_INFO("[GetPlaybackStream]Create renderer in client for playback stream");
         return RendererInClient::GetInstance(eStreamType, appUid);
     }
     return nullptr;
@@ -340,26 +315,8 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     AudioStreamType eStreamType, int32_t appUid)
 {
     Trace trace("IAudioStream::GetRecordStream");
-    if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
-#ifdef SUPPORT_LOW_LATENCY
-        int32_t enableNewRoute = 0;
-        GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
-
-        if (enableNewRoute != 1) {
-            HILOG_COMM_INFO("[GetRecordStream]Create capturer in client for fast record stream with new route");
-            return CapturerInClient::GetInstance(eStreamType, appUid);
-        } else {
-            HILOG_COMM_INFO("[GetRecordStream]Create fast record stream");
-            return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
-        }
-#else
-        (void)params;
-        AUDIO_INFO_LOG("Unsupport create fast record stream, so create ipc record stream");
-        return CapturerInClient::GetInstance(eStreamType, appUid);
-#endif
-    }
-    if (streamClass == PA_STREAM) {
-        HILOG_COMM_INFO("[GetRecordStream]Create ipc record stream");
+    if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM || streamClass == PA_STREAM) {
+        HILOG_COMM_INFO("[GetRecordStream]Create capturer in client for record stream");
         return CapturerInClient::GetInstance(eStreamType, appUid);
     }
     return nullptr;
@@ -407,12 +364,6 @@ bool IAudioStream::IsSamplingRateValid(uint32_t samplingRate)
                != AUDIO_SUPPORTED_SAMPLING_RATES.end());
     AUDIO_DEBUG_LOG("AudioStream: IsSamplingRateValid: %{public}s", isValidSamplingRate ? "true" : "false");
     return isValidSamplingRate;
-}
-
-bool IAudioStream::IsCustomSampleRateValid(uint32_t customSampleRate)
-{
-    return (customSampleRate >= SAMPLE_RATE_8000 && customSampleRate <= SAMPLE_RATE_384000 &&
-        customSampleRate % SAMPLE_RATE_RESOLUTION_10 == 0) || customSampleRate == SAMPLE_RATE_11025;
 }
 
 bool IAudioStream::IsRendererChannelLayoutValid(uint64_t channelLayout)

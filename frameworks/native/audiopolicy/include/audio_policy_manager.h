@@ -319,7 +319,7 @@ public:
 
     int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
-    
+
     int32_t SetAudioSessionCurrentInputDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> &deviceChangedCallback);
 
@@ -442,6 +442,8 @@ public:
     int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType);
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
+
+    int32_t SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities);
 
     int32_t GetMaxRendererInstances();
 
@@ -626,9 +628,9 @@ public:
 
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId);
 
-    int32_t PauseAudioFocusForExtAudioZone();
+    int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
 
-    int32_t ResumeAudioFocusForExtAudioZone();
+    int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
 
     void SetZoneDeviceVisible(bool visible);
 
@@ -845,6 +847,7 @@ private:
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
+    sptr<IRemoteObject> GetAudioPolicyClientStubObject();
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable, bool block = true);
     int32_t SetCallbackStreamInfo(const CallbackChange &callbackChange);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = INVALID_UID);

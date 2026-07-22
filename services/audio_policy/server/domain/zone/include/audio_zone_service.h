@@ -109,8 +109,8 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
-    int32_t PauseAudioFocusForExtAudioZone();
-    int32_t ResumeAudioFocusForExtAudioZone();
+    int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
+    int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
     
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(int32_t zoneId,
         StreamUsage streamUsage, int32_t clientUid, RouterType bypassType);
@@ -121,7 +121,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetZoneDevices();
 
 #ifdef MULTI_USER_ZONE
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(int32_t usage, int32_t clientUid);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage, int32_t clientUid);
 #endif
 
     const std::string GetZoneStringDescriptor(int32_t zoneId);
@@ -141,7 +141,6 @@ public:
     // interfaces of SessionTimeOutCallback
     void OnSessionTimeout(const int32_t pid) override;
     void UpdateZonePreferDeviceWhenDeviceConnect();
-    void UpdateZonePreferDeviceWhenDeviceDisConnect(std::shared_ptr<AudioDeviceDescriptor> device);
 
 private:
     AudioZoneService()
@@ -175,6 +174,8 @@ private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FilterDevicesByVisibleMode(
         const std::vector<std::pair<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> &zoneDevices,
         int32_t currentZoneId, bool isSystemService);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FilterDevicesByUsage(AudioDeviceUsage usage,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 #endif
 };
 } // namespace AudioStandard

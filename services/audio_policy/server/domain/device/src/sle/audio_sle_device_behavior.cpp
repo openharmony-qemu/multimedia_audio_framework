@@ -60,7 +60,6 @@ int32_t AudioSleDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
         AUDIO_INFO_LOG("Another nearlink device[%{public}s] is already activated",
             AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str());
         SleAudioDeviceManager::GetInstance().ResetSleStreamTypeCount(device);
-        return SUCCESS;
     }
 
     auto runDeviceActivationFlow = [&deviceDesc, &isRunning, &realUid, &isLoopback](auto &&config) -> int32_t {

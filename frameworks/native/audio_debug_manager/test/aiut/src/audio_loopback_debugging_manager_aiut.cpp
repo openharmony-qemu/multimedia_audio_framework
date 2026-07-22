@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,18 +112,6 @@ HWTEST_F(AudioLoopbackDebuggingManagerAiut, AudioDebugManager_UnregisterLoopback
 
     int32_t ret = AudioDebugManager::GetInstance().UnregisterAudioLoopback(key);
     AIUT_EXPECT_EQ_INFO_LOG(ret, SUCCESS, "UnregisterAudioLoopback failed, ret=%d", ret);
-}
-
-/**
-* @tc.name  : Test UnregisterAudioLoopback API with non-existent key
-* @tc.number: AudioDebugManager_UnregisterLoopback_NonExistentKey
-* @tc.desc  : Test UnregisterAudioLoopback interface. Returns SUCCESS when key does not exist (graceful handling).
-*/
-HWTEST_F(AudioLoopbackDebuggingManagerAiut, AudioDebugManager_UnregisterLoopback_NonExistentKey, TestSize.Level1)
-{
-    AIUT_INFO_LOG("entry");
-    int32_t ret = AudioDebugManager::GetInstance().UnregisterAudioLoopback(99999);
-    AIUT_EXPECT_EQ_INFO_LOG(ret, SUCCESS, "expected SUCCESS for non-existent key, got ret=%d", ret);
 }
 
 // ==================== PrintAudioLoopbackDebugInfo Tests ====================

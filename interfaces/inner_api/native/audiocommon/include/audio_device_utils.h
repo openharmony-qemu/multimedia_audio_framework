@@ -23,7 +23,6 @@
 #include <sstream>
 #include <list>
 #include <vector>
-#include "securec.h"
 #include <audio_stream_info.h>
 
 namespace OHOS {

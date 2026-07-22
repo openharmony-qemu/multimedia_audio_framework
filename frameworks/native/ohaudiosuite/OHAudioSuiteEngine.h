@@ -128,7 +128,7 @@ public:
     int32_t GetNodeBypassStatus(OHAudioNode *node, bool *bypassStatus);
     int32_t BypassEffectNode(OHAudioNode *node, bool bypass);
     int32_t SetAudioFormat(OHAudioNode *node, OH_AudioFormat *audioFormat);
-    int32_t SetAudioFormat(OHAudioNode *node, OH_AudioSystemNodeFormat *audioFormat);
+    int32_t SetAudioFormat(OHAudioNode *node, OH_AudioSuite_SystemNodeFormat *audioFormat);
     int32_t ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
     int32_t DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
     int32_t SetEqualizerFrequencyBandGains(

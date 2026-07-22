@@ -333,7 +333,7 @@ interface IAudioPolicy {
     void GetAudioSceneFromAllZones([out] int audioScene);
     void UpdateContextForAudioZone([in] int zoneId, [in] AudioZoneContext context);
     void SetCustomAudioMix([in] String zoneName, [in] List<AudioZoneMix> audioMixes);
-    void NotifyStreamSilentChange([in] int clientPid, [in] unsigned int streamId);
+    [oneway] void NotifyStreamSilentChange([in] int clientPid, [in] unsigned int streamId);
     void IsAdaptiveSpatialRenderingEnabled([in] String address, [out] boolean ret);
     void SetAdaptiveSpatialRenderingEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
     void GetCurrentSpatialAudioSourceType([out] int ret);
@@ -363,10 +363,12 @@ interface IAudioPolicy {
     void SetSystemVolumeChangeCallbackInfo([in] SystemVolumeFilter filter);
     void RemoveSystemVolumeChangeCallbackInfo([in] SystemVolumeFilter filter);
     void RemoveAllSystemVolumeChangeCallbackInfo();
-    void PauseAudioFocusForExtAudioZone();
-    void ResumeAudioFocusForExtAudioZone();
-    void EnableSystemRecordController([in] boolean show, [in] SystemRecordControllerConfig config);
+    void PauseAudioFocusForExtAudioZone([in] List<int> zoneIds);
+    void ResumeAudioFocusForExtAudioZone([in] List<int> zoneIds);
+    void EnableSystemRecordController([in] boolean show, [in] SystemRecordControllerConfig config,
+        [in] IRemoteObject object);
     void GetSystemVolumeDegreeWithDevice([in] int volumeType, [in] int deviceType,
         [in] String networkId, [out] int volumeDegree);
     void SkipDeviceTypes([in] boolean skipped, [in] List<int> deviceTypes);
+    void SetVolumeControlPriority([in] List<int> priorities, [out] int ret);
 }

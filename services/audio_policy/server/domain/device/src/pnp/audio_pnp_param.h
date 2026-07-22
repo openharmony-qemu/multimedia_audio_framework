@@ -72,6 +72,7 @@
 
 #define DP_PORT_COUNT           5
 #define DP_PATH                 "/sys/class/switch/hdmi_audio"
+#define HDMI_PATH               "/sys/class/switch/hdmi_mipi_audio"
 #define DEVICE_PORT             "device_port="
 #define EXTCON_PATH             "/sys/class/extcon/"
 #define EXTCON_STATE            "/state"

@@ -25,7 +25,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 HpaePluginNode::HpaePluginNode(HpaeNodeInfo& nodeInfo)
-    : HpaeNode(nodeInfo),  pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate),
+    : HpaeNode(nodeInfo),  pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen,
+    nodeInfo.samplingRate, nodeInfo.channelLayout),
     outputStream_(this), enableProcess_(true), silenceData_(pcmBufferInfo_)
 
 {

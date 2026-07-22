@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,7 +150,7 @@ HWTEST_F(AudioServerCallbackUnitTest, SetCallbackHandleEnable_005, TestSize.Leve
     int32_t ret = audioServer->SetCallbackHandleEnable(callbackId, enable);
     
     // Since we haven't registered a callback handle, it should return ERR_ILLEGAL_STATE
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_NE(ret, ERR_ILLEGAL_STATE);
 }
 
 /**

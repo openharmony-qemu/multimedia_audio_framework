@@ -170,7 +170,18 @@ public:
 
 class ICapturerStreamRouteFlagTest : public ICapturerStreamTest2 {
 public:
-    explicit ICapturerStreamRouteFlagTest(uint32_t routeFlag) : routeFlag_(routeFlag) {}
+    explicit ICapturerStreamRouteFlagTest(uint32_t routeFlag, size_t spanSizeInFrame = 1, size_t byteSizePerFrame = 4)
+        : routeFlag_(routeFlag), spanSizeInFrame_(spanSizeInFrame), byteSizePerFrame_(byteSizePerFrame) {}
+
+    void GetByteSizePerFrame(size_t &byteSizePerFrame) const override
+    {
+        byteSizePerFrame = byteSizePerFrame_;
+    }
+
+    void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override
+    {
+        spanSizeInFrame = spanSizeInFrame_;
+    }
 
     uint32_t GetRouteFlag() const noexcept override
     {
@@ -179,6 +190,8 @@ public:
 
 private:
     uint32_t routeFlag_ = 0;
+    size_t spanSizeInFrame_ = 0;
+    size_t byteSizePerFrame_ = 0;
 };
 
 /**
@@ -1363,16 +1376,34 @@ HWTEST_F(CapturerInServerSecondUnitTest, GetCapturerFlagsByRoute_001, TestSize.L
 HWTEST_F(CapturerInServerSecondUnitTest, RefreshServerBufferForSpanSizeUpdate_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_MIC;
     processConfig.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
     auto stateListener = std::make_shared<CapturerSpanSizeListener>();
     std::weak_ptr<IStreamListener> streamListener = stateListener;
     auto capturerInServer = std::make_shared<CapturerInServer>(processConfig, streamListener);
     ASSERT_NE(capturerInServer, nullptr);
-    capturerInServer->stream_ = std::make_shared<ICapturerStreamRouteFlagTest>(AUDIO_INPUT_FLAG_FAST);
+    constexpr size_t spanSizeInFrame = 128;
+    constexpr size_t byteSizePerFrame = 4;
+    constexpr size_t defaultBufferNum = 4;
+    capturerInServer->stream_ = std::make_shared<ICapturerStreamRouteFlagTest>(AUDIO_INPUT_FLAG_FAST,
+        spanSizeInFrame, byteSizePerFrame);
+    capturerInServer->audioServerBuffer_ = OHAudioBuffer::CreateFromLocal(512, 128, 4);
+    capturerInServer->ringCache_ = AudioRingCache::Create(16);
 
     capturerInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
 
     EXPECT_EQ(capturerInServer->processConfig_.capturerInfo.capturerFlags, AUDIO_FLAG_MMAP);
+    EXPECT_EQ(capturerInServer->spanSizeInFrame_, spanSizeInFrame);
+    EXPECT_EQ(capturerInServer->byteSizePerFrame_, byteSizePerFrame);
+    EXPECT_EQ(capturerInServer->spanSizeInBytes_, spanSizeInFrame * byteSizePerFrame);
+    EXPECT_EQ(capturerInServer->totalSizeInFrame_, spanSizeInFrame * defaultBufferNum);
+    EXPECT_EQ(capturerInServer->cacheSizeInBytes_, 2 * spanSizeInFrame * byteSizePerFrame);
+    uint64_t pendingTotalSize = 0;
+    uint32_t pendingRouteFlag = 0;
+    EXPECT_EQ(capturerInServer->audioServerBuffer_->GetAndClearPendingSpanSize(pendingTotalSize, pendingRouteFlag),
+        spanSizeInFrame);
+    EXPECT_EQ(pendingTotalSize, spanSizeInFrame * defaultBufferNum);
+    EXPECT_EQ(pendingRouteFlag, AUDIO_INPUT_FLAG_FAST);
     EXPECT_EQ(stateListener->notifyCount_, 1);
     EXPECT_EQ(stateListener->operation_, UPDATE_SPANSIZE);
     EXPECT_EQ(stateListener->result_, FASTSTATUS_FAST);
@@ -1397,11 +1428,76 @@ HWTEST_F(CapturerInServerSecondUnitTest, RefreshServerBufferForSpanSizeUpdate_00
     capturerInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
 
     EXPECT_EQ(capturerInServer->processConfig_.capturerInfo.capturerFlags, AUDIO_FLAG_NORMAL);
+    constexpr size_t wakeupBufferNum = 100;
+    EXPECT_EQ(capturerInServer->spanSizeInFrame_, 1U);
+    EXPECT_EQ(capturerInServer->byteSizePerFrame_, 4U);
+    EXPECT_EQ(capturerInServer->spanSizeInBytes_, 4U);
+    EXPECT_EQ(capturerInServer->totalSizeInFrame_, wakeupBufferNum);
     EXPECT_EQ(stateListener->notifyCount_, 1);
     EXPECT_EQ(stateListener->result_, FASTSTATUS_NORMAL);
 
     capturerInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
     EXPECT_EQ(stateListener->notifyCount_, 1);
+}
+
+/**
+ * @tc.name  : Test RefreshServerBufferForSpanSizeUpdate.
+ * @tc.type  : FUNC
+ * @tc.number: RefreshServerBufferForSpanSizeUpdate_003.
+ * @tc.desc  : Cover early return branches for null stream, zero span, and zero byte size.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RefreshServerBufferForSpanSizeUpdate_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    auto stateListener = std::make_shared<CapturerSpanSizeListener>();
+    std::weak_ptr<IStreamListener> streamListener = stateListener;
+    auto capturerInServer = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_NE(capturerInServer, nullptr);
+    capturerInServer->spanSizeInFrame_ = 64;
+    capturerInServer->byteSizePerFrame_ = 4;
+    capturerInServer->spanSizeInBytes_ = 256;
+    capturerInServer->totalSizeInFrame_ = 400;
+
+    capturerInServer->stream_ = nullptr;
+    capturerInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
+    EXPECT_EQ(capturerInServer->spanSizeInFrame_, 64U);
+    EXPECT_EQ(capturerInServer->totalSizeInFrame_, 400U);
+
+    capturerInServer->stream_ = std::make_shared<ICapturerStreamRouteFlagTest>(AUDIO_INPUT_FLAG_FAST, 0, 4);
+    capturerInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
+    EXPECT_EQ(capturerInServer->spanSizeInFrame_, 64U);
+    EXPECT_EQ(capturerInServer->totalSizeInFrame_, 400U);
+
+    capturerInServer->stream_ = std::make_shared<ICapturerStreamRouteFlagTest>(AUDIO_INPUT_FLAG_FAST, 128, 0);
+    capturerInServer->RefreshServerBufferForSpanSizeUpdate(stateListener);
+    EXPECT_EQ(capturerInServer->spanSizeInFrame_, 64U);
+    EXPECT_EQ(capturerInServer->totalSizeInFrame_, 400U);
+    EXPECT_EQ(stateListener->notifyCount_, 0);
+}
+
+/**
+ * @tc.name  : Test RefreshServerBufferForSpanSizeUpdate.
+ * @tc.type  : FUNC
+ * @tc.number: RefreshServerBufferForSpanSizeUpdate_004.
+ * @tc.desc  : Cover listener-null branch when capturer flags need to change.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RefreshServerBufferForSpanSizeUpdate_004, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_NE(capturerInServer, nullptr);
+    capturerInServer->spanSizeInFrame_ = 64;
+    capturerInServer->totalSizeInFrame_ = 400;
+    capturerInServer->stream_ = std::make_shared<ICapturerStreamRouteFlagTest>(AUDIO_INPUT_FLAG_FAST, 128, 4);
+    std::shared_ptr<IStreamListener> nullStateListener;
+
+    capturerInServer->RefreshServerBufferForSpanSizeUpdate(nullStateListener);
+
+    EXPECT_EQ(capturerInServer->processConfig_.capturerInfo.capturerFlags, AUDIO_FLAG_NORMAL);
+    EXPECT_EQ(capturerInServer->spanSizeInFrame_, 64U);
+    EXPECT_EQ(capturerInServer->totalSizeInFrame_, 400U);
 }
  
 /*

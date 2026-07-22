@@ -252,7 +252,8 @@ void AudioInterruptDfx::CheckShortInterruptEvent(uint32_t streamId)
     }
     auto interruptCheckInfo = audioInterruptCheckInfo_[streamId];
     auto currentTime = std::chrono::steady_clock::now();
-    if (currentTime - interruptCheckInfo.startTime < std::chrono::seconds(1)) {
+    if (!interruptCheckInfo.isMuteStream &&
+        currentTime - interruptCheckInfo.startTime < std::chrono::seconds(1)) {
         AUDIO_ERR_LOG("Is ShortStream %{public}d", streamId);
         for (auto interruptError : interruptCheckInfo.errorEvents) {
             if (interruptError.hintType == INTERRUPT_HINT_PAUSE) {

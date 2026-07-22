@@ -143,16 +143,16 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
     AudioXCollie audioXCollie("EventEntry::UpdateSessionOperation", TIMEOUT_CORE_ENTRY_S,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
-    bool isInterrruptActive = false;
+    bool isInterruptActive = false;
     if (operation == SESSION_OPERATION_START) {
-        isInterrruptActive = coreService_->IsStreamActive(sessionId);
+        isInterruptActive = coreService_->IsStreamActive(sessionId);
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     HILOG_COMM_INFO("[UpdateSessionOperation]withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
         sessionId, SessionOperationToString(operation), SessionOperationMsgToString(opMsg));
     switch (operation) {
         case SESSION_OPERATION_START:
-            return coreService_->StartClient(sessionId, opMsg, isInterrruptActive);
+            return coreService_->StartClient(sessionId, opMsg, isInterruptActive);
         case SESSION_OPERATION_PAUSE:
             return coreService_->PauseClient(sessionId);
         case SESSION_OPERATION_STANDBY:
@@ -756,6 +756,27 @@ int32_t AudioCoreService::EventEntry::ReleaseMultiChannelPipe(AudioIOHandle id, 
     coreService_->pipeManager_->RemoveAudioPipeInfo(id);
     coreService_->audioIOHandleMap_.DelIOHandleInfo(MCH_PRIMARY_SPEAKER);
     coreService_->isMultiChannelInRelease_.store(false);
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::EventEntry::ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex,
+    const std::string &pipeName, const std::string &moduleName)
+{
+    CHECK_AND_RETURN_RET_LOG(coreService_, ERR_INVALID_PARAM, "coreService_ is nullptr");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    std::lock_guard<std::mutex> primaryLock(coreService_->primaryExtraCloseMutex_);
+    if (coreService_->isPrimaryExtraOpenedMap_[pipeName]) {
+        coreService_->isPrimaryExtraInReleaseMap_[pipeName] = false;
+        AUDIO_INFO_LOG("primary_extra %{public}s restart", pipeName.c_str());
+        return ERROR;
+    }
+    AUDIO_INFO_LOG("Close %{public}s pipe hdi port id: %{public}u, index %{public}u", pipeName.c_str(), id, paIndex);
+    coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
+    CHECK_AND_RETURN_RET_LOG(coreService_->pipeManager_, ERROR, "pipeManager_ is nullptr");
+    coreService_->pipeManager_->RemoveAudioPipeInfo(id);
+    coreService_->audioIOHandleMap_.DelIOHandleInfo(moduleName);
+    coreService_->isPrimaryExtraInReleaseMap_[pipeName] = false;
+    coreService_->audioPolicyManager_.RemoveAudioPipeVolume(id);
     return SUCCESS;
 }
 

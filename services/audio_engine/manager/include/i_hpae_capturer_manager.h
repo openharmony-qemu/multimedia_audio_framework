@@ -68,6 +68,7 @@ public:
         const SourceType &sourceType) = 0;
     virtual void TriggerAppsUidUpdate(uint32_t sessionId) { return; };
     virtual int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) { return 0; };
+    static bool AdjustFrameLen(HpaeNodeInfo &inNodeInfo, const HpaeNodeInfo &outNodeInfo);
 private:
 #ifdef ENABLE_HIDUMP_DFX
     HpaeDfxMapTree dfxTree_;

@@ -53,6 +53,7 @@ public:
     std::mutex writeCallbackMutex_;
     std::condition_variable writeCallbackCv_;
     std::list<std::shared_ptr<NapiAudioRendererCallbackInner>> audioRendererCallbacks_;
+    std::atomic<bool> isNotifyFromOff_;
 
 private:
     struct AudioRendererAsyncContext : public ContextBase {

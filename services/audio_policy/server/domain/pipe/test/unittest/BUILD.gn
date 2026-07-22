@@ -61,6 +61,7 @@ ohos_unittest("audio_offload_stream_unit_test") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "bluetooth:btframework",
     "data_share:datashare_consumer",
@@ -108,6 +109,7 @@ ohos_unittest("audio_a2dp_offload_manager_unit_test") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "googletest:gmock",

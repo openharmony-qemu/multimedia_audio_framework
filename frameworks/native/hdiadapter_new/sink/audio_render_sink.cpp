@@ -33,6 +33,7 @@
 #include "adapter/i_device_manager.h"
 #include "audio_stream_enum.h"
 #include "audio_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,7 +41,6 @@ namespace {
 const int64_t RENDER_FRAME_LIMIT = 50; // 50ms
 const int64_t RENDER_FRAME_REPORT_LIMIT = 100000000; // 100ms
 static constexpr uint32_t AUDIO_TTS = 11;
-static constexpr uint32_t AUDIO_D2D = 12;
 
 const std::unordered_map<std::string, HdiRenderOffset> HALNAME_TO_HDI_OFFSET = {
     {HDI_ID_INFO_USB, HDI_RENDER_OFFSET_USB},
@@ -171,6 +171,8 @@ int32_t AudioRenderSink::Start(void)
         return SUCCESS;
     }
 
+    CheckActiveDeviceValidForStart();
+
     int32_t ret = audioRender_->Start(audioRender_);
     if (ret != SUCCESS) {
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret,
@@ -185,6 +187,16 @@ int32_t AudioRenderSink::Start(void)
     playingAppManager_.Start();
 #endif
     return SUCCESS;
+}
+
+void AudioRenderSink::CheckActiveDeviceValidForStart()
+{
+    if (currentActiveDevice_ == DEVICE_TYPE_NONE && lastValidActiveDevice_ != DEVICE_TYPE_NONE) {
+        AUDIO_INFO_LOG("currentActiveDevice is NONE before start, restore to %{public}d from lastValidActiveDevice_",
+            lastValidActiveDevice_);
+        std::vector<DeviceType> restoreDevices = { lastValidActiveDevice_ };
+        UpdateActiveDevice(restoreDevices);
+    }
 }
 
 int32_t AudioRenderSink::Stop(void)
@@ -663,12 +675,11 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
         return SUCCESS;
     }
-    if (currentScoExcludeFlag_) {
-        AUDIO_INFO_LOG("currentScoExcludeFlag is true.");
-        return SUCCESS;
-    }
     forceSetRouteFlag_ = false;
     currentActiveDevice_ = outputDevices[0];
+    if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
+        lastValidActiveDevice_ = currentActiveDevice_;
+    }
     currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
     SetAudioRouteInfoForEnhanceChain();
     bool isA2dp = false;
@@ -920,6 +931,8 @@ AudioPortPin AudioRenderSink::GetAudioPortPin(void) const noexcept
             return PIN_OUT_HEADPHONE;
         case DEVICE_TYPE_BLUETOOTH_SCO:
             return PIN_OUT_BLUETOOTH_SCO;
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+            return PIN_OUT_BLUETOOTH_A2DP;
         case DEVICE_TYPE_USB_HEADSET:
             return PIN_OUT_USB_EXT;
         case DEVICE_TYPE_HDMI:
@@ -951,9 +964,6 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     param.interleaved = true;
     param.streamId = static_cast<int32_t>(GetUniqueId());
     param.type = AUDIO_IN_MEDIA;
-    if (attr_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
-        param.type = static_cast<AudioCategory>(AUDIO_D2D);
-    }
     param.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     param.isBigEndian = false;
     param.isSignedData = true;

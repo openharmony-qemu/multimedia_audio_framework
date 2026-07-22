@@ -236,7 +236,7 @@ private:
     static NoiseReductionMode StringToNoiseReductionMode(const std::string &modeStr);
     int32_t UpdateSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes, const std::string &value);
     void SendAudioErrorEventAndProcessOther(int32_t uid, int32_t errorCode,
- 	    const std::string &erroDesc, bool isClient, CapturerState state) const;
+        const std::string &erroDesc, bool isClient, CapturerState state) const;
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;

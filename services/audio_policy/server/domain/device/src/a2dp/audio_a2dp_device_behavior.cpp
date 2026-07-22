@@ -145,10 +145,10 @@ int32_t AudioA2dpDeviceBehavior::LoadA2dpModule(DeviceType deviceType, const Aud
             moduleInfo.name.c_str(), deviceRole, configRole);
         if (configRole != deviceRole) { continue; }
         if (!AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
-            AUDIO_INFO_LOG("A2dp device connects for the first time");
             AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo);
 
             uint32_t paIndex = 0;
+            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(deviceType));
             AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo,
                 paIndex);
             CHECK_AND_CALL_FUNC_RETURN_RET(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
@@ -191,8 +191,6 @@ int32_t AudioA2dpDeviceBehavior::LoadA2dpModule(DeviceType deviceType, const Aud
 
 int32_t AudioA2dpDeviceBehavior::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, const A2dpReloadContext &context)
 {
-    AUDIO_INFO_LOG("Switch device from a2dp to another a2dp, reload a2dp module");
-
     AudioIOHandleMap::GetInstance().MuteDefaultSinkPort(context.networkId, context.sinkName);
 
     std::string portName = (context.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) ?
@@ -220,6 +218,7 @@ int32_t AudioA2dpDeviceBehavior::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo
 
     AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, context.audioStreamInfo);
     uint32_t paIndex = 0;
+    moduleInfo.deviceType = std::to_string(static_cast<int32_t>(context.deviceType));
     AudioIOHandle ioHandle = ReloadOrOpenAudioPort(engineFlag, moduleInfo, paIndex);
     AudioIOHandleMap::GetInstance().AddIOHandleInfo(moduleInfo.name, ioHandle);
 
@@ -245,7 +244,7 @@ int32_t AudioA2dpDeviceBehavior::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo
     auto pipeDeviceVolumeGroup = AudioPipeManager::GetPipeManager()->GetPipeDeviceVolumeInfoForPipe(pipeInfo);
     AudioAdapterManager::GetInstance().UpdateAudioPipeVolume(pipeDeviceVolumeGroup);
 
-    AUDIO_INFO_LOG("Close paIndex: %{public}u, open paIndex: %{public}u", curPaIndex, paIndex);
+    AUDIO_INFO_LOG("reload a2dp module, Close paIndex: %{public}u, open paIndex: %{public}u", curPaIndex, paIndex);
     return SUCCESS;
 }
 

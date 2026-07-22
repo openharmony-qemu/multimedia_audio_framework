@@ -34,6 +34,7 @@
 #include "audio_stream_descriptor.h"
 #include "audio_limiter_manager.h"
 #include "bluetooth_host.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1048,8 +1049,10 @@ void UpdateSessionConnectionStateFuzzTest()
     if (audioStreamDescriptor == nullptr) {
         return;
     }
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs {audioStreamDescriptor};
-    AudioStreamDeviceChangeReasonExt reason(GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>());
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    streamDescs.push_back(audioStreamDescriptor);
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
     int32_t sessionID = GetData<int32_t>();
@@ -1068,13 +1071,10 @@ void UpdateSessionConnectionStateFuzzTest()
     audioCoreService->CheckAndSleepBeforeRingDeviceSet(audioStreamDescriptor);
     audioCoreService->ResetOriginalFlagForRemote(audioStreamDescriptor);
     std::string caller = "caller";
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToRoute;
-    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, caller, streamsToRoute);
-    {
-        AudioRouterCenter::ArbiterScope scope(audioCoreService->audioRouterCenter_);
-        audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, caller);
-    }
-    audioCoreService->DeactivateBluetoothDevice(GetData<bool>());
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, caller);
+    bool isRunning = GetData<bool>();
+    audioCoreService->DeactivateBluetoothDevice(isRunning);
+    int32_t result = GetData<int32_t>();
     std::unique_ptr<ConcurrentCaptureDfxResult> DfxResult;
     audioCoreService->WriteCapturerConcurrentMsg(audioStreamDescriptor, DfxResult);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs;

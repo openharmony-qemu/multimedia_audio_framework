@@ -199,6 +199,11 @@ AudioDebuggingManager AudioManagerImpl::GetDebuggingManager()
     return AudioDebuggingManagerImpl::CreateDebuggingManagerWrapper();
 }
 
+AudioRecordingManager AudioManagerImpl::GetRecordingManager()
+{
+    return AudioRecordingManagerImpl::CreateRecordingManagerWrapper();
+}
+
 AudioScene AudioManagerImpl::GetAudioSceneSync()
 {
     if (audioMngr_ == nullptr) {

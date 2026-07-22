@@ -42,6 +42,7 @@
 #include "audio_device_info.h"
 #include "audio_spatialization_service.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

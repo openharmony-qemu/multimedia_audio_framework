@@ -322,6 +322,58 @@ HpaeProcessorType HpaeRendererManager::GetConnectedProcessorType(uint32_t sessio
     return node->connectedProcessorType_;
 }
 
+std::optional<ChannelOverrideRoute> HpaeRendererManager::BuildChannelOverrideRouteFromProcessorType(
+    HpaeProcessorType sceneType) const
+{
+    if (sceneType == HPAE_SCENE_EFFECT_NONE) {
+        return std::nullopt;
+    }
+    ChannelOverrideRoute route;
+    route.sceneType = TransProcessorTypeToSceneType(sceneType);
+    route.deviceType = renderDeviceType_;
+    route.renderId = renderId_;
+    return route;
+}
+
+std::optional<ChannelOverrideRoute> HpaeRendererManager::BuildChannelOverrideRoute(uint32_t sessionId) const
+{
+    return BuildChannelOverrideRouteFromProcessorType(GetProcessorType(sessionId));
+}
+
+void HpaeRendererManager::SetChannelOverrideForRoute(const ChannelOverrideRoute &route)
+{
+    if (Util::IsEnhancedRoutingSupported()) {
+        AudioEffectChainManager::GetInstance()->SetChannelOverride(
+            route.sceneType, route.deviceType, route.renderId, STEREO, CH_LAYOUT_STEREO);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(
+            route.sceneType, route.deviceType, route.renderId);
+    } else {
+        AudioEffectChainManager::GetInstance()->SetChannelOverride(route.sceneType, STEREO, CH_LAYOUT_STEREO);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(route.sceneType);
+    }
+}
+
+void HpaeRendererManager::ClearChannelOverrideForRoute(const ChannelOverrideRoute &route)
+{
+    if (Util::IsEnhancedRoutingSupported()) {
+        AudioEffectChainManager::GetInstance()->ClearChannelOverride(
+            route.sceneType, route.deviceType, route.renderId);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(
+            route.sceneType, route.deviceType, route.renderId);
+    } else {
+        AudioEffectChainManager::GetInstance()->ClearChannelOverride(route.sceneType);
+        AudioEffectChainManager::GetInstance()->UpdateMultichannelConfig(route.sceneType);
+    }
+}
+
+void HpaeRendererManager::OnSessionEffectMaterialized(uint32_t sessionId)
+{
+    auto route = BuildChannelOverrideRoute(sessionId);
+    if (route.has_value()) {
+        SetChannelOverrideForRoute(route.value());
+    }
+}
+
 void HpaeRendererManager::DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo)
 {
     auto processCluster = SafeGetMap(sceneClusterMap_, nodeInfo.sceneType);
@@ -447,9 +499,12 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
         AUDIO_INFO_LOG("DestroyStream sessionId %{public}u", sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Release not find sessionId %{public}u", sessionId);
-        HpaeProcessorType sceneType = GetProcessorType(sessionId);
+        HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RELEASED);
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RELEASED);
+        if (HasSessionEffect(sessionId)) {
+            sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
+        }
         DeleteInputSession(sessionId);
         isNeedInitEffectBufferFlagMap_.erase(sessionId);
         UpdateClusterStreamInfo(sceneType);
@@ -541,6 +596,12 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId, bool needI
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneTypeToDestroyNodes), ERROR,
         "SessionId %{public}u, sceneCluster processorType %{public}d not exist, cant destroy nodes",
         sessionId, sceneTypeToDestroyNodes);
+    
+    auto route = BuildChannelOverrideRouteFromProcessorType(sceneTypeToDestroyNodes);
+    if (route.has_value() && sceneClusterMap_[sceneTypeToDestroyNodes]->HasSessionEffectNode(sessionId)) {
+        ClearChannelOverrideForRoute(route.value());
+    }
+
     if (sceneClusterMap_[sceneTypeToDestroyNodes]->DestroyNodes(sessionId, mode) != SUCCESS) {
         AUDIO_INFO_LOG("SessionId %{public}d, Nodes not found in sceneCluster processorType %{public}d,"
             "try to destroy nodes by traverse sceneCluster", sessionId, sceneTypeToDestroyNodes);
@@ -552,8 +613,7 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId, bool needI
 
 void HpaeRendererManager::DisConnectCoBufferFromDeleteProcessCluster(HpaeProcessorType sceneType)
 {
-    CHECK_AND_RETURN_LOG(sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr,
-        "no need DisConnect CoBufferNode, sceneType: %{public}d", static_cast<int32_t>(sceneType));
+    CHECK_AND_RETURN(sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr);
     CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType), "sceneCluster is nullptr, sceneType: %{public}d",
         static_cast<int32_t>(sceneType));
     CHECK_AND_RETURN_LOG(sceneClusterMap_[sceneType]->GetPreOutNum() == 0, "no DisConnect, GetPreOutNum: %{public}d",
@@ -611,10 +671,10 @@ int32_t HpaeRendererManager::UpdateClusterStreamInfo(HpaeProcessorType sceneType
         }
     }
     if (updateNode == nullptr) {
-        AUDIO_INFO_LOG("no need to update the stream info");
         return SUCCESS;
     }
     CHECK_AND_RETURN_RET_LOG(outputCluster_ != nullptr, ERR_NULL_POINTER, "outputCluster_ is nullptr");
+    AUDIO_INFO_LOG("update the stream info");
     outputCluster_->UpdateStreamInfo(updateNode);
     return SUCCESS;
 }
@@ -673,19 +733,13 @@ void HpaeRendererManager::MaterializeSessionEffectFromAttachState(uint32_t sessi
     int32_t ret = processCluster->CreateSessionEffectNode(sessionId, st->effectName, inst, st->config);
     if (ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS) ||
         ret == static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND)) {
-        // Restart preheat if previous incarnation was active.
-        if (st->lastSeStatus >= static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP)) {
-            auto seNode = processCluster->GetSessionEffectNode(sessionId);
-            if (seNode != nullptr) {
-                seNode->StartEffect();
-            }
-        }
         auto sessionIt = sessionNodeMap_.find(sessionId);
         HpaeSessionState sessionState = (sessionIt != sessionNodeMap_.end())
             ? sessionIt->second.state : HPAE_SESSION_NEW;
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionState,
             OPERATION_SESSION_EFFECT_ENABLED);
         AUDIO_INFO_LOG("[SE::RendererManager] AttachState materialized+ENABLED sessionId=%{public}u", sessionId);
+        OnSessionEffectMaterialized(sessionId);
     } else {
         HandleSessionEffectMaterializeFailure(sessionId, ret, sinkInputNode);
     }
@@ -929,8 +983,7 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
 
 void HpaeRendererManager::DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType)
 {
-    CHECK_AND_RETURN_LOG(sceneType == HPAE_SCENE_COLLABORATIVE,
-        "no need DisConnect CoBufferNode, sceneType: %{public}d", static_cast<int32_t>(sceneType));
+    CHECK_AND_RETURN(sceneType == HPAE_SCENE_COLLABORATIVE);
     if (hpaeCoBufferNode_ != nullptr) {
         hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
         hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
@@ -1123,7 +1176,7 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
             "Stop not find sessionId %{public}u", sessionId);
         HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
-            if (HasSessionEffect(sessionId) && SafeGetMap(sceneClusterMap_, sceneType)) {
+            if (HasSessionEffect(sessionId)) {
                 sceneClusterMap_[sceneType]->SessionEffectPause(sessionId);
             }
             DisConnectInputSession(sessionId);
@@ -1739,6 +1792,8 @@ void HpaeRendererManager::UpdateProcessClusterConnection(uint32_t sessionId, int
         AUDIO_INFO_LOG("no need to update the sceneType %{public}d", sceneType);
         return;
     }
+    HpaeProcessorType connectedSceneType = GetConnectedProcessorType(sessionId);
+    DetachSessionEffectNodeForRefresh(sessionId, connectedSceneType);
     DisConnectInputSession(sessionId);
     ConnectInputSession(sessionId);
 }
@@ -2108,7 +2163,6 @@ void HpaeRendererManager::SetCollDelayCount()
 void HpaeRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
-        AUDIO_INFO_LOG("deviceClass: %{public}s", sinkInfo_.deviceClass.c_str());
         CHECK_AND_RETURN(IsRemoteDevice());
         appsUid_.clear();
         for (const auto &sinkInputNodePair : sinkInputNodeMap_) {

@@ -277,15 +277,59 @@ int32_t CapturerInServer::GetCapturerFlagsByRoute(uint32_t routeFlag)
 
 void CapturerInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener)
 {
+    CHECK_AND_RETURN_LOG(stream_ != nullptr, "RefreshServerBufferForSpanSizeUpdate: stream_ is nullptr");
+    AUDIO_INFO_LOG("RefreshServerBufferForSpanSizeUpdate begin, sessionId:%{public}u oldSpan:%{public}zu",
+        streamIndex_, spanSizeInFrame_);
+
+    size_t newSpanSizeInFrame = 0;
+    size_t newByteSizePerFrame = byteSizePerFrame_;
+    stream_->GetSpanSizePerFrame(newSpanSizeInFrame);
+    stream_->GetByteSizePerFrame(newByteSizePerFrame);
+    AUDIO_INFO_LOG("New spanSize from stream: %{public}zu, byteSizePerFrame:%{public}zu",
+        newSpanSizeInFrame, newByteSizePerFrame);
+
+    CHECK_AND_RETURN_LOG(newSpanSizeInFrame != 0,
+        "RefreshServerBufferForSpanSizeUpdate: newSpanSizeInFrame is zero");
+    CHECK_AND_RETURN_LOG(newByteSizePerFrame != 0,
+        "RefreshServerBufferForSpanSizeUpdate: byteSizePerFrame is zero");
+
+    const size_t bufferNum = ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP) ?
+        CAPTURER_BUFFER_WAKE_UP_NUM : CAPTURER_BUFFER_DEFAULT_NUM);
+    size_t newTotalSizeInFrame = newSpanSizeInFrame * bufferNum;
+    size_t newSpanSizeInBytes = newSpanSizeInFrame * newByteSizePerFrame;
+
     uint32_t newRouteFlag = stream_->GetRouteFlag();
     int32_t capturerFlags = GetCapturerFlagsByRoute(newRouteFlag);
+
+    if (audioServerBuffer_ != nullptr) {
+        AUDIO_INFO_LOG("SetPendingSpanSize: sessionId:%{public}u spanSize:%{public}zu totalSize:%{public}zu "
+            "routeFlag:%{public}u", streamIndex_, newSpanSizeInFrame, newTotalSizeInFrame, newRouteFlag);
+        audioServerBuffer_->SetPendingSpanSize(newSpanSizeInFrame, newTotalSizeInFrame, newRouteFlag);
+        audioServerBuffer_->UpdateSpanBasicInfo(newSpanSizeInFrame, newTotalSizeInFrame, newByteSizePerFrame);
+    }
+
     if (capturerFlags != processConfig_.capturerInfo.capturerFlags) {
+        CHECK_AND_RETURN_LOG(stateListener != nullptr, "RefreshServerBufferForSpanSizeUpdate:stateListener is nullptr");
         AUDIO_INFO_LOG("Update processConfig_.capturerInfo.capturerFlags from %{public}u to %{public}u",
             processConfig_.capturerInfo.capturerFlags, capturerFlags);
         processConfig_.capturerInfo.capturerFlags = capturerFlags;
         stateListener->OnOperationHandled(UPDATE_SPANSIZE, capturerFlags == AUDIO_FLAG_NORMAL ?
             FASTSTATUS_NORMAL : FASTSTATUS_FAST);
     }
+
+    spanSizeInFrame_ = newSpanSizeInFrame;
+    totalSizeInFrame_ = newTotalSizeInFrame;
+    byteSizePerFrame_ = newByteSizePerFrame;
+    spanSizeInBytes_ = newSpanSizeInBytes;
+    if (ringCache_ != nullptr) {
+        int32_t ret = InitCacheBuffer(2 * spanSizeInBytes_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS,
+            "RefreshServerBufferForSpanSizeUpdate: InitCacheBuffer failed, ret:%{public}d", ret);
+    }
+
+    AUDIO_INFO_LOG("RefreshServerBufferForSpanSizeUpdate success, sessionId:%{public}u newSpan:%{public}zu "
+        "totalSize:%{public}zu spanByte:%{public}zu", streamIndex_, spanSizeInFrame_, totalSizeInFrame_,
+        spanSizeInBytes_);
 }
 
 void CapturerInServer::HandleOperationFlushed()
@@ -1142,7 +1186,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
     AUDIO_INFO_LOG("Client using config: %{public}s", ProcessConfig::DumpInnerCapConfig(config).c_str());
 
     for (auto &usg : config.filterOptions.usages) {
-        if (usg != STREAM_USAGE_VOICE_COMMUNICATION) {
+        if (usg != STREAM_USAGE_VOICE_COMMUNICATION && usg != STREAM_USAGE_VIDEO_COMMUNICATION) {
             continue;
         }
 
@@ -1216,8 +1260,9 @@ int32_t CapturerInServer::RequestUserPrivacyAuthority(uint32_t sessionId)
             RECORD_CALLBACK_ILLEGAL_STATE, "IStreamListener is nullptr", false),
         "IStreamListener is nullptr");
 
-    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION,
-        IPCSkeleton::GetCallingTokenID())) {
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, tokenId) ||
+        PermissionUtil::VerifyPermission(CAPTURER_VOICE_DOWNLINK_PERMISSION, tokenId)) {
         hasRequestUserPrivacyAuthority_ = true;
         stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
         AUDIO_INFO_LOG("Has static permission, granted");
@@ -1492,7 +1537,7 @@ bool CapturerInServer::CheckVoiceDownlinkPermission()
     return true;
 #endif
 }
- 	  
+
 void CapturerInServer::NotifySensitiveRecordPermit(const bool isPermitted)
 {
     AUDIO_INFO_LOG("Set sensitive record isPermitted: %{public}d", isPermitted);

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "securec.h"
 #include "audio_log.h"
 #include "audio_session_service.h"
 

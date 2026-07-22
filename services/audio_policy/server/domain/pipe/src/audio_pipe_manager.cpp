@@ -573,7 +573,6 @@ std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
             if (desc->sessionId_ != sessionId) {
                 continue;
             }
-            AUDIO_INFO_LOG("adapter name: %{public}s", pipeInfo->GetAdapterName().c_str());
             return pipeInfo->GetAdapterName();
         }
     }
@@ -695,6 +694,7 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
             tmp->callerUid_ = desc->callerUid_;
             tmp->callerPid_ = desc->callerPid_;
             tmp->streamStatus_ = desc->streamStatus_;
+            tmp->bundleName_ = desc->bundleName_;
             streamDescs.push_back(tmp);
             CHECK_AND_CONTINUE(!tmp->newDeviceDescs_.empty() && tmp->newDeviceDescs_.front() != nullptr);
             tmp->newDeviceDescs_.front()->hasStreamRunning_ = false;
@@ -1414,11 +1414,8 @@ bool AudioPipeManager::HasRunningNormalCapturerStream(DeviceType type)
         for (auto &desc : pipeInfo->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
-                (desc->capturerInfo_.sourceType == SOURCE_TYPE_MIC ||
-                 desc->capturerInfo_.sourceType == SOURCE_TYPE_WAKEUP ||
-                 desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_MESSAGE ||
-                 desc->capturerInfo_.sourceType == SOURCE_TYPE_CAMCORDER ||
-                 desc->capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED) &&
+                (desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_RECOGNITION &&
+                 desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
                 ((type == DEVICE_TYPE_NONE) ||
                  (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
                   desc->newDeviceDescs_[0]->deviceType_ == type))) {

@@ -205,37 +205,6 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
     return SUCCESS;
 }
 
-void AudioInterruptService::ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
-    const AudioInterrupt &activeInterrupt, int32_t reason)
-{
-    CHECK_AND_CALL_FUNC_RETURN_LOG(incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
-        activeInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_INTERRUPT_START_INVALID_PARAM, "not recording, source type is invalid", false),
-        "not recording");
-    AUDIO_INFO_LOG("recording failed to start, incoming: sourceType %{public}d pid %{public}d uid %{public}d"\
-        "active: sourceType %{public}d pid %{public}d uid %{public}d",
-        incomingInterrupt.audioFocusType.sourceType, incomingInterrupt.pid, incomingInterrupt.uid,
-        activeInterrupt.audioFocusType.sourceType, activeInterrupt.pid, activeInterrupt.uid);
-
-    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::RECORD_ERROR,
-        Media::MediaMonitor::EventType::FAULT_EVENT);
-    CHECK_AND_CALL_FUNC_RETURN_LOG(bean != nullptr,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_INTERRUPT_CALLBACK_NULL_POINTER, "bean is nullptr", false),
-        "bean is nullptr");
-
-    bean->Add("INCOMING_SOURCE", incomingInterrupt.audioFocusType.sourceType);
-    bean->Add("INCOMING_PID", incomingInterrupt.pid);
-    bean->Add("INCOMING_UID", incomingInterrupt.uid);
-    bean->Add("ACTIVE_SOURCE", activeInterrupt.audioFocusType.sourceType);
-    bean->Add("ACTIVE_PID", activeInterrupt.pid);
-    bean->Add("ACTIVE_UID", activeInterrupt.uid);
-    bean->Add("REASON", reason);
-    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-}
-
 bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const AudioCapturerInfo &capturerInfo)
 {
     if (isPreemptMode_) {
@@ -474,16 +443,15 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
     if (interruptDfx_ != nullptr) {
         interruptDfx_->NotifyStreamSilentChange(streamId);
     }
+    std::lock_guard<std::mutex> lock(mutex_);
     std::list<MuteFocusInfo> tempMuteList;
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (muteAudioFocus_.count(callerPid) > 0) {
-            tempMuteList = muteAudioFocus_[callerPid];
-            muteAudioFocus_.erase(callerPid);
-            AUDIO_INFO_LOG("pid: %{public}d has been removed from muteAudioFocus_ record, "
-                "now record size: %{public}zu", callerPid, muteAudioFocus_.size());
-        }
+    if (muteAudioFocus_.count(callerPid) > 0) {
+        tempMuteList = muteAudioFocus_[callerPid];
+        muteAudioFocus_.erase(callerPid);
+        AUDIO_INFO_LOG("pid: %{public}d has been removed from muteAudioFocus_ record, "
+            "now record size: %{public}zu", callerPid, muteAudioFocus_.size());
     }
+    CHECK_AND_RETURN_RET(tempMuteList.size() > 0, ret);
     for (const auto& audioFocusInfo : tempMuteList) {
         const AudioInterrupt& activeInterrupt = audioFocusInfo.interrupt;
         InterruptEventInternal interruptEvent = audioFocusInfo.interruptEvent;
@@ -491,8 +459,8 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
         AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
             activeInterrupt.streamId, streamId);
         SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
-        int32_t zoneId = FindAudioZoneByStreamId(activeInterrupt.streamId);
-        DeactivateAudioInterrupt(zoneId, activeInterrupt);
+        int32_t zoneId = FindAudioZoneByStreamIdInternal(activeInterrupt.streamId);
+        DeactivateAudioInterruptInternal(zoneId, activeInterrupt);
         ret = true;
     }
     return ret;
@@ -523,7 +491,7 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt,
     bool &removeFocusInfo, InterruptEventInternal &interruptEvent)
 {
-    AUDIO_INFO_LOG("isCheckMuteStream = %{public}d", incomingInterrupt.isCheckMuteStream);
+    CHECK_AND_RETURN(audioFocusInfo.second == AudioFocuState::ACTIVE);
     if (!incomingInterrupt.isCheckMuteStream) {
         AUDIO_INFO_LOG("is not check mute stream");
         return;
@@ -627,6 +595,13 @@ void AudioInterruptService::SetStreamInterruptMute(const InterruptEventInternal 
     } else if (interruptEvent.hintType == INTERRUPT_HINT_RESUME) {
         policyServer_->SetStreamInterruptMute(streamId, false);
     }
+}
+
+bool AudioInterruptService::IsIndependentStrategyValid(const AudioInterrupt &interrupt)
+{
+    auto concurrencyMode = interrupt.independentStrategy.concurrencyMode;
+    return concurrencyMode != AudioConcurrencyMode::INVALID &&
+        concurrencyMode != AudioConcurrencyMode::DEFAULT;
 }
 }
 } // namespace OHOS

@@ -41,6 +41,7 @@
 #include "audio_sink_latency_fetcher.h"
 #include "boot_animation_state_info.h"
 #include "util/id_handler.h"
+#include "securec.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 
@@ -958,7 +959,6 @@ int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
         AUDIO_ERR_LOG("invalid clientVolume %{public}f", clientVolume);
         return ERR_INVALID_PARAM;
     }
-    AUDIO_PRERELEASE_LOGI("clientVolume %{public}f", clientVolume);
     int32_t ret = IHpaeManager::GetHpaeManager().SetClientVolume(processConfig_.originalSessionId, clientVolume);
     std::string tempStringSessionId = std::to_string(processConfig_.originalSessionId);
     IHpaeManager::GetHpaeManager().AddStreamVolumeToEffect(tempStringSessionId, clientVolume);

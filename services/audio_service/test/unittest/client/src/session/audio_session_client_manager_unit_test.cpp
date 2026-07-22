@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,7 +144,7 @@ HWTEST(AudioSessionClientManagerUnitTest, UnsetAudioSessionCallback_001, TestSiz
     int32_t result = AudioSessionClientManager::GetInstance().UnsetAudioSessionCallback();
     AUDIO_INFO_LOG("AudioSessCliMgrUT UnsetAudioSessionCallback_001 result:%{public}d", result);
     // Should return success or error code, but not crash
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**

@@ -193,9 +193,9 @@ int32_t AudioSuiteClientPolicy::StartDownload(const std::string& version)
     return result;
 }
 
-int32_t AudioSuiteClientPolicy::CancelDownload()
+int32_t AudioSuiteClientPolicy::CancelDownload(const std::string& version)
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::CancelDownload");
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::CancelDownload, version=%{public}s", version.c_str());
 
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -205,7 +205,7 @@ int32_t AudioSuiteClientPolicy::CancelDownload()
     }
 
     ErrCode result = SUCCESS;
-    proxy_->CancelDownload(result);
+    proxy_->CancelDownload(version, result);
     return result;
 }
 

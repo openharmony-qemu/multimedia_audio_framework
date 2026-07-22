@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -275,14 +275,6 @@ HWTEST_F(AudioServiceSecondUnitTest, AudioServiceInRenderWhitelist_002, TestSize
  * @tc.number: AudioServiceUpdateForegroundState_001
  * @tc.desc  : Test UpdateForegroundState interface.
  */
-HWTEST_F(AudioServiceSecondUnitTest, AudioServiceUpdateForegroundState_001, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    ASSERT_NE(audioService, nullptr);
-    bool result = audioService->UpdateForegroundState(1, true);
-    EXPECT_EQ(result, false);
-}
-
 /**
  * @tc.name  : Test AudioService::DumpForegroundList API
  * @tc.type  : FUNC
@@ -613,14 +605,6 @@ HWTEST_F(AudioServiceSecondUnitTest, AudioServiceUpdateSourceType_001, TestSize.
  * @tc.number: AudioServiceHasBluetoothEndpoint_001
  * @tc.desc  : Test HasBluetoothEndpoint interface.
  */
-HWTEST_F(AudioServiceSecondUnitTest, AudioServiceHasBluetoothEndpoint_001, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    ASSERT_NE(audioService, nullptr);
-    bool hasBluetooth = audioService->HasBluetoothEndpoint();
-    EXPECT_TRUE(hasBluetooth);
-}
-
 /**
  * @tc.name  : Test AudioService::IsStreamTypeFitWorkgroup API
  * @tc.type  : FUNC

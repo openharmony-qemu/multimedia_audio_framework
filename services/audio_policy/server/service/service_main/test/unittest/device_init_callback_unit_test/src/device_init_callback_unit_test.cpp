@@ -20,6 +20,7 @@
 #include <thread>
 #include <memory>
 #include <vector>
+#include "securec.h"
 using namespace testing::ext;
 
 namespace OHOS {

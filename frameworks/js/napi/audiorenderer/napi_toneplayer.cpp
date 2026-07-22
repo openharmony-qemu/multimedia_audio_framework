@@ -32,7 +32,7 @@ int32_t NapiTonePlayer::isConstructSuccess_ = SUCCESS;
 
 static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode)
 {
-    NapiAudioError::ThrowError(env, errCode);
+    NapiAudioError::ThrowErrorDoNotUse(env, errCode);
     return nullptr;
 }
 

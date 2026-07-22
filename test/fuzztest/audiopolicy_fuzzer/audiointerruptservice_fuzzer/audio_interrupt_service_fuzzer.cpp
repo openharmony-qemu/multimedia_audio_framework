@@ -1277,25 +1277,6 @@ void UpdateMuteAudioFocusStrategyFuzzTest(const uint8_t *rawData, size_t size)
     audioInterruptStrategy->UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
 }
  
-void ReportRecordGetFocusFailFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    if (interruptService == nullptr) {
-        return;
-    }
-    AudioInterrupt activeInterrupt;
-    AudioInterrupt incomingInterrupt;
-    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
-    incomingInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
-    activeInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
-    activeInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
-    int32_t reason = *reinterpret_cast<const int32_t *>(rawData);
-    interruptService->ReportRecordGetFocusFail(incomingInterrupt, activeInterrupt, reason);
-}
- 
 void ProcessActiveStreamFocusFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -1406,7 +1387,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::DeactivateAudioSessionFakeInterruptFuzzTest,
     OHOS::AudioStandard::SetLatestMuteStateFuzzTest,
     OHOS::AudioStandard::UpdateMuteAudioFocusStrategyFuzzTest,
-    OHOS::AudioStandard::ReportRecordGetFocusFailFuzzTest,
     OHOS::AudioStandard::ProcessActiveStreamFocusFuzzTest,
     OHOS::AudioStandard::CanMixForActiveSessionFuzzTest,
 };

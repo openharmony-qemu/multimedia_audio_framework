@@ -215,7 +215,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
-    isBTSupportWearDetectionEnable_ = false;
+    isSupportWearDetectionEnable_ = false;
     modemCallSupported_ = true;
     highQualityRecordingSupported_ = false;
     isUnidirectional_ = false;
@@ -258,7 +258,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
-    isBTSupportWearDetectionEnable_ = false;
+    isSupportWearDetectionEnable_ = false;
     modemCallSupported_ = true;
     highQualityRecordingSupported_ = false;
     isUnidirectional_ = false;
@@ -304,7 +304,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     hasPair_ = deviceDescriptor.hasPair_;
     spatializationSupported_ = deviceDescriptor.spatializationSupported_;
     isVrSupported_ = deviceDescriptor.isVrSupported_;
-    isBTSupportWearDetectionEnable_ = deviceDescriptor.isBTSupportWearDetectionEnable_;
+    isSupportWearDetectionEnable_ = deviceDescriptor.isSupportWearDetectionEnable_;
     clientInfo_ = deviceDescriptor.clientInfo_;
     modemCallSupported_ = deviceDescriptor.modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor.highQualityRecordingSupported_;
@@ -357,7 +357,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     hasPair_ = deviceDescriptor->hasPair_;
     spatializationSupported_ = deviceDescriptor->spatializationSupported_;
     isVrSupported_ = deviceDescriptor->isVrSupported_;
-    isBTSupportWearDetectionEnable_ = deviceDescriptor->isBTSupportWearDetectionEnable_;
+    isSupportWearDetectionEnable_ = deviceDescriptor->isSupportWearDetectionEnable_;
     clientInfo_ = deviceDescriptor->clientInfo_;
     modemCallSupported_ = deviceDescriptor->modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor->highQualityRecordingSupported_;
@@ -558,7 +558,7 @@ bool AudioDeviceDescriptor::MarshallingInnerdata(Parcel &parcel, int32_t devType
         parcel.WriteBool(spatializationSupported_) &&
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) && parcel.WriteInt32(isVrSupported_) &&
-        parcel.WriteBool(isBTSupportWearDetectionEnable_) &&
+        parcel.WriteBool(isSupportWearDetectionEnable_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) && parcel.WriteBool(modemCallSupported_) &&
         parcel.WriteBool(highQualityRecordingSupported_) && parcel.WriteBool(isUnidirectional_) &&
         parcel.WriteString(dmDeviceInfo_) && parcel.WriteInt32(hdPlaybackMode_) &&
@@ -630,7 +630,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) &&
         parcel.WriteInt32(isVrSupported_) &&
-        parcel.WriteBool(isBTSupportWearDetectionEnable_) &&
+        parcel.WriteBool(isSupportWearDetectionEnable_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) &&
         parcel.WriteBool(modemCallSupported_) &&
         parcel.WriteBool(highQualityRecordingSupported_) &&
@@ -674,7 +674,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     hasPair_ = parcel.ReadBool();
     routerType_ = static_cast<RouterType>(parcel.ReadInt32());
     isVrSupported_ = parcel.ReadInt32();
-    isBTSupportWearDetectionEnable_ = parcel.ReadBool();
+    isSupportWearDetectionEnable_ = parcel.ReadBool();
     deviceUsage_ = static_cast<DeviceUsage>(parcel.ReadInt32());
     modemCallSupported_ = parcel.ReadBool();
     highQualityRecordingSupported_ = parcel.ReadBool();
@@ -846,6 +846,9 @@ std::string AudioDeviceDescriptor::GetName()
 {
     if (networkId_ != LOCAL_NETWORK_ID && deviceType_ == DEVICE_TYPE_SPEAKER) {
         return "DMSDP";
+    }
+    if (networkId_ != LOCAL_NETWORK_ID && deviceType_ == DEVICE_TYPE_MIC) {
+        return "Remote_Mic";
     }
     return GetDeviceTypeString();
 }

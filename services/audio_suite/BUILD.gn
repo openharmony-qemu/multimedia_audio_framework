@@ -46,17 +46,8 @@ config("audio_suite_public_config") {
     "../../interfaces/inner_api/native/audiomanager/include",
     "../../interfaces/kits/c/common",
   ]
-
-  cflags_cc = [
-    "-Wall",
-    "-Werror",
-    "-Os",
-  ]
-
-  ldflags = [ "-Wl" ]
 }
 
-# Audio Suite SA IDL 头文件配置
 config("audio_suite_sa_idl_support") {
   include_dirs = [
     "${target_gen_dir}",
@@ -83,6 +74,27 @@ audio_ohos_library("audio_suite") {
       ":audio_suite_sa_idl_support",
       "idl:audio_suite_sa_idl_config",
     ]
+
+    cflags_cc = [
+      "-Wall",
+      "-Werror",
+      "-Os",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-fvisibility-inlines-hidden",
+      "-fno-ident",
+      "-fno-exceptions",
+      "-fno-rtti",
+    ]
+
+    ldflags = [
+      "-flto=full",
+      "-Wl,-gc-sections",
+      "-Wl,--exclude-libs,ALL",
+      "-Wl,--hash-style=gnu",
+      "-Wl,--strip-debug",
+    ]
+
     include_dirs = [
       "client/manager/include",
       "client/converter/include",
@@ -172,9 +184,11 @@ audio_ohos_library("audio_suite") {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "hilog:libhilog",
       "ipc:ipc_single",
+      "bounds_checking_function:libsec_shared",
       "media_foundation:media_monitor_client",
       "media_foundation:media_monitor_common",
       "samgr:samgr_proxy",
@@ -227,6 +241,7 @@ audio_ohos_library("audio_pcm_process") {
     external_deps = [
       "c_utils:utils",
       "hilog:libhilog",
+      "bounds_checking_function:libsec_shared",
     ]
   }
 
@@ -236,10 +251,9 @@ audio_ohos_library("audio_pcm_process") {
   part_name = "audio_framework"
 }
 
-# Audio Suite SA 服务端
 if (audio_framework_feature_audiosuite_support) {
   audio_ohos_library("audio_suite_sa_service") {
-    stack_protector_ret = true
+    branch_protector_ret = "pac_ret"
     sanitize = {
       cfi = true
       cfi_cross_dso = true
@@ -250,6 +264,25 @@ if (audio_framework_feature_audiosuite_support) {
       boundary_sanitize = true
     }
     install_enable = true
+
+    cflags_cc = [
+      "-Werror",
+      "-Os",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-fvisibility-inlines-hidden",
+      "-fno-ident",
+      "-fno-exceptions",
+      "-fno-rtti",
+    ]
+
+    ldflags = [
+      "-flto=full",
+      "-Wl,-gc-sections",
+      "-Wl,--exclude-libs,ALL",
+      "-Wl,--hash-style=gnu",
+      "-Wl,--strip-debug",
+    ]
  
     defines = []
  
@@ -273,7 +306,10 @@ if (audio_framework_feature_audiosuite_support) {
     sources = [
       "server/audio_suite_policy/src/audio_suite_rom_download_service.cpp",
       "server/manager/src/download_manager.cpp",
+      "server/manager/src/background_download.cpp",
     ]
+
+    shlib_type = "sa"
  
     deps = [
       ":audio_suite",
@@ -290,13 +326,30 @@ if (audio_framework_feature_audiosuite_support) {
       "ipc:ipc_core",
       "samgr:samgr_proxy",
       "safwk:system_ability_fwk",
+      "eventhandler:libeventhandler",
       "hisysevent:libhisysevent",
       "hitrace:hitrace_meter",
       "access_token:libaccesstoken_sdk",
       "access_token:libnativetoken_shared",
       "access_token:libtokensetproc_shared",
       "init:libbegetutil",
+      "bounds_checking_function:libsec_shared",
+      "common_event_service:cesfwk_innerkits",
     ]
+    if (defined(global_parts_info) && defined(global_parts_info.communication_netmanager_base)) {
+      external_deps += ["netmanager_base:net_conn_manager_if"]
+      defines += ["AUDIO_SUITE_ROM_DOWNLOAD_NET_MANAGER"]
+    }
+
+    if (defined(global_parts_info) && defined(global_parts_info.powermgr_battery_manager)) {
+      external_deps += ["battery_manager:batterysrv_client"]
+      defines += ["AUDIO_SUITE_ROM_DOWNLOAD_BATTERY_MANAGER"]
+    }
+
+    if (defined(global_parts_info) && defined(global_parts_info.theme_screenlock_mgr)) {
+      external_deps += ["screenlock_mgr:screenlock_client"]
+      defines += ["AUDIO_SUITE_ROM_DOWNLOAD_SCREENLOCK_MANAGER"]
+    }
  
     subsystem_name = "multimedia"
     part_name = "audio_framework"

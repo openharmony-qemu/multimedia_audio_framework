@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,7 @@ enum DownloadState {
 
 struct DownloadStatus {
     DownloadState state;
-    unsigned int progress;
+    int progress;
     String version;
     String romPath;
     int errorCode;
@@ -34,50 +34,45 @@ struct DownloadStatus {
     long fileSize;
 };
 
-// 云 ROM 下载状态枚举
 enum CloudRomStatus {
-    ERROR = -1,                         // 异常
-    INIT = 0,                           // 初始状态
-    CHECKING_VERSION = 10,              // 新版本检测中
-    CHECK_VERSION_FAIL = 11,            // 版本检测失败
-    CHECK_VERSION_SUCCESS = 12,         // 版本检测成功
-    DOWNLOADING = 20,                   // 下载中
-    DOWNLOAD_PAUSE = 21,                // 下载暂停
-    DOWNLOAD_FAIL = 22,                 // 下载失败
-    DOWNLOAD_SUCCESS = 23,              // 下载成功
-    INSTALLING = 30,                    // 安装中
-    WAIT_REBOOT_THEN_INSTALL = 31,      // 待重启后安装
-    WAIT_UPGRADE_THEN_INSTALL = 32,     // 待系统更新后安装
-    RESTARTED_WAIT_FOR_INSTALL = 33,    // 已重启待安装
-    UPGRADED_WAIT_FOR_INSTALL = 34,     // 已更新待安装
-    INSTALL_FAIL = 35,                  // 安装失败
-    INSTALL_SUCCESS = 36,               // 安装成功
-    UNINSTALLING = 40,                  // 卸载中
-    WAIT_REBOOT_THEN_UNINSTALL = 41,    // 待重启后卸载
-    UNINSTALL_FAIL = 42,                // 卸载失败
-    UNINSTALL_SUCCESS = 43,             // 卸载成功
+    ERROR = -1,
+    INIT = 0,
+    CHECKING_VERSION = 10,
+    CHECK_VERSION_FAIL = 11,
+    CHECK_VERSION_SUCCESS = 12,
+    DOWNLOADING = 20,
+    DOWNLOAD_PAUSE = 21,
+    DOWNLOAD_FAIL = 22,
+    DOWNLOAD_SUCCESS = 23,
+    INSTALLING = 30,
+    WAIT_REBOOT_THEN_INSTALL = 31,
+    WAIT_UPGRADE_THEN_INSTALL = 32,
+    RESTARTED_WAIT_FOR_INSTALL = 33,
+    UPGRADED_WAIT_FOR_INSTALL = 34,
+    INSTALL_FAIL = 35,
+    INSTALL_SUCCESS = 36,
+    UNINSTALLING = 40,
+    WAIT_REBOOT_THEN_UNINSTALL = 41,
+    UNINSTALL_FAIL = 42,
+    UNINSTALL_SUCCESS = 43,
 };
 
-// 安全级别枚举
 enum SecurityLevel {
-    DEFAULT = 0,    // 默认
-    HIGH = 1,       // 高
-    LOW = 2,        // 低
+    DEFAULT = 0,
+    HIGH = 1,
+    LOW = 2,
 };
 
-// 业务错误
 struct BusinessError {
     String message;
     int errorNum;
 };
 
-// 云 ROM 特性信息
 struct FeatureInfo {
     String featureName;
     String info;
 };
 
-// 云 ROM 状态信息
 struct StatusInfo {
     FeatureInfo featureInfo;
     String version;
@@ -87,7 +82,6 @@ struct StatusInfo {
     BusinessError errorInfo;
 };
 
-// 云 ROM 新版本信息
 struct CloudRomNewVersionInfo {
     FeatureInfo featureInfo;
     String version;
@@ -99,39 +93,33 @@ struct CloudRomNewVersionInfo {
     BusinessError errorInfo;
 };
 
-// 云 ROM 版本检测结果
 struct CloudRomCheckResult {
     CloudRomNewVersionInfo[] newVersionInfos;
     BusinessError errorInfo;
 };
 
-// 状态信息结果
 struct StatusInfoResult {
     StatusInfo[] statusInfos;
     BusinessError errorInfo;
 };
 
-// 检测条件
 struct CheckCondition {
     String language;
     String condition;
 };
 
-// 下载条件
 struct DownloadCondition {
     int allowedNetType;
     String condition;
     boolean isBackground;
 };
 
-// 暂停条件
 struct PauseCondition {
     String reason;
     boolean autoResume;
     String condition;
 };
 
-// 云 ROM 回调数据
 struct CloudRomCallback {
     StatusInfo[] statusInfos;
 };

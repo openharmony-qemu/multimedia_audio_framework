@@ -698,13 +698,13 @@ int32_t AudioServerProxy::SetNonInterruptMuteProxy(uint32_t sessionId, bool mute
     return ret;
 }
 
-std::string AudioServerProxy::GetRemoteAudioParameterProxy(const std::string& networkId)
+std::string AudioServerProxy::GetRemoteAudioParameterProxy(const std::string& networkId, const std::string& condition)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, "");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     std::string value = "";
-    gsp->GetRemoteAudioParameter(networkId, AUDIO_EXT_PARAM_KEY_CUSTOM, "", value);
+    gsp->GetRemoteAudioParameter(networkId, AUDIO_EXT_PARAM_KEY_CUSTOM, condition, value);
     IPCSkeleton::SetCallingIdentity(identity);
     return value;
 }

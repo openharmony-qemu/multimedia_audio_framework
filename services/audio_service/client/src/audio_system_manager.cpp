@@ -328,6 +328,11 @@ float AudioSystemManager::GetVolumeInUnitOfDb(AudioVolumeType volumeType, int32_
     return AudioVolumeClientManager::GetInstance().GetVolumeInUnitOfDb(volumeType, volumeLevel, device);
 }
 
+int32_t AudioSystemManager::SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities)
+{
+    return AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
+}
+
 int32_t AudioSystemManager::SetDeviceChangeCallback(const DeviceFlag flag,
     const std::shared_ptr<AudioManagerDeviceChangeCallback>& callback)
 {

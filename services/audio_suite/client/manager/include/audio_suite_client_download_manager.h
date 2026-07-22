@@ -32,7 +32,7 @@ public:
     int32_t RegisterDownloadCallback(std::shared_ptr<IDownloadCallbackListener> callback) override;
     int32_t UnregisterDownloadCallback() override;
     int32_t StartDownload(const std::string& version) override;
-    int32_t CancelDownload() override;
+    int32_t CancelDownload(const std::string& version) override;
     int32_t StartBackgroundDownload(const std::string& version) override;
     int32_t GetDownloadStatus(DownloadStatus& status, const std::string& version) override;
     int32_t UninstallCloudRom(const std::string& version) override;

@@ -41,12 +41,10 @@ constexpr int32_t NAPI_ERR_UNAVAILABLE_ON_DEVICE = 801;
 class NapiAudioError {
 public:
     static napi_status ThrowError(napi_env env, const char *napiMessage, int32_t napiCode);
-    static void ThrowError(napi_env env, int32_t code);
-    static void ThrowError(napi_env env, int32_t code, const std::string &errMessage);
-    static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode);
-    // Deprecated: error code returned as string type,
-    // use ThrowErrorAndReturn(env, napiMessage, napiCode) which returns number type instead
-    static napi_value ThrowErrorAndReturn(napi_env env, int32_t errCode, const std::string &errMessage);
+    static void ThrowErrorDoNotUse(napi_env env, int32_t code);
+    static void ThrowErrorDoNotUse(napi_env env, int32_t code, const std::string &errMessage);
+    static napi_value ThrowErrorAndReturnDoNotUse(napi_env env, int32_t errCode);
+    static napi_value ThrowErrorAndReturnDoNotUse(napi_env env, int32_t errCode, const std::string &errMessage);
     static napi_value ThrowErrorAndReturn(napi_env env, const char *napiMessage, int32_t napiCode);
     static std::string GetMessageByCode(int32_t &code);
 };

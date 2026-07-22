@@ -349,8 +349,6 @@ void HpaeAdapterManager::SetHighResolution(AudioProcessConfig &processConfig, ui
         AUDIO_INFO_LOG("current stream marked as high resolution");
         isHighResolutionExist_ = true;
         highResolutionIndex_ = sessionId;
-    } else {
-        AUDIO_INFO_LOG("current stream marked as non-high resolution");
     }
 }
 

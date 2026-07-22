@@ -17,7 +17,6 @@
 #define AUDIO_SUITE_FORMAT_CONVERSION_H
 
 #include <vector>
-#include "securec.h"
 #include "audio_errors.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_proresampler.h"

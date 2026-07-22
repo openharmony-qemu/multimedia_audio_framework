@@ -32,6 +32,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "audio_stream_enum.h"
+#include "securec.h"
 
 using namespace OHOS::HDI::DistributedAudio::Audio::V2_0;
 

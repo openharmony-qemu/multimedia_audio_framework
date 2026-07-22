@@ -45,7 +45,7 @@ public:
     int32_t RegisterDownloadCallback(std::shared_ptr<IDownloadCallbackListener> callback);
     int32_t UnregisterDownloadCallback();
     int32_t StartDownload(const std::string& version);
-    int32_t CancelDownload();
+    int32_t CancelDownload(const std::string& version);
     int32_t StartBackgroundDownload(const std::string& version);
     int32_t GetDownloadStatus(DownloadStatus& status, const std::string& version);
     int32_t UninstallCloudRom(const std::string& version);

@@ -519,7 +519,7 @@ set<shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::FindCurrentOut
         auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceId);
         CHECK_AND_CONTINUE(desc);
         result.insert(desc);
-        AUDIO_INFO_LOG("deviceId=%{public}d, deviceType=%{public}d", desc->deviceId_, desc->deviceType_);
+        AUDIO_DEBUG_LOG("deviceId=%{public}d, deviceType=%{public}d", desc->deviceId_, desc->deviceType_);
     }
     return result;
 }

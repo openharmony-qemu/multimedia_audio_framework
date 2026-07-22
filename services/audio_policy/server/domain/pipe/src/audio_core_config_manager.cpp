@@ -24,6 +24,7 @@
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
 #include "audio_core_service.h"
+#include "audio_bus_selector.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
@@ -781,7 +782,8 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
 {
     // Vehicle system scenario enter
     CHECK_AND_RETURN_LOG(desc != nullptr, "StreamDesc is null, none streamProp");
-    if (desc->audioMode_ == AUDIO_MODE_RECORD) {
+    if (desc->audioMode_ == AUDIO_MODE_RECORD ||
+        !AudioPolicyUtils::GetInstance().IsMultiBusDevice(desc->GetMainNewDeviceType())) {
         GetStreamPropInfo(desc, info);
         return;
     }
@@ -793,7 +795,6 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
         newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
-    AUDIO_INFO_LOG("DeviceType: %{public}d, DeviceRole: %{public}d", deviceInfo->type_, deviceInfo->role_);
 
     std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = deviceInfo->adapterInfo_.lock();
     CHECK_AND_RETURN_LOG(adapterInfoPtr != nullptr, "Find adapter info failed, none streamProp");
@@ -1109,6 +1110,19 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoFro
     AudioSampleFormat format = streamInfo.format;
     uint32_t sampleRate = static_cast<uint32_t>(streamInfo.samplingRate);
     AudioChannel channels = streamInfo.channels;
+#ifdef MULTI_BUS_ENABLE
+    for (const auto &streamProp : info->streamPropInfos_) {
+        if (streamProp->channels_ == channels) {
+            return streamProp;
+        }
+    }
+    for (const auto &streamProp : info->streamPropInfos_) {
+        if (streamProp->channels_ > AudioCahnnel::STEREO &&
+            channels > AudioCahnnel::STEREO) {
+            return streamProp;
+        }
+    }
+#else
     for (auto &streamProp : info->streamPropInfos_) {
         if (streamProp->format_ == format &&
             streamProp->sampleRate_ == sampleRate &&
@@ -1116,6 +1130,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoFro
             return streamProp;
         }
     }
+#endif
     return nullptr;
 }
 

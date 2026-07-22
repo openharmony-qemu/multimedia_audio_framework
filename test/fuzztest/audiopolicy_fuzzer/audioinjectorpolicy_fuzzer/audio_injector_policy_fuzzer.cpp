@@ -31,6 +31,7 @@
 #include "audio_pipe_info.h"
 #include "audio_injector_policy.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

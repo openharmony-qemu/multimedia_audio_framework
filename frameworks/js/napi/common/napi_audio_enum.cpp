@@ -105,6 +105,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::streamUsageMap = {
     {"STREAM_USAGE_MUSIC", STREAM_USAGE_MUSIC},
     {"STREAM_USAGE_VOICE_COMMUNICATION", STREAM_USAGE_VOICE_COMMUNICATION},
     {"STREAM_USAGE_VOICE_ASSISTANT", STREAM_USAGE_VOICE_ASSISTANT},
+    {"STREAM_USAGE_VOICE_ASSISTANT_SYSTEM", STREAM_USAGE_VOICE_ASSISTANT_SYSTEM},
     {"STREAM_USAGE_ALARM", STREAM_USAGE_ALARM},
     {"STREAM_USAGE_VOICE_MESSAGE", STREAM_USAGE_VOICE_MESSAGE},
     {"STREAM_USAGE_VOICE_CALL_ASSISTANT", STREAM_USAGE_VOICE_CALL_ASSISTANT},
@@ -332,6 +333,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::playbackCaptureStartStateMap
 const std::map<std::string, int32_t> NapiAudioEnum::playbackCaptureModeMap = {
     {"MODE_DEFAULT", 0x0},
     {"MODE_MEDIA", 0x1},
+    {"MODE_ONLY_VOIP", 0x4000},
     {"MODE_EXCLUDING_SELF", 0x8000},
 };
 
@@ -1601,6 +1603,8 @@ int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
             return NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
         case StreamUsage::STREAM_USAGE_INTERPHONE:
             return NapiAudioEnum::USAGE_INTERPHONE;
+        case StreamUsage::STREAM_USAGE_VOICE_ASSISTANT_SYSTEM:
+            return NapiAudioEnum::USAGE_VOICE_ASSISTANT_SYSTEM;
 #ifdef MULTI_ALARM_LEVEL
         case StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
             return NapiAudioEnum::USAGE_ANNOUNCEMENT;
@@ -1771,6 +1775,7 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_ANNOUNCEMENT:
         case STREAM_USAGE_EMERGENCY:
         case STREAM_USAGE_INTERPHONE:
+        case STREAM_USAGE_VOICE_ASSISTANT_SYSTEM:
             result = true;
             break;
         default:
@@ -1923,6 +1928,8 @@ StreamUsage NapiAudioEnum::GetNativeStreamUsageFir(int32_t streamUsage)
             return STREAM_USAGE_INTERPHONE;
         case NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT:
             return STREAM_USAGE_VOICE_CALL_ASSISTANT;
+        case NapiAudioEnum::USAGE_VOICE_ASSISTANT_SYSTEM:
+            return STREAM_USAGE_VOICE_ASSISTANT_SYSTEM;
 #ifdef MULTI_ALARM_LEVEL
         case NapiAudioEnum::USAGE_ANNOUNCEMENT:
             return STREAM_USAGE_ANNOUNCEMENT;

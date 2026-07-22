@@ -222,7 +222,7 @@ napi_value NapiAudioStreamMgr::GetCurrentAudioRendererInfosSync(napi_env env, na
     size_t argc = PARAM0;
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, nullptr);
     if (argc > 0) {
-        NapiAudioError::ThrowError(env, NAPI_ERROR_INVALID_PARAM);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERROR_INVALID_PARAM);
     }
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr!= nullptr, result, "napiStreamMgr is nullptr");
 
@@ -271,7 +271,7 @@ napi_value NapiAudioStreamMgr::GetCurrentAudioCapturerInfosSync(napi_env env, na
     size_t argc = PARAM0;
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, nullptr);
     if (argc > 0) {
-        NapiAudioError::ThrowError(env, NAPI_ERROR_INVALID_PARAM);
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERROR_INVALID_PARAM);
     }
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr!= nullptr, result, "napiStreamMgr is nullptr");
 
@@ -336,19 +336,19 @@ napi_value NapiAudioStreamMgr::IsStreamActiveSync(napi_env env, napi_callback_in
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of volumeType must be number"),
         "invalid valueType");
 
     int32_t volType;
     NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
 
     NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
@@ -369,19 +369,19 @@ napi_value NapiAudioStreamMgr::IsStreamActiveByStreamUsage(napi_env env, napi_ca
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of volumeType must be number"),
         "invalid valueType");
 
     int32_t streamUsage;
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of streamUsage must be enum StreamUsage"), "get streamUsage failed");
 
 #ifndef MULTI_ALARM_LEVEL
@@ -426,7 +426,7 @@ napi_value NapiAudioStreamMgr::GetEffectInfoArray(napi_env env, napi_callback_in
     context->GetCbInfo(env, info, inputParser);
 
     if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowErrorDoNotUse(env, context->errCode, context->errMessage);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -456,19 +456,19 @@ napi_value NapiAudioStreamMgr::GetEffectInfoArraySync(napi_env env, napi_callbac
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of usage must be number"),
         "invalid valueType");
 
     int32_t streamUsage;
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of usage must be enum StreamUsage"), "get streamUsage failed");
 
 #ifndef MULTI_ALARM_LEVEL
@@ -512,7 +512,7 @@ napi_value NapiAudioStreamMgr::GetHardwareOutputSamplingRate(napi_env env, napi_
     NapiParamUtils::GetAudioDeviceDescriptor(env, deviceDescriptor, argTransFlag, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(argTransFlag && NapiAudioEnum::IsLegalOutputDeviceType(deviceDescriptor->deviceType_) &&
         (deviceDescriptor->deviceRole_ == DeviceRole::OUTPUT_DEVICE),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM), "invalid deviceDescriptor");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM), "invalid deviceDescriptor");
 
     int32_t rate = napiStreamMgr->audioStreamMngr_->GetHardwareOutputSamplingRate(deviceDescriptor);
     NapiParamUtils::SetValueInt32(env, rate, result);
@@ -533,7 +533,7 @@ void NapiAudioStreamMgr::RegisterCallback(napi_env env, napi_value jsThis,
         RegisterCapturerStateChangeCallback(env, args, cbName, napiStreamMgr);
     } else {
         AUDIO_ERR_LOG("NapiAudioStreamMgr::No such callback supported");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported");
     }
 }
@@ -600,13 +600,13 @@ napi_value NapiAudioStreamMgr::On(napi_env env, napi_callback_info info)
     napi_value args[requireArgc + PARAM1] = {nullptr, nullptr, nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok && argc == requireArgc, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && argc == requireArgc, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"),
         "status or arguments error");
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, args[PARAM0], &eventType);
-    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"),
         "eventType error");
 
@@ -616,7 +616,7 @@ napi_value NapiAudioStreamMgr::On(napi_env env, napi_callback_info info)
     napi_valuetype handler = napi_undefined;
 
     napi_typeof(env, args[PARAM1], &handler);
-    CHECK_AND_RETURN_RET_LOG(handler == napi_function, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(handler == napi_function, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of callback must be function"),
         "handler is invalid");
 
@@ -641,7 +641,7 @@ void NapiAudioStreamMgr::UnregisterCallback(napi_env env, napi_value jsThis,
         AUDIO_INFO_LOG("UnRegistering of capturer State Change Callback successful");
     } else {
         AUDIO_ERR_LOG("No such callback supported");
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported");
     }
 }
@@ -697,13 +697,13 @@ napi_value NapiAudioStreamMgr::Off(napi_env env, napi_callback_info info)
     napi_value args[requireArgc + PARAM2] = {nullptr, nullptr, nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok && argc >= requireArgc, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && argc >= requireArgc, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID,
         "mandatory parameters are left unspecified"), "status or arguments error");
 
     napi_valuetype eventType = napi_undefined;
     CHECK_AND_RETURN_RET_LOG(napi_typeof(env, args[PARAM0], &eventType) == napi_ok && eventType == napi_string,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of eventType must be string"), "eventType error");
 
     std::string callbackName = NapiParamUtils::GetStringArgument(env, args[0]);
@@ -720,18 +720,18 @@ napi_value NapiAudioStreamMgr::IsAcousticEchoCancelerSupported(napi_env env, nap
     napi_value args[ARGS_ONE] = {};
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE && napiStreamMgr != nullptr &&
-        napiStreamMgr->audioStreamMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        napiStreamMgr->audioStreamMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID,
         "parameter verification failed: mandatory parameters are left unspecified"), "argcCount invalid");
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of options must be number"),
         "invaild valueType");
     int32_t sourceType;
     NapiParamUtils::GetValueInt32(env, sourceType, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsValidSourceType(sourceType),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of sourceType must be enum SourceType"), "get sourceType failed");
 
     bool isSupported = napiStreamMgr->audioStreamMngr_->IsAcousticEchoCancelerSupported(
@@ -747,13 +747,13 @@ napi_value NapiAudioStreamMgr::IsRecordingAvailable(napi_env env, napi_callback_
     napi_value args[ARGS_ONE] = {};
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE && napiStreamMgr != nullptr &&
-        napiStreamMgr->audioStreamMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        napiStreamMgr->audioStreamMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: mandatory parameters are left unspecified"), "argcCount invalid");
     AudioCapturerInfo capturerInfo = {};
     napi_status status = NapiParamUtils::GetAudioCapturerInfo(env, &capturerInfo, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && capturerInfo.sourceType != SourceType::SOURCE_TYPE_INVALID,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "parameter verification failed"),
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM, "parameter verification failed"),
         "get audioCapturerChangeInfo failed");
 
     bool isAvailable = napiStreamMgr->audioStreamMngr_->IsCapturerFocusAvailable(capturerInfo);
@@ -767,19 +767,19 @@ napi_value NapiAudioStreamMgr::IsAudioLoopbackSupported(napi_env env, napi_callb
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of loopback mode must be number"),
         "invalid valueType");
 
     int32_t loopbackMode;
     NapiParamUtils::GetValueInt32(env, loopbackMode, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(loopbackMode),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of loopbackMode must be enum AudioLoopbackMode"),
         "get loopbackMode failed");
 
@@ -799,18 +799,18 @@ napi_value NapiAudioStreamMgr::IsIntelligentNoiseReductionEnabledForCurrentDevic
     napi_value args[ARGS_ONE] = {};
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE && napiStreamMgr != nullptr &&
-        napiStreamMgr->audioStreamMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        napiStreamMgr->audioStreamMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID,
         "parameter verification failed: mandatory parameters are left unspecified"), "argcCount invalid");
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of options must be number"),
         "invaild valueType");
     int32_t sourceType = 0;
     NapiParamUtils::GetValueInt32(env, sourceType, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsValidSourceType(sourceType),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of sourceType must be enum SourceType"), "get sourceType failed");
 
     bool isSupported = napiStreamMgr->audioStreamMngr_->IsIntelligentNoiseReductionEnabledForCurrentDevice(

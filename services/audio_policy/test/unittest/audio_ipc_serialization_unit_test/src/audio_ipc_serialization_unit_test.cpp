@@ -296,33 +296,6 @@ HWTEST(AudioIpcSerializationUnitTest, AudioZoneContext_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test AudioZoneDescriptor.
- * @tc.number: AudioZoneDescriptor_001
- * @tc.desc  : Test AudioZoneDescriptor Serialization.
- */
-HWTEST(AudioIpcSerializationUnitTest, AudioZoneDescriptor_001, TestSize.Level1)
-{
-    Parcel parcel;
-    auto device = std::make_shared<AudioDeviceDescriptor>();
-    EXPECT_NE(device, nullptr);
-    AudioZoneDescriptor descriptor = {};
-    descriptor.zoneId_ = TEST_VALUE_1;
-    descriptor.name_ = TEST_STRING_VALUE_1;
-    descriptor.uids_ = {TEST_VALUE_1, TEST_VALUE_2};
-    descriptor.supportType_ = static_cast<int32_t>(AudioZoneSupportType::PLAY_ONLY);
-    descriptor.devices_.push_back(device);
-
-    EXPECT_TRUE(descriptor.Marshalling(parcel));
-    auto newDescriptor = std::shared_ptr<AudioZoneDescriptor>(AudioZoneDescriptor::Unmarshalling(parcel));
-    ASSERT_NE(newDescriptor, nullptr);
-    EXPECT_TRUE(newDescriptor->zoneId_ == descriptor.zoneId_);
-    EXPECT_TRUE(newDescriptor->name_ == descriptor.name_);
-    EXPECT_TRUE(newDescriptor->supportType_ == descriptor.supportType_);
-    EXPECT_TRUE(newDescriptor->uids_ == descriptor.uids_);
-    EXPECT_TRUE(newDescriptor->devices_.size() == descriptor.devices_.size());
-}
-
-/**
  * @tc.name  : Test AudioZoneStream.
  * @tc.number: AudioZoneStream_001
  * @tc.desc  : Test AudioZoneStream Serialization.

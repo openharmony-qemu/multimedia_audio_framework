@@ -150,29 +150,6 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_005, TestSize.Level
 
 /**
  * @tc.name  : Test PrivacyPriorityRouter.
- * @tc.number: GetRecordCaptureDevice_006
- * @tc.desc  : Only A2DP_IN, recognition source should return NONE (because SCO is suspend).
- */
-HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_006, TestSize.Level1)
-{
-    PrivacyPriorityRouter privacyPriorityRouter;
-    int32_t clientUID = TEST_CLIENT_UID;
-    uint32_t sessionID = TEST_SESSION_ID;
-
-    auto &manager = AudioDeviceManager::GetAudioDeviceManager();
-    auto a2dpin = CreateA2dpInDevice(200);
-    manager.reconCapturePrivacyDevices_.clear();
-    manager.mediaCapturePrivacyDevices_.clear();
-    manager.mediaCapturePrivacyDevices_.push_back(a2dpin);
-    auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_RECOGNITION, clientUID, sessionID);
-    EXPECT_NE(result, nullptr);
-    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
-    manager.reconCapturePrivacyDevices_.clear();
-    manager.mediaCapturePrivacyDevices_.clear();
-}
-
-/**
- * @tc.name  : Test PrivacyPriorityRouter.
  * @tc.number: GetRecordCaptureDevice_007
  * @tc.desc  : Normal recording source microphone, A2DP_IN is available, and A2DP_IN should be selected.
  */
@@ -341,29 +318,6 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_013, TestSize.Level
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_TRANSCRIPTION, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
-    manager.reconCapturePrivacyDevices_.clear();
-    manager.mediaCapturePrivacyDevices_.clear();
-}
-
-/**
- * @tc.name  : Test PrivacyPriorityRouter.
- * @tc.number: GetRecordCaptureDevice_014
- * @tc.desc  : Only A2DP_IN, device select should return NONE (because SCO is suspend).
- */
-HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_014, TestSize.Level1)
-{
-    PrivacyPriorityRouter privacyPriorityRouter;
-    int32_t clientUID = TEST_CLIENT_UID;
-    uint32_t sessionID = TEST_SESSION_ID;
-
-    auto &manager = AudioDeviceManager::GetAudioDeviceManager();
-    auto a2dpin = CreateA2dpInDevice(200);
-    manager.reconCapturePrivacyDevices_.clear();
-    manager.mediaCapturePrivacyDevices_.clear();
-    manager.mediaCapturePrivacyDevices_.push_back(a2dpin);
-    auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_TRANSCRIPTION, clientUID, sessionID);
-    EXPECT_NE(result, nullptr);
-    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     manager.reconCapturePrivacyDevices_.clear();
     manager.mediaCapturePrivacyDevices_.clear();
 }

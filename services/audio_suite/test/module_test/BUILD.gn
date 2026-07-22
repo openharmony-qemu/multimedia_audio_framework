@@ -42,6 +42,7 @@ if (audio_framework_feature_audiosuite_support) {
 
     external_deps = [
       "c_utils:utils",
+      "bounds_checking_function:libsec_shared",
     ]
 
     subsystem_name = "multimedia"

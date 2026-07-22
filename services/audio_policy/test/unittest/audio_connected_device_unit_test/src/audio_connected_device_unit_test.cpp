@@ -433,5 +433,78 @@ HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_020, TestSiz
     result = audioConnectedDevice->IsArmDevice(address, DeviceRole::INPUT_DEVICE);
     EXPECT_EQ(result, false);
 }
+
+/**
+* @tc.name  : Test AudioConnectedDevice.
+* @tc.number: AudioConnectedDeviceUnitTest_021.
+* @tc.desc  : Test GetConnectedDeviceByType.
+*/
+HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_021, TestSize.Level1)
+{
+    std::string networkId = "test";
+    auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_DP, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = networkId;
+    audioConnectedDevice->connectedDevices_.push_back(desc);
+    auto result = audioConnectedDevice->GetConnectedDeviceByType(networkId, DeviceType::DEVICE_TYPE_DP,
+        DeviceRole::OUTPUT_DEVICE);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioConnectedDevice.
+* @tc.number: AudioConnectedDeviceUnitTest_022.
+* @tc.desc  : Test GetConnectedDeviceByType.
+*/
+HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_022, TestSize.Level1)
+{
+    std::string networkId = "test";
+    auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_DP, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = networkId;
+    audioConnectedDevice->connectedDevices_.push_back(desc);
+
+    auto result = audioConnectedDevice->GetConnectedDeviceByType(networkId, DeviceType::DEVICE_TYPE_EARPIECE,
+        DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioConnectedDevice.
+* @tc.number: AudioConnectedDeviceUnitTest_023.
+* @tc.desc  : Test GetConnectedDeviceByType.
+*/
+HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_023, TestSize.Level1)
+{
+    std::string networkId = "test";
+    auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_DP, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = "networkId";
+    audioConnectedDevice->connectedDevices_.push_back(desc);
+    auto result = audioConnectedDevice->GetConnectedDeviceByType(networkId, DeviceType::DEVICE_TYPE_DP,
+        DeviceRole::OUTPUT_DEVICE);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioConnectedDevice.
+* @tc.number: AudioConnectedDeviceUnitTest_024.
+* @tc.desc  : Test GetConnectedDeviceByType.
+*/
+HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_024, TestSize.Level1)
+{
+    std::string networkId = "test";
+    auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_DP, DeviceRole::OUTPUT_DEVICE);
+    desc->networkId_ = networkId;
+    audioConnectedDevice->connectedDevices_.push_back(desc);
+    auto result = audioConnectedDevice->GetConnectedDeviceByType(networkId, DeviceType::DEVICE_TYPE_DP,
+        DeviceRole::INPUT_DEVICE);
+    EXPECT_EQ(result, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

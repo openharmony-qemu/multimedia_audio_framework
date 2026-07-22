@@ -208,14 +208,14 @@ int32_t AudioPolicyManager::RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t
     return gsp->RemoveStreamIdFromAudioZone(zoneId, streamId);
 }
 
-int32_t AudioPolicyManager::PauseAudioFocusForExtAudioZone()
+int32_t AudioPolicyManager::PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->PauseAudioFocusForExtAudioZone();
 }
 
-int32_t AudioPolicyManager::ResumeAudioFocusForExtAudioZone()
+int32_t AudioPolicyManager::ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);

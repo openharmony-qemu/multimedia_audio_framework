@@ -20,6 +20,7 @@
 #include <cinttypes>
 #include <ctime>
 #include <sstream>
+#include <fstream>
 #include <ostream>
 #include <climits>
 #include <thread>
@@ -214,7 +215,8 @@ bool Util::IsBackgroundSourceType(const SourceType sourceType)
 
 bool Util::IsScoSupportSource(const SourceType sourceType)
 {
-    return sourceType == SOURCE_TYPE_VOICE_RECOGNITION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
+    return sourceType == SOURCE_TYPE_VOICE_RECOGNITION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION ||
+        sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
 }
 
 bool Util::IsDualToneStreamType(const AudioStreamType streamType)
@@ -272,6 +274,12 @@ bool Util::IsEnhancedRoutingSupported()
     static const bool isEnhancedRoutingSupported =
         OHOS::system::GetBoolParameter("const.multimedia.audio.sys_multidevice_capability.enable", false);
     return isEnhancedRoutingSupported;
+}
+
+bool Util::IsCustomSampleRateValid(uint32_t customSampleRate)
+{
+    return (customSampleRate >= SAMPLE_RATE_8000 && customSampleRate <= SAMPLE_RATE_384000 &&
+        customSampleRate % SAMPLE_RATE_RESOLUTION_10 == 0) || customSampleRate == SAMPLE_RATE_11025;
 }
 
 WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
@@ -683,10 +691,12 @@ bool PermissionUtil::NeedVerifyBackgroundCapture(int32_t callingUid, SourceType 
 bool PermissionUtil::VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId)
 {
     Trace trace("PermissionUtil::VerifyBackgroundCapture");
+#ifndef MULTI_BUS_ENABLE
     if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId)) {
         AUDIO_INFO_LOG("system app recording");
         return true;
     }
+#endif
 
     bool ret = Security::AccessToken::PrivacyKit::IsAllowedUsingPermission(tokenId, MICROPHONE_PERMISSION);
     if (!ret) {
@@ -1590,6 +1600,39 @@ std::string GetField(const std::string &src, const char* field, const char sep)
     return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
 }
 
+std::string ReadTextFile(const std::string &file)
+{
+    std::string ret;
+    std::ifstream fin;
+    fin.open(file.c_str(), std::ios::binary | std::ios::in);
+    if (fin) {
+        int val;
+        while ((val = fin.get()) != EOF) {
+            ret.push_back(static_cast<char>(val));
+        }
+        fin.close();
+    }
+    return ret;
+}
+
+std::string Trim(const std::string &str)
+{
+    static const std::set<char> WHITE_SPACE{' ', '\r', '\n', '\t'};
+    size_t pos = 0;
+    size_t end = str.length();
+    for (; pos < end; pos++) {
+        if (WHITE_SPACE.find(str[pos]) == WHITE_SPACE.end()) {
+            break;
+        }
+    }
+    for (; end > pos; end--) {
+        if (WHITE_SPACE.find(str[end - 1]) == WHITE_SPACE.end()) {
+            break;
+        }
+    }
+    return str.substr(pos, end - pos);
+}
+
 int32_t GetFormatByteSize(int32_t format)
 {
     int32_t formatByteSize;
@@ -2011,6 +2054,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
 
     {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
+    {STREAM_VOICE_ASSISTANT_SYSTEM, STREAM_VOICE_ASSISTANT},
     {STREAM_ALARM, STREAM_ALARM},
     {STREAM_ACCESSIBILITY, STREAM_ACCESSIBILITY},
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
@@ -2027,6 +2071,7 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeM
     {STREAM_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
     {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
     {STREAM_VOICE_ASSISTANT, STREAM_MUSIC},
+    {STREAM_VOICE_ASSISTANT_SYSTEM, STREAM_MUSIC},
     {STREAM_VOICE_COMMUNICATION, STREAM_MUSIC},
     {STREAM_DTMF, STREAM_MUSIC},
     {STREAM_MUSIC, STREAM_MUSIC},
@@ -2151,6 +2196,7 @@ std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = 
     {STREAM_USAGE_VOICE_COMMUNICATION, STREAM_VOICE_COMMUNICATION},
     {STREAM_USAGE_INTERPHONE, STREAM_VOICE_COMMUNICATION},
     {STREAM_USAGE_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
+    {STREAM_USAGE_VOICE_ASSISTANT_SYSTEM, STREAM_VOICE_ASSISTANT_SYSTEM},
     {STREAM_USAGE_ALARM, STREAM_ALARM},
     {STREAM_USAGE_VOICE_MESSAGE, STREAM_VOICE_MESSAGE},
     {STREAM_USAGE_RINGTONE, STREAM_RING},
@@ -2286,6 +2332,7 @@ std::map<AudioVolumeType, std::vector<StreamUsage>> VolumeUtils::streamToStreamU
     {STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_USAGE_VOICE_COMMUNICATION,
         STREAM_USAGE_INTERPHONE, STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION}},
     {STREAM_VOICE_ASSISTANT, {STREAM_USAGE_VOICE_ASSISTANT}},
+    {STREAM_VOICE_ASSISTANT_SYSTEM, {STREAM_USAGE_VOICE_ASSISTANT_SYSTEM}},
     {STREAM_ALARM, {STREAM_USAGE_ALARM}},
     {STREAM_ACCESSIBILITY, {STREAM_USAGE_ACCESSIBILITY}},
     {STREAM_SYSTEM, {STREAM_USAGE_SYSTEM}},

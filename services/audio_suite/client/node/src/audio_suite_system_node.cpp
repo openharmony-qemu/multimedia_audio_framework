@@ -19,6 +19,7 @@
 #include <cinttypes>
 #include "audio_suite_system_node.h"
 #include "audio_suite_log.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -196,7 +197,7 @@ int32_t AudioSuiteSystemNode::Connect(const std::shared_ptr<AudioNode>& preNode)
 void AudioSuiteSystemNode::Prepare()
 {
     CHECK_AND_RETURN_LOG(effectChain_ != nullptr,
-        "Prepare failsed, currentNode not Init, nodeId:%{pubild}u", GetAudioNodeId());
+        "Prepare failsed, currentNode not Init, nodeId:%{public}u", GetAudioNodeId());
     int32_t ret = effectChain_->Prepare();
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "effectChain_->Prepare failed, ret=%{public}d", ret);
 }
@@ -231,7 +232,7 @@ void AudioSuiteSystemNode::TryConfigure()
 {
     CHECK_AND_RETURN_LOG(hasInputFormat_ && hasOutputFormat_,
         "Current Node note set input and output format, nodeId:%{public}u", GetAudioNodeId());
-    CHECK_AND_RETURN_LOG(effectChain_ != nullptr, "currentNode not Init, nodeId:%{pubild}u", GetAudioNodeId());
+    CHECK_AND_RETURN_LOG(effectChain_ != nullptr, "currentNode not Init, nodeId:%{public}u", GetAudioNodeId());
 
     AUDIO_INFO_LOG("%{public}d %{public}d %{public}d %{public}u %{public}" PRIu64 " input cfg",
         inputFormat_.rate, inputFormat_.encodingType, inputFormat_.format,
@@ -268,9 +269,9 @@ void AudioSuiteSystemNode::TryConfigure()
     inData_.resize(inBufferSize_);
     outData_.resize(outBufferSize_);
     metaFrame_.audioData = inAudioData_.data();
-    metaFrame_.audioDataSize = inAudioData_.size();
+    metaFrame_.audioDataSize = static_cast<int32_t>(inAudioData_.size());
     metaFrame_.metaData = inMetaData_.data();
-    metaFrame_.metaDataSize = inMetaData_.size();
+    metaFrame_.metaDataSize = static_cast<int32_t>(inMetaData_.size());
     AUDIO_INFO_LOG("init buffer inBufferSize_:%{public}u, outBufferSize_:%{public}u", inBufferSize_, outBufferSize_);
 
     uint32_t frameLen = static_cast<uint32_t>(PCM_DATA_DURATION_40_MS) * outputFormat_.rate / SECONDS_TO_MS;
@@ -296,7 +297,7 @@ std::vector<AudioSuitePcmBuffer*> AudioSuiteSystemNode::SignalProcess(
         "Invalid input format");
 
     uint8_t* inBuffer = inputs[0]->GetPcmData();
-    int32_t inSize = inputs[0]->GetDataSize();
+    int32_t inSize = static_cast<int32_t>(inputs[0]->GetDataSize());
     
     CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr && inSize > 0, retError,
         "Invalid input buffer, size=%{public}d", inSize);
@@ -337,12 +338,12 @@ int32_t AudioSuiteSystemNode::DoProcess(AudioMetaFrame &metaFrame,
     AUDIO_DEBUG_LOG("inputDataSize:%{public}d, metaDataSize:%{public}d", responseInAudioSize, *((int32_t *)ptr));
     ptr += META_DATA_LEN_SIZE;
     errno_t err = memcpy_s(ptr, inData_.size() - META_DATA_LEN_SIZE, metaFrame_.metaData, responseInMetaSize);
-    CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memcpy_s meta data failed, ret=%{public}d, size=%{public}u, "
+    CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memcpy_s meta data failed, ret=%{public}d, size=%{public}zu, "
         "count=%{public}d", err, inData_.size() - META_DATA_LEN_SIZE, responseInMetaSize);
     ptr += responseInMetaSize;
     err = memcpy_s(ptr, inData_.size() - META_DATA_LEN_SIZE - responseInMetaSize,
         metaFrame_.audioData, responseInAudioSize);
-    CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memcpy_s audio data failed, ret=%{public}d, size=%{public}u, "
+    CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memcpy_s audio data failed, ret=%{public}d, size=%{public}zu, "
         "count=%{public}d", err, inData_.size() - META_DATA_LEN_SIZE - responseInMetaSize, responseInAudioSize);
     
     ret = effectChain_->Process(inData_.data(), inputDataSize, outData_.data(), outData_.size());
@@ -351,7 +352,7 @@ int32_t AudioSuiteSystemNode::DoProcess(AudioMetaFrame &metaFrame,
     *responseMetaSize = *((int32_t *)ptr);
     ptr += META_DATA_LEN_SIZE;
     *responseAudioSize = static_cast<int32_t>(outAudioDataSize_);
-    AUDIO_DEBUG_LOG("output outsize:%{public}u, audio data:%{public}d, metaDataSize:%{public}d",
+    AUDIO_DEBUG_LOG("output outsize:%{public}zu, audio data:%{public}d, metaDataSize:%{public}d",
         outData_.size(), *responseAudioSize, *responseMetaSize);
     CHECK_AND_RETURN_RET_LOG(static_cast<int>(outData_.size()) >= *responseMetaSize +
         META_DATA_LEN_SIZE + *responseAudioSize, ERR_INVALID_PARAM, "responseMetaSize error");

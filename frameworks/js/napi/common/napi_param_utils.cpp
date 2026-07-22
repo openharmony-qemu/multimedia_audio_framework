@@ -20,18 +20,20 @@
 #include "napi_audio_enum.h"
 #include "audio_effect.h"
 #include <unistd.h>
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr uint32_t PLAYBACK_CAPTURE_MODE_DEFAULT = 0x0;
 constexpr uint32_t PLAYBACK_CAPTURE_MODE_MEDIA = 0x1;
+constexpr uint32_t PLAYBACK_CAPTURE_MODE_ONLY_VOIP = 0x4000;
 constexpr uint32_t PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF = 0x8000;
 
 bool IsValidPlaybackCaptureMode(uint32_t mode)
 {
     return mode == PLAYBACK_CAPTURE_MODE_DEFAULT || mode == PLAYBACK_CAPTURE_MODE_MEDIA ||
-        mode == PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF ||
+        mode == PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF || mode == PLAYBACK_CAPTURE_MODE_ONLY_VOIP ||
         mode == (PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF | PLAYBACK_CAPTURE_MODE_MEDIA);
 }
 
@@ -41,7 +43,13 @@ void InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig &config, uint32_t mode
     auto &filterOptions = config.filterOptions;
     filterOptions.usageFilterMode = FilterMode::INCLUDE;
     filterOptions.pidFilterMode = FilterMode::INCLUDE;
+    config.isModernInnerCapturer = true;
 
+    if (mode == PLAYBACK_CAPTURE_MODE_ONLY_VOIP) {
+        filterOptions.usages.push_back(STREAM_USAGE_VOICE_COMMUNICATION);
+        filterOptions.usages.push_back(STREAM_USAGE_VIDEO_COMMUNICATION);
+        return;
+    }
     filterOptions.usages.push_back(STREAM_USAGE_UNKNOWN);
     filterOptions.usages.push_back(STREAM_USAGE_MEDIA);
     filterOptions.usages.push_back(STREAM_USAGE_MUSIC);
@@ -59,7 +67,6 @@ void InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig &config, uint32_t mode
         filterOptions.pids.push_back(getpid());
         filterOptions.pidFilterMode = FilterMode::EXCLUDE;
     }
-    config.isModernInnerCapturer = true;
 }
 } // namespace
 
@@ -948,6 +955,22 @@ static napi_status GetPlaybackCaptureMode(const napi_env &env, AudioCapturerOpti
 
     opts->capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
     InitPlaybackCaptureConfig(opts->playbackCaptureConfig, static_cast<uint32_t>(mode));
+    opts->playbackCaptureConfig.filterOptions.playbackCaptureMode = mode;
+    bool hasPlaybackCaptureUid = false;
+    status = napi_has_named_property(env, in, "playbackCaptureUid", &hasPlaybackCaptureUid);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetPlaybackCaptureMode has playbackCaptureUid failed");
+    if (!hasPlaybackCaptureUid) {
+        AUDIO_INFO_LOG("ParseCapturerOptions, without playbackCaptureUid");
+        return napi_ok;
+    }
+    napi_value uidValue = nullptr;
+    status = napi_get_named_property(env, in, "playbackCaptureUid", &uidValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetPlaybackCaptureMode get playbackCaptureUid failed");
+
+    int32_t uid = PLAYBACKCAPTURER_RECORD_ALL;
+    status = NapiParamUtils::GetValueInt32(env, uid, uidValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetPlaybackCaptureMode parse uid failed");
+    opts->playbackCaptureConfig.filterOptions.playbackCaptureUid = uid;
     return napi_ok;
 }
 
@@ -1014,6 +1037,28 @@ napi_status NapiParamUtils::GetCapturerSubStreamOptions(
     return napi_ok;
 }
 
+static napi_status GetPreferredInputDevice(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
+{
+    bool hasPreferredInputDevice = false;
+    napi_status status = napi_has_named_property(env, in, "preferredInputDevice", &hasPreferredInputDevice);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "has preferInputDevice failed");
+    if (!hasPreferredInputDevice) {
+        AUDIO_INFO_LOG("ParseCapturerOptions, without preferredInputDevice");
+        return napi_ok;
+    }
+
+    napi_value result = nullptr;
+    status = napi_get_named_property(env, in, "preferredInputDevice", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get preferInputDevice failed");
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    bool argTransFlag = false;
+    status = NapiParamUtils::GetAudioDeviceDescriptor(env, device, argTransFlag, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse PreferInputDevice failed");
+    CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
+    opts->preferredInputDevice = device;
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
 {
     napi_value result = nullptr;
@@ -1031,19 +1076,31 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     status = GetCapturerInfo(env, &(opts->capturerInfo), result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerInfo failed");
 
-    status = napi_get_named_property(env, in, "preferredInputDevice", &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get preferInputDevice failed");
-    auto device = std::make_shared<AudioDeviceDescriptor>();
-    bool argTransFlag = false;
-    status = GetAudioDeviceDescriptor(env, device, argTransFlag, result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse PreferInputDevice failed");
-    CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
-    opts->preferredInputDevice = device;
+    status = GetPreferredInputDevice(env, opts, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse preferredInputDevice failed");
 
     status = GetCapturerSubStreamOptions(env, opts, in);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerSubStreamOptions failed");
 
     return GetPlaybackCaptureMode(env, opts, in);
+}
+
+napi_status NapiParamUtils::GetCapturerMicInConfig(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
+{
+    napi_value result = nullptr;
+    napi_status status = napi_get_named_property(env, in, "capturerInfo", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get capturerInfo name failed");
+
+    status = GetCapturerInfo(env, &(opts->capturerInfo), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerInfo failed");
+
+    status = GetPreferredInputDevice(env, opts, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse preferredInputDevice failed");
+
+    status = GetCapturerSubStreamOptions(env, opts, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerSubStreamOptions failed");
+
+    return napi_ok;
 }
 
 napi_status NapiParamUtils::SetAudioCapturerChangeInfoDescriptors(const napi_env &env,

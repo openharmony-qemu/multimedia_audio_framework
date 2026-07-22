@@ -63,6 +63,7 @@ ohos_unittest("audio_focus_parser_unit_test") {
   }
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bluetooth:btframework",
     "c_utils:utils",
     "data_share:datashare_common",
@@ -116,6 +117,7 @@ ohos_unittest("audio_concurrency_parser_unit_test") {
   }
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bluetooth:btframework",
     "c_utils:utils",
     "data_share:datashare_common",
@@ -171,6 +173,7 @@ ohos_unittest("audio_tone_parser_test") {
   }
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bluetooth:btframework",
     "c_utils:utils",
     "data_share:datashare_common",
@@ -221,6 +224,7 @@ ohos_unittest("audio_volume_parser_unit_test") {
   }
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bluetooth:btframework",
     "c_utils:utils",
     "data_share:datashare_common",
@@ -272,6 +276,7 @@ ohos_unittest("audio_source_strategy_parser_unit_test") {
   }
  
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bluetooth:btframework",
     "c_utils:utils",
     "data_share:datashare_common",
@@ -324,6 +329,7 @@ ohos_unittest("audio_policy_global_parser_unit_test") {
   }
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bluetooth:btframework",
     "c_utils:utils",
     "data_share:datashare_common",

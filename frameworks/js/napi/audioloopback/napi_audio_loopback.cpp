@@ -495,13 +495,13 @@ napi_value NapiAudioLoopback::On(napi_env env, napi_callback_info info)
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "status error");
-    CHECK_AND_RETURN_RET_LOG(argc >= requireArgc, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_SYSTEM), "status error");
+    CHECK_AND_RETURN_RET_LOG(argc >= requireArgc, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "requireArgc is invaild");
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &eventType);
-    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"),
         "eventType is invaild");
 
@@ -511,19 +511,19 @@ napi_value NapiAudioLoopback::On(napi_env env, napi_callback_info info)
     napi_valuetype handler = napi_undefined;
     if (argc == requireArgc) {
         napi_typeof(env, argv[PARAM1], &handler);
-        CHECK_AND_RETURN_RET_LOG(handler == napi_function, NapiAudioError::ThrowErrorAndReturn(env,
+        CHECK_AND_RETURN_RET_LOG(handler == napi_function, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
             NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of callback must be function"),
             "handler is invaild");
     } else {
         napi_valuetype paramArg1 = napi_undefined;
         napi_typeof(env, argv[PARAM1], &paramArg1);
         napi_valuetype expectedValType = napi_number;  // Default. Reset it with 'callbackName' if check, if required.
-        CHECK_AND_RETURN_RET_LOG(paramArg1 == expectedValType, NapiAudioError::ThrowErrorAndReturn(env,
+        CHECK_AND_RETURN_RET_LOG(paramArg1 == expectedValType, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
             NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of frame must be number"),
             "paramArg1 is invaild");
         const int32_t arg2 = ARGS_TWO;
         napi_typeof(env, argv[arg2], &handler);
-        CHECK_AND_RETURN_RET_LOG(handler == napi_function, NapiAudioError::ThrowErrorAndReturn(env,
+        CHECK_AND_RETURN_RET_LOG(handler == napi_function, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
             NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of callback must be function"),
             "handler2 is invaild");
     }
@@ -537,10 +537,10 @@ napi_value NapiAudioLoopback::RegisterCallback(napi_env env, napi_value jsThis,
     NapiAudioLoopback *napiLoopback = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiLoopback));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "status error");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_SYSTEM), "status error");
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
 
     napi_value result = nullptr;
@@ -550,7 +550,7 @@ napi_value NapiAudioLoopback::RegisterCallback(napi_env env, napi_value jsThis,
         result = RegisterLoopbackCallback(env, argv, cbName, napiLoopback);
     } else {
         bool unknownCallback = true;
-        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturn(env,
+        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
             NAPI_ERROR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported"), "loopback_ is nullptr");
     }
@@ -561,7 +561,7 @@ napi_value NapiAudioLoopback::RegisterCallback(napi_env env, napi_value jsThis,
 napi_value NapiAudioLoopback::RegisterLoopbackCallback(napi_env env, napi_value *argv,
     const std::string &cbName, NapiAudioLoopback *napiLoopback)
 {
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->callbackNapi_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(napiLoopback->callbackNapi_ != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_NO_MEMORY), "callbackNapi_ is nullptr");
 
     std::shared_ptr<NapiAudioLoopbackCallback> cb =
@@ -587,13 +587,13 @@ napi_value NapiAudioLoopback::Off(napi_env env, napi_callback_info info)
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "status error");
-    CHECK_AND_RETURN_RET_LOG(argc <= requireArgc, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_SYSTEM), "status error");
+    CHECK_AND_RETURN_RET_LOG(argc <= requireArgc, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argc is invaild");
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &eventType);
-    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"),
         "eventType is invaild");
 
@@ -609,17 +609,17 @@ napi_value NapiAudioLoopback::UnregisterCallback(napi_env env, napi_value jsThis
     NapiAudioLoopback *napiLoopback = nullptr;
     napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiLoopback));
     CHECK_AND_RETURN_RET_LOG(status == napi_ok,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM), "status error");
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_SYSTEM), "status error");
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
 
     if (!cbName.compare(STATUS_CHANGE_CALLBACK_NAME)) {
         UnregisterLoopbackCallback(env, argc, cbName, argv, napiLoopback);
     } else {
         bool unknownCallback = true;
-        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturn(env,
+        CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
             NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of type is not supported"), "cbName is invaild");
     }
@@ -710,24 +710,24 @@ napi_value NapiAudioLoopback::SetReverbPreset(napi_env env, napi_callback_info i
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invalid");
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of mode must be number"),
         "valueType invaild");
     int32_t preset;
     NapiParamUtils::GetValueInt32(env, preset, argv[PARAM0]);
 
     if (!NapiAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(preset)) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of mode must be enum AudioLoopbackReverbPreset");
         return result;
     }
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
     bool ret = napiLoopback->loopback_->SetReverbPreset(static_cast<AudioLoopbackReverbPreset>(preset));
     napi_get_boolean(env, ret, &result);
@@ -739,8 +739,8 @@ napi_value NapiAudioLoopback::GetReverbPreset(napi_env env, napi_callback_info i
     size_t argc = PARAM0;
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
     int32_t reverbPreset = static_cast<int32_t>(napiLoopback->loopback_->GetReverbPreset());
     napi_value result = nullptr;
@@ -755,25 +755,25 @@ napi_value NapiAudioLoopback::SetEqualizerPreset(napi_env env, napi_callback_inf
     size_t argc = ARGS_ONE;
     napi_value argv[ARGS_ONE] = {};
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invalid");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of mode must be number"),
         "valueType invaild");
     int32_t preset;
     NapiParamUtils::GetValueInt32(env, preset, argv[PARAM0]);
 
     if (!NapiAudioEnum::IsLegalInputArgumentAudioLoopbackEqualizerPreset(preset)) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of mode must be enum AudioLoopbackEqualizerPreset");
         return result;
     }
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
     bool ret = napiLoopback->loopback_->SetEqualizerPreset(static_cast<AudioLoopbackEqualizerPreset>(preset));
     napi_get_boolean(env, ret, &result);
@@ -785,8 +785,8 @@ napi_value NapiAudioLoopback::GetEqualizerPreset(napi_env env, napi_callback_inf
     size_t argc = PARAM0;
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NapiAudioError::ThrowErrorAndReturnDoNotUse(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturnDoNotUse(env,
         NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
     int32_t reverbPreset = static_cast<int32_t>(napiLoopback->loopback_->GetEqualizerPreset());
     napi_value result = nullptr;
