@@ -44,7 +44,7 @@ const sptr<IStandardAudioService> AudioServerProxy::GetAudioServerProxy()
         "[Policy Service] audio service remote object is NULL.");
 
     const sptr<IStandardAudioService> gsp = iface_cast<IStandardAudioService>(object);
-    CHECK_AND_RETURN_RET(gsp != nullptr, nullptr);
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, nullptr, "[Policy Service] init gsp is NULL.");
     return gsp;
 }
 
