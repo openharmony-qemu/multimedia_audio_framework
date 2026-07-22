@@ -21,41 +21,57 @@
 #include <string>
 #include <vector>
 #include <functional>
-#include "audio_stream_info.h"
-
-namespace OHOS {
-namespace AudioStandard {
-namespace AudioSuite {
-    struct DownloadStatus;
-} // namespace AudioSuite
-} // namespace AudioStandard
-} // namespace OHOS
+#include "audio_suite_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-using SaDiedCallback = std::function<void()>;
-
-class IDownloadCallbackListener {
+class DownloadStatusCallback {
 public:
-    virtual ~IDownloadCallbackListener() = default;
-    virtual void OnDownloadStatusChanged(const DownloadStatus& status) = 0;
+    virtual ~DownloadStatusCallback() = default;
+    virtual void OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status) = 0;
+};
+
+class AudioSuiteRomDownloadCallback {
+public:
+    AudioSuiteRomDownloadCallback() = default;
+    virtual ~AudioSuiteRomDownloadCallback() = default;
+
+    virtual int32_t GetFeatureNewVersion(
+        const std::string featureName, AudioSuiteCloudRomVersionInfo &newfeatureNameInfos, int32_t &funcResult) = 0;
+    virtual int32_t GetFeatureStatus(
+        const std::string featureName, AudioSuiteDownloadStatusInfo &statusInfos, int32_t &funcResult) = 0;
+    virtual int32_t DownloadAndInstall(
+        const bool downloadCondition, const std::string featureName, int32_t &funcResult) = 0;
+    virtual int32_t PauseCloudRom(const std::string featureName, int32_t &funcResult) = 0;
+    virtual int32_t CancelCloudRom(const std::string featureName, int32_t &funcResult) = 0;
+    virtual int32_t UninstallCloudRom(const std::string featureName, int32_t &funcResult) = 0;
+
+    virtual int32_t RegisterDownloadStatusCallback(int32_t &funcResult) = 0;
+    virtual int32_t UnregisterDownloadStatusCallback(int32_t &funcResult) = 0;
 };
 
 class AudioSuiteDownloadManager {
 public:
+    static AudioSuiteDownloadManager& GetInstance();
     virtual ~AudioSuiteDownloadManager() = default;
 
-    static AudioSuiteDownloadManager& GetInstance();
+    // for ohaudiosuite
+    virtual int32_t RegisterDownloadStatusCallback(std::shared_ptr<DownloadStatusCallback> callback) = 0;
+    virtual int32_t UnregisterDownloadStatusCallback() = 0;
+    virtual int32_t StartDownload(const std::string& featureName) = 0;
+    virtual int32_t PauseDownload(const std::string& featureName) = 0;
+    virtual int32_t CancelDownload(const std::string& featureName) = 0;
+    virtual int32_t StartBackgroundDownload(const std::string& featureName) = 0;
+    virtual int32_t GetDownloadStatus(const std::string& featureName, AudioSuiteDownloadStatusInfo& status) = 0;
+    virtual int32_t UninstallCloudRom(const std::string& featureName) = 0;
 
-    virtual int32_t RegisterDownloadCallback(std::shared_ptr<IDownloadCallbackListener> callback) = 0;
-    virtual int32_t StartDownload(const std::string& version) = 0;
-    virtual int32_t CancelDownload(const std::string& version) = 0;
-    virtual int32_t StartBackgroundDownload(const std::string& version) = 0;
-    virtual int32_t GetDownloadStatus(DownloadStatus& status, const std::string& version) = 0;
-    virtual int32_t UninstallCloudRom(const std::string& version) = 0;
-    virtual int32_t UnregisterDownloadCallback() = 0;
+    // for audio server
+    virtual int32_t RegisterDownloadInterfaceCallback(
+        const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback) = 0;
+    virtual int32_t UnregisterDownloadInterfaceCallback() = 0;
+    virtual void OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status) = 0;
 };
 
 } // namespace AudioSuite

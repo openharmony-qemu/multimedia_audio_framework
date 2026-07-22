@@ -19,18 +19,17 @@
 #include <mutex>
 #include <string>
 #include <functional>
-#include "audio_suite_sa_types.h"
-#include "download_callback_stub_impl.h"
-#include "iaudio_suite_sa_service.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
+#include <atomic>
+#include "audio_suite_types.h"
+#include "iaudio_suite_service.h"
+#include "iremote_object.h"
+#include "audio_suite_download_manager.h"
+#include "audio_suite_status_callback_stub_impl.h"
+#include "audio_suite_download_callback_stub_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
-
-using SaDiedCallback = std::function<void()>;
-class IDownloadCallbackListener;
 
 class AudioSuiteClientPolicy {
 public:
@@ -39,34 +38,40 @@ public:
     AudioSuiteClientPolicy(const AudioSuiteClientPolicy&) = delete;
     AudioSuiteClientPolicy& operator=(const AudioSuiteClientPolicy&) = delete;
 
-    int32_t Init();
-    void DeInit();
+    int32_t RegisterDownloadStatusCallback(std::shared_ptr<DownloadStatusCallback> callback);
+    int32_t UnregisterDownloadStatusCallback();
+    int32_t StartDownload(const std::string& featureName);
+    int32_t PauseDownload(const std::string& featureName);
+    int32_t CancelDownload(const std::string& featureName);
+    int32_t StartBackgroundDownload(const std::string& featureName);
+    int32_t GetDownloadStatus(const std::string& featureName, AudioSuiteDownloadStatusInfo& status);
+    int32_t UninstallCloudRom(const std::string& featureName);
 
-    int32_t RegisterDownloadCallback(std::shared_ptr<IDownloadCallbackListener> callback);
-    int32_t UnregisterDownloadCallback();
-    int32_t StartDownload(const std::string& version);
-    int32_t CancelDownload(const std::string& version);
-    int32_t StartBackgroundDownload(const std::string& version);
-    int32_t GetDownloadStatus(DownloadStatus& status, const std::string& version);
-    int32_t UninstallCloudRom(const std::string& version);
+    int32_t RegisterDownloadInterfaceCallback(const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback);
+    int32_t UnregisterDownloadInterfaceCallback();
+    void OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status);
 
-    static constexpr int32_t SA_ID = 3015;
+    void DisconnectService();
 
 private:
     AudioSuiteClientPolicy();
     ~AudioSuiteClientPolicy();
-
     bool ConnectService();
-    void DisconnectService();
-    bool EnsureConnected();
 
-    sptr<IAudioSuiteSaService> proxy_;
-    bool connected_ = false;
-    bool needsReconnect_ = false;
+    class AudioSuiteServerDeathRecipient : public IRemoteObject::DeathRecipient {
+    public:
+        explicit AudioSuiteServerDeathRecipient() = default;
+        virtual ~AudioSuiteServerDeathRecipient() = default;
+        DISALLOW_COPY_AND_MOVE(AudioSuiteServerDeathRecipient);
+        void OnRemoteDied(const wptr<IRemoteObject> &remote);
+    };
+
     std::mutex mutex_;
-
-    std::shared_ptr<IDownloadCallbackListener> downloadCallback_;
-    sptr<DownloadCallbackStubImpl> downloadCallbackStub_;
+    std::atomic<bool> connected_ = false;
+    sptr<IAudioSuiteService> proxy_ = nullptr;
+    sptr<AudioSuiteStatusCallbackStubImpl> statusCallbackStub_ = nullptr;
+    sptr<AudioSuiteDownloadCallbackStubImpl> downloadCallbackStub_ = nullptr;
+    sptr<AudioSuiteServerDeathRecipient> deathRecipient_ = nullptr;
 };
 
 }  // namespace AudioSuite

@@ -37,8 +37,8 @@ if (audio_framework_feature_audiosuite_support) {
       "../../client/utils/include",
       "../../client/pcm_process/include",
       "../../client/stub/include",
-      "../../server/manager/include",
-      "../../server/audio_suite_policy/include",
+      "../../server/include",
+      "../../server/include",
       "../../../audio_engine/buffer",
       "../../../audio_engine/plugin/channel_converter/include/",
       "../../../audio_engine/plugin/resample/include/",
@@ -65,9 +65,7 @@ if (audio_framework_feature_audiosuite_support) {
       "manager/src/audio_suite_manager_dfx_test.cpp",
       "manager/src/audio_suite_engine_manager_test.cpp",
       "manager/src/audio_suite_manager_params_template_test.cpp",
-      "manager/src/download_manager_test.cpp",
-      "../../server/manager/src/download_manager.cpp",
-      "../../server/manager/src/background_download.cpp",
+      "manager/src/audio_suite_client_download_manager_test.cpp",
     ]
 
     sanitize = {
@@ -85,8 +83,6 @@ if (audio_framework_feature_audiosuite_support) {
     deps = [
       "../../:audio_suite_static",
       "../../:audio_suite",
-      "../../idl:audio_suite_sa_client_idl_interface",
-      "../../idl:audio_suite_sa_server_idl_interface",
     ]
 
     external_deps = [
@@ -235,10 +231,10 @@ if (audio_framework_feature_audiosuite_support) {
   ohos_unittest("audio_suite_service_test") {
     module_out_path = module_output_path
     sources = [
-      "service/audio_suite_rom_download_service_test.cpp",
-      "../../server/manager/src/download_manager.cpp",
-      "../../server/audio_suite_policy/src/audio_suite_rom_download_service.cpp",
-      "../../server/manager/src/background_download.cpp",
+      "service/audio_suite_service_test.cpp",
+      "../../server/src/download_manager.cpp",
+      "../../server/src/audio_suite_service.cpp",
+      "../../server/src/background_download.cpp",
     ]
 
     defines = [ "AUDIOSUITE_SA_UT" ]
@@ -256,8 +252,6 @@ if (audio_framework_feature_audiosuite_support) {
     configs = [ ":audio_suite_unit_config" ]
 
     deps = [
-      "../../idl:audio_suite_sa_client_idl_interface",
-      "../../idl:audio_suite_sa_server_idl_interface",
       "../../:audio_suite",
     ]
 

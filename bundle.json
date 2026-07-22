@@ -396,34 +396,6 @@
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/services/audio_engine/plugin/resample/include"
               }
-            },
-            {
-              "type": "none",
-              "name": "//foundation/multimedia/audio_framework/services/audio_suite/idl:audio_suite_sa_client_idl_interface",
-              "header": {
-                "header_files": [
-                  "iaudio_suite_sa_service.h",
-                  "iupdate_engine_callback.h",
-                  "audio_suite_sa_types.h",
-                  "idownload_callback.h",
-                  "icloud_rom_download_callback.h"
-                ],
-                "header_base": "//foundation/multimedia/audio_framework/services/audio_suite/idl"
-              }
-            },
-            {
-              "type": "none",
-              "name": "//foundation/multimedia/audio_framework/services/audio_suite/idl:audio_suite_sa_server_idl_interface",
-              "header": {
-                "header_files": [
-                  "iaudio_suite_sa_service.h",
-                  "iupdate_engine_callback.h",
-                  "audio_suite_sa_types.h",
-                  "idownload_callback.h",
-                  "icloud_rom_download_callback.h"
-                ],
-                "header_base": "//foundation/multimedia/audio_framework/services/audio_suite/idl"
-              }
             }
           ],
           "test": [

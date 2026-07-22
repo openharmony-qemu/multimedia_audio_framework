@@ -16,8 +16,7 @@ import("//foundation/multimedia/audio_framework/config.gni")
 
 audio_framework_root = "../../.."
 
-# Audio Suite SA IDL 配置
-config("audio_suite_sa_idl_config") {
+config("audio_suite_idl_config") {
   include_dirs = [
     "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
     "${audio_framework_root}/services/audio_suite/idl",
@@ -25,22 +24,20 @@ config("audio_suite_sa_idl_config") {
   ]
 }
 
-# Audio Suite SA 接口 IDL 编译（主接口）
 idl_gen_interface("audio_suite_idl_interface") {
   sources = [
-    "IAudioSuiteSaService.idl",
-    "IDownloadCallback.idl",
-    "ICloudRomDownloadCallback.idl",
-    "IUpdateEngineCallback.idl",
+    "IAudioSuiteService.idl",
+    "IAudioSuiteDownloadCallback.idl",
+    "IAudioSuiteStatusCallback.idl",
   ]
   sources_callback = []
-  sources_common = [ "AudioSuiteSaTypes.idl" ]
+  sources_common = [ "AudioSuiteTypes.idl" ]
 
   inputs = [
-    "AudioSuiteSaTypes.idl",
+    "AudioSuiteTypes.idl",
   ]
 
-  configs = [ ":audio_suite_sa_idl_config" ]
+  configs = [ ":audio_suite_idl_config" ]
 
   log_tag = "AudioSuiteSaIdl"
   hitrace = "HITRACE_TAG_ZAUDIO"
@@ -50,116 +47,113 @@ idl_gen_interface("audio_suite_idl_interface") {
   part_name = "audio_framework"
 }
 
-# Audio Suite SA 客户端 IDL 接口库（包含 Proxy）
-ohos_shared_library("audio_suite_sa_client_idl_interface") {
-  install_enable = true
-  branch_protector_ret = "pac_ret"
+if (audio_framework_feature_audiosuite_support) {
+  ohos_shared_library("audio_suite_client_idl") {
+    install_enable = true
+    branch_protector_ret = "pac_ret"
 
-  cflags_cc = [
-    "-fomit-frame-pointer",
-    "-fdata-sections",
-    "-ffunction-sections",
-    "-fno-unroll-loops",
-    "-fno-exceptions",
-    "-fno-unwind-tables",
-    "-fno-asynchronous-unwind-tables",
-    "-Os",
-  ]
+    cflags_cc = [
+      "-fomit-frame-pointer",
+      "-fdata-sections",
+      "-ffunction-sections",
+      "-fno-unroll-loops",
+      "-fno-exceptions",
+      "-fno-unwind-tables",
+      "-fno-asynchronous-unwind-tables",
+      "-Os",
+    ]
 
-  include_dirs = [
-    "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
-  ]
+    include_dirs = [
+      "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
+    ]
 
-  # 参考 audio_client_idl_interface 的正确做法
-  # 1. 主接口的 proxy + types（客户端调用服务端）
-  client_output_values = []
-  client_output_values += filter_include(get_target_outputs(":audio_suite_idl_interface"),
-    [ "*service_proxy.cpp", "*callback_stub.cpp", "*_types.cpp" ])
+    client_output_values = []
+    client_output_values += filter_include(get_target_outputs(":audio_suite_idl_interface"),
+      [ "*service_proxy.cpp", "*callback_stub.cpp", "*_types.cpp" ])
 
-  sources = []
-  sources += client_output_values
+    sources = []
+    sources += client_output_values
 
-  deps = [
-    ":audio_suite_idl_interface",
-    "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
-  ]
+    deps = [
+      ":audio_suite_idl_interface",
+      "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
+    ]
 
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-    "ipc:ipc_core",
-    "ipc:ipc_single",
-    "hitrace:hitrace_meter",
-  ]
+    external_deps = [
+      "c_utils:utils",
+      "hilog:libhilog",
+      "ipc:ipc_core",
+      "ipc:ipc_single",
+      "hitrace:hitrace_meter",
+    ]
 
-  public_configs = [ ":audio_suite_sa_idl_config" ]
+    public_configs = [ ":audio_suite_idl_config" ]
 
-  subsystem_name = "multimedia"
-  part_name = "audio_framework"
+    subsystem_name = "multimedia"
+    part_name = "audio_framework"
 
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+    }
   }
 }
 
-# Audio Suite SA 服务端 IDL 接口库（包含 Stub）
-ohos_shared_library("audio_suite_sa_server_idl_interface") {
-  install_enable = true
-  branch_protector_ret = "pac_ret"
+if (audio_framework_feature_audiosuite_support) {
+  ohos_shared_library("audio_suite_server_idl") {
+    install_enable = true
+    branch_protector_ret = "pac_ret"
 
-  cflags_cc = [
-    "-fomit-frame-pointer",
-    "-fdata-sections",
-    "-ffunction-sections",
-    "-fno-unroll-loops",
-    "-fno-exceptions",
-    "-fno-unwind-tables",
-    "-fno-asynchronous-unwind-tables",
-    "-Os",
-  ]
+    cflags_cc = [
+      "-fomit-frame-pointer",
+      "-fdata-sections",
+      "-ffunction-sections",
+      "-fno-unroll-loops",
+      "-fno-exceptions",
+      "-fno-unwind-tables",
+      "-fno-asynchronous-unwind-tables",
+      "-Os",
+    ]
 
-  include_dirs = [
-    "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
-  ]
+    include_dirs = [
+      "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
+    ]
 
-  # 服务端需要：
-  # 1. 主接口的 stub + types（服务端实现）
-  server_output_values = []
-  server_output_values += filter_include(get_target_outputs(":audio_suite_idl_interface"),
-    [ "*service_stub.cpp", "*callback_proxy.cpp", "*_types.cpp" ])
-  sources = []
-  sources += server_output_values
+    server_output_values = []
+    server_output_values += filter_include(get_target_outputs(":audio_suite_idl_interface"),
+      [ "*service_stub.cpp", "*callback_proxy.cpp", "*_types.cpp" ])
+    sources = []
+    sources += server_output_values
 
-  deps = [
-    ":audio_suite_idl_interface",
-    "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
-  ]
+    deps = [
+      ":audio_suite_idl_interface",
+      "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
+    ]
 
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-    "ipc:ipc_core",
-    "ipc:ipc_single",
-    "samgr:samgr_proxy",
-    "hitrace:hitrace_meter",
-  ]
+    external_deps = [
+      "c_utils:utils",
+      "hilog:libhilog",
+      "ipc:ipc_core",
+      "ipc:ipc_single",
+      "samgr:samgr_proxy",
+      "hitrace:hitrace_meter",
+    ]
 
-  public_configs = [ ":audio_suite_sa_idl_config" ]
+    public_configs = [ ":audio_suite_idl_config" ]
 
-  subsystem_name = "multimedia"
-  part_name = "audio_framework"
+    subsystem_name = "multimedia"
+    part_name = "audio_framework"
 
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+    }
   }
 }
 
-# 导出所有生成的头文件
-group("audio_suite_sa_idl_headers") {
+group("audio_suite_idl_headers") {
   deps = [
     ":audio_suite_idl_interface",
   ]

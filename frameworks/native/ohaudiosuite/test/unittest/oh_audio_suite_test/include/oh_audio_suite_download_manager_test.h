@@ -20,23 +20,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class OHAudioSuiteDownloadManagerNullTest : public testing::Test {
-public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
-    void SetUp(void);
-    void TearDown(void);
-};
-
-class ConvertToSaResultTest : public testing::Test {
-public:
-    static void SetUpTestCase(void);
-    static void TearDownTestCase(void);
-    void SetUp(void);
-    void TearDown(void);
-};
-
-class CApiStatusConstantTest : public testing::Test {
+class OHAudioSuiteDownloadManagerTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);

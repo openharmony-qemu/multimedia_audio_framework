@@ -14,8 +14,22 @@
  */
 
 package OHOS.AudioStandard.AudioSuite;
-import AudioSuiteSaTypes;
 
-interface IDownloadCallback {
-    [oneway] void OnDownloadStatusChanged([in] DownloadStatus status);
+struct AudioSuiteDownloadStatusInfo {
+    int state;
+    int progress;
+    String featureName;
+    String romPath;
+    long size;    
+    String errMessage;
+    int errorCode;
+};
+
+struct AudioSuiteCloudRomVersionInfo {
+    int status;
+    String featureName;
+    String version;
+    long size;
+    String errMessage;
+    int errorCode;
 };
