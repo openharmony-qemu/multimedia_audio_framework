@@ -168,6 +168,16 @@ bool AudioCoreService::HandleA2dpSuspendWhenFetch(const AudioStreamDeviceChangeR
     const AudioDeviceDescriptor &actived, const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streams)
 {
     if (reason.IsOldDeviceUnavaliable() && !streams.empty()) {
+        bool isSameA2dpUsed = any_of(streams.begin(), streams.end(), [](const auto &stream) {
+            return stream != nullptr && stream->streamStatus_ == STREAM_STATUS_STARTED &&
+                !stream->newDeviceDescs_.empty() &&
+                stream->newDeviceDescs_.front() != nullptr &&
+                stream->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+                !stream->oldDeviceDescs_.empty() &&
+                stream->newDeviceDescs_.front()->IsSameDeviceDescPtr(stream->oldDeviceDescs_.front());
+        });
+        CHECK_AND_RETURN_RET(!isSameA2dpUsed, false);
+
         bool activedWillChange = any_of(streams.begin(), streams.end(), [&actived](const auto &stream) {
             return stream != nullptr && stream->streamStatus_ == STREAM_STATUS_STARTED &&
                 !stream->newDeviceDescs_.empty() &&
