@@ -163,7 +163,7 @@ bool LoudVolumeManager::ReloadLoudVolumeMode(const AudioStreamType streamInFocus
     if (!FindLoudVolStreamTypeEnable(streamInFocus, funcHoldType) || (device != nullptr &&
         (device->networkId_ != LOCAL_NETWORK_ID || device->deviceType_ != DeviceType::DEVICE_TYPE_SPEAKER))) {
         AUDIO_INFO_LOG("streamType = %{public}d, or deviceType = %{public}d not support loud volume mode.",
-            streamInFocus, device->deviceType_);
+            streamInFocus, device ? device->deviceType_ : DEVICE_TYPE_NONE);
         return false;
     }
 
