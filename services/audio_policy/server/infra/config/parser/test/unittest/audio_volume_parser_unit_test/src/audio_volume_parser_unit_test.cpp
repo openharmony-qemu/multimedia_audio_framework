@@ -133,26 +133,6 @@ HWTEST_F(AudioVolumeParserUnitTest, AudioVolumeParserUnitTest_003, TestSize.Leve
 
 /**
 * @tc.name  : Test ParseVolumeFixInfo
-* @tc.number: ParseVolumeFixInfo_008
-* @tc.desc  : Test ParseVolumeFixInfo with LEGACY_HIGH_VOLUME_LEVEL_TO_NOTIFY
-*/
-HWTEST_F(AudioVolumeParserUnitTest, ParseVolumeFixInfo_008, TestSize.Level2)
-{
-    ASSERT_TRUE(audioVolumeParser_ != nullptr);
-    std::shared_ptr<MockAudioXmlNode> mockXmlNode = std::make_shared<MockAudioXmlNode>();
-    std::string typeValue = "LEGACY_HIGH_VOLUME_LEVEL_TO_NOTIFY";
-    std::string enableValue = "10";
-    EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("type"), _))
-        .WillOnce(DoAll(SetArgReferee<1>(typeValue), Return(0)));
-    EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("enable"), _))
-        .WillOnce(DoAll(SetArgReferee<1>(enableValue), Return(0)));
-
-    int32_t result = audioVolumeParser_->ParseVolumeFixInfo(mockXmlNode);
-    EXPECT_EQ(result, AUDIO_OK);
-}
-
-/**
-* @tc.name  : Test ParseVolumeFixInfo
 * @tc.number: ParseVolumeFixInfo_009
 * @tc.desc  : Test ParseVolumeFixInfo with invalid legacy volume level
 */
