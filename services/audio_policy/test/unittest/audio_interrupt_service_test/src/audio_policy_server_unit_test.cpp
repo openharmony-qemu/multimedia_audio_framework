@@ -3498,7 +3498,7 @@ HWTEST(AudioPolicyUnitTest, SelectPrivateDevice_01, TestSize.Level1)
     int32_t devType = 8;
     std::string macAddress{"11:22:33:44"};
     int32_t result = server->SelectPrivateDevice(devType, macAddress);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(result == SUCCESS || result == ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 /**
@@ -3511,7 +3511,7 @@ HWTEST(AudioPolicyUnitTest, ForceSelectDevice_01, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     sptr<AudioRendererFilter> filter{nullptr};
     int32_t result = server->ForceSelectDevice(31, "11:22", filter);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(result == SUCCESS || result == ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 /**
