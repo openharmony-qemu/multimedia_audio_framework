@@ -212,14 +212,14 @@ int32_t AudioPolicyManager::PauseAudioFocusForExtAudioZone(const std::vector<int
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
-    return gsp->PauseAudioFocusForExtAudioZone();
+    return gsp->PauseAudioFocusForExtAudioZone(zoneIds);
 }
 
 int32_t AudioPolicyManager::ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
-    return gsp->ResumeAudioFocusForExtAudioZone();
+    return gsp->ResumeAudioFocusForExtAudioZone(zoneIds);
 }
 
 void AudioPolicyManager::SetZoneDeviceVisible(bool visible)
