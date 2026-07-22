@@ -2382,6 +2382,7 @@ void CapturerInClientInner::SetCallbackLoopTid(int32_t tid)
 
 int32_t CapturerInClientInner::GetCallbackLoopTid()
 {
+    RETURN_RET_IF(capturerInfo_.isLoopback == true, 0);
     std::unique_lock<std::mutex> waitLock(callbackLoopTidMutex_);
     bool stopWaiting = callbackLoopTidCv_.wait_for(waitLock, std::chrono::seconds(1), [this] {
         return callbackLoopTid_ != -1; // callbackLoopTid_ will change when got notified.
