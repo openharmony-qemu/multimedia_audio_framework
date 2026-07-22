@@ -96,6 +96,8 @@ public:
 
     int32_t SetAppVolumeMutedDB(int32_t appUid, bool muted);
 
+    int32_t SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
+
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
     int32_t GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);

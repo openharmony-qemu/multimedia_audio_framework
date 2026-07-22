@@ -100,6 +100,7 @@ constexpr uid_t UID_AVSESSION_SERVICE = 6700;
 const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
 const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
+const char* MUTE_VOIP_PLAYBACK = "ohos.permission.MUTE_VOIP_PLAYBACK";
 const std::string CALLER_NAME = "audio_server";
 static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
 const std::string HIVIEWCARE_PERMISSION = "ohos.permission.ACCESS_HIVIEWCARE";
@@ -1246,6 +1247,22 @@ int32_t AudioPolicyServer::SetAdjustVolumeForZone(int32_t zoneId)
     auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
     audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_MUSIC, false, zoneId, deviceDesc);
     return ret;
+}
+
+int32_t AudioPolicyServer::SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted)
+{
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MUTE_VOIP_PLAYBACK),
+        ERR_PERMISSION_DENIED, "MUTE_VOIP_PLAYBACK permission check failed");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(appUid, streamId), ERR_INVALID_PARAM,
+        "The streamId %{public}ld does not belong to appUid %{public}d!", streamId, appUid);
+
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
+        callerUid, appUid, streamId, muted);
+    return audioVolumeManager_.SetVoipRendererMute(callerUid, appUid, streamId, muted);
 }
 
 // LCOV_EXCL_START

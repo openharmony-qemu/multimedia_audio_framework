@@ -135,6 +135,16 @@ public:
     int32_t SetAppVolumeMuted(const int32_t appUid, const bool muted, const int32_t flag = 0);
 
     /**
+     * @brief Set the mute state of the VoIP renderer for the specified uid and streamId.
+     * @param appUid The UID of the app.
+     * @param streamId The stream ID of the VoIP renderer.
+     * @param muted Set to true to mute the VoIP renderer, false to unmute.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetVoipRendererMuteForUid(const int32_t appUid, const int64_t streamId, const bool muted);
+
+    /**
      * @brief Set the mute state of the VoIP ringtone for the specified app.
      * @param appUid The UID of the app.
      * @param muted Set to true to mute the VoIP ringtone, false to unmute.

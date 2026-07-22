@@ -52,6 +52,7 @@ private:
         int32_t volDegree;
         int32_t volPercent; // 0-100
         int32_t appUid;
+        int64_t streamId;
         bool isOwned;
         std::string networkId;
         std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos;
@@ -74,6 +75,7 @@ private:
     static napi_value GetVolumeGroupManagerSync(napi_env env, napi_callback_info info);
     static napi_value SetAppVolumeMutedForUid(napi_env env, napi_callback_info info);
     static napi_value IsAppVolumeMutedForUid(napi_env env, napi_callback_info info);
+    static napi_value SetVoipRendererMuteForUid(napi_env env, napi_callback_info info);
     static napi_value GetSystemVolume(napi_env env, napi_callback_info info);
     static napi_value GetMinSystemVolume(napi_env env, napi_callback_info info);
     static napi_value GetMaxSystemVolume(napi_env env, napi_callback_info info);

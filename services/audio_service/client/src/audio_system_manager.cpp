@@ -215,6 +215,11 @@ int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     return AudioVolumeClientManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
 
+int32_t SetVoipRendererMuteForUid(const int32_t appUid, const int64_t streamId, const bool muted)
+{
+    return AudioVolumeClientManager::GetInstance().SetVoipRendererMuteForUid(appUid, streamId, muted);
+}
+
 int32_t AudioSystemManager::SetAppRingMuted(int32_t appUid, bool muted)
 {
     return AudioVolumeClientManager::GetInstance().SetAppRingMuted(appUid, muted);
