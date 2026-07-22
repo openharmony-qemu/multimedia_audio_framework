@@ -979,6 +979,7 @@ void AudioServer::OnStart()
      * NOTICE:
      * If the listening SA has already started, it immediately runs a callback on the main thread.
      * Don't randomly change the current listening order.
+     * Otherwise, OnStart() might take too long.
      */
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);

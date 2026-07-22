@@ -363,6 +363,7 @@ void AudioPolicyServer::AddSystemAbilityListeners()
      * NOTICE:
      * If the listening SA has already started, it immediately runs a callback on the main thread.
      * Don't randomly change the current listening order.
+     * Otherwise, OnStart() might take too long.
      */
     AddSystemAbilityListener(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
