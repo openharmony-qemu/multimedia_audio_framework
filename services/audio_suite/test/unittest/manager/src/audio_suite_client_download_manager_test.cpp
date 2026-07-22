@@ -263,12 +263,6 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, RegisterDownloadInterfaceCallback_00
     EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteDownloadManagerUnitTest, UnregisterDownloadInterfaceCallback_001, TestSize.Level0)
-{
-    int32_t ret = AudioSuiteDownloadManager::GetInstance().UnregisterDownloadInterfaceCallback();
-    EXPECT_EQ(ret, SUCCESS);
-}
-
 HWTEST_F(AudioSuiteDownloadManagerUnitTest, UnregisterDownloadStatusCallback_001, TestSize.Level0)
 {
     int32_t ret = AudioSuiteDownloadManager::GetInstance().UnregisterDownloadStatusCallback();

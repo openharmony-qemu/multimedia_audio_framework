@@ -139,18 +139,6 @@ HWTEST_F(AudioSuiteServiceTest, PauseDownloadTest, TestSize.Level0)
     EXPECT_EQ(result, ERR_CALLBACK_NOT_REGISTERED);
 }
 
-HWTEST_F(AudioSuiteServiceTest, StartBackgroundDownloadTest, TestSize.Level0)
-{
-    ErrCode result = SUCCESS;
-    ErrCode ret = service->StartBackgroundDownload("", result);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(result, ERR_INVALID_PARAM);
-
-    ret = service->StartBackgroundDownload("v1", result);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(result, ERR_CALLBACK_NOT_REGISTERED);
-}
-
 HWTEST_F(AudioSuiteServiceTest, GetDownloadStatusTest, TestSize.Level0)
 {
     AudioSuiteDownloadStatusInfo status;

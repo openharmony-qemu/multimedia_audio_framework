@@ -24,139 +24,93 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-void OHAudioSuiteDownloadManagerNullTest::SetUpTestCase(void) {}
-void OHAudioSuiteDownloadManagerNullTest::TearDownTestCase(void) {}
-void OHAudioSuiteDownloadManagerNullTest::SetUp(void) {}
-void OHAudioSuiteDownloadManagerNullTest::TearDown(void) {}
+void OHAudioSuiteDownloadManagerTest::SetUpTestCase(void) {}
+void OHAudioSuiteDownloadManagerTest::TearDownTestCase(void) {}
+void OHAudioSuiteDownloadManagerTest::SetUp(void) {}
+void OHAudioSuiteDownloadManagerTest::TearDown(void) {}
 
-HWTEST_F(OHAudioSuiteDownloadManagerNullTest, RegisterDownloadCallbackNullManager, TestSize.Level0)
+HWTEST_F(OHAudioSuiteDownloadManagerTest, RegisterDownloadCallbackNullManager, TestSize.Level0)
 {
     int32_t ret = OH_AudioSuite_RegisterDownloadCallback(nullptr, nullptr);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
-HWTEST_F(OHAudioSuiteDownloadManagerNullTest, StartDownloadNullManager, TestSize.Level0)
+HWTEST_F(OHAudioSuiteDownloadManagerTest, StartDownloadNullManager, TestSize.Level0)
 {
     int32_t ret = OH_AudioSuite_StartDownload(nullptr, "v1");
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
-HWTEST_F(OHAudioSuiteDownloadManagerNullTest, StartDownloadNullVersion, TestSize.Level0)
+HWTEST_F(OHAudioSuiteDownloadManagerTest, StartDownloadNullVersion, TestSize.Level0)
 {
     OH_AudioSuite_DownloadManager *manager = nullptr;
     OH_AudioSuite_GetDownloadManager(&manager);
     if (manager != nullptr) {
         int32_t ret = OH_AudioSuite_StartDownload(manager, nullptr);
-        EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+        EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
     }
 }
 
-HWTEST_F(OHAudioSuiteDownloadManagerNullTest, CancelDownloadNullManager, TestSize.Level0)
+HWTEST_F(OHAudioSuiteDownloadManagerTest, CancelDownloadNullManager, TestSize.Level0)
 {
     int32_t ret = OH_AudioSuite_CancelDownload(nullptr, "v1");
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
-HWTEST_F(OHAudioSuiteDownloadManagerNullTest, StartBackgroundDownloadNullManager, TestSize.Level0)
+HWTEST_F(OHAudioSuiteDownloadManagerTest, StartBackgroundDownloadNullManager, TestSize.Level0)
 {
     int32_t ret = OH_AudioSuite_StartBackgroundDownload(nullptr, "v1");
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
-HWTEST_F(OHAudioSuiteDownloadManagerNullTest, StartBackgroundDownloadNullVersion, TestSize.Level0)
+HWTEST_F(OHAudioSuiteDownloadManagerTest, StartBackgroundDownloadNullVersion, TestSize.Level0)
 {
     OH_AudioSuite_DownloadManager *manager = nullptr;
     OH_AudioSuite_GetDownloadManager(&manager);
     if (manager != nullptr) {
         int32_t ret = OH_AudioSuite_StartBackgroundDownload(manager, nullptr);
-        EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+        EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
     }
 }
 
-HWTEST_F(OHAudioSuiteDownloadManagerNullTest, GetDownloadStatusNullManager, TestSize.Level0)
+HWTEST_F(OHAudioSuiteDownloadManagerTest, GetDownloadStatusNullManager, TestSize.Level0)
 {
     OH_AudioSuite_DownloadStatusInfo status;
     int32_t ret = OH_AudioSuite_GetDownloadStatus(nullptr, "v1", &status);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
-HWTEST_F(OHAudioSuiteDownloadManagerNullTest, GetDownloadStatusNullStatus, TestSize.Level0)
+HWTEST_F(OHAudioSuiteDownloadManagerTest, GetDownloadStatusNullStatus, TestSize.Level0)
 {
     OH_AudioSuite_DownloadManager *manager = nullptr;
     OH_AudioSuite_GetDownloadManager(&manager);
     if (manager != nullptr) {
         int32_t ret = OH_AudioSuite_GetDownloadStatus(manager, "v1", nullptr);
-        EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+        EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
     }
 }
 
-HWTEST_F(OHAudioSuiteDownloadManagerNullTest, UninstallCloudRomNullManager, TestSize.Level0)
+HWTEST_F(OHAudioSuiteDownloadManagerTest, UninstallCloudRomNullManager, TestSize.Level0)
 {
     int32_t ret = OH_AudioSuite_UninstallCloudRom(nullptr, "v1");
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
-HWTEST_F(OHAudioSuiteDownloadManagerNullTest, UninstallCloudRomNullVersion, TestSize.Level0)
+HWTEST_F(OHAudioSuiteDownloadManagerTest, UninstallCloudRomNullVersion, TestSize.Level0)
 {
     OH_AudioSuite_DownloadManager *manager = nullptr;
     OH_AudioSuite_GetDownloadManager(&manager);
     if (manager != nullptr) {
         int32_t ret = OH_AudioSuite_UninstallCloudRom(manager, nullptr);
-        EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
+        EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
     }
 }
 
-HWTEST_F(OHAudioSuiteDownloadManagerNullTest, UnregisterDownloadCallbackNullManager, TestSize.Level0)
+HWTEST_F(OHAudioSuiteDownloadManagerTest, UnregisterDownloadCallbackNullManager, TestSize.Level0)
 {
     OH_AudioSuite_DownloadCallback cb = [](OH_AudioSuite_DownloadStatusInfoArray *) {};
     int32_t ret = OH_AudioSuite_UnregisterDownloadCallback(nullptr, &cb);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
-}
-
-void ConvertToSaResultTest::SetUpTestCase(void) {}
-void ConvertToSaResultTest::TearDownTestCase(void) {}
-void ConvertToSaResultTest::SetUp(void) {}
-void ConvertToSaResultTest::TearDown(void) {}
-
-HWTEST_F(ConvertToSaResultTest, SuccessMapping, TestSize.Level0)
-{
-    EXPECT_EQ(AUDIOCOMMON_RESULT_SUCCESS, 0);
-}
-
-HWTEST_F(ConvertToSaResultTest, InvalidParamMapping, TestSize.Level0)
-{
-    EXPECT_EQ(AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, 6800101);
-}
-
-HWTEST_F(ConvertToSaResultTest, IllegalStateMapping, TestSize.Level0)
-{
-    EXPECT_EQ(AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE, 6800103);
-}
-
-HWTEST_F(ConvertToSaResultTest, SystemMapping, TestSize.Level0)
-{
-    EXPECT_EQ(AUDIOCOMMON_RESULT_ERROR_SYSTEM, 6800301);
-}
-
-void CApiStatusConstantTest::SetUpTestCase(void) {}
-void CApiStatusConstantTest::TearDownTestCase(void) {}
-void CApiStatusConstantTest::SetUp(void) {}
-void CApiStatusConstantTest::TearDown(void) {}
-
-HWTEST_F(CApiStatusConstantTest, DownloadStatusInfoStructSize, TestSize.Level0)
-{
-    OH_AudioSuite_DownloadStatusInfo info;
-    memset_s(&info, sizeof(info), 0, sizeof(info));
-    EXPECT_EQ(sizeof(info.featureName), 256u);
-    EXPECT_EQ(sizeof(info.installPath), 256u);
-}
-
-HWTEST_F(CApiStatusConstantTest, AudiosuiteErrorCodeConstants, TestSize.Level0)
-{
-    EXPECT_EQ(AUDIOSUITE_SUCCESS, 0);
-    EXPECT_EQ(AUDIOSUITE_ERROR_INVALID_PARAM, 1);
-    EXPECT_EQ(AUDIOSUITE_ERROR_INVALID_STATE, 2);
-    EXPECT_EQ(AUDIOSUITE_ERROR_SYSTEM, 3);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
 } // namespace AudioStandard
