@@ -22,8 +22,6 @@
 #include <atomic>
 #include "audio_suite_types.h"
 #include "iaudio_suite_service.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
 #include "iremote_object.h"
 #include "audio_suite_download_manager.h"
 #include "audio_suite_status_callback_stub_impl.h"

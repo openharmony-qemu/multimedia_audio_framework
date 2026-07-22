@@ -17,6 +17,8 @@
 #define LOG_TAG "AudioSuiteClientPolicy"
 #endif
 
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 #include "audio_suite_client_policy.h"
 #include "audio_suite_log.h"
 #include "audio_errors.h"
