@@ -105,6 +105,7 @@ const sptr<IAudioPolicy> AudioPolicyManager::GetAudioPolicyManagerProxy(bool blo
     if (!object->IsProxyObject() || RegisterDeathRecipientInner(object)) {
         g_apProxy = gsp;
     }
+    JUDGE_AND_ERR_LOG(!gsp, "audio policy manager proxy is NULL.");
 
     return gsp;
 }
