@@ -274,7 +274,7 @@ public:
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
         std::string networkId);
 
-    void HandleRingerMode(AudioRingerMode ringerMode);
+    void SaveRingerMode(AudioRingerMode ringerMode);
 
     void SetAudioServerProxy(sptr<IStandardAudioService> gsp);
 
