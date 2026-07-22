@@ -52,13 +52,11 @@ AudioSuiteClientPolicy::~AudioSuiteClientPolicy()
     std::lock_guard<std::mutex> lock(mutex_);
     if (statusCallbackStub_ != nullptr) {
         statusCallbackStub_->ClearCallback();
-        delete statusCallbackStub_;
         statusCallbackStub_ = nullptr;
     }
 
     if (downloadCallbackStub_ != nullptr) {
         downloadCallbackStub_->ClearCallback();
-        delete downloadCallbackStub_;
         downloadCallbackStub_ = nullptr;
     }
 }
@@ -112,8 +110,7 @@ int32_t AudioSuiteClientPolicy::RegisterDownloadStatusCallback(std::shared_ptr<D
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     if (statusCallbackStub_ != nullptr) {
-        statusCallbackStub_->ClearCallback();
-        delete statusCallbackStub_;
+        statusCallbackStub_->ClearCallback();  
         statusCallbackStub_ = nullptr;
     }
     statusCallbackStub_ = new(std::nothrow) AudioSuiteStatusCallbackStubImpl();
@@ -122,7 +119,6 @@ int32_t AudioSuiteClientPolicy::RegisterDownloadStatusCallback(std::shared_ptr<D
     int32_t result = SUCCESS;
     ErrCode ret = proxy_->RegisterDownloadStatusCallback(statusCallbackStub_->AsObject(), result);
     if (ret != SUCCESS || result != SUCCESS) {
-        delete statusCallbackStub_;
         statusCallbackStub_ = nullptr;
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterDownloadStatusCallback IPC ret: %{public}d", ret);
@@ -146,7 +142,6 @@ int32_t AudioSuiteClientPolicy::UnregisterDownloadStatusCallback()
 
     if (statusCallbackStub_ != nullptr) {
         statusCallbackStub_->ClearCallback();
-        delete statusCallbackStub_;
         statusCallbackStub_ = nullptr;
     }
 
@@ -248,7 +243,6 @@ int32_t AudioSuiteClientPolicy::RegisterDownloadInterfaceCallback(
     CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
     if (downloadCallbackStub_ != nullptr) {
         downloadCallbackStub_->ClearCallback();
-        delete downloadCallbackStub_;
         downloadCallbackStub_ = nullptr;
     }
 
@@ -259,7 +253,6 @@ int32_t AudioSuiteClientPolicy::RegisterDownloadInterfaceCallback(
     int32_t result = SUCCESS;
     ErrCode ret = proxy_->RegisterDownloadInterfaceCallback(downloadCallbackStub_->AsObject(), result);
     if (ret != SUCCESS || result != SUCCESS) {
-        delete downloadCallbackStub_;
         downloadCallbackStub_ = nullptr;
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UninstallCloudRom IPC ret: %{public}d", ret);
@@ -273,7 +266,6 @@ int32_t AudioSuiteClientPolicy::UnregisterDownloadInterfaceCallback()
     std::lock_guard<std::mutex> lock(mutex_);
     if (downloadCallbackStub_ != nullptr) {
         downloadCallbackStub_->ClearCallback();
-        delete downloadCallbackStub_;
         downloadCallbackStub_ = nullptr;
     }
     return SUCCESS;

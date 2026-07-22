@@ -71,8 +71,8 @@ private:
     std::mutex mutex_;
     std::atomic<bool> connected_ = false;
     sptr<IAudioSuiteService> proxy_ = nullptr;
-    AudioSuiteStatusCallbackStubImpl *statusCallbackStub_ = nullptr;
-    AudioSuiteDownloadCallbackStubImpl *downloadCallbackStub_ = nullptr;
+    sptr<AudioSuiteStatusCallbackStubImpl> statusCallbackStub_ = nullptr;
+    sptr<AudioSuiteDownloadCallbackStubImpl> downloadCallbackStub_ = nullptr;
     sptr<AudioSuiteServerDeathRecipient> deathRecipient_ = nullptr;
 };
 
