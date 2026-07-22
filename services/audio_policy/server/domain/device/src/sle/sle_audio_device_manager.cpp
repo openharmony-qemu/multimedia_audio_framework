@@ -108,6 +108,8 @@ int32_t SleAudioDeviceManager::SetActiveSinkDevice(const std::string &device, ui
 
 int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t streamType, int32_t timeoutMs)
 {
+    Trace trace("SleAudioDeviceManager::StartPlaying:" + std::to_string(streamType) + "Wait:" +
+        std::to_string(timeoutMs));
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
