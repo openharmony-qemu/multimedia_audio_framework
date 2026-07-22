@@ -278,7 +278,6 @@ int32_t DownloadManager::UnregisterDownloadStatusCallback(int32_t callerPid)
     AUDIO_INFO_LOG("UnregisterDownloadStatusCallback start");
     CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "Download callback not reg.");
 
-
     if (deathRecipients_.find(callerPid) != deathRecipients_.end()) {
         deathRecipients_.erase(callerPid);
     }
