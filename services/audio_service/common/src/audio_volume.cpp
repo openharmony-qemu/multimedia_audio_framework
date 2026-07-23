@@ -714,6 +714,30 @@ void AudioVolume::SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t
     }
 }
 
+void AudioVolume::SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
+{
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
+        callerUid, appUid, streamId, muted);
+    auto &streamMap = voipCapturerMuteMap_[appUid];
+    if (muted) {
+        streamMap[streamId].insert(callerUid);
+    } else {
+        streamMap[streamId].erase(callerUid);
+    }
+    auto setIt = streamMap.find(streamId);
+    bool shouldMute = (setIt != streamMap.end()) && !setIt->second.empty();
+    AUDIO_INFO_LOG("voip capturer shouldMute:%{public}d, caller set size:%{public}zu",
+        shouldMute, (setIt != streamMap.end()) ? setIt->second.size() : 0);
+
+    if (setIt != streamMap.end() && setIt->second.empty()) {
+        streamMap.erase(setIt);
+    }
+    if (streamMap.empty()) {
+        voipCapturerMuteMap_.erase(appUid);
+    }
+}
+
 bool AudioVolume::SetAppRingMuted(int32_t appUid, bool isMuted)
 {
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);

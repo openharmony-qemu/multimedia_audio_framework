@@ -466,6 +466,16 @@ int32_t AudioAdapterManager::SetVoipRendererMute(int32_t callerUid, int32_t appU
     return SUCCESS;
 }
 
+int32_t AudioAdapterManager::SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
+{
+    AUDIO_INFO_LOG("appUid: %{public}d, streamId: %{public}ld, muted: %{public}d", appUid, streamId, muted);
+    std::lock_guard<std::mutex> lock(audioVolumeMutex_);
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
+    audioVolume->SetVoipCapturerMute(callerUid, appUid, streamId, muted);
+    return SUCCESS;
+}
+
 int32_t AudioAdapterManager::GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
 {
     if (volumeDataMaintainer_.IsSetSystemAppVolume(appUid)) {

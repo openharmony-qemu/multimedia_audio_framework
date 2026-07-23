@@ -366,6 +366,13 @@ int32_t AudioPolicyManager::SetVoipRendererMute(int32_t appUid, int64_t streamId
     return gsp->SetVoipRendererMute(appUid, streamId, muted);
 }
 
+int32_t AudioPolicyManager::SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetVoipCapturerMute(appUid, streamId, muted);
+}
+
 int32_t AudioPolicyManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

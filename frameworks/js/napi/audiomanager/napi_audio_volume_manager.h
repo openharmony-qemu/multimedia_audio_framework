@@ -76,6 +76,7 @@ private:
     static napi_value SetAppVolumeMutedForUid(napi_env env, napi_callback_info info);
     static napi_value IsAppVolumeMutedForUid(napi_env env, napi_callback_info info);
     static napi_value SetVoipRendererMuteForUid(napi_env env, napi_callback_info info);
+    static napi_value SetVoipCapturerMuteForUid(napi_env env, napi_callback_info info);
     static napi_value GetSystemVolume(napi_env env, napi_callback_info info);
     static napi_value GetMinSystemVolume(napi_env env, napi_callback_info info);
     static napi_value GetMaxSystemVolume(napi_env env, napi_callback_info info);

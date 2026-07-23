@@ -1265,6 +1265,22 @@ int32_t AudioPolicyServer::SetVoipRendererMute(int32_t appUid, int64_t streamId,
     return audioVolumeManager_.SetVoipRendererMute(callerUid, appUid, streamId, muted);
 }
 
+int32_t AudioPolicyServer::SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted)
+{
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MUTE_VOIP_PLAYBACK),
+        ERR_PERMISSION_DENIED, "MUTE_VOIP_PLAYBACK permission check failed");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(appUid, streamId), ERR_INVALID_PARAM,
+        "The streamId %{public}ld does not belong to appUid %{public}d!", streamId, appUid);
+
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
+        callerUid, appUid, streamId, muted);
+    return audioVolumeManager_.SetVoipCapturerMute(callerUid, appUid, streamId, muted);
+}
+
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
 {

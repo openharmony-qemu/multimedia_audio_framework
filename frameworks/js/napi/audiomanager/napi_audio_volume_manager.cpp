@@ -163,6 +163,7 @@ napi_value NapiAudioVolumeManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setAppVolumeMutedForUid", SetAppVolumeMutedForUid),
         DECLARE_NAPI_FUNCTION("isAppVolumeMutedForUid", IsAppVolumeMutedForUid),
         DECLARE_NAPI_FUNCTION("setVoipRendererMuteForUid", SetVoipRendererMuteForUid),
+        DECLARE_NAPI_FUNCTION("setVoipCapturerMuteForUid", SetVoipCapturerMuteForUid),
         DECLARE_NAPI_FUNCTION("getSystemVolume", GetSystemVolume),
         DECLARE_NAPI_FUNCTION("getMinSystemVolume", GetMinSystemVolume),
         DECLARE_NAPI_FUNCTION("getMaxSystemVolume", GetMaxSystemVolume),
@@ -500,6 +501,51 @@ napi_value NapiAudioVolumeManager::SetVoipRendererMuteForUid(napi_env env, napi_
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "setVoipRendererMuteForUid", executor, complete);
+}
+
+napi_value NapiAudioVolumeManager::SetVoipCapturerMuteForUid(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioVolumeManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("SetVoipCapturerMuteForUid failed : no memory");
+        NapiAudioError::ThrowError(env, "SetVoipCapturerMuteForUid failed : no memory", NAPI_ERR_SYSTEM);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_THREE, "Invalid arguments count or types.",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->appUid, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueInt64(env, context->streamId, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get streamId failed", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueBoolean(env, context->isMute, argv[PARAM2]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get isMute failed", NAPI_ERR_INPUT_INVALID);
+    };
+    context->GetCbInfo(env, info, inputParser);
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeManagerStatus(napiAudioVolumeManager, context),
+            "audio volume group manager state is error.");
+        context->intValue = napiAudioVolumeManager->audioSystemMngr_->SetVoipCapturerMuteForUid(
+            context->appUid, context->streamId, context->isMute);
+        CHECK_AND_RETURN(context->intValue != SUCCESS);
+        if (context->intValue == ERR_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_NO_PERMISSION);
+        } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_PERMISSION_DENIED);
+        } else {
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Failed to set voip capturer muted.");
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "setVoipCapturerMuteForUid", executor, complete);
 }
 
 napi_value NapiAudioVolumeManager::GetSystemVolumeByUid(napi_env env, napi_callback_info info)

@@ -112,6 +112,13 @@ int32_t AppVolumeManager::SetVoipRendererMute(int32_t callerUid, int32_t appUid,
     return audioPolicyManager_.SetVoipRendererMute(callerUid, appUid, streamId, muted);
 }
 
+int32_t AppVolumeManager::SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
+{
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
+        callerUid, appUid, streamId, muted);
+    return audioPolicyManager_.SetVoipCapturerMute(callerUid, appUid, streamId, muted);
+}
+
 int32_t AppVolumeManager::SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage, DeviceType deviceType)
 {
     // For system-controlled app volume, the volumeLevel range is 0-100.

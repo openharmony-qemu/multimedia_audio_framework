@@ -953,6 +953,14 @@ int32_t AudioVolumeClientManager::SetVoipRendererMuteForUid(int32_t appUid, cons
     return AudioPolicyManager::GetInstance().SetVoipRendererMute(appUid, streamId, muted);
 }
 
+int32_t AudioVolumeClientManager::SetVoipCapturerMuteForUid(int32_t appUid, const int64_t streamId, bool muted)
+{
+    AUDIO_INFO_LOG("appUid[%{public}d], streamId[%{public}ld], muted[%{public}d]", appUid, streamId, muted);
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioPolicyManager::GetInstance().SetVoipCapturerMute(appUid, streamId, muted);
+}
+
 int32_t AudioVolumeClientManager::SetAppRingMuted(int32_t appUid, bool muted)
 {
     bool ret = PermissionUtil::VerifySelfPermission();

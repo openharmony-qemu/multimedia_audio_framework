@@ -371,4 +371,5 @@ interface IAudioPolicy {
     void SkipDeviceTypes([in] boolean skipped, [in] List<int> deviceTypes);
     void SetVolumeControlPriority([in] List<int> priorities, [out] int ret);
     void SetVoipRendererMute([in] int appUid, [in] long streamId, [in] boolean muted);
+    void SetVoipCapturerMute([in] int appUid, [in] long streamId, [in] boolean muted);
 }
