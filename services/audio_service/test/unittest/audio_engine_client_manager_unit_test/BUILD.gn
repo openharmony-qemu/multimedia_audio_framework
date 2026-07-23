@@ -41,5 +41,6 @@ ohos_unittest("audio_engine_client_manager_unit_test") {
     "googletest:gtest",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "samgr:samgr_proxy",
   ]
 }

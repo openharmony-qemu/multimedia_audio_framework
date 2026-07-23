@@ -57,5 +57,6 @@ ohos_unittest("audio_manager_unit_test") {
     "googletest:gmock",
     "googletest:gtest",
     "ipc:ipc_core",
+    "samgr:samgr_proxy",
   ]
 }
