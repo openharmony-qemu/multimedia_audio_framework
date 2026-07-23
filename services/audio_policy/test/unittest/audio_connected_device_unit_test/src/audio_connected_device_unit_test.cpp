@@ -506,5 +506,83 @@ HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_024, TestSiz
         DeviceRole::INPUT_DEVICE);
     EXPECT_EQ(result, nullptr);
 }
+
+/**
+* @tc.name  : Test AudioConnectedDevice.
+* @tc.number: AudioConnectedDeviceUnitTest_025.
+* @tc.desc  : Test UpdateSpatializationSupported for DEVICE_TYPE_NEARLINK.
+*/
+HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_025, TestSize.Level1)
+{
+    std::string macAddress = "test";
+    bool spatializationSupported = true;
+    auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
+    std::string encryAddress =
+        AudioSpatializationService::GetAudioSpatializationService().GetSha256EncryptAddress(macAddress);
+
+    auto desc1 = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NEARLINK,
+        DeviceRole::OUTPUT_DEVICE);
+    desc1->macAddress_ = macAddress;
+    desc1->spatializationSupported_ = spatializationSupported;
+    audioConnectedDevice->connectedDevices_.push_back(desc1);
+
+    auto desc2 = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NEARLINK,
+        DeviceRole::OUTPUT_DEVICE);
+    desc2->macAddress_ = macAddress;
+    audioConnectedDevice->connectedDevices_.push_back(desc2);
+
+    auto desc3 = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO,
+        DeviceRole::OUTPUT_DEVICE);
+    desc3->macAddress_ = macAddress;
+    desc3->spatializationSupported_ = spatializationSupported;
+    audioConnectedDevice->connectedDevices_.push_back(desc3);
+
+    auto desc4 = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO,
+        DeviceRole::OUTPUT_DEVICE);
+    desc4->macAddress_ = macAddress;
+    audioConnectedDevice->connectedDevices_.push_back(desc4);
+
+    audioConnectedDevice->UpdateSpatializationSupported(encryAddress, spatializationSupported);
+    EXPECT_NE(audioConnectedDevice, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioConnectedDevice.
+* @tc.number: AudioConnectedDeviceUnitTest_026.
+* @tc.desc  : Test UpdateSpatializationSupported for DEVICE_TYPE_NEARLINK.
+*/
+HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_026, TestSize.Level1)
+{
+    std::string macAddress = "test";
+    bool spatializationSupported = true;
+    auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
+    std::string encryAddress =
+        AudioSpatializationService::GetAudioSpatializationService().GetSha256EncryptAddress(macAddress);
+
+    auto desc1 = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NEARLINK,
+        DeviceRole::OUTPUT_DEVICE);
+    desc1->macAddress_ = "test1";
+    desc1->spatializationSupported_ = spatializationSupported;
+    audioConnectedDevice->connectedDevices_.push_back(desc1);
+
+    auto desc2 = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NEARLINK,
+        DeviceRole::OUTPUT_DEVICE);
+    desc2->macAddress_ = "test1";
+    audioConnectedDevice->connectedDevices_.push_back(desc2);
+
+    auto desc3 = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO,
+        DeviceRole::OUTPUT_DEVICE);
+    desc3->macAddress_ = "test1";
+    desc3->spatializationSupported_ = spatializationSupported;
+    audioConnectedDevice->connectedDevices_.push_back(desc3);
+
+    auto desc4 = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO,
+        DeviceRole::OUTPUT_DEVICE);
+    desc4->macAddress_ = "test1";
+    audioConnectedDevice->connectedDevices_.push_back(desc4);
+
+    audioConnectedDevice->UpdateSpatializationSupported(encryAddress, spatializationSupported);
+    EXPECT_NE(audioConnectedDevice, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
