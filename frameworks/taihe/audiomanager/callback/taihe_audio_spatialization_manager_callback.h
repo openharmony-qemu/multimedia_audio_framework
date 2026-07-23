@@ -161,7 +161,6 @@ private:
         AudioPersonalizedSpatializationEnabledJsCallback *event);
 
     std::mutex mutex_;
-    std::list<std::shared_ptr<AutoRef>> personalizedSpatializationEnabledChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> personalizedSpatializationEnabledChangeCbForAnyDeviceList_;
     static bool onPersonalizedSpatializationEnabledChangeFlag_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
