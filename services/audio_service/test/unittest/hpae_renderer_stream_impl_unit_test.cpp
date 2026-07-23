@@ -61,7 +61,7 @@ public:
 class MockStatusCallback : public IStatusCallback {
 public:
     MOCK_METHOD(void, OnStatusUpdate, (IOperation operation), (override));
-    ~MockStatusCallback() override = default;
+    virtual ~MockStatusCallback() = default;
 };
 
 class HpaeRendererStreamUnitTest : public ::testing::Test {
