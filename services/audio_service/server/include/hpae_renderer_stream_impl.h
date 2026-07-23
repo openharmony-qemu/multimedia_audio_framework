@@ -131,6 +131,8 @@ private:
     uint64_t GetOffloadLatency();
     bool InitLatencyInfo(const AudioCallBackStreamInfo &callBackStreamInfo);
     void UpdateInnerCapWriteState(bool isWriteFirst);
+    int32_t HandleCallbackBufferData(AudioCallBackStreamInfo &callBackStreamInfo);
+    int32_t HandleWriteBufferData(AudioCallBackStreamInfo &callBackStreamInfo);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;

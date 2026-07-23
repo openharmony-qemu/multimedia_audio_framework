@@ -720,45 +720,52 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
     CHECK_AND_RETURN_RET(callBackStreamInfo.needData, SUCCESS);
     CHECK_AND_RETURN_RET_LOG(sendDataEnabled_.load(), ERR_OPERATION_FAILED,
         "Send data disabled, sessionId %{public}u", streamIndex_);
-    if (isCallbackMode_) { // callback buffer
-        auto requestDataLen = callBackStreamInfo.requestDataLen;
-        auto writeCallback = writeCallback_.lock();
-        CHECK_AND_RETURN_RET(writeCallback != nullptr, ERROR);
-        writeCallback->GetAvailableSize(requestDataLen);
-        requestDataLen = std::min(requestDataLen, callBackStreamInfo.requestDataLen);
-        size_t mutePaddingSize = 0;
-        if (callBackStreamInfo.requestDataLen > requestDataLen) {
-            mutePaddingSize = callBackStreamInfo.requestDataLen - requestDataLen;
-            int chToFill = (processConfig_.streamInfo.format == SAMPLE_U8) ? 0x7f : 0;
-            memset_s(callBackStreamInfo.inputData + requestDataLen,
-                mutePaddingSize, chToFill, mutePaddingSize);
-            requestDataLen = callBackStreamInfo.forceData && noWaitDataFlag_ ? requestDataLen : 0;
-        }
-        callBackStreamInfo.requestDataLen = requestDataLen;
-        int32_t ret = callBackStreamInfo.isLowLatency ?
-            writeCallback->OnWriteDataNoWake(callBackStreamInfo.inputData, requestDataLen) :
-            writeCallback->OnWriteData(callBackStreamInfo.inputData, requestDataLen);
-        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-        // Non-zero media data obtained from the client; notify first-frame fallback once.
-        if (callBackStreamInfo.isPullData && callBackStreamInfo.requestDataLen > 0) {
-            NotifyFirstFrameConsumedOnce();
-        }
-        noWaitDataFlag_ = true;
-        size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
-        CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
-        mutePaddingFrames_.fetch_add(mutePaddingFrames);
-        Trace trace("HpaeRendererStreamImpl::underrun mute frames " + std::to_string(mutePaddingFrames));
-        AUDIO_INFO_LOG("Padding mute frames %{public}zu, sessionId %{public}u", mutePaddingFrames, streamIndex_);
-    } else { // write buffer
-        int32_t writeRet = WriteDataFromRingBuffer(callBackStreamInfo.forceData,
-            callBackStreamInfo.inputData, callBackStreamInfo.requestDataLen);
-        // SUCCESS implies non-zero media data was dequeued from the ring buffer.
-        if (callBackStreamInfo.isPullData && writeRet == SUCCESS) {
-            NotifyFirstFrameConsumedOnce();
-        }
-        return writeRet;
+    return isCallbackMode_ ? HandleCallbackBufferData(callBackStreamInfo)
+                           : HandleWriteBufferData(callBackStreamInfo);
+}
+
+int32_t HpaeRendererStreamImpl::HandleCallbackBufferData(AudioCallBackStreamInfo &callBackStreamInfo)
+{
+    auto requestDataLen = callBackStreamInfo.requestDataLen;
+    auto writeCallback = writeCallback_.lock();
+    CHECK_AND_RETURN_RET(writeCallback != nullptr, ERROR);
+    writeCallback->GetAvailableSize(requestDataLen);
+    requestDataLen = std::min(requestDataLen, callBackStreamInfo.requestDataLen);
+    size_t mutePaddingSize = 0;
+    if (callBackStreamInfo.requestDataLen > requestDataLen) {
+        mutePaddingSize = callBackStreamInfo.requestDataLen - requestDataLen;
+        int chToFill = (processConfig_.streamInfo.format == SAMPLE_U8) ? 0x7f : 0;
+        memset_s(callBackStreamInfo.inputData + requestDataLen,
+            mutePaddingSize, chToFill, mutePaddingSize);
+        requestDataLen = callBackStreamInfo.forceData && noWaitDataFlag_ ? requestDataLen : 0;
     }
+    callBackStreamInfo.requestDataLen = requestDataLen;
+    int32_t ret = callBackStreamInfo.isLowLatency ?
+        writeCallback->OnWriteDataNoWake(callBackStreamInfo.inputData, requestDataLen) :
+        writeCallback->OnWriteData(callBackStreamInfo.inputData, requestDataLen);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    // Non-zero media data obtained from the client; notify first-frame fallback once.
+    if (callBackStreamInfo.isPullData && callBackStreamInfo.requestDataLen > 0) {
+        NotifyFirstFrameConsumedOnce();
+    }
+    noWaitDataFlag_ = true;
+    size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
+    CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
+    mutePaddingFrames_.fetch_add(mutePaddingFrames);
+    Trace trace("HpaeRendererStreamImpl::underrun mute frames " + std::to_string(mutePaddingFrames));
+    AUDIO_INFO_LOG("Padding mute frames %{public}zu, sessionId %{public}u", mutePaddingFrames, streamIndex_);
     return SUCCESS;
+}
+
+int32_t HpaeRendererStreamImpl::HandleWriteBufferData(AudioCallBackStreamInfo &callBackStreamInfo)
+{
+    int32_t writeRet = WriteDataFromRingBuffer(callBackStreamInfo.forceData,
+        callBackStreamInfo.inputData, callBackStreamInfo.requestDataLen);
+    // SUCCESS implies non-zero media data was dequeued from the ring buffer.
+    if (callBackStreamInfo.isPullData && writeRet == SUCCESS) {
+        NotifyFirstFrameConsumedOnce();
+    }
+    return writeRet;
 }
 
 BufferDesc HpaeRendererStreamImpl::DequeueBuffer(size_t length)
