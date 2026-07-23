@@ -162,7 +162,6 @@ private:
 
     std::mutex mutex_;
     std::list<std::shared_ptr<AutoRef>> personalizedSpatializationEnabledChangeCbForAnyDeviceList_;
-    static bool onPersonalizedSpatializationEnabledChangeFlag_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio

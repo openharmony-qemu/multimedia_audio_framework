@@ -27,7 +27,6 @@ using namespace std;
 
 bool TaiheAudioSpatializationEnabledChangeCallback::onSpatializationEnabledChangeFlag_;
 bool TaiheAudioHeadTrackingEnabledChangeCallback::onHeadTrackingEnabledChangeFlag_;
-bool TaiheAudioPersonalizedSpatializationEnabledChangeCallback::onPersonalizedSpatializationEnabledChangeFlag_;
 
 TaiheAudioSpatializationEnabledChangeCallback::TaiheAudioSpatializationEnabledChangeCallback()
 {
@@ -659,7 +658,6 @@ void TaiheAudioPersonalizedSpatializationEnabledChangeCallback::OnPersonalizedSp
         anyDeviceCb->callback = (*anyDeviceIt);
         anyDeviceCb->deviceDescriptor = deviceDescriptor;
         anyDeviceCb->enabled = enabled;
-        onPersonalizedSpatializationEnabledChangeFlag_ = false;
         OnJsCallbackPersonalizedSpatializationEnabled(anyDeviceCb);
     }
 
