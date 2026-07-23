@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,7 +34,7 @@
 #include "audio_spatialization_types.h"
 #include "audio_stream_descriptor.h"
 #include "audio_debug_info.h"
-#include "va_device_broker_wrapper_impl.h"
+#include "virtual_audio_interface.h"
 #include "audio_capturer_options.h"
 #include "boot_animation_state_info.h"
 #include "audio_separation_effect_enabled_change_callback.h"
