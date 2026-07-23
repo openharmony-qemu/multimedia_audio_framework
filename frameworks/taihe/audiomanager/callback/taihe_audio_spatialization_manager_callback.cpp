@@ -27,6 +27,7 @@ using namespace std;
 
 bool TaiheAudioSpatializationEnabledChangeCallback::onSpatializationEnabledChangeFlag_;
 bool TaiheAudioHeadTrackingEnabledChangeCallback::onHeadTrackingEnabledChangeFlag_;
+bool TaiheAudioPersonalizedSpatializationEnabledChangeCallback::onPersonalizedSpatializationEnabledChangeFlag_;
 
 TaiheAudioSpatializationEnabledChangeCallback::TaiheAudioSpatializationEnabledChangeCallback()
 {
@@ -562,6 +563,157 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::OnJsCallbackHeadTrackingEnable
         }
     };
     mainHandler_->PostTask(task, "OnHeadTrackingEnabledChangeForAnyDevice", 0,
+        OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
+}
+
+TaiheAudioPersonalizedSpatializationEnabledChangeCallback::TaiheAudioPersonalizedSpatializationEnabledChangeCallback()
+{
+    AUDIO_DEBUG_LOG("TaiheAudioPersonalizedSpatializationEnabledChangeCallback: instance create");
+}
+
+TaiheAudioPersonalizedSpatializationEnabledChangeCallback::~TaiheAudioPersonalizedSpatializationEnabledChangeCallback()
+{
+    AUDIO_DEBUG_LOG("TaiheAudioPersonalizedSpatializationEnabledChangeCallback: instance destroy");
+}
+
+void TaiheAudioPersonalizedSpatializationEnabledChangeCallback::SavePersonalizedSpatializationEnabledChangeCallbackReference(
+    const std::string &callbackName, std::shared_ptr<uintptr_t> callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!callbackName.compare(PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
+        for (auto anyDeviceIt = personalizedSpatializationEnabledChangeCbForAnyDeviceList_.begin();
+            anyDeviceIt != personalizedSpatializationEnabledChangeCbForAnyDeviceList_.end(); ++anyDeviceIt) {
+            if (*anyDeviceIt == nullptr) {
+                AUDIO_ERR_LOG("SavePersonalizedSpatializationEnabledChangeCallbackReference: *anyDeviceIt is null");
+                continue;
+            }
+            bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
+            CHECK_AND_RETURN_LOG(!isSame, "SaveCallbackReference: spatialization manager has same callback");
+        }
+
+        CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");
+        std::shared_ptr<AutoRef> anyDeviceCb = std::make_shared<AutoRef>(callback);
+        CHECK_AND_RETURN_LOG(anyDeviceCb != nullptr, "creating callback failed");
+        personalizedSpatializationEnabledChangeCbForAnyDeviceList_.push_back(anyDeviceCb);
+    }
+
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
+}
+
+void TaiheAudioPersonalizedSpatializationEnabledChangeCallback::RemovePersonalizedSpatializationEnabledChangeCallbackReference(
+    const std::string &callbackName, std::shared_ptr<uintptr_t> callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!callbackName.compare(PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
+        for (auto anyDeviceIt = personalizedSpatializationEnabledChangeCbForAnyDeviceList_.begin();
+            anyDeviceIt != personalizedSpatializationEnabledChangeCbForAnyDeviceList_.end(); ++anyDeviceIt) {
+            if (*anyDeviceIt == nullptr) {
+                AUDIO_ERR_LOG("RemovePersonalizedSpatializationEnabledChangeCallbackReference: *anyDeviceIt is null");
+                continue;
+            }
+            bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
+            if (isSame) {
+                AUDIO_INFO_LOG("RemovePersonalizedSpatializationEnabledChangeCallbackReference: find js callback, erase it");
+                personalizedSpatializationEnabledChangeCbForAnyDeviceList_.erase(anyDeviceIt);
+                return;
+            }
+        }
+    }
+    AUDIO_INFO_LOG("RemovePersonalizedSpatializationEnabledChangeCallbackReference: js callback no find");
+}
+
+void TaiheAudioPersonalizedSpatializationEnabledChangeCallback::RemoveAllPersonalizedSpatializationEnabledChangeCallbackReference(
+    const std::string &callbackName)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!callbackName.compare(PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
+        personalizedSpatializationEnabledChangeCbForAnyDeviceList_.clear();
+    }
+    AUDIO_INFO_LOG("RemoveAllPersonalizedSpatializationEnabledChangeCallbackReference: remove all js callbacks success");
+}
+
+int32_t TaiheAudioPersonalizedSpatializationEnabledChangeCallback::GetPersonalizedSpatializationEnabledChangeCbListSize(
+    const std::string &callbackName)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return personalizedSpatializationEnabledChangeCbForAnyDeviceList_.size();
+}
+
+void TaiheAudioPersonalizedSpatializationEnabledChangeCallback::OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+    const std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
+{
+    AUDIO_INFO_LOG("OnPersonalizedSpatializationEnabledChange by the specified device entered");
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    for (auto anyDeviceIt = personalizedSpatializationEnabledChangeCbForAnyDeviceList_.begin();
+        anyDeviceIt != personalizedSpatializationEnabledChangeCbForAnyDeviceList_.end(); anyDeviceIt++) {
+        std::unique_ptr<AudioPersonalizedSpatializationEnabledJsCallback> anyDeviceCb =
+            std::make_unique<AudioPersonalizedSpatializationEnabledJsCallback>();
+        CHECK_AND_RETURN_LOG(anyDeviceCb != nullptr, "No memory!!");
+        anyDeviceCb->callback = (*anyDeviceIt);
+        anyDeviceCb->deviceDescriptor = deviceDescriptor;
+        anyDeviceCb->enabled = enabled;
+        onPersonalizedSpatializationEnabledChangeFlag_ = false;
+        OnJsCallbackPersonalizedSpatializationEnabled(anyDeviceCb);
+    }
+
+    return;
+}
+
+void TaiheAudioPersonalizedSpatializationEnabledChangeCallback::SafeJsCallbackPersonalizedSpatializationEnabledWork(
+    AudioPersonalizedSpatializationEnabledJsCallback *event)
+{
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "SafeJsCallbackPersonalizedSpatializationEnabledWork: no memory");
+    std::shared_ptr<AudioPersonalizedSpatializationEnabledJsCallback> safeContext(
+        static_cast<AudioPersonalizedSpatializationEnabledJsCallback*>(event),
+        [](AudioPersonalizedSpatializationEnabledJsCallback *ptr) {
+            if (ptr != nullptr) {
+                delete ptr;
+                ptr = nullptr;
+            }
+    });
+    AUDIO_INFO_LOG("SafeJsCallbackPersonalizedSpatializationEnabledWork: safe js callback working.");
+
+    do {
+        std::shared_ptr<taihe::callback<void(AudioSpatialEnabledStateForDevice const&)>> cacheCallback =
+            std::reinterpret_pointer_cast<taihe::callback<void(AudioSpatialEnabledStateForDevice const&)>>(
+                event->callback->cb_);
+        CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "get reference value fail");
+        AUDIO_INFO_LOG("SafeJsCallbackPersonalizedSpatializationEnabledWork: safe js callback working.");
+
+        OHOS::AudioStandard::AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice;
+        audioSpatialEnabledStateForDevice.deviceDescriptor = event->deviceDescriptor;
+        audioSpatialEnabledStateForDevice.enabled = event->enabled;
+        AudioSpatialEnabledStateForDevice spatialEnabledStateForDevice =
+            TaiheParamUtils::ToTaiheAudioSpatialEnabledStateForDevice(audioSpatialEnabledStateForDevice);
+        (*cacheCallback)(spatialEnabledStateForDevice);
+    } while (0);
+}
+
+void TaiheAudioPersonalizedSpatializationEnabledChangeCallback::OnJsCallbackPersonalizedSpatializationEnabled(
+    std::unique_ptr<AudioPersonalizedSpatializationEnabledJsCallback> &jsCb)
+{
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
+        AUDIO_ERR_LOG("OnJsCallbackPersonalizedSpatializationEnabled: jsCb.get() is null");
+        return;
+    }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
+    AudioPersonalizedSpatializationEnabledJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
+    auto sharePtr = shared_from_this();
+    auto task = [event, sharePtr]() {
+        if (sharePtr != nullptr) {
+            sharePtr->SafeJsCallbackPersonalizedSpatializationEnabledWork(event);
+        }
+    };
+    mainHandler_->PostTask(task, "OnPersonalizedSpatializationEnabledChangeForAnyDevice", 0,
         OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 } // namespace ANI::Audio

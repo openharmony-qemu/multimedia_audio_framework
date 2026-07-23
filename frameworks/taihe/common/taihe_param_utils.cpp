@@ -331,6 +331,16 @@ int32_t TaiheParamUtils::GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatial
     return AUDIO_OK;
 }
 
+int32_t TaiheParamUtils::GetAudioHRTFDescriptor(int32_t *fd, int64_t *length, HRTFDescriptor hrtfDescriptor)
+{
+    if (fd == nullptr || length == nullptr) {
+        return AUDIO_ERR;
+    }
+    *fd = hrtfDescriptor.fd;
+    *length = hrtfDescriptor.length;
+    return AUDIO_OK;
+}
+
 int32_t TaiheParamUtils::GetAudioDeviceDescriptor(
     std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> &selectedAudioDevice,
     bool &argTransFlag, AudioDeviceDescriptor in)

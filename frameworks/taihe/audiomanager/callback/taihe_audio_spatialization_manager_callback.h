@@ -31,6 +31,8 @@ const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
 const std::string HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME = "headTrackingEnabledChange";
 const std::string HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
     "headTrackingEnabledChangeForAnyDevice";
+const std::string PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
+    "personalizedSpatializationEnabledChangeForAnyDevice";
 
 class TaiheAudioSpatializationEnabledChangeCallback :
     public OHOS::AudioStandard::AudioSpatializationEnabledChangeCallback,
@@ -126,6 +128,42 @@ private:
     std::list<std::shared_ptr<AutoRef>> headTrackingEnabledChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> headTrackingEnabledChangeCbForAnyDeviceList_;
     static bool onHeadTrackingEnabledChangeFlag_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
+};
+
+class TaiheAudioPersonalizedSpatializationEnabledChangeCallback :
+    public OHOS::AudioStandard::AudioPersonalizedSpatializationEnabledChangeCallback,
+    public std::enable_shared_from_this<TaiheAudioPersonalizedSpatializationEnabledChangeCallback> {
+public:
+    explicit TaiheAudioPersonalizedSpatializationEnabledChangeCallback();
+    virtual ~TaiheAudioPersonalizedSpatializationEnabledChangeCallback();
+    void SavePersonalizedSpatializationEnabledChangeCallbackReference(const std::string &callbackName,
+        std::shared_ptr<uintptr_t> callback);
+    void RemovePersonalizedSpatializationEnabledChangeCallbackReference(const std::string &callbackName,
+        std::shared_ptr<uintptr_t> callback);
+    void RemoveAllPersonalizedSpatializationEnabledChangeCallbackReference(const std::string &callbackName);
+    int32_t GetPersonalizedSpatializationEnabledChangeCbListSize(const std::string &callbackName);
+    void OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+        const std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> &deviceDescriptor,
+        const bool &enabled) override;
+
+private:
+    struct AudioPersonalizedSpatializationEnabledJsCallback {
+        std::shared_ptr<AutoRef> callback = nullptr;
+        std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> deviceDescriptor;
+        std::string callbackName = "unknown";
+        bool enabled;
+    };
+
+    void OnJsCallbackPersonalizedSpatializationEnabled(
+        std::unique_ptr<AudioPersonalizedSpatializationEnabledJsCallback> &jsCb);
+    static void SafeJsCallbackPersonalizedSpatializationEnabledWork(
+        AudioPersonalizedSpatializationEnabledJsCallback *event);
+
+    std::mutex mutex_;
+    std::list<std::shared_ptr<AutoRef>> personalizedSpatializationEnabledChangeCbList_;
+    std::list<std::shared_ptr<AutoRef>> personalizedSpatializationEnabledChangeCbForAnyDeviceList_;
+    static bool onPersonalizedSpatializationEnabledChangeFlag_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
