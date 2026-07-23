@@ -241,6 +241,8 @@ public:
         int32_t ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex);
         int32_t ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
             const std::string &moduleName);
+        int32_t ReleaseFastPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
+            const std::string &moduleName);
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
         int32_t StartInjection(uint32_t sessionId) override;
         void RemoveIdForInjector(uint32_t streamId) override;
@@ -733,6 +735,10 @@ private:
     int32_t ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
         const std::string &moduleName);
     void UpdatePrimaryExtraState(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void DelayReleaseFastPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
+        const std::string &moduleName, uint32_t routeFlag);
+    int32_t ReleaseFastPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
+        const std::string &moduleName, int32_t delayMs);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     bool HandleMuteBeforeDeviceSwitch(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -782,6 +788,7 @@ private:
     void UpdateSpecialRemoteModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void UpdateMultiChannelState(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void UpdateFastState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
@@ -972,6 +979,11 @@ private:
     std::condition_variable primaryExtraCloseCondition_;
     std::map<std::string, bool> isPrimaryExtraOpenedMap_;
     std::map<std::string, bool> isPrimaryExtraInReleaseMap_;
+    // Fast pipe delay release
+    std::mutex fastCloseMutex_;
+    std::condition_variable fastCloseCondition_;
+    std::map<std::string, bool> isFastOpenedMap_;
+    std::map<std::string, bool> isFastInReleaseMap_;
 
     // route update callback
     std::unordered_map<uint32_t, RouteUpdateCallbackInfo> routeUpdateCallback_;
