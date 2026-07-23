@@ -52,6 +52,7 @@ ohos_unittest("audio_enhance_unittest") {
   ]
 
   external_deps = [
+    "ability_runtime:dataobs_manager",
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "data_share:datashare_common",

@@ -83,6 +83,7 @@ ohos_shared_library("audio_renderer") {
     "../audio_debug_manager:audio_debug_manager",
   ]
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",

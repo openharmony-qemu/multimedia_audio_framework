@@ -52,6 +52,7 @@ audio_ohos_library("audio_bluetooth_client") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bluetooth:btframework",
     "c_utils:utils",
     "hdf_core:libhdf_ipc_adapter",
