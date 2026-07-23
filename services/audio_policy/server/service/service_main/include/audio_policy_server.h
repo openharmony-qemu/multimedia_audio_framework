@@ -1123,6 +1123,20 @@ private:
     AudioCommonEventSubscriber() = default;
     std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
 };
+
+class VoipMuteDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    explicit VoipMuteDeathRecipient(std::function<void()> callback) : callback_(std::move(callback)) {}
+    ~VoipMuteDeathRecipient() = default;
+    void OnRemoteDied(const wptr<IRemoteObject> &remote) override
+    {
+        if (callback_) {
+            callback_();
+        }
+    }
+private:
+    std::function<void()> callback_;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_SERVER_H

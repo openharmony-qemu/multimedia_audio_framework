@@ -125,6 +125,12 @@ int32_t AppVolumeManager::ClearVoipMuteByCallerUid(int32_t callerUid)
     return audioPolicyManager_.ClearVoipMuteByCallerUid(callerUid);
 }
 
+int32_t AppVolumeManager::ClearVoipMuteByStreamId(int64_t streamId)
+{
+    AUDIO_INFO_LOG("streamId: %{public}ld", streamId);
+    return audioPolicyManager_.ClearVoipMuteByStreamId(streamId);
+}
+
 int32_t AppVolumeManager::SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage, DeviceType deviceType)
 {
     // For system-controlled app volume, the volumeLevel range is 0-100.

@@ -471,11 +471,11 @@ napi_value NapiAudioVolumeManager::SetVoipRendererMuteForUid(napi_env env, napi_
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_THREE, "Invalid arguments count or types.",
             NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->appUid, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt64(env, context->streamId, argv[PARAM1]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get streamId failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get streamId failed", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueBoolean(env, context->isMute, argv[PARAM2]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get isMute failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get isMute failed", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
     auto executor = [context]() {
@@ -492,6 +492,8 @@ napi_value NapiAudioVolumeManager::SetVoipRendererMuteForUid(napi_env env, napi_
             context->SignError(NAPI_ERR_NO_PERMISSION);
         } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_PERMISSION_DENIED);
+        } else if (context->intValue == ERR_INVALID_PARAM) {
+            context->SignError(NAPI_ERR_INVALID_PARAM);
         } else {
             context->SignError(NAPI_ERR_SYSTEM, "System error. Failed to set voip renderer muted.");
         }
@@ -516,11 +518,11 @@ napi_value NapiAudioVolumeManager::SetVoipCapturerMuteForUid(napi_env env, napi_
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_THREE, "Invalid arguments count or types.",
             NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->appUid, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt64(env, context->streamId, argv[PARAM1]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get streamId failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get streamId failed", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueBoolean(env, context->isMute, argv[PARAM2]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get isMute failed", NAPI_ERR_INPUT_INVALID);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get isMute failed", NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
     auto executor = [context]() {
@@ -537,6 +539,8 @@ napi_value NapiAudioVolumeManager::SetVoipCapturerMuteForUid(napi_env env, napi_
             context->SignError(NAPI_ERR_NO_PERMISSION);
         } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_PERMISSION_DENIED);
+        } else if (context->intValue == ERR_INVALID_PARAM) {
+            context->SignError(NAPI_ERR_INVALID_PARAM);
         } else {
             context->SignError(NAPI_ERR_SYSTEM, "System error. Failed to set voip capturer muted.");
         }

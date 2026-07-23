@@ -72,8 +72,6 @@ public:
     void SetSystemAppVolumeMuted(int32_t appUid, bool muted);
     bool SetAppRingMuted(int32_t appUid, bool isMuted);
     void SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
-    void SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
-    void ClearVoipMuteByCallerUid(int32_t callerUid);
 
     //pipe volume
     void SetPipeVolume(PipeVolume &pipeVolume);
@@ -135,8 +133,6 @@ private:
     std::unordered_map<std::string, std::shared_ptr<PipeVolume>> pipeVolume_ {};
     std::unordered_map<int32_t, AppVolume> appVolume_ {};
     std::unordered_map<int32_t, SystemAppVolume> systemAppVolume_ {};
-    std::unordered_map<int32_t, std::unordered_map<int64_t, std::unordered_set<int32_t>>> voipRendererMuteMap_;
-    std::unordered_map<int32_t, std::unordered_map<int64_t, std::unordered_set<int32_t>>> voipCapturerMuteMap_;
     std::shared_mutex volumeMutex_ {};
     std::shared_mutex fadeoutMutex_ {};
     std::unordered_map<uint32_t, uint32_t> fadeoutState_{};

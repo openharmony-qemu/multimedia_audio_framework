@@ -611,7 +611,8 @@ void AudioVolume::SetDualStreamVolumeMute(uint32_t sessionId, bool isDualMuted)
         it->second->isDualMuted_ = isDualMuted;
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
         float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
-            it->second->isDualMuted_ || it->second->isVoipRendererMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
+            it->second->isDualMuted_ || it->second->isVoipRendererMuted_) ?
+            0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
@@ -679,22 +680,11 @@ void AudioVolume::SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t
         callerUid, appUid, streamId, muted);
 
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
-    auto &streamMap = voipRendererMuteMap_[appUid];
-    if (muted) {
-        streamMap[streamId].insert(callerUid);
-    } else {
-        streamMap[streamId].erase(callerUid);
-    }
-    auto setIt = streamMap.find(streamId);
-    bool shouldMute = (setIt != streamMap.end()) && !setIt->second.empty();
-    AUDIO_INFO_LOG("voip renderer shouldMute:%{public}d, caller set size:%{public}zu",
-        shouldMute, (setIt != streamMap.end()) ? setIt->second.size() : 0);
-
     for (auto &streamVolume : streamVolume_) {
         auto &stream = streamVolume.second;
         if (stream->GetAppUid() == appUid && stream->GetSessionId() == static_cast<uint32_t>(streamId)) {
             std::unique_lock<std::shared_mutex> factorsLock(stream->volumeFactorsMutex_);
-            stream->isVoipRendererMuted_ = shouldMute;
+            stream->isVoipRendererMuted_ = muted;
             float newTotal = (stream->isMuted_ || stream->isAppRingMuted_ || stream->nonInterruptMute_ ||
                 stream->isDualMuted_ || stream->isVoipRendererMuted_) ? 0.0f : stream->volume_ *
                 stream->duckFactor_ * stream->lowPowerFactor_ * stream->appVolume_ *
@@ -705,84 +695,6 @@ void AudioVolume::SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t
                 stream->GetSessionId(), stream->GetTotalVolume());
         }
     }
-
-    if (setIt != streamMap.end() && setIt->second.empty()) {
-        streamMap.erase(setIt);
-    }
-    if (streamMap.empty()) {
-        voipRendererMuteMap_.erase(appUid);
-    }
-}
-
-void AudioVolume::SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
-{
-    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
-    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
-        callerUid, appUid, streamId, muted);
-    auto &streamMap = voipCapturerMuteMap_[appUid];
-    if (muted) {
-        streamMap[streamId].insert(callerUid);
-    } else {
-        streamMap[streamId].erase(callerUid);
-    }
-    auto setIt = streamMap.find(streamId);
-    bool shouldMute = (setIt != streamMap.end()) && !setIt->second.empty();
-    AUDIO_INFO_LOG("voip capturer shouldMute:%{public}d, caller set size:%{public}zu",
-        shouldMute, (setIt != streamMap.end()) ? setIt->second.size() : 0);
-
-    if (setIt != streamMap.end() && setIt->second.empty()) {
-        streamMap.erase(setIt);
-    }
-    if (streamMap.empty()) {
-        voipCapturerMuteMap_.erase(appUid);
-    }
-}
-
-void AudioVolume::ClearVoipMuteByCallerUid(int32_t callerUid)
-{
-    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
-    AUDIO_INFO_LOG("clear voip mute for callerUid:%{public}d", callerUid);
-    auto clearFn = [this](auto &muteMap, int32_t uid, bool applyToStream) {
-        for (auto appIt = muteMap.begin(); appIt != muteMap.end();) {
-            auto &streamMap = appIt->second;
-            for (auto stIt = streamMap.begin(); stIt != streamMap.end();) {
-                if (stIt->second.erase(uid) > 0 && applyToStream) {
-                    bool shouldMute = !stIt->second.empty();
-                    int32_t appUid = appIt->first;
-                    int64_t streamId = stIt->first;
-                    for (auto &sv : streamVolume_) {
-                        auto &stream = sv.second;
-                        if (stream->GetAppUid() == appUid &&
-                            stream->GetSessionId() == static_cast<uint32_t>(streamId)) {
-                            std::unique_lock<std::shared_mutex> factorsLock(stream->volumeFactorsMutex_);
-                            stream->isVoipRendererMuted_ = shouldMute;
-                            float newTotal = (stream->isMuted_ || stream->isAppRingMuted_ ||
-                                stream->nonInterruptMute_ || stream->isDualMuted_ ||
-                                stream->isVoipRendererMuted_) ? 0.0f : stream->volume_ *
-                                stream->duckFactor_ * stream->lowPowerFactor_ * stream->appVolume_ *
-                                GetSystemAppVolumeEffective(*stream);
-                            factorsLock.unlock();
-                            stream->totalVolume_.store(newTotal, std::memory_order_release);
-                            AUDIO_INFO_LOG("caller died, reapply voip renderer mute, sessionId:%{public}u "
-                                "shouldMute:%{public}d", stream->GetSessionId(), shouldMute);
-                        }
-                    }
-                }
-                if (stIt->second.empty()) {
-                    stIt = streamMap.erase(stIt);
-                } else {
-                    ++stIt;
-                }
-            }
-            if (streamMap.empty()) {
-                appIt = muteMap.erase(appIt);
-            } else {
-                ++appIt;
-            }
-        }
-    };
-    clearFn(voipRendererMuteMap_, callerUid, true);
-    clearFn(voipCapturerMuteMap_, callerUid, false);
 }
 
 bool AudioVolume::SetAppRingMuted(int32_t appUid, bool isMuted)
@@ -1240,7 +1152,8 @@ void AudioVolume::HandleAppIndividualVolumeSettingChanged(bool appIndividualVolu
         auto &stream = streamVolume.second;
         std::unique_lock<std::shared_mutex> factorsLock(stream->volumeFactorsMutex_);
         float newTotal = (stream->isMuted_ || stream->isAppRingMuted_ || stream->nonInterruptMute_ ||
-            stream->isDualMuted_ || stream->isVoipRendererMuted_) ? 0.0f : stream->volume_ * stream->duckFactor_ * stream->lowPowerFactor_ *
+            stream->isDualMuted_ || stream->isVoipRendererMuted_) ?
+            0.0f : stream->volume_ * stream->duckFactor_ * stream->lowPowerFactor_ *
             stream->appVolume_ * GetSystemAppVolumeEffective(*stream);
         factorsLock.unlock();
         stream->totalVolume_.store(newTotal, std::memory_order_release);

@@ -1285,22 +1285,6 @@ int32_t AudioPolicyServer::SetVoipCapturerMute(int32_t appUid, int64_t streamId,
     return audioVolumeManager_.SetVoipCapturerMute(callerUid, appUid, streamId, muted);
 }
 
-namespace {
-class VoipMuteDeathRecipient : public IRemoteObject::DeathRecipient {
-public:
-    explicit VoipMuteDeathRecipient(std::function<void()> callback) : callback_(std::move(callback)) {}
-    ~VoipMuteDeathRecipient() = default;
-    void OnRemoteDied(const wptr<IRemoteObject> &remote) override
-    {
-        if (callback_) {
-            callback_();
-        }
-    }
-private:
-    std::function<void()> callback_;
-};
-} // namespace
-
 void AudioPolicyServer::RegisterVoipMuteDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj)
 {
     CHECK_AND_RETURN_LOG(callerObj != nullptr, "callerObj is null, skip voip mute death recipient");
@@ -1324,12 +1308,10 @@ void AudioPolicyServer::OnVoipMuteCallerDied(int32_t callerUid)
 {
     AUDIO_INFO_LOG("voip mute caller died, callerUid:%{public}d", callerUid);
     audioVolumeManager_.ClearVoipMuteByCallerUid(callerUid);
-    sptr<IRemoteObject::DeathRecipient> dr;
     {
         std::lock_guard<std::mutex> lock(voipMuteMutex_);
         auto it = voipMuteDeathRecipients_.find(callerUid);
         if (it != voipMuteDeathRecipients_.end()) {
-            dr = std::move(it->second);
             voipMuteDeathRecipients_.erase(it);
         }
     }

@@ -458,21 +458,60 @@ int32_t AudioAdapterManager::SetAppVolumeMuted(int32_t appUid, bool muted)
 
 int32_t AudioAdapterManager::SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
 {
-    AUDIO_INFO_LOG("appUid: %{public}d, streamId: %{public}ld, muted: %{public}d", appUid, streamId, muted);
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
+        callerUid, appUid, streamId, muted);
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
+
+    auto &streamMap = voipRendererMuteMap_[appUid];
+    if (muted) {
+        streamMap[streamId].insert(callerUid);
+    } else {
+        streamMap[streamId].erase(callerUid);
+    }
+    auto setIt = streamMap.find(streamId);
+    bool shouldMute = (setIt != streamMap.end()) && !setIt->second.empty();
+    AUDIO_INFO_LOG("voip renderer shouldMute:%{public}d, caller set size:%{public}zu",
+        shouldMute, (setIt != streamMap.end()) ? setIt->second.size() : 0);
+
+    if (setIt != streamMap.end() && setIt->second.empty()) {
+        streamMap.erase(setIt);
+    }
+    if (streamMap.empty()) {
+        voipRendererMuteMap_.erase(appUid);
+    }
+
     auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    audioVolume->SetVoipRendererMute(callerUid, appUid, streamId, muted);
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_OPERATION_FAILED, "audioVolume handle null");
+    audioVolume->SetVoipRendererMute(callerUid, appUid, streamId, shouldMute);
     return SUCCESS;
 }
 
 int32_t AudioAdapterManager::SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
 {
-    AUDIO_INFO_LOG("appUid: %{public}d, streamId: %{public}ld, muted: %{public}d", appUid, streamId, muted);
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
+        callerUid, appUid, streamId, muted);
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
-    auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    audioVolume->SetVoipCapturerMute(callerUid, appUid, streamId, muted);
+
+    auto &streamMap = voipCapturerMuteMap_[appUid];
+    if (muted) {
+        streamMap[streamId].insert(callerUid);
+    } else {
+        streamMap[streamId].erase(callerUid);
+    }
+    auto setIt = streamMap.find(streamId);
+    bool shouldMute = (setIt != streamMap.end()) && !setIt->second.empty();
+    AUDIO_INFO_LOG("voip capturer shouldMute:%{public}d, caller set size:%{public}zu",
+        shouldMute, (setIt != streamMap.end()) ? setIt->second.size() : 0);
+
+    if (setIt != streamMap.end() && setIt->second.empty()) {
+        streamMap.erase(setIt);
+    }
+    if (streamMap.empty()) {
+        voipCapturerMuteMap_.erase(appUid);
+    }
+
+    // To do: SetVoipCapturerMute(appUid, streamId, shouldMute)
+
     return SUCCESS;
 }
 
@@ -480,9 +519,73 @@ int32_t AudioAdapterManager::ClearVoipMuteByCallerUid(int32_t callerUid)
 {
     AUDIO_INFO_LOG("callerUid: %{public}d", callerUid);
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
-    auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    audioVolume->ClearVoipMuteByCallerUid(callerUid);
+
+    auto clearFn = [](auto &muteMap, int32_t uid, bool isRenderer) {
+        for (auto appIt = muteMap.begin(); appIt != muteMap.end();) {
+            auto &streamMap = appIt->second;
+            for (auto stIt = streamMap.begin(); stIt != streamMap.end();) {
+                if (stIt->second.erase(uid) == 0) {
+                    // The died uid is not found.
+                    ++stIt;
+                    continue;
+                }
+                // The died uid has been deleted. Reset the mute state for stream.
+                bool shouldMute = !stIt->second.empty();
+                int32_t appUid = appIt->first;
+                int64_t streamId = stIt->first;
+
+                if (isRenderer) {
+                    // for renderer.
+                    auto audioVolume = AudioVolume::GetInstance();
+                    (audioVolume == nullptr) ? : audioVolume->SetVoipRendererMute(uid, appUid, streamId, shouldMute);
+                } else {
+                    // To do: SetVoipCapturerMute(appUid, streamId, shouldMute)
+                }
+
+                if (stIt->second.empty()) {
+                    stIt = streamMap.erase(stIt);
+                } else {
+                    ++stIt;
+                }
+            }
+            if (streamMap.empty()) {
+                appIt = muteMap.erase(appIt);
+            } else {
+                ++appIt;
+            }
+        }
+    };
+    clearFn(voipRendererMuteMap_, callerUid, true);
+    clearFn(voipCapturerMuteMap_, callerUid, false);
+
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::ClearVoipMuteByStreamId(int64_t streamId)
+{
+    // When the stream id is released, need to clear mute data.
+    AUDIO_INFO_LOG("streamId: %{public}ld", streamId);
+    std::lock_guard<std::mutex> lock(audioVolumeMutex_);
+
+    auto clearFn = [](auto &muteMap, int64_t streamId) {
+        for (auto appIt = muteMap.begin(); appIt != muteMap.end();) {
+            auto &streamMap = appIt->second;
+            if (streamMap.erase(streamId) > 0) {
+                AUDIO_INFO_LOG("Finish to delete streamId: %{public}ld", streamId);
+            }
+            // The stream id has been released. No need to reset the mute state.
+            // To do: check capturer!
+
+            if (streamMap.empty()) {
+                appIt = muteMap.erase(appIt);
+            } else {
+                ++appIt;
+            }
+        }
+    };
+    clearFn(voipRendererMuteMap_, streamId);
+    clearFn(voipCapturerMuteMap_, streamId);
+
     return SUCCESS;
 }
 

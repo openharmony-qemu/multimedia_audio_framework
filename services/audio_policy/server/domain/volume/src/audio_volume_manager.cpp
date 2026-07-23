@@ -478,6 +478,11 @@ int32_t AudioVolumeManager::ClearVoipMuteByCallerUid(int32_t callerUid)
     return appVolumeManager_.ClearVoipMuteByCallerUid(callerUid);
 }
 
+int32_t AudioVolumeManager::ClearVoipMuteByStreamId(int64_t streamId);
+{
+    return appVolumeManager_.ClearVoipMuteByStreamId(streamId);
+}
+
 int32_t AudioVolumeManager::SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage)
 {
     auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(appUid);
