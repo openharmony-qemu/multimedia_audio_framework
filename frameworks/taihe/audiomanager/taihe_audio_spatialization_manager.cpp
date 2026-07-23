@@ -734,7 +734,7 @@ void AudioSpatializationManagerImpl::UnregisterPersonalizedSpatializationEnabled
     }
 }
 
-void AudioSpatializationManagerImpl::DownloadPersonalizedHRTF(HRTFDescriptor hrtfDescriptor)
+void AudioSpatializationManagerImpl::DownloadPersonalizedHRTFSync(HRTFDescriptor hrtfDescriptor)
 {
     AUDIO_INFO_LOG("DownloadPersonalizedHRTF");
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {

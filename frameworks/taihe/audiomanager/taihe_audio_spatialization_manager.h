@@ -44,7 +44,7 @@ public:
     bool IsHeadTrackingEnabled(AudioDeviceDescriptor deviceDescriptor);
     void SetPersonalizedSpatializationEnabledSync(AudioDeviceDescriptor deviceDescriptor, bool enabled);
     bool IsPersonalizedSpatializationEnabled(AudioDeviceDescriptor deviceDescriptor);
-    void DownloadPersonalizedHRTF(HRTFDescriptor hrtfDescriptor);
+    void DownloadPersonalizedHRTFSync(HRTFDescriptor hrtfDescriptor);
     void UpdateSpatialDeviceState(AudioSpatialDeviceState spatialDeviceState);
     void SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     AudioSpatializationSceneType GetSpatializationSceneType();
