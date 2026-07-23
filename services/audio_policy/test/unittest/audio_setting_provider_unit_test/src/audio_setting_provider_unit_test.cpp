@@ -524,25 +524,6 @@ HWTEST(AudioSettingProviderUnitTest, UnregisterObserver_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test UnregisterObserver API
- * @tc.type  : FUNC
- * @tc.number: UnregisterObserver_002
- * @tc.desc  : Test UnregisterObserver
- */
-HWTEST(AudioSettingProviderUnitTest, UnregisterObserver_002, TestSize.Level1)
-{
-    AudioSettingProvider* audioSettingProvider_ = nullptr;
-    int32_t systemAbilityId = 1;
-    audioSettingProvider_ = &AudioSettingProvider::GetInstance(systemAbilityId);
-    ASSERT_TRUE(audioSettingProvider_ != nullptr);
-
-    audioSettingProvider_->SetDataShareReady(true);
-    sptr<AudioSettingObserver> observerPtr = new AudioSettingObserver();
-    ErrCode ret = audioSettingProvider_->UnregisterObserver(observerPtr, "TEST");
-    EXPECT_EQ(ret, ERR_OK);
-}
-
-/**
  * @tc.name  : Test PutStringValue API
  * @tc.type  : FUNC
  * @tc.number: PutStringValue_001

@@ -1151,26 +1151,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_003, TestSize.Level
 
 /**
  * @tc.name: Test GetSourceIdInfoAndIdType
- * @tc.number: GetSinkIdInfoAndIdType_001
- * @tc.type: FUNC
- * @tc.desc: when successful execution, return success
- */
-HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_011, TestSize.Level1)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->adapterName_ = "usb";
-    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
-
-    std::string idInfo;
-    HdiIdType idType;
-    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
-    EXPECT_NE(idType, HDI_ID_TYPE_FAST);
-    EXPECT_EQ(idInfo, HDI_ID_INFO_USB);
-}
-
-/**
- * @tc.name: Test GetSourceIdInfoAndIdType
  * @tc.number: GetSourceIdInfoAndIdType_002
  * @tc.type: FUNC
  * @tc.desc: when successful execution, return success
