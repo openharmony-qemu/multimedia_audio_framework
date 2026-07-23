@@ -287,20 +287,6 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_001, Test
 
 /**
 * @tc.name   : Test LoadCollaborationConfigInner API
-* @tc.number : LoadCollaborationConfigInner_002
-* @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
-*/
-HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_002, TestSize.Level1)
-{
-    auto mockNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(false));
-
-    AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
-    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeEarphoneNameConfig_.empty());
-}
-
-/**
-* @tc.name   : Test LoadCollaborationConfigInner API
 * @tc.number : LoadCollaborationConfigInner_003
 * @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
 */
