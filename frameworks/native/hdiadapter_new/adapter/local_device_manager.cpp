@@ -493,6 +493,7 @@ static const std::unordered_map<DeviceType, std::pair<AudioPortPin, const char *
     {DEVICE_TYPE_BLUETOOTH_SCO, {PIN_OUT_BLUETOOTH_SCO, "pin_out_bluetooth_sco"}},
     {DEVICE_TYPE_BLUETOOTH_A2DP, {PIN_OUT_BLUETOOTH_A2DP, "pin_out_bluetooth_a2dp"}},
     {DEVICE_TYPE_HDMI, {PIN_OUT_HDMI, "pin_out_hdmi"}},
+    {DEVICE_TYPE_WIRED_MICIN, {PIN_IN_REAR_MIC, "pin_in_rear_mic"}},
     {DEVICE_TYPE_LINE_DIGITAL, {PIN_OUT_LINEOUT, "pin_out_lineout"}},
     {DEVICE_TYPE_NONE, {PIN_NONE, "pin_out_none"}}
 };
@@ -564,6 +565,10 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
         case DEVICE_TYPE_USB_ARM_HEADSET:
             source.ext.device.type = PIN_IN_USB_HEADSET;
             source.ext.device.desc = (char *)"pin_in_usb_headset";
+            break;
+        case DEVICE_TYPE_WIRED_MICIN:
+            source.ext.device.type = PIN_IN_REAR_MIC;
+            source.ext.device.desc = (char *)"pin_in_rear_mic";
             break;
         case DEVICE_TYPE_LINE_DIGITAL:
             source.ext.device.type = PIN_IN_LINEIN;
