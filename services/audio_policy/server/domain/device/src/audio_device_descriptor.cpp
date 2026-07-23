@@ -209,6 +209,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     pairDeviceDescriptor_ = nullptr;
     isScoRealConnected_ = false;
     isEnable_ = true;
+    isExclusiveMicScoUnavailable_ = false;
     exceptionFlag_ = false;
     isLowLatencyDevice_ = false;
     a2dpOffloadFlag_ = 0;
@@ -252,6 +253,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     pairDeviceDescriptor_ = nullptr;
     isScoRealConnected_ = false;
     isEnable_ = true;
+    isExclusiveMicScoUnavailable_ = false;
     exceptionFlag_ = false;
     isLowLatencyDevice_ = false;
     a2dpOffloadFlag_ = 0;
@@ -270,7 +272,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     visibleMode_ = GLOBAL_VISIBLE;
 }
 
-AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
+void AudioDeviceDescriptor::CopyBaseFields(const AudioDeviceDescriptor &deviceDescriptor)
 {
     deviceId_ = deviceDescriptor.deviceId_;
     deviceName_ = deviceDescriptor.deviceName_;
@@ -294,12 +296,15 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     pairDeviceDescriptor_ = deviceDescriptor.pairDeviceDescriptor_;
     isScoRealConnected_ = deviceDescriptor.isScoRealConnected_;
     isEnable_ = deviceDescriptor.isEnable_;
+    isExclusiveMicScoUnavailable_ = deviceDescriptor.isExclusiveMicScoUnavailable_;
     exceptionFlag_ = deviceDescriptor.exceptionFlag_;
     deviceUsage_ = deviceDescriptor.deviceUsage_;
-    // DeviceInfo
+}
+
+void AudioDeviceDescriptor::CopyExtendedFields(const AudioDeviceDescriptor &deviceDescriptor)
+{
     isLowLatencyDevice_ = deviceDescriptor.isLowLatencyDevice_;
     a2dpOffloadFlag_ = deviceDescriptor.a2dpOffloadFlag_;
-    // Other
     descriptorType_ = deviceDescriptor.descriptorType_;
     hasPair_ = deviceDescriptor.hasPair_;
     spatializationSupported_ = deviceDescriptor.spatializationSupported_;
@@ -311,7 +316,6 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     isUnidirectional_ = deviceDescriptor.isUnidirectional_;
     dmDeviceInfo_ = deviceDescriptor.dmDeviceInfo_;
     volumeBehavior_ = deviceDescriptor.volumeBehavior_;
-    deviceSupportMmap_ = deviceDescriptor.GetDeviceSupportMmap();
     glassesWearCount_ = deviceDescriptor.glassesWearCount_;
     hdPlaybackMode_ = deviceDescriptor.hdPlaybackMode_;
     isSupportRemoteMultichannel_ = deviceDescriptor.isSupportRemoteMultichannel_;
@@ -322,57 +326,17 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     visibleMode_ = deviceDescriptor.visibleMode_;
 }
 
+AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
+{
+    CopyBaseFields(deviceDescriptor);
+    CopyExtendedFields(deviceDescriptor);
+}
+
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "Error input parameter");
-    deviceId_ = deviceDescriptor->deviceId_;
-    deviceName_ = deviceDescriptor->deviceName_;
-    macAddress_ = deviceDescriptor->macAddress_;
-    deviceType_ = deviceDescriptor->deviceType_;
-    deviceRole_ = deviceDescriptor->deviceRole_;
-    audioStreamInfo_ = deviceDescriptor->audioStreamInfo_;
-    capabilities_ = deviceDescriptor->capabilities_;
-    channelMasks_ = deviceDescriptor->channelMasks_;
-    channelIndexMasks_ = deviceDescriptor->channelIndexMasks_;
-    volumeGroupId_ = deviceDescriptor->volumeGroupId_;
-    interruptGroupId_ = deviceDescriptor->interruptGroupId_;
-    networkId_ = deviceDescriptor->networkId_;
-    dmDeviceType_ = deviceDescriptor->dmDeviceType_;
-    hasStreamRunning_ = deviceDescriptor->hasStreamRunning_;
-    displayName_ = deviceDescriptor->displayName_;
-    model_ = deviceDescriptor->model_;
-    deviceCategory_ = deviceDescriptor->deviceCategory_;
-    connectTimeStamp_ = deviceDescriptor->connectTimeStamp_;
-    connectState_ = deviceDescriptor->connectState_;
-    pairDeviceDescriptor_ = deviceDescriptor->pairDeviceDescriptor_;
-    isScoRealConnected_ = deviceDescriptor->isScoRealConnected_;
-    isEnable_ = deviceDescriptor->isEnable_;
-    exceptionFlag_ = deviceDescriptor->exceptionFlag_;
-    deviceUsage_ = deviceDescriptor->deviceUsage_;
-    // DeviceInfo
-    isLowLatencyDevice_ = deviceDescriptor->isLowLatencyDevice_;
-    a2dpOffloadFlag_ = deviceDescriptor->a2dpOffloadFlag_;
-    // Other
-    descriptorType_ = deviceDescriptor->descriptorType_;
-    hasPair_ = deviceDescriptor->hasPair_;
-    spatializationSupported_ = deviceDescriptor->spatializationSupported_;
-    isVrSupported_ = deviceDescriptor->isVrSupported_;
-    isSupportWearDetectionEnable_ = deviceDescriptor->isSupportWearDetectionEnable_;
-    clientInfo_ = deviceDescriptor->clientInfo_;
-    modemCallSupported_ = deviceDescriptor->modemCallSupported_;
-    highQualityRecordingSupported_ = deviceDescriptor->highQualityRecordingSupported_;
-    isUnidirectional_ = deviceDescriptor->isUnidirectional_;
-    dmDeviceInfo_ = deviceDescriptor->dmDeviceInfo_;
-    volumeBehavior_ = deviceDescriptor->volumeBehavior_;
-    deviceSupportMmap_ = deviceDescriptor->GetDeviceSupportMmap();
-    glassesWearCount_ = deviceDescriptor->glassesWearCount_;
-    hdPlaybackMode_ = deviceDescriptor->hdPlaybackMode_;
-    isSupportRemoteMultichannel_ = deviceDescriptor->isSupportRemoteMultichannel_;
-    deviceTokenId_ = deviceDescriptor->deviceTokenId_;
-    privacyType_ = deviceDescriptor->GetDevicePrivacyType();
-    isSilent_ = deviceDescriptor->isSilent_;
-    isSupportMultiZone_ = deviceDescriptor->isSupportMultiZone_;
-    visibleMode_ = deviceDescriptor->visibleMode_;
+    CopyBaseFields(*deviceDescriptor);
+    CopyExtendedFields(*deviceDescriptor);
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
@@ -550,6 +514,7 @@ bool AudioDeviceDescriptor::MarshallingInnerdata(Parcel &parcel, int32_t devType
         parcel.WriteInt64(connectTimeStamp_) &&
         parcel.WriteBool(isScoRealConnected_) &&
         parcel.WriteBool(isEnable_) &&
+        parcel.WriteBool(isExclusiveMicScoUnavailable_) &&
         parcel.WriteInt32(mediaVolume_) &&
         parcel.WriteInt32(callVolume_) &&
         parcel.WriteBool(isLowLatencyDevice_) &&
@@ -600,8 +565,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
 
     return parcel.WriteInt32(static_cast<int32_t>(devType)) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceRole_)) &&
-        parcel.WriteInt32(devId) &&
-        parcel.WriteInt32(channelMasks_) &&
+        parcel.WriteInt32(devId) && parcel.WriteInt32(channelMasks_) &&
         parcel.WriteInt32(channelIndexMasks_) &&
         parcel.WriteString((!hasBTPermission && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : deviceName_) &&
@@ -621,6 +585,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteInt64(connectTimeStamp_) &&
         parcel.WriteBool(isScoRealConnected_) &&
         parcel.WriteBool(isEnable_) &&
+        parcel.WriteBool(isExclusiveMicScoUnavailable_) &&
         parcel.WriteInt32(mediaVolume_) &&
         parcel.WriteInt32(callVolume_) &&
         parcel.WriteBool(isLowLatencyDevice_) &&
@@ -665,6 +630,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     connectTimeStamp_ = parcel.ReadInt64();
     isScoRealConnected_ = parcel.ReadBool();
     isEnable_ = parcel.ReadBool();
+    isExclusiveMicScoUnavailable_ = parcel.ReadBool();
     mediaVolume_ = parcel.ReadInt32();
     callVolume_ = parcel.ReadInt32();
     isLowLatencyDevice_ = parcel.ReadBool();
@@ -703,11 +669,9 @@ AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
 void AudioDeviceDescriptor::MapInputDeviceType(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     for (int index = static_cast<int>(descs.size()) - 1; index >= 0; index--) {
-        if ((descs[index]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
-            descs[index]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP_IN) ||
-            descs[index]->deviceRole_ != INPUT_DEVICE) {
-            continue;
-        }
+        bool isTargetDevice = (descs[index]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN ||
+            (descs[index]->deviceType_ == DEVICE_TYPE_BT_SPP && descs[index]->isUnidirectional_));
+        CHECK_AND_CONTINUE(isTargetDevice);
         bool hasSame = false;
         for (auto& otherDesc : descs) {
             if (otherDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
@@ -901,12 +865,6 @@ DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVer
                 return DEVICE_TYPE_BLUETOOTH_SCO;
             }
             return DEVICE_TYPE_NEARLINK;
-        case DEVICE_TYPE_BT_SPP:
-        case DEVICE_TYPE_NEARLINK_PORT:
-            if (isUnidirectional_) {
-                return DEVICE_TYPE_BLUETOOTH_SCO;
-            }
-            return deviceType_;
         default:
             return deviceType_;
     }

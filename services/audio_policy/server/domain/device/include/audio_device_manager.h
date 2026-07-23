@@ -62,6 +62,7 @@ public:
     vector<shared_ptr<AudioDeviceDescriptor>> GetCapturePrivacyDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> GetCapturePublicDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> GetRecongnitionCapturePrivacyDevices();
+    shared_ptr<AudioDeviceDescriptor> GetSingleMicSppDevice();
     shared_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice(StreamUsage streamUsage);
     shared_ptr<AudioDeviceDescriptor> GetRenderDefaultDevice();
     shared_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevice();

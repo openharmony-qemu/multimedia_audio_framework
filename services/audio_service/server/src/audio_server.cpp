@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,6 +54,7 @@
 
 #include "audio_service.h"
 #include "core_service_handler.h"
+#include "iv_a_device_controller.h"
 #include "icore_service_provider_ipc.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/i_audio_render_sink.h"
@@ -60,6 +62,7 @@
 #include "util/id_handler.h"
 #include "manager/hdi_monitor.h"
 #include "audio_bundle_manager.h"
+#include "va_device_controller_registry.h"
 
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
@@ -120,6 +123,7 @@ const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
 const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 const char* MANAGE_AUDIO_CONFIG_PERMISSION = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const char* CAPTURE_PLAYBACK_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK_DOWNLINK";
+const char* MANAGE_AUDIO_ACCESSORY = "ohos.permission.MANAGE_AUDIO_ACCESSORY";
 static constexpr char WAKEUP_TRACK_FILE_PATCH[] = "/dev/audio_wakeup_track";
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_SYSTEM,
@@ -3636,6 +3640,31 @@ int32_t AudioServer::CreateHdiSourcePort(const std::string &deviceClass, const s
     if (!source->IsInited()) {
         source->Init(attr);
     }
+    return SUCCESS;
+}
+
+int32_t AudioServer::RegisterVADeviceController(const std::string &macAddress, const sptr<IRemoteObject> &controller)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission() ||
+        PermissionUtil::VerifyPermission(MANAGE_AUDIO_ACCESSORY, IPCSkeleton::GetCallingTokenID()),
+        ERR_PERMISSION_DENIED, "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(!macAddress.empty() && controller != nullptr, ERR_INVALID_PARAM,
+        "invalid va device controller");
+    sptr<IVADeviceController> vaController = iface_cast<IVADeviceController>(controller);
+    CHECK_AND_RETURN_RET_LOG(vaController != nullptr, ERR_INVALID_PARAM, "va controller is null");
+    VADeviceControllerRegistry::GetInstance().RegisterController(macAddress, vaController);
+    return SUCCESS;
+}
+ 
+int32_t AudioServer::UnregisterVADeviceController(const std::string &macAddress)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission() ||
+        PermissionUtil::VerifyPermission(MANAGE_AUDIO_ACCESSORY, IPCSkeleton::GetCallingTokenID()),
+        ERR_PERMISSION_DENIED, "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(!macAddress.empty(), ERR_INVALID_PARAM, "macAddress is empty");
+    VADeviceControllerRegistry::GetInstance().UnregisterController(macAddress);
     return SUCCESS;
 }
 

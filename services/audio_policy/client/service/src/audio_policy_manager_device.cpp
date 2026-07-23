@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -859,6 +860,18 @@ int32_t AudioPolicyManager::UnregisterPreferredDeviceSetCallback(
             SetClientCallbacksEnable(CALLBACK_PREFERRED_DEVICE_SET, false);
         }
     }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrapper> &vaBroker)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is null");
+
+    auto vaBrokerWrapper = std::make_shared<VADeviceBrokerWrapperImpl>();
+    CHECK_AND_RETURN_RET_LOG(vaBrokerWrapper != nullptr, ERROR, "vaBrokerWrapper is null");
+    vaBroker = vaBrokerWrapper;
+
     return SUCCESS;
 }
 } // namespace AudioStandard

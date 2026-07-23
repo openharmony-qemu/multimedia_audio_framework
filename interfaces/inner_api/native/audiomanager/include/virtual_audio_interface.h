@@ -52,6 +52,8 @@ public:
     virtual int32_t OnDevicesConnected(const VADevice &device,
                                        const std::shared_ptr<VADeviceControllerCallback> &controllerCallback) = 0;
     virtual int32_t OnDevicesDisconnected(const VADevice &device) = 0;
+    virtual int32_t SetAssociatedMacAddresses(const std::string &macAddress, bool isEnable) = 0;
+    virtual int32_t SetNoiseReductionMode(const VADevice &device, int32_t noiseReductionMode) = 0;
 };
 #endif
 }
