@@ -252,18 +252,21 @@ void AudioSuiteService::PostDelayUnloadTask()
     CHECK_AND_RETURN_LOG(unloadHandler_ != nullptr, "PostDelayUnloadTask: unloadHandler_ is null");
 
     unloadHandler_->RemoveTask(TASK_ID);
-    unloadHandler_->PostTask([this]() {
-        if (ShouldExtendUnloadTimer()) {
-            PostDelayUnloadTask();
-            return;
-        }
+    unloadHandler_->PostTask(
+        [this]() {
+            if (ShouldExtendUnloadTimer()) {
+                PostDelayUnloadTask();
+                return;
+            }
 
-        auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_LOG(samgrProxy != nullptr, "get samgr failed");
-        AUDIO_INFO_LOG("start UnloadSystemAbility");
-        int32_t ret = samgrProxy->UnloadSystemAbility(AUDIO_SUITE_SA_ID);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "unload system ability failed, ret=%{public}d", ret);
-    }, TASK_ID, DELAY_TIME);
+            auto samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+            CHECK_AND_RETURN_LOG(samgrProxy != nullptr, "get samgr failed");
+            AUDIO_INFO_LOG("start UnloadSystemAbility");
+            int32_t ret = samgrProxy->UnloadSystemAbility(AUDIO_SUITE_SA_ID);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "unload system ability failed, ret=%{public}d", ret);
+        },
+        TASK_ID,
+        DELAY_TIME);
 #endif
 }
 
