@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +22,7 @@
 #include "audio_policy_log.h"
 #include "audio_utils.h"
 #include "iservice_registry.h"
+#include "va_device_broker_wrapper_impl.h"
 #include "system_ability_definition.h"
 #include "sle_audio_operation_callback_stub_impl.h"
 
