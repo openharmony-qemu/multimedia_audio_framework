@@ -1249,7 +1249,8 @@ int32_t AudioPolicyServer::SetAdjustVolumeForZone(int32_t zoneId)
     return ret;
 }
 
-int32_t AudioPolicyServer::SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted)
+int32_t AudioPolicyServer::SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted,
+    const sptr<IRemoteObject> &callerObj)
 {
     CHECK_AND_RETURN_RET_LOG(VerifyPermission(MUTE_VOIP_PLAYBACK),
         ERR_PERMISSION_DENIED, "MUTE_VOIP_PLAYBACK permission check failed");
@@ -1259,13 +1260,15 @@ int32_t AudioPolicyServer::SetVoipRendererMute(int32_t appUid, int64_t streamId,
         "The streamId %{public}ld does not belong to appUid %{public}d!", streamId, appUid);
 
     int32_t callerUid = IPCSkeleton::GetCallingUid();
+    RegisterVoipMuteDeathRecipient(callerUid, callerObj);
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
         callerUid, appUid, streamId, muted);
     return audioVolumeManager_.SetVoipRendererMute(callerUid, appUid, streamId, muted);
 }
 
-int32_t AudioPolicyServer::SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted)
+int32_t AudioPolicyServer::SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted,
+    const sptr<IRemoteObject> &callerObj)
 {
     CHECK_AND_RETURN_RET_LOG(VerifyPermission(MUTE_VOIP_PLAYBACK),
         ERR_PERMISSION_DENIED, "MUTE_VOIP_PLAYBACK permission check failed");
@@ -1275,10 +1278,61 @@ int32_t AudioPolicyServer::SetVoipCapturerMute(int32_t appUid, int64_t streamId,
         "The streamId %{public}ld does not belong to appUid %{public}d!", streamId, appUid);
 
     int32_t callerUid = IPCSkeleton::GetCallingUid();
+    RegisterVoipMuteDeathRecipient(callerUid, callerObj);
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
         callerUid, appUid, streamId, muted);
     return audioVolumeManager_.SetVoipCapturerMute(callerUid, appUid, streamId, muted);
+}
+
+namespace {
+class VoipMuteDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    explicit VoipMuteDeathRecipient(std::function<void()> callback) : callback_(std::move(callback)) {}
+    ~VoipMuteDeathRecipient() = default;
+    void OnRemoteDied(const wptr<IRemoteObject> &remote) override
+    {
+        if (callback_) {
+            callback_();
+        }
+    }
+private:
+    std::function<void()> callback_;
+};
+} // namespace
+
+void AudioPolicyServer::RegisterVoipMuteDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj)
+{
+    CHECK_AND_RETURN_LOG(callerObj != nullptr, "callerObj is null, skip voip mute death recipient");
+    std::lock_guard<std::mutex> lock(voipMuteMutex_);
+    if (voipMuteDeathRecipients_.find(callerUid) != voipMuteDeathRecipients_.end()) {
+        AUDIO_DEBUG_LOG("voip mute death recipient already registered for callerUid:%{public}d", callerUid);
+        return;
+    }
+    sptr<IRemoteObject::DeathRecipient> dr = new(std::nothrow) VoipMuteDeathRecipient(
+        [this, callerUid]() { this->OnVoipMuteCallerDied(callerUid); });
+    CHECK_AND_RETURN_LOG(dr != nullptr, "create VoipMuteDeathRecipient failed");
+    if (!callerObj->AddDeathRecipient(dr)) {
+        AUDIO_WARNING_LOG("AddDeathRecipient failed for callerUid:%{public}d", callerUid);
+        return;
+    }
+    voipMuteDeathRecipients_[callerUid] = dr;
+    AUDIO_INFO_LOG("register voip mute death recipient for callerUid:%{public}d", callerUid);
+}
+
+void AudioPolicyServer::OnVoipMuteCallerDied(int32_t callerUid)
+{
+    AUDIO_INFO_LOG("voip mute caller died, callerUid:%{public}d", callerUid);
+    audioVolumeManager_.ClearVoipMuteByCallerUid(callerUid);
+    sptr<IRemoteObject::DeathRecipient> dr;
+    {
+        std::lock_guard<std::mutex> lock(voipMuteMutex_);
+        auto it = voipMuteDeathRecipients_.find(callerUid);
+        if (it != voipMuteDeathRecipients_.end()) {
+            dr = std::move(it->second);
+            voipMuteDeathRecipients_.erase(it);
+        }
+    }
 }
 
 // LCOV_EXCL_START

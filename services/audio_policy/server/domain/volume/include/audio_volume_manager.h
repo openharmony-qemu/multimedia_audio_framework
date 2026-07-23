@@ -137,6 +137,7 @@ public:
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
     int32_t SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
     int32_t SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
+    int32_t ClearVoipMuteByCallerUid(int32_t callerUid);
     int32_t SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage);
     int32_t GetSystemAppVolumePercentage(int32_t appUid, int32_t &volumePercentage);
     int32_t SetSystemAppVolumePercentageWithCallback(int32_t appUid, int32_t volumePercentage);

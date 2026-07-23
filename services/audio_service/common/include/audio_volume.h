@@ -73,6 +73,7 @@ public:
     bool SetAppRingMuted(int32_t appUid, bool isMuted);
     void SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
     void SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
+    void ClearVoipMuteByCallerUid(int32_t callerUid);
 
     //pipe volume
     void SetPipeVolume(PipeVolume &pipeVolume);

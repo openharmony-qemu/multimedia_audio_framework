@@ -738,6 +738,53 @@ void AudioVolume::SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t
     }
 }
 
+void AudioVolume::ClearVoipMuteByCallerUid(int32_t callerUid)
+{
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    AUDIO_INFO_LOG("clear voip mute for callerUid:%{public}d", callerUid);
+    auto clearFn = [this](auto &muteMap, int32_t uid, bool applyToStream) {
+        for (auto appIt = muteMap.begin(); appIt != muteMap.end();) {
+            auto &streamMap = appIt->second;
+            for (auto stIt = streamMap.begin(); stIt != streamMap.end();) {
+                if (stIt->second.erase(uid) > 0 && applyToStream) {
+                    bool shouldMute = !stIt->second.empty();
+                    int32_t appUid = appIt->first;
+                    int64_t streamId = stIt->first;
+                    for (auto &sv : streamVolume_) {
+                        auto &stream = sv.second;
+                        if (stream->GetAppUid() == appUid &&
+                            stream->GetSessionId() == static_cast<uint32_t>(streamId)) {
+                            std::unique_lock<std::shared_mutex> factorsLock(stream->volumeFactorsMutex_);
+                            stream->isVoipRendererMuted_ = shouldMute;
+                            float newTotal = (stream->isMuted_ || stream->isAppRingMuted_ ||
+                                stream->nonInterruptMute_ || stream->isDualMuted_ ||
+                                stream->isVoipRendererMuted_) ? 0.0f : stream->volume_ *
+                                stream->duckFactor_ * stream->lowPowerFactor_ * stream->appVolume_ *
+                                GetSystemAppVolumeEffective(*stream);
+                            factorsLock.unlock();
+                            stream->totalVolume_.store(newTotal, std::memory_order_release);
+                            AUDIO_INFO_LOG("caller died, reapply voip renderer mute, sessionId:%{public}u "
+                                "shouldMute:%{public}d", stream->GetSessionId(), shouldMute);
+                        }
+                    }
+                }
+                if (stIt->second.empty()) {
+                    stIt = streamMap.erase(stIt);
+                } else {
+                    ++stIt;
+                }
+            }
+            if (streamMap.empty()) {
+                appIt = muteMap.erase(appIt);
+            } else {
+                ++appIt;
+            }
+        }
+    };
+    clearFn(voipRendererMuteMap_, callerUid, true);
+    clearFn(voipCapturerMuteMap_, callerUid, false);
+}
+
 bool AudioVolume::SetAppRingMuted(int32_t appUid, bool isMuted)
 {
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);

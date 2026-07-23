@@ -158,6 +158,12 @@ public:
 
     /**
      * @brief Set the mute state of the VoIP renderer for the specified uid and streamId.
+     * If there are multiple callers setting muted states for the same uid and streamId,
+     * only when all callers cancel muted state the VoIP renderer stream will be truly unmuted.
+     * When the application abnormally exits, the application releases the audio stream and
+     * restarts it, or the audio service abnormally exits and restarts, the mute state set
+     * for this audio stream will automatically become invalid. In these cases, you need to
+     * call this API again to apply the mute state.
      * @param appUid The UID of the app.
      * @param streamId The stream ID of the VoIP renderer.
      * @param muted Set to true to mute the VoIP renderer, false to unmute.
@@ -168,6 +174,12 @@ public:
 
     /**
      * @brief Set the mute state of the VoIP capturer for the specified app and stream.
+     * If there are multiple callers setting muted states for the same uid and streamId,
+     * only when all callers cancel muted state the VoIP renderer stream will be truly unmuted.
+     * When the application abnormally exits, the application releases the audio stream and
+     * restarts it, or the audio service abnormally exits and restarts, the mute state set
+     * for this audio stream will automatically become invalid. In these cases, you need to
+     * call this API again to apply the mute state.
      * @param appUid The UID of the app.
      * @param streamId The stream ID of the VoIP capturer.
      * @param muted Set to true to mute the VoIP capturer, false to unmute.

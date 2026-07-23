@@ -88,6 +88,8 @@ public:
 
     virtual int32_t SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted) = 0;
 
+    virtual int32_t ClearVoipMuteByCallerUid(int32_t callerUid) = 0;
+
     virtual int32_t GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
 
     virtual int32_t SetSystemAppVolumeLevel(int32_t appUid, int32_t volumeLevel, DeviceType deviceType) = 0;
