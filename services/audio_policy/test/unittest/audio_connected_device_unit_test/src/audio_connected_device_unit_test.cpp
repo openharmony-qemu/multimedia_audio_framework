@@ -543,7 +543,13 @@ HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_025, TestSiz
     audioConnectedDevice->connectedDevices_.push_back(desc4);
 
     audioConnectedDevice->UpdateSpatializationSupported(encryAddress, spatializationSupported);
-    EXPECT_NE(audioConnectedDevice, nullptr);
+    // NEARLINK + 地址匹配 + 值不同 -> 命中新增的 DEVICE_TYPE_NEARLINK 分支并被更新(本次修复核心路径)
+    EXPECT_EQ(desc2->spatializationSupported_, spatializationSupported);
+    // NEARLINK + 地址匹配 + 值相同 -> 不更新, 保持原值
+    EXPECT_EQ(desc1->spatializationSupported_, spatializationSupported);
+    // 类型不匹配(SCO) -> 不更新
+    EXPECT_EQ(desc3->spatializationSupported_, spatializationSupported);
+    EXPECT_EQ(desc4->spatializationSupported_, false);
 }
 
 /**
