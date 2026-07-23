@@ -2495,12 +2495,12 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
 }
 
 bool AudioInterruptService::AudioFocusInfoListRemovalCondition(const AudioInterrupt &audioInterrupt,
-    const std::pair<AudioInterrupt, AudioFocuState> &audioFocus)
+    const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo)
 {
-    return audioFocus.first.streamId == audioInterrupt.streamId ||
-        ((audioFocus.first.pid == audioInterrupt.pid || 
-          audioFocus.first.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION) && 
-        audioFocus.second == PLACEHOLDER && audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INVALID);
+    return audioFocusInfo.first.streamId == audioInterrupt.streamId ||
+        ((audioFocusInfo.first.pid == audioInterrupt.pid ||
+          audioFocusInfo.first.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION) &&
+        audioFocusInfo.second == PLACEHOLDER && audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INVALID);
 }
 
 bool AudioInterruptService::IsAudioSourceConcurrency(const SourceType &existSourceType,
