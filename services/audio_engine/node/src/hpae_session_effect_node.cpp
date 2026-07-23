@@ -279,12 +279,9 @@ void HpaeSessionEffectNode::ReconfigRawBypassBuffers(const AudioEffectConfig &co
         config.inputCfg.samplingRate : static_cast<uint32_t>(GetSampleRate());
     uint32_t channels = config.inputCfg.channels != 0 ? config.inputCfg.channels : GetChannelCount();
     uint32_t frameLen = static_cast<uint32_t>(GetFrameLen());
-    if (samplingRate == 0 || channels == 0 || frameLen == 0) {
-        AUDIO_WARNING_LOG("ReconfigRawBypassBuffers skipped: samplingRate=%{public}u channels=%{public}u "
-            "frameLen=%{public}u", samplingRate, channels, frameLen);
-        return;
-    }
-
+    CHECK_AND_RETURN_LOG(samplingRate != 0 && channels != 0 && frameLen != 0 ,
+        "ReconfigRawBypassBuffers skipped: samplingRate=%{public}u channels=%{public}u "
+        "frameLen=%{public}u", samplingRate, channels, frameLen);
     size_t frameBytes = 0;
     uint32_t rawFrames = RAW_BYPASS_FIFO_MIN_FRAMES;
     if (GetPcmByteLen(frameLen, channels, frameBytes) && frameBytes != 0) {
@@ -328,9 +325,7 @@ bool HpaeSessionEffectNode::WaitRawBypassBufferWritable()
 
 bool HpaeSessionEffectNode::PushRawBypassBuffer(HpaePcmBuffer *buf)
 {
-    if (buf == nullptr || !buf->IsValid()) {
-        return false;
-    }
+    CHECK_AND_RETURN_RET(buf != nullptr && buf->IsValid(), false);
     bool pushed = false;
     {
         std::lock_guard<std::mutex> lock(rawBypassMutex_);
@@ -349,9 +344,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::PopRawBypassBuffer()
     bool popped = false;
     {
         std::unique_lock<std::mutex> lock(rawBypassMutex_, std::defer_lock);
-        if (!lock.try_lock()) {
-            return nullptr;
-        }
+        CHECK_AND_RETURN_RET(lock.try_lock(), nullptr);
         if (rawBypassBuffer_.GetCurFrames() > 0) {
             popped = rawBypassBuffer_.GetFrameData(rawBypassOutputData_);
             rawBypassOutputData_.SetBufferValid(true);
@@ -371,9 +364,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::PopRawBypassBuffer()
 bool HpaeSessionEffectNode::WriteRawBypassOutput()
 {
     HpaePcmBuffer *rawOut = PopRawBypassBuffer();
-    if (rawOut == nullptr) {
-        return false;
-    }
+    CHECK_AND_RETURN_RET(rawOut != nullptr, false);
     outputStream_.WriteDataToOutput(ProcessRawBypassOutput(rawOut));
     return true;
 }
@@ -680,9 +671,7 @@ void HpaeSessionEffectNode::PreheatThreadFunc()
             AUDIO_WARNING_LOG("PreheatThread exiting: effectInstance is null");
             break;
         }
-        if (!WaitRawBypassBufferWritable()) {
-            continue;
-        }
+        CHECK_AND_CONTINUE(WaitRawBypassBufferWritable());
 
         std::vector<HpaePcmBuffer *> &upstreamData = inputStream_.ReadPreOutputData();
 
@@ -766,21 +755,15 @@ void HpaeSessionEffectNode::StopPreheatThread()
 
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    if (inputs.empty()) {
-        return &silenceData_;
-    }
+    CHECK_AND_RETURN_RET(!inputs.empty(), &silenceData_);
     return ProcessInterceptingRaw(inputs[0], true);
 }
 
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessRawBypassOutput(HpaePcmBuffer *rawBuf)
 {
-    if (rawBuf == nullptr) {
-        return &silenceData_;
-    }
+    CHECK_AND_RETURN_RET(rawBuf != nullptr, &silenceData_);
     size_t byteLen = 0;
-    if (!GetPcmByteLen(rawBuf->GetFrameLen(), audioConfig_.inputCfg.channels, byteLen)) {
-        return &silenceData_;
-    }
+    CHECK_AND_RETURN_RET(GetPcmByteLen(rawBuf->GetFrameLen(), audioConfig_.inputCfg.channels, byteLen), &silenceData_);
     rawBuf->SetBufferValid(true);
     rawBuf->SetBufferSilence(false);
     AccountOutput(byteLen);
@@ -800,27 +783,20 @@ void HpaeSessionEffectNode::ConsumePendingRawBypassBlocks(size_t skipRequest, ui
     size_t current = pendingRawBypassBlocks_.load(std::memory_order_relaxed);
     while (current > 0) {
         size_t next = current > consumed ? current - consumed : 0;
-        if (pendingRawBypassBlocks_.compare_exchange_weak(current, next, std::memory_order_relaxed)) {
-            return;
-        }
+        CHECK_AND_RETURN(!pendingRawBypassBlocks_.compare_exchange_weak(current, next, std::memory_order_relaxed));
     }
 }
 
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessInterceptingRaw(HpaePcmBuffer *inputBuf, bool feedInput)
 {
-    if (inputBuf == nullptr || effectInstance_ == nullptr) {
-        return &silenceData_;
-    }
+    CHECK_AND_RETURN_RET(inputBuf != nullptr && effectInstance_ != nullptr, &silenceData_);
     size_t channels = audioConfig_.inputCfg.channels;
     size_t byteLen = 0;
-    if (!GetPcmByteLen(inputBuf->GetFrameLen(), channels, byteLen)) {
-        return &silenceData_;
-    }
+    CHECK_AND_RETURN_RET(!GetPcmByteLen(inputBuf->GetFrameLen(), channels, byteLen), &silenceData_);
 
     size_t sampleCount = static_cast<size_t>(inputBuf->GetFrameLen()) * channels;
-    if (interceptingRawData_.size() < sampleCount) {
-        return &silenceData_;
-    }
+    CHECK_AND_RETURN_RET(interceptingRawData_.size() >= sampleCount, &silenceData_);
+
     std::copy_n(inputBuf->GetPcmDataBuffer(), sampleCount, interceptingRawData_.data());
     if (feedInput) {
         FeedInputFromBuffer(inputBuf);
