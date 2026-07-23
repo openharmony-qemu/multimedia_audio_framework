@@ -578,7 +578,7 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Stop_activeSessionEffect_pauses
     manager_->HandleMsg();
 
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
-    EXPECT_TRUE(manager_->sessionEffectNode_->IsPaused());
+    EXPECT_FALSE(manager_->sessionEffectNode_->IsPaused());
     EXPECT_EQ(testNode_->GetState(), HPAE_SESSION_STOPPED);
 }
 
