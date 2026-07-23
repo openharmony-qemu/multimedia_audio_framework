@@ -855,7 +855,6 @@ int32_t AudioSuiteEngine::SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_
             managerCallback_.OnSetSystemNodeParam(ret);
             return;
         }
-        managerCallback_.OnSetSystemNodeParam(SUCCESS);
     };
 
     SendRequest(request, __func__);
@@ -892,7 +891,6 @@ int32_t AudioSuiteEngine::GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_
             managerCallback_.OnGetSystemNodeParam(ret);
             return;
         }
-        managerCallback_.OnGetSystemNodeParam(SUCCESS);
     };
 
     SendRequest(request, __func__);
@@ -929,7 +927,6 @@ int32_t AudioSuiteEngine::GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSi
             managerCallback_.OnGetSystemNodeInOutSize(ret);
             return;
         }
-        managerCallback_.OnGetSystemNodeInOutSize(SUCCESS);
     };
 
     SendRequest(request, __func__);

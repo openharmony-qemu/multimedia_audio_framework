@@ -304,7 +304,7 @@ int32_t OHAudioSuiteDownloadManager::UnregisterDownloadStatusCallback(const OH_A
 {
     std::lock_guard<std::mutex> lock(downloadCbMutex_);
     CHECK_AND_RETURN_RET_LOG(downloadStatusCallback_ != nullptr, SUCCESS, "AudioSuiteDownload not register callback");
-    CHECK_AND_RETURN_RET_LOG(downloadStatusCallback_->GetCallback() != callback, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(downloadStatusCallback_->GetCallback() == callback, ERR_INVALID_PARAM,
         "AudioSuiteDownload UnregisterDownloadStatusCallback failed, not same callback");
 
     int32_t ret = AudioSuite::AudioSuiteDownloadManager::GetInstance().UnregisterDownloadStatusCallback();
