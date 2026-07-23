@@ -2499,7 +2499,7 @@ bool AudioInterruptService::AudioFocusInfoListRemovalCondition(const AudioInterr
 {
     return audioFocusInfo.first.streamId == audioInterrupt.streamId ||
         ((audioFocusInfo.first.pid == audioInterrupt.pid ||
-          audioFocusInfo.first.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION) &&
+          audioFocusInfo.first.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION) &&
         audioFocusInfo.second == PLACEHOLDER && audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INVALID);
 }
 
