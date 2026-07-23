@@ -57,7 +57,7 @@ public:
     int32_t GetMute(bool &isMute) override;
 
     int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
-    float GetMaxAmplitude(void) override;
+    bool GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude) override;
 
     int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false,
         int32_t phoneCallSceneType = SCENE_TYPE_INVALID) override;
@@ -106,6 +106,7 @@ private:
     std::mutex statusMutex_;
     uint32_t hdiCaptureId_ = 0;
     std::string adapterNameCase_ = "bt_hdap";
+    std::string sourceName_ = "";
     BtAudioCapture *audioCapture_ = nullptr;
     // for signal detect
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;

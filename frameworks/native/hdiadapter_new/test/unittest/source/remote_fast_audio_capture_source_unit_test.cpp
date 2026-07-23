@@ -169,5 +169,11 @@ HWTEST_F(RemoteFastAudioCaptureSourceUnitTest, RemoteFastSourceUnitTest_005, Tes
     EXPECT_EQ(ret, SUCCESS);
 }
 
+HWTEST_F(RemoteFastAudioCaptureSourceUnitTest, RemoteFastSourceUnitTest_006, TestSize.Level1)
+{
+    auto source = std::make_shared<RemoteFastAudioCaptureSource>("test");
+    float maxAmplitude = 0.0f;
+    EXPECT_FALSE(source->GetMaxAmplitude("test", maxAmplitude));
+}
 } // namespace AudioStandard
 } // namespace OHOS

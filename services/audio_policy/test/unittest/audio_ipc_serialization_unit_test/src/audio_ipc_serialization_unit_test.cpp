@@ -379,10 +379,6 @@ HWTEST(AudioIpcSerializationUnitTest, IAudioSourceAttr_001, TestSize.Level1)
     attr.sourceType = TEST_VALUE_1;
     attr.channelLayout = TEST_VALUE_3;
     attr.audioStreamFlag = TEST_VALUE_4;
-    attr.hasEcConfig = false;
-    attr.formatEc = static_cast<AudioSampleFormat>(TEST_VALUE_2);;
-    attr.sampleRateEc = TEST_VALUE_4;
-    attr.channelEc = TEST_VALUE_1;
 
     EXPECT_TRUE(attr.Marshalling(parcel));
     auto newAttr = std::shared_ptr<IAudioSourceAttr>(IAudioSourceAttr::Unmarshalling(parcel));
@@ -401,10 +397,43 @@ HWTEST(AudioIpcSerializationUnitTest, IAudioSourceAttr_001, TestSize.Level1)
     EXPECT_TRUE(newAttr->sourceType == attr.sourceType);
     EXPECT_TRUE(newAttr->channelLayout == attr.channelLayout);
     EXPECT_TRUE(newAttr->audioStreamFlag == attr.audioStreamFlag);
-    EXPECT_TRUE(newAttr->hasEcConfig == attr.hasEcConfig);
-    EXPECT_TRUE(newAttr->formatEc == attr.formatEc);
-    EXPECT_TRUE(newAttr->sampleRateEc == attr.sampleRateEc);
-    EXPECT_TRUE(newAttr->channelEc == attr.channelEc);
+}
+
+/**
+ * @tc.name  : Test IAudioSourceAttr sourceName.
+ * @tc.number: IAudioSourceAttr_002
+ * @tc.desc  : Test IAudioSourceAttr sourceName serialization.
+ */
+HWTEST(AudioIpcSerializationUnitTest, IAudioSourceAttr_002, TestSize.Level1)
+{
+    Parcel parcel;
+    IAudioSourceAttr attr = {};
+    attr.sourceName = TEST_STRING_VALUE_3;
+    attr.macAddress = TEST_STRING_VALUE_4;
+    attr.hasEcConfig = true;
+    attr.formatEc = static_cast<AudioSampleFormat>(TEST_VALUE_2);
+    attr.sampleRateEc = TEST_VALUE_4;
+    attr.channelEc = TEST_VALUE_1;
+    attr.hdiSourceType = TEST_STRING_VALUE_2;
+    attr.formatMicIn = static_cast<AudioSampleFormat>(TEST_VALUE_1);
+    attr.sampleRateMicIn = TEST_VALUE_2;
+    attr.channelMicIn = TEST_VALUE_3;
+    attr.routeFlag = TEST_VALUE_4;
+
+    EXPECT_TRUE(attr.Marshalling(parcel));
+    auto newAttr = std::shared_ptr<IAudioSourceAttr>(IAudioSourceAttr::Unmarshalling(parcel));
+    ASSERT_NE(newAttr, nullptr);
+    EXPECT_EQ(newAttr->sourceName, attr.sourceName);
+    EXPECT_EQ(newAttr->macAddress, attr.macAddress);
+    EXPECT_EQ(newAttr->hasEcConfig, attr.hasEcConfig);
+    EXPECT_EQ(newAttr->formatEc, attr.formatEc);
+    EXPECT_EQ(newAttr->sampleRateEc, attr.sampleRateEc);
+    EXPECT_EQ(newAttr->channelEc, attr.channelEc);
+    EXPECT_EQ(newAttr->hdiSourceType, attr.hdiSourceType);
+    EXPECT_EQ(newAttr->formatMicIn, attr.formatMicIn);
+    EXPECT_EQ(newAttr->sampleRateMicIn, attr.sampleRateMicIn);
+    EXPECT_EQ(newAttr->channelMicIn, attr.channelMicIn);
+    EXPECT_EQ(newAttr->routeFlag, attr.routeFlag);
 }
 
 /**

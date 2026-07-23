@@ -3173,21 +3173,28 @@ int32_t AudioServer::GetMaxAmplitude(bool isOutputDevice, const std::string &dev
     AUDIO_DEBUG_LOG("GetMaxAmplitude in audio server deviceClass %{public}s", deviceClass.c_str());
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "GetMaxAmplitude refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(isOutputDevice, ERR_NOT_SUPPORTED, "Input device use GetInputMaxAmplitude");
 
     float fastMaxAmplitude = AudioService::GetInstance()->GetMaxAmplitude(isOutputDevice);
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
-    if (isOutputDevice) {
-        uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass);
-        sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
-        if (sink != nullptr) {
-            float normalMaxAmplitude = sink->GetMaxAmplitude();
-            maxAmplitude = (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
-        }
-    } else {
-        // get normal source maxAmplitude
-        maxAmplitude = HdiAdapterManager::GetInstance().GetNormalSourceMaxAmplitude();
-        maxAmplitude = (maxAmplitude > fastMaxAmplitude) ? maxAmplitude : fastMaxAmplitude;
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass);
+    sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
+    if (sink != nullptr) {
+        float normalMaxAmplitude = sink->GetMaxAmplitude();
+        maxAmplitude = (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
     }
+
+    return SUCCESS;
+}
+
+int32_t AudioServer::GetInputMaxAmplitude(const std::string &sourceName, float &maxAmplitude)
+{
+    maxAmplitude = 0;
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    AUDIO_DEBUG_LOG("GetInputMaxAmplitude in audio server sourceName %{public}s", sourceName.c_str());
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "GetInputMaxAmplitude refused for %{public}d", callingUid);
+    maxAmplitude = HdiAdapterManager::GetInstance().GetCaptureSourceMaxAmplitude(sourceName);
 
     return SUCCESS;
 }

@@ -197,6 +197,7 @@ int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
     if (adapterNameCase_ == "" && halName_ == "primary") {
         adapterNameCase_ = "primary";
     }
+    sourceName_ = attr.sourceName;
     openMic_ = attr_.openMicSpeaker;
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
 
@@ -735,11 +736,15 @@ int32_t AudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &t
     return ret;
 }
 
-float AudioCaptureSource::GetMaxAmplitude(void)
+bool AudioCaptureSource::GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude)
 {
+    if (sourceName != sourceName_ || !IsStarted()) {
+        return false;
+    }
     lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
     startUpdate_ = true;
-    return maxAmplitude_;
+    normalMaxAmplitude = maxAmplitude_;
+    return true;
 }
 
 int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,

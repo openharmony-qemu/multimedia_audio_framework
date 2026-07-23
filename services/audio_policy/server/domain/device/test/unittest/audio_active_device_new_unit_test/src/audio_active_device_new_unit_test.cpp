@@ -90,6 +90,42 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, GetMaxAmplitude_002, TestSize.Level4)
 
 /**
 * @tc.name  : Test AudioActiveDevice.
+* @tc.number: AudioActiveDeviceNewUnitTest_GetMaxAmplitude_003.
+* @tc.desc  : Test GetMaxAmplitude input-device branch with current input device id.
+*/
+HWTEST_F(AudioActiveDeviceNewUnitTest, GetMaxAmplitude_003, TestSize.Level4)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    desc->deviceId_ = 3;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, {desc});
+
+    AudioInterrupt audioInterrupt;
+    float result = audioActiveDevice->GetMaxAmplitude(desc->deviceId_, audioInterrupt);
+    EXPECT_FLOAT_EQ(result, 0.0f);
+}
+
+/**
+* @tc.name  : Test AudioActiveDevice.
+* @tc.number: AudioActiveDeviceNewUnitTest_GetMaxAmplitude_004.
+* @tc.desc  : Test GetMaxAmplitude output-device branch with current output device id.
+*/
+HWTEST_F(AudioActiveDeviceNewUnitTest, GetMaxAmplitude_004, TestSize.Level4)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    desc->deviceId_ = 4;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+
+    AudioInterrupt audioInterrupt;
+    float result = audioActiveDevice->GetMaxAmplitude(desc->deviceId_, audioInterrupt);
+    EXPECT_FLOAT_EQ(result, 0.0f);
+}
+
+/**
+* @tc.name  : Test AudioActiveDevice.
 * @tc.number: AudioActiveDeviceNewUnitTest_NotifyUserSelectionEventToBt_001.
 * @tc.desc  : Test NotifyUserSelectionEventToBt.
 */

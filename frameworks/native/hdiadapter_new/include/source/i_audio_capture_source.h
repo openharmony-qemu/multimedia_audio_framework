@@ -61,7 +61,7 @@ public:
     virtual int32_t GetMute(bool &isMute) = 0;
 
     virtual int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
-    virtual float GetMaxAmplitude(void) = 0;
+    virtual bool GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude) = 0;
 
     virtual int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false,
         int32_t phoneCallSceneType = SCENE_TYPE_INVALID) NOT_SUPPORT_RET

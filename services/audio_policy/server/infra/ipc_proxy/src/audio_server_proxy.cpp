@@ -95,6 +95,18 @@ float AudioServerProxy::GetMaxAmplitudeProxy(bool flag, std::string portName, So
     return maxAmplitude;
 }
 
+float AudioServerProxy::GetInputMaxAmplitudeProxy(std::string sourceName)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    float maxAmplitude = 0;
+    gsp->GetInputMaxAmplitude(sourceName, maxAmplitude);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return maxAmplitude;
+}
+
 int32_t AudioServerProxy::GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
