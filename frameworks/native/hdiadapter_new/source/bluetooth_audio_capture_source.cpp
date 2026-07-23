@@ -68,6 +68,7 @@ int32_t BluetoothAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 
     std::lock_guard<std::mutex> lock(statusMutex_);
     attr_ = attr;
+    sourceName_ = attr_.sourceName;
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
 
     int32_t ret = CreateCapture();
@@ -336,11 +337,15 @@ int32_t BluetoothAudioCaptureSource::GetPresentationPosition(uint64_t &frames, i
     return ERR_NOT_SUPPORTED;
 }
 
-float BluetoothAudioCaptureSource::GetMaxAmplitude(void)
+bool BluetoothAudioCaptureSource::GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude)
 {
+    if (sourceName != sourceName_ || !IsStarted()) {
+        return false;
+    }
     lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
     startUpdate_ = true;
-    return maxAmplitude_;
+    normalMaxAmplitude = maxAmplitude_;
+    return true;
 }
 
 int32_t BluetoothAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,

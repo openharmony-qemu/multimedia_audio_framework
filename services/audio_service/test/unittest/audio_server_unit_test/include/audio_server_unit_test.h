@@ -25,6 +25,9 @@ namespace AudioStandard {
 
 class TestAudioCaptureSource : public IAudioCaptureSource {
 public:
+    TestAudioCaptureSource() = default;
+    TestAudioCaptureSource(const std::string &name, float amp, bool match)
+        : sourceName_(name), amplitude_(amp), shouldMatch_(match) {}
     int32_t Init(const IAudioSourceAttr& attr) override {return 0;};
 
     void DeInit(void) override {};
@@ -47,12 +50,24 @@ public:
     int32_t GetMute(bool &isMute)override {return 0;};
 
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override {return 0;};
-    float GetMaxAmplitude(void) override {return 0;};
+    bool GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude) override
+    {
+        if (!shouldMatch_ || sourceName != sourceName_) {
+            return false;
+        }
+        normalMaxAmplitude = amplitude_;
+        return true;
+    };
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) override {return 0;};
     int32_t UpdateAppsUid(const std::vector<int32_t>& appsUid) override {return 0;};
 
     void DumpInfo(std::string& dumpString) override {};
+
+private:
+    std::string sourceName_;
+    float amplitude_ = 0.0f;
+    bool shouldMatch_ = false;
 };
 
 class AudioServerUnitTest : public testing::Test {

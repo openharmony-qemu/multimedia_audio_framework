@@ -213,6 +213,8 @@ public:
     int32_t GetMaxAmplitude(bool isOutputDevice, const std::string& deviceClass, int32_t sourceType,
         float& maxAmplitude) override;
 
+    int32_t GetInputMaxAmplitude(const std::string &sourceName, float &maxAmplitude) override;
+
     int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData) override;
 
     int32_t UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer) override;

@@ -199,7 +199,8 @@ HWTEST_F(FileAudioCaptureSourceUnitTest, FileSourceUnitTest_008, TestSize.Level1
 HWTEST_F(FileAudioCaptureSourceUnitTest, FileSourceUnitTest_009, TestSize.Level1)
 {
     EXPECT_TRUE(source_ && source_->IsInited());
-    float maxAmplitude = source_->GetMaxAmplitude();
+    float maxAmplitude = 0.0f;
+    source_->GetMaxAmplitude("", maxAmplitude);
     EXPECT_EQ(maxAmplitude, 0.0f);
 }
 

@@ -158,5 +158,50 @@ HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_006, TestSize.Level1)
     EXPECT_FALSE(source_->IsInited());
 }
 
+/**
+ * @tc.name   : Test VA source max amplitude source name mismatch
+ * @tc.number : VACaptureSourceUnitTest_010
+ * @tc.desc   : Verify max amplitude rejects a different source name.
+ */
+HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_0010, TestSize.Level1)
+{
+    ASSERT_NE(source_, nullptr);
+    float maxAmplitude = 0.0f;
+    EXPECT_FALSE(source_->GetMaxAmplitude("not_exist", maxAmplitude));
+}
+
+/**
+ * @tc.name   : Test VA source max amplitude before start
+ * @tc.number : VACaptureSourceUnitTest_011
+ * @tc.desc   : Verify max amplitude rejects an unstarted matching source.
+ */
+HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_011, TestSize.Level1)
+{
+    ASSERT_NE(source_, nullptr);
+    attr_.sourceName = "va";
+    (void)source_->Init(attr_);
+    float maxAmplitude = 0.0f;
+    EXPECT_FALSE(source_->GetMaxAmplitude("va", maxAmplitude));
+    source_->DeInit();
+}
+
+/**
+ * @tc.name   : Test VA source max amplitude after start
+ * @tc.number : VACaptureSourceUnitTest_012
+ * @tc.desc   : Verify max amplitude is returned for a started matching source.
+ */
+HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_012, TestSize.Level1)
+{
+    auto source = std::make_shared<VACaptureSource>(0);
+    source->sourceName_ = "va";
+    source->started_ = true;
+    source->maxAmplitude_ = 0.75f;
+
+    float maxAmplitude = 0.0f;
+    EXPECT_TRUE(source->GetMaxAmplitude("va", maxAmplitude));
+    EXPECT_FLOAT_EQ(maxAmplitude, 0.75f);
+    EXPECT_TRUE(source->startUpdate_);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
