@@ -3050,6 +3050,9 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         isGetFocusForLog_ = true;
         if (interruptDfx_ != nullptr) {
             interruptDfx_->HandleInterruptCallbackEvent(audioInterrupt);
+            if (isSessionTimeout) {
+                interruptDfx_->AudioSessionTimeoutErrorEvent(audioInterrupt);
+            }
         }
     } else {
         // If it was not in the audioFocusInfoList, no need to take any action on other sessions, just return.
