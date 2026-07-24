@@ -53,6 +53,10 @@ public:
 
     void OnDevicesDisconnected(const std::shared_ptr<VADevice> &vaDevice);
 
+    void SetAssociatedMacAddresses(const std::string &macAddress, bool isEnable);
+
+    void SetNoiseReductionMode(const std::shared_ptr<VADevice> &vaDevice, int32_t noiseReductionMode);
+
     void GetDeviceController(const std::string macAddr, sptr<IRemoteObject> &controller);
 private:
     VADeviceManager() = default;
@@ -76,6 +80,9 @@ private:
         const VAAudioStreamProperty &vaStreamProperty);
 
     uint32_t CalculateBufferSize(const VAAudioStreamProperty &vaStreamProperty);
+
+    void UpdateNoiseReductionCapability(const std::shared_ptr<VADevice> &vaDevice,
+        const std::shared_ptr<AudioDeviceDescriptor> &descriptor);
 };
 } //namespace AudioStandard
 } //namespace OHOS

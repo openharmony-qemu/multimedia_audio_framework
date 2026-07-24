@@ -22,6 +22,7 @@
 #include "audio_policy_log.h"
 #include "audio_utils.h"
 #include "iservice_registry.h"
+#include "va_device_broker_wrapper_impl.h"
 #include "system_ability_definition.h"
 #include "sle_audio_operation_callback_stub_impl.h"
 
@@ -859,6 +860,18 @@ int32_t AudioPolicyManager::UnregisterPreferredDeviceSetCallback(
             SetClientCallbacksEnable(CALLBACK_PREFERRED_DEVICE_SET, false);
         }
     }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrapper> &vaBroker)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is null");
+
+    auto vaBrokerWrapper = std::make_shared<VADeviceBrokerWrapperImpl>();
+    CHECK_AND_RETURN_RET_LOG(vaBrokerWrapper != nullptr, ERROR, "vaBrokerWrapper is null");
+    vaBroker = vaBrokerWrapper;
+
     return SUCCESS;
 }
 } // namespace AudioStandard

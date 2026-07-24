@@ -542,6 +542,8 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const std::shared_ptr<Audio
                 case DEVICE_TYPE_NEARLINK:
                 case DEVICE_TYPE_NEARLINK_IN:
                 case DEVICE_TYPE_REMOTE_DAUDIO:
+                case DEVICE_TYPE_BT_SPP:
+                case DEVICE_TYPE_NEARLINK_PORT:
                     return descriptor->macAddress_ == deviceDescriptor->macAddress_;
                 default:
                     return true;
@@ -972,10 +974,14 @@ void AudioDeviceManager::AddAvailableDevicesByUsageAndPrivacy(AudioDeviceUsage u
 {
     for (const auto &dev : devices) {
         CHECK_AND_CONTINUE_LOG(dev != nullptr, "dev is null from devices");
+        CHECK_AND_CONTINUE(!(dev->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && dev->isExclusiveMicScoUnavailable_));
         for (const auto &devicePrivacy : devicePrivacyMaps_) {
             const list<DevicePrivacyInfo> &deviceInfos = devicePrivacy.second;
             std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(*dev);
             GetAvailableDevicesWithUsage(usage, deviceInfos, desc, resultDevices);
+        }
+        if (dev->deviceType_ == DEVICE_TYPE_BT_SPP && dev->isUnidirectional_ && ((usage & MEDIA_INPUT_DEVICES) != 0)) {
+            resultDevices.push_back(std::make_shared<AudioDeviceDescriptor>(*dev));
         }
     }
 }
@@ -1606,6 +1612,15 @@ bool AudioDeviceManager::HasWirelessDevicesConnected()
         }
     }
     return false;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSingleMicSppDevice()
+{
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    auto it = std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [](const auto &item) {
+        return item->isUnidirectional_;
+    });
+    return it == connectedDevices_.cend() ? nullptr : *it;
 }
 }
 }

@@ -48,6 +48,7 @@ ohos_unittest("audio_capturer_unit_test") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
     "access_token:libtokensetproc_shared",
+    "samgr:samgr_proxy",
   ]
 
   sources = [
@@ -92,6 +93,7 @@ ohos_unittest("inner_capturer_unit_test") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
+    "samgr:samgr_proxy",
   ]
 
   sources = [ "src/inner_capturer_unit_test.cpp" ]
@@ -128,6 +130,7 @@ ohos_unittest("audio_fast_capturer_unit_test") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
+    "samgr:samgr_proxy",
   ]
 
   sources = [ "src/audio_fast_capturer_unit_test.cpp" ]

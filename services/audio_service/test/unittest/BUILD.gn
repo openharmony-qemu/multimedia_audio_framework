@@ -273,6 +273,7 @@ ohos_unittest("audio_thread_task_unit_test") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
+    "samgr:samgr_proxy",
   ]
 }
 
@@ -310,6 +311,7 @@ ohos_unittest("audio_ring_cache_unit_test") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
+    "samgr:samgr_proxy",
   ]
 }
 
@@ -348,6 +350,7 @@ ohos_unittest("audio_stream_checker_unit_test") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
+    "samgr:samgr_proxy",
   ]
 }
 
@@ -383,6 +386,7 @@ ohos_unittest("audio_stream_monitor_unit_test") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
+    "samgr:samgr_proxy",
   ]
 }
 
@@ -580,6 +584,7 @@ ohos_unittest("audio_volume_unit_test") {
     "safwk:system_ability_fwk",
     "qos_manager:concurrent_task_client",
     "eventhandler:libeventhandler",
+    "samgr:samgr_proxy",
   ]
 
   defines = []
@@ -1361,6 +1366,7 @@ ohos_unittest("audio_spatial_channel_converter_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "samgr:samgr_proxy",
   ]
 }
 
@@ -1509,6 +1515,7 @@ ohos_unittest("audio_resource_service_unit_test") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "qos_manager:concurrent_task_client",
+    "samgr:samgr_proxy",
   ]
 }
 
@@ -1546,6 +1553,7 @@ ohos_unittest("audio_tool_calculate_unit_test") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
+    "samgr:samgr_proxy",
   ]
 }
 
@@ -1628,6 +1636,7 @@ ohos_unittest("audio_volume_client_manager_unit_test") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "samgr:samgr_proxy",
   ]
 
   defines = [ "TEST_COVERAGE=1" ]
@@ -2492,6 +2501,7 @@ ohos_unittest("audio_system_client_policy_manager_unit_test") {
     "googletest:gtest",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "samgr:samgr_proxy",
   ]
 }
 
@@ -2533,6 +2543,7 @@ ohos_unittest("audio_interrupt_client_manager_unit_test") {
     "googletest:gtest",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "samgr:samgr_proxy",
   ]
 }
 

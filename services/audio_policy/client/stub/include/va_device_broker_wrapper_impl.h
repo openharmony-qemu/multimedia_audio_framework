@@ -31,6 +31,8 @@ public:
     int32_t OnDevicesConnected(
         const VADevice& device, const std::shared_ptr<VADeviceControllerCallback>& controllerCallback) override;
     int32_t OnDevicesDisconnected(const VADevice& device)override;
+    int32_t SetAssociatedMacAddresses(const std::string &macAddress, bool isEnable) override;
+    int32_t SetNoiseReductionMode(const VADevice &device, int32_t noiseReductionMode) override;
 
     static const sptr<IAudioPolicy> GetAudioPolicyProxyFromSamgr(bool block = true);
 };

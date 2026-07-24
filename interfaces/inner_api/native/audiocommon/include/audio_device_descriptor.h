@@ -238,6 +238,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> pairDeviceDescriptor_;
     bool isScoRealConnected_ = false;
     bool isEnable_ = true;
+    bool isExclusiveMicScoUnavailable_ = false;
     int32_t mediaVolume_ = 0;
     int32_t callVolume_ = 0;
     // DeviceInfo
@@ -271,6 +272,8 @@ public:
 
 private:
     uint32_t deviceSupportMmap_ = 0; //only valid on armusb
+    void CopyBaseFields(const AudioDeviceDescriptor &deviceDescriptor);
+    void CopyExtendedFields(const AudioDeviceDescriptor &deviceDescriptor);
 
 private:
     bool IsOutput()

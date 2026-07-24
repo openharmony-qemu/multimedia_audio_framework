@@ -219,6 +219,11 @@ bool Util::IsScoSupportSource(const SourceType sourceType)
         sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
 }
 
+bool Util::IsSppSupportSource(const SourceType sourceType)
+{
+    return sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_LIVE || sourceType == SOURCE_TYPE_CAMCORDER;
+}
+
 bool Util::IsDualToneStreamType(const AudioStreamType streamType)
 {
     if (VolumeUtils::IsPCVolumeEnable()) {

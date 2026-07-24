@@ -1,3 +1,4 @@
+
 # Copyright (c) 2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -79,6 +80,7 @@ ohos_shared_library("hdiadapter_new") {
   ]
 
   deps = [
+    "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_setting_provider",
     "../../../services/audio_service:audio_common",
     "../audioeffect:audio_effect",
@@ -223,6 +225,7 @@ ohos_unittest("hdiadapter_unit_test") {
 
   deps = [
     ":hdiadapter_new",
+    "../../../services/audio_policy:audio_policy_client",
     "../audioclock:audio_clock",
     "../audioutils:audio_utils",
   ]

@@ -156,11 +156,6 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
     }
     vector<shared_ptr<AudioDeviceDescriptor>> recordDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
-    if (Util::IsScoSupportSource(sourceType)) {
-        vector<shared_ptr<AudioDeviceDescriptor>> recognitionDescs =
-            AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
-        recordDevices.insert(recordDevices.end(), recognitionDescs.begin(), recognitionDescs.end());
-    }
     RouterBase::ClearConflictDevice(recordDevices, GetRouterType());
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(MEDIA_INPUT_DEVICES, perDev_)) {
         AUDIO_DEBUG_LOG(" PreferredRecordCaptureDevice is null or device is not available now");

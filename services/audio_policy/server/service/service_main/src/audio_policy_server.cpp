@@ -1754,12 +1754,7 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
         if (item && IsUsb(item->deviceType_)) {
             desc.deviceType_ = item->deviceType_;
         }
-    } else if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && desc.deviceRole_ == INPUT_DEVICE) {
-        desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
     } else if (desc.deviceType_ == DEVICE_TYPE_NEARLINK && desc.deviceRole_ == INPUT_DEVICE) {
-        desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
-    }
-    if (desc.deviceType_ == DEVICE_TYPE_NEARLINK && desc.deviceRole_ == INPUT_DEVICE) {
         desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     }
     if (desc.deviceType_ == DEVICE_TYPE_WIRED_HEADSET && desc.deviceRole_ == INPUT_DEVICE) {
@@ -1772,6 +1767,12 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
         auto a2dpin = std::make_shared<AudioDeviceDescriptor>(desc);
         a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
         auto descPtr = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(a2dpin);
+        desc = descPtr && descPtr->deviceType_ != DEVICE_TYPE_NONE ? (*descPtr) : desc;
+    }
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc.isUnidirectional_) {
+        auto spp = std::make_shared<AudioDeviceDescriptor>(desc);
+        spp->deviceType_ = DEVICE_TYPE_BT_SPP;
+        auto descPtr = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(spp);
         desc = descPtr && descPtr->deviceType_ != DEVICE_TYPE_NONE ? (*descPtr) : desc;
     }
 }
@@ -1982,8 +1983,8 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
             desc->networkId_ = "";
             desc->interruptGroupId_ = GROUP_ID_NONE;
             desc->volumeGroupId_ = GROUP_ID_NONE;
-            if (desc->deviceType_ == DEVICE_TYPE_BT_SPP) {
-                desc->deviceType_ = DEVICE_TYPE_SYSTEM_PRIVATE;
+            if (desc->deviceType_ == DEVICE_TYPE_BT_SPP || desc->deviceType_ == DEVICE_TYPE_NEARLINK_PORT) {
+                desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
             }
         }
     }
@@ -2126,7 +2127,9 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+        bool isA2dpIn = (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+        bool isSppUnidirectional = (desc->deviceType_ == DEVICE_TYPE_BT_SPP && desc->isUnidirectional_);
+        if (isA2dpIn) {
             auto sco = std::make_shared<AudioDeviceDescriptor>(desc);
             sco->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
             auto descPtr = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(sco);
@@ -2134,6 +2137,8 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
                 std::make_shared<AudioDeviceDescriptor>(descPtr) : desc;
             desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
             desc->highQualityRecordingSupported_ = true;
+        } else if (isSppUnidirectional) {
+            desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
         }
     }
     bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
@@ -4119,8 +4124,8 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
             desc->networkId_ = "";
             desc->interruptGroupId_ = GROUP_ID_NONE;
             desc->volumeGroupId_ = GROUP_ID_NONE;
-            desc->deviceType_ = desc->deviceType_ == DEVICE_TYPE_BT_SPP ?
-                DEVICE_TYPE_SYSTEM_PRIVATE : desc->deviceType_;
+            desc->deviceType_ = (desc->deviceType_ == DEVICE_TYPE_BT_SPP ||
+                desc->deviceType_ == DEVICE_TYPE_NEARLINK_PORT) ? DEVICE_TYPE_BLUETOOTH_SCO : desc->deviceType_;
         }
     }
 

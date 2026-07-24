@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -111,6 +112,8 @@ interface IStandardAudioService {
     void CreateSinkPort([in] unsigned int idBase, [in] unsigned int idType, [in] String idInfo, [in] IAudioSinkAttr attr, [out] unsigned int renderId);
     void CreateHdiSourcePort([in] String deviceClass, [in] String idInfo, [in] IAudioSourceAttr attr, [out] unsigned int captureId);
     void CreateSourcePort([in] unsigned int idBase, [in] unsigned int idType, [in] String idInfo, [in] IAudioSourceAttr attr, [out] unsigned int captureId);
+    void RegisterVADeviceController([in] String macAddress, [in] IRemoteObject controller);
+    void UnregisterVADeviceController([in] String macAddress);
     void DestroyHdiPort([in] unsigned int id);
     void SetDeviceConnectedFlag([in] boolean flag);
     void SetDmDeviceType([in] unsigned short dmDeviceType, [in] int deviceType);

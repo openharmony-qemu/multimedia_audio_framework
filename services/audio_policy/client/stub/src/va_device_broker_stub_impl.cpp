@@ -31,6 +31,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+const char* MANAGE_AUDIO_ACCESSORY = "ohos.permission.MANAGE_AUDIO_ACCESSORY";
 
 sptr<VADeviceBrokerStubImpl> VADeviceBrokerStubImpl::Create()
 {
@@ -46,8 +47,9 @@ VADeviceBrokerStubImpl::~VADeviceBrokerStubImpl()
 
 int32_t VADeviceBrokerStubImpl::OnDevicesConnected(const VADevice &device, const sptr<IRemoteObject>& controller)
 {
-    CHECK_AND_RETURN_RET_LOG(
-        PermissionUtil::VerifySystemPermission(), ERROR, "connect virtual audio denied: no system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission() ||
+        PermissionUtil::VerifyPermission(MANAGE_AUDIO_ACCESSORY, IPCSkeleton::GetCallingTokenID()),
+        ERR_PERMISSION_DENIED, "connect virtual audio denied: no MANAGE_AUDIO_ACCESSORY permission");
     sptr<IVADeviceController> vaDeviceController = iface_cast<IVADeviceController>(controller);
     CHECK_AND_RETURN_RET_LOG(vaDeviceController != nullptr, ERR_INVALID_PARAM, "controller is null");
     auto sharedDevice = std::make_shared<VADevice>(device);
@@ -59,10 +61,24 @@ int32_t VADeviceBrokerStubImpl::OnDevicesConnected(const VADevice &device, const
 
 int32_t VADeviceBrokerStubImpl::OnDevicesDisconnected(const VADevice &device)
 {
-    CHECK_AND_RETURN_RET_LOG(
-        PermissionUtil::VerifySystemPermission(), ERROR, "disconnect virtual audio denied: no system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission() ||
+        PermissionUtil::VerifyPermission(MANAGE_AUDIO_ACCESSORY, IPCSkeleton::GetCallingTokenID()),
+        ERR_PERMISSION_DENIED, "connect virtual audio denied: no MANAGE_AUDIO_ACCESSORY permission");
     auto sharedDevice = std::make_shared<VADevice>(device);
     VADeviceManager::GetInstance().OnDevicesDisconnected(sharedDevice);
+    return SUCCESS;
+}
+
+int32_t VADeviceBrokerStubImpl::SetAssociatedMacAddresses(const std::string &macAddress, bool isEnable)
+{
+    VADeviceManager::GetInstance().SetAssociatedMacAddresses(macAddress, isEnable);
+    return SUCCESS;
+}
+
+int32_t VADeviceBrokerStubImpl::SetNoiseReductionMode(const VADevice& device, int32_t noiseReductionMode)
+{
+    auto sharedDevice = std::make_shared<VADevice>(device);
+    VADeviceManager::GetInstance().SetNoiseReductionMode(sharedDevice, noiseReductionMode);
     return SUCCESS;
 }
 

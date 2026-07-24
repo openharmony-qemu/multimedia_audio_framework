@@ -767,19 +767,12 @@ napi_status NapiParamUtils::SetDeviceDescriptor(const napi_env &env, const Audio
     }
     napi_set_named_property(env, result, "channelCounts", channelCounts);
 
-    std::vector<int32_t> channelMasks_;
-    channelMasks_.push_back(deviceInfo.channelMasks_);
-    SetValueInt32Element(env, "channelMasks", channelMasks_, result);
-
-    std::vector<int32_t> channelIndexMasks_;
-    channelIndexMasks_.push_back(deviceInfo.channelIndexMasks_);
-    SetValueInt32Element(env, "channelIndexMasks", channelIndexMasks_, result);
-
-    std::vector<int32_t> encoding;
-    encoding.push_back(deviceInfo.GetDeviceStreamInfo().encoding);
-    SetValueInt32Element(env, "encodingTypes", encoding, result);
+    SetValueInt32Element(env, "channelMasks", {deviceInfo.channelMasks_}, result);
+    SetValueInt32Element(env, "channelIndexMasks", {deviceInfo.channelIndexMasks_}, result);
+    SetValueInt32Element(env, "encodingTypes", {deviceInfo.GetDeviceStreamInfo().encoding}, result);
     SetValueBoolean(env, "spatializationSupported", deviceInfo.spatializationSupported_, result);
     SetValueBoolean(env, "highQualityRecordingSupported", deviceInfo.highQualityRecordingSupported_, result);
+    SetValueBoolean(env, "isUnidirectional", deviceInfo.isUnidirectional_, result);
 
     status = SetJsAudioStreamInfos(env, deviceInfo.capabilities_, result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set capabilities property failed");
@@ -1275,14 +1268,14 @@ napi_status NapiParamUtils::SetValueAudioVolumeTypeArray(const napi_env& env,
 napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
     std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &argTransFlag, napi_value in)
 {
-    int32_t intValue = {0};
+    int32_t intValue = 0;
     bool boolValue = false;
     argTransFlag = true;
     bool hasDeviceRole = true;
-    bool hasNetworkId  = true;
+    bool hasNetworkId = true;
     napi_status status = napi_has_named_property(env, in, "deviceRole", &hasDeviceRole);
     status = napi_has_named_property(env, in, "networkId", &hasNetworkId);
-    if ((!hasDeviceRole) || (!hasNetworkId)) {
+    if (!hasDeviceRole || !hasNetworkId) {
         argTransFlag = false;
         return status;
     }
@@ -1313,22 +1306,18 @@ napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
         selectedAudioDevice->dmDeviceType_ = static_cast<uint16_t>(intValue);
     }
     selectedAudioDevice->displayName_ = GetPropertyString(env, in, "displayName");
-
-    status = GetValueInt32(env, "interruptGroupId", intValue, in);
-    if (status == napi_ok) {
+    if (GetValueInt32(env, "interruptGroupId", intValue, in) == napi_ok) {
         selectedAudioDevice->interruptGroupId_ = intValue;
     }
-
-    status = GetValueInt32(env, "volumeGroupId", intValue, in);
-    if (status == napi_ok) {
+    if (GetValueInt32(env, "volumeGroupId", intValue, in) == napi_ok) {
         selectedAudioDevice->volumeGroupId_ = intValue;
     }
-
     selectedAudioDevice->macAddress_ = GetPropertyString(env, in, "address");
-    selectedAudioDevice->deviceId_ =
-        GetValueInt32(env, "id", intValue, in) == napi_ok ? intValue : 0;
+    selectedAudioDevice->deviceId_ = GetValueInt32(env, "id", intValue, in) == napi_ok ? intValue : 0;
     selectedAudioDevice->highQualityRecordingSupported_ =
-        GetValueBoolean(env, "highQualityRecordingSupported", boolValue, in) == napi_ok ? true : false;
+        GetValueBoolean(env, "highQualityRecordingSupported", boolValue, in) == napi_ok ? boolValue : false;
+    selectedAudioDevice->isUnidirectional_ =
+        GetValueBoolean(env, "isUnidirectional", boolValue, in) == napi_ok ? boolValue : false;
 
     return napi_ok;
 }
