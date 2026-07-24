@@ -580,13 +580,15 @@ void TaiheAudioPersonalizedSpatialEnabledChangeCallback::SavePersonalizedSpatial
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!callbackName.compare(PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
-        for (auto it = personalizedSpatialEnabledChangeCbForAnyDeviceList_.begin(); it != personalizedSpatialEnabledChangeCbForAnyDeviceList_.end(); ++it) {
+        for (auto it = personalizedSpatialEnabledChangeCbForAnyDeviceList_.begin();
+            it != personalizedSpatialEnabledChangeCbForAnyDeviceList_.end(); ++it) {
             if (*it == nullptr) {
                 AUDIO_ERR_LOG("SavePersonalizedSpatialEnabledChangeCallbackReference: *it is null");
                 continue;
             }
             bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*it)->cb_);
-            CHECK_AND_RETURN_LOG(!isSame, "SavePersonalizedSpatialEnabledChangeCallbackReference: spatialization manager has same callback");
+            CHECK_AND_RETURN_LOG(!isSame,
+                "SavePersonalizedSpatialEnabledChangeCallbackReference: spatialization manager has same callback");
         }
 
         CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");
@@ -609,7 +611,8 @@ void TaiheAudioPersonalizedSpatialEnabledChangeCallback::RemovePersonalizedSpati
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!callbackName.compare(PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
-        for (auto it = personalizedSpatialEnabledChangeCbForAnyDeviceList_.begin(); it != personalizedSpatialEnabledChangeCbForAnyDeviceList_.end(); ++it) {
+        for (auto it = personalizedSpatialEnabledChangeCbForAnyDeviceList_.begin();
+            it != personalizedSpatialEnabledChangeCbForAnyDeviceList_.end(); ++it) {
             if (*it == nullptr) {
                 AUDIO_ERR_LOG("RemovePersonalizedSpatialEnabledChangeCallbackReference: *it is null");
                 continue;
@@ -625,7 +628,8 @@ void TaiheAudioPersonalizedSpatialEnabledChangeCallback::RemovePersonalizedSpati
     AUDIO_INFO_LOG("RemovePersonalizedSpatialEnabledChangeCallbackReference: js callback no find");
 }
 
-void TaiheAudioPersonalizedSpatialEnabledChangeCallback::RemoveAllPersonalizedSpatialEnabledChangeCallbackReference(const std::string &callbackName)
+void TaiheAudioPersonalizedSpatialEnabledChangeCallback::RemoveAllPersonalizedSpatialEnabledChangeCallbackReference(
+    const std::string &callbackName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!callbackName.compare(PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
@@ -634,7 +638,8 @@ void TaiheAudioPersonalizedSpatialEnabledChangeCallback::RemoveAllPersonalizedSp
     AUDIO_INFO_LOG("RemoveAllPersonalizedSpatialEnabledChangeCallbackReference: remove all js callbacks success");
 }
 
-int32_t TaiheAudioPersonalizedSpatialEnabledChangeCallback::GetPersonalizedSpatialEnabledChangeCbListSize(const std::string &callbackName)
+int32_t TaiheAudioPersonalizedSpatialEnabledChangeCallback::GetPersonalizedSpatialEnabledChangeCbListSize(
+    const std::string &callbackName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return personalizedSpatialEnabledChangeCbForAnyDeviceList_.size();
@@ -646,7 +651,8 @@ void TaiheAudioPersonalizedSpatialEnabledChangeCallback::OnPersonalizedSpatializ
     AUDIO_INFO_LOG("OnPersonalizedSpatializationEnabledChange by the specified device entered");
     std::lock_guard<std::mutex> lock(mutex_);
 
-    for (auto it = personalizedSpatialEnabledChangeCbForAnyDeviceList_.begin(); it != personalizedSpatialEnabledChangeCbForAnyDeviceList_.end(); it++) {
+    for (auto it = personalizedSpatialEnabledChangeCbForAnyDeviceList_.begin();
+        it != personalizedSpatialEnabledChangeCbForAnyDeviceList_.end(); it++) {
         auto jsCb = std::make_unique<AudioPersonalizedSpatialEnabledJsCallback>();
         CHECK_AND_RETURN_LOG(jsCb != nullptr, "No memory!!");
         jsCb->callback = (*it);
@@ -656,7 +662,8 @@ void TaiheAudioPersonalizedSpatialEnabledChangeCallback::OnPersonalizedSpatializ
     }
 }
 
-void TaiheAudioPersonalizedSpatialEnabledChangeCallback::SafeJsCallbackPersonalizedSpatialEnabledWork(AudioPersonalizedSpatialEnabledJsCallback *event)
+void TaiheAudioPersonalizedSpatialEnabledChangeCallback::SafeJsCallbackPersonalizedSpatialEnabledWork(
+    AudioPersonalizedSpatialEnabledJsCallback *event)
 {
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackPersonalizedSpatialEnabledWork: no memory");
