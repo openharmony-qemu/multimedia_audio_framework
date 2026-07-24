@@ -184,7 +184,6 @@ private:
     std::mutex rawBypassMutex_;
     std::condition_variable rawBypassCv_;
     size_t prebufTargetBytes_ = 0;
-    std::atomic<size_t> rawBypassBlocks_{0};
     std::atomic<size_t> pendingRawBypassBlocks_{0};
     SeProcessStats stats_;
     int64_t statsReportThreshold_ = 48000; // 1s@48kHz

@@ -220,7 +220,6 @@ void HpaeSessionEffectNode::ResetAccounting()
     totalBytesIn_ = 0;
     totalBytesOut_ = 0;
     paddingBytesIn_ = 0;
-    rawBypassBlocks_.store(0);
     pendingRawBypassBlocks_.store(0);
     stats_.Reset();
 }
@@ -310,6 +309,7 @@ void HpaeSessionEffectNode::ClearRawBypassBuffer()
     {
         std::lock_guard<std::mutex> lock(rawBypassMutex_);
         rawBypassBuffer_.Reset();
+        pendingRawBypassBlocks_.store(0, std::memory_order_relaxed);
     }
     rawBypassCv_.notify_all();
 }
@@ -767,7 +767,6 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessRawBypassOutput(HpaePcmBuffer *rawB
     rawBuf->SetBufferValid(true);
     rawBuf->SetBufferSilence(false);
     AccountOutput(byteLen);
-    rawBypassBlocks_.fetch_add(1, std::memory_order_relaxed);
     pendingRawBypassBlocks_.fetch_add(1, std::memory_order_relaxed);
     return rawBuf;
 }
