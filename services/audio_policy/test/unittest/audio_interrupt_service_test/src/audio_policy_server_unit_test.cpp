@@ -6714,11 +6714,9 @@ HWTEST(AudioPolicyUnitTest, GetPreferredInputDeviceDescriptors_SppUnidirectional
     EXPECT_EQ(ret, SUCCESS);
  
     // Find the device that originally was SPP unidirectional
-    bool foundConvertedSco = false;
     for (const auto &desc : deviceDescs) {
         ASSERT_TRUE(desc != nullptr);
         if (desc->macAddress_ == "11:22:33:44:55:66" && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            foundConvertedSco = true;
             // For SPP unidirectional branch, only deviceType is changed to SCO,
             // isUnidirectional_ should remain true (from the original SPP descriptor)
             EXPECT_TRUE(desc->isUnidirectional_);
@@ -6769,11 +6767,9 @@ HWTEST(AudioPolicyUnitTest, GetPreferredInputDeviceDescriptors_A2dpIn_001, TestS
     EXPECT_EQ(ret, SUCCESS);
  
     // Find the device that was converted from A2DP_IN to SCO
-    bool foundConvertedSco = false;
     for (const auto &desc : deviceDescs) {
         ASSERT_TRUE(desc != nullptr);
         if (desc->macAddress_ == "AA:BB:CC:DD:EE:FF" && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            foundConvertedSco = true;
             // For A2DP_IN branch, deviceType is converted to SCO
             // and highQualityRecordingSupported_ must be set to true
             EXPECT_TRUE(desc->highQualityRecordingSupported_);
