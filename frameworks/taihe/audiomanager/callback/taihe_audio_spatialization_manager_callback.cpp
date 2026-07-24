@@ -47,7 +47,7 @@ void TaiheAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledCha
         for (auto it = spatializationEnabledChangeCbList_.begin();
             it != spatializationEnabledChangeCbList_.end(); ++it) {
             bool isSameCallback = TaiheAudioManagerCallback::IsSameCallback(callback, (*it)->cb_);
-            CHECK_AND_RETURN_LOG(!isSameCallback, "SavePersonalizedSpatialEnabledChangeCallbackReference: spatialization manager has same callback");
+            CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
         }
 
         CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");
@@ -62,7 +62,7 @@ void TaiheAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledCha
                 continue;
             }
             bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
-            CHECK_AND_RETURN_LOG(!isSame, "SavePersonalizedSpatialEnabledChangeCallbackReference: spatialization manager has same callback");
+            CHECK_AND_RETURN_LOG(!isSame, "SaveCallbackReference: spatialization manager has same callback");
         }
 
         CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");
@@ -248,7 +248,7 @@ void TaiheAudioCurrentSpatializationEnabledChangeCallback::SaveCurrentSpatializa
     for (auto it = spatializationEnabledChangeCbForCurrentDeviceList_.begin();
         it != spatializationEnabledChangeCbForCurrentDeviceList_.end(); ++it) {
         bool isSameCallback = TaiheAudioManagerCallback::IsSameCallback(callback, (*it)->cb_);
-        CHECK_AND_RETURN_LOG(!isSameCallback, "SavePersonalizedSpatialEnabledChangeCallbackReference: spatialization manager has same callback");
+        CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
     }
 
     CHECK_AND_RETURN_LOG(callback != nullptr,
@@ -378,7 +378,7 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeC
     if (!callbackName.compare(HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME)) {
         for (auto it = headTrackingEnabledChangeCbList_.begin(); it != headTrackingEnabledChangeCbList_.end(); ++it) {
             bool isSameCallback = TaiheAudioManagerCallback::IsSameCallback(callback, (*it)->cb_);
-            CHECK_AND_RETURN_LOG(!isSameCallback, "SavePersonalizedSpatialEnabledChangeCallbackReference: spatialization manager has same callback");
+            CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
         }
 
         CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");
@@ -394,7 +394,7 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeC
                 continue;
             }
             bool isSame = TaiheAudioManagerCallback::IsSameCallback(callback, (*anyDeviceIt)->cb_);
-            CHECK_AND_RETURN_LOG(!isSame, "SavePersonalizedSpatialEnabledChangeCallbackReference: spatialization manager has same callback");
+            CHECK_AND_RETURN_LOG(!isSame, "SaveCallbackReference: spatialization manager has same callback");
         }
 
         CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");

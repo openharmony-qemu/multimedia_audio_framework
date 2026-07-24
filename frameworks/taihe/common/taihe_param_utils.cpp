@@ -345,7 +345,7 @@ int32_t TaiheParamUtils::GetAudioHRTFDescriptor(int32_t *fd, int64_t *length, HR
         return AUDIO_ERR;
     }
     if (fcntl(hrtfDescriptor.fd, F_GETFL) == -1) {
-        AUDIO_ERR_LOG("GetAudioHRTFDescriptor: fd no permission");
+        AUDIO_ERR_LOG("GetAudioHRTFDescriptor: fd is invalid or not accessible, errno=%{public}d", errno);
         return AUDIO_ERR;
     }
     if (hrtfDescriptor.length <= 0 || hrtfDescriptor.length > MAX_HRTF_LENGTH) {
