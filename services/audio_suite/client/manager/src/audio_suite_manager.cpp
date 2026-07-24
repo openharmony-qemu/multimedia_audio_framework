@@ -1491,6 +1491,10 @@ int32_t AudioSuiteManager::GetSystemNodeParam(uint32_t nodeId, std::vector<uint8
 
 int32_t AudioSuiteManager::GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize)
 {
+    std::unique_lock<std::mutex> lk(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr,
+        ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetSystemNodeInOutSize_ = false;
     getSystemNodeInOutSizeResult_ = 0;
