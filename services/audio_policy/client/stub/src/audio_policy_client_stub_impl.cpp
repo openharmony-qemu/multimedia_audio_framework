@@ -27,7 +27,6 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t RSS_UID = 1096;
-constexpr int32_t AVSESSION_UID = 6700;
 constexpr int32_t ALL_APPS_UID = -1;
 static const int32_t FOCUS_INFO_VALID_SIZE = 128;
 static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
@@ -38,7 +37,7 @@ static const int32_t MIC_BLOCKED_VALID_SIZE = 128;
 static bool IsRendererCallbackDfxUid()
 {
     int32_t uid = static_cast<int32_t>(getuid());
-    return uid == RSS_UID || uid == AVSESSION_UID;
+    return uid == RSS_UID;
 }
 
 static void LogRendererCallbackDfx(const std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> &callbacks,
