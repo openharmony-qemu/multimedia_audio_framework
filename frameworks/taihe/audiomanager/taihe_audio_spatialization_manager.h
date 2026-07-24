@@ -91,7 +91,7 @@ private:
     std::shared_ptr<OHOS::AudioStandard::AudioHeadTrackingEnabledChangeCallback>
         headTrackingEnabledChangeCallback_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioPersonalizedSpatializationEnabledChangeCallback>
-        personalizedSpatializationEnabledChangeCallback_ = nullptr;
+        personalizedSpatialEnabledChangeCallback_ = nullptr;
     std::mutex mutex_;
 };
 } // namespace ANI::Audio

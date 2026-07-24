@@ -588,7 +588,8 @@ bool AudioSpatializationManagerImpl::IsPersonalizedSpatializationSupported()
     return isPersonalizedSpatializationSupported;
 }
 
-void AudioSpatializationManagerImpl::SetPersonalizedSpatializationEnabledSync(AudioDeviceDescriptor deviceDescriptor, bool enabled)
+void AudioSpatializationManagerImpl::SetPersonalizedSpatializationEnabledSync(AudioDeviceDescriptor deviceDescriptor,
+    bool enabled)
 {
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
@@ -680,23 +681,23 @@ void AudioSpatializationManagerImpl::RegisterPersonalizedSpatializationEnabledCh
         return;
     }
     std::lock_guard<std::mutex> lock(taiheSpatializationManager->mutex_);
-    if (!taiheSpatializationManager->personalizedSpatializationEnabledChangeCallback_) {
-        taiheSpatializationManager->personalizedSpatializationEnabledChangeCallback_ =
-            std::make_shared<TaiheAudioPersonalizedSpatializationEnabledChangeCallback>();
-        CHECK_AND_RETURN_LOG(taiheSpatializationManager->personalizedSpatializationEnabledChangeCallback_ != nullptr,
+    if (!taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_) {
+        taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_ =
+            std::make_shared<TaiheAudioPersonalizedSpatialEnabledChangeCallback>();
+        CHECK_AND_RETURN_LOG(taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_ != nullptr,
             "AudioSpatializationManagerImpl: Memory Allocation Failed !!");
 
         int32_t ret = taiheSpatializationManager->audioSpatializationMngr_->
             RegisterPersonalizedSpatializationEnabledEventListener(
-            taiheSpatializationManager->personalizedSpatializationEnabledChangeCallback_);
+            taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_);
         CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
-            "AudioSpatializationManagerImpl: Registering of Personalized Spatialization Enabled Change Callback Failed");
+            "AudioSpatializationManagerImpl: Registering Personalized Spatialization Enabled Change Callback Failed");
     }
-    std::shared_ptr<TaiheAudioPersonalizedSpatializationEnabledChangeCallback> cb =
-        std::static_pointer_cast<TaiheAudioPersonalizedSpatializationEnabledChangeCallback>
-        (taiheSpatializationManager->personalizedSpatializationEnabledChangeCallback_);
+    std::shared_ptr<TaiheAudioPersonalizedSpatialEnabledChangeCallback> cb =
+        std::static_pointer_cast<TaiheAudioPersonalizedSpatialEnabledChangeCallback>
+        (taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_);
     CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
-    cb->SavePersonalizedSpatializationEnabledChangeCallbackReference(
+    cb->SavePersonalizedSpatialEnabledChangeCallbackReference(
         PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME, callback);
     AUDIO_INFO_LOG("Register personalized spatialization enabled callback is successful");
 }
@@ -708,29 +709,29 @@ void AudioSpatializationManagerImpl::UnregisterPersonalizedSpatializationEnabled
     std::lock_guard<std::mutex> lock(taiheSpatializationManager->mutex_);
     CHECK_AND_RETURN_LOG(taiheSpatializationManager->audioSpatializationMngr_ != nullptr,
         "spatialization instance null.");
-    if (taiheSpatializationManager->personalizedSpatializationEnabledChangeCallback_ != nullptr) {
-        std::shared_ptr<TaiheAudioPersonalizedSpatializationEnabledChangeCallback> cb =
-            std::static_pointer_cast<TaiheAudioPersonalizedSpatializationEnabledChangeCallback>(
-            taiheSpatializationManager->personalizedSpatializationEnabledChangeCallback_);
+    if (taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_ != nullptr) {
+        std::shared_ptr<TaiheAudioPersonalizedSpatialEnabledChangeCallback> cb =
+            std::static_pointer_cast<TaiheAudioPersonalizedSpatialEnabledChangeCallback>(
+            taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_);
         CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
         if (callback != nullptr) {
-            cb->RemovePersonalizedSpatializationEnabledChangeCallbackReference(
+            cb->RemovePersonalizedSpatialEnabledChangeCallbackReference(
                 PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME, callback);
         }
-        if (callback == nullptr || cb->GetPersonalizedSpatializationEnabledChangeCbListSize(
+        if (callback == nullptr || cb->GetPersonalizedSpatialEnabledChangeCbListSize(
             PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME) == 0) {
             int32_t ret = taiheSpatializationManager->audioSpatializationMngr_->
                 UnregisterPersonalizedSpatializationEnabledEventListener();
             CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
                 "UnregisterPersonalizedSpatializationEnabledEventListener Failed");
-            taiheSpatializationManager->personalizedSpatializationEnabledChangeCallback_.reset();
-            taiheSpatializationManager->personalizedSpatializationEnabledChangeCallback_ = nullptr;
-            cb->RemoveAllPersonalizedSpatializationEnabledChangeCallbackReference(
+            taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_.reset();
+            taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_ = nullptr;
+            cb->RemoveAllPersonalizedSpatialEnabledChangeCallbackReference(
                 PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME);
         }
     } else {
-        AUDIO_ERR_LOG("UnregisterPersonalizedSpatializationEnabledChangeCb: "
-            "personalizedSpatializationEnabledChangeCallback_ is null");
+        AUDIO_ERR_LOG("UnregisterPersonalizedSpatialCb: "
+            "personalizedSpatialEnabledChangeCallback_ is null");
     }
 }
 
