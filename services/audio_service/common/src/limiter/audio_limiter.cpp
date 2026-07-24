@@ -40,6 +40,7 @@ constexpr float FLOAT_EPS_NUM = 1e-6f;
 #if USE_ARM_NEON == 1
 const int32_t NEON_FRAME_PER_ITER = 4; // 4 stereo frame in a NEON process
 const int32_t NEON_SAMPLE_PER_ITER = 8; // 8 sample in 4 stereo frame (LR)
+const int32_t NEON_MONO_FRAME_PER_ITER = 4; // 4 mono sample in a NEON process
 #endif
 AudioLimiter::AudioLimiter(int32_t sinkIndex)
 {
@@ -72,11 +73,12 @@ int32_t AudioLimiter::SetConfig(int32_t inputFrameBytes, int32_t bytePerSample, 
     // reset
     algoFrameLen_ = 0;
 
-    CHECK_AND_RETURN_RET_LOG(inputFrameBytes > 0 && sampleRate > 0 && channels == AUDIO_LMT_ALGO_CHANNEL &&
+    CHECK_AND_RETURN_RET_LOG(inputFrameBytes > 0 && sampleRate > 0 &&
+                                 (channels == 1 || channels == AUDIO_LMT_ALGO_CHANNEL) &&
                                  bytePerSample == AUDIO_LMT_ALGO_BYTE_PER_SAMPLE,
         ERR_INVALID_PARAM,
         "Invalid input parameters");
-    CHECK_AND_RETURN_RET_LOG((inputFrameBytes / bytePerSample) % PROC_COUNT == 0,
+    CHECK_AND_RETURN_RET_LOG((inputFrameBytes / bytePerSample / channels) % PROC_COUNT == 0,
         ERR_INVALID_PARAM,
         "Invalid inputFrameBytes, frameLen must be an even number, intput frameLen is %{public}d",
         inputFrameBytes / (bytePerSample * channels));
@@ -86,6 +88,12 @@ int32_t AudioLimiter::SetConfig(int32_t inputFrameBytes, int32_t bytePerSample, 
         ERR_INVALID_PARAM,
         "Invalid inputFrameBytes, min request frameBytes is %{public}d",
         bytePerSample * PROC_COUNT * channels);
+
+    CHECK_AND_RETURN_RET_LOG(newAlgoFrameLen % channels == 0,
+        ERR_INVALID_PARAM,
+        "Invalid algoFrameLen, algoFrameLen must be divisible by channels, algoFrameLen is %{public}d, channels is %{public}d",
+        newAlgoFrameLen,
+        channels);
 
     latency_ = static_cast<uint32_t>(newAlgoFrameLen * AUDIO_MS_PER_S / (sampleRate * channels));
 
@@ -166,77 +174,132 @@ float AudioLimiter::CalculateEnvelopeEnergy(float *inBuffer)
 {
     float maxEnvelopeLevel = 0.0f;
     int32_t i = 0;
+    if (channels_ == AUDIO_LMT_ALGO_CHANNEL) {
 #if USE_ARM_NEON == 1
-    for (; i <= algoFrameLen_ - NEON_SAMPLE_PER_ITER; i += NEON_SAMPLE_PER_ITER) {
-        float32x4x2_t lr = vld2q_f32(&inBuffer[i]); // load interleaved stereo samples
+        for (; i <= algoFrameLen_ - NEON_SAMPLE_PER_ITER; i += NEON_SAMPLE_PER_ITER) {
+            float32x4x2_t lr = vld2q_f32(&inBuffer[i]); // load interleaved stereo samples
 
-        float32x4_t absL = vabsq_f32(lr.val[0]);
-        float32x4_t absR = vabsq_f32(lr.val[1]);
-        float32x4_t tempLevelVec = vmaxq_f32(absL, absR); // max value for each frame
+            float32x4_t absL = vabsq_f32(lr.val[0]);
+            float32x4_t absR = vabsq_f32(lr.val[1]);
+            float32x4_t tempLevelVec = vmaxq_f32(absL, absR); // max value for each frame
 
-        float tempLevelArr[NEON_FRAME_PER_ITER];
-        vst1q_f32(tempLevelArr, tempLevelVec);
+            float tempLevelArr[NEON_FRAME_PER_ITER];
+            vst1q_f32(tempLevelArr, tempLevelVec);
 
-        // envelope update must be scalar because of data dependency
-        for (int j = 0; j < NEON_FRAME_PER_ITER; ++j) {
-            float tempLevel = tempLevelArr[j];
+            // envelope update must be scalar because of data dependency
+            for (int j = 0; j < NEON_FRAME_PER_ITER; ++j) {
+                float tempLevel = tempLevelArr[j];
+                float coeff = tempLevel > nextLev_ ? levelAttack_ : levelRelease_;
+                nextLev_ = coeff * nextLev_ + (1.0f - coeff) * tempLevel;
+                maxEnvelopeLevel = std::max(maxEnvelopeLevel, nextLev_);
+            }
+        }
+#endif
+        for (; i < algoFrameLen_ - 1; i += AUDIO_LMT_ALGO_CHANNEL) {
+            float tempBufInLeft = inBuffer[i];
+            float tempBufInRight = inBuffer[i + 1];
+            float tempLevel = std::max(std::abs(tempBufInLeft), std::abs(tempBufInRight));
             float coeff = tempLevel > nextLev_ ? levelAttack_ : levelRelease_;
-            nextLev_ = coeff * nextLev_ + (1.0f - coeff) * tempLevel;
+            nextLev_ = coeff * nextLev_ + (1 - coeff) * tempLevel;
             maxEnvelopeLevel = std::max(maxEnvelopeLevel, nextLev_);
         }
-    }
+    } else {
+#if USE_ARM_NEON == 1
+        for (; i <= algoFrameLen_ - NEON_MONO_FRAME_PER_ITER; i += NEON_MONO_FRAME_PER_ITER) {
+            float32x4_t samples = vld1q_f32(&inBuffer[i]);
+            float32x4_t absSamples = vabsq_f32(samples);
+
+            float tempLevelArr[NEON_MONO_FRAME_PER_ITER];
+            vst1q_f32(tempLevelArr, absSamples);
+
+            for (int j = 0; j < NEON_MONO_FRAME_PER_ITER; ++j) {
+                float tempLevel = tempLevelArr[j];
+                float coeff = tempLevel > nextLev_ ? levelAttack_ : levelRelease_;
+                nextLev_ = coeff * nextLev_ + (1.0f - coeff) * tempLevel;
+                maxEnvelopeLevel = std::max(maxEnvelopeLevel, nextLev_);
+            }
+        }
 #endif
-    for (; i < algoFrameLen_ - 1; i += AUDIO_LMT_ALGO_CHANNEL) {
-        float tempBufInLeft = inBuffer[i];
-        float tempBufInRight = inBuffer[i + 1];
-        float tempLevel = std::max(std::abs(tempBufInLeft), std::abs(tempBufInRight));
-        float coeff = tempLevel > nextLev_ ? levelAttack_ : levelRelease_;
-        nextLev_ = coeff * nextLev_ + (1 - coeff) * tempLevel;
-        maxEnvelopeLevel = std::max(maxEnvelopeLevel, nextLev_);
+        for (; i < algoFrameLen_; i += 1) {
+            float tempLevel = std::abs(inBuffer[i]);
+            float coeff = tempLevel > nextLev_ ? levelAttack_ : levelRelease_;
+            nextLev_ = coeff * nextLev_ + (1 - coeff) * tempLevel;
+            maxEnvelopeLevel = std::max(maxEnvelopeLevel, nextLev_);
+        }
     }
     return maxEnvelopeLevel;
 }
 
-void AudioLimiter::ApplyGainToStereoFrame(float *inBuffer, float *outBuffer, float &lastGain, float deltaGain)
+void AudioLimiter::ApplyGainToFrame(float *inBuffer, float *outBuffer, float &lastGain, float deltaGain)
 {
     int32_t i = 0;
+    if (channels_ == AUDIO_LMT_ALGO_CHANNEL) {
 #if USE_ARM_NEON == 1
-    for (; i <= algoFrameLen_ - NEON_SAMPLE_PER_ITER; i += NEON_SAMPLE_PER_ITER) {
-        // Load interleaved stereo input and history
-        float32x4x2_t in_data  = vld2q_f32(&inBuffer[i]);
-        float32x4x2_t his_data = vld2q_f32(&bufHis_[i]);
+        for (; i <= algoFrameLen_ - NEON_SAMPLE_PER_ITER; i += NEON_SAMPLE_PER_ITER) {
+            // Load interleaved stereo input and history
+            float32x4x2_t in_data  = vld2q_f32(&inBuffer[i]);
+            float32x4x2_t his_data = vld2q_f32(&bufHis_[i]);
 
-        // Scalar-equivalent gain progression
-        lastGain += deltaGain;
-        float g0 = lastGain;
-        lastGain += deltaGain;
-        float g1 = lastGain;
-        lastGain += deltaGain;
-        float g2 = lastGain;
-        lastGain += deltaGain;
-        float g3 = lastGain;
+            // Scalar-equivalent gain progression
+            lastGain += deltaGain;
+            float g0 = lastGain;
+            lastGain += deltaGain;
+            float g1 = lastGain;
+            lastGain += deltaGain;
+            float g2 = lastGain;
+            lastGain += deltaGain;
+            float g3 = lastGain;
 
-        // Pack gains into vector [g0 g1 g2 g3]
-        float32x4_t gainVec = { g0, g1, g2, g3 };
+            // Pack gains into vector [g0 g1 g2 g3]
+            float32x4_t gainVec = { g0, g1, g2, g3 };
 
-        // Apply gain to history buffer
-        float32x4x2_t out_data;
-        out_data.val[0] = vmulq_f32(his_data.val[0], gainVec);
-        out_data.val[1] = vmulq_f32(his_data.val[1], gainVec);
+            // Apply gain to history buffer
+            float32x4x2_t out_data;
+            out_data.val[0] = vmulq_f32(his_data.val[0], gainVec);
+            out_data.val[1] = vmulq_f32(his_data.val[1], gainVec);
 
-        // Store output
-        vst2q_f32(&outBuffer[i], out_data);
+            // Store output
+            vst2q_f32(&outBuffer[i], out_data);
 
-        // Update history buffer with new input
-        vst2q_f32(&bufHis_[i], in_data);
-    }
+            // Update history buffer with new input
+            vst2q_f32(&bufHis_[i], in_data);
+        }
 #endif
-    for (; i < algoFrameLen_; i += AUDIO_LMT_ALGO_CHANNEL) {
-        lastGain += deltaGain;
-        outBuffer[i] = bufHis_[i] * lastGain;
-        outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
-        bufHis_[i] = inBuffer[i];
-        bufHis_[i + 1] = inBuffer[i + 1];
+        for (; i < algoFrameLen_; i += AUDIO_LMT_ALGO_CHANNEL) {
+            lastGain += deltaGain;
+            outBuffer[i] = bufHis_[i] * lastGain;
+            outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
+            bufHis_[i] = inBuffer[i];
+            bufHis_[i + 1] = inBuffer[i + 1];
+        }
+    } else {
+#if USE_ARM_NEON == 1
+        for (; i <= algoFrameLen_ - NEON_MONO_FRAME_PER_ITER; i += NEON_MONO_FRAME_PER_ITER) {
+            float32x4_t his_data = vld1q_f32(&bufHis_[i]);
+            float32x4_t in_data  = vld1q_f32(&inBuffer[i]);
+
+            // Scalar-equivalent gain progression for mono
+            lastGain += deltaGain;
+            float g0 = lastGain;
+            lastGain += deltaGain;
+            float g1 = lastGain;
+            lastGain += deltaGain;
+            float g2 = lastGain;
+            lastGain += deltaGain;
+            float g3 = lastGain;
+
+            float32x4_t gainVec = { g0, g1, g2, g3 };
+
+            float32x4_t out_data = vmulq_f32(his_data, gainVec);
+            vst1q_f32(&outBuffer[i], out_data);
+            vst1q_f32(&bufHis_[i], in_data);
+        }
+#endif
+        for (; i < algoFrameLen_; i += 1) {
+            lastGain += deltaGain;
+            outBuffer[i] = bufHis_[i] * lastGain;
+            bufHis_[i] = inBuffer[i];
+        }
     }
 }
 
@@ -255,20 +318,24 @@ void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer)
     float lastGain = gain_;
     float coeff = gain_ > targetGain ? gainAttack_ : gainRelease_;
     gain_ = coeff * gain_ + (1 - coeff) * targetGain;
-    float deltaGain = (gain_ - lastGain) * AUDIO_LMT_ALGO_CHANNEL / algoFrameLen_;
+    float deltaGain = (gain_ - lastGain) * channels_ / algoFrameLen_;
 
     // apply gain
-    if (algoFrameLen_ % AUDIO_LMT_ALGO_CHANNEL == 0) {
-        ApplyGainToStereoFrame(inBuffer, outBuffer, lastGain, deltaGain);
+    if (algoFrameLen_ % channels_ == 0) {
+        ApplyGainToFrame(inBuffer, outBuffer, lastGain, deltaGain);
     } else {
         outBuffer[0] = bufHis_[0] * lastGain;
         bufHis_[0] = bufHis_[algoFrameLen_];
-        for (int32_t i = 1; i < algoFrameLen_ - 1; i += AUDIO_LMT_ALGO_CHANNEL) {
+        for (int32_t i = 1; i < algoFrameLen_ - 1; i += channels_) {
             lastGain += deltaGain;
             outBuffer[i] = bufHis_[i] * lastGain;
-            outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
+            if (channels_ == AUDIO_LMT_ALGO_CHANNEL) {
+                outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
+            }
             bufHis_[i] = inBuffer[i - 1];
-            bufHis_[i + 1] = inBuffer[i];
+            if (channels_ == AUDIO_LMT_ALGO_CHANNEL) {
+                bufHis_[i + 1] = inBuffer[i];
+            }
         }
         bufHis_[algoFrameLen_] = inBuffer[algoFrameLen_ - 1];
     }
