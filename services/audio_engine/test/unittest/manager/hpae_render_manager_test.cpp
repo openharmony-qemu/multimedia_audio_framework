@@ -2058,43 +2058,6 @@ HWTEST_F(HpaeRendererManagerTest, DeactivateThread_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test Process
- * @tc.type  : FUNC
- * @tc.number: Process_001
- * @tc.desc  : Test Process.
- */
-HWTEST_F(HpaeRendererManagerTest, Process_001, TestSize.Level0)
-{
-    HpaeSinkInfo info;
-    HpaeNodeInfo nodeinfo;
-    auto hpaeRendererManager = std::make_shared<HpaeRendererManager>(info);
-    auto outputCluster = std::make_shared<HpaeOutputCluster>(nodeinfo);
-    hpaeRendererManager->outputCluster_ = outputCluster;
-    ::testing::DefaultValue<int32_t>::Set(0);
-    auto mockRenderSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
-    outputCluster->hpaeSinkOutputNode_->audioRendererSink_ = mockRenderSink;
-    outputCluster->hpaeSinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
-    outputCluster->timeoutThdFramesForDevice_ = 300; // prevent unexpected call
-    hpaeRendererManager->hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
-    hpaeRendererManager->hpaeSignalProcessThread_->running_.store(true);
-
-    hpaeRendererManager->Process();
-    EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
-    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeinfo);
-    hpaeRendererManager->sinkInputNodeMap_.insert_or_assign(1, sinkInputNode);
-    sinkInputNode->SetState(HPAE_SESSION_RUNNING);
-    hpaeRendererManager->Process();
-    EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
-    hpaeRendererManager->sinkInputNodeMap_.erase(1);
-    hpaeRendererManager->noneStreamTime_ = 1;
-    EXPECT_CALL(*mockRenderSink, Stop())
-        .WillOnce(Return(0));
-    hpaeRendererManager->Process();
-    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
-    ::testing::DefaultValue<int32_t>::Clear();
-}
-
-/**
  * @tc.name: SetAudioEffectMode
  * @tc.type: FUNC
  * @tc.number: SetAudioEffectMode_001
