@@ -624,7 +624,8 @@ void AudioCoreService::UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration,
             [this] { return updateModemRouteFinished_; });
     }
     usleep(muteDuration);
-    audioVolumeManager_.SetVolumeForSwitchDevice(*desc, true);
+    audioPolicyManager_.UpdateVolumeForAllPipes();
+    audioVolumeManager_.SetVoiceCallVolumeOnDeviceSwitch(*desc, true);
 }
 
 void AudioCoreService::NotifyUnmuteVoiceCall()
@@ -2518,7 +2519,8 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
     audioRouterSelectStrategy_.UpdateCurrentOutputDevice(SYSTEM_UID, descs);
     AUDIO_DEBUG_LOG("currentActiveDevice %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
     bool enableSetVoiceCallVolume = !IsDeviceSwitching(reason);
-    audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front(), enableSetVoiceCallVolume);
+    audioPolicyManager_.UpdateVolumeForAllPipes();
+    audioVolumeManager_.SetVoiceCallVolumeOnDeviceSwitch(*descs.front(), enableSetVoiceCallVolume);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_ = descs;
@@ -2644,7 +2646,7 @@ int32_t AudioCoreService::HandleDeviceChangeForFetchOutputDevice(std::shared_ptr
         if (!IsSameDevice(desc, tmpOutputDeviceDesc)) {
             audioRouterSelectStrategy_.UpdateCurrentOutputDevice(uid, {desc});
             AudioDeviceDescriptor curOutputDevice = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
-            audioVolumeManager_.SetVolumeForSwitchDevice(curOutputDevice);
+            audioVolumeManager_.SetVoiceCallVolumeOnDeviceSwitch(curOutputDevice);
             audioActiveDevice_.UpdateActiveDeviceRoute(curOutputDevice.deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
                 pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), curOutputDevice.networkId_);
             OnPreferredOutputDeviceUpdated(audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid), reason);
@@ -3057,7 +3059,7 @@ void AudioCoreService::SetVoiceCallMuteForSwitchDevice()
 
     AUDIO_INFO_LOG("%{public}" PRId64" us for modem call update route", WAIT_MODEM_CALL_SET_VOLUME_TIME_US);
     usleep(WAIT_MODEM_CALL_SET_VOLUME_TIME_US);
-    // Unmute in SetVolumeForSwitchDevice after update route.
+    // Unmute in SetVoiceCallVolumeOnDeviceSwitch after update route.
 }
 
 void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,

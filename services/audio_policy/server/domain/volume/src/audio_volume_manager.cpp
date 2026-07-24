@@ -365,7 +365,7 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
     return audioPolicyManager_.GetSystemVolumeLevelNoMuteState(streamType, deviceDesc);
 }
 
-int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
+int32_t AudioVolumeManager::SetVoiceCallVolumeOnDeviceSwitch(AudioDeviceDescriptor deviceDescriptor,
     bool enableSetVoiceCallVolume, std::shared_ptr<AudioStreamDescriptor> targetStream)
 {
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
@@ -375,9 +375,7 @@ int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor devic
         cancelSafeNotificationThrd.detach();
     }
 
-    Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
-
-    audioPolicyManager_.UpdateVolumeForAllPipes();
+    Trace trace("AudioVolumeManager::SetVoiceCallVolumeOnDeviceSwitch:" + std::to_string(deviceDescriptor.deviceType_));
 
     // The volume of voice_call needs to be adjusted separately
     if (enableSetVoiceCallVolume && audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
