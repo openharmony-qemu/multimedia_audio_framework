@@ -115,6 +115,12 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag) override;
 
+    int32_t SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted,
+        const sptr<IRemoteObject> &callerObj) override;
+
+    int32_t SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted,
+        const sptr<IRemoteObject> &callerObj) override;
+
     int32_t SetAppRingMuted(int32_t appUid, bool muted) override;
 
     int32_t SetAdjustVolumeForZone(int32_t zoneId) override;
@@ -371,6 +377,10 @@ public:
     void RegisteredTrackerClientDied(int pid, int uid);
 
     void RegisteredStreamListenerClientDied(int pid, int uid);
+
+    void RegisterVoipMuteDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
+
+    void OnVoipMuteCallerDied(int32_t callerUid);
 
     int32_t ResumeStreamState();
 
@@ -1018,6 +1028,8 @@ private:
     std::mutex systemVolumeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
+    std::mutex voipMuteMutex_;
+    std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> voipMuteDeathRecipients_;
     std::mutex subscribeVolumeKey_;
 
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
@@ -1111,6 +1123,20 @@ public:
 private:
     AudioCommonEventSubscriber() = default;
     std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
+};
+
+class VoipMuteDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    explicit VoipMuteDeathRecipient(std::function<void()> callback) : callback_(std::move(callback)) {}
+    ~VoipMuteDeathRecipient() = default;
+    void OnRemoteDied(const wptr<IRemoteObject> &remote) override
+    {
+        if (callback_) {
+            callback_();
+        }
+    }
+private:
+    std::function<void()> callback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

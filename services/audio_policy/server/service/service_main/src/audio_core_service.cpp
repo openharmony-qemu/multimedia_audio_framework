@@ -1779,6 +1779,8 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         RemoveUnusedRecordPipe();
     }
     DeleteSessionId(sessionId);
+    audioVolumeManager_.ClearVoipMuteByStreamId(sessionId);
+
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             ReleaseCaptureInjector();

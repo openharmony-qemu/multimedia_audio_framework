@@ -407,7 +407,8 @@ void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
         it->second->systemAppVolume_ = totalSystemAppVolume;
         float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
-            it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
+            it->second->isDualMuted_ || it->second->isVoipRendererMuted_) ?
+            0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
@@ -440,7 +441,8 @@ void AudioVolume::SetStreamVolume(uint32_t sessionId, float volume)
         it->second->volume_ = volume;
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
         float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
-            it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
+            it->second->isDualMuted_ || it->second->isVoipRendererMuted_) ?
+            0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
@@ -463,7 +465,8 @@ void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor
         }
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
         float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
-            it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
+            it->second->isDualMuted_ || it->second->isVoipRendererMuted_) ?
+            0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
@@ -482,7 +485,8 @@ void AudioVolume::SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPow
         it->second->lowPowerFactor_ = lowPowerFactor;
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
         float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
-            it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
+            it->second->isDualMuted_ || it->second->isVoipRendererMuted_) ?
+            0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
@@ -537,7 +541,8 @@ void AudioVolume::SetNonInterruptMute(uint32_t sessionId, bool muteFlag)
         it->second->nonInterruptMute_ = muteFlag;
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
         float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
-            it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
+            it->second->isDualMuted_ || it->second->isVoipRendererMuted_) ?
+            0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
@@ -555,7 +560,8 @@ void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
         it->second->isMuted_ = isMuted;
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
         float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
-            it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
+            it->second->isDualMuted_ || it->second->isVoipRendererMuted_) ?
+            0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
@@ -588,7 +594,8 @@ void AudioVolume::SetStreamVolumeMuteForZone(uint32_t sessionId, bool isMuted)
     it->second->isMuted_ = isMuted;
     it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
     float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
-        it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
+        it->second->isDualMuted_ || it->second->isVoipRendererMuted_) ?
+        0.0f : it->second->volume_ * it->second->duckFactor_ *
         it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
     factorsLock.unlock();
     it->second->totalVolume_.store(newTotal, std::memory_order_release);
@@ -604,7 +611,8 @@ void AudioVolume::SetDualStreamVolumeMute(uint32_t sessionId, bool isDualMuted)
         it->second->isDualMuted_ = isDualMuted;
         it->second->appVolume_ = GetAppVolumeInternal(it->second->GetAppUid(), it->second->GetVolumeMode());
         float newTotal = (it->second->isMuted_ || it->second->isAppRingMuted_ || it->second->nonInterruptMute_ ||
-            it->second->isDualMuted_) ? 0.0f : it->second->volume_ * it->second->duckFactor_ *
+            it->second->isDualMuted_ || it->second->isVoipRendererMuted_) ?
+            0.0f : it->second->volume_ * it->second->duckFactor_ *
             it->second->lowPowerFactor_ * it->second->appVolume_ * GetSystemAppVolumeEffective(*it->second);
         factorsLock.unlock();
         it->second->totalVolume_.store(newTotal, std::memory_order_release);
@@ -658,10 +666,33 @@ void AudioVolume::SetAppVolumeMute(int32_t appUid, bool isMuted)
             stream->appVolume_ = VolumeUtils::IsPCVolumeEnable() ? totalAppVolume : (isMuted ? totalAppVolume :
                 (stream->GetVolumeMode() == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL ? 1.0 : totalAppVolume));
             float newTotal = (stream->isMuted_ || stream->isAppRingMuted_ || stream->nonInterruptMute_ ||
-                stream->isDualMuted_) ? 0.0f : stream->volume_ * stream->duckFactor_ *
+                stream->isDualMuted_ || stream->isVoipRendererMuted_) ? 0.0f : stream->volume_ * stream->duckFactor_ *
                 stream->lowPowerFactor_ * stream->appVolume_ * GetSystemAppVolumeEffective(*stream);
             factorsLock.unlock();
             stream->totalVolume_.store(newTotal, std::memory_order_release);
+        }
+    }
+}
+
+void AudioVolume::SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
+{
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}d, muted: %{public}d",
+        callerUid, appUid, static_cast<int32_t>(streamId), muted);
+
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    for (auto &streamVolume : streamVolume_) {
+        auto &stream = streamVolume.second;
+        if (stream->GetAppUid() == appUid && stream->GetSessionId() == static_cast<uint32_t>(streamId)) {
+            std::unique_lock<std::shared_mutex> factorsLock(stream->volumeFactorsMutex_);
+            stream->isVoipRendererMuted_ = muted;
+            float newTotal = (stream->isMuted_ || stream->isAppRingMuted_ || stream->nonInterruptMute_ ||
+                stream->isDualMuted_ || stream->isVoipRendererMuted_) ? 0.0f : stream->volume_ *
+                stream->duckFactor_ * stream->lowPowerFactor_ * stream->appVolume_ *
+                GetSystemAppVolumeEffective(*stream);
+            factorsLock.unlock();
+            stream->totalVolume_.store(newTotal, std::memory_order_release);
+            AUDIO_INFO_LOG("voip stream sessionId:%{public}u totalVolume:%{public}f",
+                stream->GetSessionId(), stream->GetTotalVolume());
         }
     }
 }
@@ -778,7 +809,7 @@ void AudioVolume::SetSystemAppVolume(SystemAppVolume &systemAppVolume)
             std::unique_lock<std::shared_mutex> factorsLock(stream->volumeFactorsMutex_);
             stream->systemAppVolume_ = systemAppVolume.totalVolume_;
             float newTotal = (stream->isMuted_ || stream->isAppRingMuted_ || stream->nonInterruptMute_ ||
-                stream->isDualMuted_) ? 0.0f : stream->volume_ * stream->duckFactor_ *
+                stream->isDualMuted_ || stream->isVoipRendererMuted_) ? 0.0f : stream->volume_ * stream->duckFactor_ *
                 stream->lowPowerFactor_ * stream->appVolume_ * GetSystemAppVolumeEffective(*stream);
             factorsLock.unlock();
             stream->totalVolume_.store(newTotal, std::memory_order_release);
@@ -810,7 +841,7 @@ void AudioVolume::SetSystemAppVolumeMuted(int32_t appUid, bool isMuted)
             std::unique_lock<std::shared_mutex> factorsLock(stream->volumeFactorsMutex_);
             stream->systemAppVolume_ = totalSystemAppVolume;
             float newTotal = (stream->isMuted_ || stream->isAppRingMuted_ || stream->nonInterruptMute_ ||
-                stream->isDualMuted_) ? 0.0f : stream->volume_ * stream->duckFactor_ *
+                stream->isDualMuted_ || stream->isVoipRendererMuted_) ? 0.0f : stream->volume_ * stream->duckFactor_ *
                 stream->lowPowerFactor_ * stream->appVolume_ * GetSystemAppVolumeEffective(*stream);
             factorsLock.unlock();
             stream->totalVolume_.store(newTotal, std::memory_order_release);
@@ -1121,7 +1152,8 @@ void AudioVolume::HandleAppIndividualVolumeSettingChanged(bool appIndividualVolu
         auto &stream = streamVolume.second;
         std::unique_lock<std::shared_mutex> factorsLock(stream->volumeFactorsMutex_);
         float newTotal = (stream->isMuted_ || stream->isAppRingMuted_ || stream->nonInterruptMute_ ||
-            stream->isDualMuted_) ? 0.0f : stream->volume_ * stream->duckFactor_ * stream->lowPowerFactor_ *
+            stream->isDualMuted_ || stream->isVoipRendererMuted_) ?
+            0.0f : stream->volume_ * stream->duckFactor_ * stream->lowPowerFactor_ *
             stream->appVolume_ * GetSystemAppVolumeEffective(*stream);
         factorsLock.unlock();
         stream->totalVolume_.store(newTotal, std::memory_order_release);

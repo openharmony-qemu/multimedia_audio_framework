@@ -945,6 +945,24 @@ int32_t AudioVolumeClientManager::SetAppVolumeMuted(int32_t appUid, bool muted, 
     return AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
 
+int32_t AudioVolumeClientManager::SetVoipRendererMuteForUid(int32_t appUid, const int64_t streamId, bool muted)
+{
+    AUDIO_INFO_LOG("appUid[%{public}d], streamId[%{public}d], muted[%{public}d]",
+        appUid, static_cast<int32_t>(streamId), muted);
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioPolicyManager::GetInstance().SetVoipRendererMute(appUid, streamId, muted);
+}
+
+int32_t AudioVolumeClientManager::SetVoipCapturerMuteForUid(int32_t appUid, const int64_t streamId, bool muted)
+{
+    AUDIO_INFO_LOG("appUid[%{public}d], streamId[%{public}d], muted[%{public}d]",
+        appUid, static_cast<int32_t>(streamId), muted);
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioPolicyManager::GetInstance().SetVoipCapturerMute(appUid, streamId, muted);
+}
+
 int32_t AudioVolumeClientManager::SetAppRingMuted(int32_t appUid, bool muted)
 {
     bool ret = PermissionUtil::VerifySelfPermission();
