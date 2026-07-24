@@ -205,6 +205,166 @@ HWTEST(AudioServiceCommonUnitTest, CheckReasonable_001, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test ConfigSampleRate API
+* @tc.type  : FUNC
+* @tc.number: ConfigSampleRate_001
+* @tc.desc  : Test ConfigSampleRate boundary (rate > MAX and rate == MAX).
+*/
+HWTEST(AudioServiceCommonUnitTest, ConfigSampleRate_001, TestSize.Level1)
+{
+    auto model = std::make_unique<LinearPosTimeModel>();
+    EXPECT_EQ(false, model->ConfigSampleRate(384001)); // sampleRate_ > MAX_SUPPORT_SAMPLE_RETE
+    EXPECT_EQ(true, model->ConfigSampleRate(384000));  // boundary: exactly MAX, isConfiged still false
+}
+
+/**
+* @tc.name  : Test IsReasonable API
+* @tc.type  : FUNC
+* @tc.number: IsReasonable_001
+* @tc.desc  : Test IsReasonable all if/else branches.
+*/
+HWTEST(AudioServiceCommonUnitTest, IsReasonable_001, TestSize.Level1)
+{
+    auto model = std::make_unique<LinearPosTimeModel>();
+    ASSERT_TRUE(model->ConfigSampleRate(44100));
+    const uint64_t stampFrame = 1000;
+    const int64_t stampNanoTime = 1000000000;
+    model->ResetFrameStamp(stampFrame, stampNanoTime);
+
+    EXPECT_EQ(true, model->IsReasonable(stampFrame, stampNanoTime)); // frame==stamp && nano==stamp -> true
+    EXPECT_EQ(true, model->IsReasonable(stampFrame, stampNanoTime + 5000000)); // frame==stamp, nano!=stamp, reasonable -> true
+    EXPECT_EQ(true, model->IsReasonable(stampFrame - 100, stampNanoTime)); // frame<stamp (else), reasonable -> true
+    EXPECT_EQ(false, model->IsReasonable(stampFrame + 100, stampNanoTime + 100000000)); // frame>stamp, nanoTime>upper -> false
+    EXPECT_EQ(false, model->IsReasonable(stampFrame - 100, 0)); // frame<stamp, nanoTime<lower -> false
+}
+
+/**
+* @tc.name  : Test CheckReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckReasonable_002
+* @tc.desc  : Test CheckReasonable size < MAX_STATISTICS_COUNT -> CHECK_FAILED.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckReasonable_002, TestSize.Level1)
+{
+    auto model = std::make_unique<LinearPosTimeModel>();
+    ASSERT_TRUE(model->ConfigSampleRate(44100));
+    model->ResetFrameStamp(0, 0);
+    EXPECT_EQ(CHECK_FAILED, model->CheckReasonable(10, 100)); // posTimeVec_ empty -> size 1 < 5
+    EXPECT_EQ(CHECK_FAILED, model->CheckReasonable(11, 200)); // size 2 < 5
+}
+
+/**
+* @tc.name  : Test CheckPosTimeReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckPosTimeReasonable_004
+* @tc.desc  : Test CheckPosTimeReasonable unreasonable (abs(deltaTime) >= bound) -> false.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonable_004, TestSize.Level1)
+{
+    auto model = std::make_unique<LinearPosTimeModel>();
+    ASSERT_TRUE(model->ConfigSampleRate(44100));
+    std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
+    std::pair<uint64_t, int64_t> next = std::make_pair(11, 100000000);
+    EXPECT_EQ(false, model->CheckPosTimeReasonable(pre, next));
+}
+
+/**
+* @tc.name  : Test UpdateFrameStamp API
+* @tc.type  : FUNC
+* @tc.number: UpdateFrameStamp_001
+* @tc.desc  : Test UpdateFrameStamp unreasonable -> CheckReasonable CHECK_FAILED.
+*/
+HWTEST(AudioServiceCommonUnitTest, UpdateFrameStamp_001, TestSize.Level1)
+{
+    auto model = std::make_unique<LinearPosTimeModel>();
+    ASSERT_TRUE(model->ConfigSampleRate(44100));
+    model->ResetFrameStamp(1000, 1000000000);
+    EXPECT_EQ(CHECK_FAILED, model->UpdateFrameStamp(2000, 0)); // unreasonable, posTimeVec_ size 1 < 5
+}
+
+/**
+* @tc.name  : Test UpdateFrameStamp API
+* @tc.type  : FUNC
+* @tc.number: UpdateFrameStamp_002
+* @tc.desc  : Test UpdateFrameStamp reasonable -> CHECK_SUCCESS.
+*/
+HWTEST(AudioServiceCommonUnitTest, UpdateFrameStamp_002, TestSize.Level1)
+{
+    auto model = std::make_unique<LinearPosTimeModel>();
+    ASSERT_TRUE(model->ConfigSampleRate(44100));
+    model->ResetFrameStamp(1000, 1000000000);
+    EXPECT_EQ(CHECK_SUCCESS, model->UpdateFrameStamp(1100, 1000000000)); // reasonable -> CHECK_SUCCESS
+}
+
+/**
+* @tc.name  : Test UpdateFrameStamp API
+* @tc.type  : FUNC
+* @tc.number: UpdateFrameStamp_003
+* @tc.desc  : Test UpdateFrameStamp unreasonable but CheckReasonable -> NEED_MODIFY.
+*/
+HWTEST(AudioServiceCommonUnitTest, UpdateFrameStamp_003, TestSize.Level1)
+{
+    auto model = std::make_unique<LinearPosTimeModel>();
+    ASSERT_TRUE(model->ConfigSampleRate(44100));
+    model->ResetFrameStamp(1000, 1000000000);
+    for (int i = 0; i < 4; ++i) {
+        model->posTimeVec_.push_back(std::make_pair(static_cast<uint64_t>(10 + i * 10), static_cast<int64_t>(0)));
+    }
+    EXPECT_EQ(NEED_MODIFY, model->UpdateFrameStamp(50, 0)); // unreasonable vs stamp, 5 reasonable samples
+}
+
+/**
+* @tc.name  : Test GetFrameStamp API
+* @tc.type  : FUNC
+* @tc.number: GetFrameStamp_001
+* @tc.desc  : Test GetFrameStamp not configed -> false, configed -> true.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetFrameStamp_001, TestSize.Level1)
+{
+    auto model = std::make_unique<LinearPosTimeModel>();
+    uint64_t frame = 0;
+    int64_t nanoTime = 0;
+    EXPECT_EQ(false, model->GetFrameStamp(frame, nanoTime)); // not configed
+    ASSERT_TRUE(model->ConfigSampleRate(44100));
+    model->ResetFrameStamp(123, 456);
+    EXPECT_EQ(true, model->GetFrameStamp(frame, nanoTime)); // configed
+    EXPECT_EQ(123ULL, frame);
+    EXPECT_EQ(456, nanoTime);
+}
+
+/**
+* @tc.name  : Test GetTimeOfPos API
+* @tc.type  : FUNC
+* @tc.number: GetTimeOfPos_003
+* @tc.desc  : Test GetTimeOfPos posInFrame >= stampFrame_ and diff >= sampleRate_ (too large warning).
+*/
+HWTEST(AudioServiceCommonUnitTest, GetTimeOfPos_003, TestSize.Level1)
+{
+    auto model = std::make_unique<LinearPosTimeModel>();
+    ASSERT_TRUE(model->ConfigSampleRate(44100));
+    model->ResetFrameStamp(1000, 1000000000);
+    uint64_t posInFrame = 1000 + 44100 + 10; // diff > sampleRate_ -> "too large" warning path
+    int64_t ret = model->GetTimeOfPos(posInFrame);
+    EXPECT_NE(-1, ret);
+}
+
+/**
+* @tc.name  : Test GetTimeOfPos API
+* @tc.type  : FUNC
+* @tc.number: GetTimeOfPos_004
+* @tc.desc  : Test GetTimeOfPos posInFrame < stampFrame_ and diff >= sampleRate_ (too small warning).
+*/
+HWTEST(AudioServiceCommonUnitTest, GetTimeOfPos_004, TestSize.Level1)
+{
+    auto model = std::make_unique<LinearPosTimeModel>();
+    ASSERT_TRUE(model->ConfigSampleRate(44100));
+    model->ResetFrameStamp(100000, 1000000000);
+    uint64_t posInFrame = 100000 - 44100 - 10; // diff > sampleRate_ -> "too small" warning path
+    int64_t ret = model->GetTimeOfPos(posInFrame);
+    EXPECT_NE(-1, ret);
+}
+
+/**
 * @tc.name  : Test OHAudioBuffer API
 * @tc.type  : FUNC
 * @tc.number: OHAudioBuffer_001
