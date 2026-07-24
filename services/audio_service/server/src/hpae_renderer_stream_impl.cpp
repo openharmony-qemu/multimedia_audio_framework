@@ -638,6 +638,13 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
             lastHdiFramePosition_ = newFramePosition > lastFramePosition_ ? lastHdiFramePosition_ + duration :
                 (lastHdiFramePosition_ > duration ? lastHdiFramePosition_ - duration : 0);
         }
+
+        // from remote offload to other class, consume rewind cache of remote offload first
+        // when calculating position for other class, rewindFramePosition_ needs to be added
+        if (rewindFramePosition_ > 0) {
+            lastHdiFramePosition_ += rewindFramePosition_;
+            rewindFramePosition_ = 0;
+        }
         // Device type switch, replace lastFramePosition_
         lastFramePosition_ = callBackStreamInfo.framePosition;
         needLog = true;
@@ -648,8 +655,8 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
     if (callBackStreamInfo.hdiFramePosition > 0) {
         lastHdiFramePosition_ +=
             // from time (us) to sample
-            callBackStreamInfo.hdiFramePosition * usedSampleRate_ / AUDIO_US_PER_S +
-            callBackStreamInfo.rewindTime * usedSampleRate_ / AUDIO_US_PER_S;
+            callBackStreamInfo.hdiFramePosition * usedSampleRate_ / AUDIO_US_PER_S;
+        rewindFramePosition_ = callBackStreamInfo.rewindTime * usedSampleRate_ / AUDIO_US_PER_S;
         needLog = true;
     }
     if (needLog) {

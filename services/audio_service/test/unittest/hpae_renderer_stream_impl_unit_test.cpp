@@ -1036,8 +1036,8 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030e, TestSize.Level1)
  * @tc.name  : Test OnDeviceClassChange hdiFramePosition accumulation.
  * @tc.type  : FUNC
  * @tc.number: HpaeRenderer_030f
- * @tc.desc  : Verify lastHdiFramePosition_ accumulates hdiFramePosition and rewindTime converted from
- *             microseconds to samples.
+ * @tc.desc  : Verify hdiFramePosition is accumulated into lastHdiFramePosition_ and
+ *             rewindTime is stored in rewindFramePosition_ converted from microseconds to samples.
  */
 HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030f, TestSize.Level1)
 {
@@ -1056,9 +1056,10 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030f, TestSize.Level1)
         .rewindTime = 500000         // 0.5 second in us
     };
     unit->OnDeviceClassChange(info);
-    uint64_t expectedHdi = static_cast<uint64_t>(1000000) * sampleRate / AUDIO_US_PER_S +
-        static_cast<uint64_t>(500000) * sampleRate / AUDIO_US_PER_S;
+    uint64_t expectedHdi = static_cast<uint64_t>(1000000) * sampleRate / AUDIO_US_PER_S;
+    uint64_t expectedRewind = static_cast<uint64_t>(500000) * sampleRate / AUDIO_US_PER_S;
     EXPECT_EQ(unit->lastHdiFramePosition_, expectedHdi);
+    EXPECT_EQ(unit->rewindFramePosition_, expectedRewind);
     EXPECT_EQ(unit->lastFramePosition_, 0);
 }
 
@@ -1089,6 +1090,47 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030g, TestSize.Level1)
     uint64_t expectedHdi = 2000 + static_cast<uint64_t>(500000) * sampleRate / AUDIO_US_PER_S;
     EXPECT_EQ(unit->lastHdiFramePosition_, expectedHdi);
     EXPECT_EQ(unit->lastFramePosition_, 5000);
+}
+
+/**
+ * @tc.name  : Test OnDeviceClassChange remote_offload to normal with rewindFramePosition.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_030h
+ * @tc.desc  : Verify rewindFramePosition_ is consumed when switching from remote_offload to non-offload.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030h, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+
+    unit->deviceClass_ = "remote_offload";
+    unit->lastFramePosition_ = 2000;
+    unit->lastHdiFramePosition_ = 5000;
+    uint32_t sampleRate = unit->usedSampleRate_;
+
+    AudioCallBackStreamInfo info1 = {
+        .deviceClass = "remote_offload",
+        .framePosition = 2000,
+        .hdiFramePosition = 1000000,
+        .rewindTime = 500000
+    };
+    unit->OnDeviceClassChange(info1);
+    uint64_t rewindFrames = static_cast<uint64_t>(500000) * sampleRate / AUDIO_US_PER_S;
+    uint64_t expectedHdiAfterFirst = 5000 + static_cast<uint64_t>(1000000) * sampleRate / AUDIO_US_PER_S;
+    EXPECT_EQ(unit->lastHdiFramePosition_, expectedHdiAfterFirst);
+    EXPECT_EQ(unit->rewindFramePosition_, rewindFrames);
+
+    AudioCallBackStreamInfo info2 = {
+        .deviceClass = "offload",
+        .framePosition = 8000,
+        .hdiFramePosition = 0,
+        .rewindTime = 0
+    };
+    unit->OnDeviceClassChange(info2);
+    uint64_t expectedHdiAfterSecond = expectedHdiAfterFirst + rewindFrames;
+    EXPECT_EQ(unit->lastHdiFramePosition_, expectedHdiAfterSecond);
+    EXPECT_EQ(unit->rewindFramePosition_, 0);
+    EXPECT_EQ(unit->lastFramePosition_, 8000);
 }
 
 /**
