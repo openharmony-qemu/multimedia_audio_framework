@@ -676,8 +676,8 @@ void AudioVolume::SetAppVolumeMute(int32_t appUid, bool isMuted)
 
 void AudioVolume::SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
 {
-    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
-        callerUid, appUid, streamId, muted);
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}d, muted: %{public}d",
+        callerUid, appUid, static_cast<int32_t>(streamId), muted);
 
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     for (auto &streamVolume : streamVolume_) {

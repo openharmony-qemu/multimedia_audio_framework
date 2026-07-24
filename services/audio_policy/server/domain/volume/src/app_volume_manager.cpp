@@ -107,15 +107,15 @@ int32_t AppVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMu
 
 int32_t AppVolumeManager::SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
 {
-    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
-        callerUid, appUid, streamId, muted);
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}d, muted: %{public}d",
+        callerUid, appUid, static_cast<int32_t>(streamId), muted);
     return audioPolicyManager_.SetVoipRendererMute(callerUid, appUid, streamId, muted);
 }
 
 int32_t AppVolumeManager::SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
 {
-    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}ld, muted: %{public}d",
-        callerUid, appUid, streamId, muted);
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}d, muted: %{public}d",
+        callerUid, appUid, static_cast<int32_t>(streamId), muted);
     return audioPolicyManager_.SetVoipCapturerMute(callerUid, appUid, streamId, muted);
 }
 
@@ -127,7 +127,7 @@ int32_t AppVolumeManager::ClearVoipMuteByCallerUid(int32_t callerUid)
 
 int32_t AppVolumeManager::ClearVoipMuteByStreamId(int64_t streamId)
 {
-    AUDIO_INFO_LOG("streamId: %{public}ld", streamId);
+    AUDIO_INFO_LOG("streamId: %{public}d", static_cast<int32_t>(streamId));
     return audioPolicyManager_.ClearVoipMuteByStreamId(streamId);
 }
 

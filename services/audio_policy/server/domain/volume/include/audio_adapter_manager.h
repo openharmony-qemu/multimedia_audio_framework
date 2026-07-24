@@ -450,6 +450,8 @@ private:
     void SetAppAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, int32_t appUid, float volumeDb);
     int32_t SetSystemAppVolumeDb(int32_t appUid, DeviceType deviceType);
     void SetSystemAppAudioVolume(int32_t appUid, float volumeDb);
+    int32_t ClearVoipMuteByCallerUidInner(std::unordered_map<int32_t,
+        std::unordered_map<int64_t, std::unordered_set<int32_t>>> muteMap, int32_t uid, bool isRenderer);
     void SendOffloadVolume();
     bool GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType,
         int32_t zoneId = 0);

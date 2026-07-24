@@ -478,7 +478,7 @@ int32_t AudioVolumeManager::ClearVoipMuteByCallerUid(int32_t callerUid)
     return appVolumeManager_.ClearVoipMuteByCallerUid(callerUid);
 }
 
-int32_t AudioVolumeManager::ClearVoipMuteByStreamId(int64_t streamId);
+int32_t AudioVolumeManager::ClearVoipMuteByStreamId(int64_t streamId)
 {
     return appVolumeManager_.ClearVoipMuteByStreamId(streamId);
 }
