@@ -268,6 +268,12 @@ public:
         (void)targetStreamId;
         RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, SOURCE_TYPE_VOICE_COMMUNICATION);
     }
+
+    virtual void SetCaptureInjectorMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+    {
+        (void)targetStreamId;
+        (void)isMute;
+    }
     virtual void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) = 0;
     /**
      * @brief Check is channelLayout support for multichannel render manager

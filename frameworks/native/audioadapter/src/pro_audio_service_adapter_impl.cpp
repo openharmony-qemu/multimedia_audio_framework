@@ -602,6 +602,12 @@ void ProAudioServiceAdapterImpl::RemoveCaptureInjectorByTargetStream(const uint3
         targetStreamId);
 }
 
+void ProAudioServiceAdapterImpl::SetCaptureInjectorMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().SetCaptureInjectorMuteByTargetStream(targetStreamId, isMute);
+}
+
 void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex,
     const AudioModuleInfo &audioPortInfo)
 {

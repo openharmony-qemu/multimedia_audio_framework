@@ -3334,16 +3334,6 @@ bool RendererInServer::IsMovieStream()
     processConfig_.rendererInfo.originalFlag == AUDIO_FLAG_PCM_OFFLOAD;
 }
 
-int32_t RendererInServer::SetTarget(RenderTarget target, int32_t &ret)
-{
-    return SetTarget(target, INVALID_UID, INVALID_STREAM_ID, ret);
-}
-
-int32_t RendererInServer::SetTarget(int32_t target, int32_t targetUid, uint32_t targetStreamId, int32_t &ret)
-{
-    return SetTarget(static_cast<RenderTarget>(target), targetUid, targetStreamId, ret);
-}
-
 int32_t RendererInServer::SetTarget(RenderTarget target, int32_t targetUid, uint32_t targetStreamId, int32_t &ret)
 {
     ret = ERROR;

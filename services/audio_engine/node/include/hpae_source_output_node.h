@@ -62,7 +62,7 @@ private:
     void ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer);
     HpaePcmBuffer *GetAndValidateOutput();
     HpaePcmBuffer *MixInputs(const std::vector<HpaePcmBuffer *> &inputs);
-    void ProcessAudioData(HpaePcmBuffer *outputData);
+    void ProcessAudioData(HpaePcmBuffer *outputData, bool isMute);
     void WriteDataAndUpdateFrames();
 private:
     InputPort<HpaePcmBuffer *> inputStream_;
@@ -86,6 +86,7 @@ private:
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer mixedOutput_;
     HpaePcmBuffer tmpOutput_;
+    HpaePcmBuffer silenceData_;
     std::unique_ptr<AudioLimiter> limiter_ = nullptr;
 };
 
