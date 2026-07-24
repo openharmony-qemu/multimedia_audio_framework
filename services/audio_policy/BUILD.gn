@@ -414,6 +414,7 @@ audio_ohos_library("audio_policy_service") {
     "ability_base:zuri",
     "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:ability_context_native",
+    "ability_runtime:ability_manager",
     "ability_runtime:app_context",
     "ability_runtime:app_manager",
     "ability_runtime:dataobs_manager",

@@ -433,6 +433,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
         case APP_MGR_SERVICE_ID:
             RegisterAppStateListener();
+            RegisterAppStateObserver();
             break;
 #ifdef USB_ENABLE
         case USB_SYSTEM_ABILITY_ID:
@@ -4293,6 +4294,25 @@ void AudioPolicyServer::RegisterAppStateListener()
 
     if (appManager_.RegisterAppStateCallback(appStateListener_) != AppExecFwk::AppMgrResultCode::RESULT_OK) {
         AUDIO_ERR_LOG("register app state callback failed");
+    }
+}
+
+void AudioPolicyServer::RegisterAppStateObserver()
+{
+    if (appStateObserver_ != nullptr) {
+        AUDIO_INFO_LOG("appStateObserver has been registered");
+        return;
+    }
+    appStateObserver_ = sptr<AppStateObserver>(new (std::nothrow) AppStateObserver());
+    if (appStateObserver_ == nullptr) {
+        AUDIO_ERR_LOG("get appStateObserver failed");
+        return;
+    }
+    int32_t result = appManager_.RegisterApplicationStateObserver(appStateObserver_);
+    if (result != 0) {
+        AUDIO_ERR_LOG("RegisterApplicationStateObserver failed result = %{public}d", result);
+        appStateObserver_ = nullptr;
+        return;
     }
 }
 
