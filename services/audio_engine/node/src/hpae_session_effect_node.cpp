@@ -792,7 +792,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessInterceptingRaw(HpaePcmBuffer *inpu
     CHECK_AND_RETURN_RET(inputBuf != nullptr && effectInstance_ != nullptr, &silenceData_);
     size_t channels = audioConfig_.inputCfg.channels;
     size_t byteLen = 0;
-    CHECK_AND_RETURN_RET(!GetPcmByteLen(inputBuf->GetFrameLen(), channels, byteLen), &silenceData_);
+    CHECK_AND_RETURN_RET(GetPcmByteLen(inputBuf->GetFrameLen(), channels, byteLen), &silenceData_);
 
     size_t sampleCount = static_cast<size_t>(inputBuf->GetFrameLen()) * channels;
     CHECK_AND_RETURN_RET(interceptingRawData_.size() >= sampleCount, &silenceData_);

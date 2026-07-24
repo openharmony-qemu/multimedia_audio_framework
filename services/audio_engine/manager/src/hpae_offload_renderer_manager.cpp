@@ -1257,10 +1257,6 @@ int32_t HpaeOffloadRendererManager::InsertSessionEffectNode(const std::string &e
         sinkOutputNode_->SetPolicyState(0);
     }
 
-    // Flush HDI/DSP cache and internal buffer to prevent stale bypass data
-    // mixing with SE output during warmup, which causes pop noise.
-    StopOffloadSinkIfRunning();
-
     AUDIO_INFO_LOG("InsertSessionEffectNode: SE node inserted for session %{public}u",
         sessionEffectSessionId_);
     return 0;
