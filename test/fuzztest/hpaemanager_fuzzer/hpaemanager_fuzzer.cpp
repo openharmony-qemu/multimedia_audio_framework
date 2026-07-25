@@ -27,6 +27,7 @@
 #include "hpae_capturer_manager.h"
 #include "hpae_renderer_manager.h"
 #include "hpae_node_common.h"
+#include "audio_module_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -52,10 +53,15 @@ using namespace OHOS::AudioStandard::HPAE;
 // Thread safety rules enforced below:
 //   - NEVER call Handle*/Process/Enqueue*/Dequeue*/Invoke*/InvokeSync/
 //     SendRequest/OnNodeStatusUpdate/OnRequestLatency/OnNotifyQueue/
-//     IsRunning/IsMsgProcessing/GetMsgCount from the fuzz main thread.
+//     IsMsgProcessing from the fuzz main thread — these touch the lock-free
+//     queue / unsynchronized maps and race the worker.
+//   - IsRunning / GetMsgCount are exceptions: PURE ATOMIC reads (no queue/map
+//     access), safe from the main thread. Contrast IsMsgProcessing, which reads
+//     the lock-free queue and must NOT be called here.
 //   - Session Effect: only Post* (async) variants, never the sync trio.
-//   - -fno-access-control is used only for the cleanup guard body, never to
-//     reach into worker-only methods.
+//   - -fno-access-control reaches private members for (a) the cleanup guard
+//     body and (b) OnCallbackOpenOrReloadFailed (non-worker-only: synchronous
+//     weak_ptr read + no-op stub). Never used to reach worker-only methods.
 // ---------------------------------------------------------------------------
 
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
@@ -234,9 +240,11 @@ void WaitForCapturerInit(shared_ptr<HpaeCapturerManager> &mgr)
     this_thread::sleep_for(chrono::milliseconds(INIT_SETTLE_SLEEP_MS));
 }
 
-// Construct + Init a renderer sub-object. Worker is bounded to the returned
-// shared_ptr's lifetime — when it goes out of scope the destructor calls
-// DeInit -> DeactivateThread -> join, cleanly stopping the worker.
+// Construct + Init a renderer sub-object. Each B-class test case calls
+// mgr->DeInit() explicitly at its end to stop the worker at a deterministic
+// point (the primary fix for the teardown UAF). DeInit is idempotent
+// (isInit_ guard), so the subsequent shared_ptr destructor's DeInit is a
+// no-op fallback — safe double-call.
 shared_ptr<HpaeRendererManager> MakeFuzzRendererManager(FuzzedDataProvider &fdp)
 {
     HpaeSinkInfo sinkInfo = MakeFuzzSinkInfo(fdp);
@@ -303,6 +311,44 @@ public:
     ~HpaeFuzzCleanupGuard() { AtExitCleanup(); }
 };
 
+// Sink/session fixtures for C-tier lever tests (see SetClientVolumeWithSession
+// and later). Open ONE file_io sink + ONE play session on the singleton so that
+// rendererManagerMap_ / rendererIdSinkNameMap_ are non-empty, unlocking the deep
+// "session found" branches the empty-singleton C-class tests can never reach.
+// file_io writes to a file (no HDI), safe in fuzz. OpenAudioPort + CreateStream
+// are SendRequest on the single HpaeManager worker, so FIFO orders them before
+// any lever test's request -> the session is registered before later queries.
+// The sink worker spawned here is DeactivateThread'd by AtExitCleanup (iterates
+// rendererManagerMap_), so no new cleanup path is needed.
+constexpr const char *FUZZ_SINK_NAME = "file_io";
+constexpr uint32_t FUZZ_PLAY_SESSION_ID = 0x7B000000;
+
+static void OpenFuzzSinkAndSession(const std::shared_ptr<HpaeManager> &mgr)
+{
+    AudioModuleInfo moduleInfo {};
+    moduleInfo.name = FUZZ_SINK_NAME;
+    moduleInfo.className = FUZZ_SINK_NAME;     // -> deviceClass of the sink
+    moduleInfo.adapterName = FUZZ_SINK_NAME;
+    moduleInfo.lib = "";                        // not a source lib -> sink path
+    moduleInfo.networkId = "LocalDevice";
+    moduleInfo.format = "s16le";                // in g_formatFromParserStrToEnum
+    moduleInfo.channels = "2";
+    moduleInfo.rate = "48000";
+    moduleInfo.bufferSize = "3840";             // frameLen = 3840/(2ch*2B) = 960
+    mgr->OpenAudioPort(moduleInfo);
+
+    HpaeStreamInfo streamInfo {};
+    streamInfo.sessionId = FUZZ_PLAY_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_S16LE;
+    streamInfo.channels = STEREO;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.deviceName = FUZZ_SINK_NAME;
+    mgr->CreateStream(streamInfo);
+}
+
 // Reuse ONE HpaeManager for the whole fuzz run. Per-iteration Init/DeInit
 // triggers a teardown join deadlock (~HpaeManager -> DeInit -> worker join
 // while the worker is parked in Run()->condition_.wait).
@@ -318,6 +364,10 @@ shared_ptr<HpaeManager> GetFuzzHpaeManager()
     // a null weak_ptr. The stub is process-lifetime static so the weak_ptr stays valid.
     static const auto serviceCb = make_shared<FuzzHpaeServiceCallback>();
     [[maybe_unused]] static const bool registered = (manager->RegisterSerivceCallback(serviceCb), true);
+    // Open one sink + session ONCE (see OpenFuzzSinkAndSession). Runs before
+    // cleanupGuard is constructed so the sink worker exists by the time
+    // AtExitCleanup iterates rendererManagerMap_.
+    [[maybe_unused]] static const bool sinkReady = (OpenFuzzSinkAndSession(manager), true);
     // Constructed after `manager`: by reverse order it destructs first, stopping
     // workers before the manager's own destruction. See HpaeFuzzCleanupGuard.
     static const HpaeFuzzCleanupGuard cleanupGuard;
@@ -961,6 +1011,176 @@ void UpdateSpatializationStateStructFuzzTest(FuzzedDataProvider &fdp)
     }
 }
 
+// A-tier additions (coverage): HpaeManager entry points the fuzzer never
+// reached. Each covers the method-body entry + early-return / warning branch.
+// The deep "session found" branches need a real sink+stream (lever plan, TBD).
+// All are SendRequest-queue or pure-read on the main thread — same pattern as
+// the C-class tests above. OnCallbackOpenOrReloadFailed is private;
+// -fno-access-control reaches it (not worker-only — reads a weak_ptr only).
+
+void IsRunningFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    (void)hpaeManager->IsRunning();
+}
+
+void GetMsgCountFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    (void)hpaeManager->GetMsgCount();
+}
+
+void OnCallbackOpenOrReloadFailedFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    hpaeManager->OnCallbackOpenOrReloadFailed(fdp.ConsumeIntegral<uint8_t>() != 0);
+}
+
+void DestroyStreamFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    // movingIds_ empty -> SetMovingStreamState returns false -> PLAY/RECORD
+    // erase body runs on empty maps (no-op). Covers the lambda main path.
+    HpaeStreamClassType streamType = static_cast<HpaeStreamClassType>(
+        fdp.ConsumeIntegral<uint8_t>() % ENUM_HPAESTREAMCLASSTYPE_COUNT);
+    uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
+    (void)hpaeManager->DestroyStream(streamType, sessionId);
+}
+
+void SetClientVolumeFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    (void)hpaeManager->SetClientVolume(fdp.ConsumeIntegral<uint32_t>(),
+        fdp.ConsumeFloatingPoint<float>());
+}
+
+void SetLoudnessGainFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    (void)hpaeManager->SetLoudnessGain(fdp.ConsumeIntegral<uint32_t>(),
+        fdp.ConsumeFloatingPoint<float>());
+}
+
+void SetAudioEffectModeFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    (void)hpaeManager->SetAudioEffectMode(fdp.ConsumeIntegral<uint32_t>(),
+        fdp.ConsumeIntegral<int32_t>());
+}
+
+void RegisterWriteCallbackFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    std::weak_ptr<IStreamCallback> callback;
+    (void)hpaeManager->RegisterWriteCallback(fdp.ConsumeIntegral<uint32_t>(), callback);
+}
+
+// C-tier lever test: uses the fixture session (FUZZ_PLAY_SESSION_ID) opened in
+// GetFuzzHpaeManager to reach SetClientVolume's "session found" success branch
+// (rendererManagerMap_[...]->SetClientVolume). The empty-singleton version above
+// only hits the warning branch. First lever test — validates the sink/session
+// fixture; more lever tests follow once this mechanism is reviewed.
+void SetClientVolumeWithSessionFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    (void)hpaeManager->SetClientVolume(FUZZ_PLAY_SESSION_ID, fdp.ConsumeFloatingPoint<float>());
+}
+
+// The remaining lever tests share the fixture session and reach each method's
+// "session found" / deep branch. Same pattern as SetClientVolumeWithSession —
+// FIFO guarantees the session is registered before these run.
+
+void SetLoudnessGainWithSessionFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    (void)hpaeManager->SetLoudnessGain(FUZZ_PLAY_SESSION_ID, fdp.ConsumeFloatingPoint<float>());
+}
+
+void SetAudioEffectModeWithSessionFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    (void)hpaeManager->SetAudioEffectMode(FUZZ_PLAY_SESSION_ID, fdp.ConsumeIntegral<int32_t>());
+}
+
+void RegisterWriteCallbackWithSessionFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    std::weak_ptr<IStreamCallback> callback;
+    (void)hpaeManager->RegisterWriteCallback(FUZZ_PLAY_SESSION_ID, callback);
+}
+
+void RegisterStatusCallbackPlayFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    // PLAY + existing session -> rendererIdSinkNameMap_ found -> success branch
+    std::weak_ptr<IStreamStatusCallback> callback;
+    (void)hpaeManager->RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY,
+        FUZZ_PLAY_SESSION_ID, callback);
+}
+
+void SetDefaultSinkToExistingFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    // defaultSink_ == "file_io" (set by the fixture) -> "same as default" early
+    // return branch. The random-name version only hits the "not exist" branch.
+    (void)hpaeManager->SetDefaultSink(FUZZ_SINK_NAME);
+}
+
+void MoveSinkInputCheckDeepFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    // Fixture session passes CheckMoveSinkInput's session-exists + src-non-null
+    // checks; empty sinkName then hits the empty-name check -> false -> ERROR
+    // callback. NO MoveStream is called, so this stays out of Handle*/D-tier.
+    (void)hpaeManager->MoveSinkInputByIndexOrName(FUZZ_PLAY_SESSION_ID,
+        fdp.ConsumeIntegral<uint32_t>(), "");
+}
+
 // ===========================================================================
 // B-class tests: HpaeRendererManager sub-object (independent lifecycle).
 // Each test constructs + Inits + operates + destructs. The worker thread
@@ -975,6 +1195,7 @@ void RendererCreateStreamFuzzTest(FuzzedDataProvider &fdp)
     }
     HpaeStreamInfo streamInfo = MakeFuzzStreamInfo(fdp);
     (void)mgr->CreateStream(streamInfo);
+    mgr->DeInit();
 }
 
 void RendererCreateStreamWithInvalidEnumFuzzTest(FuzzedDataProvider &fdp)
@@ -988,6 +1209,7 @@ void RendererCreateStreamWithInvalidEnumFuzzTest(FuzzedDataProvider &fdp)
     streamInfo.sourceType = static_cast<SourceType>(INVALID_ENUM_VALUE);
     streamInfo.streamClassType = static_cast<HpaeStreamClassType>(INVALID_ENUM_VALUE);
     (void)mgr->CreateStream(streamInfo);
+    mgr->DeInit();
 }
 
 void RendererDestroyStreamFuzzTest(FuzzedDataProvider &fdp)
@@ -998,6 +1220,7 @@ void RendererDestroyStreamFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->DestroyStream(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererStartFuzzTest(FuzzedDataProvider &fdp)
@@ -1008,6 +1231,7 @@ void RendererStartFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->Start(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererStartWithSyncIdFuzzTest(FuzzedDataProvider &fdp)
@@ -1020,6 +1244,7 @@ void RendererStartWithSyncIdFuzzTest(FuzzedDataProvider &fdp)
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     int32_t syncId = fdp.ConsumeIntegral<int32_t>();
     (void)mgr->StartWithSyncId(sessionId, syncId);
+    mgr->DeInit();
 }
 
 void RendererStartStopStartSequenceFuzzTest(FuzzedDataProvider &fdp)
@@ -1033,6 +1258,7 @@ void RendererStartStopStartSequenceFuzzTest(FuzzedDataProvider &fdp)
     (void)mgr->Start(sessionId);
     (void)mgr->Stop(sessionId);
     (void)mgr->Start(sessionId);
+    mgr->DeInit();
 }
 
 void RendererStopFuzzTest(FuzzedDataProvider &fdp)
@@ -1043,6 +1269,7 @@ void RendererStopFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->Stop(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererPauseFuzzTest(FuzzedDataProvider &fdp)
@@ -1053,6 +1280,7 @@ void RendererPauseFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->Pause(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererPauseDrainPauseSequenceFuzzTest(FuzzedDataProvider &fdp)
@@ -1066,6 +1294,7 @@ void RendererPauseDrainPauseSequenceFuzzTest(FuzzedDataProvider &fdp)
     (void)mgr->Pause(sessionId);
     (void)mgr->Drain(sessionId);
     (void)mgr->Pause(sessionId);
+    mgr->DeInit();
 }
 
 void RendererDrainFuzzTest(FuzzedDataProvider &fdp)
@@ -1076,6 +1305,7 @@ void RendererDrainFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->Drain(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererFlushFuzzTest(FuzzedDataProvider &fdp)
@@ -1086,6 +1316,7 @@ void RendererFlushFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->Flush(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererReleaseFuzzTest(FuzzedDataProvider &fdp)
@@ -1096,6 +1327,7 @@ void RendererReleaseFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->Release(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererReleaseWithoutStartFuzzTest(FuzzedDataProvider &fdp)
@@ -1105,6 +1337,7 @@ void RendererReleaseWithoutStartFuzzTest(FuzzedDataProvider &fdp)
         return;
     }
     (void)mgr->Release(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererSetClientVolumeFuzzTest(FuzzedDataProvider &fdp)
@@ -1116,6 +1349,7 @@ void RendererSetClientVolumeFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->SetClientVolume(fdp.ConsumeIntegral<uint32_t>(),
         fdp.ConsumeFloatingPoint<float>());
+    mgr->DeInit();
 }
 
 void RendererSetVolumeWithExtremeValuesFuzzTest(FuzzedDataProvider &fdp)
@@ -1129,6 +1363,7 @@ void RendererSetVolumeWithExtremeValuesFuzzTest(FuzzedDataProvider &fdp)
     const uint8_t count = sizeof(extremes) / sizeof(extremes[0]);
     float volume = extremes[fdp.ConsumeIntegral<uint8_t>() % count];
     (void)mgr->SetClientVolume(fdp.ConsumeIntegral<uint32_t>(), volume);
+    mgr->DeInit();
 }
 
 void RendererSetVolumeWithNanInfinityFuzzTest(FuzzedDataProvider &fdp)
@@ -1140,6 +1375,7 @@ void RendererSetVolumeWithNanInfinityFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->SetClientVolume(fdp.ConsumeIntegral<uint32_t>(),
         fdp.ConsumeFloatingPoint<float>());
+    mgr->DeInit();
 }
 
 void RendererSetRateFuzzTest(FuzzedDataProvider &fdp)
@@ -1150,6 +1386,7 @@ void RendererSetRateFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->SetRate(fdp.ConsumeIntegral<uint32_t>(), fdp.ConsumeIntegral<int32_t>());
+    mgr->DeInit();
 }
 
 void RendererSetRateWithInvalidValueFuzzTest(FuzzedDataProvider &fdp)
@@ -1162,6 +1399,7 @@ void RendererSetRateWithInvalidValueFuzzTest(FuzzedDataProvider &fdp)
     int32_t rate = fdp.PickValueInArray({
         numeric_limits<int32_t>::min(), 0, -1, numeric_limits<int32_t>::max()});
     (void)mgr->SetRate(fdp.ConsumeIntegral<uint32_t>(), rate);
+    mgr->DeInit();
 }
 
 void RendererSetSpeedFuzzTest(FuzzedDataProvider &fdp)
@@ -1172,6 +1410,7 @@ void RendererSetSpeedFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     mgr->SetSpeed(fdp.ConsumeIntegral<uint32_t>(), fdp.ConsumeFloatingPoint<float>());
+    mgr->DeInit();
 }
 
 void RendererSetSpeedWithExtremeValuesFuzzTest(FuzzedDataProvider &fdp)
@@ -1184,6 +1423,7 @@ void RendererSetSpeedWithExtremeValuesFuzzTest(FuzzedDataProvider &fdp)
     const float speeds[] = {0.0f, -1.0f, 1.0f, 10.0f, 100.0f};
     float speed = speeds[fdp.ConsumeIntegral<uint8_t>() % MAX_ARRAY_SIZE_SMALL];
     mgr->SetSpeed(fdp.ConsumeIntegral<uint32_t>(), speed);
+    mgr->DeInit();
 }
 
 void RendererSetSpeedWithNanInfinityFuzzTest(FuzzedDataProvider &fdp)
@@ -1194,6 +1434,7 @@ void RendererSetSpeedWithNanInfinityFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     mgr->SetSpeed(fdp.ConsumeIntegral<uint32_t>(), fdp.ConsumeFloatingPoint<float>());
+    mgr->DeInit();
 }
 
 void RendererSetAudioEffectModeFuzzTest(FuzzedDataProvider &fdp)
@@ -1205,6 +1446,7 @@ void RendererSetAudioEffectModeFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->SetAudioEffectMode(fdp.ConsumeIntegral<uint32_t>(),
         fdp.ConsumeIntegral<int32_t>());
+    mgr->DeInit();
 }
 
 void RendererGetAudioEffectModeFuzzTest(FuzzedDataProvider &fdp)
@@ -1216,6 +1458,7 @@ void RendererGetAudioEffectModeFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnRenderer(mgr, fdp);
     int32_t effectMode = 0;
     (void)mgr->GetAudioEffectMode(fdp.ConsumeIntegral<uint32_t>(), effectMode);
+    mgr->DeInit();
 }
 
 void RendererSetPrivacyTypeFuzzTest(FuzzedDataProvider &fdp)
@@ -1227,6 +1470,7 @@ void RendererSetPrivacyTypeFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->SetPrivacyType(fdp.ConsumeIntegral<uint32_t>(),
         fdp.ConsumeIntegral<int32_t>());
+    mgr->DeInit();
 }
 
 void RendererGetPrivacyTypeFuzzTest(FuzzedDataProvider &fdp)
@@ -1238,6 +1482,7 @@ void RendererGetPrivacyTypeFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnRenderer(mgr, fdp);
     int32_t privacyType = 0;
     (void)mgr->GetPrivacyType(fdp.ConsumeIntegral<uint32_t>(), privacyType);
+    mgr->DeInit();
 }
 
 void RendererRegisterWriteCallbackFuzzTest(FuzzedDataProvider &fdp)
@@ -1249,6 +1494,7 @@ void RendererRegisterWriteCallbackFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnRenderer(mgr, fdp);
     weak_ptr<IStreamCallback> callback;
     (void)mgr->RegisterWriteCallback(fdp.ConsumeIntegral<uint32_t>(), callback);
+    mgr->DeInit();
 }
 
 void RendererRegisterReadCallbackFuzzTest(FuzzedDataProvider &fdp)
@@ -1260,6 +1506,7 @@ void RendererRegisterReadCallbackFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnRenderer(mgr, fdp);
     weak_ptr<ICapturerStreamCallback> callback;
     (void)mgr->RegisterReadCallback(fdp.ConsumeIntegral<uint32_t>(), callback);
+    mgr->DeInit();
 }
 
 void RendererUpdateSpatializationStateFuzzTest(FuzzedDataProvider &fdp)
@@ -1273,6 +1520,7 @@ void RendererUpdateSpatializationStateFuzzTest(FuzzedDataProvider &fdp)
     bool spatializationEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
     bool headTrackingEnabled = fdp.ConsumeIntegral<uint8_t>() != 0;
     (void)mgr->UpdateSpatializationState(sessionId, spatializationEnabled, headTrackingEnabled);
+    mgr->DeInit();
 }
 
 void RendererUpdateMaxLengthFuzzTest(FuzzedDataProvider &fdp)
@@ -1284,6 +1532,7 @@ void RendererUpdateMaxLengthFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->UpdateMaxLength(fdp.ConsumeIntegral<uint32_t>(),
         fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererSetOffloadPolicyFuzzTest(FuzzedDataProvider &fdp)
@@ -1295,6 +1544,7 @@ void RendererSetOffloadPolicyFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->SetOffloadPolicy(fdp.ConsumeIntegral<uint32_t>(),
         fdp.ConsumeIntegral<int32_t>());
+    mgr->DeInit();
 }
 
 void RendererGetWritableSizeFuzzTest(FuzzedDataProvider &fdp)
@@ -1305,6 +1555,7 @@ void RendererGetWritableSizeFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->GetWritableSize(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererSetLoudnessGainFuzzTest(FuzzedDataProvider &fdp)
@@ -1316,6 +1567,7 @@ void RendererSetLoudnessGainFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->SetLoudnessGain(fdp.ConsumeIntegral<uint32_t>(),
         fdp.ConsumeFloatingPoint<float>());
+    mgr->DeInit();
 }
 
 // Session Effect: only Post* (async) variants — the header explicitly says
@@ -1332,6 +1584,7 @@ void RendererPostCreateSessionEffectFuzzTest(FuzzedDataProvider &fdp)
     shared_ptr<IEffectInstance> instance = nullptr;
     AudioEffectConfig config;
     mgr->PostCreateSessionEffect(sessionId, effectName, instance, config);
+    mgr->DeInit();
 }
 
 void RendererPostDestroySessionEffectFuzzTest(FuzzedDataProvider &fdp)
@@ -1342,6 +1595,7 @@ void RendererPostDestroySessionEffectFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     mgr->PostDestroySessionEffect(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererPostSetSessionEffectParameterFuzzTest(FuzzedDataProvider &fdp)
@@ -1355,6 +1609,7 @@ void RendererPostSetSessionEffectParameterFuzzTest(FuzzedDataProvider &fdp)
     int32_t type = fdp.ConsumeIntegral<int32_t>();
     float value = fdp.ConsumeFloatingPoint<float>();
     mgr->PostSetSessionEffectParameter(sessionId, type, value);
+    mgr->DeInit();
 }
 
 void RendererHasSessionEffectFuzzTest(FuzzedDataProvider &fdp)
@@ -1365,6 +1620,7 @@ void RendererHasSessionEffectFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->HasSessionEffect(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void RendererIsValidSessionFuzzTest(FuzzedDataProvider &fdp)
@@ -1375,6 +1631,7 @@ void RendererIsValidSessionFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnRenderer(mgr, fdp);
     (void)mgr->IsValidSession(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 // ===========================================================================
@@ -1390,6 +1647,7 @@ void CapturerCreateStreamFuzzTest(FuzzedDataProvider &fdp)
     HpaeStreamInfo streamInfo = MakeFuzzStreamInfo(fdp);
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
     (void)mgr->CreateStream(streamInfo);
+    mgr->DeInit();
 }
 
 void CapturerStartFuzzTest(FuzzedDataProvider &fdp)
@@ -1400,6 +1658,7 @@ void CapturerStartFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnCapturer(mgr, fdp);
     (void)mgr->Start(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void CapturerStopFuzzTest(FuzzedDataProvider &fdp)
@@ -1410,6 +1669,7 @@ void CapturerStopFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnCapturer(mgr, fdp);
     (void)mgr->Stop(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void CapturerPauseFuzzTest(FuzzedDataProvider &fdp)
@@ -1420,6 +1680,7 @@ void CapturerPauseFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnCapturer(mgr, fdp);
     (void)mgr->Pause(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void CapturerFlushFuzzTest(FuzzedDataProvider &fdp)
@@ -1430,6 +1691,7 @@ void CapturerFlushFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnCapturer(mgr, fdp);
     (void)mgr->Flush(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void CapturerReleaseFuzzTest(FuzzedDataProvider &fdp)
@@ -1440,6 +1702,7 @@ void CapturerReleaseFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnCapturer(mgr, fdp);
     (void)mgr->Release(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void CapturerDestroyStreamFuzzTest(FuzzedDataProvider &fdp)
@@ -1450,6 +1713,7 @@ void CapturerDestroyStreamFuzzTest(FuzzedDataProvider &fdp)
     }
     CreateStreamOnCapturer(mgr, fdp);
     (void)mgr->DestroyStream(fdp.ConsumeIntegral<uint32_t>());
+    mgr->DeInit();
 }
 
 void CapturerRegisterReadCallbackFuzzTest(FuzzedDataProvider &fdp)
@@ -1461,6 +1725,7 @@ void CapturerRegisterReadCallbackFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnCapturer(mgr, fdp);
     weak_ptr<ICapturerStreamCallback> callback;
     (void)mgr->RegisterReadCallback(fdp.ConsumeIntegral<uint32_t>(), callback);
+    mgr->DeInit();
 }
 
 void CapturerSetAppsEnhanceMuteStateFuzzTest(FuzzedDataProvider &fdp)
@@ -1472,6 +1737,7 @@ void CapturerSetAppsEnhanceMuteStateFuzzTest(FuzzedDataProvider &fdp)
     CreateStreamOnCapturer(mgr, fdp);
     uint32_t sessionId = fdp.ConsumeIntegral<uint32_t>();
     (void)mgr->SetAppsEnhanceMuteState(sessionId, fdp.ConsumeIntegral<uint8_t>() != 0);
+    mgr->DeInit();
 }
 
 // ===========================================================================
@@ -1536,6 +1802,21 @@ void Test(FuzzedDataProvider &fdp)
         SetAissEnabledByUidSyncFuzzTest,
         SetVocalRatioSyncBoundaryFuzzTest,
         UpdateSpatializationStateStructFuzzTest,
+        IsRunningFuzzTest,
+        GetMsgCountFuzzTest,
+        OnCallbackOpenOrReloadFailedFuzzTest,
+        DestroyStreamFuzzTest,
+        SetClientVolumeFuzzTest,
+        SetLoudnessGainFuzzTest,
+        SetAudioEffectModeFuzzTest,
+        RegisterWriteCallbackFuzzTest,
+        SetClientVolumeWithSessionFuzzTest,
+        SetLoudnessGainWithSessionFuzzTest,
+        SetAudioEffectModeWithSessionFuzzTest,
+        RegisterWriteCallbackWithSessionFuzzTest,
+        RegisterStatusCallbackPlayFuzzTest,
+        SetDefaultSinkToExistingFuzzTest,
+        MoveSinkInputCheckDeepFuzzTest,
         // --- B-class: HpaeRendererManager sub-object ---
         RendererCreateStreamFuzzTest,
         RendererCreateStreamWithInvalidEnumFuzzTest,
