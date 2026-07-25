@@ -2785,6 +2785,5 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetStreamPropInfoForMultiChannel_NearLinkDis
     EXPECT_EQ(result->isCollaborationEnable_, false);
 }
 
-}
 } // namespace AudioStandard
 } // namespace OHOS
