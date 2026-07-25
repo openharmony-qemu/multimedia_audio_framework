@@ -109,8 +109,8 @@ int32_t AudioInjectorPolicy::RemoveStreamDescriptor(uint32_t renderId)
     AUDIO_INFO_LOG("Injector:: renderId: %{public}u", renderId);
     rendererStreamMap_.erase(renderId);
     rendererMuteStreamMap_.erase(renderId);
-    rendererTargetUidMap_.erase(renderId);
-    rendererTargetStreamIdMap_.erase(renderId);
+    injectCaptureTargetUidMap_.erase(renderId);
+    injectCaptureTargetStreamIdMap_.erase(renderId);
     injectorStreamIds_.erase(renderId);
     if (rendererStreamMap_.size() == 0) {
         RemoveCaptureInjectorInner(false);
@@ -181,7 +181,7 @@ void AudioInjectorPolicy::SetVoipType(VoipType type)
 
 void AudioInjectorPolicy::ResetInjectorModeIfNeeded()
 {
-    if (injectorStreamIds_.empty() && rendererStreamMap_.empty() && rendererTargetStreamIdMap_.empty()) {
+    if (injectorStreamIds_.empty() && rendererStreamMap_.empty() && injectCaptureTargetStreamIdMap_.empty()) {
         injectorWorkMode_ = INJECTOR_MODE_NONE;
         activeTargetUid_ = INVALID_UID;
         activeTargetStreamId_ = INVALID_STREAM_ID;
@@ -191,11 +191,11 @@ void AudioInjectorPolicy::ResetInjectorModeIfNeeded()
 int32_t AudioInjectorPolicy::PrepareLegacyRenderer(uint32_t renderId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
-    CHECK_AND_RETURN_RET_LOG(injectorWorkMode_ != INJECTOR_MODE_STREAM_ID_TARGET, ERR_NOT_SUPPORTED,
+    CHECK_AND_RETURN_RET_LOG(injectorWorkMode_ == INJECTOR_MODE_NONE, ERR_NOT_SUPPORTED,
         "Injector::precise target mode is active");
     injectorWorkMode_ = INJECTOR_MODE_LEGACY_TARGET;
-    rendererTargetUidMap_.erase(renderId);
-    rendererTargetStreamIdMap_.erase(renderId);
+    injectCaptureTargetUidMap_.erase(renderId);
+    injectCaptureTargetStreamIdMap_.erase(renderId);
     injectorStreamIds_.insert(renderId);
     return SUCCESS;
 }
@@ -206,7 +206,7 @@ int32_t AudioInjectorPolicy::PreparePreciseRenderer(uint32_t renderId, int32_t t
     CHECK_AND_RETURN_RET_LOG(targetUid >= 0, ERR_INVALID_PARAM, "Injector::invalid targetUid");
     CHECK_AND_RETURN_RET_LOG(ValidStreamId(targetStreamId), ERR_INVALID_PARAM,
         "Injector::invalid targetStreamId");
-    CHECK_AND_RETURN_RET_LOG(injectorWorkMode_ != INJECTOR_MODE_LEGACY_TARGET, ERR_NOT_SUPPORTED,
+    CHECK_AND_RETURN_RET_LOG(injectorWorkMode_ == INJECTOR_MODE_NONE, ERR_NOT_SUPPORTED,
         "Injector::legacy target mode is active");
     if (injectorWorkMode_ == INJECTOR_MODE_STREAM_ID_TARGET &&
         (activeTargetUid_ != targetUid || activeTargetStreamId_ != targetStreamId)) {
@@ -222,8 +222,8 @@ int32_t AudioInjectorPolicy::PreparePreciseRenderer(uint32_t renderId, int32_t t
     injectorWorkMode_ = INJECTOR_MODE_STREAM_ID_TARGET;
     activeTargetUid_ = targetUid;
     activeTargetStreamId_ = targetStreamId;
-    rendererTargetUidMap_[renderId] = targetUid;
-    rendererTargetStreamIdMap_[renderId] = targetStreamId;
+    injectCaptureTargetUidMap_[renderId] = targetUid;
+    injectCaptureTargetStreamIdMap_[renderId] = targetStreamId;
     injectorStreamIds_.insert(renderId);
     return SUCCESS;
 }
@@ -231,8 +231,8 @@ int32_t AudioInjectorPolicy::PreparePreciseRenderer(uint32_t renderId, int32_t t
 void AudioInjectorPolicy::ClearRendererTarget(uint32_t renderId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
-    rendererTargetUidMap_.erase(renderId);
-    rendererTargetStreamIdMap_.erase(renderId);
+    injectCaptureTargetUidMap_.erase(renderId);
+    injectCaptureTargetStreamIdMap_.erase(renderId);
     injectorStreamIds_.erase(renderId);
     ResetInjectorModeIfNeeded();
 }
@@ -240,7 +240,7 @@ void AudioInjectorPolicy::ClearRendererTarget(uint32_t renderId)
 bool AudioInjectorPolicy::IsPreciseRenderer(uint32_t renderId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
-    return rendererTargetStreamIdMap_.count(renderId) > 0;
+    return injectCaptureTargetStreamIdMap_.count(renderId) > 0;
 }
 
 void AudioInjectorPolicy::ReleaseCaptureInjector()
@@ -390,10 +390,10 @@ int32_t AudioInjectorPolicy::AddCaptureInjectorInner()
 int32_t AudioInjectorPolicy::AddCaptureInjectorByTargetStream(uint32_t renderId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
-    auto targetUidIt = rendererTargetUidMap_.find(renderId);
-    auto targetStreamIdIt = rendererTargetStreamIdMap_.find(renderId);
-    CHECK_AND_RETURN_RET_LOG(targetUidIt != rendererTargetUidMap_.end() &&
-        targetStreamIdIt != rendererTargetStreamIdMap_.end(), ERR_INVALID_PARAM,
+    auto targetUidIt = injectCaptureTargetUidMap_.find(renderId);
+    auto targetStreamIdIt = injectCaptureTargetStreamIdMap_.find(renderId);
+    CHECK_AND_RETURN_RET_LOG(targetUidIt != injectCaptureTargetUidMap_.end() &&
+        targetStreamIdIt != injectCaptureTargetStreamIdMap_.end(), ERR_INVALID_PARAM,
         "Injector::renderer has no precise target");
     CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
     VoipType type = NO_VOIP;

@@ -120,8 +120,8 @@ private:
     InjectorWorkMode injectorWorkMode_ = INJECTOR_MODE_NONE;
     int32_t activeTargetUid_ = INVALID_UID;
     uint32_t activeTargetStreamId_ = INVALID_STREAM_ID;
-    std::unordered_map<uint32_t, int32_t> rendererTargetUidMap_ = {};
-    std::unordered_map<uint32_t, uint32_t> rendererTargetStreamIdMap_ = {};
+    std::unordered_map<uint32_t, int32_t> injectCaptureTargetUidMap_ = {};
+    std::unordered_map<uint32_t, uint32_t> injectCaptureTargetStreamIdMap_ = {};
     bool isNeedMuteRenderer_ = false;
 };
 } //  namespace AudioStandard
