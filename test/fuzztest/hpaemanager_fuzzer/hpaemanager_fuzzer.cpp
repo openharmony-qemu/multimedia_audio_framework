@@ -1181,6 +1181,124 @@ void MoveSinkInputCheckDeepFuzzTest(FuzzedDataProvider &fdp)
         fdp.ConsumeIntegral<uint32_t>(), "");
 }
 
+// Misc HpaeManager public entries not previously covered. Most are
+// SendRequest -> HpaePolicyManager (policy layer, low risk); calling the entry
+// covers the method body. IsAcousticEchoCancelerSupported is a pure if-else.
+
+void RegisterHpaeDumpCallbackFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    std::weak_ptr<AudioServiceHpaeDumpCallback> callback;
+    (void)hpaeManager->RegisterHpaeDumpCallback(callback);
+}
+
+void UpdateEffectBtOffloadSupportedFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    if (hpaeManager->IsInit()) {
+        hpaeManager->UpdateEffectBtOffloadSupported(fdp.ConsumeIntegral<uint8_t>() != 0);
+    }
+}
+
+void SetPersonalizedSpatializationStateResultCallbackFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    if (hpaeManager->IsInit()) {
+        hpaeManager->SetPersonalizedSpatializationStateResultCallback([](int32_t) {});
+    }
+}
+
+void SetMicrophoneMuteInfoFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    if (hpaeManager->IsInit()) {
+        (void)hpaeManager->SetMicrophoneMuteInfo(fdp.ConsumeIntegral<uint8_t>() != 0);
+    }
+}
+
+void SetStreamVolumeInfoFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    if (hpaeManager->IsInit()) {
+        (void)hpaeManager->SetStreamVolumeInfo(fdp.ConsumeIntegral<uint32_t>(),
+            fdp.ConsumeFloatingPoint<float>());
+    }
+}
+
+void SetAudioEnhancePropertyFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    AudioEffectPropertyArray propertyArray {};
+    DeviceType deviceType = ConsumeEnum<DeviceType>(fdp);
+    if (hpaeManager->IsInit()) {
+        (void)hpaeManager->SetAudioEnhanceProperty(propertyArray, deviceType);
+    }
+}
+
+void UpdateExtraSceneTypeFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    if (hpaeManager->IsInit()) {
+        hpaeManager->UpdateExtraSceneType(FuzzString(fdp, MAX_NAME_LENGTH),
+            FuzzString(fdp, MAX_NAME_LENGTH), FuzzString(fdp, MAX_NAME_LENGTH));
+    }
+}
+
+void IsAcousticEchoCancelerSupportedFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    SourceType sourceType = ConsumeEnum<SourceType>(fdp);
+    (void)hpaeManager->IsAcousticEchoCancelerSupported(sourceType);
+}
+
+void SetOutputDeviceFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    DeviceType deviceType = ConsumeEnum<DeviceType>(fdp);
+    if (hpaeManager->IsInit()) {
+        (void)hpaeManager->SetOutputDevice(fdp.ConsumeIntegral<uint32_t>(), deviceType);
+    }
+}
+
+void UpdateSpatialDeviceTypeFuzzTest(FuzzedDataProvider &fdp)
+{
+    auto hpaeManager = GetFuzzHpaeManager();
+    if (hpaeManager == nullptr) {
+        return;
+    }
+    AudioSpatialDeviceType spatialDeviceType = ConsumeEnum<AudioSpatialDeviceType>(fdp);
+    if (hpaeManager->IsInit()) {
+        (void)hpaeManager->UpdateSpatialDeviceType(spatialDeviceType);
+    }
+}
+
 // ===========================================================================
 // B-class tests: HpaeRendererManager sub-object (independent lifecycle).
 // Each test constructs + Inits + operates + destructs. The worker thread
@@ -1817,6 +1935,16 @@ void Test(FuzzedDataProvider &fdp)
         RegisterStatusCallbackPlayFuzzTest,
         SetDefaultSinkToExistingFuzzTest,
         MoveSinkInputCheckDeepFuzzTest,
+        RegisterHpaeDumpCallbackFuzzTest,
+        UpdateEffectBtOffloadSupportedFuzzTest,
+        SetPersonalizedSpatializationStateResultCallbackFuzzTest,
+        SetMicrophoneMuteInfoFuzzTest,
+        SetStreamVolumeInfoFuzzTest,
+        SetAudioEnhancePropertyFuzzTest,
+        UpdateExtraSceneTypeFuzzTest,
+        IsAcousticEchoCancelerSupportedFuzzTest,
+        SetOutputDeviceFuzzTest,
+        UpdateSpatialDeviceTypeFuzzTest,
         // --- B-class: HpaeRendererManager sub-object ---
         RendererCreateStreamFuzzTest,
         RendererCreateStreamWithInvalidEnumFuzzTest,
