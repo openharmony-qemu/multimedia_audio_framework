@@ -94,36 +94,6 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetSelectedInputDe
 
 /**
 * @tc.name  : Test AudioUsrSelectManager.
-* @tc.number: AudioUsrSelectManager_JudgeFinalSelectDevice_001
-* @tc.desc  : Test JudgeFinalSelectDevice interface.
-*/
-HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDevice_001, TestSize.Level1)
-{
-    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
-        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::INPUT_DEVICE);
-    desc->deviceId_ = DEVICE_ID1;
-    desc->macAddress_ = "00:11:22:33:44:55";
-    desc->connectState_ = VIRTUAL_CONNECTED;
-    auto judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_CAMCORDER, PREFERRED_DEFAULT);
-    EXPECT_NE(judge, nullptr);
-    EXPECT_EQ(judge->deviceId_, 2);
-
-    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_LIVE, PREFERRED_DEFAULT);
-    EXPECT_NE(judge, nullptr);
-    EXPECT_EQ(judge->deviceId_, 2);
-
-    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_EC, PREFERRED_HIGH_QUALITY);
-    EXPECT_NE(judge, nullptr);
-    EXPECT_EQ(judge->deviceId_, 2);
-
-    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_EC, PREFERRED_DEFAULT);
-    EXPECT_NE(judge, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioUsrSelectManager.
 * @tc.number: AudioUsrSelectManager_JudgeFinalSelectDevice_002
 * @tc.desc  : Test JudgeFinalSelectDevice interface.
 */

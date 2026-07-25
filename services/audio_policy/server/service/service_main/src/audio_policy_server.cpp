@@ -1727,16 +1727,16 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
     const int32_t audioDeviceSelectMode)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERROR, "SelectOutputDevice: ptr exception");
+    if (!(IsEnhancedRoutingAvailableForSelectMode(audioDeviceSelectMode) &&
+        audioRendererFilter->uid == IPCSkeleton::GetCallingUid())) {
+        CHECK_AND_CALL_FUNC_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             ERR_PLAY_DEVICE_SWITCH_PERMISSION_DENIED, "SelectOutputDevice: No system permission", false),
-        "SelectOutputDevice: No system permission");
-    if (!IsEnhancedRoutingAvailableForSelectMode(audioDeviceSelectMode)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
-            "SelectInputDevice: No system permission");
+            "SelectOutputDevice: No system permission");
     }
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioRendererFilter != nullptr &&
-        !audioDeviceDescriptors.empty() && audioDeviceDescriptors[0] != nullptr, ERROR,
+
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(!audioDeviceDescriptors.empty() && audioDeviceDescriptors[0] != nullptr, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
             ERR_PLAY_DEVICE_SWITCH_NULL_POINTER, "SelectOutputDevice: null filter or selectedDesc", false),
         "SelectOutputDevice null filter or selectedDesc");
@@ -1755,6 +1755,8 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
 
 int32_t AudioPolicyServer::RestoreOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> restoreDescs;
     restoreDescs.push_back(std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NONE,
         DeviceRole::OUTPUT_DEVICE));
@@ -1765,6 +1767,8 @@ int32_t AudioPolicyServer::RestoreOutputDevice(const sptr<AudioRendererFilter> &
 int32_t AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamTypeIn,
     std::string &info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "SelectInputDevice: No system permission");
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
     info = audioPolicyService_.GetSelectedDeviceInfo(uid, pid, streamType);
     return SUCCESS;
@@ -1788,8 +1792,9 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERROR, "SelectInputDevice: ptr exception");
-    if (!IsEnhancedRoutingAvailableForSelectMode(audioCapturerFilter->audioDeviceSelectMode)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+    if (!(IsEnhancedRoutingAvailableForSelectMode(audioCapturerFilter->audioDeviceSelectMode) &&
+        audioCapturerFilter->uid == IPCSkeleton::GetCallingUid())) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
             "SelectInputDevice: No system permission");
     }
 
@@ -5998,6 +6003,8 @@ int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, 
 
 int32_t AudioPolicyServer::SelectPrivateDevice(int32_t devType, const std::string &macAddress)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     eventEntry_->OnPrivacyDeviceSelected(static_cast<DeviceType>(devType), macAddress, "Nearlink");
     return SUCCESS;
 }
@@ -6005,6 +6012,8 @@ int32_t AudioPolicyServer::SelectPrivateDevice(int32_t devType, const std::strin
 int32_t AudioPolicyServer::ForceSelectDevice(int32_t devType, const std::string &macAddress,
     const sptr<AudioRendererFilter> &filter)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     eventEntry_->OnForcedDeviceSelected(static_cast<DeviceType>(devType), macAddress, filter, "Nearlink");
     return SUCCESS;
 }

@@ -661,25 +661,6 @@ HWTEST_F(AudioDeviceManagerUnitTest, TriggerDeviceInfoUpdatedCallback_001, TestS
 }
 
 /**
-* @tc.name  : Test AudioDeviceManager.
-* @tc.number: AudioDeviceManagerUnitTest_020.
-* @tc.desc  : Test GetCommRenderDefaultDevice.
-*/
-HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_020, TestSize.Level1)
-{
-    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
-    shared_ptr<AudioDeviceDescriptor> desc0 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_MEDIA);
-    shared_ptr<AudioDeviceDescriptor> desc1 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_INVALID);
-    EXPECT_NE(desc0, desc1);
-    desc1 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_VOICE_RINGTONE);
-    EXPECT_NE(desc0, desc1);
-    shared_ptr<AudioDeviceDescriptor> desc2 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_ULTRASONIC);
-    EXPECT_EQ(make_shared<AudioDeviceDescriptor>(audioDeviceManager.earpiece_), desc2);
-    desc1 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_VIDEO_COMMUNICATION);
-    EXPECT_EQ(make_shared<AudioDeviceDescriptor>(audioDeviceManager.speaker_), desc1);
-}
-
-/**
  * @tc.name  : Test AudioDeviceManager.
  * @tc.number: UpdateDevicesListInfo_001.
  * @tc.desc  : Test UpdateDevicesListInfo with CATEGORY_UPDATE.

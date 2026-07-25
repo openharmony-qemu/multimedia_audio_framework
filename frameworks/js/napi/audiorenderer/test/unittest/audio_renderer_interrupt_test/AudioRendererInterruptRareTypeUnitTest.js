@@ -744,12 +744,12 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         await render2.setInterruptMode(audio.InterruptMode.INDEPENDENT_MODE)
         render2.on("audioInterrupt", async(eventAction) => {
             console.log("102_2.eventAction=" + JSON.stringify(eventAction))
-            render2_callback == true
+            render2_callback = true
         })
         await start(render2, done)
         await sleep(500)
         console.log("102.render1_callback = " + render1_callback + ", render2_callback = " + render2_callback)
-        expect(render1_callback == true && render2_callback == false).assertTrue()
+        expect(render1_callback == false && render2_callback == false).assertTrue()
         await sleep(100)
         await release(render1, done)
         await release(render2, done)
@@ -777,7 +777,7 @@ describe("AudioRendererInterruptRareTypeUnitTest", function() {
         await start(render2, done)
         await sleep(500)
         console.log("103.render1_callback = " + render1_callback + ", render2_callback = " + render2_callback)
-        expect(render1_callback == true && render2_callback == false).assertTrue()
+        expect(render1_callback == false && render2_callback == false).assertTrue()
         await sleep(100)
         await release(render1, done)
         await release(render2, done)

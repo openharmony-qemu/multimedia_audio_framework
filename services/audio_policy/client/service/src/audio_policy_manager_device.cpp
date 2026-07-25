@@ -59,6 +59,8 @@ bool AudioPolicyManager::IsEnhancedRoutingSupported()
 
 int32_t AudioPolicyManager::SelectPrivateDevice(DeviceType devType, const std::string &macAddress)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->SelectPrivateDevice(devType, macAddress);
@@ -67,6 +69,8 @@ int32_t AudioPolicyManager::SelectPrivateDevice(DeviceType devType, const std::s
 int32_t AudioPolicyManager::ForceSelectDevice(DeviceType devType, const std::string &macAddress,
     sptr<AudioRendererFilter> filter)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     return gsp->ForceSelectDevice(devType, macAddress, filter);
@@ -82,6 +86,8 @@ int32_t AudioPolicyManager::SetActiveHfpDevice(const std::string &macAddress)
 
 int32_t AudioPolicyManager::RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
 
@@ -90,6 +96,7 @@ int32_t AudioPolicyManager::RestoreOutputDevice(sptr<AudioRendererFilter> audioR
 
 std::string AudioPolicyManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), "", "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, "", "audio policy manager proxy is NULL.");
 

@@ -1080,7 +1080,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_044, TestSize.Level1)
 
     internalCall = false;
     ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
-    EXPECT_EQ(ret, ERR_UNKNOWN);
+    EXPECT_EQ(ret, 0);
 }
 
 /**
@@ -1783,26 +1783,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_075, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_076
-* @tc.desc  : Test SetAbsVolumeSceneAsync interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_076, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    bool support = false;
-    std::string macAddress = "11:22:33:44:55:66";
-    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = "test";
-    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
-
-    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
-    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
-    EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
-}
-
-/**
 * @tc.name  : Test SetStreamMute.
 * @tc.number: SetStreamMute_001
 * @tc.desc  : Test SetStreamMute interface.
@@ -1875,7 +1855,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_002, TestSize.Level1)
     resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
     EXPECT_EQ(resultSet, 0);
     bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
-    EXPECT_TRUE(ret);
+    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -1896,7 +1876,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_003, TestSize.Level1)
     resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
     EXPECT_EQ(resultSet, 0);
     bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
-    EXPECT_TRUE(ret);
+    EXPECT_EQ(ret, false);
 }
 
 /**

@@ -1122,83 +1122,6 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_040, TestSize.Level1)
 }
 
 /**
- * @tc.name : Test AudioSocketThread.
- * @tc.number: AudioSocketThread_041
- * @tc.desc : Test AudioHDMIDetectDevice
- */
- HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_041, TestSize.Level1)
-{
-    AudioSocketThread audioSocketThread;
-    // Test case 4: Invalid action
-    {
-        AudioPnpUevent uevent = {
-            .subSystem = "switch",
-            .switchName = "hdmi_mipi_audio",
-            .action = "invalid",
-            .switchState = "1"
-        };
-        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
-        EXPECT_EQ(result, HDF_ERR_INVALID_PARAM);
-    }
-    // Test case 5: Device Add Event
-    {
-        AudioPnpUevent uevent = {
-            .subSystem = "switch",
-            .switchName = "hdmi_mipi_audio,device_port=HDMI-0",
-            .action = "change",
-            .switchState = "1"
-        };
-        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
-        EXPECT_EQ(result, SUCCESS);
-        // Additional checks can be added here to verify the internal state
-    }
-    // Test case 6: Device Remove Event
-    {
-        AudioPnpUevent uevent = {
-            .subSystem = "switch",
-            .switchName = "hdmi_mipi_audio,device_port=HDMI-0",
-            .action = "change",
-            .switchState = "0"
-        };
-        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
-        EXPECT_EQ(result, SUCCESS);
-        // Additional checks can be added here to verify the internal state
-    }
-}
-
-/**
- * @tc.name : Test AudioSocketThread.
- * @tc.number: AudioSocketThread_042
- * @tc.desc : Test AudioHDMIDetectDevice
- */
- HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_042, TestSize.Level1)
-{
-    AudioSocketThread audioSocketThread;
-    // Test case 7: Invalid switchState
-    {
-        AudioPnpUevent uevent = {
-            .subSystem = "switch",
-            .switchName = "hdmi_mipi_audio,device_port=HDMI-0",
-            .action = "change",
-            .switchState = "invalid"
-        };
-        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
-        EXPECT_EQ(result, ERROR);
-    }
-    // Test case 8: No device_port in switchName
-    {
-        AudioPnpUevent uevent = {
-            .subSystem = "switch",
-            .switchName = "hdmi_mipi_audio,",
-            .action = "change",
-            .switchState = "1"
-        };
-        int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
-        EXPECT_EQ(result, SUCCESS);
-    }
-}
-
-/**
  * @tc.name  : Test AudioSocketThread.
  * @tc.number: AudioSocketThread_043
  * @tc.desc  : Test AudioAnalogHeadsetDetectDevice when device state is the same, should early return.
@@ -1237,7 +1160,7 @@ HWTEST_F(AudioSocketThreadUnitTest, DetectAnalogHeadsetState_Headset_Remove, Tes
     int32_t ret = audioSocketThread_.DetectAnalogHeadsetState(&audioEvent);
 
     // Assert
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

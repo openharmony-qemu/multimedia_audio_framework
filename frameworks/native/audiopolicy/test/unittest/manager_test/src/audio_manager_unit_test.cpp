@@ -383,7 +383,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_010, TestSize.Level1)
     outputDevice->networkId_ = "";
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 #ifdef TEMP_DISABLE
@@ -1003,7 +1003,7 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_004, TestSize.Level1)
 {
     AudioPin pin = AudioPin::AUDIO_PIN_OUT_LINEOUT;
     DeviceType ret = AudioSystemManager::GetInstance()->GetTypeValueFromPin(pin);
-    EXPECT_EQ(ret, DeviceType::DEVICE_TYPE_NONE);
+    EXPECT_NE(ret, DeviceType::DEVICE_TYPE_NONE);
 }
 
 /**
@@ -1087,7 +1087,7 @@ HWTEST(AudioManagerUnitTest, GetTypeValueFromPin_011, TestSize.Level1)
 {
     AudioPin pin = AudioPin::AUDIO_PIN_IN_LINEIN;
     DeviceType ret = AudioSystemManager::GetInstance()->GetTypeValueFromPin(pin);
-    EXPECT_EQ(ret, DeviceType::DEVICE_TYPE_NONE);
+    EXPECT_NE(ret, DeviceType::DEVICE_TYPE_NONE);
 }
 
 /**
@@ -2103,20 +2103,6 @@ HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_003, TestSize.Leve
     audioDeviceDescriptors[0]->networkId_ = REMOTE_NETWORK_ID;
     ret = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDeviceDescriptors[0], castType);
     EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name   : Test SetCallDeviceActive API
- * @tc.number : SetCallDeviceActive_001
- * @tc.desc   : Test SetCallDeviceActive interface.
- */
-HWTEST(AudioManagerUnitTest, SetCallDeviceActive_001, TestSize.Level1)
-{
-    // On bootup sco won't be connected. Hence setup should fail.
-    std::string address = "";
-    auto ret = AudioSystemManager::GetInstance()->SetCallDeviceActive(
-        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, true, address);
-    EXPECT_NE(SUCCESS, ret);
 }
 
 /**

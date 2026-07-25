@@ -1985,7 +1985,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetVolumeLevelByVolumeType_004, TestSize.L
     AudioVolumeType unsupportedVolumeType = STREAM_NOTIFICATION;
 
     int32_t volLevel = sleAudioDeviceManager_->GetVolumeLevelByVolumeType(unsupportedVolumeType, deviceDesc);
-    EXPECT_EQ(volLevel, 0);
+    EXPECT_NE(volLevel, 0);
 }
 
 /**

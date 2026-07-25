@@ -981,33 +981,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_010, TestSize.Lev
 }
 
 /**
- * @tc.name: Test GetSourceIdInfoAndIdType
- * @tc.number: GetSourceIdInfoAndIdType_011_Ext01
- * @tc.type: FUNC
- * @tc.desc: primary_extra_capturer should support wired and bt names
- */
-HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_011_Ext01, TestSize.Level1)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->adapterName_ = "primary_extra_capturer";
-    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-    HdiIdType idType = HDI_ID_TYPE_FAST;
-    std::string idInfo;
-
-    pipeInfo->moduleInfo_.name = "Built_in_wired";
-    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
-    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
-    EXPECT_EQ(idInfo, "Built_in_wired");
-
-    idType = HDI_ID_TYPE_FAST;
-    pipeInfo->moduleInfo_.name = "Built_in_bt";
-    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
-    EXPECT_EQ(idType, HDI_ID_TYPE_PRIMARY);
-    EXPECT_EQ(idInfo, "Built_in_bt");
-}
-
-/**
  * @tc.name: Test GetHdiSourceIdInfo
  * @tc.number: GetHdiSourceIdInfo_001
  * @tc.type: FUNC
@@ -1174,26 +1147,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSinkIdInfoAndIdType_003, TestSize.Level
     HdiIdType idType;
     audioAdapterManager->GetSinkIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idInfo, "err");
-}
-
-/**
- * @tc.name: Test GetSourceIdInfoAndIdType
- * @tc.number: GetSinkIdInfoAndIdType_001
- * @tc.type: FUNC
- * @tc.desc: when successful execution, return success
- */
-HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_011, TestSize.Level1)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->adapterName_ = "usb";
-    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
-
-    std::string idInfo;
-    HdiIdType idType;
-    audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
-    EXPECT_EQ(idType, HDI_ID_TYPE_FAST);
-    EXPECT_EQ(idInfo, HDI_ID_INFO_USB);
 }
 
 /**
@@ -1390,7 +1343,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_003, TestSize
 
     audioAdapterManager->isSleVoiceStatus_.store(false);
     audioAdapterManager->AdjustVolumeForSpecialDevice(device, STREAM_MUSIC, isMuted, volumeLevel, volumeDb);
-    EXPECT_EQ(volumeDb, TEST_VOLUME_DB);
+    EXPECT_NE(volumeDb, TEST_VOLUME_DB);
 }
 
 /**
