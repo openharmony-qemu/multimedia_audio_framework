@@ -3377,7 +3377,7 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
     audioPolicyManager_.GetAppVolumeLevel(callerUid, appVolume);
     streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     AUDIO_DEBUG_LOG("RegisterTracker: [caller uid: %{public}d]", callerUid);
-    if (callerUid != MEDIA_SERVICE_UID) {
+    if (callerUid != MEDIA_SERVICE_UID && !Util::IsEnhancedRoutingSupported()) {
         if (mode == AUDIO_MODE_PLAYBACK) {
             streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
@@ -3385,7 +3385,6 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
         } else {
             streamChangeInfo.audioCapturerChangeInfo.clientUID = callerUid;
             streamChangeInfo.audioCapturerChangeInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
-
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
@@ -3413,7 +3412,7 @@ int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChange
     streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
     streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
     AUDIO_DEBUG_LOG("UpdateTracker: [caller uid: %{public}d]", callerUid);
-    if (callerUid != MEDIA_SERVICE_UID) {
+    if (callerUid != MEDIA_SERVICE_UID && !Util::IsEnhancedRoutingSupported()) {
         if (mode == AUDIO_MODE_PLAYBACK) {
             streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
