@@ -526,6 +526,13 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             }
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
             break;
+        case OPERATION_FIRST_FRAME_CONSUMED:
+            // HPAE first-frame-consumed fallback. Does not change renderer lifecycle
+            // status; forwards to the client so its once-gate can fire the existing
+            // first-frame callback. Sent at most once per Start cycle. result is fixed
+            // SUCCESS and carries no timestamp or HPAE latency.
+            stateListener->OnOperationHandled(FIRST_FRAME_CONSUMED, 0);
+            break;
         default:
             OnStatusUpdateSubs(operation);
     }

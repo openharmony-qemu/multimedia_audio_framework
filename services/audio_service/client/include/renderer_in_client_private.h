@@ -99,6 +99,7 @@ public:
     int32_t SetRendererFirstFrameWritingCallback(
         const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
     void OnFirstFrameWriting() override;
+    void NotifyFirstFrameWritingOnce();
     int32_t SetSpeed(float speed) override;
     int32_t SetPitch(float pitch) override;
     int32_t SetSonicPitch(float pitch) override;

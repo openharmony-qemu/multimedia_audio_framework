@@ -559,6 +559,10 @@ struct AudioCallBackStreamInfo {
     uint64_t writePos_ = 0;
     bool isWriteFirst_ = false;
     bool isLowLatency = false;
+    // Marks a formal HPAE pull that may consume media data. False for registration,
+    // device migration and history rewind notifications. Internal-only: does not
+    // change the public first-frame callback contract.
+    bool isPullData = false;
 };
 
 struct AudioCallBackCapturerStreamInfo {
