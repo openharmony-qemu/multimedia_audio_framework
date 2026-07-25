@@ -224,11 +224,10 @@ void AudioVolumeManagerSaveNotificationVolumeToLocalFuzzTest(FuzzedDataProvider&
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     CHECK_AND_RETURN(audioAdapterManager != nullptr);
-    int32_t volumeLevel = fdp.ConsumeIntegral<int32_t>();
     AudioVolumeType volumeType = PickValue(fdp, g_testAudioStreamTypes);
     auto desc = std::make_shared<AudioDeviceDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
-    audioAdapterManager->SaveNotificationVolumeToLocal(desc, volumeType, volumeLevel);
+    audioAdapterManager->SaveNotificationVolumeToLocal(desc, volumeType);
 }
 
 void AudioVolumeManagerSaveRingerModeInfoFuzzTest(FuzzedDataProvider& fdp)
