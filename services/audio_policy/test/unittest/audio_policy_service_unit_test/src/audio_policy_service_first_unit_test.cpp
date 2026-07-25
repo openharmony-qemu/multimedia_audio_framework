@@ -438,57 +438,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetActiveA2dpDeviceStreamInfo_001, TestSize
 }
 
 /**
-* @tc.name  : Test GetSelectedDeviceInfo.
-* @tc.number: GetActiveDeviceStreamInfo_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, GetSelectedDeviceInfo_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetSelectedDeviceInfo_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-
-    // clear data
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-
-    // dummy data
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    ASSERT_NE(nullptr, audioDeviceDescriptor) << "audioDeviceDescriptor is nullptr.";
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDeviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    audioDeviceDescriptor->networkId_ = REMOTE_NETWORK_ID;
-
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor);
-
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID1]
-        = std::pair(LOCAL_NETWORK_ID, (G_UNKNOWN_PID - 1));
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID2]
-        = std::pair(LOCAL_NETWORK_ID, G_UNKNOWN_PID);
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID3]
-        = std::pair(REMOTE_NETWORK_ID, (G_UNKNOWN_PID + 1));
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID4]
-        = std::pair(REMOTE_NETWORK_ID, (G_UNKNOWN_PID + 2));
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID5]
-        = std::pair(REMOTE_NETWORK_ID, G_UNKNOWN_PID);
-
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID0, G_UNKNOWN_PID, STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID1, (G_UNKNOWN_PID - 1), STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID1, (G_UNKNOWN_PID + 1), STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID2, G_UNKNOWN_PID, STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID2, (G_UNKNOWN_PID + 1), STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID3, G_UNKNOWN_PID, STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID3, (G_UNKNOWN_PID + 1), STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID4, G_UNKNOWN_PID, STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID4, (G_UNKNOWN_PID + 1), STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID4, (G_UNKNOWN_PID + 2), STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID5, G_UNKNOWN_PID, STREAM_MUSIC);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID6, G_UNKNOWN_PID, STREAM_MUSIC);
-
-    GetServerPtr()->audioPolicyService_.audioRouteMap_.routerMap_[ROUTER_MAP_ID6] =
-        std::pair(std::string(REMOTE_NETWORK_ID) + "_out", G_UNKNOWN_PID);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(ROUTER_MAP_ID6, G_UNKNOWN_PID, STREAM_MUSIC);
-}
-
-/**
 * @tc.name  : Test SetSourceOutputStreamMute.
 * @tc.number: SetSourceOutputStreamMute_001
 * @tc.desc  : Test AudioPolicyService interfaces.

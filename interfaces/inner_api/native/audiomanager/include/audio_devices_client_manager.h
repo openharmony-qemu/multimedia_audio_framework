@@ -57,8 +57,7 @@ public:
      * @return Returns device info.
      * @since 9
      */
-    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) const;
-
+    
     /**
      * @brief Select the audio output device according to the filter conditions.
      *

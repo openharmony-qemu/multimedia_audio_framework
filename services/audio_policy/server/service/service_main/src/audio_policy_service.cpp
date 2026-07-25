@@ -190,29 +190,6 @@ int32_t AudioPolicyService::SetAncoSourceOutputStreamMute(int32_t uid, bool setM
     return SUCCESS;
 }
 
-std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
-{
-    (void)streamType;
-
-    std::string selectedDevice = audioRouteMap_.GetDeviceInfoByUidAndPid(uid, pid);
-    if (selectedDevice == "") {
-        return selectedDevice;
-    }
-
-    if (LOCAL_NETWORK_ID == selectedDevice) {
-        AUDIO_INFO_LOG("uid[%{public}d]-->local.", uid);
-        return "";
-    }
-    // check if connected.
-    if (audioConnectedDevice_.CheckDeviceConnected(selectedDevice)) {
-        AUDIO_INFO_LOG("result[%{public}s]", selectedDevice.c_str());
-        return selectedDevice;
-    } else {
-        audioRouteMap_.DelRouteMapInfoByKey(uid);
-        AUDIO_INFO_LOG("device already disconnected.");
-        return "";
-    }
-}
 
 void AudioPolicyService::RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo)
 {

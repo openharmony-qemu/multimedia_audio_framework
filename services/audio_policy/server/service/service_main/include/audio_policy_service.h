@@ -100,8 +100,6 @@ public:
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
-    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
