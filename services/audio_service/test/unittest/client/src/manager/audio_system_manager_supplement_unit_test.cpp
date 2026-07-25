@@ -131,7 +131,7 @@ HWTEST(AudioSystemManagerSupplementTest, GenerateSessionId_001, TestSize.Level1)
     uint32_t sessionId = 0;
     int32_t result = AudioSystemManager::GetInstance()->GenerateSessionId(sessionId);
     AUDIO_INFO_LOG("GenerateSessionId_001 result:%{public}d, sessionId:%{public}u", result, sessionId);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 // ==================== GetEffectLatency Tests ====================

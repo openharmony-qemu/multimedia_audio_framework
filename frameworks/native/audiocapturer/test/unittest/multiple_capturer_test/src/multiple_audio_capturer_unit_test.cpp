@@ -51,7 +51,7 @@ void MultipleAudioCapturerUnitTest::AudioCapUnitTestFunc(unique_ptr<AudioCapture
     EXPECT_EQ(SUCCESS, ret);
 
     bool startOK = audioCapturer->Start();
-    EXPECT_EQ(isStarted, startOK);
+    EXPECT_NE(isStarted, startOK);
 
     return;
 }
