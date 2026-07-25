@@ -2246,6 +2246,10 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
 
     resetConfig.callerUid = callerUid;
 
+    // Snapshot the pristine client-passed appInfo before the auth rewrite below
+    // overwrites appInfo.appUid. Used by RendererInServer to key per-app volume.
+    resetConfig.originalAppInfo = resetConfig.appInfo;
+
     // client pid uid check.
     if (RECORD_PASS_APPINFO_LIST.count(callerUid)) {
         AUDIO_INFO_LOG("Create process for %{public}d, clientUid:%{public}d.", callerUid, config.appInfo.appUid);
