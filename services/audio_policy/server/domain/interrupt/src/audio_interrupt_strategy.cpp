@@ -20,6 +20,7 @@
 #include "audio_interrupt_strategy.h"
 #include "audio_log.h"
 #include "audio_policy_log.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -207,6 +208,22 @@ void AudioInterruptStrategy::UpdateAIBaseFocusStrategy(const AudioInterrupt &cur
     }
 }
 
+void AudioInterruptStrategy::UpdateVoipCaptureFocusStrategy(const AudioInterrupt &currentInterrupt,
+    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
+{
+    if (currentInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+        incomingInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+        incomingInterrupt.behaviorFlags_.voipCaptureMixWithOthers &&
+        PermissionUtil::VerifyPermission(VOIP_CAPTURE_CONCURRENCY_PERMISSION, IPCSkeleton::GetCallingTokenID()) &&
+        PermissionUtil::VerifySystemPermission()) {
+        AUDIO_INFO_LOG("voip capture mix with others voip capture, current streamId:%{public}d, "
+            "incoming streamId:%{public}d", currentInterrupt.streamId, incomingInterrupt.streamId);
+        focusEntry.actionOn = INCOMING;
+        focusEntry.hintType = INTERRUPT_HINT_NONE;
+        focusEntry.isReject = false;
+    }
+}
+
 void AudioInterruptStrategy::UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
     const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
@@ -234,6 +251,7 @@ void AudioInterruptStrategy::UpdateAudioFocusStrategy(const AudioInterrupt &curr
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateAIBaseFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    UpdateVoipCaptureFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
 }
 
 void AudioInterruptStrategy::UpdateMediaWithDuckStrategy(const AudioInterrupt &activeInterrupt,

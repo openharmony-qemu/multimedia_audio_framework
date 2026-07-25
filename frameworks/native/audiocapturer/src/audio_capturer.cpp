@@ -40,6 +40,7 @@
 #include "audio_debug_callback.h"
 #include "stream_dfx_manager.h"
 #include "securec.h"
+#include "ipc_skeleton.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
@@ -3457,6 +3458,12 @@ int32_t AudioCapturerPrivate::SetIndependentAudioSessionStrategy(
         PermissionUtil::VerifySystemPermission()) {
         audioInterrupt_.behaviorFlags_.aibaseMuteVoip = true;
         AUDIO_INFO_LOG("Capturer id: %{public}d activated AIBASE_MUTE_VOIP success", sessionID_);
+    }
+    if ((behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_CAPTURE_MIX_WITH_OTHERS)) &&
+        PermissionUtil::VerifyPermission(VOIP_CAPTURE_CONCURRENCY_PERMISSION, IPCSkeleton::GetCallingTokenID()) &&
+        PermissionUtil::VerifySystemPermission()) {
+        audioInterrupt_.behaviorFlags_.voipCaptureMixWithOthers = true;
+        AUDIO_INFO_LOG("Capturer id: %{public}d activated VOIP_CAPTURE_MIX_WITH_OTHERS success", sessionID_);
     }
     audioInterrupt_.independentStrategy = strategy;
     AUDIO_INFO_LOG("Capturer id: %{public}d set independentStrategy: %{public}d",
