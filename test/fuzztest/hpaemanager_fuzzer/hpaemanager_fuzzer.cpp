@@ -1013,7 +1013,7 @@ void UpdateSpatializationStateStructFuzzTest(FuzzedDataProvider &fdp)
 
 // A-tier additions (coverage): HpaeManager entry points the fuzzer never
 // reached. Each covers the method-body entry + early-return / warning branch.
-// The deep "session found" branches need a real sink+stream (lever plan, TBD).
+// The deep "session found" branches need a real sink+stream (lever plan).
 // All are SendRequest-queue or pure-read on the main thread — same pattern as
 // the C-class tests above. OnCallbackOpenOrReloadFailed is private;
 // -fno-access-control reaches it (not worker-only — reads a weak_ptr only).
