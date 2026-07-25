@@ -751,23 +751,12 @@ void CapturerInServer::ReportNoBgPermissionEvent()
 
 bool CapturerInServer::CheckBgRecordPermission(CapturerState capturerState)
 {
-    uint32_t tokenId = processConfig_.appInfo.appTokenId;
-    SwitchStreamInfo info = {
-        streamIndex_,
-        processConfig_.callerUid,
-        processConfig_.appInfo.appUid,
-        processConfig_.appInfo.appPid,
-        tokenId,
-        capturerState,
-    };
-    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED) && !CheckBGCapture()) {
+    if (!CheckBGCapture()) {
         AUDIO_ERR_LOG("Verify failed, incoming: sourceType %{public}d pid %{public}d uid %{public}d",
             processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appPid, processConfig_.appInfo.appUid);
         ReportNoBgPermissionEvent();
         return false;
     }
- 
-    SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
     return true;
 }
  
@@ -802,15 +791,6 @@ bool CapturerInServer::TurnOnMicIndicator()
 bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
-    SwitchStreamInfo info = {
-        streamIndex_,
-        processConfig_.callerUid,
-        processConfig_.appInfo.appUid,
-        processConfig_.appInfo.appPid,
-        tokenId,
-        capturerState,
-    };
-    SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     if (isMicIndicatorOn_) {
         bool ret = RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, streamIndex_);
         if (!ret) {
@@ -1320,17 +1300,9 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
 {
     RestoreStatus restoreStatus = audioServerBuffer_->SetRestoreStatus(NEED_RESTORE);
     if (restoreStatus == NEED_RESTORE) {
-        SwitchStreamInfo info = {
-            streamIndex_,
-            processConfig_.callerUid,
-            processConfig_.appInfo.appUid,
-            processConfig_.appInfo.appPid,
-            processConfig_.appInfo.appTokenId,
-            status_.load() == I_STATUS_STARTED ? CAPTURER_RUNNING : CAPTURER_PREPARED
-        };
-        AUDIO_INFO_LOG("Insert switchStream:%{public}u uid:%{public}d tokenId:%{public}u "
-            "Reason:NEED_RESTORE", streamIndex_, info.callerUid, info.appTokenId);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+        AUDIO_INFO_LOG("RestoreSession streamIndex:%{public}u uid:%{public}d tokenId:%{public}u "
+            "Reason:NEED_RESTORE", streamIndex_, processConfig_.callerUid,
+            processConfig_.appInfo.appTokenId);
 
         audioServerBuffer_->SetRestoreInfo(restoreInfo);
         audioServerBuffer_->WakeFutex(IS_PRE_EXIT);

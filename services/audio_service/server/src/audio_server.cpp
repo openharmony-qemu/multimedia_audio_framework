@@ -2969,20 +2969,6 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
         return true;
     }
 
-    SwitchStreamInfo info = {
-        config.originalSessionId,
-        config.callerUid,
-        config.appInfo.appUid,
-        config.appInfo.appPid,
-        config.appInfo.appTokenId,
-        CAPTURER_PREPARED,
-    };
-    if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
-        AUDIO_INFO_LOG("switchStream is recreating, callerUid:%{public}d", config.callerUid);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
-        return true;
-    }
-
     std::string bundleName = AppBundleManager::GetBundleNameFromUid(config.appInfo.appUid);
     if (AudioService::GetInstance()->MatchForegroundList(bundleName, config.appInfo.appUid) &&
         Util::IsBackgroundSourceType(config.capturerInfo.sourceType)) {

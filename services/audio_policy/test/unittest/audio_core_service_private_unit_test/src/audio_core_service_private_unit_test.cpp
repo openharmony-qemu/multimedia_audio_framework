@@ -1098,9 +1098,6 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Leve
 
     audioCoreService->TriggerRecreateCapturerStreamCallback(streamDesc);
     EXPECT_NE(audioCoreService->audioPolicyServerHandler_, nullptr);
-
-    bool ret = SwitchStreamUtil::RemoveAllRecordBySessionId(123456);
-    EXPECT_EQ(ret, true);
 }
 
 /**

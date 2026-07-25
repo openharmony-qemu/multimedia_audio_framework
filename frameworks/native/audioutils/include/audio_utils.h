@@ -201,20 +201,6 @@ public:
         const char* permission, int32_t successCount, int32_t failCount);
 };
 
-class SwitchStreamUtil {
-public:
-    static bool UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState);
-    static bool IsSwitchStreamSwitching(SwitchStreamInfo &info, SwitchState targetState);
-private:
-    static bool InsertSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState);
-    static bool RemoveSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState);
-    static bool HandleCreatedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState);
-    static bool HandleStartedSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState);
-    static bool HandleSwitchInfoInRecord(SwitchStreamInfo &info, SwitchState targetState);
-    static void TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState);
-    static bool RemoveAllRecordBySessionId(uint32_t sessionId);
-};
-
 class SolePipe {
 public:
     static void SetSolePipeSourceInfo(int32_t sourceType, uint32_t routeFlag, const std::string &pipeName);
