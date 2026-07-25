@@ -224,7 +224,7 @@ std::shared_ptr<IHpaeRendererManager> &GetSharedRendererManager()
     return mgr;
 }
 
-uint32_t SetupSession(std::shared_ptr<IHpaeRendererManager> &mgr)
+uint32_t g_setupSession(std::shared_ptr<IHpaeRendererManager> &mgr)
 {
     HpaeStreamInfo streamInfo;
     InitRenderStreamInfo(streamInfo);
@@ -233,7 +233,7 @@ uint32_t SetupSession(std::shared_ptr<IHpaeRendererManager> &mgr)
     return streamInfo.sessionId;
 }
 
-void TeardownSession(std::shared_ptr<IHpaeRendererManager> &mgr, uint32_t sessionId)
+void g_teardownSession(std::shared_ptr<IHpaeRendererManager> &mgr, uint32_t sessionId)
 {
     mgr->DestroyStream(sessionId);
     WaitForMsgProcessing(mgr);
@@ -381,13 +381,13 @@ void HpaeRendererManagerOnNodeStatusUpdateFuzzTest()
     if (rendererManager == nullptr) {
         return;
     }
-    uint32_t sessionId = SetupSession(rendererManager);
+    uint32_t sessionId = g_setupSession(rendererManager);
     for (size_t i = 0; i < IOperationVec.size(); i++) {
         IOperation operation = IOperationVec[i];
         rendererManager->OnNodeStatusUpdate(sessionId, operation);
     }
     WaitForMsgProcessing(rendererManager);
-    TeardownSession(rendererManager, sessionId);
+    g_teardownSession(rendererManager, sessionId);
 }
 
 void HpaeRendererManagerOnFadeDoneFuzzTest()
@@ -396,10 +396,10 @@ void HpaeRendererManagerOnFadeDoneFuzzTest()
     if (rendererManager == nullptr) {
         return;
     }
-    uint32_t sessionId = SetupSession(rendererManager);
+    uint32_t sessionId = g_setupSession(rendererManager);
     rendererManager->OnFadeDone(sessionId);
     WaitForMsgProcessing(rendererManager);
-    TeardownSession(rendererManager, sessionId);
+    g_teardownSession(rendererManager, sessionId);
 }
 
 void HpaeRendererManagerOnRequestLatencyFuzzTest()
@@ -408,11 +408,11 @@ void HpaeRendererManagerOnRequestLatencyFuzzTest()
     if (rendererManager == nullptr) {
         return;
     }
-    uint32_t sessionId = SetupSession(rendererManager);
+    uint32_t sessionId = g_setupSession(rendererManager);
     uint64_t latency = GetData<uint64_t>();
     rendererManager->OnRequestLatency(sessionId, latency);
     WaitForMsgProcessing(rendererManager);
-    TeardownSession(rendererManager, sessionId);
+    g_teardownSession(rendererManager, sessionId);
 }
 
 void HpaeRendererManagerOnDisConnectProcessClusterFuzzTest()
@@ -432,11 +432,11 @@ void HpaeRendererManagerSetLoudnessGainFuzzTest()
     if (rendererManager == nullptr) {
         return;
     }
-    uint32_t sessionId = SetupSession(rendererManager);
+    uint32_t sessionId = g_setupSession(rendererManager);
     float loudnessGain = GetData<float>();
     rendererManager->SetLoudnessGain(sessionId, loudnessGain);
     WaitForMsgProcessing(rendererManager);
-    TeardownSession(rendererManager, sessionId);
+    g_teardownSession(rendererManager, sessionId);
 }
 
 void HpaeRendererManagerConnectCoBufferNodeFuzzTest()
@@ -473,11 +473,11 @@ void HpaeRendererManagerStartWithSyncIdFuzzTest()
     if (rendererManager == nullptr) {
         return;
     }
-    uint32_t sessionId = SetupSession(rendererManager);
+    uint32_t sessionId = g_setupSession(rendererManager);
     int32_t syncId = GetData<int32_t>();
     rendererManager->StartWithSyncId(sessionId, syncId);
     WaitForMsgProcessing(rendererManager);
-    TeardownSession(rendererManager, sessionId);
+    g_teardownSession(rendererManager, sessionId);
 }
 
 void EnableCollaborationWithMovieSceneFuzzTest()
@@ -508,10 +508,10 @@ void OnCollborationFadeDoneFuzzTest()
     if (rendererManager == nullptr) {
         return;
     }
-    uint32_t sessionId = SetupSession(rendererManager);
+    uint32_t sessionId = g_setupSession(rendererManager);
     rendererManager->OnCollborationFadeDone(sessionId);
     WaitForMsgProcessing(rendererManager);
-    TeardownSession(rendererManager, sessionId);
+    g_teardownSession(rendererManager, sessionId);
 }
 
 void OnFadeDoneWithActiveSessionFuzzTest()
