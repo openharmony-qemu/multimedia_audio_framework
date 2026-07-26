@@ -109,7 +109,7 @@ static const std::unordered_map<std::string, int32_t> FAST_PIPE_DELAY_RELEASE_TI
 static int32_t GetFastPipeDelayReleaseTimeMs(const std::string &pipeName)
 {
     auto it = FAST_PIPE_DELAY_RELEASE_TIME_MS.find(pipeName);
-    return it ? it->second : NORMAL_FAST_PIPE_CLOSE_DELAY_TIME_MS;
+    return it != FAST_PIPE_DELAY_RELEASE_TIME_MS ? it->second : NORMAL_FAST_PIPE_CLOSE_DELAY_TIME_MS;
 }
 
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
