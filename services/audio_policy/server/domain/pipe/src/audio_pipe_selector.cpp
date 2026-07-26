@@ -451,6 +451,8 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
         streamDesc->isNearLinkCollaborationEnable_ = false;
     }
 
+    AdjustFastRouteForUltraFastIfNeeded(streamDesc);
+
     std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList {};
     for (auto &curPipeInfo : pipeInfoList) {
         if (curPipeInfo->pipeRole_ == static_cast<AudioPipeRole>(streamDesc->audioMode_)) {
@@ -483,6 +485,27 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
         info.ToString().c_str(), streamDesc->sessionId_);
 
     return selectedPipeInfoList;
+}
+
+void AudioPipeSelector::AdjustFastRouteForUltraFastIfNeeded(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(!streamDesc->newDeviceDescs_.empty() && streamDesc->newDeviceDescs_.front() != nullptr,
+        "new device desc is empty!");
+
+    std::string adapterName = AudioPipeManager::GetPipeManager()->GetAdapterNameBySessionId(streamDesc->sessionId_);
+    DeviceType deviceType = streamDesc->newDeviceDescs_.front()->getType();
+    if (streamDesc->GetRoute() == AUDIO_OUTPUT_FLAG_FAST && pipeManager_->HasUltraFastPipe() &&
+        adapterName == "primary" && !pipeManager_->IsUltraFastSupportedDevice(deviceType)) {
+        streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    }
+}
+
+void AudioPipeSelector::AdjustFastRouteForUltraFastIfNeeded(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+{
+    for (auto &streamDesc : streamDescs) {
+        AdjustFastRouteForUltraFastIfNeeded(streamDesc);
+    }
 }
 
 void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -589,6 +612,7 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
     if (streamDescs.size() == 1) {
         // modemCommunication streamDescs stored in modemCommunicationIdMap_, need to do extra concurrencyProcess
         ProcessModemCommunicationConcurrency(streamDescs, streamsMoveToNormal);
+        AdjustFastRouteForUltraFastIfNeeded(streamDescs);
         return;
     }
 
@@ -599,6 +623,7 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
         }
     }
     ProcessModemCommunicationConcurrency(streamDescs, streamsMoveToNormal);
+    AdjustFastRouteForUltraFastIfNeeded(streamDescs);
     CheckFastStreamOverLimitToNormal(streamDescs);
 
     streamDescs = UpdateStreamDescs(streamDescs, originalStreamSessionIds);
