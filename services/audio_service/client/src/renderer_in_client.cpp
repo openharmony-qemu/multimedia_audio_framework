@@ -1487,7 +1487,7 @@ int32_t RendererInClientInner::CallStartWhenInStandby()
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, SUCCESS, "Client is not RUNNING!");
     CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, ERROR,
         HILOG_COMM_ERROR("[CallStartWhenInStandby]ipcStream is not inited!"));
-    int32_t ret = ipcStream_->Start(writeCb_ == nullptr);
+    int32_t ret = ipcStream_->Start(CheckWriteCb());
     AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
     return SUCCESS;
 }
