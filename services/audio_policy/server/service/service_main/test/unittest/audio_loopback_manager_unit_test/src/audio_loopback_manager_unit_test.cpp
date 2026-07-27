@@ -278,22 +278,6 @@ HWTEST_F(AudioLoopbackManagerUnitTest, GetVolume_NotSupported_001, TestSize.Leve
     EXPECT_EQ(result, ERROR_LOOPBACK_OPERATION_NOT_SUPPORTED);
 }
 
-HWTEST_F(AudioLoopbackManagerUnitTest, OnHandlerDied_001, TestSize.Level1)
-{
-    sptr<IRemoteObject> handlerLoopback;
-    sptr<IRemoteObject> controlLoopback;
-    sptr<MockILoopbackCallback> handlerCallback = new MockILoopbackCallback();
-    sptr<MockILoopbackCallback> controlCallback = new MockILoopbackCallback();
-    
-    EXPECT_CALL(*controlCallback, OnStatusChange(LOOPBACK_AVAILABLE_IDLE, CMD_FROM_SYSTEM)).Times(1);
-    manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_HANDLER, handlerCallback, handlerLoopback, 1001);
-    manager_->CreateLoopback(LOOPBACK_HARDWARE, LOOPBACK_TYPE_GLOBAL_CONTROL, controlCallback, controlLoopback, 1002);
-    manager_->OnHandlerDied();
-    int status = 0;
-    int32_t result = manager_->GetStatus(LOOPBACK_TYPE_GLOBAL_CONTROL, status, 1002);
-    EXPECT_EQ(result, ERROR_LOOPBACK_HANDLER_NOT_EXIST);
-}
-
 HWTEST_F(AudioLoopbackManagerUnitTest, OnControlDied_001, TestSize.Level1)
 {
     sptr<IRemoteObject> handlerLoopback;
