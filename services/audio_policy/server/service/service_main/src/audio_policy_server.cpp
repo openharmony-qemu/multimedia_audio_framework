@@ -3374,11 +3374,21 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
     auto callerUid = IPCSkeleton::GetCallingUid();
     streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
     streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
-    int appVolume = 0;
-    audioPolicyManager_.GetAppVolumeLevel(callerUid, appVolume);
-    streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     AUDIO_DEBUG_LOG("RegisterTracker: [caller uid: %{public}d]", callerUid);
-    if (callerUid != MEDIA_SERVICE_UID && !Util::IsEnhancedRoutingSupported()) {
+    // Under enhanced routing the client-reported appUid is kept as clientUID only for trusted callers
+    // (media_service, the app itself when callerUid == appUid, or a system-permission proxy); for any
+    // other caller fall back to the kernel-authenticated callerUid to prevent uid spoofing. Legacy
+    // (non-enhanced) configs always override, matching the previous behaviour.
+    bool keepClientUid = false;
+    if (callerUid == MEDIA_SERVICE_UID) {
+        keepClientUid = true;
+    } else if (Util::IsEnhancedRoutingSupported()) {
+        int32_t appUid = (mode == AUDIO_MODE_PLAYBACK)
+            ? streamChangeInfo.audioRendererChangeInfo.clientUID
+            : streamChangeInfo.audioCapturerChangeInfo.clientUID;
+        keepClientUid = (callerUid == appUid) || PermissionUtil::VerifySystemPermission();
+    }
+    if (!keepClientUid) {
         if (mode == AUDIO_MODE_PLAYBACK) {
             streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
@@ -3390,6 +3400,11 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
     }
+    // Mirror UpdateTracker: key per-app volume on the (post-decision) clientUID so the volume
+    // identity matches the stream identity under enhanced routing.
+    int appVolume = 0;
+    audioPolicyManager_.GetAppVolumeLevel(streamChangeInfo.audioRendererChangeInfo.clientUID, appVolume);
+    streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     if (streamChangeInfoIn.audioCapturerChangeInfo.capturerInfo.sourceType == SOURCE_TYPE_VOICE_DOWNLINK &&
         queryBundleNameListCallback_ != nullptr) {
         uint32_t sessionId = streamChangeInfoIn.audioCapturerChangeInfo.sessionId;
@@ -3413,13 +3428,25 @@ int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChange
     streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
     streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
     AUDIO_DEBUG_LOG("UpdateTracker: [caller uid: %{public}d]", callerUid);
-    if (callerUid != MEDIA_SERVICE_UID && !Util::IsEnhancedRoutingSupported()) {
+    // Same trust gate as RegisterTracker: under enhanced routing keep the client-reported appUid as
+    // clientUID only for trusted callers; otherwise override with the kernel-authenticated callerUid.
+    bool keepClientUid = false;
+    if (callerUid == MEDIA_SERVICE_UID) {
+        keepClientUid = true;
+    } else if (Util::IsEnhancedRoutingSupported()) {
+        int32_t appUid = (mode == AUDIO_MODE_PLAYBACK)
+            ? streamChangeInfo.audioRendererChangeInfo.clientUID
+            : streamChangeInfo.audioCapturerChangeInfo.clientUID;
+        keepClientUid = (callerUid == appUid) || PermissionUtil::VerifySystemPermission();
+    }
+    if (!keepClientUid) {
         if (mode == AUDIO_MODE_PLAYBACK) {
             streamChangeInfo.audioRendererChangeInfo.clientUID = callerUid;
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioRendererChangeInfo.clientUID);
         } else {
             streamChangeInfo.audioCapturerChangeInfo.clientUID = callerUid;
+            streamChangeInfo.audioCapturerChangeInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
