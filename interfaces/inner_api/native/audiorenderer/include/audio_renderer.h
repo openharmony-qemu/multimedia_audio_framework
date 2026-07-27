@@ -1266,6 +1266,22 @@ public:
     virtual int32_t SetTarget(RenderTarget target) { return 0; };
 
     /**
+     * @brief Set the render target with target capture stream parameters.
+     * @param target The target at which the stream needs to be rendered.
+     * @param targetUid The uid of the target capture stream.
+     * @param targetStreamId The stream id of the target capture stream.
+     * @return Returns {@link SUCCESS} if render target is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26
+     */
+    virtual int32_t SetTarget(RenderTarget target, int32_t targetUid, uint32_t targetStreamId)
+    {
+        (void)targetUid;
+        (void)targetStreamId;
+        return SetTarget(target);
+    };
+
+    /**
      * @brief Obtains the current render target
      * @return Returns current render target
      * @since 22

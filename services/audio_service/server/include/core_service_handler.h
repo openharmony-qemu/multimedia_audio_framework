@@ -50,7 +50,8 @@ public:
     uint32_t GenerateSessionId();
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
     int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
-    int32_t SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId);
+    int32_t SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId,
+        int32_t targetUid = INVALID_UID, uint32_t targetStreamId = INVALID_STREAM_ID);
     int32_t StartInjection(uint32_t sessionId);
     void RemoveIdForInjector(uint32_t sessionId);
     void ReleaseCaptureInjector();

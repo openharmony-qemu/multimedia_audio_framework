@@ -237,6 +237,8 @@ public:
         int32_t ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
             const std::string &moduleName);
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
+        int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId,
+            int32_t targetUid, uint32_t targetStreamId) override;
         int32_t StartInjection(uint32_t sessionId) override;
         void RemoveIdForInjector(uint32_t streamId) override;
         void ReleaseCaptureInjector() override;
@@ -506,6 +508,8 @@ public:
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsA2dpOffloadStream(uint sessionId);
     int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId);
+    int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId,
+        int32_t targetUid, uint32_t targetStreamId);
     int32_t StartInjection(uint32_t sessionId);
     void RemoveIdForInjector(uint32_t sessionId);
     void ReleaseCaptureInjector();

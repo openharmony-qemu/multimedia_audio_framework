@@ -243,6 +243,7 @@ public:
     bool GetStopFlag() const override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
     int32_t SetRenderTarget(RenderTarget renderTarget) override;
+    int32_t SetRenderTarget(RenderTarget renderTarget, int32_t targetUid, uint32_t targetStreamId) override;
     RenderTarget GetRenderTarget() override;
     bool IsRestoreNeeded() override;
     void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,

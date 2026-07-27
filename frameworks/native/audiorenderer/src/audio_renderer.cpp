@@ -3730,6 +3730,16 @@ int32_t AudioRendererPrivate::SetTarget(RenderTarget target)
     return currentStream->SetRenderTarget(target);
 }
 
+int32_t AudioRendererPrivate::SetTarget(RenderTarget target, int32_t targetUid, uint32_t targetStreamId)
+{
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_PREPARED || state == RENDERER_STOPPED || state == RENDERER_PAUSED,
+        ERR_ILLEGAL_STATE, "Set target failed. Illegal state: %{public}u", state);
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR, "audioStream_ is nullptr");
+    return currentStream->SetRenderTarget(target, targetUid, targetStreamId);
+}
+
 RenderTarget AudioRendererPrivate::GetTarget() const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();

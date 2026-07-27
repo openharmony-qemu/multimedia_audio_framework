@@ -783,9 +783,15 @@ int32_t AudioCoreService::EventEntry::ReleasePrimaryExtraPipe(AudioIOHandle id, 
 int32_t AudioCoreService::EventEntry::SetRendererTarget(RenderTarget target, RenderTarget lastTarget,
     uint32_t sessionId)
 {
+    return SetRendererTarget(target, lastTarget, sessionId, INVALID_UID, INVALID_STREAM_ID);
+}
+
+int32_t AudioCoreService::EventEntry::SetRendererTarget(RenderTarget target, RenderTarget lastTarget,
+    uint32_t sessionId, int32_t targetUid, uint32_t targetStreamId)
+{
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "Injector::coreService_ is nullptr");
-    return coreService_->SetRendererTarget(target, lastTarget, sessionId);
+    return coreService_->SetRendererTarget(target, lastTarget, sessionId, targetUid, targetStreamId);
 }
 
 int32_t AudioCoreService::EventEntry::StartInjection(uint32_t sessionId)

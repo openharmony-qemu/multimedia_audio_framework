@@ -82,6 +82,11 @@ public:
         const SourceType &sourceType) override;
     int32_t RemoveCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
         const SourceType &sourceType) override;
+    int32_t AddCaptureInjectorByTargetStream(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
+        uint32_t targetStreamId) override;
+    int32_t RemoveCaptureInjectorByTargetStream(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
+        uint32_t targetStreamId) override;
+    int32_t SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute) override;
     void TriggerAppsUidUpdate(uint32_t sessionId) override;
     int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) override;
 

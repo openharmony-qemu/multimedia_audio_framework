@@ -117,7 +117,8 @@ public:
 
     int32_t SetOffloadMode(int32_t state, bool isAppBack) { return 0; } // renderer only
 
-    int32_t SetTarget(int32_t target, int32_t &ret) { return 0; } // renderer only
+    int32_t SetTarget(int32_t target, int32_t targetUid,
+        uint32_t targetStreamId, int32_t &ret) { return 0; } // renderer only
 
     int32_t UnsetOffloadMode() { return 0; } // renderer only
 

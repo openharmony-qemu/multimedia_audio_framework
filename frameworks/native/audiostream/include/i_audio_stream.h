@@ -215,6 +215,12 @@ public:
     virtual void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) = 0;
     virtual int32_t SetRenderTarget(RenderTarget target) { return ERR_NOT_SUPPORTED; }
+    virtual int32_t SetRenderTarget(RenderTarget target, int32_t targetUid, uint32_t targetStreamId)
+    {
+        (void)targetUid;
+        (void)targetStreamId;
+        return SetRenderTarget(target);
+    }
     virtual RenderTarget GetRenderTarget() { return NORMAL_PLAYBACK; }
     virtual int32_t GetKeepRunning(bool &keepRunning) const { return -1; }
 

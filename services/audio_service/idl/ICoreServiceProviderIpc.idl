@@ -53,6 +53,8 @@ interface ICoreServiceProviderIpc {
         [in] unsigned int target,
         [in] unsigned int lastTarget,
         [in] unsigned int sessionId,
+        [in] int targetUid,
+        [in] unsigned int targetStreamId,
         [out] int ret);
     void StartInjection(
         [in] unsigned int target,

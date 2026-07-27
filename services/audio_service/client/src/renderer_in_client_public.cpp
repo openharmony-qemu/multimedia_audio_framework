@@ -703,7 +703,23 @@ int32_t RendererInClientInner::SetRenderTarget(RenderTarget renderTarget)
     CHECK_AND_RETURN_RET_LOG(renderTarget_ != renderTarget, SUCCESS, "Set same renderTarget");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
     int32_t ret = ERROR;
-    int32_t ipcRet = ipcStream_->SetTarget(renderTarget, ret);
+    int32_t ipcRet = ipcStream_->SetTarget(renderTarget, INVALID_UID, INVALID_STREAM_ID, ret);
+    CHECK_AND_RETURN_RET_LOG(ipcRet == SUCCESS, ret, "ipcStream error: %{public}d", ipcRet);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set render target error: %{public}d", ret);
+    renderTarget_ = renderTarget;
+    return ret;
+}
+
+int32_t RendererInClientInner::SetRenderTarget(RenderTarget renderTarget, int32_t targetUid,
+    uint32_t targetStreamId)
+{
+    bool noTargetParams = (targetUid == INVALID_UID && targetStreamId == INVALID_STREAM_ID);
+    bool hasTargetParams = (targetUid != INVALID_UID && targetStreamId != INVALID_STREAM_ID);
+    CHECK_AND_RETURN_RET_LOG(noTargetParams || hasTargetParams, ERR_INVALID_PARAM,
+        "targetUid and targetStreamId must be set together");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
+    int32_t ret = ERROR;
+    int32_t ipcRet = ipcStream_->SetTarget(renderTarget, targetUid, targetStreamId, ret);
     CHECK_AND_RETURN_RET_LOG(ipcRet == SUCCESS, ret, "ipcStream error: %{public}d", ipcRet);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set render target error: %{public}d", ret);
     renderTarget_ = renderTarget;

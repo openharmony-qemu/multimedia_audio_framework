@@ -62,6 +62,9 @@ private:
         int32_t rendererFlags;
         int32_t interruptMode;
         int32_t target;
+        bool hasTargetParams = false;
+        int32_t targetUid = INVALID_UID;
+        uint32_t targetStreamId = INVALID_STREAM_ID;
         int32_t latencyType;
         bool isTrue;
         uint64_t time;
