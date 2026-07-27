@@ -136,11 +136,11 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(Strea
 vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevices(StreamUsage streamUsage,
     int32_t clientUID, RouterType &routerType, const RouterType &bypassType)
 {
-    (void)bypassType;
     bool isTransferRing = (streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE);
     
     for (auto &router : ringRenderRouters_) {
         CHECK_AND_CONTINUE_LOG(router != nullptr, "Invalid router.");
+        CHECK_AND_CONTINUE(bypassType != router->GetRouterType());
         vector<shared_ptr<AudioDeviceDescriptor>> descs = router->GetRingRenderDevices(streamUsage, clientUID);
         CHECK_AND_CONTINUE_LOG(!descs.empty(), "FetchRingRenderDevices is empty.");
         if (descs.front() != nullptr && descs.front()->deviceType_ != DEVICE_TYPE_NONE) {
