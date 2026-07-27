@@ -60,7 +60,7 @@ const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 const uint32_t PC_MIC_CHANNEL_NUM = 4;
 const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
-static const unsigned int BUFFER_CALC_20MS = 20 * SOURCE_PERIOD_SIZE;
+static const unsigned int BUFFER_CALC_20MS = (20 * SOURCE_PERIOD_SIZE);
 static const std::string CHECK_VIDEO_COMM_SELECTION = "audio_video_comm_fast_blocklist";
 static const int32_t REFETCH_DEVICE = 4;
 static const int64_t RING_DUAL_END_DELAY_US = 100000;
