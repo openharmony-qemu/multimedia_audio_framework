@@ -2703,7 +2703,7 @@ void AudioInterruptService::ReactivateAudioInterrupts(
     2. and to handle the state transition when the audio session resumes from a paused state.
     */
     auto isStreamFocusPresent = [&](const std::pair<AudioInterrupt, AudioFocuState> &pair) {
-        return pair.first.pid == callerPid && pair.second != PLACEHOLDER;
+        return pair.first.pid == callerPid && pair.second == ACTIVE;
     };
 
     bool tempUpdateScene = false;
