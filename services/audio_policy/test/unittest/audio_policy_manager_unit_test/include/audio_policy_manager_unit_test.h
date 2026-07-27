@@ -101,6 +101,11 @@ public:
     void OnAudioSceneChange(const AudioScene audioScene) override {}
 };
 
+class ConcreteSystemRecordControllerEnabledChangeCallback : public SystemRecordControllerEnabledChangeCallback {
+public:
+    void OnRecordControllerEnabledChange(const SystemRecordControllerChangeInfo &changeInfo) override {}
+};
+
 class AudioPolicyManagerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
