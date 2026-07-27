@@ -2654,6 +2654,121 @@ HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_ErrorReturn_002, TestSize.Level
 }
 
 /**
+ * @tc.name  : RenderSinkStart_PrimaryExtraOpenPa_003
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkStart opens PA power for the newly added primary_extra device class branch.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_PrimaryExtraOpenPa_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.deviceClass = "primary_extra"; // Newly added branch at RenderSinkStart (line 447)
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+
+    // Pre-set PA power state so the branch's reset effect can be asserted
+    hpaeSinkOutputNode->isOpenPaPower_ = false;
+    hpaeSinkOutputNode->isDisplayPaPowerState_ = true;
+    hpaeSinkOutputNode->silenceDataUs_ = 1000;
+
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
+    EXPECT_CALL(*mockSink, Start()).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockSink, SetPaPower(true)).WillOnce(Return(0));
+
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+    // primary_extra branch opens PA power and resets related state
+    EXPECT_TRUE(hpaeSinkOutputNode->isOpenPaPower_);
+    EXPECT_FALSE(hpaeSinkOutputNode->isDisplayPaPowerState_);
+    EXPECT_EQ(hpaeSinkOutputNode->silenceDataUs_, 0);
+}
+
+/**
+ * @tc.name  : RenderSinkStart_PrimaryExtraOpenPaFail_004
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkStart still succeeds when SetPaPower fails for primary_extra device.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_PrimaryExtraOpenPaFail_004, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.deviceClass = "primary_extra";
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
+    EXPECT_CALL(*mockSink, Start()).WillOnce(Return(SUCCESS));
+    // SetPaPower failure is only logged; it does not change the final SUCCESS return
+    EXPECT_CALL(*mockSink, SetPaPower(true)).WillOnce(Return(ERR_OPERATION_FAILED));
+
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+    // PA power state flag is set regardless of the SetPaPower return value
+    EXPECT_TRUE(hpaeSinkOutputNode->isOpenPaPower_);
+}
+
+/**
+ * @tc.name  : RenderSinkStart_PrimaryOpenPa_005
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkStart opens PA power for the primary device class branch.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_PrimaryOpenPa_005, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.deviceClass = "primary"; // Original operand of the OR condition
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+    hpaeSinkOutputNode->isOpenPaPower_ = false;
+
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
+    EXPECT_CALL(*mockSink, Start()).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockSink, SetPaPower(true)).WillOnce(Return(0));
+
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+    EXPECT_TRUE(hpaeSinkOutputNode->isOpenPaPower_);
+}
+
+/**
+ * @tc.name  : RenderSinkStart_NonPrimarySkipPa_006
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkStart does not call SetPaPower for non-primary device classes.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkStart_NonPrimarySkipPa_006, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.deviceClass = "a2dp"; // Neither "primary" nor "primary_extra"
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+
+    // Pre-set PA power state to verify it is left untouched by the skipped branch
+    hpaeSinkOutputNode->isOpenPaPower_ = false;
+    hpaeSinkOutputNode->isDisplayPaPowerState_ = true;
+    hpaeSinkOutputNode->silenceDataUs_ = 1000;
+
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
+    EXPECT_CALL(*mockSink, Start()).WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0); // Must not be called
+
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+    // PA power related state remains unchanged because the branch is skipped
+    EXPECT_FALSE(hpaeSinkOutputNode->isOpenPaPower_);
+    EXPECT_TRUE(hpaeSinkOutputNode->isDisplayPaPowerState_);
+    EXPECT_EQ(hpaeSinkOutputNode->silenceDataUs_, 1000);
+}
+
+/**
  * @tc.name  : RenderSinkStop_NullSink_001
  * @tc.type  : FUNC
  * @tc.desc  : Test RenderSinkStop returns ERROR when sink is null.
