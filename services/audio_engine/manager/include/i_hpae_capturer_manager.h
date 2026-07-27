@@ -81,7 +81,7 @@ public:
         (void)targetStreamId;
         return ERR_NOT_SUPPORTED;
     }
-    virtual int32_t SetCaptureInjectorMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+    virtual int32_t SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
     {
         (void)targetStreamId;
         (void)isMute;

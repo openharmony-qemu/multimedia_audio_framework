@@ -269,7 +269,7 @@ public:
         RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, SOURCE_TYPE_VOICE_COMMUNICATION);
     }
 
-    virtual void SetCaptureInjectorMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+    virtual void SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
     {
         (void)targetStreamId;
         (void)isMute;

@@ -2961,16 +2961,16 @@ void HpaeManager::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIn
     SendRequest(request, __func__);
 }
 
-void HpaeManager::SetCaptureInjectorMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+void HpaeManager::SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
 {
     auto request = [this, targetStreamId, isMute] {
-        AUDIO_INFO_LOG("set injector mute targetStreamId[%{public}u] isMute[%{public}d]",
+        AUDIO_INFO_LOG("set mic mute targetStreamId[%{public}u] isMute[%{public}d]",
             targetStreamId, isMute);
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
         if (capturerIdSourceNameMap_.find(targetStreamId) != capturerIdSourceNameMap_.end()) {
             CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[targetStreamId]),
                 "cannot find device:%{public}s", capturerIdSourceNameMap_[targetStreamId].c_str());
-            capturerManagerMap_[capturerIdSourceNameMap_[targetStreamId]]->SetCaptureInjectorMuteByTargetStream(
+            capturerManagerMap_[capturerIdSourceNameMap_[targetStreamId]]->SetCaptureMicMuteByTargetStream(
                 targetStreamId, isMute);
         }
     };

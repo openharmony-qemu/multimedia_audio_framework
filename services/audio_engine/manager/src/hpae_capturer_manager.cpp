@@ -1361,7 +1361,7 @@ int32_t HpaeCapturerManager::RemoveCaptureInjectorByTargetStream(
         if (sourceOutputNode != nullptr) {
             sourceOutputNode->DisConnect(converter);
             sourceOutputNode->SetInjectorState(false);
-            sourceOutputNode->SetInjectorMute(false);
+            sourceOutputNode->SetMicMute(false);
             sourceOutputNode->ResetAudioLimiter();
         }
         converter->DisConnect(sinkOutputNode);
@@ -1374,16 +1374,16 @@ int32_t HpaeCapturerManager::RemoveCaptureInjectorByTargetStream(
     return SUCCESS;
 }
 
-int32_t HpaeCapturerManager::SetCaptureInjectorMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+int32_t HpaeCapturerManager::SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
 {
     auto request = [this, targetStreamId, isMute] {
-        Trace trace("HpaeCapturerManager::SetCaptureInjectorMuteByTargetStream");
-        AUDIO_INFO_LOG("set capture injector mute targetStreamId %{public}u isMute %{public}d",
+        Trace trace("HpaeCapturerManager::SetCaptureMicMuteByTargetStream");
+        AUDIO_INFO_LOG("set capture mic mute targetStreamId %{public}u isMute %{public}d",
             targetStreamId, isMute);
         auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
         CHECK_AND_RETURN_LOG(sourceOutputNode != nullptr,
             "targetStreamId[%{public}u] sourceOutputNode not exist", targetStreamId);
-        sourceOutputNode->SetInjectorMute(isMute);
+        sourceOutputNode->SetMicMute(isMute);
     };
     SendRequest(request, __func__);
     return SUCCESS;

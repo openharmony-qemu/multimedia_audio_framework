@@ -131,24 +131,7 @@ HpaePcmBuffer *HpaeSourceOutputNode::GetAndValidateOutput()
         AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), data read is empty", GetSessionId());
         return nullptr;
     }
-    HpaePcmBuffer *outputData = nullptr;
-    if (isInjector_) {
-        if (isInjectorMute_) {
-            outputData = &silenceData_;
-            // solo mode: only the INJECTOR buffer (ignore mic)
-            for (auto *buffer : outputVec) {
-                if (buffer != nullptr && buffer->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_INJECTOR) {
-                    outputData = buffer;
-                    break;
-                }
-            }
-        } else {
-            // mix mode: sum all upstream buffers (mic + injector) with limiter
-            outputData = MixInputs(outputVec);
-        }
-    } else {
-        outputData = outputVec.front();
-    }
+    HpaePcmBuffer *outputData = SelectOutputData(outputVec);
     if (outputData == nullptr) {
         return nullptr;
     }
@@ -158,14 +141,32 @@ HpaePcmBuffer *HpaeSourceOutputNode::GetAndValidateOutput()
     return outputData;
 }
 
+HpaePcmBuffer *HpaeSourceOutputNode::SelectOutputData(const std::vector<HpaePcmBuffer *> &outputVec)
+{
+    if (!isInjector_) {
+        return outputVec.front();
+    }
+    // mix mode: sum all upstream buffers (mic + injector) with limiter
+    if (!isMicMute_) {
+        return MixInputs(outputVec);
+    }
+    // solo mode: only the INJECTOR buffer (ignore mic), fall back to silence if absent
+    for (auto *buffer : outputVec) {
+        if (buffer != nullptr && buffer->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_INJECTOR) {
+            return buffer;
+        }
+    }
+    return &silenceData_;
+}
+
 void HpaeSourceOutputNode::SetInjectorState(bool isInjector)
 {
     isInjector_ = isInjector;
 }
 
-void HpaeSourceOutputNode::SetInjectorMute(bool isMute)
+void HpaeSourceOutputNode::SetMicMute(bool isMute)
 {
-    isInjectorMute_ = isMute;
+    isMicMute_ = isMute;
 }
 
 int32_t HpaeSourceOutputNode::SetupAudioLimiter()
@@ -263,7 +264,7 @@ void HpaeSourceOutputNode::WriteDataAndUpdateFrames()
 
 void HpaeSourceOutputNode::DoProcess()
 {
-    bool isMute = isMute_ || (!isInjector_ && isInjectorMute_);
+    bool isMute = isMute_ || (!isInjector_ && isMicMute_);
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo() +
         (isMute ? "_[Mute]" : "_[unMute]"));
     HpaePcmBuffer *outputData = GetAndValidateOutput();

@@ -51,7 +51,7 @@ public:
     void SetMute(bool isMute);
     bool GetMute();
     void SetInjectorState(bool isInjector);
-    void SetInjectorMute(bool isMute);
+    void SetMicMute(bool isMute);
     int32_t SetupAudioLimiter();
     void ResetAudioLimiter();
     static int32_t GetPcEnableState();
@@ -61,6 +61,7 @@ private:
     uint64_t GetTimestamp();
     void ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer);
     HpaePcmBuffer *GetAndValidateOutput();
+    HpaePcmBuffer *SelectOutputData(const std::vector<HpaePcmBuffer *> &outputVec);
     HpaePcmBuffer *MixInputs(const std::vector<HpaePcmBuffer *> &inputs);
     void ProcessAudioData(HpaePcmBuffer *outputData, bool isMute);
     void WriteDataAndUpdateFrames();
@@ -77,12 +78,12 @@ private:
     uint32_t tokenId_ = 0;
     bool isMute_;
     bool isInjector_ = false;
-    bool isInjectorMute_ = false;
+    bool isMicMute_ = false;
     std::unique_ptr<AudioHighPassFilter> highpassFilter_;
     int32_t filterChannelCount_;
     bool isSupportHighpassFilter_;
 
-    // injector mix resources (mix mic + injector with limiter when isInjector_ && !isInjectorMute_)
+    // injector mix resources (mix mic + injector with limiter when isInjector_ && !isMicMute_)
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer mixedOutput_;
     HpaePcmBuffer tmpOutput_;

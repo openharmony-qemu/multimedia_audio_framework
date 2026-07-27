@@ -68,7 +68,7 @@ public:
         uint32_t targetStreamId) override;
     void RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         uint32_t targetStreamId) override;
-    void SetCaptureInjectorMuteByTargetStream(uint32_t targetStreamId, bool isMute) override;
+    void SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute) override;
     void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
     // callback Member functions
     virtual void OnOpenAudioPortCb(int32_t portId) override;

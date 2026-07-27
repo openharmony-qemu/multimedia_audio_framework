@@ -972,10 +972,10 @@ void HpaeManagerImpl::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPo
     manager_->RemoveCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex, targetStreamId);
 }
 
-void HpaeManagerImpl::SetCaptureInjectorMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+void HpaeManagerImpl::SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->SetCaptureInjectorMuteByTargetStream(targetStreamId, isMute);
+    manager_->SetCaptureMicMuteByTargetStream(targetStreamId, isMute);
 }
 
 int32_t HpaeManagerImpl::PeekAudioData(
