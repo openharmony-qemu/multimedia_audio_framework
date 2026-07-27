@@ -16,6 +16,7 @@
 #ifndef VA_DEVICE_MANAGER_H
 #define VA_DEVICE_MANAGER_H
 
+#include <functional>
 #include <iremote_broker.h>
 #include <unordered_map>
 #include "audio_errors.h"
@@ -39,10 +40,25 @@
 #include "audio_definition_adapter_info.h"
 
 #include "iv_a_device_controller.h"
+#include "iremote_object.h"
 
 
 namespace OHOS {
 namespace AudioStandard {
+
+class VADeviceDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    explicit VADeviceDeathRecipient(std::function<void()> callback) : callback_(std::move(callback)) {}
+    ~VADeviceDeathRecipient() override = default;
+    void OnRemoteDied(const wptr<IRemoteObject> &remote) override
+    {
+        if (callback_) {
+            callback_();
+        }
+    }
+private:
+    std::function<void()> callback_;
+};
 
 class VADeviceManager {
 public:
