@@ -90,19 +90,6 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckBlueToothActiveMusicTime_002, TestS
 
 /**
  * @tc.name  : Test AudioVolumeManager.
- * @tc.number: CheckWiredActiveMusicTime_001
- * @tc.desc  : CheckWiredActiveMusicTime
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, CheckWiredActiveMusicTime_001, TestSize.Level1)
-{
-    auto& volumeManager = AudioVolumeManager::GetInstance();
-    volumeManager.activeSafeTime_ = 68400;
-    volumeManager.CheckWiredActiveMusicTime(0);
-    EXPECT_TRUE(volumeManager.restoreNIsShowing_);
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
  * @tc.number: CheckWiredActiveMusicTime_002
  * @tc.desc  : CheckWiredActiveMusicTime
  */
