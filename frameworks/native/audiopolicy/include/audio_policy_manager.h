@@ -477,6 +477,8 @@ public:
     int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
+    
+    std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDevice();
 
     int32_t ClearSelectedInputDevice();
 
