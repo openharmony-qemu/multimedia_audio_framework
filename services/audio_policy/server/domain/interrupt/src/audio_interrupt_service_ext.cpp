@@ -453,14 +453,20 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
     }
     CHECK_AND_RETURN_RET(tempMuteList.size() > 0, ret);
     for (const auto& audioFocusInfo : tempMuteList) {
-        const AudioInterrupt& activeInterrupt = audioFocusInfo.interrupt;
+        const AudioInterrupt& activeInterrupt = audioFocusInfo.currInterrupt;
+        const AudioInterrupt& incomingInterrupt = audioFocusInfo.incomingInterrupt;
+        int32_t activeZoneId = FindAudioZoneByStreamIdInternal(activeInterrupt.streamId);
+        int32_t incomingZoneId = FindAudioZoneByStreamIdInternal(incomingInterrupt.streamId);
+        CHECK_AND_CONTINUE_LOG(activeZoneId == incomingZoneId,
+            "NotifyStreamSilentChange:streamId %{public}d(zoneId:%{public}d) and streamId "
+            "%{public}d(zoneId:%{public}d) are not in the same zone, skip interrupt",
+            activeInterrupt.streamId, activeZoneId, incomingInterrupt.streamId, incomingZoneId);
         InterruptEventInternal interruptEvent = audioFocusInfo.interruptEvent;
         interruptEvent.hintType = INTERRUPT_HINT_STOP;
         AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
             activeInterrupt.streamId, streamId);
         SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
-        int32_t zoneId = FindAudioZoneByStreamIdInternal(activeInterrupt.streamId);
-        DeactivateAudioInterruptInternal(zoneId, activeInterrupt);
+        DeactivateAudioInterruptInternal(activeZoneId, activeInterrupt);
         ret = true;
     }
     return ret;
@@ -520,7 +526,8 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
         MuteFocusInfo muteFocusInfo;
         muteFocusInfo.currStreamId = currentInterrupt.streamId;
         muteFocusInfo.incomingStreamId = incomingInterrupt.streamId;
-        muteFocusInfo.interrupt = currentInterrupt;
+        muteFocusInfo.currInterrupt = currentInterrupt;
+        muteFocusInfo.incomingInterrupt = incomingInterrupt;
         muteFocusInfo.interruptEvent = interruptEvent;
         focusList.emplace_back(muteFocusInfo);
     }
