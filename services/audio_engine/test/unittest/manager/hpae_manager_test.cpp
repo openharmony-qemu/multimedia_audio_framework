@@ -48,8 +48,6 @@ constexpr int32_t TEST_STREAM_UID = 111111;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t SESSION_ID_NOEXIST = 100000;
-constexpr uint32_t DEFAULT_FRAME_LEN_MS = 20;
-constexpr uint32_t MS_PER_SECOND = 1000;
 
 class HpaeManagerUnitTest : public testing::Test {
 public:
