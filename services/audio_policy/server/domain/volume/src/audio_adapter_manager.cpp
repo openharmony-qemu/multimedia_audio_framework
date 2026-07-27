@@ -305,6 +305,8 @@ void AudioAdapterManager::LoadVolumeValueMapFromDb()
         }
 #endif
     }
+    auto desc = audioConnectedDevice_.GetOutputDeviceByDeviceType(DEVICE_TYPE_SPEAKER);
+    SaveNotificationVolumeToLocal(desc, STREAM_NOTIFICATION);
 }
 
 int32_t AudioAdapterManager::ReInitKVStore()
@@ -378,7 +380,7 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType, Devic
 }
 
 void AudioAdapterManager::SaveNotificationVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
-    AudioVolumeType volumeType, int32_t volumeLevel)
+    AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     AudioVolumeType audioVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
@@ -386,7 +388,7 @@ void AudioAdapterManager::SaveNotificationVolumeToLocal(std::shared_ptr<AudioDev
     // use STREAM_NOTIFICATION on phone and use STREAM_SYSTEM on PC.
     bool isRightVolumeType = VolumeUtils::IsPCVolumeEnable() ?
         (audioVolumeMap == STREAM_SYSTEM) : (audioVolumeMap == STREAM_NOTIFICATION);
-    if (isRightVolumeType) {
+    if (isRightVolumeType && (!VolumeUtils::IsPCVolumeEnable() || device->deviceType_ == DEVICE_TYPE_SPEAKER)) {
         int32_t volumeLevel =
             GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
         // To keep the startup volume consistent between the new and old versions, still use "ringtonevolume".
@@ -2599,10 +2601,8 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
 
     ringerMode_.store(ringerMode);
     auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_NOTIFICATION);
-    int32_t volumeLevel =
-        GetStreamVolumeInternal(desc, STREAM_NOTIFICATION) * ((ringerMode_ != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation
-    SaveNotificationVolumeToLocal(desc, STREAM_NOTIFICATION, volumeLevel);
+    SaveNotificationVolumeToLocal(desc, STREAM_NOTIFICATION);
 }
 
 void AudioAdapterManager::CloneVolumeMap(void)
@@ -4311,9 +4311,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     AudioStreamType volumeType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is null");
-    int32_t volumeLevel =
-        GetStreamVolumeInternal(desc, volumeType) * (GetStreamMuteInternal(desc, volumeType) ? 0 : 1);
-    SaveNotificationVolumeToLocal(desc, volumeType, volumeLevel);
+    SaveNotificationVolumeToLocal(desc, volumeType);
     if (desc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
         AudioIOHandle ioHandle;
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_HEARING_AID);

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /**
- * @addtogroup AudioSuite
+ * @addtogroup OHAudioSuite
  * @{
  *
  * @brief Provide the definition of the C interface for the audio download manager module.

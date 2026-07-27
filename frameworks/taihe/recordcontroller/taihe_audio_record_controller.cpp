@@ -85,6 +85,7 @@ AudioRecordingManager AudioRecordingManagerImpl::CreateRecordingManagerWrapper()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "impl is nullptr");
         return make_holder<AudioRecordingManagerImpl, AudioRecordingManager>(nullptr);
     }
+
     impl->audioMngr_ = OHOS::AudioStandard::AudioSystemManager::GetInstance();
     if (impl->audioMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");

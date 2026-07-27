@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /**
- * @addtogroup AudioConverter
+ * @addtogroup OHAudioSuite
  * @{
  *
  * @brief Provide the definition of the C interface for the audio module.

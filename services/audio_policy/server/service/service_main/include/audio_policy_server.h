@@ -26,6 +26,7 @@
 #include "system_ability.h"
 #include "iservice_registry.h"
 
+#include "application_state_observer_stub.h"
 #include "accesstoken_kit.h"
 #include "perm_state_change_callback_customize.h"
 #include "power_state_callback_stub.h"
@@ -931,6 +932,7 @@ private:
     void RegisterSyncHibernateListener();
     void UnRegisterSyncHibernateListener();
     void RegisterAppStateListener();
+    void RegisterAppStateObserver();
     void AddRemoteDevstatusCallback();
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
     void SubscribeCommonEventExecute();
@@ -1022,6 +1024,7 @@ private:
     bool powerStateCallbackRegister_;
     AppExecFwk::AppMgrClient appManager_;
     sptr<AppStateListener> appStateListener_;
+    sptr<AppExecFwk::ApplicationStateObserverStub> appStateObserver_ = nullptr;
 
     std::mutex systemVolumeMutex_;
     std::mutex micStateChangeMutex_;

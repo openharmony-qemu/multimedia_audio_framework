@@ -36,11 +36,15 @@ public:
     bool IsSpatializationSupportedForDevice(AudioDeviceDescriptor deviceDescriptor);
     bool IsHeadTrackingSupported();
     bool IsHeadTrackingSupportedForDevice(AudioDeviceDescriptor deviceDescriptor);
+    bool IsPersonalizedSpatializationSupported();
     void SetSpatializationEnabledSync(AudioDeviceDescriptor deviceDescriptor, bool enabled);
     bool IsSpatializationEnabled(AudioDeviceDescriptor deviceDescriptor);
     bool IsSpatializationEnabledForCurrentDevice();
     void SetHeadTrackingEnabledSync(AudioDeviceDescriptor deviceDescriptor, bool enabled);
     bool IsHeadTrackingEnabled(AudioDeviceDescriptor deviceDescriptor);
+    void SetPersonalizedSpatializationEnabledSync(AudioDeviceDescriptor deviceDescriptor, bool enabled);
+    bool IsPersonalizedSpatializationEnabled(AudioDeviceDescriptor deviceDescriptor);
+    void DownloadPersonalizedHRTFSync(HRTFDescriptor hrtfDescriptor);
     void UpdateSpatialDeviceState(AudioSpatialDeviceState spatialDeviceState);
     void SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     AudioSpatializationSceneType GetSpatializationSceneType();
@@ -50,10 +54,14 @@ public:
         callback_view<void(AudioSpatialEnabledStateForDevice const&)> callback);
     void OnHeadTrackingEnabledChangeForAnyDevice(
         callback_view<void(AudioSpatialEnabledStateForDevice const&)> callback);
+    void OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+        callback_view<void(AudioSpatialEnabledStateForDevice const&)> callback);
     void OffSpatializationEnabledChangeForCurrentDevice(optional_view<callback<void(bool)>> callback);
     void OffSpatializationEnabledChangeForAnyDevice(
         optional_view<callback<void(AudioSpatialEnabledStateForDevice const&)>> callback);
     void OffHeadTrackingEnabledChangeForAnyDevice(
+        optional_view<callback<void(AudioSpatialEnabledStateForDevice const&)>> callback);
+    void OffPersonalizedSpatializationEnabledChangeForAnyDevice(
         optional_view<callback<void(AudioSpatialEnabledStateForDevice const&)>> callback);
 
 private:
@@ -63,11 +71,15 @@ private:
         std::shared_ptr<uintptr_t> &callback, AudioSpatializationManagerImpl *taiheSpatializationManager);
     static void RegisterHeadTrackingEnabledChangeCallback(
         std::shared_ptr<uintptr_t> &callback, AudioSpatializationManagerImpl *taiheSpatializationManager);
+    static void RegisterPersonalizedSpatializationEnabledChangeCallback(
+        std::shared_ptr<uintptr_t> &callback, AudioSpatializationManagerImpl *taiheSpatializationManager);
     static void UnregisterSpatializationEnabledChangeForCurrentDeviceCallback(
         std::shared_ptr<uintptr_t> &callback, AudioSpatializationManagerImpl *taiheSpatializationManager);
     static void UnregisterSpatializationEnabledChangeCallback(
         std::shared_ptr<uintptr_t> &callback, AudioSpatializationManagerImpl *taiheSpatializationManager);
     static void UnregisterHeadTrackingEnabledChangeCallback(
+        std::shared_ptr<uintptr_t> &callback, AudioSpatializationManagerImpl *taiheSpatializationManager);
+    static void UnregisterPersonalizedSpatializationEnabledChangeCallback(
         std::shared_ptr<uintptr_t> &callback, AudioSpatializationManagerImpl *taiheSpatializationManager);
 
     OHOS::AudioStandard::AudioSpatializationManager *audioSpatializationMngr_;
@@ -78,6 +90,8 @@ private:
         spatializationEnabledChangeCallback_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioHeadTrackingEnabledChangeCallback>
         headTrackingEnabledChangeCallback_ = nullptr;
+    std::shared_ptr<OHOS::AudioStandard::AudioPersonalizedSpatializationEnabledChangeCallback>
+        personalizedSpatialEnabledChangeCallback_ = nullptr;
     std::mutex mutex_;
 };
 } // namespace ANI::Audio

@@ -49,6 +49,7 @@ ohos_shared_library("audio_safe_volume_notification_impl") {
     "image_framework:image_native",
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
+    "resource_management:global_resmgr",
   ]
 
   cflags = [

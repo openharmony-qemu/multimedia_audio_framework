@@ -21,8 +21,11 @@
 #include "audio_log.h"
 #include "taihe_audio_enum.h"
 #include <unistd.h>
+#include <fcntl.h>
 
 namespace ANI::Audio {
+
+const int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024; // 10MB
 
 const std::vector<OHOS::AudioStandard::DeviceRole> DEVICE_ROLE_SET = {
     OHOS::AudioStandard::DEVICE_ROLE_NONE,
@@ -328,6 +331,29 @@ int32_t TaiheParamUtils::GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatial
         return AUDIO_INVALID_PARAM;
     }
     spatialDeviceState->spatialDeviceType = static_cast<OHOS::AudioStandard::AudioSpatialDeviceType>(intValue);
+    return AUDIO_OK;
+}
+
+int32_t TaiheParamUtils::GetAudioHRTFDescriptor(int32_t *fd, int64_t *length, HRTFDescriptor hrtfDescriptor)
+{
+    if (fd == nullptr || length == nullptr) {
+        AUDIO_ERR_LOG("GetAudioHRTFDescriptor: fd or length is nullptr");
+        return AUDIO_ERR;
+    }
+    if (hrtfDescriptor.fd < 0) {
+        AUDIO_ERR_LOG("GetAudioHRTFDescriptor: fd is invalid");
+        return AUDIO_ERR;
+    }
+    if (fcntl(hrtfDescriptor.fd, F_GETFL) == -1) {
+        AUDIO_ERR_LOG("GetAudioHRTFDescriptor: fd is invalid or not accessible, errno=%{public}d", errno);
+        return AUDIO_ERR;
+    }
+    if (hrtfDescriptor.length <= 0 || hrtfDescriptor.length > MAX_HRTF_LENGTH) {
+        AUDIO_ERR_LOG("GetAudioHRTFDescriptor: length is invalid");
+        return AUDIO_ERR;
+    }
+    *fd = hrtfDescriptor.fd;
+    *length = hrtfDescriptor.length;
     return AUDIO_OK;
 }
 

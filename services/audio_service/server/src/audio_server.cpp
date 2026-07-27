@@ -2259,10 +2259,17 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
 
     resetConfig.callerUid = callerUid;
 
+    // Snapshot the pristine client-passed appInfo before the auth rewrite below
+    // overwrites appInfo.appUid. Used by RendererInServer to key per-app volume.
+    resetConfig.originalAppInfo = resetConfig.appInfo;
+
     // client pid uid check.
     if (RECORD_PASS_APPINFO_LIST.count(callerUid)) {
         AUDIO_INFO_LOG("Create process for %{public}d, clientUid:%{public}d.", callerUid, config.appInfo.appUid);
     } else if (RECORD_CHECK_FORWARD_LIST.count(callerUid)) {
+        // Trusted proxy SAs (e.g. VM_MANAGER, camera): forward tokenId only, appUid stays as the
+        // client-passed value. These callers hold system permission, so the originalAppInfo gate
+        // below keeps their pristine appUid intentionally (they are exempt from the spoof drop).
         AUDIO_INFO_LOG("Check forward calling for uid:%{public}d", callerUid);
         resetConfig.appInfo.appTokenId = IPCSkeleton::GetFirstTokenID();
         resetConfig.appInfo.appFullTokenId = IPCSkeleton::GetFirstFullTokenID();
@@ -2272,6 +2279,15 @@ AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &con
         resetConfig.appInfo.appUid = callerUid;
         resetConfig.appInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
         resetConfig.appInfo.appFullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    }
+
+    // originalAppInfo guards the per-app volume identity used by RendererInServer. Only trust the
+    // client-passed appUid when the caller is the app itself (callerUid == clientAppUid) or a
+    // system-permission proxy; otherwise drop the possibly-spoofed pristine value and align
+    // originalAppInfo with the auth-rewritten appInfo so per-app volume keys on the caller.
+    int32_t clientAppUid = config.appInfo.appUid;
+    if (clientAppUid != callerUid && !PermissionUtil::VerifySystemPermission()) {
+        resetConfig.originalAppInfo = resetConfig.appInfo;
     }
 
     if (resetConfig.audioMode == AUDIO_MODE_RECORD) {

@@ -443,7 +443,7 @@ private:
         std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
     void SaveNotificationVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
-        AudioVolumeType volumeType, int32_t volumeLevel);
+        AudioVolumeType volumeType);
     int32_t SetSystemVolumeToEffect(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t SetAppVolumeDb(int32_t appUid, DeviceType deviceType);
     void SetAppAudioVolume(int32_t appUid, float volumeDb);
