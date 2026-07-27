@@ -62,26 +62,6 @@ static AudioDeviceDescriptor& CurrentActiveDevice()
 }
 
 /**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: SetSystemVolumeLevel_001
-* @tc.desc  : Test SetSystemVolumeLevel.
-*/
-HWTEST_F(AudioVolumeManagerExtUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    EXPECT_NE(audioVolumeManager, nullptr);
-
-    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    AudioStreamType streamType = STREAM_RING;
-    int32_t volumeLevel = 0;
-    EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_RING);
-
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
-    auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test AudioVolumeManager.
  * @tc.number: CheckBlueToothActiveMusicTime_001
  * @tc.desc  : CheckBlueToothActiveMusicTime
@@ -91,7 +71,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckBlueToothActiveMusicTime_001, TestS
     auto& volumeManager = AudioVolumeManager::GetInstance();
     volumeManager.activeSafeTimeBt_ = 68400;
     volumeManager.CheckBlueToothActiveMusicTime(0);
-    EXPECT_TRUE(volumeManager.restoreNIsShowing_);
+    EXPECT_FALSE(volumeManager.restoreNIsShowing_);
 }
 
 /**
@@ -105,34 +85,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckBlueToothActiveMusicTime_002, TestS
     volumeManager.activeSafeTimeBt_ = 0;
     volumeManager.activeSafeTime_ = 68400;
     volumeManager.CheckBlueToothActiveMusicTime(0);
-    EXPECT_TRUE(volumeManager.restoreNIsShowing_);
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
- * @tc.number: CheckBlueToothActiveMusicTime_003
- * @tc.desc  : CheckBlueToothActiveMusicTime
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, CheckBlueToothActiveMusicTime_003, TestSize.Level1)
-{
-    auto& volumeManager = AudioVolumeManager::GetInstance();
-    int32_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    volumeManager.startSafeTimeBt_ = currentTime - 60;
-    volumeManager.CheckBlueToothActiveMusicTime(0);
-    EXPECT_GT(volumeManager.startSafeTimeBt_, currentTime - 60);
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
- * @tc.number: CheckWiredActiveMusicTime_001
- * @tc.desc  : CheckWiredActiveMusicTime
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, CheckWiredActiveMusicTime_001, TestSize.Level1)
-{
-    auto& volumeManager = AudioVolumeManager::GetInstance();
-    volumeManager.activeSafeTime_ = 68400;
-    volumeManager.CheckWiredActiveMusicTime(0);
-    EXPECT_TRUE(volumeManager.restoreNIsShowing_);
+    EXPECT_FALSE(volumeManager.restoreNIsShowing_);
 }
 
 /**

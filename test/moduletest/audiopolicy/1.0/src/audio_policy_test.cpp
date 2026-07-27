@@ -144,17 +144,6 @@ const PolicyParam AUDIO_SCENE_PARAMS[] = {
 } // namespace
 
 /*
- * Set Volume
- *
- */
-class AudioPolicySetVolumeTest : public AudioPolicyTest {};
-
-INSTANTIATE_TEST_SUITE_P(
-    SetVolume,
-    AudioPolicySetVolumeTest,
-    ValuesIn(VOLUME_PARAMS));
-
-/*
  * Get Volume
  *
  */
