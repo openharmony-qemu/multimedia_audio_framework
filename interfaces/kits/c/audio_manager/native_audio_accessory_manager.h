@@ -149,6 +149,13 @@ OH_AudioCommon_Result OH_AudioAccessoryManager_CreateInput(
  *     <b>Can be null if count is 0</b>, indicating that all associated MAC addresses
  *     should be cleared (e.g., when all secondary transmitters disconnect).
  *     If not null, the framework performs a deep copy of these strings.
+ *     Each element must conform to the following rules:
+ *     - Must be a NUL-terminated ASCII string in colon-separated hexadecimal
+ *       notation, e.g. "00:11:22:33:44:55". Both upper-case and lower-case
+ *       hex digits (A-F / a-f) are accepted.
+ *     - Must be a non-null, non-empty string.
+ *     - Duplicate addresses within the same array are ignored; only the first
+ *       occurrence of each unique address takes effect.
  * @param count [in] Number of MAC addresses in the array.
  * @return <ul>
  *         <li>{@link AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds.</li>

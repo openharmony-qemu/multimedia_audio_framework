@@ -325,6 +325,15 @@ OH_AudioCommon_Result OH_AudioAccessoryInputStreamManager_RegisterFramePositionC
  * the last frame has less than 20 ms of audio data, the caller may discard
  * this frame or pad it with zeros to 20 ms before calling this function.
  *
+ * <b>Calling Context and Concurrency:</b>
+ *
+ * This function is not reentrant for the same stream. The caller is advised
+ * to use only one thread to write audio data serially to the same stream.
+ * If this function is called concurrently with the stop or release callback
+ * for the same stream, it returns
+ * {@link AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if the stop or release
+ * operation completes before this function acquires the lock.
+ *
  * @param stream [in] Pointer to the input stream handle.
  * @param data [in] Pointer to the audio data buffer. Must not be null.
  * @param dataSize [in] Size of the audio data in bytes. Must be > 0.
