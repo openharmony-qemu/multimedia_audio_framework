@@ -63,7 +63,6 @@ ohos_unittest("audio_policy_manager_device_unit_test") {
     "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:ability_context_native",
     "ability_runtime:app_context",
-    "ability_runtime:app_manager",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
     "ability_runtime:wantagent_innerkits",

@@ -18,7 +18,6 @@
 
 #include "audio_policy_manager.h"
 
-#include "app_mgr_client.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
@@ -3537,16 +3536,6 @@ bool AudioPolicyManager::SetKaraokeParameters(const DeviceType deviceType, const
 
 bool AudioPolicyManager::SetLoopbackVolume(float volume)
 {
-    AppExecFwk::AppMgrClient appManager;
-    AppExecFwk::RunningProcessInfo processInfo;
-    const int32_t appPid = getpid();
-    const int32_t result = appManager.GetRunningProcessInfoByPid(appPid, processInfo);
-    CHECK_AND_RETURN_RET_LOG(result == ERR_OK, true,
-        "SetLoopbackVolume skipped because querying app state failed, pid %{public}d", appPid);
-    CHECK_AND_RETURN_RET_LOG(processInfo.state_ == AppExecFwk::AppProcessState::APP_STATE_FOREGROUND, true,
-        "SetLoopbackVolume skipped because app is not foreground, pid %{public}d, state %{public}d",
-        appPid, static_cast<int32_t>(processInfo.state_));
-
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;

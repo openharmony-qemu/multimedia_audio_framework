@@ -689,7 +689,6 @@ audio_ohos_library("audio_policy_client") {
   ]
 
   external_deps = [
-    "ability_runtime:app_manager",
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "eventhandler:libeventhandler",

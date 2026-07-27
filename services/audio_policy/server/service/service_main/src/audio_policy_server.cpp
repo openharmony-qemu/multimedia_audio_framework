@@ -5930,11 +5930,18 @@ int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, const std::s
 
 int32_t AudioPolicyServer::SetLoopbackVolume(float volume, bool &ret)
 {
+    const int32_t callerPid = IPCSkeleton::GetCallingPid();
+    bool isBack = true;
+    const int32_t result = GetAppBackGroundState(callerPid, isBack);
+    ret = true;
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !isBack, SUCCESS,
+        "SetLoopbackVolume skipped, callingPid %{public}d, result %{public}d, isBack %{public}d",
+        callerPid, result, isBack);
+
     ret = false;
     CHECK_AND_RETURN_RET_LOG(volume >= 0.0f && volume <= 1.0f, SUCCESS,
         "SetLoopbackVolume invalid volume %{public}f", volume);
 
-    int32_t callerPid = IPCSkeleton::GetCallingPid();
     AUDIO_INFO_LOG("SetLoopbackVolume callingPid %{public}d, volume %{public}f", callerPid, volume);
     loopbackVolume_.store(volume, std::memory_order_relaxed);
     ret = true;
