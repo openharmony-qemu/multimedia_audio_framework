@@ -2557,16 +2557,16 @@ HWTEST(IpcStreamInServerUnitTest, SetTarget_001, TestSize.Level1)
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
     int32_t target = 1;
     int32_t ret = 0;
-    auto result = ipcStreamInServerRet.SetTarget(target, ret);
+    auto result = ipcStreamInServerRet.SetTarget(target, INVALID_UID, INVALID_STREAM_ID, ret);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
-    result = ipcStreamInServerRet.SetTarget(target, ret);
+    result = ipcStreamInServerRet.SetTarget(target, INVALID_UID, INVALID_STREAM_ID, ret);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
-    result = ipcStreamInServerRet.SetTarget(target, ret);
+    result = ipcStreamInServerRet.SetTarget(target, INVALID_UID, INVALID_STREAM_ID, ret);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 }
 

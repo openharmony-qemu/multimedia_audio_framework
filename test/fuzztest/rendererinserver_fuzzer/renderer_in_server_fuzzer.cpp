@@ -1208,7 +1208,7 @@ void SetTargetFuzzTest()
     int32_t ret = 0;
 
     RendererInServerPtr->status_ = I_STATUS_STOPPED;
-    RendererInServerPtr->SetTarget(target, ret);
+    RendererInServerPtr->SetTarget(target, INVALID_UID, INVALID_STREAM_ID, ret);
 }
 
 void ClearInnerCapBufferForInjectFuzzTest()
