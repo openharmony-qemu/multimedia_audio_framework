@@ -47,16 +47,6 @@ public:
      * @since 9
      */
     int32_t SelectInputDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
-
-    /**
-     * @brief get selected device info.
-     *
-     * @param uid identifier.
-     * @param pid identifier.
-     * @param streamType audio stream type.
-     * @return Returns device info.
-     * @since 9
-     */
     
     /**
      * @brief Select the audio output device according to the filter conditions.

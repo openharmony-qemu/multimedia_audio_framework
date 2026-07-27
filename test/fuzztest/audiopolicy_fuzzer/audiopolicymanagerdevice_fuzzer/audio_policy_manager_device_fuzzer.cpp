@@ -211,13 +211,6 @@ void RestoreOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().RestoreOutputDevice(audioRendererFilter);
 }
 
-void GetSelectedDeviceInfoFuzzTest(FuzzedDataProvider& fdp)
-{
-    int32_t uid = GetData<int32_t>();
-    int32_t pid = GetData<int32_t>();
-    AudioStreamType streamType = AudioStreamTypeVec[GetData<uint32_t>() % AudioStreamTypeVec.size()];
-    AudioPolicyManager::GetInstance().GetSelectedDeviceInfo(uid, pid, streamType);
-}
 
 void SelectInputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
@@ -450,7 +443,6 @@ void Test(FuzzedDataProvider& fdp)
     ForceSelectDeviceFuzzTest,
     SetActiveHfpDeviceFuzzTest,
     RestoreOutputDeviceFuzzTest,
-    GetSelectedDeviceInfoFuzzTest,
     SelectInputDeviceFuzzTest,
     SelectInputDeviceSingleFuzzTest,
     ExcludeOutputDevicesFuzzTest,
