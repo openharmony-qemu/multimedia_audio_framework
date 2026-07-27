@@ -2269,6 +2269,15 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
             std::make_shared<AudioDeviceDescriptor>(audioRouterSelectStrategy_
             .Get1stCurrentOutputDevice(uid)), false, false);
     }
+    if (pipeManager_ != nullptr) {
+        uint32_t trackerSessionId = (mode == AUDIO_MODE_PLAYBACK)
+            ? streamChangeInfo.audioRendererChangeInfo.sessionId
+            : streamChangeInfo.audioCapturerChangeInfo.sessionId;
+        auto streamDesc = pipeManager_->GetStreamDescById(trackerSessionId);
+        if (streamDesc != nullptr) {
+            streamDesc->isServerStreamCreated_.store(true);
+        }
+    }
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
 
@@ -2329,8 +2338,15 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
     auto sessionIds = pipeManager_->GetStreamIdsByUidAndPid(curUid, curPid);
     for (auto sessionId : sessionIds) {
-        ReleaseClient(sessionId);
-        pipeManager_->RemoveSwitchStream(sessionId);
+        auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+        if (streamDesc == nullptr) {
+            AUDIO_INFO_LOG("Session %{public}u already removed from pipeManager, skip ReleaseClient", sessionId);
+        } else if (streamDesc->isServerStreamCreated_.load()) {
+            AUDIO_INFO_LOG("Session %{public}u server stream alive, skip ReleaseClient", sessionId);
+        } else {
+            ReleaseClient(sessionId);
+            pipeManager_->RemoveSwitchStream(sessionId);
+        }
         UnsetAudioRouteCallback(sessionId);
     }
     FetchOutputDeviceAndRoute("RegisteredTrackerClientDied");
