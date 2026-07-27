@@ -27,6 +27,8 @@ void AudioActiveDeviceUnitTest::TearDownTestCase(void) {}
 void AudioActiveDeviceUnitTest::SetUp(void) {}
 void AudioActiveDeviceUnitTest::TearDown(void) {}
 
+constexpr int32_t TEST_DEVICE_ID = 1001;
+
 /**
 * @tc.name  : Test AudioActiveDevice.
 * @tc.number: AudioActiveDeviceUnitTest_001.
@@ -49,13 +51,17 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_001, TestSize.Leve
 HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_002, TestSize.Level1)
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    desc->deviceId_ = TEST_DEVICE_ID;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, {desc});
+
     int32_t deviceId = AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice().deviceId_;
     AudioInterrupt audioInterrupt;
     float result = audioActiveDevice->GetMaxAmplitude(deviceId, audioInterrupt);
-    EXPECT_NE(audioActiveDevice, nullptr);
+    EXPECT_FLOAT_EQ(result, 0.0f);
 }
 
-constexpr int32_t TEST_DEVICE_ID = 1001;
 /**
 * @tc.name  : Test AudioActiveDevice.
 * @tc.number: AudioActiveDeviceUnitTest_011.

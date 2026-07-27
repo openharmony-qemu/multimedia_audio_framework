@@ -1532,6 +1532,7 @@ int32_t AudioAdapterManager::CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeIn
         }
         attr.routeFlag = pipeInfo->routeFlag_;
         pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
+        attr.sourceName = pipeInfo->moduleInfo_.name;
         result = audioServerProxy_->CreateHdiSourcePort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
     }
     IPCSkeleton::SetCallingIdentity(identity);
@@ -2248,6 +2249,7 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
         attr.openMicSpeaker = static_cast<uint32_t>(std::stoul(audioModuleInfo.OpenMicSpeaker));
     }
     attr.routeFlag = audioModuleInfo.routeFlag;
+    attr.sourceName = audioModuleInfo.name;
     attr.format = ParseSourceAudioSampleFormat(audioModuleInfo.format);
     if (!audioModuleInfo.rate.empty()) {
         attr.sampleRate = static_cast<uint32_t>(std::stoul(audioModuleInfo.rate));

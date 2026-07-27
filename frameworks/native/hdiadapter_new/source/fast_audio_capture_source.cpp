@@ -232,10 +232,10 @@ int32_t FastAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_
     return ERR_NOT_SUPPORTED;
 }
 
-float FastAudioCaptureSource::GetMaxAmplitude(void)
+bool FastAudioCaptureSource::GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude)
 {
     AUDIO_INFO_LOG("not support");
-    return 0;
+    return false;
 }
 
 int32_t FastAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,

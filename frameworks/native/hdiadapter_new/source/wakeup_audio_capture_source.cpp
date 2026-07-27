@@ -243,9 +243,9 @@ int32_t WakeupAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int6
     return audioCaptureSource_.GetPresentationPosition(frames, timeSec, timeNanoSec);
 }
 
-float WakeupAudioCaptureSource::GetMaxAmplitude(void)
+bool WakeupAudioCaptureSource::GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude)
 {
-    return audioCaptureSource_.GetMaxAmplitude();
+    return audioCaptureSource_.GetMaxAmplitude(sourceName, normalMaxAmplitude);
 }
 
 int32_t WakeupAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,

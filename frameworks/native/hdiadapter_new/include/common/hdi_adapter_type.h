@@ -102,6 +102,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
 
 typedef struct IAudioSourceAttr : public Parcelable {
     std::string adapterName = "";
+    std::string sourceName = "";
     uint32_t openMicSpeaker = 0;
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     uint32_t sampleRate = 0;
@@ -153,7 +154,8 @@ typedef struct IAudioSourceAttr : public Parcelable {
             parcel.WriteUint8(static_cast<uint8_t>(formatMicIn)) &&
             parcel.WriteUint32(sampleRateMicIn) &&
             parcel.WriteUint32(channelMicIn) &&
-            parcel.WriteUint32(routeFlag);
+            parcel.WriteUint32(routeFlag) &&
+            parcel.WriteString(sourceName);
     }
 
     static IAudioSourceAttr *Unmarshalling(Parcel &parcel)
@@ -187,6 +189,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
         attr->sampleRateMicIn = parcel.ReadUint32();
         attr->channelMicIn = parcel.ReadUint32();
         attr->routeFlag = parcel.ReadUint32();
+        attr->sourceName = parcel.ReadString();
         return attr;
     }
 } IAudioSourceAttr;

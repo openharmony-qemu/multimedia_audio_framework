@@ -292,17 +292,16 @@ int32_t HdiAdapterManager::ProcessSink(const std::function<int32_t(uint32_t,
     return ret;
 }
 
-float HdiAdapterManager::GetNormalSourceMaxAmplitude()
+float HdiAdapterManager::GetCaptureSourceMaxAmplitude(const std::string &sourceName)
 {
-    float normalMaxAmplitude = 0.0f;
+    float maxAmplitude = 0.0f;
     std::lock_guard<std::mutex> lock(captureSourceMtx_);
     for (const auto &item : captureSources_) {
         const std::shared_ptr<IAudioCaptureSource> &source = item.second.source_;
-        CHECK_AND_CONTINUE(source != nullptr && source->IsStarted());
-        normalMaxAmplitude = source->GetMaxAmplitude();
+        CHECK_AND_CONTINUE(source != nullptr && source->GetMaxAmplitude(sourceName, maxAmplitude));
         break;
     }
-    return normalMaxAmplitude;
+    return maxAmplitude;
 }
 
 int32_t HdiAdapterManager::ProcessSource(const std::function<int32_t(uint32_t,
