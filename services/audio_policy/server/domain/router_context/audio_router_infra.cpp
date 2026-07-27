@@ -960,7 +960,24 @@ void AudioRouterInfra::WriteExcludeOutputSysEvents(const AudioDeviceUsage audioD
 void AudioRouterInfra::WriteSelectOutputSysEvents(
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, SelectDeviceType type)
 {
-    CHECK_AND_RETURN(device != nullptr);
+    if (device == nullptr) {
+        PreferredType preferredType = PreferredType::AUDIO_MEDIA_RENDER;
+        switch (type) {
+            case SelectDeviceType::MEDIA_OUTPUT:
+                preferredType = PreferredType::AUDIO_MEDIA_RENDER;
+                break;
+            case SelectDeviceType::CALL_OUTPUT:
+                preferredType = PreferredType::AUDIO_CALL_RENDER;
+                break;
+            default:
+                AUDIO_ERR_LOG("Invalid select device type: %{public}d", type);
+                return;
+        }
+        Media::MediaMonitor::MediaMonitorManager::GetInstance().ErasePreferredDeviceByType(
+            static_cast<Media::MediaMonitor::PreferredType>(preferredType));
+        return;
+    }
+
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::SET_FORCE_USE_AUDIO_DEVICE,
         Media::MediaMonitor::BEHAVIOR_EVENT);
