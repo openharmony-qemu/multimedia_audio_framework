@@ -1428,12 +1428,19 @@ struct AudioSpatialEnabledStateForDevice {
   enabled: bool;
 }
 
+struct HRTFDescriptor {
+  fd: i32;
+  length: i64;
+}
+
 interface AudioSpatializationManager {
   IsSpatializationSupported(): bool;
   IsSpatializationSupportedForDevice(deviceDescriptor: AudioDeviceDescriptor): bool;
 
   IsHeadTrackingSupported(): bool;
   IsHeadTrackingSupportedForDevice(deviceDescriptor: AudioDeviceDescriptor): bool;
+
+  IsPersonalizedSpatializationSupported(): bool;
 
   @gen_promise("setSpatializationEnabled")
   SetSpatializationEnabledSync(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
@@ -1446,6 +1453,14 @@ interface AudioSpatializationManager {
 
   IsHeadTrackingEnabled(deviceDescriptor: AudioDeviceDescriptor): bool;
 
+  @gen_promise("setPersonalizedSpatializationEnabled")
+  SetPersonalizedSpatializationEnabledSync(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
+
+  IsPersonalizedSpatializationEnabled(deviceDescriptor: AudioDeviceDescriptor): bool;
+
+  @gen_promise("downloadPersonalizedHRTF")
+  DownloadPersonalizedHRTFSync(hrtfDescriptor: HRTFDescriptor): void;
+
   UpdateSpatialDeviceState(spatialDeviceState: AudioSpatialDeviceState): void;
 
   SetSpatializationSceneType(spatializationSceneType: AudioSpatializationSceneType): void;
@@ -1454,10 +1469,12 @@ interface AudioSpatializationManager {
   OnSpatializationEnabledChangeForCurrentDevice(callback: (data: bool) => void): void;
   OnSpatializationEnabledChangeForAnyDevice(callback: (data: AudioSpatialEnabledStateForDevice) => void): void;
   OnHeadTrackingEnabledChangeForAnyDevice(callback: (data: AudioSpatialEnabledStateForDevice) => void): void;
+  OnPersonalizedSpatializationEnabledChangeForAnyDevice(callback: (data: AudioSpatialEnabledStateForDevice) => void): void;
 
   OffSpatializationEnabledChangeForCurrentDevice(callback: Optional<(data: bool) => void>): void;
   OffSpatializationEnabledChangeForAnyDevice(callback: Optional<(data: AudioSpatialEnabledStateForDevice) => void>): void;
   OffHeadTrackingEnabledChangeForAnyDevice(callback: Optional<(data: AudioSpatialEnabledStateForDevice) => void>): void;
+  OffPersonalizedSpatializationEnabledChangeForAnyDevice(callback: Optional<(data: AudioSpatialEnabledStateForDevice) => void>): void;
 }
 
 enum AsrNoiseSuppressionMode: i32 {

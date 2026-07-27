@@ -71,7 +71,7 @@ static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
-static const int32_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 40; // 40ms, align with legacy AudioProcessInClient
+static const int32_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 100; // 100ms, align with legacy AudioProcessInClient
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const uint32_t WAIT_FOR_NEXT_CB = 10000; // 10ms
 static constexpr int32_t ONE_MINUTE = 60;
@@ -1487,7 +1487,7 @@ int32_t RendererInClientInner::CallStartWhenInStandby()
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, SUCCESS, "Client is not RUNNING!");
     CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, ERROR,
         HILOG_COMM_ERROR("[CallStartWhenInStandby]ipcStream is not inited!"));
-    int32_t ret = ipcStream_->Start(writeCb_ == nullptr);
+    int32_t ret = ipcStream_->Start(CheckWriteCb());
     AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
     return SUCCESS;
 }

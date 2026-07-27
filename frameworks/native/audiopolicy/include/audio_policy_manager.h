@@ -478,8 +478,6 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
-    std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDevice();
-
     int32_t ClearSelectedInputDevice();
 
     int32_t PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);

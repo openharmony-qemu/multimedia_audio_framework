@@ -571,4 +571,207 @@ void AudioSpatializationManagerImpl::UnregisterHeadTrackingEnabledChangeCallback
         AUDIO_ERR_LOG("UnregisterHeadTrackingEnabledChangeCb: headTrackingEnabledChangeCallback_ is null");
     }
 }
+
+bool AudioSpatializationManagerImpl::IsPersonalizedSpatializationSupported()
+{
+    AUDIO_DEBUG_LOG("in");
+    bool isPersonalizedSpatializationSupported = false;
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return isPersonalizedSpatializationSupported;
+    }
+    if (audioSpatializationMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSpatializationMngr_ is nullptr");
+        return isPersonalizedSpatializationSupported;
+    }
+    isPersonalizedSpatializationSupported = audioSpatializationMngr_->IsPersonalizedSpatializationSupported();
+    return isPersonalizedSpatializationSupported;
+}
+
+void AudioSpatializationManagerImpl::SetPersonalizedSpatializationEnabledSync(AudioDeviceDescriptor deviceDescriptor,
+    bool enabled)
+{
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return;
+    }
+    bool personalizedSpatializationEnable = enabled;
+    std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> selectedAudioDevice =
+        std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
+    bool argTransFlag = true;
+    int32_t status = TaiheParamUtils::GetAudioDeviceDescriptor(selectedAudioDevice, argTransFlag, deviceDescriptor);
+    if (status != AUDIO_OK) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INPUT_INVALID,
+            "incorrect parameter types: The param of deviceDescriptor must be interface AudioDeviceDescriptor");
+        return;
+    }
+    if (audioSpatializationMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSpatializationMngr_ is nullptr");
+        return;
+    }
+    int32_t intValue = audioSpatializationMngr_->SetPersonalizedSpatializationEnabled(
+        selectedAudioDevice, personalizedSpatializationEnable);
+    if (intValue == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
+        return;
+    } else if (intValue == OHOS::AudioStandard::ERR_DEVICE_NOT_SUPPORTED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNAVAILABLE_ON_DEVICE);
+        return;
+    } else if (intValue != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return;
+    }
+    return;
+}
+
+bool AudioSpatializationManagerImpl::IsPersonalizedSpatializationEnabled(AudioDeviceDescriptor deviceDescriptor)
+{
+    AUDIO_INFO_LOG("in");
+    bool isPersonalizedSpatializationEnabled = false;
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return isPersonalizedSpatializationEnabled;
+    }
+    bool argTransFlag = true;
+    std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> selectedAudioDevice =
+        std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
+    TaiheParamUtils::GetAudioDeviceDescriptor(selectedAudioDevice, argTransFlag, deviceDescriptor);
+    if (argTransFlag != true) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor");
+        AUDIO_ERR_LOG("invalid parameter");
+        return isPersonalizedSpatializationEnabled;
+    }
+    if (audioSpatializationMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSpatializationMngr_ is nullptr");
+        return isPersonalizedSpatializationEnabled;
+    }
+    isPersonalizedSpatializationEnabled = audioSpatializationMngr_->IsPersonalizedSpatializationEnabled(
+        selectedAudioDevice);
+    return isPersonalizedSpatializationEnabled;
+}
+
+void AudioSpatializationManagerImpl::OnPersonalizedSpatializationEnabledChangeForAnyDevice(
+    callback_view<void(AudioSpatialEnabledStateForDevice const&)> callback)
+{
+    auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
+    CHECK_AND_RETURN_RET_LOG(OHOS::AudioStandard::PermissionUtil::VerifySelfPermission(),
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED), "No system permission");
+    RegisterPersonalizedSpatializationEnabledChangeCallback(cacheCallback, this);
+}
+
+void AudioSpatializationManagerImpl::OffPersonalizedSpatializationEnabledChangeForAnyDevice(
+    optional_view<callback<void(AudioSpatialEnabledStateForDevice const&)>> callback)
+{
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
+    if (callback.has_value()) {
+        cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
+    }
+    CHECK_AND_RETURN_RET_LOG(OHOS::AudioStandard::PermissionUtil::VerifySelfPermission(),
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED), "No system permission");
+    UnregisterPersonalizedSpatializationEnabledChangeCallback(cacheCallback, this);
+}
+
+void AudioSpatializationManagerImpl::RegisterPersonalizedSpatializationEnabledChangeCallback(
+    std::shared_ptr<uintptr_t> &callback, AudioSpatializationManagerImpl *taiheSpatializationManager)
+{
+    if ((taiheSpatializationManager == nullptr) ||
+        (taiheSpatializationManager->audioSpatializationMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("Failed to retrieve audio spatialization manager taihe instance.");
+        return;
+    }
+    std::lock_guard<std::mutex> lock(taiheSpatializationManager->mutex_);
+    if (!taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_) {
+        taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_ =
+            std::make_shared<TaiheAudioPersonalizedSpatialEnabledChangeCallback>();
+        CHECK_AND_RETURN_LOG(taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_ != nullptr,
+            "AudioSpatializationManagerImpl: Memory Allocation Failed !!");
+
+        int32_t ret = taiheSpatializationManager->audioSpatializationMngr_->
+            RegisterPersonalizedSpatializationEnabledEventListener(
+            taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_);
+        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
+            "AudioSpatializationManagerImpl: Registering Personalized Spatialization Enabled Change Callback Failed");
+    }
+    std::shared_ptr<TaiheAudioPersonalizedSpatialEnabledChangeCallback> cb =
+        std::static_pointer_cast<TaiheAudioPersonalizedSpatialEnabledChangeCallback>
+        (taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
+    cb->SavePersonalizedSpatialEnabledChangeCallbackReference(
+        PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME, callback);
+    AUDIO_INFO_LOG("Register personalized spatialization enabled callback is successful");
+}
+
+void AudioSpatializationManagerImpl::UnregisterPersonalizedSpatializationEnabledChangeCallback(
+    std::shared_ptr<uintptr_t> &callback, AudioSpatializationManagerImpl *taiheSpatializationManager)
+{
+    CHECK_AND_RETURN_LOG(taiheSpatializationManager != nullptr, "Failed to retrieve taihe instance.");
+    std::lock_guard<std::mutex> lock(taiheSpatializationManager->mutex_);
+    CHECK_AND_RETURN_LOG(taiheSpatializationManager->audioSpatializationMngr_ != nullptr,
+        "spatialization instance null.");
+    if (taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_ != nullptr) {
+        std::shared_ptr<TaiheAudioPersonalizedSpatialEnabledChangeCallback> cb =
+            std::static_pointer_cast<TaiheAudioPersonalizedSpatialEnabledChangeCallback>(
+            taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_);
+        CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
+        if (callback != nullptr) {
+            cb->RemovePersonalizedSpatialEnabledChangeCallbackReference(
+                PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME, callback);
+        }
+        if (callback == nullptr || cb->GetPersonalizedSpatialEnabledChangeCbListSize(
+            PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME) == 0) {
+            int32_t ret = taiheSpatializationManager->audioSpatializationMngr_->
+                UnregisterPersonalizedSpatializationEnabledEventListener();
+            CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
+                "UnregisterPersonalizedSpatializationEnabledEventListener Failed");
+            taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_.reset();
+            taiheSpatializationManager->personalizedSpatialEnabledChangeCallback_ = nullptr;
+            cb->RemoveAllPersonalizedSpatialEnabledChangeCallbackReference(
+                PERSONALIZED_SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME);
+        }
+    } else {
+        AUDIO_ERR_LOG("UnregisterPersonalizedSpatialCb: "
+            "personalizedSpatialEnabledChangeCallback_ is null");
+    }
+}
+
+void AudioSpatializationManagerImpl::DownloadPersonalizedHRTFSync(HRTFDescriptor hrtfDescriptor)
+{
+    AUDIO_INFO_LOG("DownloadPersonalizedHRTF");
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return;
+    }
+    if (audioSpatializationMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSpatializationMngr_ is nullptr");
+        return;
+    }
+    bool isPersonalizedSpatializationSupported = audioSpatializationMngr_->IsPersonalizedSpatializationSupported();
+    if (!isPersonalizedSpatializationSupported) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNAVAILABLE_ON_DEVICE);
+        return;
+    }
+    int32_t fd = -1;
+    int64_t length = 0;
+    int32_t ret = TaiheParamUtils::GetAudioHRTFDescriptor(&fd, &length, hrtfDescriptor);
+    if (ret != AUDIO_OK) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of hrtfDescriptor must be interface HRTFDescriptor");
+        return;
+    }
+    ret = audioSpatializationMngr_->DownloadPersonalizedHRTF(fd, length);
+    if (ret == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
+        return;
+    } else if (ret == OHOS::AudioStandard::ERR_DEVICE_NOT_SUPPORTED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNAVAILABLE_ON_DEVICE);
+        return;
+    } else if (ret == OHOS::AudioStandard::ERR_SAVE_HRTF_TIMEOUT) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_TIMEOUT);
+        return;
+    } else if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return;
+    }
+}
 } // namespace ANI::Audio

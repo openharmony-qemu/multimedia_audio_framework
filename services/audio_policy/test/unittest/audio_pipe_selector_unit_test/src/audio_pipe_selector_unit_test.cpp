@@ -2401,9 +2401,9 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_001, TestSize.Le
 
     ConcurrencyAction action = CONCEDE_INCOMING;
     audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
-    
-    // Expect action to flip from CONCEDE_INCOMING to CONCEDE_EXISTING
-    EXPECT_EQ(action, CONCEDE_INCOMING);
+
+    // Action flips from CONCEDE_INCOMING to CONCEDE_EXISTING when target is not STARTED
+    EXPECT_EQ(action, CONCEDE_EXISTING);
 }
 
 /**
@@ -2429,9 +2429,9 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_002, TestSize.Le
 
     ConcurrencyAction action = CONCEDE_INCOMING;
     audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
-    
-    // Expect action to flip from CONCEDE_INCOMING to CONCEDE_EXISTING
-    EXPECT_EQ(action, CONCEDE_INCOMING);
+
+    // Action flips from CONCEDE_INCOMING to CONCEDE_EXISTING when target is not STARTED
+    EXPECT_EQ(action, CONCEDE_EXISTING);
 }
 
 /**
@@ -2486,9 +2486,9 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_004, TestSize.Le
 
     ConcurrencyAction action = CONCEDE_INCOMING;
     audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
-    
-    // Expect action to flip from CONCEDE_INCOMING to CONCEDE_EXISTING
-    EXPECT_EQ(action, CONCEDE_INCOMING);
+
+    // Action flips from CONCEDE_INCOMING to CONCEDE_EXISTING when in switch state with normal route
+    EXPECT_EQ(action, CONCEDE_EXISTING);
 }
 
 /**
@@ -2544,9 +2544,9 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_006, TestSize.Le
 
     ConcurrencyAction action = CONCEDE_EXISTING;
     audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
-    
-    // Expect action to flip from CONCEDE_EXISTING to CONCEDE_INCOMING
-    EXPECT_EQ(action, CONCEDE_EXISTING);
+
+    // Action flips from CONCEDE_EXISTING to CONCEDE_INCOMING when target is in switch state with normal route
+    EXPECT_EQ(action, CONCEDE_INCOMING);
 }
 
 /**

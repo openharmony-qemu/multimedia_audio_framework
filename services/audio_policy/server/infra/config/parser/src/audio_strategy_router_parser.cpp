@@ -39,7 +39,7 @@ bool AudioStrategyRouterParser::LoadConfiguration()
     char *path = GetOneCfgFile(DEVICE_CONFIG_FILE, buf, MAX_PATH_LEN);
     if (path != nullptr && *path != '\0') {
         AUDIO_INFO_LOG("strategy router file path: %{public}s", path);
-        ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);
+        ret = curNode_->Config(path, nullptr, 0);
     }
 #else
     ret = curNode_->Config(DEVICE_CONFIG_FILE, nullptr, 0);

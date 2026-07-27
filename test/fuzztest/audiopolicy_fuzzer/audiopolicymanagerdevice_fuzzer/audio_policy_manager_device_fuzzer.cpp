@@ -211,7 +211,6 @@ void RestoreOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().RestoreOutputDevice(audioRendererFilter);
 }
 
-
 void SelectInputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     sptr<AudioCapturerFilter> audioCapturerFilter = new AudioCapturerFilter();

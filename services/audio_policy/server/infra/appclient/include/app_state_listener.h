@@ -19,6 +19,7 @@
 #include <memory>
 #include "app_mgr_client.h"
 #include "app_state_callback_host.h"
+#include "application_state_observer_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,6 +34,13 @@ private:
     AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t callingUid);
 
     static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
+};
+
+class AppStateObserver : public AppExecFwk::ApplicationStateObserverStub {
+public:
+    AppStateObserver() {}
+    ~AppStateObserver() override = default;
+    void OnProcessDied(const AppExecFwk::ProcessData &processData) override;
 };
 
 }

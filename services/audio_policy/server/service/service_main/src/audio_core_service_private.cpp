@@ -3694,7 +3694,7 @@ void AudioCoreService::GetFlagForUltraFastStream(
         supportUltraFastBundleSet_.find(streamDesc->GetBundleName()) != supportUltraFastBundleSet_.end(),
         "Bundle name %{public}s is not in ultra fast support list", streamDesc->GetBundleName().c_str());
     DeviceType deviceType = streamDesc->newDeviceDescs_.front()->getType();
-    if (g_ultraFastDevicesSet.find(deviceType) == g_ultraFastDevicesSet.end()) {
+    if (!pipeManager_->IsUltraFastSupportedDevice(deviceType)) {
         AUDIO_INFO_LOG("Device type %{public}d is not support ultra fast mode", deviceType);
         // Issue: Missing check for recreate triggered route reselection.
         // Consequence: Every "device without primary ultra-fast support" whill be forced to use normal route,

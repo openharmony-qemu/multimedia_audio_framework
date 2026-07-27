@@ -23,20 +23,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class WriteFixedDataCb : public IStreamCallback, public std::enable_shared_from_this<WriteFixedDataCb> {
-public:
-    int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
-
-    explicit WriteFixedDataCb(AudioSampleFormat format) : format_(format)
-    {}
-    virtual ~WriteFixedDataCb()
-    {}
-
-private:
-    int32_t writeNum_ = 0;
-    AudioSampleFormat format_ = SAMPLE_F32LE;
-};
-
 class ReadDataCb : public ICapturerStreamCallback, public std::enable_shared_from_this<ReadDataCb> {
 public:
     explicit ReadDataCb(const std::string &fileName);
