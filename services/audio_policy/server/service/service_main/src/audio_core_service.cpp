@@ -3058,7 +3058,8 @@ int32_t AudioCoreService::StartInjection(uint32_t streamId)
 {
     bool isConnected = audioInjectorPolicy_.GetIsConnected();
     CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "Injector::pipeManager_ is null");
-    if (!isConnected && !audioInjectorPolicy_.IsPreciseRenderer(streamId) && pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
+    if (!isConnected && !audioInjectorPolicy_.IsPreciseRenderer(streamId) &&
+        pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
         return ERR_ILLEGAL_STATE;
     }
     int32_t ret = ERROR;
