@@ -32,7 +32,7 @@ namespace AudioStandard {
 namespace {
 static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
-static const unsigned int BUFFER_CALC_20MS = 20;
+static const unsigned int BUFFER_CALC_20MS = (20 * SOURCE_PERIOD_SIZE);
 static std::map<AudioSampleFormat, std::string> formatEnumToStr = {
     {SAMPLE_U8, "s16le"},
     {SAMPLE_S16LE, "s16le"},
