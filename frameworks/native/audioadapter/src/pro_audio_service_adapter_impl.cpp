@@ -140,7 +140,6 @@ int32_t ProAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, bo
 {
     Trace trace("SuspendAudioDevice");
     lock_guard<mutex> lock(lock_);
-    AUDIO_INFO_LOG("[%{public}s] : [%{public}d]", audioPortName.c_str(), isSuspend);
     IHpaeManager::GetHpaeManager().SuspendAudioDevice(audioPortName, isSuspend);
     return SUCCESS;
 }

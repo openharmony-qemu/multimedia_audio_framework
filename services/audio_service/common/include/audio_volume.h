@@ -71,6 +71,7 @@ public:
     void SetSystemAppVolume(SystemAppVolume &systemAppVolume);
     void SetSystemAppVolumeMuted(int32_t appUid, bool muted);
     bool SetAppRingMuted(int32_t appUid, bool isMuted);
+    void SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
 
     //pipe volume
     void SetPipeVolume(PipeVolume &pipeVolume);
@@ -212,6 +213,9 @@ public:
     bool isAppRingMuted_ = false;
     // dual mute flag, this flag is true only dual and stream is mute
     bool isDualMuted_ = false;
+    // Indicates whether the voip renderer is muted by SetVoipRendererMuteForUid API.
+    // This flag is only applicable to voip renderer streams.
+    bool isVoipRendererMuted_ = false;
 
     std::atomic<float> totalVolume_{1.0f};
 

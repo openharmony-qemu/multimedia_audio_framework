@@ -54,6 +54,7 @@ public:
     static int32_t GetAppInfo(OHOS::AudioStandard::AppInfo &appInfo, AppIdInfo const &options);
     static int32_t GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatialDeviceState *spatialDeviceState,
         AudioSpatialDeviceState in);
+    static int32_t GetAudioHRTFDescriptor(int32_t *fd, int64_t *length, HRTFDescriptor hrtfDescriptor);
     static int32_t GetAudioDeviceDescriptor(
         std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> &selectedAudioDevice,
         bool &argTransFlag, AudioDeviceDescriptor in);
@@ -140,6 +141,8 @@ public:
         const std::vector<OHOS::AudioStandard::ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
     static ActiveStreamVolumeInfo ToTaiheActiveStreamVolumeInfo(
         const OHOS::AudioStandard::ActiveStreamVolumeInfo &src);
+    static SystemRecordControllerChangeInfo ToTaiheSystemRecordControllerChangeInfo(
+        const OHOS::AudioStandard::SystemRecordControllerChangeInfo &changeInfo);
 
     template<typename E>
     static std::shared_ptr<uintptr_t> TypeCallback(callback_view<void(E)> callback)
@@ -154,6 +157,14 @@ public:
     {
         std::shared_ptr<taihe::callback<AudioDataCallbackResult(E)>> taiheCallback =
             std::make_shared<taihe::callback<AudioDataCallbackResult(E)>>(callback);
+        return std::reinterpret_pointer_cast<uintptr_t>(taiheCallback);
+    }
+
+    static std::shared_ptr<uintptr_t> TypeCallback(
+        callback_view<AudioRendererWriteDataCallbackResult(int32_t)> callback)
+    {
+        std::shared_ptr<taihe::callback<AudioRendererWriteDataCallbackResult(int32_t)>> taiheCallback =
+            std::make_shared<taihe::callback<AudioRendererWriteDataCallbackResult(int32_t)>>(callback);
         return std::reinterpret_pointer_cast<uintptr_t>(taiheCallback);
     }
 };

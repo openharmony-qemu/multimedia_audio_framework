@@ -24,6 +24,7 @@
 #include "audio_router_infra.h"
 #include "audio_device_manager.h"
 #include "audio_policy_log.h"
+#include "audio_policy_utils.h"
 #include "audio_core_config_manager.h"
 #include "audio_utils.h"
 
@@ -200,7 +201,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetRecognition
     auto result = ConvertSimpleToDevice(simpleDesc);
 
     AudioRouterInfra::GetInstance().Unlock();
-    return result;
+    return (result && !IsDeviceTypeSkipped(result->deviceType_)) ?
+        result : std::make_shared<AudioDeviceDescriptor>();
 }
 
 void AudioRouterSelectStrategy::SetRecognitionInputDevice(
@@ -436,6 +438,11 @@ bool AudioRouterSelectStrategy::IsDeviceExcluded(const std::shared_ptr<AudioDevi
     return routerInfra.IsDeviceExcluded(simpleDesc, usage);
 }
 
+bool AudioRouterSelectStrategy::IsDeviceTypeSkipped(DeviceType deviceType)
+{
+    return AudioRouterInfra::GetInstance().IsDeviceTypeSkipped(deviceType);
+}
+
 bool AudioRouterSelectStrategy::IsSameDeviceDeviceDescriptor(
     std::shared_ptr<AudioDeviceDescriptor> desc1, std::shared_ptr<AudioDeviceDescriptor> desc2)
 {
@@ -512,7 +519,7 @@ set<shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::FindCurrentOut
         auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceId);
         CHECK_AND_CONTINUE(desc);
         result.insert(desc);
-        AUDIO_INFO_LOG("deviceId=%{public}d, deviceType=%{public}d", desc->deviceId_, desc->deviceType_);
+        AUDIO_DEBUG_LOG("deviceId=%{public}d, deviceType=%{public}d", desc->deviceId_, desc->deviceType_);
     }
     return result;
 }

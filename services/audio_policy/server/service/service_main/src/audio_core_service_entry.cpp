@@ -143,12 +143,16 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
     AudioXCollie audioXCollie("EventEntry::UpdateSessionOperation", TIMEOUT_CORE_ENTRY_S,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
+    bool isInterruptActive = false;
+    if (operation == SESSION_OPERATION_START) {
+        isInterruptActive = coreService_->IsStreamActive(sessionId);
+    }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     HILOG_COMM_INFO("[UpdateSessionOperation]withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
         sessionId, SessionOperationToString(operation), SessionOperationMsgToString(opMsg));
     switch (operation) {
         case SESSION_OPERATION_START:
-            return coreService_->StartClient(sessionId, opMsg);
+            return coreService_->StartClient(sessionId, opMsg, isInterruptActive);
         case SESSION_OPERATION_PAUSE:
             return coreService_->PauseClient(sessionId);
         case SESSION_OPERATION_STANDBY:
@@ -457,6 +461,12 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetActiveBl
     return coreService_->GetActiveBluetoothDevice();
 }
 
+int32_t AudioCoreService::EventEntry::SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes)
+{
+    std::shared_lock<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SkipDeviceTypes(skipped, deviceTypes);
+}
+
 void AudioCoreService::EventEntry::OnDeviceInfoUpdated(
     AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
@@ -749,6 +759,27 @@ int32_t AudioCoreService::EventEntry::ReleaseMultiChannelPipe(AudioIOHandle id, 
     return SUCCESS;
 }
 
+int32_t AudioCoreService::EventEntry::ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex,
+    const std::string &pipeName, const std::string &moduleName)
+{
+    CHECK_AND_RETURN_RET_LOG(coreService_, ERR_INVALID_PARAM, "coreService_ is nullptr");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    std::lock_guard<std::mutex> primaryLock(coreService_->primaryExtraCloseMutex_);
+    if (coreService_->isPrimaryExtraOpenedMap_[pipeName]) {
+        coreService_->isPrimaryExtraInReleaseMap_[pipeName] = false;
+        AUDIO_INFO_LOG("primary_extra %{public}s restart", pipeName.c_str());
+        return ERROR;
+    }
+    AUDIO_INFO_LOG("Close %{public}s pipe hdi port id: %{public}u, index %{public}u", pipeName.c_str(), id, paIndex);
+    coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
+    CHECK_AND_RETURN_RET_LOG(coreService_->pipeManager_, ERROR, "pipeManager_ is nullptr");
+    coreService_->pipeManager_->RemoveAudioPipeInfo(id);
+    coreService_->audioIOHandleMap_.DelIOHandleInfo(moduleName);
+    coreService_->isPrimaryExtraInReleaseMap_[pipeName] = false;
+    coreService_->audioPolicyManager_.RemoveAudioPipeVolume(id);
+    return SUCCESS;
+}
+
 int32_t AudioCoreService::EventEntry::SetRendererTarget(RenderTarget target, RenderTarget lastTarget,
     uint32_t sessionId)
 {
@@ -834,16 +865,26 @@ int32_t AudioCoreService::EventEntry::NotifyStreamStandbyResume(int32_t pid, uin
     return coreService->NotifyStreamStandbyResume(pid, streamId);
 }
 
+// EventEntry proxy method: notify silent state change
+void AudioCoreService::EventEntry::NotifySilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifySilentStateChange(sessionId, isSilent);
+}
+
+void AudioCoreService::EventEntry::NotifyDataTransSilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifyDataTransSilentStateChange(sessionId, isSilent);
+}
+
 int32_t AudioCoreService::EventEntry::SetCapturerMuteHint(uint32_t sessionId, bool mute)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
-    int32_t ret = coreService_->SetCapturerMuteHint(sessionId, mute);
-    if (ret == SUCCESS) {
-        coreService_->ReEvaluateVoipPrivacyMuteForCapturers(
-            "AudioCoreService::EventEntry::SetCapturerMuteHint");
-    }
-    return ret;
+    return coreService_->SetCapturerMuteHint(sessionId, mute);
 }
 
 void AudioCoreService::EventEntry::OnDeviceStateChange(const std::string &networkId, DeviceRole role, bool isAvailable)
@@ -853,11 +894,11 @@ void AudioCoreService::EventEntry::OnDeviceStateChange(const std::string &networ
     coreService_->OnDeviceStateChange(networkId, role, isAvailable);
 }
 
-void AudioCoreService::EventEntry::ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason)
+void AudioCoreService::EventEntry::SetStreamInterruptMute(uint32_t streamId, bool mute)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
-    coreService_->ReEvaluateVoipPrivacyMuteForCapturers(reason);
+    coreService_->SetStreamInterruptMute(streamId, mute);
 }
 
 bool AudioCoreService::EventEntry::IsSupportIndependentPipe()

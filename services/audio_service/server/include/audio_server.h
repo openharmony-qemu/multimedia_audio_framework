@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -279,6 +280,9 @@ public:
         const IAudioSourceAttr &attr, uint32_t& captureId) override;
     int32_t CreateSourcePort(uint32_t idBase, uint32_t idType, const std::string &idInfo,
         const IAudioSourceAttr &attr, uint32_t& captureId) override;
+    int32_t RegisterVADeviceController(const std::string &macAddress,
+        const sptr<IRemoteObject> &controller) override;
+    int32_t UnregisterVADeviceController(const std::string &macAddress) override;
     int32_t DestroyHdiPort(uint32_t id) override;
     int32_t SetDeviceConnectedFlag(bool flag) override;
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool& isSupported) override;
@@ -325,6 +329,7 @@ public:
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice) override;
     int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo) override;
     int32_t SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList) override;
+    int32_t NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -423,6 +428,7 @@ private:
     int32_t CheckInnerRecorderPermission(const AudioProcessConfig &config);
     bool CheckRecorderPermission(const AudioProcessConfig &config);
     bool HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config);
+    bool CheckVoiceDownlinkPermission(const AudioProcessConfig &config);
     bool CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId);
     void RegisterSinkLatencyFetcher(uint32_t renderId);
     void RegisterSinkLatencyFetcher(uint32_t renderId, uint32_t sinkLatency);

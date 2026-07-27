@@ -163,8 +163,11 @@ int32_t HpaeRemoteOutputCluster::GetConverterNodeCount()
     return sceneConverterMap_.size();
 }
 
-int32_t HpaeRemoteOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId)
+int32_t HpaeRemoteOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
+    const std::string &macAddress)
 {
+    // macAddress is intentionally ignored on the remote path: remote sink requires a valid
+    // distributed networkId, and a MAC address is not a legal networkId (would break routing).
     return hpaeSinkOutputNode_->GetRenderSinkInstance(deviceClass, deviceNetId);
 }
 

@@ -73,6 +73,19 @@ void IHpaeCapturerManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId
     }
 #endif
 }
+
+bool IHpaeCapturerManager::AdjustFrameLen(HpaeNodeInfo &outNodeInfo, const HpaeNodeInfo &inNodeInfo)
+{
+    // Check if input node's frameLen needs to modify.
+    uint32_t inRate = inNodeInfo.GetEffectiveSampleRate();
+    uint32_t outRate = outNodeInfo.GetEffectiveSampleRate();
+    if (inRate == 0 || outRate == 0) {
+        AUDIO_ERR_LOG("AdjustFrameLen invalid rate: inRate=%{public}u outRate=%{public}u", inRate, outRate);
+        return false;
+    }
+    outNodeInfo.frameLen = static_cast<uint32_t>(inNodeInfo.frameLen) * outRate / inRate;
+    return true;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

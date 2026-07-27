@@ -119,12 +119,13 @@ private:
     void WriteSmartPAStatusSysEvent(int32_t status);
     void UpdateSinkState(bool started);
     void UpdateNearlinkOutputRoute();
-    void RefreshSpeakerDeviceForEnhancedRouting();
     int32_t SelectSceneToHdi(AudioScene audioScene, bool scoExcludeFlag);
     int32_t HandleSwitchDeviceMuteState(bool mute, bool &applyVolume);
     int32_t SetSinkMuteForSwitchDeviceWithHdiVolume(bool mute);
     int32_t SetSinkMuteForSwitchDeviceWithoutHdiVolume(bool mute);
     bool SetPlayingAppNameParam(const std::string &param);
+
+    void CheckActiveDeviceValidForStart();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -186,6 +187,9 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+    // Sticky last non-NONE device; never overwritten with NONE so Start can restore it
+    // when upper layer hasn't re-pushed a device yet.
+    DeviceType lastValidActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     bool currentScoExcludeFlag_ = false;
     int32_t currentDevicesSize_ = 0;

@@ -16,11 +16,14 @@
 #ifndef OH_AUDIO_CAPTURER_H
 #define OH_AUDIO_CAPTURER_H
 
+#include <vector>
+
 #include "native_audiocapturer.h"
 #include "native_audio_session_base.h"
 #include "audio_capturer.h"
 #include "audio_common_log.h"
 #include "OHAudioDeviceDescriptor.h"
+#include "audio_noise_reduction_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -156,6 +159,21 @@ struct CapturerCallback {
     OH_AudioCapturer_OnErrorCallback onErrorCallback = {};
 };
 
+class OHAudioCapturerSensitiveRecordPermitCallback : public AudioCapturerSensitiveRecordPermitCallback {
+public:
+    OHAudioCapturerSensitiveRecordPermitCallback(OH_AudioCapturer_SensitiveRecordPermitCallback callback,
+        OH_AudioCapturer *audioCapturer, void *userData)
+        : callback_(callback), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+
+    void OnSensitiveRecordPermit(bool isPermitted) override;
+private:
+    OH_AudioCapturer_SensitiveRecordPermitCallback callback_;
+    OH_AudioCapturer *ohAudioCapturer_;
+    void *userData_;
+};
+
 class OHAudioCapturerOnPlaybackCaptureStartCallback : public AudioCapturerOnPlaybackCaptureStartCallback {
 public:
     OHAudioCapturerOnPlaybackCaptureStartCallback(OH_AudioCapturer_OnPlaybackCaptureStartCallback callback,
@@ -163,7 +181,7 @@ public:
         : callback_(callback), ohAudioCapturer_(audioCapturer), userData_(userData)
     {
     }
- 
+
     void OnPlaybackCaptureStartResult(PlaybackCaptureStartState state) override;
 private:
     OH_AudioCapturer_OnPlaybackCaptureStartCallback callback_;
@@ -209,6 +227,8 @@ public:
     InterruptEventCallbackType GetCapturerInterruptEventCallbackType();
     ErrorCallbackType GetCapturerErrorCallbackType();
     void SetCapturerFastStatusChangeCallback(OH_AudioCapturer_OnFastStatusChange callback, void *userData);
+    void SetCapturerSensitiveRecordPermitCallback(
+        OH_AudioCapturer_SensitiveRecordPermitCallback callback, void *userData);
 
     void SetCapturerCallback(CapturerCallback capturerCallbacks, void* userData);
     void SetReadDataCallback(CapturerCallback capturerCallbacks, void* userData);
@@ -222,7 +242,10 @@ public:
         OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData);
     bool IsModernInnerCapturer();
     int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior);
-    const AudioCapturer *GetAudioCapturer() const;
+    int32_t SetNoiseReductionMode(NoiseReductionMode mode);
+    int32_t GetNoiseReductionMode(NoiseReductionMode &mode);
+    int32_t GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes);
+    std::shared_ptr<AudioCapturer> GetAudioCapturer();
 
 private:
     std::shared_ptr<AudioCapturer> audioCapturer_;
@@ -232,6 +255,7 @@ private:
     ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_COMBINED;
     InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
     std::shared_ptr<OHAudioCapturerFastStatusChangeCallback> audioCapturerFastStatusChangeCallback_;
+    std::shared_ptr<OHAudioCapturerSensitiveRecordPermitCallback> audioCapturerSensitiveRecordPermitCallback_;
     std::shared_ptr<OHAudioCapturerOnPlaybackCaptureStartCallback> capturerOnPlaybackCaptureStartCallback_ = nullptr;
     bool isModernInnerCapturer_ = false;
 };

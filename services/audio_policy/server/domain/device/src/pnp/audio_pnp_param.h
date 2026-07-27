@@ -22,6 +22,7 @@
 #define ADD_DEVICE_MIC_UN_BLOCKED '6'
 #define AUDIO_EVENT_INFO_LEN_MAX 256
 #define AUDIO_PNP_INFO_LEN_MAX  256
+#define AUDIO_DEVICE_WAIT_USB_ONLINE 1000
 #define AUDIO_DEVICE_WAIT_USB_EVENT_UPDATE 100
 
 #define INPUT_EVT_MAX_CNT       4
@@ -29,7 +30,7 @@
 #define REMOVE_AUDIO_DEVICE '0'
 #define SWITCH_STATE_PATH    "/sys/class/switch/h2w/state"
 #define SWITCH_STATE_PATH_LINEIN    "/sys/class/switch/h2w_linein/state"
-#define SWITCH_STATE_PATH_LINEOUT   "/sys/class/switch/h2w_lineout/state"
+#define SWITCH_STATE_PATH_LINEOUT    "/sys/class/switch/h2w_lineout/state"
 #define SWITCH_STATE_PATH_MICIN    "/sys/class/switch/h2w_micin/state"
 #define STATE_PATH_ITEM_SIZE 1
 
@@ -71,7 +72,12 @@
 
 #define DP_PORT_COUNT           5
 #define DP_PATH                 "/sys/class/switch/hdmi_audio"
+#define HDMI_PATH               "/sys/class/switch/hdmi_mipi_audio"
 #define DEVICE_PORT             "device_port="
+#define EXTCON_PATH             "/sys/class/extcon/"
+#define EXTCON_STATE            "/state"
+
+#define FILE_BUFFER_SIZE       256
 
 #include <string>
 

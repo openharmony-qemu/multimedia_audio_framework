@@ -91,6 +91,8 @@ audio_ohos_library("audio_effect") {
   ]
 
   external_deps = [
+    "ability_runtime:dataobs_manager",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
@@ -126,6 +128,7 @@ audio_ohos_library("audio_effect") {
 }
 
 ohos_static_library("audio_effect_integration") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true

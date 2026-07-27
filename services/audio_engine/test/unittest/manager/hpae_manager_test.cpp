@@ -84,6 +84,28 @@ void WaitForMsgProcessing(std::shared_ptr<HpaeManager> &hpaeManager)
     EXPECT_EQ(waitCount < waitCountThd, true);
 }
 
+void WaitForMsgProcessingStable(std::shared_ptr<HpaeManager> &hpaeManager)
+{
+    int waitCount = 0;
+    int stableIdleCount = 0;
+    const int waitCountThd = 150;
+    const int stableIdleCountThd = 5;
+    while (waitCount < waitCountThd) {
+        if (hpaeManager->IsMsgProcessing()) {
+            stableIdleCount = 0;
+        } else {
+            stableIdleCount++;
+            if (stableIdleCount >= stableIdleCountThd) {
+                return;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
+        waitCount++;
+    }
+    EXPECT_EQ(hpaeManager->IsMsgProcessing(), false);
+    EXPECT_GE(stableIdleCount, stableIdleCountThd);
+}
+
 AudioModuleInfo GetSinkAudioModeInfo(std::string name = "Speaker_File")
 {
     AudioModuleInfo audioModuleInfo;
@@ -2627,34 +2649,34 @@ HWTEST_F(HpaeManagerUnitTest, SetAissEnabled_EnableDisableRoundTrip, TestSize.Le
     AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     hpaeManager_->SetDefaultSink(audioModuleInfo.name);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
 
     HpaeStreamInfo streamInfo = GetRenderStreamInfo();
     hpaeManager_->CreateStream(streamInfo);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
 
     // Start the stream so SignalProcessThread is active and cluster has converter/gain nodes
     hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
 
     // Enable AISS — should succeed (Bind + async PostCreateSessionEffect)
     int32_t ret = hpaeManager_->SetAissEnabledSync(streamInfo.sessionId, true);
     EXPECT_EQ(ret, SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
     // Give async PostCreateSessionEffect time to execute on SignalProcessThread
     usleep(100000); // 100ms
 
     // Disable AISS — should succeed (async PostDestroySessionEffect + Unbind)
     ret = hpaeManager_->SetAissEnabledSync(streamInfo.sessionId, false);
     EXPECT_EQ(ret, SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
     usleep(100000); // 100ms
 
     // Cleanup
     hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
+    WaitForMsgProcessingStable(hpaeManager_);
     EXPECT_EQ(hpaeManager_->CloseOutAudioPort("Speaker_File"), SUCCESS);
     hpaeManager_->DeInit();
 }
@@ -2965,5 +2987,246 @@ HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_NoChange_004, TestSize.Le
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->DeInit();
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    // Case 1: defaultSink_ starts empty, target not in map → must stay empty.
+    hpaeManager_->defaultSink_ = "";
+    EXPECT_EQ(hpaeManager_->SetDefaultSink("NotInMapSink"), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSink_, "");
+
+    // Case 2: defaultSink_ points to an opened & init'd sink, target not in map
+    //         → must remain unchanged.
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->defaultSink_ = audioModuleInfo.name;
+    std::string before = hpaeManager_->defaultSink_;
+    EXPECT_EQ(hpaeManager_->SetDefaultSink("AnotherMissingSink"), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSink_, before);
+
+    EXPECT_EQ(hpaeManager_->CloseOutAudioPort(audioModuleInfo.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+// Verify: target sink exists and IsInit() == true → defaultSink_ switches.
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink004, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    AudioModuleInfo sinkA = GetSinkAudioModeInfo("Speaker_File");
+    AudioModuleInfo sinkB = GetSinkAudioModeInfo("Speaker_File1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(sinkA), SUCCESS);
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(sinkB), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    // Prime defaultSink_ to sinkA, then switch to init'd sinkB.
+    hpaeManager_->defaultSink_ = sinkA.name;
+    EXPECT_EQ(hpaeManager_->SetDefaultSink(sinkB.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSink_, sinkB.name);
+
+    EXPECT_EQ(hpaeManager_->CloseOutAudioPort(sinkA.name), SUCCESS);
+    EXPECT_EQ(hpaeManager_->CloseOutAudioPort(sinkB.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+// Verify: target source not in capturerManagerMap_ → defaultSource_ must NOT change.
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource002, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    // Case 1: defaultSource_ starts empty, target not in map → must stay empty.
+    hpaeManager_->defaultSource_ = "";
+    EXPECT_EQ(hpaeManager_->SetDefaultSource("NotInMapSource"), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSource_, "");
+
+    // Case 2: defaultSource_ points to an opened & init'd source, target not in map
+    //         → must remain unchanged.
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->defaultSource_ = audioModuleInfo.name;
+    std::string before = hpaeManager_->defaultSource_;
+    EXPECT_EQ(hpaeManager_->SetDefaultSource("AnotherMissingSource"), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSource_, before);
+
+    EXPECT_EQ(hpaeManager_->CloseInAudioPort(audioModuleInfo.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+// Verify: target source exists and IsInit() == true → defaultSource_ switches.
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    AudioModuleInfo srcA = GetSourceAudioModeInfo("mic");
+    AudioModuleInfo srcB = GetSourceAudioModeInfo("mic1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(srcA), SUCCESS);
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(srcB), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    // Prime defaultSource_ to srcA, then switch to init'd srcB.
+    hpaeManager_->defaultSource_ = srcA.name;
+    EXPECT_EQ(hpaeManager_->SetDefaultSource(srcB.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->defaultSource_, srcB.name);
+
+    EXPECT_EQ(hpaeManager_->CloseInAudioPort(srcA.name), SUCCESS);
+    EXPECT_EQ(hpaeManager_->CloseInAudioPort(srcB.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+/**
+ * @tc.name  : UpdateBypassSpatializationForStereo_StateTransition_001
+ * @tc.desc  : UpdateBypassSpatializationForStereo flips bypassSpatializationForStereo_ when the
+ *             incoming value differs from the cached one.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateBypassSpatializationForStereo_StateTransition_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    // Fresh manager defaults to false.
+    hpaeManager_->bypassSpatializationForStereo_ = false;
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = false;
+
+    hpaeManager_->UpdateBypassSpatializationForStereo(true);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    hpaeManager_->UpdateBypassSpatializationForStereo(false);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, false);
+}
+
+/**
+ * @tc.name  : UpdateBypassSpatializationForStereo_SameValueNoFlip_002
+ * @tc.desc  : Calling UpdateBypassSpatializationForStereo with the same value as the cached one
+ *             keeps bypassSpatializationForStereo_ unchanged.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateBypassSpatializationForStereo_SameValueNoFlip_002, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    hpaeManager_->bypassSpatializationForStereo_ = true;
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = false;
+
+    hpaeManager_->UpdateBypassSpatializationForStereo(true);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    hpaeManager_->bypassSpatializationForStereo_ = false;
+    hpaeManager_->UpdateBypassSpatializationForStereo(false);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, false);
+}
+
+/**
+ * @tc.name  : UpdateBypassSpatializationForStereo_AdaptiveRenderingGates_003
+ * @tc.desc  : bypassSpatializationForStereo_ always caches the raw bypass flag, but downstream value
+ *             passed to HpaePolicyManager is (bypass && adaptiveSpatialRenderingEnabled_). Toggling
+ *             adaptiveSpatialRenderingEnabled_ changes only the downstream propagation, not the cached
+ *             flag once it has been settled.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateBypassSpatializationForStereo_AdaptiveRenderingGates_003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    // adaptiveSpatialRenderingEnabled_ == false: cached flag still tracks raw bypass.
+    hpaeManager_->bypassSpatializationForStereo_ = false;
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = false;
+    hpaeManager_->UpdateBypassSpatializationForStereo(true);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    // Enable adaptive rendering afterwards; cached flag must remain true without a new call.
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = true;
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    // Disabling bypass again flips the cached flag regardless of adaptive state.
+    hpaeManager_->UpdateBypassSpatializationForStereo(false);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, false);
+}
+
+/**
+ * @tc.name  : HandleBypassSpatializationForStereo_AsyncDispatch_004
+ * @tc.desc  : HandleBypassSpatializationForStereo posts UpdateBypassSpatializationForStereo onto the
+ *             manager thread; after WaitForMsgProcessing the cached flag reflects the request.
+ */
+HWTEST_F(HpaeManagerUnitTest, HandleBypassSpatializationForStereo_AsyncDispatch_004, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    hpaeManager_->bypassSpatializationForStereo_ = false;
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = false;
+
+    hpaeManager_->HandleBypassSpatializationForStereo(true);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    hpaeManager_->HandleBypassSpatializationForStereo(false);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, false);
+}
+
+/**
+ * @tc.name  : UpdateSpatializationState_RefreshesAdaptiveThenBypass_005
+ * @tc.desc  : UpdateSpatializationState copies adaptiveSpatialRenderingEnabled from the incoming
+ *             state and re-runs UpdateBypassSpatializationForStereo with the cached bypass flag, so
+ *             the cached flag survives while adaptive state tracks the request.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateSpatializationState_RefreshesAdaptiveThenBypass_005, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    hpaeManager_->bypassSpatializationForStereo_ = true;
+    hpaeManager_->adaptiveSpatialRenderingEnabled_ = false;
+
+    AudioSpatializationState stateInfo;
+    stateInfo.spatializationEnabled = false;
+    stateInfo.headTrackingEnabled = false;
+    stateInfo.adaptiveSpatialRenderingEnabled = true;
+    ASSERT_EQ(hpaeManager_->UpdateSpatializationState(stateInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    EXPECT_EQ(hpaeManager_->adaptiveSpatialRenderingEnabled_, true);
+    // Cached bypass flag must survive the UpdateSpatializationState-triggered re-run.
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
+
+    // Now flip adaptive off via the same path.
+    stateInfo.adaptiveSpatialRenderingEnabled = false;
+    ASSERT_EQ(hpaeManager_->UpdateSpatializationState(stateInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->adaptiveSpatialRenderingEnabled_, false);
+    EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
 }
 }  // namespace

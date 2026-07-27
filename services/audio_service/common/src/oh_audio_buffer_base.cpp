@@ -33,6 +33,8 @@
 #include "audio_parcel_helper.h"
 #include "volume_tools.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B8B
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -933,7 +935,7 @@ void OHAudioBufferBase::SetLastWrittenTime(int64_t time)
 uint32_t OHAudioBufferBase::GetSyncWriteFrame()
 {
     if (bufferHolder_ != AUDIO_SERVER_ONLY_WITH_SYNC || syncWriteFrame_ == nullptr) {
-        AUDIO_WARNING_LOG("sync info not support with holder: %{public}d", bufferHolder_);
+        AUDIO_DEBUG_LOG("sync info not support with holder: %{public}d", bufferHolder_);
         return 0;
     }
     return *syncWriteFrame_;
@@ -942,7 +944,7 @@ uint32_t OHAudioBufferBase::GetSyncWriteFrame()
 bool OHAudioBufferBase::SetSyncWriteFrame(uint32_t writeFrame)
 {
     if (bufferHolder_ != AUDIO_SERVER_ONLY_WITH_SYNC || syncWriteFrame_ == nullptr) {
-        AUDIO_WARNING_LOG("sync info not support with holder: %{public}d", bufferHolder_);
+        AUDIO_DEBUG_LOG("sync info not support with holder: %{public}d", bufferHolder_);
         return false;
     }
     *syncWriteFrame_ = writeFrame;
@@ -952,7 +954,7 @@ bool OHAudioBufferBase::SetSyncWriteFrame(uint32_t writeFrame)
 uint32_t OHAudioBufferBase::GetSyncReadFrame()
 {
     if (bufferHolder_ != AUDIO_SERVER_ONLY_WITH_SYNC || syncReadFrame_ == nullptr) {
-        AUDIO_WARNING_LOG("sync info not support with holder: %{public}d", bufferHolder_);
+        AUDIO_DEBUG_LOG("sync info not support with holder: %{public}d", bufferHolder_);
         return 0;
     }
     return *syncReadFrame_;
@@ -961,7 +963,7 @@ uint32_t OHAudioBufferBase::GetSyncReadFrame()
 bool OHAudioBufferBase::SetSyncReadFrame(uint32_t readFrame)
 {
     if (bufferHolder_ != AUDIO_SERVER_ONLY_WITH_SYNC || syncReadFrame_ == nullptr) {
-        AUDIO_WARNING_LOG("sync info not support with holder: %{public}d", bufferHolder_);
+        AUDIO_DEBUG_LOG("sync info not support with holder: %{public}d", bufferHolder_);
         return false;
     }
     *syncReadFrame_ = readFrame;

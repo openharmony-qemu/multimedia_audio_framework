@@ -87,6 +87,8 @@ public:
     std::shared_ptr<HpaeLoudnessGainNode> GetLoudnessGainNode(uint32_t sessionId) const;
     void SetCollaborationStateToMixNode(CollaborationState isCollaborationEnabled);
     void SetDelayCountToEffectNode(int32_t delayCount);
+    void SetCollabDoFade(bool fadeOutState);
+    void SetStopRunningState(bool stopRunning);
 
 private:
     void ConnectMixerNode();

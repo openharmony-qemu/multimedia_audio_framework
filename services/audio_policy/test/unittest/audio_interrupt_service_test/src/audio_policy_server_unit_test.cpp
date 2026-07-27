@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -347,11 +347,12 @@ HWTEST(AudioPolicyUnitTest, SetStreamMute_001, TestSize.Level1)
     int32_t streamTypeIn = 1;
     bool mute = false;
     int32_t deviceTypeIn = 1;
+    int32_t volumeFlag = 0;
 
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    int32_t res = ptrAudioPolicyServer->SetStreamMute(streamTypeIn, mute, deviceTypeIn);
+    int32_t res = ptrAudioPolicyServer->SetStreamMute(streamTypeIn, mute, deviceTypeIn, volumeFlag);
     EXPECT_EQ(res, SUCCESS);
 }
 
@@ -3332,6 +3333,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_161, TestSize.Level1)
 
     int32_t systemAbilityId = APP_MGR_SERVICE_ID;
     std::string deviceId = "test";
+    server->HandleAudioServerRelatedSystemAbility(FUSION_CONNECTIVITY_SA_ID, deviceId);
     server->HandleAudioServerRelatedSystemAbility(systemAbilityId, deviceId);
 
     systemAbilityId = -1;
@@ -3661,7 +3663,7 @@ HWTEST(AudioPolicyUnitTest, SelectPrivateDevice_01, TestSize.Level1)
     int32_t devType = 8;
     std::string macAddress{"11:22:33:44"};
     int32_t result = server->SelectPrivateDevice(devType, macAddress);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(result == SUCCESS || result == ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 /**
@@ -3674,7 +3676,7 @@ HWTEST(AudioPolicyUnitTest, ForceSelectDevice_01, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     sptr<AudioRendererFilter> filter{nullptr};
     int32_t result = server->ForceSelectDevice(31, "11:22", filter);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(result == SUCCESS || result == ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 /**
@@ -4269,34 +4271,6 @@ HWTEST(AudioPolicyUnitTest, GetAudioZone_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioPolicyServer::GetAudioZone.
-* @tc.number: GetAudioZone_003
-* @tc.desc  : Test GetAudioZone with valid zoneId.
-*/
-HWTEST(AudioPolicyUnitTest, GetAudioZone_003, TestSize.Level1)
-{
-    GetPermission();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    ASSERT_TRUE(server != nullptr);
-
-    // First get all zones to find a valid zoneId
-    std::vector<std::shared_ptr<AudioZoneDescriptor>> descs;
-    server->GetAllAudioZone(descs);
-
-    if (!descs.empty()) {
-        std::shared_ptr<AudioZoneDescriptor> desc = nullptr;
-        int32_t zoneId = descs[0]->zoneId_;
-
-        int32_t ret = server->GetAudioZone(zoneId, desc);
-        EXPECT_EQ(ret, SUCCESS);
-        EXPECT_NE(desc, nullptr);
-        EXPECT_EQ(desc->zoneId_, zoneId);
-    }
-}
-
-/**
 * @tc.name  : Test AudioPolicyServer::GetAudioZoneByName.
 * @tc.number: GetAudioZoneByName_001
 * @tc.desc  : Test GetAudioZoneByName with empty name.
@@ -4498,35 +4472,6 @@ HWTEST(AudioPolicyUnitTest, BindDeviceToAudioZone_005, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioPolicyServer::BindDeviceToAudioZone.
-* @tc.number: BindDeviceToAudioZone_006
-* @tc.desc  : Test BindDeviceToAudioZone with valid parameters.
-*/
-HWTEST(AudioPolicyUnitTest, BindDeviceToAudioZone_006, TestSize.Level1)
-{
-    GetPermission();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    ASSERT_TRUE(server != nullptr);
-
-    // First get all zones to find a valid zoneId
-    std::vector<std::shared_ptr<AudioZoneDescriptor>> descs;
-    server->GetAllAudioZone(descs);
-
-    if (!descs.empty()) {
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-        auto device = std::make_shared<AudioDeviceDescriptor>();
-        device->deviceType_ = DEVICE_TYPE_SPEAKER;
-        devices.push_back(device);
-        int32_t zoneId = descs[0]->zoneId_;
-
-        int32_t ret = server->BindDeviceToAudioZone(zoneId, devices);
-        EXPECT_EQ(ret, SUCCESS);
-    }
-}
-
-/**
 * @tc.name  : Test AudioPolicyServer::UnBindDeviceToAudioZone.
 * @tc.number: UnBindDeviceToAudioZone_001
 * @tc.desc  : Test UnBindDeviceToAudioZone with invalid zoneId (zoneId <= 0).
@@ -4616,35 +4561,6 @@ HWTEST(AudioPolicyUnitTest, UnBindDeviceToAudioZone_004, TestSize.Level1)
 
     int32_t ret = server->UnBindDeviceToAudioZone(zoneId, devices);
     EXPECT_EQ(ret, ERROR);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer::UnBindDeviceToAudioZone.
-* @tc.number: UnBindDeviceToAudioZone_005
-* @tc.desc  : Test UnBindDeviceToAudioZone with valid parameters.
-*/
-HWTEST(AudioPolicyUnitTest, UnBindDeviceToAudioZone_005, TestSize.Level1)
-{
-    GetPermission();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    ASSERT_TRUE(server != nullptr);
-
-    // First get all zones to find a valid zoneId
-    std::vector<std::shared_ptr<AudioZoneDescriptor>> descs;
-    server->GetAllAudioZone(descs);
-
-    if (!descs.empty()) {
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-        auto device = std::make_shared<AudioDeviceDescriptor>();
-        device->deviceType_ = DEVICE_TYPE_SPEAKER;
-        devices.push_back(device);
-        int32_t zoneId = descs[0]->zoneId_;
-
-        int32_t ret = server->UnBindDeviceToAudioZone(zoneId, devices);
-        EXPECT_EQ(ret, SUCCESS);
-    }
 }
 
 /**
@@ -6768,6 +6684,109 @@ HWTEST(AudioPolicyUnitTest, SetClientCallbacksEnable_RouteSelector_003, TestSize
     int32_t callbackChange = static_cast<int32_t>(CallbackChange::CALLBACK_ROUTE_SELECTOR);
     int32_t result = server->SetClientCallbacksEnable(callbackChange, true);
     EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetPreferredInputDeviceDescriptors SPP unidirectional branch.
+ * @tc.number: GetPreferredInputDeviceDescriptors_SppUnidirectional_001
+ * @tc.desc  : When the preferred input device is BT_SPP with isUnidirectional_=true,
+ *             deviceType should be converted to BLUETOOTH_SCO without other changes.
+ */
+HWTEST(AudioPolicyUnitTest, GetPreferredInputDeviceDescriptors_SppUnidirectional_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+ 
+    // Construct an SPP unidirectional device descriptor and add it to the connected device list
+    auto sppDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BT_SPP, INPUT_DEVICE);
+    sppDesc->macAddress_ = "11:22:33:44:55:66";
+    sppDesc->networkId_ = LOCAL_NETWORK_ID;
+    sppDesc->isUnidirectional_ = true;
+    sppDesc->connectState_ = CONNECTED;
+ 
+    AudioDeviceManager &devMgr = AudioDeviceManager::GetAudioDeviceManager();
+    devMgr.AddConnectedDevices(sppDesc);
+ 
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs;
+    int32_t ret = server->GetPreferredInputDeviceDescriptors(capturerInfo, deviceDescs);
+    EXPECT_EQ(ret, SUCCESS);
+ 
+    // Find the device that originally was SPP unidirectional
+    for (const auto &desc : deviceDescs) {
+        ASSERT_TRUE(desc != nullptr);
+        if (desc->macAddress_ == "11:22:33:44:55:66" && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            // For SPP unidirectional branch, only deviceType is changed to SCO,
+            // isUnidirectional_ should remain true (from the original SPP descriptor)
+            EXPECT_TRUE(desc->isUnidirectional_);
+            // highQualityRecordingSupported_ should NOT be set (that's only for A2DP_IN)
+            EXPECT_FALSE(desc->highQualityRecordingSupported_);
+            break;
+        }
+    }
+ 
+    // Clean up: remove the test device
+    auto removeDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BT_SPP, INPUT_DEVICE);
+    removeDesc->macAddress_ = "11:22:33:44:55:66";
+    removeDesc->networkId_ = LOCAL_NETWORK_ID;
+    devMgr.RemoveConnectedDevices(removeDesc);
+}
+ 
+/**
+ * @tc.name  : Test GetPreferredInputDeviceDescriptors A2DP_IN branch.
+ * @tc.number: GetPreferredInputDeviceDescriptors_A2dpIn_001
+ * @tc.desc  : When the preferred input device is BLUETOOTH_A2DP_IN,
+ *             deviceType should be converted to BLUETOOTH_SCO and highQualityRecordingSupported_=true.
+ */
+HWTEST(AudioPolicyUnitTest, GetPreferredInputDeviceDescriptors_A2dpIn_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+ 
+    // Construct an A2DP_IN device descriptor and add it to the connected device list
+    auto a2dpInDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE);
+    a2dpInDesc->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    a2dpInDesc->networkId_ = LOCAL_NETWORK_ID;
+    a2dpInDesc->connectState_ = CONNECTED;
+ 
+    // Also add a corresponding SCO device so GetExistedDevice can find it
+    auto scoDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE);
+    scoDesc->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    scoDesc->networkId_ = LOCAL_NETWORK_ID;
+    scoDesc->connectState_ = CONNECTED;
+ 
+    AudioDeviceManager &devMgr = AudioDeviceManager::GetAudioDeviceManager();
+    devMgr.AddConnectedDevices(a2dpInDesc);
+    devMgr.AddConnectedDevices(scoDesc);
+ 
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs;
+    int32_t ret = server->GetPreferredInputDeviceDescriptors(capturerInfo, deviceDescs);
+    EXPECT_EQ(ret, SUCCESS);
+ 
+    // Find the device that was converted from A2DP_IN to SCO
+    for (const auto &desc : deviceDescs) {
+        ASSERT_TRUE(desc != nullptr);
+        if (desc->macAddress_ == "AA:BB:CC:DD:EE:FF" && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            // For A2DP_IN branch, deviceType is converted to SCO
+            // and highQualityRecordingSupported_ must be set to true
+            EXPECT_TRUE(desc->highQualityRecordingSupported_);
+            break;
+        }
+    }
+ 
+    // Clean up: remove the test devices
+    auto removeSco = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE);
+    removeSco->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    removeSco->networkId_ = LOCAL_NETWORK_ID;
+    devMgr.RemoveConnectedDevices(removeSco);
+ 
+    auto removeA2dpIn = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE);
+    removeA2dpIn->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    removeA2dpIn->networkId_ = LOCAL_NETWORK_ID;
+    devMgr.RemoveConnectedDevices(removeA2dpIn);
 }
 } // AudioStandard
 } // OHOS

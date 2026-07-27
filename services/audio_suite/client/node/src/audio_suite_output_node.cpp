@@ -59,6 +59,16 @@ void AudioOutputNode::SetAudioNodeFormat(AudioFormat audioFormat)
         needDataLength_ = DOUBLE_FRAME_NEED_LENGTH;
     }
     AudioNode::SetAudioNodeFormat(audioFormat);
+
+    auto preNodes = preNodes_;
+    for (auto& weakPreNode : preNodes) {
+        auto preNode = weakPreNode.lock();
+        if (preNode != nullptr) {
+            if (preNode->IsSystemNodeType()) {
+                preNode->UpdateOutputFormat(audioFormat);
+            }
+        }
+    }
 }
 
 int32_t AudioOutputNode::Connect(const std::shared_ptr<AudioNode> &preNode)
@@ -78,6 +88,11 @@ int32_t AudioOutputNode::Connect(const std::shared_ptr<AudioNode> &preNode)
         AUDIO_INFO_LOG("current output node connect audio separation node.");
     } else {
         preNodeOutputNum_ = DEFAULT_NODE_OUTPUT_NUM;
+    }
+
+    if (preNode->IsSystemNodeType()) {
+        preNode->UpdateOutputFormat(GetAudioNodeFormat());
+        needDataLength_ = DOUBLE_FRAME_NEED_LENGTH;
     }
     return SUCCESS;
 }
@@ -180,6 +195,28 @@ int32_t AudioOutputNode::DoProcess(uint8_t **audioDataArray, int32_t arraySize,
 
     AUDIO_ERR_LOG("write data failed, writeDataSize = %{public}d.", writeDataSize);
     return ERROR;
+}
+
+int32_t AudioOutputNode::DoProcess(AudioMetaFrame &metaFrame,
+    int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
+{
+    if ((responseAudioSize == nullptr) || (responseMetaSize == nullptr) || (finishedFlag == nullptr)) {
+        AUDIO_ERR_LOG("check output param failed, parame is nullptr.");
+        return ERR_INVALID_PARAM;
+    }
+    if ((metaFrame.audioData == nullptr) || (metaFrame.metaData == nullptr)) {
+        AUDIO_ERR_LOG("check output param failed, audioData or metaData is nullptr.");
+        return ERR_INVALID_PARAM;
+    }
+    CHECK_AND_RETURN_RET_LOG(!GetAudioNodeDataFinishedFlag(), ERR_NOT_SUPPORTED, "meta data output completed.");
+    CHECK_AND_RETURN_RET_LOG(!preNodes_.empty(), ERR_NOT_SUPPORTED, "current output node not connet pre node.");
+    auto preNode = preNodes_[0].lock();
+    CHECK_AND_RETURN_RET_LOG(preNode != nullptr, ERR_NOT_SUPPORTED, "current output node connet pre node is nullptr.");
+    int32_t ret = preNode->DoProcess(metaFrame, responseAudioSize, responseMetaSize, finishedFlag);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_SUPPORTED,
+        "get process meta audio data failed, ret:%{public}d", ret);
+    SetAudioNodeDataFinishedFlag(*finishedFlag);
+    return SUCCESS;
 }
 
 int32_t AudioOutputNode::DoProcessParamCheck(uint8_t **audioDataArray, int32_t arraySize,

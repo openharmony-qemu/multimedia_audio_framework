@@ -14,6 +14,7 @@
  */
 
 #include "audio_device_status_extended_test.h"
+#include "securec.h"
 
 using namespace testing::ext;
 
@@ -515,5 +516,36 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_028, TestSize.Level4)
     audioDeviceStatus_->OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
 }
+
+#ifdef MULTI_BUS_ENABLE
+/**
+ * @tc.name  : Test AudioDeviceStatus.
+ * @tc.number: AudioDeviceStatus_029
+ * @tc.desc  : Test AddAudioDevice sets isSupportMultiZone.
+ */
+HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_029, TestSize.Level4)
+{
+    AudioModuleInfo speakerInfo;
+    speakerInfo.role = ROLE_SINK;
+    speakerInfo.name = "Speaker";
+    audioDeviceStatus_->audioConfigManager_.deviceClassInfo_[ClassType::TYPE_PRIMARY] = { speakerInfo };
+    audioDeviceStatus_->AddAudioDevice(speakerInfo, DEVICE_TYPE_SPEAKER);
+
+    AudioModuleInfo micInfo;
+    micInfo.role = ROLE_SOURCE;
+    micInfo.name = "Built_in_mic";
+    audioDeviceStatus_->AddAudioDevice(micInfo, DEVICE_TYPE_MIC);
+
+    auto &devices = audioDeviceStatus_->audioConnectedDevice_.connectedDevices_;
+    for (auto &desc : devices) {
+        if (desc->deviceType_ == DEVICE_TYPE_SPEAKER) {
+            EXPECT_TRUE(desc->isSupportMultiZone_);
+        } else if (desc->deviceType_ == DEVICE_TYPE_MIC) {
+            EXPECT_FALSE(desc->isSupportMultiZone_);
+        }
+    }
+}
+#endif
+
 } // namespace AudioStandard
 } // namespace OHOS

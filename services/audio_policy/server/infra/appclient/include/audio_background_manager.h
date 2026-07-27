@@ -31,8 +31,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-struct AppState
-{
+struct AppState {
     bool isFreeze = false;
     bool isBack = false;
     bool hasSession = false;

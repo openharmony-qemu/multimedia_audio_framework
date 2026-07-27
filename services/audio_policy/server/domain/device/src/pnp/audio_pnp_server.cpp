@@ -79,6 +79,9 @@ bool AudioPnpServer::init(void)
     if (!socketThread_) {
         socketThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadWithSocket(); });
         pthread_setname_np(socketThread_->native_handle(), "OS_SocketEvent");
+        thread th([this] { DetectAudioDevice(); });
+        pthread_setname_np(th.native_handle(), "OS_DET_AUD_DEV");
+        th.detach();
     }
     if (!inputThread_) {
         inputThread_ = std::make_unique<std::thread>([this] { this->OpenAndReadInput(); });
@@ -228,9 +231,25 @@ void AudioPnpServer::DetectAudioDevice()
     } else {
         AUDIO_INFO_LOG("Post audio devices not detected or detectino failed");
     }
-
+#ifdef HDMI_DETECT_ENABLE
+    DetectAudioHDMIDevice();
+#endif
     DetectAudioDpDevice();
+    DetectAudioHdmiMipiDevice();
     AUDIO_INFO_LOG("DetectAudioDevice Done");
+}
+
+void AudioPnpServer::DetectAudioHDMIDevice()
+{
+    AudioEvent audioEvent = {0};
+    int32_t ret = AudioSocketThread::DetectHDMIState(&audioEvent);
+    if ((ret == SUCCESS) && (audioEvent.eventType == AUDIO_DEVICE_ADD)) {
+        AUDIO_INFO_LOG("audio detect hdmi");
+        AudioSocketThread::UpdateDeviceState(audioEvent);
+        eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
+        CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid detect info");
+        OnPnpDeviceStatusChanged(eventInfo_);
+    }
 }
 
 void AudioPnpServer::DetectAudioDpDevice()
@@ -244,6 +263,28 @@ void AudioPnpServer::DetectAudioDpDevice()
         CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid detect info");
         OnPnpDeviceStatusChanged(eventInfo_);
     }
+}
+
+void AudioPnpServer::DetectAudioHdmiMipiDevice()
+{
+    string hdmiPath{HDMI_PATH};
+    string text = ReadTextFile(hdmiPath + "/state");
+    CHECK_AND_RETURN(!text.empty() && text[0] == '1');
+    text = Trim(ReadTextFile(hdmiPath + "/name"));
+    CHECK_AND_RETURN(!text.empty());
+
+    string name = GetField(text, "device_port", ',');
+    name = name.empty() ? text : name;
+    AUDIO_INFO_LOG("HDMI found. name=%{public}s", name.c_str());
+    AudioEvent audioEvent {
+        .eventType = AUDIO_DEVICE_ADD,
+        .deviceType = PNP_DEVICE_HDMI_DEVICE,
+        .name = name,
+        .address = name.empty() ? "0" : name.substr(name.length() - 1),
+        .deviceRole = DeviceRole::OUTPUT_DEVICE,
+    };
+    string info = GetAudioEventInfo(audioEvent);
+    OnPnpDeviceStatusChanged(info);
 }
 
 void AudioPnpServer::StopPnpServer()

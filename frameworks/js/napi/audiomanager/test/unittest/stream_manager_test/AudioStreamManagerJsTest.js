@@ -103,7 +103,7 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getCurrentAudioRendererInfoArray001", 0, async function (done) {
+  it('getCurrentAudioRendererInfoArray001', 0, async function (done) {
     let audioRenderer = null;
     let audioStreamManager = null;
     try {
@@ -142,7 +142,7 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getCurrentAudioRendererInfoArray002", 0, async function (done) {
+  it('getCurrentAudioRendererInfoArray002', 0, async function (done) {
 
     try {
       let audioRenderer = await audio.createAudioRenderer(AudioRendererOptions);
@@ -171,7 +171,7 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getCurrentAudioRendererInfoArray003", 0, async function (done) {
+  it('getCurrentAudioRendererInfoArray003', 0, async function (done) {
 
     let audioRenderer = null;
     let audioStreamManager = null;
@@ -213,7 +213,7 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getCurrentAudioRendererInfoArray004", 0, async function (done) {
+  it('getCurrentAudioRendererInfoArray004', 0, async function (done) {
     let audioRenderer = null;
     let audioStreamManager = null;
     try {
@@ -245,7 +245,7 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getCurrentAudioRendererInfoArray005", 0, async function (done) {
+  it('getCurrentAudioRendererInfoArray005', 0, async function (done) {
     let audioRenderer = null;
     let audioStreamManager = null;
     try {
@@ -300,7 +300,7 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I6C9VA
    */
-  it("getCurrentAudioRendererInfoArray006", 0, async function (done) {
+  it('getCurrentAudioRendererInfoArray006', 0, async function (done) {
     let audioRenderer = null;
     let audioStreamManager = null;
     try {
@@ -406,7 +406,7 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I7V04L
    */
-  it("getCurrentAudioRendererInfoArraySync001", 0, async function (done) {
+  it('getCurrentAudioRendererInfoArraySync001', 0, async function (done) {
     let audioRenderer = null;
     let audioStreamManager = null;
     try {
@@ -443,7 +443,7 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I7V04L
    */
-  it("getCurrentAudioRendererInfoArraySync002", 0, async function (done) {
+  it('getCurrentAudioRendererInfoArraySync002', 0, async function (done) {
 
     let audioRenderer = null;
     let audioStreamManager = null;
@@ -482,7 +482,7 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.type: FUNC
    * @tc.require: I7V04L
    */
-  it("getCurrentAudioRendererInfoArraySync003", 0, async function (done) {
+  it('getCurrentAudioRendererInfoArraySync003', 0, async function (done) {
     let audioRenderer = null;
     let audioStreamManager = null;
 

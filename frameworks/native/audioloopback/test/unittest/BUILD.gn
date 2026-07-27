@@ -64,6 +64,7 @@ ohos_unittest("audio_loopback_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "samgr:samgr_proxy",
   ]
 }
 
@@ -113,5 +114,6 @@ ohos_unittest("audio_loopback_wrapper_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "samgr:samgr_proxy",
   ]
 }

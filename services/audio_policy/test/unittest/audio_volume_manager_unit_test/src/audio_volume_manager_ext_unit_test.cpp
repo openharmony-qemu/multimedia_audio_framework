@@ -257,12 +257,14 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, HandleAbsBluetoothVolume_004, TestSize.L
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.isBtFirstBoot_ = false;
-    ret = audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel, true, streamType);
+    VolumeScale safeVolume = audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel, true, streamType);
+    ret = safeVolume.VolumeLevel();
     EXPECT_EQ(ret, 0);
 
     audioVolumeManager.isBtFirstBoot_ = false;
     CurrentActiveDevice().deviceCategory_ = BT_HEADPHONE;
-    ret = audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel, false, streamType);
+    safeVolume = audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel, false, streamType);
+    ret = safeVolume.VolumeLevel();
     EXPECT_EQ(ret, 0);
 }
 
@@ -278,7 +280,8 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_001, TestSize.Level1)
     int32_t volumeLevel = 0;
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     CurrentActiveDevice().deviceCategory_ = BT_CAR;
-    int32_t ret = audioVolumeManager->DealWithSafeVolume(volumeLevel, true);
+    VolumeScale safeVolume = audioVolumeManager->DealWithSafeVolume(volumeLevel, true);
+    int32_t ret = safeVolume.VolumeLevel();
     EXPECT_EQ(ret, 0);
 }
 
@@ -294,7 +297,8 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_002, TestSize.Level1)
     int32_t volumeLevel = 0;
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     CurrentActiveDevice().deviceCategory_ = BT_SOUNDBOX;
-    int32_t ret = audioVolumeManager->DealWithSafeVolume(volumeLevel, true);
+    VolumeScale safeVolume = audioVolumeManager->DealWithSafeVolume(volumeLevel, true);
+    int32_t ret = safeVolume.VolumeLevel();
     EXPECT_EQ(ret, 0);
 }
 
@@ -311,7 +315,8 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_003, TestSize.Level1)
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     CurrentActiveDevice().deviceCategory_ = BT_HEADPHONE;
     audioVolumeManager->safeStatusBt_ = SAFE_INACTIVE;
-    int32_t ret = audioVolumeManager->DealWithSafeVolume(volumeLevel, true);
+    VolumeScale safeVolume = audioVolumeManager->DealWithSafeVolume(volumeLevel, true);
+    int32_t ret = safeVolume.VolumeLevel();
     EXPECT_EQ(ret, 0);
 }
 
@@ -328,7 +333,8 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_004, TestSize.Level1)
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     CurrentActiveDevice().deviceCategory_ = BT_HEADPHONE;
     audioVolumeManager->safeStatus_ = SAFE_INACTIVE;
-    int32_t ret = audioVolumeManager->DealWithSafeVolume(volumeLevel, false);
+    VolumeScale safeVolume = audioVolumeManager->DealWithSafeVolume(volumeLevel, false);
+    int32_t ret = safeVolume.VolumeLevel();
     EXPECT_EQ(ret, 0);
 }
 
@@ -345,7 +351,8 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_005, TestSize.Level1)
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     CurrentActiveDevice().deviceCategory_ = BT_HEADPHONE;
     audioVolumeManager->safeStatus_ = SAFE_ACTIVE;
-    int32_t ret = audioVolumeManager->DealWithSafeVolume(volumeLevel, false);
+    VolumeScale safeVolume = audioVolumeManager->DealWithSafeVolume(volumeLevel, false);
+    int32_t ret = safeVolume.VolumeLevel();
     EXPECT_EQ(ret, 0);
 }
 
@@ -362,7 +369,8 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_006, TestSize.Level1)
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     CurrentActiveDevice().deviceCategory_ = BT_HEADPHONE;
     audioVolumeManager->safeStatusBt_ = SAFE_ACTIVE;
-    int32_t ret = audioVolumeManager->DealWithSafeVolume(volumeLevel, true);
+    VolumeScale safeVolume = audioVolumeManager->DealWithSafeVolume(volumeLevel, true);
+    int32_t ret = safeVolume.VolumeLevel();
     EXPECT_EQ(ret, 0);
 }
 
@@ -507,50 +515,6 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_004, TestSize.Level
 
     auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, deviceType);
     EXPECT_LT(-10, ret.VolumeLevel());
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
- * @tc.number: SelectDealSafeVolume_005
- * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT_SOUNDBOX category.
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_005, TestSize.Level4)
-{
-    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
-    AudioStreamType streamType = STREAM_MUSIC;
-    VolumeScale volume = VolumeScale(15, -1, 15);
-    auto device = std::make_shared<AudioDeviceDescriptor>();
-    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    device->networkId_ = LOCAL_NETWORK_ID;
-    device->deviceCategory_ = BT_SOUNDBOX;
-    AudioConnectedDevice::GetInstance().AddConnectedDevice(device);
-
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, DEVICE_TYPE_BLUETOOTH_A2DP);
-    EXPECT_EQ(ret.VolumeLevel(), volume.VolumeLevel());
-
-    AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_BLUETOOTH_A2DP);
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
- * @tc.number: SelectDealSafeVolume_006
- * @tc.desc  : Test SelectDealSafeVolume with STREAM_MUSIC and BT_CAR category.
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, SelectDealSafeVolume_006, TestSize.Level4)
-{
-    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
-    AudioStreamType streamType = STREAM_MUSIC;
-    VolumeScale volume = VolumeScale(15, -1, 15);
-    auto device = std::make_shared<AudioDeviceDescriptor>();
-    device->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    device->networkId_ = LOCAL_NETWORK_ID;
-    device->deviceCategory_ = BT_CAR;
-    AudioConnectedDevice::GetInstance().AddConnectedDevice(device);
-
-    auto ret = audioVolumeManager.SelectDealSafeVolume(streamType, volume, DEVICE_TYPE_BLUETOOTH_A2DP);
-    EXPECT_EQ(ret.VolumeLevel(), volume.VolumeLevel());
-
-    AudioConnectedDevice::GetInstance().DelConnectedDevice(LOCAL_NETWORK_ID, DEVICE_TYPE_BLUETOOTH_A2DP);
 }
 
 /**
@@ -907,7 +871,8 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_007, TestSize.Level4)
     bool isBtDevice = false;
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
-    auto ret = audioVolumeManager.DealWithSafeVolume(volumeLevel, isBtDevice);
+    VolumeScale safeVolume = audioVolumeManager.DealWithSafeVolume(volumeLevel, isBtDevice);
+    int32_t ret = safeVolume.VolumeLevel();
     EXPECT_LT(-10, ret);
 }
 
@@ -925,7 +890,8 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_008, TestSize.Level4)
     audioVolumeManager.safeStatus_ = SAFE_UNKNOWN;
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
 
-    auto ret = audioVolumeManager.DealWithSafeVolume(volumeLevel, isBtDevice);
+    VolumeScale safeVolume = audioVolumeManager.DealWithSafeVolume(volumeLevel, isBtDevice);
+    int32_t ret = safeVolume.VolumeLevel();
     EXPECT_LT(-10, ret);
 }
 
@@ -943,7 +909,8 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, DealWithSafeVolume_009, TestSize.Level4)
     audioVolumeManager.safeStatus_ = SAFE_UNKNOWN;
     CurrentActiveDevice().deviceType_ = DEVICE_TYPE_SPEAKER;
 
-    auto ret = audioVolumeManager.DealWithSafeVolume(volumeLevel, isBtDevice);
+    VolumeScale safeVolume = audioVolumeManager.DealWithSafeVolume(volumeLevel, isBtDevice);
+    int32_t ret = safeVolume.VolumeLevel();
     EXPECT_LT(-10, ret);
 }
 

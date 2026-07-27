@@ -509,9 +509,9 @@ HWTEST_F(HpaeFastSourceInputNodeTest, TimingAndVoipBranches, TestSize.Level1)
     EXPECT_EQ(fastNode->PrepareNextLoop(wakeUpTime), false);
 
     fastNode->spanDuration_ = HpaeFastSourceInputNode::ONE_MILLISECOND_DURATION_NS / 2;
-    EXPECT_GT(fastNode->GetPredictNextWriteTime(0), 0);
+    EXPECT_EQ(fastNode->GetPredictNextWriteTime(0), 0);
     fastNode->spanDuration_ = HpaeFastSourceInputNode::ONE_MILLISECOND_DURATION_NS * 2;
-    EXPECT_GT(fastNode->GetPredictNextWriteTime(0), 0);
+    EXPECT_EQ(fastNode->GetPredictNextWriteTime(0), 0);
 
     fastNode->srcAudioBuffer_ =
         OHAudioBuffer::CreateFromLocal(FAST_TOTAL_FRAME, FAST_SPAN_FRAME, FAST_BYTE_PER_FRAME);
@@ -693,6 +693,162 @@ HWTEST_F(HpaeFastSourceInputNodeTest, DoProcessOneSpan, TestSize.Level1)
     EXPECT_EQ(fastNode->needReSyncPosition_, false);
     EXPECT_EQ(fastNode->curReadPos_, FAST_SPAN_FRAME);
 }
+
+// ==================== GetPredictNextWriteTime Tests ====================
+
+HWTEST_F(HpaeFastSourceInputNodeTest, GetPredictNextWriteTime_StartPeriodNotify, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    fastNode->writeTimeModel_.ConfigSampleRate(SAMPLE_RATE_48000);
+    fastNode->writeTimeModel_.ResetFrameStamp(0, 0);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    uint64_t posInFrame = FAST_SPAN_FRAME * 10;
+    int64_t result = fastNode->GetPredictNextWriteTime(posInFrame);
+    EXPECT_NE(result, 0);
+}
+
+HWTEST_F(HpaeFastSourceInputNodeTest, GetPredictNextWriteTime_BigPeriodNotify, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    fastNode->writeTimeModel_.ConfigSampleRate(SAMPLE_RATE_48000);
+    fastNode->writeTimeModel_.ResetFrameStamp(0, 0);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    uint64_t posInFrame = FAST_SPAN_FRAME * 40;
+    int64_t result = fastNode->GetPredictNextWriteTime(posInFrame);
+    EXPECT_NE(result, 0);
+}
+
+HWTEST_F(HpaeFastSourceInputNodeTest, GetPredictNextWriteTime_NoNotify, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    fastNode->writeTimeModel_.ConfigSampleRate(SAMPLE_RATE_48000);
+    fastNode->writeTimeModel_.ResetFrameStamp(0, 0);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    uint64_t posInFrame = FAST_SPAN_FRAME * 21;
+    int64_t result = fastNode->GetPredictNextWriteTime(posInFrame);
+    EXPECT_NE(result, 0);
+}
+
+HWTEST_F(HpaeFastSourceInputNodeTest, GetPredictNextWriteTime_FrameStampNotConfiged, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    int64_t result = fastNode->GetPredictNextWriteTime(FAST_SPAN_FRAME);
+    EXPECT_NE(result, -1);
+}
+
+HWTEST_F(HpaeFastSourceInputNodeTest, GetPredictNextWriteTime_WriteFrameEqualsPos, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    fastNode->writeTimeModel_.ConfigSampleRate(SAMPLE_RATE_48000);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    fastNode->posInFrame_ = FAST_SPAN_FRAME * 10;
+    fastNode->timeInNano_ = 1666667;
+    fastNode->writeTimeModel_.ResetFrameStamp(fastNode->posInFrame_.load(), fastNode->timeInNano_.load());
+    fastNode->needReSyncPosition_ = false;
+    int64_t result = fastNode->GetPredictNextWriteTime(FAST_SPAN_FRAME * 10);
+    EXPECT_NE(result, 0);
+    EXPECT_EQ(fastNode->needReSyncPosition_, false);
+}
+
+HWTEST_F(HpaeFastSourceInputNodeTest, GetPredictNextWriteTime_UpdataCheckSuccess, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    fastNode->writeTimeModel_.ConfigSampleRate(SAMPLE_RATE_48000);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    fastNode->writeTimeModel_.ResetFrameStamp(0, 0);
+    fastNode->posInFrame_ = 480;
+    fastNode->timeInNano_ = 10000000;
+    fastNode->needReSyncPosition_ = false;
+    int64_t result = fastNode->GetPredictNextWriteTime(FAST_SPAN_FRAME * 10);
+    EXPECT_NE(result, 0);
+    EXPECT_EQ(fastNode->needReSyncPosition_, false);
+}
+
+HWTEST_F(HpaeFastSourceInputNodeTest, GetPredictNextWriteTime_UpdataCheckFailed, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    fastNode->writeTimeModel_.ConfigSampleRate(SAMPLE_RATE_48000);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    fastNode->writeTimeModel_.ResetFrameStamp(0, 0);
+    fastNode->posInFrame_ = 480;
+    fastNode->timeInNano_ = 100000000000LL;
+    int64_t result = fastNode->GetPredictNextWriteTime(FAST_SPAN_FRAME);
+    EXPECT_NE(result, 0);
+}
+
+HWTEST_F(HpaeFastSourceInputNodeTest, GetPredictNextWriteTime_UpdataNeedModify, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    fastNode->writeTimeModel_.ConfigSampleRate(SAMPLE_RATE_48000);
+    fastNode->writeTimeModel_.ResetFrameStamp(0, 0);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    int64_t baseTime = 1000000000LL;
+    int64_t frameDuration = static_cast<int64_t>(480) * AUDIO_NS_PER_SECOND / SAMPLE_RATE_48000;
+    for (int i = 1; i <= 4; i++) {
+        fastNode->writeTimeModel_.UpdateFrameStamp(i * 480, baseTime + i * frameDuration);
+    }
+    fastNode->posInFrame_ = 5 * 480;
+    fastNode->timeInNano_ = baseTime + 5 * frameDuration;
+    fastNode->needReSyncPosition_ = false;
+    int64_t result = fastNode->GetPredictNextWriteTime(FAST_SPAN_FRAME * 10);
+    EXPECT_EQ(fastNode->needReSyncPosition_, true);
+    EXPECT_NE(result, 0);
+}
+
+// ==================== PrepareNextLoop WakeUpTime Abnormal Tests ====================
+
+HWTEST_F(HpaeFastSourceInputNodeTest, PrepareNextLoop_WakeUpTimeAbnormal, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    fastNode->srcAudioBuffer_ =
+        OHAudioBuffer::CreateFromLocal(FAST_TOTAL_FRAME, FAST_SPAN_FRAME, FAST_BYTE_PER_FRAME);
+    ASSERT_NE(fastNode->srcAudioBuffer_, nullptr);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    fastNode->srcByteSizePerFrame_ = FAST_BYTE_PER_FRAME;
+    fastNode->curReadPos_ = 0;
+    fastNode->writeTimeModel_.ConfigSampleRate(SAMPLE_RATE_48000);
+    fastNode->writeTimeModel_.ResetFrameStamp(0, 0);
+    fastNode->spanDuration_ = static_cast<int64_t>(FAST_SPAN_FRAME) * AUDIO_NS_PER_SECOND / SAMPLE_RATE_48000;
+    fastNode->posInFrame_ = 0;
+    fastNode->timeInNano_ = ClockTime::GetCurNano() - 100000000000LL;
+    int64_t wakeUpTime = 0;
+    EXPECT_EQ(fastNode->PrepareNextLoop(wakeUpTime), true);
+    EXPECT_GT(wakeUpTime, ClockTime::GetCurNano());
+}
+
+// ==================== AsyncGetPosTime Branch Tests ====================
+
+HWTEST_F(HpaeFastSourceInputNodeTest, AsyncGetPosTime_GetDeviceHandleInfo, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    fastNode->audioCapturerSource_ = mockSource;
+    fastNode->captureId_ = FAST_CAPTURE_ID;
+    fastNode->stopUpdateThread_.store(false);
+    EXPECT_CALL(*mockSource, GetMmapHandlePosition(_, _, _))
+        .WillRepeatedly(DoAll(SetArgReferee<0>(480), SetArgReferee<1>(0), SetArgReferee<2>(20000000), Return(SUCCESS)));
+    fastNode->AsyncGetPosTime();
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    EXPECT_EQ(fastNode->posInFrame_, 0);
+    fastNode->StopUpdateThread();
+}
+
+HWTEST_F(HpaeFastSourceInputNodeTest, AsyncGetPosTime_StopThreadBreak, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    fastNode->audioCapturerSource_ = mockSource;
+    fastNode->captureId_ = FAST_CAPTURE_ID;
+    fastNode->stopUpdateThread_.store(false);
+    EXPECT_CALL(*mockSource, GetMmapHandlePosition(_, _, _))
+        .WillRepeatedly(DoAll(SetArgReferee<0>(480), SetArgReferee<1>(0), SetArgReferee<2>(20000000), Return(SUCCESS)));
+    fastNode->AsyncGetPosTime();
+    fastNode->StopUpdateThread();
+    EXPECT_EQ(fastNode->stopUpdateThread_.load(), true);
+    EXPECT_EQ(fastNode->updatePosTimeThread_.joinable(), false);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

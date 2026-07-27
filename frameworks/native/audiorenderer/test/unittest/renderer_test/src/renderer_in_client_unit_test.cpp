@@ -26,6 +26,7 @@
 #include "audio_stream_enum.h"
 #include "parameter.h"
 #include "iipc_stream.h"
+#include "securec.h"
 
 
 using namespace testing::ext;
@@ -485,7 +486,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_007, TestSize.Level1
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
 
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
-
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -1307,7 +1307,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_045, TestSize.Level1
     ptrRendererInClientInner->curStreamParams_.samplingRate = 1;
     ptrRendererInClientInner->offloadStartReadPos_ = 0;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
-
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -1345,7 +1344,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_046, TestSize.Level1
     ptrRendererInClientInner->curStreamParams_.samplingRate = 1;
     ptrRendererInClientInner->offloadStartReadPos_ = 0;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
-
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -1383,7 +1381,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_047, TestSize.Level1
     ptrRendererInClientInner->curStreamParams_.samplingRate = 1;
     ptrRendererInClientInner->offloadStartReadPos_ = 1;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
-
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -3130,9 +3127,8 @@ HWTEST(RendererInClientInnerUnitTest, CheckStaticAndOperate_001, TestSize.Level4
 {
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
-
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     ptrRendererInClientInner->rendererInfo_.isStatic = true;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 0, 0);
     ptrRendererInClientInner->clientBuffer_->SetStaticMode(true);
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
@@ -4016,61 +4012,267 @@ HWTEST(RendererInClientNewUnitTest, GetFastStatus_Normal_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test CheckAndProcessPendingSpanSize with no pending span
+ * @tc.name  : Test SyncRendererAttrFromSpan with no pending span
  * @tc.type  : FUNC
- * @tc.number: CheckAndProcessPendingSpanSize_NoPending_001
- * @tc.desc  : Test CheckAndProcessPendingSpanSize with no pending span size.
+ * @tc.number: SyncRendererAttrFromSpan_NoPending_001
+ * @tc.desc  : Test SyncRendererAttrFromSpan with no pending span size.
  */
-HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_NoPending_001, TestSize.Level1)
+HWTEST(RendererInClientNewUnitTest, SyncRendererAttrFromSpan_NoPending_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 100;
     uint32_t byteSizePerFrame = 4;
     rendererInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame, byteSizePerFrame);
+        OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
     
-    rendererInClientInner->CheckAndProcessPendingSpanSize();
+    bool ret = rendererInClientInner->SyncRendererAttrFromSpan();
+    EXPECT_FALSE(ret);
     EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 0);
 }
 
 /**
- * @tc.name  : Test CheckAndProcessPendingSpanSize with AUDIO_OUTPUT_FLAG_VOIP
+ * @tc.name  : Test SyncRendererAttrFromSpan with AUDIO_OUTPUT_FLAG_VOIP
  * @tc.type  : FUNC
- * @tc.number: CheckAndProcessPendingSpanSize_VoipFlag_001
- * @tc.desc  : Test CheckAndProcessPendingSpanSize updates rendererFlags for VOIP flag.
+ * @tc.number: SyncRendererAttrFromSpan_VoipFlag_001
+ * @tc.desc  : Test SyncRendererAttrFromSpan updates rendererFlags for VOIP flag.
  */
-HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_VoipFlag_001, TestSize.Level1)
+HWTEST(RendererInClientNewUnitTest, SyncRendererAttrFromSpan_VoipFlag_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 100;
     uint32_t byteSizePerFrame = 4;
     rendererInClientInner->clientBuffer_ =
-        std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame, byteSizePerFrame);
+        OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
     rendererInClientInner->sizePerFrameInByte_ = 4;
     
     uint32_t validSpanSize = 960;
     uint64_t engineSize = 1920;
     rendererInClientInner->clientBuffer_->SetPendingSpanSize(validSpanSize, engineSize,
         AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP);
-    rendererInClientInner->CheckAndProcessPendingSpanSize();
+    bool ret = rendererInClientInner->SyncRendererAttrFromSpan();
+    EXPECT_TRUE(ret);
     EXPECT_EQ(rendererInClientInner->rendererInfo_.rendererFlags, AUDIO_FLAG_VOIP_FAST);
 }
 
 /**
- * @tc.name  : Test CheckAndProcessPendingSpanSize with null clientBuffer
+ * @tc.name  : Test SyncRendererAttrFromSpan with null clientBuffer
  * @tc.type  : FUNC
- * @tc.number: CheckAndProcessPendingSpanSize_NullBuffer_001
- * @tc.desc  : Test CheckAndProcessPendingSpanSize with null clientBuffer.
+ * @tc.number: SyncRendererAttrFromSpan_NullBuffer_001
+ * @tc.desc  : Test SyncRendererAttrFromSpan with null clientBuffer.
  */
-HWTEST(RendererInClientNewUnitTest, CheckAndProcessPendingSpanSize_NullBuffer_001, TestSize.Level1)
+HWTEST(RendererInClientNewUnitTest, SyncRendererAttrFromSpan_NullBuffer_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
     rendererInClientInner->clientBuffer_ = nullptr;
     
-    rendererInClientInner->CheckAndProcessPendingSpanSize();
+    bool ret = rendererInClientInner->SyncRendererAttrFromSpan();
+    EXPECT_FALSE(ret);
     EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 0);
+}
+
+/**
+ * @tc.name  : Test CheckRendererAttrInfoFromSpan returns false with null buffer
+ * @tc.type  : FUNC
+ * @tc.number: CheckRendererAttrInfoFromSpan_NullBuffer_001
+ * @tc.desc  : Test CheckRendererAttrInfoFromSpan with null clientBuffer.
+ */
+HWTEST(RendererInClientNewUnitTest, CheckRendererAttrInfoFromSpan_NullBuffer_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->clientBuffer_ = nullptr;
+
+    RendererAttrInfo attr;
+    bool ret = rendererInClientInner->CheckRendererAttrInfoFromSpan(attr);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckRendererAttrInfoFromSpan returns false with no pending
+ * @tc.type  : FUNC
+ * @tc.number: CheckRendererAttrInfoFromSpan_NoPending_001
+ * @tc.desc  : Test CheckRendererAttrInfoFromSpan with no pending span size.
+ */
+HWTEST(RendererInClientNewUnitTest, CheckRendererAttrInfoFromSpan_NoPending_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->clientBuffer_ =
+        OHAudioBufferBase::CreateFromLocal(100, 4);
+
+    RendererAttrInfo attr;
+    bool ret = rendererInClientInner->CheckRendererAttrInfoFromSpan(attr);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckRendererAttrInfoFromSpan returns true with valid pending
+ * @tc.type  : FUNC
+ * @tc.number: CheckRendererAttrInfoFromSpan_Valid_001
+ * @tc.desc  : Test CheckRendererAttrInfoFromSpan with valid pending span size.
+ */
+HWTEST(RendererInClientNewUnitTest, CheckRendererAttrInfoFromSpan_Valid_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->clientBuffer_ =
+        OHAudioBufferBase::CreateFromLocal(100, 4);
+
+    uint32_t validSpanSize = 960;
+    uint64_t engineSize = 1920;
+    rendererInClientInner->clientBuffer_->SetPendingSpanSize(validSpanSize, engineSize,
+        AUDIO_OUTPUT_FLAG_FAST);
+
+    RendererAttrInfo attr;
+    bool ret = rendererInClientInner->CheckRendererAttrInfoFromSpan(attr);
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(attr.spanSizeInFrame, validSpanSize);
+    EXPECT_EQ(attr.engineSize, engineSize);
+    EXPECT_EQ(attr.routeFlag, AUDIO_OUTPUT_FLAG_FAST);
+}
+
+/**
+ * @tc.name  : Test RefreshRendererAttrInfoFromSpan skips invalid span size
+ * @tc.type  : FUNC
+ * @tc.number: RefreshRendererAttrInfoFromSpan_InvalidSize_001
+ * @tc.desc  : Test RefreshRendererAttrInfoFromSpan skips invalid span size but updates other fields.
+ */
+HWTEST(RendererInClientNewUnitTest, RefreshRendererAttrInfoFromSpan_InvalidSize_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->sizePerFrameInByte_ = 4;
+    rendererInClientInner->spanSizeInFrame_ = 480;
+    rendererInClientInner->clientSpanSizeInByte_ = 1920;
+
+    RendererAttrInfo attr;
+    attr.spanSizeInFrame = 16; // below MIN_SPAN_SIZE(32), invalid
+    attr.engineSize = 1920;
+    attr.routeFlag = AUDIO_OUTPUT_FLAG_FAST;
+
+    rendererInClientInner->RefreshRendererAttrInfoFromSpan(attr);
+    // spanSize should NOT be updated (invalid)
+    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 480);
+    EXPECT_EQ(rendererInClientInner->clientSpanSizeInByte_, 1920);
+    // engineSize and routeFlag should still be updated
+    EXPECT_EQ(rendererInClientInner->cacheSizeInFrame_, 1920);
+    EXPECT_EQ(rendererInClientInner->rendererInfo_.audioFlag, AUDIO_OUTPUT_FLAG_FAST);
+}
+
+/**
+ * @tc.name  : Test RefreshRendererAttrInfoFromSpan updates span and flags
+ * @tc.type  : FUNC
+ * @tc.number: RefreshRendererAttrInfoFromSpan_FastFlag_001
+ * @tc.desc  : Test RefreshRendererAttrInfoFromSpan with FAST flag.
+ */
+HWTEST(RendererInClientNewUnitTest, RefreshRendererAttrInfoFromSpan_FastFlag_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->sizePerFrameInByte_ = 4;
+
+    RendererAttrInfo attr;
+    attr.spanSizeInFrame = 960;
+    attr.engineSize = 1920;
+    attr.routeFlag = AUDIO_OUTPUT_FLAG_FAST;
+
+    rendererInClientInner->RefreshRendererAttrInfoFromSpan(attr);
+    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 960);
+    EXPECT_EQ(rendererInClientInner->clientSpanSizeInByte_, 3840);
+    EXPECT_EQ(rendererInClientInner->rendererInfo_.audioFlag, AUDIO_OUTPUT_FLAG_FAST);
+    EXPECT_EQ(rendererInClientInner->rendererInfo_.rendererFlags, AUDIO_FLAG_MMAP);
+}
+
+/**
+ * @tc.name  : Test RefreshRendererAttrInfoFromSpan with VOIP flag
+ * @tc.type  : FUNC
+ * @tc.number: RefreshRendererAttrInfoFromSpan_VoipFlag_001
+ * @tc.desc  : Test RefreshRendererAttrInfoFromSpan with VOIP+FAST flag.
+ */
+HWTEST(RendererInClientNewUnitTest, RefreshRendererAttrInfoFromSpan_VoipFlag_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->sizePerFrameInByte_ = 4;
+
+    RendererAttrInfo attr;
+    attr.spanSizeInFrame = 480;
+    attr.engineSize = 960;
+    attr.routeFlag = AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP;
+
+    rendererInClientInner->RefreshRendererAttrInfoFromSpan(attr);
+    EXPECT_EQ(rendererInClientInner->rendererInfo_.rendererFlags, AUDIO_FLAG_VOIP_FAST);
+}
+
+/**
+ * @tc.name  : Test RefreshRendererAttrInfoFromSpan with normal flag
+ * @tc.type  : FUNC
+ * @tc.number: RefreshRendererAttrInfoFromSpan_NormalFlag_001
+ * @tc.desc  : Test RefreshRendererAttrInfoFromSpan with normal (non-FAST) flag.
+ */
+HWTEST(RendererInClientNewUnitTest, RefreshRendererAttrInfoFromSpan_NormalFlag_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->sizePerFrameInByte_ = 4;
+
+    RendererAttrInfo attr;
+    attr.spanSizeInFrame = 480;
+    attr.engineSize = 960;
+    attr.routeFlag = 0x1000; // non-zero but not FAST
+
+    rendererInClientInner->RefreshRendererAttrInfoFromSpan(attr);
+    EXPECT_EQ(rendererInClientInner->rendererInfo_.rendererFlags, AUDIO_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name  : Test RefreshRendererAttrInfoFromSpan with zero routeFlag
+ * @tc.type  : FUNC
+ * @tc.number: RefreshRendererAttrInfoFromSpan_ZeroFlag_001
+ * @tc.desc  : Test RefreshRendererAttrInfoFromSpan with zero routeFlag (no flag update).
+ */
+HWTEST(RendererInClientNewUnitTest, RefreshRendererAttrInfoFromSpan_ZeroFlag_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->sizePerFrameInByte_ = 4;
+    rendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+
+    RendererAttrInfo attr;
+    attr.spanSizeInFrame = 480;
+    attr.engineSize = 960;
+    attr.routeFlag = 0;
+
+    rendererInClientInner->RefreshRendererAttrInfoFromSpan(attr);
+    EXPECT_EQ(rendererInClientInner->spanSizeInFrame_, 480);
+    EXPECT_EQ(rendererInClientInner->rendererInfo_.rendererFlags, AUDIO_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name  : Test JudgeFastStreamByRendererAttr with FAST flag
+ * @tc.type  : FUNC
+ * @tc.number: JudgeFastStreamByRendererAttr_Fast_001
+ * @tc.desc  : Test JudgeFastStreamByRendererAttr returns true with FAST flag.
+ */
+HWTEST(RendererInClientNewUnitTest, JudgeFastStreamByRendererAttr_Fast_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->clientBuffer_ =
+        OHAudioBufferBase::CreateFromLocal(100, 4);
+    rendererInClientInner->sizePerFrameInByte_ = 4;
+
+    rendererInClientInner->clientBuffer_->SetPendingSpanSize(960, 1920, AUDIO_OUTPUT_FLAG_FAST);
+
+    bool ret = rendererInClientInner->JudgeFastStreamByRendererAttr();
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test JudgeFastStreamByRendererAttr without FAST flag
+ * @tc.type  : FUNC
+ * @tc.number: JudgeFastStreamByRendererAttr_Normal_001
+ * @tc.desc  : Test JudgeFastStreamByRendererAttr returns false without FAST flag.
+ */
+HWTEST(RendererInClientNewUnitTest, JudgeFastStreamByRendererAttr_Normal_001, TestSize.Level1)
+{
+    auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    rendererInClientInner->clientBuffer_ =
+        OHAudioBufferBase::CreateFromLocal(100, 4);
+
+    bool ret = rendererInClientInner->JudgeFastStreamByRendererAttr();
+    EXPECT_FALSE(ret);
 }
 
 class IpcStreamMock : public IIpcStream {
@@ -4656,9 +4858,94 @@ HWTEST(RendererInClientPublicNewUnitTest, OnFirstFrameWriting_002, TestSize.Leve
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
     rendererInClientInner->ipcStream_ = nullptr;
-    
+
     rendererInClientInner->OnFirstFrameWriting();
     EXPECT_TRUE(true);
+}
+
+// Counting first-frame callback: records how many times OnFirstFrameWriting fires and
+// the delivered latency, so the client-side once-gate (plan §6.5 / §8.4) can be asserted.
+class CountingFirstFrameCallback : public AudioRendererFirstFrameWritingCallback {
+public:
+    void OnFirstFrameWriting(uint64_t latency) override
+    {
+        ++count;
+        lastLatency = latency;
+    }
+    int count = 0;
+    uint64_t lastLatency = 0;
+};
+
+// Server (HPAE) event first, then a Write-path trigger: only one callback, in ms units.
+HWTEST(RendererInClientPublicNewUnitTest, FirstFrameWriting_ServerEventThenWrite_Once, TestSize.Level1)
+{
+    auto r = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto cb = std::make_shared<CountingFirstFrameCallback>();
+    r->firstFrameWritingCb_ = cb;
+    r->state_ = RUNNING;
+    r->hasFirstFrameWrited_ = false;
+
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 1);
+    EXPECT_GT(cb->lastLatency, 0u); // latency still delivered in the existing ms scale
+
+    // Later Write-path trigger and a repeat server event must not fire again.
+    r->NotifyFirstFrameWritingOnce();
+    EXPECT_EQ(cb->count, 1);
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 1);
+}
+
+// Write-path trigger first, then the server event: still only one callback.
+HWTEST(RendererInClientPublicNewUnitTest, FirstFrameWriting_WriteThenServerEvent_Once, TestSize.Level1)
+{
+    auto r = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto cb = std::make_shared<CountingFirstFrameCallback>();
+    r->firstFrameWritingCb_ = cb;
+    r->state_ = RUNNING;
+    r->hasFirstFrameWrited_ = false;
+
+    r->NotifyFirstFrameWritingOnce(); // Write path wins
+    EXPECT_EQ(cb->count, 1);
+
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 1); // server event does not fire a second time
+}
+
+// A server event arriving while not RUNNING is dropped, and must not consume the gate.
+HWTEST(RendererInClientPublicNewUnitTest, FirstFrameWriting_NotRunning_NoFire, TestSize.Level1)
+{
+    auto r = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto cb = std::make_shared<CountingFirstFrameCallback>();
+    r->firstFrameWritingCb_ = cb;
+    r->state_ = PAUSED; // not RUNNING
+    r->hasFirstFrameWrited_ = false;
+
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 0); // dropped, once-gate untouched
+
+    // Once RUNNING, a fresh server event still fires exactly once.
+    r->state_ = RUNNING;
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 1);
+}
+
+// The next Start resets the once-gate, so the callback can fire again in the new cycle.
+HWTEST(RendererInClientPublicNewUnitTest, FirstFrameWriting_NextStartResetsGate, TestSize.Level1)
+{
+    auto r = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
+    auto cb = std::make_shared<CountingFirstFrameCallback>();
+    r->firstFrameWritingCb_ = cb;
+    r->state_ = RUNNING;
+    r->hasFirstFrameWrited_ = false;
+
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 1);
+
+    // StartAudioStream resets hasFirstFrameWrited_ = false; simulate that reset.
+    r->hasFirstFrameWrited_ = false;
+    EXPECT_EQ(r->OnOperationHandled(FIRST_FRAME_CONSUMED, 0), SUCCESS);
+    EXPECT_EQ(cb->count, 2); // fires again in the new Start cycle
 }
 
 /**
@@ -4809,8 +5096,7 @@ HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_002, TestSize.Level1
 HWTEST(RendererInClientPublicNewUnitTest, OnOperationHandled_UpdateSpanSize_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
-    rendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 100, 4);
+    rendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(100, 4);
     rendererInClientInner->ipcStream_ = new IpcStreamMock();
     int32_t notifyCount = 0;
     FastStatus notifiedStatus = FASTSTATUS_INVALID;
@@ -4875,7 +5161,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetupFastStreamThreadPriority_UltraFas
     sptr<IpcStreamTest> ipcStreamTest = sptr<IpcStreamTest>::MakeSptr();
     rendererInClientInner->ipcStream_ = ipcStreamTest;
     
-    EXPECT_TRUE(rendererInClientInner->IsFastStream());
+    EXPECT_TRUE(rendererInClientInner->JudgeFastStreamByRendererAttr());
     EXPECT_TRUE(rendererInClientInner->IsUltraFastStream());
 }
 
@@ -4895,7 +5181,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetupFastStreamThreadPriority_NormalFa
     sptr<IpcStreamTest> ipcStreamTest = sptr<IpcStreamTest>::MakeSptr();
     rendererInClientInner->ipcStream_ = ipcStreamTest;
     
-    EXPECT_TRUE(rendererInClientInner->IsFastStream());
+    EXPECT_TRUE(rendererInClientInner->JudgeFastStreamByRendererAttr());
     EXPECT_FALSE(rendererInClientInner->IsUltraFastStream());
 }
 
@@ -4913,7 +5199,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetupFastStreamThreadPriority_NoIpcStr
     rendererInClientInner->clientConfig_.ultraFastFlag = ULTRA_REQUESTED | ULTRA_IMPLEMENTED;
     rendererInClientInner->ipcStream_ = nullptr;
     
-    EXPECT_TRUE(rendererInClientInner->IsFastStream());
+    EXPECT_TRUE(rendererInClientInner->JudgeFastStreamByRendererAttr());
     EXPECT_TRUE(rendererInClientInner->IsUltraFastStream());
 }
 
@@ -4930,7 +5216,7 @@ HWTEST(RendererInClientPublicNewUnitTest, SetupFastStreamThreadPriority_NormalSt
     rendererInClientInner->rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     rendererInClientInner->clientConfig_.ultraFastFlag = ULTRA_NONE;
     
-    EXPECT_FALSE(rendererInClientInner->IsFastStream());
+    EXPECT_FALSE(rendererInClientInner->JudgeFastStreamByRendererAttr());
     EXPECT_FALSE(rendererInClientInner->IsUltraFastStream());
 }
 

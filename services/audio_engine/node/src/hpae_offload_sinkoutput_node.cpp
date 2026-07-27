@@ -380,7 +380,7 @@ const char *HpaeOffloadSinkOutputNode::GetRenderFrameData(void)
     return renderFrameData_.data();
 }
 
-void HpaeOffloadSinkOutputNode::StopStream()
+void HpaeOffloadSinkOutputNode::StopStream(bool needRewindAndFlush)
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
     // flush hdi when disconnect
@@ -397,7 +397,9 @@ void HpaeOffloadSinkOutputNode::StopStream()
     CHECK_AND_RETURN_LOG(callback != nullptr, "HpaeOffloadSinkOutputNode::StopStream callback is null");
     OffloadReset();
     NotifyHdiPos();
-    callback->OnRewindAndFlush(rewindTime, hdiRealPos_);
+    if (needRewindAndFlush) {
+        callback->OnRewindAndFlush(rewindTime, hdiRealPos_);
+    }
 }
 
 void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)

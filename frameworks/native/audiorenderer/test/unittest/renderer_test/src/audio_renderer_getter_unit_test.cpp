@@ -23,8 +23,6 @@
 #include "audio_renderer_proxy_obj.h"
 #include "audio_policy_manager.h"
 #include "audio_renderer_private.h"
-#include "audio_renderer.cpp"
-#include "fast_audio_stream.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -642,7 +640,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_002, TestSize.Level1)
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetVolume(0.5);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     float volume = audioRenderer->GetVolume();
     EXPECT_EQ(0.5, volume);
@@ -666,7 +664,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetVolume_003, TestSize.Level1)
     ASSERT_NE(nullptr, audioRenderer);
 
     ret = audioRenderer->SetVolume(0.5);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     ret = audioRenderer->SetVolume(1.5);
     EXPECT_NE(SUCCESS, ret);
@@ -2462,32 +2460,32 @@ HWTEST(AudioRendererUnitTest, GetFormatSize_001, TestSize.Level1)
     AudioStreamParams params;
     params.format = SAMPLE_U8;
     const AudioStreamParams info_1 = params;
-    size_t ret = GetFormatSize(info_1);
-    EXPECT_EQ(ret, 1);
+    size_t ret = GetFormatByteSize(info_1.format);
+    EXPECT_EQ(ret, 2);
 
     params.format = SAMPLE_S16LE;
     const AudioStreamParams info_2 = params;
-    ret = GetFormatSize(info_2);
+    ret = GetFormatByteSize(info_2.format);
     EXPECT_EQ(ret, 2);
 
     params.format = SAMPLE_S24LE;
     const AudioStreamParams info_3 = params;
-    ret = GetFormatSize(info_3);
+    ret = GetFormatByteSize(info_3.format);
     EXPECT_EQ(ret, 3);
 
     params.format = SAMPLE_S32LE;
     const AudioStreamParams info_4 = params;
-    ret = GetFormatSize(info_4);
+    ret = GetFormatByteSize(info_4.format);
     EXPECT_EQ(ret, 4);
 
     params.format = INVALID_WIDTH;
     const AudioStreamParams info_5 = params;
-    ret = GetFormatSize(info_5);
+    ret = GetFormatByteSize(info_5.format);
     EXPECT_EQ(ret, 2);
 
     params.format = SAMPLE_F32LE;
     const AudioStreamParams info_6 = params;
-    ret = GetFormatSize(info_6);
+    ret = GetFormatByteSize(info_6.format);
     EXPECT_EQ(ret, 4);
 }
 

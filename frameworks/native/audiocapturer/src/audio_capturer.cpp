@@ -21,6 +21,8 @@
 
 #include <cinttypes>
 #include <cstring>
+#include <sstream>
+#include <algorithm>
 
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
@@ -31,11 +33,13 @@
 #include "audio_stream_descriptor.h"
 #include "audio_info.h"
 #include "audio_system_client_engine_manager.h"
+#include "audio_system_manager.h"
 #include "audio_capturer_types.h"
 #include "audio_debug_manager.h"
 #include "audio_debug_info.h"
 #include "audio_debug_callback.h"
 #include "stream_dfx_manager.h"
+#include "securec.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
@@ -202,6 +206,8 @@ void AudioCapturerPrivate::SetCapturerInfoByOptions(const AudioCapturerOptions &
     strategy_ = capturerOptions.strategy;
     mixWithWakeUp_ = capturerOptions.mixWithWakeUp;
     capturerInfo_.mixWithWakeUp = mixWithWakeUp_;
+    capturerInfo_.cellularRecordPhoneNum = capturerOptions.capturerInfo.cellularRecordPhoneNum;
+    capturerInfo_.cellularRecordToken = capturerOptions.capturerInfo.cellularRecordToken;
 }
 
 // LCOV_EXCL_START
@@ -251,7 +257,7 @@ static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions 
 
     return true;
 }
- 
+
 static inline void FillEcParams(AudioCapturerParams &params, const AudioStreamInfo &ec)
 {
     params.audioEcSampleFormat = ec.format;
@@ -1356,6 +1362,17 @@ void AudioCapturerPrivate::SetFastStatusChangeCallback(
     SetInnerStreamFastStatusChangeCallback(currentStream);
 }
 
+void AudioCapturerPrivate::SetSensitiveRecordPermitCallback(
+    const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback)
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_CALL_FUNC_RETURN_LOG(currentStream != nullptr,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_CALLBACK_ILLEGAL_STATE, "audioStream_ is nullptr", true),
+        "audioStream_ is nullptr");
+    currentStream->SetSensitiveRecordPermitCallback(callback);
+}
+
 void AudioCapturerPrivate::SetPlaybackCaptureStartStateCallback(
     const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
 {
@@ -1825,7 +1842,7 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
     audioInterrupt_.state = State::RELEASED;
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
-    // Unregister the callaback in policy server
+    // Unregister the callback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
     RemoveCapturerPolicyServiceDiedCallback(audioStream_);
@@ -1834,6 +1851,7 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
         AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
     }
 
+    ResetNoiseReductionModeOnRelease();
     return audioStream_->ReleaseAudioStream() ? SUCCESS : ERROR;
 }
 
@@ -2122,6 +2140,7 @@ AudioStreamType AudioCapturer::FindStreamTypeBySourceType(SourceType sourceType)
         case SOURCE_TYPE_WAKEUP:
             return STREAM_WAKEUP;
         case SOURCE_TYPE_VOICE_CALL:
+        case SOURCE_TYPE_VOICE_DOWNLINK:
             return STREAM_SOURCE_VOICE_CALL;
         case SOURCE_TYPE_CAMCORDER:
             return STREAM_CAMCORDER;
@@ -2805,10 +2824,6 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
         RECORD_DEVICE_SWITCH_OPERATION_FAILED, "UpdatePlaybackCaptureConfig Failed", true));
 
-    bool restartResult = RestartAudioStream(newAudioStream, previousState);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(restartResult, false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        RECORD_DEVICE_SWITCH_OPERATION_FAILED, "start new stream failed", true), "start new stream failed.");
     return true;
 }
 
@@ -2903,7 +2918,20 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
 
     // Activate audio interrupt again when restoring for audio server died.
     if (restoreInfo.restoreReason == SERVER_DIED) {
-        HandleAudioInterruptWhenServerDied();
+        HandleAudioInterruptWhenServerDied(previousState);
+    }
+
+    bool restartResult = RestartAudioStream(audioStream_, previousState);
+    if (!restartResult) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_DEVICE_SWITCH_OPERATION_FAILED, "start new stream failed", true);
+        int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        if (ret != 0) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_DEVICE_SWITCH_OPERATION_FAILED, "DeactivateAudioInterrupt Failed", true);
+            AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
+        }
+        return false;
     }
 
     isSwitching_ = false;
@@ -2912,11 +2940,11 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     return switchResult;
 }
 
-void AudioCapturerPrivate::HandleAudioInterruptWhenServerDied()
+void AudioCapturerPrivate::HandleAudioInterruptWhenServerDied(CapturerState previousState)
 {
     int32_t ret = InitAudioInterruptCallback(true);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init audio interrupt callback failed when restoring from server died");
-    if (GetStatusInner() == CAPTURER_RUNNING) {
+    if (previousState == CAPTURER_RUNNING) {
         AudioInterrupt audioInterrupt = audioInterrupt_;
         ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
         if (ret != SUCCESS) {
@@ -3435,5 +3463,130 @@ int32_t AudioCapturerPrivate::SetIndependentAudioSessionStrategy(
         sessionID_, static_cast<int32_t>(strategy.concurrencyMode));
     return SUCCESS;
 }
+
+int32_t AudioCapturerPrivate::SetNoiseReductionMode(NoiseReductionMode mode)
+{
+    AUDIO_INFO_LOG("SetNoiseReductionMode NoiseReductionMode: %{public}d", mode);
+
+    CapturerState state = GetStatus();
+    CHECK_AND_RETURN_RET_LOG(state == CAPTURER_PREPARED || state == CAPTURER_STOPPED, ERR_ILLEGAL_STATE,
+        "SetNoiseReductionMode only supports prepared or stopped state");
+
+    {
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        if (!hasFetchedSupportedModes_) {
+            std::vector<NoiseReductionMode> tempModes;
+            int32_t ret = GetSupportedNoiseReductionModes(tempModes);
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("SetNoiseReductionMode: failed to get supported modes");
+                return ret;
+            }
+        }
+
+        auto it = std::find(supportedNoiseReductionModes_.begin(),
+                            supportedNoiseReductionModes_.end(), mode);
+        if (it == supportedNoiseReductionModes_.end()) {
+            AUDIO_ERR_LOG("SetNoiseReductionMode: mode %{public}d is not supported", mode);
+            return ERR_NOT_SUPPORTED;
+        }
+    }
+
+    std::string key = "record_denoise_mode";
+    std::string value = std::to_string(static_cast<int32_t>(mode));
+    AudioSystemManager::GetInstance()->SetAudioParameter(key, value);
+
+    {
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        noiseReductionMode_ = mode;
+        hasSetNoiseReductionMode_ = true;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::GetNoiseReductionMode(NoiseReductionMode &mode)
+{
+    std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+    AUDIO_INFO_LOG("GetNoiseReductionMode NoiseReductionMode: %{public}d", noiseReductionMode_);
+    mode = noiseReductionMode_;
+    return SUCCESS;
+}
+
+NoiseReductionMode AudioCapturerPrivate::StringToNoiseReductionMode(const std::string &modeStr)
+{
+    if (modeStr == "normal" || modeStr == "fidelity") {
+        return NOISE_REDUCTION_MODE_FIDELITY;
+    } else if (modeStr == "pure_voice") {
+        return NOISE_REDUCTION_MODE_PURE_VOCALS;
+    }
+    return NOISE_REDUCTION_MODE_MAX;
+}
+
+void AudioCapturerPrivate::ResetNoiseReductionModeOnRelease()
+{
+    bool needReset = false;
+    {
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        needReset = hasSetNoiseReductionMode_;
+        hasSetNoiseReductionMode_ = false;
+        noiseReductionMode_ = NOISE_REDUCTION_MODE_FIDELITY;
+    }
+
+    if (!needReset) {
+        return;
+    }
+
+    std::string key = "record_denoise_mode";
+    std::string value = std::to_string(static_cast<int32_t>(NOISE_REDUCTION_MODE_FIDELITY));
+    AudioSystemManager::GetInstance()->SetAudioParameter(key, value);
+}
+
+int32_t AudioCapturerPrivate::GetSupportedNoiseReductionModes(std::vector<NoiseReductionMode>& modes)
+{
+    AUDIO_INFO_LOG("GetSupportedNoiseReductionModes");
+    modes.clear();
+    modes.push_back(NOISE_REDUCTION_MODE_FIDELITY);
+    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_MESSAGE) {
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        supportedNoiseReductionModes_ = modes;
+        hasFetchedSupportedModes_ = true;
+        return SUCCESS;
+    }
+
+    std::string key = "record_denoise_mode_support";
+    std::string value = AudioSystemManager::GetInstance()->GetAudioParameter(key);
+    return UpdateSupportedNoiseReductionModes(modes, value);
+}
+
+int32_t AudioCapturerPrivate::UpdateSupportedNoiseReductionModes(
+    std::vector<NoiseReductionMode>& modes, const std::string &value)
+{
+    if (value.empty()) {
+        AUDIO_WARNING_LOG("GetSupportedNoiseReductionModes: failed to get from system, use default");
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        supportedNoiseReductionModes_ = modes;
+        hasFetchedSupportedModes_ = true;
+        return SUCCESS;
+    }
+
+    std::stringstream ss(value);
+    std::string modeStr;
+    while (std::getline(ss, modeStr, ',')) {
+        if (!modeStr.empty()) {
+            NoiseReductionMode mode = StringToNoiseReductionMode(modeStr);
+            if (mode != NOISE_REDUCTION_MODE_MAX &&
+                std::find(modes.begin(), modes.end(), mode) == modes.end()) {
+                modes.push_back(mode);
+            }
+        }
+    }
+
+    {
+        std::lock_guard<std::recursive_mutex> lock(noiseReductionModesMtx_);
+        supportedNoiseReductionModes_ = modes;
+        hasFetchedSupportedModes_ = true;
+    }
+    return SUCCESS;
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

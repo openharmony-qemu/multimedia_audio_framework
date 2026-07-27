@@ -27,6 +27,7 @@
 #include "audio_performance_monitor.h"
 #include "audio_engine_log.h"
 #include "stream_dfx_manager.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -416,7 +417,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         .forceData = forceData,
         .writePos_ = callbackData.writePos_,
         .isWriteFirst_ = callbackData.isFlush_,
-        .isLowLatency = isLowLatency_
+        .isLowLatency = isLowLatency_,
+        .isPullData = isPullData
     };
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);

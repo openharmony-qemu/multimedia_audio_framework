@@ -216,7 +216,16 @@ int32_t HpaeFastCapturerManager::InitCapturerManager()
     isInit_.store(true);
     mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     mixerNode_->Connect(sourceInputNode_);
+    WarmUpCapturer();
     return SUCCESS;
+}
+
+void HpaeFastCapturerManager::WarmUpCapturer()
+{
+    // Creating without Start/Stop will result in residual mmap buffer (affecting other recording channels)
+    // and power consumption issues.
+    sourceInputNode_->CapturerSourceStart();
+    sourceInputNode_->CapturerSourceStop();
 }
 
 int32_t HpaeFastCapturerManager::Init(bool isReload)
@@ -579,6 +588,13 @@ void HpaeFastCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &m
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
     uint32_t sessionId = nodeInfo.sessionId;
     Trace trace("HpaeFastCapturerManager::AddSingleNodeToSource[" + std::to_string(sessionId) + "]");
+    nodeInfo.deviceClass = sourceInfo_.deviceClass;
+    nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = sourceInputNode_->GetNodeInfo().frameLen;
+    inNodeInfo.samplingRate = sourceInputNode_->GetNodeInfo().samplingRate;
+    AdjustFrameLen(nodeInfo, inNodeInfo);
+    moveInfo.sourceOutputNode->SetNodeInfo(nodeInfo);
     AUDIO_INFO_LOG("[FinishMove] session:%{public}u to source:fast", sessionId);
     TriggerCallback(UPDATE_SPAN_SIZE, sessionId, static_cast<uint32_t>(nodeInfo.frameLen),
         HPAE_STREAM_CLASS_TYPE_RECORD);

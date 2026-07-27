@@ -24,11 +24,6 @@
 #include <vector>
 #include <atomic>
 
-#ifdef SUPPORT_LOW_LATENCY
-#include "audio_process_in_server.h"
-#include "audio_endpoint.h"
-#endif
-
 #include "i_audio_process_stream.h"
 #include "audio_info.h"
 #include "audio_device_descriptor.h"
@@ -53,11 +48,7 @@ enum ReuseEndpointType : uint32_t {
 
 using MuteStateChangeCallbck = std::function<void(bool)>;
 
-#ifdef SUPPORT_LOW_LATENCY
-class AudioService : public ProcessReleaseCallback, public ICapturerFilterListener
-#else
 class AudioService : public ICapturerFilterListener
-#endif
 {
 public:
     static AudioService *GetInstance();
@@ -85,24 +76,8 @@ public:
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume);
 
 #ifdef SUPPORT_LOW_LATENCY
-    sptr<AudioProcessInServer> GetAudioProcess(const AudioProcessConfig &config);
-    // override for ProcessReleaseCallback, do release process work.
-    int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) override;
-    void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
-    void WaitForRelease(const std::string endpointName, const int32_t delayTime);
-
-    void CheckBeforeVoipEndpointCreate(bool isVoip, bool isRecord);
     AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config,
         AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess = false);
-    std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(const AudioEndpointConfig &endpointConfig,
-        bool isVoipStream);
-    AudioEndpointConfig BuildEndpointConfig(const AudioProcessConfig &config,
-        const AudioDeviceDescriptor &deviceInfo, const AudioStreamInfo &audioStreamInfo,
-        const std::string &adapterName, bool isUltraFast);
-
-    int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    std::shared_ptr<AudioEndpoint> GetEndPointByType(AudioEndpoint::EndpointType type);
     void SetEndpointMuteForSwitchDevice(const std::string &deviceClass, bool mute);
 #endif
 
@@ -150,6 +125,7 @@ public:
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
     void SetAncoRecordingConfigChanged(const std::vector<std::string> &bundleNameList);
+    void NotifySensitiveRecordPermit(uint32_t sessionId, bool isPermitted);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
@@ -159,16 +135,6 @@ private:
 #ifdef HAS_FEATURE_INNERCAPTURER
     // for inner-capturer
     void CheckInnerCapForRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
-#ifdef SUPPORT_LOW_LATENCY
-    void CheckInnerCapForProcess(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    void FilterAllFastProcess();
-    int32_t CheckDisableFastInner(std::shared_ptr<AudioEndpoint> endpoint);
-    int32_t HandleFastCapture(std::set<int32_t> captureIds, sptr<AudioProcessInServer> audioProcessInServer,
-        std::shared_ptr<AudioEndpoint> audioEndpoint);
-
-    void CheckFastSessionMuteState(uint32_t sessionId, sptr<AudioProcessInServer> process);
-    int32_t GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord);
-#endif
     InnerCapFilterPolicy GetInnerCapFilterPolicy(int32_t innerCapId);
     bool CanCapturePrivateStream(const AudioPlaybackCaptureConfig &config) const;
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
@@ -194,15 +160,9 @@ private:
     int32_t GetPrivacyTypeForNormalStream(const uint32_t sessionId, AudioPrivacyType &privacyType);
 
 #ifdef SUPPORT_LOW_LATENCY
-    sptr<AudioProcessInServer> GetProcessInServerBySessionId(const uint32_t sessionId);
     int32_t GetPrivacyTypeForFastStream(const uint32_t sessionId, AudioPrivacyType &privacyType);
     int32_t EnableDualStreamForFastStream(const uint32_t sessionId, const std::string &dupSinkName);
     int32_t DisableDualStreamForFastStream(const uint32_t sessionId);
-    std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> GetLinkedPairInner(
-        const uint32_t sessionId);
-    void HandleProcessInserverDualStreamDisableInner(AudioEndpoint &endpoint);
-    void HandleProcessInserverDualStreamEnableInner(AudioEndpoint &endpoint, const std::string &dupSinkName);
-    bool DecideReleaseSink(std::shared_ptr<AudioEndpoint> endpoint);
 #endif
     int32_t EnableDualStreamForNormalStream(const uint32_t sessionId, const std::string &dupSinkName);
     int32_t DisableDualStreamForNormalStream(const uint32_t sessionId);
@@ -216,12 +176,6 @@ private:
     std::set<std::string> releasingEndpointSet_;
     std::mutex renderWhitelistMutex_;
     std::set<std::string> renderWhitelist_;
-
-#ifdef SUPPORT_LOW_LATENCY
-    std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
-    std::map<std::string, std::shared_ptr<AudioEndpoint>> endpointList_;
-    std::unordered_map<uint32_t, wptr<AudioProcessInServer>> allProcessInServer_;
-#endif
 
     // for inner-capturer
     bool isRegisterCapturerFilterListened_ = false;

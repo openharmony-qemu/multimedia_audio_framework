@@ -297,6 +297,7 @@ int32_t HpaeSessionEffectNode::DropEffect()
 {
     StopPreheatThread();  // Always join if joinable
     if (effectInstance_) {
+        effectInstance_->Flush();
         effectInstance_->StopEffect();  // DISABLE if not already
     }
     AUDIO_INFO_LOG("[SE::SessionEffectNode] %s→IDLE reason=DropEffect sessionId=%{public}u",
@@ -487,7 +488,7 @@ void HpaeSessionEffectNode::DoProcess()
 {
     // Paused: output silence, don't pull upstream
     if (isPaused_) {
-        outputStream_.WriteDataToOutput(&silenceData_);
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
         return;
     }
 
@@ -506,7 +507,7 @@ void HpaeSessionEffectNode::DoProcess()
             // Fall through to normal DoProcess (pull upstream + SignalProcess)
         } else {
             // Disconnect: don't pull upstream, output silence directly
-            outputStream_.WriteDataToOutput(&silenceData_);
+            outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
             return;
         }
     }
@@ -664,7 +665,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<Hpae
         return inputBuf;
     }
 
-    return &silenceData_;
+    return PrepareSilenceBuffer(silenceData_);
 }
 
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessActive(const std::vector<HpaePcmBuffer *> &inputs)
@@ -689,18 +690,18 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessActive(const std::vector<HpaePcmBuf
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessActiveNoInput()
 {
     if (!effectInstance_ || status_ != STATUS::ACTIVE) {
-        return &silenceData_;
+        return PrepareSilenceBuffer(silenceData_);
     }
 
     size_t channels = tailOutputData_.GetChannelCount();
     if (audioConfig_.inputCfg.channels != channels) {
         AUDIO_WARNING_LOG("ProcessActiveNoInput channel mismatch: config=%{public}u buffer=%{public}zu",
             audioConfig_.inputCfg.channels, channels);
-        return &silenceData_;
+        return PrepareSilenceBuffer(silenceData_);
     }
     size_t byteLen = 0;
     if (!GetPcmByteLen(tailOutputData_.GetFrameLen(), channels, byteLen)) {
-        return &silenceData_;
+        return PrepareSilenceBuffer(silenceData_);
     }
 
     auto now = std::chrono::steady_clock::now();
@@ -761,14 +762,25 @@ int32_t HpaeSessionEffectNode::FeedPaddingInput(size_t byteLen)
         return 0;
     }
 
-    std::vector<uint8_t> padding(byteLen, 0);
-    int32_t ret = effectInstance_->FeedInput(padding.data(), byteLen);
-    if (ret != 0) {
-        AUDIO_WARNING_LOG("FeedPaddingInput failed: %{public}d", ret);
-        stats_.processErrors++;
-        return ret;
+    uint32_t sampleRate = audioConfig_.inputCfg.samplingRate;
+    size_t paddingFrameLen = static_cast<size_t>(CalculateFrameLenBySampleRate(sampleRate));
+    size_t channels = audioConfig_.inputCfg.channels;
+    size_t chunkByteLen = 0;
+    CHECK_AND_RETURN_RET_LOG((GetPcmByteLen(paddingFrameLen, channels, chunkByteLen) && chunkByteLen != 0), -1,
+        "FeedPaddingInput invalid chunk: channels=%{public}u", audioConfig_.inputCfg.channels);
+    std::vector<uint8_t> padding(chunkByteLen, 0);
+    size_t remaining = byteLen;
+    while (remaining > 0) {
+        size_t cur = std::min(remaining, chunkByteLen);
+        int32_t ret = effectInstance_->FeedInput(padding.data(), cur);
+        if (ret != 0) {
+            AUDIO_WARNING_LOG("FeedPaddingInput failed: %{public}d", ret);
+            stats_.processErrors++;
+            return ret;
+        }
+        paddingBytesIn_ += cur;
+        remaining -= cur;
     }
-    paddingBytesIn_ += byteLen;
     return 0;
 }
 
@@ -792,7 +804,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ReadAlgoOutput(HpaePcmBuffer *inputBuf, si
     }
     // No output → return silence
     stats_.underrunCount++;
-    return &silenceData_;
+    return PrepareSilenceBuffer(silenceData_);
 }
 
 void HpaeSessionEffectNode::CloseSessionEffectCore()
@@ -816,7 +828,7 @@ void HpaeSessionEffectNode::CloseSessionEffectCore()
     if (effectInstance_) {
         effectInstance_->Flush();
     }
-
+    ResetAccounting();
     // Step 4: Enter bypass mode
     status_ = STATUS::IDLE;
     isPaused_ = false;

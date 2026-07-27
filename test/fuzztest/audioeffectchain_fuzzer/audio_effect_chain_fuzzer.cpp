@@ -1148,6 +1148,73 @@ void UpdateEarphoneProductFuzzTest()
     audioEffectChainManager->UpdateEarphoneProduct(earphoneProduct);
 }
 
+void AudioEffectChainUpdatePersonalizedHRTFBinFuzzTest()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+
+    audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    int32_t fd = GetData<int32_t>();
+    long length = GetData<long>();
+
+    audioEffectChainManager->UpdatePersonalizedHRTFBin(fd, length);
+    audioEffectChainManager->ResetInfo();
+}
+
+void AudioEffectChainUpdatePersonalizedHRTFBinToArmFuzzTest()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+
+    audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    int32_t fd = GetData<int32_t>();
+    long length = GetData<long>();
+
+    audioEffectChainManager->UpdatePersonalizedHRTFBinToArm(fd, length);
+    audioEffectChainManager->ResetInfo();
+}
+
+void AudioEffectChainUpdatePersonalizedHRTFBinToHdiFuzzTest()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+
+    audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    int32_t fd = GetData<int32_t>();
+    long length = GetData<long>();
+
+    audioEffectChainManager->UpdatePersonalizedHRTFBinToHdi(fd, length);
+    audioEffectChainManager->ResetInfo();
+}
+
+void AudioEffectChainUpdatePersonalizedSpatializationStateInnerFuzzTest()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+
+    audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    bool personalizedSpatializationEnabled = GetData<bool>();
+
+    audioEffectChainManager->UpdatePersonalizedSpatializationStateInner(personalizedSpatializationEnabled);
+    audioEffectChainManager->ResetInfo();
+}
+
 TestFuncs g_testFuncs[] = {
     EffectChainManagerInitCbFuzzTest,
     EffectChainManagerCreateCbFuzzTest,
@@ -1207,6 +1274,10 @@ TestFuncs g_testFuncs[] = {
     EffectChainManagerSetEffectSystemVolumeFuzzTest,
     IsChannelLayoutSupportedForDspEffectFuzzTest,
     UpdateEarphoneProductFuzzTest,
+    AudioEffectChainUpdatePersonalizedHRTFBinFuzzTest,
+    AudioEffectChainUpdatePersonalizedHRTFBinToArmFuzzTest,
+    AudioEffectChainUpdatePersonalizedHRTFBinToHdiFuzzTest,
+    AudioEffectChainUpdatePersonalizedSpatializationStateInnerFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

@@ -30,12 +30,14 @@
 #include "audio_usage_strategy_parser.h"
 #include "wireless_conflict_handler.h"
 #include <mutex>
+#include <unordered_map>
 
 namespace OHOS {
 namespace AudioStandard {
 
 class AudioRouterCenter {
 public:
+    using InputDeviceMap = std::unordered_map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>>;
     static AudioRouterCenter& GetAudioRouterCenter()
     {
         static AudioRouterCenter audioRouterCenter;
@@ -44,6 +46,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo &info);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(FetchDeviceInfo &info);
+    InputDeviceMap FetchInputDeviceForAllInputStreams(std::vector<FetchDeviceInfo> &infos);
     int32_t SetAudioDeviceRefinerCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceRefinerCallback();
     bool isCallRenderRouter(StreamUsage streamUsage);
@@ -58,6 +61,8 @@ public:
     int32_t SetSplitModeReady();
     bool UpdateVehiclePriority(bool enable);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchMediaOutputDevices(FetchDeviceInfo &info);
+
+    bool IsMediaFollowCallStrategy(AudioScene audioScene);
 private:
     AudioRouterCenter()
     {
@@ -140,12 +145,12 @@ private:
     bool NeedSkipSelectAudioOutputDeviceRefined(StreamUsage streamUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     RouterType GetBypassWithSco(AudioScene audioScene);
-    bool IsMediaFollowCallStrategy(AudioScene audioScene);
     bool IsAlarmFollowRingStrategy(AudioScene audioScene, StreamUsage streamUsage);
     shared_ptr<AudioDeviceDescriptor> FetchCapturerInputDevice(SourceType sourceType,
         int32_t clientUID, RouterType &routerType, const uint32_t sessionID);
     shared_ptr<AudioDeviceDescriptor> FetchInputZoneDevice(SourceType sourceType, int32_t clientUID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesInner(FetchDeviceInfo &info);
+    std::shared_ptr<AudioDeviceDescriptor> FetchInputDeviceInner(FetchDeviceInfo &info);
 
     std::vector<std::unique_ptr<RouterBase>> mediaRenderRouters_;
     std::vector<std::unique_ptr<RouterBase>> callRenderRouters_;
@@ -173,9 +178,13 @@ private:
         const FetchDeviceInfo &info);
 
     std::vector<StreamDeviceInfo> CollectOutputStreamDevices(const FetchDeviceInfo &deviceInfo);
+    std::vector<StreamDeviceInfo> CollectOutputStreamDevices(RouterType bypassType = ROUTER_TYPE_NONE);
     std::vector<StreamDeviceInfo> CollectInputStreamDevices(const FetchDeviceInfo &deviceInfo);
+    std::vector<StreamDeviceInfo> CollectInputStreamDevices();
     void StartArbiterContext(const FetchDeviceInfo &deviceInfo);
+    void StartArbiterContext();
     void StopArbiterContext();
+    bool HasWirelessDevicesConnected();
     std::shared_ptr<WirelessConflictHandler> wirelessConflictHandler_;
     std::mutex routerMutex_;
 

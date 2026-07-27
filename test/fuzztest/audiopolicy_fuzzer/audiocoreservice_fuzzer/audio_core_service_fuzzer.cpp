@@ -52,6 +52,7 @@ const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
 typedef void (*TestFuncs)();
 void Init();
 shared_ptr<AudioCoreService> audioCoreService;
+shared_ptr<AudioCoreService::EventEntry> eventEntry;
 class AudioClientTrackerFuzzTest : public AudioClientTracker {
     public:
         virtual ~AudioClientTrackerFuzzTest() = default;
@@ -711,6 +712,13 @@ void Init()
 {
     audioCoreService = std::make_shared<AudioCoreService>();
     audioCoreService->Init();
+    eventEntry = std::make_shared<AudioCoreService::EventEntry>(
+        audioCoreService, audioCoreService->readyConditionNotifier_);
+    audioCoreService->pipeManager_->SetRequiredPipesReadyCallback([]() {
+        audioCoreService->NotifyRequiredPipesReady();
+    });
+    audioCoreService->pipeManager_->InitRequiredPipes();
+    eventEntry->NotifyServiceReady();
 }
 } // namespace AudioStandard
 } // namesapce OHOS

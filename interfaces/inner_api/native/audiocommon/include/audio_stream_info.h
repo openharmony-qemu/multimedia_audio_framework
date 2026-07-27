@@ -71,7 +71,8 @@ enum StreamUsage {
     STREAM_USAGE_INTERPHONE,
     STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION,
     STREAM_USAGE_VOICE_TRANSFER_RINGTONE,
-    STREAM_USAGE_MAX = STREAM_USAGE_VOICE_TRANSFER_RINGTONE
+    STREAM_USAGE_VOICE_ASSISTANT_SYSTEM,
+    STREAM_USAGE_MAX = STREAM_USAGE_VOICE_ASSISTANT_SYSTEM
 };
 
 /**
@@ -116,6 +117,7 @@ enum AudioPipeType {
     PIPE_TYPE_IN_NORMAL_LIVE = 21,
     PIPE_TYPE_IN_CAMCORDER = 23,
     PIPE_TYPE_OUT_VOICE_CALL_ASSISTANT = 24,
+    PIPE_TYPE_IN_NORMAL_VOICE_MESSAGE = 25,
 };
 
 enum AudioPreloadType {
@@ -557,6 +559,10 @@ struct AudioCallBackStreamInfo {
     uint64_t writePos_ = 0;
     bool isWriteFirst_ = false;
     bool isLowLatency = false;
+    // Marks a formal HPAE pull that may consume media data. False for registration,
+    // device migration and history rewind notifications. Internal-only: does not
+    // change the public first-frame callback contract.
+    bool isPullData = false;
 };
 
 struct AudioCallBackCapturerStreamInfo {

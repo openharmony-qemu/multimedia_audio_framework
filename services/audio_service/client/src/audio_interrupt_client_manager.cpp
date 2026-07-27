@@ -23,51 +23,44 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioManagerInterruptCallbackImpl : public AudioInterruptCallback {
-public:
-    explicit AudioManagerInterruptCallbackImpl()
-    {
-        AUDIO_INFO_LOG("AudioManagerInterruptCallbackImpl constructor");
-    }
-    virtual ~AudioManagerInterruptCallbackImpl()
-    {
-        AUDIO_DEBUG_LOG("AudioManagerInterruptCallbackImpl: instance destroy");
-    }
+AudioManagerInterruptCallbackImpl::AudioManagerInterruptCallbackImpl()
+{
+    AUDIO_INFO_LOG("AudioManagerInterruptCallbackImpl constructor");
+}
 
-    void OnInterrupt(const InterruptEventInternal &interruptEvent) override
-    {
-        cb_ = callback_.lock();
-        if (cb_ != nullptr) {
-            cb_->cbMutex_.lock();
-            InterruptAction interruptAction = {};
-            interruptAction.actionType = (interruptEvent.eventType == INTERRUPT_TYPE_BEGIN)
-                ? TYPE_INTERRUPT : TYPE_ACTIVATED;
-            interruptAction.interruptType = interruptEvent.eventType;
-            interruptAction.interruptHint = interruptEvent.hintType;
-            interruptAction.activated = (interruptEvent.eventType == INTERRUPT_TYPE_BEGIN) ? false : true;
-            cb_->OnInterrupt(interruptAction);
-            AUDIO_DEBUG_LOG("Notify event to app complete");
-            cb_->cbMutex_.unlock();
-        } else {
-            AUDIO_ERR_LOG("callback is null");
-        }
+AudioManagerInterruptCallbackImpl::~AudioManagerInterruptCallbackImpl()
+{
+    AUDIO_DEBUG_LOG("AudioManagerInterruptCallbackImpl: instance destroy");
+}
 
-        return;
+void AudioManagerInterruptCallbackImpl::SaveCallback(const std::weak_ptr<AudioManagerCallback> &callback)
+{
+    auto wp = callback.lock();
+    if (wp != nullptr) {
+        callback_ = callback;
+    } else {
+        AUDIO_ERR_LOG("callback is nullptr");
     }
-    void SaveCallback(const std::weak_ptr<AudioManagerCallback> &callback)
-    {
-        auto wp = callback.lock();
-        if (wp != nullptr) {
-            callback_ = callback;
-        } else {
-            AUDIO_ERR_LOG("callback is nullptr");
-        }
-    }
+}
 
-private:
-    std::weak_ptr<AudioManagerCallback> callback_;
-    std::shared_ptr<AudioManagerCallback> cb_;
-};
+void AudioManagerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
+{
+    cb_ = callback_.lock();
+    if (cb_ != nullptr) {
+        cb_->cbMutex_.lock();
+        InterruptAction interruptAction = {};
+        interruptAction.actionType = (interruptEvent.eventType == INTERRUPT_TYPE_BEGIN)
+            ? TYPE_INTERRUPT : TYPE_ACTIVATED;
+        interruptAction.interruptType = interruptEvent.eventType;
+        interruptAction.interruptHint = interruptEvent.hintType;
+        interruptAction.activated = (interruptEvent.eventType == INTERRUPT_TYPE_BEGIN) ? false : true;
+        cb_->OnInterrupt(interruptAction);
+        AUDIO_DEBUG_LOG("Notify event to app complete");
+        cb_->cbMutex_.unlock();
+    } else {
+        AUDIO_ERR_LOG("callback is null");
+    }
+}
 
 AudioInterruptClientManager &AudioInterruptClientManager::GetInstance()
 {
@@ -88,6 +81,7 @@ int32_t AudioInterruptClientManager::RegisterFocusInfoChangeCallback(
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
 
     int32_t clientId = getpid();
+    std::unique_lock<std::mutex> lock(audioFocusInfoCallbackMutex_);
     AUDIO_DEBUG_LOG("RegisterFocusInfoChangeCallback clientId:%{public}d", clientId);
     if (audioFocusInfoCallback_ == nullptr) {
         audioFocusInfoCallback_ = std::make_shared<AudioFocusInfoChangeCallbackImpl>();
@@ -101,6 +95,7 @@ int32_t AudioInterruptClientManager::RegisterFocusInfoChangeCallback(
     std::shared_ptr<AudioFocusInfoChangeCallbackImpl> cbFocusInfo =
         std::static_pointer_cast<AudioFocusInfoChangeCallbackImpl>(audioFocusInfoCallback_);
     CHECK_AND_RETURN_RET_LOG(cbFocusInfo != nullptr, ERROR, "cbFocusInfo is nullptr");
+    lock.unlock();
     cbFocusInfo->SaveCallback(callback);
 
     return SUCCESS;
@@ -112,12 +107,13 @@ int32_t AudioInterruptClientManager::UnregisterFocusInfoChangeCallback(
     int32_t clientId = getpid();
     int32_t ret = 0;
 
+    std::unique_lock<std::mutex> lock(audioFocusInfoCallbackMutex_);
     if (callback == nullptr) {
         ret = AudioPolicyManager::GetInstance().UnregisterFocusInfoChangeCallback(clientId);
         audioFocusInfoCallback_.reset();
         audioFocusInfoCallback_ = nullptr;
         if (!ret) {
-            AUDIO_DEBUG_LOG("AudioInterruptClientManager::UnregisterVolumeKeyEventCallback success");
+            AUDIO_DEBUG_LOG("AudioSystemManager::UnregisterVolumeKeyEventCallback success");
         }
         return ret;
     }
@@ -125,6 +121,7 @@ int32_t AudioInterruptClientManager::UnregisterFocusInfoChangeCallback(
         "Failed to allocate memory for audioInterruptCallback");
     std::shared_ptr<AudioFocusInfoChangeCallbackImpl> cbFocusInfo =
         std::static_pointer_cast<AudioFocusInfoChangeCallbackImpl>(audioFocusInfoCallback_);
+    lock.unlock();
     cbFocusInfo->RemoveCallback(callback);
 
     return ret;
@@ -138,10 +135,7 @@ int32_t AudioInterruptClientManager::ActivateAudioInterrupt(AudioInterrupt &audi
 
 int32_t AudioInterruptClientManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
 {
-    bool ret = PermissionUtil::VerifyIsSystemApp();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
-        "SetAppConcurrencyMode: No system permission");
-    ret = PermissionUtil::VerifySelfPermission();
+    bool ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
         "SetAppConcurrencyMode: No system permission");
     return AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
@@ -171,13 +165,12 @@ int32_t AudioInterruptClientManager::SetAudioManagerInterruptCallback(
     AUDIO_INFO_LOG("client id: %{public}d", clientId);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
 
+    std::unique_lock<std::mutex> lock(audioInterruptCallbackMutex_);
     if (audioInterruptCallback_ != nullptr) {
-        callback->cbMutex_.lock();
         AUDIO_DEBUG_LOG("reset existing callback object");
         AudioPolicyManager::GetInstance().UnsetAudioManagerInterruptCallback(clientId);
         audioInterruptCallback_.reset();
         audioInterruptCallback_ = nullptr;
-        callback->cbMutex_.unlock();
     }
 
     audioInterruptCallback_ = std::make_shared<AudioManagerInterruptCallbackImpl>();
@@ -187,6 +180,7 @@ int32_t AudioInterruptClientManager::SetAudioManagerInterruptCallback(
     int32_t ret =
         AudioPolicyManager::GetInstance().SetAudioManagerInterruptCallback(clientId, audioInterruptCallback_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed set callback");
+    lock.unlock();
 
     std::shared_ptr<AudioManagerInterruptCallbackImpl> cbInterrupt =
         std::static_pointer_cast<AudioManagerInterruptCallbackImpl>(audioInterruptCallback_);
@@ -201,6 +195,7 @@ int32_t AudioInterruptClientManager::UnsetAudioManagerInterruptCallback()
     int32_t clientId = getpid();
     AUDIO_INFO_LOG("client id: %{public}d", clientId);
 
+    std::lock_guard<std::mutex> lock(audioInterruptCallbackMutex_);
     int32_t ret = AudioPolicyManager::GetInstance().UnsetAudioManagerInterruptCallback(clientId);
     if (audioInterruptCallback_ != nullptr) {
         audioInterruptCallback_.reset();
@@ -238,7 +233,7 @@ int32_t AudioInterruptClientManager::AbandonAudioFocus(const AudioInterrupt &aud
 
 bool AudioInterruptClientManager::RequestIndependentInterrupt(FocusType focusType)
 {
-    AUDIO_INFO_LOG("RequestIndependentInterrupt : foncusType");
+    AUDIO_INFO_LOG("RequestIndependentInterrupt : focusType");
     AudioInterrupt audioInterrupt;
     int32_t clientId = getpid();
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;
@@ -253,7 +248,7 @@ bool AudioInterruptClientManager::RequestIndependentInterrupt(FocusType focusTyp
 
 bool AudioInterruptClientManager::AbandonIndependentInterrupt(FocusType focusType)
 {
-    AUDIO_INFO_LOG("AbandonIndependentInterrupt : foncusType");
+    AUDIO_INFO_LOG("AbandonIndependentInterrupt : focusType");
     AudioInterrupt audioInterrupt;
     int32_t clientId = getpid();
     audioInterrupt.contentType = ContentType::CONTENT_TYPE_SPEECH;

@@ -17,8 +17,11 @@
 #include "audio_stream_descriptor.h"
 #include "audio_interrupt_service.h"
 #include "audio_adapter_manager_handler.h"
+#include "mock_os_account.h"
 
 using namespace testing::ext;
+using namespace testing;
+using namespace OHOS::AccountSA;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -27,6 +30,12 @@ static AudioAdapterManager *audioAdapterManager_;
 
 void AudioAdapterManagerExtUnitTest::SetUpTestCase(void) {}
 void AudioAdapterManagerExtUnitTest::TearDownTestCase(void) {}
+
+static constexpr int32_t TEST_INVALID_SUBSPACE_ID = -1;
+static constexpr int32_t TEST_BASE_SUBSPACE_ID = 100000;
+static constexpr int32_t TEST_SECOND_SUBSPACE_ID = 100001;
+static constexpr int32_t TEST_ACTIVE_OS_ACCOUNT_ID = 100;
+static constexpr ErrCode TEST_ERR_FAIL = ERR_READ_FAILED;
 
 std::shared_ptr<AudioInterruptService> GetInterruptServiceTest()
 {
@@ -763,6 +772,170 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, GetStreamMuteForVolumeSet, TestSize.Lev
     EXPECT_EQ(result, false);
     result = audioAdapterManager->GetStreamMuteForVolumeSet(device, STREAM_MUSIC);
     EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: UpdateSubProfileId_QueryActiveIdsFailed
+ * @tc.desc: Test UpdateSubProfileId when QueryActiveOsAccountIds fails, early return.
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateSubProfileId_QueryActiveIdsFailed, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(mgr, nullptr);
+    EXPECT_CALL(g_mockOsAccountManager, QueryActiveOsAccountIds(_))
+        .WillOnce(Return(TEST_ERR_FAIL));
+    mgr->volumeDataMaintainer_.SetCurrentSubspaceId(TEST_INVALID_SUBSPACE_ID);
+    mgr->UpdateSubProfileId();
+    EXPECT_EQ(mgr->volumeDataMaintainer_.GetCurrentSubspaceId(), TEST_INVALID_SUBSPACE_ID);
+}
+
+/**
+ * @tc.name: UpdateSubProfileId_GetSubProfileIdFailed
+ * @tc.desc: Test UpdateSubProfileId when GetOsAccountForegroundSubProfileId fails, early return.
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateSubProfileId_GetSubProfileIdFailed, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(mgr, nullptr);
+    EXPECT_CALL(g_mockOsAccountManager, QueryActiveOsAccountIds(_))
+        .WillOnce(DoAll(SetArgReferee<0>(std::vector<int32_t>{TEST_ACTIVE_OS_ACCOUNT_ID}), Return(ERR_OK)));
+    EXPECT_CALL(g_mockOsAccountSubProfileClient, GetOsAccountForegroundSubProfileId(_, _))
+        .WillOnce(Return(TEST_ERR_FAIL));
+    mgr->volumeDataMaintainer_.SetCurrentSubspaceId(TEST_INVALID_SUBSPACE_ID);
+    mgr->UpdateSubProfileId();
+    EXPECT_EQ(mgr->volumeDataMaintainer_.GetCurrentSubspaceId(), TEST_INVALID_SUBSPACE_ID);
+}
+
+/**
+ * @tc.name: UpdateSubProfileId_NoChange
+ * @tc.desc: Test UpdateSubProfileId when newSubProfileId == currentSubspaceId, no change.
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateSubProfileId_NoChange, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(mgr, nullptr);
+    EXPECT_CALL(g_mockOsAccountManager, QueryActiveOsAccountIds(_))
+        .WillOnce(DoAll(SetArgReferee<0>(std::vector<int32_t>{TEST_ACTIVE_OS_ACCOUNT_ID}), Return(ERR_OK)));
+    EXPECT_CALL(g_mockOsAccountSubProfileClient, GetOsAccountForegroundSubProfileId(_, _))
+        .WillOnce(DoAll(SetArgReferee<1>(TEST_BASE_SUBSPACE_ID), Return(ERR_OK)));
+    mgr->volumeDataMaintainer_.SetCurrentSubspaceId(TEST_BASE_SUBSPACE_ID);
+    mgr->UpdateSubProfileId();
+    EXPECT_EQ(mgr->volumeDataMaintainer_.GetCurrentSubspaceId(), TEST_BASE_SUBSPACE_ID);
+}
+
+/**
+ * @tc.name: UpdateSubProfileId_Changed
+ * @tc.desc: Test UpdateSubProfileId when newSubProfileId != currentSubspaceId, subspaceId is updated.
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateSubProfileId_Changed, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(mgr, nullptr);
+    EXPECT_CALL(g_mockOsAccountManager, QueryActiveOsAccountIds(_))
+        .WillOnce(DoAll(SetArgReferee<0>(std::vector<int32_t>{TEST_ACTIVE_OS_ACCOUNT_ID}), Return(ERR_OK)));
+    EXPECT_CALL(g_mockOsAccountSubProfileClient, GetOsAccountForegroundSubProfileId(_, _))
+        .WillOnce(DoAll(SetArgReferee<1>(TEST_SECOND_SUBSPACE_ID), Return(ERR_OK)));
+    mgr->volumeDataMaintainer_.SetCurrentSubspaceId(TEST_INVALID_SUBSPACE_ID);
+    mgr->UpdateSubProfileId();
+    EXPECT_EQ(mgr->volumeDataMaintainer_.GetCurrentSubspaceId(), TEST_SECOND_SUBSPACE_ID);
+}
+
+/**
+ * @tc.name: UpdateSubProfileId_EmptyActiveIds
+ * @tc.desc: Test UpdateSubProfileId when QueryActiveOsAccountIds succeeds but returns empty ids.
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateSubProfileId_EmptyActiveIds, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(mgr, nullptr);
+    EXPECT_CALL(g_mockOsAccountManager, QueryActiveOsAccountIds(_))
+        .WillOnce(DoAll(SetArgReferee<0>(std::vector<int32_t>{}), Return(ERR_OK)));
+    mgr->volumeDataMaintainer_.SetCurrentSubspaceId(TEST_INVALID_SUBSPACE_ID);
+    mgr->UpdateSubProfileId();
+    EXPECT_EQ(mgr->volumeDataMaintainer_.GetCurrentSubspaceId(), TEST_INVALID_SUBSPACE_ID);
+}
+
+/**
+ * @tc.name: UpdateSubProfileId_ChangedFromOldToNew
+ * @tc.desc: Test UpdateSubProfileId changes subspaceId from one valid value to another.
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateSubProfileId_ChangedFromOldToNew, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(mgr, nullptr);
+    EXPECT_CALL(g_mockOsAccountManager, QueryActiveOsAccountIds(_))
+        .WillOnce(DoAll(SetArgReferee<0>(std::vector<int32_t>{TEST_ACTIVE_OS_ACCOUNT_ID}), Return(ERR_OK)));
+    EXPECT_CALL(g_mockOsAccountSubProfileClient, GetOsAccountForegroundSubProfileId(_, _))
+        .WillOnce(DoAll(SetArgReferee<1>(TEST_SECOND_SUBSPACE_ID), Return(ERR_OK)));
+    mgr->volumeDataMaintainer_.SetCurrentSubspaceId(TEST_BASE_SUBSPACE_ID);
+    mgr->UpdateSubProfileId();
+    EXPECT_EQ(mgr->volumeDataMaintainer_.GetCurrentSubspaceId(), TEST_SECOND_SUBSPACE_ID);
+}
+
+/**
+ * @tc.name: NotifySubProfileChanged_Flow
+ * @tc.desc: Test NotifySubProfileChanged calls UpdateVolumeDataForUserSwitch without crash.
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, NotifySubProfileChanged_Flow, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(mgr, nullptr);
+    ON_CALL(g_mockOsAccountManager, QueryActiveOsAccountIds(_))
+        .WillByDefault(DoAll(SetArgReferee<0>(std::vector<int32_t>{TEST_ACTIVE_OS_ACCOUNT_ID}), Return(ERR_OK)));
+    ON_CALL(g_mockOsAccountSubProfileClient, GetOsAccountForegroundSubProfileId(_, _))
+        .WillByDefault(DoAll(SetArgReferee<1>(TEST_BASE_SUBSPACE_ID), Return(ERR_OK)));
+    mgr->NotifySubProfileChanged();
+    SUCCEED();
+}
+
+/**
+ * @tc.name: NotifyAccountsChanged_Flow
+ * @tc.desc: Test NotifyAccountsChanged calls UpdateVolumeDataForUserSwitch without crash.
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, NotifyAccountsChanged_Flow, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(mgr, nullptr);
+    ON_CALL(g_mockOsAccountManager, QueryActiveOsAccountIds(_))
+        .WillByDefault(DoAll(SetArgReferee<0>(std::vector<int32_t>{TEST_ACTIVE_OS_ACCOUNT_ID}), Return(ERR_OK)));
+    ON_CALL(g_mockOsAccountSubProfileClient, GetOsAccountForegroundSubProfileId(_, _))
+        .WillByDefault(DoAll(SetArgReferee<1>(TEST_BASE_SUBSPACE_ID), Return(ERR_OK)));
+    mgr->NotifyAccountsChanged(TEST_ACTIVE_OS_ACCOUNT_ID);
+    SUCCEED();
+}
+
+/**
+ * @tc.name: UpdateVolumeDataForUserSwitch_Flow
+ * @tc.desc: Test UpdateVolumeDataForUserSwitch executes without crash.
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateVolumeDataForUserSwitch_Flow, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(mgr, nullptr);
+    ON_CALL(g_mockOsAccountManager, QueryActiveOsAccountIds(_))
+        .WillByDefault(DoAll(SetArgReferee<0>(std::vector<int32_t>{TEST_ACTIVE_OS_ACCOUNT_ID}), Return(ERR_OK)));
+    ON_CALL(g_mockOsAccountSubProfileClient, GetOsAccountForegroundSubProfileId(_, _))
+        .WillByDefault(DoAll(SetArgReferee<1>(TEST_BASE_SUBSPACE_ID), Return(ERR_OK)));
+    mgr->UpdateVolumeDataForUserSwitch();
+    SUCCEED();
 }
 
 } // namespace AudioStandard

@@ -21,6 +21,8 @@
 #include "audio_device_info.h"
 #include "audio_common_utils.h"
 #include "audio_zone_client_manager_unit_test.h"
+#include "audio_interrupt_zone.h"
+#include "audio_interrupt_info.h"
 
 #include <thread>
 #include <memory>
@@ -820,5 +822,243 @@ HWTEST_F(AudioZoneServiceUnitTest, RemoveStreamIdFromAudioZone_003, TestSize.Lev
     auto ret = AudioZoneService::GetInstance().RemoveStreamIdFromAudioZone(invalidZoneId, streamId);
     EXPECT_EQ(ret, ERROR);
 }
+
+#ifdef FEATURE_AUDIO_ZONE_VOLUME
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: AudioZoneService_BindDeviceWithProxy_001
+ * @tc.desc  : Test BindDeviceToAudioZone with proxy.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_BindDeviceWithProxy_001, TestSize.Level1)
+{
+    ClearZone();
+    AudioZoneService &svc = AudioZoneService::GetInstance();
+
+    AudioZoneContext context;
+    int32_t zoneId = svc.CreateAudioZone("ProxyZone1", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    pid_t pid = 3000;
+    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientUnitTest();
+    EXPECT_EQ(svc.RegisterAudioZoneClient(pid, client), SUCCESS);
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(pid, zoneId, DEVICE_TYPE_SPEAKER, true), SUCCESS);
+
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    device->macAddress_ = "00:11:22:33:44:55";
+    device->networkId_ = "LocalDevice";
+    device->isSupportMultiZone_ = true;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(device);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = { device };
+
+    EXPECT_EQ(svc.BindDeviceToAudioZone(zoneId, devices), SUCCESS);
+
+    svc.UnRegisterAudioZoneClient(pid);
+    svc.ReleaseAudioZone(zoneId);
+
+    int32_t zoneId2 = svc.CreateAudioZone("ProxyZone2", context, 0);
+    ASSERT_NE(zoneId2, ERROR);
+    auto device2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    device2->macAddress_ = "00:11:22:33:44:66";
+    device2->networkId_ = "LocalDevice";
+    device2->isSupportMultiZone_ = true;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(device2);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices2 = { device2 };
+    EXPECT_EQ(svc.BindDeviceToAudioZone(zoneId2, devices2), SUCCESS);
+
+    svc.ReleaseAudioZone(zoneId2);
+}
+#endif
+
+#ifdef MULTI_USER_ZONE
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: CreateAudioZone_MigrateFocus_001
+ * @tc.desc  : Test MigrateAudioInterruptZone does not migrate focus when OsAccountManager
+ *             is unavailable (GetOsAccountLocalIdFromUid fails and FindAudioZoneByKey
+ *             returns ZONEID_DEFAULT), focus remains in default zone.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, CreateAudioZone_MigrateFocus_001, TestSize.Level1)
+{
+    ClearZone();
+    auto defaultZone = std::make_shared<AudioInterruptZone>();
+    defaultZone->zoneId = 0;
+    AudioZoneService::GetInstance().interruptService_->zonesMap_[0] = defaultZone;
+    AudioInterrupt placeholder;
+    placeholder.uid = 100;
+    placeholder.streamId = 100;
+    placeholder.streamUsage = STREAM_USAGE_MEDIA;
+    placeholder.deviceTag = "";
+    defaultZone->audioFocusInfoList.push_back({placeholder, AudioFocuState::PLACEHOLDER});
+
+    AudioZoneContext context;
+    context.userId_ = 100;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("ExtZone", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    EXPECT_EQ(defaultZone->audioFocusInfoList.size(), 1);
+    EXPECT_EQ(defaultZone->audioFocusInfoList.front().first.uid, 100);
+    auto &newZone = AudioZoneService::GetInstance().interruptService_->zonesMap_[zoneId];
+    ASSERT_NE(newZone, nullptr);
+    EXPECT_EQ(newZone->audioFocusInfoList.size(), 0);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: RemoveDeviceToGlobalFromZones_001
+ * @tc.desc  : Test RemoveDeviceToGlobalFromZones unbinds device and releases empty zone.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, RemoveDeviceToGlobalFromZones_001, TestSize.Level1)
+{
+    ClearZone();
+    AudioZoneService &svc = AudioZoneService::GetInstance();
+    AudioZoneContext context;
+    int32_t zoneId = svc.CreateAudioZone("ExtZone", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    device->macAddress_ = "00:11:22:33:44:55";
+    device->networkId_ = "LocalDevice";
+    device->isSupportMultiZone_ = true;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(device);
+    EXPECT_EQ(svc.BindDeviceToAudioZone(zoneId, { device }), SUCCESS);
+
+    svc.RemoveDeviceToGlobalFromZones(device);
+    EXPECT_EQ(svc.GetAudioZone(zoneId), nullptr);
+
+    AudioConnectedDevice::GetInstance().DelConnectedDevice(
+        device->networkId_, device->deviceType_, device->macAddress_);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: FilterDevicesByVisibleMode_001
+ * @tc.desc  : Test FilterDevicesByVisibleMode with isSystemService=true and nullptr device.
+ *             All non-null devices are added regardless of visibleMode when isSystemService=true.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, FilterDevicesByVisibleMode_001, TestSize.Level1)
+{
+    auto &svc = AudioZoneService::GetInstance();
+    auto dev1 = std::make_shared<AudioDeviceDescriptor>();
+    dev1->visibleMode_ = ZONE_VISIBLE;
+    auto dev2 = std::make_shared<AudioDeviceDescriptor>();
+    dev2->visibleMode_ = GLOBAL_VISIBLE;
+    std::vector<std::pair<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> inputs = {
+        {1, dev1}, {2, dev2}, {3, nullptr}
+    };
+    auto result = svc.FilterDevicesByVisibleMode(inputs, 1, true);
+    EXPECT_EQ(result.size(), 2);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: FilterDevicesByVisibleMode_002
+ * @tc.desc  : Test FilterDevicesByVisibleMode with isSystemService=false.
+ *             Devices with zoneId==currentZoneId and ZONE_VISIBLE, or GLOBAL_VISIBLE are added.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, FilterDevicesByVisibleMode_002, TestSize.Level1)
+{
+    auto &svc = AudioZoneService::GetInstance();
+    auto devZoneVis = std::make_shared<AudioDeviceDescriptor>();
+    devZoneVis->visibleMode_ = ZONE_VISIBLE;
+    auto devGlobalVis = std::make_shared<AudioDeviceDescriptor>();
+    devGlobalVis->visibleMode_ = GLOBAL_VISIBLE;
+    std::vector<std::pair<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> inputs = {
+        {1, devZoneVis}, {99, devGlobalVis}
+    };
+    auto result = svc.FilterDevicesByVisibleMode(inputs, 1, false);
+    EXPECT_EQ(result.size(), 2);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: FilterDevicesByUsage_001
+ * @tc.desc  : Test FilterDevicesByUsage with SPEAKER device and output usages.
+ *             SPEAKER should be included when usage matches MEDIA_OUTPUT_DEVICES or CALL_OUTPUT_DEVICES.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, FilterDevicesByUsage_001, TestSize.Level1)
+{
+    auto &svc = AudioZoneService::GetInstance();
+    auto speaker = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    speaker->networkId_ = "LocalDevice";
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = {speaker};
+
+    auto resultMedia = svc.FilterDevicesByUsage(MEDIA_OUTPUT_DEVICES, descs);
+    EXPECT_EQ(resultMedia.size(), 1);
+    EXPECT_NE(resultMedia[0], nullptr);
+    EXPECT_EQ(resultMedia[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+
+    auto resultCall = svc.FilterDevicesByUsage(CALL_OUTPUT_DEVICES, descs);
+    EXPECT_EQ(resultCall.size(), 1);
+    EXPECT_NE(resultCall[0], nullptr);
+    EXPECT_EQ(resultCall[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: FilterDevicesByUsage_002
+ * @tc.desc  : Test FilterDevicesByUsage with SPEAKER device and input usages.
+ *             SPEAKER should be filtered out when usage is MEDIA_INPUT_DEVICES or CALL_INPUT_DEVICES.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, FilterDevicesByUsage_002, TestSize.Level1)
+{
+    auto &svc = AudioZoneService::GetInstance();
+    auto speaker = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    speaker->networkId_ = "LocalDevice";
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = {speaker};
+
+    auto resultMedia = svc.FilterDevicesByUsage(MEDIA_INPUT_DEVICES, descs);
+    EXPECT_EQ(resultMedia.size(), 0);
+
+    auto resultCall = svc.FilterDevicesByUsage(CALL_INPUT_DEVICES, descs);
+    EXPECT_EQ(resultCall.size(), 0);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: GetAvailableDevices_001
+ * @tc.desc  : Test GetAvailableDevices with extension zone containing visible device.
+ *             Extension zone (id > 0) is processed, zoneDevices not empty,
+ *             isSystemService=false so devices = zoneDevices.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, GetAvailableDevices_001, TestSize.Level1)
+{
+    ClearZone();
+    auto &svc = AudioZoneService::GetInstance();
+    AudioZoneContext ctx;
+    int32_t zoneId = svc.CreateAudioZone("UTZone", ctx, 0);
+    ASSERT_NE(zoneId, ERROR);
+
+    auto dev = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    dev->networkId_ = "LocalDevice";
+    dev->macAddress_ = "00:11:22:33:44:55";
+    dev->visibleMode_ = GLOBAL_VISIBLE;
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(dev);
+    auto zone = svc.FindZone(zoneId);
+    ASSERT_NE(zone, nullptr);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devList = {dev};
+    zone->AddDeviceDescriptor(devList);
+    zone->SetDeviceDescriptorState(dev, true);
+
+    auto &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto originalPrivacyMaps = audioDeviceManager.devicePrivacyMaps_;
+    DevicePrivacyInfo a2dpInfo;
+    a2dpInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    a2dpInfo.deviceRole = OUTPUT_DEVICE;
+    a2dpInfo.deviceCategory = BT_HEADPHONE;
+    a2dpInfo.deviceUsage = DeviceUsage::MEDIA;
+    list<DevicePrivacyInfo> privacyList = {a2dpInfo};
+    audioDeviceManager.devicePrivacyMaps_[AudioDevicePrivacyType::TYPE_PRIVACY] = privacyList;
+
+    auto result = svc.GetAvailableDevices(AudioDeviceUsage::MEDIA_OUTPUT_DEVICES, 2000);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->macAddress_, "00:11:22:33:44:55");
+
+    audioDeviceManager.devicePrivacyMaps_ = originalPrivacyMaps;
+    svc.ReleaseAudioZone(zoneId);
+}
+#endif
+
 } // namespace AudioStandard
 } // namespace OHOS

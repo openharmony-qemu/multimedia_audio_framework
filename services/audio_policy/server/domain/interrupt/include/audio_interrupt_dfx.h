@@ -69,6 +69,7 @@ public:
     void DelayCheckMuteStreamInterrupt(uint32_t streamId);
     void HandleInterruptCallbackEvent(const AudioInterrupt &audioInterrupt);
     void HandleStateChangeCallbackEvent(const int32_t usage, const int32_t uid, const int32_t type);
+    void AudioSessionTimeoutErrorEvent(const AudioInterrupt &audioInterrupt);
 
 private:
     void WriteAudioInterruptErrorEvent(const AudioFocusErrorEvent &interruptError);

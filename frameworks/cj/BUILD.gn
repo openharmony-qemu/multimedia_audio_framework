@@ -23,13 +23,15 @@ config("public_ffi_config") {
 ohos_shared_library("cj_multimedia_audio_ffi") {
   public_configs = [ ":public_ffi_config" ]
 
+  branch_protector_ret = "pac_ret"
   sanitize = {
-    cfi = true  # Enable/disable control flow integrity detection
-    boundary_sanitize = true  # Enable boundary san detection
-    cfi_cross_dso = true  # Cross-SO CFI Checks
-    integer_overflow = true  # Enable integer overflow detection
-    ubsan = true  # Enable some Ubsan options
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
     debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
   }
 
   cflags = [ "-Os" ]
@@ -78,6 +80,7 @@ ohos_shared_library("cj_multimedia_audio_ffi") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "napi:ace_napi",

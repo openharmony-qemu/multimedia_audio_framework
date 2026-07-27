@@ -29,6 +29,7 @@
         "features": [
           "audio_framework_feature_wired_audio",
           "audio_framework_feature_usb_audio",
+          "audio_framework_feature_hdmi_detect_audio",
           "audio_framework_feature_double_pnp_detect",
           "audio_framework_feature_dtmf_tone",
           "audio_framework_feature_detect_soundbox",
@@ -51,7 +52,8 @@
           "audio_framework_feature_multi_bus",
           "audio_framework_feature_source_period_size",
           "audio_framework_feature_input_independent_routing_rule",
-          "audio_framework_feature_multi_zone_volume"
+          "audio_framework_feature_multi_zone_volume",
+          "audio_framework_feature_multi_user_zone"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
@@ -62,6 +64,7 @@
             "ability_runtime",
             "access_token",
             "accessibility",
+            "battery_manager",
             "bluetooth",
             "bundle_framework",
             "background_task_mgr",
@@ -93,6 +96,8 @@
             "kv_store",
             "libxml2",
             "napi",
+            "netmanager_base",
+            "node",
             "os_account",
             "power_manager",
             "resource_management",
@@ -102,6 +107,7 @@
             "sensor",
             "bounds_checking_function",
             "sonic",
+            "screenlock_mgr",
             "pulseaudio",
             "libuv",
             "libxml2",
@@ -117,7 +123,8 @@
             "call_manager",
             "icu",
             "json",
-            "ets_frontend"
+            "ets_frontend",
+            "taihe_ffi_gen"
           ],
           "third_party": []
         },
@@ -136,6 +143,7 @@
             ],
             "service_group": [
               "//foundation/multimedia/audio_framework/sa_profile:audio_service_sa_profile",
+              "//foundation/multimedia/audio_framework/sa_profile:audio_suite_sa_profile",
               "//foundation/multimedia/audio_framework/services/audio_service:audio_service_packages",
               "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_packages",
               "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite_packages",
@@ -363,7 +371,8 @@
               "header": {
                 "header_files": [
                   "audio_suite_manager.h",
-                  "audio_format_converter.h"
+                  "audio_format_converter.h",
+                  "audio_suite_download_manager.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiosuite/include"
               }

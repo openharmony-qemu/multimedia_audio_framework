@@ -15,7 +15,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 
 ohos_fuzztest("HpaeDelayedTaskQueueFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_engine"
   fuzz_config_file = "../hpae_delayed_task_queue_fuzzer"
 
   include_dirs = [

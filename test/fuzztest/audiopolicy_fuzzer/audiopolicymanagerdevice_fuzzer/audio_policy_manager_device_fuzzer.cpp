@@ -26,6 +26,7 @@
 #include "token_setproc.h"
 #include "access_token.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -395,6 +396,12 @@ void GetActiveBluetoothDeviceFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().GetActiveBluetoothDevice();
 }
 
+void SkipDeviceTypesFuzzTest(FuzzedDataProvider& fdp)
+{
+    size_t pos = fdp.ConsumeIntegralInRange<size_t>(0, DeviceTypeVec.size() - 1);
+    AudioPolicyManager::GetInstance().SkipDeviceTypes(fdp.ConsumeBool(), {DeviceTypeVec[pos]});
+}
+
 void TriggerFetchDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
@@ -467,6 +474,7 @@ void Test(FuzzedDataProvider& fdp)
     GetPreferBluetoothAndNearlinkRecordFuzzTest,
     SetCallDeviceActiveFuzzTest,
     GetActiveBluetoothDeviceFuzzTest,
+    SkipDeviceTypesFuzzTest,
     TriggerFetchDeviceFuzzTest,
     SetPreferredDeviceFuzzTest,
     SetDeviceVolumeBehaviorFuzzTest,

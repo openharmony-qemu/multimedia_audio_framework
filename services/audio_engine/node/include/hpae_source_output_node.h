@@ -51,9 +51,13 @@ public:
     bool GetMute();
     static int32_t GetPcEnableState();
     static void SetPcEnableState(int32_t val);
+    void SetNodeInfo(HpaeNodeInfo &nodeInfo) override;
 private:
     uint64_t GetTimestamp();
     void ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer);
+    HpaePcmBuffer *GetAndValidateOutput();
+    void ProcessAudioData(HpaePcmBuffer *outputData);
+    void WriteDataAndUpdateFrames();
 private:
     InputPort<HpaePcmBuffer *> inputStream_;
     std::weak_ptr<ICapturerStreamCallback> readCallback_;

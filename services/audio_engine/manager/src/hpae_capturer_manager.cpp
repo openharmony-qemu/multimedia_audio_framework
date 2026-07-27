@@ -744,6 +744,7 @@ void HpaeCapturerManager::CreateSourceAttr(IAudioSourceAttr &attr)
     attr.openMicSpeaker = sourceInfo_.openMicSpeaker;
     attr.hasEcConfig = mainMicType_ == HPAE_SOURCE_MIC_EC;
     attr.macAddress = sourceInfo_.macAddress;
+    attr.routeFlag = sourceInfo_.routeFlag;
     return;
 }
 
@@ -822,7 +823,6 @@ void HpaeCapturerManager::StopOuputNode()
     if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
         sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceDeInit();
     }
-    sourceInputClusterMap_.clear();
 }
 
 int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceInfo, bool isReload)
@@ -847,6 +847,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
         for (const auto &it : moveInfos) {
             DeleteOutputSession(it.sessionId, true);
         }
+        sourceInputClusterMap_.clear();
         sourceInfo_ = sourceInfo;
         int32_t ret = InitCapturerManager();
         if (ret != SUCCESS) {
@@ -1116,8 +1117,15 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
         sessionId, sourceInfo_.sourceName.c_str());
     CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceoutputnode is null");
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
+    nodeInfo.deviceClass = sourceInfo_.deviceClass;
+    nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = sourceInfo_.frameLen;
+    inNodeInfo.samplingRate = sourceInfo_.samplingRate;
+    AdjustFrameLen(nodeInfo, inNodeInfo);
+    moveInfo.sourceOutputNode->SetNodeInfo(nodeInfo);
     TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
         static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_RECORD);
 #ifdef ENABLE_HIDUMP_DFX

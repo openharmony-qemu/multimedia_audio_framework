@@ -266,6 +266,8 @@ int32_t AudioSuiteManager::DestroyPipeline(uint32_t pipelineId)
     renderFrameResultMap_.erase(pipelineId);
     isFinishMultiRenderFrameMap_.erase(pipelineId);
     multiRenderFrameResultMap_.erase(pipelineId);
+    isFinishMetaRenderFrameMap_.erase(pipelineId);
+    metaRenderFrameResultMap_.erase(pipelineId);
     pipelineLockMap_.erase(pipelineId);
     pipelineCallbackMutexMap_.erase(pipelineId);
     pipelineCallbackCVMap_.erase(pipelineId);
@@ -493,6 +495,29 @@ int32_t AudioSuiteManager::SetRequestDataCallback(uint32_t nodeId,
     AUDIO_DEBUG_LOG("SetRequestDataCallback leave");
     CHECK_AND_CALL_FUNC_RETURN_RET(setWriteDataResult_ == SUCCESS, setWriteDataResult_,
         HILOG_COMM_ERROR("[SetRequestDataCallback]engine failed, setWriteDataResult_ = %{public}d",
+        setWriteDataResult_));
+    return setWriteDataResult_;
+}
+
+int32_t AudioSuiteManager::SetRequestMetaDataCallback(uint32_t nodeId,
+    std::shared_ptr<InputNodeRequestMetaDataCallBack> callback)
+{
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishSetWriteData_ = false;
+    int32_t ret = suiteEngine_->SetRequestMetaDataCallback(nodeId, callback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetRequestMetaDataCallback failed, ret = %{public}d", ret);
+
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishSetWriteData_;
+    });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetRequestMetaDataCallback timeout");
+
+    AUDIO_DEBUG_LOG("SetRequestMetaDataCallback leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(setWriteDataResult_ == SUCCESS, setWriteDataResult_,
+        HILOG_COMM_ERROR("[SetRequestMetaDataCallback]engine failed, setWriteDataResult_ = %{public}d",
         setWriteDataResult_));
     return setWriteDataResult_;
 }
@@ -998,6 +1023,41 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
     return multiRenderFrameResultMap_[pipelineId];
 }
 
+int32_t AudioSuiteManager::MetaRenderFrame(uint32_t pipelineId, AudioMetaFrame &metaFrame,
+    int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
+{
+    std::unique_lock<std::mutex> lk(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr,
+        ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    auto it = pipelineLockMap_.find(pipelineId);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                                       StreamDfxManager::GetInstance().SendAudioErrorEvent(
+                                           static_cast<int32_t>(getuid()), ERR_RENDER_PIPELINE_NOT_FOUND,
+                                           "manager MetaRenderFrame failed, pipeline id is invailed.", true),
+                                       "pipeline lock not exist");
+    std::mutex *pipelineLock = it->second.get();
+    CHECK_AND_RETURN_RET_LOG(pipelineLock != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                             "pipeline lock is null");
+
+    std::lock_guard<std::mutex> lock(*pipelineLock);
+    auto &callbackMutex = pipelineCallbackMutexMap_[pipelineId];
+    auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
+    lk.unlock();
+
+    std::unique_lock<std::mutex> waitLock(*callbackMutex);
+    isFinishMetaRenderFrameMap_[pipelineId] = false;
+    int32_t ret = suiteEngine_->MetaRenderFrame(pipelineId, metaFrame, responseAudioSize,
+        responseMetaSize, finishedFlag);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine MetaRenderFrame failed, ret = %{public}d", ret);
+
+    bool stopWaiting = callbackCV->wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS),
+        [this, pipelineId] { return isFinishMetaRenderFrameMap_[pipelineId]; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "MetaRenderFrame timeout");
+
+    return metaRenderFrameResultMap_[pipelineId];
+}
+
 int32_t AudioSuiteManager::IsNodeTypeSupported(AudioNodeType  nodeType, bool &isSupported)
 {
     AUDIO_DEBUG_LOG("isNodeTypeSupported enter.");
@@ -1295,7 +1355,7 @@ template<typename T>
 void ParseValue(const std::string valueStr, T &result)
 {
     std::istringstream iss(valueStr);
-    float value;
+    float value = 0.0f;
     iss >> value;
     result = static_cast<T>(value);
 }
@@ -1303,15 +1363,15 @@ void ParseValue(const std::string valueStr, T &result)
 void ParseValue(const std::string valueStr, AudioSpaceRenderPositionParams &result)
 {
     std::istringstream iss(valueStr);
-    char comma;
+    char comma = ',';
     iss >> result.x >> comma >> result.y >> comma >> result.z;
 }
 
 void ParseValue(const std::string valueStr, AudioSpaceRenderRotationParams &result)
 {
     std::istringstream iss(valueStr);
-    char comma;
-    int directionInt;
+    char comma = ',';
+    int directionInt = 0;
     iss >> result.x >> comma >> result.y >> comma >> result.z >> comma >> result.surroundTime >> comma >>
         directionInt;
     result.surroundDirection = static_cast<AudioSurroundDirection>(directionInt);
@@ -1320,24 +1380,24 @@ void ParseValue(const std::string valueStr, AudioSpaceRenderRotationParams &resu
 void ParseValue(const std::string valueStr, AudioSpaceRenderExtensionParams &result)
 {
     std::istringstream iss(valueStr);
-    char comma;
+    char comma = ',';
     iss >> result.extRadius >> comma >> result.extAngle;
 }
 
 void ParseValue(const std::string valueStr, float &speed, float &pitch)
 {
     std::istringstream iss(valueStr);
-    char comma;
+    char comma = ',';
     iss >> speed >> comma >> pitch;
 }
 
 void ParseValue(const std::string valueStr, AudioPureVoiceChangeOption &option)
 {
     std::istringstream iss(valueStr);
-    char comma;
-    int32_t genderInt;
-    int32_t typeInt;
-    float pitch;
+    char comma = ',';
+    int32_t genderInt = 0;
+    int32_t typeInt = 0;
+    float pitch = 0.0f;
     iss >> genderInt >> comma >> typeInt >> comma >> pitch;
     option.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(genderInt);
     option.optionType = static_cast<AudioPureVoiceChangeType>(typeInt);
@@ -1392,6 +1452,106 @@ int32_t StringToInt32(std::string &str)
     }
 
     return static_cast<int32_t>(value);
+}
+
+int32_t AudioSuiteManager::SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param)
+{
+    std::unique_lock<std::mutex> lk(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr,
+        ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishSetSystemNodeParam_ = false;
+    int32_t ret = suiteEngine_->SetSystemNodeParam(nodeId, param);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetSystemNodeParam failed, ret = %{public}d", ret);
+
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetSystemNodeParam_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetSystemNodeParam timeout");
+    return setSystemNodeParamResult_;
+}
+
+int32_t AudioSuiteManager::GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param)
+{
+    std::unique_lock<std::mutex> lk(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr,
+        ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishGetSystemNodeParam_ = false;
+    int32_t ret = suiteEngine_->GetSystemNodeParam(nodeId, param);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetSystemNodeParam failed, ret = %{public}d", ret);
+
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetSystemNodeParam_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetSystemNodeParam timeout");
+
+    return getSystemNodeParamResult_;
+}
+
+int32_t AudioSuiteManager::GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize)
+{
+    std::unique_lock<std::mutex> lk(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr,
+        ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishGetSystemNodeInOutSize_ = false;
+    getSystemNodeInOutSizeResult_ = 0;
+    inSize = 0;
+    outSize = 0;
+
+    int32_t ret = suiteEngine_->GetSystemNodeInOutSize(nodeId, inSize, outSize);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSystemNodeInOutSize failed, ret=%{public}d", ret);
+
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+            return isFinishGetSystemNodeInOutSize_;
+        });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetSystemNodeInOutSize timeout");
+
+    CHECK_AND_CALL_FUNC_RETURN_RET(getSystemNodeInOutSizeResult_ == SUCCESS, getSystemNodeInOutSizeResult_,
+        HILOG_COMM_ERROR("GetSystemNodeInOutSize failed, result=%{public}d", getSystemNodeInOutSizeResult_));
+
+    return getSystemNodeInOutSizeResult_;
+}
+
+void AudioSuiteManager::OnSetSystemNodeParam(int32_t result)
+{
+    std::lock_guard<std::mutex> lock(callbackMutex_);
+    isFinishSetSystemNodeParam_ = true;
+    setSystemNodeParamResult_ = result;
+    callbackCV_.notify_all();
+}
+
+void AudioSuiteManager::OnGetSystemNodeParam(int32_t result)
+{
+    std::lock_guard<std::mutex> lock(callbackMutex_);
+    isFinishGetSystemNodeParam_ = true;
+    getSystemNodeParamResult_ = result;
+    callbackCV_.notify_all();
+}
+
+void AudioSuiteManager::OnGetSystemNodeInOutSize(int32_t result)
+{
+    std::lock_guard<std::mutex> lock(callbackMutex_);
+    isFinishGetSystemNodeInOutSize_ = true;
+    getSystemNodeInOutSizeResult_ = result;
+    callbackCV_.notify_all();
+}
+
+void AudioSuiteManager::OnMetaRenderFrame(int32_t result, uint32_t pipelineId)
+{
+    if (result != SUCCESS) {
+        AUDIO_ERR_LOG("OnMetaRenderFrame failed, result = %{public}d", result);
+    }
+
+    auto &callbackMutex = pipelineCallbackMutexMap_[pipelineId];
+    auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
+    std::unique_lock<std::mutex> waitLock(*callbackMutex);
+    isFinishMetaRenderFrameMap_[pipelineId] = true;
+    metaRenderFrameResultMap_[pipelineId] = result;
+    callbackCV->notify_all();
 }
 
 }  // namespace AudioSuite

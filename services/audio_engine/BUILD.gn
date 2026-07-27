@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 import("../../config.gni")
 
 ohos_shared_library("audio_engine_utils") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -64,6 +64,7 @@ ohos_shared_library("audio_engine_utils") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
   ]
@@ -78,7 +79,7 @@ config("audio_engine_plugins_config") {
 }
 
 ohos_shared_library("audio_engine_plugins") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -111,6 +112,7 @@ ohos_shared_library("audio_engine_plugins") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
   ]
@@ -169,7 +171,7 @@ config("audio_engine_node_config") {
 }
 
 ohos_shared_library("audio_engine_node") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -240,6 +242,7 @@ ohos_shared_library("audio_engine_node") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
@@ -252,7 +255,7 @@ ohos_shared_library("audio_engine_node") {
 }
 
 ohos_shared_library("hpae_engine_manager") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -310,6 +313,8 @@ ohos_shared_library("hpae_engine_manager") {
   ]
 
   external_deps = [
+    "ability_runtime:dataobs_manager",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
@@ -325,7 +330,7 @@ ohos_shared_library("hpae_engine_manager") {
 }
 
 ohos_shared_library("audio_engine_monitor") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true

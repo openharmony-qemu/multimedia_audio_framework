@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 
 ohos_shared_library("audio_safe_volume_notification_impl") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -49,6 +49,7 @@ ohos_shared_library("audio_safe_volume_notification_impl") {
     "image_framework:image_native",
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
+    "resource_management:global_resmgr",
   ]
 
   cflags = [

@@ -18,6 +18,7 @@
 #include "audio_session_info.h"
 #include "audio_bundle_manager.h"
 #include "audio_volume.h"
+#include "securec.h"
 using namespace std;
 
 namespace OHOS {

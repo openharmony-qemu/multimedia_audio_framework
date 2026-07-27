@@ -17,6 +17,7 @@
 #include <chrono>
 #include "gmock/gmock.h"
 #include "oh_audio_render_unit_test.h"
+#include "securec.h"
 
 using namespace testing::ext;
 using namespace testing;

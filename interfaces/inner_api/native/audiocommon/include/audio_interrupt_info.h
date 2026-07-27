@@ -339,6 +339,7 @@ public:
     bool registerCallbackFlag = false;
     bool activatedRegisterCallbackFlag = false;
     bool isCallWaitingTone = false;
+    bool isCheckMuteStream = false;
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -363,6 +364,12 @@ public:
     bool operator>(const AudioInterrupt &other) const
     {
         return streamId > other.streamId || pid > other.pid || uid > other.uid;
+    }
+
+    bool IsSameAudioInterrupt(const AudioInterrupt &audioInterrupt) const
+    {
+        return streamId == audioInterrupt.streamId &&
+            deviceTag == audioInterrupt.deviceTag;
     }
 
     static bool Marshalling(Parcel &parcel, const AudioInterrupt &interrupt)
@@ -399,6 +406,7 @@ public:
         res = res && parcel.WriteBool(interrupt.registerCallbackFlag);
         res = res && parcel.WriteBool(interrupt.activatedRegisterCallbackFlag);
         res = res && parcel.WriteBool(interrupt.isCallWaitingTone);
+        res = res && parcel.WriteBool(interrupt.isCheckMuteStream);
         return res;
     }
     static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
@@ -439,6 +447,7 @@ public:
         interrupt.registerCallbackFlag = parcel.ReadBool();
         interrupt.activatedRegisterCallbackFlag = parcel.ReadBool();
         interrupt.isCallWaitingTone = parcel.ReadBool();
+        interrupt.isCheckMuteStream = parcel.ReadBool();
     }
 
     bool Marshalling(Parcel &parcel) const override

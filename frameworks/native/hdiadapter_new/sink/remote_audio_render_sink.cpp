@@ -30,6 +30,7 @@
 #include "audio_performance_monitor.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "securec.h"
 
 using namespace OHOS::HDI::DistributedAudio::Audio::V2_0;
 
@@ -318,6 +319,7 @@ int32_t RemoteAudioRenderSink::SetVolume(float left, float right)
 int32_t RemoteAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
 {
     AUDIO_INFO_LOG("RemoteAudioRenderSink::SetVolumeWithRamp in");
+    SetVolume(left, right);
     return SUCCESS;
 }
 

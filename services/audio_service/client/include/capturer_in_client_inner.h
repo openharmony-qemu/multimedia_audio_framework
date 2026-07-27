@@ -240,6 +240,8 @@ public:
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
     void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
+    void SetSensitiveRecordPermitCallback(
+        const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback) override;
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
     void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo,
@@ -270,6 +272,11 @@ private:
 
     void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
     void NotifyFastStatusChange(FastStatus status);
+
+    bool CheckCapturerAttrInfoFromSpan(CapturerAttrInfo &attr);
+    void RefreshCapturerAttrInfoFromSpan(const CapturerAttrInfo &attr);
+    bool SyncCapturerAttrFromSpan();
+    bool JudgeFastStreamByCapturerAttr();
 
     int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
     int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
@@ -406,6 +413,8 @@ private:
     int32_t innerCapId_ = 0;
     std::mutex playbackCaptureStartCallbackMutex_;
     std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> playbackCaptureStartCallback_ = nullptr;
+    std::mutex sensitiveRecordPermitCallbackMutex_;
+    std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> sensitiveRecordPermitCallback_ = nullptr;
 
     std::string bundleName = "";
 

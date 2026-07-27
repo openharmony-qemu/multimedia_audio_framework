@@ -31,6 +31,7 @@
 #include "hpae_source_output_node.h"
 #include "hpaecapturermanager_fuzzer.h"
 #include "audio_engine_log.h"
+#include "securec.h"
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
 

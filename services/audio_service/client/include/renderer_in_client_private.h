@@ -99,6 +99,7 @@ public:
     int32_t SetRendererFirstFrameWritingCallback(
         const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
     void OnFirstFrameWriting() override;
+    void NotifyFirstFrameWritingOnce();
     int32_t SetSpeed(float speed) override;
     int32_t SetPitch(float pitch) override;
     int32_t SetSonicPitch(float pitch) override;
@@ -135,6 +136,7 @@ public:
     void SetCapturerSource(int capturerSource) override;
     void SetPrivacyType(AudioPrivacyType privacyType) override;
 
+    bool CheckWriteCb();
     // Common APIs
     bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT,
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) override;
@@ -263,6 +265,12 @@ public:
         return (rendererInfo_.audioFlag & AUDIO_OUTPUT_FLAG_FAST) != 0;
     }
 
+    void UpdateLogTag()
+    {
+        logUtilsTag_ = "[" + std::to_string(sessionId_) + "]" +
+            (IsFastStream() ? "Fast" : "Normal") + "Renderer";
+    }
+
     bool IsUltraFastStream() const
     {
         return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
@@ -270,7 +278,13 @@ public:
 
     void SetupFastStreamThreadPriority();
 
-    void CheckAndProcessPendingSpanSize();
+    bool SyncRendererAttrFromSpan();
+
+    bool JudgeFastStreamByRendererAttr();
+
+    bool CheckRendererAttrInfoFromSpan(RendererAttrInfo &attr);
+
+    void RefreshRendererAttrInfoFromSpan(const RendererAttrInfo &attr);
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -280,6 +294,8 @@ private:
     int32_t DeinitIpcStream();
 
     int32_t InitIpcStream();
+    void CreateAndRetryAudioProcess(const AudioProcessConfig &config,
+        const sptr<IStandardAudioService> &gasp, AudioPlaybackCaptureConfig &playbackConfig);
 
     void InitDFXOperaiton();
 
@@ -425,9 +441,9 @@ private:
     std::atomic<FastStatus> fastStatus_ = FASTSTATUS_NORMAL;
 
     size_t cacheSizeInByte_ = 0;
-    uint32_t spanSizeInFrame_ = 0;
+    std::atomic<uint32_t> spanSizeInFrame_ = 0;
     std::atomic<uint32_t> cacheSizeInFrame_ = 0;
-    size_t clientSpanSizeInByte_ = 0;
+    std::atomic<size_t> clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
     uint32_t bufferSizeInMsec_ = 20; // 20ms

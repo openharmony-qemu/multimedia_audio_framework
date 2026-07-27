@@ -34,6 +34,7 @@
 #include "audio_stream_descriptor.h"
 #include "audio_limiter_manager.h"
 #include "bluetooth_host.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

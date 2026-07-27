@@ -358,9 +358,16 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
         TransSinkInfoToNodeInfo(sinkInfo, rendererManagerMap_[audioModuleInfo.name], nodeInfo);
         sinkVirtualOutputNodeMap_[sinkInfo.sinkId]->ReloadNode(nodeInfo);
     }
+
+    if (sinkInfo.deviceName == MCH_SINK_NAME && isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
+        AUDIO_INFO_LOG("ReloadRenderManager MCH_Speaker, need set isCollaborationEnabled: %{public}d",
+            isCollaborationEnabled_);
+        sinkInfo.isCollaborationEnabled = isCollaborationEnabled_;
+    }
     rendererManagerMap_[audioModuleInfo.name]->ReloadRenderManager(sinkInfo, isReload);
     // Both primary and offload self-heal SE via attach-state on SinkInputNode.
     // No external replay needed — ConnectInputSession reads attach state and materializes.
+
     return SUCCESS;
 }
 
@@ -807,8 +814,10 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
             return;
         }
 
-        if (!SafeGetMap(rendererManagerMap_, name)) {
-            AUDIO_WARNING_LOG("sink: %{public}s not exist, do not change default sink", GetEncryptStr(name).c_str());
+        std::shared_ptr<IHpaeRendererManager> newRendererManager = GetRendererManagerByName(name);
+        if (newRendererManager == nullptr || !newRendererManager->IsInit()) {
+            AUDIO_WARNING_LOG("sink: %{public}s not exist or not init, do not change default sink",
+                GetEncryptStr(name).c_str());
             return;
         }
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(defaultSink_);
@@ -845,8 +854,9 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
             return;
         }
         
-        if (!SafeGetMap(capturerManagerMap_, name)) {
-            AUDIO_WARNING_LOG("source: %{public}s not exist, do not change default source", name.c_str());
+        std::shared_ptr<IHpaeCapturerManager> newCapturerManager = GetCapturerManagerByName(name);
+        if (newCapturerManager == nullptr || !newCapturerManager->IsInit()) {
+            AUDIO_WARNING_LOG("source: %{public}s not exist or not init, do not change default source", name.c_str());
             return;
         }
         std::shared_ptr<IHpaeCapturerManager> capturerManager = GetCapturerManagerByName(defaultSource_);
@@ -1576,8 +1586,6 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
         }
     };
     SendRequest(request, __func__);
-    AUDIO_INFO_LOG("defaultSink_ is %{public}s defaultSource_ is %{public}s streamClassType %{public}u",
-        defaultSink_.c_str(), defaultSource_.c_str(), streamInfo.streamClassType);
     return SUCCESS;
 }
 
@@ -2121,7 +2129,6 @@ int32_t HpaeManager::GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &str
 int32_t HpaeManager::SetClientVolume(uint32_t sessionId, float volume)
 {
     auto request = [this, sessionId, volume]() {
-        AUDIO_INFO_LOG("SetClientVolume sessionId %{public}u %{public}f", sessionId, volume);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
                 "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
@@ -2856,6 +2863,7 @@ void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const Audio
         TransSinkInfoToNodeInfo(sinkInfo, rendererManager, nodeInfo);
         sinkOutputNode->ReloadNode(nodeInfo);
         rendererManager->ReloadRenderManager(sinkInfo, false);
+
         // Both primary and offload self-heal SE via attach-state on SinkInputNode.
         // No external replay needed — ConnectInputSession reads attach state and materializes.
     };
@@ -3086,11 +3094,6 @@ bool IsAissStreamSupported(const HpaeStreamInfo &streamInfo, uint32_t sessionId,
     if (INNER_SOURCE_TYPE_SET.count(streamInfo.sourceType) != 0) {
         AUDIO_INFO_LOG("%{public}s: skip inner capture stream sourceType=%{public}d session=%{public}u",
             caller, streamInfo.sourceType, sessionId);
-        return false;
-    }
-    if (streamInfo.channels > STEREO) {
-        AUDIO_INFO_LOG("%{public}s: skip non-stereo stream channels=%{public}u session=%{public}u",
-            caller, streamInfo.channels, sessionId);
         return false;
     }
     return true;
@@ -3337,14 +3340,15 @@ float HpaeManager::GetMaxAmplitude()
 
 void HpaeManager::UpdateBypassSpatializationForStereo(bool bypass)
 {
-    bypassSpatializationForStereo_ = bypass;
-    AUDIO_INFO_LOG("HpaeManager::UpdateBypassSpatializationForStereo %{public}d", bypass);
+    if (bypassSpatializationForStereo_ != bypass) {
+        bypassSpatializationForStereo_ = bypass;
+        AUDIO_INFO_LOG("HpaeManager::UpdateBypassSpatializationForStereo %{public}d", bypass);
+    }
     HpaePolicyManager::GetInstance().SetBypassSpatializationForStereo(bypass && adaptiveSpatialRenderingEnabled_);
 }
  
 void HpaeManager::HandleBypassSpatializationForStereo(bool bypass)
 {
-    AUDIO_INFO_LOG("HpaeManager::HandleBypassSpatializationForStereo %{public}d", bypass);
     auto request = [this, bypass]() {
         UpdateBypassSpatializationForStereo(bypass);
     };

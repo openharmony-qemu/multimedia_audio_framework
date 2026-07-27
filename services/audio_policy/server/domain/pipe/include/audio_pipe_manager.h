@@ -36,6 +36,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static const std::unordered_set<DeviceType> g_ultraFastDevicesSet = {
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_USB_ARM_HEADSET
+};
+
 class AudioPipeManager {
 public:
     using RequiredPipesReadyCallback = std::function<void()>;
@@ -101,6 +107,12 @@ public:
     void PauseClient(uint32_t sessionId);
     void StandbyClient(uint32_t sessionId);
     void ClearStandbyFlag(uint32_t sessionId);
+    // Set mute silent flag, return whether isSilent_ changed
+    bool SetMuteSilentState(uint32_t sessionId, bool isMuteSilent);
+    // Set data transfer silent flag, return whether isSilent_ changed
+    bool SetDataTransSilentState(uint32_t sessionId, bool isDataTransSilent);
+    // Check whether stream is silent (isSilent_)
+    bool IsStreamSilent(uint32_t sessionId);
     void StopClient(uint32_t sessionId);
     void RemoveClient(uint32_t sessionId);
 
@@ -179,6 +191,8 @@ public:
     void UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
     StreamUsage GetLastestRunningCallStreamUsage();
+    bool HasUltraFastPipe();
+    bool IsUltraFastSupportedDevice(DeviceType deviceType);
     bool IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::vector<std::string> GetNoRunningPipeModuleName();
     bool CheckNoRunningCondition(std::shared_ptr<AudioPipeInfo> pipeInfo);

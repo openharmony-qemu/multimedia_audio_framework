@@ -29,6 +29,7 @@
 #include "audio_ec_info.h"
 #include "datashare_helper.h"
 #include "audio_errors.h"
+#include "audio_policy_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

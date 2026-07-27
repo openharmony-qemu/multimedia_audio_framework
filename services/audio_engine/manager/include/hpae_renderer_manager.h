@@ -21,6 +21,7 @@
 #include <string>
 #include <mutex>
 #include <shared_mutex>
+#include <optional>
 #include "hpae_signal_process_thread.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_process_cluster.h"
@@ -35,7 +36,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
 class HpaeRendererManager : public IHpaeRendererManager {
 public:
     HpaeRendererManager(HpaeSinkInfo &sinkInfo);
@@ -121,6 +121,7 @@ public:
     // Session Effect parameter routing
     int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
     void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
+    void SetCollabDoFade(HpaeProcessorType sceneType);
 
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
@@ -157,6 +158,13 @@ private:
     int32_t HandlePriPaPower(uint32_t sessionId);
     bool CheckIsStreamRunning();
     HpaeProcessorType GetProcessorType(uint32_t sessionId) const;
+    HpaeProcessorType GetConnectedProcessorType(uint32_t sessionId) const;
+    std::optional<ChannelOverrideRoute> BuildChannelOverrideRoute(uint32_t sessionId) const;
+    std::optional<ChannelOverrideRoute> BuildChannelOverrideRouteFromProcessorType(
+        HpaeProcessorType sceneType) const;
+    void SetChannelOverrideForRoute(const ChannelOverrideRoute &route);
+    void ClearChannelOverrideForRoute(const ChannelOverrideRoute &route);
+    void OnSessionEffectMaterialized(uint32_t sessionId);
     HpaeProcessorType TransToProperSceneType(StreamUsage streamUsage, AudioEffectScene effectScene);
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
@@ -187,13 +195,12 @@ private:
     void ConnectCoBufferFromConnectOutputCluster(HpaeProcessorType sceneType);
     void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
     void ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo, bool isReload, bool isNeedCallBack);
+    void InitDefaultNodeInfoFromInitManager(bool isReload);
     void StopInterphoneSinkIfNeeded();
     void DetachSessionEffectNodeForRefresh(uint32_t sessionId, HpaeProcessorType oldSceneType);
     void MaterializeSessionEffectFromAttachState(uint32_t sessionId, HpaeProcessorType sceneType);
     void HandleSessionEffectMaterializeFailure(uint32_t sessionId, int32_t ret,
         const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
-
-    DeviceType GetCurrentSinkDeviceType();
     int32_t InitOutputCluster();
 
 private:
@@ -221,6 +228,7 @@ private:
     bool coBufferNodeIsConnected_ = false;
     bool isReloadManagerFromCollStateChange_ = false;
     uint32_t renderId_ = HDI_INVALID_ID;
+    DeviceType renderDeviceType_ = DEVICE_TYPE_INVALID;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -22,7 +22,6 @@
 #include "audio_suite_log.h"
 #include "audio_suite_common.h"
 #include <cstring>
-#include <securec.h>
 
 using namespace OHOS::AudioStandard;
 using namespace OHOS::AudioStandard::AudioSuite;
@@ -36,6 +35,7 @@ constexpr uint32_t S16_BYTE_SIZE = 2;
 constexpr uint32_t S24_BYTE_SIZE = 3;
 constexpr uint32_t S32_BYTE_SIZE = 4;
 constexpr uint32_t F32_BYTE_SIZE = 4;
+constexpr int32_t MAX_MIX_STREAM_COUNT = 1024;
 }
 
 AudioSampleFormat ConvertBitDepthToSampleFormat(AudioBitDepth bitDepth)
@@ -291,10 +291,8 @@ bool ParamCheck(AudioMixHandle handle, const CAudioMixStream* streams, int strea
         return false;
     }
 
-    if (streams == nullptr || streamCount <= 0) {
-        AUDIO_ERR_LOG("invalid streams params");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(streams != nullptr && (streamCount > 0 && streamCount <= MAX_MIX_STREAM_COUNT),
+        false, "invalid streams params, streamCount=%{public}d", streamCount);
 
     MixerHandleWrapper* wrapper = static_cast<MixerHandleWrapper*>(handle);
     if (wrapper->mixer == nullptr) {

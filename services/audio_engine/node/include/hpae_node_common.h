@@ -16,6 +16,7 @@
 #ifndef HPAE_NODE_COMMON_H
 #define HPAE_NODE_COMMON_H
 #include "hpae_define.h"
+#include "hpae_pcm_buffer.h"
 #include "audio_effect.h"
 #include "audio_module_info.h"
 #include "audio_service_hpae_dump_callback.h"
@@ -73,6 +74,14 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
     HpaeNodeInfo &nodeInfo);
 size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate);
 size_t CalculateFrameLenBySampleRate(const AudioSamplingRate sampleRate);
+
+// Shared silence-buffer helper for sibling node classes that each own a silenceData_ buffer.
+inline HpaePcmBuffer* PrepareSilenceBuffer(HpaePcmBuffer& silence)
+{
+    silence.SetBufferValid(false);
+    silence.SetBufferSilence(true);
+    return &silence;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

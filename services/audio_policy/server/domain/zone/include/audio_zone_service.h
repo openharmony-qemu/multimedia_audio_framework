@@ -23,6 +23,7 @@
 #include "audio_policy_server_handler.h"
 #include "audio_zone.h"
 #include "audio_volume_manager.h"
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -53,6 +54,8 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
     void MoveDeviceToGlobalFromZones(std::shared_ptr<AudioDeviceDescriptor> device);
     int32_t UpdateDeviceFromGlobalForAllZone(std::shared_ptr<AudioDeviceDescriptor> device);
+    bool UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &devDesc,
+        DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceDescriptor(DeviceType type, std::string networkId);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceDescriptor(int32_t zoneId, DeviceType type);
 
@@ -78,6 +81,12 @@ public:
         uint32_t streamId = INVALID_STREAM_ID);
     virtual std::string FindAudioZoneNameByUid(int32_t uid, DeviceRole deviceRole = DEVICE_ROLE_NONE,
         uint32_t streamId = INVALID_STREAM_ID);
+    int32_t FindAudioZoneByExactInfo(int32_t uid, const std::string &deviceTag, uint32_t streamId,
+        const StreamUsage &usage, DeviceRole deviceRole);
+#ifdef MULTI_USER_ZONE
+    std::vector<int32_t> FindAudioZoneByDeviceForExtZone(const std::shared_ptr<AudioDeviceDescriptor> &device);
+    void RemoveDeviceToGlobalFromZones(const std::shared_ptr<AudioDeviceDescriptor> &device);
+#endif
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, DeviceType deviceType, bool enable);
     bool IsSystemVolumeProxyEnable(int32_t zoneId, DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE);
@@ -100,8 +109,8 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
-    int32_t PauseAudioFocusForExtAudioZone();
-    int32_t ResumeAudioFocusForExtAudioZone();
+    int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
+    int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
     
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(int32_t zoneId,
         StreamUsage streamUsage, int32_t clientUid, RouterType bypassType);
@@ -111,6 +120,10 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAllOutputDevices(int32_t zoneId);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetZoneDevices();
 
+#ifdef MULTI_USER_ZONE
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage, int32_t clientUid);
+#endif
+
     const std::string GetZoneStringDescriptor(int32_t zoneId);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
     bool CheckZoneExist(int32_t zoneId);
@@ -118,7 +131,7 @@ public:
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
     bool HasVolumeControllableDeviceInAudioZone();
-    void NotifyStreamSilentChange(uint32_t streamId);
+    void NotifyStreamSilentChange(int32_t callerPid, uint32_t streamId);
     int32_t GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     AudioScene GetAudioSceneFromAllZones();
     AudioInterruptResult ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
@@ -127,6 +140,7 @@ public:
     int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
     // interfaces of SessionTimeOutCallback
     void OnSessionTimeout(const int32_t pid) override;
+    void UpdateZonePreferDeviceWhenDeviceConnect();
 
 private:
     AudioZoneService()
@@ -141,12 +155,9 @@ private:
     std::shared_ptr<AudioZoneClientManager> zoneClientManager_;
     std::shared_ptr<SessionTimeOutCallback> sessionTimeoutCallbackPtr_;
     std::unordered_map<int32_t, std::shared_ptr<AudioZone>> zoneMaps_;
-    AudioZoneContext mainZoneContext_;
     std::set<pid_t> zoneReportClientList_;
     std::mutex zoneMutex_;
     bool zoneDeviceVisible_ = true;
-    pid_t mainZoneVolumeProxyClientPid_ = 0;
-    std::unordered_set<DeviceType> mainZoneVolumeProxyDeviceTypes_;
 
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
     int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
@@ -155,7 +166,17 @@ private:
     int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, uint32_t streamId,
         const StreamUsage &usage, DeviceRole deviceRole);
     bool CheckIsZoneValid(int32_t zoneId);
-    void RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescriptor> device);
+    void RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescriptor> device, const int32_t zoneId = 0);
+#ifdef MULTI_USER_ZONE
+    int32_t FindAudioZoneByUserId(int32_t userId);
+    bool UpdateDevicesListInfoForZone(int32_t zoneId, const std::shared_ptr<AudioDeviceDescriptor> &devDesc,
+        DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FilterDevicesByVisibleMode(
+        const std::vector<std::pair<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> &zoneDevices,
+        int32_t currentZoneId, bool isSystemService);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> FilterDevicesByUsage(AudioDeviceUsage usage,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+#endif
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -69,6 +69,8 @@ public:
     int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override;
     int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<InputNodeRequestDataCallBack> callback) override;
+    int32_t SetRequestMetaDataCallback(uint32_t nodeId,
+        std::shared_ptr<InputNodeRequestMetaDataCallBack> callback) override;
     int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t RenderFrame(uint32_t pipelineId,
@@ -76,10 +78,15 @@ public:
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) override;
     int32_t MultiRenderFrame(uint32_t pipelineId, AudioDataArray *audioDataArray,
         int32_t *responseSize, bool *finishedFlag) override;
+    int32_t MetaRenderFrame(uint32_t pipelineId, AudioMetaFrame &metaFrame,
+        int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag) override;
 
     // async interface
     int32_t SetOptions(uint32_t nodeId, std::string name, std::string value) override;
     int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) override;
+    int32_t SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) override;
+    int32_t GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_t> &param) override;
+    int32_t GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSize, uint32_t &outSize) override;
     int32_t PrintInfo(uint32_t pipelineId, int32_t fd) override;
 
     // for queue and thread
@@ -106,8 +113,12 @@ private:
     void HandleDisConnectNodes(int32_t result);
     void HandleRenderFrame(int32_t result, uint32_t pipelineId);
     void HandleMultiRenderFrame(int32_t result, uint32_t pipelineId);
+    void HandleMetaRenderFrame(int32_t result, uint32_t pipelineId);
     void HandleGetOptions(int32_t result);
     void HandleSetOptions(int32_t result);
+    void HandleSetSystemNodeParam(int32_t result);
+    void HandleGetSystemNodeParam(int32_t result);
+    void HandleGetSystemNodeInOutSize(int32_t result);
     void HandlePrintInfo(int32_t result, int32_t fd);
 
 private:

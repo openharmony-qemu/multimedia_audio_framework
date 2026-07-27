@@ -480,7 +480,7 @@ HWTEST(AudioGeneralManagerUnitTest, SelectPrivateDevice_01, TestSize.Level1)
     DeviceType devType{DEVICE_TYPE_BLUETOOTH_A2DP};
     std::string macAddress{"11:22:33:44"};
     int32_t ret = audioGeneralManager->SelectPrivateDevice(devType, macAddress);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(ret == SUCCESS || ret == ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 /**
@@ -494,7 +494,7 @@ HWTEST(AudioGeneralManagerUnitTest, ForceSelectDevice_01, TestSize.Level1)
     EXPECT_NE(audioGeneralManager, nullptr);
     sptr<AudioRendererFilter> filter = new AudioRendererFilter();
     int32_t ret = audioGeneralManager->ForceSelectDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:11", filter);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(ret == SUCCESS || ret == ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 /**

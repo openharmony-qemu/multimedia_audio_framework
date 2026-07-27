@@ -15,7 +15,6 @@
 
 #ifndef HPAE_GAIN_NODE_H
 #define HPAE_GAIN_NODE_H
-#include <memory>
 #include "hpae_plugin_node.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"

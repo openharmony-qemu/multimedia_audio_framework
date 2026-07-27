@@ -129,11 +129,16 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         return SUCCESS;
     }
     if (operation == UPDATE_SPANSIZE) {
-        int32_t ret = InitSharedBuffer();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer for UPDATE_SPANSIZE failed:%{public}d", ret);
-        AUDIO_INFO_LOG("UPDATE_SPANSIZE sessionId:%{public}u spanSizeInFrame:%{public}u cacheSizeInFrame:%{public}u",
-            sessionId_, spanSizeInFrame_, cacheSizeInFrame_.load());
         NotifyFastStatusChange(static_cast<FastStatus>(result));
+        return SUCCESS;
+    }
+    if (operation == FIRST_FRAME_CONSUMED) {
+        // HPAE first-frame-consumed fallback: fire the existing first-frame callback via
+        // the shared once-gate only while RUNNING. Not a control operation: never enter
+        // callServerMutex_/callServerCV_, just return.
+        if (state_.load() == RUNNING) {
+            NotifyFirstFrameWritingOnce();
+        }
         return SUCCESS;
     }
 
@@ -393,7 +398,7 @@ void RendererInClientInner::SetSwitchInfoTimestamp(
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed)
 {
-    CHECK_AND_RETURN_LOG(!IsFastStream(),
+    CHECK_AND_RETURN_LOG(!JudgeFastStreamByRendererAttr(),
         "SetSwitchInfoTimestamp: switching, not support reset timestamp");
     AUDIO_INFO_LOG("RendererInClientInner::SetSwitchInfoTimestamp");
 
@@ -474,7 +479,7 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
 int32_t RendererInClientInner::GetBufferSize(size_t &bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Renderer stream is released");
-    bufferSize = clientSpanSizeInByte_;
+    bufferSize = spanSizeInFrame_.load() * sizePerFrameInByte_;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         bufferSize = cbBufferSize_;
     }
@@ -492,7 +497,7 @@ int32_t RendererInClientInner::GetFrameCount(uint32_t &frameCount)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Renderer stream is released");
     CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ != 0, ERR_ILLEGAL_STATE, "sizePerFrameInByte_ is 0!");
-    frameCount = spanSizeInFrame_;
+    frameCount = spanSizeInFrame_.load();
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         frameCount = cbBufferSize_ / sizePerFrameInByte_;
         if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
@@ -585,7 +590,7 @@ float RendererInClientInner::GetVolume()
 
 int32_t RendererInClientInner::SetLoudnessGain(float loudnessGain)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), ERROR, "SetLoudnessGain: only for renderer");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERROR, "SetLoudnessGain: only for renderer");
     AUDIO_INFO_LOG("[%{public}s]sessionId:%{public}d loudnessGain:%{public}f", (offloadEnable_ ? "offload" : "normal"),
         sessionId_, loudnessGain);
     CHECK_AND_RETURN_RET_LOG(loudnessGain <= MAX_LOUDNESS_GAIN && loudnessGain >= MIN_LOUDNESS_GAIN, ERR_INVALID_PARAM,
@@ -601,7 +606,7 @@ int32_t RendererInClientInner::SetLoudnessGain(float loudnessGain)
 
 float RendererInClientInner::GetLoudnessGain()
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), 0.0, "GetLoudnessGain: only for renderer");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), 0.0, "GetLoudnessGain: only for renderer");
     AUDIO_INFO_LOG("loudnessGain: %{public}f", loudnessGain_);
     return loudnessGain_;
 }
@@ -674,7 +679,7 @@ int32_t RendererInClientInner::SetMuteHint(bool mute)
 
 int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {
-    if (IsFastStream()) {
+    if (JudgeFastStreamByRendererAttr()) {
         CHECK_AND_RETURN_RET(RENDER_RATE_NORMAL != renderRate, SUCCESS);
         return ERR_INVALID_OPERATION;
     }
@@ -758,6 +763,16 @@ void RendererInClientInner::OnFirstFrameWriting()
     cb->OnFirstFrameWriting(latency);
 }
 
+void RendererInClientInner::NotifyFirstFrameWritingOnce()
+{
+    // Client-side once-gate shared by the client Write path and the HPAE
+    // first-frame-consumed fallback. Whichever source wins the atomic exchange fires
+    // OnFirstFrameWriting() once per Start cycle.
+    if (!hasFirstFrameWrited_.exchange(true)) {
+        OnFirstFrameWriting();
+    }
+}
+
 bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
 {
     AUDIO_INFO_LOG("set speed to hdi, sessionId: %{public}d, speed: %{public}f", sessionId_, speed);
@@ -770,7 +785,7 @@ bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
 
 void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId)
 {
-    AUDIO_INFO_LOG("NotifyRouteUpdate: routeFlag=0x%{public}x networkId=%{public}s",
+    AUDIO_DEBUG_LOG("NotifyRouteUpdate: routeFlag=0x%{public}x networkId=%{public}s",
         routeFlag, networkId.c_str());
     
     // rendererFlags 更新已通过共享内存 pendingRouteFlag 传递
@@ -799,7 +814,7 @@ void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::str
 
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), ERR_OPERATION_FAILED,
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_OPERATION_FAILED,
         "SetSpeed: not supported");
     if (isHWDecodingType_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_INVALID_HANDLE, "ipcStream is not inited!");
@@ -821,7 +836,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
 
 int32_t RendererInClientInner::SetPitch(float pitch)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), ERR_OPERATION_FAILED, "SetPitch: not supported");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_OPERATION_FAILED, "SetPitch: not supported");
     RETURN_RET_IF(isHWDecodingType_, SUCCESS);
     if (rendererInfo_.isStatic) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
@@ -874,7 +889,7 @@ int32_t RendererInClientInner::SetSonicPitch(float pitch)
 
 float RendererInClientInner::GetSpeed()
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), static_cast<float>(ERROR), "GetSpeed: not supported");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), static_cast<float>(ERROR), "GetSpeed: not supported");
     std::lock_guard lock(speedMutex_);
     return realSpeed_.has_value() ? realSpeed_.value() : 1.0f;
 }
@@ -924,13 +939,13 @@ void RendererInClientInner::InitCallbackLoop()
         if (strongRef != nullptr) {
             strongRef->SetCallbackLoopTid(gettid());
             
-            if (strongRef->IsFastStream()) {
+            if (strongRef->JudgeFastStreamByRendererAttr()) {
                 strongRef->SetupFastStreamThreadPriority();
             }
             
             strongRef->cbThreadCv_.notify_one();
             AUDIO_INFO_LOG("WriteCallbackFunc start, sessionID :%{public}d, IsFastStream:%{public}d, "
-                "IsUltraFastStream:%{public}d", strongRef->sessionId_, strongRef->IsFastStream(),
+                "IsUltraFastStream:%{public}d", strongRef->sessionId_, strongRef->JudgeFastStreamByRendererAttr(),
                 strongRef->IsUltraFastStream());
         } else {
             HILOG_COMM_WARN("[InitCallbackLoop]Strong ref is nullptr, could cause error");
@@ -1135,7 +1150,7 @@ int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
 
 int32_t RendererInClientInner::Clear()
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), SUCCESS, "Clear: not supported");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), SUCCESS, "Clear: not supported");
     Trace trace("RendererInClientInner::Clear");
     if (renderMode_ != RENDER_MODE_CALLBACK) {
         AUDIO_ERR_LOG("Clear is not supported. Render mode is not callback.");
@@ -1151,7 +1166,7 @@ int32_t RendererInClientInner::Clear()
 
 int32_t RendererInClientInner::SetLowPowerVolume(float volume)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), SUCCESS, "SetLowPowerVolume: in.");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), SUCCESS, "SetLowPowerVolume: in.");
     AUDIO_INFO_LOG("Volume number: %{public}f", volume);
     if (volume < 0.0 || volume > 1.0) {
         AUDIO_ERR_LOG("Invalid param: %{public}f", volume);
@@ -1165,20 +1180,20 @@ int32_t RendererInClientInner::SetLowPowerVolume(float volume)
 
 float RendererInClientInner::GetLowPowerVolume()
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), 1.0f, "GetLowPowerVolume: in.");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), 1.0f, "GetLowPowerVolume: in.");
     return lowPowerVolume_;
 }
 
 int32_t RendererInClientInner::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), ERR_NOT_SUPPORTED, "SetOffloadMode: in.");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_NOT_SUPPORTED, "SetOffloadMode: in.");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
     return ipcStream_->SetOffloadMode(state, isAppBack);
 }
 
 int32_t RendererInClientInner::UnsetOffloadMode()
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), ERR_NOT_SUPPORTED, "UnsetOffloadMode: in.");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_NOT_SUPPORTED, "UnsetOffloadMode: in.");
     rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is null!");
     return ipcStream_->UnsetOffloadMode();
@@ -1192,14 +1207,14 @@ float RendererInClientInner::GetSingleStreamVolume()
 
 AudioEffectMode RendererInClientInner::GetAudioEffectMode()
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), EFFECT_NONE, "GetAudioEffectMode: not supported");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), EFFECT_NONE, "GetAudioEffectMode: not supported");
     AUDIO_DEBUG_LOG("Current audio effect mode is %{public}d", effectMode_);
     return effectMode_;
 }
 
 int32_t RendererInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), ERR_NOT_SUPPORTED, "SetAudioEffectMode: not supported");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_NOT_SUPPORTED, "SetAudioEffectMode: not supported");
     if (effectMode_ == effectMode) {
         AUDIO_INFO_LOG("Set same effect mode");
         return SUCCESS;
@@ -1243,7 +1258,7 @@ void RendererInClientInner::SetCapturerSource(int capturerSource)
 
 void RendererInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
 {
-    CHECK_AND_RETURN_LOG(!IsFastStream(), "SetPrivacyType: not supported");
+    CHECK_AND_RETURN_LOG(!JudgeFastStreamByRendererAttr(), "SetPrivacyType: not supported");
     if (privacyType_ == privacyType) {
         AUDIO_INFO_LOG("same type");
         return;
@@ -1261,10 +1276,19 @@ int32_t RendererInClientInner::ResetNotifyStreamSilentChangeFlag()
     return SUCCESS;
 }
 
+bool RendererInClientInner::CheckWriteCb()
+{
+    // In low-latency mode, each frame of data is obtained through onWriteData, and the client must register writeCb,
+    // otherwise it will fall back to normal mode.
+    // In static low-latency mode, the entire audio data is requested from the client at once,
+    // so the static mode does not need to check writeCb_.
+    return writeCb_ == nullptr && renderMode_ != RENDER_MODE_STATIC;
+}
+
 bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    CheckAndProcessPendingSpanSize();
+    SyncRendererAttrFromSpan();
     mutePlayStartTime_ = 0;
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
@@ -1277,7 +1301,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
         SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
             PLAY_START_NULL_POINTER, "ipcStream is not inited", true, state_),
         HILOG_COMM_ERROR("[StartAudioStream]ipcStream is not inited!"));
-    int32_t ret = ipcStream_->Start(writeCb_ == nullptr);
+    int32_t ret = ipcStream_->Start(CheckWriteCb());
     CHECK_AND_CALL_FUNC_RETURN_RET_REPORT(ret == SUCCESS, false,
         SendAudioErrorEventAndProcessOther(static_cast<int32_t>(clientUid_),
             PLAY_START_OPERATION_FAILED, "Start call server failed", true, state_),
@@ -1531,7 +1555,7 @@ void RendererInClientInner::ClearCbBufferQueue()
 
 bool RendererInClientInner::FlushAudioStream()
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), true, "FlushAudioStream: in");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), true, "FlushAudioStream: in");
     Trace trace("RendererInClientInner::FlushAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     std::lock_guard<std::mutex>lock(writeMutex_);
@@ -1584,7 +1608,7 @@ bool RendererInClientInner::FlushAudioStream()
 
 bool RendererInClientInner::DrainAudioStream(bool stopFlag)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), true, "RendererInClientInner::DrainAudioStream SUCCESS");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), true, "RendererInClientInner::DrainAudioStream SUCCESS");
     std::lock_guard<std::mutex> statusLock(statusMutex_);
     std::lock_guard<std::mutex> lock(writeMutex_);
     bool ret = DrainAudioStreamInner(stopFlag);
@@ -1594,7 +1618,7 @@ bool RendererInClientInner::DrainAudioStream(bool stopFlag)
 int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), ERR_INVALID_OPERATION, "Write with meta: not supported");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_INVALID_OPERATION, "Write with meta: not supported");
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
     int32_t ret = WriteInner(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
@@ -1603,7 +1627,7 @@ int32_t RendererInClientInner::Write(uint8_t *pcmBuffer, size_t pcmBufferSize, u
 
 int32_t RendererInClientInner::Write(uint8_t *buffer, size_t bufferSize)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), ERR_INVALID_OPERATION, "Write: not supported");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_INVALID_OPERATION, "Write: not supported");
     CHECK_AND_RETURN_RET_LOG(renderMode_ != RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE,
         "Write with callback is not supported");
     return WriteInner(buffer, bufferSize);
@@ -1618,7 +1642,8 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize, bool isRecr
         "playing audiovivid, frameSize is always 1024.");
     size_t maxCbBufferSize =
         static_cast<size_t>(MAX_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
-    size_t minSize = static_cast<size_t>(IsFastStream() ? DEFAULT_FAST_CBBUF_IN_USEC : MIN_CBBUF_IN_USEC);
+    size_t minSize = static_cast<size_t>(JudgeFastStreamByRendererAttr() ?
+        DEFAULT_FAST_CBBUF_IN_USEC : MIN_CBBUF_IN_USEC);
     size_t minCbBufferSize =
         static_cast<size_t>(minSize * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     size_t preferredCbBufferSize = static_cast<size_t>(frameSize) * sizePerFrameInByte_;
@@ -1689,7 +1714,7 @@ int32_t RendererInClientInner::UnregisterRemoteDiedCallback()
 void RendererInClientInner::SetRendererPositionCallback(int64_t markPosition,
     const std::shared_ptr<RendererPositionCallback> &callback)
 {
-    CHECK_AND_RETURN_LOG(!IsFastStream(),
+    CHECK_AND_RETURN_LOG(!JudgeFastStreamByRendererAttr(),
         "Registering render frame position callback mark position");
     // waiting for review
     std::lock_guard<std::mutex> lock(markReachMutex_);
@@ -1701,7 +1726,7 @@ void RendererInClientInner::SetRendererPositionCallback(int64_t markPosition,
 
 void RendererInClientInner::UnsetRendererPositionCallback()
 {
-    CHECK_AND_RETURN_LOG(!IsFastStream(), "Unregistering render frame position callback");
+    CHECK_AND_RETURN_LOG(!JudgeFastStreamByRendererAttr(), "Unregistering render frame position callback");
     // waiting for review
     std::lock_guard<std::mutex> lock(markReachMutex_);
     rendererPositionCallback_ = nullptr;
@@ -1712,7 +1737,7 @@ void RendererInClientInner::UnsetRendererPositionCallback()
 void RendererInClientInner::SetRendererPeriodPositionCallback(int64_t periodPosition,
     const std::shared_ptr<RendererPeriodPositionCallback> &callback)
 {
-    CHECK_AND_RETURN_LOG(!IsFastStream(), "Registering render period position callback");
+    CHECK_AND_RETURN_LOG(!JudgeFastStreamByRendererAttr(), "Registering render period position callback");
     // waiting for review
     std::lock_guard<std::mutex> lock(periodReachMutex_);
     CHECK_AND_RETURN_LOG(callback != nullptr, "RendererPeriodPositionCallback is nullptr");
@@ -1724,7 +1749,7 @@ void RendererInClientInner::SetRendererPeriodPositionCallback(int64_t periodPosi
 
 void RendererInClientInner::UnsetRendererPeriodPositionCallback()
 {
-    CHECK_AND_RETURN_LOG(!IsFastStream(), "Unregistering render period position callback");
+    CHECK_AND_RETURN_LOG(!JudgeFastStreamByRendererAttr(), "Unregistering render period position callback");
     // waiting for review
     std::lock_guard<std::mutex> lock(periodReachMutex_);
     rendererPeriodPositionCallback_ = nullptr;
@@ -1772,7 +1797,7 @@ uint32_t RendererInClientInner::GetRendererSamplingRate()
 
 int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), ERR_NOT_SUPPORTED, "SetBufferSizeInMsec: not supported");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), ERR_NOT_SUPPORTED, "SetBufferSizeInMsec: not supported");
     // bufferSizeInMsec is checked between 5ms and 20ms.
     bufferSizeInMsec_ = static_cast<uint32_t>(bufferSizeInMsec);
     isBufferSizeInMsecSet_ = true;
@@ -1782,14 +1807,14 @@ int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
         InitCallbackBuffer(bufferDurationInUs);
     }
     if (rendererInfo_.playerType == PLAYER_TYPE_TONE_PLAYER) {
-        SetCacheSize(TONE_PLAYER_CACHE_SIZE * spanSizeInFrame_);
+        SetCacheSize(TONE_PLAYER_CACHE_SIZE * spanSizeInFrame_.load());
     }
     return SUCCESS;
 }
 
 int32_t RendererInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), SUCCESS, "SetChannelBlendMode: not supported");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), SUCCESS, "SetChannelBlendMode: not supported");
     if ((state_ != PREPARED) && (state_ != NEW)) {
         AUDIO_ERR_LOG("SetChannelBlendMode in invalid status:%{public}d", state_.load());
         return ERR_ILLEGAL_STATE;
@@ -1801,7 +1826,7 @@ int32_t RendererInClientInner::SetChannelBlendMode(ChannelBlendMode blendMode)
 
 int32_t RendererInClientInner::SetVolumeWithRamp(float volume, int32_t duration)
 {
-    CHECK_AND_RETURN_RET_LOG(!IsFastStream(), SUCCESS, "SetVolumeWithRamp: not supported");
+    CHECK_AND_RETURN_RET_LOG(!JudgeFastStreamByRendererAttr(), SUCCESS, "SetVolumeWithRamp: not supported");
     CHECK_AND_RETURN_RET_LOG((state_ != RELEASED) && (state_ != INVALID) && (state_ != STOPPED),
         ERR_ILLEGAL_STATE, "Illegal state %{public}d", state_.load());
 
@@ -1893,7 +1918,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
 
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()
 {
-    if (IsFastStream()) {
+    if (JudgeFastStreamByRendererAttr()) {
         return IAudioStream::StreamClass::FAST_STREAM;
     }
     return PA_STREAM;
@@ -2157,7 +2182,7 @@ int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOu
 
 FastStatus RendererInClientInner::GetFastStatus()
 {
-    if (IsFastStream()) {
+    if (JudgeFastStreamByRendererAttr()) {
         return FASTSTATUS_FAST;
     }
     return FASTSTATUS_NORMAL;
@@ -2293,7 +2318,7 @@ void RendererInClientInner::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus RendererInClientInner::CheckRestoreStatus()
 {
-    bool restoreFlag = IsFastStream() && (writeCb_ == nullptr) && !rendererInfo_.isStatic;
+    bool restoreFlag = JudgeFastStreamByRendererAttr() && (writeCb_ == nullptr) && !rendererInfo_.isStatic;
     if (restoreFlag) {
         AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
         renderMode_ = RENDER_MODE_NORMAL;

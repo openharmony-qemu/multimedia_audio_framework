@@ -42,22 +42,6 @@ static const std::map<std::pair<SourceType, SourceType>, InterruptHint> ULTRASON
     {{SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_COMMUNICATION}, INTERRUPT_HINT_NONE}
 };
 
-bool AudioInterruptCustom::IsUltrasonicConcurrentScene(SourceType firstSourceType,
-    SourceType secondSourceType) const
-{
-    if (firstSourceType != SOURCE_TYPE_ULTRASONIC && secondSourceType != SOURCE_TYPE_ULTRASONIC) {
-        return false;
-    }
-    if (!SolePipe::IsSolePipeSource(SOURCE_TYPE_ULTRASONIC)) {
-        return false;
-    }
-
-    std::pair<SourceType, SourceType> ultraSonicFocus = {firstSourceType, secondSourceType};
-    bool isConcurrentScene = ULTRASONIC_MAP.find(ultraSonicFocus) != ULTRASONIC_MAP.end() ||
-        ULTRASONIC_STRATEGY_MAP.find(ultraSonicFocus) != ULTRASONIC_STRATEGY_MAP.end();
-    return isConcurrentScene;
-}
-
 void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
 {
@@ -112,8 +96,8 @@ static const std::map<std::pair<SourceType, SourceType>,
     {{SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_WAKEUP }, {ACTIVE, INTERRUPT_HINT_NONE}},
     {{SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_VOICE_RECOGNITION }, {ACTIVE, INTERRUPT_HINT_NONE}}
 };
- 	  
-void AudioInterruptCustom::UnprocessedCustomFocus(const AudioInterrupt &incomingInterrupt,
+
+void AudioInterruptCustom::UnprocessedSourceCustomFocus(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, AudioFocuState &incomingState, InterruptEventInternal &interruptEvent)
 {
     if (!activeInterrupt.mixWithWakeUp) {
@@ -142,7 +126,7 @@ void AudioInterruptCustom::ProcessActiveStreamCustomFocus(const AudioInterrupt &
         bundleName = AudioBundleManager::GetBundleNameFromUid(incomingInterrupt.uid);
     }
     CeliaCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent, bundleName);
-    UnprocessedCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent);
+    UnprocessedSourceCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent);
     UltraSonicCustomFocus(incomingInterrupt, activeInterrupt, incomingState, interruptEvent);
 }
 

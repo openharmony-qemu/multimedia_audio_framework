@@ -15,6 +15,7 @@
 
 #include "renderer_in_server_third_unit_test.h"
 #include "pro_renderer_stream_impl.h"
+#include "securec.h"
 
 using namespace testing::ext;
 
@@ -27,7 +28,6 @@ const uint64_t TEST_TIMESTAMP = 111111;
 const float IN_VOLUME_RANGE = 0.5f;
 const uint32_t TEST_BUFLENGTH = 10;
 const int32_t TEST_DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
-const int32_t TEST_DUP_SESSION_EFFECT_LEN = 4000; // 4000 -> 4000ms
 const int32_t TEST_DUP_COMMON_LEN = 440; // 400 -> 440ms
 const int32_t TEST_DUP_DEFAULT_LEN = 20; // 20 -> 20ms
 static const size_t TEST_MAX_INNERCAP_BUFFER_SIZE = 16 * 1024 * 1024;
@@ -1881,9 +1881,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
     EXPECT_NE(nullptr, rendererInServer);
 
     bool on = true;
-    rendererInServer->isMuted_ = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1897,10 +1896,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
     EXPECT_NE(nullptr, rendererInServer);
 
     bool on = true;
-    rendererInServer->isMuted_ = true;
-    rendererInServer->muteFlag_ = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1915,7 +1912,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
 
     bool on = false;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1929,9 +1926,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetSilentModeAndMixWithO
     EXPECT_NE(nullptr, rendererInServer);
 
     bool on = true;
-    rendererInServer->isDualToneEnabled_ = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1944,11 +1940,9 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetClientVolume_001, Tes
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->managerType_ = DIRECT_PLAYBACK;
     rendererInServer->Init();
-    rendererInServer->isDualToneEnabled_ = true;
     int32_t ret = rendererInServer->SetClientVolume();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1962,9 +1956,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_001, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     bool isMute = true;
-    rendererInServer->muteFlag_ = true;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1978,10 +1971,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_002, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     bool isMute = true;
-    rendererInServer->silentModeAndMixWithOthers_ = true;
-    rendererInServer->muteFlag_ = true;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -1995,10 +1986,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_003, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     bool isMute = false;
-    rendererInServer->silentModeAndMixWithOthers_ = false;
-    rendererInServer->muteFlag_ = false;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2012,9 +2001,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetMute_004, TestSize.Le
     EXPECT_NE(nullptr, rendererInServer);
 
     bool isMute = true;
-    rendererInServer->isDualToneEnabled_ = true;
     int32_t ret = rendererInServer->SetMute(isMute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2171,7 +2159,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_006, TestSize.
     rendererInServer->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(NORMAL_PLAYBACK, ret);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2896,45 +2884,6 @@ HWTEST_F(RendererInServerThirdUnitTest, ReConfigDupStreamCallback_001, TestSize.
     rendererInServer->dupSpanSizeInFrame_ = TEST_MAX_INNERCAP_BUFFER_SIZE;
     rendererInServer->ReConfigDupStreamCallback();
     EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, TEST_MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrameTest);
-}
-
-/**
- * @tc.name  : Test OnStatusUpdateSub API
- * @tc.type  : FUNC
- * @tc.number: SessionEffectReConfigDupStreamCallback_001
- * @tc.desc  : Test SessionEffect enabled state expands non-offload duplicate buffer for inner capture.
- */
-HWTEST_F(RendererInServerThirdUnitTest, SessionEffectReConfigDupStreamCallback_001, TestSize.Level1)
-{
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    InitAudioProcessConfig(testStreamInfo);
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
-    EXPECT_NE(nullptr, rendererInServer);
-
-    int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->ConfigServerBuffer();
-    EXPECT_EQ(SUCCESS, ret);
-
-    int32_t innerCapId = 1;
-    uint32_t dupStreamIndex = 1;
-    size_t dupTotalSizeInFrameTest = 1;
-    size_t dupSpanSizeInFrameTest = 1;
-    size_t dupByteSizePerFrameTest = 1;
-    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId] =
-        std::make_shared<StreamCallbacks>(dupStreamIndex, rendererInServer);
-    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() =
-        AudioRingCache::Create(dupTotalSizeInFrameTest * dupByteSizePerFrameTest);
-    rendererInServer->offloadEnable_ = false;
-    rendererInServer->dupTotalSizeInFrame_ = dupTotalSizeInFrameTest;
-    rendererInServer->dupSpanSizeInFrame_ = dupSpanSizeInFrameTest;
-    rendererInServer->dupByteSizePerFrame_ = dupByteSizePerFrameTest;
-
-    rendererInServer->OnStatusUpdateSub(OPERATION_SESSION_EFFECT_ENABLED);
-
-    EXPECT_TRUE(rendererInServer->hasSessionEffect_.load());
-    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
-        (TEST_DUP_SESSION_EFFECT_LEN / TEST_DUP_DEFAULT_LEN));
 }
 
 /**

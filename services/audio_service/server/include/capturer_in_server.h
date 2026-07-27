@@ -82,6 +82,7 @@ public:
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
     int32_t GetAppUid() const {return processConfig_.appInfo.appUid;};
     void HandleMultiAncoCapturer(const std::vector<std::string> &bundleNameList);
+    void NotifySensitiveRecordPermit(const bool isPermitted);
 
 private:
     bool CheckBGCapture();
@@ -93,6 +94,8 @@ private:
     void HandleOperationFlushed();
     void UpdateBufferTimeStamp(size_t readLen);
     void RebuildCaptureInjector();
+    void HandleBufferTimeStampAndFrame(uint64_t currentWriteFrame,
+        uint64_t nextWriteFrame, size_t bufLength);
     inline void CaptureConcurrentCheck(uint32_t streamIndex);
     void HandleOperationStopped(CapturerStage stage);
     void OnHandle(uint32_t code, int64_t data) override;
@@ -109,6 +112,7 @@ private:
     int32_t CheckForOnReadData(size_t requestDataLen, uint64_t currentWriteFrame);
     void RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<IStreamListener> stateListener);
     int32_t GetCapturerFlagsByRoute(uint32_t routeFlag);
+    bool CheckVoiceDownlinkPermission();
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -168,6 +172,8 @@ private:
     std::mutex runnerMutex_;
     std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
     bool isInMainThread_ = false;
+
+    std::atomic<bool> sensitiveRecordPermitted_{false};
 };
 } // namespace AudioStandard
 } // namespace OHOS

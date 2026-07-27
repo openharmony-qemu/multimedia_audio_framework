@@ -20,6 +20,7 @@
 #include "audio_client_tracker_callback_listener.h"
 #include "audio_effect.h"
 #include "audio_interrupt_callback.h"
+#include "audio_capturer.h"
 #include "iaudio_policy.h"
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_policy_client_stub_impl.h"
@@ -33,6 +34,7 @@
 #include "audio_spatialization_types.h"
 #include "audio_stream_descriptor.h"
 #include "audio_debug_info.h"
+#include "virtual_audio_interface.h"
 #include "audio_capturer_options.h"
 #include "boot_animation_state_info.h"
 #include "audio_separation_effect_enabled_change_callback.h"
@@ -66,6 +68,10 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
 
+    int32_t SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted);
+
+    int32_t SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted);
+
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
 
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
@@ -93,7 +99,7 @@ public:
     float GetSingleStreamVolume(int32_t streamId);
 
     int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t volumeFlag = 0);
 
     bool GetStreamMute(AudioVolumeType volumeType);
 
@@ -318,7 +324,7 @@ public:
 
     int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
-    
+
     int32_t SetAudioSessionCurrentInputDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> &deviceChangedCallback);
 
@@ -441,6 +447,8 @@ public:
     int32_t AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType);
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
+
+    int32_t SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities);
 
     int32_t GetMaxRendererInstances();
 
@@ -625,9 +633,9 @@ public:
 
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId);
 
-    int32_t PauseAudioFocusForExtAudioZone();
+    int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
 
-    int32_t ResumeAudioFocusForExtAudioZone();
+    int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
 
     void SetZoneDeviceVisible(bool visible);
 
@@ -651,6 +659,8 @@ public:
         const int32_t uid = INVALID_UID);
 
     std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
+
+    int32_t SkipDeviceTypes(bool skipped, const std::vector<DeviceType> &deviceTypes);
 
     ConverterConfig GetConverterConfig();
 
@@ -797,6 +807,7 @@ public:
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
     int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
+    int32_t GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrapper> &vaBroker);
     bool IsCollaborativePlaybackSupported();
     bool IsCollaborativePlaybackSupportedForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
@@ -814,6 +825,8 @@ public:
     int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
         int32_t volumeFlag, int32_t uid);
     int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
+    int32_t GetSystemVolumeDegreeWithDevice(AudioVolumeType volumeType, DeviceType deviceType,
+        std::string networkId = LOCAL_NETWORK_ID);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
     int32_t UpdateSafeVolumeByStrMode();
     int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(
@@ -821,7 +834,7 @@ public:
     int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
     AudioScene GetAudioSceneFromAllZones();
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
-    int32_t NotifyStreamSilentChange(uint32_t streamId);
+    int32_t NotifyStreamSilentChange(int32_t clientPid, uint32_t streamId);
     int32_t SetAudioSessionBehavior(const uint32_t behavior);
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
     int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
@@ -840,6 +853,7 @@ private:
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
+    sptr<IRemoteObject> GetAudioPolicyClientStubObject();
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable, bool block = true);
     int32_t SetCallbackStreamInfo(const CallbackChange &callbackChange);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = INVALID_UID);

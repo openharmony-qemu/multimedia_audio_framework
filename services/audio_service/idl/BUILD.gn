@@ -187,6 +187,7 @@ ohos_shared_library("audio_framework_interface") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hitrace:hitrace_meter",
     "hilog:libhilog",

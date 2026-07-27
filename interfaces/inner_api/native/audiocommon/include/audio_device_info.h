@@ -405,6 +405,12 @@ enum HdPlaybackMode {
     DEVICE_LEVEL,
 };
 
+enum VisibleMode {
+    GLOBAL_VISIBLE = 0,
+    ZONE_VISIBLE = 1,
+    SYSTEM_SERVICE_VISIBLE = 2,
+};
+
 enum VolumeControlMode {
     DEFAULT_MODE = 0,
     LOCAL_MODE = DEFAULT_MODE,

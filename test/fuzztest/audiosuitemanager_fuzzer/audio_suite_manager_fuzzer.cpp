@@ -17,6 +17,8 @@
 #include "../fuzz_utils.h"
 #include "native_audio_suite_base.h"
 #include "OHAudioSuiteEngine.h"
+#include "audio_suite_download_manager.h"
+#include "securec.h"
 
 using namespace std;
 
@@ -33,6 +35,21 @@ static const uint32_t MAX_PIPELINE_NUM = 10;
 static const uint32_t MAX_NODE_NUM = 5;
 static const uint32_t MAX_CHANNEL_NUM = 16;
 static const uint32_t MAX_FRAME_SIZE = 1000;
+static const uint32_t MAX_FEATURE_NAME_SIZE = 256;
+static bool g_downloadManagerInited = false;
+AudioSuite::AudioSuiteDownloadManager *g_downloadManager = nullptr;
+
+class DownloadStatusCallbackTestImpl : public AudioSuite::DownloadStatusCallback {
+public:
+    ~DownloadStatusCallbackTestImpl() = default;
+    void OnDownloadStatusChanged(const std::vector<AudioSuite::AudioSuiteDownloadStatusInfo>& status) override
+    {
+        return;
+    }
+};
+
+std::shared_ptr<AudioSuite::DownloadStatusCallback> g_downloadCallback =
+    std::make_shared<DownloadStatusCallbackTestImpl>();
 
 typedef void (*TestPtr)();
 
@@ -285,7 +302,7 @@ void AudioSuiteRenderFrameFuzzTest()
     uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
     uint8_t audioData[MAX_FRAME_SIZE] = {0};
     uint32_t frameSize = GetData<uint32_t>() % MAX_FRAME_SIZE;
-    for (int i = 0; i < frameSize; i++) {
+    for (uint32_t i = 0; i < frameSize; i++) {
         audioData[i] = GetData<uint8_t>();
     }
     int32_t writeLen = GetData<int32_t>();
@@ -363,6 +380,146 @@ void AudioSuiteManagerGetSpaceRenderExtensionParamsFuzzTest()
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderExtensionParams(nodeId, spaceRenderExtension);
 }
 
+void AudioSuiteManagerRegisterDownloadCallbackFuzzTest()
+{
+    if (!g_downloadManagerInited) {
+        g_downloadManager = &AudioSuite::AudioSuiteDownloadManager::GetInstance();
+        g_downloadManagerInited = true;
+    }
+    if (g_downloadManager == nullptr) {
+        return;
+    }
+    g_downloadManager->RegisterDownloadStatusCallback(g_downloadCallback);
+}
+
+void AudioSuiteManagerStartDownloadFuzzTest()
+{
+    if (!g_downloadManagerInited) {
+        g_downloadManager = &AudioSuite::AudioSuiteDownloadManager::GetInstance();
+        g_downloadManagerInited = true;
+    }
+    if (g_downloadManager == nullptr) {
+        return;
+    }
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    g_downloadManager->StartDownload(std::string(featureName));
+}
+
+void AudioSuiteManagerCancelDownloadFuzzTest()
+{
+    if (!g_downloadManagerInited) {
+        g_downloadManager = &AudioSuite::AudioSuiteDownloadManager::GetInstance();
+        g_downloadManagerInited = true;
+    }
+    if (g_downloadManager == nullptr) {
+        return;
+    }
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    g_downloadManager->CancelDownload(std::string(featureName));
+}
+
+void AudioSuiteManagerStartBackgroundDownloadFuzzTest()
+{
+    if (!g_downloadManagerInited) {
+        g_downloadManager = &AudioSuite::AudioSuiteDownloadManager::GetInstance();
+        g_downloadManagerInited = true;
+    }
+    if (g_downloadManager == nullptr) {
+        return;
+    }
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    g_downloadManager->StartBackgroundDownload(std::string(featureName));
+}
+
+void AudioSuiteManagerGetDownloadStatusFuzzTest()
+{
+    if (!g_downloadManagerInited) {
+        g_downloadManager = &AudioSuite::AudioSuiteDownloadManager::GetInstance();
+        g_downloadManagerInited = true;
+    }
+    if (g_downloadManager == nullptr) {
+        return;
+    }
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    AudioSuite::AudioSuiteDownloadStatusInfo status;
+    g_downloadManager->GetDownloadStatus(std::string(featureName), status);
+}
+
+void AudioSuiteManagerUninstallCloudRomFuzzTest()
+{
+    if (!g_downloadManagerInited) {
+        g_downloadManager = &AudioSuite::AudioSuiteDownloadManager::GetInstance();
+        g_downloadManagerInited = true;
+    }
+    if (g_downloadManager == nullptr) {
+        return;
+    }
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    g_downloadManager->UninstallCloudRom(std::string(featureName));
+}
+
+void AudioSuiteManagerUnregisterDownloadCallbackFuzzTest()
+{
+    if (!g_downloadManagerInited) {
+        g_downloadManager = &AudioSuite::AudioSuiteDownloadManager::GetInstance();
+        g_downloadManagerInited = true;
+    }
+    if (g_downloadManager == nullptr) {
+        return;
+    }
+    g_downloadManager->UnregisterDownloadStatusCallback();
+}
+
 vector g_testFuncs = {
     AudioSuiteManagerInitFuzzTest,
     AudioSuiteManagerDeInitFuzzTest,
@@ -401,6 +558,13 @@ vector g_testFuncs = {
     AudioSuiteManagerGetSpaceRenderRotationParamsFuzzTest,
     AudioSuiteManagerSetSpaceRenderExtensionParamsFuzzTest,
     AudioSuiteManagerGetSpaceRenderExtensionParamsFuzzTest,
+    AudioSuiteManagerRegisterDownloadCallbackFuzzTest,
+    AudioSuiteManagerStartDownloadFuzzTest,
+    AudioSuiteManagerCancelDownloadFuzzTest,
+    AudioSuiteManagerStartBackgroundDownloadFuzzTest,
+    AudioSuiteManagerGetDownloadStatusFuzzTest,
+    AudioSuiteManagerUninstallCloudRomFuzzTest,
+    AudioSuiteManagerUnregisterDownloadCallbackFuzzTest,
 };
 
 } // namespace AudioStandard

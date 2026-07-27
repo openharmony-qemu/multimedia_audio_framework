@@ -23,10 +23,11 @@
 #include <unordered_set>
 #include <mutex>
 #include "singleton.h"
-#include "async_action_handler.h"
 #include "audio_group_handle.h"
+#include "audio_utils.h"
 #include "audio_module_info.h"
 #include "audio_pipe_info.h"
+#include "async_action_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -67,7 +68,6 @@ public:
 private:
     AudioIOHandleMap() {}
     ~AudioIOHandleMap() {}
-
 private:
     std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 

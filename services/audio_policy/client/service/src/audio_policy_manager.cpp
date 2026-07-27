@@ -105,6 +105,7 @@ const sptr<IAudioPolicy> AudioPolicyManager::GetAudioPolicyManagerProxy(bool blo
     if (!object->IsProxyObject() || RegisterDeathRecipientInner(object)) {
         g_apProxy = gsp;
     }
+    JUDGE_AND_ERR_LOG(!gsp, "audio policy manager proxy is NULL.");
 
     return gsp;
 }
@@ -155,6 +156,19 @@ static const sptr<IAudioPolicy> RecoverAndGetAudioPolicyManagerProxy()
     return gsp;
 }
 
+sptr<IRemoteObject> AudioPolicyManager::GetAudioPolicyClientStubObject()
+{
+    std::unique_lock<std::mutex> lock(registerCallbackMutex_);
+    if (audioPolicyClientStubCB_ == nullptr) {
+        audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+        CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, nullptr,
+            "audioPolicyClientStubCB_ is nullptr");
+    }
+    sptr<IRemoteObject> object = audioPolicyClientStubCB_->AsObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "audioPolicyClientStubCB_->AsObject is nullptr");
+    return object;
+}
+
 int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp)
 {
     AudioXCollie audioXCollie("AudioPolicyManager::RegisterPolicyCallbackClientFunc", TIME_OUT_SECONDS,
@@ -177,7 +191,7 @@ int32_t AudioPolicyManager::RegisterPolicyCallbackClientFunc(const sptr<IAudioPo
     }
     lock.unlock();
 
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "AudioPolicy is nullptr");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     int32_t ret = gsp->RegisterPolicyCallbackClient(object, 0);
     if (ret == SUCCESS) {
         isAudioPolicyClientRegisted_ = true;
@@ -243,7 +257,7 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
 int32_t AudioPolicyManager::SetCallbackStreamInfo(const CallbackChange &callbackChange)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
 
     int32_t ret = SUCCESS;
     if (callbackChange == CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) {
@@ -321,7 +335,7 @@ void AudioPolicyManager::RegisterServerDiedCallBack(AudioServerDiedCallBack func
 int32_t AudioPolicyManager::GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
 
     int32_t volumeLevel = -1;
     gsp->GetMaxVolumeLevel(volumeType, volumeLevel, deviceType);
@@ -331,7 +345,7 @@ int32_t AudioPolicyManager::GetMaxVolumeLevel(AudioVolumeType volumeType, Device
 int32_t AudioPolicyManager::GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
 
     int32_t volumeLevel = -1;
     gsp->GetMinVolumeLevel(volumeType, volumeLevel, deviceType);
@@ -341,42 +355,76 @@ int32_t AudioPolicyManager::GetMinVolumeLevel(AudioVolumeType volumeType, Device
 int32_t AudioPolicyManager::SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
 }
 
 int32_t AudioPolicyManager::SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
 int32_t AudioPolicyManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetAppVolumeMuted(appUid, muted, volumeFlag);
+}
+
+int32_t AudioPolicyManager::SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    sptr<IRemoteObject> callerObj;
+    {
+        std::unique_lock<std::mutex> lock(registerCallbackMutex_);
+        if (audioPolicyClientStubCB_ == nullptr) {
+            audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+        }
+        if (audioPolicyClientStubCB_ != nullptr) {
+            callerObj = audioPolicyClientStubCB_->AsObject();
+        }
+    }
+    return gsp->SetVoipRendererMute(appUid, streamId, muted, callerObj);
+}
+
+int32_t AudioPolicyManager::SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    sptr<IRemoteObject> callerObj;
+    {
+        std::unique_lock<std::mutex> lock(registerCallbackMutex_);
+        if (audioPolicyClientStubCB_ == nullptr) {
+            audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+        }
+        if (audioPolicyClientStubCB_ != nullptr) {
+            callerObj = audioPolicyClientStubCB_->AsObject();
+        }
+    }
+    return gsp->SetVoipCapturerMute(appUid, streamId, muted, callerObj);
 }
 
 int32_t AudioPolicyManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->IsAppVolumeMute(appUid, owned, isMute);
 }
 
 int32_t AudioPolicyManager::SetAppRingMuted(int32_t appUid, bool muted)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetAppRingMuted(appUid, muted);
 }
 
 int32_t AudioPolicyManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetAdjustVolumeForZone(zoneId);
 }
 
@@ -384,7 +432,7 @@ int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int
     int32_t volumeFlag, int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
 
     if (isLegacy) {
         return gsp->SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
@@ -396,7 +444,7 @@ int32_t AudioPolicyManager::SetSystemVolumeLevelWithDevice(AudioVolumeType volum
     DeviceType deviceType, int32_t volumeFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
 
     return gsp->SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType, volumeFlag);
 }
@@ -404,14 +452,14 @@ int32_t AudioPolicyManager::SetSystemVolumeLevelWithDevice(AudioVolumeType volum
 int32_t AudioPolicyManager::SetRingerModeLegacy(AudioRingerMode ringMode)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetRingerModeLegacy(ringMode);
 }
 
 int32_t AudioPolicyManager::SetRingerMode(AudioRingerMode ringMode)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetRingerMode(ringMode);
 }
 
@@ -420,7 +468,7 @@ AudioRingerMode AudioPolicyManager::GetRingerMode()
     AudioXCollie audioXCollie("AudioPolicyManager::GetRingerMode", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, RINGER_MODE_NORMAL, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, RINGER_MODE_NORMAL);
 
     int32_t out = RINGER_MODE_NORMAL;
     gsp->GetRingerMode(out);
@@ -430,35 +478,35 @@ AudioRingerMode AudioPolicyManager::GetRingerMode()
 int32_t AudioPolicyManager::SetAudioScene(AudioScene scene)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetAudioScene(scene);
 }
 
 int32_t AudioPolicyManager::SetMicrophoneMute(bool isMute)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetMicrophoneMute(isMute);
 }
 
 int32_t AudioPolicyManager::SetMicrophoneMuteAudioConfig(bool isMute)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetMicrophoneMuteAudioConfig(isMute);
 }
 
 int32_t AudioPolicyManager::SetMicrophoneMutePersistent(const bool isMute, const PolicyType type)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetMicrophoneMutePersistent(isMute, type);
 }
 
 bool AudioPolicyManager::GetPersistentMicMuteState()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
 
     bool mute = true;
     gsp->GetPersistentMicMuteState(mute);
@@ -468,7 +516,7 @@ bool AudioPolicyManager::GetPersistentMicMuteState()
 bool AudioPolicyManager::IsMicrophoneMuteLegacy()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     if (!isAudioPolicyClientRegisted_) {
         RegisterPolicyCallbackClientFunc(gsp);
     }
@@ -481,7 +529,7 @@ bool AudioPolicyManager::IsMicrophoneMuteLegacy()
 bool AudioPolicyManager::IsMicrophoneMute()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     if (!isAudioPolicyClientRegisted_) {
         RegisterPolicyCallbackClientFunc(gsp);
     }
@@ -494,7 +542,7 @@ bool AudioPolicyManager::IsMicrophoneMute()
 AudioScene AudioPolicyManager::GetAudioScene()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_SCENE_DEFAULT, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, AUDIO_SCENE_DEFAULT);
     int32_t scene = AUDIO_SCENE_DEFAULT;
     gsp->GetAudioScene(scene);
     return static_cast<AudioScene>(scene);
@@ -503,7 +551,7 @@ AudioScene AudioPolicyManager::GetAudioScene()
 AudioStreamType AudioPolicyManager::GetSystemActiveVolumeType(const int32_t clientUid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, STREAM_DEFAULT, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, STREAM_DEFAULT);
     int32_t streamType = STREAM_DEFAULT;
     gsp->GetSystemActiveVolumeType(clientUid, streamType);
     return static_cast<AudioStreamType>(streamType);
@@ -512,7 +560,7 @@ AudioStreamType AudioPolicyManager::GetSystemActiveVolumeType(const int32_t clie
 bool AudioPolicyManager::ReloadLoudVolumeMode(AudioStreamType streamType, SetLoudVolMode setVolMode)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->ReloadLoudVolumeMode(static_cast<int32_t>(streamType), static_cast<int32_t>(setVolMode), ret);
     return ret;
@@ -521,21 +569,21 @@ bool AudioPolicyManager::ReloadLoudVolumeMode(AudioStreamType streamType, SetLou
 int32_t AudioPolicyManager::GetSelfAppVolumeLevel(int32_t &volumeLevel)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->GetSelfAppVolumeLevel(volumeLevel);
 }
 
 int32_t AudioPolicyManager::GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->GetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
 int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
 
     int32_t volumeLevel = -1;
     gsp->GetSystemVolumeLevel(volumeType, uid, volumeLevel);
@@ -543,20 +591,20 @@ int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType, int
 }
 
 int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy,
-    const DeviceType &deviceType)
+    const DeviceType &deviceType, int32_t volumeFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     if (isLegacy) {
         return gsp->SetStreamMuteLegacy(volumeType, mute, deviceType);
     }
-    return gsp->SetStreamMute(volumeType, mute, deviceType);
+    return gsp->SetStreamMute(volumeType, mute, deviceType, volumeFlag);
 }
 
 bool AudioPolicyManager::GetStreamMute(AudioVolumeType volumeType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
 
     bool mute = false;
     gsp->GetStreamMute(volumeType, mute);
@@ -566,14 +614,14 @@ bool AudioPolicyManager::GetStreamMute(AudioVolumeType volumeType)
 int32_t AudioPolicyManager::SetLowPowerVolume(int32_t streamId, float volume)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetLowPowerVolume(streamId, volume);
 }
 
 float AudioPolicyManager::GetLowPowerVolume(int32_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
 
     float outVolume = -1;
     gsp->GetLowPowerVolume(streamId, outVolume);
@@ -586,7 +634,7 @@ float AudioPolicyManager::GetSingleStreamVolume(int32_t streamId)
     bool ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, outVolume, "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, outVolume, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, outVolume);
     gsp->GetSingleStreamVolume(streamId, outVolume);
     return outVolume;
 }
@@ -594,7 +642,7 @@ float AudioPolicyManager::GetSingleStreamVolume(int32_t streamId)
 bool AudioPolicyManager::IsStreamActive(AudioVolumeType volumeType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
 
     bool active = false;
     gsp->IsStreamActive(volumeType, active);
@@ -604,7 +652,7 @@ bool AudioPolicyManager::IsStreamActive(AudioVolumeType volumeType)
 bool AudioPolicyManager::IsStreamActiveByStreamUsage(StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool active = false;
     gsp->IsStreamActiveByStreamUsage(streamUsage, active);
     return active;
@@ -613,7 +661,7 @@ bool AudioPolicyManager::IsStreamActiveByStreamUsage(StreamUsage streamUsage)
 bool AudioPolicyManager::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
 
     bool support = false;
     gsp->IsFastPlaybackSupported(streamInfo, static_cast<int32_t>(usage), support);
@@ -623,7 +671,7 @@ bool AudioPolicyManager::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, St
 bool AudioPolicyManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
 
     bool support = false;
     gsp->IsFastRecordingSupported(streamInfo, static_cast<int32_t>(source), support);
@@ -633,7 +681,7 @@ bool AudioPolicyManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, S
 bool AudioPolicyManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
 
     bool support = false;
     gsp->IsMultichannelPlaybackSupported(streamInfo, static_cast<int32_t>(streamUsage), support);
@@ -643,7 +691,7 @@ bool AudioPolicyManager::IsMultichannelPlaybackSupported(AudioStreamInfo &stream
 bool AudioPolicyManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
 
     bool support = false;
     gsp->IsDirectPlaybackSupported(streamInfo, static_cast<int32_t>(streamUsage), support);
@@ -653,7 +701,7 @@ bool AudioPolicyManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo, 
 bool AudioPolicyManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
 
     bool support = false;
     gsp->IsOffloadPlaybackSupported(streamInfo, static_cast<int32_t>(streamUsage), support);
@@ -664,7 +712,7 @@ int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInter
     const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     auto ipcInterrupts = ToIpcInterrupts(focusInfoList);
     int32_t ret = gsp->GetAudioFocusInfoList(ipcInterrupts, zoneID);
     focusInfoList = FromIpcInterrupts(ipcInterrupts);
@@ -675,42 +723,42 @@ int32_t AudioPolicyManager::SetClientCallbacksEnable(const CallbackChange &callb
     const bool &enable, bool block)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy(block);
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetClientCallbacksEnable(callbackchange, enable);
 }
 
 int32_t AudioPolicyManager::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetCallbackRendererInfo(rendererInfo, uid);
 }
 
 int32_t AudioPolicyManager::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetCallbackCapturerInfo(capturerInfo, uid);
 }
 
 int32_t AudioPolicyManager::SetSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_NULL_POINTER);
     return gsp->SetSystemVolumeChangeCallbackInfo(filter);
 }
 
 int32_t AudioPolicyManager::RemoveSystemVolumeChangeCallbackInfo(const SystemVolumeFilter &filter)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_NULL_POINTER);
     return gsp->RemoveSystemVolumeChangeCallbackInfo(filter);
 }
 
 int32_t AudioPolicyManager::RemoveAllSystemVolumeChangeCallbackInfo()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_NULL_POINTER);
     return gsp->RemoveAllSystemVolumeChangeCallbackInfo();
 }
 
@@ -723,7 +771,7 @@ int32_t AudioPolicyManager::RegisterFocusInfoChangeCallback(const int32_t client
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -779,7 +827,7 @@ std::shared_ptr<ToneInfo> AudioPolicyManager::GetToneConfig(int32_t ltonetype, c
     AUDIO_DEBUG_LOG("AudioPolicyManager::GetToneConfig");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     std::shared_ptr<ToneInfo> config = nullptr;
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, nullptr, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, nullptr);
 
     gsp->GetToneConfig(ltonetype, countryCode, config);
     return config;
@@ -797,7 +845,7 @@ int32_t AudioPolicyManager::SetActiveVolumeTypeCallback(
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERR_INVALID_PARAM);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -851,7 +899,7 @@ int32_t AudioPolicyManager::SetSelfAppVolumeChangeCallback(
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERR_INVALID_PARAM);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -930,7 +978,7 @@ int32_t AudioPolicyManager::SetAppVolumeChangeCallbackForUid(const int32_t appUi
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERR_INVALID_PARAM);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -962,7 +1010,7 @@ int32_t AudioPolicyManager::SetRingerModeCallback(const int32_t clientId,
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERR_INVALID_PARAM);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -1013,7 +1061,7 @@ int32_t AudioPolicyManager::SetMicrophoneBlockedCallback(const int32_t clientId,
     const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "SetMicrophoneBlockedCallback: callback is nullptr");
     if (!isAudioPolicyClientRegisted_) {
@@ -1052,7 +1100,7 @@ int32_t AudioPolicyManager::SetAudioSceneChangeCallback(const int32_t clientId,
     const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "AudioManagerAudioSceneChangedCallback: callback is nullptr");
     if (!isAudioPolicyClientRegisted_) {
@@ -1095,7 +1143,7 @@ int32_t AudioPolicyManager::SetMicStateChangeCallback(const int32_t clientId,
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -1118,7 +1166,7 @@ int32_t AudioPolicyManager::UnsetMicStateChangeCallback(
     const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, ERR_INVALID_OPERATION,
         "audioPolicyClientStubCB is nullptr");
@@ -1175,7 +1223,7 @@ int32_t AudioPolicyManager::SetAudioRouteCallback(uint32_t sessionId, std::share
     uint32_t clientUid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     sptr<AudioPolicyManagerListenerStubImpl> listener = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
@@ -1190,7 +1238,7 @@ int32_t AudioPolicyManager::SetAudioRouteCallback(uint32_t sessionId, std::share
 int32_t AudioPolicyManager::UnsetAudioRouteCallback(uint32_t sessionId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->UnsetAudioRouteCallback(sessionId);
 }
 
@@ -1198,7 +1246,7 @@ int32_t AudioPolicyManager::SetQueryClientTypeCallback(const std::shared_ptr<Aud
 {
     AUDIO_INFO_LOG("In");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     sptr<AudioPolicyManagerListenerStubImpl> listener = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
@@ -1215,7 +1263,7 @@ int32_t AudioPolicyManager::SetAncoSourceOutputStreamMute(int32_t uid, bool setM
 {
     AUDIO_INFO_LOG("In");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetAncoSourceOutputStreamMute(uid, setMute);
 }
 
@@ -1224,7 +1272,7 @@ int32_t AudioPolicyManager::SetQueryBundleNameListCallback(
 {
     AUDIO_INFO_LOG("In");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     sptr<AudioPolicyManagerListenerStubImpl> listener = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
@@ -1253,7 +1301,7 @@ int32_t AudioPolicyManager::ActivateAudioInterrupt(
 int32_t AudioPolicyManager::SetRegisterInterruptCallbackFlag(const uint32_t streamId, const bool interruptCallbackFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetRegisterInterruptCallbackFlag(streamId, interruptCallbackFlag);
 }
 
@@ -1263,7 +1311,7 @@ int32_t AudioPolicyManager::SetAppConcurrencyMode(const int32_t appUid, const in
     CHECK_AND_RETURN_RET_LOG((audioConcurrencyMode == AudioConcurrencyMode::DEFAULT ||
         audioConcurrencyMode == AudioConcurrencyMode::STANDALONE), -1, "mode is illegal parameters");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     if (!isAudioPolicyClientRegisted_) {
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
@@ -1276,7 +1324,7 @@ int32_t AudioPolicyManager::SetAppConcurrencyMode(const int32_t appUid, const in
 int32_t AudioPolicyManager::SetOffloadAllowedForUid(uint32_t uid, bool allowed)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetOffloadAllowedForUid(uid, allowed);
 }
 
@@ -1285,7 +1333,7 @@ int32_t AudioPolicyManager::SetAppSilentOnDisplay(const int32_t displayId)
     CHECK_AND_RETURN_RET_LOG((displayId > 0 || displayId == -1), -1,
         "mode is illegal parameters");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     if (!isAudioPolicyClientRegisted_) {
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
@@ -1311,14 +1359,14 @@ int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audio
 int32_t AudioPolicyManager::ActivatePreemptMode()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->ActivatePreemptMode();
 }
 
 int32_t AudioPolicyManager::DeactivatePreemptMode()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->DeactivatePreemptMode();
 }
 
@@ -1326,7 +1374,7 @@ int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clien
     const std::shared_ptr<AudioInterruptCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     std::unique_lock<std::mutex> lock(listenerStubMutex_);
@@ -1345,35 +1393,35 @@ int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clien
 int32_t AudioPolicyManager::UnsetAudioManagerInterruptCallback(const int32_t clientId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->UnsetAudioManagerInterruptCallback(clientId);
 }
 
 int32_t AudioPolicyManager::CheckVKBInfo(const std::string &bundleName, bool &isValid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->CheckVKBInfo(bundleName, isValid);
 }
 
 int32_t AudioPolicyManager::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->RequestAudioFocus(clientId, audioInterrupt);
 }
 
 int32_t AudioPolicyManager::AbandonAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->AbandonAudioFocus(clientId, audioInterrupt);
 }
 
 AudioStreamType AudioPolicyManager::GetStreamInFocus(const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, STREAM_DEFAULT, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, STREAM_DEFAULT);
     int32_t out = STREAM_DEFAULT;
     gsp->GetStreamInFocus(zoneID, out);
     return static_cast<AudioStreamType>(out);
@@ -1382,7 +1430,7 @@ AudioStreamType AudioPolicyManager::GetStreamInFocus(const int32_t zoneID)
 AudioStreamType AudioPolicyManager::GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, STREAM_DEFAULT, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, STREAM_DEFAULT);
     int32_t out = STREAM_DEFAULT;
     gsp->GetStreamInFocusByUid(uid, zoneID, out);
     return static_cast<AudioStreamType>(out);
@@ -1391,7 +1439,7 @@ AudioStreamType AudioPolicyManager::GetStreamInFocusByUid(const int32_t uid, con
 int32_t AudioPolicyManager::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->GetSessionInfoInFocus(audioInterrupt, zoneID);
 }
 
@@ -1407,7 +1455,7 @@ int32_t AudioPolicyManager::SetVolumeKeyEventCallback(const int32_t clientPid,
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -1449,7 +1497,7 @@ int32_t AudioPolicyManager::SetSystemVolumeChangeCallback(const int32_t clientPi
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -1476,7 +1524,7 @@ int32_t AudioPolicyManager::SetSystemVolumeChangeByFilterCallback(const int32_t 
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     }
@@ -1538,7 +1586,7 @@ int32_t AudioPolicyManager::RegisterAudioRendererEventListener(
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -1594,7 +1642,7 @@ int32_t AudioPolicyManager::RegisterAudioCapturerEventListener(const int32_t cli
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -1630,7 +1678,7 @@ int32_t AudioPolicyManager::RegisterTracker(AudioMode &mode, AudioStreamChangeIn
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::RegisterTracker");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
     std::lock_guard<std::mutex> lock(clientTrackerStubMutex_);
     sptr<AudioClientTrackerCallbackService> callback = new(std::nothrow) AudioClientTrackerCallbackService();
@@ -1653,7 +1701,7 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UpdateTracker");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     int32_t ret = gsp->UpdateTracker(mode, streamChangeInfo);
     CheckAndRemoveClientTrackerStub(mode, streamChangeInfo);
     return ret;
@@ -1663,7 +1711,7 @@ int32_t AudioPolicyManager::CreateRendererClient(std::shared_ptr<AudioStreamDesc
     uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, AUDIO_FLAG_INVALID);
     int32_t ret = gsp->CreateRendererClient(streamDesc, flag, sessionId, networkId);
     for (int32_t retrycount = 0; (ret == ERR_RETRY_IN_CLIENT) && (retrycount < CREATE_MAX_RETRY_COUNT);
         retrycount++) {
@@ -1678,7 +1726,7 @@ int32_t AudioPolicyManager::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, AUDIO_FLAG_INVALID);
     int32_t ret = gsp->CreateCapturerClient(streamDesc, flag, sessionId);
     for (int32_t retrycount = 0; (ret == ERR_RETRY_IN_CLIENT) && (retrycount < CREATE_MAX_RETRY_COUNT);
         retrycount++) {
@@ -1694,7 +1742,7 @@ int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
 {
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
 }
 
@@ -1703,7 +1751,7 @@ int32_t AudioPolicyManager::GetCurrentCapturerChangeInfos(
 {
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 
@@ -1712,14 +1760,14 @@ int32_t AudioPolicyManager::UpdateStreamState(const int32_t clientUid,
 {
     AUDIO_DEBUG_LOG("UpdateStreamState");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return  gsp->UpdateStreamState(clientUid, streamSetState, streamUsage);
 }
 
 int32_t AudioPolicyManager::GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->GetVolumeGroupInfos(networkId, infos);
 }
 
@@ -1728,7 +1776,7 @@ int32_t AudioPolicyManager::GetNetworkIdByGroupId(int32_t groupId, std::string &
     AudioXCollie audioXCollie("AudioPolicyManager::GetNetworkIdByGroupId", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "GetNetworkIdByGroupId failed, g_apProxy is nullptr.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->GetNetworkIdByGroupId(groupId, networkId);
 }
 
@@ -1736,7 +1784,7 @@ int32_t AudioPolicyManager::SetSystemSoundUri(const std::string &key, const std:
 {
     AUDIO_DEBUG_LOG("SetSystemSoundUri: [%{public}s]: [%{public}s]", key.c_str(), uri.c_str());
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
     return gsp->SetSystemSoundUri(key, uri);
 }
@@ -1745,7 +1793,7 @@ std::string AudioPolicyManager::GetSystemSoundUri(const std::string &key)
 {
     AUDIO_DEBUG_LOG("GetSystemSoundUri: %{public}s", key.c_str());
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, "", "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, "");
 
     std::string out{};
     gsp->GetSystemSoundUri(key, out);
@@ -1756,7 +1804,7 @@ std::string AudioPolicyManager::GetSystemSoundPath(const int32_t systemSoundType
 {
     AUDIO_DEBUG_LOG("GetSystemSoundPath: %{public}d", systemSoundType);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, "", "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, "");
 
     std::string out{};
     gsp->GetSystemSoundPath(systemSoundType, out);
@@ -1766,7 +1814,7 @@ std::string AudioPolicyManager::GetSystemSoundPath(const int32_t systemSoundType
 float AudioPolicyManager::GetMinStreamVolume()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     float out = -1;
     gsp->GetMinStreamVolume(out);
     return out;
@@ -1775,7 +1823,7 @@ float AudioPolicyManager::GetMinStreamVolume()
 float AudioPolicyManager::GetMaxStreamVolume()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     float out = -1;
     gsp->GetMaxStreamVolume(out);
     return out;
@@ -1812,7 +1860,7 @@ int32_t AudioPolicyManager::GetMaxRendererInstances()
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::GetMaxRendererInstances");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
     int32_t ret = -1;
     gsp->GetMaxRendererInstances(ret);
@@ -1822,7 +1870,7 @@ int32_t AudioPolicyManager::GetMaxRendererInstances()
 bool AudioPolicyManager::IsVolumeUnadjustable()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool out = false;
     gsp->IsVolumeUnadjustable(out);
     return out;
@@ -1831,30 +1879,44 @@ bool AudioPolicyManager::IsVolumeUnadjustable()
 int32_t AudioPolicyManager::AdjustVolumeByStep(VolumeAdjustType adjustType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->AdjustVolumeByStep(adjustType);
 }
 
 int32_t AudioPolicyManager::AdjustSystemVolumeByStep(AudioVolumeType volumeType, VolumeAdjustType adjustType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->AdjustSystemVolumeByStep(volumeType, adjustType);
 }
 
 float AudioPolicyManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     float out = -1.0f;
     int32_t ret = gsp->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType, out);
     return ret == SUCCESS ? out : static_cast<float>(ERR_INVALID_PARAM);
 }
 
+int32_t AudioPolicyManager::SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    int32_t result = SUCCESS;
+    std::vector<int32_t> prioritiesIn;
+    for (auto type : priorities) {
+        int32_t volumeTypeIn = static_cast<int32_t>(type);
+        prioritiesIn.emplace_back(volumeTypeIn);
+    }
+    gsp->SetVolumeControlPriority(prioritiesIn, result);
+    return result;
+}
+
 int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     int error = gsp->QueryEffectSceneMode(supportedEffectConfig);
     return error;
 }
@@ -1862,7 +1924,7 @@ int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supporte
 int32_t AudioPolicyManager::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     int32_t ret = ERROR;
     gsp->GetHardwareOutputSamplingRate(desc, ret);
     return ret;
@@ -1896,7 +1958,7 @@ vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAvailableMicrophones()
 int32_t AudioPolicyManager::GetAudioDebugInfo(uint32_t sessionId, AudioDebugInfo &audioDebugInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     std::shared_ptr<AudioDebugInfo> audioDebugInfoPtr = nullptr;
     int32_t ret = gsp->GetAudioDebugInfo(sessionId, audioDebugInfoPtr);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioDebugInfo failed, ret:%{public}d", ret);
@@ -1909,7 +1971,7 @@ int32_t AudioPolicyManager::GetAudioDebugInfo(uint32_t sessionId, AudioDebugInfo
 int32_t AudioPolicyManager::GetSessionDebugInfo(AudioSessionDebugInfo &sessionDebugInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     std::shared_ptr<AudioSessionDebugInfo> sessionDebugInfoPtr = nullptr;
     int32_t ret = gsp->GetSessionDebugInfo(sessionDebugInfoPtr);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSessionDebugInfo failed, ret:%{public}d", ret);
@@ -1923,14 +1985,14 @@ int32_t AudioPolicyManager::SetDeviceAbsVolumeSupported(const std::string &macAd
     const int32_t volume)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetDeviceAbsVolumeSupported(macAddress, support, volume);
 }
 
 bool AudioPolicyManager::IsAbsVolumeScene()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     bool ret = true;
     gsp->IsAbsVolumeScene(ret);
     return ret;
@@ -1940,7 +2002,7 @@ int32_t AudioPolicyManager::SetA2dpDeviceVolume(const std::string &macAddress, c
     const bool updateUi)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetA2dpDeviceVolume(macAddress, volume, updateUi);
 }
 
@@ -1948,14 +2010,14 @@ int32_t AudioPolicyManager::SetNearlinkDeviceVolume(const std::string &macAddres
     const int32_t volume, const bool updateUi)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
 }
 
 int32_t AudioPolicyManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetSleVoiceStatusFlag(isSleVoiceStatus);
 }
 
@@ -1963,7 +2025,7 @@ int32_t AudioPolicyManager::ConfigDistributedRoutingRole(
     std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->ConfigDistributedRoutingRole(descriptor, static_cast<int32_t>(type));
 }
 
@@ -1971,7 +2033,7 @@ int32_t AudioPolicyManager::SetDistributedRoutingRoleCallback(
     const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     if (callback == nullptr) {
         AUDIO_ERR_LOG("SetDistributedRoutingRoleCallback: callback is nullptr");
         return ERR_INVALID_PARAM;
@@ -1996,14 +2058,14 @@ int32_t AudioPolicyManager::SetDistributedRoutingRoleCallback(
 int32_t AudioPolicyManager::UnsetDistributedRoutingRoleCallback()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->UnsetDistributedRoutingRoleCallback();
 }
 
 bool AudioPolicyManager::IsSpatializationEnabled()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsSpatializationEnabled(ret);
     return ret;
@@ -2012,7 +2074,7 @@ bool AudioPolicyManager::IsSpatializationEnabled()
 bool AudioPolicyManager::IsSpatializationEnabled(const std::string address)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsSpatializationEnabled(address, ret);
     return ret;
@@ -2021,7 +2083,7 @@ bool AudioPolicyManager::IsSpatializationEnabled(const std::string address)
 bool AudioPolicyManager::IsSpatializationEnabledForCurrentDevice()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsSpatializationEnabledForCurrentDevice(ret);
     return ret;
@@ -2030,7 +2092,7 @@ bool AudioPolicyManager::IsSpatializationEnabledForCurrentDevice()
 int32_t AudioPolicyManager::SetSpatializationEnabled(const bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetSpatializationEnabled(enable);
 }
 
@@ -2038,7 +2100,7 @@ int32_t AudioPolicyManager::SetSpatializationEnabled(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetSpatializationEnabled(selectedAudioDevice, enable);
 }
 
@@ -2046,14 +2108,14 @@ int32_t AudioPolicyManager::SetAdaptiveSpatialRenderingEnabled(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable);
 }
 
 int32_t AudioPolicyManager::GetCurrentSpatialAudioSourceType()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     int32_t ret = SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
     gsp->GetCurrentSpatialAudioSourceType(ret);
     return ret;
@@ -2062,7 +2124,7 @@ int32_t AudioPolicyManager::GetCurrentSpatialAudioSourceType()
 bool AudioPolicyManager::IsAdaptiveSpatialRenderingEnabled(const std::string address)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsAdaptiveSpatialRenderingEnabled(address, ret);
     return ret;
@@ -2072,14 +2134,14 @@ int32_t AudioPolicyManager::SetPersonalizedSpatializationEnabled(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetPersonalizedSpatializationEnabled(selectedAudioDevice, enable);
 }
 
 bool AudioPolicyManager::IsPersonalizedSpatializationEnabled(const std::string address)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsPersonalizedSpatializationEnabled(address, ret);
     return ret;
@@ -2088,14 +2150,14 @@ bool AudioPolicyManager::IsPersonalizedSpatializationEnabled(const std::string a
 int32_t AudioPolicyManager::DownloadPersonalizedHRTF(const int32_t fd, const int64_t length)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->DownloadPersonalizedHRTF(fd, length);
 }
 
 bool AudioPolicyManager::IsHeadTrackingEnabled()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsHeadTrackingEnabled(ret);
     return ret;
@@ -2104,7 +2166,7 @@ bool AudioPolicyManager::IsHeadTrackingEnabled()
 bool AudioPolicyManager::IsHeadTrackingEnabled(const std::string address)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsHeadTrackingEnabled(address, ret);
     return ret;
@@ -2113,7 +2175,7 @@ bool AudioPolicyManager::IsHeadTrackingEnabled(const std::string address)
 int32_t AudioPolicyManager::SetHeadTrackingEnabled(const bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetHeadTrackingEnabled(enable);
 }
 
@@ -2121,7 +2183,7 @@ int32_t AudioPolicyManager::SetHeadTrackingEnabled(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetHeadTrackingEnabled(selectedAudioDevice, enable);
 }
 
@@ -2133,7 +2195,7 @@ int32_t AudioPolicyManager::RegisterSpatializationEnabledEventListener(
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, -1);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -2160,7 +2222,7 @@ int32_t AudioPolicyManager::RegisterSpatializationEnabledForCurrentDeviceEventLi
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, -1);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -2188,7 +2250,7 @@ int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, -1);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -2214,7 +2276,7 @@ int32_t AudioPolicyManager::RegisterNnStateEventListener(const std::shared_ptr<A
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, -1);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     }
@@ -2237,7 +2299,7 @@ int32_t AudioPolicyManager::RegisterAdaptiveSpatialRenderingEnabledEventListener
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, -1);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -2265,7 +2327,7 @@ int32_t AudioPolicyManager::RegisterSpatialAudioSourceTypeEventListener(
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, -1);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -2293,7 +2355,7 @@ int32_t AudioPolicyManager::RegisterPersonalizedSpatializationEnabledEventListen
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, -1);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -2430,7 +2492,7 @@ AudioSpatializationState AudioPolicyManager::GetSpatializationState(const Stream
 bool AudioPolicyManager::IsSpatializationSupported()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsSpatializationSupported(ret);
     return ret;
@@ -2439,7 +2501,7 @@ bool AudioPolicyManager::IsSpatializationSupported()
 bool AudioPolicyManager::IsSpatializationSupportedForDevice(const std::string address)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsSpatializationSupportedForDevice(address, ret);
     return ret;
@@ -2448,7 +2510,7 @@ bool AudioPolicyManager::IsSpatializationSupportedForDevice(const std::string ad
 bool AudioPolicyManager::IsHeadTrackingSupported()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsHeadTrackingSupported(ret);
     return ret;
@@ -2457,7 +2519,7 @@ bool AudioPolicyManager::IsHeadTrackingSupported()
 bool AudioPolicyManager::IsHeadTrackingSupportedForDevice(const std::string address)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsHeadTrackingSupportedForDevice(address, ret);
     return ret;
@@ -2466,7 +2528,7 @@ bool AudioPolicyManager::IsHeadTrackingSupportedForDevice(const std::string addr
 bool AudioPolicyManager::IsPersonalizedSpatializationSupported()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsPersonalizedSpatializationSupported(ret);
     return ret;
@@ -2475,7 +2537,7 @@ bool AudioPolicyManager::IsPersonalizedSpatializationSupported()
 int32_t AudioPolicyManager::UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->UpdateSpatialDeviceState(audioSpatialDeviceState);
 }
 
@@ -2483,7 +2545,7 @@ int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint3
     const StreamUsage streamUsage, const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Spatialization state callback is nullptr");
 
@@ -2502,7 +2564,7 @@ int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint3
 int32_t AudioPolicyManager::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
     return gsp->UnregisterSpatializationStateEventListener(sessionID);
 }
@@ -2617,7 +2679,7 @@ int32_t AudioPolicyManager::SetInputDevice(const DeviceType deviceType, const ui
     const SourceType sourceType, bool isRunning)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetInputDevice(deviceType, sessionID, sourceType, isRunning);
 }
 
@@ -2741,7 +2803,7 @@ int32_t AudioPolicyManager::SetAudioSessionScene(const AudioSessionScene audioSe
 int32_t AudioPolicyManager::SetRegisterStateChangeCallbackFlag(const bool stateChangeCallbackFlag)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     if (!isAudioPolicyClientRegisted_) {
         int32_t result = RegisterPolicyCallbackClientFunc(gsp);
         if (result != SUCCESS) {
@@ -2854,7 +2916,7 @@ int32_t AudioPolicyManager::UnsetAudioSessionStateChangeCallback(
 int32_t AudioPolicyManager::GetDefaultOutputDevice(DeviceType &deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     if (!isAudioPolicyClientRegisted_) {
         int32_t result = RegisterPolicyCallbackClientFunc(gsp);
         if (result != SUCCESS) {
@@ -2871,7 +2933,7 @@ int32_t AudioPolicyManager::GetDefaultOutputDevice(DeviceType &deviceType)
 int32_t AudioPolicyManager::SetDefaultOutputDevice(DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     if (!isAudioPolicyClientRegisted_) {
         int32_t result = RegisterPolicyCallbackClientFunc(gsp);
         if (result != SUCCESS) {
@@ -2925,7 +2987,7 @@ int32_t AudioPolicyManager::SetAudioSessionCurrentDeviceChangeCallback(
     const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     CHECK_AND_RETURN_RET_LOG(deviceChangedCallback != nullptr, ERR_INVALID_PARAM, "deviceChangedCallback is nullptr");
 
     int32_t result = SUCCESS;
@@ -3032,7 +3094,7 @@ int32_t AudioPolicyManager::SetAudioSessionCapturerMuteHint(bool mute)
 AudioSpatializationSceneType AudioPolicyManager::GetSpatializationSceneType()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, SPATIALIZATION_SCENE_TYPE_MUSIC, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, SPATIALIZATION_SCENE_TYPE_MUSIC);
     int32_t type = SPATIALIZATION_SCENE_TYPE_MUSIC;
     gsp->GetSpatializationSceneType(type);
     return static_cast<AudioSpatializationSceneType>(type);
@@ -3041,14 +3103,14 @@ AudioSpatializationSceneType AudioPolicyManager::GetSpatializationSceneType()
 int32_t AudioPolicyManager::SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetSpatializationSceneType(spatializationSceneType);
 }
 
 float AudioPolicyManager::GetMaxAmplitude(const int32_t deviceId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, SPATIALIZATION_SCENE_TYPE_DEFAULT, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, SPATIALIZATION_SCENE_TYPE_DEFAULT);
     float ret = SPATIALIZATION_SCENE_TYPE_DEFAULT;
     gsp->GetMaxAmplitude(deviceId, ret);
     return ret;
@@ -3057,14 +3119,14 @@ float AudioPolicyManager::GetMaxAmplitude(const int32_t deviceId)
 int32_t AudioPolicyManager::DisableSafeMediaVolume()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->DisableSafeMediaVolume();
 }
 
 bool AudioPolicyManager::IsHeadTrackingDataRequested(const std::string &macAddress)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsHeadTrackingDataRequested(macAddress, ret);
     return ret;
@@ -3078,7 +3140,7 @@ int32_t AudioPolicyManager::RegisterHeadTrackingDataRequestedEventListener(const
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, -1);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -3113,7 +3175,7 @@ int32_t AudioPolicyManager::UnregisterHeadTrackingDataRequestedEventListener(con
 int32_t AudioPolicyManager::SetAudioDeviceRefinerCallback(const std::shared_ptr<AudioDeviceRefiner> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     if (callback == nullptr) {
         return ERR_INVALID_PARAM;
     };
@@ -3138,14 +3200,14 @@ int32_t AudioPolicyManager::SetAudioDeviceRefinerCallback(const std::shared_ptr<
 int32_t AudioPolicyManager::UnsetAudioDeviceRefinerCallback()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->UnsetAudioDeviceRefinerCallback();
 }
 
 int32_t AudioPolicyManager::SetAudioRouteSelectorCallback(const std::shared_ptr<AudioRouteSelector> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     if (!isAudioPolicyClientRegisted_) {
@@ -3180,7 +3242,7 @@ int32_t AudioPolicyManager::SetAudioClientInfoMgrCallback(
     const std::shared_ptr<AudioClientInfoMgrCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     if (callback == nullptr) {
         return ERR_INVALID_PARAM;
     };
@@ -3199,7 +3261,7 @@ int32_t AudioPolicyManager::SetAudioVKBInfoMgrCallback(
     const std::shared_ptr<AudioVKBInfoMgrCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     if (callback == nullptr) {
         return ERR_INVALID_PARAM;
     };
@@ -3257,7 +3319,7 @@ void AudioPolicyManager::RemoveClientTrackerStub(int32_t sessionId)
 int32_t AudioPolicyManager::GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_INVALID_PARAM);
     int32_t result = gsp->GetSupportedAudioEffectProperty(propertyArray);
     CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Supported Audio Effect Property, error: %d", result);
 
@@ -3270,14 +3332,14 @@ int32_t AudioPolicyManager::GetSupportedAudioEffectProperty(AudioEffectPropertyA
 int32_t AudioPolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_INVALID_PARAM);
     return gsp->SetAudioEffectProperty(propertyArray);
 }
 
 int32_t AudioPolicyManager::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_INVALID_PARAM);
     int32_t result = gsp->GetAudioEffectProperty(propertyArray);
     CHECK_AND_RETURN_RET_LOG(result == ERR_NONE, result, "Get Audio Effect Property, error: %d", result);
 
@@ -3290,21 +3352,21 @@ int32_t AudioPolicyManager::GetAudioEffectProperty(AudioEffectPropertyArray &pro
 int32_t AudioPolicyManager::InjectInterruption(const std::string networkId, InterruptEvent &event)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->InjectInterruption(networkId, event);
 }
 
 int32_t AudioPolicyManager::SetSplitModeReady()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetSplitModeReady();
 }
 
 int32_t AudioPolicyManager::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->LoadSplitModule(splitArgs, networkId);
 }
 
@@ -3312,7 +3374,7 @@ bool AudioPolicyManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pi
     StreamUsage streamUsage, bool &silentControl)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     bool isAllowed = false;
     gsp->IsAllowedPlayback(uid, pid, sessionId, streamUsage, isAllowed, silentControl);
     return isAllowed;
@@ -3321,7 +3383,7 @@ bool AudioPolicyManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pi
 int32_t AudioPolicyManager::SetVoiceRingtoneMute(bool isMute)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetVoiceRingtoneMute(isMute);
 }
 
@@ -3330,7 +3392,7 @@ int32_t AudioPolicyManager::SetVirtualCall(const bool isVirtual)
     bool ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->SetVirtualCall(isVirtual);
 }
 
@@ -3340,7 +3402,7 @@ bool AudioPolicyManager::GetVirtualCall()
     bool ret = PermissionUtil::VerifySelfPermission();
     CHECK_AND_RETURN_RET_LOG(ret, isVirtualCall, "No system permission");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, isVirtualCall, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, isVirtualCall);
     gsp->GetVirtualCall(isVirtualCall);
     return isVirtualCall;
 }
@@ -3350,7 +3412,7 @@ int32_t AudioPolicyManager::SetQueryAllowedPlaybackCallback(
 {
     AUDIO_INFO_LOG("In");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     sptr<AudioPolicyManagerListenerStubImpl> listener = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
@@ -3368,7 +3430,7 @@ int32_t AudioPolicyManager::SetBackgroundMuteCallback(
 {
     AUDIO_INFO_LOG("In");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     sptr<AudioPolicyManagerListenerStubImpl> listener = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
@@ -3384,21 +3446,21 @@ int32_t AudioPolicyManager::SetBackgroundMuteCallback(
 int32_t AudioPolicyManager::NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->NotifySessionStateChange(uid, pid, hasSession);
 }
 
 int32_t AudioPolicyManager::NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->NotifyFreezeStateChange(pidList, isFreeze);
 }
 
 int32_t AudioPolicyManager::ResetAllProxy()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->ResetAllProxy();
 }
 
@@ -3406,7 +3468,7 @@ int32_t AudioPolicyManager::NotifyProcessBackgroundState(const int32_t uid, cons
 {
     AUDIO_INFO_LOG("In");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
     return gsp->NotifyProcessBackgroundState(uid, pid);
 }
 
@@ -3416,7 +3478,7 @@ int32_t AudioPolicyManager::SetAudioFormatUnsupportedErrorCallback(
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     }
@@ -3447,7 +3509,7 @@ DirectPlaybackMode AudioPolicyManager::GetDirectPlaybackSupport(const AudioStrea
     const StreamUsage &streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, DIRECT_PLAYBACK_NOT_SUPPORTED, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, DIRECT_PLAYBACK_NOT_SUPPORTED);
     int32_t ret = DIRECT_PLAYBACK_NOT_SUPPORTED;
     gsp->GetDirectPlaybackSupport(streamInfo, streamUsage, ret);
     return static_cast<DirectPlaybackMode>(ret);
@@ -3456,7 +3518,7 @@ DirectPlaybackMode AudioPolicyManager::GetDirectPlaybackSupport(const AudioStrea
 bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
 
     bool isSupport = false;
     gsp->IsAcousticEchoCancelerSupported(sourceType, isSupport);
@@ -3466,7 +3528,7 @@ bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 bool AudioPolicyManager::SetKaraokeParameters(const DeviceType deviceType, const std::string &parameters)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->SetKaraokeParameters(deviceType, parameters, ret);
     return ret;
@@ -3475,7 +3537,7 @@ bool AudioPolicyManager::SetKaraokeParameters(const DeviceType deviceType, const
 bool AudioPolicyManager::SetLoopbackVolume(float volume)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->SetLoopbackVolume(volume, ret);
     return ret;
@@ -3484,7 +3546,7 @@ bool AudioPolicyManager::SetLoopbackVolume(float volume)
 float AudioPolicyManager::GetLoopbackVolume()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0.0f, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, 0.0f);
     float volume = 0.0f;
     bool ret = false;
     gsp->GetLoopbackVolume(volume, ret);
@@ -3496,7 +3558,7 @@ int32_t AudioPolicyManager::CreateLoopback(AudioLoopbackMode mode, LoopbackType 
     const sptr<IRemoteObject> &callback, sptr<IRemoteObject> &loopback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_NULL_POINTER);
     int32_t result = SUCCESS;
     gsp->CreateLoopback(static_cast<int32_t>(mode), static_cast<int32_t>(type), callback, loopback, result);
     return result;
@@ -3505,7 +3567,7 @@ int32_t AudioPolicyManager::CreateLoopback(AudioLoopbackMode mode, LoopbackType 
 int32_t AudioPolicyManager::DestroyLoopback(LoopbackType type)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_NULL_POINTER, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_NULL_POINTER);
     int32_t result = SUCCESS;
     gsp->DestroyLoopback(static_cast<int32_t>(type), result);
     return result;
@@ -3515,7 +3577,7 @@ bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode, Device
 {
     Trace trace("AudioPolicyManager::IsAudioLoopbackSupported");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool support = false;
     gsp->IsAudioLoopbackSupported(mode, deviceType, support);
     return support;
@@ -3525,7 +3587,7 @@ std::vector<AudioDevicePair> AudioPolicyManager::GetLoopbackSupportedDevicePairs
 {
     Trace trace("AudioPolicyManager::GetLoopbackSupportedDevicePairs");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, {}, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, {});
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDevices;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
@@ -3550,7 +3612,7 @@ AudioDevicePair AudioPolicyManager::GetLoopbackPreferredDevicePair()
 {
     Trace trace("AudioPolicyManager::GetLoopbackPreferredDevicePair");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, {}, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, {});
 
     std::shared_ptr<AudioDeviceDescriptor> inputDevice;
     std::shared_ptr<AudioDeviceDescriptor> outputDevice;
@@ -3566,7 +3628,7 @@ bool AudioPolicyManager::IsSupportInnerCaptureOffload()
 {
     Trace trace("AudioPolicyManager::IsSupportInnerCaptureOffload");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool isSupported = false;
     gsp->IsSupportInnerCaptureOffload(isSupported);
     return isSupported;
@@ -3575,7 +3637,7 @@ bool AudioPolicyManager::IsSupportInnerCaptureOffload()
 int32_t AudioPolicyManager::GetMaxVolumeLevelByUsage(StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_INVALID_PARAM);
     int32_t maxVolumeLevel = 0;
     gsp->GetMaxVolumeLevelByUsage(streamUsage, maxVolumeLevel);
     return maxVolumeLevel;
@@ -3584,7 +3646,7 @@ int32_t AudioPolicyManager::GetMaxVolumeLevelByUsage(StreamUsage streamUsage)
 int32_t AudioPolicyManager::GetMinVolumeLevelByUsage(StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_INVALID_PARAM);
     int32_t minVolumeLevel = 0;
     gsp->GetMinVolumeLevelByUsage(streamUsage, minVolumeLevel);
     return minVolumeLevel;
@@ -3593,7 +3655,7 @@ int32_t AudioPolicyManager::GetMinVolumeLevelByUsage(StreamUsage streamUsage)
 int32_t AudioPolicyManager::GetVolumeLevelByUsage(StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_INVALID_PARAM);
     int32_t volumeLevel = 0;
     gsp->GetVolumeLevelByUsage(streamUsage, volumeLevel);
     return volumeLevel;
@@ -3602,7 +3664,7 @@ int32_t AudioPolicyManager::GetVolumeLevelByUsage(StreamUsage streamUsage)
 bool AudioPolicyManager::GetStreamMuteByUsage(StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool isMute = false;
     gsp->GetStreamMuteByUsage(streamUsage, isMute);
     return isMute;
@@ -3611,11 +3673,11 @@ bool AudioPolicyManager::GetStreamMuteByUsage(StreamUsage streamUsage)
 float AudioPolicyManager::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     float volume = -1;
     int32_t ret = gsp->GetVolumeInDbByStream(static_cast<int32_t>(streamUsage), volumeLevel,
         static_cast<int32_t>(deviceType), volume);
-    return ret == SUCCESS ? volume : ERR_INVALID_PARAM;
+    return ret == SUCCESS ? volume : static_cast<float>(ERR_INVALID_PARAM);
 }
 
 std::vector<AudioVolumeType> AudioPolicyManager::GetSupportedAudioVolumeTypes()
@@ -3637,7 +3699,7 @@ std::vector<AudioVolumeType> AudioPolicyManager::GetSupportedAudioVolumeTypes()
 AudioVolumeType AudioPolicyManager::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AudioVolumeType::STREAM_DEFAULT, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, AudioVolumeType::STREAM_DEFAULT);
     int32_t volumeType = AudioVolumeType::STREAM_DEFAULT;
     int32_t ret = gsp->GetAudioVolumeTypeByStreamUsage(streamUsage, volumeType);
     return ret == SUCCESS ? static_cast<AudioVolumeType>(volumeType) : AudioVolumeType::STREAM_DEFAULT;
@@ -3668,7 +3730,7 @@ int32_t AudioPolicyManager::SetStreamVolumeChangeCallback(const int32_t clientPi
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -3707,7 +3769,7 @@ int32_t AudioPolicyManager::UnsetStreamVolumeChangeCallback(
 int32_t AudioPolicyManager::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
 
     std::set<int32_t> streamUsagesIn;
     for (auto item : streamUsages) {
@@ -3719,7 +3781,7 @@ int32_t AudioPolicyManager::SetCallbackStreamUsageInfo(const std::set<StreamUsag
 bool AudioPolicyManager::IsCollaborativePlaybackSupported()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool support = false;
     gsp->IsCollaborativePlaybackSupported(support);
     return support;
@@ -3729,7 +3791,7 @@ bool AudioPolicyManager::IsCollaborativePlaybackSupportedForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool isSupported = false;
     gsp->IsCollaborativePlaybackSupportedForDevice(selectedAudioDevice, isSupported);
     return isSupported;
@@ -3739,7 +3801,7 @@ bool AudioPolicyManager::IsCollaborativePlaybackEnabledForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool enable = false;
     gsp->IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice, enable);
     return enable;
@@ -3749,21 +3811,21 @@ int32_t AudioPolicyManager::SetCollaborativePlaybackEnabledForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_PARAM, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_INVALID_PARAM);
     return gsp->SetCollaborativePlaybackEnabledForDevice(selectedAudioDevice, enabled);
 }
 
 int32_t AudioPolicyManager::ForceStopAudioStream(StopAudioType audioType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->ForceStopAudioStream(audioType);
 }
 
 bool AudioPolicyManager::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool isAvailable = false;
     gsp->IsCapturerFocusAvailable(capturerInfo, isAvailable);
     return isAvailable;
@@ -3772,7 +3834,7 @@ bool AudioPolicyManager::IsCapturerFocusAvailable(const AudioCapturerInfo &captu
 int32_t AudioPolicyManager::ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     int32_t ret = ERROR;
     gsp->ForceVolumeKeyControlType(static_cast<int32_t>(volumeType), duration, ret);
     return ret;
@@ -3781,7 +3843,7 @@ int32_t AudioPolicyManager::ForceVolumeKeyControlType(AudioVolumeType volumeType
 bool AudioPolicyManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
 
     bool isSupport = false;
     gsp->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType, isSupport);
@@ -3791,7 +3853,7 @@ bool AudioPolicyManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(Sour
 int32_t AudioPolicyManager::RestoreDistributedDeviceInfo()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     int32_t result = gsp->RestoreDistributedDeviceInfo();
     return result;
 }
@@ -3801,7 +3863,7 @@ int32_t AudioPolicyManager::CheckAudioPolicyClientRegisted()
 {
     CHECK_AND_RETURN_RET(!isAudioPolicyClientRegisted_, SUCCESS);
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     int32_t result = RegisterPolicyCallbackClientFunc(gsp);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to register policy callback clent");
     return result;
@@ -3819,7 +3881,7 @@ int32_t AudioPolicyManager::SetVolumeDegreeCallback(const int32_t clientPid,
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;
@@ -3862,24 +3924,35 @@ int32_t AudioPolicyManager::SetSystemVolumeDegree(AudioVolumeType volumeType, in
     int32_t volumeFlag, int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetSystemVolumeDegree(volumeType, volumeDegree, volumeFlag, uid);
 }
 
 int32_t AudioPolicyManager::GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
     int32_t volumeDegree = -1;
     gsp->GetSystemVolumeDegree(volumeType, uid, volumeDegree);
     return volumeDegree;
 }
 
+int32_t AudioPolicyManager::GetSystemVolumeDegreeWithDevice(AudioVolumeType volumeType, DeviceType deviceType,
+    std::string networkId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
+
+    int32_t volumeDegree = -1;
+    gsp->GetSystemVolumeDegreeWithDevice(volumeType, deviceType, networkId, volumeDegree);
+    return volumeDegree;
+}
+
 int32_t AudioPolicyManager::GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
     int32_t volumeDegree = -1;
     gsp->GetMinVolumeDegree(volumeType, deviceType, volumeDegree);
@@ -3889,7 +3962,7 @@ int32_t AudioPolicyManager::GetMinVolumeDegree(AudioVolumeType volumeType, Devic
 int32_t AudioPolicyManager::UpdateSafeVolumeByStrMode()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
     return gsp->UpdateSafeVolumeByStrMode();
 }
@@ -3897,7 +3970,7 @@ int32_t AudioPolicyManager::UpdateSafeVolumeByStrMode()
 int32_t AudioPolicyManager::RecordBootAnimationClientStateTime(const BootAnimationInfo &info)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
     return gsp->RecordBootAnimationClientStateTime(info);
 }
@@ -3910,7 +3983,7 @@ int32_t AudioPolicyManager::RegisterCollaborationEnabledForCurrentDeviceEventLis
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, -1);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterPolicyCallbackClientFunc failed");
     }
@@ -3946,7 +4019,7 @@ int32_t AudioPolicyManager::UnregisterCollaborationEnabledForCurrentDeviceEventL
 int32_t AudioPolicyManager::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetCustomAudioMix(zoneName, audioMixes);
 }
 AudioPolicyManager& AudioPolicyManager::GetInstance()
@@ -3958,18 +4031,18 @@ AudioPolicyManager& AudioPolicyManager::GetInstance()
 AudioScene AudioPolicyManager::GetAudioSceneFromAllZones()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_SCENE_DEFAULT, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, AUDIO_SCENE_DEFAULT);
     int32_t audioScene = AUDIO_SCENE_DEFAULT;
     gsp->GetAudioSceneFromAllZones(audioScene);
     return static_cast<AudioScene>(audioScene);
 }
 
-int32_t AudioPolicyManager::NotifyStreamSilentChange(uint32_t streamId)
+int32_t AudioPolicyManager::NotifyStreamSilentChange(int32_t clientPid, uint32_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
-    gsp->NotifyStreamSilentChange(streamId);
+    gsp->NotifyStreamSilentChange(clientPid, streamId);
     return SUCCESS;
 }
 
@@ -3994,7 +4067,7 @@ int32_t AudioPolicyManager::GetActiveStreamsVolumeInfo(
     std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
 }
 
@@ -4002,21 +4075,21 @@ int32_t AudioPolicyManager::SetAudioZoneVolumeConfig(const std::string &zoneName
     const std::vector<AudioZoneVolumeConfig> &configs)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetAudioZoneVolumeConfig(zoneName, configs);
 }
 
 int32_t AudioPolicyManager::TriggerAudioZoneVolumeSync()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->TriggerAudioZoneVolumeSync();
 }
 
 bool AudioPolicyManager::IsAudioSeparationEffectSupported()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
     gsp->IsAudioSeparationEffectSupported(ret);
     return ret;
@@ -4025,14 +4098,14 @@ bool AudioPolicyManager::IsAudioSeparationEffectSupported()
 int32_t AudioPolicyManager::SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetAudioSeparationEffectEnabled(enabled, uid, streamId);
 }
 
 int32_t AudioPolicyManager::SetAudioSeparationEffectVolume(AudioSeparationVolumeType type, double volume)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->SetAudioSeparationEffectVolume(type, volume);
 }
 
@@ -4040,7 +4113,7 @@ int32_t AudioPolicyManager::OnAudioSeparationEffectEnabledChange(
     const std::shared_ptr<AudioSeparationEffectEnabledChangeCallback> &callback)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
 
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "Audio separation effect enabled change callback is nullptr");
@@ -4085,7 +4158,9 @@ int32_t AudioPolicyManager::EnableSystemRecordController(bool show, const System
     }
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    int32_t ret = gsp->EnableSystemRecordController(show, config);
+    sptr<IRemoteObject> object = GetAudioPolicyClientStubObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "audio policy client stub object is NULL.");
+    int32_t ret = gsp->EnableSystemRecordController(show, config, object);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "EnableSystemRecordController failed");
     return SUCCESS;
 }
@@ -4098,7 +4173,7 @@ int32_t AudioPolicyManager::SetRecordControllerEnabledChangeCallback(
 
     if (!isAudioPolicyClientRegisted_) {
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
         if (ret != SUCCESS) {
             return ret;

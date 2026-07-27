@@ -103,7 +103,8 @@ public:
     void ReleaseActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag, const std::string &networkId);
     bool IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
-    void UpdateStreamDeviceMap(std::string source);
+    void UpdateStreamDeviceMapForOutput(std::string source);
+    void UpdateStreamDeviceMapForInput(std::string source);
     bool IsDeviceInActiveOutputDevices(DeviceType type, bool isRemote);
     bool IsDeviceInActiveOutputDevices(std::shared_ptr<AudioDeviceDescriptor> desc);
     void SetAdjustVolumeForZone(int32_t zoneId);
@@ -116,6 +117,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(int32_t appUid);
     std::shared_ptr<AudioDeviceDescriptor> GetActiveDeviceForVolume(int32_t appUid);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetActiveOutputDevices();
+    void UpdateUidVolumeDeviceMapForEnhancedRouting();
 
 private:
     AudioActiveDevice()
@@ -132,8 +134,9 @@ private:
     bool IsAvailableFrontDeviceInVector(
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
     void UpdateDeviceListWithStreamState(const std::shared_ptr<AudioDeviceDescriptor> &desc,
- 	    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolumeEnhanced(int32_t appUid = INVALID_UID);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetUidVolumeDevicesForEnhancedRouting(int32_t uid);
 
 private:
     int32_t volumeAdjustZoneId_ = 0;
@@ -144,6 +147,7 @@ private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> activeOutputDevices_;
     std::unordered_map<AudioVolumeType, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> volumeTypeDeviceMap_;
     std::unordered_map<StreamUsage, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> streamUsageDeviceMap_;
+    std::unordered_map<int32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> uidVolumeDeviceMap_;
     std::shared_ptr<AudioDeviceDescriptor> defaultOutputDevice_ =
         std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
 

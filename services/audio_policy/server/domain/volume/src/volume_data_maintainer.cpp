@@ -24,6 +24,8 @@
 #include "audio_bundle_manager.h"
 #include <nlohmann/json.hpp>
 #include "audio_zone_service.h"
+#include "os_account_subprofile_client.h"
+#include "distributed_account_subscribe_callback.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -822,9 +824,30 @@ std::string VolumeDataMaintainer::GetVolumeKey(const std::shared_ptr<AudioDevice
 std::string VolumeDataMaintainer::GetZoneKey(int32_t zoneId)
 {
     if (zoneId > 0) {
-        return AudioZoneService::GetInstance().GetZoneNameById(zoneId);
+        return "_" + AudioZoneService::GetInstance().GetZoneNameById(zoneId);
     }
     return "";
+}
+
+std::string VolumeDataMaintainer::GetSubspaceKey(int32_t zoneId)
+{
+    std::lock_guard<ffrt::mutex> lock(subspaceMutex_);
+    if (zoneId == 0 && currentSubspaceId_ >= 0) {
+        return "_" + std::to_string(currentSubspaceId_);
+    }
+    return "";
+}
+
+void VolumeDataMaintainer::SetCurrentSubspaceId(int32_t subspaceId)
+{
+    std::lock_guard<ffrt::mutex> lock(subspaceMutex_);
+    currentSubspaceId_ = subspaceId;
+}
+
+int32_t VolumeDataMaintainer::GetCurrentSubspaceId()
+{
+    std::lock_guard<ffrt::mutex> lock(subspaceMutex_);
+    return currentSubspaceId_;
 }
 
 std::string VolumeDataMaintainer::GetMuteKey(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType)
@@ -943,7 +966,7 @@ IntValueInfo VolumeDataMaintainer::GetVolumeLevelInfo(std::shared_ptr<AudioDevic
     int32_t maxVolume = AudioVolumeUtils::GetInstance().GetMaxVolumeLevel(deviceType, streamType, zoneId);
     IntValueInfo info {
 #ifdef FEATURE_AUDIO_ZONE_VOLUME
-        .key = GetVolumeKey(device, streamType) + GetZoneKey(zoneId),
+        .key = GetVolumeKey(device, streamType) + GetZoneKey(zoneId) + GetSubspaceKey(zoneId),
 #else
         .key = GetVolumeKey(device, streamType),
 #endif
@@ -960,7 +983,7 @@ IntValueInfo VolumeDataMaintainer::GetVolumeDegreeInfo(std::shared_ptr<AudioDevi
 {
     IntValueInfo degreeInfo {
 #ifdef FEATURE_AUDIO_ZONE_VOLUME
-        .key = GetVolumeKey(device, streamType, VolumeKeyType::DEGREE) + GetZoneKey(zoneId),
+        .key = GetVolumeKey(device, streamType, VolumeKeyType::DEGREE) + GetZoneKey(zoneId) + GetSubspaceKey(zoneId),
 #else
         .key = GetVolumeKey(device, streamType, VolumeKeyType::DEGREE),
 #endif
@@ -996,9 +1019,9 @@ int32_t VolumeDataMaintainer::SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDes
         }
     }
 #ifdef FEATURE_AUDIO_ZONE_VOLUME
-    std::string volumeKey = GetVolumeKey(device, volumeType) + GetZoneKey(zoneId);
+    std::string volumeKey = GetVolumeKey(device, volumeType) + GetZoneKey(zoneId) + GetSubspaceKey(zoneId);
     std::string volumeDegreeKey = GetVolumeKey(device, volumeType, VolumeKeyType::DEGREE)
-        + GetZoneKey(zoneId);
+        + GetZoneKey(zoneId) + GetSubspaceKey(zoneId);
 #else
     std::string volumeKey = GetVolumeKey(device, volumeType);
     std::string volumeDegreeKey = GetVolumeKey(device, volumeType, VolumeKeyType::DEGREE);
@@ -1152,7 +1175,7 @@ void VolumeDataMaintainer::LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDe
     for (auto stream : volumeList) {
         BoolValueInfo info {
 #ifdef FEATURE_AUDIO_ZONE_VOLUME
-            .key = GetMuteKey(device, stream) + GetZoneKey(zoneId),
+            .key = GetMuteKey(device, stream) + GetZoneKey(zoneId) + GetSubspaceKey(zoneId),
 #else
             .key = GetMuteKey(device, stream),
 #endif
@@ -1209,7 +1232,7 @@ int32_t VolumeDataMaintainer::SaveMuteToDb(std::shared_ptr<AudioDeviceDescriptor
         }
     }
 #ifdef FEATURE_AUDIO_ZONE_VOLUME
-    std::string muteKey = GetMuteKey(device, volumeType) + GetZoneKey(zoneId);
+    std::string muteKey = GetMuteKey(device, volumeType) + GetZoneKey(zoneId) + GetSubspaceKey(zoneId);
 #else
     std::string muteKey = GetMuteKey(device, volumeType);
 #endif
@@ -1260,6 +1283,8 @@ bool VolumeDataMaintainer::LoadMuteFromMap(std::shared_ptr<AudioDeviceDescriptor
         "key %{public}s not in muteStatusMap_", volumeKey.c_str());
     CHECK_AND_RETURN_RET_LOG(volumeValueMap_[volumeKey].contains(volumeType), false,
         "key %{public}s volumeType %{public}d not in muteStatusMap_", volumeKey.c_str(), volumeType);
+    AUDIO_DEBUG_LOG("volumeKey: %{public}s, volumeType: %{public}d, muteStatus: %{public}d",
+        volumeKey.c_str(), volumeType, volumeValueMap_[volumeKey][volumeType].mute_);
     return volumeValueMap_[volumeKey][volumeType].mute_;
 }
 
@@ -1315,7 +1340,7 @@ int32_t VolumeDataMaintainer::LoadVolumeDegreeFromMap(std::shared_ptr<AudioDevic
         "device %{public}s not in map", device->GetName().c_str());
     CHECK_AND_RETURN_RET_LOG(volumeValueMap_[volumeKey].contains(volumeType), defaultVolumeDegree,
         "device %{public}s stream %{public}d not in map", device->GetName().c_str(), volumeType);
-    AUDIO_INFO_LOG("[device %{public}s, streamType %{public}d] volumeDegree %{public}d",
+    AUDIO_DEBUG_LOG("[device %{public}s, streamType %{public}d] volumeDegree %{public}d",
         device->GetName().c_str(), volumeType, volumeValueMap_[volumeKey][volumeType].volumeDegree_);
     return volumeValueMap_[volumeKey][volumeType].volumeDegree_;
 }

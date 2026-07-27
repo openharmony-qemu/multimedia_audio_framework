@@ -19,6 +19,7 @@
 #include "audio_zone_interrupt_reporter.h"
 #include "audio_zone_service.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 using namespace std;
 
 namespace OHOS {

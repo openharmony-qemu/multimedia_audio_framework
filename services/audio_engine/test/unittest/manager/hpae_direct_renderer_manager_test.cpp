@@ -1877,23 +1877,24 @@ HWTEST_F(HpaeDirectRendererManagerTest, startStopLifecycle_001, TestSize.Level1)
 {
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
+    uint32_t sessionId = TEST_STREAM_SESSION_ID + 2;
     EXPECT_EQ(directManager_->Init(), SUCCESS);
     WaitForMsgProcessing(directManager_);
 
-    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(sessionId)), SUCCESS);
     WaitForMsgProcessing(directManager_);
 
     auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S32LE);
-    EXPECT_EQ(directManager_->RegisterWriteCallback(TEST_STREAM_SESSION_ID, writeCb), SUCCESS);
+    EXPECT_EQ(directManager_->RegisterWriteCallback(sessionId, writeCb), SUCCESS);
 
-    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    EXPECT_EQ(directManager_->Start(sessionId), SUCCESS);
     WaitForMsgProcessing(directManager_);
 
-    EXPECT_EQ(directManager_->Stop(TEST_STREAM_SESSION_ID), SUCCESS);
+    EXPECT_EQ(directManager_->Stop(sessionId), SUCCESS);
     std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_160));
 
     HpaeSinkInputInfo sinkInputInfo;
-    EXPECT_EQ(directManager_->GetSinkInputInfo(TEST_STREAM_SESSION_ID, sinkInputInfo), SUCCESS);
+    EXPECT_EQ(directManager_->GetSinkInputInfo(sessionId, sinkInputInfo), SUCCESS);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_STOPPED);
 
     EXPECT_EQ(directManager_->DeInit(), SUCCESS);

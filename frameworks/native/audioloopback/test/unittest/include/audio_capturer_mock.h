@@ -97,6 +97,11 @@ public:
     MOCK_METHOD(int32_t, StartWithError, (), (override));
     MOCK_METHOD(int32_t, StopWithError, (), (const, override));
     MOCK_METHOD(int32_t, ReleaseWithError, (), (override));
+    MOCK_METHOD(int32_t, SetNoiseReductionMode, (NoiseReductionMode mode), (override));
+    MOCK_METHOD(int32_t, GetNoiseReductionMode, (NoiseReductionMode &mode), (override));
+    MOCK_METHOD(int32_t, GetSupportedNoiseReductionModes, (std::vector<NoiseReductionMode> &modes), (override));
+    MOCK_METHOD(void, SetSensitiveRecordPermitCallback,
+        (const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback), (override));
 };
 
 } // namespace AudioStandard

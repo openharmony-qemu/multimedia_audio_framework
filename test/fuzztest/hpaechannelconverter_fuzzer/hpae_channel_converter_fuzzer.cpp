@@ -26,6 +26,7 @@
 #include <cinttypes>
 #include "channel_converter.h"
 #include "audio_engine_log.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

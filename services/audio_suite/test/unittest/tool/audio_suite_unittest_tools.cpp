@@ -21,6 +21,7 @@
 #include "audio_suite_voice_beautifier_node.h"
 #include "audio_suite_log.h"
 #include "audio_suite_base.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -169,7 +170,9 @@ bool AllNodeTypesSupported()
 {
     AudioSuiteCapabilities capabilities;
     for (const auto& nodeTypeEntry : NODETYPE_TOSTRING_MAP) {
-        if (nodeTypeEntry.first == NODE_TYPE_EMPTY) {
+        if (nodeTypeEntry.first == NODE_TYPE_EMPTY ||
+            nodeTypeEntry.first == NODE_TYPE_SYSTEM_DIALOGUE_ENHANCE ||
+            nodeTypeEntry.first == NODE_TYPE_SYSTEM_MUSIC_MASTER) {
             continue;
         }
         AudioNodeType nodeType = nodeTypeEntry.first;

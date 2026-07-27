@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,6 +30,7 @@
 #include "audio_utils.h"
 #include "volume_tools.h"
 #include "audio_volume.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,9 +40,11 @@ namespace {
     constexpr size_t MAX_TRANS_BUFFER_SIZE = 1 * 1024 * 1024; // 1M
     constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     constexpr int64_t AUDIO_NS_PER_US = 1000;
-    constexpr uint32_t WAIT_GET_POS_TIMEOUT_MS = 200;
+    constexpr uint32_t WAIT_GET_POS_TIMEOUT_MS = 1000;
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
     constexpr int64_t ULTRA_FAST_MINIMUM_AHEAD_TIME_NS = 3000000; // 3ms
+    constexpr uint32_t TIMESTAMP_SYNC_CNT_AT_START = 20; // sync timestamp for the first N spans
+    constexpr uint32_t TIMESTAMP_SYNC_CNT_INTERVAL = 40; // sync timestamp every N spans
 }
 
 HpaeFastSinkOutputNode::HpaeFastSinkOutputNode(HpaeNodeInfo &nodeInfo)
@@ -452,7 +455,8 @@ int32_t HpaeFastSinkOutputNode::GetAdapterBufferInfo()
     return SUCCESS;
 }
 
-void HpaeFastSinkOutputNode::InitTransBuffer() //todo
+// renderFrameData_ is in heap, and can be accessed much more faster than dstAudioBuffer_
+void HpaeFastSinkOutputNode::InitTransBuffer()
 {
     dstSpanSizeInByte_ = static_cast<size_t>(dstSpanSizeInframe_) * dstByteSizePerFrame_;
     if (dstSpanSizeInByte_ == 0 || dstSpanSizeInByte_ > MAX_TRANS_BUFFER_SIZE) {
@@ -565,14 +569,36 @@ void HpaeFastSinkOutputNode::AsyncGetPosTime()
     }
     updatePosTimeThread_ = std::thread([this]() {
         while (!stopUpdateThread_.load()) {
+            std::unique_lock<std::mutex> lock(updateThreadLock_);
+            updateThreadCV_.wait_for(lock, std::chrono::milliseconds(WAIT_GET_POS_TIMEOUT_MS));
+            if (stopUpdateThread_.load()) {
+                break;
+            }
+            if (!isStarted_) {
+                UpdateVirtualDeviceHandleInfo();
+                continue;
+            }
             uint64_t frames = 0;
             int64_t nanoTime = 0;
             (void)GetDeviceHandleInfo(frames, nanoTime);
-            std::unique_lock<std::mutex> lock(updateThreadLock_);
-            updateThreadCV_.wait_for(lock, std::chrono::milliseconds(WAIT_GET_POS_TIMEOUT_MS),
-                [this]() { return stopUpdateThread_.load(); });
         }
     });
+}
+
+void HpaeFastSinkOutputNode::UpdateVirtualDeviceHandleInfo()
+{
+    int64_t currentNanoTime = ClockTime::GetCurNano();
+    CHECK_AND_RETURN_LOG(currentNanoTime > timeInNano_, "currentNanoTime: %{public}" PRId64"  "
+        ", timeInNano_: %{public}" PRId64" ", currentNanoTime, timeInNano_.load());
+    int64_t increasedTime = currentNanoTime - timeInNano_;
+    uint32_t sampleRate = sinkOutAttr_.sampleRate == 0 ? GetNodeInfo().samplingRate : sinkOutAttr_.sampleRate;
+    uint64_t increasedFrame = sampleRate / AUDIO_MS_PER_SECOND *
+        static_cast<uint64_t>(increasedTime) / AUDIO_US_PER_SECOND;
+    posInFrame_ += increasedFrame;
+    timeInNano_ += increasedFrame * AUDIO_US_PER_SECOND / sampleRate * AUDIO_MS_PER_SECOND;
+
+    Trace infoTrace("HpaeFastSinkOutputNode::UpdateVirtualDeviceHandleInfo posInFrame: " + std::to_string(posInFrame_) +
+        " incFrame: " + std::to_string(increasedFrame) + " timeInNano:  " + std::to_string(timeInNano_));
 }
 
 void HpaeFastSinkOutputNode::StopUpdateThread()
@@ -631,7 +657,6 @@ void HpaeFastSinkOutputNode::ReSyncPosition()
     timeInNano_.store(nanoTime);
     lastPredictWakeUpTime_ = 0;
     if (dstAudioBuffer_ != nullptr) {
-        dstAudioBuffer_->SetHandleInfo(frame, nanoTime);
         uint64_t nextWritePos = frame + dstSpanSizeInframe_;
         InitAudiobuffer(false);
         int32_t ret = dstAudioBuffer_->ResetCurReadWritePos(nextWritePos, nextWritePos, false);
@@ -656,15 +681,8 @@ bool HpaeFastSinkOutputNode::GetDeviceHandleInfo(uint64_t &frames, int64_t &nano
     nanoTime = timeSec * AUDIO_NS_PER_SECOND + timeNanoSec;
     Trace infoTrace("HpaeFastSinkOutputNode::GetDeviceHandleInfo frames=>" + std::to_string(frames) + " " +
         std::to_string(nanoTime) + " at " + std::to_string(ClockTime::GetCurNano()));
-    auto result = readTimeModel_.UpdataFrameStamp(frames, nanoTime);
-    if (result == NEED_MODIFY) {
-        readTimeModel_.ResetFrameStamp(frames, nanoTime);
-    }
     posInFrame_.store(frames);
     timeInNano_.store(nanoTime);
-    if (dstAudioBuffer_ != nullptr) {
-        dstAudioBuffer_->SetHandleInfo(frames, nanoTime);
-    }
     return true;
 }
 
@@ -673,9 +691,8 @@ bool HpaeFastSinkOutputNode::CheckAllBufferReady(int64_t checkTime, uint64_t cur
     if (dstAudioBuffer_ == nullptr) {
         return false;
     }
-    int64_t nextHdiReadTime = GetPredictNextReadTime(curWritePos);
-    int64_t predictWakeupTime = nextHdiReadTime - serverAheadReadTime_;
-    return predictWakeupTime <= checkTime;
+    // In plan: Register a callback to rendererInServer to obtain buffer status information
+    return true;
 }
 
 void HpaeFastSinkOutputNode::CheckTimeAndBufferReady(uint64_t &curWritePos, int64_t &wakeUpTime, int64_t &curTime)
@@ -698,6 +715,10 @@ bool HpaeFastSinkOutputNode::PrepareNextLoop(uint64_t curWritePos, int64_t &wake
     int64_t nextHdiReadTime = GetPredictNextReadTime(nextHandlePos);
     predictTrace.End();
     wakeUpTime = nextHdiReadTime - serverAheadReadTime_;
+    if (wakeUpTime <= ClockTime::GetCurNano()) {
+        wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION_NS;
+        AUDIO_ERR_LOG("hdi send wrong position time, nextHandlePos:%{public}" PRIu64, nextHandlePos);
+    }
     int32_t ret1 = dstAudioBuffer_->SetCurWriteFrame(nextHandlePos, false);
     int32_t ret2 = dstAudioBuffer_->SetCurReadFrame(nextHandlePos, false);
     CHECK_AND_RETURN_RET_LOG(ret1 == SUCCESS && ret2 == SUCCESS, false,
@@ -708,11 +729,28 @@ bool HpaeFastSinkOutputNode::PrepareNextLoop(uint64_t curWritePos, int64_t &wake
 
 int64_t HpaeFastSinkOutputNode::GetPredictNextReadTime(uint64_t posInFrame)
 {
-    int64_t predictWakeupTime = readTimeModel_.GetTimeOfPos(posInFrame);
-    if (predictWakeupTime <= 0) {
-        return ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION_NS;
+    Trace trace("HpaeFastSinkOutputNode::GetPredictNextRead");
+    CHECK_AND_RETURN_RET_LOG(dstSpanSizeInframe_ != 0,
+        ClockTime::GetCurNano() + RELATIVE_SLEEP_TIME_NS, "dstSpanSizeInframe_ is zero");
+    uint64_t handleSpanCnt = posInFrame / dstSpanSizeInframe_;
+    if (handleSpanCnt < TIMESTAMP_SYNC_CNT_AT_START || handleSpanCnt % TIMESTAMP_SYNC_CNT_INTERVAL == 0) {
+        updateThreadCV_.notify_all();
     }
-    return predictWakeupTime;
+    uint64_t readFrame = 0;
+    int64_t readTime = 0;
+    if (readTimeModel_.GetFrameStamp(readFrame, readTime)) {
+        if (readFrame != posInFrame_) {
+            CheckPosTimeRes res = readTimeModel_.UpdateFrameStamp(posInFrame_, timeInNano_);
+            if (res == CHECK_FAILED) {
+                updateThreadCV_.notify_all();
+            } else if (res == NEED_MODIFY) {
+                needReSyncPosition_ = true;
+            }
+        }
+    }
+
+    int64_t nextHdiReadTime = readTimeModel_.GetTimeOfPos(posInFrame);
+    return nextHdiReadTime;
 }
 
 void HpaeFastSinkOutputNode::CheckWakeUpTime(int64_t &wakeUpTime)
@@ -770,47 +808,62 @@ bool HpaeFastSinkOutputNode::GetRenderFrameDataInner(HpaePcmBuffer *&pcmBuffer)
     return true;
 }
 
+void HpaeFastSinkOutputNode::ProcessVolumeAndDfx(BufferDesc &transBuf)
+{
+    CheckPlaySignal(transBuf.buffer, transBuf.dataLength);
+    VolumeTools::DfxOperation(transBuf, GetDfxStreamInfo(), logUtilsTag_, volumeDataCount_);
+    ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(transBuf, GetDfxStreamInfo().format,
+        GetDfxStreamInfo().channels);
+    int32_t vol = channelVolumes.channel == 0 ? 0 : std::accumulate(channelVolumes.volStart,
+        channelVolumes.volStart + channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel;
+    vol = isExistLoopback_ ? 1 : vol;
+    ZeroVolumeCheck(vol);
+    UpdateSilentState(transBuf.buffer, transBuf.dataLength);
+    UpdateAmplitudeIfNeeded(transBuf);
+}
+
 int32_t HpaeFastSinkOutputNode::WriteToDeviceBuffer(HpaePcmBuffer *pcmBuffer, uint64_t curWritePos)
 {
     CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_ILLEGAL_STATE, "dstAudioBuffer_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(dstSpanSizeInByte_ > 0, ERR_INVALID_PARAM, "dstSpanSizeInByte_ is invalid");
     CHECK_AND_RETURN_RET_LOG(pcmBuffer != nullptr, ERR_INVALID_PARAM, "pcmBuffer is nullptr");
 
+    // renderFrameData_ is in heap, can be accessed much faster than dstAudioBuffer_ (DSP mmap memory without MMU).
+    // Do volume and other read-heavy works on heap buffer, then copy once to DSP buffer.
+    size_t writeSize = std::min(validRenderDataLen_, dstSpanSizeInByte_);
+    CHECK_AND_RETURN_RET_LOG(writeSize > 0, ERR_INVALID_PARAM, "writeSize is invalid");
+    if (writeSize < dstSpanSizeInByte_) {
+        AUDIO_WARNING_LOG("WriteToDeviceBuffer short frame, "
+            "sessionId:%{public}u valid:%{public}zu span:%{public}zu",
+            GetSessionId(), writeSize, dstSpanSizeInByte_);
+    }
+
+    if (switchDevicesMute_) {
+        std::fill(renderFrameData_.begin(), renderFrameData_.end(), 0);
+    }
+
+    BufferDesc transBuf = {};
+    transBuf.buffer = reinterpret_cast<uint8_t *>(renderFrameData_.data());
+    transBuf.dataLength = dstSpanSizeInByte_;
+    transBuf.bufLength = dstSpanSizeInByte_;
+
+    // do volume and read-heavy works on heap buffer
+    ProcessVolumeAndDfx(transBuf);
+
+    // do memcpy|write work: single copy from heap to DSP buffer
     BufferDesc writeBuf = {};
     int32_t ret = dstAudioBuffer_->GetWriteBuffer(curWritePos, writeBuf);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetWriteBuffer failed");
-
-    size_t writeSize = std::min(validRenderDataLen_, writeBuf.bufLength);
-    if (writeSize == 0) {
-        return ERR_INVALID_PARAM;
-    }
-    if (switchDevicesMute_) {
-        ret = memset_s(writeBuf.buffer, writeBuf.bufLength, 0, writeBuf.bufLength);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memset_s for switch mute failed");
-    } else {
-        ret = memcpy_s(writeBuf.buffer, writeBuf.bufLength, renderFrameData_.data(), writeSize);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memcpy_s failed");
-        if (writeSize < writeBuf.bufLength) {
-            size_t remainingSize = writeBuf.bufLength - writeSize;
-            ret = memset_s(writeBuf.buffer + writeSize, remainingSize, 0, remainingSize);
-            CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memset_s failed");
-            AUDIO_WARNING_LOG("WriteToDeviceBuffer short frame, "
-                "sessionId:%{public}u valid:%{public}zu span:%{public}zu",
-                GetSessionId(), writeSize, writeBuf.bufLength);
-        }
+    size_t copySize = std::min(transBuf.bufLength, writeBuf.bufLength);
+    ret = memcpy_s(writeBuf.buffer, writeBuf.bufLength, transBuf.buffer, copySize);
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memcpy_s failed");
+    if (copySize < writeBuf.bufLength) {
+        size_t remainingSize = writeBuf.bufLength - copySize;
+        ret = memset_s(writeBuf.buffer + copySize, remainingSize, 0, remainingSize);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memset_s failed");
     }
     writeBuf.dataLength = writeBuf.bufLength;
-    CheckPlaySignal(writeBuf.buffer, writeBuf.dataLength);
-    VolumeTools::DfxOperation(writeBuf, GetDfxStreamInfo(), logUtilsTag_, volumeDataCount_);
-    ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(writeBuf, GetDfxStreamInfo().format,
-        GetDfxStreamInfo().channels);
-    int32_t vol = channelVolumes.channel == 0 ? 0 : std::accumulate(channelVolumes.volStart,
-        channelVolumes.volStart + channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel;
-    vol = isExistLoopback_ ? 1 : vol;
-    ZeroVolumeCheck(vol);
-    UpdateSilentState(writeBuf.buffer, writeBuf.dataLength);
-    UpdateAmplitudeIfNeeded(writeBuf);
-    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(writeBuf.buffer), writeBuf.dataLength);
+    DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(transBuf.buffer), transBuf.dataLength);
 
     lastWriteTime_ = ClockTime::GetCurNano();
     return SUCCESS;
@@ -978,7 +1031,7 @@ void HpaeFastSinkOutputNode::UpdateAmplitudeIfNeeded(BufferDesc &writeBuf)
 void HpaeFastSinkOutputNode::ZeroVolumeCheck(int32_t vol)
 {
     CHECK_AND_RETURN(sinkOutAttr_.audioStreamFlag != AUDIO_FLAG_VOIP_FAST);
-    if (currentOutputDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+    if (GetDeviceClass() == "a2dp_fast") {
         return;
     }
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {

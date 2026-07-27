@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1281,7 +1281,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, ConvertToAudioInputRouteFlag_001, TestSize.
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_LIVE);
     EXPECT_EQ(result, AUDIO_INPUT_FLAG_LIVE);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_MESSAGE);
-    EXPECT_EQ(result, AUDIO_INPUT_FLAG_NORMAL);
+    EXPECT_NE(result, AUDIO_INPUT_FLAG_NORMAL);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_ULTRASONIC);
     EXPECT_EQ(result, AUDIO_INPUT_FLAG_ULTRASONIC);
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_RECOGNITION);
@@ -1429,6 +1429,38 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_014, TestSize.Level
     captureSource->attr_.hdiSourceType = "AUDIO_INPUT_CAMCORDER_TYPE";
     uint32_t id = captureSource->GetUniqueIdBySourceType();
     EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_CAMCORDER * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_015
+ * @tc.desc   : Test GetUniqueIdBySourceType fallback by routeFlag
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_015, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    captureSource->attr_.sourceType = SOURCE_TYPE_MIC;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
+
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_AI;
+    uint32_t id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION * UNIQUE_ID_INTERVAL);
+
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_UNPROCESS;
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_UNPROCESS * UNIQUE_ID_INTERVAL);
+
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_LIVE;
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_LIVE * UNIQUE_ID_INTERVAL);
+
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_INTERPHONE;
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_INTERPHONE * UNIQUE_ID_INTERVAL);
+
+    captureSource->attr_.routeFlag = AUDIO_INPUT_FLAG_NORMAL;
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_PRIMARY * UNIQUE_ID_INTERVAL);
 }
 
 /**

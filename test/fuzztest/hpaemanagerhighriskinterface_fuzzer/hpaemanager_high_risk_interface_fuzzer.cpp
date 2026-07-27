@@ -25,6 +25,7 @@
 #include "audio_errors.h"
 #include "test_case_common.h"
 #include "hpae_audio_service_dump_callback_unit_test.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -79,9 +79,9 @@ public:
 
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
 
-    int32_t PauseAudioFocusForExtAudioZone() override;
+    int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
-    int32_t ResumeAudioFocusForExtAudioZone() override;
+    int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
     void SetZoneDeviceVisible(bool visible) override;
 
@@ -259,7 +259,7 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneChangeCallback(int32_t zoneId,
     const std::shared_ptr<AudioZoneChangeCallback> &callback)
 {
     AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId is invalid");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
@@ -274,7 +274,7 @@ int32_t AudioZoneManagerInner::RegisterAudioZoneChangeCallback(int32_t zoneId,
 int32_t AudioZoneManagerInner::UnRegisterAudioZoneChangeCallback(int32_t zoneId)
 {
     AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId is invalid");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_RET_LOG(client_ != nullptr, ERROR, "client_ is nullptr!");
@@ -380,19 +380,19 @@ int32_t AudioZoneManagerInner::RemoveStreamIdFromAudioZone(int32_t zoneId, uint3
     return result;
 }
 
-int32_t AudioZoneManagerInner::PauseAudioFocusForExtAudioZone()
+int32_t AudioZoneManagerInner::PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     AUDIO_INFO_LOG("in");
-    int32_t result = AudioPolicyManager::GetInstance().PauseAudioFocusForExtAudioZone();
+    int32_t result = AudioPolicyManager::GetInstance().PauseAudioFocusForExtAudioZone(zoneIds);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
         "PauseAudioFocusForExtAudioZone result:%{public}d", result);
     return result;
 }
 
-int32_t AudioZoneManagerInner::ResumeAudioFocusForExtAudioZone()
+int32_t AudioZoneManagerInner::ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds)
 {
     AUDIO_INFO_LOG("in");
-    int32_t result = AudioPolicyManager::GetInstance().ResumeAudioFocusForExtAudioZone();
+    int32_t result = AudioPolicyManager::GetInstance().ResumeAudioFocusForExtAudioZone(zoneIds);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
         "ResumeAudioFocusForExtAudioZone result:%{public}d", result);
     return result;

@@ -512,6 +512,54 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererKeepRunning(OH_AudioStrea
 OH_AudioStream_Result OH_AudioStreamBuilder_SetPlaybackCaptureMode(OH_AudioStreamBuilder* builder,
     uint32_t mode);
 
+/**
+ * @brief Sets the callback to receive when the sensitive warning message playback is finished for
+ * voice downlink capturer stream.
+ * This function is only needed when using {@link AUDIOSTREAM_SOURCE_TYPE_VOICE_DOWNLINK} to record.
+ * This callback must be successfully set, otherwise the capturer can not be created.
+ * The sensitive warning message will be automatically added to the voice data sent to the other
+ * end of the call right after the audio capturer is created.
+ * The application should wait for the callback result before starting the capturer, otherwise an
+ * error will be returned by {@link OH_AudioCapturer_Start}.
+ * Make sure the audio capturer is created after the voice call started, otherwise the message will
+ * be played in local.
+ *
+ * @param builder The pointer to the {@link OH_AudioStreamBuilder} object created
+ *     by {@link OH_AudioStreamBuilder_Create}.
+ * @param callback Callback to the functions that will process capturer stream, NULL value is not allowed.
+ * @param userData The pointer to user data, which will be passed back to the application in the callback.
+ *     If application does not need to pass any data, NULL value is also allowed. But if data is not NULL, the
+ *        caller should check whether the data is still valid when receive the callback.
+ * @return <ul>
+ *         <li>{@link AUDIOSTREAM_SUCCESS} If the execution is successful.</li>
+ *         <li>{@link AUDIOSTREAM_ERROR_INVALID_PARAM} The param of builder or callback is nullptr.</li>
+ *         </ul>
+ * @since 26.0.0
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetSensitiveRecordPermitCallback(
+    OH_AudioStreamBuilder* builder, OH_AudioCapturer_SensitiveRecordPermitCallback callback, void* userData);
+
+/**
+ * @brief Sets phone number and token for voice downlink capturer stream.
+ * This function is only needed when using {@link AUDIOSTREAM_SOURCE_TYPE_VOICE_DOWNLINK} to record.
+ * The phone number and token must be successfully set, otherwise the capturer can not be created. They
+ * will be used to check whether the voice downlink capturer matches the cellular call.
+ *
+ * @param builder The pointer to the {@link OH_AudioStreamBuilder} object created
+ *     by {@link OH_AudioStreamBuilder_Create}.
+ * @param cellularRecordPhoneNum The phone number for the target cellular call, which is used in makeCallWithToken(),
+ *     NULL value is not allowed.
+ * @param cellularRecordToken The token for the target cellular call, which can be obtained by makeCallWithToken()
+ *     function from call management, NULL value is not allowed.
+ * @return <ul>
+ *         <li>{@link AUDIOSTREAM_SUCCESS} If the execution is successful.</li>
+ *         <li>{@link AUDIOSTREAM_ERROR_INVALID_PARAM} The param of builder,
+ *              cellularRecordPhoneNum or cellularRecordToken is nullptr.</li>
+ *         </ul>
+ * @since 26.0.0
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetCellularRecordSecurityParams(
+    OH_AudioStreamBuilder* builder, const char* cellularRecordPhoneNum, const char* cellularRecordToken);
 #ifdef __cplusplus
 }
 #endif

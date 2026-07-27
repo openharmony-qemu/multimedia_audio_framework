@@ -62,6 +62,7 @@ public:
     vector<shared_ptr<AudioDeviceDescriptor>> GetCapturePrivacyDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> GetCapturePublicDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> GetRecongnitionCapturePrivacyDevices();
+    shared_ptr<AudioDeviceDescriptor> GetSingleMicSppDevice();
     shared_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice(StreamUsage streamUsage);
     shared_ptr<AudioDeviceDescriptor> GetRenderDefaultDevice();
     shared_ptr<AudioDeviceDescriptor> GetCaptureDefaultDevice();
@@ -71,6 +72,9 @@ public:
     void GetAvailableDevicesWithUsage(const AudioDeviceUsage usage,
         const list<DevicePrivacyInfo> &deviceInfos, const std::shared_ptr<AudioDeviceDescriptor> &dev,
         std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    void AddAvailableDevicesByUsageAndPrivacy(AudioDeviceUsage usage,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &resultDevices);
     vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
         const std::string &macAddress);
     vector<shared_ptr<AudioDeviceDescriptor>> GetConnectedDevicesByTypesAndRole(
@@ -104,7 +108,14 @@ public:
     AudioDevicePrivacyType GetDevicePrivacyType(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     int32_t GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool IsDeviceAvailable(AudioDeviceUsage audioDevUsage, const std::shared_ptr<AudioDeviceDescriptor> &desc);
-    void UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    void UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor, AudioPin hdiPin);
+    // Update silent state for all connected wireless devices
+    void UpdateAllWirelessDevicesSilentState();
+    // Update wireless device silent state, only update when isSilent_ differs
+    void UpdateWirelessDeviceSilentState(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool RestoreWirelessDeviceSilentState();
+
+    bool HasWirelessDevicesConnected();
 
 private:
     AudioDeviceManager();
@@ -142,6 +153,7 @@ private:
     void AddMediaDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void AddCaptureDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     void HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void UpdateBtDeviceListForCategory(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     bool IsExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
         const vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     void AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
@@ -161,18 +173,11 @@ private:
     void RemoveCommunicationDevices(const AudioDeviceDescriptor &devDesc);
     void RemoveMediaDevices(const AudioDeviceDescriptor &devDesc);
     void RemoveCaptureDevices(const AudioDeviceDescriptor &devDesc);
-    bool UpdateConnectState(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    bool UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    bool UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    bool UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    bool UpdateDeviceUsage(const shared_ptr<AudioDeviceDescriptor> &deviceDesc,
-        AudioStreamDeviceChangeReasonExt &reason);
     bool IsDescMatchedInVector(const shared_ptr<AudioDeviceDescriptor> &devDesc, list<DevicePrivacyInfo> &deviceList);
 
     void RemoveVirtualConnectedDevice(const shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc);
-    bool TriggerDeviceInfoUpdatedCallback(AudioDeviceDescriptor &desc,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
+    // Check whether all streams are silent or standby
+    bool CheckAllStreamsSilentOrStandByOnDevice();
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;

@@ -258,7 +258,6 @@ ohos_unittest("audio_zone_service_unit_test") {
   if (bluetooth_part_enable == true) {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
-
 }
 
 ohos_unittest("audio_zone_unit_test") {
@@ -424,6 +423,13 @@ ohos_unittest("audio_zone_unit_test") {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
 
+  if (audio_framework_feature_multi_zone_volume) {
+    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
+  }
+
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+  }
 }
 
 ohos_unittest("audio_interrupt_service_unit_test") {
@@ -4468,7 +4474,10 @@ ohos_unittest("audio_adapter_manager_ext_unit_test") {
     "-fno-access-control",
   ]
 
-  sources = [ "./unittest/audio_adapter_manager_unit_test/src/audio_adapter_manager_ext_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_adapter_manager_unit_test/src/audio_adapter_manager_ext_unit_test.cpp",
+    "./unittest/audio_adapter_manager_unit_test/src/mock_os_account.cpp",
+  ]
 
   deps = [
     "../../../frameworks/native/audiodefinitions:audio_definitions",
@@ -4961,6 +4970,7 @@ ohos_unittest("audio_state_manager_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
+    "samgr:samgr_proxy",
   ]
 
   sources = [ "./unittest/audio_state_manager_unit_test/src/audio_state_manager_unit_test.cpp" ]
@@ -5186,6 +5196,7 @@ ohos_unittest("audio_usr_select_manager_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
+    "samgr:samgr_proxy",
   ]
 
   sources = [ "./unittest/audio_usr_select_manager_unit_test/src/audio_usr_select_manager_unit_test.cpp" ]
@@ -6914,7 +6925,7 @@ ohos_unittest("va_device_manager_test") {
   module_out_path = module_output_path
   include_dirs = ["./unittest/va_device_manager_test/include",
                   "../../audio_policy/server/domain/device/src/va",
-                  "../../../services/audio_service/unittest/include",
+                  "../../../services/audio_service/test/unittest/include",
                   "../../../frameworks",
                   "//foundation/multimedia/audio_framework/services/audio_service/test/unittest/include/",
   ]

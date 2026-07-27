@@ -30,6 +30,7 @@
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_aiss_node.h"
 #include "audio_suite_unittest_tools.h"
+#include "securec.h"
 
 using namespace testing::ext;
 using namespace testing;

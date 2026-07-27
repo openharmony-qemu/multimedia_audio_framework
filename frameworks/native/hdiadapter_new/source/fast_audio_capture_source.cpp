@@ -408,6 +408,7 @@ enum AudioInputType FastAudioCaptureSource::ConvertToHDIAudioInputType(int32_t s
             hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
             break;
         case SOURCE_TYPE_VOICE_CALL:
+        case SOURCE_TYPE_VOICE_DOWNLINK:
             hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
             break;
         case SOURCE_TYPE_CAMCORDER:
@@ -486,6 +487,9 @@ void FastAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &device
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
             deviceDesc.pins = PIN_IN_HS_MIC;
+            break;
+        case DEVICE_TYPE_WIRED_MICIN:
+            deviceDesc.pins = PIN_IN_REAR_MIC;
             break;
         case DEVICE_TYPE_LINE_DIGITAL:
             deviceDesc.pins = PIN_IN_LINEIN;

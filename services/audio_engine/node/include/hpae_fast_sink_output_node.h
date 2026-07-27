@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -111,6 +111,7 @@ private:
     void InitTransBuffer();
     void InitAudiobuffer(bool resetReadWritePos);
     void AsyncGetPosTime();
+    void UpdateVirtualDeviceHandleInfo();
     void StopUpdateThread();
     bool TriggerPrepareNextLoop();
     bool TriggerPrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
@@ -127,6 +128,7 @@ private:
     void CheckSyncInfo(uint64_t curWritePos);
     bool GetRenderFrameDataInner(HpaePcmBuffer *&pcmBuffer);
     int32_t WriteToDeviceBuffer(HpaePcmBuffer *pcmBuffer, uint64_t curWritePos);
+    void ProcessVolumeAndDfx(BufferDesc &transBuf);
     AudioStreamInfo GetDfxStreamInfo();
     void InitDumpFile();
     void InitSinkVolume();

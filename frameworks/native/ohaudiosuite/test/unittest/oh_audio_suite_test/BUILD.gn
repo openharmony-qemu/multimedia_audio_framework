@@ -27,6 +27,8 @@ if (audio_framework_feature_audiosuite_support) {
       "${audio_framework_root}/services/audio_suite/client/utils/include",
       "${audio_framework_root}/services/audio_engine/plugin/resample/include",
       "${audio_framework_root}/services/audio_suite/client/converter/include",
+      "${audio_framework_root}/services/audio_suite/idl",
+      "${target_gen_dir}",
     ]
 
     cflags = [
@@ -57,6 +59,8 @@ if (audio_framework_feature_audiosuite_support) {
       "src/oh_audio_suite_node_builder_test.cpp",
       "src/oh_audio_converter_test.cpp",
       "src/oh_audio_suite_tool_test.cpp",
+      "src/oh_audio_suite_system_node_test.cpp",
+      "src/oh_audio_suite_download_manager_test.cpp",
     ]
 
     deps = [
@@ -68,8 +72,10 @@ if (audio_framework_feature_audiosuite_support) {
     ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "hilog:libhilog",
       "ipc:ipc_single",
+      "bounds_checking_function:libsec_shared",
     ]
   }
 }

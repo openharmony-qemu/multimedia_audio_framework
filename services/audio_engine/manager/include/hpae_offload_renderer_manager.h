@@ -99,6 +99,9 @@ public:
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
+    void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
+    OffloadCallbackData GetOffloadCallbackData() noexcept override;
+    void TriggerAppsUidUpdate(uint32_t sessionId) override;
 
     // Session Effect (synchronous — must be called from SignalProcessThread)
     int32_t CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
@@ -113,9 +116,6 @@ public:
     int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
     void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
 
-    void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
-    OffloadCallbackData GetOffloadCallbackData() noexcept override;
-    void TriggerAppsUidUpdate(uint32_t sessionId) override;
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
@@ -137,6 +137,7 @@ private:
     void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state,
         uint32_t appUid = INVALID_UID);
     void FlushPipelineNodes(uint32_t sessionId);
+    void TearDownCurrentNodePipeline(uint32_t sessionId, HpaeSessionState state, bool isSessionEffectActive);
 
     std::shared_ptr<HpaeSinkInputNode> curNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;

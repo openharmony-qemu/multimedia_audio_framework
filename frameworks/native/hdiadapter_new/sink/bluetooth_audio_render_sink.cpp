@@ -32,6 +32,7 @@
 #include "adapter/i_device_manager.h"
 #include "audio_stream_enum.h"
 #include "util/audio_running_lock.h"
+#include "securec.h"
 
 using namespace OHOS::HDI::Audio_Bluetooth;
 

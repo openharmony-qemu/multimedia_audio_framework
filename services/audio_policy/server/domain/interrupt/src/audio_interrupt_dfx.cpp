@@ -147,20 +147,20 @@ std::string AudioInterruptDfx::GetInterruptRendererInfo(const AudioInterrupt &au
 
 std::string AudioInterruptDfx::GetInterruptSessionInfo(const AudioInterrupt &audioInterrupt)
 {
-    std::string sesssionInfoStr = "";
+    std::string sessionInfoStr = "";
     AudioSessionService &sessionService = OHOS::Singleton<AudioSessionService>::GetInstance();
     if (!sessionService.IsAudioSessionActivated(audioInterrupt.pid)) {
-        return sesssionInfoStr;
+        return sessionInfoStr;
     }
     if (sessionService.IsAudioSessionFocusMode(audioInterrupt.pid)) {
-        AppendFormat(sesssionInfoStr, "audioSessionVersion: v2, concurrencyMode : %d, Scene : %d",
+        AppendFormat(sessionInfoStr, "audioSessionVersion: v2, concurrencyMode : %d, Scene : %d",
             sessionService.GetSessionStrategy(audioInterrupt.pid),
             sessionService.GenerateFakeAudioInterrupt(audioInterrupt.pid).audioFocusType.streamType);
     } else {
-        AppendFormat(sesssionInfoStr, "audioSessionVersion: v1, concurrencyMode : %d",
+        AppendFormat(sessionInfoStr, "audioSessionVersion: v1, concurrencyMode : %d",
             sessionService.GetSessionStrategy(audioInterrupt.pid));
     }
-    return sesssionInfoStr;
+    return sessionInfoStr;
 }
 
 void AudioInterruptDfx::RecordInterruptEvent(const InterruptEventInternal &interruptEvent,
@@ -232,29 +232,35 @@ void AudioInterruptDfx::NotifyStreamSilentChange(uint32_t streamId)
 
 void AudioInterruptDfx::CheckMuteInterruptEvent(uint32_t streamId)
 {
-    if (audioInterruptCheckInfo_.count(streamId) > 0) {
-        auto interruptCheckInfo = audioInterruptCheckInfo_[streamId];
-        if (interruptCheckInfo.isMuteStream) {
-            AUDIO_ERR_LOG("Is MuteStream %{public}d", streamId);
-            for (auto interruptError : interruptCheckInfo.errorEvents) {
-                interruptError.errorInfo = "MuteInterruptEvent";
-                WriteAudioInterruptErrorEvent(interruptError);
-            }
+    if (audioInterruptCheckInfo_.count(streamId) <= 0) {
+        return;
+    }
+    auto interruptCheckInfo = audioInterruptCheckInfo_[streamId];
+    if (interruptCheckInfo.isMuteStream) {
+        AUDIO_ERR_LOG("Is MuteStream %{public}d", streamId);
+        for (auto interruptError : interruptCheckInfo.errorEvents) {
+            interruptError.errorInfo = "MuteInterruptEvent";
+            WriteAudioInterruptErrorEvent(interruptError);
         }
     }
 }
 
 void AudioInterruptDfx::CheckShortInterruptEvent(uint32_t streamId)
 {
-    if (audioInterruptCheckInfo_.count(streamId) > 0) {
-        auto interruptCheckInfo = audioInterruptCheckInfo_[streamId];
-        auto currentTime = std::chrono::steady_clock::now();
-        if (currentTime - interruptCheckInfo.startTime < std::chrono::seconds(1)) {
-            AUDIO_ERR_LOG("Is ShortStream %{public}d", streamId);
-            for (auto interruptError : interruptCheckInfo.errorEvents) {
-                interruptError.errorInfo = "ShortInterruptEvent";
-                WriteAudioInterruptErrorEvent(interruptError);
+    if (audioInterruptCheckInfo_.count(streamId) <= 0) {
+        return;
+    }
+    auto interruptCheckInfo = audioInterruptCheckInfo_[streamId];
+    auto currentTime = std::chrono::steady_clock::now();
+    if (!interruptCheckInfo.isMuteStream &&
+        currentTime - interruptCheckInfo.startTime < std::chrono::seconds(1)) {
+        AUDIO_ERR_LOG("Is ShortStream %{public}d", streamId);
+        for (auto interruptError : interruptCheckInfo.errorEvents) {
+            if (interruptError.hintType == INTERRUPT_HINT_PAUSE) {
+                return;
             }
+            interruptError.errorInfo = "ShortInterruptEvent";
+            WriteAudioInterruptErrorEvent(interruptError);
         }
     }
 }
@@ -323,6 +329,18 @@ void AudioInterruptDfx::WriteInterruptOrSessionCallbackErrorEvent(int32_t usage,
         " type: " + std::to_string(type);
     interruptError.errorInfo = "MisuseOfInterfaces";
     WriteAudioInterruptErrorEvent(interruptError);
+}
+
+void AudioInterruptDfx::AudioSessionTimeoutErrorEvent(const AudioInterrupt &audioInterrupt)
+{
+    AudioFocusErrorEvent interruptErrorEvent;
+    interruptErrorEvent.appName = AudioInterruptUtils::GetAudioInterruptBundleName(audioInterrupt);
+    if (audioInterrupt.isAudioSessionInterrupt) {
+        interruptErrorEvent.errorInfo = "V2Timeout";
+    } else {
+        interruptErrorEvent.errorInfo = "V1Timeout";
+    }
+    WriteAudioInterruptErrorEvent(interruptErrorEvent);
 }
 } // namespace AudioStandard
 } // namespace OHOS

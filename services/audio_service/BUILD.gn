@@ -21,16 +21,6 @@ import("../../window_manager.gni")
 
 audio_framework_root = "../.."
 
-sanitize_init = {
-  cfi = true
-  cfi_cross_dso = true
-  cfi_vcall_icall_only = true
-  debug = false
-  integer_overflow = false
-  ubsan = true
-  boundary_sanitize = true
-}
-
 group("audio_service_packages") {
   deps = [
     ":audio_common",
@@ -123,6 +113,7 @@ ohos_shared_library("audio_common") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
@@ -211,7 +202,10 @@ config("audio_client_public_config") {
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
   }
-  external_deps = []
+  external_deps = [
+    "ipc:ipc_core",
+    "samgr:samgr_proxy",
+  ]
   if (sonic_enable == true) {
     external_deps += [ "sonic:sonic" ]
   }
@@ -271,10 +265,17 @@ config("audio_sasdk_public_config") {
 
 ohos_shared_library("audio_stream_client") {
   branch_protector_ret = "pac_ret"
-  sanitize = sanitize_init
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = false
+    ubsan = true
+    boundary_sanitize = true
+  }
 
   sources = [
-    "client/src/audio_process_in_client.cpp",
     "client/src/audio_spatial_channel_converter.cpp",
     "client/src/audio_stream_tracker.cpp",
     "client/src/capturer_in_client.cpp",
@@ -284,10 +285,6 @@ ohos_shared_library("audio_stream_client") {
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
   ]
-
-  if (audio_framework_feature_low_latency) {
-    sources += [ "client/src/fast_audio_stream.cpp" ]
-  }
 
   public_configs = [
     ":audio_client_public_config",
@@ -332,7 +329,15 @@ ohos_shared_library("audio_stream_client") {
 ohos_shared_library("audio_policy_manager") {
   branch_protector_ret = "pac_ret"
   install_enable = true
-  sanitize = sanitize_init
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = false
+    ubsan = true
+    boundary_sanitize = true
+  }
 
   sources = [
     "client/src/audio_collaborative_manager.cpp",
@@ -398,7 +403,15 @@ ohos_shared_library("audio_policy_manager") {
 ohos_shared_library("audio_engine_manager") {
   branch_protector_ret = "pac_ret"
   install_enable = true
-  sanitize = sanitize_init
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = false
+    ubsan = true
+    boundary_sanitize = true
+  }
   sources = [
     "client/src/audio_engine_client_manager.cpp",
     "client/src/audio_manager_listener_stub_impl.cpp",
@@ -454,6 +467,15 @@ ohos_shared_library("audio_engine_manager") {
 ohos_shared_library("audio_client") {
   branch_protector_ret = "pac_ret"
   install_enable = true
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = false
+    ubsan = true
+    boundary_sanitize = true
+  }
   sources = [
     "client/src/audio_routing_manager.cpp",
     "client/src/audio_system_manager.cpp",
@@ -515,15 +537,16 @@ ohos_prebuilt_etc("audio_server_init") {
 config("audio_service_config") {
   visibility = [ ":*" ]
   visibility += [
-    "../../services/audio_service/test/unittest:audio_process_in_client_unit_test",
     "../../services/audio_service/test/unittest:capturer_in_server_unit_test",
-    "../../services/audio_service/test/unittest/audio_endpoint_unit_test",
-    "../../services/audio_service/test/unittest/audio_endpoint_plus_unit_test",
     "../../services/audio_service/test/unittest/audio_server_unit_test",
     "../../services/audio_service/test/unittest/hw_decoding_stream_unit_test",
     "../../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test",
     "../../test/fuzztest/*",
-    "../../services/audio_service/test/unittest:audio_process_in_client_second_unit_test",
+    "../../services/audio_service/test/unittest:audio_effect_server_unit_test",
+    "../../services/audio_service/test/unittest:audio_playback_engine_unit_test",
+    "../../services/audio_service/test/unittest:audio_server_extra_unit_test",
+    "../../services/audio_service/test/unittest:audio_service_second_unit_test",
+    "../../services/audio_service/test/unittest:audio_manager_stub_unit_test",
   ]
 
   include_dirs = [
@@ -626,15 +649,6 @@ audio_ohos_library("audio_process_service") {
     ]
   }
 
-  if (audio_framework_feature_low_latency) {
-    sources += [
-      "server/src/audio_endpoint.cpp",
-      "server/src/audio_endpoint_performance.cpp",
-      "server/src/audio_process_in_server.cpp",
-      "server/src/audio_endpoint_sink_adapter.cpp",
-    ]
-  }
-
   configs = [ ":audio_service_config" ]
 
   include_dirs = [
@@ -688,7 +702,7 @@ audio_ohos_library("audio_process_service") {
     "qos_manager:concurrent_task_client",
     "ability_runtime:extension_manager",
     "init:libbegetutil",
-    "bounds_checking_function:libsec_static",
+    "bounds_checking_function:libsec_shared",
     "cJSON:cjson",
   ]
 
@@ -760,7 +774,7 @@ audio_ohos_library("audio_process_service") {
 }
 
 audio_ohos_library("audio_service") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -798,6 +812,7 @@ audio_ohos_library("audio_service") {
     ":audio_common",
     ":audio_process_service",
     ":audio_policy_manager",
+    "../audio_policy:audio_policy_client",
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioinnercall:audio_inner_call",
@@ -900,7 +915,7 @@ audio_ohos_library("audio_service") {
 }
 
 ohos_shared_library("audio_sasdk") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -954,46 +969,6 @@ group("audio_service_test_packages") {
     ":audio_engine_client_manager_test",
     "../../frameworks/native/hdiadapter_new:hdi_monitor_test",
   ]
-
-  if (audio_framework_feature_low_latency) {
-    deps += [ ":audio_process_client_test" ]
-  }
-}
-
-ohos_executable("audio_process_client_test") {
-  install_enable = false
-
-  include_dirs = [
-    "../../frameworks/native/audiostream/include",
-    "../../frameworks/native/audioutils/include",
-    "../../interfaces/inner_api/native/audiocommon/include",
-    "client/include",
-    "../audio_policy/server/include",
-  ]
-
-  sources = [ "test/example/audio_process_client_test.cpp" ]
-
-  deps = [
-    ":audio_client",
-    ":audio_engine_manager",
-    ":audio_policy_manager",
-    ":audio_stream_client",
-    "../audio_policy:audio_foundation",
-    "./../../frameworks/native/audioutils:audio_utils",
-  ]
-
-  external_deps = [
-    "bounds_checking_function:libsec_shared",
-    "ipc:ipc_core",
-    "c_utils:utils",
-    "hilog:libhilog",
-    "init:libbegetutil",
-    "eventhandler:libeventhandler",
-    "samgr:samgr_proxy",
-  ]
-
-  part_name = "audio_framework"
-  subsystem_name = "multimedia"
 }
 
 ohos_executable("audio_hdi_device_test") {

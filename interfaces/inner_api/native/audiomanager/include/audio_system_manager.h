@@ -157,6 +157,38 @@ public:
     int32_t SetAppVolumeMuted(const int32_t appUid, const bool muted, const int32_t flag = 0);
 
     /**
+     * @brief Set the mute state of the VoIP renderer for the specified uid and streamId.
+     * If there are multiple callers setting muted states for the same uid and streamId,
+     * only when all callers cancel muted state the VoIP renderer stream will be truly unmuted.
+     * When the application abnormally exits, the application releases the audio stream and
+     * restarts it, or the audio service abnormally exits and restarts, the mute state set
+     * for this audio stream will automatically become invalid. In these cases, you need to
+     * call this API again to apply the mute state.
+     * @param appUid The UID of the app.
+     * @param streamId The stream ID of the VoIP renderer.
+     * @param muted Set to true to mute the VoIP renderer, false to unmute.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetVoipRendererMuteForUid(const int32_t appUid, const int64_t streamId, const bool muted);
+
+    /**
+     * @brief Set the mute state of the VoIP capturer for the specified app and stream.
+     * If there are multiple callers setting muted states for the same uid and streamId,
+     * only when all callers cancel muted state the VoIP renderer stream will be truly unmuted.
+     * When the application abnormally exits, the application releases the audio stream and
+     * restarts it, or the audio service abnormally exits and restarts, the mute state set
+     * for this audio stream will automatically become invalid. In these cases, you need to
+     * call this API again to apply the mute state.
+     * @param appUid The UID of the app.
+     * @param streamId The stream ID of the VoIP capturer.
+     * @param muted Set to true to mute the VoIP capturer, false to unmute.
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetVoipCapturerMuteForUid(const int32_t appUid, const int64_t streamId, const bool muted);
+
+    /**
      * @brief Set the mute state of the VoIP ringtone for the specified app.
      * @param appUid The UID of the app.
      * @param muted Set to true to mute the VoIP ringtone, false to unmute.
@@ -290,6 +322,17 @@ public:
      * @since 8
      */
     bool IsStreamMute(AudioVolumeType volumeType) const;
+
+    /**
+     * @brief Set volume type control priority.
+     *
+     * @param priorities a volume type list which indicates the priority order of volume control.
+     * The position that is further forward has a higher priority.
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 26
+     */
+    int32_t SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities);
 
     /**
      * @brief get volume db value that system calculate by volume type, volume level and device type.

@@ -40,6 +40,7 @@
 #include "hpae_policy_manager.h"
 #include "hpae_no_lock_queue.h"
 #include "i_standard_spatialization_state_change_listener_fuzzer.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

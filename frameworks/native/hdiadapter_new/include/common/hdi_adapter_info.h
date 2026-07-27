@@ -53,6 +53,7 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_DIRECT "direct"
 #define HDI_ID_INFO_VOIP "voip"
 #define HDI_ID_INFO_DP "dp"
+#define HDI_ID_INFO_HDMI "hdmi"
 #define HDI_ID_INFO_USB "usb"
 #define HDI_ID_INFO_EC "ec"
 #define HDI_ID_INFO_MIC_REF "mic_ref"
@@ -72,6 +73,7 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_WIRED "Built_in_wired"
 #define HDI_ID_INFO_PRIMARY_EXTRA_CAPTURER_BT_NEARLINK "Built_in_bt"
 #define HDI_ID_INFO_CAMCORDER "camcorder"
+#define HDI_ID_INFO_VOICE_MESSAGE "voice_message"
 
 #define HDI_ID_INFO_PRIMARY_EXTRA_TYPEC "Typec_Speaker"
 #define HDI_ID_INFO_PRIMARY_EXTRA_WIRED "Wired_Speaker"

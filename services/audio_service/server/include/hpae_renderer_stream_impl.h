@@ -124,12 +124,15 @@ private:
     int32_t GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
     bool WaitFirstStreamData();
     void NotifyFirstStreamData();
+    void NotifyFirstFrameConsumedOnce();
     int32_t FetchSinkLatency(uint32_t &sinkLatency);
     void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
     uint64_t GetOffloadLatency();
     bool InitLatencyInfo(const AudioCallBackStreamInfo &callBackStreamInfo);
     void UpdateInnerCapWriteState(bool isWriteFirst);
+    int32_t HandleCallbackBufferData(AudioCallBackStreamInfo &callBackStreamInfo);
+    int32_t HandleWriteBufferData(AudioCallBackStreamInfo &callBackStreamInfo);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
@@ -160,7 +163,7 @@ private:
     uint64_t framePosition_ = 0;
     uint64_t lastFramePosition_ = 0;
     uint64_t lastHdiFramePosition_ = 0;
-    uint64_t rewindTime_ = 0;
+    uint64_t rewindFramePosition_ = 0;
     std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
@@ -196,6 +199,10 @@ private:
     std::condition_variable firstStreamDataCv_;
     std::atomic<bool> firstStreamDataReceived_ = false;
     std::atomic<bool> sendDataEnabled_ = true;
+    // Once-gate for the HPAE first-frame-consumed fallback. Armed after STARTED is
+    // forwarded, disarmed before PAUSED/STOPPED/RELEASED is forwarded. Consumed
+    // atomically by the first valid media-data consumption in a Start cycle.
+    std::atomic<bool> firstFramePending_ = false;
 
     std::pair<uint64_t, TimePoint> hdiPos_ = std::make_pair(0, std::chrono::high_resolution_clock::now());
     uint64_t writePos_ = 0;

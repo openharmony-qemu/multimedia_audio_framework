@@ -14,6 +14,7 @@
  */
 
 #include "hpae_capturer_stream_impl_fuzzer.h"
+#include "securec.h"
 #include <memory>
 #include <string>
 #include "i_hpae_manager.h"

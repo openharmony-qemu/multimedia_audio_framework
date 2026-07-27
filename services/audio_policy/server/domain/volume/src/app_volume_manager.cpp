@@ -105,6 +105,32 @@ int32_t AppVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMu
     return audioPolicyManager_.IsAppVolumeMute(appUid, owned, isMute);
 }
 
+int32_t AppVolumeManager::SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
+{
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}d, muted: %{public}d",
+        callerUid, appUid, static_cast<int32_t>(streamId), muted);
+    return audioPolicyManager_.SetVoipRendererMute(callerUid, appUid, streamId, muted);
+}
+
+int32_t AppVolumeManager::SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted)
+{
+    AUDIO_INFO_LOG("callerUid: %{public}d, appUid: %{public}d, streamId: %{public}d, muted: %{public}d",
+        callerUid, appUid, static_cast<int32_t>(streamId), muted);
+    return audioPolicyManager_.SetVoipCapturerMute(callerUid, appUid, streamId, muted);
+}
+
+int32_t AppVolumeManager::ClearVoipMuteByCallerUid(int32_t callerUid)
+{
+    AUDIO_INFO_LOG("callerUid: %{public}d", callerUid);
+    return audioPolicyManager_.ClearVoipMuteByCallerUid(callerUid);
+}
+
+int32_t AppVolumeManager::ClearVoipMuteByStreamId(int64_t streamId)
+{
+    AUDIO_INFO_LOG("streamId: %{public}d", static_cast<int32_t>(streamId));
+    return audioPolicyManager_.ClearVoipMuteByStreamId(streamId);
+}
+
 int32_t AppVolumeManager::SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage, DeviceType deviceType)
 {
     // For system-controlled app volume, the volumeLevel range is 0-100.

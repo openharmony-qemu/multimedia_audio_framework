@@ -117,6 +117,69 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
 }
 
 /*
+ * tc.name   : Test IHpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : AdjustFrameLen_001
+ * tc.desc   : Test AdjustFrameLen recalculates output frame length by effective sample rate.
+ */
+HWTEST_F(HpaeCapturerManagerTest, AdjustFrameLen_001, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    HpaeNodeInfo outNodeInfo;
+    inNodeInfo.frameLen = 480;
+    inNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    outNodeInfo.frameLen = 0;
+    outNodeInfo.samplingRate = SAMPLE_RATE_96000;
+
+    bool ret = IHpaeCapturerManager::AdjustFrameLen(outNodeInfo, inNodeInfo);
+
+    EXPECT_TRUE(ret);
+    EXPECT_EQ(outNodeInfo.frameLen, 960);
+}
+
+/*
+ * tc.name   : Test IHpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : AdjustFrameLen_002
+ * tc.desc   : Test AdjustFrameLen returns false when input effective sample rate is zero.
+ */
+HWTEST_F(HpaeCapturerManagerTest, AdjustFrameLen_002, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    HpaeNodeInfo outNodeInfo;
+    inNodeInfo.frameLen = 480;
+    inNodeInfo.samplingRate = static_cast<AudioSamplingRate>(0);
+    outNodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    outNodeInfo.samplingRate = SAMPLE_RATE_48000;
+
+    bool ret = IHpaeCapturerManager::AdjustFrameLen(outNodeInfo, inNodeInfo);
+
+    EXPECT_FALSE(ret);
+    EXPECT_EQ(outNodeInfo.frameLen, DEFAULT_FRAME_LENGTH);
+}
+
+/*
+ * tc.name   : Test IHpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : AdjustFrameLen_003
+ * tc.desc   : Test AdjustFrameLen returns false when output effective sample rate is zero.
+ */
+HWTEST_F(HpaeCapturerManagerTest, AdjustFrameLen_003, TestSize.Level1)
+{
+    HpaeNodeInfo inNodeInfo;
+    HpaeNodeInfo outNodeInfo;
+    inNodeInfo.frameLen = 480;
+    inNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    outNodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    outNodeInfo.samplingRate = static_cast<AudioSamplingRate>(0);
+
+    bool ret = IHpaeCapturerManager::AdjustFrameLen(outNodeInfo, inNodeInfo);
+
+    EXPECT_FALSE(ret);
+    EXPECT_EQ(outNodeInfo.frameLen, DEFAULT_FRAME_LENGTH);
+}
+
+/*
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
  * tc.number : HpaeCapturerManagerTest_001
@@ -1496,6 +1559,7 @@ HWTEST_F(HpaeCapturerManagerTest, CreateSourceAttr_BasicInfo_Test, TestSize.Leve
     sourceInfo.filePath = "/data/test.pcm";
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
     sourceInfo.openMicSpeaker = true;
+    sourceInfo.routeFlag = AUDIO_INPUT_FLAG_LIVE;
     
     std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     
@@ -1514,6 +1578,7 @@ HWTEST_F(HpaeCapturerManagerTest, CreateSourceAttr_BasicInfo_Test, TestSize.Leve
     EXPECT_EQ(attr.isBigEndian == false, true);
     EXPECT_EQ(attr.sourceType == static_cast<int32_t>(sourceInfo.sourceType), true);
     EXPECT_EQ(attr.openMicSpeaker == sourceInfo.openMicSpeaker, true);
+    EXPECT_EQ(attr.routeFlag == sourceInfo.routeFlag, true);
 }
 
 /**

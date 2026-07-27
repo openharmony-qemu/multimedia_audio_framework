@@ -88,7 +88,21 @@ typedef enum {
      *
      * @since 19
      */
-    AUDIOSTREAM_ERROR_UNSUPPORTED_FORMAT = 4
+    AUDIOSTREAM_ERROR_UNSUPPORTED_FORMAT = 4,
+
+    /**
+     * @error Unsupported audio stream ability, including function and configuration.
+     *
+     * @since 26.0.0
+     */
+    AUDIOSTREAM_ERROR_UNSUPPORTED_ABILITY = 6800104,
+
+    /**
+     * @error Audio server process died.
+     *
+     * @since 26.0.0
+     */
+    AUDIOSTREAM_ERROR_SERVICE_DIED = 6800302
 } OH_AudioStream_Result;
 
 /**
@@ -587,7 +601,18 @@ typedef enum {
      *
      * @since 20
      */
-    AUDIOSTREAM_SOURCE_TYPE_LIVE = 17
+    AUDIOSTREAM_SOURCE_TYPE_LIVE = 17,
+
+    /**
+    * Voice call downlink source type.
+    * The audio capturer using this source type should be created after the voice call started.
+    * Note that ohos.permission.CAPTURE_PLAYBACK_DOWNLINK is needed when using
+    * {@link OH_AudioStreamBuilder_GenerateCapturer} to create the capturer stream,
+    * the function will return an error without permission.
+    *
+    * @since 26.0.0
+    */
+    AUDIOSTREAM_SOURCE_TYPE_VOICE_DOWNLINK = 22
 } OH_AudioStream_SourceType;
 
 /**
@@ -671,7 +696,7 @@ typedef struct OH_AudioCapturerStruct OH_AudioCapturer;
  *
  * @deprecated since 18
  * @useinstead Use the callback type: OH_AudioRenderer_OnWriteDataCallback, OH_AudioRenderer_OutputDeviceChangeCallback,
- * OH_AudioRenderer_OnInterruptEvent, OH_AudioRenderer_OnErrorCallback separately.
+ * OH_AudioRenderer_OnInterruptCallback, OH_AudioRenderer_OnErrorCallback separately.
  * @since 10
  */
 typedef struct OH_AudioRenderer_Callbacks_Struct {

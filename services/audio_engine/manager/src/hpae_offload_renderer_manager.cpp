@@ -392,11 +392,6 @@ void HpaeOffloadRendererManager::MaterializeSessionEffectFromAttachState(uint32_
             "attach-state cleared, ret=%{public}d", curSessionId, seRet);
         return;
     }
-    // Restart preheat if previous incarnation was active.
-    if (stOpt->lastSeStatus >= static_cast<int32_t>(HpaeSessionEffectNode::STATUS::WARMING_UP)
-        && sessionEffectNode_ != nullptr) {
-        sessionEffectNode_->StartEffect();
-    }
     TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, curSessionId, state,
         OPERATION_SESSION_EFFECT_ENABLED);
     AUDIO_INFO_LOG("ConnectInputSession: SE materialized+ENABLED for session %{public}u", curSessionId);
@@ -430,6 +425,7 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     // Do NOT DropEffect here — that happens in DeleteInputSession after this returns.
     if (sessionEffectNode_ != nullptr && loudnessGainNode_ != nullptr
         && converterForLoudness_ != nullptr) {
+        sessionEffectNode_->PauseEffect();
         loudnessGainNode_->DisConnect(sessionEffectNode_);
         sessionEffectNode_->DisConnect(converterForLoudness_);
     } else if (loudnessGainNode_ != nullptr && converterForLoudness_ != nullptr) {
@@ -461,26 +457,30 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId, bool isStandby)
         bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         node->SetState(HPAE_SESSION_PAUSED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_PAUSED);
-        if (sessionId == curNode_->GetSessionId()) {
-            if (isSessionEffectActive) {
-                sessionEffectNode_->PauseEffect();
-            }
-            DisConnectInputSession();
-            bool isRunningWithSink = state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr;
-            if (isRunningWithSink) {
-                sinkOutputNode_->StopStream();
-            }
-            if (isRunningWithSink && !isSessionEffectActive) {
-                uint64_t latency = 0;
-                OnRequestLatency(sessionId, latency);
-                OnRewindBuffer(sessionId, latency);
-                FlushPipelineNodes(sessionId);
-            }
-        }
+        TearDownCurrentNodePipeline(sessionId, state, isSessionEffectActive);
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeOffloadRendererManager::TearDownCurrentNodePipeline(uint32_t sessionId,
+    HpaeSessionState state, bool isSessionEffectActive)
+{
+    if (sessionId != curNode_->GetSessionId()) {
+        return;
+    }
+    DisConnectInputSession();
+    bool isRunningWithSink = state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr;
+    if (isRunningWithSink) {
+        sinkOutputNode_->StopStream(!isSessionEffectActive);
+    }
+    if (isRunningWithSink && !isSessionEffectActive) {
+        uint64_t latency = 0;
+        OnRequestLatency(sessionId, latency);
+        OnRewindBuffer(sessionId, latency);
+        FlushPipelineNodes(sessionId);
+    }
 }
 
 int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
@@ -552,15 +552,7 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
         bool isSessionEffectActive = sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId;
         node->SetState(HPAE_SESSION_STOPPED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_STOPPED);
-        if (sessionId == curNode_->GetSessionId()) {
-            if (isSessionEffectActive) {
-                sessionEffectNode_->PauseEffect();
-            }
-            DisConnectInputSession();
-            if (state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
-                sinkOutputNode_->StopStream();
-            }
-        }
+        TearDownCurrentNodePipeline(sessionId, state, isSessionEffectActive);
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_STOPPED);
     };
     SendRequest(request, __func__);
@@ -1206,6 +1198,11 @@ int32_t HpaeOffloadRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, A
         // has loudness gain algorithm, should convert to 48k, channels and chanellayout stay same as input
         basicFormat.rate = SAMPLE_RATE_48000;
     }
+    // When sessionEffect is enabled, force 48kHz dual channel
+    CHECK_AND_RETURN_RET(sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId, SUCCESS);
+    basicFormat.rate = SAMPLE_RATE_48000;
+    basicFormat.audioChannelInfo.numChannels = STEREO;
+    basicFormat.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
     return SUCCESS;
 }
 
@@ -1325,7 +1322,9 @@ bool HpaeOffloadRendererManager::StopOffloadSinkIfRunning()
     CHECK_AND_RETURN_RET(curNode_ != nullptr, false);
     CHECK_AND_RETURN_RET(curNode_->GetState() == HPAE_SESSION_RUNNING, false);
     CHECK_AND_RETURN_RET(sinkOutputNode_ != nullptr, false);
-    sinkOutputNode_->StopStream();
+    // Only flush HDI/DSP cache to prevent pop noise on SE insert/remove.
+    // Do NOT rewind the upstream history buffer; the SE pipeline handles buffering itself.
+    sinkOutputNode_->StopStream(false);
     return true;
 }
 
@@ -1334,16 +1333,6 @@ void HpaeOffloadRendererManager::DetachSessionEffectNodeForReload()
     // Do NOT clear attach state — it must survive reload so ConnectInputSession can re-materialize.
     // Only reset the physical cache (node + sessionId).
     if (sessionEffectNode_ != nullptr) {
-        // Capture lastSeStatus before reset so MaterializeSessionEffectFromAttachState can restart
-        // preheat (mirrors DetachSessionEffectNodeForRefresh in hpae_renderer_manager_session_effect.cpp).
-        auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionEffectSessionId_);
-        if (sinkInputNode != nullptr && sinkInputNode->HasSessionEffectAttachState()) {
-            auto st = sinkInputNode->GetSessionEffectAttachState();
-            if (st.has_value()) {
-                st->lastSeStatus = static_cast<int32_t>(sessionEffectNode_->GetStatus());
-                sinkInputNode->SetSessionEffectAttachState(st.value());
-            }
-        }
         // Reload runs on SignalProcessThread after DisConnectInputSession has removed this node
         // from the processing chain, so DetachEffectForReload only resets local runtime state.
         sessionEffectNode_->DetachEffectForReload();

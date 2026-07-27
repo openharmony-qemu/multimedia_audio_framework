@@ -27,6 +27,7 @@
 #include "audio_group_handle.h"
 #include "audio_module_info.h"
 #include "audio_errors.h"
+#include "audio_policy_log.h"
 
 #ifdef BLUETOOTH_ENABLE
 #include "audio_server_death_recipient.h"

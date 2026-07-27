@@ -19,6 +19,7 @@
 #include "mock_audio_arm_device_behavior.h"
 #include "audio_device_factory.h"
 #include "sco_audio_scene_manager.h"
+#include <thread>
 
 using namespace testing::ext;
 using namespace testing;
@@ -3538,26 +3539,13 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateHearingAidCall_001, TestSize
  */
 HWTEST_F(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
 {
-    auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    newDeviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    newDeviceDesc->deviceId_ = 1;
-    newDeviceDesc->deviceName_ = "usb_arm_headset";
-
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_HEARING_AID;
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
-
-    auto mockDeviceBehavior = std::make_shared<MockAudioArmDeviceBehavior>();
-    ASSERT_NE(mockDeviceBehavior, nullptr);
-
-    EXPECT_CALL(*mockDeviceBehavior, ActivateDevice(_, _)).WillOnce(Return(SUCCESS));
-
-    auto& audioDeviceFactory = AudioDeviceFactory::GetInstance();
-    audioDeviceFactory.deviceBehaviorCache_[DEVICE_TYPE_USB_ARM_HEADSET] = mockDeviceBehavior;
-
+    auto audioCoreService = std::make_shared<AudioCoreService>();
     int32_t ret = audioCoreService->ActivateOutputDevice(streamDesc);
-    ASSERT_NE(audioCoreService, nullptr);
-    ASSERT_EQ(ret, SUCCESS);
+    ASSERT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -4996,6 +4984,128 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckFastToNormalForRecord_004, TestSize.L
     auto streamDesc = MakeFastRecordStreamDesc(AUDIO_INPUT_FLAG_FAST, AUDIO_FLAG_MMAP);
     testCoreService_->CheckFastToNormalForRecord(streamDesc, SESSION_OP_MSG_FAST_CHANGE_TO_NORMAL);
     EXPECT_EQ(streamDesc->capturerInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
+}
+
+/**
+ * @tc.name  : UpdatePrimaryExtraState_NullPipe_001
+ * @tc.desc  : Test UpdatePrimaryExtraState with null pipeInfo should not crash.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdatePrimaryExtraState_NullPipe_001, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    testCoreService_->UpdatePrimaryExtraState(nullptr);
+    SUCCEED();
+}
+
+/**
+ * @tc.name  : UpdatePrimaryExtraState_NonMatchingClass_002
+ * @tc.desc  : Test UpdatePrimaryExtraState with non-primary_extra className should not set flag.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdatePrimaryExtraState_NonMatchingClass_002, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.className = "primary";
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    testCoreService_->UpdatePrimaryExtraState(pipeInfo);
+    EXPECT_EQ(testCoreService_->isPrimaryExtraOpenedMap_["primary_typec_output"], false);
+}
+
+/**
+ * @tc.name  : UpdatePrimaryExtraState_ValidPipe_003
+ * @tc.desc  : Test UpdatePrimaryExtraState with valid primary_extra pipe should set flag.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdatePrimaryExtraState_ValidPipe_003, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.className = "primary_extra";
+    pipeInfo->name_ = "primary_typec_output";
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    testCoreService_->UpdatePrimaryExtraState(pipeInfo);
+    EXPECT_EQ(testCoreService_->isPrimaryExtraOpenedMap_["primary_typec_output"], true);
+}
+
+/**
+ * @tc.name  : UpdatePrimaryExtraState_UnknownName_004
+ * @tc.desc  : Test UpdatePrimaryExtraState with unknown pipe name should not set flag.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdatePrimaryExtraState_UnknownName_004, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.className = "primary_extra";
+    pipeInfo->name_ = "unknown_output";
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    testCoreService_->UpdatePrimaryExtraState(pipeInfo);
+    EXPECT_EQ(testCoreService_->isPrimaryExtraOpenedMap_["unknown_output"], true);
+}
+
+/**
+ * @tc.name  : UpdatePrimaryExtraState_EmptyStreams_005
+ * @tc.desc  : Test UpdatePrimaryExtraState with empty streamDescriptors should not set flag.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, UpdatePrimaryExtraState_EmptyStreams_005, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.className = "primary_extra";
+    pipeInfo->name_ = "primary_typec_output";
+    pipeInfo->streamDescriptors_.clear();
+    testCoreService_->UpdatePrimaryExtraState(pipeInfo);
+    EXPECT_EQ(testCoreService_->isPrimaryExtraOpenedMap_["primary_typec_output"], false);
+}
+
+/**
+ * @tc.name  : DelayReleasePrimaryExtraPipe_SetsReleaseFlag_006
+ * @tc.desc  : Test DelayReleasePrimaryExtraPipe sets isPrimaryExtraInReleaseMap_ flag.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DelayReleasePrimaryExtraPipe_SetsReleaseFlag_006, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    testCoreService_->isPrimaryExtraInReleaseMap_["primary_typec_output"] = false;
+    testCoreService_->DelayReleasePrimaryExtraPipe(TEST_IO_HANDLE, DEFAULT_PIPE_ID,
+        "primary_typec_output", "Typec_Speaker");
+    EXPECT_EQ(testCoreService_->isPrimaryExtraInReleaseMap_["primary_typec_output"], true);
+    std::this_thread::sleep_for(std::chrono::seconds(6)); // 5s wait + 1s buffer
+}
+
+/**
+ * @tc.name  : DelayReleasePrimaryExtraPipe_AlreadyInRelease_007
+ * @tc.desc  : Test DelayReleasePrimaryExtraPipe skips when already in release.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DelayReleasePrimaryExtraPipe_AlreadyInRelease_007, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    testCoreService_->isPrimaryExtraInReleaseMap_["primary_wired_output"] = true;
+    testCoreService_->DelayReleasePrimaryExtraPipe(TEST_IO_HANDLE, DEFAULT_PIPE_ID,
+        "primary_wired_output", "Wired_Speaker");
+    EXPECT_EQ(testCoreService_->isPrimaryExtraInReleaseMap_["primary_wired_output"], true);
+}
+
+/**
+ * @tc.name  : DelayReleasePrimaryExtraPipe_NewPipeName_008
+ * @tc.desc  : Test DelayReleasePrimaryExtraPipe with a new pipe name sets flag correctly.
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DelayReleasePrimaryExtraPipe_NewPipeName_008, TestSize.Level1)
+{
+    ASSERT_NE(testCoreService_, nullptr);
+    std::string newPipeName = "primary_hdmi_output";
+    testCoreService_->DelayReleasePrimaryExtraPipe(TEST_IO_HANDLE, DEFAULT_PIPE_ID,
+        newPipeName, "Hdmi_Speaker");
+    EXPECT_EQ(testCoreService_->isPrimaryExtraInReleaseMap_[newPipeName], true);
+    std::this_thread::sleep_for(std::chrono::seconds(6));
 }
 
 } // namespace AudioStandard

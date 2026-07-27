@@ -26,6 +26,9 @@
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
 #include "audio_zone_info.h"
+#include "i_hpae_manager.h"
+#include "manager/hdi_adapter_manager.h"
+#include "util/id_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -51,6 +54,9 @@ sptr<AudioPolicyServer> GetServerPtr()
 {
     static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (!g_hasServerInit && server != nullptr) {
+        IdHandler::GetInstance();
+        HdiAdapterManager::GetInstance();
+        HPAE::IHpaeManager::GetHpaeManager().Init();
         server->OnStart();
         server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -92,7 +98,7 @@ void AudioPolicyServerCallbackGapFuzzTest(FuzzedDataProvider &fdp)
 
     server->SetRegisterInterruptCallbackFlag(fdp.ConsumeIntegral<uint32_t>(), enabled);
     server->SetRegisterStateChangeCallbackFlag(enabled);
-    server->NotifyStreamSilentChange(fdp.ConsumeIntegral<uint32_t>());
+    server->NotifyStreamSilentChange(fdp.ConsumeIntegral<uint32_t>(), fdp.ConsumeIntegral<uint32_t>());
     server->SetSourceOutputStreamMuteByStreamId(fdp.ConsumeIntegral<int32_t>(), enabled);
     server->SetAncoSourceOutputStreamMute(fdp.ConsumeIntegral<int32_t>(), enabled);
 }
@@ -201,7 +207,6 @@ void AudioPolicyServerInterruptSessionGapFuzzTest(FuzzedDataProvider &fdp)
     server->OnAudioStreamRemoved(fdp.ConsumeIntegral<uint64_t>());
     server->GetSessionDebugInfo(sessionDebugInfo);
     server->SetAudioSessionCapturerMuteHint(fdp.ConsumeBool());
-    server->ReEvaluateVoipPrivacyMuteForCapturers(fdp.ConsumeRandomLengthString(MAX_STRING_LEN));
 }
 
 void AudioPolicyServerDebugSpatialGapFuzzTest(FuzzedDataProvider &fdp)

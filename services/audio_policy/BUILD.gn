@@ -96,6 +96,7 @@ config("audio_policy_public_config") {
     "../../frameworks/native/hdiadapter_new/include/common",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
+    "../../interfaces/inner_api/native/audiocapturer/include",
   ]
 
   cflags = [
@@ -119,7 +120,7 @@ config("audio_policy_public_config") {
 }
 
 ohos_shared_library("audio_setting_provider") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -143,6 +144,7 @@ ohos_shared_library("audio_setting_provider") {
   deps = [ "../../frameworks/native/audioutils:audio_utils" ]
 
   external_deps = [
+    "ability_runtime:dataobs_manager",
     "c_utils:utils",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
@@ -164,7 +166,7 @@ ohos_shared_library("audio_setting_provider") {
 }
 
 audio_ohos_library("audio_policy_service") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -324,6 +326,11 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
   }
 
+  if (audio_framework_feature_multi_user_zone) {
+    defines += [ "MULTI_USER_ZONE" ]
+    sources += [ "server/domain/zone/src/audio_zone_router.cpp" ]
+  }
+
   if (audio_framework_feature_wired_audio) {
     defines += [ "AUDIO_WIRED_DETECT" ]
     sources += [
@@ -407,6 +414,7 @@ audio_ohos_library("audio_policy_service") {
     "ability_base:zuri",
     "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:ability_context_native",
+    "ability_runtime:ability_manager",
     "ability_runtime:app_context",
     "ability_runtime:app_manager",
     "ability_runtime:dataobs_manager",
@@ -436,6 +444,7 @@ audio_ohos_library("audio_policy_service") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "ipc:ipc_core",
+    "kv_store:distributeddata_inner",
     "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
@@ -453,6 +462,10 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
     sources += [ "server/domain/device/src/pnp/audio_usb_manager.cpp" ]
+  }
+
+  if (audio_framework_feature_hdmi_detect_audio) {
+    defines += [ "HDMI_DETECT_ENABLE" ]
   }
 
   if (target_platform != "watch" && target_platform != "glasses") {
@@ -610,6 +623,7 @@ config("audio_policy_client_config") {
     "../../frameworks/native/audiopolicy/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
+    "../../interfaces/inner_api/native/audiocapturer/include",
   ]
 
   cflags = [
@@ -650,6 +664,10 @@ audio_ohos_library("audio_policy_client") {
     "client/stub/src/audio_policy_client_stub_impl.cpp",
     "client/stub/src/audio_policy_manager_listener_stub_impl.cpp",
     "client/stub/src/audio_zone_client.cpp",
+    "client/stub/src/va_device_controller_registry.cpp",
+    "client/stub/src/va_device_broker_wrapper_impl.cpp",
+    "client/stub/src/va_device_controller_stub_impl.cpp",
+    "client/stub/src/va_input_stream_stub_impl.cpp",
     "client/stub/src/sle_audio_operation_callback_stub_impl.cpp",
     "server/src/audio_client_tracker_callback_service.cpp",
     "server/src/audio_spatialization_state_change_listener.cpp",
@@ -869,6 +887,7 @@ ohos_shared_library("audio_foundation") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "ipc:ipc_core",
     "samgr:samgr_proxy",

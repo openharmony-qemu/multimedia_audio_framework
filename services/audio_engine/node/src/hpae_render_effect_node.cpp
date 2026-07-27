@@ -20,6 +20,7 @@
 #include <cinttypes>
 #include "audio_errors.h"
 #include "hpae_render_effect_node.h"
+#include "hpae_node_common.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_effect_map.h"
@@ -27,6 +28,7 @@
 #include "audio_effect_log.h"
 #include "stream_dfx_manager.h"
 #include "audio_collaboration_manager.h"
+#include "manager/hdi_adapter_manager.h"
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;
@@ -43,6 +45,7 @@ static constexpr int32_t EFFECT_TEMP_BUFFER_MAX_CACHE_SIZE = 800;
 static constexpr int32_t EFFECT_TEMP_BUFFER_MS_PER_SECOND = 1000;
 static constexpr int32_t EFFECT_TEMP_BUFFER_DEFAULT_WAIT_COUNT = 10;
 static constexpr int32_t EFFECT_TEMP_BUFFER_DEFAULT_CO_LATENCY = 260;
+static constexpr int32_t UPDATE_NEARLINK_COLLAB_STATE_TO_HDI_WAIT_COUNT = 2; // 2 frames
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -64,7 +67,7 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, Collaboration
         if (sceneType_ == "SCENE_COLLABORATIVE") {
             PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, CH_LAYOUT_STEREO);
             if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
-                tempEffectBuffer_ = std::make_shared<HpaeTempEffectBuffer>(pcmBufferInfo);
+                tempEffectBuffer_ = std::make_shared<HpaeTempEffectBuffer>(pcmBufferInfo, isCollaborationEnabled);
             } else {
                 directOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // bt speaker
                 collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // default speaker
@@ -127,7 +130,7 @@ void HpaeRenderEffectNode::DoProcess()
         SignalProcess(preOutputs);
         int32_t ret = SplitCollaborativeData();
         if (ret != SUCCESS) {
-            outputStream_.WriteDataToOutput(&silenceData_);
+            outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
             outputStream_.WriteDataToOutput(&silenceData_, HPAE_BUFFER_TYPE_COBUFFER);
         } else {
             outputStream_.WriteDataToOutput(directOutput_.get());
@@ -137,7 +140,7 @@ void HpaeRenderEffectNode::DoProcess()
         outputStream_.WriteDataToOutput(preOutputs[0]);
         outputStream_.WriteDataToOutput(preOutputs[0], HPAE_BUFFER_TYPE_COBUFFER);
     } else {
-        outputStream_.WriteDataToOutput(&silenceData_);
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
         outputStream_.WriteDataToOutput(&silenceData_, HPAE_BUFFER_TYPE_COBUFFER);
     }
 #ifdef ENABLE_HOOK_PCM
@@ -240,6 +243,10 @@ int32_t HpaeRenderEffectNode::AudioRendererStart(HpaeNodeInfo &nodeInfo)
 {
     AUDIO_INFO_LOG("in");
     ModifyAudioEffectChainInfo(nodeInfo, ADD_AUDIO_EFFECT_CHAIN_INFO);
+    if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN && tempEffectBuffer_ != nullptr) {
+        tempEffectBuffer_->SetStopRunningState(false);
+        tempEffectBuffer_->SetCollabDoFade(false);
+    }
     AUDIO_INFO_LOG("out");
     return SUCCESS;
 }
@@ -589,7 +596,21 @@ void HpaeRenderEffectNode::SetDelayCountToEffectNode(int32_t delayCount)
     }
 }
 
-HpaeTempEffectBuffer::HpaeTempEffectBuffer(PcmBufferInfo pcmBufferInfo)
+void HpaeRenderEffectNode::SetCollabDoFade(bool fadeOutState)
+{
+    if (tempEffectBuffer_ != nullptr) {
+        tempEffectBuffer_->SetCollabDoFade(fadeOutState);
+    }
+}
+
+void HpaeRenderEffectNode::SetStopRunningState(bool stopRunning)
+{
+    if (tempEffectBuffer_ != nullptr) {
+        tempEffectBuffer_->SetStopRunningState(stopRunning);
+    }
+}
+
+HpaeTempEffectBuffer::HpaeTempEffectBuffer(PcmBufferInfo pcmBufferInfo, CollaborationState isCollaborationEnabled)
 {
     const size_t size = static_cast<size_t>(SAMPLE_RATE_48000) *
                         static_cast<size_t>(STEREO) *
@@ -601,6 +622,7 @@ HpaeTempEffectBuffer::HpaeTempEffectBuffer(PcmBufferInfo pcmBufferInfo)
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
     waitCountThreshold_ = EFFECT_TEMP_BUFFER_DEFAULT_WAIT_COUNT;
     tempOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+    isCollaborationEnabled_ = isCollaborationEnabled;
 }
 
 void HpaeTempEffectBuffer::ChangeEffectDataForLatency(HpaePcmBuffer* buffer)
@@ -610,8 +632,20 @@ void HpaeTempEffectBuffer::ChangeEffectDataForLatency(HpaePcmBuffer* buffer)
         SetSilenceData(buffer);
         return;
     }
+
+    if (stopRunning_ == true) {
+        SetSilenceDataInAllChannel(buffer);
+        return;
+    }
     WriteDataEnqueueRingCache(buffer);
     ReadDataDequeueRingCache(buffer);
+
+    if (effectCollabDoFadeOutState_ == true) {
+        DoFadeOut(buffer);
+        effectCollabDoFadeOutState_ = false;
+        stopRunning_ = true;
+        AUDIO_INFO_LOG("CollabDoFadeOut finish");
+    }
 }
 
 void HpaeTempEffectBuffer::WriteDataEnqueueRingCache(HpaePcmBuffer* buffer)
@@ -695,11 +729,39 @@ void HpaeTempEffectBuffer::SetTempBufferData(HpaePcmBuffer* buffer, float *tempO
     }
 }
 
+ void HpaeTempEffectBuffer::SetSilenceDataInAllChannel(HpaePcmBuffer* buffer)
+{
+    float *collOutPut = buffer->GetPcmDataBuffer();
+    for (uint32_t i = 0; i < buffer->GetFrameLen(); ++i) {
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i] = SMALL_SIGNAL_NUM;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + 1] = SMALL_SIGNAL_NUM;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] = SMALL_SIGNAL_NUM;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] = SMALL_SIGNAL_NUM;
+    }
+}
+
+void HpaeTempEffectBuffer::DoFadeOut(HpaePcmBuffer* buffer)
+{
+    float *collOutPut = buffer->GetPcmDataBuffer();
+    float gain = 1.0f;
+    float deltaGain = 1.0f / buffer->GetFrameLen();
+    for (uint32_t i = 0; i< buffer->GetFrameLen(); ++i) {
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i] *= gain;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + 1] *= gain;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX] *= gain;
+        collOutPut[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX] *= gain;
+        gain -= deltaGain;
+    }
+}
+
 bool HpaeTempEffectBuffer::DelayAlignmentForEffectNode(HpaePcmBuffer* buffer)
 {
     if (enqueueCount_ < waitCountThreshold_) {
         enqueueCount_++;
         SetSilenceData(buffer);
+        if (enqueueCount_ <= UPDATE_NEARLINK_COLLAB_STATE_TO_HDI_WAIT_COUNT) {
+            UpdateNearLinkCollaborationStateToHdi(isCollaborationEnabled_);
+        }
         return false;
     }
 
@@ -772,6 +834,30 @@ HpaeTempEffectBuffer::HpaeTempEffectBuffer()
 HpaeTempEffectBuffer::~HpaeTempEffectBuffer()
 {
     AUDIO_INFO_LOG("HpaeTempEffectBuffer release");
+}
+
+ void HpaeTempEffectBuffer::UpdateNearLinkCollaborationStateToHdi(CollaborationState isCollaborationEnabled)
+{
+    CHECK_AND_RETURN_LOG(isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN,
+        "isCollaborationEnabled not COLLABORATION_NEARLINK_OPEN");
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    std::string keyValue = std::string("nearLink_collaborative_state=") + "1";
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", keyValue);
+    AUDIO_INFO_LOG("effectNode: UpdateNearLinkCollaborationStateToHdi, value: %{public}s", keyValue.c_str());
+}
+
+void HpaeTempEffectBuffer::SetCollabDoFade(bool fadeOutState)
+{
+    AUDIO_INFO_LOG("SetCollabDoFade: %{public}d", fadeOutState);
+    effectCollabDoFadeOutState_ = fadeOutState;
+}
+
+void HpaeTempEffectBuffer::SetStopRunningState(bool stopRunning)
+{
+    AUDIO_INFO_LOG("SetStopRunningState: %{public}d", stopRunning);
+    stopRunning_ = stopRunning;
 }
 } // namespace HPAE
 } // namespace AudioStandard

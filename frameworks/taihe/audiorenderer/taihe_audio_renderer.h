@@ -33,12 +33,18 @@ using namespace ohos::multimedia::audio;
 class AudioRendererImpl {
 public:
     AudioRendererImpl();
-    explicit AudioRendererImpl(std::shared_ptr<AudioRendererImpl> obj);
+    AudioRendererImpl(
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+        std::shared_ptr<OHOS::AudioStandard::AudioRenderer> audioRenderer,
+#else
+        std::unique_ptr<OHOS::AudioStandard::AudioRenderer> audioRenderer,
+#endif
+        std::shared_ptr<OHOS::AudioStandard::AudioRendererCallback> callback,
+        const OHOS::AudioStandard::AudioRendererOptions &rendererOptions);
     ~AudioRendererImpl() = default;
 
     int64_t GetImplPtr();
     static void CreateRendererFailed();
-    static std::shared_ptr<AudioRendererImpl> CreateAudioRendererNativeObject();
     static AudioRendererOrNull CreateAudioRendererWrapper(OHOS::AudioStandard::AudioRendererOptions rendererOptions);
 
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
@@ -48,7 +54,6 @@ public:
 #endif
     std::mutex writeCallbackMutex_;
     std::condition_variable writeCallbackCv_;
-    bool enqueued_ = false;
 
     void StartSync();
     int64_t GetAudioTimeSync();
@@ -92,7 +97,7 @@ public:
     void OnMarkReach(int64_t frame, callback_view<void(int64_t)> callback);
     void OnOutputDeviceChange(callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
     void OnOutputDeviceChangeWithInfo(callback_view<void(AudioStreamDeviceChangeInfo const&)> callback);
-    void OnWriteData(callback_view<AudioDataCallbackResult(array_view<uint8_t>)> callback);
+    void OnWriteDataInner(callback_view<AudioRendererWriteDataCallbackResult(int32_t)> callback);
 
     void OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback);
     void OffStateChange(optional_view<callback<void(AudioState)>> callback);
@@ -100,7 +105,7 @@ public:
     void OffOutputDeviceChangeWithInfo(optional_view<callback<void(AudioStreamDeviceChangeInfo const&)>> callback);
     void OffPeriodReach(optional_view<callback<void(int64_t)>> callback);
     void OffMarkReach(optional_view<callback<void(int64_t)>> callback);
-    void OffWriteData(optional_view<callback<AudioDataCallbackResult(array_view<uint8_t>)>> callback);
+    void OffWriteDataInner(optional_view<callback<AudioRendererWriteDataCallbackResult(int32_t)>> callback);
 
     void DestroyCallbacks();
     void DestroyTaiheCallbacks();
@@ -140,14 +145,11 @@ private:
     std::shared_ptr<OHOS::AudioStandard::AudioRendererPolicyServiceDiedCallback>
         rendererPolicyServiceDiedCallbackTaihe_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioRendererWriteCallback> rendererWriteDataCallbackTaihe_ = nullptr;
+    OHOS::AudioStandard::AudioRendererOptions rendererOptions_ {};
 
     std::mutex mutex_;
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
-    static std::unique_ptr<OHOS::AudioStandard::AudioRendererOptions> sRendererOptions_;
-
-    OHOS::AudioStandard::ContentType contentType_;
-    OHOS::AudioStandard::StreamUsage streamUsage_;
 };
 } // namespace ANI::Audio
 

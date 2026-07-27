@@ -258,6 +258,25 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_007_Ext06, TestSize.Le
 }
 
 /**
+ * @tc.name  : Test GetSourcePortName API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_007_Ext07
+ * @tc.desc  : Test GetSourcePortName with voice message route flag.
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_007_Ext07, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_MIC;
+    uint32_t routeFlag = AUDIO_INPUT_FLAG_VOICE_MESSAGE;
+
+    std::string ret = audioPolicyUtilsTest_->GetSourcePortName(deviceType, routeFlag);
+    EXPECT_EQ(ret, PRIMARY_VOICE_MESSAGE_MIC);
+}
+
+/**
  * @tc.name  : Test GetOutputDeviceClassBySinkPortName API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyUtilsUnitTest_008
@@ -374,6 +393,24 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_010_Ext02, TestSize.Le
     ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
 
     std::string sourcePortName = PRIMARY_CAMCORDER;
+
+    std::string ret = audioPolicyUtilsTest_->GetInputDeviceClassBySourcePortName(sourcePortName);
+    EXPECT_EQ(ret, PRIMARY_CLASS);
+}
+
+/**
+ * @tc.name  : Test GetInputDeviceClassBySourcePortName API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_010_Ext03
+ * @tc.desc  : Test GetInputDeviceClassBySourcePortName with voice message source port.
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_010_Ext03, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    std::string sourcePortName = PRIMARY_VOICE_MESSAGE_MIC;
 
     std::string ret = audioPolicyUtilsTest_->GetInputDeviceClassBySourcePortName(sourcePortName);
     EXPECT_EQ(ret, PRIMARY_CLASS);
@@ -516,6 +553,23 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016_ext03, TestSize.Le
     ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
 
     std::string deviceName = PRIMARY_VOICE_RECOGNITION_MIC;
+    DeviceType ret = audioPolicyUtilsTest_->GetDeviceType(deviceName);
+    EXPECT_EQ(ret, DEVICE_TYPE_MIC);
+}
+
+/**
+ * @tc.name  : Test GetDeviceType API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_016_ext06
+ * @tc.desc  : Test GetDeviceType with voice message mic.
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016_ext06, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    std::string deviceName = PRIMARY_VOICE_MESSAGE_MIC;
     DeviceType ret = audioPolicyUtilsTest_->GetDeviceType(deviceName);
     EXPECT_EQ(ret, DEVICE_TYPE_MIC);
 }

@@ -17,6 +17,7 @@
 #endif
 
 #include "taihe_audio_capturer.h"
+#include <thread>
 #ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
@@ -25,6 +26,7 @@
 #include "audio_errors.h"
 #include "audio_log.h"
 #include "audio_utils.h"
+#include "event_handler.h"
 #include "taihe_audio_enum.h"
 #include "taihe_audio_error.h"
 #include "taihe_audio_capturer_callbacks.h"
@@ -49,17 +51,28 @@ PlaybackCaptureStartState HandlePlaybackCaptureStartResult(
     OHOS::AudioStandard::PlaybackCaptureStartState state, OHOS::AudioStandard::AudioCapturer *audioCapturer);
 
 class TaihePlaybackCaptureStartStateCallback :
-        public OHOS::AudioStandard::AudioCapturerOnPlaybackCaptureStartCallback {
+        public OHOS::AudioStandard::AudioCapturerOnPlaybackCaptureStartCallback,
+        public std::enable_shared_from_this<TaihePlaybackCaptureStartStateCallback> {
 public:
-    TaihePlaybackCaptureStartStateCallback(
-        std::shared_ptr<uintptr_t> callback, OHOS::AudioStandard::AudioCapturer *audioCapturer)
-        : callback_(std::make_shared<AutoRef>(callback)), audioCapturer_(audioCapturer)
-    {}
+    explicit TaihePlaybackCaptureStartStateCallback(std::shared_ptr<uintptr_t> callback)
+        : callback_(std::make_shared<AutoRef>(callback))
+    {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    }
 
     void OnPlaybackCaptureStartResult(OHOS::AudioStandard::PlaybackCaptureStartState state) override
     {
-        PlaybackCaptureStartState result = HandlePlaybackCaptureStartResult(state, audioCapturer_);
-        NotifyResult(result);
+        std::lock_guard<std::mutex> lock(mutex_);
+        state_ = state;
+        hasResult_ = true;
+    }
+
+    OHOS::AudioStandard::PlaybackCaptureStartState GetState()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return state_;
     }
 
     bool HasResult()
@@ -78,16 +91,35 @@ public:
         }
 
         CHECK_AND_RETURN_LOG(callback != nullptr && callback->cb_ != nullptr, "callback is nullptr");
+        auto self = shared_from_this();
+        auto task = [self, callback, state]() {
+            self->NotifyResultInner(callback, state);
+        };
+        if (mainHandler_ != nullptr) {
+            bool ret = mainHandler_->PostTask(task, "RequestPlaybackCaptureStart", 0,
+                OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
+            if (ret) {
+                return;
+            }
+            AUDIO_ERR_LOG("RequestPlaybackCaptureStart callback PostTask failed");
+        }
+        task();
+    }
+
+private:
+    void NotifyResultInner(const std::shared_ptr<AutoRef> &callback, PlaybackCaptureStartState state)
+    {
+        CHECK_AND_RETURN_LOG(callback != nullptr && callback->cb_ != nullptr, "callback is nullptr");
         std::shared_ptr<taihe::callback<void(PlaybackCaptureStartState)>> cacheCallback =
             std::reinterpret_pointer_cast<taihe::callback<void(PlaybackCaptureStartState)>>(callback->cb_);
         CHECK_AND_RETURN_LOG(cacheCallback != nullptr, "get requestPlaybackCaptureStart callback failed");
         (*cacheCallback)(state);
     }
 
-private:
     std::mutex mutex_;
     std::shared_ptr<AutoRef> callback_ = nullptr;
-    OHOS::AudioStandard::AudioCapturer *audioCapturer_ = nullptr;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
+    OHOS::AudioStandard::PlaybackCaptureStartState state_ = OHOS::AudioStandard::START_STATE_FAILED;
     bool hasResult_ = false;
 };
 
@@ -108,6 +140,29 @@ PlaybackCaptureStartState HandlePlaybackCaptureStartResult(
     AUDIO_ERR_LOG("Playback capture start failed: unknown error");
     return PlaybackCaptureStartState::key_t::STATE_FAILED;
 }
+
+void ExecutePlaybackCaptureStart(std::shared_ptr<OHOS::AudioStandard::AudioCapturer> audioCapturer,
+    std::shared_ptr<TaihePlaybackCaptureStartStateCallback> playbackCaptureStartCallback)
+{
+    CHECK_AND_RETURN_LOG(audioCapturer != nullptr, "audioCapturer is nullptr");
+    CHECK_AND_RETURN_LOG(playbackCaptureStartCallback != nullptr, "playbackCaptureStartCallback is nullptr");
+
+    audioCapturer->SetPlaybackCaptureStartStateCallback(playbackCaptureStartCallback);
+    int32_t ret = audioCapturer->StartPlaybackCapture();
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        AUDIO_ERR_LOG("StartPlaybackCapture failed, ret=%{public}d", ret);
+        playbackCaptureStartCallback->NotifyResult(PlaybackCaptureStartState::key_t::STATE_FAILED);
+    } else if (!playbackCaptureStartCallback->HasResult()) {
+        AUDIO_ERR_LOG("Playback capture start result missing");
+        playbackCaptureStartCallback->NotifyResult(PlaybackCaptureStartState::key_t::STATE_FAILED);
+    } else {
+        PlaybackCaptureStartState result =
+            HandlePlaybackCaptureStartResult(playbackCaptureStartCallback->GetState(), audioCapturer.get());
+        playbackCaptureStartCallback->NotifyResult(result);
+    }
+    audioCapturer->SetPlaybackCaptureStartStateCallback(nullptr);
+}
+
 } // namespace
 
 template <typename T>
@@ -197,6 +252,7 @@ AudioCapturerImpl::AudioCapturerImpl(std::shared_ptr<AudioCapturerImpl> obj)
         periodPositionCbTaihe_ = obj->periodPositionCbTaihe_;
         capturerReadDataCallbackTaihe_ = obj->capturerReadDataCallbackTaihe_;
         sourceType_ = obj->sourceType_;
+        isModernInnerCapturer_ = obj->isModernInnerCapturer_;
     }
 }
 
@@ -414,6 +470,8 @@ void AudioCapturerImpl::StartSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return;
     }
+    // Playback capture created by modern inner capture api forbidden to start.
+    // It should start by RequestPlaybackCaptureStart.
     if (sourceType_ == OHOS::AudioStandard::SOURCE_TYPE_PLAYBACK_CAPTURE && isModernInnerCapturer_) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE,
             "Playback capture stream should start by requestPlaybackCaptureStart");
@@ -606,11 +664,80 @@ void AudioCapturerImpl::SetMuteHintSync(bool mute)
     }
 
     int32_t ret = audioCapturer_->SetMuteHint(mute);
-    if (ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE || ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
+    if (ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "SetMuteHint failed");
     } else if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetMuteHint failed");
     }
+}
+
+void AudioCapturerImpl::SetNoiseReductionMode(ohos::multimedia::audio::NoiseReductionMode noiseReductionMode)
+{
+    int32_t modeValue = noiseReductionMode.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentNoiseReductionMode(modeValue)) {
+        AUDIO_ERR_LOG("get noiseReductionMode failed: %{public}d", modeValue);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of noiseReductionMode must be enum NoiseReductionMode");
+        return;
+    }
+    if (audioCapturer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        return;
+    }
+
+    int32_t ret = audioCapturer_->SetNoiseReductionMode(
+        static_cast<OHOS::AudioStandard::NoiseReductionMode>(modeValue));
+    if (ret == OHOS::AudioStandard::ERROR_INVALID_PARAM || ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "SetNoiseReductionMode failed");
+    } else if (ret == OHOS::AudioStandard::ERR_NOT_SUPPORTED || ret == OHOS::AudioStandard::ERROR_UNSUPPORTED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED, "SetNoiseReductionMode failed");
+    } else if (ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE || ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "SetNoiseReductionMode failed");
+    } else if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetNoiseReductionMode failed");
+    }
+}
+
+ohos::multimedia::audio::NoiseReductionMode AudioCapturerImpl::GetNoiseReductionMode()
+{
+    if (audioCapturer_ == nullptr) {
+        AUDIO_ERR_LOG("GetNoiseReductionMode failed, audioCapturer_ is nullptr");
+        return ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY;
+    }
+
+    OHOS::AudioStandard::NoiseReductionMode noiseReductionMode =
+        OHOS::AudioStandard::NOISE_REDUCTION_MODE_FIDELITY;
+    int32_t ret = audioCapturer_->GetNoiseReductionMode(noiseReductionMode);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        AUDIO_ERR_LOG("GetNoiseReductionMode failed, ret=%{public}d", ret);
+        return ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY;
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentNoiseReductionMode(static_cast<int32_t>(noiseReductionMode))) {
+        AUDIO_ERR_LOG("GetNoiseReductionMode invalid mode: %{public}d", static_cast<int32_t>(noiseReductionMode));
+        return ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY;
+    }
+    return TaiheAudioEnum::ToTaiheNoiseReductionMode(noiseReductionMode);
+}
+
+taihe::array<ohos::multimedia::audio::NoiseReductionMode> AudioCapturerImpl::GetSupportedNoiseReductionModes()
+{
+    std::vector<ohos::multimedia::audio::NoiseReductionMode> result;
+    if (audioCapturer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
+        return taihe::array<ohos::multimedia::audio::NoiseReductionMode>(result);
+    }
+
+    std::vector<OHOS::AudioStandard::NoiseReductionMode> nativeModes;
+    int32_t ret = audioCapturer_->GetSupportedNoiseReductionModes(nativeModes);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetSupportedNoiseReductionModes failed");
+        return taihe::array<ohos::multimedia::audio::NoiseReductionMode>(result);
+    }
+
+    for (const auto &mode : nativeModes) {
+        result.emplace_back(TaiheAudioEnum::ToTaiheNoiseReductionMode(mode));
+    }
+    return taihe::array<ohos::multimedia::audio::NoiseReductionMode>(result);
 }
 
 void AudioCapturerImpl::RequestPlaybackCaptureStart(callback_view<void(PlaybackCaptureStartState)> callback)
@@ -627,24 +754,16 @@ void AudioCapturerImpl::RequestPlaybackCaptureStart(callback_view<void(PlaybackC
 
     auto callbackRef = TaiheParamUtils::TypeCallback(callback);
     auto playbackCaptureStartCallback =
-        std::make_shared<TaihePlaybackCaptureStartStateCallback>(callbackRef, audioCapturer_.get());
+        std::make_shared<TaihePlaybackCaptureStartStateCallback>(callbackRef);
     if (playbackCaptureStartCallback == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY, "No memory");
         return;
     }
 
-    audioCapturer_->SetPlaybackCaptureStartStateCallback(playbackCaptureStartCallback);
-    int32_t ret = audioCapturer_->StartPlaybackCapture();
-    if (ret != OHOS::AudioStandard::SUCCESS) {
-        AUDIO_ERR_LOG("StartPlaybackCapture failed, ret=%{public}d", ret);
-        if (!playbackCaptureStartCallback->HasResult()) {
-            playbackCaptureStartCallback->NotifyResult(PlaybackCaptureStartState::key_t::STATE_FAILED);
-        }
-    } else if (!playbackCaptureStartCallback->HasResult()) {
-        AUDIO_ERR_LOG("Playback capture start result missing");
-        playbackCaptureStartCallback->NotifyResult(PlaybackCaptureStartState::key_t::STATE_FAILED);
-    }
-    audioCapturer_->SetPlaybackCaptureStartStateCallback(nullptr);
+    std::shared_ptr<OHOS::AudioStandard::AudioCapturer> audioCapturer = audioCapturer_;
+    std::thread([audioCapturer, playbackCaptureStartCallback]() {
+        ExecutePlaybackCaptureStart(audioCapturer, playbackCaptureStartCallback);
+    }).detach();
 }
 
 taihe::array<AudioDeviceDescriptor> AudioCapturerImpl::GetCurrentInputDevices()
@@ -736,7 +855,7 @@ void AudioCapturerImpl::SetIndependentAudioSessionStrategy(
     }
     CHECK_AND_RETURN_RET_LOG(
         (behavior & ~static_cast<uint32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MASK_VALID_BEHAVIOR)) == 0,
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM), "invaild behavior param");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM), "invalid behavior param");
     int32_t ret = audioCapturer_->SetIndependentAudioSessionStrategy(audioSessionStrategy, behavior);
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "SetIndependentAudioSessionStrategy failed");

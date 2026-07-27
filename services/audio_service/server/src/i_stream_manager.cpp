@@ -26,22 +26,12 @@ namespace OHOS {
 namespace AudioStandard {
 IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
 {
-    int32_t enableNewRoute = 0;
-    GetSysPara("persist.multimedia.audio.enable_new_route", enableNewRoute);
     switch (managerType) {
         case DIRECT_PLAYBACK:
-            if (enableNewRoute != 1) {
-                static HpaeAdapterManager directManager(managerType);
-                return directManager;
-            }
-            static ProAudioStreamManager directManager(DIRECT_PLAYBACK);
+            static HpaeAdapterManager directManager(managerType);
             return directManager;
         case VOIP_PLAYBACK:
-            if (enableNewRoute != 1) {
-                static HpaeAdapterManager voipManager(managerType);
-                return voipManager;
-            }
-            static ProAudioStreamManager voipManager(VOIP_PLAYBACK);
+            static HpaeAdapterManager voipManager(managerType);
             return voipManager;
         case HWDECODING_PLAYBACK:
             static HWDecodingStreamManager hwDecodingManger;

@@ -151,7 +151,6 @@ public:
     static bool IsCapturerChannelValid(uint8_t channel);
     static bool IsEncodingTypeValid(uint8_t encodingType);
     static bool IsSamplingRateValid(uint32_t samplingRate);
-    static bool IsCustomSampleRateValid(uint32_t customSampleRate);
     static bool IsRendererChannelLayoutValid(uint64_t channelLayout);
     static bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
     static bool IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t channelLayout,
@@ -184,6 +183,7 @@ public:
     virtual State GetState() = 0;
     virtual StreamFocusState GetFocusState() = 0;
     virtual void SetFocusState(StreamFocusState state) = 0;
+
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) = 0;
     virtual int32_t GetBufferSize(size_t &bufferSize) = 0;
@@ -241,7 +241,11 @@ public:
         (void)callback;
         return ERR_NOT_SUPPORTED;
     }
-
+    virtual void SetSensitiveRecordPermitCallback(
+        const std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> &callback)
+    {
+        (void)callback;
+    };
     virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
     virtual int32_t GetBufQueueState(BufferQueueState &bufState) = 0;
     virtual int32_t Enqueue(const BufferDesc &bufDesc) = 0;

@@ -174,6 +174,13 @@ int32_t CoreServiceProviderWrapper::NotifySessionStandbyStatus(uint32_t sessionI
     return SUCCESS;
 }
 
+int32_t CoreServiceProviderWrapper::IsSupportIndependentPipe(bool &support)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    support = coreServiceWorker_->IsSupportIndependentPipe();
+    return SUCCESS;
+}
+
 int32_t CoreServiceProviderWrapper::NotifyStreamStandby(int32_t pid, uint32_t streamId, int32_t &ret)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
@@ -188,18 +195,19 @@ int32_t CoreServiceProviderWrapper::NotifyStreamStandbyResume(int32_t pid, uint3
     return SUCCESS;
 }
 
-int32_t CoreServiceProviderWrapper::IsSupportIndependentPipe(bool &support)
-{
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    support = coreServiceWorker_->IsSupportIndependentPipe();
-    return SUCCESS;
-}
-
 int32_t CoreServiceProviderWrapper::NotifyDeviceStateChange(const std::string &networkId, int32_t role,
     bool isAvailable)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     coreServiceWorker_->OnDeviceStateChange(networkId, static_cast<DeviceRole>(role), isAvailable);
+    return SUCCESS;
+}
+ 
+// Notify silent state change
+int32_t CoreServiceProviderWrapper::NotifySilentStateChange(uint32_t sessionId, bool isSilent)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    coreServiceWorker_->NotifySilentStateChange(sessionId, isSilent);
     return SUCCESS;
 }
 } // namespace AudioStandard

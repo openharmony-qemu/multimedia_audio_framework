@@ -40,6 +40,7 @@ ohos_fuzztest("AudioVolumeManagerFuzzTest") {
     "../../../../services/audio_policy:audio_policy_service_static",
   ]
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bluetooth:btframework",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",

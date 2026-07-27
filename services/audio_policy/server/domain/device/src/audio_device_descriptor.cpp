@@ -19,6 +19,8 @@
 #include "audio_service_log.h"
 #include "audio_utils.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B8B
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t API_VERSION_18 = 18;
@@ -207,19 +209,23 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     pairDeviceDescriptor_ = nullptr;
     isScoRealConnected_ = false;
     isEnable_ = true;
+    isExclusiveMicScoUnavailable_ = false;
     exceptionFlag_ = false;
     isLowLatencyDevice_ = false;
     a2dpOffloadFlag_ = 0;
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
-    isBTSupportWearDetectionEnable_ = false;
+    isSupportWearDetectionEnable_ = false;
     modemCallSupported_ = true;
     highQualityRecordingSupported_ = false;
+    isUnidirectional_ = false;
     dmDeviceInfo_ = "";
     hdPlaybackMode_ = HD_NOT_SUPPORTED;
     isSupportRemoteMultichannel_ = true;
     deviceTokenId_ = 0;
+    isSupportMultiZone_ = false;
+    visibleMode_ = GLOBAL_VISIBLE;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -247,22 +253,26 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     pairDeviceDescriptor_ = nullptr;
     isScoRealConnected_ = false;
     isEnable_ = true;
+    isExclusiveMicScoUnavailable_ = false;
     exceptionFlag_ = false;
     isLowLatencyDevice_ = false;
     a2dpOffloadFlag_ = 0;
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
-    isBTSupportWearDetectionEnable_ = false;
+    isSupportWearDetectionEnable_ = false;
     modemCallSupported_ = true;
     highQualityRecordingSupported_ = false;
+    isUnidirectional_ = false;
     dmDeviceInfo_ = "";
     hdPlaybackMode_ = HD_NOT_SUPPORTED;
     isSupportRemoteMultichannel_ = true;
     deviceTokenId_ = 0;
+    isSupportMultiZone_ = false;
+    visibleMode_ = GLOBAL_VISIBLE;
 }
 
-AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
+void AudioDeviceDescriptor::CopyBaseFields(const AudioDeviceDescriptor &deviceDescriptor)
 {
     deviceId_ = deviceDescriptor.deviceId_;
     deviceName_ = deviceDescriptor.deviceName_;
@@ -286,77 +296,47 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     pairDeviceDescriptor_ = deviceDescriptor.pairDeviceDescriptor_;
     isScoRealConnected_ = deviceDescriptor.isScoRealConnected_;
     isEnable_ = deviceDescriptor.isEnable_;
+    isExclusiveMicScoUnavailable_ = deviceDescriptor.isExclusiveMicScoUnavailable_;
     exceptionFlag_ = deviceDescriptor.exceptionFlag_;
     deviceUsage_ = deviceDescriptor.deviceUsage_;
-    // DeviceInfo
+}
+
+void AudioDeviceDescriptor::CopyExtendedFields(const AudioDeviceDescriptor &deviceDescriptor)
+{
     isLowLatencyDevice_ = deviceDescriptor.isLowLatencyDevice_;
     a2dpOffloadFlag_ = deviceDescriptor.a2dpOffloadFlag_;
-    // Other
     descriptorType_ = deviceDescriptor.descriptorType_;
     hasPair_ = deviceDescriptor.hasPair_;
     spatializationSupported_ = deviceDescriptor.spatializationSupported_;
     isVrSupported_ = deviceDescriptor.isVrSupported_;
-    isBTSupportWearDetectionEnable_ = deviceDescriptor.isBTSupportWearDetectionEnable_;
+    isSupportWearDetectionEnable_ = deviceDescriptor.isSupportWearDetectionEnable_;
     clientInfo_ = deviceDescriptor.clientInfo_;
     modemCallSupported_ = deviceDescriptor.modemCallSupported_;
     highQualityRecordingSupported_ = deviceDescriptor.highQualityRecordingSupported_;
+    isUnidirectional_ = deviceDescriptor.isUnidirectional_;
     dmDeviceInfo_ = deviceDescriptor.dmDeviceInfo_;
     volumeBehavior_ = deviceDescriptor.volumeBehavior_;
-    deviceSupportMmap_ = deviceDescriptor.GetDeviceSupportMmap();
     glassesWearCount_ = deviceDescriptor.glassesWearCount_;
     hdPlaybackMode_ = deviceDescriptor.hdPlaybackMode_;
     isSupportRemoteMultichannel_ = deviceDescriptor.isSupportRemoteMultichannel_;
     deviceTokenId_ = deviceDescriptor.deviceTokenId_;
     privacyType_ = deviceDescriptor.GetDevicePrivacyType();
+    isSilent_ = deviceDescriptor.isSilent_;
+    isSupportMultiZone_ = deviceDescriptor.isSupportMultiZone_;
+    visibleMode_ = deviceDescriptor.visibleMode_;
+}
+
+AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
+{
+    CopyBaseFields(deviceDescriptor);
+    CopyExtendedFields(deviceDescriptor);
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "Error input parameter");
-    deviceId_ = deviceDescriptor->deviceId_;
-    deviceName_ = deviceDescriptor->deviceName_;
-    macAddress_ = deviceDescriptor->macAddress_;
-    deviceType_ = deviceDescriptor->deviceType_;
-    deviceRole_ = deviceDescriptor->deviceRole_;
-    audioStreamInfo_ = deviceDescriptor->audioStreamInfo_;
-    capabilities_ = deviceDescriptor->capabilities_;
-    channelMasks_ = deviceDescriptor->channelMasks_;
-    channelIndexMasks_ = deviceDescriptor->channelIndexMasks_;
-    volumeGroupId_ = deviceDescriptor->volumeGroupId_;
-    interruptGroupId_ = deviceDescriptor->interruptGroupId_;
-    networkId_ = deviceDescriptor->networkId_;
-    dmDeviceType_ = deviceDescriptor->dmDeviceType_;
-    hasStreamRunning_ = deviceDescriptor->hasStreamRunning_;
-    displayName_ = deviceDescriptor->displayName_;
-    model_ = deviceDescriptor->model_;
-    deviceCategory_ = deviceDescriptor->deviceCategory_;
-    connectTimeStamp_ = deviceDescriptor->connectTimeStamp_;
-    connectState_ = deviceDescriptor->connectState_;
-    pairDeviceDescriptor_ = deviceDescriptor->pairDeviceDescriptor_;
-    isScoRealConnected_ = deviceDescriptor->isScoRealConnected_;
-    isEnable_ = deviceDescriptor->isEnable_;
-    exceptionFlag_ = deviceDescriptor->exceptionFlag_;
-    deviceUsage_ = deviceDescriptor->deviceUsage_;
-    // DeviceInfo
-    isLowLatencyDevice_ = deviceDescriptor->isLowLatencyDevice_;
-    a2dpOffloadFlag_ = deviceDescriptor->a2dpOffloadFlag_;
-    // Other
-    descriptorType_ = deviceDescriptor->descriptorType_;
-    hasPair_ = deviceDescriptor->hasPair_;
-    spatializationSupported_ = deviceDescriptor->spatializationSupported_;
-    isVrSupported_ = deviceDescriptor->isVrSupported_;
-    isBTSupportWearDetectionEnable_ = deviceDescriptor->isBTSupportWearDetectionEnable_;
-    clientInfo_ = deviceDescriptor->clientInfo_;
-    modemCallSupported_ = deviceDescriptor->modemCallSupported_;
-    highQualityRecordingSupported_ = deviceDescriptor->highQualityRecordingSupported_;
-    dmDeviceInfo_ = deviceDescriptor->dmDeviceInfo_;
-    volumeBehavior_ = deviceDescriptor->volumeBehavior_;
-    deviceSupportMmap_ = deviceDescriptor->GetDeviceSupportMmap();
-    glassesWearCount_ = deviceDescriptor->glassesWearCount_;
-    hdPlaybackMode_ = deviceDescriptor->hdPlaybackMode_;
-    isSupportRemoteMultichannel_ = deviceDescriptor->isSupportRemoteMultichannel_;
-    deviceTokenId_ = deviceDescriptor->deviceTokenId_;
-    privacyType_ = deviceDescriptor->GetDevicePrivacyType();
+    CopyBaseFields(*deviceDescriptor);
+    CopyExtendedFields(*deviceDescriptor);
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
@@ -534,6 +514,7 @@ bool AudioDeviceDescriptor::MarshallingInnerdata(Parcel &parcel, int32_t devType
         parcel.WriteInt64(connectTimeStamp_) &&
         parcel.WriteBool(isScoRealConnected_) &&
         parcel.WriteBool(isEnable_) &&
+        parcel.WriteBool(isExclusiveMicScoUnavailable_) &&
         parcel.WriteInt32(mediaVolume_) &&
         parcel.WriteInt32(callVolume_) &&
         parcel.WriteBool(isLowLatencyDevice_) &&
@@ -542,12 +523,14 @@ bool AudioDeviceDescriptor::MarshallingInnerdata(Parcel &parcel, int32_t devType
         parcel.WriteBool(spatializationSupported_) &&
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) && parcel.WriteInt32(isVrSupported_) &&
-        parcel.WriteBool(isBTSupportWearDetectionEnable_) &&
+        parcel.WriteBool(isSupportWearDetectionEnable_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) && parcel.WriteBool(modemCallSupported_) &&
-        parcel.WriteBool(highQualityRecordingSupported_) && parcel.WriteString(dmDeviceInfo_) &&
-        parcel.WriteInt32(hdPlaybackMode_) && parcel.WriteBool(isSupportRemoteMultichannel_) &&
-        parcel.WriteUint32(deviceTokenId_) &&
-        parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType()));
+        parcel.WriteBool(highQualityRecordingSupported_) && parcel.WriteBool(isUnidirectional_) &&
+        parcel.WriteString(dmDeviceInfo_) && parcel.WriteInt32(hdPlaybackMode_) &&
+        parcel.WriteBool(isSupportRemoteMultichannel_) && parcel.WriteUint32(deviceTokenId_) &&
+        parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType())) &&
+        parcel.WriteBool(isSilent_) && parcel.WriteBool(isSupportMultiZone_) &&
+        parcel.WriteInt32(static_cast<int32_t>(visibleMode_));
 }
 
 void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
@@ -582,8 +565,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
 
     return parcel.WriteInt32(static_cast<int32_t>(devType)) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceRole_)) &&
-        parcel.WriteInt32(devId) &&
-        parcel.WriteInt32(channelMasks_) &&
+        parcel.WriteInt32(devId) && parcel.WriteInt32(channelMasks_) &&
         parcel.WriteInt32(channelIndexMasks_) &&
         parcel.WriteString((!hasBTPermission && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
             deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) ? "" : deviceName_) &&
@@ -603,6 +585,7 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteInt64(connectTimeStamp_) &&
         parcel.WriteBool(isScoRealConnected_) &&
         parcel.WriteBool(isEnable_) &&
+        parcel.WriteBool(isExclusiveMicScoUnavailable_) &&
         parcel.WriteInt32(mediaVolume_) &&
         parcel.WriteInt32(callVolume_) &&
         parcel.WriteBool(isLowLatencyDevice_) &&
@@ -612,15 +595,16 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) &&
         parcel.WriteInt32(isVrSupported_) &&
-        parcel.WriteBool(isBTSupportWearDetectionEnable_) &&
+        parcel.WriteBool(isSupportWearDetectionEnable_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) &&
         parcel.WriteBool(modemCallSupported_) &&
         parcel.WriteBool(highQualityRecordingSupported_) &&
+        parcel.WriteBool(isUnidirectional_) &&
         parcel.WriteString(dmDeviceInfo_) &&
         parcel.WriteInt32(hdPlaybackMode_) &&
-        parcel.WriteBool(isSupportRemoteMultichannel_) &&
-        parcel.WriteUint32(deviceTokenId_) &&
-        parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType()));
+        parcel.WriteBool(isSupportRemoteMultichannel_) && parcel.WriteUint32(deviceTokenId_) &&
+        parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType())) && parcel.WriteBool(isSilent_) &&
+        parcel.WriteBool(isSupportMultiZone_) && parcel.WriteInt32(static_cast<int32_t>(visibleMode_));
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -646,6 +630,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     connectTimeStamp_ = parcel.ReadInt64();
     isScoRealConnected_ = parcel.ReadBool();
     isEnable_ = parcel.ReadBool();
+    isExclusiveMicScoUnavailable_ = parcel.ReadBool();
     mediaVolume_ = parcel.ReadInt32();
     callVolume_ = parcel.ReadInt32();
     isLowLatencyDevice_ = parcel.ReadBool();
@@ -655,15 +640,19 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     hasPair_ = parcel.ReadBool();
     routerType_ = static_cast<RouterType>(parcel.ReadInt32());
     isVrSupported_ = parcel.ReadInt32();
-    isBTSupportWearDetectionEnable_ = parcel.ReadBool();
+    isSupportWearDetectionEnable_ = parcel.ReadBool();
     deviceUsage_ = static_cast<DeviceUsage>(parcel.ReadInt32());
     modemCallSupported_ = parcel.ReadBool();
     highQualityRecordingSupported_ = parcel.ReadBool();
+    isUnidirectional_ = parcel.ReadBool();
     dmDeviceInfo_ = parcel.ReadString();
     hdPlaybackMode_ = static_cast<HdPlaybackMode>(parcel.ReadInt32());
     isSupportRemoteMultichannel_ = parcel.ReadBool();
     deviceTokenId_ = parcel.ReadUint32();
     privacyType_ = static_cast<AudioDevicePrivacyType>(parcel.ReadInt32());
+    isSilent_ = parcel.ReadBool();
+    isSupportMultiZone_ = parcel.ReadBool();
+    visibleMode_ = static_cast<VisibleMode>(parcel.ReadInt32());
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
@@ -680,11 +669,9 @@ AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
 void AudioDeviceDescriptor::MapInputDeviceType(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     for (int index = static_cast<int>(descs.size()) - 1; index >= 0; index--) {
-        if ((descs[index]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
-            descs[index]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP_IN) ||
-            descs[index]->deviceRole_ != INPUT_DEVICE) {
-            continue;
-        }
+        bool isTargetDevice = (descs[index]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN ||
+            (descs[index]->deviceType_ == DEVICE_TYPE_BT_SPP && descs[index]->isUnidirectional_));
+        CHECK_AND_CONTINUE(isTargetDevice);
         bool hasSame = false;
         for (auto& otherDesc : descs) {
             if (otherDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
@@ -694,6 +681,7 @@ void AudioDeviceDescriptor::MapInputDeviceType(std::vector<std::shared_ptr<Audio
                 otherDesc->networkId_ == descs[index]->networkId_) {
                 hasSame = true;
                 otherDesc->highQualityRecordingSupported_ = descs[index]->highQualityRecordingSupported_;
+                otherDesc->isUnidirectional_ = descs[index]->isUnidirectional_;
                 break;
             }
         }
@@ -823,6 +811,9 @@ std::string AudioDeviceDescriptor::GetName()
     if (networkId_ != LOCAL_NETWORK_ID && deviceType_ == DEVICE_TYPE_SPEAKER) {
         return "DMSDP";
     }
+    if (networkId_ != LOCAL_NETWORK_ID && deviceType_ == DEVICE_TYPE_MIC) {
+        return "Remote_Mic";
+    }
     return GetDeviceTypeString();
 }
 
@@ -889,7 +880,7 @@ DeviceStreamInfo AudioDeviceDescriptor::GetDeviceStreamInfo(void) const
 void AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo()
 {
     if ((deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != LOCAL_NETWORK_ID) ||
-        deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET || isUnidirectional_) {
         capabilities_.clear();
         for (const auto &deviceStreamInfo : audioStreamInfo_) {
             AudioStreamInfo cap;

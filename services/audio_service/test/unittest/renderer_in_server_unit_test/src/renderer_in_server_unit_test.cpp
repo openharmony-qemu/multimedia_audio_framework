@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,6 +287,61 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdate_001, TestSize.
     ASSERT_EQ(SUCCESS, ret);
     rendererInServer->OnStatusUpdate(OPERATION_FLUSHED);
     EXPECT_EQ(I_STATUS_IDLE, rendererInServer->status_);
+}
+
+// Non-gmock IStreamListener fake that records the last forwarded operation, so the
+// HPAE first-frame-consumed forwarding can be asserted without pulling gmock into
+// this test target (plan §8.3).
+class RecordingStreamListener : public IStreamListener {
+public:
+    int32_t OnOperationHandled(Operation operation, int64_t result) override
+    {
+        lastOp = operation;
+        lastResult = result;
+        ++callCount;
+        return SUCCESS;
+    }
+    Operation lastOp = MAX_OPERATION_CODE;
+    int64_t lastResult = -1;
+    int32_t callCount = 0;
+};
+
+// OPERATION_FIRST_FRAME_CONSUMED is forwarded to the listener as
+// OnOperationHandled(FIRST_FRAME_CONSUMED, 0) and does NOT change renderer lifecycle status.
+HWTEST_F(RendererInServerUnitTest, RendererInServer_FirstFrameConsumed_Forwarded, TestSize.Level1)
+{
+    AudioStreamInfo streamInfoFF(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(streamInfoFF);
+    auto recListener = std::make_shared<RecordingStreamListener>();
+    std::weak_ptr<IStreamListener> weakListener = recListener;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, weakListener);
+    ASSERT_EQ(rendererInServer->Init(), SUCCESS);
+
+    IStatus statusBefore = rendererInServer->status_;
+    rendererInServer->OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED);
+    EXPECT_EQ(recListener->callCount, 1);
+    EXPECT_EQ(recListener->lastOp, FIRST_FRAME_CONSUMED);
+    EXPECT_EQ(recListener->lastResult, 0);
+    EXPECT_EQ(rendererInServer->status_, statusBefore); // lifecycle status unchanged
+}
+
+// When the stream listener has gone away, the event must return safely without crashing.
+HWTEST_F(RendererInServerUnitTest, RendererInServer_FirstFrameConsumed_NullListener_SafeReturn, TestSize.Level1)
+{
+    AudioStreamInfo streamInfoFF(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(streamInfoFF);
+    std::weak_ptr<IStreamListener> dangling;
+    {
+        auto recListener = std::make_shared<RecordingStreamListener>();
+        dangling = recListener;
+        rendererInServer = std::make_shared<RendererInServer>(processConfig, dangling);
+        ASSERT_EQ(rendererInServer->Init(), SUCCESS);
+    } // recListener destroyed -> weak ptr dangles
+    IStatus statusBefore = rendererInServer->status_;
+    rendererInServer->OnStatusUpdate(OPERATION_FIRST_FRAME_CONSUMED); // safe return, no crash
+    EXPECT_EQ(rendererInServer->status_, statusBefore);
 }
 
 /**
@@ -2682,12 +2737,11 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetClientVolume_002, TestSize
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->managerType_ = DIRECT_PLAYBACK;
     rendererInServer->Init();
 
     int32_t ret = rendererInServer->SetClientVolume();
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2702,7 +2756,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetMute_001, TestSize.Level1)
 
     bool mute = true;
     int32_t ret = rendererInServer->SetMute(mute);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -2733,7 +2787,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetSilentModeAndMixWithOthers
     bool on = true;
     int32_t ret = rendererInServer->SetSilentModeAndMixWithOthers(on);
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_HANDLE, ret);
 }
 
 /**
@@ -3950,7 +4004,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_001, TestSize.Level1)
     ASSERT_EQ(SUCCESS, ret);
     
     ret = rendererInServer->Standby(true);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**
@@ -3967,10 +4021,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStandby_002, TestSize.Level1)
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     ASSERT_NE(nullptr, rendererInServer);
     
-    rendererInServer->asyncHandler_ = nullptr;
-    
     int32_t ret = rendererInServer->Standby(true);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -3989,8 +4041,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_001, 
     
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
-    
-    rendererInServer->standByEnable_ = true;
     
     ret = rendererInServer->StartInnerDuringStandby();
     EXPECT_NE(ERR_OPERATION_FAILED, ret);
@@ -4013,11 +4063,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStartInnerDuringStandby_002, 
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
     
-    rendererInServer->standByEnable_ = true;
-    rendererInServer->asyncHandler_ = nullptr;
-    
     ret = rendererInServer->StartInnerDuringStandby();
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**

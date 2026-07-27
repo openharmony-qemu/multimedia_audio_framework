@@ -118,7 +118,15 @@ class AudioRendererFirstFrameWritingCallback {
 public:
     virtual ~AudioRendererFirstFrameWritingCallback() = default;
     /**
-     * Called when first buffer to be enqueued.
+     * Called when the first buffer is about to be enqueued for playback.
+     *
+     * Invoked at most once per Start cycle. The trigger is whichever happens first:
+     * the client's first Write, or the HPAE engine's first valid media-data
+     * consumption. The HPAE trigger only indicates media data has entered the
+     * playback pipeline; it does NOT mean the first sample has been output by the
+     * hardware (effect chain, sink, HDI, DSP and device buffering may still apply).
+     *
+     * @param latency Latency in milliseconds.
      */
     virtual void OnFirstFrameWriting(uint64_t latency) = 0;
 };

@@ -27,6 +27,7 @@
 #include "audio_suite_serializer.h"
 #include "audio_suite_pure_voice_change_algo_interface_impl.h"
 #include "audio_utils.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

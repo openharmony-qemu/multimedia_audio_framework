@@ -46,13 +46,13 @@ extern "C" {
  */
 typedef enum {
     /**
-     * default input node type, this input node type support get audio data from application.
+     * default input node type, this input node type supports getting audio data from application.
      *
      * @since 22
      */
     INPUT_NODE_TYPE_DEFAULT = 1,
     /**
-     * default output node type, this output node type support provide audio data to application .
+     * default output node type, this output node type supports providing audio data to the application.
      *
      * @since 22
      */
@@ -92,13 +92,13 @@ typedef enum {
      * The audio format output by the audio separation node is as follows:
      * Sample rate: 48000 Hz.
      * Sample format: {@link AUDIO_SAMPLE_F32LE}.
-     * Channels: 4(First 2 channels for vocals; last 2 channels for accompaniment).
+     * Channels: 4 (First 2 channels for vocals; last 2 channels for accompaniment).
      *
      * @since 22
      */
     EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION = 204,
     /**
-     * Voice beautifier node type. Support beautifier type{@link OH_VoiceBeautifierType}.
+     * Voice beautifier node type. Supports beautifier type {@link OH_VoiceBeautifierType}.
      * The audio format output by the voice beautifier node is as follows:
      * Sample rate: 48000 Hz.
      * Sample format: {@link AUDIO_SAMPLE_S16LE}.
@@ -187,6 +187,27 @@ typedef enum {
      */
     EFFECT_NODE_TYPE_HOA_SPACE_RENDER = 212,
 } OH_AudioNode_Type;
+
+/**
+ * @brief Define audio node system type.
+ * @systemapi
+ * @since 26.0.0
+ */
+typedef enum OH_AudioSuite_SystemNodeType {
+    /**
+     * Dialogue Algo System Effect Node.
+     *
+     * @since 26.0.0
+     */
+    OH_AUDIOSUITE_EFFECT_NODE_SYSTEM_TYPE_DIALOGUE_ENHANCE = 301,
+    /**
+     * Voice Beautifier System Effect Node.
+     *
+     * @since 26.0.0
+     */
+    OH_AUDIOSUITE_EFFECT_NODE_SYSTEM_TYPE_VOICE_BEAUTIFIER = 302,
+} OH_AudioSuite_SystemNodeType;
+
 /**
  * @brief Define pipeline work mode
  *
@@ -201,7 +222,8 @@ typedef enum {
     AUDIOSUITE_PIPELINE_EDIT_MODE = 1,
     /**
      * If you need to play audio after effect processing, you should select this mode.
-     * In real-time rendering mode, the pipeline only supports EQ effect processing.
+     * Before API version 23, in real-time rendering mode, the pipeline only supports EQ effect processing.
+     * In API version 23 and later, in real-time rendering mode, the pipeline supports all effect processing.
      *
      * @since 22
      */
@@ -251,7 +273,7 @@ typedef enum {
      */
     AUDIOSUITE_ERROR_INVALID_STATE = 2,
     /**
-     * @error An system error has occurred.
+     * @error A system error has occurred.
      *
      * @since 22
      */
@@ -263,19 +285,19 @@ typedef enum {
      */
     AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT = 4,
     /**
-     * @error audio engine not exist.
+     * @error audio engine does not exist.
      *
      * @since 22
      */
     AUDIOSUITE_ERROR_ENGINE_NOT_EXIST = 5,
     /**
-     * @error audio pipeline not exist.
+     * @error audio pipeline does not exist.
      *
      * @since 22
      */
     AUDIOSUITE_ERROR_PIPELINE_NOT_EXIST = 6,
     /**
-     * @error audio node not exist.
+     * @error audio node does not exist.
      *
      * @since 22
      */
@@ -485,13 +507,51 @@ typedef struct OH_AudioFormat {
 } OH_AudioFormat;
 
 /**
- * @brief Define the audio data array structure,
+ * @brief Define the audio format info structure, used to describe basic audio format for system node.
+ * @systemapi
+ * @since 26.0.0
+ */
+typedef struct OH_AudioSuite_SystemNodeFormat {
+    /**
+     * @brief Audio sampling rate.
+     *
+     * @since 26.0.0
+     */
+    OH_Audio_SampleRate samplingRate;
+    /**
+     * @brief Audio channel layout.
+     *
+     * @since 26.0.0
+     */
+    OH_AudioChannelLayout channelLayout;
+    /**
+     * @brief Audio channel count.
+     *
+     * @since 26.0.0
+     */
+    uint32_t channelCount;
+    /**
+     * @brief Audio encoding format.
+     *
+     * @since 26.0.0
+     */
+    int32_t encoding;
+    /**
+     * @brief Audio sample format.
+     *
+     * @since 26.0.0
+     */
+    OH_Audio_SampleFormat sampleFormat;
+} OH_AudioSuite_SystemNodeFormat;
+
+/**
+ * @brief Define the audio data array structure.
  * This structure is used to get the processed audio data after acquisition processing during multi-channel rendering.
  * @since 22
  */
 typedef struct OH_AudioDataArray {
     /**
-     * @brief Audio audioDataArray mail.
+     * @brief Pointer to the array of audio data pointers.
      *
      * @since 22
      */
@@ -503,12 +563,46 @@ typedef struct OH_AudioDataArray {
      */
     int32_t arraySize;
     /**
-     * @brief Audio requestFrameSize count.
+     * @brief The memory size pointed to by each address in the audioDataArray array, in bytes.
+     * It should be ensured that the memory size pointed to by each address is requestFrameSize bytes.
      *
      * @since 22
      */
     int32_t requestFrameSize;
 } OH_AudioDataArray;
+
+/**
+ * @brief Define the audio meta data frame structure.
+ * This structure is used to pass audio data and meta data together.
+ * @systemapi
+ * @since 26.0.0
+ */
+typedef struct OH_AudioSuite_MetaFrame {
+    /**
+     * @brief Audio data pointer.
+     *
+     * @since 26.0.0
+     */
+    void* audioData;
+    /**
+     * @brief Audio data size.
+     *
+     * @since 26.0.0
+     */
+    int32_t audioDataSize;
+    /**
+     * @brief Meta data pointer.
+     *
+     * @since 26.0.0
+     */
+    void* metaData;
+    /**
+     * @brief Meta data size.
+     *
+     * @since 26.0.0
+     */
+    int32_t metaDataSize;
+} OH_AudioSuite_MetaFrame;
 
 /**
  * @brief Define the sound field type.
@@ -535,7 +629,7 @@ typedef enum {
      */
     SOUND_FIELD_NEAR = 3,
     /**
-     * Near sound field type.
+     * Wide sound field type.
      *
      * @since 22
      */
@@ -705,8 +799,8 @@ extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_ROCK;
 typedef struct OH_AudioSuiteEngineStruct OH_AudioSuiteEngine;
 
 /**
- * @brief Declare the audio pipe line.
- * The handle of audio suite pipe line is used for audio pipe line related functions.
+ * @brief Declare the audio pipeline.
+ * The handle of audio suite pipeline is used for audio pipeline related functions.
  *
  * @since 22
  */
@@ -730,7 +824,7 @@ typedef struct OH_AudioNodeBuilderStruct OH_AudioNodeBuilder;
 
 /**
  * @brief Definition of the parameter structure for fixed position mode in 3D spatial rendering.
- * Left-hand coordinate system: Extend your left hand, forming an "L" shapewith your thumb and index finger.
+ * Left-hand coordinate system: Extend your left hand, forming an "L" shape with your thumb and index finger.
  * Point the thumb to the right, the index finger upward, and the remaining fingers forward.
  * This establishes a left-hand coordinate system. In this system, the thumb, index finger,
  * and other fingers represent the positive directions of the x, y, and z axes, respectively.
@@ -739,18 +833,21 @@ typedef struct OH_AudioNodeBuilderStruct OH_AudioNodeBuilder;
 typedef struct OH_AudioSuite_SpaceRenderPositionParams {
     /**
      * X coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     * If the value is out of range, the setting will fail and return {@link AUDIOSUITE_ERROR_INVALID_PARAM}.
      *
      * @since 23
      */
     float x;
     /**
      * Y coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     * If the value is out of range, the setting will fail and return {@link AUDIOSUITE_ERROR_INVALID_PARAM}.
      *
      * @since 23
      */
     float y;
     /**
      * Z coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     * If the value is out of range, the setting will fail and return {@link AUDIOSUITE_ERROR_INVALID_PARAM}.
      *
      * @since 23
      */
@@ -769,11 +866,11 @@ typedef enum {
      * @since 23
      */
     SPACE_RENDER_CCW = 0,
-     /**
-      * Rotate clockwise
-      *
-      * @since 23
-      */
+    /**
+     * Rotate clockwise
+     *
+     * @since 23
+     */
     SPACE_RENDER_CW = 1,
 } OH_AudioSuite_SurroundDirection;
 
@@ -785,30 +882,34 @@ typedef enum {
 typedef struct OH_AudioSuite_SpaceRenderRotationParams {
     /**
      * X coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     * If the value is out of range, the setting will fail and return {@link AUDIOSUITE_ERROR_INVALID_PARAM}.
      *
      * @since 23
      */
     float x;
     /**
      * Y coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     * If the value is out of range, the setting will fail and return {@link AUDIOSUITE_ERROR_INVALID_PARAM}.
      *
      * @since 23
      */
     float y;
     /**
      * Z coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     * If the value is out of range, the setting will fail and return {@link AUDIOSUITE_ERROR_INVALID_PARAM}.
      *
      * @since 23
      */
     float z;
     /**
      * Single-week circumnavigation time, value range: [2, 40], unit: seconds.
+     * If the value is out of range, the setting will fail and return {@link AUDIOSUITE_ERROR_INVALID_PARAM}.
      *
      * @since 23
      */
     int32_t surroundTime;
     /**
-     * Single-week circumnavigation direction, value range: [0, 1].
+     * Single-week circumnavigation direction.
      *
      * @since 23
      */
@@ -823,12 +924,14 @@ typedef struct OH_AudioSuite_SpaceRenderRotationParams {
 typedef struct OH_AudioSuite_SpaceRenderExtensionParams {
     /**
      * Expansion radius, value range: [1.0, 5.0], unit: meters.
+     * If the value is out of range, the setting will fail and return {@link AUDIOSUITE_ERROR_INVALID_PARAM}.
      *
      * @since 23
      */
     float extRadius;
     /**
      * Expansion angle, value range: (0, 360), unit: degrees.
+     * If the value is out of range, the setting will fail and return {@link AUDIOSUITE_ERROR_INVALID_PARAM}.
      *
      * @since 23
      */
@@ -907,7 +1010,7 @@ typedef enum {
 
 /**
  * Use system recommended pitch.
- * Use in {@Link OH_AudioSuite_PureVoiceChangeOption}.
+ * Use in {@link OH_AudioSuite_PureVoiceChangeOption}.
  *
  * @since 23
  */
@@ -935,13 +1038,15 @@ typedef struct OH_AudioSuite_PureVoiceChangeOption {
      * Define voice pitch.
      * If using default pitch in system for best effect, set to {@link OH_PURE_VOICE_DEFAULT_PITCH}.
      * For custom pitch setting, specify a value with the valid range: [0.3f, 3.0f].
+     * If the value is out of range, the setting will fail and return {@link AUDIOSUITE_ERROR_INVALID_PARAM}.
+     *
      * @since 23
      */
     float pitch;
 } OH_AudioSuite_PureVoiceChangeOption;
 
 /**
- * @brief Define voice type in change general voice.
+ * @brief Define voice type in general voice change.
  *
  * @since 23
  */

@@ -115,6 +115,7 @@ const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
 const char* VIRTUAL_INJECTOR = "Virtual_Injector";
 inline constexpr std::string_view PRIMARY_ZONE_NAME = "primary_zone";
+constexpr int32_t PLAYBACKCAPTURER_RECORD_ALL = -1;
 
 // For ipc
 constexpr uint32_t MAX_COMMON_IPC_ARRAY_SIZE = 1000;
@@ -884,6 +885,8 @@ public:
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
     bool mixWithWakeUp = false;
     bool loopBackEffectEnabled = false;
+    std::string cellularRecordPhoneNum = "";
+    std::string cellularRecordToken = "";
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -907,7 +910,9 @@ public:
             parcel.WriteBool(isLoopback) &&
             parcel.WriteInt32(static_cast<int32_t>(loopbackMode)) &&
             parcel.WriteBool(mixWithWakeUp) &&
-            parcel.WriteBool(loopBackEffectEnabled);
+            parcel.WriteBool(loopBackEffectEnabled) &&
+            parcel.WriteString(cellularRecordPhoneNum) &&
+            parcel.WriteString(cellularRecordToken);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -925,6 +930,8 @@ public:
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         mixWithWakeUp = parcel.ReadBool();
         loopBackEffectEnabled = parcel.ReadBool();
+        cellularRecordPhoneNum = parcel.ReadString();
+        cellularRecordToken = parcel.ReadString();
     }
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
@@ -941,6 +948,18 @@ public:
 struct AudioRendererDesc {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+};
+
+struct RendererAttrInfo {
+    uint32_t spanSizeInFrame = 0;
+    uint64_t engineSize = 0;
+    uint32_t routeFlag = 0;
+};
+
+struct CapturerAttrInfo {
+    uint32_t spanSizeInFrame = 0;
+    uint64_t engineSize = 0;
+    uint32_t routeFlag = 0;
 };
 
 struct MicStateChangeEvent : public Parcelable {
@@ -1169,6 +1188,8 @@ struct CaptureFilterOptions {
     std::vector<int32_t> pids;
     FilterMode pidFilterMode {FilterMode::INCLUDE};
     bool capturePrivatePrivacyStreams = false;
+    int32_t playbackCaptureUid = PLAYBACKCAPTURER_RECORD_ALL;
+    int32_t playbackCaptureMode = 0;
 
     CaptureFilterOptions() = default;
     CaptureFilterOptions(const std::vector<StreamUsage> &usage, FilterMode uFilterMode,
@@ -1188,7 +1209,9 @@ struct CaptureFilterOptions {
         std::sort(pids.begin(), pids.end());
         return (filter.usages == usages && filter.usageFilterMode == usageFilterMode
             && filter.pids == pids && filter.pidFilterMode == pidFilterMode
-            && filter.capturePrivatePrivacyStreams == capturePrivatePrivacyStreams);
+            && filter.capturePrivatePrivacyStreams == capturePrivatePrivacyStreams &&
+            filter.playbackCaptureUid == playbackCaptureUid &&
+            filter.playbackCaptureMode == playbackCaptureMode);
     }
 };
 
@@ -1235,6 +1258,8 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
         // filterOptions.pidFilterMode
         parcel.WriteUint32(filterOptions.pidFilterMode);
         parcel.WriteBool(filterOptions.capturePrivatePrivacyStreams);
+        parcel.WriteInt32(filterOptions.playbackCaptureUid);
+        parcel.WriteInt32(filterOptions.playbackCaptureMode);
 
         // silentCapture
         parcel.WriteBool(silentCapture);
@@ -1246,6 +1271,8 @@ private:
     static AudioPlaybackCaptureConfig *ReadPlaybackCaptureFlags(Parcel &parcel, AudioPlaybackCaptureConfig *config)
     {
         config->filterOptions.capturePrivatePrivacyStreams = parcel.ReadBool();
+        config->filterOptions.playbackCaptureUid = parcel.ReadInt32();
+        config->filterOptions.playbackCaptureMode = parcel.ReadInt32();
         // silentCapture
         config->silentCapture = parcel.ReadBool();
         config->isModernInnerCapturer = parcel.ReadBool();
@@ -1607,6 +1634,11 @@ struct AudioProcessConfig : public Parcelable {
 
     AppInfo appInfo;
 
+    // Snapshot of the client-side appInfo captured in audio_server before the
+    // auth rewrite of `appInfo`. Used to key per-app volume on the real app uid.
+    // Not marshalled: populated and consumed server-side only.
+    AppInfo originalAppInfo;
+
     AudioStreamInfo streamInfo;
 
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
@@ -1672,6 +1704,8 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(static_cast<int32_t>(capturerInfo.loopbackMode));
         parcel.WriteBool(capturerInfo.mixWithWakeUp);
         parcel.WriteBool(capturerInfo.loopBackEffectEnabled);
+        parcel.WriteString(capturerInfo.cellularRecordPhoneNum);
+        parcel.WriteString(capturerInfo.cellularRecordToken);
 
         // streamType
         parcel.WriteInt32(streamType);
@@ -1738,6 +1772,8 @@ struct AudioProcessConfig : public Parcelable {
         config->capturerInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         config->capturerInfo.mixWithWakeUp = parcel.ReadBool();
         config->capturerInfo.loopBackEffectEnabled = parcel.ReadBool();
+        config->capturerInfo.cellularRecordPhoneNum = parcel.ReadString();
+        config->capturerInfo.cellularRecordToken = parcel.ReadString();
 
         // streamType
         config->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
@@ -2395,6 +2431,7 @@ struct FetchDeviceInfo : public Parcelable {
     RouterType bypassType = ROUTER_TYPE_NONE;
     uint32_t streamId = INVALID_STREAM_ID;
     SourceType sourceType = SOURCE_TYPE_INVALID;
+    bool isRunning = false;
 
     FetchDeviceInfo(StreamUsage streamUsage, StreamUsage preStreamUsage, int32_t clientUID,
         RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)

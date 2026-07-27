@@ -27,6 +27,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_schedule.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -75,7 +76,7 @@ int32_t MemChunk::GetMemBlock(size_t dataLength, std::string &dumpFileName, MemB
         fileNameIdMap_[dumpFileName] = curFileNameId_;
         idFileNameMap_[curFileNameId_] = dumpFileName;
     }
-    
+
     curMemBlock.dataPointer_ = bufferPointer_ + pointerOffset_;
     curMemBlock.dataLength_ = dataLength;
     pointerOffset_ += dataLength;
@@ -192,19 +193,19 @@ void AudioCacheMgrInner::CacheData(std::string &dumpFileName, void* srcDataPoint
 
     if (!g_Mutex.try_lock()) {
         /*
-        * condition 1: cacheData thread and dumpData thread in Concurrency
-        * if dumpData thread gets mutex, discard cacheData and return directly
-        * if cacheData threads gets mutex, dumpData thread waits for cacheData finish,
-        * cause cacheData excutes very fast.
-        */
+         * condition 1: cacheData thread and dumpData thread in Concurrency
+         * if dumpData thread gets mutex, discard cacheData and return directly
+         * if cacheData threads gets mutex, dumpData thread waits for cacheData finish,
+         * cause cacheData excutes very fast.
+         */
         if (isDumpingData_.load()) {
             Trace trace("AudioCacheMgrInner::CacheData::TryLockFailedWhenDumpingData");
             return;
         }
         /*
-        * condition 2: two cacheData threads in Concurrency, one gets mutex
-        * the other thread waits for mutex.
-        */
+         * condition 2: two cacheData threads in Concurrency, one gets mutex
+         * the other thread waits for mutex.
+         */
         g_Mutex.lock();
     }
 

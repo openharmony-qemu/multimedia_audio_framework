@@ -135,6 +135,10 @@ public:
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
+    int32_t SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
+    int32_t SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
+    int32_t ClearVoipMuteByCallerUid(int32_t callerUid);
+    int32_t ClearVoipMuteByStreamId(int64_t streamId);
     int32_t SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage);
     int32_t GetSystemAppVolumePercentage(int32_t appUid, int32_t &volumePercentage);
     int32_t SetSystemAppVolumePercentageWithCallback(int32_t appUid, int32_t volumePercentage);
@@ -187,7 +191,7 @@ public:
     void UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
         bool connected, int32_t mappingId);
     void GetVolumeGroupInfo(std::vector<sptr<VolumeGroupInfo>>& volumeGroupInfos);
-    int32_t SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
+    int32_t SetVoiceCallVolumeOnDeviceSwitch(AudioDeviceDescriptor deviceDescriptor,
         bool enableSetVoiceCallVolume = true, std::shared_ptr<AudioStreamDescriptor> targetStream = nullptr);
 
     bool IsRingerModeMute();
@@ -214,6 +218,8 @@ public:
     bool IsNeedForceControlVolumeType();
     AudioVolumeType GetForceControlVolumeType();
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, int32_t zoneId = 0);
+    int32_t GetSystemVolumeDegree(AudioStreamType streamType, DeviceType deviceType,
+        const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
     int32_t UpdateSafeVolumeByStrMode();
     void OnCheckActiveMusicTime(const std::string &reason);
@@ -243,9 +249,9 @@ private:
     AudioVolumeManager();
     ~AudioVolumeManager() = default;
 
-    int32_t HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel,
+    VolumeScale HandleAbsBluetoothVolume(const std::string &macAddress, const VolumeScale &volume,
         bool isNearlinkDevice = false, AudioStreamType streamType = STREAM_DEFAULT);
-    int32_t DealWithSafeVolume(const int32_t volumeLevel, bool isBtDevice);
+    VolumeScale DealWithSafeVolume(const VolumeScale &volume, bool isBtDevice);
     void CreateCheckMusicActiveThread();
     void CheckBlueToothActiveMusicTime(int32_t safeVolume);
     void CheckNearlinkActiveMusicTime(int32_t safeVolume);
@@ -290,6 +296,8 @@ private:
     void SetNearlinkTransitionCurrentAbsVolume(int32_t volumeLevel);
     void TriggerKaraokeTransition();
     void KaraokeTransitionThreadFunc();
+    bool GetSpecialDeviceVolumeDegree(AudioStreamType streamType, AudioVolumeType volumeType,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t &volumeDegree);
 
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;

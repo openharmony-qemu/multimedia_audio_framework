@@ -822,6 +822,209 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetZoneKey_001, TestSi
     // release zone and verify key no longer available
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
     EXPECT_EQ(vd->GetZoneKey(zoneId), "");
+
+    // release zone and verify key no longer available
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+    EXPECT_EQ(vd->GetZoneKey(zoneId), "");
+}
+
+static constexpr int32_t TEST_INVALID_SUBSPACE_ID = -1;
+static constexpr int32_t TEST_BASE_SUBSPACE_ID = 100000;
+static constexpr int32_t TEST_SECOND_SUBSPACE_ID = 100001;
+static constexpr int32_t TEST_ZERO_SUBSPACE_ID = 0;
+static constexpr int32_t TEST_PRIMARY_ZONE_ID = 0;
+
+/**
+ * @tc.name  : GetSubspaceKey_DefaultInit
+ * @tc.number: VolumeDataMaintainer_GetSubspaceKey_001
+ * @tc.desc  : Test GetSubspaceKey with default subspaceId=-1, zoneId=0 returns empty string.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetSubspaceKey_001, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    EXPECT_EQ(vd->GetSubspaceKey(TEST_PRIMARY_ZONE_ID), "");
+}
+
+/**
+ * @tc.name  : GetSubspaceKey_ValidSubspaceId
+ * @tc.number: VolumeDataMaintainer_GetSubspaceKey_002
+ * @tc.desc  : Test GetSubspaceKey with valid subspaceId=100000, zoneId=0 returns "_100000".
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetSubspaceKey_002, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    vd->SetCurrentSubspaceId(TEST_BASE_SUBSPACE_ID);
+    EXPECT_EQ(vd->GetSubspaceKey(TEST_PRIMARY_ZONE_ID), "_100000");
+}
+
+/**
+ * @tc.name  : GetSubspaceKey_NonPrimaryZone
+ * @tc.number: VolumeDataMaintainer_GetSubspaceKey_003
+ * @tc.desc  : Test GetSubspaceKey with subspaceId set but zoneId>0 returns empty string.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetSubspaceKey_003, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    vd->SetCurrentSubspaceId(TEST_BASE_SUBSPACE_ID);
+    AudioZoneService::GetInstance().Init(
+        DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("UT_SubspaceZone", context, 0);
+    ASSERT_GT(zoneId, 0);
+    EXPECT_EQ(vd->GetSubspaceKey(zoneId), "");
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+ * @tc.name  : GetSubspaceKey_ZeroSubspaceId
+ * @tc.number: VolumeDataMaintainer_GetSubspaceKey_004
+ * @tc.desc  : Test GetSubspaceKey with subspaceId=0, zoneId=0 returns "_0" per >=0 condition.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetSubspaceKey_004, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    vd->SetCurrentSubspaceId(TEST_ZERO_SUBSPACE_ID);
+    EXPECT_EQ(vd->GetSubspaceKey(TEST_PRIMARY_ZONE_ID), "_0");
+}
+
+/**
+ * @tc.name  : GetSubspaceKey_SubspaceIdThenReset
+ * @tc.number: VolumeDataMaintainer_GetSubspaceKey_005
+ * @tc.desc  : Test GetSubspaceKey returns empty after subspaceId reset to -1.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetSubspaceKey_005, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    vd->SetCurrentSubspaceId(TEST_BASE_SUBSPACE_ID);
+    EXPECT_EQ(vd->GetSubspaceKey(TEST_PRIMARY_ZONE_ID), "_100000");
+    vd->SetCurrentSubspaceId(TEST_INVALID_SUBSPACE_ID);
+    EXPECT_EQ(vd->GetSubspaceKey(TEST_PRIMARY_ZONE_ID), "");
+}
+
+/**
+ * @tc.name  : SetAndGetCurrentSubspaceId
+ * @tc.number: VolumeDataMaintainer_SubspaceId_001
+ * @tc.desc  : Test SetCurrentSubspaceId and GetCurrentSubspaceId round-trip.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SubspaceId_001, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    EXPECT_EQ(vd->GetCurrentSubspaceId(), TEST_INVALID_SUBSPACE_ID);
+    vd->SetCurrentSubspaceId(TEST_BASE_SUBSPACE_ID);
+    EXPECT_EQ(vd->GetCurrentSubspaceId(), TEST_BASE_SUBSPACE_ID);
+    vd->SetCurrentSubspaceId(TEST_SECOND_SUBSPACE_ID);
+    EXPECT_EQ(vd->GetCurrentSubspaceId(), TEST_SECOND_SUBSPACE_ID);
+    vd->SetCurrentSubspaceId(TEST_INVALID_SUBSPACE_ID);
+    EXPECT_EQ(vd->GetCurrentSubspaceId(), TEST_INVALID_SUBSPACE_ID);
+}
+
+/**
+ * @tc.name  : VolumeLevelKeyFormat_WithSubspace
+ * @tc.number: VolumeDataMaintainer_VolumeKeyFormat_001
+ * @tc.desc  : Test GetVolumeLevelInfo key format includes subspace suffix for zoneId=0.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_VolumeKeyFormat_001, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    vd->SetCurrentSubspaceId(TEST_BASE_SUBSPACE_ID);
+    vd->SetDataShareReady(true);
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    auto info = vd->GetVolumeLevelInfo(desc, STREAM_MUSIC, TEST_PRIMARY_ZONE_ID);
+    EXPECT_TRUE(info.key.find("_100000") != std::string::npos);
+}
+
+/**
+ * @tc.name  : VolumeLevelKeyFormat_NoSubspace
+ * @tc.number: VolumeDataMaintainer_VolumeKeyFormat_002
+ * @tc.desc  : Test GetVolumeLevelInfo key format without subspace suffix when subspaceId=-1.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_VolumeKeyFormat_002, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    vd->SetDataShareReady(true);
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    auto info = vd->GetVolumeLevelInfo(desc, STREAM_MUSIC, TEST_PRIMARY_ZONE_ID);
+    EXPECT_TRUE(info.key.find("_100000") == std::string::npos);
+    EXPECT_TRUE(info.key.find("music_volume_builtin") != std::string::npos);
+}
+
+/**
+ * @tc.name  : VolumeDegreeKeyFormat_WithSubspace
+ * @tc.number: VolumeDataMaintainer_VolumeKeyFormat_003
+ * @tc.desc  : Test GetVolumeDegreeInfo key format includes subspace suffix for zoneId=0.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_VolumeKeyFormat_003, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    vd->SetCurrentSubspaceId(TEST_BASE_SUBSPACE_ID);
+    vd->SetDataShareReady(true);
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    auto info = vd->GetVolumeDegreeInfo(desc, STREAM_MUSIC, TEST_PRIMARY_ZONE_ID);
+    EXPECT_TRUE(info.key.find("_100000") != std::string::npos);
+}
+
+/**
+ * @tc.name  : VolumeDegreeKeyFormat_NoSubspace
+ * @tc.number: VolumeDataMaintainer_VolumeKeyFormat_004
+ * @tc.desc  : Test GetVolumeDegreeInfo key format without subspace suffix when subspaceId=-1.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_VolumeKeyFormat_004, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    vd->SetDataShareReady(true);
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    auto info = vd->GetVolumeDegreeInfo(desc, STREAM_MUSIC, TEST_PRIMARY_ZONE_ID);
+    EXPECT_TRUE(info.key.find("_100000") == std::string::npos);
+}
+
+/**
+ * @tc.name  : VolumeLevelKeyFormat_NonPrimaryZone
+ * @tc.number: VolumeDataMaintainer_VolumeKeyFormat_005
+ * @tc.desc  : Test GetVolumeLevelInfo key format for zoneId>0 does not include subspace suffix.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_VolumeKeyFormat_005, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    vd->SetCurrentSubspaceId(TEST_BASE_SUBSPACE_ID);
+    vd->SetDataShareReady(true);
+    AudioZoneService::GetInstance().Init(
+        DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("UT_KeyZone", context, 0);
+    ASSERT_GT(zoneId, 0);
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    auto info = vd->GetVolumeLevelInfo(desc, STREAM_MUSIC, zoneId);
+    EXPECT_TRUE(info.key.find("_100000") == std::string::npos);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+}
+
+/**
+ * @tc.name  : VolumeValueMapKey_NoSubspaceInMemory
+ * @tc.number: VolumeDataMaintainer_VolumeMapKey_001
+ * @tc.desc  : Test GetVolumeValueMapKey for zoneId=0 does not include subspaceId.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_VolumeMapKey_001, TestSize.Level1)
+{
+    auto vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+    vd->SetCurrentSubspaceId(TEST_BASE_SUBSPACE_ID);
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    std::string mapKey = vd->GetVolumeValueMapKey(desc, TEST_PRIMARY_ZONE_ID);
+    EXPECT_TRUE(mapKey.find("100000") == std::string::npos);
+    EXPECT_TRUE(mapKey.find("zone__") != std::string::npos || mapKey.find("deviceGroup_") != std::string::npos);
 }
 } // AudioStandardnamespace
 } // OHOSnamespace

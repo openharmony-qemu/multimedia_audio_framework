@@ -28,6 +28,7 @@
 #include "capturer_clock_manager.h"
 #include "audio_engine_log.h"
 #include "stream_dfx_manager.h"
+#include "securec.h"
 
 #define BYTE_SIZE_SAMPLE_U8 1
 #define BYTE_SIZE_SAMPLE_S16 2

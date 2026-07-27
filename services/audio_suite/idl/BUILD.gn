@@ -1,0 +1,160 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/components/idl_tool/idl.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
+
+audio_framework_root = "../../.."
+
+config("audio_suite_idl_config") {
+  include_dirs = [
+    "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_framework_root}/services/audio_suite/idl",
+    "${target_gen_dir}",
+  ]
+}
+
+idl_gen_interface("audio_suite_idl_interface") {
+  sources = [
+    "IAudioSuiteService.idl",
+    "IAudioSuiteDownloadCallback.idl",
+    "IAudioSuiteStatusCallback.idl",
+  ]
+  sources_callback = []
+  sources_common = [ "AudioSuiteTypes.idl" ]
+
+  inputs = [
+    "AudioSuiteTypes.idl",
+  ]
+
+  configs = [ ":audio_suite_idl_config" ]
+
+  log_tag = "AudioSuiteSaIdl"
+  hitrace = "HITRACE_TAG_ZAUDIO"
+  log_domainid = "0xD002B8C"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+if (audio_framework_feature_audiosuite_support) {
+  ohos_shared_library("audio_suite_client_idl") {
+    install_enable = true
+    branch_protector_ret = "pac_ret"
+
+    cflags_cc = [
+      "-fomit-frame-pointer",
+      "-fdata-sections",
+      "-ffunction-sections",
+      "-fno-unroll-loops",
+      "-fno-exceptions",
+      "-fno-unwind-tables",
+      "-fno-asynchronous-unwind-tables",
+      "-Os",
+    ]
+
+    include_dirs = [
+      "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
+    ]
+
+    client_output_values = []
+    client_output_values += filter_include(get_target_outputs(":audio_suite_idl_interface"),
+      [ "*service_proxy.cpp", "*callback_stub.cpp", "*_types.cpp" ])
+
+    sources = []
+    sources += client_output_values
+
+    deps = [
+      ":audio_suite_idl_interface",
+      "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "hilog:libhilog",
+      "ipc:ipc_core",
+      "ipc:ipc_single",
+      "hitrace:hitrace_meter",
+    ]
+
+    public_configs = [ ":audio_suite_idl_config" ]
+
+    subsystem_name = "multimedia"
+    part_name = "audio_framework"
+
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+    }
+  }
+}
+
+if (audio_framework_feature_audiosuite_support) {
+  ohos_shared_library("audio_suite_server_idl") {
+    install_enable = true
+    branch_protector_ret = "pac_ret"
+
+    cflags_cc = [
+      "-fomit-frame-pointer",
+      "-fdata-sections",
+      "-ffunction-sections",
+      "-fno-unroll-loops",
+      "-fno-exceptions",
+      "-fno-unwind-tables",
+      "-fno-asynchronous-unwind-tables",
+      "-Os",
+    ]
+
+    include_dirs = [
+      "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
+    ]
+
+    server_output_values = []
+    server_output_values += filter_include(get_target_outputs(":audio_suite_idl_interface"),
+      [ "*service_stub.cpp", "*callback_proxy.cpp", "*_types.cpp" ])
+    sources = []
+    sources += server_output_values
+
+    deps = [
+      ":audio_suite_idl_interface",
+      "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
+    ]
+
+    external_deps = [
+      "c_utils:utils",
+      "hilog:libhilog",
+      "ipc:ipc_core",
+      "ipc:ipc_single",
+      "samgr:samgr_proxy",
+      "hitrace:hitrace_meter",
+    ]
+
+    public_configs = [ ":audio_suite_idl_config" ]
+
+    subsystem_name = "multimedia"
+    part_name = "audio_framework"
+
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+    }
+  }
+}
+
+group("audio_suite_idl_headers") {
+  deps = [
+    ":audio_suite_idl_interface",
+  ]
+}

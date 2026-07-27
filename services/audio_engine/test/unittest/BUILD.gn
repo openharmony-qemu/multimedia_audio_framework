@@ -55,6 +55,7 @@ config("audio_engine_private_config") {
 }
 
 engine_test_external_deps = [
+  "bounds_checking_function:libsec_shared",
   "c_utils:utils",
   "googletest:gmock",
   "googletest:gtest",
@@ -86,7 +87,7 @@ ohos_unittest("hpae_render_manager_test") {
 
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
+    cfi_cross_dso = false
     boundary_sanitize = true
     debug = false
     integer_overflow = true
@@ -1335,6 +1336,39 @@ ohos_unittest("hpae_direct_sinkoutput_node_test") {
   sanitize = {
     cfi = true
     cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+  external_deps = engine_test_external_deps
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
+
+ohos_unittest("hpae_direct_renderer_manager_session_effect_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "manager/hpae_direct_renderer_manager_session_effect_test.cpp",
+    ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:hpae_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
     boundary_sanitize = true
     debug = false
     integer_overflow = true

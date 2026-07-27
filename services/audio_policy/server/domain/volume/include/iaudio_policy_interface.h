@@ -84,6 +84,14 @@ public:
 
     virtual int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) = 0;
 
+    virtual int32_t SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted) = 0;
+
+    virtual int32_t SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted) = 0;
+
+    virtual int32_t ClearVoipMuteByCallerUid(int32_t callerUid) = 0;
+
+    virtual int32_t ClearVoipMuteByStreamId(int64_t streamId) = 0;
+
     virtual int32_t GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
 
     virtual int32_t SetSystemAppVolumeLevel(int32_t appUid, int32_t volumeLevel, DeviceType deviceType) = 0;
@@ -154,11 +162,6 @@ public:
     virtual void ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
 
     virtual int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID) = 0;
-
-    virtual int32_t SelectDevice(DeviceRole deviceRole, InternalDeviceType deviceType, std::string name) = 0;
-
-    virtual int32_t SetDeviceActive(InternalDeviceType deviceType,
-                                    std::string name, bool active, DeviceFlag flag = ALL_DEVICES_FLAG) = 0;
 
     virtual int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName) = 0;
 
@@ -233,6 +236,8 @@ public:
 
     virtual void NotifyAccountsChanged(const int &id) = 0;
 
+    virtual void NotifySubProfileChanged() = 0;
+
     virtual void MuteMediaWhenAccountsChanged() = 0;
 
     virtual int32_t GetCurActivateCount() const = 0;
@@ -246,7 +251,7 @@ public:
     virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
         std::string networkId) = 0;
 
-    virtual void HandleRingerMode(AudioRingerMode ringerMode) = 0;
+    virtual void SaveRingerMode(AudioRingerMode ringerMode) = 0;
 
     virtual void SetAudioServerProxy(sptr<IStandardAudioService> gsp) = 0;
 

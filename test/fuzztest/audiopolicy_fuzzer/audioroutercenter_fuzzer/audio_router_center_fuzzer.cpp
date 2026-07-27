@@ -43,6 +43,7 @@
 #include "audio_router_center.h"
 #include "wireless_conflict_handler.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "securec.h"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

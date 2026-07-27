@@ -78,6 +78,8 @@ class Util {
 public:
     static bool IsScoSupportSource(const SourceType sourceType);
 
+    static bool IsSppSupportSource(const SourceType sourceType);
+
     static bool IsDualToneStreamType(const AudioStreamType streamType);
 
     static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);
@@ -92,10 +94,12 @@ public:
 
     static size_t CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
         uint32_t sampleRate, uint32_t bytesPerSample);
-    
+
     static std::vector<std::string> SplitString(const std::string& str, char delimiter);
 
     static bool IsEnhancedRoutingSupported();
+
+    static bool IsCustomSampleRateValid(uint32_t customSampleRate);
 };
 
 class AudioTypeUtils {
@@ -439,6 +443,8 @@ auto SafeGetMap(const std::map<Key, std::shared_ptr<T>>& map, Key key)
 
 std::string GetTime();
 std::string GetField(const std::string &src, const char* field, const char sep);
+std::string ReadTextFile(const std::string &file);
+std::string Trim(const std::string &str);
 int32_t GetFormatByteSize(int32_t format);
 
 struct SignalDetectAgent {
@@ -648,6 +654,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_PRIMARY_EXTRA_BT_NER = 20,
     HDI_CAPTURE_OFFSET_LIVE = 21,
     HDI_CAPTURE_OFFSET_CAMCORDER = 23,
+    HDI_CAPTURE_OFFSET_VOICE_MESSAGE = 24,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -674,6 +681,7 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_PRIMARY_EXTRA_HDMI = 21,
     HDI_RENDER_OFFSET_REMOTE_MULTICHANNEL = 22,
     HDI_RENDER_OFFSET_VOICE_CALL_ASSISTANT = 23,
+    HDI_RENDER_OFFSET_HDMI = 24
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);

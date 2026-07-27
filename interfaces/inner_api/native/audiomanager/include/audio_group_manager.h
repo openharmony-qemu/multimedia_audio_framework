@@ -88,7 +88,8 @@ public:
     int32_t GetVolume(AudioVolumeType volumeType, int32_t uid = 0);
     int32_t GetMaxVolume(AudioVolumeType volumeType);
     int32_t GetMinVolume(AudioVolumeType volumeType);
-    int32_t SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType = DEVICE_TYPE_NONE);
+    int32_t SetMute(AudioVolumeType volumeType, bool mute,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t volumeFlag = 0);
     int32_t IsStreamMute(AudioVolumeType volumeType, bool &isMute);
     int32_t Init();
     bool IsAlived();

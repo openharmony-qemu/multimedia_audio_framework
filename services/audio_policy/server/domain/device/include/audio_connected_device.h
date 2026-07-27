@@ -24,10 +24,11 @@
 #include <shared_mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
+#include "audio_device_descriptor.h"
 #include "audio_module_info.h"
 #include "audio_volume_config.h"
+#include "audio_policy_log.h"
 #include "audio_errors.h"
-#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,6 +58,8 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType);
     std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress);
+    std::shared_ptr<AudioDeviceDescriptor> GetConnectedDeviceByType(std::string networkId, DeviceType deviceType,
+        DeviceRole deviceRole);
     void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     void DelConnectedDevice(std::string networkId, DeviceType deviceType);
@@ -79,9 +82,10 @@ public:
     bool IsEmpty();
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceByDeviceType(DeviceType type,
         std::string networkId = LOCAL_NETWORK_ID);
+    std::shared_ptr<AudioDeviceDescriptor> GetOutputDeviceByDeviceType(DeviceType type,
+        std::string networkId = LOCAL_NETWORK_ID);
     std::unordered_set<DeviceType> GetAllOutputDeviceTypes();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAllOutputDevices();
-
 private:
     AudioConnectedDevice() {}
     ~AudioConnectedDevice() {}

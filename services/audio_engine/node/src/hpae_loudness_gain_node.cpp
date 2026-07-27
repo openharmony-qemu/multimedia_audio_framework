@@ -25,6 +25,7 @@
 #include "audio_errors.h"
 #include "audio_effect_log.h"
 #include "stream_dfx_manager.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

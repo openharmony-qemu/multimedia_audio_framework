@@ -40,6 +40,55 @@ enum VADeviceType {
     VA_DEVICE_TYPE_BT_SPP = 1,
 };
 
+// Noise reduction mode for external microphone devices
+enum VANoiseReductionMode {
+    VA_NOISE_REDUCTION_MODE_FIDELITY = 0,
+    VA_NOISE_REDUCTION_MODE_PURE_VOCALS = 1,
+    VA_NOISE_REDUCTION_MODE_STANDARD = 2,
+};
+ 
+struct VADeviceNoiseReductionCapability : public Parcelable {
+    std::vector<VANoiseReductionMode> supportedModes_;
+    VANoiseReductionMode defaultMode_ = VA_NOISE_REDUCTION_MODE_FIDELITY;
+ 
+    VADeviceNoiseReductionCapability() = default;
+ 
+    bool Marshalling(Parcel &parcel) const override
+    {
+        size_t size = supportedModes_.size();
+        if (!parcel.WriteUint64(size)) {
+            return false;
+        }
+        for (const auto& mode : supportedModes_) {
+            if (!parcel.WriteInt32(static_cast<int32_t>(mode))) {
+                return false;
+            }
+        }
+        return parcel.WriteInt32(static_cast<int32_t>(defaultMode_));
+    }
+ 
+    void UnmarshallingSelf(Parcel &parcel)
+    {
+        size_t size = parcel.ReadUint64();
+        CheckVADeviceInfoSize(size);
+        supportedModes_.clear();
+        for (size_t i = 0; i < size; i++) {
+            supportedModes_.push_back(static_cast<VANoiseReductionMode>(parcel.ReadInt32()));
+        }
+        defaultMode_ = static_cast<VANoiseReductionMode>(parcel.ReadInt32());
+    }
+ 
+    static VADeviceNoiseReductionCapability *Unmarshalling(Parcel &parcel)
+    {
+        auto cap = new VADeviceNoiseReductionCapability();
+        if (cap == nullptr) {
+            return nullptr;
+        }
+        cap->UnmarshallingSelf(parcel);
+        return cap;
+    }
+};
+
 struct VAAudioStreamProperty : public Parcelable {
     AudioEncodingType encoding_;
     uint32_t sampleRate_;
@@ -115,6 +164,13 @@ struct VADeviceConfiguration :public Parcelable {
     VADeviceType type_;
     std::list<VAAudioStreamProperty> properties_;
 
+    // Extended fields for external microphone device identification
+    std::string manufacturer_;
+    std::string modelNumber_;
+    bool isUnidirectional_ = false;
+    uint32_t captureLatencyMs_ = 0;
+    VADeviceNoiseReductionCapability noiseReductionCapability_;
+
     VADeviceConfiguration() = default;
     VADeviceConfiguration(const std::string &name, const std::string &address, VADeviceRole role, VADeviceType type)
         : name_(name), address_(address), role_(role), type_(type)
@@ -124,7 +180,10 @@ struct VADeviceConfiguration :public Parcelable {
     {
         return parcel.WriteString(name_) && parcel.WriteString(address_) &&
                parcel.WriteInt32(static_cast<int32_t>(role_)) && parcel.WriteInt32(static_cast<int32_t>(type_)) &&
-               MarshallingVAAudioStreamPropertyList(properties_, parcel);
+               MarshallingVAAudioStreamPropertyList(properties_, parcel) &&
+               parcel.WriteString(manufacturer_) && parcel.WriteString(modelNumber_) &&
+               parcel.WriteBool(isUnidirectional_) && parcel.WriteUint32(captureLatencyMs_) &&
+               noiseReductionCapability_.Marshalling(parcel);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -133,6 +192,11 @@ struct VADeviceConfiguration :public Parcelable {
         role_ = static_cast<VADeviceRole>(parcel.ReadInt32());
         type_ = static_cast<VADeviceType>(parcel.ReadInt32());
         UnmarshallingVAAudioStreamPropertyList(parcel, properties_);
+        manufacturer_ = parcel.ReadString();
+        modelNumber_ = parcel.ReadString();
+        isUnidirectional_ = parcel.ReadBool();
+        captureLatencyMs_ = parcel.ReadUint32();
+        noiseReductionCapability_.UnmarshallingSelf(parcel);
     }
     static VADeviceConfiguration *Unmarshalling(Parcel &parcel)
     {

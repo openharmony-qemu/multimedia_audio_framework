@@ -359,7 +359,9 @@ void AudioInterruptZoneManager::RemoveAudioZoneInterrupts(int32_t zoneId, const 
 {
     CHECK_AND_RETURN_LOG(service_ != nullptr, "service is nullptr");
     for (auto &it : focus) {
-        service_->sessionService_.RemoveStreamInfo(it->first.pid, it->first.streamId);
+        if (it->first.deviceTag == "") {
+            service_->sessionService_.RemoveStreamInfo(it->first.pid, it->first.streamId);
+        }
         AUDIO_INFO_LOG("[RemoteFocus]remove focus: %{public}d deviceTag: %{public}s from zone %{public}d",
             it->first.streamId, it->first.deviceTag.c_str(), zoneId);
         CHECK_AND_CONTINUE(service_->zonesMap_.find(zoneId) != service_->zonesMap_.end() &&

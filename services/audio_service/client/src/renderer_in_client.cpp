@@ -71,7 +71,7 @@ static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
-static const int32_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 40; // 40ms, align with legacy AudioProcessInClient
+static const int32_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 100; // 100ms, align with legacy AudioProcessInClient
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
 static const uint32_t WAIT_FOR_NEXT_CB = 10000; // 10ms
 static constexpr int32_t ONE_MINUTE = 60;
@@ -167,14 +167,15 @@ bool RendererInClientInner::IsHighResolution() const noexcept
 
 void RendererInClientInner::InitDFXOperaiton()
 {
-    // eg: 100005_44100_2_1_client_out.pcm
+    UpdateLogTag();
+    // eg: 100005_44100_2_1_Fast_client_out.pcm
     dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.customSampleRate == 0 ?
         curStreamParams_.samplingRate : curStreamParams_.customSampleRate) + "_" +
-        std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out." +
+        std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_" +
+        (IsFastStream() ? "Fast" : "Normal") + "_client_out." +
         (isHWDecodingType_ ? EncodingTypeStr(static_cast<AudioEncodingType>(curStreamParams_.encoding)) : "pcm");
 
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
-    logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalRenderer";
 }
 
 void RendererInClientInner::InitDirectPipeType()
@@ -270,10 +271,12 @@ int32_t RendererInClientInner::InitSharedBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "InitSharedBuffer failed, null ipcStream_.");
     uint64_t engineSize = 0;
-    int32_t ret = ipcStream_->ResolveBufferBaseAndGetServerSpanSize(clientBuffer_, spanSizeInFrame_, engineSize);
+    uint32_t spanSizeInFrame = 0;
+    int32_t ret = ipcStream_->ResolveBufferBaseAndGetServerSpanSize(clientBuffer_, spanSizeInFrame, engineSize);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret, "ResolveBuffer failed:%{public}d", ret);
-    cacheSizeInFrame_ = engineSize;
+    spanSizeInFrame_.store(spanSizeInFrame);
+    cacheSizeInFrame_.store(static_cast<uint32_t>(engineSize));
 
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -283,11 +286,11 @@ int32_t RendererInClientInner::InitSharedBuffer()
         ":%{public}d, byteSizePerFrame:%{public}u, sizePerFrameInByte_:%{public}zu", ret, byteSizePerFrame,
         sizePerFrameInByte_);
 
-    clientSpanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame;
+    clientSpanSizeInByte_.store(spanSizeInFrame * byteSizePerFrame);
 
     AUDIO_INFO_LOG("totalSizeInFrame_[%{public}u] spanSizeInFrame[%{public}u] sizePerFrameInByte_[%{public}zu]"
-        "clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
-        clientSpanSizeInByte_);
+        "clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame, sizePerFrameInByte_,
+        clientSpanSizeInByte_.load());
     if (rendererInfo_.isStatic) {
         CHECK_AND_RETURN_RET_LOG(CopyStaticBufferData() == SUCCESS, ERR_OPERATION_FAILED,
             "CopyStaticBufferData failed");
@@ -312,7 +315,8 @@ uint64_t RendererInClientInner::GetDefaultCallbackBufferDurationInUs() const
     }
     // For low-latency callback mode, the callback quantum should follow one server span.
     // cacheSizeInFrame_ comes from server engine size, which is typically span * 2.
-    uint32_t frameCount = spanSizeInFrame_ > 0 ? spanSizeInFrame_ : cacheSizeInFrame_.load();
+    uint32_t spanSize = spanSizeInFrame_.load();
+    uint32_t frameCount = spanSize > 0 ? spanSize : cacheSizeInFrame_.load();
     if (frameCount == 0) {
         return OLD_BUF_DURATION_IN_USEC;
     }
@@ -330,6 +334,19 @@ int32_t RendererInClientInner::GetBufferWaitTimeoutInMs() const
     return IsLowLatencyRenderer() ? FAST_WRITE_CACHE_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
 }
 
+void RendererInClientInner::CreateAndRetryAudioProcess(const AudioProcessConfig &config,
+    const sptr<IStandardAudioService> &gasp, AudioPlaybackCaptureConfig &playbackConfig)
+{
+    int32_t errorCode = 0;
+    gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy_);
+    for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) &&
+        (retrycount < MAX_RETRY_COUNT); retrycount++) {
+        AUDIO_WARNING_LOG("retry in client");
+        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
+        gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy_);
+    }
+}
+
 int32_t RendererInClientInner::InitIpcStream()
 {
     Trace trace("RendererInClientInner::InitIpcStream");
@@ -340,15 +357,9 @@ int32_t RendererInClientInner::InitIpcStream()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_SERVICE_UNAVAILABLE, "Can not get service", true),
         HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."));
-    int32_t errorCode = 0;
     ipcProxy_ = nullptr;
     AudioPlaybackCaptureConfig playbackConfig = {};
-    gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy_);
-    for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
-        AUDIO_WARNING_LOG("retry in client");
-        std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy_);
-    }
+    CreateAndRetryAudioProcess(config, gasp, playbackConfig);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_OPERATION_FAILED,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_NULL_POINTER, "ipcProxy is null", true),
@@ -358,7 +369,6 @@ int32_t RendererInClientInner::InitIpcStream()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_NULL_POINTER, "iface_cast failed", true),
         "failed when iface_cast.");
-
     // in plan next: old listener_ is destoried here, will server receive dieth notify?
     listener_ = sptr<IpcStreamListenerImpl>::MakeSptr(shared_from_this());
     int32_t ret = ipcStream_->RegisterStreamListener(listener_->AsObject());
@@ -366,7 +376,6 @@ int32_t RendererInClientInner::InitIpcStream()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_OPERATION_FAILED, "RegisterStreamListener failed", true),
         "RegisterStreamListener failed:%{public}d", ret);
-
     if (resetSilentMode && gServerProxy_ != nullptr && silentModeAndMixWithOthers_) {
         ipcStream_->SetSilentModeAndMixWithOthers(silentModeAndMixWithOthers_);
     }
@@ -375,13 +384,13 @@ int32_t RendererInClientInner::InitIpcStream()
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_OPERATION_FAILED, "InitSharedBuffer failed", true),
         "InitSharedBuffer failed:%{public}d", ret);
-
     ret = ipcStream_->GetAudioSessionID(sessionId_);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ret,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(clientUid_),
             PLAY_CREATE_INVALID_INDEX, "GetAudioSessionID failed", true),
         "GetAudioSessionID failed:%{public}d", ret);
-    traceTag_ = "[" + std::to_string(sessionId_) + "]RendererInClient"; // [100001]RendererInClient
+    traceTag_ = "[" + std::to_string(sessionId_) + "]RendererInClient";
+    UpdateLogTag();
     InitCallbackHandler();
     return SUCCESS;
 }
@@ -403,7 +412,8 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
 
 void RendererInClientInner::SetCacheSize(uint32_t cacheSizeInFrame)
 {
-    if (spanSizeInFrame_ == 0) {
+    uint32_t spanSizeInFrame = spanSizeInFrame_.load();
+    if (spanSizeInFrame == 0) {
         AUDIO_ERR_LOG("failed: spanSizeInFrame is invalid");
         return;
     }
@@ -416,9 +426,9 @@ void RendererInClientInner::SetCacheSize(uint32_t cacheSizeInFrame)
     int32_t ret = ipcStream_->CalculateCacheCount(cacheSizeInFrame, cacheCount);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("CalculateCacheCount failed: %{public}d", ret);
-        cacheCount = (cacheSizeInFrame + spanSizeInFrame_ - 1) / spanSizeInFrame_ + 1;
+        cacheCount = (cacheSizeInFrame + spanSizeInFrame - 1) / spanSizeInFrame + 1;
     }
-    cacheSizeInFrame_ = cacheCount * spanSizeInFrame_;
+    cacheSizeInFrame_.store(cacheCount * spanSizeInFrame);
     AUDIO_INFO_LOG("cacheCount:%{public}d cacheSizeInFrame:%{public}d", cacheCount, cacheSizeInFrame_.load());
 }
 
@@ -739,7 +749,7 @@ bool RendererInClientInner::WriteCallbackFunc()
     if (!WaitForRunning()) {
         return true;
     }
-    CheckAndProcessPendingSpanSize();
+    SyncRendererAttrFromSpan();
     if (cbBufferQueue_.Size() > 1) { // One callback, one enqueue, queue size should always be 1.
         HILOG_COMM_WARN("[WriteCallbackFunc]The queue is too long, reducing data through loops");
     }
@@ -878,7 +888,7 @@ void RendererInClientInner::FirstFrameProcess()
         ipcStream_->RegisterThreadPriority(gettid(), bundleName, METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
     }
 
-    if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
+    NotifyFirstFrameWritingOnce();
 }
 
 void RendererInClientInner::NotifyStreamSilentChange()
@@ -886,7 +896,7 @@ void RendererInClientInner::NotifyStreamSilentChange()
     CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && GetVolume() > 0.0f && volumeDataCount_ > 0);
     int64_t stamp = ClockTime::GetCurNano();
     Trace trace("RendererInClientInner::NotifyStreamSilentChange " + std::to_string(sessionId_));
-    AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
+    AudioPolicyManager::GetInstance().NotifyStreamSilentChange(clientPid_, sessionId_);
     needNotifyStreamSilentChange_.store(false);
     AUDIO_INFO_LOG("NotifyStreamSilentChange cost %{public}" PRId64 " ns", ClockTime::GetCurNano() - stamp);
 }
@@ -1023,7 +1033,7 @@ int32_t RendererInClientInner::ProcessBufferAndWriteCache(uint8_t *buffer, size_
 
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 {
-    CheckAndProcessPendingSpanSize();
+    SyncRendererAttrFromSpan();
     // eg: RendererInClient::sessionId:100001 WriteSize:3840
     DfxWriteInterval();
     Trace trace(traceTag_+ " WriteSize:" + std::to_string(bufferSize));
@@ -1449,7 +1459,7 @@ void RendererInClientInner::CheckOperations()
     }
     if (clientBuffer_->IsFirstFrame()) {
         clientBuffer_->SetIsFirstFrame(false);
-        OnFirstFrameWriting();
+        NotifyFirstFrameWritingOnce();
     }
 }
 
@@ -1477,59 +1487,74 @@ int32_t RendererInClientInner::CallStartWhenInStandby()
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, SUCCESS, "Client is not RUNNING!");
     CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, ERROR,
         HILOG_COMM_ERROR("[CallStartWhenInStandby]ipcStream is not inited!"));
-    int32_t ret = ipcStream_->Start(writeCb_ == nullptr);
+    int32_t ret = ipcStream_->Start(CheckWriteCb());
     AUDIO_INFO_LOG("%{public}u call start to exit stand-by ret %{public}u", sessionId_, ret);
     return SUCCESS;
 }
 
-void RendererInClientInner::CheckAndProcessPendingSpanSize()
+bool RendererInClientInner::CheckRendererAttrInfoFromSpan(RendererAttrInfo &attr)
 {
-    Trace trace("RendererInClientInner::CheckAndProcessPendingSpanSize");
-    AUDIO_DEBUG_LOG("CheckAndProcessPendingSpanSize enter, sessionId:%{public}u", sessionId_);
+    AUDIO_DEBUG_LOG("CheckRendererAttrInfoFromSpan enter, sessionId:%{public}u", sessionId_);
 
-    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer_ is nullptr");
-    uint64_t spanSize = 0;
-    uint64_t engineSize = 0;
-    uint32_t routeFlag = 0;
-    spanSize = clientBuffer_->GetAndClearPendingSpanSize(engineSize, routeFlag);
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientBuffer_ is nullptr");
+
+    uint64_t spanSize = clientBuffer_->GetAndClearPendingSpanSize(attr.engineSize, attr.routeFlag);
     if (spanSize == 0) {
-        AUDIO_DEBUG_LOG("No pending span size");
-        return;
+        AUDIO_DEBUG_LOG("No rendererAttr change");
+        return false;
     }
+
+    attr.spanSizeInFrame = static_cast<uint32_t>(spanSize);
+
+    AUDIO_INFO_LOG("Check rendererAttr: spanSize:%{public}u engineSize:%{public}" PRIu64 " routeFlag:0x%{public}x",
+        attr.spanSizeInFrame, attr.engineSize, attr.routeFlag);
+    return true;
+}
+
+void RendererInClientInner::RefreshRendererAttrInfoFromSpan(const RendererAttrInfo &attr)
+{
+    Trace trace("RefreshRendererAttrInfoFromSpan spanSize:" + std::to_string(attr.spanSizeInFrame) +
+        " engineSize:" + std::to_string(attr.engineSize) + " routeFlag:" + std::to_string(attr.routeFlag));
     const uint32_t MIN_SPAN_SIZE = 32;
     const uint32_t MAX_SPAN_SIZE = 8192;
-    uint32_t spanSizeInFrame = static_cast<uint32_t>(spanSize);
-    if (spanSizeInFrame < MIN_SPAN_SIZE || spanSizeInFrame > MAX_SPAN_SIZE) {
-        AUDIO_ERR_LOG("Invalid pending span size %{public}u, ignore", spanSizeInFrame);
-        return;
+    if (attr.spanSizeInFrame >= MIN_SPAN_SIZE && attr.spanSizeInFrame <= MAX_SPAN_SIZE) {
+        spanSizeInFrame_ = attr.spanSizeInFrame;
+        clientSpanSizeInByte_ = spanSizeInFrame_ * sizePerFrameInByte_;
+    } else {
+        AUDIO_ERR_LOG("Invalid span size %{public}u, skip update", attr.spanSizeInFrame);
     }
-    AUDIO_INFO_LOG("Process pending span size: %{public}u engineSize:%{public}" PRIu64 " routeFlag:0x%{public}x",
-        spanSizeInFrame, engineSize, routeFlag);
-
-    // Directly update the parameters without calling InitSharedBuffer (the buffer remains unchanged)
-    spanSizeInFrame_ = spanSizeInFrame;
-    clientSpanSizeInByte_ = spanSizeInFrame_ * sizePerFrameInByte_;
-    cacheSizeInFrame_ = engineSize;
-
-    // Update rendererFlags (based on routeFlag)
-    if (routeFlag != 0) {
-        rendererInfo_.audioFlag = routeFlag;
-        if (routeFlag & AUDIO_OUTPUT_FLAG_FAST) {
-            if (routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
-                rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-                AUDIO_INFO_LOG("Updated rendererFlags to VOIP_FAST (0x%{public}x)", rendererInfo_.rendererFlags);
-            } else {
-                rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-                AUDIO_INFO_LOG("Updated rendererFlags to MMAP (0x%{public}x)", rendererInfo_.rendererFlags);
-            }
-        } else {
+    cacheSizeInFrame_ = attr.engineSize;
+    if (attr.routeFlag != 0) {
+        rendererInfo_.audioFlag = attr.routeFlag;
+        if ((attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) == 0) {
             rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-            AUDIO_INFO_LOG("Updated rendererFlags to NORMAL (0x%{public}x)", rendererInfo_.rendererFlags);
+        } else if (attr.routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
+            rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+        } else {
+            rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
         }
+        AUDIO_INFO_LOG("Updated rendererFlags to 0x%{public}x", rendererInfo_.rendererFlags);
     }
     AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}u "
         "rendererFlags:0x%{public}x",
-        spanSizeInFrame_, clientSpanSizeInByte_, cacheSizeInFrame_.load(), rendererInfo_.rendererFlags);
+        spanSizeInFrame_.load(), clientSpanSizeInByte_.load(), cacheSizeInFrame_.load(),
+        rendererInfo_.rendererFlags);
+}
+
+bool RendererInClientInner::SyncRendererAttrFromSpan()
+{
+    RendererAttrInfo attr;
+    CHECK_AND_RETURN_RET_LOG(CheckRendererAttrInfoFromSpan(attr), false, "No rendererAttr to refresh");
+    RefreshRendererAttrInfoFromSpan(attr);
+    return true;
+}
+
+bool RendererInClientInner::JudgeFastStreamByRendererAttr()
+{
+    SyncRendererAttrFromSpan();
+    bool isFast = IsFastStream();
+    AUDIO_DEBUG_LOG("isFast:%{public}d, sessionId:%{public}u", isFast, sessionId_);
+    return isFast;
 }
 
 void RendererInClientInner::UpdateStreamState(State state)

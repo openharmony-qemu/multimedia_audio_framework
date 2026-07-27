@@ -17,14 +17,16 @@
 #endif
 
 #include "taihe_param_utils.h"
-
-#include <unistd.h>
-
 #include "audio_stream_info.h"
 #include "audio_log.h"
 #include "taihe_audio_enum.h"
+#include <unistd.h>
+#include <fcntl.h>
 
 namespace ANI::Audio {
+
+const int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024; // 10MB
+
 const std::vector<OHOS::AudioStandard::DeviceRole> DEVICE_ROLE_SET = {
     OHOS::AudioStandard::DEVICE_ROLE_NONE,
     OHOS::AudioStandard::INPUT_DEVICE,
@@ -41,6 +43,7 @@ const std::vector<OHOS::AudioStandard::DeviceType> DEVICE_TYPE_SET = {
     OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO,
     OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_A2DP,
     OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BT_SPP,
+    OHOS::AudioStandard::DeviceType::DEVICE_TYPE_NEARLINK_PORT,
     OHOS::AudioStandard::DEVICE_TYPE_MIC,
     OHOS::AudioStandard::DEVICE_TYPE_WAKEUP,
     OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET,
@@ -61,12 +64,13 @@ const std::vector<OHOS::AudioStandard::DeviceType> DEVICE_TYPE_SET = {
 
 constexpr uint32_t PLAYBACK_CAPTURE_MODE_DEFAULT = 0x0;
 constexpr uint32_t PLAYBACK_CAPTURE_MODE_MEDIA = 0x1;
+constexpr uint32_t PLAYBACK_CAPTURE_MODE_ONLY_VOIP = 0x4000;
 constexpr uint32_t PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF = 0x8000;
 
 bool IsValidPlaybackCaptureMode(uint32_t mode)
 {
     return mode == PLAYBACK_CAPTURE_MODE_DEFAULT || mode == PLAYBACK_CAPTURE_MODE_MEDIA ||
-        mode == PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF ||
+        mode == PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF || mode == PLAYBACK_CAPTURE_MODE_ONLY_VOIP ||
         mode == (PLAYBACK_CAPTURE_MODE_EXCLUDING_SELF | PLAYBACK_CAPTURE_MODE_MEDIA);
 }
 
@@ -76,7 +80,13 @@ void InitPlaybackCaptureConfig(OHOS::AudioStandard::AudioPlaybackCaptureConfig &
     auto &filterOptions = config.filterOptions;
     filterOptions.usageFilterMode = OHOS::AudioStandard::FilterMode::INCLUDE;
     filterOptions.pidFilterMode = OHOS::AudioStandard::FilterMode::INCLUDE;
+    config.isModernInnerCapturer = true;
 
+    if (mode == PLAYBACK_CAPTURE_MODE_ONLY_VOIP) {
+        filterOptions.usages.push_back(OHOS::AudioStandard::STREAM_USAGE_VOICE_COMMUNICATION);
+        filterOptions.usages.push_back(OHOS::AudioStandard::STREAM_USAGE_VIDEO_COMMUNICATION);
+        return;
+    }
     filterOptions.usages.push_back(OHOS::AudioStandard::STREAM_USAGE_UNKNOWN);
     filterOptions.usages.push_back(OHOS::AudioStandard::STREAM_USAGE_MEDIA);
     filterOptions.usages.push_back(OHOS::AudioStandard::STREAM_USAGE_MUSIC);
@@ -94,9 +104,7 @@ void InitPlaybackCaptureConfig(OHOS::AudioStandard::AudioPlaybackCaptureConfig &
         filterOptions.pids.push_back(getpid());
         filterOptions.pidFilterMode = OHOS::AudioStandard::FilterMode::EXCLUDE;
     }
-    config.isModernInnerCapturer = true;
 }
-
 const std::unordered_map<OHOS::AudioStandard::AudioSamplingRate, AudioSamplingRate> gNativeToAniAudioSamplingRate = {
     {OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_8000, AudioSamplingRate::key_t::SAMPLE_RATE_8000},
     {OHOS::AudioStandard::AudioSamplingRate::SAMPLE_RATE_11025, AudioSamplingRate::key_t::SAMPLE_RATE_11025},
@@ -246,6 +254,9 @@ static int32_t GetPlaybackCaptureMode(OHOS::AudioStandard::AudioCapturerOptions 
 
     opts->capturerInfo.sourceType = OHOS::AudioStandard::SOURCE_TYPE_PLAYBACK_CAPTURE;
     InitPlaybackCaptureConfig(opts->playbackCaptureConfig, static_cast<uint32_t>(mode));
+    opts->playbackCaptureConfig.filterOptions.playbackCaptureMode = mode;
+    CHECK_AND_RETURN_RET(options.playbackCaptureUid.has_value(), AUDIO_OK);
+    opts->playbackCaptureConfig.filterOptions.playbackCaptureUid = options.playbackCaptureUid.value();
     return AUDIO_OK;
 }
 
@@ -259,7 +270,7 @@ int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOp
 
     status = GetCapturerInfo(opts->capturerInfo, options.capturerInfo);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParseCapturerInfo failed");
-
+    
     status = GetPreferredInputDevice(opts, options);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse PreferredInputDevice failed");
 
@@ -299,7 +310,8 @@ int32_t TaiheParamUtils::GetAppInfo(OHOS::AudioStandard::AppInfo &appInfo, AppId
     CHECK_AND_RETURN_RET_LOG(options.appTokenId >= 0, AUDIO_INVALID_PARAM, "appTokenId is invalid negative value");
     appInfo.appTokenId = static_cast<uint32_t>(options.appTokenId);
 
-    CHECK_AND_RETURN_RET_LOG(options.appTokenId >= 0, AUDIO_INVALID_PARAM, "appFullTokenId is invalid negative value");
+    CHECK_AND_RETURN_RET_LOG(options.appFullTokenId >= 0, AUDIO_INVALID_PARAM,
+        "appFullTokenId is invalid negative value");
     appInfo.appFullTokenId = static_cast<uint64_t>(options.appFullTokenId);
 
     return AUDIO_OK;
@@ -319,6 +331,29 @@ int32_t TaiheParamUtils::GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatial
         return AUDIO_INVALID_PARAM;
     }
     spatialDeviceState->spatialDeviceType = static_cast<OHOS::AudioStandard::AudioSpatialDeviceType>(intValue);
+    return AUDIO_OK;
+}
+
+int32_t TaiheParamUtils::GetAudioHRTFDescriptor(int32_t *fd, int64_t *length, HRTFDescriptor hrtfDescriptor)
+{
+    if (fd == nullptr || length == nullptr) {
+        AUDIO_ERR_LOG("GetAudioHRTFDescriptor: fd or length is nullptr");
+        return AUDIO_ERR;
+    }
+    if (hrtfDescriptor.fd < 0) {
+        AUDIO_ERR_LOG("GetAudioHRTFDescriptor: fd is invalid");
+        return AUDIO_ERR;
+    }
+    if (fcntl(hrtfDescriptor.fd, F_GETFL) == -1) {
+        AUDIO_ERR_LOG("GetAudioHRTFDescriptor: fd is invalid or not accessible, errno=%{public}d", errno);
+        return AUDIO_ERR;
+    }
+    if (hrtfDescriptor.length <= 0 || hrtfDescriptor.length > MAX_HRTF_LENGTH) {
+        AUDIO_ERR_LOG("GetAudioHRTFDescriptor: length is invalid");
+        return AUDIO_ERR;
+    }
+    *fd = hrtfDescriptor.fd;
+    *length = hrtfDescriptor.length;
     return AUDIO_OK;
 }
 
@@ -1058,5 +1093,16 @@ ActiveStreamVolumeInfo TaiheParamUtils::ToTaiheActiveStreamVolumeInfo(
         .clientUid = src.clientUid_,
     };
     return activeStreamVolumeInfo;
+}
+
+SystemRecordControllerChangeInfo TaiheParamUtils::ToTaiheSystemRecordControllerChangeInfo(
+    const OHOS::AudioStandard::SystemRecordControllerChangeInfo &changeInfo)
+{
+    SystemRecordControllerChangeInfo result = {
+        .enabled = changeInfo.enabled,
+        .uid = changeInfo.uid,
+        .sourceType = TaiheAudioEnum::ToTaiheSourceType(changeInfo.sourceType),
+    };
+    return result;
 }
 } // namespace ANI::Audio

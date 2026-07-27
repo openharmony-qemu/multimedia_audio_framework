@@ -29,6 +29,7 @@
 #include "audio_suite_hoa_render_node.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_hoa_render_algo_interface_impl.h"
+#include "securec.h"
 
 using namespace OHOS;
 using namespace AudioStandard;

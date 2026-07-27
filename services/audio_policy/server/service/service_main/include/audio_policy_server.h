@@ -26,6 +26,7 @@
 #include "system_ability.h"
 #include "iservice_registry.h"
 
+#include "application_state_observer_stub.h"
 #include "accesstoken_kit.h"
 #include "perm_state_change_callback_customize.h"
 #include "power_state_callback_stub.h"
@@ -46,6 +47,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
 #include "audio_interrupt_service.h"
+#include "audio_policy_manager_listener.h"
 #include "audio_device_manager.h"
 #include "audio_policy_dump.h"
 #include "app_state_listener.h"
@@ -60,6 +62,8 @@
 #include "audio_pipe_selector.h"
 #include "boot_animation_state_info.h"
 #include "audio_loopback_manager.h"
+#include "os_account_subprofile_client.h"
+#include "os_account_sub_profile_subscribe_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -69,6 +73,7 @@ class AudioInterruptService;
 class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
+class AudioSubProfileObserver;
 
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyStub,
@@ -111,6 +116,12 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag) override;
 
+    int32_t SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted,
+        const sptr<IRemoteObject> &callerObj) override;
+
+    int32_t SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted,
+        const sptr<IRemoteObject> &callerObj) override;
+
     int32_t SetAppRingMuted(int32_t appUid, bool muted) override;
 
     int32_t SetAdjustVolumeForZone(int32_t zoneId) override;
@@ -135,7 +146,7 @@ public:
         int32_t deviceType) override;
 
     int32_t SetStreamMute(int32_t streamType, bool mute,
-        int32_t deviceType) override;
+        int32_t deviceType, int32_t volumeFlag) override;
 
     int32_t GetStreamMute(int32_t streamType, bool &mute) override;
 
@@ -160,6 +171,8 @@ public:
 
     int32_t GetSystemVolumeInDb(int32_t volumeType, int32_t volumeLevel,
         int32_t deviceType, float &volume) override;
+
+    int32_t SetVolumeControlPriority(const std::vector<int32_t> &priorities, int32_t &result) override;
 
     bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
 
@@ -267,7 +280,7 @@ public:
 
     int32_t DeactivateAudioSession() override;
 
-    int32_t NotifyStreamSilentChange(uint32_t streamId) override;
+    int32_t NotifyStreamSilentChange(int32_t callerPid, uint32_t streamId) override;
 
     int32_t IsAudioSessionActivated(bool &active) override;
 
@@ -281,7 +294,7 @@ public:
 
     int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable) override;
     int32_t SetAudioSessionCapturerMuteHint(bool mute) override;
-    void ReEvaluateVoipPrivacyMuteForCapturers(const std::string &reason);
+    void SetStreamInterruptMute(uint32_t streamId, bool mute);
 
     int32_t GetDefaultOutputDevice(int32_t &deviceType) override;
 
@@ -365,6 +378,10 @@ public:
     void RegisteredTrackerClientDied(int pid, int uid);
 
     void RegisteredStreamListenerClientDied(int pid, int uid);
+
+    void RegisterVoipMuteDeathRecipient(int32_t callerUid, const sptr<IRemoteObject> &callerObj);
+
+    void OnVoipMuteCallerDied(int32_t callerUid);
 
     int32_t ResumeStreamState();
 
@@ -583,9 +600,9 @@ public:
 
     int32_t RemoveStreamIdFromAudioZone(int32_t zoneId, uint32_t streamId) override;
 
-    int32_t PauseAudioFocusForExtAudioZone() override;
+    int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
-    int32_t ResumeAudioFocusForExtAudioZone() override;
+    int32_t ResumeAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds) override;
 
     int32_t SetZoneDeviceVisible(bool visible) override;
 
@@ -610,6 +627,8 @@ public:
         int32_t uid) override;
 
     int32_t GetActiveBluetoothDevice(std::shared_ptr<AudioDeviceDescriptor> &descs) override;
+
+    int32_t SkipDeviceTypes(bool skipped, const std::vector<int32_t> &deviceTypes) override;
 
     int32_t GetConverterConfig(ConverterConfig &cfg) override;
 
@@ -759,6 +778,7 @@ public:
     int32_t SetHighResolutionExist(bool highResExist) override;
 
     void NotifyAccountsChanged(const int &id, const int &oldId);
+    void NotifySubProfileChanged();
     void SendVolumeKeyEventToRssWhenAccountsChanged();
 
     // for hidump
@@ -796,6 +816,8 @@ public:
     int32_t ReloadLoudVolumeMode(const int32_t streamInFocus, const int32_t setVolMode, bool &ret) override;
     int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
+    int32_t GetSystemVolumeDegreeWithDevice(int32_t streamType, int32_t deviceType,
+        const std::string &networkId, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
     int32_t UpdateSafeVolumeByStrMode() override;
     void HandleDataShareReadyEvent();
@@ -810,7 +832,8 @@ public:
     int32_t IsAudioSeparationEffectSupported(bool &ret) override;
     int32_t SetAudioSeparationEffectEnabled(bool enabled, int32_t uid, int64_t streamId) override;
     int32_t SetAudioSeparationEffectVolume(int32_t type, double volume) override;
-    int32_t EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config) override;
+    int32_t EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config,
+        const sptr<IRemoteObject> &object) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
@@ -891,6 +914,7 @@ private:
 #endif
     void AddAudioServiceOnStart();
     void SubscribeOsAccountChangeEvents();
+    void SubscribeOsAccountSubProfileChangeEvents();
     void SubscribePowerStateChangeEvents();
     void SubscribeCommonEvent(const std::string event);
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
@@ -902,6 +926,7 @@ private:
     void ConnectServiceAdapter();
     void LoadEffectLibrary();
     void RegisterBluetoothListener();
+    void RegisterFusionConnectivityListener();
     void SubscribeAccessibilityConfigObserver();
     void RegisterDataObserver();
     void RegisterPowerStateListener();
@@ -909,6 +934,7 @@ private:
     void RegisterSyncHibernateListener();
     void UnRegisterSyncHibernateListener();
     void RegisterAppStateListener();
+    void RegisterAppStateObserver();
     void AddRemoteDevstatusCallback();
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
     void SubscribeCommonEventExecute();
@@ -942,6 +968,7 @@ private:
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
     int32_t VerifyUidAndPid(const int32_t uid, const int32_t pid);
     void FillDeviceTokenId(std::shared_ptr<AudioDeviceDescriptor> device);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
 
     AudioEffectService &audioEffectService_;
     AudioStateManager &audioStateManager_;
@@ -999,10 +1026,13 @@ private:
     bool powerStateCallbackRegister_;
     AppExecFwk::AppMgrClient appManager_;
     sptr<AppStateListener> appStateListener_;
+    sptr<AppExecFwk::ApplicationStateObserverStub> appStateObserver_ = nullptr;
 
     std::mutex systemVolumeMutex_;
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
+    std::mutex voipMuteMutex_;
+    std::unordered_map<int32_t, sptr<IRemoteObject::DeathRecipient>> voipMuteDeathRecipients_;
     std::mutex subscribeVolumeKey_;
 
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
@@ -1019,6 +1049,7 @@ private:
     std::map<std::u16string, DumpFunc> dumpFuncMap;
     pid_t lastMicMuteSettingPid_ = 0;
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
+    std::shared_ptr<AudioSubProfileObserver> subProfileObserver_ = nullptr;
 
     int32_t micRefEnableState_ = 0;
     int32_t sessionIdByRemote_ = -1;
@@ -1060,6 +1091,31 @@ private:
     AudioPolicyServer *audioPolicyServer_;
 };
 
+class AudioSubProfileObserver : public AccountSA::OsAccountSubProfileSubscribeCallback {
+public:
+    explicit AudioSubProfileObserver(AudioPolicyServer *audioPolicyServer)
+        : audioPolicyServer_(audioPolicyServer) {}
+
+    virtual ~AudioSubProfileObserver()
+    {
+        AUDIO_WARNING_LOG("Destructor AudioSubProfileObserver");
+    }
+
+    void OnSubProfileChanged(
+        const AccountSA::SubProfileEventData &eventData) override
+    {
+        AUDIO_INFO_LOG("OnSubProfileChanged received, type: %{public}d, osAccountId: %{public}d,"
+            " subspaceId: %{public}d, previousSubspaceId: %{public}d",
+            static_cast<int32_t>(eventData.type_), eventData.osAccountId_,
+            eventData.subProfileId_, eventData.previousSubProfileId_);
+        if (audioPolicyServer_ != nullptr) {
+            audioPolicyServer_->NotifySubProfileChanged();
+        }
+    }
+private:
+    AudioPolicyServer *audioPolicyServer_;
+};
+
 class AudioCommonEventSubscriber : public EventFwk::CommonEventSubscriber {
 public:
     explicit AudioCommonEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
@@ -1070,6 +1126,20 @@ public:
 private:
     AudioCommonEventSubscriber() = default;
     std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
+};
+
+class VoipMuteDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    explicit VoipMuteDeathRecipient(std::function<void()> callback) : callback_(std::move(callback)) {}
+    ~VoipMuteDeathRecipient() = default;
+    void OnRemoteDied(const wptr<IRemoteObject> &remote) override
+    {
+        if (callback_) {
+            callback_();
+        }
+    }
+private:
+    std::function<void()> callback_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

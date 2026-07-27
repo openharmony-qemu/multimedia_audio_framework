@@ -97,11 +97,6 @@ void AudioServiceMoreFuzzTest()
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
 
     AudioService *audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, audioServicePtr);
-    std::shared_ptr<AudioProcessInServer> audioProcessInServer =
-        std::make_shared<AudioProcessInServer>(config, audioServicePtr);
-    audioProcessInServer->Release(true);
-    audioProcessInServer->Release(false);
 
     uint32_t sessionId = GetData<uint32_t>();
     AudioPlaybackCaptureConfig newConfig;

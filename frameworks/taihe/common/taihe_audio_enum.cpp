@@ -241,6 +241,16 @@ static const std::map<OHOS::AudioStandard::AudioEffectMode, AudioEffectMode> AUD
     {OHOS::AudioStandard::AudioEffectMode::EFFECT_DEFAULT, AudioEffectMode::key_t::EFFECT_DEFAULT},
 };
 
+static const std::map<OHOS::AudioStandard::NoiseReductionMode, ohos::multimedia::audio::NoiseReductionMode>
+    NOISE_REDUCTION_MODE_TAIHE_MAP = {
+    {OHOS::AudioStandard::NOISE_REDUCTION_MODE_FIDELITY,
+        ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY},
+    {OHOS::AudioStandard::NOISE_REDUCTION_MODE_PURE_VOCALS,
+        ohos::multimedia::audio::NoiseReductionMode::key_t::PURE_VOCALS},
+    {OHOS::AudioStandard::NOISE_REDUCTION_MODE_STANDARD,
+        ohos::multimedia::audio::NoiseReductionMode::key_t::STANDARD},
+};
+
 static const std::map<OHOS::AudioStandard::AudioStreamDeviceChangeReason, AudioStreamDeviceChangeReason>
     AUDIO_STREAM_DEVICE_CHANGE_REASON_TAIHE_MAP = {
     {OHOS::AudioStandard::AudioStreamDeviceChangeReason::UNKNOWN, AudioStreamDeviceChangeReason::key_t::REASON_UNKNOWN},
@@ -475,6 +485,22 @@ bool TaiheAudioEnum::IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode
     switch (audioEffectMode) {
         case OHOS::AudioStandard::AudioEffectMode::EFFECT_NONE:
         case OHOS::AudioStandard::AudioEffectMode::EFFECT_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentNoiseReductionMode(int32_t noiseReductionMode)
+{
+    bool result = false;
+    switch (noiseReductionMode) {
+        case OHOS::AudioStandard::NOISE_REDUCTION_MODE_FIDELITY:
+        case OHOS::AudioStandard::NOISE_REDUCTION_MODE_PURE_VOCALS:
+        case OHOS::AudioStandard::NOISE_REDUCTION_MODE_STANDARD:
             result = true;
             break;
         default:
@@ -1150,6 +1176,13 @@ bool TaiheAudioEnum::IsValidSourceType(int32_t intValue)
     }
 }
 
+bool TaiheAudioEnum::IsLegalInputArgumentRecordControllerSourceType(int32_t sourceType)
+{
+    return sourceType == OHOS::AudioStandard::SourceType::SOURCE_TYPE_MIC ||
+        sourceType == OHOS::AudioStandard::SourceType::SOURCE_TYPE_CAMCORDER ||
+        sourceType == OHOS::AudioStandard::SourceType::SOURCE_TYPE_LIVE;
+}
+
 bool TaiheAudioEnum::IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category)
 {
     bool result = false;
@@ -1540,6 +1573,18 @@ AudioEffectMode TaiheAudioEnum::ToTaiheAudioEffectMode(OHOS::AudioStandard::Audi
         AUDIO_WARNING_LOG("ToTaiheAudioEffectMode invalid mode: %{public}d", static_cast<int32_t>(mode));
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "ToTaiheAudioEffectMode fail");
         return AudioEffectMode::key_t::EFFECT_NONE;
+    }
+    return iter->second;
+}
+
+ohos::multimedia::audio::NoiseReductionMode TaiheAudioEnum::ToTaiheNoiseReductionMode(
+    OHOS::AudioStandard::NoiseReductionMode mode)
+{
+    auto iter = NOISE_REDUCTION_MODE_TAIHE_MAP.find(mode);
+    if (iter == NOISE_REDUCTION_MODE_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheNoiseReductionMode invalid mode: %{public}d", static_cast<int32_t>(mode));
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "ToTaiheNoiseReductionMode fail");
+        return ohos::multimedia::audio::NoiseReductionMode::key_t::FIDELITY;
     }
     return iter->second;
 }

@@ -42,6 +42,7 @@
 #include "audio_device_info.h"
 #include "audio_server.h"
 #include "pulseaudio_ipc_interface_code.h"
+#include "securec.h"
 
 namespace OHOS {
 namespace AudioStandard {

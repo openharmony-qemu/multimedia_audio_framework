@@ -250,6 +250,25 @@ HWTEST_F(AudioPipeInfoUnitTest, IsSameRole_001, TestSize.Level4)
 }
 
 /**
+ * @tc.name   : AudioPipeInfo_IsNormalSourcePipe_001
+ * @tc.number : IsNormalSourcePipe_001
+ * @tc.desc   : Test normal source pipe check with EC state.
+ */
+HWTEST_F(AudioPipeInfoUnitTest, IsNormalSourcePipe_001, TestSize.Level2)
+{
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.name = PRIMARY_MIC;
+    EXPECT_TRUE(pipeInfo->IsNormalSourcePipe(false));
+
+    pipeInfo->moduleInfo_.name = "FastCapturerSource";
+    EXPECT_FALSE(pipeInfo->IsNormalSourcePipe(false));
+
+    pipeInfo->moduleInfo_.name = USB_MIC;
+    EXPECT_FALSE(pipeInfo->IsNormalSourcePipe(false));
+    EXPECT_TRUE(pipeInfo->IsNormalSourcePipe(true));
+}
+
+/**
  * @tc.name   : AudioPipeInfo_UltraFastFlag_001
  * @tc.number : UltraFastFlag_001
  * @tc.desc   : Test SetUltraFastFlag/GetUltraFastFlag on default output pipe

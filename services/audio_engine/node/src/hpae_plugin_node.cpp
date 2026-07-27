@@ -17,6 +17,7 @@
 #endif
 
 #include "hpae_plugin_node.h"
+#include "hpae_node_common.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 
@@ -24,7 +25,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 HpaePluginNode::HpaePluginNode(HpaeNodeInfo& nodeInfo)
-    : HpaeNode(nodeInfo),  pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate),
+    : HpaeNode(nodeInfo),  pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen,
+    nodeInfo.samplingRate, nodeInfo.channelLayout),
     outputStream_(this), enableProcess_(true), silenceData_(pcmBufferInfo_)
 
 {
@@ -58,7 +60,7 @@ void HpaePluginNode::DoProcess()
         return;
     }
     Trace trace("[sceneType:" + std::to_string(GetSceneType()) + "]" + GetNodeName() + "::DoProcess is_silence");
-    outputStream_.WriteDataToOutput(&silenceData_);
+    outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
 }
 
 bool HpaePluginNode::Reset()

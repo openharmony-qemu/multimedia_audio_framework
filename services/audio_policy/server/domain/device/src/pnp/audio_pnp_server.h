@@ -56,7 +56,9 @@ private:
     void OpenAndReadWithSocket();
     void OpenAndReadInput();
     void DetectAudioDevice();
+    void DetectAudioHDMIDevice();
     void DetectAudioDpDevice();
+    void DetectAudioHdmiMipiDevice();
 };
 
 std::string GetAudioEventInfo(const AudioEvent audioEvent);

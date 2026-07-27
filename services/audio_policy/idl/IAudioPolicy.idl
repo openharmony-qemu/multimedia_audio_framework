@@ -78,7 +78,7 @@ interface IAudioPolicy {
     void GetSystemAppVolumePercentageForUid([in] int appUid, [out] int volumePercentage);
     void GetSelfAppVolumeLevel([out] int volumeLevel);
     void SetStreamMuteLegacy([in] int volumeType, [in] boolean mute, [in] int deviceType); /*deviceType default DEVICE_TYPE_NONE, AudioVolumeType volumeType*/
-    void SetStreamMute([in] int volumeType, [in] boolean mute, [in] int deviceType); /*deviceType default DEVICE_TYPE_NONE*/
+    void SetStreamMute([in] int volumeType, [in] boolean mute, [in] int deviceType, [in] int volumeFlag); /*deviceType default DEVICE_TYPE_NONE, volumeFlag default 0*/
     void GetStreamMute([in] int volumeType, [out] boolean retMute);
     void IsStreamActive([in] int volumeType, [out] boolean retActive);
     void IsStreamActiveByStreamUsage([in] int streamUsage, [out] boolean active);
@@ -333,7 +333,7 @@ interface IAudioPolicy {
     void GetAudioSceneFromAllZones([out] int audioScene);
     void UpdateContextForAudioZone([in] int zoneId, [in] AudioZoneContext context);
     void SetCustomAudioMix([in] String zoneName, [in] List<AudioZoneMix> audioMixes);
-    void NotifyStreamSilentChange([in] unsigned int streamId);
+    [oneway] void NotifyStreamSilentChange([in] int clientPid, [in] unsigned int streamId);
     void IsAdaptiveSpatialRenderingEnabled([in] String address, [out] boolean ret);
     void SetAdaptiveSpatialRenderingEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
     void GetCurrentSpatialAudioSourceType([out] int ret);
@@ -363,7 +363,14 @@ interface IAudioPolicy {
     void SetSystemVolumeChangeCallbackInfo([in] SystemVolumeFilter filter);
     void RemoveSystemVolumeChangeCallbackInfo([in] SystemVolumeFilter filter);
     void RemoveAllSystemVolumeChangeCallbackInfo();
-    void PauseAudioFocusForExtAudioZone();
-    void ResumeAudioFocusForExtAudioZone();
-    void EnableSystemRecordController([in] boolean show, [in] SystemRecordControllerConfig config);
+    void PauseAudioFocusForExtAudioZone([in] List<int> zoneIds);
+    void ResumeAudioFocusForExtAudioZone([in] List<int> zoneIds);
+    void EnableSystemRecordController([in] boolean show, [in] SystemRecordControllerConfig config,
+        [in] IRemoteObject object);
+    void GetSystemVolumeDegreeWithDevice([in] int volumeType, [in] int deviceType,
+        [in] String networkId, [out] int volumeDegree);
+    void SkipDeviceTypes([in] boolean skipped, [in] List<int> deviceTypes);
+    void SetVolumeControlPriority([in] List<int> priorities, [out] int ret);
+    void SetVoipRendererMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
+    void SetVoipCapturerMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
 }

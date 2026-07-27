@@ -14,10 +14,8 @@
 1.0 {
   global:
     *GetAudioSuiteManager*;
-    *AudioFormatConverter*;
-    *IAudioFormatConverter*;
-    *MixerProcessorManager*;
-    *MixerProcessor*;
+    *Create*;
+    *AudioSuiteDownloadManager*;
   local:
     *;
 };

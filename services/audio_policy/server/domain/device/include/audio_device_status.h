@@ -84,13 +84,13 @@ public:
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
     void OnConnectFailed(AudioDeviceDescriptor &desc);
     uint16_t GetDmDeviceType();
-    void RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
+    void RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc, const int32_t zoneId = 0);
     void AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
     uint32_t GetPaIndexByPortName(const std::string &portName);
     void TriggerDeviceInfoUpdatedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devChangeDesc);
     void NotifyPreferredDeviceSet(PreferredType preferredType,
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller);
-    void UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor &device);
+    void UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor &device, AudioPin hdiPin);
     void HandleDeviceStateChange(std::shared_ptr<AudioDeviceDescriptor> desc, bool isAvailable);
 
 private:
@@ -128,9 +128,10 @@ private:
     int32_t HandleSpecialDeviceType(DeviceType &devType, bool &isConnected,
         const std::string &address, DeviceRole role);
     void TriggerAvailableDeviceChangedCallback(
-        const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+        const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected, const int32_t zoneId = 0);
     void TriggerDeviceChangedCallback(
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devChangeDesc, bool connection,
+        const int32_t zoneId = 0);
     void TriggerMicrophoneBlockedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
         DeviceBlockStatus status);
     int32_t HandleDistributedDeviceUpdate(DStatusInfo &statusInfo,
@@ -191,6 +192,7 @@ private:
         uint32_t paIndex, AudioIOHandle ioHandle, std::string &currentActivePort);
     void UpdateChangeReasonForCollaboration(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand,
         AudioStreamDeviceChangeReasonExt &reason);
+    bool CheckNeedExclude(AudioDeviceDescriptor &desc, bool isConnected);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;
