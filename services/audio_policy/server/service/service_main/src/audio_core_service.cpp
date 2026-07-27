@@ -3855,7 +3855,8 @@ void AudioCoreService::OnCapturerSessionRemoved(uint64_t sessionID)
 
 bool AudioCoreService::IsSourceTypeValidForEc(SourceType sourceType)
 {
-    return sourceType == SOURCE_TYPE_VOICE_COMMUNICATION || sourceType == SOURCE_TYPE_MIC;
+    return sourceType == SOURCE_TYPE_VOICE_COMMUNICATION || sourceType == SOURCE_TYPE_MIC ||
+        sourceType == SOURCE_TYPE_UNPROCESSED;
 }
 
 bool AudioCoreService::IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevice,
