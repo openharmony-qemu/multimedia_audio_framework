@@ -232,9 +232,9 @@ HWTEST(AudioServiceCommonUnitTest, IsReasonable_001, TestSize.Level1)
     model->ResetFrameStamp(stampFrame, stampNanoTime);
 
     EXPECT_EQ(true, model->IsReasonable(stampFrame, stampNanoTime)); // frame==stamp && nano==stamp -> true
-    EXPECT_EQ(true, model->IsReasonable(stampFrame, stampNanoTime + 5000000)); // frame==stamp, nano!=stamp, reasonable -> true
+    EXPECT_EQ(true, model->IsReasonable(stampFrame, stampNanoTime + 5000000));
     EXPECT_EQ(true, model->IsReasonable(stampFrame - 100, stampNanoTime)); // frame<stamp (else), reasonable -> true
-    EXPECT_EQ(false, model->IsReasonable(stampFrame + 100, stampNanoTime + 100000000)); // frame>stamp, nanoTime>upper -> false
+    EXPECT_EQ(false, model->IsReasonable(stampFrame + 100, stampNanoTime + 100000000));
     EXPECT_EQ(false, model->IsReasonable(stampFrame - 100, 0)); // frame<stamp, nanoTime<lower -> false
 }
 
