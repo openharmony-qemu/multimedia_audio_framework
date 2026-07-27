@@ -2553,8 +2553,11 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     CHECK_AND_CALL_FUNC_RETURN_RET(CheckConfigFormat(resetConfig), nullptr,
         HILOG_COMM_ERROR("[CreateAudioProcessInner]AudioProcessConfig format is wrong, please check"
         ":%{public}s", ProcessConfig::DumpProcessConfig(resetConfig).c_str()));
-    CHECK_AND_CALL_FUNC_RETURN_RET(PermissionChecker(resetConfig), nullptr,
-        HILOG_COMM_ERROR("[CreateAudioProcessInner]Create audio process failed, no permission"));
+    if (!PermissionChecker(resetConfig)) {
+        errorCode = ERR_PERMISSION_DENIED;
+        HILOG_COMM_ERROR("[CreateAudioProcessInner]Create audio process failed, no permission");
+        return nullptr;
+    }
 
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
