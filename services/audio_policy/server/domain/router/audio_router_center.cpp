@@ -134,12 +134,13 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(Strea
 }
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevices(StreamUsage streamUsage,
-    int32_t clientUID, RouterType &routerType)
+    int32_t clientUID, RouterType &routerType, const RouterType &bypassType)
 {
     bool isTransferRing = (streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE);
     
     for (auto &router : ringRenderRouters_) {
         CHECK_AND_CONTINUE_LOG(router != nullptr, "Invalid router.");
+        CHECK_AND_CONTINUE(bypassType != router->GetRouterType());
         vector<shared_ptr<AudioDeviceDescriptor>> descs = router->GetRingRenderDevices(streamUsage, clientUID);
         CHECK_AND_CONTINUE_LOG(!descs.empty(), "FetchRingRenderDevices is empty.");
         if (descs.front() != nullptr && descs.front()->deviceType_ != DEVICE_TYPE_NONE) {
@@ -417,7 +418,7 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
                 AudioPipeManager::GetPipeManager()->GetLastestRunningCallStreamUsage();
     bool isVoipStream = AudioStreamCollector::GetAudioStreamCollector().IsCallStreamUsage(callStreamUsage);
     if (Util::IsEnhancedRoutingSupported()) {
-        descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType);
+        descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType, info.bypassType);
     } else if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
         (audioScene == AUDIO_SCENE_VOICE_RINGING && isVoipStream)) {
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
@@ -430,9 +431,9 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
         descs.push_back(move(desc));
     } else if (IsAlarmFollowRingStrategy(audioScene, info.streamUsage)) {
         AUDIO_INFO_LOG("alarm follow ring strategy, replace usage alarm to ringtone");
-        descs = FetchRingRenderDevices(STREAM_USAGE_RINGTONE, info.clientUID, routerType);
+        descs = FetchRingRenderDevices(STREAM_USAGE_RINGTONE, info.clientUID, routerType, info.bypassType);
     } else {
-        descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType);
+        descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType, info.bypassType);
     }
 }
 
