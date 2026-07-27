@@ -2977,20 +2977,6 @@ void HpaeManager::SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool 
     SendRequest(request, __func__);
 }
 
-int32_t HpaeManager::PeekAudioData(
-    const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
-{
-    std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
-    auto sinkVirtualOutputNode = SafeGetMap(sinkVirtualOutputNodeMap_, sinkPortIndex);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sinkVirtualOutputNode != nullptr, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-                BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "sinkPort not exit", false),
-        "sinkPort[%{public}u] not exit", sinkPortIndex);
-    return sinkVirtualOutputNode->PeekAudioData(buffer, bufferSize, streamInfo);
-}
-
 void HpaeManager::DeleteRendererManager(const std::string &name)
 {
     if (name == VIRTUAL_INJECTOR) {

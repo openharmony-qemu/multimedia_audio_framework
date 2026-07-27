@@ -21,6 +21,7 @@
 #include "audio_service_hpae_callback.h"
 #include "audio_service_hpae_dump_callback.h"
 #include "audio_effect.h"
+#include "audio_errors.h"
 #include <functional>
 
 namespace OHOS {
@@ -161,8 +162,6 @@ public:
     virtual void RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
         const uint32_t &sourcePortIndex, uint32_t targetStreamId) = 0;
     virtual void SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute) = 0;
-    virtual int32_t PeekAudioData(
-        const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) = 0;
     virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
     virtual void UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled) = 0;
     virtual bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) = 0;

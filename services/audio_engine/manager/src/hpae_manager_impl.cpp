@@ -978,18 +978,6 @@ void HpaeManagerImpl::SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, b
     manager_->SetCaptureMicMuteByTargetStream(targetStreamId, isMute);
 }
 
-int32_t HpaeManagerImpl::PeekAudioData(
-    const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
-{
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "manager is nullptr", false),
-        "manager is nullptr");
-    return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
-}
-
 void HpaeManagerImpl::UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled)
 {
     CHECK_AND_RETURN_LOG(manager_ != nullptr, "manager is nullptr");
