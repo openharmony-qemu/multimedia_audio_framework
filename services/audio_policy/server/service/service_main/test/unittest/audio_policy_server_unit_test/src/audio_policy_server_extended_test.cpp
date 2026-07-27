@@ -618,5 +618,48 @@ HWTEST_F(AudioPolicyServerUnitTest, GetActiveStreamRendererInfosForDevice_NullDe
     auto ret = audioPolicyServer_->coreService_->GetActiveStreamRendererInfosForDevice(nullptr, rendererInfos);
     EXPECT_EQ(ret, ERR_NULL_POINTER);
 }
+
+/**
+ * @tc.name  : GetAppBackGroundState_PermissionDenied
+ * @tc.number: GetAppBackGroundState_001
+ * @tc.desc  : Test permission denied when callingUid != MEDIA_SERVICE_UID and pid != callingPid
+ */
+HWTEST_F(AudioPolicyServerUnitTest, GetAppBackGroundState_PermissionDenied, TestSize.Level1)
+{
+    int32_t TEST_INVALID_PID = 0;
+    bool isBack = false;
+    int32_t result = audioPolicyServer_->GetAppBackGroundState(TEST_INVALID_PID, isBack);
+    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name  : GetAppBackGroundState_PidMatchesCallingUid
+ * @tc.number: GetAppBackGroundState_002
+ * @tc.desc  : Test bypassing permission check when uid == MEDIA_SERVICE_UID
+ */
+HWTEST_F(AudioPolicyServerUnitTest, GetAppBackGroundState_PidMatchesCallingUid, TestSize.Level1)
+{
+    int32_t selfUid = getuid();
+    setuid(1041);
+    int32_t TEST_INVALID_PID = 0;
+    bool isBack = false;
+    int32_t callingPid = IPCSkeleton::GetCallingPid();
+    int32_t result = audioPolicyServer_->GetAppBackGroundState(TEST_INVALID_PID, isBack);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+    setuid(selfUid);
+}
+
+/**
+ * @tc.name  : GetAppBackGroundState_PidMatchesCallingPid
+ * @tc.number: GetAppBackGroundState_003
+ * @tc.desc  : Test bypassing permission check when pid == callingPid
+ */
+HWTEST_F(AudioPolicyServerUnitTest, GetAppBackGroundState_PidMatchesCallingPid, TestSize.Level1)
+{
+    bool isBack = false;
+    int32_t callingPid = getpid();
+    int32_t result = audioPolicyServer_->GetAppBackGroundState(callingPid, isBack);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+}
 } // AudioStandard
 } // OHOS

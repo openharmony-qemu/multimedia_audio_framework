@@ -250,7 +250,7 @@ public:
 
     ~PipeVolume() = default;
     AudioVolumeType GetVolumeType() const {return volumeType_;};
-    int32_t GetPipeId() const {return pipeId_;};
+    uint32_t GetPipeId() const {return pipeId_;};
 
     float GetTotalVolume() const { return totalVolume_.load(std::memory_order_acquire); }
     float GetVolume() const { return volume_.load(std::memory_order_acquire); }

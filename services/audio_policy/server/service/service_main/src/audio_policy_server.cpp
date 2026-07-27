@@ -6424,6 +6424,24 @@ int32_t AudioPolicyServer::DestroyLoopback(int32_t type, int32_t &ret)
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::GetAppBackGroundState(int32_t pid, bool &isBack)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    int32_t callingPid = IPCSkeleton::GetCallingPid();
+    if (callingUid != MEDIA_SERVICE_UID && pid != callingPid) {
+        AUDIO_ERR_LOG("permission denied, callingUid: %{public}d, callingPid: %{public}d, pid: %{public}d",
+            callingUid, callingPid, pid);
+        return ERR_PERMISSION_DENIED;
+    }
+    AppExecFwk::RunningProcessInfo processInfo;
+    int32_t ret = appManager_.GetRunningProcessInfoByPid(pid, processInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == AppExecFwk::AppMgrResultCode::RESULT_OK, ERR_INVALID_PARAM,
+        "GetRunningProcessInfoByPid failed, pid: %{public}d", pid);
+    isBack = !(processInfo.state_ == AppExecFwk::AppProcessState::APP_STATE_FOREGROUND);
+    AUDIO_INFO_LOG("pid: %{public}d, isBack: %{public}d", pid, isBack);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::EnableSystemRecordController(bool show, const SystemRecordControllerConfig &config,
     const sptr<IRemoteObject> &object)
 {
