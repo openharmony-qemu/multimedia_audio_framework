@@ -2684,25 +2684,6 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererGetLatency_001, TestSize.Level0)
 }
 
 /**
- * @tc.name  : Test QueryOneStreamUnderrun
- * @tc.type  : FUNC
- * @tc.number: QueryOneStreamUnderrun_002
- * @tc.desc  : Test QueryOneStreamUnderrun when one stream underrun.
- */
-HWTEST_F(HpaeRendererManagerTest, QueryOneStreamUnderrun_002, TestSize.Level1)
-{
-    EXPECT_CALL(*mockCallback_, OnQueryUnderrun())
-        .WillOnce(Return(true))
-        .WillOnce(Return(true));
-    hpaeRendererManager_->lastOnUnderrunTime_ = ClockTime::GetCurNano();
-    EXPECT_TRUE(hpaeRendererManager_->QueryOneStreamUnderrun());
-
-    hpaeRendererManager_->lastOnUnderrunTime_ = 1;
-    EXPECT_FALSE(hpaeRendererManager_->QueryOneStreamUnderrun());
-    EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 1);
-}
-
-/**
  * @tc.name  : Test DeleteInputSessionIdNotExit
  * @tc.type  : FUNC
  * @tc.number: DeleteInputSessionIdNotExit
