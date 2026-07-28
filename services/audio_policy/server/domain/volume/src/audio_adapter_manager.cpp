@@ -527,7 +527,7 @@ int32_t AudioAdapterManager::ClearVoipMuteByCallerUid(int32_t callerUid)
 }
 
 int32_t AudioAdapterManager::ClearVoipMuteByCallerUidInner(std::unordered_map<int32_t,
-    std::unordered_map<int64_t, std::unordered_set<int32_t>>> muteMap, int32_t callerUid, bool isRenderer)
+    std::unordered_map<int64_t, std::unordered_set<int32_t>>> &muteMap, int32_t callerUid, bool isRenderer)
 {
     for (auto appIt = muteMap.begin(); appIt != muteMap.end();) {
         auto &streamMap = appIt->second;
