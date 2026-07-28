@@ -5388,4 +5388,207 @@ HWTEST_F(HpaeRendererManagerTest, DetachSessionEffectNodeForRefresh_ClearsOverri
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+
+// ===========================================================================
+// Branch-coverage supplements for hpae_renderer_manager_session_effect.cpp.
+// Each case targets an early-return / else arm the happy-path tests above do
+// not reach. All setups are deterministic and self-contained; none drives the
+// worker thread, and only the *_PreservesOverride case touches the effect chain.
+// ===========================================================================
+
+// CreateSessionEffect (line 32): session not registered -> ERR_SESSION_NOT_FOUND.
+HWTEST_F(HpaeRendererManagerTest, CreateSessionEffect_SessionNotFound, TestSize.Level0)
+{
+    constexpr uint32_t absentSession = 90001;
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+
+    EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(absentSession, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
+}
+
+// CreateSessionEffect (line 42): session present but sceneClusterMap_ has no cluster for it.
+HWTEST_F(HpaeRendererManagerTest, CreateSessionEffect_ClusterNotFound, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 90002;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].sceneType = HPAE_SCENE_EFFECT_NONE;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].state = HPAE_SESSION_RUNNING;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].bypass = false;
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+
+    EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
+}
+
+// CreateSessionEffect (line 47): cluster exists but CreateSessionEffectNode fails. A bare cluster
+// (CreateNodes never called) has no converter/loudnessGain nodes, so the cluster returns
+// ERR_SESSION_NOT_FOUND and the manager takes the ret != SUCCESS warning arm without writing state.
+HWTEST_F(HpaeRendererManagerTest, CreateSessionEffect_NodeCreateFails, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 90003;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    nodeInfo.channels = STEREO;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    hpaeRendererManager_->sessionNodeMap_[sessionId].sceneType = HPAE_SCENE_EFFECT_NONE;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].state = HPAE_SESSION_RUNNING;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].bypass = false;
+    hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, hpaeRendererManager_->sinkInfo_);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+
+    EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
+}
+
+// CreateSessionEffect (line 61 else-branch): SE node created but SinkInputNode missing.
+HWTEST_F(HpaeRendererManagerTest, CreateSessionEffect_SinkInputNodeAbsent, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 90004;
+    constexpr uint32_t nodeId = 301;
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, nodeId); // cluster has converter/loudness
+    hpaeRendererManager_->sinkInputNodeMap_.erase(sessionId); // force the SinkInputNode-not-found path
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+
+    EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+}
+
+// DestroySessionEffect (line 79): session not registered -> ERR_SESSION_NOT_FOUND.
+HWTEST_F(HpaeRendererManagerTest, DestroySessionEffect_SessionNotFound, TestSize.Level0)
+{
+    constexpr uint32_t absentSession = 90005;
+    EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(absentSession),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
+}
+
+// DestroySessionEffect (line 85): session present but cluster missing.
+HWTEST_F(HpaeRendererManagerTest, DestroySessionEffect_ClusterNotFound, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 90006;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].sceneType = HPAE_SCENE_EFFECT_NONE;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].state = HPAE_SESSION_RUNNING;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].bypass = false;
+
+    EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
+}
+
+// DestroySessionEffect (line 92): DestroySessionEffectNode fails because the cluster has no SE node.
+// Per the safety comment at line 93, the channel override must be PRESERVED and the function returns
+// the error code without rewinding/clearing. Split scene -> override set; destroy fails -> retained.
+HWTEST_F(HpaeRendererManagerTest, DestroySessionEffect_DestroyFails_PreservesOverride, TestSize.Level1)
+{
+    constexpr uint32_t sessionId = 90007;
+    constexpr uint32_t nodeId = 302;
+    AddSessionEffectTestSessionWithScene(hpaeRendererManager_, sessionId, nodeId, HPAE_SCENE_SPLIT_MEDIA);
+
+    std::string scene = TransProcessorTypeToSceneType(HPAE_SCENE_SPLIT_MEDIA); // "SCENE_EXTRA"
+    InjectOverrideChain(scene);
+    ChannelOverrideRoute setRoute{scene, DEVICE_TYPE_SPEAKER, 0};
+    hpaeRendererManager_->SetChannelOverrideForRoute(setRoute);
+    uint32_t channels = 0;
+    uint64_t layout = 0;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO)); // override applied
+
+    // No SE node was ever created -> DestroySessionEffectNode returns ERR_EFFECT_NOT_BOUND.
+    EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(scene, channels, layout), SUCCESS);
+    EXPECT_EQ(channels, static_cast<uint32_t>(STEREO)); // override preserved (returned early at line 98)
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+// DetachSessionEffectNodeForRefresh (line 126): old cluster not in sceneClusterMap_ -> early return.
+HWTEST_F(HpaeRendererManagerTest, DetachSessionEffectNodeForRefresh_OldClusterNotFound, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 90008;
+    // HPAE_SCENE_MUSIC cluster was never created -> SafeGetMap null -> CHECK_AND_RETURN (line 126).
+    hpaeRendererManager_->DetachSessionEffectNodeForRefresh(sessionId, HPAE_SCENE_MUSIC);
+    EXPECT_TRUE(true); // reaching here means the early return did not crash
+}
+
+// DetachSessionEffectNodeForRefresh (line 129): cluster exists but has no SE node -> early return.
+HWTEST_F(HpaeRendererManagerTest, DetachSessionEffectNodeForRefresh_NoSeNode, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 90009;
+    constexpr uint32_t nodeId = 303;
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, nodeId); // NONE cluster, no SE node
+    hpaeRendererManager_->DetachSessionEffectNodeForRefresh(sessionId, HPAE_SCENE_EFFECT_NONE);
+    EXPECT_TRUE(true);
+}
+
+// HasSessionEffect (lines 167/172): session absent and cluster absent both return false.
+HWTEST_F(HpaeRendererManagerTest, HasSessionEffect_NotFoundPaths, TestSize.Level0)
+{
+    constexpr uint32_t absentSession = 90010;
+    EXPECT_FALSE(hpaeRendererManager_->HasSessionEffect(absentSession)); // session not in map (line 167)
+
+    constexpr uint32_t sessionId = 90011;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].sceneType = HPAE_SCENE_EFFECT_NONE;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].state = HPAE_SESSION_RUNNING;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].bypass = false;
+    EXPECT_FALSE(hpaeRendererManager_->HasSessionEffect(sessionId)); // cluster missing (line 172)
+}
+
+// IsValidSession (line 180): both arms.
+HWTEST_F(HpaeRendererManagerTest, IsValidSession_FoundAndNotFound, TestSize.Level0)
+{
+    constexpr uint32_t absentSession = 90012;
+    EXPECT_FALSE(hpaeRendererManager_->IsValidSession(absentSession));
+
+    constexpr uint32_t sessionId = 90013;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].state = HPAE_SESSION_RUNNING;
+    EXPECT_TRUE(hpaeRendererManager_->IsValidSession(sessionId));
+}
+
+// SetSessionEffectParameter (lines 207/212/215): not-found, cluster-missing, and forward paths.
+HWTEST_F(HpaeRendererManagerTest, SetSessionEffectParameter_AllPaths, TestSize.Level0)
+{
+    constexpr uint32_t absentSession = 90014;
+    EXPECT_EQ(hpaeRendererManager_->SetSessionEffectParameter(absentSession, 1, 0.5f),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND)); // line 207
+
+    constexpr uint32_t sessionId = 90015;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].sceneType = HPAE_SCENE_EFFECT_NONE;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].state = HPAE_SESSION_RUNNING;
+    hpaeRendererManager_->sessionNodeMap_[sessionId].bypass = false;
+    EXPECT_EQ(hpaeRendererManager_->SetSessionEffectParameter(sessionId, 1, 0.5f),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND)); // line 212 (no cluster)
+
+    constexpr uint32_t seSession = 90016;
+    constexpr uint32_t nodeId = 304;
+    AddSessionEffectTestSession(hpaeRendererManager_, seSession, nodeId); // cluster present, no SE node
+    EXPECT_EQ(hpaeRendererManager_->SetSessionEffectParameter(seSession, 1, 0.5f),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND)); // line 215 forwarded to cluster
+}
+
 }  // namespace
