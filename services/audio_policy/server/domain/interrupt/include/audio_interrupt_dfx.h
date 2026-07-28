@@ -62,6 +62,8 @@ public:
     void DeactivateAudioSessionErrorEvent(
         const std::vector<AudioInterrupt> &streamsInSession, const int32_t callerPid);
     void AddInterruptErrorEvent(const AudioInterrupt &audioInterrupt, const int32_t callerPid);
+    void RecordSilentWithPauseStrategyEvent(const AudioInterrupt &incomingInterrupt,
+        const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry);
     void RecordInterruptEvent(const InterruptEventInternal &interruptEvent,
         const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt);
     void NotifyStreamSilentChange(uint32_t streamId);
