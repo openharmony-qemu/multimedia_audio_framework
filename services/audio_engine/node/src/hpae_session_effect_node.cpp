@@ -997,7 +997,7 @@ void HpaeSessionEffectNode::CloseSessionEffectCore()
 
 void HpaeSessionEffectNode::ApplyInterceptingFadeIn(float *algoOutput, const float *rawInput, size_t sampleCount)
 {
-    CHECK_AND_RETURN_RET(!rawBypassNeeded_);
+    CHECK_AND_RETURN(!rawBypassNeeded_);
     for (size_t i = 0; i < sampleCount; ++i) {
         float t = sampleCount > 1 ? static_cast<float>(i) / static_cast<float>(sampleCount - 1) : 1.0f;
         algoOutput[i] = rawInput[i] * (1.0f - t) + algoOutput[i] * t;
