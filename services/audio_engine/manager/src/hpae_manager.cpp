@@ -1027,16 +1027,12 @@ bool HpaeManager::CheckMoveSinkInput(uint32_t sinkInputId, const std::string &si
     }
     if (sinkName.empty()) {
         HILOG_COMM_INFO("[CheckMoveSinkInput]move session:%{public}u failed,sink name is empty.", sinkInputId);
-        HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sinkInputId, HPAE_STREAM_CLASS_TYPE_PLAY,
-            rendererIdSinkNameMap_[sinkInputId], sinkName, "sink name is empty");
         return false;
     }
     std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
     if (rendererManager == nullptr || !rendererManager->IsInit()) {
         HILOG_COMM_INFO("[CheckMoveSinkInput]move session:%{public}u failed, can not find sink:%{public}s "
             "or sink is not open.", sinkInputId, GetEncryptStr(sinkName).c_str());
-        HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sinkInputId, HPAE_STREAM_CLASS_TYPE_PLAY,
-            rendererIdSinkNameMap_[sinkInputId], sinkName, "dest sink is not open");
         return false;
     }
     if (!rendererIdStreamInfoMap_[sinkInputId].streamInfo.isMoveAble) {
