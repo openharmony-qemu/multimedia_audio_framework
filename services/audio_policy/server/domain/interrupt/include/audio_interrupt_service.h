@@ -376,7 +376,7 @@ private:
     void WriteSessionTimeoutDfxEvent(const int32_t pid);
 
     bool AudioFocusInfoListRemovalCondition(const AudioInterrupt &audioInterrupt,
-        const std::pair<AudioInterrupt, AudioFocuState> &audioFocus);
+        const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo);
     AudioScene RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
         AudioScene &highestPriorityAudioScene);
     void PostRefreshAudioSceneAction(const int32_t zoneId);
