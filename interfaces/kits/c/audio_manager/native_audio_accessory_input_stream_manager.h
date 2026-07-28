@@ -14,7 +14,7 @@
  */
 
 /**
- * @addtogroup AudioAccessoryInputStreamManager
+ * @addtogroup OHAudio
  * @{
  *
  * @brief Provide audio accessory input stream manager C interface.
