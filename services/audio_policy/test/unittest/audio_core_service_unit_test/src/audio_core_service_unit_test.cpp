@@ -8361,5 +8361,85 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyVoipPriorityLoweredByMute_004, TestSize
 
     pipeManager->curPipeList_.clear();
 }
+
+/**
+ * @tc.name  : RegisteredTrackerClientDied_001
+ * @tc.number: RegisteredTrackerClientDied_001
+ * @tc.desc  : Test pipeManager_ is nullptr, early return without crash.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, RegisteredTrackerClientDied_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->pipeManager_ = nullptr;
+    audioCoreService->RegisteredTrackerClientDied(88801, 99901);
+}
+
+/**
+ * @tc.name  : RegisteredTrackerClientDied_002
+ * @tc.number: RegisteredTrackerClientDied_002
+ * @tc.desc  : Test isServerStreamCreated_ true skips ReleaseClient, stream remains.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, RegisteredTrackerClientDied_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    constexpr int32_t uid = 88802;
+    constexpr int32_t pid = 99902;
+    constexpr uint32_t sessionId = 800201;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = sessionId;
+    streamDesc->callerUid_ = uid;
+    streamDesc->callerPid_ = pid;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->isServerStreamCreated_.store(true);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    audioCoreService->RegisteredTrackerClientDied(uid, pid);
+    EXPECT_NE(pipeManager->GetStreamDescById(sessionId), nullptr);
+    pipeManager->curPipeList_.clear();
+}
+
+/**
+ * @tc.name  : RegisteredTrackerClientDied_003
+ * @tc.number: RegisteredTrackerClientDied_003
+ * @tc.desc  : Test isServerStreamCreated_ false calls ReleaseClient, stream removed.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, RegisteredTrackerClientDied_003, TestSize.Level1)
+{
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(pipeManager, nullptr);
+    pipeManager->curPipeList_.clear();
+
+    constexpr int32_t uid = 88803;
+    constexpr int32_t pid = 99903;
+    constexpr uint32_t sessionId = 800301;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = sessionId;
+    streamDesc->callerUid_ = uid;
+    streamDesc->callerPid_ = pid;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    streamDesc->isServerStreamCreated_.store(false);
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager->AddAudioPipeInfo(pipeInfo);
+
+    GetServerPtr()->eventEntry_->RegisteredTrackerClientDied(uid, pid);
+    EXPECT_EQ(pipeManager->GetStreamDescById(sessionId), nullptr);
+    pipeManager->curPipeList_.clear();
+}
 } // namespace AudioStandard
 } // namespace OHOS

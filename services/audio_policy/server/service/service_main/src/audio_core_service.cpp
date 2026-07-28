@@ -2269,16 +2269,16 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
             std::make_shared<AudioDeviceDescriptor>(audioRouterSelectStrategy_
             .Get1stCurrentOutputDevice(uid)), false, false);
     }
-    if (pipeManager_ != nullptr) {
-        uint32_t trackerSessionId = (mode == AUDIO_MODE_PLAYBACK)
-            ? streamChangeInfo.audioRendererChangeInfo.sessionId
-            : streamChangeInfo.audioCapturerChangeInfo.sessionId;
-        auto streamDesc = pipeManager_->GetStreamDescById(trackerSessionId);
-        if (streamDesc != nullptr) {
-            streamDesc->isServerStreamCreated_.store(true);
-        }
-    }
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
+}
+
+void AudioCoreService::MarkServerStreamCreated(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
+    auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN(streamDesc != nullptr);
+    streamDesc->isServerStreamCreated_.store(true);
+    AUDIO_INFO_LOG("Session %{public}u server stream created flag set", sessionId);
 }
 
 void AudioCoreService::SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object)
