@@ -683,7 +683,7 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToGroupInfo(
     }
 }
 
-bool AudioPolicyConfigParser::ValidatePipeInfo(AudioAdapterType adapterType, uint32_t currentRole,
+bool AudioPolicyConfigParser::ValidatePipeInfo(AudioAdapterType adapterType, AudioPipeRole currentRole,
                                                const AdapterPipeInfo &pipeInfo)
 {
 #ifdef MULTI_BUS_ENABLE
