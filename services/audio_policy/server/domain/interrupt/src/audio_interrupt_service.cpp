@@ -1336,6 +1336,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy, bool &updateScene)
 {
     AudioInterrupt currAudioInterrupt = audioInterrupt;
+    VerifyFocusPermission(currAudioInterrupt);
     HandleAppStreamType(zoneId, currAudioInterrupt);
     AudioStreamType streamType = currAudioInterrupt.audioFocusType.streamType;
     uint32_t incomingStreamId = currAudioInterrupt.streamId;
@@ -1587,6 +1588,16 @@ void AudioInterruptService::GameRecogSetParam(ClientType clientType, SourceType 
 
     AudioServerProxy::GetInstance().SetAudioParameterProxy(key, value);
     return;
+}
+
+void AudioInterruptService::VerifyFocusPermission(AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.behaviorFlags_.voipCaptureMixWithOthers &&
+        audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+        PermissionUtil::VerifyPermission(VOIP_CAPTURE_CONCURRENCY_PERMISSION, IPCSkeleton::GetCallingTokenID()) &&
+        PermissionUtil::VerifySystemPermission()) {
+        audioInterrupt.voipCaptureMixWithOthersFlag = true;
+    }
 }
 
 int32_t AudioInterruptService::ActivatePreemptMode()
