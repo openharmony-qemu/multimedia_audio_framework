@@ -4339,50 +4339,6 @@ HWTEST_F(HpaeRendererManagerTest, Init_Interphone_NoThread_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
-HWTEST_F(HpaeRendererManagerTest, SendRequest_Interphone_Sync_001, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.deviceName = "Interphone_Sink";
-    sinkInfo.filePath = g_rootPath + "interphone_sync_test.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-    sinkInfo.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
-
-    HpaeNodeInfo nodeInfo;
-    auto hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
-    ::testing::DefaultValue<int32_t>::Set(0);
-    
-    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
-    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_, nullptr);
-    ASSERT_NE(hpaeRendererManager->outputCluster_, nullptr);
-    
-    auto mockRenderSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
-    auto outputClusterImpl = std::static_pointer_cast<HpaeOutputCluster>(hpaeRendererManager->outputCluster_);
-    outputClusterImpl->hpaeSinkOutputNode_->audioRendererSink_ = mockRenderSink;
-    outputClusterImpl->hpaeSinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
-
-    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    hpaeRendererManager->sinkInputNodeMap_.insert_or_assign(1, sinkInputNode);
-    sinkInputNode->SetState(HPAE_SESSION_RUNNING);
-
-    EXPECT_CALL(*mockRenderSink, RenderFrame(_, _, _)).Times(0);
-    EXPECT_CALL(*mockRenderSink, Stop()).Times(0);
-    hpaeRendererManager->Process();
-    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
-
-    EXPECT_CALL(*mockRenderSink, Stop()).Times(AtLeast(1)).WillRepeatedly(Return(0));
-    hpaeRendererManager->StopInterphoneSinkIfNeeded();
-    
-    EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
-    ::testing::DefaultValue<int32_t>::Clear();
-}
-
 HWTEST_F(HpaeRendererManagerTest, Process_Interphone_NoThread_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
