@@ -14,7 +14,7 @@
  */
 
 /**
- * @addtogroup AudioAccessoryManager
+ * @addtogroup OHAudio
  * @{
  *
  * @brief Provide audio accessory manager C interface.
