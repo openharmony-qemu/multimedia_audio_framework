@@ -19,7 +19,6 @@
 #include <list>
 #include <unordered_map>
 #include <string>
-#include <regex>
 #include <set>
 #include <audio_xml_parser.h>
 
