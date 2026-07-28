@@ -139,7 +139,8 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
     CHECK_AND_RETURN_RET(idHandler.CheckId(captureId, HDI_ID_BASE_CAPTURE), nullptr);
     uint32_t type = idHandler.ParseType(captureId);
     std::string info = idHandler.ParseInfo(captureId);
-    AUDIO_INFO_LOG("type: %{public}u, info: %{public}s", type, info.c_str());
+    std::string infoLog = idHandler.IsRemoteType(static_cast<HdiIdType>(type)) ? GetEncryptStr(info) : info;
+    AUDIO_INFO_LOG("type: %{public}u, info: %{public}s", type, infoLog.c_str());
 
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
     switch (type) {

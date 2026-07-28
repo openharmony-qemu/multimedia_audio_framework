@@ -372,6 +372,8 @@ public:
 
         void OnHdiRouteStateChange(const std::string& networkId, bool enable) override {};
     };
+    std::string GetModuleArgsLog(const AudioModuleInfo &audioModuleInfo);
+    bool IsRemoteAdapter(const std::string &adapterName);
 
 private:
     friend class PolicyCallbackImpl;

@@ -593,7 +593,9 @@ std::string AudioPipeManager::GetModuleNameBySessionId(uint32_t sessionId)
             if (desc->sessionId_ != sessionId) {
                 continue;
             }
-            AUDIO_INFO_LOG("adapter name: %{public}s", pipeInfo->moduleInfo_.name.c_str());
+            std::string adapterName = pipeInfo->IsSameAdapter("remote") ?
+                GetEncryptStr(pipeInfo->moduleInfo_.name) : pipeInfo->moduleInfo_.name;
+            AUDIO_INFO_LOG("adapter name: %{public}s", adapterName.c_str());
             return desc->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ?
                 "RemoteCastInnerCapturer" : pipeInfo->moduleInfo_.name;
         }

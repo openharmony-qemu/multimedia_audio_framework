@@ -155,8 +155,9 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
     const std::string &info, uint32_t routeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(!deviceClass.empty(), HDI_INVALID_ID, "invalid device class");
+    std::string infoLog = IsRemoteClass(deviceClass) ? GetEncryptStr(info) : info;
     AUDIO_INFO_LOG("deviceClass: %{public}s, sourceType: %{public}d, info: %{public}s, routeFlag: %{public}u",
-        deviceClass.c_str(), sourceType, info.c_str(), routeFlag);
+        deviceClass.c_str(), sourceType, infoLog.c_str(), routeFlag);
 
     if (deviceClass == "primary") {
 #ifdef MULTI_BUS_ENABLE
@@ -275,6 +276,19 @@ uint32_t IdHandler::CreateInfoId(void)
     uint32_t infoId = *freeInfoIdSet_.begin();
     freeInfoIdSet_.erase(infoId);
     return infoId;
+}
+
+bool IdHandler::IsRemoteType(HdiIdType type)
+{
+    return type == HDI_ID_TYPE_REMOTE ||
+        type == HDI_ID_TYPE_REMOTE_FAST ||
+        type == HDI_ID_TYPE_REMOTE_OFFLOAD ||
+        type == HDI_ID_TYPE_REMOTE_MULTICHANNEL;
+}
+
+bool IdHandler::IsRemoteClass(const std::string &deviceClass)
+{
+    return deviceClass == "remote";
 }
 
 } // namespace AudioStandard

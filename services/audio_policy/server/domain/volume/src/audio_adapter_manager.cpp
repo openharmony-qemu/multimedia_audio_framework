@@ -1581,7 +1581,8 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
 void AudioAdapterManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
-    AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgs.c_str());
+    std::string moduleArgsLog = GetModuleArgsLog(audioModuleInfo);
+    AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgsLog.c_str());
 
     CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "ServiceAdapter is null");
     CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
@@ -1595,7 +1596,8 @@ void AudioAdapterManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo
 AudioIOHandle AudioAdapterManager::ReloadA2dpAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
-    AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgs.c_str());
+    std::string moduleArgsLog = GetModuleArgsLog(audioModuleInfo);
+    AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgsLog.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     AudioIOHandle ioHandle = HDI_INVALID_ID;
@@ -1631,7 +1633,8 @@ AudioIOHandle AudioAdapterManager::ReloadA2dpAudioPort(const AudioModuleInfo &au
 AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
-    AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgs.c_str());
+    std::string moduleArgsLog = GetModuleArgsLog(audioModuleInfo);
+    AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgsLog.c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     curActiveCount_++;
@@ -4267,6 +4270,23 @@ int32_t AudioAdapterManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const 
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "ServiceAdapter is null");
     return audioServiceAdapter_->UpdatePersonalizedHRTFBin(fd, length);
+}
+
+std::string AudioAdapterManager::GetModuleArgsLog(const AudioModuleInfo &audioModuleInfo)
+{
+    AudioModuleInfo tempModuleInfo = audioModuleInfo;
+
+    tempModuleInfo.name = IsRemoteAdapter(tempModuleInfo.adapterName) ?
+        GetEncryptStr(tempModuleInfo.name) : tempModuleInfo.name;
+    tempModuleInfo.networkId = IsRemoteAdapter(tempModuleInfo.adapterName) ?
+        GetEncryptStr(tempModuleInfo.networkId) : tempModuleInfo.networkId;
+
+    return GetModuleArgs(tempModuleInfo);
+}
+
+bool AudioAdapterManager::IsRemoteAdapter(const std::string &adapterName)
+{
+    return adapterName == "remote";
 }
 } // namespace AudioStandard
 } // namespace OHOS
