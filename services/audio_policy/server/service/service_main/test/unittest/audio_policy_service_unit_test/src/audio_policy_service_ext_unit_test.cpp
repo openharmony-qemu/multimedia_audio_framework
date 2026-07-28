@@ -717,7 +717,8 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadGetRenderPosition_001, TestSize.L
     uint32_t delayValue = 0;
     uint64_t sendDataSize = 0;
     uint32_t timeStamp = 0;
-    int32_t ret = AudioPolicyService::GetAudioPolicyService().OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    int32_t ret = AudioPolicyService::GetAudioPolicyService().OffloadGetRenderPosition(delayValue,
+        sendDataSize, timeStamp);
 #ifdef BLUETOOTH_ENABLE
     EXPECT_EQ(SUCCESS, ret);
 #else
