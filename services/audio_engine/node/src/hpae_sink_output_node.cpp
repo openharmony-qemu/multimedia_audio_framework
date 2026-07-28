@@ -568,7 +568,7 @@ void HpaeSinkOutputNode::UpdateAuxiliarySinkState(StreamChangeType change,
 
 void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
 {
-    if (GetDeviceClass() != "primary") {
+    if (GetDeviceClass() != "primary" && GetDeviceClass() != "primary_extra") {
         return;
     }
     CHECK_AND_RETURN(collaborationState_ == COLLABORATION_CLOSE);

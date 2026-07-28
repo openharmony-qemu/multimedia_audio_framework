@@ -289,6 +289,31 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_NonPrimaryDevice_ShouldSkip, Test
     hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
 }
 
+// Test case: primary_extra device should proceed with PA power handling (not skip)
+HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_PrimaryExtraDevice_ShouldProceed, TestSize.Level0)
+{
+    PcmBufferInfo bufferInfo;
+    PreparePcmBufferInfo(bufferInfo);
+    std::shared_ptr<HpaePcmBuffer> pcmBuffer = std::make_shared<HpaePcmBuffer>(bufferInfo);
+
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.deviceClass = "primary_extra"; // primary_extra device, should not skip
+
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+
+    // PA is closed and data is non-silence: SetPaPower(true) must be invoked, proving the
+    // function did not early-return at the GetDeviceClass() device class guard.
+    hpaeSinkOutputNode->isOpenPaPower_ = false;
+    EXPECT_CALL(*mockSink, SetPaPower(true)).WillOnce(Return(0));
+    hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
+    // Verify PA is opened, i.e. HandlePaPower proceeded past the device class check
+    EXPECT_TRUE(hpaeSinkOutputNode->isOpenPaPower_);
+    EXPECT_EQ(hpaeSinkOutputNode->silenceDataUs_, 0);
+}
+
 // Test case: should skip when PCM buffer is invalid
 HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_InvalidBuffer_ShouldSkip, TestSize.Level0)
 {
