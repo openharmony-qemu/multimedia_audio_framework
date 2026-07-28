@@ -326,6 +326,8 @@ bool HpaeSessionEffectNode::WaitRawBypassBufferWritable()
 bool HpaeSessionEffectNode::PushRawBypassBuffer(HpaePcmBuffer *buf)
 {
     CHECK_AND_RETURN_RET(buf != nullptr && buf->IsValid(), false);
+    // Bypass not required yet (first warmup): succeed without enqueueing upstream data.
+    CHECK_AND_RETURN_RET(!rawBypassNeeded_, true);
     bool pushed = false;
     {
         std::lock_guard<std::mutex> lock(rawBypassMutex_);
@@ -341,6 +343,7 @@ bool HpaeSessionEffectNode::PushRawBypassBuffer(HpaePcmBuffer *buf)
 
 HpaePcmBuffer *HpaeSessionEffectNode::PopRawBypassBuffer()
 {
+    CHECK_AND_RETURN_RET(!rawBypassNeeded_, nullptr);
     bool popped = false;
     {
         std::unique_lock<std::mutex> lock(rawBypassMutex_, std::defer_lock);
@@ -704,6 +707,7 @@ void HpaeSessionEffectNode::PreheatThreadFunc()
         }
     }
 
+    rawBypassNeeded_ = rawBypassNeeded_ || stopRequested_;
     prebufFilled_.store(true);
     AUDIO_INFO_LOG("PreheatThread exiting, stopRequested=%{public}d", stopRequested_.load());
 }
@@ -813,11 +817,12 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessInterceptingRaw(HpaePcmBuffer *inpu
         inputBuf->SetBufferSilence(false);
         ApplyInterceptingFadeIn(inputBuf->GetPcmDataBuffer(), interceptingRawData_.data(), sampleCount);
         status_ = STATUS::ACTIVE;
+        rawBypassNeeded_ = true;
         pendingRawBypassBlocks_.store(0);
         AccountOutput(byteLen);
         return inputBuf;
     }
-
+    CHECK_AND_RETURN_RET(!rawBypassNeeded_, PrepareSilenceBuffer(silenceData_));
     std::copy_n(interceptingRawData_.data(), sampleCount, inputBuf->GetPcmDataBuffer());
     return ProcessRawBypassOutput(inputBuf);
 }
@@ -992,6 +997,7 @@ void HpaeSessionEffectNode::CloseSessionEffectCore()
 
 void HpaeSessionEffectNode::ApplyInterceptingFadeIn(float *algoOutput, const float *rawInput, size_t sampleCount)
 {
+    CHECK_AND_RETURN_RET(!rawBypassNeeded_);
     for (size_t i = 0; i < sampleCount; ++i) {
         float t = sampleCount > 1 ? static_cast<float>(i) / static_cast<float>(sampleCount - 1) : 1.0f;
         algoOutput[i] = rawInput[i] * (1.0f - t) + algoOutput[i] * t;

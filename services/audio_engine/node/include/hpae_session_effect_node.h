@@ -180,6 +180,7 @@ private:
     HpaePcmBuffer rawBypassBuffer_;
     PcmBufferInfo rawBypassOutputBufferInfo_;
     HpaePcmBuffer rawBypassOutputData_;
+    bool rawBypassNeeded_ = false;
     std::vector<float> interceptingRawData_;
     std::mutex rawBypassMutex_;
     std::condition_variable rawBypassCv_;
