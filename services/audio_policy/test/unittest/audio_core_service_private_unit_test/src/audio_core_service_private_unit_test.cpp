@@ -554,7 +554,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_038, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->audioCoreService->ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
+    audioCoreService->ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -581,7 +581,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_039, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->audioCoreService->ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
+    audioCoreService->ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -608,7 +608,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_040, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->audioCoreService->ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
+    audioCoreService->ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
 }
 

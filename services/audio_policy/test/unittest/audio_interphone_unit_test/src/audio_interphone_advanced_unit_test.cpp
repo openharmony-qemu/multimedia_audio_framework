@@ -228,10 +228,10 @@ HWTEST_F(AudioInterphoneAdvancedUnitTest, TestCheckStreamConflictsWithInterphone
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_INTERPHONE;
-    uint32_t audioFlag = 0;
+    StreamFlagInfo flagInfo;
     
-    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, audioFlag));
-    EXPECT_EQ(AUDIO_OUTPUT_FLAG_INTERPHONE, audioFlag);
+    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, flagInfo));
+    EXPECT_EQ(AUDIO_OUTPUT_FLAG_INTERPHONE, flagInfo.audioFlag);
     MockNative::Resume();
 }
 
@@ -242,9 +242,9 @@ HWTEST_F(AudioInterphoneAdvancedUnitTest, TestCheckStreamConflictsWithVoip, Test
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    uint32_t audioFlag = 0;
+    StreamFlagInfo flagInfo;
     
-    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, audioFlag));
+    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, flagInfo));
     MockNative::Resume();
 }
 
@@ -279,9 +279,9 @@ HWTEST_F(AudioInterphoneAdvancedUnitTest, TestCheckStreamConflictsWithVideoCommu
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    uint32_t audioFlag = 0;
+    StreamFlagInfo flagInfo;
     
-    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, audioFlag));
+    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, flagInfo));
     MockNative::Resume();
 }
 
@@ -292,9 +292,9 @@ HWTEST_F(AudioInterphoneAdvancedUnitTest, TestCheckStreamConflictsWithVoiceModem
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
-    uint32_t audioFlag = 0;
+    StreamFlagInfo flagInfo;
     
-    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, audioFlag));
+    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, flagInfo));
     MockNative::Resume();
 }
 
@@ -317,9 +317,9 @@ HWTEST_F(AudioInterphoneAdvancedUnitTest, TestInterphoneRendererRouteFlagSet, Te
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_INTERPHONE;
-    uint32_t audioFlag = 0;
+    StreamFlagInfo flagInfo;
     
-    int32_t ret = AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, audioFlag);
+    int32_t ret = AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, flagInfo);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(AUDIO_OUTPUT_FLAG_INTERPHONE, streamDesc->audioFlag_);
     EXPECT_EQ(AUDIO_OUTPUT_FLAG_INTERPHONE, streamDesc->routeFlag_);

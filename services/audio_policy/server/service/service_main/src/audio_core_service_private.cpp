@@ -783,7 +783,7 @@ void AudioCoreService::ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pi
 
     audioPolicyManager_.RemoveAudioPipeVolume(pipeInfo->id_);
     pipeInfo->paIndex_ = paIndex;
-    ProcessOutputPipeUpdate(pipeInfo, flag, reason);
+    ProcessOutputPipeUpdate(pipeInfo, flagInfo, reason);
 }
 
 // This API is called by non-split-car to ensure that device can be selected.
@@ -928,10 +928,6 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
     RemoveUnusedPipe();
     return SUCCESS;
 }
-    }
-    RemoveUnusedPipe();
-    return SUCCESS;
-}
 
 void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
     const AudioStreamDeviceChangeReasonExt reason)
@@ -1052,7 +1048,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
-                flagInfo.audioFlag = desc->routeFlag_;
+                flag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
@@ -1090,7 +1086,7 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
-                flagInfo.audioFlag = desc->routeFlag_;
+                flag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:

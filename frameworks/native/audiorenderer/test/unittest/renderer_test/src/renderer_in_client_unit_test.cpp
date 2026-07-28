@@ -1886,7 +1886,6 @@ HWTEST(RendererInClientInnerUnitTest, SetSpeed_001, TestSize.Level0)
     ptrRendererInClientInner->offloadEnable_ = true;
     ptrRendererInClientInner->eStreamType_ = STREAM_MOVIE;
     ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
-    StreamFlagInfo flagInfo;
     flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_LOWPOWER;
     ptrRendererInClientInner->NotifyRouteUpdate(flagInfo, LOCAL_NETWORK_ID);
     ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
