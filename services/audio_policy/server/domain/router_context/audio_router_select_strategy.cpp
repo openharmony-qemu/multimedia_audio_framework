@@ -46,6 +46,11 @@ AudioRouterSelectStrategy& AudioRouterSelectStrategy::GetInstance()
 #endif
 }
 
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetHighestPriorityMediaInputDevice()
+{
+    return nullptr;
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::ConvertSimpleToDevice(
     const std::shared_ptr<AudioDeviceSimpleDescriptor> &simpleDesc)
 {
