@@ -306,6 +306,17 @@ void AudioInterruptService::DeactivateAudioSessionErrorEvent(
     }
 }
 
+void AudioInterruptService::RecordSilentWithPauseStrategyEvent(const AudioInterrupt &incomingInterrupt,
+    const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
+{
+    AudioConcurrencyMode concurrencyMode = sessionService_.GetSessionStrategy(incomingInterrupt.pid);
+    if (concurrencyMode == AudioConcurrencyMode::PAUSE_OTHERS &&
+        incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SILENT &&
+        interruptDfx_ != nullptr)  {
+            interruptDfx_->RecordSilentWithPauseStrategyEvent(incomingInterrupt, activeInterrupt, focusEntry);
+        }
+}
+
 void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
 {
     bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
@@ -845,6 +856,7 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
         // The strategy of activated AudioSession is the one with the highest priority.
         AudioConcurrencyMode concurrencyMode = sessionService_.GetSessionStrategy(incomingInterrupt.pid);
         if (concurrencyMode != AudioConcurrencyMode::MIX_WITH_OTHERS) {
+            RecordSilentWithPauseStrategyEvent(incomingInterrupt, activeInterrupt, focusEntry);
             AUDIO_INFO_LOG("The concurrency mode of incoming session is %{public}d",
                 static_cast<int32_t>(concurrencyMode));
             return false;

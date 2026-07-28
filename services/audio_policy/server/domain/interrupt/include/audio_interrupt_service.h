@@ -325,6 +325,8 @@ private:
     void ActivateAudioSessionErrorEvent(const int32_t zoneId, const int32_t callerPid);
     void DeactivateAudioSessionErrorEvent(const std::vector<AudioInterrupt> &streamsInSession,
         const int32_t callerPid);
+    void RecordSilentWithPauseStrategyEvent(const AudioInterrupt &incomingInterrupt,
+        const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry);
     void AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
 
     // interfaces about audio session.
