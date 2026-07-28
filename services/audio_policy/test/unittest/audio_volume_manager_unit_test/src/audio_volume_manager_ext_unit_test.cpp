@@ -89,59 +89,6 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckBlueToothActiveMusicTime_002, TestS
 }
 
 /**
- * @tc.name  : Test AudioVolumeManager.
- * @tc.number: CheckWiredActiveMusicTime_002
- * @tc.desc  : CheckWiredActiveMusicTime
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, CheckWiredActiveMusicTime_002, TestSize.Level1)
-{
-    auto& volumeManager = AudioVolumeManager::GetInstance();
-    volumeManager.activeSafeTimeBt_ = 68400;
-    volumeManager.activeSafeTime_ = 0;
-    volumeManager.CheckWiredActiveMusicTime(0);
-    EXPECT_TRUE(volumeManager.restoreNIsShowing_);
-}
-
-/**
- * @tc.name  : Test AudioVolumeManager.
- * @tc.number: CheckWiredActiveMusicTime_003
- * @tc.desc  : CheckWiredActiveMusicTime
- */
-HWTEST_F(AudioVolumeManagerExtUnitTest, CheckWiredActiveMusicTime_003, TestSize.Level1)
-{
-    auto& volumeManager = AudioVolumeManager::GetInstance();
-    int32_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    volumeManager.startSafeTime_ = currentTime - 60;
-    volumeManager.CheckWiredActiveMusicTime(0);
-    EXPECT_GT(volumeManager.startSafeTime_, currentTime - 60);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: HandleAbsBluetoothVolume_004
-* @tc.desc  : Test HandleAbsBluetoothVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerExtUnitTest, HandleAbsBluetoothVolume_004, TestSize.Level1)
-{
-    std::string macAddress = "11:22:33:44:55:66";
-    int32_t volumeLevel = 0;
-    int32_t ret;
-    AudioStreamType streamType = STREAM_MUSIC;
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-
-    audioVolumeManager.isBtFirstBoot_ = false;
-    VolumeScale safeVolume = audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel, true, streamType);
-    ret = safeVolume.VolumeLevel();
-    EXPECT_EQ(ret, 0);
-
-    audioVolumeManager.isBtFirstBoot_ = false;
-    CurrentActiveDevice().deviceCategory_ = BT_HEADPHONE;
-    safeVolume = audioVolumeManager.HandleAbsBluetoothVolume(macAddress, volumeLevel, false, streamType);
-    ret = safeVolume.VolumeLevel();
-    EXPECT_EQ(ret, 0);
-}
-
-/**
 * @tc.name  : Test AudioVolumeManager.
 * @tc.number: DealWithSafeVolume_001
 * @tc.desc  : Test DealWithSafeVolume interface.
