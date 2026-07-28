@@ -1494,8 +1494,6 @@ int32_t RendererInClientInner::CallStartWhenInStandby()
 
 bool RendererInClientInner::CheckRendererAttrInfoFromSpan(RendererAttrInfo &attr)
 {
-    AUDIO_DEBUG_LOG("CheckRendererAttrInfoFromSpan enter, sessionId:%{public}u", sessionId_);
-
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientBuffer_ is nullptr");
 
     uint64_t spanSize = clientBuffer_->GetAndClearPendingSpanSize(attr.engineSize, attr.routeFlag);
@@ -1524,16 +1522,13 @@ void RendererInClientInner::RefreshRendererAttrInfoFromSpan(const RendererAttrIn
         AUDIO_ERR_LOG("Invalid span size %{public}u, skip update", attr.spanSizeInFrame);
     }
     cacheSizeInFrame_ = attr.engineSize;
-    if (attr.routeFlag != 0) {
-        rendererInfo_.audioFlag = attr.routeFlag;
-        if ((attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) == 0) {
-            rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        } else if (attr.routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
-            rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-        } else {
-            rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-        }
-        AUDIO_INFO_LOG("Updated rendererFlags to 0x%{public}x", rendererInfo_.rendererFlags);
+    rendererInfo_.audioFlag = attr.routeFlag;
+    if ((attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) == 0) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    } else if (attr.routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+    } else {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
     }
     AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}u "
         "rendererFlags:0x%{public}x",
@@ -1544,7 +1539,7 @@ void RendererInClientInner::RefreshRendererAttrInfoFromSpan(const RendererAttrIn
 bool RendererInClientInner::SyncRendererAttrFromSpan()
 {
     RendererAttrInfo attr;
-    CHECK_AND_RETURN_RET_LOG(CheckRendererAttrInfoFromSpan(attr), false, "No rendererAttr to refresh");
+    CHECK_AND_RETURN_RET(CheckRendererAttrInfoFromSpan(attr), false);
     RefreshRendererAttrInfoFromSpan(attr);
     return true;
 }
@@ -1553,7 +1548,6 @@ bool RendererInClientInner::JudgeFastStreamByRendererAttr()
 {
     SyncRendererAttrFromSpan();
     bool isFast = IsFastStream();
-    AUDIO_DEBUG_LOG("isFast:%{public}d, sessionId:%{public}u", isFast, sessionId_);
     return isFast;
 }
 
