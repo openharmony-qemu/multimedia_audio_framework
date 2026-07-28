@@ -484,7 +484,8 @@ void AudioVolumeManagerInitializeFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioVolumeManagerSetDataShareReadyFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    static std::shared_ptr<AudioAdapterManager> staticAudioAdapterManager;
+    staticAudioAdapterManager = std::make_shared<AudioAdapterManager>();
     CHECK_AND_RETURN(audioAdapterManager != nullptr);
     std::atomic<bool> isDataShareReady = fdp.ConsumeBool();
     audioAdapterManager->SetDataShareReady(isDataShareReady.load());
@@ -618,8 +619,7 @@ void AudioVolumeManagerSetDualStreamVolumeMuteFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioVolumeManagerSetVolumeFromRemoteFuzzTest(FuzzedDataProvider& fdp)
 {
-    static std::shared_ptr<AudioAdapterManager> audioAdapterManager;
-    audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     CHECK_AND_RETURN(audioAdapterManager != nullptr);
     std::string networkId = LOCAL_NETWORK_ID;
     int32_t volumeDegree = fdp.ConsumeIntegral<int32_t>();
