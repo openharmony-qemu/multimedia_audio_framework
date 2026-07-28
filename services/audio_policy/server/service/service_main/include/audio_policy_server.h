@@ -64,6 +64,7 @@
 #include "audio_loopback_manager.h"
 #include "os_account_subprofile_client.h"
 #include "os_account_sub_profile_subscribe_callback.h"
+#include "stream_flag_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -357,7 +358,7 @@ public:
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
     int32_t CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        uint32_t &flag, uint32_t &sessionId, std::string &networkId) override;
+        StreamFlagInfo &flagInfo, uint32_t &sessionId, std::string &networkId) override;
 
     int32_t CreateCapturerClient(
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId) override;

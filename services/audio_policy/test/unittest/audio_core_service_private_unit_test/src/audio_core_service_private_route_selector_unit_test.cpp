@@ -16,6 +16,7 @@
 #include "audio_core_service_private_route_selector_unit_test.h"
 
 #include "audio_errors.h"
+#include "stream_flag_info.h"
 
 using namespace testing::ext;
 
@@ -122,9 +123,10 @@ HWTEST_F(AudioCoreServicePrivateRouteSelectorUnitTest, FetchRendererPipeAndExecu
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
 
     uint32_t sessionId = TEST_STREAM_1_SESSION_ID;
-    uint32_t audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    int32_t ret = testCoreService_->FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag, reason);
+    int32_t ret = testCoreService_->FetchRendererPipeAndExecute(streamDesc, sessionId, flagInfo, reason);
 
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     EXPECT_TRUE(streamDesc->GetRouteSelectRejectedFlag());
@@ -179,10 +181,11 @@ HWTEST_F(AudioCoreServicePrivateRouteSelectorUnitTest, CreateRendererClient_Reje
     EXPECT_EQ(testCoreService_->SetAudioRouteSelectorCallback(callback), SUCCESS);
 
     auto streamDesc = MakeRendererCreateStreamDesc();
-    uint32_t audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t sessionId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
-    int32_t ret = testCoreService_->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
+    int32_t ret = testCoreService_->CreateRendererClient(streamDesc, flagInfo, sessionId, networkId);
 
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     EXPECT_NE(sessionId, 0u);

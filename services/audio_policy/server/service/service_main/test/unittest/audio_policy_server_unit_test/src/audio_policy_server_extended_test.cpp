@@ -18,6 +18,7 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include <chrono>
+#include "stream_flag_info.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -182,10 +183,11 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_005, TestSize.Level4)
     audioPolicyServer_->eventEntry_->NotifyServiceReady();
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    uint32_t flag = 1;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = 1;
     uint32_t sessionId = 1;
     std::string networkId = "";
-    audioPolicyServer_->CreateRendererClient(streamDesc, flag, sessionId, networkId);
+    audioPolicyServer_->CreateRendererClient(streamDesc, flagInfo, sessionId, networkId);
     EXPECT_EQ(streamDesc->bundleName_, "");
 }
 

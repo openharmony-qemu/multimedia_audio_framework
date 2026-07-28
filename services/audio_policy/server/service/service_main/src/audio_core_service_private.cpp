@@ -374,18 +374,18 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
         }
     }
 
-    uint32_t audioFlag;
+    StreamFlagInfo flagInfo;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         UpdateOffloadState(pipeInfo);
         UpdateMultiChannelState(pipeInfo);
         UpdatePrimaryExtraState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
-            ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
+            ProcessOutputPipeUpdate(pipeInfo, flagInfo, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
-            ProcessOutputPipeNew(pipeInfo, audioFlag, reason);
+            ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD) {
-            ProcessOutputPipeReload(pipeInfo, audioFlag, reason);
+            ProcessOutputPipeReload(pipeInfo, flagInfo, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) {
             // Do nothing
         }
@@ -769,7 +769,7 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
     }
 }
 
-void AudioCoreService::ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
+void AudioCoreService::ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
@@ -898,11 +898,11 @@ int32_t AudioCoreService::FetchDeviceAndRoute(std::string caller, const AudioStr
 }
 
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-    uint32_t &sessionId, uint32_t &audioFlag, const AudioStreamDeviceChangeReasonExt reason)
+    uint32_t &sessionId, StreamFlagInfo &flagInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "stream desc is nullptr");
     UpdatePlaybackStreamFlag(streamDesc, true);
-    HILOG_COMM_INFO("[PipeFetchStart] AudioFlag 0x%{public}x for stream %{public}d", streamDesc->audioFlag_, sessionId);
+    HILOG_COMM_INFO("[PipeFetchStart] AudioFlag 0x%{public}x for stream %{public}u", streamDesc->audioFlag_, sessionId);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipeAndExecute(streamDesc);
     CHECK_AND_RETURN_RET_LOG(!(pipeInfos.empty() && streamDesc->GetRouteSelectRejectedFlag()), ERR_OPERATION_FAILED,
         "route select rejected renderer create for stream %{public}u", sessionId);
@@ -916,11 +916,11 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
         UpdateMultiChannelState(pipeInfo);
         UpdatePrimaryExtraState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
-            ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
+            ProcessOutputPipeUpdate(pipeInfo, flagInfo, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
-            ProcessOutputPipeNew(pipeInfo, audioFlag, reason);
+            ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD) {
-            ProcessOutputPipeReload(pipeInfo, audioFlag, reason);
+            ProcessOutputPipeReload(pipeInfo, flagInfo, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) { // DEFAULT
             // Do nothing
         }
@@ -928,8 +928,12 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
     RemoveUnusedPipe();
     return SUCCESS;
 }
+    }
+    RemoveUnusedPipe();
+    return SUCCESS;
+}
 
-void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
+void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     uint32_t paIndex = 0;
@@ -946,7 +950,7 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc, pipeInfo->id_);
-                flag = desc->routeFlag_;
+                flagInfo.audioFlag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_MOVE:
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc, pipeInfo->id_);
@@ -969,7 +973,7 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
     pipeManager_->AddAudioPipeInfo(pipeInfo);
 }
 
-void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
+void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioCoreService::ProcessOutputPipeUpdate");
@@ -980,7 +984,7 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc, pipeInfo->id_);
-                flag = desc->routeFlag_;
+                flagInfo.audioFlag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
@@ -1048,7 +1052,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
-                flag = desc->routeFlag_;
+                flagInfo.audioFlag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
@@ -1086,7 +1090,7 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
-                flag = desc->routeFlag_;
+                flagInfo.audioFlag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
