@@ -1304,6 +1304,31 @@ void AudioCoreService::DeleteSessionId(const uint32_t sessionId)
     }
 }
 
+void AudioCoreService::ClearMuteVoipState(
+    const std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t sessionId)
+{
+    StreamUsage streamUsage = STREAM_USAGE_INVALID;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    if (streamDesc == nullptr) {
+        AUDIO_WARNING_LOG("streamDesc is nullptr!");
+        // Ensure the sessionId will be cleared.
+        streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    } else {
+        streamUsage = streamDesc->rendererInfo_.streamUsage;
+        sourceType = streamDesc->capturerInfo_.sourceType;
+    }
+
+    if (streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
+        streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION &&
+        sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
+        // It is not a VoIP stream.
+        return;
+    }
+    AUDIO_INFO_LOG("streamUsage %{public}d, sourceType %{public}d, sessionId %{public}u",
+        streamUsage, sourceType, sessionId);
+    audioVolumeManager_.ClearVoipMuteByStreamId(sessionId);
+}
+
 bool AudioCoreService::IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(sessionIdMutex_);
