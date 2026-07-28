@@ -473,10 +473,13 @@ int32_t AudioDeviceStatus::UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &upd
         SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(STREAM_MUSIC, updatedDesc);
     audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_MUSIC, volume);
 
-    volume =
-        SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(STREAM_VOICE_CALL, updatedDesc);
-    audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_VOICE_CALL, volume);
     if (!VolumeUtils::IsPCVolumeEnable()) {
+        // No need to set voice call volume for PC nearlink device.
+        volume =
+            SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(STREAM_VOICE_CALL, updatedDesc);
+        audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_VOICE_CALL, volume);
+
+        // Set max volume to voice assistant for nearlink device.
         volume = audioVolumeManager_.GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT);
         audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_VOICE_ASSISTANT, volume);
         audioVolumeManager_.SetStreamMute(STREAM_VOICE_ASSISTANT, false, STREAM_USAGE_UNKNOWN, DEVICE_TYPE_NEARLINK);
