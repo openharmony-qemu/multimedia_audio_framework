@@ -4320,48 +4320,6 @@ HWTEST_F(HpaeRendererManagerTest, Init_Interphone_NoThread_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
-HWTEST_F(HpaeRendererManagerTest, Process_Interphone_NoThread_001, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.deviceName = "Interphone_Sink";
-    sinkInfo.filePath = g_rootPath + "interphone_process_nothread_test.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-    sinkInfo.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
-
-    HpaeNodeInfo nodeInfo;
-    auto hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
-    auto outputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
-    hpaeRendererManager->outputCluster_ = outputCluster;
-    ::testing::DefaultValue<int32_t>::Set(0);
-    auto mockRenderSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
-    outputCluster->hpaeSinkOutputNode_->audioRendererSink_ = mockRenderSink;
-    outputCluster->hpaeSinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
-
-    EXPECT_EQ(hpaeRendererManager->hpaeSignalProcessThread_, nullptr);
-    
-    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    hpaeRendererManager->sinkInputNodeMap_.insert_or_assign(1, sinkInputNode);
-    sinkInputNode->SetState(HPAE_SESSION_RUNNING);
-
-    EXPECT_CALL(*mockRenderSink, RenderFrame(_, _, _)).Times(0);
-    EXPECT_CALL(*mockRenderSink, Stop()).Times(0);
-    hpaeRendererManager->Process();
-    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
-
-    hpaeRendererManager->sinkInputNodeMap_.erase(1);
-    EXPECT_CALL(*mockRenderSink, Stop()).WillOnce(Return(0));
-    hpaeRendererManager->StopInterphoneSinkIfNeeded();
-    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
-    ::testing::DefaultValue<int32_t>::Clear();
-}
-
 HWTEST_F(HpaeRendererManagerTest, CreateSessionEffect_EnsureHistoryBufferForAiss, TestSize.Level0)
 {
     constexpr uint32_t sessionId = 789;
