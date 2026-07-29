@@ -1368,16 +1368,14 @@ bool AudioPipeSelector::ShouldAdjustConcedeAction(const std::shared_ptr<AudioStr
     const std::shared_ptr<AudioStreamDescriptor> &incomingStream,
     const std::shared_ptr<AudioStreamDescriptor> &targetStream)
 {
-    CHECK_AND_RETURN_RET_LOG(targetStream != nullptr, false, "targetStream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(existingStream != nullptr && incomingStream != nullptr, false,
+        "existingStream or incomingStream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(existingStream->IsRunning() || incomingStream->IsRunning(), false,
+        "both streams are not running");
     CHECK_AND_RETURN_RET_LOG(!targetStream->IsLoopbackStream(), false,
         "target stream %{public}u is loopback, skip adjust", targetStream->GetSessionId());
     CHECK_AND_RETURN_RET(IsUpdateActionForDeviceLevelHdPlay(existingStream, incomingStream), false);
     CHECK_AND_RETURN_RET(targetStream->GetRoute() != (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_DIRECT), false);
-
-    CHECK_AND_RETURN_RET_LOG(!((existingStream->GetRoute() & AUDIO_OUTPUT_FLAG_LOWPOWER) &&
-        existingStream->streamStatus_ != STREAM_STATUS_STARTED &&
-        incomingStream->GetRoute() == AUDIO_OUTPUT_FLAG_FAST), false,
-        "offload stream in non-running state, fast stream skip adjust.");
     return true;
 }
 
@@ -1385,8 +1383,6 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
     std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action)
 {
     CHECK_AND_RETURN(action == CONCEDE_INCOMING || action == CONCEDE_EXISTING);
-    CHECK_AND_RETURN(existingStream != nullptr && incomingStream != nullptr);
-    CHECK_AND_RETURN(existingStream->IsRunning() || incomingStream->IsRunning());
 
     std::shared_ptr<AudioStreamDescriptor> targetStream =
         (action == CONCEDE_INCOMING) ? existingStream : incomingStream;
