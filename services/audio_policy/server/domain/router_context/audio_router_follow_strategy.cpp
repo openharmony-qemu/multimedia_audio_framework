@@ -291,6 +291,11 @@ void AudioRouterFollowStrategy::UpdateCurrentOutputDevice(int32_t uid,
     AUDIO_INFO_LOG("uid=%{public}d, deviceId=%{public}d", uid,
         !devices.empty() && devices[0] ? devices[0]->deviceId_ : 0);
     auto simpleDevices = ConvertDeviceToSimple(devices);
+    auto it = std::remove_if(simpleDevices.begin(), simpleDevices.end(), [](auto &item) {
+        return !item || item->deviceType_ == DEVICE_TYPE_SYSTEM_PRIVATE;
+    });
+    simpleDevices.erase(it, simpleDevices.end());
+    CHECK_AND_RETURN(!simpleDevices.empty());
     AudioRouterInfra::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, simpleDevices);
 }
 

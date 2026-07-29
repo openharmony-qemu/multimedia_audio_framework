@@ -1250,7 +1250,7 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
         auto inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
         FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
     }
-    
+
     bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
     bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
     bool hasRecognition = pipeManager_->HasRunningRecognitionCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
