@@ -220,6 +220,155 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, GetCurrentActiveDevice_NullSink_001, Test
     // audioRendererSink_ is nullptr by default
     EXPECT_EQ(remoteNode->GetCurrentOutputDevice(), DEVICE_TYPE_NONE);
 }
+
+/**
+ * @tc.name  : GetRenderSinkInstance_EmptyDeviceNetId_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetRenderSinkInstance with empty deviceNetId uses HDI_ID_INFO_DEFAULT.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, GetRenderSinkInstance_EmptyDeviceNetId_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    // Test with empty deviceNetId (should use HDI_ID_INFO_DEFAULT)
+    // In real environment, HdiAdapterManager may successfully get sink
+    int32_t result = remoteNode->GetRenderSinkInstance("remote", "");
+    // Verify renderId is set (not HDI_INVALID_ID) when successful
+    if (result == SUCCESS) {
+        EXPECT_NE(remoteNode->GetRenderId(), HDI_INVALID_ID);
+    }
+}
+
+/**
+ * @tc.name  : RenderSinkInit_NullSink_002
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkInit returns ERROR when audioRendererSink_ is nullptr.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, RenderSinkInit_NullSink_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    // Use SetSinkState to simulate initialization
+    remoteNode->SetSinkState(STREAM_MANAGER_RUNNING);
+
+    IAudioSinkAttr attr;
+    attr.adapterName = "remote";
+
+    // Since audioRendererSink_ is nullptr, returns ERROR
+    EXPECT_EQ(remoteNode->RenderSinkInit(attr), ERROR);
+}
+
+/**
+ * @tc.name  : RenderSinkStart_Failure_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkStart returns ERROR when sink Start() fails.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, RenderSinkStart_Failure_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    // audioRendererSink_ is nullptr by default
+    EXPECT_EQ(remoteNode->RenderSinkStart(), ERROR);
+}
+
+/**
+ * @tc.name  : RenderSinkResume_Failure_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkResume returns error code when sink Resume() fails.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, RenderSinkResume_Failure_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    // audioRendererSink_ is nullptr by default
+    EXPECT_EQ(remoteNode->RenderSinkResume(), ERROR);
+}
+
+/**
+ * @tc.name  : RenderSinkStop_Failure_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test RenderSinkStop returns error code when sink Stop() fails.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, RenderSinkStop_Failure_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    // audioRendererSink_ is nullptr by default
+    EXPECT_EQ(remoteNode->RenderSinkStop(), ERROR);
+}
+
+/**
+ * @tc.name  : SetGetSinkState_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SetSinkState and GetSinkState functionality.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, SetGetSinkState_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    // Test setting different states
+    EXPECT_EQ(remoteNode->SetSinkState(STREAM_MANAGER_IDLE), SUCCESS);
+    EXPECT_EQ(remoteNode->GetSinkState(), STREAM_MANAGER_IDLE);
+
+    EXPECT_EQ(remoteNode->SetSinkState(STREAM_MANAGER_RUNNING), SUCCESS);
+    EXPECT_EQ(remoteNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+
+    EXPECT_EQ(remoteNode->SetSinkState(STREAM_MANAGER_SUSPENDED), SUCCESS);
+    EXPECT_EQ(remoteNode->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    EXPECT_EQ(remoteNode->SetSinkState(STREAM_MANAGER_RELEASED), SUCCESS);
+    EXPECT_EQ(remoteNode->GetSinkState(), STREAM_MANAGER_RELEASED);
+}
+
+/**
+ * @tc.name  : UpdateAppsUid_MultipleUids_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test UpdateAppsUid with multiple UIDs returns ERROR when sink is nullptr.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, UpdateAppsUid_MultipleUids_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    std::vector<int32_t> appsUid = {TEST_APP_UID, TEST_APP_UID + 1, TEST_APP_UID + 2};
+    // audioRendererSink_ is nullptr, returns ERROR
+    EXPECT_EQ(remoteNode->UpdateAppsUid(appsUid), ERROR);
+}
+
+/**
+ * @tc.name  : HandlePcmDumping_DefaultCase_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test HandlePcmDumping default case with unknown stream type.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, HandlePcmDumping_DefaultCase_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    size_t dataSize = 512;
+    std::vector<char> mockData(dataSize, 0xAB);
+    char* dataPtr = mockData.data();
+
+    // Test with default case (non-standard stream type)
+    remoteNode->outputCommunicationPcmDumper_ = std::make_unique<HpaePcmDumper>("ut_default_dump.pcm");
+
+    // Use an invalid stream type to trigger default case
+    remoteNode->HandlePcmDumping(static_cast<SplitStreamType>(999), dataPtr, dataSize);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

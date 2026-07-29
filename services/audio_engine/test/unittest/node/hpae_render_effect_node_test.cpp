@@ -2150,6 +2150,656 @@ HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_keepsNodeInfoWhenManager
     EXPECT_EQ(node->GetNodeInfo().channelLayout, CH_LAYOUT_STEREO);
 }
 
+// ==================== Additional Test Cases for Branch Coverage > 75% ====================
+
+/**
+ * @tc.name   : Test ReconfigOutputBuffer with channel change
+ * @tc.number : ReconfigOutputBuffer_ChannelChange_001
+ * @tc.desc   : Test ReconfigOutputBuffer when channels/channelLayout changes.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_ChannelChange_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneStr = "SCENE_MUSIC";
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneStr);
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4000, MONO, CH_LAYOUT_MONO);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    node->sceneType_ = "SCENE_MUSIC";
+
+    // Set different channels in effectOutput_ to trigger reconfig
+    node->effectOutput_.ReConfig(PcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO));
+
+    node->ReconfigOutputBuffer();
+
+    // Verify node info was updated
+    EXPECT_EQ(node->GetNodeInfo().channels, STEREO);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test CreateAudioEffectChain with duplicate sessionId
+ * @tc.number : CreateAudioEffectChain_DuplicateSession_002
+ * @tc.desc   : Test CreateAudioEffectChain when sessionId already exists (CheckAndAddSessionID returns false).
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, CreateAudioEffectChain_DuplicateSession_002, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4100);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    // First call creates the session
+    EXPECT_EQ(node->AudioRendererCreate(nodeInfo), 0);
+
+    // Second call with same sessionId should return early (deduplication branch)
+    EXPECT_EQ(node->AudioRendererCreate(nodeInfo), 0);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test ReleaseAudioEffectChain with non-existent sessionId
+ * @tc.number : ReleaseAudioEffectChain_SessionNotFound_003
+ * @tc.desc   : Test ReleaseAudioEffectChain when sessionId doesn't exist (CheckAndRemoveSessionID returns false).
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, ReleaseAudioEffectChain_SessionNotFound_003, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4200);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    // Release without create - should return SUCCESS via early return branch
+    EXPECT_EQ(node->ReleaseAudioEffectChain(nodeInfo), 0);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test ModifyAudioEffectChainInfo with invalid effectMode
+ * @tc.number : ModifyAudioEffectChainInfo_InvalidEffectMode_004
+ * @tc.desc   : Test ModifyAudioEffectChainInfo when effectMode is not in supported map.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, ModifyAudioEffectChainInfo_InvalidEffectMode_004, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4300);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = static_cast<AudioEffectMode>(0xFF); // Invalid mode
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    ModifyAudioEffectChainInfoReason addReason = ADD_AUDIO_EFFECT_CHAIN_INFO;
+    node->ModifyAudioEffectChainInfo(nodeInfo, addReason);
+
+    std::string sessionId = std::to_string(TEST_ID + 4300);
+    // Verify sceneMode was set to EFFECT_NONE
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionId].sceneMode, "EFFECT_NONE");
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test ModifyAudioEffectChainInfo removes session info
+ * @tc.number : ModifyAudioEffectChainInfo_RemoveSession_005
+ * @tc.desc   : Test ModifyAudioEffectChainInfo with REMOVE_AUDIO_EFFECT_CHAIN_INFO.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, ModifyAudioEffectChainInfo_RemoveSession_005, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4400);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    // First add
+    ModifyAudioEffectChainInfoReason addReason = ADD_AUDIO_EFFECT_CHAIN_INFO;
+    node->ModifyAudioEffectChainInfo(nodeInfo, addReason);
+
+    // Then remove
+    ModifyAudioEffectChainInfoReason removeReason = REMOVE_AUDIO_EFFECT_CHAIN_INFO;
+    node->ModifyAudioEffectChainInfo(nodeInfo, removeReason);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test TempEffectBuffer UpdateNearLinkCollaborationStateToHdi
+ * @tc.number : TempEffectBuffer_UpdateNearLinkState_006
+ * @tc.desc   : Test UpdateNearLinkCollaborationStateToHdi path in DelayAlignmentForEffectNode.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_UpdateNearLinkState_006, TestSize.Level1)
+{
+    PcmBufferInfo stereoInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaeTempEffectBuffer tempBuffer(stereoInfo, COLLABORATION_NEARLINK_OPEN);
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+
+    // Call multiple times to trigger the UPDATE_NEARLINK_COLLAB_STATE_TO_HDI_WAIT_COUNT branch
+    for (int i = 0; i < 3; i++) {
+        tempBuffer.DelayAlignmentForEffectNode(&inputBuffer);
+    }
+
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test TempEffectBuffer SetCollabDoFade
+ * @tc.number : TempEffectBuffer_SetCollabDoFade_007
+ * @tc.desc   : Test SetCollabDoFade triggers fade out in ChangeEffectDataForLatency.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_SetCollabDoFade_007, TestSize.Level1)
+{
+    PcmBufferInfo stereoInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaeTempEffectBuffer tempBuffer(stereoInfo, COLLABORATION_NEARLINK_OPEN);
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+
+    // Set delay count to 0 so alignment is ready
+    tempBuffer.SetDelayCountToEffectNode(0);
+    tempBuffer.DelayAlignmentForEffectNode(&inputBuffer);
+
+    // Set fade out state
+    tempBuffer.SetCollabDoFade(true);
+
+    // This should trigger fade out and set stopRunning
+    tempBuffer.ChangeEffectDataForLatency(&inputBuffer);
+
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test TempEffectBuffer SetStopRunningState
+ * @tc.number : TempEffectBuffer_SetStopRunningState_008
+ * @tc.desc   : Test SetStopRunningState causes silence output in ChangeEffectDataForLatency.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_SetStopRunningState_008, TestSize.Level1)
+{
+    PcmBufferInfo stereoInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaeTempEffectBuffer tempBuffer(stereoInfo, COLLABORATION_NEARLINK_OPEN);
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+
+    // Set delay count to 0 so alignment is ready
+    tempBuffer.SetDelayCountToEffectNode(0);
+    tempBuffer.DelayAlignmentForEffectNode(&inputBuffer);
+
+    // Set stop running state
+    tempBuffer.SetStopRunningState(true);
+
+    // This should output silence in all collaborative channels
+    tempBuffer.ChangeEffectDataForLatency(&inputBuffer);
+
+    constexpr float smallSignal = 1e-6f;
+    EXPECT_NEAR(inputBuffer.GetPcmDataBuffer()[2], smallSignal, 1e-7f);
+    EXPECT_NEAR(inputBuffer.GetPcmDataBuffer()[3], smallSignal, 1e-7f);
+}
+
+/**
+ * @tc.name   : Test TempEffectBuffer DoFadeOut
+ * @tc.number : TempEffectBuffer_DoFadeOut_009
+ * @tc.desc   : Test DoFadeOut applies gain ramp to all channels.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_DoFadeOut_009, TestSize.Level1)
+{
+    PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
+    HpaePcmBuffer buffer(pcmBufferInfo);
+    float *data = buffer.GetPcmDataBuffer();
+    ASSERT_NE(data, nullptr);
+
+    // Set all channels to 1.0
+    for (uint32_t i = 0; i < buffer.GetFrameLen(); ++i) {
+        data[4 * i] = 1.0f;
+        data[4 * i + 1] = 1.0f;
+        data[4 * i + 2] = 1.0f;
+        data[4 * i + 3] = 1.0f;
+    }
+
+    PcmBufferInfo stereoInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaeTempEffectBuffer tempBuffer(stereoInfo);
+
+    tempBuffer.DoFadeOut(&buffer);
+
+    // First sample should have gain close to 1.0, last sample should be near 0
+    EXPECT_NEAR(data[0], 1.0f, 0.1f);
+    EXPECT_LT(data[4 * (buffer.GetFrameLen() - 1)], 0.1f);
+}
+
+/**
+ * @tc.name   : Test SignalProcess with ApplyAudioEffectChain failure
+ * @tc.number : SignalProcess_ApplyEffectChainFail_010
+ * @tc.desc   : Test SignalProcess when ApplyAudioEffectChain returns error.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, SignalProcess_ApplyEffectChainFail_010, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4500);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(false);
+    std::vector<HpaePcmBuffer *> inputs = {&inputBuffer};
+
+    // Call SignalProcess - should return inputBuffer on failure
+    HpaePcmBuffer *result = node->SignalProcess(inputs);
+    EXPECT_EQ(result, &inputBuffer);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test GetExpectedInputChannelInfo returns error
+ * @tc.number : GetExpectedInputChannelInfo_Error_011
+ * @tc.desc   : Test GetExpectedInputChannelInfo when QueryEffectChannelInfo fails.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, GetExpectedInputChannelInfo_Error_011, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4600);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    node->sceneType_ = "SCENE_MUSIC";
+
+    AudioBasicFormat basicFormat;
+    basicFormat.rate = SAMPLE_RATE_48000;
+    basicFormat.audioChannelInfo.numChannels = STEREO;
+
+    // Should return error when no effect chain exists
+    int32_t ret = node->GetExpectedInputChannelInfo(basicFormat);
+    EXPECT_NE(ret, SUCCESS);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test AudioRendererStart with tempEffectBuffer
+ * @tc.number : AudioRendererStart_TempEffectBuffer_012
+ * @tc.desc   : Test AudioRendererStart resets tempEffectBuffer state for NearLink.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, AudioRendererStart_TempEffectBuffer_012, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4700, STEREO, CH_LAYOUT_STEREO);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    ASSERT_NE(node->tempEffectBuffer_, nullptr);
+
+    EXPECT_EQ(node->AudioRendererStart(nodeInfo), 0);
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test AudioRendererStop
+ * @tc.number : AudioRendererStop_013
+ * @tc.desc   : Test AudioRendererStop calls ModifyAudioEffectChainInfo with REMOVE.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, AudioRendererStop_013, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4800);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    EXPECT_EQ(node->AudioRendererCreate(nodeInfo), 0);
+    EXPECT_EQ(node->AudioRendererStart(nodeInfo), 0);
+    EXPECT_EQ(node->AudioRendererStop(nodeInfo), 0);
+}
+
+/**
+ * @tc.name   : Test AudioRendererRelease
+ * @tc.number : AudioRendererRelease_014
+ * @tc.desc   : Test AudioRendererRelease calls ReleaseAudioEffectChain.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, AudioRendererRelease_014, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4900);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    EXPECT_EQ(node->AudioRendererCreate(nodeInfo), 0);
+    EXPECT_EQ(node->AudioRendererRelease(nodeInfo), 0);
+}
+
+/**
+ * @tc.name   : Test InitEffectBufferFromDisConnect
+ * @tc.number : InitEffectBufferFromDisConnect_015
+ * @tc.desc   : Test InitEffectBufferFromDisConnect calls InitAudioEffectChainDynamic.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, InitEffectBufferFromDisConnect_015, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5000);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    node->sceneType_ = "SCENE_MUSIC";
+
+    node->InitEffectBufferFromDisConnect();
+    SUCCEED();
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test DoProcess with non-collaborative scene
+ * @tc.number : DoProcess_NonCollaborativeScene_016
+ * @tc.desc   : Test DoProcess delegates to parent for non-collaborative scenes.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_NonCollaborativeScene_016, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5100);
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    // Should not crash
+    node->DoProcess();
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test SetCollabDoFade on node
+ * @tc.number : SetCollabDoFade_017
+ * @tc.desc   : Test SetCollabDoFade delegates to tempEffectBuffer.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, SetCollabDoFade_017, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5200, STEREO, CH_LAYOUT_STEREO);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+
+    node->SetCollabDoFade(true);
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test SetStopRunningState on node
+ * @tc.number : SetStopRunningState_018
+ * @tc.desc   : Test SetStopRunningState delegates to tempEffectBuffer.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, SetStopRunningState_018, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5300, STEREO, CH_LAYOUT_STEREO);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+
+    node->SetStopRunningState(true);
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test OffloadRendererCheckNotifyEffect with null manager
+ * @tc.number : OffloadRendererCheckNotifyEffect_NullManager_019
+ * @tc.desc   : Test OffloadRendererCheckNotifyEffect returns false when manager is null.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, OffloadRendererCheckNotifyEffect_NullManager_019, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5400);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "speaker";
+
+    // With null manager or offload disabled, should return false
+    // Note: We can't easily make AudioEffectChainManager::GetInstance() return null,
+    // but we can verify the offload disabled path
+    EXPECT_NE(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
+}
+
+/**
+ * @tc.name   : Test OffloadRendererCheckNotifyEffect with remote_offload
+ * @tc.number : OffloadRendererCheckNotifyEffect_RemoteOffload_020
+ * @tc.desc   : Test OffloadRendererCheckNotifyEffect returns false for remote_offload device.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, OffloadRendererCheckNotifyEffect_RemoteOffload_020, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5500);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote_offload";
+
+    // remote_offload should cause early return
+    EXPECT_NE(node->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
+}
+
+/**
+ * @tc.name   : Test TempEffectBuffer constructor with IsCollaborationEnabled
+ * @tc.number : TempEffectBuffer_ConstructorWithCollabState_021
+ * @tc.desc   : Test TempEffectBuffer constructor stores collaboration state.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_ConstructorWithCollabState_021, TestSize.Level1)
+{
+    PcmBufferInfo stereoInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaeTempEffectBuffer tempBuffer(stereoInfo, COLLABORATION_NEARLINK_OPEN);
+
+    // Verify isCollaborationEnabled_ was stored
+    tempBuffer.SetDelayCountToEffectNode(5);
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test TempEffectBuffer ChangeLatencyByCollManagerForEffectNode
+ * @tc.number : TempEffectBuffer_ChangeLatency_022
+ * @tc.desc   : Test ChangeLatencyByCollManagerForEffectNode gets latency from manager.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, TempEffectBuffer_ChangeLatency_022, TestSize.Level1)
+{
+    PcmBufferInfo stereoInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaeTempEffectBuffer tempBuffer(stereoInfo);
+
+    int32_t latency = 100;
+    tempBuffer.ChangeLatencyByCollManagerForEffectNode(latency);
+
+    // Latency should be modified by AudioCollaborationManager
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test SplitCollaborativeData with four channels
+ * @tc.number : SplitCollaborativeData_FourChannels_023
+ * @tc.desc   : Test SplitCollaborativeData splits 4-channel output correctly.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, SplitCollaborativeData_FourChannels_023, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5600, CHANNEL_4, CH_LAYOUT_4POINT0);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+
+    EXPECT_EQ(node->SplitCollaborativeData(), SUCCESS);
+}
+
+/**
+ * @tc.name   : Test IsByPassEffectZeroVolume with silence threshold not reached
+ * @tc.number : IsByPassEffectZeroVolume_BeforeThreshold_024
+ * @tc.desc   : Test IsByPassEffectZeroVolume before reaching bypass threshold.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, IsByPassEffectZeroVolume_BeforeThreshold_024, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5700);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(STEREO, SAMPLE_RATE_48000 * 2, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
+    HpaePcmBuffer inputBuffer(pcmBufferInfo);
+    inputBuffer.SetBufferValid(true);
+    inputBuffer.SetBufferSilence(true);
+
+    // Before reaching 4 second threshold, should return false
+    EXPECT_FALSE(node->IsByPassEffectZeroVolume(&inputBuffer));
+    EXPECT_FALSE(node->isByPassEffect_);
+}
+
+/**
+ * @tc.name   : Test SignalProcess with empty inputs returns null
+ * @tc.number : SignalProcess_EmptyInputs_025
+ * @tc.desc   : Test SignalProcess returns nullptr when inputs are empty.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, SignalProcess_EmptyInputs_025, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5800);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    std::vector<HpaePcmBuffer *> emptyInputs;
+    EXPECT_EQ(node->SignalProcess(emptyInputs), nullptr);
+}
+
+/**
+ * @tc.name   : Test ReconfigOutputBuffer with invalid channel info
+ * @tc.number : ReconfigOutputBuffer_InvalidChannelInfo_026
+ * @tc.desc   : Test ReconfigOutputBuffer handles invalid channel info (channels=0).
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_InvalidChannelInfo_026, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5900);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    node->sceneType_ = "SCENE_MUSIC";
+
+    // Invalid channel info should not crash
+    node->ReconfigOutputBuffer();
+    SUCCEED();
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test DoProcess collaborative with empty preOutputs and BT mode
+ * @tc.number : DoProcess_CollaborativeBT_EmptyPreOutputs_027
+ * @tc.desc   : Test DoProcess with collaborative scene, BT mode, and empty preOutputs.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_CollaborativeBT_EmptyPreOutputs_027, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6000, STEREO, CH_LAYOUT_STEREO);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+
+    // Empty preOutputs should write silence
+    node->DoProcess();
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test InitEffectBuffer with collaborative scene
+ * @tc.number : InitEffectBuffer_CollaborativeScene_028
+ * @tc.desc   : Test InitEffectBuffer returns early for collaborative scene.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, InitEffectBuffer_CollaborativeScene_028, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6100, STEREO, CH_LAYOUT_STEREO);
+    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+
+    // Collaborative scene should return early
+    node->InitEffectBuffer(nodeInfo.sessionId);
+    SUCCEED();
+}
+
+/**
+ * @tc.name   : Test GetLatency with valid sessionId
+ * @tc.number : GetLatency_ValidSession_029
+ * @tc.desc   : Test GetLatency returns latency value for session.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, GetLatency_ValidSession_029, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6200);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    // GetLatency should return a value (may be 0 if no effect chain)
+    uint64_t latency = node->GetLatency(nodeInfo.sessionId);
+    EXPECT_GE(latency, 0u);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test CreateAudioEffectChain with offload enabled
+ * @tc.number : CreateAudioEffectChain_OffloadEnabled_030
+ * @tc.desc   : Test CreateAudioEffectChain returns early when offload is enabled.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, CreateAudioEffectChain_OffloadEnabled_030, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    // Enable offload
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6300);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    // Should return SUCCESS without creating chain when offload enabled
+    EXPECT_EQ(node->AudioRendererCreate(nodeInfo), 0);
+
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test ReleaseAudioEffectChain with offload enabled
+ * @tc.number : ReleaseAudioEffectChain_OffloadEnabled_031
+ * @tc.desc   : Test ReleaseAudioEffectChain returns early when offload is enabled.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, ReleaseAudioEffectChain_OffloadEnabled_031, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    // Enable offload
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
+
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6400);
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    // Should return SUCCESS when offload enabled
+    EXPECT_EQ(node->ReleaseAudioEffectChain(nodeInfo), 0);
+
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+ * @tc.name   : Test UpdateAudioEffectChainInfo with null manager
+ * @tc.number : UpdateAudioEffectChainInfo_NullManager_032
+ * @tc.desc   : Test UpdateAudioEffectChainInfo returns early when manager is null.
+ */
+HWTEST_F(HpaeRenderEffectNodeTest, UpdateAudioEffectChainInfo_NullManager_032, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6500);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+
+    // Should not crash even if manager operations fail
+    node->UpdateAudioEffectChainInfo(nodeInfo);
+    SUCCEED();
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

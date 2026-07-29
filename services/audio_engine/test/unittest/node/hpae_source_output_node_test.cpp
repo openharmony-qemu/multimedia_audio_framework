@@ -566,6 +566,359 @@ HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_015, TestSize.Level1
     EXPECT_EQ(stateAfterResetAll, HPAE_SESSION_RUNNING);
     EXPECT_EQ(uidAfterResetAll, DEFAULT_APP_UID);
 }
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_016
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_016
+ * @tc.desc: Test HpaeSourceOutputNode GetMute functionality
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_016, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+
+    // Test initial mute state
+    bool initialMute = node->GetMute();
+    EXPECT_EQ(initialMute, false);
+
+    // Test setting mute to true
+    node->SetMute(true);
+    bool currentMute = node->GetMute();
+    EXPECT_EQ(currentMute, true);
+
+    // Test setting mute to false
+    node->SetMute(false);
+    currentMute = node->GetMute();
+    EXPECT_EQ(currentMute, false);
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_017
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_017
+ * @tc.desc: Test HpaeSourceOutputNode TokenId management
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_017, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+
+    // Test initial token ID
+    uint32_t initialTokenId = node->GetTokenId();
+    EXPECT_EQ(initialTokenId, 0U);
+
+    // Test setting token ID
+    uint32_t testTokenId = 12345U;
+    node->SetTokenId(testTokenId);
+
+    uint32_t currentTokenId = node->GetTokenId();
+    EXPECT_EQ(currentTokenId, testTokenId);
+
+    // Test with different token ID values
+    uint32_t testTokenIds[] = {0U, 1U, 99999U, UINT32_MAX};
+
+    for (auto tokenId : testTokenIds) {
+        node->SetTokenId(tokenId);
+        EXPECT_EQ(node->GetTokenId(), tokenId);
+    }
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_018
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_018
+ * @tc.desc: Test HpaeSourceOutputNode PcEnableState management
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_018, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+
+    // Test initial PC enable state
+    int32_t initialPcState = node->GetPcEnableState();
+    // Initial value is from system parameter, just check we can get it
+    EXPECT_GE(initialPcState, 0);
+
+    // Test setting PC enable state to 1
+    node->SetPcEnableState(1);
+    int32_t currentPcState = node->GetPcEnableState();
+    EXPECT_EQ(currentPcState, 1);
+
+    // Test setting PC enable state to 0
+    node->SetPcEnableState(0);
+    currentPcState = node->GetPcEnableState();
+    EXPECT_EQ(currentPcState, 0);
+
+    // Test setting PC enable state to different values
+    int32_t testValues[] = {-1, 0, 1, 2, 100};
+    for (auto val : testValues) {
+        node->SetPcEnableState(val);
+        EXPECT_EQ(node->GetPcEnableState(), val);
+    }
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_019
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_019
+ * @tc.desc: Test HpaeSourceOutputNode with ULTRASONIC source type
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_019, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.sourceType = SOURCE_TYPE_ULTRASONIC;
+    nodeInfo.channels = STEREO;
+
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    EXPECT_NE(node, nullptr);
+
+    // Test basic operations with ULTRASONIC source type
+    node->SetState(HPAE_SESSION_RUNNING);
+    EXPECT_EQ(node->GetState(), HPAE_SESSION_RUNNING);
+
+    node->SetAppUid(DEFAULT_APP_UID);
+    EXPECT_EQ(node->GetAppUid(), DEFAULT_APP_UID);
+
+    // Test with PC enable state set
+    node->SetPcEnableState(1);
+    std::unique_ptr<HpaeSourceOutputNode> nodeWithFilter = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    EXPECT_NE(nodeWithFilter, nullptr);
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_020
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_020
+ * @tc.desc: Test HpaeSourceOutputNode with VOICE_DOWNLINK source type
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_020, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.sourceType = SOURCE_TYPE_VOICE_DOWNLINK;
+    nodeInfo.format = SAMPLE_S16LE;
+
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    EXPECT_NE(node, nullptr);
+
+    // Test basic operations with VOICE_DOWNLINK source type
+    node->SetState(HPAE_SESSION_RUNNING);
+    node->SetAppUid(DEFAULT_APP_UID);
+    node->SetMute(false);
+
+    EXPECT_EQ(node->GetState(), HPAE_SESSION_RUNNING);
+    EXPECT_EQ(node->GetAppUid(), DEFAULT_APP_UID);
+    EXPECT_EQ(node->GetMute(), false);
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_021
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_021
+ * @tc.desc: Test HpaeSourceOutputNode with PLAYBACK_CAPTURE source type
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_021, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    EXPECT_NE(node, nullptr);
+
+    // Test basic operations with PLAYBACK_CAPTURE source type
+    node->SetState(HPAE_SESSION_RUNNING);
+    node->SetAppUid(DEFAULT_APP_UID);
+
+    EXPECT_EQ(node->GetState(), HPAE_SESSION_RUNNING);
+    EXPECT_EQ(node->GetAppUid(), DEFAULT_APP_UID);
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_022
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_022
+ * @tc.desc: Test SetNodeInfo with format change
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_022, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.frameLen = 160;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    size_t sourceOutputSize = node->sourceOutputData_.size();
+    size_t interleveSize = node->interleveData_.size();
+
+    // Change format from S16LE to F32LE
+    HpaeNodeInfo newNodeInfo = nodeInfo;
+    newNodeInfo.format = SAMPLE_F32LE;
+    newNodeInfo.frameLen = 320;
+    node->SetNodeInfo(newNodeInfo);
+
+    EXPECT_EQ(node->GetNodeInfo().format, SAMPLE_F32LE);
+    EXPECT_EQ(node->GetNodeInfo().frameLen, 320);
+    // Buffer sizes should change due to frameLen change
+    EXPECT_NE(node->sourceOutputData_.size(), sourceOutputSize);
+    EXPECT_NE(node->interleveData_.size(), interleveSize);
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_023
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_023
+ * @tc.desc: Test SetMute with same value twice
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_023, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+
+    // Test setting mute to same value twice
+    node->SetMute(true);
+    bool mute1 = node->GetMute();
+    node->SetMute(true);  // Set same value again
+    bool mute2 = node->GetMute();
+    EXPECT_EQ(mute1, true);
+    EXPECT_EQ(mute2, true);
+
+    node->SetMute(false);
+    mute1 = node->GetMute();
+    node->SetMute(false);  // Set same value again
+    mute2 = node->GetMute();
+    EXPECT_EQ(mute1, false);
+    EXPECT_EQ(mute2, false);
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_024
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_024
+ * @tc.desc: Test SetNodeInfo with same parameters
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_024, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.frameLen = 160;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    size_t sourceOutputSize = node->sourceOutputData_.size();
+    size_t interleveSize = node->interleveData_.size();
+
+    // Set same node info again
+    HpaeNodeInfo sameNodeInfo = nodeInfo;
+    node->SetNodeInfo(sameNodeInfo);
+
+    // Buffer sizes should remain the same
+    EXPECT_EQ(node->sourceOutputData_.size(), sourceOutputSize);
+    EXPECT_EQ(node->interleveData_.size(), interleveSize);
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_025
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_025
+ * @tc.desc: Test SetAppUid with various values including negative
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_025, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+
+    // Test initial UID
+    int32_t initialUid = node->GetAppUid();
+    EXPECT_EQ(initialUid, -1);
+
+    // Test with various UID values
+    int32_t testUids[] = {-100, -1, 0, 1, 1000, 99999, INT32_MAX};
+
+    for (auto uid : testUids) {
+        node->SetAppUid(uid);
+        EXPECT_EQ(node->GetAppUid(), uid);
+    }
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_026
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_026
+ * @tc.desc: Test RegisterReadCallback with valid callback
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_026, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+
+    std::shared_ptr<TestReadDataCb> testReadDataCb = std::make_shared<TestReadDataCb>();
+    std::weak_ptr<ICapturerStreamCallback> validCallback = testReadDataCb;
+
+    bool result = node->RegisterReadCallback(validCallback);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_027
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_027
+ * @tc.desc: Test RegisterReadCallback with expired callback
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_027, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::unique_ptr<HpaeSourceOutputNode> node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+
+    std::weak_ptr<ICapturerStreamCallback> expiredCallback;
+    {
+        std::shared_ptr<TestReadDataCb> tempCb = std::make_shared<TestReadDataCb>();
+        expiredCallback = tempCb;
+    }
+    // tempCb is destroyed here, expiredCallback is now expired
+
+    bool result = node->RegisterReadCallback(expiredCallback);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: TestHpaeSourceOutputNode_028
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceOutputNode_028
+ * @tc.desc: Test ResetAll with connected input node that returns false
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_028, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC;
+
+    std::shared_ptr<HpaeSourceInputNode> hpaeSoruceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    SourceType sourceType = SOURCE_TYPE_MIC;
+    std::string sourceName = "mic";
+    EXPECT_EQ(hpaeSoruceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
+
+    IAudioSourceAttr attr;
+    GetTestAudioSourceAttr(attr);
+    std::shared_ptr<HpaeSourceOutputNode> hpaeSoruceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
+    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceInit(attr), SUCCESS);
+    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStart(), 0);
+
+    hpaeSoruceOutputNode->Connect(hpaeSoruceInputNode);
+
+    // Test ResetAll - should work even if ResetAll on input node returns false
+    bool resetAllResult = hpaeSoruceOutputNode->ResetAll();
+    EXPECT_TRUE(resetAllResult);
+
+    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStop(), 0);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
