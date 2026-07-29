@@ -574,16 +574,11 @@ public:
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
 
-    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
-        const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback);
-
     int32_t ConfigDistributedRoutingRole(std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
 
     int32_t SetDistributedRoutingRoleCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
 
     int32_t UnsetDistributedRoutingRoleCallback();
-
-    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
 
     int32_t RegisterAudioZoneClient(const sptr<IRemoteObject>& object);
 

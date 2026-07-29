@@ -311,7 +311,6 @@ group("audio_fuzz_test") {
     "fuzztest/hpae_fast_sink_output_node_fuzzer:fuzztest",
     "fuzztest/ipcstreaminserver_fuzzer:fuzztest",
     "fuzztest/istandardaudiozoneclient_fuzzer:fuzztest",
-    "fuzztest/istandardspatializationstatechangelistener_fuzzer:fuzztest",
     "fuzztest/microphonedescriptor_fuzzer:fuzztest",
     "fuzztest/audiosystemloadlistener_fuzzer:fuzztest",
     "fuzztest/offlineaudioeffectserverchain_fuzzer:fuzztest",

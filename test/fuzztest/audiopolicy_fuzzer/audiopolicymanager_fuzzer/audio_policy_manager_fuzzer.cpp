@@ -412,8 +412,6 @@ void AudioPolicyManagerSevenFuzzTest(FuzzedDataProvider& fdp)
     std::string address = "address";
     AudioSpatialDeviceState audioSpatialDeviceState;
     uint32_t sessionId = GetData<uint32_t>();
-    StreamUsage streamUsage = GetData<StreamUsage>();
-    std::shared_ptr<AudioSpatializationStateChangeCallback> audioSpatializationStateChangeCallback;
     std::set<int32_t> pids;
     int32_t pid = GetData<int32_t>();
     pids.insert(pid);
@@ -430,9 +428,6 @@ void AudioPolicyManagerSevenFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().IsHeadTrackingSupported();
     AudioPolicyManager::GetInstance().IsHeadTrackingSupportedForDevice(address);
     AudioPolicyManager::GetInstance().UpdateSpatialDeviceState(audioSpatialDeviceState);
-    AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(sessionId,
-        streamUsage, audioSpatializationStateChangeCallback);
-    AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionId);
     AudioPolicyManager::GetInstance().GetConverterConfig();
     AudioPolicyManager::GetInstance().IsHighResolutionExist();
     AudioPolicyManager::GetInstance().SetHighResolutionExist(highResExist);

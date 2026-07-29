@@ -98,7 +98,6 @@ RendererInClientInner::~RendererInClientInner()
         runnerReleased_ = true;
         callbackHandler_ = nullptr;
     }
-    UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
     
     if (pitchProcessor_ != nullptr) {
         pitchProcessor_->PitchAlgoRelease();
@@ -309,7 +308,6 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
     proxyObj_ = proxyObj;
     RegisterTracker(proxyObj);
-    RegisterSpatializationStateEventListener();
     return SUCCESS;
 }
 

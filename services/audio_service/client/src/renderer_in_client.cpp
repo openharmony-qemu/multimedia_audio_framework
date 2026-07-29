@@ -1219,35 +1219,6 @@ bool RendererInClientInner::ProcessVolume()
     return true;
 }
 
-int32_t RendererInClientInner::RegisterSpatializationStateEventListener()
-{
-    if (firstSpatializationRegistered_) {
-        firstSpatializationRegistered_ = false;
-    } else {
-        UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
-    }
-
-    if (!spatializationStateChangeCallback_) {
-        spatializationStateChangeCallback_ = std::make_shared<SpatializationStateChangeCallbackImpl>();
-        CHECK_AND_RETURN_RET_LOG(spatializationStateChangeCallback_, ERROR, "Memory Allocation Failed !!");
-    }
-    spatializationStateChangeCallback_->SetRendererInClientPtr(shared_from_this());
-
-    int32_t ret = AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(
-        sessionId_, rendererInfo_.streamUsage, spatializationStateChangeCallback_);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "RegisterSpatializationStateEventListener failed");
-    spatializationRegisteredSessionID_ = sessionId_;
-
-    return SUCCESS;
-}
-
-int32_t RendererInClientInner::UnregisterSpatializationStateEventListener(uint32_t sessionID)
-{
-    int32_t ret = AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionID);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "UnregisterSpatializationStateEventListener failed");
-    return SUCCESS;
-}
-
 bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
 {
     Trace trace("RendererInClientInner::DrainAudioStreamInner " + std::to_string(sessionId_));
@@ -1326,31 +1297,6 @@ void RendererInClientInner::ResetCallbackLoopTid()
 {
     AUDIO_INFO_LOG("to -1");
     callbackLoopTid_ = -1;
-}
-
-SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()
-{
-    AUDIO_INFO_LOG("Instance create");
-}
-
-SpatializationStateChangeCallbackImpl::~SpatializationStateChangeCallbackImpl()
-{
-    AUDIO_INFO_LOG("Instance destory");
-}
-
-void SpatializationStateChangeCallbackImpl::SetRendererInClientPtr(
-    std::shared_ptr<RendererInClientInner> rendererInClientPtr)
-{
-    rendererInClientPtr_ = rendererInClientPtr;
-}
-
-void SpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
-    const AudioSpatializationState &spatializationState)
-{
-    std::shared_ptr<RendererInClientInner> rendererInClient = rendererInClientPtr_.lock();
-    if (rendererInClient != nullptr) {
-        rendererInClient->OnSpatializationStateChange(spatializationState);
-    }
 }
 
 void RendererInClientInner::FlushSpeedBuffer()
