@@ -787,8 +787,12 @@ private:
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     void FetchDevicesForDescs(
-        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,
-        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inStreamDescs);
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,
+ 	    std::vector<std::shared_ptr<AudioStreamDescriptor>> &inStreamDescs);
+    bool HasRunningScoOutputStream(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs);
+    bool HasRunningScoNormalCapturerStream(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs);
+    bool HasRunningScoRecognitionCapturerStream(
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs);
     void DeactivateBluetoothDevice(bool isRunning);
     bool DeactivateA2dpAfterExclude(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &excludeDeviceDescs,
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs);

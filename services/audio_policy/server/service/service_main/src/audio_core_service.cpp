@@ -1246,14 +1246,16 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
 {
     if (!forceUpdate) {
         CHECK_AND_RETURN(!audioSceneManager_.IsVoiceCallRelatedScene());
-        auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModem();
-        auto inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
-        FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
     }
 
-    bool hasScoRecord = pipeManager_->HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
-    bool hasScoPlay = pipeManager_->HasRunningScoOutputStream();
-    bool hasRecognition = pipeManager_->HasRunningRecognitionCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
+    auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModem();
+    auto inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
+    // Deep copy: streamDescs elements are replaced with new shared_ptr copies in FetchDevicesForDescs
+    FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
+
+    bool hasScoRecord = HasRunningScoNormalCapturerStream(inputStreamDescs);
+    bool hasScoPlay = HasRunningScoOutputStream(outputStreamDescs);
+    bool hasRecognition = HasRunningScoRecognitionCapturerStream(inputStreamDescs);
     bool isScoSelected = hasScoPlay || hasScoRecord || hasRecognition ||
         (audioSceneManager_.IsVoiceCallRelatedScene() &&
             streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
@@ -1320,7 +1322,7 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
     // FetchOutputDeviceAndRoute is triggered by AudioScene changes instead of a single call stream stop.
     if (!audioSceneManager_.IsPhoneCallOrChatSceneTriggeredByUid(streamDesc->callerUid_) ||
         streamCollector_.IsVoipStreamActive()) {
-        FetchOutputDeviceAndRoute(caller);
+        FetchOutputDeviceAndRoute(caller, AudioStreamDeviceChangeReasonExt::ExtEnum::DEVICE_RESELECT);
     }
 
     const StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;

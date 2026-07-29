@@ -510,7 +510,7 @@ public:
         SET_DEFAULT_OUTPUT_DEVICE = 1002,
         DISTRIBUTED_DEVICE_UNAVAILABLE = 1003,
         SET_INPUT_DEVICE = 1004,
-        CALL_OR_RING_TO_DEFAULT = 1005,
+        DEVICE_RESELECT = 1005,
         COLLABORATIVE_STATE_CHANGE = 1006,
         SELECTED_DEVICE_CONNECT_FAILED = 1007,
     };
@@ -576,9 +576,9 @@ public:
         return reason_ == ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE;
     }
 
-    bool IsCallOrRingToDefault() const
+    bool IsDeviceReselect() const
     {
-        return reason_ == ExtEnum::CALL_OR_RING_TO_DEFAULT;
+        return reason_ == ExtEnum::DEVICE_RESELECT;
     }
 
     bool Marshalling(Parcel &parcel) const override
