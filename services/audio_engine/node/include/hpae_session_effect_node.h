@@ -155,7 +155,8 @@ private:
 
     // --- Phase 3C: Crossfade ---
     void ApplyInterceptingFadeIn(float *algoOutput, const float *rawInput, size_t sampleCount);
-    void ApplyCrossfadeMix(float *algoOutput, const float *rawInput, size_t sampleCount);
+    // Close crossfade: per-frame wet→dry mix (same coefficient for all channels in a frame).
+    void ApplyCrossfadeMix(float *dryOutput, const float *wetInput, size_t frameLen, size_t channels);
 
     // --- Phase 3B: Three-stage state machine ---
     // --- Phase 3B-2: Operation matrix ---
