@@ -1385,25 +1385,17 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
     std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action)
 {
     CHECK_AND_RETURN(action == CONCEDE_INCOMING || action == CONCEDE_EXISTING);
+    CHECK_AND_RETURN(existingStream != nullptr && incomingStream != nullptr);
+    CHECK_AND_RETURN(existingStream->IsRunning() || incomingStream->IsRunning());
 
     std::shared_ptr<AudioStreamDescriptor> targetStream =
         (action == CONCEDE_INCOMING) ? existingStream : incomingStream;
     CHECK_AND_RETURN(ShouldAdjustConcedeAction(existingStream, incomingStream, targetStream));
 
-    bool isStreamInSwitch = AudioPipeManager::GetPipeManager()->IsSwitchStreamExist(targetStream->sessionId_);
-    // Stream is in persistenly pasued state, unrelated to trigger recreation.
-    if (targetStream->streamStatus_ != STREAM_STATUS_STARTED && !isStreamInSwitch) {
+    if (!targetStream->IsRunning()) {
         action = (action == CONCEDE_EXISTING) ? CONCEDE_INCOMING : CONCEDE_EXISTING;
-        AUDIO_INFO_LOG("[AdjustConcedeActionByStatus] sessionId_: %{public}u, streamStatus_: %{public}u,"
-            " isStreamInSwitch: %{public}d, action: %{public}d", targetStream->sessionId_,
-            targetStream->streamStatus_, isStreamInSwitch, action);
-    }
-    // Stream requires triggerrecreate to normal pipe, pending execution.
-    if (isStreamInSwitch && targetStream->IsFutureRouteNormal()) {
-        action = (action == CONCEDE_EXISTING) ? CONCEDE_INCOMING : CONCEDE_EXISTING;
-        AUDIO_INFO_LOG("[AdjustConcedeActionByStatus] sessionId_: %{public}u, isStreamInSwitch: %{public}d,"
-            " futureRouteFlag: %{public}u, action: %{public}d", targetStream->sessionId_,
-            isStreamInSwitch, targetStream->futureRouteFlag_, action);
+        AUDIO_INFO_LOG("sessionId_: %{public}u, streamStatus_: %{public}u, action: %{public}d",
+            targetStream->sessionId_, targetStream->streamStatus_, action);
     }
 }
 
