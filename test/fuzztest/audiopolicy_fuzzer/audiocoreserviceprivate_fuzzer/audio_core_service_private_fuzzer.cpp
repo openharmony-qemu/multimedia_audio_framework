@@ -998,8 +998,9 @@ void HandleA2dpSuspendWhenFetchFuzzTest()
     int32_t streamActionCount = static_cast<int32_t>(AudioStreamAction::AUDIO_STREAM_ACTION_RECREATE) + 1;
     audioStreamDescriptor->streamAction_ = static_cast<AudioStreamAction>(GetData<uint8_t>() % streamActionCount);
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
-    uint32_t flag = GetData<uint32_t>();
-    audioCoreService->ProcessOutputPipeReload(pipeInfo, flag, reason);
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = GetData<uint32_t>();
+    audioCoreService->ProcessOutputPipeReload(pipeInfo, flagInfo, reason);
     audioCoreService->MoveToNewOutputDevice(audioStreamDescriptor, pipeInfo, reason);
     audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(audioStreamDescriptor, 0);
 }
