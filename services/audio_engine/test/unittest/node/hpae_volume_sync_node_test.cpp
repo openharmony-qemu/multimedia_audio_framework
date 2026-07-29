@@ -58,6 +58,14 @@ constexpr float TEST_VOLUME_1 = 0.5f;
 // so HpaeVolumeSyncNode::GetRenderSink()'s re-fetch guard does not fire. Used to force
 // SetSinkVolume()'s else branch (audioRendererSink == nullptr).
 constexpr uint32_t BOGUS_CAPTURE_BASE_RENDER_ID = 0x1000u;
+// Compile-time guard against HDI id-layout drift. HDI_ID_BASE_OFFSET (12) is
+// IdHandler-private (id_handler.h:69) and cannot be referenced from tests, but
+// HDI_ID_BASE_CAPTURE (hdi_adapter_info.h:24) IS visible; assert the composed value so
+// a change to the HdiIdBase enum order fails the build instead of silently mis-routing
+// this case (whose whole point is ParseBase != RENDER).
+static_assert(BOGUS_CAPTURE_BASE_RENDER_ID == static_cast<uint32_t>(HDI_ID_BASE_CAPTURE) << 12,
+    "BOGUS_CAPTURE_BASE_RENDER_ID must equal HDI_ID_BASE_CAPTURE(1) << 12; update this "
+    "constant and the comment above if the HDI id base/offset encoding changed");
 
 /**
  * @tc.name  : constructHpaeVolumeSyncNode_001
@@ -742,7 +750,9 @@ HWTEST_F(HpaeVolumeSyncNodeTest, privateMember_renderId_initial_001, TestSize.Le
  * @tc.name  : getRenderSink_invalidId_001
  * @tc.type  : FUNC
  * @tc.number: HpaeVolumeSyncNodeTest_026
- * @tc.desc  : Test GetRenderSink when renderId_ is HDI_INVALID_ID (calls HdiAdapterManager)
+ * @tc.desc  : Test GetRenderSink with a ctor-assigned (non-INVALID) renderId_: the re-fetch
+ *             guard (renderId_ == HDI_INVALID_ID) is skipped, exercising the cached path
+ *             (the @tc.name is historical). The TRUE/re-fetch branch is covered by #039.
  */
 HWTEST_F(HpaeVolumeSyncNodeTest, getRenderSink_invalidId_001, TestSize.Level0)
 {
@@ -757,10 +767,11 @@ HWTEST_F(HpaeVolumeSyncNodeTest, getRenderSink_invalidId_001, TestSize.Level0)
     std::shared_ptr<HpaeVolumeSyncNode> volumeSyncNode = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
     EXPECT_NE(volumeSyncNode->renderId_, HDI_INVALID_ID);
 
-    // Call GetRenderSink - should try to get ID from HdiAdapterManager
-    // In test environment, no real adapter, so it returns nullptr
+    // renderId_ is already valid (ctor-assigned), so GetRenderSink skips its re-fetch
+    // guard and uses the cached id (the TRUE/re-fetch path is covered by #039).
+    // In the test environment no real adapter exists, so the cached lookup returns nullptr.
     auto sink = volumeSyncNode->GetRenderSink();
-    // renderId_ should have been updated (no longer HDI_INVALID_ID)
+    // On the cached path renderId_ is unchanged (still non-INVALID).
     EXPECT_NE(volumeSyncNode->renderId_, HDI_INVALID_ID);
 }
 
