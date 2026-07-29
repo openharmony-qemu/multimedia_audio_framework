@@ -32,6 +32,7 @@
 #include "test_case_common.h"
 #include "fake_audio_effect_lib_entry.h"
 #include "hpae_plugin_node.h"
+#include "mock_effect_instance.h"
 
 using namespace testing::ext;
 
@@ -385,7 +386,7 @@ HWTEST_F(HpaeOffloadSeTest, createSessionEffect_notCurNode_deferred, TestSize.Le
     EXPECT_EQ(callback_->events_.back().state, HPAE_SESSION_RUNNING);
 }
 
-// OSE-3: DestroySessionEffect for active SE → disconnect + restore chain
+// OSE-3: DestroySessionEffect for active SE → BeginClose now, FinalizeClose next HandleMsg
 HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_active, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
@@ -394,6 +395,12 @@ HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_active, TestSize.Level0)
 
     int32_t ret = manager_->DestroySessionEffect(CUR_SESSION_ID);
     EXPECT_EQ(ret, 0);
+    // BeginClose: node stays STOPPING this batch, DISABLED not sent yet.
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    manager_->HandleMsg();  // FinalizeClose runs on the next queued batch
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
@@ -408,13 +415,13 @@ HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_active_restoresChain, TestSize.
 
     int32_t ret = manager_->DestroySessionEffect(CUR_SESSION_ID);
     EXPECT_EQ(ret, 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);  // STOPPING this batch
+    manager_->HandleMsg();  // FinalizeClose: disconnect + restore bypass
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
 
     // Verify chain restored: loudnessGainNode_ reads directly from converterForLoudness_
     // (no SE node in between)
-    // After disconnect+reconnect, loudnessGainNode_'s upstream should be converterForLoudness_
-    // We verify indirectly: no crash when SignalProcess runs on the chain
     ASSERT_NE(manager_->loudnessGainNode_, nullptr);
     ASSERT_NE(manager_->converterForLoudness_, nullptr);
 }
@@ -433,7 +440,7 @@ HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_pending, TestSize.Level0)
     EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
-// OSE-4a: RemoveSessionEffectNode for active SE sends disabled directly
+// OSE-4a: RemoveSessionEffectNode (BeginClose) defers disabled to next HandleMsg
 HWTEST_F(HpaeOffloadSeTest, removeSessionEffectNode_active_sendsDisabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
@@ -441,14 +448,19 @@ HWTEST_F(HpaeOffloadSeTest, removeSessionEffectNode_active_sendsDisabled, TestSi
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
 
-    int32_t ret = manager_->RemoveSessionEffectNode();
+    int32_t ret = manager_->RemoveSessionEffectNode();  // BeginClose
     EXPECT_EQ(ret, 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    manager_->HandleMsg();  // FinalizeClose
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
-// OSE-4a1: RemoveSessionEffectNode waits preheat thread before restoring offload chain
+// OSE-4a1: BeginClose waits preheat thread; FinalizeClose (next batch) clears the cache
 HWTEST_F(HpaeOffloadSeTest, removeSessionEffectNode_waitsPreheatThreadIdle, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
@@ -464,27 +476,117 @@ HWTEST_F(HpaeOffloadSeTest, removeSessionEffectNode_waitsPreheatThreadIdle, Test
     });
     ASSERT_TRUE(node->preheatThread_.joinable());
 
-    int32_t ret = manager_->RemoveSessionEffectNode();
+    int32_t ret = manager_->RemoveSessionEffectNode();  // BeginClose joins preheat thread
 
     EXPECT_EQ(ret, 0);
     EXPECT_TRUE(node->stopRequested_.load());
     EXPECT_FALSE(node->preheatThread_.joinable());
+    // Node stays STOPPING this batch (test still holds `node`, so the object is alive).
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    manager_->HandleMsg();  // FinalizeClose
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
-// OSE-4b: DeleteInputSession drops active SE and sends disabled
+// OSE-4b: DeleteInputSession beats the deferred FinalizeClose and sends disabled exactly once
 HWTEST_F(HpaeOffloadSeTest, deleteInputSession_activeSessionEffect_sendsDisabled, TestSize.Level0)
 {
     auto instance = MakeTestEffectInstance();
     manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
+    // BeginClose first: queues FinalizeClose, sends no DISABLED yet.
+    ASSERT_EQ(manager_->DestroySessionEffect(CUR_SESSION_ID), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    // Preemptive teardown drops the node and emits DISABLED.
     manager_->DeleteInputSession();
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    // The stale FinalizeClose must no-op (identity check fails) and NOT send a second DISABLED.
+    manager_->HandleMsg();
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE-5: Rapid recreate while old node is STOPPING requeues until FinalizeClose completes
+HWTEST_F(HpaeOffloadSeTest, destroyThenCreate_requeuesUntilOldNodeFinalized, TestSize.Level0)
+{
+    auto oldInstance = MakeTestEffectInstance();
+    auto newInstance = MakeTestEffectInstance();
+    ASSERT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "old_effect", oldInstance, config_), 0);
+    ASSERT_EQ(manager_->DestroySessionEffect(CUR_SESSION_ID), 0);  // BeginClose
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+
+    // Create sees STOPPING: defers (no attach state, no enabled), requeues the request.
+    EXPECT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "new_effect", newInstance, config_), 0);
+    EXPECT_FALSE(curNode_->HasSessionEffectAttachState());
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    manager_->HandleMsg();  // FinalizeClose (old) then retried Create (new)
+
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetEffectName(), "new_effect");
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
+    ASSERT_GE(callback_->events_.size(), 3u);
+    EXPECT_EQ(callback_->events_[callback_->events_.size() - 2].operation,
+        OPERATION_SESSION_EFFECT_DISABLED);
+    EXPECT_EQ(callback_->events_.back().operation, OPERATION_SESSION_EFFECT_ENABLED);
+}
+
+// OSE-6: FinalizeClose is deferred to the NEXT HandleMsg batch (production path)
+HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_defersFinalizeToNextHandleMsg, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    manager_->isInit_.store(true);  // PostDestroySessionEffect uses SendRequest (needs IsInit)
+
+    // Post Destroy as a queued request, mimicking the signal-thread dispatch path:
+    // BeginClose runs inside HandleMsg, so the FinalizeClose it pushes is excluded from this
+    // snapshot and must wait for the next HandleMsg.
+    manager_->PostDestroySessionEffect(CUR_SESSION_ID);
+    manager_->HandleMsg();  // batch N: Destroy -> BeginClose -> push Finalize (excluded)
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    manager_->HandleMsg();  // batch N+1: FinalizeClose deletes node + emits disabled
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE-7: Same-instance rapid recreate -> Finalize detaches old node without Flush/Stop
+HWTEST_F(HpaeOffloadSeTest, destroyThenCreate_sameInstance_finalizesWithoutStop, TestSize.Level0)
+{
+    auto mockInst = std::make_shared<testing::NiceMock<MockEffectInstance>>();
+    ON_CALL(*mockInst, GetPreheatFrames()).WillByDefault(testing::Return(0));
+    // Same-instance reuse path must NOT disable/flush the shared algorithm instance.
+    EXPECT_CALL(*mockInst, StopEffect()).Times(0);
+    EXPECT_CALL(*mockInst, Flush()).Times(0);
+
+    ASSERT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", mockInst, config_), 0);
+    ASSERT_EQ(manager_->DestroySessionEffect(CUR_SESSION_ID), 0);  // BeginClose
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+
+    // Rapid recreate with the SAME instance object while the old node is STOPPING.
+    ASSERT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", mockInst, config_), 0);
+    manager_->HandleMsg();  // Finalize (same instance -> DetachEffectForReload) + retried Create
+
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetEffectInstance().get(), mockInst.get());
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
+
+    // Verify before TearDown, which drops the new node and WOULD call StopEffect.
+    testing::Mock::VerifyAndClearExpectations(mockInst.get());
 }
 
 // OSE-4c: DestroyStream clears attach state and sends disabled for non-curNode
@@ -734,6 +836,13 @@ protected:
         probe_ = std::make_shared<OffloadProbeNode>(probeInfo);
         probe_->Connect(manager_->loudnessGainNode_);
 
+        // curNode_ marker (RUNNING) so FinalizeClose restores the bypass chain, mirroring the
+        // production single-stream model where the active stream is always curNode_.
+        curNode_ = std::make_shared<HpaeSinkInputNode>(curInfo);
+        curNode_->SetState(HPAE_SESSION_RUNNING);
+        manager_->curNode_ = curNode_;
+        manager_->sinkInputNodeMap_[CUR_SESSION_ID] = curNode_;
+
         manager_->sessionEffectSessionId_ = CUR_SESSION_ID;
     }
 
@@ -757,6 +866,7 @@ protected:
 
     FakeAudioEffectLibEntry fake_;
     std::shared_ptr<OffloadMockSourceNode> source_;
+    std::shared_ptr<HpaeSinkInputNode> curNode_;
     std::shared_ptr<HpaeOffloadRendererManager> manager_;
     std::shared_ptr<OffloadProbeNode> probe_;
     AudioEffectConfig config_ = MakeTestConfig();
@@ -855,8 +965,14 @@ HWTEST_F(HpaeOffloadSeDataflowTest, remove_restoresPassthrough, TestSize.Level0)
     probe_->DoProcess();  // INTERCEPTING→ACTIVE
     ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
 
-    // Remove SE
+    // BeginClose: node enters STOPPING (one aligned wet->dry opportunity if pulled this cycle).
     manager_->RemoveSessionEffectNode();
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+    probe_->DoProcess();  // close frame while STOPPING
+
+    // FinalizeClose (next HandleMsg batch) deletes the node and restores the bypass chain.
+    manager_->HandleMsg();
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
 
     // Data should pass through directly
@@ -882,13 +998,15 @@ HWTEST_F(HpaeOffloadSeDataflowTest, insert_topo_correct, TestSize.Level0)
     EXPECT_EQ(manager_->loudnessGainNode_->GetPreOutNum(), 1u);
 }
 
-// OSE-TOPO-2: RemoveSessionEffectNode -- chain restored
+// OSE-TOPO-2: RemoveSessionEffectNode -- chain restored (after deferred FinalizeClose)
 HWTEST_F(HpaeOffloadSeDataflowTest, remove_topo_restored, TestSize.Level0)
 {
     auto instance = CreateEffectInstance();
     manager_->InsertSessionEffectNode("test_effect", instance, config_);
 
-    manager_->RemoveSessionEffectNode();
+    manager_->RemoveSessionEffectNode();  // BeginClose
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    manager_->HandleMsg();  // FinalizeClose: disconnect SE + restore bypass
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->loudnessGainNode_->GetPreOutNum(), 1u);
 }
