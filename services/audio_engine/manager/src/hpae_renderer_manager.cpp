@@ -1895,7 +1895,8 @@ int32_t HpaeRendererManager::UpdateCollaborativeState(CollaborationState isColla
 
 int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
 {
-    if (!SafeGetMap(sinkInputNodeMap_, sessionId) || sinkInfo_.deviceClass != "primary") {
+    if (!SafeGetMap(sinkInputNodeMap_, sessionId) ||
+        (sinkInfo_.deviceClass != "primary" && sinkInfo_.deviceClass != "primary_extra")) {
         return ERR_INVALID_OPERATION;
     }
     auto &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();

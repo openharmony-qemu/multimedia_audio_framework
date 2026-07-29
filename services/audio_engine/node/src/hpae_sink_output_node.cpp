@@ -444,7 +444,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
     if (IsRemoteDeviceClass(GetDeviceClass())) {
         remoteTimePoint_ = std::chrono::high_resolution_clock::now();
     }
-    if (GetDeviceClass() == "primary") {
+    if (GetDeviceClass() == "primary" || GetDeviceClass() == "primary_extra") {
         ret = audioRendererSink_->SetPaPower(true);
         isOpenPaPower_ = true;
         isDisplayPaPowerState_ = false;
@@ -568,7 +568,7 @@ void HpaeSinkOutputNode::UpdateAuxiliarySinkState(StreamChangeType change,
 
 void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
 {
-    if (GetDeviceClass() != "primary") {
+    if (GetDeviceClass() != "primary" && GetDeviceClass() != "primary_extra") {
         return;
     }
     CHECK_AND_RETURN(collaborationState_ == COLLABORATION_CLOSE);
