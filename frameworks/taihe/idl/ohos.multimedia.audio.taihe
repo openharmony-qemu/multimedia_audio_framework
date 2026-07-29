@@ -555,6 +555,12 @@ interface AudioVolumeManager {
   @gen_promise("setAppVolumeMutedForUid")
   SetAppVolumeMutedForUidSync(uid: i32, muted: bool): void;
 
+  @gen_promise("setVoipRendererMuteForUid")
+  SetVoipRendererMuteForUidSync(uid: i32, streamId: i64, muted: bool): void;
+
+  @gen_promise("setVoipCapturerMuteForUid")
+  SetVoipCapturerMuteForUidSync(uid: i32, streamId: i64, muted: bool): void;
+
   @gen_promise("getAppVolumePercentage")
   GetAppVolumePercentageSync(): i32;
 
