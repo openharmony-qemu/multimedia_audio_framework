@@ -5252,12 +5252,14 @@ int32_t AudioPolicyServer::SetDeviceVolumeBehavior(const std::string &networkId,
         return ERR_PERMISSION_DENIED;
     }
     FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "SetDeviceVolumeBehavior_1", ROUTER_TYPE_USER_SELECT};
+    info.isRunning = true;
     auto mediaDeviceList = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!mediaDeviceList.empty(), ERROR, "mediaDeviceList is empty");
     std::shared_ptr<AudioDeviceDescriptor> newMediaDescriptor = mediaDeviceList.front();
     CHECK_AND_RETURN_RET_LOG(newMediaDescriptor != nullptr, ERROR, "newMediaDescriptor is nullptr");
 
     info = { STREAM_USAGE_VOICE_COMMUNICATION, "SetDeviceVolumeBehavior_2", ROUTER_TYPE_USER_SELECT};
+    info.isRunning = true;
     auto callDeviceList = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!callDeviceList.empty(), ERROR, "callDeviceList is empty");
     std::shared_ptr<AudioDeviceDescriptor> newCallDescriptor = callDeviceList.front();

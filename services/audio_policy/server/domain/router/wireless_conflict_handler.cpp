@@ -107,16 +107,9 @@ void WirelessConflictHandler::FindHighestPriorityDevice()
             }
         }
     };
-    
+
     findPriority(outputStreamDevices_, true, true);
     findPriority(inputStreamDevices_, false, true);
-    
-    if (cachedHighestPriority_ > 0) {
-        return;
-    }
-    
-    findPriority(outputStreamDevices_, true, false);
-    findPriority(inputStreamDevices_, false, false);
 }
 
 bool WirelessConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType)
