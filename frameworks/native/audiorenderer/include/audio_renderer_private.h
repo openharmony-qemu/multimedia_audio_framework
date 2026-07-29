@@ -238,7 +238,7 @@ private:
     int32_t CheckAndStopAudioRenderer(std::string callingFunc);
     bool WaitSwitchStreamIfNeeded(bool needWait = false);
     int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
-        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag);
+        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, StreamFlagInfo &flagInfo);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
     std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);

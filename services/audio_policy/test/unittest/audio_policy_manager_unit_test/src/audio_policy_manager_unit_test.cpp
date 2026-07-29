@@ -16,6 +16,7 @@
 #include "audio_errors.h"
 #include "audio_policy_manager_unit_test.h"
 #include "audio_utils.h"
+#include "stream_flag_info.h"
 
 using namespace testing::ext;
 
@@ -628,10 +629,11 @@ HWTEST(AudioPolicyManager, CreateRendererClient_001, TestSize.Level1)
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 123;
     std::string networkId = LOCAL_NETWORK_ID;
-    auto result = audioPolicyManager_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    auto result = audioPolicyManager_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result,  SUCCESS);
 }
 
@@ -655,15 +657,16 @@ HWTEST(AudioPolicyManager, CreateRendererClient_002, TestSize.Level1)
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
-    auto result = audioPolicyManager->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    auto result = audioPolicyManager->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_NE(originalSessionId, 0);
 
     uint32_t oldSessionId = originalSessionId;
-    result = audioPolicyManager->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    result = audioPolicyManager->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(originalSessionId, oldSessionId);
 }

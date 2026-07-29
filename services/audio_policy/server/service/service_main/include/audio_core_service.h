@@ -28,6 +28,7 @@
 #include "audio_stream_descriptor.h"
 #include "audio_device_descriptor.h"
 #include "audio_info.h"
+#include "stream_flag_info.h"
 #include "audio_debug_info.h"
 #include "audio_ec_info.h"
 #include "microphone_descriptor.h"
@@ -123,7 +124,7 @@ public:
 
         // Stream operations
         int32_t CreateRendererClient(
-            std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId,
+            std::shared_ptr<AudioStreamDescriptor> &streamDesc, StreamFlagInfo &flagInfo, uint32_t &sessionId,
             std::string &networkId);
         int32_t CreateCapturerClient(
             std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
@@ -346,7 +347,7 @@ public:
     // Called by EventEntry - with lock
     // Stream operations
     int32_t CreateRendererClient(
-        std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &audioFlag, uint32_t &sessionId,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc, StreamFlagInfo &flagInfo, uint32_t &sessionId,
         std::string &networkId);
     void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t CreateCapturerClient(
@@ -595,7 +596,7 @@ private:
     void NotifyUnmuteVoiceCall();
     void SetUpdateModemRouteFinished(bool flag);
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
-    void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
+    void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
         const AudioStreamDeviceChangeReasonExt reason);
     void RecordSelectDevice(const std::string &history);
     std::string ParsePreferredInputDeviceHistory(std::shared_ptr<AudioStreamDescriptor> streamDesc);
@@ -612,11 +613,11 @@ private:
     int32_t FetchDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        uint32_t &sessionId, uint32_t &audioFlag,
+        uint32_t &sessionId, StreamFlagInfo &flagInfo,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    void ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
+    void ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
         const AudioStreamDeviceChangeReasonExt reason);
-    void ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
+    void ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t FetchCapturerPipeAndExecute(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
@@ -826,9 +827,9 @@ private:
     void HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     void CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool forceUpdate);
     void ForceStopInterphoneStreamsIfNecessary(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
-    int32_t CheckStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc, uint32_t& audioFlag);
+    int32_t CheckStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc, StreamFlagInfo& flagInfo);
     int32_t CreateCallCommunicationRenderer(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        uint32_t &audioFlag, uint32_t sessionId);
+        StreamFlagInfo &flagInfo, uint32_t sessionId);
     int32_t CheckCapturerStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
     void LoadInnerCapturerSink(std::string moduleName, AudioStreamInfo streamInfo);
     void UnloadInnerCapturerSink(std::string moduleName);

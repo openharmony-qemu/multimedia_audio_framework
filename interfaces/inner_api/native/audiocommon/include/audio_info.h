@@ -1589,6 +1589,7 @@ enum PlayOtherErrorCode {
     TYPE_OFFLOAD_NOT_ENOUGH_DATA,
     TYPE_GET_TIMESTAMP_TOO_FREQUENTLY,
     TYPE_FAST_ABUSE,
+    TYPE_FAST_PREFERRED_FRAME_SIZE_OUT_OF_RANGE,
 };
 
 // LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.

@@ -643,7 +643,7 @@ void AudioCoreService::SetOpenedNormalSourceSessionId(uint64_t sessionId)
 }
 
 int32_t AudioCoreService::CheckStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc,
-    uint32_t& audioFlag)
+    StreamFlagInfo& flagInfo)
 {
     // Check interphone stream conflict with VoIP/Cellular stream
     if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_INTERPHONE) {
@@ -651,7 +651,7 @@ int32_t AudioCoreService::CheckStreamConflicts(const std::shared_ptr<AudioStream
             AUDIO_ERR_LOG("Cannot create interphone renderer: VoIP or Cellular stream is active");
             return ERR_ILLEGAL_STATE;
         }
-        audioFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+        flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_INTERPHONE;
         streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_INTERPHONE;
     }
@@ -668,7 +668,7 @@ int32_t AudioCoreService::CheckStreamConflicts(const std::shared_ptr<AudioStream
 }
 
 int32_t AudioCoreService::CreateCallCommunicationRenderer(
-    std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &audioFlag, uint32_t sessionId)
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, StreamFlagInfo &flagInfo, uint32_t sessionId)
 {
     StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     AUDIO_INFO_LOG("Call communication renderer create, streamUsage=%{public}d, sessionId %{public}u",
@@ -683,7 +683,7 @@ int32_t AudioCoreService::CreateCallCommunicationRenderer(
         AUDIO_ERR_LOG("Cannot create Call communication renderer: another call stream already exists");
         return ERR_ILLEGAL_STATE;
     }
-    audioFlag = AUDIO_FLAG_NORMAL;
+    flagInfo.audioFlag = AUDIO_FLAG_NORMAL;
     AddSessionId(sessionId);
     if (streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) {
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_TRANSFER_COMMUNICATION;
@@ -692,12 +692,13 @@ int32_t AudioCoreService::CreateCallCommunicationRenderer(
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_MODEM_COMMUNICATION;
         streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_MODEM_COMMUNICATION;
     }
+    flagInfo.staticCheckFlag = static_cast<uint32_t>(streamDesc->audioFlag_);
     pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
     return SUCCESS;
 }
 
 int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    uint32_t &audioFlag, uint32_t &sessionId, std::string &networkId)
+    StreamFlagInfo &flagInfo, uint32_t &sessionId, std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "stream desc is nullptr");
     if (sessionId == 0) {
@@ -715,13 +716,13 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     if ((streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && !streamDesc->rendererInfo_.toneFlag) ||
         streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) {
-        return CreateCallCommunicationRenderer(streamDesc, audioFlag, sessionId);
+        return CreateCallCommunicationRenderer(streamDesc, flagInfo, sessionId);
     }
     CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0
         && streamDesc->newDeviceDescs_.front() != nullptr, ERR_NULL_POINTER, "Invalid deviceDesc");
 
     // Check interphone stream conflict with VoIP/Cellular stream
-    int32_t ret = CheckStreamConflicts(streamDesc, audioFlag);
+    int32_t ret = CheckStreamConflicts(streamDesc, flagInfo);
     if (ret != SUCCESS) {
         return ret;
     }
@@ -735,7 +736,9 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     // Fetch pipe
     audioActiveDevice_.UpdateStreamDeviceMapForOutput("CreateRendererClient");
     audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
-    ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
+    ret = FetchRendererPipeAndExecute(streamDesc, sessionId, flagInfo);
+    flagInfo.staticCheckFlag = static_cast<uint32_t>(streamDesc->audioFlag_);
+    flagInfo.isSupportUltraFast = static_cast<bool>(isSupportUltraFast_);
     networkId = streamDesc->newDeviceDescs_.front()->networkId_;
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);

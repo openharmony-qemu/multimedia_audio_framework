@@ -114,15 +114,15 @@ void AudioCoreService::EventEntry::NotifyServiceReady()
     coreService_->NotifyServiceReady();
 }
 
-int32_t AudioCoreService::EventEntry::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
+int32_t AudioCoreService::EventEntry::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    StreamFlagInfo &flagInfo, uint32_t &sessionId, std::string &networkId)
 {
     int32_t waitRet = WaitForReadyConditions();
     RecordBootStateTime(static_cast<int32_t>(BootAnimationState::WAIT_FOR_SERVICE_READY), streamDesc->GetRealUid(),
         ClockTime::GetCurMilli());
     CHECK_AND_RETURN_RET(waitRet != ERR_RETRY_IN_CLIENT, ERR_RETRY_IN_CLIENT);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->CreateRendererClient(streamDesc, flag, sessionId, networkId);
+    coreService_->CreateRendererClient(streamDesc, flagInfo, sessionId, networkId);
     return SUCCESS;
 }
 

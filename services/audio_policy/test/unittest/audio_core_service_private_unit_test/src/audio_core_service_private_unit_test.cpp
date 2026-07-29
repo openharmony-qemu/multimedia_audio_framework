@@ -14,6 +14,7 @@
  */
 
 #include "audio_core_service_private_unit_test.h"
+#include "stream_flag_info.h"
 #include "hisysevent.h"
 #include "audio_utils.h"
 #include "mock_audio_arm_device_behavior.h"
@@ -517,7 +518,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_037, TestSize.Leve
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioStreamDescriptor->streamAction_ = AUDIO_STREAM_ACTION_NEW;
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
-    uint32_t flag = 0;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = 0;
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -525,7 +527,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_037, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->ProcessOutputPipeNew(pipeInfo, flag, reason);
+    audioCoreService->ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -543,7 +545,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_038, TestSize.Leve
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioStreamDescriptor->streamAction_ = AUDIO_STREAM_ACTION_MOVE;
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
-    uint32_t flag = 0;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = 0;
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -551,7 +554,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_038, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->ProcessOutputPipeNew(pipeInfo, flag, reason);
+    audioCoreService->ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -569,7 +572,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_039, TestSize.Leve
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioStreamDescriptor->streamAction_ = AUDIO_STREAM_ACTION_RECREATE;
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
-    uint32_t flag = 0;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = 0;
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -577,7 +581,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_039, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->ProcessOutputPipeNew(pipeInfo, flag, reason);
+    audioCoreService->ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -595,7 +599,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_040, TestSize.Leve
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioStreamDescriptor->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
-    uint32_t flag = 0;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = 0;
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -603,7 +608,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_040, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->ProcessOutputPipeNew(pipeInfo, flag, reason);
+    audioCoreService->ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -1173,7 +1178,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_100, TestSize.Leve
     audioStreamDescriptor->streamAction_ = AUDIO_STREAM_ACTION_NEW;
     audioStreamDescriptor->routeFlag_ = AUDIO_OUTPUT_FLAG_DIRECT;
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
-    uint32_t flag = 0;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = 0;
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -1181,8 +1187,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_100, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->ProcessOutputPipeUpdate(pipeInfo, flag, reason);
-    EXPECT_EQ(flag, AUDIO_OUTPUT_FLAG_DIRECT);
+    audioCoreService->ProcessOutputPipeUpdate(pipeInfo, flagInfo, reason);
+    EXPECT_EQ(flagInfo.audioFlag, AUDIO_OUTPUT_FLAG_DIRECT);
     ASSERT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -1201,7 +1207,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_101, TestSize.Leve
     audioStreamDescriptor->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
 
-    uint32_t flag = 0;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = 0;
 
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
@@ -1211,7 +1218,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_101, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->ProcessOutputPipeUpdate(pipeInfo, flag, reason);
+    audioCoreService->ProcessOutputPipeUpdate(pipeInfo, flagInfo, reason);
     ASSERT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -1231,7 +1238,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_102, TestSize.Leve
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
     pipeInfo->moduleInfo_.name = BLUETOOTH_MIC;
 
-    uint32_t flag = 0;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = 0;
 
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
@@ -1241,7 +1249,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_102, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->ProcessOutputPipeUpdate(pipeInfo, flag, reason);
+    audioCoreService->ProcessOutputPipeUpdate(pipeInfo, flagInfo, reason);
     ASSERT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -1261,7 +1269,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_103, TestSize.Leve
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
     pipeInfo->moduleInfo_.name = OFFLOAD_PRIMARY_SPEAKER;
 
-    uint32_t flag = 0;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = 0;
 
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
@@ -1271,7 +1280,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_103, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->ProcessOutputPipeUpdate(pipeInfo, flag, reason);
+    audioCoreService->ProcessOutputPipeUpdate(pipeInfo, flagInfo, reason);
     ASSERT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -3806,10 +3815,11 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_001, TestSize.
     AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
 
     uint32_t sessionId = 100001;
-    uint32_t audioFlag = 16;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = 16;
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
-    audioCoreService->FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag, reason);
+    audioCoreService->FetchRendererPipeAndExecute(streamDesc, sessionId, flagInfo, reason);
     EXPECT_TRUE(AudioPipeManager::GetPipeManager()->curPipeList_.size() == 1);
 
     auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
@@ -3850,10 +3860,11 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_002, TestSize.
     AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
 
     uint32_t sessionId = 100001;
-    uint32_t audioFlag = 16;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = 16;
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     AudioStreamDeviceChangeReasonExt reason(extEnum);
-    audioCoreService->FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag, reason);
+    audioCoreService->FetchRendererPipeAndExecute(streamDesc, sessionId, flagInfo, reason);
     EXPECT_TRUE(AudioPipeManager::GetPipeManager()->curPipeList_.size() == 1);
 
     auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);

@@ -27,6 +27,7 @@
 #include "audio_router_select_strategy.h"
 #include "i_hpae_manager.h"
 #include "audio_volume.h"
+#include "stream_flag_info.h"
 using namespace testing::ext;
 
 namespace OHOS {
@@ -187,10 +188,11 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_001, TestSize.Level1)
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -214,9 +216,10 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_002, TestSize.Level1)
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     uint32_t originalSessionId = 0;
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkId = LOCAL_NETWORK_ID;
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -231,17 +234,18 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_003, TestSize.Level1)
     streamDesc->rendererInfo_.toneFlag = false;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
     uint32_t originalSessionId = 0;
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkId = LOCAL_NETWORK_ID;
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
 
     streamDesc->rendererInfo_.toneFlag = false;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_CALL_ASSISTANT;
-    result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
 
     streamDesc->rendererInfo_.toneFlag = true;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
-    result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -273,9 +277,10 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_004, TestSize.Level1)
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
     uint32_t originalSessionId = 0;
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkId = LOCAL_NETWORK_ID;
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -307,9 +312,10 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_005, TestSize.Level1)
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
     uint32_t originalSessionId = 0;
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkId = LOCAL_NETWORK_ID;
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -3561,7 +3567,8 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCoreServiceUnitTest_Interphone_001, Test
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
 
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
 
@@ -3572,7 +3579,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCoreServiceUnitTest_Interphone_001, Test
     streamDesc->newDeviceDescs_.clear();
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 
     result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, false);
@@ -3723,10 +3730,10 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRendererClient_null_001, TestSize.Level
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
-    uint32_t audioFlag = 0;
+    StreamFlagInfo flagInfo;
     uint32_t sessionId = 0;
     std::string networkId;
-    int32_t ret = audioCoreService->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
+    int32_t ret = audioCoreService->CreateRendererClient(streamDesc, flagInfo, sessionId, networkId);
     EXPECT_EQ(ret, ERR_NULL_POINTER);
 }
 
@@ -7369,12 +7376,13 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
     streamDesc->newDeviceDescs_.clear();
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
 
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
     pipeManager->AddSingleSwitchStream(originalSessionId, streamDesc);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
@@ -7384,7 +7392,7 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
 
     originalSessionId = 0;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
-    result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
     pipeManager->AddSingleSwitchStream(originalSessionId, streamDesc);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));

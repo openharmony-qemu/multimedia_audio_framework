@@ -239,7 +239,7 @@ public:
     void SetCallbackLoopTid(int32_t tid) override;
     int32_t GetCallbackLoopTid() override;
     int32_t SetOffloadDataCallbackState(int32_t cbState) override;
-    void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) override;
+    void NotifyRouteUpdate(const StreamFlagInfo &flagInfo, const std::string &networkId) override;
     bool GetStopFlag() const override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
     int32_t SetRenderTarget(RenderTarget renderTarget) override;
@@ -259,6 +259,7 @@ public:
     bool ResetStaticPlayPosition() override;
     int32_t ResetNotifyStreamSilentChangeFlag() override;
     void ReportExceptionForInterval();
+    void ReportPreferredFrameSizeOutOfRange(int32_t frameSize, size_t minByte, size_t maxByte);
     void CheckAndReportTimestamp();
 
     bool IsFastStream() const
@@ -276,6 +277,8 @@ public:
     {
         return clientConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
     }
+
+    bool IsUltraFastStreamRequested() const;
 
     void SetupFastStreamThreadPriority();
 
@@ -639,6 +642,8 @@ private:
 
     std::mutex setPreferredFrameSizeMutex_;
     std::optional<int32_t> userSettedPreferredFrameSize_ = std::nullopt;
+    uint32_t staticCheckFlag_ = 0;
+    bool isSupportUltraFast_ = false;
 
     int32_t sleepCount_ = LOG_COUNT_LIMIT;
     DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;

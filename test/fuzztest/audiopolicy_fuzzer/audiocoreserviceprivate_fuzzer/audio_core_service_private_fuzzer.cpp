@@ -397,7 +397,7 @@ void ProcessOutputPipeNewFuzzTest()
     int32_t streamActionCount = static_cast<int32_t>(AudioStreamAction::AUDIO_STREAM_ACTION_RECREATE) + 1;
     audioStreamDescriptor->streamAction_ = static_cast<AudioStreamAction>(GetData<uint8_t>() % streamActionCount);
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
-    uint32_t flag = 0;
+    StreamFlagInfo flagInfo;
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -405,7 +405,7 @@ void ProcessOutputPipeNewFuzzTest()
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->ProcessOutputPipeNew(pipeInfo, flag, reason);
+    audioCoreService->ProcessOutputPipeNew(pipeInfo, flagInfo, reason);
 }
 
 void GetRealUidFuzzTest()
@@ -998,8 +998,9 @@ void HandleA2dpSuspendWhenFetchFuzzTest()
     int32_t streamActionCount = static_cast<int32_t>(AudioStreamAction::AUDIO_STREAM_ACTION_RECREATE) + 1;
     audioStreamDescriptor->streamAction_ = static_cast<AudioStreamAction>(GetData<uint8_t>() % streamActionCount);
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
-    uint32_t flag = GetData<uint32_t>();
-    audioCoreService->ProcessOutputPipeReload(pipeInfo, flag, reason);
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = GetData<uint32_t>();
+    audioCoreService->ProcessOutputPipeReload(pipeInfo, flagInfo, reason);
     audioCoreService->MoveToNewOutputDevice(audioStreamDescriptor, pipeInfo, reason);
     audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(audioStreamDescriptor, 0);
 }

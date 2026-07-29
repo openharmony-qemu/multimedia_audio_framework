@@ -1681,9 +1681,10 @@ HWTEST(AudioRendererUnitTest, SetSourceDuration_001, TestSize.Level1)
     AudioStreamParams audioStreamParams;
     const AudioStreamType audioStreamType = STREAM_VOICE_CALL;
     IAudioStream::StreamClass streamClass;
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
 
-    int32_t ret = audioRendererPrivate->PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, flag);
+    int32_t ret = audioRendererPrivate->PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, flagInfo);
     EXPECT_EQ(ret, SUCCESS);
 
     audioRendererPrivate->SetSourceDuration(duration);
