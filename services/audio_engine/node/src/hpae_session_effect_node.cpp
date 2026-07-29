@@ -278,7 +278,7 @@ void HpaeSessionEffectNode::ReconfigRawBypassBuffers(const AudioEffectConfig &co
         config.inputCfg.samplingRate : static_cast<uint32_t>(GetSampleRate());
     uint32_t channels = config.inputCfg.channels != 0 ? config.inputCfg.channels : GetChannelCount();
     uint32_t frameLen = static_cast<uint32_t>(GetFrameLen());
-    CHECK_AND_RETURN_LOG(samplingRate != 0 && channels != 0 && frameLen != 0 ,
+    CHECK_AND_RETURN_LOG(samplingRate != 0 && channels != 0 && frameLen != 0,
         "ReconfigRawBypassBuffers skipped: samplingRate=%{public}u channels=%{public}u "
         "frameLen=%{public}u", samplingRate, channels, frameLen);
     size_t frameBytes = 0;
