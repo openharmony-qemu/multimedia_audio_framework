@@ -3399,12 +3399,8 @@ bool RendererInServer::IsMovieStream()
 
 int32_t RendererInServer::SetTarget(RenderTarget target, int32_t targetUid, uint32_t targetStreamId, int32_t &ret)
 {
-    ret = ERROR;
-    if (!PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("verify system permission failed");
-        ret = ERR_SYSTEM_PERMISSION_DENIED;
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "verify system permission failed");
     bool noTargetParams = (targetUid == INVALID_UID && targetStreamId == INVALID_STREAM_ID);
     bool hasTargetParams = (targetUid != INVALID_UID && targetStreamId != INVALID_STREAM_ID);
     if (!noTargetParams && !hasTargetParams) {
