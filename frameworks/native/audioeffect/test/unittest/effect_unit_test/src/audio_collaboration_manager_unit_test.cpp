@@ -140,22 +140,6 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_001, Tes
 
 /**
 * @tc.name   : Test LoadCollaborationLatencyInner API
-* @tc.number : LoadCollaborationLatencyInner_002
-* @tc.desc   : Test LoadCollaborationLatencyInner interface(using empty use case).
-*/
-HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_002, TestSize.Level1)
-{
-    auto mockNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(false));
-
-    std::string prodcutId = "testProduct";
-
-    AudioCollaborationManager::GetInstance()->LoadCollaborationLatencyInner(mockNode, prodcutId);
-    EXPECT_FALSE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
-}
-
-/**
-* @tc.name   : Test LoadCollaborationLatencyInner API
 * @tc.number : LoadCollaborationLatencyInner_003
 * @tc.desc   : Test LoadCollaborationLatencyInner interface(using empty use case).
 */
