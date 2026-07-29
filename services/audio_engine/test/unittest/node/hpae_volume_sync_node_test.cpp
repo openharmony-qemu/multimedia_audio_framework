@@ -747,14 +747,14 @@ HWTEST_F(HpaeVolumeSyncNodeTest, privateMember_renderId_initial_001, TestSize.Le
 }
 
 /**
- * @tc.name  : getRenderSink_invalidId_001
+ * @tc.name  : getRenderSink_ctorAssignedId_001
  * @tc.type  : FUNC
  * @tc.number: HpaeVolumeSyncNodeTest_026
  * @tc.desc  : Test GetRenderSink with a ctor-assigned (non-INVALID) renderId_: the re-fetch
- *             guard (renderId_ == HDI_INVALID_ID) is skipped, exercising the cached path
- *             (the @tc.name is historical). The TRUE/re-fetch branch is covered by #039.
+ *             guard (renderId_ == HDI_INVALID_ID) is skipped, exercising the cached path.
+ *             The TRUE/re-fetch branch is covered by #039.
  */
-HWTEST_F(HpaeVolumeSyncNodeTest, getRenderSink_invalidId_001, TestSize.Level0)
+HWTEST_F(HpaeVolumeSyncNodeTest, getRenderSink_ctorAssignedId_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
@@ -1164,27 +1164,10 @@ HWTEST_F(HpaeVolumeSyncNodeTest, getRenderSink_forcedInvalidId_resets_001, TestS
  * @tc.name  : setSinkVolume_nullSink_001
  * @tc.type  : FUNC
  * @tc.number: HpaeVolumeSyncNodeTest_040
- * @tc.desc  : Cover SetSinkVolume else branch (audioRendererSink == nullptr) by forcing renderId_
- *             to BOGUS_CAPTURE_BASE_RENDER_ID (HDI id base = CAPTURE ≠ RENDER) so
- *             HdiAdapterManager::GetRenderSink returns nullptr. NOTE: the ctor hardcodes renderId_
- *             to the voip render id (independent of deviceClass, hence deviceClass = "primary" here
- *             is irrelevant); this case forcibly overwrites renderId_ to a bogus CAPTURE-base id so
- *             GetRenderSink returns nullptr — merely changing deviceClass would NOT null the sink.
- *             The else body emits only an AUDIO_WARNING_LOG with no observable side effect, so this
- *             case is honestly classified as branch-coverage (NOT delete-line discrimination on the
- *             else body).
- *             Discrimination here comes from two other points:
- *               (1) Precondition lock (primary discriminator): EXPECT_EQ(GetRenderSink(), nullptr)
- *                   before calling SetSinkVolume pins down "sink is null → else is taken, if is
- *                   not". If renderId_ is not corrupted (sink non-null, e.g. forgetting to set it),
- *                   this EXPECT_EQ fails → case fails. This is what separates "else ran" from
- *                   "if ran".
- *               (2) Guard delete-line discrimination: after SetSinkVolume(0.5f) the trivial
- *                   GetSessionId() assertion must be reachable → process survived. If someone
- *                   deletes the production `if (audioRendererSink != nullptr)` guard, then with
- *                   sink == nullptr the body would dereference null via SetVolume() → sanitizer
- *                   abort → the post assertion becomes unreachable → case fails. I.e. the guard
- *                   is what protects against null-deref, and removing it makes this case fail.
+ * @tc.desc  : Cover SetSinkVolume else branch (sink == nullptr) by forcing renderId_ to
+ *             BOGUS_CAPTURE_BASE_RENDER_ID (CAPTURE base: ≠ RENDER → GetRenderSink returns nullptr,
+ *             ≠ INVALID → re-fetch guard skipped). Branch-coverage case; the deviceClass note and
+ *             branch-discrimination rationale are documented inline in the test body below.
  */
 HWTEST_F(HpaeVolumeSyncNodeTest, setSinkVolume_nullSink_001, TestSize.Level0)
 {
@@ -1205,6 +1188,9 @@ HWTEST_F(HpaeVolumeSyncNodeTest, setSinkVolume_nullSink_001, TestSize.Level0)
     // so HdiAdapterManager::GetRenderSink returns nullptr. The id is not HDI_INVALID_ID, so
     // GetRenderSink()'s own re-fetch guard (if (renderId_ == HDI_INVALID_ID)) does not fire
     // and cannot overwrite the bogus value with a valid one.
+    // NOTE on deviceClass: the ctor hardcodes renderId_ to the voip render id regardless of
+    // deviceClass, so this bogus-id overwrite — not deviceClass — is what nulls the sink;
+    // merely changing deviceClass would leave renderId_ valid and the sink non-null.
     volumeSyncNode->renderId_ = BOGUS_CAPTURE_BASE_RENDER_ID;
 
     // Precondition lock (PRIMARY discriminator): sink must be null, proving SetSinkVolume will
