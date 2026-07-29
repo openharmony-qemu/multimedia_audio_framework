@@ -284,8 +284,12 @@ void AudioInterruptService::WriteCallSessionEvent(int32_t strategyValue)
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioInterruptService::ActivateAudioSessionErrorEvent(const int32_t zoneId, const int32_t callerPid)
+void AudioInterruptService::ActivateAudioSessionErrorEvent(const int32_t zoneId,
+    const int32_t callerPid, bool isActivated)
 {
+    if (isActivated) {
+        return;
+    }
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_CALL_FUNC_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr),
         StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
@@ -360,7 +364,7 @@ AudioInterruptResult AudioInterruptService::ActivateAudioSession(const int32_t z
         AUDIO_INFO_LOG("Enter audio session v2 focus mode, pid = %{public}d, strategy = %{public}d",
             callerPid, static_cast<int32_t>(strategy.concurrencyMode));
         CHECK_AND_RETURN_RET_LOG(!isStandalone, result, "Current audio session focus mode is Standalone and return");
-        ActivateAudioSessionErrorEvent(zoneId, callerPid);
+        ActivateAudioSessionErrorEvent(zoneId, callerPid, isActivated);
         result.retCode = ProcessFocusEntryForAudioSession(zoneId, callerPid, updateScene);
         if (result.retCode != SUCCESS) {
             AUDIO_INFO_LOG(

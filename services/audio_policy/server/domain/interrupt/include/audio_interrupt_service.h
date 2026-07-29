@@ -323,7 +323,7 @@ private:
     void WriteServiceStartupError();
     // systemapp debug interfaces
     void WriteCallSessionEvent(int32_t strategyValue);
-    void ActivateAudioSessionErrorEvent(const int32_t zoneId, const int32_t callerPid);
+    void ActivateAudioSessionErrorEvent(const int32_t zoneId, const int32_t callerPid, bool isActivated);
     void DeactivateAudioSessionErrorEvent(const std::vector<AudioInterrupt> &streamsInSession,
         const int32_t callerPid);
     void AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
