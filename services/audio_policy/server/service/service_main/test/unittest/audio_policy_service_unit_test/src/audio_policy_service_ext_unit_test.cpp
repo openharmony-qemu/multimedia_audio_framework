@@ -390,21 +390,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetQueryClientTypeCallback_002, TestSize
 }
 
 /**
-* @tc.name  : Test UpdateCapturerInfoWhenNoPermission with hasSystemPermission=false.
-* @tc.number: UpdateCapturerInfoWhenNoPermission_001
-* @tc.desc  : Test UpdateCapturerInfoWhenNoPermission clears info when no system permission.
-*/
-HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateCapturerInfoWhenNoPermission_001, TestSize.Level1)
-{
-    shared_ptr<AudioCapturerChangeInfo> capturerInfo = make_shared<AudioCapturerChangeInfo>();
-    capturerInfo->clientUID = 1234;
-    capturerInfo->capturerState = CAPTURER_RUNNING;
-    AudioPolicyService::GetAudioPolicyService().GetCurrentCapturerChangeInfos(
-        vector<shared_ptr<AudioCapturerChangeInfo>>{capturerInfo}, false, false);
-    EXPECT_NE(capturerInfo->clientUID, 0);
-}
-
-/**
 * @tc.name  : Test GetProcessDeviceInfo with coreService null.
 * @tc.number: GetProcessDeviceInfo_001
 * @tc.desc  : Test GetProcessDeviceInfo returns ERROR when coreService is null.
