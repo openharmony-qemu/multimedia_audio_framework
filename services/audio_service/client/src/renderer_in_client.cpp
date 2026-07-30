@@ -84,6 +84,8 @@ constexpr int32_t MAX_RETRY_COUNT = 8;
 static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
 static const int32_t VOIP_DIRECT_BUFFER_DURATION_IN_US = 120000;
 static const int64_t ONWRITEDATA_TIMEOUT_NS = 40000000;
+// 3DA HDI 帧 header: magic + size1 + size2 = 3 frame
+static constexpr int32_t THREE_DA_HDI_HEADER_FRAMES = 3;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -528,13 +530,11 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
         std::to_string(bufferDesc.metaLength));
 
     CHECK_AND_RETURN_RET_LOG(bufferDesc.dataLength != 0 &&
-        bufferDesc.metaBuffer != nullptr, ERR_INVALID_PARAM,
+        bufferDesc.buffer != nullptr && bufferDesc.metaBuffer != nullptr, ERR_INVALID_PARAM,
         "3DA: Invalid buffer, dataLength=%{public}zu", bufferDesc.dataLength);
 
     CHECK_AND_RETURN_RET(CallStartWhenInStandby() == SUCCESS, ERR_OPERATION_FAILED);
     FirstFrameProcess();
-
-    uint64_t writePos = clientBuffer_->GetCurWriteFrame();
 
     if (gServerProxy_ == nullptr) {
         cbThreadReleased_ = true;
@@ -543,30 +543,77 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
         return ERR_WRITE_BUFFER;
     }
 
-    size_t blockSize = bufferDesc.bufLength + bufferDesc.metaLength;
-    uint8_t *dataBase = clientBuffer_->GetDataBase();
-    CHECK_AND_RETURN_RET_LOG(dataBase != nullptr, ERR_OPERATION_FAILED,
-        "3DA: GetDataBase returned NULL! writePos=%{public}" PRIu64, writePos);
+    // 3DA: 组装整帧 magic|size1|metadata|align|size2|pcm 写入共享内存
+    const size_t frameSize = sizePerFrameInByte_;
+    CHECK_AND_RETURN_RET_LOG(frameSize >= sizeof(uint16_t), ERR_INVALID_PARAM,
+        "3DA: invalid frameSize=%{public}zu", frameSize);
+    const size_t pcmLen = bufferDesc.bufLength;
+    const size_t metaLen = bufferDesc.metaLength;
+    const size_t metaAligned = (metaLen + frameSize - 1) / frameSize * frameSize;
+    const size_t totalSize = static_cast<size_t>(THREE_DA_HDI_HEADER_FRAMES) * frameSize + metaAligned + pcmLen;
 
-    // Calculate offset in circular buffer
-    size_t pcmOffset = writePos % clientBuffer_->GetDataSize();
-    size_t metaOffset = pcmOffset + bufferDesc.bufLength;
-    CHECK_AND_RETURN_RET_LOG(pcmOffset + bufferDesc.bufLength <= clientBuffer_->GetDataSize(),
-        ERR_OPERATION_FAILED, "3DA: PCM out of bounds! offset=%{public}zu, size=%{public}zu, total=%{public}zu",
-        pcmOffset, bufferDesc.bufLength, clientBuffer_->GetDataSize());
+    uint64_t writePos = clientBuffer_->GetCurWriteFrame();
+    RingBufferWrapper ringBuffer;
+    int32_t ret = clientBuffer_->GetAllWritableBufferFromPosFrame(writePos, ringBuffer);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.basicBufferDescs[0].bufLength >= totalSize,
+        ERR_OPERATION_FAILED, "3DA: GetAllWritableBuffer failed:%{public}d, writable=%{public}zu, need=%{public}zu",
+        ret, ringBuffer.basicBufferDescs[0].bufLength, totalSize);
+    // 环为整帧整数倍，整帧不应跨环尾
+    CHECK_AND_RETURN_RET_LOG(ringBuffer.basicBufferDescs[1].bufLength == 0, ERR_OPERATION_FAILED,
+        "3DA: frame crosses ring tail, [1].bufLength=%{public}zu", ringBuffer.basicBufferDescs[1].bufLength);
 
-    memcpy_s(dataBase + pcmOffset, bufferDesc.bufLength, bufferDesc.buffer, bufferDesc.bufLength);
+    uint8_t *dst = ringBuffer.basicBufferDescs[0].buffer;
+    const size_t cap = ringBuffer.basicBufferDescs[0].bufLength;
+    size_t offset = 0;
+    // magic: 前2字节 0x3d 0xaf，其余 0xff
+    if (memset_s(dst + offset, cap - offset, 0xff, frameSize) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    dst[offset] = static_cast<uint8_t>(0x3d);
+    dst[offset + 1] = static_cast<uint8_t>(0xaf);
+    offset += frameSize;
+    // size1: 前2字节(CPU序)=metadata 字节数，其余 0xff
+    if (memset_s(dst + offset, cap - offset, 0xff, frameSize) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    uint16_t metaSize = static_cast<uint16_t>(metaLen);
+    if (memcpy_s(dst + offset, cap - offset, &metaSize, sizeof(uint16_t)) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    offset += frameSize;
+    // metadata
+    if (memcpy_s(dst + offset, cap - offset, bufferDesc.metaBuffer, metaLen) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    offset += metaLen;
+    // align: 0xff 补齐到 frame 整数倍
+    const size_t alignSize = metaAligned - metaLen;
+    if (alignSize > 0 && memset_s(dst + offset, cap - offset, 0xff, alignSize) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    offset += alignSize;
+    // size2: 前2字节(CPU序)=PCM 帧数，其余 0xff
+    if (memset_s(dst + offset, cap - offset, 0xff, frameSize) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    uint16_t pcmFrames = static_cast<uint16_t>(pcmLen / frameSize);
+    if (memcpy_s(dst + offset, cap - offset, &pcmFrames, sizeof(uint16_t)) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+    offset += frameSize;
+    // pcm
+    if (memcpy_s(dst + offset, cap - offset, bufferDesc.buffer, pcmLen) != EOK) {
+        return ERR_OPERATION_FAILED;
+    }
+
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
 
-    CHECK_AND_RETURN_RET_LOG(metaOffset + bufferDesc.metaLength <= clientBuffer_->GetDataSize(),
-        ERR_OPERATION_FAILED, "3DA: Metadata out of bounds! metaOffset=%{public}zu,"
-        "size=%{public}zu, total=%{public}zu",
-        metaOffset, bufferDesc.metaLength, clientBuffer_->GetDataSize());
+    // 步进按 frame（整帧 frame 数 = header + metadata对齐 + pcm）
+    uint64_t blockFrames = static_cast<uint64_t>(THREE_DA_HDI_HEADER_FRAMES) + metaAligned / frameSize
+        + pcmLen / frameSize;
+    clientBuffer_->SetCurWriteFrame(writePos + blockFrames, false);
 
-    memcpy_s(dataBase + metaOffset, bufferDesc.metaLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
-    uint64_t newWriteFrame = writePos + blockSize;
-    clientBuffer_->SetCurWriteFrame(newWriteFrame, false);
-
+    AUDIO_DEBUG_LOG("3DA: built HDI frame, total=%{public}zu, blockFrames=%{public}" PRIu64, totalSize, blockFrames);
     return SUCCESS;
 }
 

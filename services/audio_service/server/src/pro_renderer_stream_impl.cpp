@@ -41,6 +41,8 @@ const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
 const std::string DEVICE_NAME = "primary";
 static constexpr int32_t AVS3METADATA_SIZE = 19824;
 static constexpr int32_t AUDIO_VIVID_SAMPLES = 1024;
+// 3DA HDI 帧头个数: magic + size1 + size2 (每个占 1 frame)
+static constexpr int32_t THREE_DA_HDI_HEADER_FRAMES = 3;
 
 ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, bool isDirect)
     : isDirect_(isDirect),
@@ -136,7 +138,11 @@ int32_t ProRendererStreamImpl::InitParams()
     uint32_t bufferSize = 0;
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
-        bufferSize = minBufferSize_;
+        // 3DA HDI 帧格式 magic|size1|metadata|align|size2|pcm，sinkBuffer 需容纳整帧
+        size_t frameSize = byteSizePerFrame_;
+        size_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
+        bufferSize = static_cast<uint32_t>((AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize
+            + metaAligned);
         isNeedResample_ = false;
         isNeedMcr_ = false;
         AUDIO_INFO_LOG("3DA Direct Mode: bypass resample and mixer, buffersize=%{public}u", bufferSize);
@@ -412,33 +418,17 @@ void ProRendererStreamImpl::WriteToSinkBuffer(const BufferDesc &bufferDesc, uint
 {
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
-            size_t totalSize = bufferDesc.bufLength + bufferDesc.metaLength;
-            if (sinkBuffer_[writeIndex].size() < bufferDesc.bufLength) {
-                AUDIO_ERR_LOG("sinkBuffer size too small! index: %{public}u", writeIndex);
-                return;
-            }
-            if (sinkBuffer_[writeIndex].size() < totalSize) {
-                AUDIO_ERR_LOG("sinkBuffer size too small for 3DA! index: %{public}u, need=%{public}zu,"
-                    "have=%{public}zu", writeIndex, totalSize, sinkBuffer_[writeIndex].size());
-                return;
-            }
-
-            auto ret = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(),
-                bufferDesc.buffer, bufferDesc.bufLength);
-            if (ret != EOK) {
-                AUDIO_ERR_LOG("memcpy_s failed");
-                return;
-            }
-            if (bufferDesc.metaBuffer != nullptr && bufferDesc.metaLength > 0) {
-                ret = memcpy_s(sinkBuffer_[writeIndex].data() + bufferDesc.bufLength,
-                sinkBuffer_[writeIndex].size() - bufferDesc.bufLength,
-                bufferDesc.metaBuffer, bufferDesc.metaLength);
-                if (ret != EOK) {
-                    AUDIO_ERR_LOG("memcpy_s meta failed");
-                    return;
-                }
-                AUDIO_INFO_LOG("3DA: Copied Metadata, size=%{public}zu", bufferDesc.metaLength);
-            }
+        // 3DA 整帧由客户端 Write3DADirectBuffer 组装(magic|size1|metadata|align|size2|pcm)，
+        // 共享内存已是整帧，此处透传到 sinkBuffer_。
+        const size_t cap = sinkBuffer_[writeIndex].size();
+        if (bufferDesc.buffer == nullptr || bufferDesc.bufLength == 0 || cap < bufferDesc.bufLength) {
+            AUDIO_ERR_LOG("3DA passthrough invalid, bufLength=%{public}zu, cap=%{public}zu",
+                bufferDesc.bufLength, cap);
+            return;
+        }
+        if (memcpy_s(sinkBuffer_[writeIndex].data(), cap, bufferDesc.buffer, bufferDesc.bufLength) != EOK) {
+            AUDIO_ERR_LOG("3DA passthrough memcpy failed");
+        }
         return;
     }
 
@@ -759,8 +749,11 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
     byteSizePerFrame_ = Util::GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
-        spanSizeInFrame_ = AUDIO_VIVID_SAMPLES;
-        minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_ + AVS3METADATA_SIZE;
+        // 3DA: 共享内存装整帧 magic|size1|metadata|align|size2|pcm，span = 整帧 frame 数
+        size_t frameSize = byteSizePerFrame_;
+        size_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
+        spanSizeInFrame_ = AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES + metaAligned / frameSize;
+        minBufferSize_ = (AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize + metaAligned;
     } else {
         minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
     }
