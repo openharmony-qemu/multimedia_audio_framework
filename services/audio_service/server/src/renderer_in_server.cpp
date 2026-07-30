@@ -3440,6 +3440,7 @@ int32_t RendererInServer::SetTarget(RenderTarget target, int32_t targetUid, uint
 void RendererInServer::ClearInnerCapBufferForInject()
 {
     CHECK_AND_RETURN(lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE);
+    std::lock_guard<std::mutex> lock(dupMutex_);
     for (auto &capInfo : captureInfos_) {
         CHECK_AND_CONTINUE(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
             innerCapIdToDupStreamCallbackMap_.end());
