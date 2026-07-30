@@ -235,15 +235,15 @@ int32_t AudioSession::Activate(const AudioSessionStrategy strategy)
 void AudioSession::UpdateSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt)
 {
     if (CanCurrentStreamSetDefaultOutputDevice(interrupt)) {
-        CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");	 
+        CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
 
-        std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = 
-            pipeManager_->GetStreamDescById(interrupt.streamId); 
+        std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor =
+            pipeManager_->GetStreamDescById(interrupt.streamId);
 
-        CHECK_AND_RETURN_LOG(audioStreamDescriptor != nullptr, "cannot find stream desc of id %{public}d", 
-            interrupt.streamId); 
+        CHECK_AND_RETURN_LOG(audioStreamDescriptor != nullptr, "cannot find stream desc of id %{public}d",
+            interrupt.streamId);
 
-        AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(DEVICE_TYPE_DEFAULT, 
+        AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(DEVICE_TYPE_DEFAULT,
             interrupt.uid, interrupt.streamId, audioStreamDescriptor->rendererInfo_.streamUsage);
     }
 }
