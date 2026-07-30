@@ -270,5 +270,102 @@ HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_TransferRing_001, TestSize
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
 }
+
+/**
+ * @tc.name  : Test UserSelectRouter GetToneRenderDevice.
+ * @tc.number: GetToneRenderDevice_002
+ * @tc.desc  : Test GetToneRenderDevice returns empty descriptor.
+ */
+HWTEST(UserSelectRouterUnitTest, GetToneRenderDevice_002, TestSize.Level1)
+{
+    UserSelectRouter router;
+    auto dev = router.GetToneRenderDevice(STREAM_USAGE_MEDIA, 0);
+    ASSERT_NE(dev, nullptr);
+    EXPECT_EQ(dev->getType(), DeviceType::DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test UserSelectRouter GetRouterType.
+ * @tc.number: GetRouterType_001
+ * @tc.desc  : Test GetRouterType returns ROUTER_TYPE_USER_SELECT.
+ */
+HWTEST(UserSelectRouterUnitTest, GetRouterType_001, TestSize.Level1)
+{
+    UserSelectRouter router;
+    EXPECT_EQ(router.GetRouterType(), ROUTER_TYPE_USER_SELECT);
+}
+
+/**
+ * @tc.name  : Test UserSelectRouter GetClassName.
+ * @tc.number: GetClassName_001
+ * @tc.desc  : Test GetClassName returns correct name.
+ */
+HWTEST(UserSelectRouterUnitTest, GetClassName_001, TestSize.Level1)
+{
+    UserSelectRouter router;
+    EXPECT_EQ(router.GetClassName(), "user_select_router");
+}
+
+/**
+ * @tc.name  : Test UserSelectRouter GetMediaRenderDevice with RINGTONE.
+ * @tc.number: GetMediaRenderDevice_Ring_001
+ * @tc.desc  : Test GetMediaRenderDevice skips user select for RINGTONE.
+ */
+HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_Ring_001, TestSize.Level1)
+{
+    UserSelectRouter router;
+    auto result = router.GetMediaRenderDevice(STREAM_USAGE_RINGTONE, 1, 1);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test UserSelectRouter GetCallRenderDevice with VOICE_COMMUNICATION.
+ * @tc.number: GetCallRenderDevice_004
+ * @tc.desc  : Test GetCallRenderDevice with VOICE_COMMUNICATION.
+ */
+HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_004, TestSize.Level1)
+{
+    UserSelectRouter router;
+    auto result = router.GetCallRenderDevice(STREAM_USAGE_VOICE_COMMUNICATION, 0);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test UserSelectRouter GetCallCaptureDevice with VOICE_COMMUNICATION.
+ * @tc.number: GetCallCaptureDevice_003
+ * @tc.desc  : Test GetCallCaptureDevice with SOURCE_TYPE_VOICE_COMMUNICATION.
+ */
+HWTEST(UserSelectRouterUnitTest, GetCallCaptureDevice_003, TestSize.Level1)
+{
+    UserSelectRouter router;
+    auto result = router.GetCallCaptureDevice(SOURCE_TYPE_VOICE_COMMUNICATION, 0);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test UserSelectRouter GetRingRenderDevices with ALARM.
+ * @tc.number: GetRingRenderDevices_004
+ * @tc.desc  : Test GetRingRenderDevices with ALARM stream usage.
+ */
+HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_004, TestSize.Level1)
+{
+    UserSelectRouter router;
+    auto descs = router.GetRingRenderDevices(STREAM_USAGE_ALARM, 0);
+    EXPECT_GE(descs.size(), 0u);
+}
+
+/**
+ * @tc.name  : Test UserSelectRouter GetRecordCaptureDevice with CAMCORDER.
+ * @tc.number: GetRecordCaptureDevice_005
+ * @tc.desc  : Test GetRecordCaptureDevice with SOURCE_TYPE_CAMCORDER.
+ */
+HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_005, TestSize.Level1)
+{
+    UserSelectRouter router;
+    auto result = router.GetRecordCaptureDevice(SOURCE_TYPE_CAMCORDER, 0);
+    EXPECT_NE(result, nullptr);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

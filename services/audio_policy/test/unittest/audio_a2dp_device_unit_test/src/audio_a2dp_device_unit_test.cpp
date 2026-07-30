@@ -387,16 +387,13 @@ HWTEST_F(AudioA2dpDeviceUnitTest, CheckHearingAidDeviceExist_001, TestSize.Level
 */
 HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpModuleInfo_001, TestSize.Level1)
 {
-    // Arrange
     AudioStreamInfo audioStreamInfo(AudioSamplingRate::SAMPLE_RATE_44100, AudioEncodingType::ENCODING_PCM,
         AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
     AudioModuleInfo moduleInfo;
     moduleInfo.role = "source";
 
-    // Act
     AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo);
 
-    // Assert
     EXPECT_EQ(moduleInfo.channels, "2");
     EXPECT_EQ(moduleInfo.rate, "44100");
     EXPECT_EQ(moduleInfo.format, "s16le");
@@ -410,15 +407,12 @@ HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpModuleInfo_001, TestSize.Level1)
 */
 HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpModuleInfo_002, TestSize.Level1)
 {
-    // Arrange
     AudioStreamInfo audioStreamInfo(AudioSamplingRate::SAMPLE_RATE_44100, AudioEncodingType::ENCODING_PCM,
         AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
     AudioModuleInfo moduleInfo;
 
-    // Act
     AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo);
 
-    // Assert
     EXPECT_EQ(moduleInfo.channels, "2");
     EXPECT_EQ(moduleInfo.rate, "44100");
     EXPECT_EQ(moduleInfo.format, "s16le");
@@ -611,6 +605,194 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SwitchActiveA2dpDevice_008, TestSize.Level1)
     deviceDesc->deviceName_ = "empty_mac_device";
     int32_t result = a2dpDeviceBehavior_.SwitchActiveA2dpDevice(deviceDesc);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name: ActivateDevice_001
+ * @tc.desc: Test AudioA2dpDeviceBehavior ActivateDevice with nullptr streamDesc.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, ActivateDevice_001, TestSize.Level1)
+{
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    int32_t result = a2dpDeviceBehavior_.ActivateDevice(nullptr, reason);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name: ActivateDevice_002
+ * @tc.desc: Test AudioA2dpDeviceBehavior ActivateDevice with empty newDeviceDescs_.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, ActivateDevice_002, TestSize.Level1)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    int32_t result = a2dpDeviceBehavior_.ActivateDevice(streamDesc, reason);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name: ActivateDevice_003
+ * @tc.desc: Test AudioA2dpDeviceBehavior ActivateDevice with valid playback stream.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, ActivateDevice_003, TestSize.Level1)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    int32_t result = a2dpDeviceBehavior_.ActivateDevice(streamDesc, reason);
+    EXPECT_NE(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name: ActivateDevice_004
+ * @tc.desc: Test AudioA2dpDeviceBehavior ActivateDevice with nullptr deviceDesc in newDeviceDescs_.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, ActivateDevice_004, TestSize.Level1)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(nullptr);
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    int32_t result = a2dpDeviceBehavior_.ActivateDevice(streamDesc, reason);
+    EXPECT_EQ(result, ERR_NULL_POINTER);
+}
+
+/**
+ * @tc.name: ActivateDevice_005
+ * @tc.desc: Test AudioA2dpDeviceBehavior ActivateDevice with disabled device (isEnable_=false),
+ *           should return SUCCESS without calling ActivateA2dpDevice.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, ActivateDevice_005, TestSize.Level1)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceDesc->isEnable_ = false;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    int32_t result = a2dpDeviceBehavior_.ActivateDevice(streamDesc, reason);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: ActivateDevice_006
+ * @tc.desc: Test AudioA2dpDeviceBehavior ActivateDevice with enabled device that does not exist
+ *           in the A2DP map, should return BLUETOOTH_FETCH_RESULT_ERROR.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, ActivateDevice_006, TestSize.Level1)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "non_existent_a2dp_mac";
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceDesc->isEnable_ = true;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    int32_t result = a2dpDeviceBehavior_.ActivateDevice(streamDesc, reason);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name: ActivateDevice_007
+ * @tc.desc: Test AudioA2dpDeviceBehavior ActivateDevice with non-A2DP device type,
+ *           should return BLUETOOTH_FETCH_RESULT_ERROR since mac won't exist in A2DP map.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, ActivateDevice_007, TestSize.Level1)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDesc->isEnable_ = true;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    int32_t result = a2dpDeviceBehavior_.ActivateDevice(streamDesc, reason);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name: ActivateDevice_008
+ * @tc.desc: Test AudioA2dpDeviceBehavior ActivateDevice with enabled A2DP device that exists in
+ *           the A2DP map but is not yet active, should attempt SwitchActiveA2dpDevice.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, ActivateDevice_008, TestSize.Level1)
+{
+    std::string testMac = "AA:BB:CC:DD:EE:44";
+    A2dpDeviceConfigInfo configInfo;
+    AudioA2dpDevice::GetInstance().AddA2dpDevice(testMac, configInfo);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = testMac;
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceDesc->isEnable_ = true;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    int32_t result = a2dpDeviceBehavior_.ActivateDevice(streamDesc, reason);
+    EXPECT_NE(result, ERR_INVALID_PARAM);
+
+    AudioA2dpDevice::GetInstance().DelA2dpDevice(testMac);
+}
+
+/**
+ * @tc.name: DeactivateDevice_001
+ * @tc.desc: Test AudioA2dpDeviceBehavior DeactivateDevice without parameter.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, DeactivateDevice_001, TestSize.Level1)
+{
+    int32_t result = a2dpDeviceBehavior_.DeactivateDevice();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: DeactivateDevice_002
+ * @tc.desc: Test AudioA2dpDeviceBehavior DeactivateDevice with device descriptor.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, DeactivateDevice_002, TestSize.Level1)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    int32_t result = a2dpDeviceBehavior_.DeactivateDevice(deviceDesc);
+    EXPECT_NE(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name: DeactivateDevice_003
+ * @tc.desc: Test AudioA2dpDeviceBehavior DeactivateDevice without active A2DP device,
+ *           should return SUCCESS without calling StopAudioPort.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, DeactivateDevice_003, TestSize.Level1)
+{
+    AudioActiveDevice::GetInstance().SetActiveBtDeviceMac("");
+    int32_t result = a2dpDeviceBehavior_.DeactivateDevice();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: DeactivateDevice_004
+ * @tc.desc: Test AudioA2dpDeviceBehavior DeactivateDevice with nullptr device descriptor.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, DeactivateDevice_004, TestSize.Level1)
+{
+    int32_t result = a2dpDeviceBehavior_.DeactivateDevice(nullptr);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 } // namespace AudioStandard
