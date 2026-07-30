@@ -160,10 +160,22 @@ private:
     std::shared_ptr<HpaeSessionEffectNode> sessionEffectNode_ = nullptr;
     uint32_t sessionEffectSessionId_ = 0;
 
+    // Pending SessionEffect create deferred behind a STOPPING node (rapid recreate).
+    uint32_t pendingSeCreateSessionId_ = 0;
+    uint64_t pendingSeCreateGeneration_ = 0;
+    std::weak_ptr<IEffectInstance> pendingSeCreateInstance_;
+
     // Session Effect helpers (called on SignalProcessThread)
     int32_t InsertSessionEffectNode(const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
-    int32_t RemoveSessionEffectNode();
+    int32_t RemoveSessionEffectNode();  // BeginClose: rewind + enter STOPPING + queue Finalize
+    void FinalizeSessionEffectClose(uint32_t sessionId,
+        const std::weak_ptr<HpaeSessionEffectNode> &closingNode);
+    uint64_t SetPendingSessionEffectCreate(uint32_t sessionId,
+        const std::shared_ptr<IEffectInstance> &instance);
+    bool IsPendingSessionEffectCreate(uint32_t sessionId, uint64_t generation,
+        const std::shared_ptr<IEffectInstance> &instance) const;
+    void CancelPendingSessionEffectCreate(uint32_t sessionId);
     void MaterializeSessionEffectFromAttachState(uint32_t curSessionId);
     void DetachSessionEffectNodeForReload();
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;

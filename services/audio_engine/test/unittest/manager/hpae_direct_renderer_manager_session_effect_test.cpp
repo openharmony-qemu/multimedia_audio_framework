@@ -796,11 +796,12 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_001, TestSize.Lev
     ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    // Test: Remove SE (synchronous, stream still not running)
+    // Test: Remove SE -> BeginClose (node enters STOPPING); FinalizeClose runs on the next batch.
     int32_t ret = manager_->RemoveSessionEffectNode();
 
-    // Verify: Success and SE removed
+    // Verify: Success; FinalizeClose is queued, let the signal thread drain it before asserting.
     EXPECT_EQ(ret, 0);
+    WaitForMsgProcessing(manager_);
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0);
 
@@ -2138,19 +2139,21 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_003, TestSize.Lev
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
-    // Force the restore-chain FALSE branch: loudnessGainNode_ is null
+    // Force the restore-chain FALSE branch in Finalize: loudnessGainNode_ is null throughout
+    // the deferred close.
     auto savedLoudness = manager_->loudnessGainNode_;
     manager_->loudnessGainNode_ = nullptr;
 
-    int32_t ret = manager_->RemoveSessionEffectNode();
+    int32_t ret = manager_->RemoveSessionEffectNode();  // BeginClose
     EXPECT_EQ(ret, 0);
+    // FinalizeClose runs with loudnessGainNode_ null -> skips disconnect, still drops + erases.
+    WaitForMsgProcessing(manager_);
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
 
     // Restore + cleanup (restore loudnessGainNode_ then destroy the stream normally;
     // DisConnect is a safe no-op for missing edges)
     manager_->loudnessGainNode_ = savedLoudness;
-    WaitForMsgProcessing(manager_);
     manager_->DestroyStream(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
 }
@@ -2177,12 +2180,46 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_004, TestSize.Lev
     manager_->sessionEffectNode_->totalBytesOut_ = 0;
     ASSERT_GT(manager_->sessionEffectNode_->GetLatency(TEST_SESSION_ID), 0u);
 
-    int32_t ret = manager_->RemoveSessionEffectNode();
+    int32_t ret = manager_->RemoveSessionEffectNode();  // BeginClose (latency>0 -> rewind in Begin)
     EXPECT_EQ(ret, 0);
+    WaitForMsgProcessing(manager_);  // FinalizeClose
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
 
     // Cleanup (restore-chain takes the TRUE branch, chain is restored normally)
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}
+
+/**
+ * @tc.name    : DestroyThenCreate_RequeuesUntilFinalized
+ * @tc.type    : FUNC
+ * @tc.number  : SE_Remove_005
+ * @tc.desc    : Rapid recreate while the old node is STOPPING is not rejected as duplicate;
+ *               it requeues and materializes after FinalizeClose (Begin/Finalize two-phase).
+ */
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Remove_005, TestSize.Level0)
+{
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo(TEST_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(manager_);
+
+    auto oldInst = MakeTestEffectInstance(defaultConfig_);
+    auto newInst = MakeTestEffectInstance(defaultConfig_);
+    ASSERT_EQ(manager_->CreateSessionEffect(TEST_SESSION_ID, "old", oldInst, defaultConfig_),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    WaitForMsgProcessing(manager_);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+
+    // Destroy then immediately Create the same session. The Create must NOT be rejected as a
+    // duplicate while the old node is STOPPING; it requeues and materializes after FinalizeClose.
+    manager_->PostDestroySessionEffect(TEST_SESSION_ID);
+    manager_->PostCreateSessionEffect(TEST_SESSION_ID, "new", newInst, defaultConfig_);
+    WaitForMsgProcessing(manager_);
+
+    // Old finalized, new materialized: the recreate was not lost.
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetEffectName(), "new");
+
     manager_->DestroyStream(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
 }

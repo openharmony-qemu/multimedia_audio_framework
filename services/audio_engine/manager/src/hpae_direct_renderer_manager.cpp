@@ -223,6 +223,8 @@ int32_t HpaeDirectRendererManager::CreateStream(const HpaeStreamInfo &streamInfo
 
 void HpaeDirectRendererManager::DeleteInputSession(SessionEffectMoveMode moveMode)
 {
+    // Invalidate any deferred Create so a stale retry cannot (re)materialize a node after teardown.
+    CancelPendingSessionEffectCreate(sessionEffectSessionId_);
     if (sessionEffectNode_ != nullptr) {
         sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
     }
@@ -1260,33 +1262,106 @@ int32_t HpaeDirectRendererManager::RemoveSessionEffectNode()
         static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
         "RemoveSessionEffectNode: no SE node to remove");
 
-    // Close SE flow
-    sessionEffectNode_->StartCloseCrossfade();
-    sessionEffectNode_->StopPreheatThread();
-    uint64_t latency = sessionEffectNode_->GetLatency(sessionEffectSessionId_);
+    auto closingNode = sessionEffectNode_;
+    uint32_t sessionId = sessionEffectSessionId_;
+    closingNode->StopPreheatThread();
 
-    sessionEffectNode_->DropEffect();  // Don't destroy algorithm — Lazy Release manages it
-    // Restore original chain
+    // Pipeline latency the wet output lags behind upstream dry = SE + the converter immediately
+    // upstream of the SE insert point (converterForGain_). Flush it, then rewind curNode_ history
+    // so the bypass dry re-pulls from the aligned cursor. Downstream queues are left untouched.
+    uint64_t latency = closingNode->GetLatency(sessionId);
+    if (converterForGain_ != nullptr) {
+        latency += converterForGain_->GetLatency();
+        converterForGain_->FlushBuffers();
+    }
+    if (latency > 0 && curNode_ != nullptr && curNode_->GetSessionId() == sessionId) {
+        curNode_->RewindHistoryBuffer(latency);
+    }
+
+    // Enter STOPPING: the next Process() (between this and the next HandleMsg) gets one aligned
+    // wet->dry crossfade opportunity if the chain is pulled. FinalizeClose, queued for the next
+    // HandleMsg batch, owns the actual node deletion (never inside DoProcess).
+    closingNode->StartCloseCrossfade();
+    std::weak_ptr<HpaeSessionEffectNode> weakClosingNode = closingNode;
+    Request finalize = [this, sessionId, weakClosingNode]() {
+        FinalizeSessionEffectClose(sessionId, weakClosingNode);
+    };
+    hpaeNoLockQueue_.PushRequest(std::move(finalize));
+    if (hpaeSignalProcessThread_ != nullptr) {
+        hpaeSignalProcessThread_->Notify();
+    }
+    AUDIO_INFO_LOG("RemoveSessionEffectNode: session %{public}u BeginClose, latency=%{public}llu",
+        sessionId, (unsigned long long)latency);
+    return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
+}
+
+void HpaeDirectRendererManager::FinalizeSessionEffectClose(uint32_t sessionId,
+    const std::weak_ptr<HpaeSessionEffectNode> &closingNode)
+{
+    auto node = closingNode.lock();
+    // Identity check: no-op if the closing node was already replaced/destroyed
+    // (DestroyStream, DeleteInputSession, Reload, or a replayed/recreated node).
+    if (node == nullptr || sessionEffectNode_ != node || sessionEffectSessionId_ != sessionId) {
+        return;
+    }
+
+    // Only reconnect the bypass if the stream is still running; if pause/stop already tore the
+    // chain down, leave it disconnected — ConnectInputSession rebuilds on Start.
+    bool restoreBypass = curNode_ != nullptr && curNode_->GetSessionId() == sessionId &&
+        curNode_->GetState() == HPAE_SESSION_RUNNING &&
+        loudnessGainNode_ != nullptr && converterForGain_ != nullptr;
     if (loudnessGainNode_ != nullptr && converterForGain_ != nullptr) {
-        loudnessGainNode_->DisConnect(sessionEffectNode_);
-        sessionEffectNode_->DisConnect(converterForGain_);
-        loudnessGainNode_->Connect(converterForGain_);
-        converterForGain_->FlushBuffers();  // Clear residual SE output from processedBuffer_
+        loudnessGainNode_->DisConnect(node);
+        node->DisConnect(converterForGain_);
+        if (restoreBypass) {
+            loudnessGainNode_->Connect(converterForGain_);
+        }
+    }
+
+    // If a pending rapid-recreate will reuse this exact instance, do NOT Flush/Stop it — the new
+    // binding takes the instance over (no matching ENABLE otherwise). Otherwise release normally.
+    auto pendingInst = pendingSeCreateInstance_.lock();
+    auto closingInst = node->GetEffectInstance();
+    bool sameInstanceReuse = pendingInst != nullptr && closingInst != nullptr &&
+        pendingSeCreateSessionId_ == sessionId && pendingInst.get() == closingInst.get();
+    if (sameInstanceReuse) {
+        node->DetachEffectForReload();
+    } else {
+        node->DropEffect();
     }
 
     sessionEffectNode_.reset();
-    uint32_t sid = sessionEffectSessionId_;
-    HpaeSessionState state = (curNode_ != nullptr) ? curNode_->GetState() : HPAE_SESSION_NEW;
     sessionEffectSessionId_ = 0;
-    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sid, state,
-        OPERATION_SESSION_EFFECT_DISABLED);
 
-    // RewindHistoryBuffer: return unconsumed data (only SE latency)
-    AUDIO_INFO_LOG("RemoveSessionEffectNode: session %{public}u, latency=%{public}llu",
-        sid, (unsigned long long)latency);
-    CHECK_AND_RETURN_RET(latency > 0 && curNode_ != nullptr, 0);
-    curNode_->RewindHistoryBuffer(latency);
-    return 0;
+    auto streamNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    HpaeSessionState state = streamNode != nullptr ? streamNode->GetState() : HPAE_SESSION_NEW;
+    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state,
+        OPERATION_SESSION_EFFECT_DISABLED);
+    AUDIO_INFO_LOG("FinalizeSessionEffectClose: session %{public}u finalized (sameInstance=%{public}d)",
+        sessionId, static_cast<int>(sameInstanceReuse));
+}
+
+uint64_t HpaeDirectRendererManager::SetPendingSessionEffectCreate(uint32_t sessionId,
+    const std::shared_ptr<IEffectInstance> &instance)
+{
+    ++pendingSeCreateGeneration_;
+    pendingSeCreateSessionId_ = sessionId;
+    pendingSeCreateInstance_ = instance;
+    return pendingSeCreateGeneration_;
+}
+
+bool HpaeDirectRendererManager::IsPendingSessionEffectCreate(uint32_t sessionId,
+    uint64_t generation, const std::shared_ptr<IEffectInstance> &instance) const
+{
+    return pendingSeCreateSessionId_ == sessionId && pendingSeCreateGeneration_ == generation &&
+        instance != nullptr && pendingSeCreateInstance_.lock().get() == instance.get();
+}
+
+void HpaeDirectRendererManager::CancelPendingSessionEffectCreate(uint32_t sessionId)
+{
+    if (pendingSeCreateSessionId_ == sessionId) {
+        pendingSeCreateSessionId_ = 0;
+    }
 }
 
 void HpaeDirectRendererManager::MaterializeSessionEffectFromAttachState(uint32_t curSessionId)
@@ -1336,6 +1411,7 @@ void HpaeDirectRendererManager::DetachSessionEffectNodeForReload()
 {
     // Do NOT clear attach state — it must survive reload so ConnectInputSession can re-materialize.
     // Only reset the physical cache (node + sessionId).
+    CancelPendingSessionEffectCreate(sessionEffectSessionId_);
     if (sessionEffectNode_ != nullptr) {
         // Reload runs on SignalProcessThread after DisConnectInputSession has removed this node
         // from the processing chain, so DetachEffectForReload only resets local runtime state.
@@ -1350,6 +1426,31 @@ int32_t HpaeDirectRendererManager::CreateSessionEffect(uint32_t sessionId,
     const AudioEffectConfig &config)
 {
     auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+
+    // The curNode's physical SE node is still finalizing its deferred close (STOPPING). Defer this
+    // Create until that node is gone: record a cancelable/ownership token and requeue. Do NOT write
+    // attach state, insert a node, or send ENABLE here.
+    if (curNode_ != nullptr && curNode_->GetSessionId() == sessionId &&
+        sessionEffectNode_ != nullptr &&
+        sessionEffectNode_->GetStatus() == HpaeSessionEffectNode::STATUS::STOPPING) {
+        uint64_t generation = SetPendingSessionEffectCreate(sessionId, instance);
+        Request retry = [this, sessionId, effectName, instance, config, generation]() {
+            if (!IsPendingSessionEffectCreate(sessionId, generation, instance)) {
+                return;  // superseded by a newer Create, or cancelled by Destroy/DestroyStream/Move/Reload
+            }
+            CancelPendingSessionEffectCreate(sessionId);
+            if (SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr) {
+                CreateSessionEffect(sessionId, effectName, instance, config);
+            }
+        };
+        hpaeNoLockQueue_.PushRequest(std::move(retry));
+        if (hpaeSignalProcessThread_ != nullptr) {
+            hpaeSignalProcessThread_->Notify();
+        }
+        AUDIO_INFO_LOG("CreateSessionEffect: session %{public}u deferred behind STOPPING node",
+            sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
+    }
 
     // Reject a duplicate bind BEFORE touching attach state
     CHECK_AND_RETURN_RET_LOG(
@@ -1408,6 +1509,15 @@ int32_t HpaeDirectRendererManager::DestroySessionEffect(uint32_t sessionId)
 
     // Remove active physical SE node if materialized for this session
     if (sessionEffectSessionId_ == sessionId && sessionEffectNode_ != nullptr) {
+        if (sessionEffectNode_->GetStatus() == HpaeSessionEffectNode::STATUS::STOPPING) {
+            // Close already begun (BeginClose already queued FinalizeClose). Re-BeginClose would
+            // double-rewind and queue a duplicate Finalize; just cancel any deferred recreate.
+            // The already-queued FinalizeClose performs the deletion and emits the single DISABLED.
+            CancelPendingSessionEffectCreate(sessionId);
+            AUDIO_INFO_LOG("DestroySessionEffect: session %{public}u already STOPPING, skip re-Begin",
+                sessionId);
+            return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
+        }
         return RemoveSessionEffectNode();
     }
 

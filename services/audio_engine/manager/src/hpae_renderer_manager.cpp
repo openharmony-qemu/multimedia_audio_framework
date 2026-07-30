@@ -517,6 +517,8 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId,
     SessionEffectMoveMode moveMode)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSession");
+    // Invalidate any deferred Create so a stale retry cannot (re)materialize a node after teardown.
+    CancelPendingSessionEffectCreate(sessionId);
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
     CHECK_AND_RETURN_RET(sinkInputNode != nullptr, SUCCESS);
     auto sessionIt = sessionNodeMap_.find(sessionId);

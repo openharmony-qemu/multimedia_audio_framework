@@ -4656,7 +4656,47 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectStatusCallback, TestSize.Level0)
 
     EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    // DISABLED is emitted by the deferred FinalizeClose; drain the queue before asserting.
+    WaitForMsgProcessing(hpaeRendererManager_);
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// Rapid recreate: Create arriving while the old node is STOPPING is not rejected as duplicate;
+// it requeues and materializes after FinalizeClose.
+HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyThenCreateRequeues, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 7901;
+    constexpr uint32_t testNodeId = 1101;
+
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    auto oldInst = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*oldInst, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "old", oldInst, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    // Destroy (BeginClose) then immediately Create the same session: requeues behind the STOPPING
+    // node instead of returning ALREADY_BOUND.
+    EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    auto newInst = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*newInst, GetPreheatFrames()).WillByDefault(Return(0));
+    EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "new", newInst, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    // After drain: old finalized (DISABLED), new materialized (still present).
+    WaitForMsgProcessing(hpaeRendererManager_);
+    EXPECT_TRUE(hpaeRendererManager_->HasSessionEffect(sessionId));
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_GE(callback->Count(sessionId, OPERATION_SESSION_EFFECT_ENABLED), 2u);
 }
 
 HWTEST_F(HpaeRendererManagerTest, HasSessionEffectUsesProcessorTypeWhenSessionSceneIsStale, TestSize.Level0)
