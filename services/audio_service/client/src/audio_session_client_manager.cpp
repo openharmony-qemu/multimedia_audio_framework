@@ -424,7 +424,7 @@ bool AudioSessionClientManager::Restore()
     // restore devicetype
     {
         std::lock_guard<std::mutex> lock(setDefaultOutputDeviceMutex_);
-        if (setDefaultOutputDevice_) {
+        if (setDefaultOutputDevice_ && (setDeviceType_ != DEVICE_TYPE_DEFAULT)) {
             AUDIO_INFO_LOG("restore need SetDefaultOutputDevice");
             auto ret = AudioPolicyManager::GetInstance().SetDefaultOutputDevice(setDeviceType_);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "SetDefaultOutputDevice failed, ret:%{public}d", ret);
@@ -433,7 +433,7 @@ bool AudioSessionClientManager::Restore()
     
     {
         std::lock_guard<std::mutex> lock(setMediaOutputDeviceMutex_);
-        if (setMediaOutputDevice_ && (setDeviceType_ != DEVICE_TYPE_DEFAULT)) {
+        if (setMediaOutputDevice_) {
             AUDIO_INFO_LOG("restore need SetMediaOutputDevice");
             auto ret = AudioPolicyManager::GetInstance().SetMediaOutputDevice(setMediaDeviceType_);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "SetMediaOutputDevice failed, ret:%{public}d", ret);
