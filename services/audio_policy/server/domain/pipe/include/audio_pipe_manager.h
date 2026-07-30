@@ -175,9 +175,6 @@ public:
     bool HasFastOutputPipe();
     bool HasUltraFastStreamRequest();
     bool IsStreamUseUltraFastRoute(uint32_t sessionId);
-    bool HasRunningRecognitionCapturerStream(DeviceType type);
-    bool HasRunningNormalCapturerStream(DeviceType type);
-    bool HasRunningScoOutputStream();
     bool IsOnPrimaryAdapter(uint32_t sessionId);
     bool HasActiveStreamOnPrimary(uint32_t inPastMs);
     void AddSingleSwitchStream(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> streamDesc);

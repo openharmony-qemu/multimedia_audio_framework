@@ -2859,7 +2859,7 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
             AudioScene lastAudioScene = audioSceneManager_.GetLastAudioScene();
             AudioScene audioScene = audioSceneManager_.GetAudioScene();
             auto muteReason = reason.IsSetAudioScene() && IsCallOrRingToDefault(lastAudioScene, audioScene) ?
-                AudioStreamDeviceChangeReasonExt::ExtEnum::CALL_OR_RING_TO_DEFAULT : reason;
+                AudioStreamDeviceChangeReasonExt::ExtEnum::DEVICE_RESELECT : reason;
             MuteSinkPortForSwitchDevice(streamDesc, muteReason);
 #endif
         }
@@ -3090,7 +3090,7 @@ void AudioCoreService::SetVoiceCallMuteForSwitchDevice()
 void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsCallOrRingToDefault() ||
+    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsDeviceReselect() ||
         reason.IsSelectedDeviceConnectFailed()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
@@ -3604,19 +3604,72 @@ void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDevice
 #endif
 }
 
-void AudioCoreService::FetchDevicesForDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,
-    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inStreamDescs)
+bool AudioCoreService::HasRunningScoOutputStream(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs)
+{
+    for (const auto &desc : outputStreamDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+        if (desc->streamStatus_ != STREAM_STATUS_STARTED || desc->newDeviceDescs_.empty()) {
+            continue;
+        }
+        if (desc->newDeviceDescs_[0] != nullptr &&
+            desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioCoreService::HasRunningScoNormalCapturerStream(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs)
+{
+    for (const auto &desc : inputStreamDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+        if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
+            (desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_RECOGNITION &&
+            desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
+            (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
+            desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
+            AUDIO_INFO_LOG("Running Normal Capturer stream : %{public}d", desc->sessionId_);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioCoreService::HasRunningScoRecognitionCapturerStream(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs)
+{
+    for (const auto &desc : inputStreamDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+        if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
+            (desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+            desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
+            (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
+            desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+            desc->newDeviceDescs_[0]->isVrSupported_)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void AudioCoreService::FetchDevicesForDescs(std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &inStreamDescs)
 {
     for (auto &desc : outStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+        desc = std::make_shared<AudioStreamDescriptor>(desc);
         FetchDeviceInfo info = { desc->rendererInfo_.streamUsage, GetRealUid(desc),
             desc->rendererInfo_.privacyType, "Arbiter", desc->bundleName_ };
         info.streamId = desc->sessionId_;
         auto newDescs = audioRouterCenter_.FetchOutputDevices(info);
         pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
+        desc->UpdateNewDeviceWithoutCheck(newDescs);
     }
     for (auto &desc : inStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+        desc = std::make_shared<AudioStreamDescriptor>(desc);
         FetchDeviceInfo info;
         info.sourceType = desc->capturerInfo_.sourceType;
         info.clientUID = GetRealUid(desc);
@@ -3624,7 +3677,8 @@ void AudioCoreService::FetchDevicesForDescs(const std::vector<std::shared_ptr<Au
         info.caller = "Arbiter";
         auto newDesc = audioRouterCenter_.FetchInputDevice(info);
         if (newDesc != nullptr) {
-            pipeManager_->UpdateNewDeviceDesc(desc, {newDesc});
+            std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = {newDesc};
+            desc->UpdateNewDeviceWithoutCheck(devices);
         }
     }
 }
