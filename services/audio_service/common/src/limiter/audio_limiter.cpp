@@ -131,7 +131,7 @@ int32_t AudioLimiter::SetConfig(int32_t inputFrameBytes, int32_t bytePerSample, 
     algoFrameLen_ = newAlgoFrameLen;
 
     sampleRate_ = static_cast<uint32_t>(sampleRate);
-    channels_ = static_cast<uint32_t>(channels);
+    channels_ = channels;
     OpenDumpFiles(sampleRate, channels);
 
     AUDIO_INFO_LOG("SetConfig Success, inputFrameBytes = %{public}d, bytePerSample = %{public}d, sampleRate = "
