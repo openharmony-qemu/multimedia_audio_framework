@@ -453,6 +453,10 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
 
     AdjustFastRouteForUltraFastIfNeeded(streamDesc);
 
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = streamDesc->IsPlayback() ?
+        pipeManager_->GetAllOutputStreamDescs() : pipeManager_->GetAllInputStreamDescs();
+    HandleFastStreamLimitOnCreate(streamDescs, streamDesc);
+
     std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList {};
     for (auto &curPipeInfo : pipeInfoList) {
         if (curPipeInfo->pipeRole_ == static_cast<AudioPipeRole>(streamDesc->audioMode_)) {
@@ -546,7 +550,25 @@ void AudioPipeSelector::ProcessRendererAndCapturerConcurrency(
     AUDIO_INFO_LOG("Set %{public}u to normal flag", streamDesc->GetSessionId());
 }
 
-void AudioPipeSelector::CheckFastStreamOverLimitToNormal(
+void AudioPipeSelector::HandleFastStreamLimitOnCreate(
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+    const std::shared_ptr<AudioStreamDescriptor> &newStreamDesc)
+{
+    CHECK_AND_RETURN_LOG(newStreamDesc != nullptr, "New stream desc is nullptr");
+    uint32_t routeFlag = newStreamDesc->GetRoute();
+    CHECK_AND_RETURN(routeFlag == AUDIO_OUTPUT_FLAG_FAST || routeFlag == AUDIO_INPUT_FLAG_FAST);
+
+    int32_t fastStreamNum = static_cast<int32_t>(std::count_if(streamDescs.begin(), streamDescs.end(),
+        [routeFlag](const std::shared_ptr<AudioStreamDescriptor> &streamDesc) {
+            return streamDesc != nullptr && streamDesc->GetRoute() == routeFlag;
+        }));
+    CHECK_AND_RETURN(fastStreamNum >= MAX_FAST_STREAM_COUNT);
+
+    AUDIO_INFO_LOG("reach fast limit, set new stream %{public}u to normal", newStreamDesc->sessionId_);
+    newStreamDesc->ResetToNormalRoute(false);
+}
+
+void AudioPipeSelector::HandleFastStreamLimitAndNearLinkState(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     int32_t fastOutputNum = 0;
@@ -624,7 +646,7 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
     }
     ProcessModemCommunicationConcurrency(streamDescs, streamsMoveToNormal);
     AdjustFastRouteForUltraFastIfNeeded(streamDescs);
-    CheckFastStreamOverLimitToNormal(streamDescs);
+    HandleFastStreamLimitAndNearLinkState(streamDescs);
 
     streamDescs = UpdateStreamDescs(streamDescs, originalStreamSessionIds);
 }
@@ -1916,12 +1938,6 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         MatchSpecialRemotePipe(streamPropInfo, pipeInfo, streamDesc);
         MatchCollaborativePipe(streamPropInfo, pipeInfo, streamDesc);
 
-        if (((pipeInfo->GetRoute() & AUDIO_OUTPUT_FLAG_FAST) || (pipeInfo->GetRoute() & AUDIO_INPUT_FLAG_FAST)) &&
-            pipeInfo->streamDescriptors_.size() == MAX_FAST_STREAM_COUNT) {
-            AUDIO_INFO_LOG("reach fast limit, set %{public}u to normal", streamDesc->sessionId_);
-            streamDesc->ResetToNormalRoute(false);
-            return FindExistingPipe(selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
-        }
         MatchUltraFastPipe(pipeInfo, streamDesc);
 
         pipeManager_->AddStreamToPipe(pipeInfo, streamDesc, PIPE_ACTION_UPDATE);
