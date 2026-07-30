@@ -214,7 +214,10 @@ int32_t AudioSession::Activate(const AudioSessionStrategy strategy)
     fakeFocusInterruptEvent_.hintType = INTERRUPT_HINT_NONE;
     AUDIO_INFO_LOG("Audio session state change: pid %{public}d, state %{public}d",
         callerPid_, static_cast<int32_t>(state_));
-    needToFetch_ = (EnableDefaultDevice() == NEED_TO_FETCH) ? true : false;
+    needToFetch_ = false;
+    if (defaultDeviceType_ != DEVICE_TYPE_DEFAULT) {
+        needToFetch_ = (EnableDefaultDevice() == NEED_TO_FETCH) ? true : false;
+    }
     AudioRendererInfo rendererInfo;
     rendererInfo.streamUsage = GetStreamUsageInner();
     auto coreService = AudioCoreService::GetCoreService();
@@ -232,16 +235,8 @@ int32_t AudioSession::Activate(const AudioSessionStrategy strategy)
 void AudioSession::UpdateSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt)
 {
     if (CanCurrentStreamSetDefaultOutputDevice(interrupt)) {
-        CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
-
-        std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor =
-            pipeManager_->GetStreamDescById(interrupt.streamId);
-
-        CHECK_AND_RETURN_LOG(audioStreamDescriptor != nullptr, "cannot find stream desc of id %{public}d",
-            interrupt.streamId);
-
-        AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(DEVICE_TYPE_DEFAULT,
-            interrupt.uid, interrupt.streamId, audioStreamDescriptor->rendererInfo_.streamUsage);
+        AudioRouterInfra::GetInstance().UpdateOutputStreamState(interrupt.uid, interrupt.streamId,
+            audioStreamDescriptor->rendererInfo_.streamUsage, RendererState::RENDERER_STOPPED, false);
     }
 }
 
@@ -260,7 +255,7 @@ int32_t AudioSession::Deactivate()
 
     state_ = AudioSessionState::SESSION_DEACTIVE;
 
-    if (defaultDeviceType_ != DEVICE_TYPE_INVALID) {
+    if (defaultDeviceType_ != DEVICE_TYPE_INVALID && defaultDeviceType_ != DEVICE_TYPE_DEFAULT) {
         UpdateVoipStreamsDefaultOutputDevice();
     }
 
@@ -292,7 +287,8 @@ int32_t AudioSession::EnableSingleVoipStreamDefaultOutputDevice(const AudioInter
     int32_t ret = SUCCESS;
 
     bool isRunning = false;
-    if (CanCurrentStreamSetDefaultOutputDevice(interrupt) && (pipeManager_ != nullptr)) {
+    if (CanCurrentStreamSetDefaultOutputDevice(interrupt) && (pipeManager_ != nullptr) &&
+        (defaultDeviceType_ != DEVICE_TYPE_DEFAULT)) {
         std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor =
             pipeManager_->GetStreamDescById(interrupt.streamId);
         if (audioStreamDescriptor != nullptr) {
@@ -410,10 +406,15 @@ int32_t AudioSession::SetSessionDefaultOutputDevice(const DeviceType &deviceType
         AUDIO_INFO_LOG("The deviceType is illegal, the default device will not be changed.");
         return ERROR_INVALID_PARAM;
     }
-
-    defaultDeviceType_ = deviceType;
-
-    return EnableDefaultDevice(forceFetch);
+    CHECK_AND_RETURN_RET(defaultDeviceType_ != deviceType, SUCCESS);
+    if (defaultDeviceType_ != DEVICE_TYPE_INVALID && deviceType == DEVICE_TYPE_DEFAULT) {
+        defaultDeviceType_ = deviceType;
+        UpdateVoipStreamsDefaultOutputDevice();
+        return SUCCESS;
+    } else {
+        defaultDeviceType_ = deviceType;
+        return EnableDefaultDevice(forceFetch);
+    }
 }
 
 void AudioSession::GetSessionDefaultOutputDevice(DeviceType &deviceType)
