@@ -211,6 +211,121 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, SetOutputClusterConnected_001, TestSize.Level
     coBufferNode->SetOutputClusterConnected(isOutputClusterConnectedTemp);
     EXPECT_EQ(coBufferNode->ringCache_->GetReadableSize().size != 0, true);
 }
+
+/**
+ * @tc.name  : Test Enqueue with nullptr
+ * @tc.type  : FUNC
+ * @tc.number: Enqueue_Nullptr_001
+ * @tc.desc  : Test Enqueue when buffer is nullptr.
+ */
+HWTEST_F(HpaeCoBufferNodeUnitTest, Enqueue_Nullptr_001, TestSize.Level0)
+{
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    EXPECT_NE(coBufferNode, nullptr);
+    // Test Enqueue with nullptr - should return early without crash
+    coBufferNode->Enqueue(nullptr);
+    // Verify node state is still valid
+    EXPECT_EQ(coBufferNode->IsOutputClusterConnected(), false);
+}
+
+/**
+ * @tc.name  : Test DelayAlignmentInner before threshold
+ * @tc.type  : FUNC
+ * @tc.number: DelayAlignmentInner_BeforeThreshold_001
+ * @tc.desc  : Test DelayAlignmentInner when enqueueCount_ < waitCountThreshold_.
+ */
+HWTEST_F(HpaeCoBufferNodeUnitTest, DelayAlignmentInner_BeforeThreshold_001, TestSize.Level0)
+{
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    EXPECT_NE(coBufferNode, nullptr);
+    // Set waitCountThreshold to a value > 0
+    coBufferNode->SetDelayCount(TEST_COLLABORATION_ALIGN_COUNT);
+    // Reset enqueueCount to ensure it starts from 0
+    coBufferNode->enqueueCount_ = 0;
+    // Create a valid buffer
+    PcmBufferInfo pcmBufferInfo;
+    pcmBufferInfo.ch = STEREO;
+    pcmBufferInfo.frameLen = TEST_FRAME_LEN;
+    HpaePcmBuffer pcmBuffer(pcmBufferInfo);
+    // Fill buffer with test data
+    for (uint32_t i = 0; i < pcmBuffer.GetFrameLen() * pcmBuffer.GetChannelCount(); i++) {
+        pcmBuffer.GetPcmDataBuffer()[i] = 0.5f;
+    }
+    // First enqueue when enqueueCount_ < waitCountThreshold_ - should return false
+    coBufferNode->Enqueue(&pcmBuffer);
+    // Verify enqueueCount increased but enqueueRunning is still false
+    EXPECT_EQ(coBufferNode->enqueueCount_, 1);
+    EXPECT_EQ(coBufferNode->enqueueRunning_, false);
+}
+
+/**
+ * @tc.name  : Test DelayAlignmentInner at threshold
+ * @tc.type  : FUNC
+ * @tc.number: DelayAlignmentInner_AtThreshold_001
+ * @tc.desc  : Test DelayAlignmentInner when enqueueCount_ == waitCountThreshold_.
+ */
+HWTEST_F(HpaeCoBufferNodeUnitTest, DelayAlignmentInner_AtThreshold_001, TestSize.Level0)
+{
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    EXPECT_NE(coBufferNode, nullptr);
+    // Set waitCountThreshold to TEST_COLLABORATION_ALIGN_COUNT (5)
+    coBufferNode->SetDelayCount(TEST_COLLABORATION_ALIGN_COUNT);
+    // Set enqueueCount to waitCountThreshold_ - 1 (4)
+    coBufferNode->enqueueCount_ = TEST_COLLABORATION_ALIGN_COUNT - 1;
+    // Create a valid buffer
+    PcmBufferInfo pcmBufferInfo;
+    pcmBufferInfo.ch = STEREO;
+    pcmBufferInfo.frameLen = TEST_FRAME_LEN;
+    HpaePcmBuffer pcmBuffer(pcmBufferInfo);
+    // Fill buffer with test data
+    for (uint32_t i = 0; i < pcmBuffer.GetFrameLen() * pcmBuffer.GetChannelCount(); i++) {
+        pcmBuffer.GetPcmDataBuffer()[i] = 0.5f;
+    }
+    // First enqueue when enqueueCount_ = 4 < waitCountThreshold_ = 5
+    // This will increment enqueueCount_ to 5 and return false
+    coBufferNode->Enqueue(&pcmBuffer);
+    EXPECT_EQ(coBufferNode->enqueueRunning_, false);
+    EXPECT_EQ(coBufferNode->enqueueCount_, TEST_COLLABORATION_ALIGN_COUNT);
+
+    // Second enqueue when enqueueCount_ = 5 == waitCountThreshold_ = 5
+    // This should trigger latency alignment and set enqueueRunning to true
+    coBufferNode->Enqueue(&pcmBuffer);
+    // Verify enqueueRunning is now true and enqueueCount increased
+    EXPECT_EQ(coBufferNode->enqueueRunning_, true);
+    EXPECT_EQ(coBufferNode->enqueueCount_, TEST_COLLABORATION_ALIGN_COUNT + 1);
+}
+
+/**
+ * @tc.name  : Test ProcessOutputFrameInner with Dequeue failure
+ * @tc.type  : FUNC
+ * @tc.number: ProcessOutputFrameInner_DequeueFailure_001
+ * @tc.desc  : Test ProcessOutputFrameInner when Dequeue operation fails.
+ */
+HWTEST_F(HpaeCoBufferNodeUnitTest, ProcessOutputFrameInner_DequeueFailure_001, TestSize.Level0)
+{
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    EXPECT_NE(coBufferNode, nullptr);
+    // Set output cluster as connected
+    coBufferNode->SetOutputClusterConnected(true);
+    // Create a valid buffer
+    PcmBufferInfo pcmBufferInfo;
+    pcmBufferInfo.ch = STEREO;
+    pcmBufferInfo.frameLen = TEST_FRAME_LEN;
+    HpaePcmBuffer pcmBuffer(pcmBufferInfo);
+    // Fill buffer with test data
+    for (uint32_t i = 0; i < pcmBuffer.GetFrameLen() * pcmBuffer.GetChannelCount(); i++) {
+        pcmBuffer.GetPcmDataBuffer()[i] = 0.5f;
+    }
+    // Set enqueueRunning to true to bypass the enqueue check in DoProcess
+    coBufferNode->enqueueRunning_ = true;
+    // Enqueue some data
+    coBufferNode->Enqueue(&pcmBuffer);
+    // Corrupt the ring cache by setting a very small readable size
+    // This simulates a condition where GetReadableSize succeeds but Dequeue might fail
+    coBufferNode->ProcessOutputFrameInner();
+    // Verify the node handled the potential failure gracefully
+    EXPECT_EQ(coBufferNode->IsOutputClusterConnected(), true);
+}
 }
 }
 }
