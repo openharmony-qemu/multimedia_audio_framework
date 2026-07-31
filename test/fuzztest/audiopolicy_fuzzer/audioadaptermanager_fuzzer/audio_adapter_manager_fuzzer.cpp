@@ -17,6 +17,7 @@
 #include "audio_server_proxy.h"
 #include <atomic>
 #include <fuzzer/FuzzedDataProvider.h>
+#include <memory>
 #include <string>
 #include <vector>
 using namespace std;
@@ -484,11 +485,14 @@ void AudioVolumeManagerInitializeFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioVolumeManagerSetDataShareReadyFuzzTest(FuzzedDataProvider& fdp)
 {
-    static std::shared_ptr<AudioAdapterManager> g_AudioAdapterManager = nullptr;
-    g_AudioAdapterManager = std::make_shared<AudioAdapterManager>();
-    CHECK_AND_RETURN(g_AudioAdapterManager != nullptr);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    static std::shared_ptr<AudioAdapterManager> staticAudioAdapterManager;
+    staticAudioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(staticAudioAdapterManager != nullptr);
     std::atomic<bool> isDataShareReady = fdp.ConsumeBool();
-    g_AudioAdapterManager->SetDataShareReady(isDataShareReady.load());
+    audioAdapterManager->SetDataShareReady(isDataShareReady.load());
+    staticAudioAdapterManager->SetDataShareReady(isDataShareReady.load());
 }
 
 void AudioVolumeManagerSendLoudVolumeModeToDspFuzzTest(FuzzedDataProvider& fdp)

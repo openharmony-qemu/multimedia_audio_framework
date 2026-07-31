@@ -93,6 +93,27 @@ namespace {
     constexpr int32_t SILENT_TYPE_MUTE_SESSION = 1;
     constexpr int32_t FIRST_SOUND_BUFFER = 1;
 
+    bool IsRendererConfigValid(const AudioProcessConfig &config)
+    {
+        if (config.appInfo.appUid < 0) {
+            AUDIO_ERR_LOG("Invalid appUid in renderer config: %{public}d", config.appInfo.appUid);
+            return false;
+        }
+        if (config.appInfo.appPid < 0) {
+            AUDIO_ERR_LOG("Invalid appPid in renderer config: %{public}d", config.appInfo.appPid);
+            return false;
+        }
+        if (config.streamInfo.samplingRate <= 0) {
+            AUDIO_ERR_LOG("Invalid samplingRate in renderer config: %{public}d", config.streamInfo.samplingRate);
+            return false;
+        }
+        if (config.streamInfo.channels <= 0 || config.streamInfo.channels > 32) {
+            AUDIO_ERR_LOG("Invalid channels in renderer config: %{public}d", config.streamInfo.channels);
+            return false;
+        }
+        return true;
+    }
+
     size_t GetDupBufferLenMs(bool offloadEnable)
     {
         if (offloadEnable) {
@@ -165,7 +186,13 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
         oldAppliedVolume_ = MIN_FLOAT_VOLUME;
     }
     isNonStandardSampleRate_ = IsNonStandardSampleRate(processConfig_.streamInfo.GetEffectiveSampleRate());
-    audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
+    if (!IsRendererConfigValid(processConfig)) {
+        AUDIO_ERR_LOG("Invalid processConfig for AudioStreamChecker, using default");
+        AudioProcessConfig defaultConfig;
+        audioStreamChecker_ = std::make_shared<AudioStreamChecker>(defaultConfig);
+    } else {
+        audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
+    }
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
     InitLatencyMeasurement();
     asyncHandler_ = std::make_shared<AsyncActionHandler>("OS_RISAsyncHandler");
