@@ -2590,10 +2590,10 @@ void AudioCoreService::RegisterBluetoothListener()
     isBtListenerRegistered = true;
     isBtCrashed = false;
     RegisterBluetoothDeathCallback();
-    AudioPolicyUtils::GetInstance().SetBtConnecting(true);
+    AudioRouterInfra::GetInstance().SetBtConnecting(true);
     Bluetooth::AudioA2dpManager::CheckA2dpDeviceReconnect();
     Bluetooth::AudioHfpManager::CheckHfpDeviceReconnect();
-    AudioPolicyUtils::GetInstance().SetBtConnecting(false);
+    AudioRouterInfra::GetInstance().SetBtConnecting(false);
 #endif
 }
 
