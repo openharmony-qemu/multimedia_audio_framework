@@ -1301,9 +1301,7 @@ void HpaeDirectRendererManager::FinalizeSessionEffectClose(uint32_t sessionId,
     auto node = closingNode.lock();
     // Identity check: no-op if the closing node was already replaced/destroyed
     // (DestroyStream, DeleteInputSession, Reload, or a replayed/recreated node).
-    if (node == nullptr || sessionEffectNode_ != node || sessionEffectSessionId_ != sessionId) {
-        return;
-    }
+    CHECK_AND_RETURN(node != nullptr && sessionEffectNode_ == node && sessionEffectSessionId_ == sessionId);
 
     // Only reconnect the bypass if the stream is still running; if pause/stop already tore the
     // chain down, leave it disconnected — ConnectInputSession rebuilds on Start.
@@ -1421,34 +1419,65 @@ void HpaeDirectRendererManager::DetachSessionEffectNodeForReload()
     sessionEffectSessionId_ = 0;
 }
 
+bool HpaeDirectRendererManager::TryDeferSessionEffectCreate(uint32_t sessionId,
+    const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
+    const AudioEffectConfig &config)
+{
+    // The curNode's physical SE node is still finalizing its deferred close (STOPPING). Defer this
+    // Create until that node is gone: record a cancelable/ownership token and requeue. Do NOT write
+    // attach state, insert a node, or send ENABLE here.
+    if (curNode_ == nullptr || curNode_->GetSessionId() != sessionId ||
+        sessionEffectNode_ == nullptr ||
+        sessionEffectNode_->GetStatus() != HpaeSessionEffectNode::STATUS::STOPPING) {
+        return false;
+    }
+    uint64_t generation = SetPendingSessionEffectCreate(sessionId, instance);
+    Request retry = [this, sessionId, effectName, instance, config, generation]() {
+        CHECK_AND_RETURN(IsPendingSessionEffectCreate(sessionId, generation, instance));
+        CancelPendingSessionEffectCreate(sessionId);
+        if (SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr) {
+            CreateSessionEffect(sessionId, effectName, instance, config);
+        }
+    };
+    hpaeNoLockQueue_.PushRequest(std::move(retry));
+    if (hpaeSignalProcessThread_ != nullptr) {
+        hpaeSignalProcessThread_->Notify();
+    }
+    AUDIO_INFO_LOG("CreateSessionEffect: session %{public}u deferred behind STOPPING node", sessionId);
+    return true;
+}
+
+int32_t HpaeDirectRendererManager::MaterializeCurrentSessionEffect(uint32_t sessionId,
+    const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
+    const AudioEffectConfig &config)
+{
+    // Caller guarantees curNode_ != nullptr && curNode_->GetSessionId() == sessionId.
+    if (converterForGain_ == nullptr || loudnessGainNode_ == nullptr) {
+        // Chain not ready; attach state sits on node, will materialize in ConnectInputSession
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
+            OPERATION_SESSION_EFFECT_ENABLED);
+        AUDIO_INFO_LOG("CreateSessionEffect: deferred for current session %{public}u (chain not created)",
+            sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
+    }
+    sessionEffectSessionId_ = sessionId;
+    int32_t ret = InsertSessionEffectNode(effectName, instance, config);
+    if (ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
+            OPERATION_SESSION_EFFECT_ENABLED);
+    } else {
+        sessionEffectSessionId_ = 0;
+    }
+    return ret;
+}
+
 int32_t HpaeDirectRendererManager::CreateSessionEffect(uint32_t sessionId,
     const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
     const AudioEffectConfig &config)
 {
     auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
 
-    // The curNode's physical SE node is still finalizing its deferred close (STOPPING). Defer this
-    // Create until that node is gone: record a cancelable/ownership token and requeue. Do NOT write
-    // attach state, insert a node, or send ENABLE here.
-    if (curNode_ != nullptr && curNode_->GetSessionId() == sessionId &&
-        sessionEffectNode_ != nullptr &&
-        sessionEffectNode_->GetStatus() == HpaeSessionEffectNode::STATUS::STOPPING) {
-        uint64_t generation = SetPendingSessionEffectCreate(sessionId, instance);
-        Request retry = [this, sessionId, effectName, instance, config, generation]() {
-            if (!IsPendingSessionEffectCreate(sessionId, generation, instance)) {
-                return;  // superseded by a newer Create, or cancelled by Destroy/DestroyStream/Move/Reload
-            }
-            CancelPendingSessionEffectCreate(sessionId);
-            if (SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr) {
-                CreateSessionEffect(sessionId, effectName, instance, config);
-            }
-        };
-        hpaeNoLockQueue_.PushRequest(std::move(retry));
-        if (hpaeSignalProcessThread_ != nullptr) {
-            hpaeSignalProcessThread_->Notify();
-        }
-        AUDIO_INFO_LOG("CreateSessionEffect: session %{public}u deferred behind STOPPING node",
-            sessionId);
+    if (TryDeferSessionEffectCreate(sessionId, effectName, instance, config)) {
         return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
     }
 
@@ -1470,25 +1499,9 @@ int32_t HpaeDirectRendererManager::CreateSessionEffect(uint32_t sessionId,
         node->SetSessionEffectAttachState(st);
     }
 
-    // If session is curNode_ and chain is ready, materialize immediately
+    // If session is curNode_, materialize immediately (chain readiness checked inside)
     if (curNode_ != nullptr && curNode_->GetSessionId() == sessionId) {
-        if (converterForGain_ == nullptr || loudnessGainNode_ == nullptr) {
-            // Chain not ready; attach state sits on node, will materialize in ConnectInputSession
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
-                OPERATION_SESSION_EFFECT_ENABLED);
-            AUDIO_INFO_LOG("CreateSessionEffect: deferred for current session %{public}u (chain not created)",
-                sessionId);
-            return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
-        }
-        sessionEffectSessionId_ = sessionId;
-        int32_t ret = InsertSessionEffectNode(effectName, instance, config);
-        if (ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
-                OPERATION_SESSION_EFFECT_ENABLED);
-        } else {
-            sessionEffectSessionId_ = 0;
-        }
-        return ret;
+        return MaterializeCurrentSessionEffect(sessionId, effectName, instance, config);
     }
     // Not curNode_ -> attach state sits on SinkInputNode, waits for ConnectInputSession
     HpaeSessionState state = (node != nullptr) ? node->GetState() : HPAE_SESSION_NEW;

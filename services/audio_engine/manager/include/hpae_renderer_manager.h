@@ -210,6 +210,11 @@ private:
     bool IsPendingSessionEffectCreate(uint32_t sessionId, uint64_t generation,
         const std::shared_ptr<IEffectInstance> &instance) const;
     void CancelPendingSessionEffectCreate(uint32_t sessionId);
+    // Returns true (and requeues a retry) when the cluster's SE node for this session is
+    // STOPPING; false otherwise.
+    bool TryDeferSessionEffectCreate(const std::shared_ptr<HpaeProcessCluster> &processCluster,
+        uint32_t sessionId, const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
+        const AudioEffectConfig &config);
     int32_t InitOutputCluster();
 
 private:

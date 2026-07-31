@@ -26,6 +26,32 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+bool HpaeRendererManager::TryDeferSessionEffectCreate(
+    const std::shared_ptr<HpaeProcessCluster> &processCluster, uint32_t sessionId,
+    const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
+    const AudioEffectConfig &config)
+{
+    // The physical SE node is still finalizing its deferred close (STOPPING). Defer this Create
+    // until that node is gone: record a cancelable/ownership token and requeue. Do NOT write
+    // attach state, create a node, or send ENABLE here.
+    if (!processCluster->IsSessionEffectNodeStopping(sessionId)) {
+        return false;
+    }
+    uint64_t generation = SetPendingSessionEffectCreate(sessionId, instance);
+    Request retry = [this, sessionId, effectName, instance, config, generation]() {
+        // superseded by a newer Create, or cancelled by Destroy/DestroyStream/Move/Reload
+        CHECK_AND_RETURN(IsPendingSessionEffectCreate(sessionId, generation, instance));
+        CancelPendingSessionEffectCreate(sessionId);
+        CreateSessionEffect(sessionId, effectName, instance, config);
+    };
+    hpaeNoLockQueue_.PushRequest(std::move(retry));
+    if (hpaeSignalProcessThread_ != nullptr) {
+        hpaeSignalProcessThread_->Notify();
+    }
+    AUDIO_INFO_LOG("CreateSessionEffect: session %{public}u deferred behind STOPPING node", sessionId);
+    return true;
+}
+
 int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
     std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
 {
@@ -43,26 +69,8 @@ int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::
         AUDIO_WARNING_LOG("CreateSessionEffect: cluster not found for sceneType %{public}d", sceneType);
         return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
     }
-    // The physical SE node is still finalizing its deferred close (STOPPING). Defer this Create
-    // until that node is gone: record a cancelable/ownership token and requeue. Do NOT write
-    // attach state, create a node, or send ENABLE here.
-    if (processCluster->IsSessionEffectNodeStopping(sessionId)) {
-        uint64_t generation = SetPendingSessionEffectCreate(sessionId, instance);
-        Request retry = [this, sessionId, effectName, instance, config, generation]() {
-            if (!IsPendingSessionEffectCreate(sessionId, generation, instance)) {
-                return;  // superseded by a newer Create, or cancelled by Destroy/DestroyStream/Move/Reload
-            }
-            CancelPendingSessionEffectCreate(sessionId);
-            CreateSessionEffect(sessionId, effectName, instance, config);
-        };
-        hpaeNoLockQueue_.PushRequest(std::move(retry));
-        if (hpaeSignalProcessThread_ != nullptr) {
-            hpaeSignalProcessThread_->Notify();
-        }
-        AUDIO_INFO_LOG("CreateSessionEffect: session %{public}u deferred behind STOPPING node",
-            sessionId);
-        return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
-    }
+    CHECK_AND_RETURN_RET(!TryDeferSessionEffectCreate(processCluster, sessionId, effectName, instance, config),
+        return static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     int32_t ret = processCluster->CreateSessionEffectNode(sessionId, effectName, instance, config);
     if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
         AUDIO_WARNING_LOG("CreateSessionEffect failed for session %{public}u, ret %{public}d", sessionId, ret);
@@ -149,9 +157,7 @@ void HpaeRendererManager::FinalizeSessionEffectClose(uint32_t sessionId,
 {
     HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
     auto processCluster = SafeGetMap(sceneClusterMap_, sceneType);
-    if (!processCluster) {
-        return;  // cluster gone (DestroyStream/Reload beat the deferred Finalize)
-    }
+    CHECK_AND_RETURN(processCluster);
     // Feed the pending create's instance so the cluster can hand off a reused instance without
     // Flush/Stop; null -> cluster releases normally.
     std::shared_ptr<IEffectInstance> pendingInst;
@@ -160,9 +166,7 @@ void HpaeRendererManager::FinalizeSessionEffectClose(uint32_t sessionId,
         pendingInst = pendingIt->second.second.lock();
     }
     bool finalized = processCluster->FinalizeDestroySessionEffectNode(sessionId, closingNode, pendingInst);
-    if (!finalized) {
-        return;  // preempted by DestroyStream/Reload/recreate
-    }
+    CHECK_AND_RETURN(finalized);
     if (route.has_value()) {
         ClearChannelOverrideForRoute(route.value());
     }

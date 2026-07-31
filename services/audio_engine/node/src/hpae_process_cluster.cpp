@@ -574,9 +574,7 @@ int32_t HpaeProcessCluster::DestroySessionEffectNode(uint32_t sessionId, uint64_
     // Used by non-smooth paths (cluster refresh) and focused tests.
     std::weak_ptr<HpaeSessionEffectNode> weakNode;
     int32_t ret = BeginDestroySessionEffectNode(sessionId, outLatency, weakNode);
-    if (ret != 0) {
-        return ret;
-    }
+    CHECK_AND_RETURN_RET(ret == 0, ret);
     FinalizeDestroySessionEffectNode(sessionId, weakNode, nullptr);
     return 0;
 }
@@ -617,9 +615,7 @@ bool HpaeProcessCluster::FinalizeDestroySessionEffectNode(uint32_t sessionId,
     auto current = SafeGetMap(idSessionEffectMap_, sessionId);
     // Identity check: no-op if the closing node was already replaced/destroyed (DestroyStream,
     // Reload, DestroyNodes, or a recreated node).
-    if (node == nullptr || current != node) {
-        return false;
-    }
+    CHECK_AND_RETURN_RET(node != nullptr && current == node);
 
     auto converterNode = SafeGetMap(idConverterMap_, sessionId);
     auto loudnessGainNode = SafeGetMap(idLoudnessGainNodeMap_, sessionId);

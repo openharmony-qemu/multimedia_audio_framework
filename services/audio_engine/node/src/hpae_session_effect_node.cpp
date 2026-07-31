@@ -35,6 +35,7 @@ static constexpr uint32_t PREHEAT_NO_DATA_TIMEOUT_MS = 100;
 static constexpr uint32_t RAW_BYPASS_FIFO_EXTRA_FRAMES = 2;
 static constexpr uint32_t RAW_BYPASS_FIFO_MIN_FRAMES = 2;
 static constexpr uint32_t RAW_BYPASS_FULL_WAIT_MS = 1;
+static constexpr uint32_t RAW_BYPASS_POP_WAIT_MS = 5;
 
 bool GetBytesPerFrame(size_t channels, size_t &bytesPerFrame)
 {
@@ -171,19 +172,15 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessCloseCrossfade(const std::vector<Hp
     size_t inputChannels = audioConfig_.inputCfg.channels;
     size_t outputChannels = audioConfig_.outputCfg.channels != 0 ?
         audioConfig_.outputCfg.channels : inputChannels;
-    if (frameLen == 0 || inputChannels == 0 || outputChannels != inputChannels ||
-        dryOutput->GetChannelCount() != inputChannels ||
-        tailOutputData_.GetChannelCount() != outputChannels ||
-        tailOutputData_.GetFrameLen() != frameLen) {
-        return dryOutput;
-    }
+    CHECK_AND_RETURN_RET(frameLen != 0 && inputChannels != 0 && outputChannels == inputChannels &&
+        dryOutput->GetChannelCount() == inputChannels &&
+        tailOutputData_.GetChannelCount() == outputChannels &&
+        tailOutputData_.GetFrameLen() == frameLen, dryOutput);
 
     size_t byteLen = 0;
-    if (!GetPcmByteLen(frameLen, inputChannels, byteLen) ||
-        byteLen > static_cast<size_t>(std::numeric_limits<int32_t>::max()) ||
-        dryOutput->DataSize() != byteLen || tailOutputData_.DataSize() != byteLen) {
-        return dryOutput;
-    }
+    CHECK_AND_RETURN_RET(GetPcmByteLen(frameLen, inputChannels, byteLen) &&
+        byteLen <= static_cast<size_t>(std::numeric_limits<int32_t>::max()) &&
+        dryOutput->DataSize() == byteLen && tailOutputData_.DataSize() == byteLen, dryOutput);
 
     // Drain the wet output queued before close (do NOT feed this dry block back into the
     // closing algorithm). Only a full aligned wet block is mixed; otherwise pass dry through.
@@ -358,22 +355,19 @@ bool HpaeSessionEffectNode::PushRawBypassBuffer(HpaePcmBuffer *buf)
 HpaePcmBuffer *HpaeSessionEffectNode::PopRawBypassBuffer()
 {
     CHECK_AND_RETURN_RET(!rawBypassNeeded_, nullptr);
-    bool popped = false;
-    {
-        std::unique_lock<std::mutex> lock(rawBypassMutex_, std::defer_lock);
-        CHECK_AND_RETURN_RET(lock.try_lock(), nullptr);
-        if (rawBypassBuffer_.GetCurFrames() > 0) {
-            popped = rawBypassBuffer_.GetFrameData(rawBypassOutputData_);
-            rawBypassOutputData_.SetBufferValid(true);
-            rawBypassOutputData_.SetBufferSilence(false);
-            rawBypassOutputData_.SetSplitStreamType(GetNodeInfo().GetSplitStreamType());
-            rawBypassOutputData_.SetAudioStreamType(GetNodeInfo().streamType);
-            rawBypassOutputData_.SetAudioStreamUsage(GetNodeInfo().effectInfo.streamUsage);
-        }
+    std::unique_lock<std::mutex> lock(rawBypassMutex_);
+    auto hasData = [this]() { return stopRequested_.load() || rawBypassBuffer_.GetCurFrames() > 0; };
+    if (rawBypassBuffer_.GetCurFrames() == 0) {
+        rawBypassCv_.wait_for(lock, std::chrono::milliseconds(RAW_BYPASS_POP_WAIT_MS), hasData);
     }
-    if (!popped) {
-        return nullptr;
-    }
+    bool popped = rawBypassBuffer_.GetFrameData(rawBypassOutputData_);
+    CHECK_AND_RETURN_RET(popped, nullptr);
+    rawBypassOutputData_.SetBufferValid(true);
+    rawBypassOutputData_.SetBufferSilence(false);
+    rawBypassOutputData_.SetSplitStreamType(GetNodeInfo().GetSplitStreamType());
+    rawBypassOutputData_.SetAudioStreamType(GetNodeInfo().streamType);
+    rawBypassOutputData_.SetAudioStreamUsage(GetNodeInfo().effectInfo.streamUsage);
+    lock.unlock();
     rawBypassCv_.notify_all();
     return &rawBypassOutputData_;
 }
@@ -545,9 +539,7 @@ int32_t HpaeSessionEffectNode::StartEffect()
 
     // A closing (STOPPING) node must not be re-warmed by Start; FinalizeClose still owns its
     // deletion. (A paused-STOPPING node already cleared isPaused_ via the resume branch above.)
-    if (status_ == STATUS::STOPPING) {
-        return 0;
-    }
+    CHECK_AND_RETURN_RET(status_ != STATUS::STOPPING, 0);
 
     AUDIO_INFO_LOG("StartEffect: prebufTargetBytes_=%{public}zu", prebufTargetBytes_);
 
