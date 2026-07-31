@@ -615,7 +615,7 @@ bool HpaeProcessCluster::FinalizeDestroySessionEffectNode(uint32_t sessionId,
     auto current = SafeGetMap(idSessionEffectMap_, sessionId);
     // Identity check: no-op if the closing node was already replaced/destroyed (DestroyStream,
     // Reload, DestroyNodes, or a recreated node).
-    CHECK_AND_RETURN_RET(node != nullptr && current == node);
+    CHECK_AND_RETURN_RET(node != nullptr && current == node, false);
 
     auto converterNode = SafeGetMap(idConverterMap_, sessionId);
     auto loudnessGainNode = SafeGetMap(idLoudnessGainNodeMap_, sessionId);

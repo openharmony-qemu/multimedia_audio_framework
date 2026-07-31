@@ -70,7 +70,7 @@ int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::
         return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
     }
     CHECK_AND_RETURN_RET(!TryDeferSessionEffectCreate(processCluster, sessionId, effectName, instance, config),
-        return static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
     int32_t ret = processCluster->CreateSessionEffectNode(sessionId, effectName, instance, config);
     if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
         AUDIO_WARNING_LOG("CreateSessionEffect failed for session %{public}u, ret %{public}d", sessionId, ret);
