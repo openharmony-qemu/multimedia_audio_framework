@@ -84,34 +84,6 @@ static void InitAudioServerBufferForOnReadDataTest(const std::shared_ptr<Capture
         totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
 }
 
-static SwitchStreamInfo MakeSwitchStreamInfo(const std::shared_ptr<CapturerInServer> &capturerInServer,
-    const AudioProcessConfig &processConfig, CapturerState capturerState)
-{
-    return {
-        capturerInServer->streamIndex_,
-        processConfig.callerUid,
-        processConfig.appInfo.appUid,
-        processConfig.appInfo.appPid,
-        processConfig.appInfo.appTokenId,
-        capturerState,
-    };
-}
-
-static bool PrepareSwitchStreamCreatedRecord(SwitchStreamInfo &info)
-{
-    SwitchStreamUtil::RemoveAllRecordBySessionId(info.sessionId);
-    info.nextState = CAPTURER_RUNNING;
-    if (!SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING)) {
-        return false;
-    }
-    info.nextState = CAPTURER_PREPARED;
-    if (!SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED)) {
-        return false;
-    }
-    info.nextState = CAPTURER_RUNNING;
-    return true;
-}
-
 class ICapturerStreamTest1 : public ICapturerStream {
 public:
     int32_t GetStreamFramesRead(uint64_t &framesRead) override { return 0; }
@@ -796,9 +768,6 @@ HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_TurnOffM
 
     capturerInServer_->streamIndex_ = 203;
     capturerInServer_->isMicIndicatorOn_ = true;
-    auto info = MakeSwitchStreamInfo(capturerInServer_, processConfig, CAPTURER_RUNNING);
-    ASSERT_TRUE(PrepareSwitchStreamCreatedRecord(info));
-    ASSERT_TRUE(SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED));
 
     auto &manager = RecordPrivacyManager::GetInstance();
     manager.tokenIdRecordMap_.clear();
@@ -808,7 +777,6 @@ HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_TurnOffM
     EXPECT_FALSE(ret);
     EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
     EXPECT_EQ(manager.tokenIdRecordMap_.count(processConfig.appInfo.appTokenId), 0);
-    SwitchStreamUtil::RemoveAllRecordBySessionId(info.sessionId);
     manager.tokenIdRecordMap_.clear();
 }
 
@@ -892,12 +860,9 @@ HWTEST_F(CapturerInServerSecondUnitTest, StartInner_TurnOnMicIndicatorFail_001, 
     capturerInServer_->status_ = I_STATUS_IDLE;
     capturerInServer_->streamIndex_ = 202;
     capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
-    auto info = MakeSwitchStreamInfo(capturerInServer_, processConfig, CAPTURER_RUNNING);
-    ASSERT_TRUE(PrepareSwitchStreamCreatedRecord(info));
     auto ret = capturerInServer_->StartInner(false);
     EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
     EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
-    SwitchStreamUtil::RemoveAllRecordBySessionId(info.sessionId);
     manager.tokenIdRecordMap_.clear();
 }
 
