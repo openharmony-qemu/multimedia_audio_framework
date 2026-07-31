@@ -258,5 +258,75 @@ HWTEST_F(ScoAudioSceneManagerTest, ClearAllScoStreams_001, TestSize.Level1)
     EXPECT_FALSE(ScoAudioSceneManager::GetInstance().HasScoStream());
 }
 
+/**
+ * @tc.name  : ScoAudioSceneManager_AddScoStream_005
+ * @tc.desc  : Test AddScoStream with voice ringing scene
+ * @tc.type  : FUNC
+ */
+HWTEST_F(ScoAudioSceneManagerTest, AddScoStream_005, TestSize.Level1)
+{
+    uint32_t streamId = 100005;
+    AudioScene audioScene = AUDIO_SCENE_VOICE_RINGING;
+    int32_t uid = 1005;
+    bool isRecognition = false;
+    
+    ScoAudioSceneManager::GetInstance().AddScoStream(streamId, audioScene, uid, isRecognition);
+    
+    EXPECT_TRUE(ScoAudioSceneManager::GetInstance().HasScoStream());
+    EXPECT_EQ(ScoAudioSceneManager::GetInstance().GetHighestPriorityAudioScene(), AUDIO_SCENE_VOICE_RINGING);
+    ScoAudioScenePriority priority = ScoAudioSceneManager::GetInstance().GetAudioScenePriority(
+        AUDIO_SCENE_VOICE_RINGING, false);
+    EXPECT_EQ(priority, SCO_PRIORITY_VOIP);
+}
+
+/**
+ * @tc.name  : ScoAudioSceneManager_AddScoStream_006
+ * @tc.desc  : Test AddScoStream with ringing scene and verify priority
+ * @tc.type  : FUNC
+ */
+HWTEST_F(ScoAudioSceneManagerTest, AddScoStream_006, TestSize.Level1)
+{
+    uint32_t streamId = 100006;
+    AudioScene audioScene = AUDIO_SCENE_RINGING;
+    int32_t uid = 1006;
+    bool isRecognition = false;
+    
+    ScoAudioSceneManager::GetInstance().AddScoStream(streamId, audioScene, uid, isRecognition);
+    
+    EXPECT_TRUE(ScoAudioSceneManager::GetInstance().HasScoStream());
+    ScoAudioScenePriority priority = ScoAudioSceneManager::GetInstance().GetAudioScenePriority(
+        AUDIO_SCENE_RINGING, false);
+    EXPECT_EQ(priority, SCO_PRIORITY_VOIP);
+}
+
+/**
+ * @tc.name  : ScoAudioSceneManager_RemoveScoStream_002
+ * @tc.desc  : Test RemoveScoStream with non-existent streamId
+ * @tc.type  : FUNC
+ */
+HWTEST_F(ScoAudioSceneManagerTest, RemoveScoStream_002, TestSize.Level1)
+{
+    ScoAudioSceneManager::GetInstance().AddScoStream(100001, AUDIO_SCENE_PHONE_CALL, 1001, false);
+    EXPECT_TRUE(ScoAudioSceneManager::GetInstance().HasScoStream());
+    
+    ScoAudioSceneManager::GetInstance().RemoveScoStream(999999);
+    EXPECT_TRUE(ScoAudioSceneManager::GetInstance().HasScoStream());
+    EXPECT_EQ(ScoAudioSceneManager::GetInstance().GetHighestPriorityAudioScene(), AUDIO_SCENE_PHONE_CALL);
+}
+
+/**
+ * @tc.name  : ScoAudioSceneManager_GetHighestPriorityAudioScene_005
+ * @tc.desc  : Test GetHighestPriorityAudioScene with multiple streams and different priorities
+ * @tc.type  : FUNC
+ */
+HWTEST_F(ScoAudioSceneManagerTest, GetHighestPriorityAudioScene_005, TestSize.Level1)
+{
+    ScoAudioSceneManager::GetInstance().AddScoStream(100001, AUDIO_SCENE_VOICE_RINGING, 1001, false);
+    ScoAudioSceneManager::GetInstance().AddScoStream(100002, AUDIO_SCENE_DEFAULT, 1002, true);
+    ScoAudioSceneManager::GetInstance().AddScoStream(100003, AUDIO_SCENE_PHONE_CALL, 1003, false);
+    
+    EXPECT_EQ(ScoAudioSceneManager::GetInstance().GetHighestPriorityAudioScene(), AUDIO_SCENE_PHONE_CALL);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
