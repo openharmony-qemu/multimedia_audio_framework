@@ -31,7 +31,7 @@ public:
 
 private:
     bool CanUseConcurrentlyWithOtherDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
-    
+
     std::shared_ptr<AudioDeviceDescriptor> highestPriorityDevice_ = nullptr;
 };
 } // namespace AudioStandard
