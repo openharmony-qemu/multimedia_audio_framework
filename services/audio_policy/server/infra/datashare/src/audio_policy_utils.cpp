@@ -30,6 +30,7 @@
 #include "audio_recovery_device.h"
 #include "audio_bus_selector.h"
 #include "audio_bundle_manager.h"
+#include "audio_router_infra.h"
 #include "audio_router_select_strategy.h"
 #include "audio_select_interface_service.h"
 #include "audio_server_proxy.h"
@@ -221,7 +222,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             break;
     }
     if (desc->deviceType_ == DEVICE_TYPE_NONE) {
-        ErasePreferredDeviceByType(preferredType);
+        AudioRouterInfra::GetInstance().ErasePreferredDeviceByType(preferredType);
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "SetPreferredDevice failed, preferredType:%{public}d, ret:%{public}d", preferredType, ret);
@@ -286,25 +287,6 @@ void AudioPolicyUtils::SetPreferredRecordCaptureDeviceInCar(
     }
 }
 #endif
-
-int32_t AudioPolicyUtils::ErasePreferredDeviceByType(const PreferredType preferredType)
-{
-    if (isBTReconnecting_) {
-        return SUCCESS;
-    }
-    auto type = static_cast<Media::MediaMonitor::PreferredType>(preferredType);
-    int32_t ret = Media::MediaMonitor::MediaMonitorManager::GetInstance().ErasePreferredDeviceByType(type);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Erase preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
-void AudioPolicyUtils::SetBtConnecting(bool flag)
-{
-    isBTReconnecting_ = flag;
-}
 
 void AudioPolicyUtils::ClearScoDeviceSuspendState(std::string macAddress)
 {

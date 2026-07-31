@@ -27,25 +27,6 @@ void AudioPolicyUtilsUnitTest::SetUp(void) {}
 void AudioPolicyUtilsUnitTest::TearDown(void) {}
 
 /**
- * @tc.name  : Test ErasePreferredDeviceByType API
- * @tc.type  : FUNC
- * @tc.number: AudioPolicyUtilsUnitTest_001
- * @tc.desc  : Test ErasePreferredDeviceByType
- */
-HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_001, TestSize.Level1)
-{
-    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
-    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
-    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
-
-    PreferredType preferredType = AUDIO_MEDIA_RENDER;
-    audioPolicyUtilsTest_->isBTReconnecting_ = false;
-
-    int32_t ret = audioPolicyUtilsTest_->ErasePreferredDeviceByType(preferredType);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test GetNewSinkPortName API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyUtilsUnitTest_002
