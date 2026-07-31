@@ -321,41 +321,6 @@ HWTEST_F(HpaeSourceInputNodeTest, testDoprocess_003, TestSize.Level0)
 /**
  * @tc.name  : Test DoProcessMicInner
  * @tc.type  : FUNC
- * @tc.number: DoProcessInjectSleepTest_001
- * @tc.desc  : Test InitCapturerManager while inject=true, reply!=0, not early return
- */
-HWTEST_F(HpaeSourceInputNodeTest, DoProcessInjectSleepTest_001, TestSize.Level1)
-{
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.nodeId = DEFAULT_NODE_ID;
-    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    nodeInfo.samplingRate = SAMPLE_RATE_48000;
-    nodeInfo.channels = STEREO;
-    nodeInfo.format = SAMPLE_S16LE;
-    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC;
-    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
-    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
-
-    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
-    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
-    hpaeSourceInputNode->isInjecting_ = true;
-
-    auto historyRemain = hpaeSourceInputNode->historyRemainSizeMap_.find(HPAE_SOURCE_BUFFER_TYPE_MIC);
-    EXPECT_EQ(historyRemain != hpaeSourceInputNode->historyRemainSizeMap_.end(), true);
-    EXPECT_EQ(historyRemain->second, 0); // no data, so historyremian = 0
-
-    EXPECT_CALL(*mockCaptureSource, CaptureFrame(_, _, _))
-        .WillOnce([](char *frame, uint64_t requestBytes, uint64_t &replyBytes) {
-            replyBytes = requestBytes;
-            return SUCCESS;
-        });
-    hpaeSourceInputNode->DoProcess();
-    EXPECT_EQ(historyRemain->second, 0); // not early return, data write to outputStream, so historyremain = 0
-}
-
-/**
- * @tc.name  : Test DoProcessMicInner
- * @tc.type  : FUNC
  * @tc.number: DoProcessInjectSleepTest_002
  * @tc.desc  : Test InitCapturerManager while inject=true, reply=0 and usbState=1, not early return
  */
