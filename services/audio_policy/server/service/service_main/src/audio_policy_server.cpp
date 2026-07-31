@@ -2134,6 +2134,8 @@ int32_t AudioPolicyServer::GetInputDevice(const sptr<AudioCapturerFilter> &audio
     deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
+    AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
+
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
     for (auto &desc : deviceDescs) {
