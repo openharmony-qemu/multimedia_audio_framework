@@ -586,8 +586,6 @@ private:
     std::atomic<uint64_t> lastPrintTimestamp_ = 0;
 
     std::string traceTag_;
-    std::string spatializationEnabled_ = "Invalid";
-    std::string headTrackingEnabled_ = "Invalid";
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;

@@ -2075,13 +2075,6 @@ void RendererInClientInner::HandleRenderPeriodReachedEvent(int64_t rendererPerio
     }
 }
 
-void RendererInClientInner::OnSpatializationStateChange(const AudioSpatializationState &spatializationState)
-{
-    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
-    CHECK_AND_RETURN_LOG(ipcStream_->UpdateSpatializationState(spatializationState.spatializationEnabled,
-        spatializationState.headTrackingEnabled) == SUCCESS, "Update spatialization state failed");
-}
-
 void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
 {
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
