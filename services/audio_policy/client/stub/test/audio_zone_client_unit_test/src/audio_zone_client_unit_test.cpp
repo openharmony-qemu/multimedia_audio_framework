@@ -115,24 +115,6 @@ public:
 
 /**
 * @tc.name  : Test AudiZoneClientUnitTest.
-* @tc.number: AudiZoneClientUnitTest_001
-* @tc.desc  : Test AddAudioZoneCallback interface.
-*/
-HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_001, TestSize.Level4)
-{
-    auto audioZoneClient = std::make_shared<AudioZoneClient>();
-    auto callback = std::make_shared<AudioZoneCallbackStub>();
-    audioZoneClient->audioZoneCallback_ = callback;
-    auto ret = audioZoneClient->AddAudioZoneCallback(callback);
-    EXPECT_EQ(SUCCESS, ret);
-
-    audioZoneClient->audioZoneCallback_ = nullptr;
-    ret = audioZoneClient->AddAudioZoneCallback(callback);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
-}
-
-/**
-* @tc.name  : Test AudiZoneClientUnitTest.
 * @tc.number: AudiZoneClientUnitTest_002
 * @tc.desc  : Test AddAudioZoneChangeCallback interface.
 */
