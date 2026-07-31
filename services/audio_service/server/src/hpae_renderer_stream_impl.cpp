@@ -343,7 +343,7 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(uint32_t &sinkLatency)
         std::shared_lock<std::shared_mutex> lock(latencyMutex_);
         deviceClass = deviceClass_;
         deviceNetId = deviceNetId_;
-        if (offloadEnable_) {
+        if (offloadEnable_ && hdiPos_.first != 0) {
             sinkLatency = GetOffloadLatency();
             return SUCCESS;
         }
