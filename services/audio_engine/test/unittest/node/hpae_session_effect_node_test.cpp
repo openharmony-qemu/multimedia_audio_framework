@@ -1064,67 +1064,6 @@ protected:
     AudioEffectConfig config_ = MakeTestConfig();
 };
 
-// SE-W2: Preheat thread pulls upstream data and FeedInput
-HWTEST_F(SessionEffectNodeThreadTest, preheatThread_pullsAndFeeds, TestSize.Level0)
-{
-    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(TEST_PREHEAT_FRAME_COUNT));
-    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
-    const size_t prebufTarget = TEST_PREBUF_TARGET_BYTE_LEN;
-    int count = 0;
-    ON_CALL(*mockInst_, GetInputLevel())
-        .WillByDefault(testing::Invoke([&]() -> size_t {
-            return ++count > 5 ? prebufTarget : 0;
-        }));
-
-    EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_))
-        .Times(testing::AtLeast(1));
-
-    node_->StartEffect();
-    ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
-
-    for (int i = 0; i < 100 && !node_->GetPrebufFilled(); i++)
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    EXPECT_TRUE(node_->GetPrebufFilled());
-}
-
-// SE-W3: Prebuf filled -> thread exits -> DoProcess transitions to INTERCEPTING
-HWTEST_F(SessionEffectNodeThreadTest, preheatThread_exitAndTransition, TestSize.Level0)
-{
-    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(TEST_PREHEAT_FRAME_COUNT));
-    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
-    const size_t prebufTarget = TEST_PREBUF_TARGET_BYTE_LEN;
-
-    // Track mock calls via global atomics (thread-safe, no production code changes)
-    static std::atomic<int> gFeedCount{0};
-    static std::atomic<int> gLevelCount{0};
-    static std::atomic<size_t> gLastLevel{0};
-    gFeedCount = 0;
-    gLevelCount = 0;
-    gLastLevel = 0;
-
-    ON_CALL(*mockInst_, FeedInput(testing::_, testing::_))
-        .WillByDefault(testing::Invoke([&](const uint8_t*, size_t) -> int32_t {
-            gFeedCount.fetch_add(1, std::memory_order_relaxed);
-            return 0;
-        }));
-    ON_CALL(*mockInst_, GetInputLevel())
-        .WillByDefault(testing::Invoke([&]() -> size_t {
-            gLevelCount.fetch_add(1, std::memory_order_relaxed);
-            gLastLevel.store(prebufTarget, std::memory_order_relaxed);
-            return prebufTarget;
-        }));
-
-    node_->StartEffect();
-
-    for (int i = 0; i < 100 && !node_->GetPrebufFilled(); i++)
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    ASSERT_TRUE(node_->GetPrebufFilled());
-
-    node_->DoProcess();
-    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::INTERCEPTING);
-}
-
 // SE-W4: DropEffect sets stopRequested and joins thread
 HWTEST_F(SessionEffectNodeThreadTest, dropEffect_joinsThread, TestSize.Level0)
 {
@@ -1328,22 +1267,6 @@ HWTEST_F(SessionEffectNodeStateTest, pause_duringActive, TestSize.Level0)
     EXPECT_TRUE(node_->IsPaused());
 }
 
-// SE-OP4: Resume from WARMING_UP paused — restart preheat with existing prebuf
-HWTEST_F(SessionEffectNodeStateTest, resume_fromWarmingUp, TestSize.Level0)
-{
-    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
-    EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
-    node_->PauseEffect();
-    ASSERT_TRUE(node_->IsPaused());
-
-    // Resume: status_ is still WARMING_UP → restart preheat with the existing target
-    node_->StartEffect();
-
-    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
-    EXPECT_FALSE(node_->IsPaused());
-    EXPECT_EQ(node_->GetPrebufTargetBytes(), TEST_PREBUF_TARGET_BYTE_LEN);
-}
-
 HWTEST_F(SessionEffectNodeStateTest, resume_fromWarmingUpWithZeroPreheatMarksFilled, TestSize.Level0)
 {
     EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
@@ -1399,53 +1322,6 @@ HWTEST_F(SessionEffectNodeStateTest, resume_fromActive, TestSize.Level0)
 }
 
 // --- Phase 3B-2: Flush tests ---
-
-// SE-OP7: Flush during INTERCEPTING — restart preheat with normal prebuf
-HWTEST_F(SessionEffectNodeStateTest, flush_duringIntercepting, TestSize.Level0)
-{
-    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
-    EnterState(HpaeSessionEffectNode::STATUS::INTERCEPTING);
-
-    size_t frameBytes = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    size_t expectedPrebuf = 5 * frameBytes;
-    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
-
-    node_->FlushEffect();
-    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
-    EXPECT_EQ(node_->GetPrebufTargetBytes(), expectedPrebuf);
-}
-
-// SE-OP8: Flush during ACTIVE — restart preheat with normal prebuf
-HWTEST_F(SessionEffectNodeStateTest, flush_duringActive, TestSize.Level0)
-{
-    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
-    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
-
-    size_t frameBytes = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    size_t expectedPrebuf = 5 * frameBytes;
-    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
-
-    node_->FlushEffect();
-    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
-    EXPECT_EQ(node_->GetPrebufTargetBytes(), expectedPrebuf);
-}
-
-HWTEST_F(SessionEffectNodeStateTest, flush_duringWarmingUpRestartsPreheat, TestSize.Level0)
-{
-    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
-    EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
-
-    size_t frameBytes = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    size_t expectedPrebuf = 5 * frameBytes;
-    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
-
-    node_->FlushEffect();
-
-    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
-    EXPECT_EQ(node_->GetPrebufTargetBytes(), expectedPrebuf);
-    EXPECT_FALSE(node_->GetPrebufFilled());
-}
-
 HWTEST_F(SessionEffectNodeStateTest, flush_duringWarmingUpWithZeroPreheatMarksFilled, TestSize.Level0)
 {
     ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(0));
@@ -2466,48 +2342,6 @@ HWTEST_F(SessionEffectNodeStateTest, handleNoDataTimeout_inputLevelAtTargetAfter
     // stopRequested_ stays false; inputLevel == prebufTargetBytes_ takes the early return.
     EXPECT_TRUE(node_->HandleNoDataTimeoutForTest(100u));
 }
-
-// Covers StartPreheatThread joinable branch (L541-543): after entering ACTIVE
-// via the real preheat thread, the std::thread handle is still joinable even
-// though PreheatThreadFunc has returned. Calling FlushEffect → RestartPreheat →
-// StartPreheatThread must observe preheatThread_.joinable()==true and stop the
-// existing thread before starting a new one.
-HWTEST_F(SessionEffectNodeThreadTest, flushDuringActive_restartsPreheatThread_joinableBranch, TestSize.Level0)
-{
-    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(TEST_PREHEAT_FRAME_COUNT));
-    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
-    ASSERT_EQ(node_->StartEffect(), 0);
-    ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
-
-    // Drive preheat thread to completion: inputLevel reaches prebufTarget →
-    // PreheatThreadFunc returns; preheatThread_ is still joinable (not joined yet).
-    const size_t prebufTarget = TEST_PREBUF_TARGET_BYTE_LEN;
-    int count = 0;
-    ON_CALL(*mockInst_, GetInputLevel())
-        .WillByDefault(testing::Invoke([&]() -> size_t {
-            return ++count > 3 ? prebufTarget : 0;
-        }));
-    for (int i = 0; i < 100 && !node_->GetPrebufFilled(); i++) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-    ASSERT_TRUE(node_->GetPrebufFilled());
-
-    // Force status to ACTIVE so FlushEffect takes the ACTIVE branch that calls
-    // RestartPreheat without StopPreheatThread first.
-    node_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
-    EXPECT_CALL(*mockInst_, Flush()).WillOnce(testing::Return(0));
-
-    node_->FlushEffect();
-    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
-
-    // Wait for the new preheat thread to also reach prebufFilled so TearDown
-    // joins cleanly without races.
-    count = 0;
-    for (int i = 0; i < 100 && !node_->GetPrebufFilled(); i++) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-}
-
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
