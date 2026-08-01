@@ -47,7 +47,6 @@ static constexpr uint32_t TEST_CHANNEL_COUNT = 2;
 static constexpr uint32_t TEST_PREHEAT_FRAME_COUNT = 5;
 static constexpr size_t TEST_FRAME_BYTE_LEN =
     static_cast<size_t>(TEST_FRAME_LEN) * TEST_CHANNEL_COUNT * sizeof(float);
-static constexpr size_t TEST_PREBUF_TARGET_BYTE_LEN = TEST_PREHEAT_FRAME_COUNT * TEST_FRAME_BYTE_LEN;
 
 static AudioEffectConfig MakeTestConfig()
 {
