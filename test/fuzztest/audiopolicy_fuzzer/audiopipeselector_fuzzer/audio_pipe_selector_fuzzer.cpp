@@ -759,20 +759,12 @@ void AdjustConcedeActionByStatusFuzzTest(FuzzedDataProvider& fdp)
     auto existingStream = MakeStreamDescriptor(fdp, false);
     auto incomingStream = MakeStreamDescriptor(fdp, false);
     ConcurrencyAction action = fdp.ConsumeBool() ? CONCEDE_INCOMING : CONCEDE_EXISTING;
-    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
-}
-
-void ShouldAdjustConcedeActionFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    auto existingStream = MakeStreamDescriptor(fdp, false);
-    auto incomingStream = MakeStreamDescriptor(fdp, false);
-    auto targetStream = fdp.ConsumeBool() ? existingStream : incomingStream;
+    auto targetStream = action == CONCEDE_INCOMING ? existingStream : incomingStream;
     targetStream->rendererInfo_.isLoopback = fdp.ConsumeBool();
     targetStream->capturerInfo_.isLoopback = fdp.ConsumeBool();
     targetStream->routeFlag_ = fdp.ConsumeBool() ? (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_DIRECT) :
         PickValue(fdp, g_audioFlags);
-    audioPipeSelector->ShouldAdjustConcedeAction(existingStream, incomingStream, targetStream);
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
 }
 
 void HandleConcedeActionsFuzzTest(FuzzedDataProvider& fdp)
@@ -962,7 +954,6 @@ void Test(FuzzedDataProvider& fdp)
     GetIncomingStreamPriorityFuzzTest,
     DetermineConcurrencyActionFuzzTest,
     AdjustConcedeActionByStatusFuzzTest,
-    ShouldAdjustConcedeActionFuzzTest,
     HandleConcedeActionsFuzzTest,
     IsSameAdapterFuzzTest,
     HandleFindMatchPipeFuzzTest,
