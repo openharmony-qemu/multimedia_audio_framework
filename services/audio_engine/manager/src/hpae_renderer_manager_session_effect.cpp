@@ -104,6 +104,7 @@ void HpaeRendererManager::OnSessionEffectPreheatStateChanged(uint32_t sessionId,
         "OnSessionEffectPreheatStateChanged: sinkInputNode not found, session=%{public}u", sessionId);
     sinkInputNode->SetSessionEffectPreheatActive(active);
 }
+
 int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
 {
     // Route via GetProcessorType to match the key used at override-set time
