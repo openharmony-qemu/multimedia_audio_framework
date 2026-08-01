@@ -44,9 +44,6 @@ static constexpr uint32_t TEST_SESSION_ID = 42;
 static constexpr uint32_t TEST_FRAME_LEN = 960;
 static constexpr uint32_t TEST_SAMPLE_RATE = 48000;
 static constexpr uint32_t TEST_CHANNEL_COUNT = 2;
-static constexpr uint32_t TEST_PREHEAT_FRAME_COUNT = 5;
-static constexpr size_t TEST_FRAME_BYTE_LEN =
-    static_cast<size_t>(TEST_FRAME_LEN) * TEST_CHANNEL_COUNT * sizeof(float);
 
 static AudioEffectConfig MakeTestConfig()
 {
