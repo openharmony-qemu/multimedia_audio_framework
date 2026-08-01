@@ -121,51 +121,6 @@ static std::shared_ptr<EffectInstance> MakeTestEffectInstance()
     return instance;
 }
 
-struct StatusEvent {
-    HpaeStreamClassType streamClassType;
-    uint32_t sessionId;
-    HpaeSessionState state;
-    IOperation operation;
-};
-
-class StatusCallbackRecorder final : public ISendMsgCallback {
-public:
-    void Invoke(HpaeMsgCode cmdID, const std::any &args) override
-    {
-        Record(cmdID, args);
-    }
-
-    void InvokeSync(HpaeMsgCode cmdID, const std::any &args) override
-    {
-        Record(cmdID, args);
-    }
-
-    size_t Count(uint32_t sessionId, IOperation operation) const
-    {
-        return static_cast<size_t>(std::count_if(events_.begin(), events_.end(),
-            [sessionId, operation](const StatusEvent &event) {
-                return event.sessionId == sessionId && event.operation == operation;
-            }));
-    }
-
-    std::vector<StatusEvent> events_;
-
-private:
-    void Record(HpaeMsgCode cmdID, const std::any &args)
-    {
-        if (cmdID != UPDATE_STATUS) {
-            return;
-        }
-        auto statusArgs = std::any_cast<std::tuple<HpaeStreamClassType, uint32_t,
-            HpaeSessionState, IOperation>>(&args);
-        if (statusArgs == nullptr) {
-            return;
-        }
-        events_.push_back({std::get<0>(*statusArgs), std::get<1>(*statusArgs),
-            std::get<2>(*statusArgs), std::get<3>(*statusArgs)});
-    }
-};
-
 // Test fixture: sets up HpaeOffloadRendererManager with real node chain,
 // following the same pattern as hpae_render_manager_test.cpp.
 // Uses -fno-access-control build flag to set private members directly.
@@ -1268,6 +1223,72 @@ HWTEST_F(HpaeOffloadSeTest, materialize_offload_chainBroken_emitsDisabledAndClea
     EXPECT_FALSE(curNode_->HasSessionEffectAttachState());
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+}
+
+// OSE_Remove_NullNode: no SE node -> CHECK_AND_RETURN_RET_LOG early-exit with ERR_EFFECT_NOT_BOUND
+// (hpae_offload_renderer_manager.cpp:1269).
+HWTEST_F(HpaeOffloadSeTest, OSE_Remove_NullNode, TestSize.Level0)
+{
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    int32_t ret = manager_->RemoveSessionEffectNode();
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+    EXPECT_EQ(callback_->Count(OTHER_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+}
+
+// OSE_Remove_NoConverter: converterForLoudness_ null -> skip converter GetLatency/FlushBuffers
+// (hpae_offload_renderer_manager.cpp:1282-1285 false branch).
+HWTEST_F(HpaeOffloadSeTest, OSE_Remove_NoConverter, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+
+    auto savedConverter = manager_->converterForLoudness_;
+    ASSERT_NE(savedConverter, nullptr);
+    manager_->converterForLoudness_ = nullptr;  // skip converter branch during BeginClose
+
+    int32_t ret = manager_->RemoveSessionEffectNode();
+    EXPECT_EQ(ret, 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    // Restore converter before Finalize so bypass-chain rebuild (offload FinalizeSessionEffectClose)
+    // has its nodes; then drain the queued Finalize.
+    manager_->converterForLoudness_ = savedConverter;
+    manager_->HandleMsg();
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE_Remove_SessionMismatch: curNode_->GetSessionId() != sessionId -> RewindHistoryBuffer skipped
+// (hpae_offload_renderer_manager.cpp:1286 false branch). sessionEffectSessionId_ stays CUR so the
+// queued Finalize's identity check still reclaims the node.
+HWTEST_F(HpaeOffloadSeTest, OSE_Remove_SessionMismatch, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_EQ(manager_->sessionEffectSessionId_, CUR_SESSION_ID);
+
+    // Swap curNode_ to a different session: curNode_->GetSessionId() (OTHER=43) != sessionId (CUR=42).
+    ASSERT_NE(otherNode_, nullptr);
+    ASSERT_EQ(otherNode_->GetSessionId(), OTHER_SESSION_ID);
+    manager_->curNode_ = otherNode_;
+
+    int32_t ret = manager_->RemoveSessionEffectNode();
+    EXPECT_EQ(ret, 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+
+    // Finalize: lambda captured sessionId == CUR == sessionEffectSessionId_, identity check holds.
+    manager_->HandleMsg();
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

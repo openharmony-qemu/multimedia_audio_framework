@@ -147,51 +147,6 @@ static std::shared_ptr<HpaeSinkInputNode> CreateTestNode(OHOS::AudioStandard::HP
     return node;
 }
 
-struct StatusEvent {
-    HpaeStreamClassType streamClassType;
-    uint32_t sessionId;
-    HpaeSessionState state;
-    IOperation operation;
-};
-
-class StatusCallbackRecorder final : public ISendMsgCallback {
-public:
-    void Invoke(HpaeMsgCode cmdID, const std::any &args) override
-    {
-        Record(cmdID, args);
-    }
-
-    void InvokeSync(HpaeMsgCode cmdID, const std::any &args) override
-    {
-        Record(cmdID, args);
-    }
-
-    size_t Count(uint32_t sessionId, IOperation operation) const
-    {
-        return static_cast<size_t>(std::count_if(events_.begin(), events_.end(),
-            [sessionId, operation](const StatusEvent &event) {
-                return event.sessionId == sessionId && event.operation == operation;
-            }));
-    }
-
-    std::vector<StatusEvent> events_;
-
-private:
-    void Record(HpaeMsgCode cmdID, const std::any &args)
-    {
-        if (cmdID != UPDATE_STATUS) {
-            return;
-        }
-        auto statusArgs = std::any_cast<std::tuple<HpaeStreamClassType, uint32_t,
-            HpaeSessionState, IOperation>>(&args);
-        if (statusArgs == nullptr) {
-            return;
-        }
-        events_.push_back({std::get<0>(*statusArgs), std::get<1>(*statusArgs),
-            std::get<2>(*statusArgs), std::get<3>(*statusArgs)});
-    }
-};
-
 static std::shared_ptr<HpaeSinkInputNode> AddSessionEffectTestSession(
     const std::shared_ptr<HpaeRendererManager> &rendererManager, uint32_t sessionId, uint32_t nodeId)
 {
@@ -5674,6 +5629,251 @@ HWTEST_F(HpaeRendererManagerTest, SetSessionEffectParameter_AllPaths, TestSize.L
     AddSessionEffectTestSession(hpaeRendererManager_, seSession, nodeId); // cluster present, no SE node
     EXPECT_EQ(hpaeRendererManager_->SetSessionEffectParameter(seSession, 1, 0.5f),
         static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND)); // line 215 forwarded to cluster
+}
+
+// ==================== UT for FinalizeSessionEffectClose (Normal Renderer) ====================
+
+// N_Fin_ClusterNull: sceneType has no cluster in sceneClusterMap_ -> CHECK_AND_RETURN early-exit,
+// no DISABLED (hpae_renderer_manager_session_effect.cpp:159-160).
+HWTEST_F(HpaeRendererManagerTest, N_Fin_ClusterNull, TestSize.Level0)
+{
+    constexpr uint32_t absentSession = 90010;
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    hpaeRendererManager_->FinalizeSessionEffectClose(absentSession, std::nullopt,
+        HPAE_SESSION_RUNNING, std::weak_ptr<HpaeSessionEffectNode>{});
+
+    EXPECT_EQ(callback->Count(absentSession, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+}
+
+// N_Fin_FinalizedFalse: cluster present but closingNode expired -> FinalizeDestroySessionEffectNode
+// returns false -> CHECK_AND_RETURN(finalized) early-exit, no DISABLED, no ClearOverride
+// (hpae_renderer_manager_session_effect.cpp:166-167).
+HWTEST_F(HpaeRendererManagerTest, N_Fin_FinalizedFalse, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 90011;
+    constexpr uint32_t nodeId = 301;
+    AddSessionEffectTestSessionWithScene(hpaeRendererManager_, sessionId, nodeId, HPAE_SCENE_SPLIT_MEDIA);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    hpaeRendererManager_->FinalizeSessionEffectClose(sessionId, std::nullopt,
+        HPAE_SESSION_RUNNING, std::weak_ptr<HpaeSessionEffectNode>{});
+
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+}
+
+// N_Fin_RouteValue: route has_value + finalize ok -> ClearChannelOverrideForRoute + DISABLED once
+// (hpae_renderer_manager_session_effect.cpp:168-172). Split scene; CreateSessionEffect auto-sets
+// the override via OnSessionEffectMaterialized.
+HWTEST_F(HpaeRendererManagerTest, N_Fin_RouteValue, TestSize.Level1)
+{
+    constexpr uint32_t sessionId = 90012;
+    constexpr uint32_t nodeId = 302;
+    AddSessionEffectTestSessionWithScene(hpaeRendererManager_, sessionId, nodeId, HPAE_SCENE_SPLIT_MEDIA);
+    std::string scene = TransProcessorTypeToSceneType(HPAE_SCENE_SPLIT_MEDIA);
+    InjectOverrideChain(scene);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_SPLIT_MEDIA];
+    ASSERT_NE(cluster, nullptr);
+    uint64_t latency = 0;
+    std::weak_ptr<HpaeSessionEffectNode> weakNode;
+    ASSERT_EQ(cluster->BeginDestroySessionEffectNode(sessionId, latency, weakNode), 0);
+
+    ChannelOverrideRoute route{scene, DEVICE_TYPE_SPEAKER, 0};
+    hpaeRendererManager_->FinalizeSessionEffectClose(sessionId, route,
+        HPAE_SESSION_RUNNING, weakNode);
+
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+// N_Fin_RouteNull: route==nullopt + finalize ok -> skip ClearChannelOverrideForRoute + DISABLED once
+// (hpae_renderer_manager_session_effect.cpp:168 false, 171-172).
+HWTEST_F(HpaeRendererManagerTest, N_Fin_RouteNull, TestSize.Level1)
+{
+    constexpr uint32_t sessionId = 90013;
+    constexpr uint32_t nodeId = 303;
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, nodeId);  // NONE scene cluster
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE];
+    ASSERT_NE(cluster, nullptr);
+    uint64_t latency = 0;
+    std::weak_ptr<HpaeSessionEffectNode> weakNode;
+    ASSERT_EQ(cluster->BeginDestroySessionEffectNode(sessionId, latency, weakNode), 0);
+
+    hpaeRendererManager_->FinalizeSessionEffectClose(sessionId, std::nullopt,
+        HPAE_SESSION_RUNNING, weakNode);
+
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// N_Fin_PendingInst: pendingSeCreateMap_ has the session with a live weak pointing to the SAME
+// instance the SE node holds -> sameInstanceReuse -> DetachEffectForReload (NOT Stop/Flush)
+// (hpae_renderer_manager_session_effect.cpp:163-166, hpae_process_cluster.cpp:628-631).
+HWTEST_F(HpaeRendererManagerTest, N_Fin_PendingInst, TestSize.Level1)
+{
+    constexpr uint32_t sessionId = 90014;
+    constexpr uint32_t nodeId = 304;
+    AddSessionEffectTestSessionWithScene(hpaeRendererManager_, sessionId, nodeId, HPAE_SCENE_SPLIT_MEDIA);
+    std::string scene = TransProcessorTypeToSceneType(HPAE_SCENE_SPLIT_MEDIA);
+    InjectOverrideChain(scene);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    EXPECT_CALL(*instance, StopEffect()).Times(0);  // same-instance reuse must NOT stop
+    EXPECT_CALL(*instance, Flush()).Times(0);
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    hpaeRendererManager_->pendingSeCreateMap_[sessionId] = {1, instance};  // SAME instance, live weak
+
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_SPLIT_MEDIA];
+    ASSERT_NE(cluster, nullptr);
+    uint64_t latency = 0;
+    std::weak_ptr<HpaeSessionEffectNode> weakNode;
+    ASSERT_EQ(cluster->BeginDestroySessionEffectNode(sessionId, latency, weakNode), 0);
+
+    hpaeRendererManager_->FinalizeSessionEffectClose(sessionId, std::nullopt,
+        HPAE_SESSION_RUNNING, weakNode);
+
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    testing::Mock::VerifyAndClearExpectations(instance.get());
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+// N_Fin_PendingExpired: pendingSeCreateMap_ has the session but weak expired -> pendingInst=nullptr
+// -> DropEffect normal release (hpae_renderer_manager_session_effect.cpp:164-166,
+// hpae_process_cluster.cpp:632-633).
+HWTEST_F(HpaeRendererManagerTest, N_Fin_PendingExpired, TestSize.Level1)
+{
+    constexpr uint32_t sessionId = 90015;
+    constexpr uint32_t nodeId = 305;
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, nodeId);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    {
+        auto tmp = std::make_shared<NiceMock<MockEffectInstance>>();
+        hpaeRendererManager_->pendingSeCreateMap_[sessionId] = {1, tmp};
+    }  // tmp destroyed -> weak expired
+
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE];
+    ASSERT_NE(cluster, nullptr);
+    uint64_t latency = 0;
+    std::weak_ptr<HpaeSessionEffectNode> weakNode;
+    ASSERT_EQ(cluster->BeginDestroySessionEffectNode(sessionId, latency, weakNode), 0);
+
+    hpaeRendererManager_->FinalizeSessionEffectClose(sessionId, std::nullopt,
+        HPAE_SESSION_RUNNING, weakNode);
+
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// N_Fin_PendingAbsent: pendingSeCreateMap_ has no entry -> pendingIt==end -> pendingInst=nullptr
+// -> DropEffect (hpae_renderer_manager_session_effect.cpp:162-163,166).
+HWTEST_F(HpaeRendererManagerTest, N_Fin_PendingAbsent, TestSize.Level1)
+{
+    constexpr uint32_t sessionId = 90016;
+    constexpr uint32_t nodeId = 306;
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, nodeId);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    // pendingSeCreateMap_ intentionally left without this session.
+
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE];
+    ASSERT_NE(cluster, nullptr);
+    uint64_t latency = 0;
+    std::weak_ptr<HpaeSessionEffectNode> weakNode;
+    ASSERT_EQ(cluster->BeginDestroySessionEffectNode(sessionId, latency, weakNode), 0);
+
+    hpaeRendererManager_->FinalizeSessionEffectClose(sessionId, std::nullopt,
+        HPAE_SESSION_RUNNING, weakNode);
+
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// N_Fin_DeferredViaHandleMsg: PostDestroySessionEffect queues Destroy; HandleMsg batch N runs
+// BeginClose + queues Finalize; batch N+1 runs FinalizeSessionEffectClose emitting a single DISABLED.
+HWTEST_F(HpaeRendererManagerTest, N_Fin_DeferredViaHandleMsg, TestSize.Level1)
+{
+    constexpr uint32_t sessionId = 90017;
+    constexpr uint32_t nodeId = 307;
+    AddSessionEffectTestSessionWithScene(hpaeRendererManager_, sessionId, nodeId, HPAE_SCENE_SPLIT_MEDIA);
+    std::string scene = TransProcessorTypeToSceneType(HPAE_SCENE_SPLIT_MEDIA);
+    InjectOverrideChain(scene);
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    hpaeRendererManager_->isInit_.store(true);  // SendRequest queues instead of running inline
+    hpaeRendererManager_->PostDestroySessionEffect(sessionId);
+
+    hpaeRendererManager_->HandleMsg();  // batch N: Destroy -> BeginClose + push Finalize
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 0u);
+
+    hpaeRendererManager_->HandleMsg();  // batch N+1: FinalizeSessionEffectClose -> DISABLED
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    hpaeRendererManager_->HandleMsg();  // no duplicate
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 }  // namespace

@@ -2365,3 +2365,102 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_007, TestSiz
     manager_->DestroyStream(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
 }
+
+// ---------------- Direct SE Destroy/Materialize branch coverage ----------------
+// These cases call the SYNCHRONOUS APIs directly (Insert/Remove/Destroy/Materialize) to
+// observe return values, which is safe in PREPARED state (after CreateStream, before Start):
+// the SignalProcessThread is idle with the queue drained (same pattern as SE_Remove_001 /
+// SE_Materialize_006 above).
+
+// SE_Destroy_StopShortCircuit: node already STOPPING -> CancelPending + return SUCCESS,
+// no duplicate Finalize/DISABLED (hpae_direct_renderer_manager.cpp:1525-1532).
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Destroy_StopShortCircuit, TestSize.Level0)
+{
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo()), SUCCESS);
+    WaitForMsgProcessing(manager_);
+
+    auto instance = MakeTestEffectInstance(defaultConfig_);
+    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
+    ASSERT_EQ(manager_->InsertSessionEffectNode("audio_aiss_enhance", instance, defaultConfig_), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    // BeginClose drives the node into STOPPING and queues exactly ONE Finalize. Do NOT drain yet.
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+
+    // Seed a pending recreate so the short-circuit's CancelPendingSessionEffectCreate is observable.
+    manager_->pendingSeCreateSessionId_ = TEST_SESSION_ID;
+    manager_->pendingSeCreateGeneration_ = 1;
+
+    // Synchronous DestroySessionEffect hits the STOPPING short-circuit: SUCCESS + cancel pending +
+    // does NOT push a second Finalize.
+    int32_t ret = manager_->DestroySessionEffect(TEST_SESSION_ID);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_EQ(manager_->pendingSeCreateSessionId_, 0u);
+
+    // Drain: exactly one Finalize runs -> node gone, exactly one DISABLED (no duplicate).
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}
+
+// SE_Materialize_Direct_ReadyOk: chain ready -> InsertSessionEffectNode succeeds ->
+// sessionEffectSessionId_ set + ENABLED once (hpae_direct_renderer_manager.cpp:1463-1467).
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_Direct_ReadyOk, TestSize.Level1)
+{
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo()), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    ASSERT_NE(manager_->converterForGain_, nullptr);
+    ASSERT_NE(manager_->loudnessGainNode_, nullptr);
+    ASSERT_NE(manager_->curNode_, nullptr);
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto instance = MakeTestEffectInstance(defaultConfig_);
+    int32_t ret = manager_->MaterializeCurrentSessionEffect(
+        TEST_SESSION_ID, "audio_aiss_enhance", instance, defaultConfig_);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    manager_->RemoveSessionEffectNode();
+    WaitForMsgProcessing(manager_);
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}
+
+// SE_Materialize_Direct_ReadyFail: converterForGain_ null -> InsertSessionEffectNode fails ->
+// sessionEffectSessionId_ reset to 0, no ENABLED (hpae_direct_renderer_manager.cpp:1468-1470).
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_Direct_ReadyFail, TestSize.Level1)
+{
+    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo()), SUCCESS);
+    WaitForMsgProcessing(manager_);
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto savedConverter = manager_->converterForGain_;
+    manager_->converterForGain_ = nullptr;  // forces InsertSessionEffectNode -> ERR_SESSION_NOT_FOUND
+
+    auto instance = MakeTestEffectInstance(defaultConfig_);
+    int32_t ret = manager_->MaterializeCurrentSessionEffect(
+        TEST_SESSION_ID, "audio_aiss_enhance", instance, defaultConfig_);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 0u);
+
+    manager_->converterForGain_ = savedConverter;  // restore before teardown
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}

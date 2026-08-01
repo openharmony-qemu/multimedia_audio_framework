@@ -134,6 +134,7 @@ private:
     uint64_t BytesToLatencyUs(size_t bytes) const;
     void UpdatePrebufTargetBytes();
     void RestartPreheat();
+    void NotifyPreheatStateChanged(bool active);
     void ResetAccounting();
     void ResetTailPaddingState();
     void ReconfigOutputBuffers(const AudioEffectConfig &config);

@@ -513,6 +513,14 @@ void HpaeSessionEffectNode::RestartPreheat()
     }
 }
 
+void HpaeSessionEffectNode::NotifyPreheatStateChanged(bool active)
+{
+    auto callback = GetNodeInfo().statusCallback.lock();
+    if (callback) {
+        callback->OnSessionEffectPreheatStateChanged(GetSessionId(), active);
+    }
+}
+
 int32_t HpaeSessionEffectNode::StartEffect()
 {
     if (!effectInstance_) return 0;
@@ -670,6 +678,7 @@ void HpaeSessionEffectNode::StartPreheatThread()
         StopPreheatThread();
     }
     stopRequested_ = false;
+    NotifyPreheatStateChanged(true); // set flag before spawn so the thread cannot pull before it takes effect
     preheatThread_ = std::thread(&HpaeSessionEffectNode::PreheatThreadFunc, this);
     AUDIO_INFO_LOG("PreheatThread started for %{public}s", effectName_.c_str());
 }
@@ -832,6 +841,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessInterceptingRaw(HpaePcmBuffer *inpu
         rawBypassNeeded_ = true;
         pendingRawBypassBlocks_.store(0);
         AccountOutput(byteLen);
+        NotifyPreheatStateChanged(false);
         return inputBuf;
     }
     CHECK_AND_RETURN_RET(!rawBypassNeeded_, PrepareSilenceBuffer(silenceData_));

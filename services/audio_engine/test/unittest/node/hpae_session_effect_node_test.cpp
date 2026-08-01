@@ -695,6 +695,35 @@ HWTEST_F(SessionEffectNodeStateTest, startEffect_zeroPreheatMarksPrebufFilled, T
     EXPECT_TRUE(node_->GetPrebufFilled());
 }
 
+// SE preheat state change notification: true before StartPreheatThread spawns, false at end of PreheatThreadFunc
+HWTEST_F(SessionEffectNodeStateTest, preheat_emitsStateChanged_trueOnStart_falseOnExit, TestSize.Level0)
+{
+    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
+    std::vector<std::pair<uint32_t, bool>> seen;
+    EXPECT_CALL(*mockCallback_, OnSessionEffectPreheatStateChanged(testing::_, testing::_))
+        .WillRepeatedly([&](uint32_t s, bool a) { seen.emplace_back(s, a); });
+
+    EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP); // CreateEffect + StartEffect -> spawn -> true
+    ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+
+    node_->StopPreheatThread(); // join -> PreheatThreadFunc emits false at end
+    EXPECT_THAT(seen, testing::Contains(std::pair<uint32_t, bool>{TEST_SESSION_ID, true}));
+    EXPECT_THAT(seen, testing::Contains(std::pair<uint32_t, bool>{TEST_SESSION_ID, false}));
+}
+
+// When prebufTargetBytes_ == 0 (no preheat thread), no preheat state change callback should be emitted
+HWTEST_F(SessionEffectNodeStateTest, preheat_noCallback_whenPrebufTargetZero, TestSize.Level0)
+{
+    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(0));
+    EXPECT_CALL(*mockCallback_, OnSessionEffectPreheatStateChanged(testing::_, testing::_)).Times(0);
+
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
+    EXPECT_EQ(node_->StartEffect(), 0);
+    ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+    EXPECT_EQ(node_->GetPrebufTargetBytes(), 0u);
+}
+
+
 HWTEST_F(SessionEffectNodeStateTest, doProcess_autoStartsFromIdleWhenInstanceBound, TestSize.Level0)
 {
     EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(0));
