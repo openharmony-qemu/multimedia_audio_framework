@@ -123,6 +123,7 @@ private:
     bool isDirect_ = false;
     bool isNonStandardSampleRate_ = false;
     std::optional<SessionEffectAttachState> sessionEffectAttachState_;
+    bool sessionEffectPreheatActive_ = false;
 };
 
 }  // namespace HPAE
