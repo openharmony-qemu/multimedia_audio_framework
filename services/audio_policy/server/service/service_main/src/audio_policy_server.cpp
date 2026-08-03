@@ -5279,6 +5279,19 @@ int32_t AudioPolicyServer::SetDeviceVolumeBehavior(const std::string &networkId,
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetStopStreamInfoWhenDisconnect(const std::string &networkId,
+    const std::vector<int32_t> &usages, const std::vector<int32_t> &uids)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_AUDIO, ERR_PERMISSION_DENIED, "No permission");
+    std::vector<StreamUsage> usagesNeedStop = {};
+    for (const auto &usage : usages) {
+        usagesNeedStop.emplace_back(static_cast<StreamUsage>(usage));
+    }
+    audioDeviceStatus_.SetStopStreamInfoWhenDisconnect(networkId, usagesNeedStop, uids);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "SetAudioDeviceAnahsCallback object is nullptr");

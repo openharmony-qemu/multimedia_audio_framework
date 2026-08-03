@@ -284,5 +284,151 @@ HWTEST(AudioInterruptZoneUnitTest, MigrateAudioInterruptZone_002, TestSize.Level
     EXPECT_EQ(audioInterruptZoneManager->service_->zonesMap_[0]->audioFocusInfoList.size(), 2);
     EXPECT_EQ(audioInterruptZoneManager->service_->zonesMap_[1]->audioFocusInfoList.size(), 0);
 }
+
+/**
+ * @tc.name  : Test StopAudioFocusBySessionIds
+ * @tc.number: StopAudioFocusBySessionIds_001
+ * @tc.desc  : Test StopAudioFocusBySessionIds with Active state and matched sessionId
+ */
+HWTEST(AudioInterruptZoneUnitTest, StopAudioFocusBySessionIds_001, TestSize.Level1)
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 100;
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    audioInterruptZoneManager->service_->zonesMap_[0] = interruptZone;
+
+    std::vector<uint32_t> sessionIds = {100};
+    audioInterruptZoneManager->StopAudioFocusBySessionIds(0, sessionIds);
+    EXPECT_EQ(interruptZone->audioFocusInfoList.size(), 0);
+}
+
+/**
+ * @tc.name  : Test StopAudioFocusBySessionIds
+ * @tc.number: StopAudioFocusBySessionIds_002
+ * @tc.desc  : Test StopAudioFocusBySessionIds with Duck state and matched sessionId
+ */
+HWTEST(AudioInterruptZoneUnitTest, StopAudioFocusBySessionIds_002, TestSize.Level1)
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 200;
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::DUCK});
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    audioInterruptZoneManager->service_->zonesMap_[0] = interruptZone;
+
+    std::vector<uint32_t> sessionIds = {200};
+    audioInterruptZoneManager->StopAudioFocusBySessionIds(0, sessionIds);
+    EXPECT_EQ(interruptZone->audioFocusInfoList.size(), 0);
+}
+
+/**
+ * @tc.name  : Test StopAudioFocusBySessionIds
+ * @tc.number: StopAudioFocusBySessionIds_003
+ * @tc.desc  : Test StopAudioFocusBySessionIds with Pause state and matched sessionId
+ */
+HWTEST(AudioInterruptZoneUnitTest, StopAudioFocusBySessionIds_003, TestSize.Level1)
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 300;
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::PAUSE});
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    audioInterruptZoneManager->service_->zonesMap_[0] = interruptZone;
+
+    std::vector<uint32_t> sessionIds = {300};
+    audioInterruptZoneManager->StopAudioFocusBySessionIds(0, sessionIds);
+    EXPECT_EQ(interruptZone->audioFocusInfoList.size(), 1);
+}
+
+/**
+ * @tc.name  : Test StopAudioFocusBySessionIds
+ * @tc.number: StopAudioFocusBySessionIds_004
+ * @tc.desc  : Test StopAudioFocusBySessionIds with sessionId not in list
+ */
+HWTEST(AudioInterruptZoneUnitTest, StopAudioFocusBySessionIds_004, TestSize.Level1)
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 100;
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    audioInterruptZoneManager->service_->zonesMap_[0] = interruptZone;
+
+    std::vector<uint32_t> sessionIds = {999};
+    audioInterruptZoneManager->StopAudioFocusBySessionIds(0, sessionIds);
+    EXPECT_EQ(interruptZone->audioFocusInfoList.size(), 1);
+}
+
+/**
+ * @tc.name  : Test StopAudioFocusBySessionIds
+ * @tc.number: StopAudioFocusBySessionIds_005
+ * @tc.desc  : Test StopAudioFocusBySessionIds with empty focusInfoList
+ */
+HWTEST(AudioInterruptZoneUnitTest, StopAudioFocusBySessionIds_005, TestSize.Level1)
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    interruptZone->audioFocusInfoList.clear();
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    audioInterruptZoneManager->service_->zonesMap_[0] = interruptZone;
+
+    std::vector<uint32_t> sessionIds = {100};
+    audioInterruptZoneManager->StopAudioFocusBySessionIds(0, sessionIds);
+    EXPECT_EQ(interruptZone->audioFocusInfoList.size(), 0);
+}
+
+/**
+ * @tc.name  : Test StopAudioFocusBySessionIds
+ * @tc.number: StopAudioFocusBySessionIds_006
+ * @tc.desc  : Test StopAudioFocusBySessionIds with mixed entries
+ */
+HWTEST(AudioInterruptZoneUnitTest, StopAudioFocusBySessionIds_006, TestSize.Level1)
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 100;
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    AudioInterrupt a2;
+    a2.streamId = 200;
+    interruptZone->audioFocusInfoList.push_back({a2, AudioFocuState::PAUSE});
+    AudioInterrupt a3;
+    a3.streamId = 300;
+    interruptZone->audioFocusInfoList.push_back({a3, AudioFocuState::DUCK});
+    AudioInterrupt a4;
+    a4.streamId = 400;
+    interruptZone->audioFocusInfoList.push_back({a4, AudioFocuState::ACTIVE});
+
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    audioInterruptZoneManager->service_->zonesMap_[0] = interruptZone;
+
+    std::vector<uint32_t> sessionIds = {100, 300};
+    audioInterruptZoneManager->StopAudioFocusBySessionIds(0, sessionIds);
+    EXPECT_EQ(interruptZone->audioFocusInfoList.size(), 2);
+}
 } // namespace AudioStandard
 } // namespace OHOS

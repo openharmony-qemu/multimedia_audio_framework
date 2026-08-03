@@ -92,6 +92,8 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller);
     void UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor &device, AudioPin hdiPin);
     void HandleDeviceStateChange(std::shared_ptr<AudioDeviceDescriptor> desc, bool isAvailable);
+    void SetStopStreamInfoWhenDisconnect(const std::string &networkId, const std::vector<StreamUsage> &usages,
+        const std::vector<int32_t> &uids);
 
 private:
     AudioDeviceStatus() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -193,6 +195,7 @@ private:
     void UpdateChangeReasonForCollaboration(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand,
         AudioStreamDeviceChangeReasonExt &reason);
     bool CheckNeedExclude(AudioDeviceDescriptor &desc, bool isConnected);
+    void StopStreamWhenDeviceDisconnect(const std::string &networkId);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;
@@ -222,6 +225,9 @@ private:
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
     bool hasModulesLoaded = false;
     uint16_t dmDeviceType_ = 0;
+    std::mutex stopStreamInfoMutex_;
+    std::map<std::string, std::vector<int32_t>> uidsNeedStop_;
+    std::map<std::string, std::vector<StreamUsage>> usagesNeedStop_;
 };
 
 }

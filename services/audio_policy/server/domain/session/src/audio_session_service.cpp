@@ -357,6 +357,14 @@ std::vector<std::pair<AudioInterrupt, AudioFocuState>> AudioSessionService::GetS
     return session->second->GetStreams();
 }
 
+uint32_t AudioSessionService::GetFakeStreamId(int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    CHECK_AND_RETURN_RET(session != sessionMap_.end(), 0);
+    return session->second->GetFakeStreamId();
+}
+
 AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);

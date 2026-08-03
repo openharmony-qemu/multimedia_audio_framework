@@ -6784,5 +6784,60 @@ HWTEST_F(AudioInterruptUnitTest, RemoveAudioZoneInterrupts_001, TestSize.Level1)
 
     EXPECT_EQ(interruptServiceTest->sessionService_.sessionMap_.size(), 1);
 }
+
+/**
+ * @tc.name  : Test StopAudioFocusBySessionIds_001
+ * @tc.number: StopAudioFocusBySessionIds_001
+ * @tc.desc  : Test StopAudioFocusBySessionIds when IsActivated is false
+ */
+HWTEST_F(AudioInterruptUnitTest, StopAudioFocusBySessionIds_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = 100;
+    interruptServiceTest->zonesMap_[0]->audioFocusInfoList.emplace_back(audioInterrupt, ACTIVE);
+    interruptServiceTest->zoneManager_.service_ = interruptServiceTest.get();
+
+    std::vector<std::pair<uint32_t, int32_t>> sessions = {{100, 9999}};
+    interruptServiceTest->StopAudioFocusBySessionIds(0, sessions);
+
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 0);
+}
+
+/**
+ * @tc.name  : Test StopAudioFocusBySessionIds_002
+ * @tc.number: StopAudioFocusBySessionIds_002
+ * @tc.desc  : Test StopAudioFocusBySessionIds when IsActivated is true and GetFakeStreamId returns non-zero
+ */
+HWTEST_F(AudioInterruptUnitTest, StopAudioFocusBySessionIds_002, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = 9999;
+    interruptServiceTest->zonesMap_[0]->audioFocusInfoList.emplace_back(audioInterrupt, ACTIVE);
+    interruptServiceTest->zoneManager_.service_ = interruptServiceTest.get();
+
+    int32_t callerPid = 5001;
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    audioSession->SetAudioSessionScene(AudioSessionScene::MEDIA);
+    audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
+    audioSession->SaveFakeStreamId(9999);
+    interruptServiceTest->sessionService_.sessionMap_[callerPid] = audioSession;
+
+    std::vector<std::pair<uint32_t, int32_t>> sessions = {{100, callerPid}};
+    interruptServiceTest->StopAudioFocusBySessionIds(0, sessions);
+
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

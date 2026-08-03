@@ -4113,6 +4113,24 @@ void AudioInterruptService::AddFocusHistory(uint32_t streamId, const AudioFocusB
         audioFocusHisMap_[streamId].erase(audioFocusHisMap_[streamId].begin());
     }
 }
+
+void AudioInterruptService::StopAudioFocusBySessionIds(const int32_t zoneId,
+    const std::vector<std::pair<uint32_t, int32_t>> &sessions)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<uint32_t> sessionIdsToStop = {};
+    for (const auto &session : sessions) {
+        uint32_t sessionId = session.first;
+        int32_t callerPid = session.second;
+        bool isActivated = sessionService_.IsAudioSessionFocusMode(callerPid);
+        if (isActivated) {
+            sessionId = sessionService_.GetFakeStreamId(callerPid);
+            CHECK_AND_CONTINUE(sessionId != 0);
+        }
+        sessionIdsToStop.emplace_back(sessionId);
+    }
+    zoneManager_.StopAudioFocusBySessionIds(zoneId, sessionIdsToStop);
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS
