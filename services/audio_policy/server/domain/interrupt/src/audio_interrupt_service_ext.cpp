@@ -460,7 +460,9 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
             activeInterrupt.streamId, streamId);
         SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
         int32_t zoneId = FindAudioZoneByStreamIdInternal(activeInterrupt.streamId);
-        DeactivateAudioInterruptInternal(zoneId, activeInterrupt);
+        if (activeInterrupt.uid != AUDIO_ID) {
+            DeactivateAudioInterruptInternal(zoneId, activeInterrupt);
+        }
         ret = true;
     }
     return ret;
