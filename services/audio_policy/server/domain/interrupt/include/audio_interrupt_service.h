@@ -126,7 +126,7 @@ public:
     // zone debug interfaces
     int32_t FindZoneByPid(int32_t pid);
     int32_t CreateAudioInterruptZone(const int32_t zoneId, const AudioZoneContext &context);
-    int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
+    int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal = false);
     int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const std::string &deviceTag,
@@ -308,7 +308,7 @@ private:
     void CollectInterruptDfx(const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt);
     bool IsSameAppInShareMode(const AudioInterrupt incomingInterrupt, const AudioInterrupt activeInterrupt);
     bool UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType,
-        int32_t zoneId = ZONEID_DEFAULT, bool notFromInterrupt = true);
+        int32_t zoneId = ZONEID_DEFAULT, bool notFromInterrupt = true, bool isInternal = false);
     void SendFocusChangeEvent(const int32_t zoneId, int32_t callbackCategory, const AudioInterrupt &audioInterrupt);
     void SendActiveVolumeTypeChangeEvent(const int32_t zoneId);
     void RemoveClient(uint32_t streamId);

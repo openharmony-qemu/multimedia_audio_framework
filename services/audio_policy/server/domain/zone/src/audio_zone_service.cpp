@@ -132,7 +132,7 @@ int32_t AudioZoneService::GetAudioZoneForApp(const std::vector<int32_t> &userIds
     return SUCCESS;
 }
 
-void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
+void AudioZoneService::ReleaseAudioZone(int32_t zoneId, bool isInternal)
 {
     if (interruptService_ != nullptr) {
         std::vector<int32_t> sessionUidList = interruptService_->GetAudioSessionUidList(zoneId);
@@ -160,7 +160,7 @@ void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
         [this](int32_t uid, const std::string &deviceTag, uint32_t streamId,
             const StreamUsage &usage, DeviceRole deviceRole)->int32_t {
             return this->FindAudioZoneByKey(uid, deviceTag, streamId, usage, deviceRole);
-    });
+    }, isInternal);
     for (auto &report : reporters) {
         report->ReportInterrupt();
     }
@@ -242,7 +242,7 @@ int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
 #endif
         CHECK_AND_CONTINUE_LOG(device != nullptr && !device->isSupportMultiZone_,
             "support multi zone, no need move from global");
-        RemoveDeviceFromGlobal(device);
+        RemoveDeviceFromGlobal(device, zoneId);
     }
 
 #ifdef MULTI_USER_ZONE
@@ -266,7 +266,7 @@ void AudioZoneService::RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescrip
 }
 
 int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices, bool isNeedFetch)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> toGlobalDevices;
     std::shared_ptr<AudioZone> zonePtr;
@@ -296,7 +296,7 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
     for (auto it : toGlobalDevices) {
         CHECK_AND_CONTINUE_LOG(it != nullptr && !it->isSupportMultiZone_,
             "support multi zone, no need move to global");
-        AudioDeviceStatus::GetInstance().AddDeviceBackToGlobalOnly(it);
+        AudioDeviceStatus::GetInstance().AddDeviceBackToGlobalOnly(it, isNeedFetch);
     }
     return SUCCESS;
 }
@@ -521,9 +521,9 @@ void AudioZoneService::RemoveDeviceToGlobalFromZones(const std::shared_ptr<Audio
 {
     auto zoneIds = FindAudioZoneByDeviceForExtZone(device);
     for (auto zoneId : zoneIds) {
-        UnBindDeviceToAudioZone(zoneId, { device });
+        UnBindDeviceToAudioZone(zoneId, { device }, false);
         CHECK_AND_CONTINUE(GetAllOutputDevices(zoneId).empty());
-        ReleaseAudioZone(zoneId);
+        ReleaseAudioZone(zoneId, true);
     }
 }
 
@@ -972,7 +972,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZoneService::GetAvailab
     auto globalDevices = AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(usage);
 
     int32_t zoneId = FindAudioZoneByUid(clientUid);
-    bool isSystemService = PermissionUtil::VerifySystemPermission() && !PermissionUtil::VerifyIsSystemApp();
+    bool isSystemService = PermissionUtil::VerifySystemPermission() && !PermissionUtil::VerifyIsSystemAppWithoutRoot();
     std::vector<std::pair<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> tempDevices = {};
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> zoneDevices = {};
     {
@@ -1083,9 +1083,9 @@ bool AudioZoneService::UpdateDevicesListInfoForZone(int32_t zoneId,
     descs.push_back(devDesc);
     AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
 
-    UnBindDeviceToAudioZone(zoneId, descs);
+    UnBindDeviceToAudioZone(zoneId, descs, false);
     CHECK_AND_RETURN_RET(GetAllOutputDevices(zoneId).empty(), true);
-    ReleaseAudioZone(zoneId);
+    ReleaseAudioZone(zoneId, true);
     return true;
 }
 #endif

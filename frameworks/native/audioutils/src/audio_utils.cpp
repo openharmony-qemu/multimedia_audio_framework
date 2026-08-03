@@ -561,6 +561,16 @@ bool PermissionUtil::VerifyIsSystemApp()
     return false;
 }
 
+bool PermissionUtil::VerifyIsSystemAppWithoutRoot()
+{
+    uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
+    WatchTimeout guard("Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID");
+    bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
+    CHECK_AND_RETURN_RET(!tmp, true);
+
+    return false;
+}
+
 bool PermissionUtil::VerifySelfPermission()
 {
 #ifdef AUDIO_BUILD_VARIANT_ROOT

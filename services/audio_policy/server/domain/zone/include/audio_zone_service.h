@@ -40,7 +40,7 @@ public:
     void DeInit();
     
     int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context, pid_t clientPid);
-    void ReleaseAudioZone(int32_t zoneId);
+    void ReleaseAudioZone(int32_t zoneId, bool isInternal = false);
     void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context);
     int32_t GetAudioZoneForApp(const std::vector<int32_t> &userIds, std::vector<int32_t> &retUserIds);
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
@@ -51,7 +51,7 @@ public:
     int32_t BindDeviceToAudioZone(int32_t zoneId,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
     int32_t UnBindDeviceToAudioZone(int32_t zoneId,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices, bool isNeedFetch = true);
     void MoveDeviceToGlobalFromZones(std::shared_ptr<AudioDeviceDescriptor> device);
     int32_t UpdateDeviceFromGlobalForAllZone(std::shared_ptr<AudioDeviceDescriptor> device);
     bool UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &devDesc,

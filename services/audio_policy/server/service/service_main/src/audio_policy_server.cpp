@@ -2711,9 +2711,16 @@ int32_t AudioPolicyServer::SetAudioScene(int32_t audioSceneIn)
 }
 // LCOV_EXCL_STOP
 
-int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene, const int32_t uid, const int32_t pid)
+int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene, const int32_t uid, const int32_t pid,
+    bool isInternal)
 {
-    return eventEntry_->SetAudioScene(audioScene, uid, pid);
+    if (isInternal) {
+        CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService_ is nullptr");
+        return coreService_->SetAudioScene(audioScene, uid, pid);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_NULL_POINTER, "eventEntry_ is nullptr");
+        return eventEntry_->SetAudioScene(audioScene, uid, pid);
+    }
 }
 
 int32_t AudioPolicyServer::GetAudioScene(int32_t &scene)
@@ -4755,7 +4762,7 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
 
     bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     bool hasSysPermission = PermissionUtil::VerifySystemPermission();
-    bool isSystemService = PermissionUtil::VerifySystemPermission() && !PermissionUtil::VerifyIsSystemApp();
+    bool isSystemService = PermissionUtil::VerifySystemPermission() && !PermissionUtil::VerifyIsSystemAppWithoutRoot();
     callback->hasBTPermission_ = hasBTPermission;
     callback->hasSystemPermission_ = hasSysPermission;
     callback->isSystemService_ = isSystemService;
