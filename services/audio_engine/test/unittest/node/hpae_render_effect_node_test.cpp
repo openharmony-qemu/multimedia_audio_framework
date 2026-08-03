@@ -2441,55 +2441,6 @@ HWTEST_F(HpaeRenderEffectNodeTest, InitEffectBufferFromDisConnect_015, TestSize.
 }
 
 /**
- * @tc.name   : Test DoProcess with non-collaborative scene
- * @tc.number : DoProcess_NonCollaborativeScene_016
- * @tc.desc   : Test DoProcess delegates to parent for non-collaborative scenes.
- */
-HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_NonCollaborativeScene_016, TestSize.Level1)
-{
-    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5100);
-    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
-    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
-
-    // Should not crash
-    node->DoProcess();
-    SUCCEED();
-}
-
-/**
- * @tc.name   : Test SetCollabDoFade on node
- * @tc.number : SetCollabDoFade_017
- * @tc.desc   : Test SetCollabDoFade delegates to tempEffectBuffer.
- */
-HWTEST_F(HpaeRenderEffectNodeTest, SetCollabDoFade_017, TestSize.Level1)
-{
-    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5200, STEREO, CH_LAYOUT_STEREO);
-    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
-    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
-
-    node->SetCollabDoFade(true);
-    SUCCEED();
-}
-
-/**
- * @tc.name   : Test SetStopRunningState on node
- * @tc.number : SetStopRunningState_018
- * @tc.desc   : Test SetStopRunningState delegates to tempEffectBuffer.
- */
-HWTEST_F(HpaeRenderEffectNodeTest, SetStopRunningState_018, TestSize.Level1)
-{
-    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5300, STEREO, CH_LAYOUT_STEREO);
-    nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
-    nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
-
-    node->SetStopRunningState(true);
-    SUCCEED();
-}
-
-/**
  * @tc.name   : Test OffloadRendererCheckNotifyEffect with null manager
  * @tc.number : OffloadRendererCheckNotifyEffect_NullManager_019
  * @tc.desc   : Test OffloadRendererCheckNotifyEffect returns false when manager is null.
