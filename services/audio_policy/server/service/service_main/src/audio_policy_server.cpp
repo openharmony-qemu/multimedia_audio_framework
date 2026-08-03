@@ -3029,6 +3029,8 @@ int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateInterrupt(int32_t zoneId
 int32_t AudioPolicyServer::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
 {
     if (interruptService_ != nullptr) {
+        bool ret = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppConcurrencyMode: No system permission");
         return StandaloneModeManager::GetInstance().SetAppConcurrencyMode(IPCSkeleton::GetCallingPid(), appUid, mode);
     }
     return ERR_UNKNOWN;
