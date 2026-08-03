@@ -1317,5 +1317,47 @@ HWTEST_F(AudioRenderSinkUnitTest, SelectSceneToHdi_001, TestSize.Level1)
 
     DeInitPrimarySink();
 }
+
+/**
+ * @tc.name   : Test DeInit clears deviceCallback_ so stale lambda is not invoked on reuse
+ * @tc.number : DeInitClearsDeviceCallback_001
+ * @tc.desc   : Test DeInit clears the registered device callback so that reusing a cached
+ *              sink does not invoke a stale lambda (fix for use-after-free when
+ *              HpaeOutputCluster is destroyed).
+ */
+HWTEST_F(AudioRenderSinkUnitTest, DeInitClearsDeviceCallback_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
+    if (!primarySinkInited_) {
+        bool callbackInvoked = false;
+        primarySink_->RegisterCurrentDeviceCallback(
+            [&callbackInvoked](bool state) { callbackInvoked = true; });
+
+        // NONE -> SPEAKER: reaches HandleDeviceCallback and invokes the lambda,
+        // proving the callback wiring works before DeInit.
+        std::vector<DeviceType> speaker = { DEVICE_TYPE_SPEAKER };
+        primarySink_->UpdateActiveDevice(speaker);
+        EXPECT_TRUE(callbackInvoked);
+
+        // DeInit must clear deviceCallback_ so the stale lambda is not invoked on reuse.
+        callbackInvoked = false;
+        primarySink_->DeInit();
+
+        // Re-Init the cached sink (simulates sink reuse by a new HpaeOutputCluster).
+        attr_.deviceType = DEVICE_TYPE_SPEAKER;
+        int32_t ret = primarySink_->Init(attr_);
+        EXPECT_EQ(ret, SUCCESS);
+
+        // Trigger HandleDeviceCallback again. A device different from the pre-DeInit
+        // active device is used so UpdateActiveDevice does not short-circuit and
+        // HandleDeviceCallback is guaranteed to be reached. With the fix deviceCallback_
+        // was cleared, so the stale lambda must NOT fire.
+        std::vector<DeviceType> wiredHeadset = { DEVICE_TYPE_WIRED_HEADSET };
+        primarySink_->UpdateActiveDevice(wiredHeadset);
+        EXPECT_FALSE(callbackInvoked);
+    }
+    DeInitPrimarySink();
+}
 } // namespace AudioStandard
 } // namespace OHOS

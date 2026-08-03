@@ -126,10 +126,9 @@ void AudioRenderSink::DeInit(void)
     deviceManager->DestroyRender(adapterNameCase_, hdiRenderId_);
     audioRender_ = nullptr;
     DeinitPipeInfo();
-    // Clear deviceCallback_ and reset active device to avoid use-after-free when the
-    // cached sink is reused: the callback lambda captures destroyed HpaeOutputCluster::this.
+    // Clear deviceCallback_ to avoid use-after-free when the cached sink is reused:
+    // the callback lambda captures destroyed HpaeOutputCluster::this.
     deviceCallback_ = nullptr;
-    currentActiveDevice_ = DEVICE_TYPE_NONE;
 }
 
 bool AudioRenderSink::IsInited(void)
