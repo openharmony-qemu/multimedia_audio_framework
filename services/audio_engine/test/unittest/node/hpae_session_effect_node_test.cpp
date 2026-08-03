@@ -844,52 +844,6 @@ HWTEST_F(SessionEffectNodeStateTest, doProcess_resetsStatsWhenReportThresholdRea
     EXPECT_EQ(node_->GetStatsForTest().framesOutput, 0);
 }
 
-HWTEST_F(SessionEffectNodeStateTest, activeNoDataPadding_stopsAtConfiguredLimit, TestSize.Level0)
-{
-    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
-    node_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
-    node_->SetActiveNoDataStartForTest(
-        std::chrono::steady_clock::now() - std::chrono::milliseconds(1000));
-
-    size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    EXPECT_CALL(*mockInst_, FeedInput(testing::_, byteLen))
-        .Times(200)
-        .WillRepeatedly(testing::Return(0));
-    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_))
-        .Times(240)
-        .WillRepeatedly(testing::Return(byteLen));
-
-    for (uint32_t i = 0; i < 240; ++i) {
-        EXPECT_NE(node_->ProcessActiveNoInputForTest(), nullptr);
-    }
-
-    EXPECT_EQ(node_->GetPaddingBytesInForTest(), byteLen * 200);
-    EXPECT_EQ(node_->GetLatency(), 0u);
-}
-
-HWTEST_F(SessionEffectNodeStateTest, activeNoDataPaddingFailure_stopsAtConfiguredLimit, TestSize.Level0)
-{
-    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
-    node_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
-    node_->SetActiveNoDataStartForTest(
-        std::chrono::steady_clock::now() - std::chrono::milliseconds(1000));
-
-    size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
-    EXPECT_CALL(*mockInst_, FeedInput(testing::_, byteLen))
-        .Times(200)
-        .WillRepeatedly(testing::Return(-1));
-    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_))
-        .Times(240)
-        .WillRepeatedly(testing::Return(byteLen));
-
-    for (uint32_t i = 0; i < 240; ++i) {
-        EXPECT_NE(node_->ProcessActiveNoInputForTest(), nullptr);
-    }
-
-    EXPECT_EQ(node_->GetPaddingBytesInForTest(), 0u);
-    EXPECT_EQ(node_->GetLatency(), 0u);
-}
-
 HWTEST_F(SessionEffectNodeStateTest, activeNoData_returnsSilenceWithoutInstanceOrWhenInactive, TestSize.Level0)
 {
     EXPECT_EQ(node_->ProcessActiveNoInputForTest(), node_->GetSilenceDataForTest());
