@@ -1404,7 +1404,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
 void AudioDeviceStatus::OnConnectFailed(AudioDeviceDescriptor &desc)
 {
     CHECK_AND_RETURN(AudioRouterSelectStrategy::GetInstance().IsPreferredDevice(desc));
-    AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::SELECTED_DEVICE_CONNECT_FAILED};
+    AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::DEVICE_RESELECT};
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnConnectFailed", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnConnectFailed", reason);
 

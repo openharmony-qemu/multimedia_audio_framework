@@ -2859,7 +2859,7 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
             AudioScene lastAudioScene = audioSceneManager_.GetLastAudioScene();
             AudioScene audioScene = audioSceneManager_.GetAudioScene();
             auto muteReason = reason.IsSetAudioScene() && IsCallOrRingToDefault(lastAudioScene, audioScene) ?
-                AudioStreamDeviceChangeReasonExt::ExtEnum::DEVICE_RESELECT : reason;
+                AudioStreamDeviceChangeReasonExt::ExtEnum::CALL_OR_RING_TO_DEFAULT : reason;
             MuteSinkPortForSwitchDevice(streamDesc, muteReason);
 #endif
         }
@@ -3021,7 +3021,7 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
     std::vector<SleepStrategy> strategies = {
         {
             [&]() { return reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsNewDeviceAvailable() ||
-                reason.IsSelectedDeviceConnectFailed(); },
+                reason.IsDeviceReselect(); },
             {BASE_DEVICE_SWITCH_SLEEP_US, BASE_DEVICE_SWITCH_SLEEP_US}
         },
         {
@@ -3090,8 +3090,8 @@ void AudioCoreService::SetVoiceCallMuteForSwitchDevice()
 void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsDeviceReselect() ||
-        reason.IsSelectedDeviceConnectFailed()) {
+    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsCallOrRingToDefault() ||
+        reason.IsDeviceReselect()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
