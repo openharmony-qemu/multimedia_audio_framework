@@ -103,10 +103,14 @@ ohos_unittest("audio_policy_manager_device_unit_test") {
 
   sources = [
     "./audio_policy_manager_device_unit_test/src/audio_policy_manager_device_unit_test.cpp",
+    "./audio_policy_manager_device_unit_test/src/audio_policy_manager_ext_unit_test.cpp",
     "../../service/src/audio_policy_manager.cpp",
     "../../service/src/audio_policy_manager_device.cpp",
     "../../service/src/audio_routing_manager_listener.cpp",
     "../../service/src/audio_anahs_manager_listener.cpp",
+    "../../service/src/audio_policy_manager_zone.cpp",
+    "../../service/src/audio_zone_manager.cpp",
+    "../../service/src/audio_general_manager.cpp",
     "../../stub/src/audio_zone_client.cpp",
     "../../stub/src/sle_audio_operation_callback_stub_impl.cpp",
     "./audio_policy_manager_device_unit_test/src/va_device_broker_wrapper_impl_test_stub.cpp",

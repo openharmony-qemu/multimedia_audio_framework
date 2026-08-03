@@ -566,8 +566,360 @@ HWTEST(AudioPolicyManagerDevice, UnsetPreferredInputDeviceChangeCallback_Removes
     EXPECT_EQ(ret, SUCCESS);
 
     // Verify entry was removed (callback size should decrease)
-    size_t sizeAfterUnset = audioPolicyManager->audioPolicyClientStubCB_->GetPreferredInputDeviceChangeCallbackSize();
+    size_t sizeAfterUnset = audioPolicyManager->audioPolicyClientStubCB_
+        ->GetPreferredInputDeviceChangeCallbackSize();
     EXPECT_LT(sizeAfterUnset, sizeAfterSet);
 }
+
+HWTEST(AudioPolicyManagerDevice, GetExcludedDevices_002, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientProxy_ = nullptr;
+    auto ret = mgr->GetExcludedDevices(AudioDeviceUsage::MEDIA_OUTPUT_DEVICES);
+    EXPECT_TRUE(ret.empty());
+}
+
+HWTEST(AudioPolicyManagerDevice, GetDevicesInner_002, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientProxy_ = nullptr;
+    auto ret = mgr->GetDevicesInner(DeviceFlag::OUTPUT_DEVICES_FLAG);
+    EXPECT_TRUE(ret.empty());
+}
+
+HWTEST(AudioPolicyManagerDevice, GetPreferredOutputDeviceDescriptors_001, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientProxy_ = nullptr;
+    AudioRendererInfo info;
+    auto ret = mgr->GetPreferredOutputDeviceDescriptors(info, false);
+    EXPECT_TRUE(ret.empty());
+}
+
+HWTEST(AudioPolicyManagerDevice, GetPreferredOutputDeviceDescriptors_002, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    AudioRendererInfo info;
+    auto ret = mgr->GetPreferredOutputDeviceDescriptors(info, true);
+}
+
+HWTEST(AudioPolicyManagerDevice, GetPreferredInputDeviceDescriptors_001, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientProxy_ = nullptr;
+    AudioCapturerInfo info;
+    auto ret = mgr->GetPreferredInputDeviceDescriptors(info);
+    EXPECT_TRUE(ret.empty());
+}
+
+HWTEST(AudioPolicyManagerDevice, GetPreferredInputDeviceDescriptors_002, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    AudioCapturerInfo info;
+    auto ret = mgr->GetPreferredInputDeviceDescriptors(info);
+}
+
+HWTEST(AudioPolicyManagerDevice, GetOutputDevice_001, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientProxy_ = nullptr;
+    sptr<AudioRendererFilter> filter = new AudioRendererFilter();
+    auto ret = mgr->GetOutputDevice(filter);
+    EXPECT_TRUE(ret.empty());
+}
+
+HWTEST(AudioPolicyManagerDevice, GetOutputDevice_002, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    sptr<AudioRendererFilter> filter = new AudioRendererFilter();
+    auto ret = mgr->GetOutputDevice(filter);
+}
+
+HWTEST(AudioPolicyManagerDevice, GetInputDevice_001, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientProxy_ = nullptr;
+    sptr<AudioCapturerFilter> filter = new AudioCapturerFilter();
+    auto ret = mgr->GetInputDevice(filter);
+    EXPECT_TRUE(ret.empty());
+}
+
+HWTEST(AudioPolicyManagerDevice, GetInputDevice_002, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    sptr<AudioCapturerFilter> filter = new AudioCapturerFilter();
+    auto ret = mgr->GetInputDevice(filter);
+}
+
+HWTEST(AudioPolicyManagerDevice, UnsetDeviceChangeCallback_002, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = nullptr;
+    auto cb = std::make_shared<AudioManagerDeviceChangeCallbackTest>();
+    int32_t ret = mgr->UnsetDeviceChangeCallback(1, OUTPUT_DEVICES_FLAG, cb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, SetDeviceInfoUpdateCallback_002, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    int32_t ret = mgr->SetDeviceInfoUpdateCallback(1, nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST(AudioPolicyManagerDevice, SetDeviceInfoUpdateCallback_003, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = nullptr;
+    mgr->isAudioPolicyClientRegisted_.store(true);
+    auto cb = std::make_shared<ConcreteAudioManagerDeviceInfoUpdateCallback>();
+    int32_t ret = mgr->SetDeviceInfoUpdateCallback(1, cb);
+    EXPECT_EQ(ret, SUCCESS);
+    MockNative::Resume();
+}
+
+HWTEST(AudioPolicyManagerDevice, UnsetDeviceInfoUpdateCallback_003, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    mgr->audioPolicyClientStubCB_->deviceInfoUpdateCallbackList_.clear();
+    auto cb = std::make_shared<ConcreteAudioManagerDeviceInfoUpdateCallback>();
+    int32_t ret = mgr->UnsetDeviceInfoUpdateCallback(1, cb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, SetPreferredOutputDeviceChangeCallback_NullCb, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    AudioRendererInfo info;
+    int32_t ret = mgr->SetPreferredOutputDeviceChangeCallback(info, nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST(AudioPolicyManagerDevice, SetPreferredOutputDeviceChangeCallback_NullStub, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = nullptr;
+    mgr->isAudioPolicyClientRegisted_.store(true);
+    AudioRendererInfo info;
+    auto cb = std::make_shared<AudioPreferredOutputDeviceChangeCallbackTest>();
+    int32_t ret = mgr->SetPreferredOutputDeviceChangeCallback(info, cb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, SetPreferredInputDeviceChangeCallback_NullCb, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    AudioCapturerInfo info;
+    int32_t ret = mgr->SetPreferredInputDeviceChangeCallback(info, nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST(AudioPolicyManagerDevice, SetPreferredInputDeviceChangeCallback_NullStub, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = nullptr;
+    mgr->isAudioPolicyClientRegisted_.store(true);
+    AudioCapturerInfo info;
+    auto cb = std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>();
+    int32_t ret = mgr->SetPreferredInputDeviceChangeCallback(info, cb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, UnsetPreferredOutputDeviceChangeCallback_NullStub, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = nullptr;
+    AudioRendererInfo info;
+    auto cb = std::make_shared<AudioPreferredOutputDeviceChangeCallbackTest>();
+    int32_t ret = mgr->UnsetPreferredOutputDeviceChangeCallback(cb, info);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, UnsetPreferredInputDeviceChangeCallback_NullStub, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = nullptr;
+    AudioCapturerInfo info;
+    auto cb = std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>();
+    int32_t ret = mgr->UnsetPreferredInputDeviceChangeCallback(cb, info);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, RegisterDeviceChangeWithInfoCallback_Expired, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    std::weak_ptr<DeviceChangeWithInfoCallback> expiredCb;
+    int32_t ret = mgr->RegisterDeviceChangeWithInfoCallback(1, expiredCb);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST(AudioPolicyManagerDevice, RegisterDeviceChangeWithInfoCallback_NullStub, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = nullptr;
+    mgr->isAudioPolicyClientRegisted_.store(true);
+    auto cb = std::make_shared<ConcreteDeviceChangeWithInfoCallback>();
+    std::weak_ptr<DeviceChangeWithInfoCallback> weakCb(cb);
+    int32_t ret = mgr->RegisterDeviceChangeWithInfoCallback(1, weakCb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, UnregisterDeviceChangeWithInfoCallback_NullStub, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = nullptr;
+    int32_t ret = mgr->UnregisterDeviceChangeWithInfoCallback(1);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, GetAvailableDevices_002, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientProxy_ = nullptr;
+    auto ret = mgr->GetAvailableDevices(MEDIA_OUTPUT_DEVICES);
+    EXPECT_TRUE(ret.empty());
+}
+
+HWTEST(AudioPolicyManagerDevice, UnsetAvailableDeviceChangeCallback_DAll, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->availableDeviceChangeCbsMap_[{1, MEDIA_OUTPUT_DEVICES}] = nullptr;
+    mgr->availableDeviceChangeCbsMap_[{1, MEDIA_INPUT_DEVICES}] = nullptr;
+    mgr->availableDeviceChangeCbsMap_[{2, MEDIA_OUTPUT_DEVICES}] = nullptr;
+    int32_t ret = mgr->UnsetAvailableDeviceChangeCallback(
+        1, AudioDeviceUsage::D_ALL_DEVICES);
+    EXPECT_EQ(mgr->availableDeviceChangeCbsMap_.count({2, MEDIA_OUTPUT_DEVICES}), 1);
+}
+
+HWTEST(AudioPolicyManagerDevice, UnsetAvailableDeviceChangeCallback_Specific, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->availableDeviceChangeCbsMap_[{1, MEDIA_OUTPUT_DEVICES}] = nullptr;
+    mgr->availableDeviceChangeCbsMap_[{1, MEDIA_INPUT_DEVICES}] = nullptr;
+    int32_t ret = mgr->UnsetAvailableDeviceChangeCallback(
+        1, MEDIA_OUTPUT_DEVICES);
+    EXPECT_EQ(mgr->availableDeviceChangeCbsMap_.count({1, MEDIA_INPUT_DEVICES}), 1);
+}
+
+HWTEST(AudioPolicyManagerDevice, SetCallDeviceActive_001, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientProxy_ = nullptr;
+    int32_t ret = mgr->SetCallDeviceActive(DEVICE_TYPE_SPEAKER, true, "", 0);
+    EXPECT_EQ(ret, -1);
+}
+
+HWTEST(AudioPolicyManagerDevice, SetCallDeviceActive_002, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    int32_t ret = mgr->SetCallDeviceActive(
+        DEVICE_TYPE_SPEAKER, true, "00:00:00:00:00:00", 0);
+}
+
+HWTEST(AudioPolicyManagerDevice, GetActiveBluetoothDevice_001, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientProxy_ = nullptr;
+    auto ret = mgr->GetActiveBluetoothDevice();
+    EXPECT_NE(ret, nullptr);
+}
+
+HWTEST(AudioPolicyManagerDevice, GetActiveBluetoothDevice_002, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    auto ret = mgr->GetActiveBluetoothDevice();
+    EXPECT_NE(ret, nullptr);
+}
+
+HWTEST(AudioPolicyManagerDevice, SetAudioDeviceAnahsCallback_NullCb, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    int32_t ret = mgr->SetAudioDeviceAnahsCallback(nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST(AudioPolicyManagerDevice, RegisterPreferredDeviceSetCallback_NullCb, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    int32_t ret = mgr->RegisterPreferredDeviceSetCallback(nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    MockNative::Resume();
+}
+
+HWTEST(AudioPolicyManagerDevice, RegisterPreferredDeviceSetCallback_NullStub, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = nullptr;
+    mgr->isAudioPolicyClientRegisted_.store(true);
+    auto cb = std::make_shared<PreferredDeviceSetCallbackTest>();
+    int32_t ret = mgr->RegisterPreferredDeviceSetCallback(cb);
+    EXPECT_EQ(ret, SUCCESS);
+    MockNative::Resume();
+}
+
+HWTEST(AudioPolicyManagerDevice, UnregisterPreferredDeviceSetCallback_NullStub, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = nullptr;
+    auto cb = std::make_shared<PreferredDeviceSetCallbackTest>();
+    int32_t ret = mgr->UnregisterPreferredDeviceSetCallback(cb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, SetPreferredOutputDeviceChangeCallback_InvUid, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    AudioRendererInfo info;
+    info.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    auto cb = std::make_shared<AudioPreferredOutputDeviceChangeCallbackTest>();
+    int32_t ret = mgr->SetPreferredOutputDeviceChangeCallback(
+        info, cb, INVALID_UID);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, SetPreferredInputDeviceChangeCallback_InvUid, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    AudioCapturerInfo info;
+    info.sourceType = SourceType::SOURCE_TYPE_MIC;
+    auto cb = std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>();
+    int32_t ret = mgr->SetPreferredInputDeviceChangeCallback(
+        info, cb, INVALID_UID);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, UnsetPreferredOutputDeviceChangeCallback_InvUid, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    AudioRendererInfo info;
+    info.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    auto cb = std::make_shared<AudioPreferredOutputDeviceChangeCallbackTest>();
+    int32_t ret = mgr->UnsetPreferredOutputDeviceChangeCallback(
+        cb, info, INVALID_UID);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyManagerDevice, UnsetPreferredInputDeviceChangeCallback_InvUid, TestSize.Level1)
+{
+    auto mgr = std::make_shared<AudioPolicyManager>();
+    mgr->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    AudioCapturerInfo info;
+    info.sourceType = SourceType::SOURCE_TYPE_MIC;
+    auto cb = std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>();
+    int32_t ret = mgr->UnsetPreferredInputDeviceChangeCallback(
+        cb, info, INVALID_UID);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
