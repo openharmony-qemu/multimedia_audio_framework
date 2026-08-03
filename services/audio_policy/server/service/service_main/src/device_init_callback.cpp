@@ -29,27 +29,26 @@ static string GetExtraDataField(const string &src, const string &field)
     auto pos = src.find(field);
     CHECK_AND_RETURN_RET(pos != string::npos, "");
     pos = src.find(':', pos + field.length());
-    CHECK_AND_RETURN_RET(pos != string::npos, "");
-    auto end = ++pos;
+    CHECK_AND_RETURN_RET(pos != string::npos && (++pos) < src.length(), "");
+    auto end = pos + 1;
     for (; end < src.length(); end++) {
         if (src[end] == '}' || src[end] == ',') {
             break;
         }
     }
-    auto value = end == src.length() ? src.substr(pos) : src.substr(pos, end - pos);
-    for (pos = 0; pos < value.length(); pos++) {
-        auto ch = value[pos];
+    for (; pos < end; pos++) {
+        auto ch = src[pos];
         if (ch != '\\' && ch != '"') {
             break;
         }
     }
-    for (end = value.length() - 1; end >= 0; end--) {
-        auto ch = value[end];
+    for (; end > pos; end--) {
+        auto ch = src[end - 1];
         if (ch != '\\' && ch != '"') {
             break;
         }
     }
-    return value.substr(pos, end - pos + 1);
+    return src.substr(pos, end - pos);
 }
 
 static DmDevice ParseDmDevice(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
