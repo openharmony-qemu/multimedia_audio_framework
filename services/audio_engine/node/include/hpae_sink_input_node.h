@@ -89,6 +89,8 @@ public:
     void ClearSessionEffectAttachState();
     bool HasSessionEffectAttachState() const;
     std::optional<SessionEffectAttachState> GetSessionEffectAttachState() const;
+    // Called by manager on SE preheat start/stop notification; when true, OnStreamInfoChange skips forcing client data
+    void SetSessionEffectPreheatActive(bool active) { sessionEffectPreheatActive_ = active; }
     void SetNodeInfo(HpaeNodeInfo& nodeInfo) override;
 
     bool isConnected_ = false;
@@ -121,6 +123,7 @@ private:
     bool isDirect_ = false;
     bool isNonStandardSampleRate_ = false;
     std::optional<SessionEffectAttachState> sessionEffectAttachState_;
+    bool sessionEffectPreheatActive_ = false;
 };
 
 }  // namespace HPAE

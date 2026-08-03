@@ -295,6 +295,7 @@ HWTEST_F(HpaeProcessClusterSeDataflowTest, warmingUp_outputsSilence, TestSize.Le
     auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
     ASSERT_NE(seNode, nullptr);
     EXPECT_EQ(seNode->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+    seNode->rawBypassNeeded_ = true;
 
     probe_->DoProcess();
 
@@ -313,7 +314,7 @@ HWTEST_F(HpaeProcessClusterSeDataflowTest, intercepting_feedsAndOutputsSilence, 
 
     auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
     ASSERT_NE(seNode, nullptr);
-
+    seNode->rawBypassNeeded_ = true;
     // Wait for preheat to complete
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 

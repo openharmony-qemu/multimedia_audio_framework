@@ -35,6 +35,7 @@ static constexpr uint32_t PREHEAT_NO_DATA_TIMEOUT_MS = 100;
 static constexpr uint32_t RAW_BYPASS_FIFO_EXTRA_FRAMES = 2;
 static constexpr uint32_t RAW_BYPASS_FIFO_MIN_FRAMES = 2;
 static constexpr uint32_t RAW_BYPASS_FULL_WAIT_MS = 1;
+static constexpr uint32_t RAW_BYPASS_POP_WAIT_MS = 5;
 
 bool GetBytesPerFrame(size_t channels, size_t &bytesPerFrame)
 {
@@ -141,7 +142,9 @@ HpaePcmBuffer *HpaeSessionEffectNode::SignalProcess(const std::vector<HpaePcmBuf
                 result = ProcessActive(inputs);
                 break;
             case STATUS::STOPPING:
-                result = &silenceData_;
+                // Closing node bypasses to upstream dry (the close crossfade block, if any,
+                // was already produced while closeCrossfadePending_ was true).
+                result = inputs[0];
                 break;
             default:
                 result = inputs[0];
@@ -154,39 +157,47 @@ HpaePcmBuffer *HpaeSessionEffectNode::SignalProcess(const std::vector<HpaePcmBuf
 
 void HpaeSessionEffectNode::StartCloseCrossfade()
 {
-    closeCrossfadePending_ = true;
+    // Only an ACTIVE effect has queued wet output worth crossfading; IDLE/other just bypass.
+    closeCrossfadePending_ = effectInstance_ != nullptr && status_ == STATUS::ACTIVE;
+    status_ = STATUS::STOPPING;
 }
 
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessCloseCrossfade(const std::vector<HpaePcmBuffer *> &inputs)
 {
     closeCrossfadePending_ = false;
-    size_t byteLen = inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount() * sizeof(float);
+    HpaePcmBuffer *dryOutput = inputs[0];
+    tailOutputData_.Reset();
 
-    if (effectInstance_ && status_ == STATUS::ACTIVE) {
-        size_t channels = audioConfig_.inputCfg.channels;
-        size_t frameLen = inputs[0]->GetFrameLen();
-        size_t sampleCount = frameLen * channels;
-        size_t algoByteLen = sampleCount * sizeof(float);
+    size_t frameLen = dryOutput->GetFrameLen();
+    size_t inputChannels = audioConfig_.inputCfg.channels;
+    size_t outputChannels = audioConfig_.outputCfg.channels != 0 ?
+        audioConfig_.outputCfg.channels : inputChannels;
+    CHECK_AND_RETURN_RET(frameLen != 0 && inputChannels != 0 && outputChannels == inputChannels &&
+        dryOutput->GetChannelCount() == inputChannels &&
+        tailOutputData_.GetChannelCount() == outputChannels &&
+        tailOutputData_.GetFrameLen() == frameLen, dryOutput);
 
-        float *raw = silenceData_.GetPcmDataBuffer();
-        float *buf = inputs[0]->GetPcmDataBuffer();
-        for (size_t i = 0; i < sampleCount; ++i) {
-            raw[i] = buf[i];
-        }
+    size_t byteLen = 0;
+    CHECK_AND_RETURN_RET(GetPcmByteLen(frameLen, inputChannels, byteLen) &&
+        byteLen <= static_cast<size_t>(std::numeric_limits<int32_t>::max()) &&
+        dryOutput->DataSize() == byteLen && tailOutputData_.DataSize() == byteLen, dryOutput);
 
-        FeedInputFromBuffer(inputs[0]);
-        int32_t readRet = effectInstance_->ReadOutput(reinterpret_cast<uint8_t *>(buf), algoByteLen);
-        if (readRet > 0) {
-            ApplyCrossfadeMix(buf, raw, sampleCount);
-        } else {
-            for (size_t i = 0; i < sampleCount; ++i) {
-                buf[i] = raw[i];
-            }
+    // Drain the wet output queued before close (do NOT feed this dry block back into the
+    // closing algorithm). Only a full aligned wet block is mixed; otherwise pass dry through.
+    if (effectInstance_ != nullptr) {
+        int32_t readRet = effectInstance_->ReadOutput(
+            reinterpret_cast<uint8_t *>(tailOutputData_.GetPcmDataBuffer()), byteLen);
+        if (readRet == static_cast<int32_t>(byteLen)) {
+            ApplyCrossfadeMix(dryOutput->GetPcmDataBuffer(),
+                tailOutputData_.GetPcmDataBuffer(), frameLen, inputChannels);
+            dryOutput->SetBufferValid(true);
+            dryOutput->SetBufferSilence(false);
         }
     }
-    status_ = STATUS::IDLE;
+    tailOutputData_.Reset();
     AccountOutput(byteLen);
-    return inputs[0];
+    // Stay STOPPING — FinalizeClose (next queue cycle) owns the actual node deletion.
+    return dryOutput;
 }
 
 bool HpaeSessionEffectNode::IsCloseCrossfadePending() const
@@ -344,22 +355,19 @@ bool HpaeSessionEffectNode::PushRawBypassBuffer(HpaePcmBuffer *buf)
 HpaePcmBuffer *HpaeSessionEffectNode::PopRawBypassBuffer()
 {
     CHECK_AND_RETURN_RET(!rawBypassNeeded_, nullptr);
-    bool popped = false;
-    {
-        std::unique_lock<std::mutex> lock(rawBypassMutex_, std::defer_lock);
-        CHECK_AND_RETURN_RET(lock.try_lock(), nullptr);
-        if (rawBypassBuffer_.GetCurFrames() > 0) {
-            popped = rawBypassBuffer_.GetFrameData(rawBypassOutputData_);
-            rawBypassOutputData_.SetBufferValid(true);
-            rawBypassOutputData_.SetBufferSilence(false);
-            rawBypassOutputData_.SetSplitStreamType(GetNodeInfo().GetSplitStreamType());
-            rawBypassOutputData_.SetAudioStreamType(GetNodeInfo().streamType);
-            rawBypassOutputData_.SetAudioStreamUsage(GetNodeInfo().effectInfo.streamUsage);
-        }
+    std::unique_lock<std::mutex> lock(rawBypassMutex_);
+    auto hasData = [this]() { return stopRequested_.load() || rawBypassBuffer_.GetCurFrames() > 0; };
+    if (rawBypassBuffer_.GetCurFrames() == 0) {
+        rawBypassCv_.wait_for(lock, std::chrono::milliseconds(RAW_BYPASS_POP_WAIT_MS), hasData);
     }
-    if (!popped) {
-        return nullptr;
-    }
+    bool popped = rawBypassBuffer_.GetFrameData(rawBypassOutputData_);
+    CHECK_AND_RETURN_RET(popped, nullptr);
+    rawBypassOutputData_.SetBufferValid(true);
+    rawBypassOutputData_.SetBufferSilence(false);
+    rawBypassOutputData_.SetSplitStreamType(GetNodeInfo().GetSplitStreamType());
+    rawBypassOutputData_.SetAudioStreamType(GetNodeInfo().streamType);
+    rawBypassOutputData_.SetAudioStreamUsage(GetNodeInfo().effectInfo.streamUsage);
+    lock.unlock();
     rawBypassCv_.notify_all();
     return &rawBypassOutputData_;
 }
@@ -505,6 +513,14 @@ void HpaeSessionEffectNode::RestartPreheat()
     }
 }
 
+void HpaeSessionEffectNode::NotifyPreheatStateChanged(bool active)
+{
+    auto callback = GetNodeInfo().statusCallback.lock();
+    if (callback) {
+        callback->OnSessionEffectPreheatStateChanged(GetSessionId(), active);
+    }
+}
+
 int32_t HpaeSessionEffectNode::StartEffect()
 {
     if (!effectInstance_) return 0;
@@ -528,6 +544,10 @@ int32_t HpaeSessionEffectNode::StartEffect()
         }
         return 0;
     }
+
+    // A closing (STOPPING) node must not be re-warmed by Start; FinalizeClose still owns its
+    // deletion. (A paused-STOPPING node already cleared isPaused_ via the resume branch above.)
+    CHECK_AND_RETURN_RET(status_ != STATUS::STOPPING, 0);
 
     AUDIO_INFO_LOG("StartEffect: prebufTargetBytes_=%{public}zu", prebufTargetBytes_);
 
@@ -658,6 +678,7 @@ void HpaeSessionEffectNode::StartPreheatThread()
         StopPreheatThread();
     }
     stopRequested_ = false;
+    NotifyPreheatStateChanged(true); // set flag before spawn so the thread cannot pull before it takes effect
     preheatThread_ = std::thread(&HpaeSessionEffectNode::PreheatThreadFunc, this);
     AUDIO_INFO_LOG("PreheatThread started for %{public}s", effectName_.c_str());
 }
@@ -820,6 +841,7 @@ HpaePcmBuffer *HpaeSessionEffectNode::ProcessInterceptingRaw(HpaePcmBuffer *inpu
         rawBypassNeeded_ = true;
         pendingRawBypassBlocks_.store(0);
         AccountOutput(byteLen);
+        NotifyPreheatStateChanged(false);
         return inputBuf;
     }
     CHECK_AND_RETURN_RET(!rawBypassNeeded_, PrepareSilenceBuffer(silenceData_));
@@ -999,16 +1021,22 @@ void HpaeSessionEffectNode::ApplyInterceptingFadeIn(float *algoOutput, const flo
 {
     CHECK_AND_RETURN(!rawBypassNeeded_);
     for (size_t i = 0; i < sampleCount; ++i) {
-        float t = sampleCount > 1 ? static_cast<float>(i) / static_cast<float>(sampleCount - 1) : 1.0f;
+        float t = static_cast<float>(i + 1) / static_cast<float>(sampleCount);
         algoOutput[i] = rawInput[i] * (1.0f - t) + algoOutput[i] * t;
     }
 }
 
-void HpaeSessionEffectNode::ApplyCrossfadeMix(float *algoOutput, const float *rawInput, size_t sampleCount)
+void HpaeSessionEffectNode::ApplyCrossfadeMix(float *dryOutput, const float *wetInput,
+    size_t frameLen, size_t channels)
 {
-    for (size_t i = 0; i < sampleCount; ++i) {
-        float t = static_cast<float>(i + 1) / static_cast<float>(sampleCount);
-        algoOutput[i] = algoOutput[i] * (1.0f - t) + rawInput[i] * t;
+    // Per-frame wet→dry: t advances once per frame, shared by all channels in that frame.
+    // First frame is fully wet, last frame is fully dry.
+    for (size_t frame = 0; frame < frameLen; ++frame) {
+        float t = static_cast<float>(frame + 1) / static_cast<float>(frameLen);
+        for (size_t channel = 0; channel < channels; ++channel) {
+            size_t index = frame * channels + channel;
+            dryOutput[index] = wetInput[index] * (1.0f - t) + dryOutput[index] * t;
+        }
     }
 }
 

@@ -439,6 +439,45 @@ HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataFalse_OffloadEnabled
     EXPECT_EQ(result, SUCCESS);
 }
 
+// Test case when forceData is false (SE preheat active)
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataFalse_SessionEffectPreheatActive, TestSize.Level0) {
+    node_->historyBuffer_ = nullptr;
+    node_->offloadEnable_ = false;
+    node_->SetSessionEffectPreheatActive(true);
+
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+
+    // SE preheating: needData is true and forceData is false (no forced fill)
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
+        .WillOnce([&](AudioCallBackStreamInfo& info) {
+            EXPECT_TRUE(info.needData);
+            EXPECT_FALSE(info.forceData);
+            return SUCCESS;
+        });
+
+    int32_t result = node_->OnStreamInfoChange(true);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+// Test case: SE preheat inactive -> forceData reverts to true on the normal path
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataTrue_SessionEffectPreheatInactive, TestSize.Level0) {
+    node_->historyBuffer_ = nullptr;
+    node_->offloadEnable_ = false;
+    node_->SetSessionEffectPreheatActive(false);
+
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
+        .WillOnce([&](AudioCallBackStreamInfo& info) {
+            EXPECT_TRUE(info.needData);
+            EXPECT_TRUE(info.forceData);
+            return SUCCESS;
+        });
+
+    int32_t result = node_->OnStreamInfoChange(true);
+    EXPECT_EQ(result, SUCCESS);
+}
+
 // Test case to verify parameters passed to OnStreamData are correct
 HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_StreamDataParametersCorrect, TestSize.Level0) {
     node_->historyBuffer_ = nullptr;

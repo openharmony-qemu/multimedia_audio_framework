@@ -121,6 +121,7 @@ group("audio_unit_test") {
     "../services/audio_engine/test/unittest:hpae_backoff_controller_test",
     "../services/audio_engine/test/unittest:hpae_inner_cap_sink_node_test",
     "../services/audio_engine/test/unittest:hpae_offload_renderer_manager_test",
+    "../services/audio_engine/test/unittest:hpae_offload_se_test",
     "../services/audio_engine/test/unittest:hpae_pcm_dumper_test",
     "../services/audio_engine/test/unittest:hpae_message_queue_monitor_test",
     "../services/audio_engine/test/unittest:hpae_stream_move_monitor_test",

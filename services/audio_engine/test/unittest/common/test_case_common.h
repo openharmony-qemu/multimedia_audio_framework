@@ -21,6 +21,11 @@
 #include "audio_errors.h"
 #include "hpae_info.h"
 #include "hpae_msg_channel.h"
+#include <algorithm>
+#include <any>
+#include <memory>
+#include <tuple>
+#include <vector>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -102,6 +107,42 @@ public:
 };
 
 void TestCapturerSourceFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes);
+
+namespace HPAE {
+struct StatusEvent {
+    HpaeStreamClassType streamClassType;
+    uint32_t sessionId;
+    HpaeSessionState state;
+    IOperation operation;
+};
+
+class StatusCallbackRecorder final : public ISendMsgCallback {
+public:
+    void Invoke(HpaeMsgCode cmdID, const std::any &args) override { Record(cmdID, args); }
+    void InvokeSync(HpaeMsgCode cmdID, const std::any &args) override { Record(cmdID, args); }
+
+    size_t Count(uint32_t sessionId, IOperation operation) const
+    {
+        return static_cast<size_t>(std::count_if(events_.begin(), events_.end(),
+            [sessionId, operation](const StatusEvent &event) {
+                return event.sessionId == sessionId && event.operation == operation;
+            }));
+    }
+
+    std::vector<StatusEvent> events_;
+
+private:
+    void Record(HpaeMsgCode cmdID, const std::any &args)
+    {
+        if (cmdID != UPDATE_STATUS) { return; }
+        auto statusArgs = std::any_cast<std::tuple<HpaeStreamClassType, uint32_t,
+            HpaeSessionState, IOperation>>(&args);
+        if (statusArgs == nullptr) { return; }
+        events_.push_back({std::get<0>(*statusArgs), std::get<1>(*statusArgs),
+            std::get<2>(*statusArgs), std::get<3>(*statusArgs)});
+    }
+};
+} // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
 #endif
