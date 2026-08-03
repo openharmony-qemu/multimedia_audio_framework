@@ -1589,6 +1589,7 @@ enum PlayOtherErrorCode {
     TYPE_OFFLOAD_NOT_ENOUGH_DATA,
     TYPE_GET_TIMESTAMP_TOO_FREQUENTLY,
     TYPE_FAST_ABUSE,
+    TYPE_FAST_PREFERRED_FRAME_SIZE_OUT_OF_RANGE,
 };
 
 // LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.
@@ -1868,62 +1869,6 @@ enum StreamSetState {
     STREAM_RESUME,
     STREAM_MUTE,
     STREAM_UNMUTE
-};
-
-enum SwitchState {
-    SWITCH_STATE_WAITING,
-    SWITCH_STATE_TIMEOUT,
-    SWITCH_STATE_CREATED,
-    SWITCH_STATE_STARTED,
-    SWITCH_STATE_FINISHED
-};
-
-struct SwitchStreamInfo {
-    uint32_t sessionId = 0;
-    int32_t callerUid = INVALID_UID;
-    int32_t appUid = INVALID_UID;
-    int32_t appPid = 0;
-    uint32_t appTokenId = 0;
-    CapturerState nextState = CAPTURER_INVALID;
-    bool operator==(const SwitchStreamInfo& info) const
-    {
-        return sessionId == info.sessionId && callerUid == info.callerUid &&
-            appUid == info.appUid && appPid == info.appPid && appTokenId == info.appTokenId;
-    }
-    bool operator!=(const SwitchStreamInfo& info) const
-    {
-        return !(*this == info);
-    }
-
-    bool operator<(const SwitchStreamInfo& info) const
-    {
-        if (sessionId != info.sessionId) {
-            return sessionId < info.sessionId;
-        }
-        if (callerUid != info.callerUid) {
-            return callerUid < info.callerUid;
-        }
-        if (appUid != info.appUid) {
-            return appUid < info.appUid;
-        }
-        if (appPid != info.appPid) {
-            return appPid < info.appPid;
-        }
-        return appTokenId < info.appTokenId;
-    }
-
-    bool operator<=(const SwitchStreamInfo& info) const
-    {
-        return *this < info || *this == info;
-    }
-    bool operator>(const SwitchStreamInfo& info) const
-    {
-        return !(*this <= info);
-    }
-    bool operator>=(const SwitchStreamInfo& info) const
-    {
-        return !(*this < info);
-    }
 };
 
 struct StreamSetStateEventInternal : public Parcelable {

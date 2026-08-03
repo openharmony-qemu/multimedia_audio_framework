@@ -157,6 +157,58 @@ void AudioVolumeManagerImpl::SetAppVolumeMutedForUidSync(int32_t uid, bool muted
     }
 }
 
+void AudioVolumeManagerImpl::SetVoipRendererMuteForUidSync(int32_t uid, int64_t streamId, bool muted)
+{
+    int32_t appUid = uid;
+    int64_t appStreamId = streamId;
+    bool isMute = muted;
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return;
+    }
+    int32_t intValue = audioSystemMngr_->SetVoipRendererMuteForUid(appUid, appStreamId, isMute);
+    CHECK_AND_RETURN(intValue != OHOS::AudioStandard::SUCCESS);
+    if (intValue == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
+        return;
+    } else if (intValue == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED);
+        return;
+    } else if (intValue == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM);
+        return;
+    } else {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Failed to set voip renderer muted.");
+        return;
+    }
+}
+
+void AudioVolumeManagerImpl::SetVoipCapturerMuteForUidSync(int32_t uid, int64_t streamId, bool muted)
+{
+    int32_t appUid = uid;
+    int64_t appStreamId = streamId;
+    bool isMute = muted;
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return;
+    }
+    int32_t intValue = audioSystemMngr_->SetVoipCapturerMuteForUid(appUid, appStreamId, isMute);
+    CHECK_AND_RETURN(intValue != OHOS::AudioStandard::SUCCESS);
+    if (intValue == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
+        return;
+    } else if (intValue == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED);
+        return;
+    } else if (intValue == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM);
+        return;
+    } else {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Failed to set voip capturer muted.");
+        return;
+    }
+}
+
 int32_t AudioVolumeManagerImpl::GetAppVolumePercentageSync()
 {
     int32_t volLevel = 0;

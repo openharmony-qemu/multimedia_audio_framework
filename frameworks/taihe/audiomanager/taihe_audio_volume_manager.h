@@ -40,6 +40,8 @@ public:
     void SetAppVolumePercentageForUidSync(int32_t uid, int32_t volume);
     bool IsAppVolumeMutedForUidSync(int32_t uid, bool owned);
     void SetAppVolumeMutedForUidSync(int32_t uid, bool muted);
+    void SetVoipRendererMuteForUidSync(int32_t uid, int64_t streamId, bool muted);
+    void SetVoipCapturerMuteForUidSync(int32_t uid, int64_t streamId, bool muted);
     int32_t GetAppVolumePercentageSync();
     void SetAppVolumePercentageSync(int32_t volume);
     AudioVolumeGroupManager GetVolumeGroupManagerSync(int32_t groupId);

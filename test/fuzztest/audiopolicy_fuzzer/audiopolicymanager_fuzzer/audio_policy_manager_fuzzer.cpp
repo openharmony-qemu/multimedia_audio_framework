@@ -293,6 +293,8 @@ void AudioPolicyManagerFourFuzzTest(FuzzedDataProvider& fdp)
     AudioCapturerInfo capturerInfo;
     std::shared_ptr<AudioStreamDescriptor> streamDesc;
     uint32_t flag = GetData<uint32_t>();
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = flag;
     uint32_t sessionId = GetData<uint32_t>();
     std::string networkId = "netWorkId";
 
@@ -312,7 +314,7 @@ void AudioPolicyManagerFourFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().UnregisterAudioCapturerEventListener(clientPid);
     AudioPolicyManager::GetInstance().RegisterTracker(mode, streamChangeInfo, clientTrackerObj);
     AudioPolicyManager::GetInstance().UpdateTracker(mode, streamChangeInfo);
-    AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag, sessionId, networkId);
+    AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flagInfo, sessionId, networkId);
     AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, sessionId);
     AudioPolicyManager::GetInstance().SetVolumeDegreeCallback(clientPid, volumeDegreeEventCallback, api_v);
     AudioPolicyManager::GetInstance().UnsetVolumeDegreeCallback(volumeDegreeEventCallback);

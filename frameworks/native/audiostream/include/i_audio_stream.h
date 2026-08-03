@@ -27,6 +27,7 @@
 #include "audio_errors.h"
 #include "audio_debug_info.h"
 #include "audio_shared_memory.h"
+#include "stream_flag_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -390,7 +391,7 @@ public:
 
     virtual void ResetFirstFrameState() {}
 
-    virtual void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) {}
+    virtual void NotifyRouteUpdate(const StreamFlagInfo &flagInfo, const std::string &networkId) {}
 
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
 

@@ -18,6 +18,8 @@
 
 #include "hpae_plugin_node.h"
 #include "i_effect_instance.h"
+#include <condition_variable>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <memory>
@@ -135,16 +137,24 @@ private:
     void ResetAccounting();
     void ResetTailPaddingState();
     void ReconfigOutputBuffers(const AudioEffectConfig &config);
+    void ReconfigRawBypassBuffers(const AudioEffectConfig &config);
+    void ClearRawBypassBuffer();
+    bool WaitRawBypassBufferWritable();
+    bool PushRawBypassBuffer(HpaePcmBuffer *buf);
+    HpaePcmBuffer *PopRawBypassBuffer();
+    bool WriteRawBypassOutput();
+    bool HandleWarmingUpRawBypass();
+    HpaePcmBuffer *ProcessRawBypassOutput(HpaePcmBuffer *rawBuf);
+    HpaePcmBuffer *ProcessInterceptingRaw(HpaePcmBuffer *inputBuf, bool feedInput);
+    void ConsumePendingRawBypassBlocks(size_t skipRequest, uint32_t skipRemaining);
 
     HpaePcmBuffer *ProcessCloseCrossfade(const std::vector<HpaePcmBuffer *> &inputs);
 
     // Close SE core logic (RewindBuffer + clear + bypass)
     void CloseSessionEffectCore();
 
-    uint32_t ComputeSkipFrames();
-
     // --- Phase 3C: Crossfade ---
-    void ApplyInterceptingFadeIn(float *algoOutput, size_t sampleCount);
+    void ApplyInterceptingFadeIn(float *algoOutput, const float *rawInput, size_t sampleCount);
     void ApplyCrossfadeMix(float *algoOutput, const float *rawInput, size_t sampleCount);
 
     // --- Phase 3B: Three-stage state machine ---
@@ -153,7 +163,7 @@ private:
     std::thread preheatThread_;
     std::atomic<bool> stopRequested_{false};
     std::atomic<bool> prebufFilled_{false};
-    // Time-based skip frame calculation
+    // Warmup lifecycle timestamps retained for pause/resume bookkeeping.
     std::chrono::steady_clock::time_point warmupStartTime_;
     uint64_t pauseAccumulatedUs_ = 0;
     std::chrono::steady_clock::time_point pauseStartTime_;
@@ -166,7 +176,16 @@ private:
     uint32_t activeTailPaddingFrames_ = 0;
     PcmBufferInfo tailOutputBufferInfo_;
     HpaePcmBuffer tailOutputData_;
+    PcmBufferInfo rawBypassBufferInfo_;
+    HpaePcmBuffer rawBypassBuffer_;
+    PcmBufferInfo rawBypassOutputBufferInfo_;
+    HpaePcmBuffer rawBypassOutputData_;
+    bool rawBypassNeeded_ = false;
+    std::vector<float> interceptingRawData_;
+    std::mutex rawBypassMutex_;
+    std::condition_variable rawBypassCv_;
     size_t prebufTargetBytes_ = 0;
+    std::atomic<size_t> pendingRawBypassBlocks_{0};
     SeProcessStats stats_;
     int64_t statsReportThreshold_ = 48000; // 1s@48kHz
 };

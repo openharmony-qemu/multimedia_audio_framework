@@ -16,6 +16,7 @@
 #include "audio_errors.h"
 #include "audio_policy_manager_unit_test.h"
 #include "audio_utils.h"
+#include "stream_flag_info.h"
 
 using namespace testing::ext;
 
@@ -628,10 +629,11 @@ HWTEST(AudioPolicyManager, CreateRendererClient_001, TestSize.Level1)
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 123;
     std::string networkId = LOCAL_NETWORK_ID;
-    auto result = audioPolicyManager_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    auto result = audioPolicyManager_->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result,  SUCCESS);
 }
 
@@ -655,15 +657,16 @@ HWTEST(AudioPolicyManager, CreateRendererClient_002, TestSize.Level1)
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
-    auto result = audioPolicyManager->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    auto result = audioPolicyManager->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_NE(originalSessionId, 0);
 
     uint32_t oldSessionId = originalSessionId;
-    result = audioPolicyManager->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    result = audioPolicyManager->CreateRendererClient(streamDesc, flagInfo, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(originalSessionId, oldSessionId);
 }
@@ -1010,6 +1013,351 @@ HWTEST(AudioPolicyManager, GetLoopbackPreferredDevicePair_002, TestSize.Level1)
 
     auto devicePair = audioPolicyManager_->GetLoopbackPreferredDevicePair();
     EXPECT_TRUE(devicePair.first == nullptr || devicePair.second == nullptr);
+}
+
+/**
+* @tc.name  : Test EnableSystemRecordController with invalid sourceType.
+* @tc.number: EnableSystemRecordController_001.
+* @tc.desc  : Test EnableSystemRecordController returns ERR_INVALID_PARAM when sourceType is invalid.
+*/
+HWTEST(AudioPolicyManager, EnableSystemRecordController_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    SystemRecordControllerConfig config;
+    config.sourceType = SOURCE_TYPE_INVALID;
+    int32_t ret = audioPolicyManager_->EnableSystemRecordController(true, config);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test EnableSystemRecordController with SOURCE_TYPE_MIC and null proxy.
+* @tc.number: EnableSystemRecordController_002.
+* @tc.desc  : Test EnableSystemRecordController returns ERROR when proxy is null with valid sourceType.
+*/
+HWTEST(AudioPolicyManager, EnableSystemRecordController_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    SystemRecordControllerConfig config;
+    config.sourceType = SOURCE_TYPE_MIC;
+    int32_t ret = audioPolicyManager_->EnableSystemRecordController(true, config);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test EnableSystemRecordController with SOURCE_TYPE_CAMCORDER and null proxy.
+* @tc.number: EnableSystemRecordController_003.
+* @tc.desc  : Test EnableSystemRecordController returns ERROR when proxy is null with SOURCE_TYPE_CAMCORDER.
+*/
+HWTEST(AudioPolicyManager, EnableSystemRecordController_003, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    SystemRecordControllerConfig config;
+    config.sourceType = SOURCE_TYPE_CAMCORDER;
+    int32_t ret = audioPolicyManager_->EnableSystemRecordController(true, config);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test EnableSystemRecordController with SOURCE_TYPE_LIVE and null proxy.
+* @tc.number: EnableSystemRecordController_004.
+* @tc.desc  : Test EnableSystemRecordController returns ERROR when proxy is null with SOURCE_TYPE_LIVE.
+*/
+HWTEST(AudioPolicyManager, EnableSystemRecordController_004, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    SystemRecordControllerConfig config;
+    config.sourceType = SOURCE_TYPE_LIVE;
+    int32_t ret = audioPolicyManager_->EnableSystemRecordController(false, config);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test SetRecordControllerEnabledChangeCallback with null callback.
+* @tc.number: SetRecordControllerEnabledChangeCallback_001.
+* @tc.desc  : Test SetRecordControllerEnabledChangeCallback returns ERR_INVALID_PARAM when callback is nullptr.
+*/
+HWTEST(AudioPolicyManager, SetRecordControllerEnabledChangeCallback_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    int32_t ret = audioPolicyManager_->SetRecordControllerEnabledChangeCallback(nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test SetRecordControllerEnabledChangeCallback with not registered client and null proxy.
+* @tc.number: SetRecordControllerEnabledChangeCallback_002.
+* @tc.desc  : Test SetRecordControllerEnabledChangeCallback returns ERROR when proxy is null and client not registered.
+*/
+HWTEST(AudioPolicyManager, SetRecordControllerEnabledChangeCallback_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    audioPolicyManager_->isAudioPolicyClientRegisted_.store(false);
+    std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    int32_t ret = audioPolicyManager_->SetRecordControllerEnabledChangeCallback(callback);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test SetRecordControllerEnabledChangeCallback with registered client and null stubCB.
+* @tc.number: SetRecordControllerEnabledChangeCallback_003.
+* @tc.desc  : Test SetRecordControllerEnabledChangeCallback returns SUCCESS when client registered but stubCB is null.
+*/
+HWTEST(AudioPolicyManager, SetRecordControllerEnabledChangeCallback_003, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
+    audioPolicyManager_->audioPolicyClientStubCB_ = nullptr;
+    std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    int32_t ret = audioPolicyManager_->SetRecordControllerEnabledChangeCallback(callback);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test SetRecordControllerEnabledChangeCallback with registered client and valid stubCB.
+* @tc.number: SetRecordControllerEnabledChangeCallback_004.
+* @tc.desc  : Test SetRecordControllerEnabledChangeCallback with first callback added sets isEnable to true.
+*/
+HWTEST(AudioPolicyManager, SetRecordControllerEnabledChangeCallback_004, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
+    audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_NE(audioPolicyManager_->audioPolicyClientStubCB_, nullptr);
+
+    std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    int32_t ret = audioPolicyManager_->SetRecordControllerEnabledChangeCallback(callback);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->GetRecordControllerEnabledChangeCallbackSize(), 1);
+}
+
+/**
+* @tc.name  : Test SetRecordControllerEnabledChangeCallback with multiple callbacks.
+* @tc.number: SetRecordControllerEnabledChangeCallback_005.
+* @tc.desc  : Test SetRecordControllerEnabledChangeCallback when callbackSize > 1, isEnable stays true.
+*/
+HWTEST(AudioPolicyManager, SetRecordControllerEnabledChangeCallback_005, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
+    audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_NE(audioPolicyManager_->audioPolicyClientStubCB_, nullptr);
+
+    std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback1 =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback2 =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    audioPolicyManager_->SetRecordControllerEnabledChangeCallback(callback1);
+    int32_t ret = audioPolicyManager_->SetRecordControllerEnabledChangeCallback(callback2);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->GetRecordControllerEnabledChangeCallbackSize(), 2);
+}
+
+/**
+* @tc.name  : Test UnsetRecordControllerEnabledChangeCallback with null stubCB.
+* @tc.number: UnsetRecordControllerEnabledChangeCallback_001.
+* @tc.desc  : Test UnsetRecordControllerEnabledChangeCallback returns ERR_INVALID_OPERATION when stubCB is null.
+*/
+HWTEST(AudioPolicyManager, UnsetRecordControllerEnabledChangeCallback_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    audioPolicyManager_->audioPolicyClientStubCB_ = nullptr;
+    std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    int32_t ret = audioPolicyManager_->UnsetRecordControllerEnabledChangeCallback(callback);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+* @tc.name  : Test UnsetRecordControllerEnabledChangeCallback with specific callback.
+* @tc.number: UnsetRecordControllerEnabledChangeCallback_002.
+* @tc.desc  : Test UnsetRecordControllerEnabledChangeCallback removes specific callback when callback is not null.
+*/
+HWTEST(AudioPolicyManager, UnsetRecordControllerEnabledChangeCallback_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
+    audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_NE(audioPolicyManager_->audioPolicyClientStubCB_, nullptr);
+
+    std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    audioPolicyManager_->SetRecordControllerEnabledChangeCallback(callback);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->GetRecordControllerEnabledChangeCallbackSize(), 1);
+
+    int32_t ret = audioPolicyManager_->UnsetRecordControllerEnabledChangeCallback(callback);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->GetRecordControllerEnabledChangeCallbackSize(), 0);
+}
+
+/**
+* @tc.name  : Test UnsetRecordControllerEnabledChangeCallback with null callback (remove all).
+* @tc.number: UnsetRecordControllerEnabledChangeCallback_003.
+* @tc.desc  : Test UnsetRecordControllerEnabledChangeCallback removes all callbacks when callback is nullptr.
+*/
+HWTEST(AudioPolicyManager, UnsetRecordControllerEnabledChangeCallback_003, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
+    audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_NE(audioPolicyManager_->audioPolicyClientStubCB_, nullptr);
+
+    std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback1 =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback2 =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    audioPolicyManager_->SetRecordControllerEnabledChangeCallback(callback1);
+    audioPolicyManager_->SetRecordControllerEnabledChangeCallback(callback2);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->GetRecordControllerEnabledChangeCallbackSize(), 2);
+
+    int32_t ret = audioPolicyManager_->UnsetRecordControllerEnabledChangeCallback(nullptr);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->GetRecordControllerEnabledChangeCallbackSize(), 0);
+}
+
+/**
+* @tc.name  : Test UnsetRecordControllerEnabledChangeCallback callbackSize remains > 0.
+* @tc.number: UnsetRecordControllerEnabledChangeCallback_004.
+* @tc.desc  : Test UnsetRecordControllerEnabledChangeCallback with multiple callbacks, removing one leaves others.
+*/
+HWTEST(AudioPolicyManager, UnsetRecordControllerEnabledChangeCallback_004, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
+    audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    ASSERT_NE(audioPolicyManager_->audioPolicyClientStubCB_, nullptr);
+
+    std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback1 =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback2 =
+        std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
+    audioPolicyManager_->SetRecordControllerEnabledChangeCallback(callback1);
+    audioPolicyManager_->SetRecordControllerEnabledChangeCallback(callback2);
+
+    int32_t ret = audioPolicyManager_->UnsetRecordControllerEnabledChangeCallback(callback1);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->GetRecordControllerEnabledChangeCallbackSize(), 1);
+}
+
+/**
+* @tc.name  : Test SetAudioSessionBehavior with null proxy.
+* @tc.number: SetAudioSessionBehavior_001.
+* @tc.desc  : Test SetAudioSessionBehavior returns ERROR when proxy is null.
+*/
+HWTEST(AudioPolicyManager, SetAudioSessionBehavior_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    uint32_t behavior = 0;
+    int32_t ret = audioPolicyManager_->SetAudioSessionBehavior(behavior);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test SetAudioSessionBehavior with not registered client and null proxy.
+* @tc.number: SetAudioSessionBehavior_002.
+* @tc.desc  : Test SetAudioSessionBehavior returns ERROR when client not registered and proxy is null.
+*/
+HWTEST(AudioPolicyManager, SetAudioSessionBehavior_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    audioPolicyManager_->isAudioPolicyClientRegisted_.store(false);
+    uint32_t behavior = 1;
+    int32_t ret = audioPolicyManager_->SetAudioSessionBehavior(behavior);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test SetAudioSessionBehavior with registered client and null proxy.
+* @tc.number: SetAudioSessionBehavior_003.
+* @tc.desc  : Test SetAudioSessionBehavior returns ERROR when client registered but proxy is null (skip registration).
+*/
+HWTEST(AudioPolicyManager, SetAudioSessionBehavior_003, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
+    uint32_t behavior = 1;
+    int32_t ret = audioPolicyManager_->SetAudioSessionBehavior(behavior);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test GetAudioPolicyProxyFromSamgr with block=true.
+* @tc.number: GetAudioPolicyProxyFromSamgr_001.
+* @tc.desc  : Test GetAudioPolicyManagerProxy returns null when samgr service not available (block=true).
+*/
+HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_001, TestSize.Level1)
+{
+    const sptr<IAudioPolicy> gsp = AudioPolicyManager::GetAudioPolicyManagerProxy(true);
+    EXPECT_EQ(gsp, nullptr);
+}
+
+/**
+* @tc.name  : Test GetAudioPolicyProxyFromSamgr with block=false.
+* @tc.number: GetAudioPolicyProxyFromSamgr_002.
+* @tc.desc  : Test GetAudioPolicyManagerProxy returns null when samgr service not available (block=false).
+*/
+HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_002, TestSize.Level1)
+{
+    const sptr<IAudioPolicy> gsp = AudioPolicyManager::GetAudioPolicyManagerProxy(false);
+    EXPECT_EQ(gsp, nullptr);
+}
+
+/**
+* @tc.name  : Test GetAudioPolicyProxyFromSamgr default block parameter.
+* @tc.number: GetAudioPolicyProxyFromSamgr_003.
+* @tc.desc  : Test GetAudioPolicyManagerProxy default block=true returns null when samgr not available.
+*/
+HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_003, TestSize.Level1)
+{
+    const sptr<IAudioPolicy> gsp = AudioPolicyManager::GetAudioPolicyManagerProxy();
+    EXPECT_EQ(gsp, nullptr);
+}
+
+/**
+* @tc.name  : Test GetAudioPolicyProxyFromSamgr with different calls verifying both block paths.
+* @tc.number: GetAudioPolicyProxyFromSamgr_004.
+* @tc.desc  : Test that both CheckSystemAbility (block=false) and GetSystemAbility (block=true) paths return null.
+*/
+HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_004, TestSize.Level1)
+{
+    const sptr<IAudioPolicy> gspBlock = AudioPolicyManager::GetAudioPolicyManagerProxy(true);
+    EXPECT_EQ(gspBlock, nullptr);
+    const sptr<IAudioPolicy> gspNonBlock = AudioPolicyManager::GetAudioPolicyManagerProxy(false);
+    EXPECT_EQ(gspNonBlock, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS

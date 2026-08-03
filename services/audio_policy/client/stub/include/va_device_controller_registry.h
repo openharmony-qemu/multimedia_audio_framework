@@ -16,14 +16,30 @@
 #ifndef VA_DEVICE_CONTROLLER_REGISTRY_H
 #define VA_DEVICE_CONTROLLER_REGISTRY_H
 
+#include <functional>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 
+#include "iremote_object.h"
 #include "iv_a_device_controller.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+class VADeviceControllerDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    explicit VADeviceControllerDeathRecipient(std::function<void()> callback) : callback_(std::move(callback)) {}
+    ~VADeviceControllerDeathRecipient() override = default;
+    void OnRemoteDied(const wptr<IRemoteObject> &remote) override
+    {
+        if (callback_) {
+            callback_();
+        }
+    }
+private:
+    std::function<void()> callback_;
+};
 
 class VADeviceControllerRegistry {
 public:

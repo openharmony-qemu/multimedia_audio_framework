@@ -703,5 +703,157 @@ HWTEST_F(AudioDeviceManagerUnitTest, UpdateDevicesListInfo_001, TestSize.Level1)
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
     dm.connectedDevices_ = backup;
 }
+
+/**
+ * @tc.name  : HasSpecificDevicesConnected_WirelessDeviceConnected
+ * @tc.number: HasSpecificDevicesConnected_001
+ * @tc.desc  : Test HasSpecificDevicesConnected returns true for wireless device with non-virtual connect state
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasSpecificDevicesConnected_WirelessDeviceConnected, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->connectState_ = CONNECTED;
+    dm.connectedDevices_ = { desc };
+
+    bool result = dm.HasSpecificDevicesConnected();
+    EXPECT_TRUE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasSpecificDevicesConnected_WirelessDeviceVirtualConnected
+ * @tc.number: HasSpecificDevicesConnected_002
+ * @tc.desc  : Test HasSpecificDevicesConnected returns false for wireless device with VIRTUAL_CONNECTED state
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasSpecificDevicesConnected_WirelessDeviceVirtualConnected, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    dm.connectedDevices_ = { desc };
+
+    bool result = dm.HasSpecificDevicesConnected();
+    EXPECT_FALSE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasSpecificDevicesConnected_UsbArmHeadset
+ * @tc.number: HasSpecificDevicesConnected_003
+ * @tc.desc  : Test HasSpecificDevicesConnected returns true for DEVICE_TYPE_USB_ARM_HEADSET
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasSpecificDevicesConnected_UsbArmHeadset, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_USB_ARM_HEADSET, INPUT_DEVICE);
+    dm.connectedDevices_ = { desc };
+
+    bool result = dm.HasSpecificDevicesConnected();
+    EXPECT_TRUE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasSpecificDevicesConnected_Accessory
+ * @tc.number: HasSpecificDevicesConnected_004
+ * @tc.desc  : Test HasSpecificDevicesConnected returns true for DEVICE_TYPE_ACCESSORY
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasSpecificDevicesConnected_Accessory, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_ACCESSORY, INPUT_DEVICE);
+    dm.connectedDevices_ = { desc };
+
+    bool result = dm.HasSpecificDevicesConnected();
+    EXPECT_TRUE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasSpecificDevicesConnected_BtSpp
+ * @tc.number: HasSpecificDevicesConnected_005
+ * @tc.desc  : Test HasSpecificDevicesConnected returns true for DEVICE_TYPE_BT_SPP
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasSpecificDevicesConnected_BtSpp, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BT_SPP, INPUT_DEVICE);
+    dm.connectedDevices_ = { desc };
+
+    bool result = dm.HasSpecificDevicesConnected();
+    EXPECT_TRUE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasSpecificDevicesConnected_NoSpecificDevice
+ * @tc.number: HasSpecificDevicesConnected_006
+ * @tc.desc  : Test HasSpecificDevicesConnected returns false for non-specific non-wireless device
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasSpecificDevicesConnected_NoSpecificDevice, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    dm.connectedDevices_ = { desc };
+
+    bool result = dm.HasSpecificDevicesConnected();
+    EXPECT_FALSE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasSpecificDevicesConnected_EmptyDevices
+ * @tc.number: HasSpecificDevicesConnected_007
+ * @tc.desc  : Test HasSpecificDevicesConnected returns false when no devices connected
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasSpecificDevicesConnected_EmptyDevices, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    dm.connectedDevices_ = {};
+
+    bool result = dm.HasSpecificDevicesConnected();
+    EXPECT_FALSE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : HasSpecificDevicesConnected_NullptrDevice
+ * @tc.number: HasSpecificDevicesConnected_008
+ * @tc.desc  : Test HasSpecificDevicesConnected skips nullptr device in connectedDevices_
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, HasSpecificDevicesConnected_NullptrDevice, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    dm.connectedDevices_ = { nullptr };
+
+    bool result = dm.HasSpecificDevicesConnected();
+    EXPECT_FALSE(result);
+
+    dm.connectedDevices_ = backup;
+}
 } // namespace AudioStandard
 } // namespace OHOS

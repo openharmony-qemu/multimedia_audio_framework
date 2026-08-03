@@ -484,10 +484,11 @@ void AudioVolumeManagerInitializeFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioVolumeManagerSetDataShareReadyFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    static std::shared_ptr<AudioAdapterManager> g_AudioAdapterManager = nullptr;
+    g_AudioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(g_AudioAdapterManager != nullptr);
     std::atomic<bool> isDataShareReady = fdp.ConsumeBool();
-    audioAdapterManager->SetDataShareReady(isDataShareReady.load());
+    g_AudioAdapterManager->SetDataShareReady(isDataShareReady.load());
 }
 
 void AudioVolumeManagerSendLoudVolumeModeToDspFuzzTest(FuzzedDataProvider& fdp)

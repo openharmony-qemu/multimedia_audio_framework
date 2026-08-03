@@ -284,8 +284,12 @@ void AudioInterruptService::WriteCallSessionEvent(int32_t strategyValue)
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioInterruptService::ActivateAudioSessionErrorEvent(const int32_t zoneId, const int32_t callerPid)
+void AudioInterruptService::ActivateAudioSessionErrorEvent(const int32_t zoneId,
+    const int32_t callerPid, bool isActivated)
 {
+    if (isActivated) {
+        return;
+    }
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_CALL_FUNC_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr),
         StreamDfxManager::GetInstance().SendAudioErrorEvent(IPCSkeleton::GetCallingUid(),
@@ -304,6 +308,17 @@ void AudioInterruptService::DeactivateAudioSessionErrorEvent(
     if (interruptDfx_ != nullptr) {
         interruptDfx_->DeactivateAudioSessionErrorEvent(streamsInSession, callerPid);
     }
+}
+
+void AudioInterruptService::RecordSilentWithPauseStrategyEvent(const AudioInterrupt &incomingInterrupt,
+    const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
+{
+    AudioConcurrencyMode concurrencyMode = sessionService_.GetSessionStrategy(incomingInterrupt.pid);
+    if (concurrencyMode == AudioConcurrencyMode::PAUSE_OTHERS &&
+        incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SILENT &&
+        interruptDfx_ != nullptr)  {
+            interruptDfx_->RecordSilentWithPauseStrategyEvent(incomingInterrupt, activeInterrupt, focusEntry);
+        }
 }
 
 void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
@@ -360,7 +375,7 @@ AudioInterruptResult AudioInterruptService::ActivateAudioSession(const int32_t z
         AUDIO_INFO_LOG("Enter audio session v2 focus mode, pid = %{public}d, strategy = %{public}d",
             callerPid, static_cast<int32_t>(strategy.concurrencyMode));
         CHECK_AND_RETURN_RET_LOG(!isStandalone, result, "Current audio session focus mode is Standalone and return");
-        ActivateAudioSessionErrorEvent(zoneId, callerPid);
+        ActivateAudioSessionErrorEvent(zoneId, callerPid, isActivated);
         result.retCode = ProcessFocusEntryForAudioSession(zoneId, callerPid, updateScene);
         if (result.retCode != SUCCESS) {
             AUDIO_INFO_LOG(
@@ -845,6 +860,7 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
         // The strategy of activated AudioSession is the one with the highest priority.
         AudioConcurrencyMode concurrencyMode = sessionService_.GetSessionStrategy(incomingInterrupt.pid);
         if (concurrencyMode != AudioConcurrencyMode::MIX_WITH_OTHERS) {
+            RecordSilentWithPauseStrategyEvent(incomingInterrupt, activeInterrupt, focusEntry);
             AUDIO_INFO_LOG("The concurrency mode of incoming session is %{public}d",
                 static_cast<int32_t>(concurrencyMode));
             return false;
@@ -1336,6 +1352,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy, bool &updateScene)
 {
     AudioInterrupt currAudioInterrupt = audioInterrupt;
+    VerifyFocusPermission(currAudioInterrupt);
     HandleAppStreamType(zoneId, currAudioInterrupt);
     AudioStreamType streamType = currAudioInterrupt.audioFocusType.streamType;
     uint32_t incomingStreamId = currAudioInterrupt.streamId;
@@ -1587,6 +1604,16 @@ void AudioInterruptService::GameRecogSetParam(ClientType clientType, SourceType 
 
     AudioServerProxy::GetInstance().SetAudioParameterProxy(key, value);
     return;
+}
+
+void AudioInterruptService::VerifyFocusPermission(AudioInterrupt &audioInterrupt)
+{
+    if (audioInterrupt.behaviorFlags_.voipCaptureMixWithOthers &&
+        audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+        PermissionUtil::VerifyPermission(VOIP_CAPTURE_CONCURRENCY_PERMISSION, IPCSkeleton::GetCallingTokenID()) &&
+        PermissionUtil::VerifySystemPermission()) {
+        audioInterrupt.voipCaptureMixWithOthersFlag = true;
+    }
 }
 
 int32_t AudioInterruptService::ActivatePreemptMode()
@@ -2503,11 +2530,12 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
 }
 
 bool AudioInterruptService::AudioFocusInfoListRemovalCondition(const AudioInterrupt &audioInterrupt,
-    const std::pair<AudioInterrupt, AudioFocuState> &audioFocus)
+    const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo)
 {
-    return audioFocus.first.streamId == audioInterrupt.streamId ||
-        (audioFocus.first.pid == audioInterrupt.pid && audioFocus.second == PLACEHOLDER &&
-        audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INVALID);
+    return audioFocusInfo.first.streamId == audioInterrupt.streamId ||
+        ((audioFocusInfo.first.pid == audioInterrupt.pid ||
+          audioFocusInfo.first.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION) &&
+        audioFocusInfo.second == PLACEHOLDER && audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INVALID);
 }
 
 bool AudioInterruptService::IsAudioSourceConcurrency(const SourceType &existSourceType,

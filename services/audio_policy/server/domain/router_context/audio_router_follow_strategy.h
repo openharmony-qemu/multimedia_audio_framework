@@ -26,6 +26,7 @@ public:
     AudioRouterFollowStrategy() = default;
     ~AudioRouterFollowStrategy() override = default;
 
+    std::shared_ptr<AudioDeviceDescriptor> GetHighestPriorityMediaInputDevice() override;
     std::shared_ptr<AudioDeviceDescriptor> GetMediaInputDevice(int32_t uid, uint32_t streamId,
         SourceType sourceType) override;
     void SetMediaInputDevice(int32_t uid, uint32_t streamId,
@@ -58,10 +59,6 @@ public:
 
     void OnAppDied(int32_t uid) override;
 private:
-    std::shared_ptr<AudioDeviceSimpleDescriptor> GetMediaInputDeviceWhenHasRunningStream(
-        SourceType &effectiveSourceType, BluetoothAndNearlinkPreferredRecordCategory &category);
-    std::shared_ptr<AudioDeviceSimpleDescriptor> GetMediaInputDeviceWhenNoRunningStream(
-        int32_t uid, BluetoothAndNearlinkPreferredRecordCategory &category, SourceType sourceType);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetCallOutputDeviceByUid(int32_t uid);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetMediaInputDeviceByPriority(int32_t uid,
         BluetoothAndNearlinkPreferredRecordCategory &category, bool isSystemSelectActive);

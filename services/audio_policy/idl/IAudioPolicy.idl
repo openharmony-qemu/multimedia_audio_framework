@@ -49,6 +49,7 @@ sequenceable audio_debug_info..OHOS.AudioStandard.AudioSessionDebugInfo;
 sequenceable audio_info..OHOS.AudioStandard.SystemVolumeFilter;
 sequenceable audio_info..OHOS.AudioStandard.SystemRecordControllerConfig;
 sequenceable audio_info..OHOS.AudioStandard.SystemRecordControllerChangeInfo;
+sequenceable stream_flag_info..OHOS.AudioStandard.StreamFlagInfo;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -121,7 +122,7 @@ interface IAudioPolicy {
     void SelectOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors, [in] int audioDeviceSelectMode);
     void GetSelectedDeviceInfo([in] int uid, [in] int pid, [in] int streamType, [out] String retStr);
     void SelectInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
-    void CreateRendererClient([inout] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [inout] unsigned int sessionId, [out] String networkId);
+    void CreateRendererClient([inout] sharedptr<AudioStreamDescriptor> streamDesc, [out] StreamFlagInfo flagInfo, [inout] unsigned int sessionId, [out] String networkId);
     void CreateCapturerClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [inout] unsigned int sessionId);
     void RegisterTracker([in] int mode, [in] AudioStreamChangeInfo streamChangeInfo, [in] IRemoteObject object);
     void UpdateTracker([in] int mode, [in] AudioStreamChangeInfo streamChangeInfo);

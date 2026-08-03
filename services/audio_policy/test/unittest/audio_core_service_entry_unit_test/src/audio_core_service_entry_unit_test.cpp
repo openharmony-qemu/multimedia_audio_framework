@@ -22,6 +22,7 @@
 #include <gmock/gmock.h>
 #include <thread>
 #include <unordered_map>
+#include "stream_flag_info.h"
 
 using namespace testing::ext;
 
@@ -273,13 +274,13 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_008, TestSize.Level1)
     EXPECT_NE(eventEntry, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    uint32_t audioFlag = 0;
+    StreamFlagInfo flagInfo;
     uint32_t sessionId = 0;
     std::string networkId = "";
 
     InitRequiredPipes(audioCoreService);
     eventEntry->NotifyServiceReady();
-    auto ret = eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
+    auto ret = eventEntry->CreateRendererClient(streamDesc, flagInfo, sessionId, networkId);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -394,11 +395,11 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_RequiredPipe_003, TestSize.Le
     audioCoreService->pipeManager_->AddAudioPipeInfo(pipeInfo);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    uint32_t audioFlag = 0;
+    StreamFlagInfo flagInfo;
     uint32_t sessionId = 0;
     std::string networkId = "";
 
-    auto ret = eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
+    auto ret = eventEntry->CreateRendererClient(streamDesc, flagInfo, sessionId, networkId);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -551,10 +552,10 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_RequiredPipe_009, TestSize.Le
     audioCoreService->pipeManager_->AddAudioPipeInfo(pipeInfo);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    uint32_t audioFlag = 0;
+    StreamFlagInfo flagInfo;
     uint32_t sessionId = 0;
     std::string networkId = "";
-    EXPECT_EQ(eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId), SUCCESS);
+    EXPECT_EQ(eventEntry->CreateRendererClient(streamDesc, flagInfo, sessionId, networkId), SUCCESS);
 }
 
 /**

@@ -529,7 +529,7 @@ int32_t AudioAdapterManager::ClearVoipMuteByCallerUid(int32_t callerUid)
 }
 
 int32_t AudioAdapterManager::ClearVoipMuteByCallerUidInner(std::unordered_map<int32_t,
-    std::unordered_map<int64_t, std::unordered_set<int32_t>>> muteMap, int32_t callerUid, bool isRenderer)
+    std::unordered_map<int64_t, std::unordered_set<int32_t>>> &muteMap, int32_t callerUid, bool isRenderer)
 {
     for (auto appIt = muteMap.begin(); appIt != muteMap.end();) {
         auto &streamMap = appIt->second;
@@ -4419,7 +4419,8 @@ void AudioAdapterManager::AdjustVolumeForSpecialDevice(std::shared_ptr<AudioDevi
     } else if (device->deviceType_ == DEVICE_TYPE_NEARLINK) {
         if (AudioVolumeManager::GetInstance().IsNearlinkKaraokeVolumeManaged(volumeType)) {
             volumeDb = volumeDb * 0.63957f;
-        } else if ((volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) || VolumeUtils::IsPCVolumeEnable()) {
+        } else if (volumeType == STREAM_MUSIC &&
+            (!isSleVoiceStatus_.load() || VolumeUtils::IsPCVolumeEnable())) {
             isMuted = isAbsVolumeMuteNearlink_.load();
             volumeDb = isMuted ? 0.0f : 0.63957f;
         } else if (volumeType == STREAM_VOICE_CALL) {
@@ -4429,7 +4430,7 @@ void AudioAdapterManager::AdjustVolumeForSpecialDevice(std::shared_ptr<AudioDevi
     } else if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && IsVgsVolumeSupported()) {
         if (volumeType == STREAM_VOICE_CALL) {
             volumeDb = 1.0f;
-        } else if (VolumeUtils::IsPCVolumeEnable()) {
+        } else if (volumeType == STREAM_MUSIC && VolumeUtils::IsPCVolumeEnable()) {
             volumeDb = 0.63957f;
         }
     }

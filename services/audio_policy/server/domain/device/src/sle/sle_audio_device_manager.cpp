@@ -327,6 +327,7 @@ int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &device, Aud
     } else {
         ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), SLE_AUDIO_STREAM_VOICE_CALL);
     }
+    AUDIO_INFO_LOG("streamType [%{public}d], volume [%{public}d], result [%{public}d]", streamType, volume, ret);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "set device to nearlink failed");
 
     return ret;
@@ -515,8 +516,12 @@ int32_t SleAudioDeviceManager::SetNearlinkDeviceMute(const std::string &device, 
         ERR_INVALID_PARAM, "device not found");
     if (streamType == STREAM_MUSIC) {
         deviceVolumeConfigInfo_[device].first.isMute = isMute;
-    } else {
-        AUDIO_ERR_LOG("voice call cannot set mute");
+    } else { // streamType == STREAM_VOICE_CALL
+        if (VolumeUtils::IsPCVolumeEnable()) {
+            deviceVolumeConfigInfo_[device].second.isMute = isMute;
+        } else {
+            AUDIO_ERR_LOG("voice call cannot set mute");
+        }
     }
     return SUCCESS;
 }
@@ -531,8 +536,12 @@ int32_t SleAudioDeviceManager::SetNearlinkDeviceVolume(const std::string &device
     auto *config = &tmp;
     if (streamType == STREAM_MUSIC) {
         config = &deviceVolumeConfigInfo_[device].first;
-    } else if (streamType == STREAM_VOICE_CALL && volume.VolumeLevel() > 0) {
-        config = &deviceVolumeConfigInfo_[device].second;
+    } else if (streamType == STREAM_VOICE_CALL) {
+        if (volume.VolumeLevel() > 0 ||
+            (volume.VolumeLevel() == 0 && VolumeUtils::IsPCVolumeEnable())) {
+            // The voice call volume can be set to 0 for PC.
+            config = &deviceVolumeConfigInfo_[device].second;
+        }
     }
 
     volume.Adjust({config->volumeLevel, config->volumeDegree});
@@ -540,6 +549,23 @@ int32_t SleAudioDeviceManager::SetNearlinkDeviceVolume(const std::string &device
     config->volumeDegree = volume.VolumeDegree();
     AUDIO_INFO_LOG("Set Volume: streamType:%{public}d volumeLevel:%{public}d, volumeDegree:%{public}d",
         config->volumeType, volume.VolumeLevel(), volume.VolumeDegree());
+
+    if (VolumeUtils::IsPCVolumeEnable() &&
+        (streamType == STREAM_MUSIC || streamType == STREAM_VOICE_CALL)) {
+        // The music volume and voice call volume should remain at the same value for PC nearlink device.
+        AudioStreamType followType = STREAM_DEFAULT;
+        if (streamType == STREAM_MUSIC) {
+            followType = STREAM_VOICE_CALL;
+            config = &deviceVolumeConfigInfo_[device].second;
+        } else if (streamType == STREAM_VOICE_CALL) {
+            followType = STREAM_MUSIC;
+            config = &deviceVolumeConfigInfo_[device].first;
+        }
+        config->volumeLevel = volume.VolumeLevel();
+        config->volumeDegree = volume.VolumeDegree();
+
+        SetDeviceAbsVolume(device, followType, volume.VolumeLevel());
+    }
     return SUCCESS;
 }
 
@@ -553,9 +579,18 @@ int32_t SleAudioDeviceManager::GetVolumeDegreeByVolumeType(AudioVolumeType volum
         return deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.isMute ? 0 :
             deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.volumeDegree;
     } else if (volumeType == STREAM_VOICE_CALL) {
-        return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeDegree;
+        if (VolumeUtils::IsPCVolumeEnable()) {
+            // The voice call volume can be set to 0 for PC.
+            return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.isMute ? 0 :
+                deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeDegree;
+        } else {
+            return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeDegree;
+        }
     }
-    return 0;
+
+    AUDIO_WARNING_LOG("The volumeType %{public}d is not music or voice call. Return music volume.", volumeType);
+    return deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.isMute ? 0 :
+        deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.volumeDegree;
 }
 
 int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volumeType,
@@ -568,8 +603,16 @@ int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volume
         return deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.isMute ? 0 :
             deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.volumeLevel;
     } else if (volumeType == STREAM_VOICE_CALL) {
-        return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeLevel;
+        if (VolumeUtils::IsPCVolumeEnable()) {
+            // The voice call volume can be set to 0 for PC.
+            return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.isMute ? 0 :
+                deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeLevel;
+        } else {
+            return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeLevel;
+        }
     }
+
+    AUDIO_WARNING_LOG("The volumeType %{public}d is not music or voice call. Return music volume.", volumeType);
     return deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.isMute ? 0 :
         deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.volumeLevel;
 }

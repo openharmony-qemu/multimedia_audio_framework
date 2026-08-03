@@ -1708,16 +1708,16 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
 }
 
 int32_t AudioPolicyManager::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    uint32_t &flag, uint32_t &sessionId, std::string &networkId)
+    StreamFlagInfo &flagInfo, uint32_t &sessionId, std::string &networkId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, AUDIO_FLAG_INVALID);
-    int32_t ret = gsp->CreateRendererClient(streamDesc, flag, sessionId, networkId);
+    int32_t ret = gsp->CreateRendererClient(streamDesc, flagInfo, sessionId, networkId);
     for (int32_t retrycount = 0; (ret == ERR_RETRY_IN_CLIENT) && (retrycount < CREATE_MAX_RETRY_COUNT);
         retrycount++) {
         AUDIO_WARNING_LOG("retry in client");
         std::this_thread::sleep_for(std::chrono::milliseconds(CREATE_RETRY_WAIT_TIME_MS));
-        ret = gsp->CreateRendererClient(streamDesc, flag, sessionId, networkId);
+        ret = gsp->CreateRendererClient(streamDesc, flagInfo, sessionId, networkId);
     }
     return ret;
 }

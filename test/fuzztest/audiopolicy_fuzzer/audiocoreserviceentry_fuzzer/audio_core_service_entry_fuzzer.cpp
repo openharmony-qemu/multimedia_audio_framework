@@ -31,6 +31,7 @@
 
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
+#include "stream_flag_info.h"
 #include "audio_limiter_manager.h"
 #include <fuzzer/FuzzedDataProvider.h>
 namespace OHOS {
@@ -348,10 +349,11 @@ void SetDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 void CreateRendererClientFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = MakeStreamDescriptor(fdp, false);
-    uint32_t audioFlag = PickValue(fdp, AudioFlagVec);
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = PickValue(fdp, AudioFlagVec);
     uint32_t sessionId = fdp.ConsumeIntegralInRange<uint32_t>(0, MAX_SESSION_ID);
     std::string networkId = ConsumeString(fdp, LOCAL_NETWORK_ID);
-    eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
+    eventEntry->CreateRendererClient(streamDesc, flagInfo, sessionId, networkId);
 }
 
 void GetProcessDeviceInfoBySessionIdFuzzTest(FuzzedDataProvider& fdp)

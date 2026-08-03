@@ -340,6 +340,8 @@ public:
     bool activatedRegisterCallbackFlag = false;
     bool isCallWaitingTone = false;
     bool isCheckMuteStream = false;
+    // no serialization required
+    bool voipCaptureMixWithOthersFlag = false;
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,

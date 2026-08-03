@@ -409,7 +409,7 @@ void ProcessRendererAndCapturerConcurrencyFuzzTest(FuzzedDataProvider& fdp)
     audioPipeSelector->ProcessRendererAndCapturerConcurrency(streamDesc, action);
 }
 
-void CheckFastStreamOverLimitToNormalFuzzTest(FuzzedDataProvider& fdp)
+void HandleFastStreamLimitAndNearLinkStateFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     size_t numStreams = fdp.ConsumeIntegralInRange<size_t>(0, MAX_TEST_STREAM_COUNT - 1);
@@ -419,7 +419,7 @@ void CheckFastStreamOverLimitToNormalFuzzTest(FuzzedDataProvider& fdp)
     }
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+    audioPipeSelector->HandleFastStreamLimitAndNearLinkState(streamDescs);
 }
 
 void IsSameAdapterFuzzTest(FuzzedDataProvider& fdp)
@@ -958,7 +958,7 @@ void Test(FuzzedDataProvider& fdp)
     FetchPipesAndExecuteFuzzTest, UpdateDeviceStreamInfoFuzzTest,
     UpdateStreamDescsFuzzTest, DecideFinalRouteFlagFuzzTest,
     ProcessConcurrencyFuzzTest, ProcessRendererAndCapturerConcurrencyFuzzTest,
-    CheckFastStreamOverLimitToNormalFuzzTest, SetPipeTypeByStreamTypeFuzzTest,
+    HandleFastStreamLimitAndNearLinkStateFuzzTest, SetPipeTypeByStreamTypeFuzzTest,
     GetIncomingStreamPriorityFuzzTest,
     DetermineConcurrencyActionFuzzTest,
     AdjustConcedeActionByStatusFuzzTest,

@@ -482,7 +482,7 @@ int32_t AudioPolicyClientStubImpl::RemovePreferredDeviceSetCallback(
                 return cb == callback || cb == nullptr;
             }),
         preferredDeviceSetCallbackList_.end());
-    
+
     AUDIO_INFO_LOG("remove preferred device set cb");
     return SUCCESS;
 }
@@ -766,6 +766,7 @@ int32_t AudioPolicyClientStubImpl::OnRingerModeUpdated(int32_t ringerMode)
 {
     std::lock_guard<std::mutex> lockCbMap(ringerModeMutex_);
     for (auto it = ringerModeCallbackList_.begin(); it != ringerModeCallbackList_.end(); ++it) {
+        CHECK_AND_CONTINUE_LOG(*it != nullptr, "callback is nullptr");
         (*it)->OnRingerModeUpdated(static_cast<AudioRingerMode>(ringerMode));
     }
     return SUCCESS;
@@ -994,7 +995,7 @@ int32_t AudioPolicyClientStubImpl::RemoveAudioSessionInputDeviceCallback(
     } else {
         audioSessionInputDeviceCallbackList_.clear();
     }
-    
+
     return SUCCESS;
 }
 
@@ -1056,6 +1057,7 @@ int32_t AudioPolicyClientStubImpl::OnMicStateUpdated(const MicStateChangeEvent &
 {
     std::lock_guard<std::mutex> lockCbMap(micStateChangeMutex_);
     for (auto it = micStateChangeCallbackList_.begin(); it != micStateChangeCallbackList_.end(); ++it) {
+        CHECK_AND_CONTINUE_LOG(*it != nullptr, "callback is nullptr");
         (*it)->OnMicStateUpdated(micStateChangeEvent);
     }
     return SUCCESS;
@@ -1175,7 +1177,7 @@ int32_t AudioPolicyClientStubImpl::RemovePreferredOutputDeviceChangeCallback(int
         callbackVector.erase(vecIt);
         AUDIO_DEBUG_LOG("Removed callback for uid:%{public}d, streamUsage:%{public}d, remaining:%{public}zu",
             uid, static_cast<int32_t>(streamUsage), callbackVector.size());
-        
+
         if (callbackVector.empty()) {
             outerIt->second.erase(innerIt);
             if (outerIt->second.empty()) {
@@ -1279,7 +1281,7 @@ int32_t AudioPolicyClientStubImpl::RemovePreferredInputDeviceChangeCallback(int3
         callbackVector.erase(vecIt);
         AUDIO_DEBUG_LOG("Removed callback for uid:%{public}d, sourceType:%{public}d, remaining:%{public}zu",
             uid, static_cast<int32_t>(sourceType), callbackVector.size());
-        
+
         if (callbackVector.empty()) {
             outerIt->second.erase(innerIt);
             if (outerIt->second.empty()) {
@@ -1329,7 +1331,7 @@ int32_t AudioPolicyClientStubImpl::OnPreferredInputDeviceUpdated(const AudioCapt
 
     AUDIO_DEBUG_LOG("Invoked %{public}zu callbacks for uid:%{public}d, sourceType:%{public}d",
         callbackVector.size(), uid, static_cast<int32_t>(capturerInfo.sourceType));
-    
+
     return SUCCESS;
 }
 

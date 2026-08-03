@@ -193,8 +193,8 @@ void AudioCoreServicePlaybackFlagGapFuzzTest(FuzzedDataProvider &fdp)
         return;
     }
 
-    uint32_t audioFlag = AUDIO_FLAG_NONE;
-    audioCoreService->CheckStreamConflicts(streamDesc, audioFlag);
+    StreamFlagInfo flagInfo;
+    audioCoreService->CheckStreamConflicts(streamDesc, flagInfo);
     audioCoreService->IsStreamSupportMultiChannel(streamDesc);
     audioCoreService->IsStreamSupportDirect(streamDesc);
     audioCoreService->IsStreamSupportOutputInterPhone(streamDesc);

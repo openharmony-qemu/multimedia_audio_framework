@@ -5637,9 +5637,14 @@ HWTEST_F(AudioInterruptUnitTest, ActivateAudioSessionErrorEventTest, TestSize.Le
     EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.empty(), true);
     AudioInterrupt testInterrupt1;
     testInterrupt1.pid = 0;
+    bool isActivated = true;
     interruptServiceTest->zonesMap_[0]->audioFocusInfoList.push_back({testInterrupt1, AudioFocuState::ACTIVE});
     EXPECT_NO_THROW(
-        interruptServiceTest->ActivateAudioSessionErrorEvent(zoneId, callerPid);
+        interruptServiceTest->ActivateAudioSessionErrorEvent(zoneId, callerPid, isActivated);
+    );
+    isActivated = false;
+    EXPECT_NO_THROW(
+        interruptServiceTest->ActivateAudioSessionErrorEvent(zoneId, callerPid, isActivated);
     );
     AudioInterrupt testInterrupt2;
     testInterrupt2.pid = 1;
@@ -5647,7 +5652,7 @@ HWTEST_F(AudioInterruptUnitTest, ActivateAudioSessionErrorEventTest, TestSize.Le
     testInterrupt2.audioFocusType.streamType = STREAM_MOVIE;
     interruptServiceTest->zonesMap_[0]->audioFocusInfoList.push_back({testInterrupt2, AudioFocuState::ACTIVE});
     EXPECT_NO_THROW(
-        interruptServiceTest->ActivateAudioSessionErrorEvent(zoneId, callerPid);
+        interruptServiceTest->ActivateAudioSessionErrorEvent(zoneId, callerPid, isActivated);
     );
 }
  

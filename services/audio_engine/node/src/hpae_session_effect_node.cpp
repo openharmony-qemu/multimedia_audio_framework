@@ -32,7 +32,9 @@ namespace HPAE {
 namespace {
 static constexpr uint32_t BACKOFF_MULTIPLIER = 2;
 static constexpr uint32_t PREHEAT_NO_DATA_TIMEOUT_MS = 100;
-static constexpr int32_t HALF_DIVISOR = 2;
+static constexpr uint32_t RAW_BYPASS_FIFO_EXTRA_FRAMES = 2;
+static constexpr uint32_t RAW_BYPASS_FIFO_MIN_FRAMES = 2;
+static constexpr uint32_t RAW_BYPASS_FULL_WAIT_MS = 1;
 
 bool GetBytesPerFrame(size_t channels, size_t &bytesPerFrame)
 {
@@ -61,21 +63,8 @@ bool HasValidPcmInput(const std::vector<HpaePcmBuffer *> &inputs)
 {
     return !inputs.empty() && inputs[0] != nullptr && inputs[0]->IsValid();
 }
-} // namespace
 
-uint32_t HpaeSessionEffectNode::ComputeSkipFrames()
-{
-    auto now = std::chrono::steady_clock::now();
-    int64_t elapsedUs = std::chrono::duration_cast<std::chrono::microseconds>(
-        now - warmupStartTime_).count();
-    elapsedUs -= static_cast<int64_t>(pauseAccumulatedUs_);
-    if (elapsedUs <= 0) {
-        return 0;
-    }
-    return static_cast<uint32_t>(
-        (elapsedUs + FRAME_LEN_20MS * MILLISECOND_PER_SECOND / HALF_DIVISOR)
-        / (FRAME_LEN_20MS * MILLISECOND_PER_SECOND));
-}
+} // namespace
 
 static const char *StatusToString(HpaeSessionEffectNode::STATUS s)
 {
@@ -91,8 +80,12 @@ static const char *StatusToString(HpaeSessionEffectNode::STATUS s)
 
 HpaeSessionEffectNode::HpaeSessionEffectNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
-      tailOutputBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate),
-      tailOutputData_(tailOutputBufferInfo_)
+      tailOutputBufferInfo_{nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate},
+      tailOutputData_{tailOutputBufferInfo_},
+      rawBypassBufferInfo_{nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate},
+      rawBypassBuffer_{rawBypassBufferInfo_},
+      rawBypassOutputBufferInfo_{nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate},
+      rawBypassOutputData_{rawBypassOutputBufferInfo_}
 {
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSessionEffectNode");
@@ -227,6 +220,7 @@ void HpaeSessionEffectNode::ResetAccounting()
     totalBytesIn_ = 0;
     totalBytesOut_ = 0;
     paddingBytesIn_ = 0;
+    pendingRawBypassBlocks_.store(0);
     stats_.Reset();
 }
 
@@ -278,6 +272,122 @@ void HpaeSessionEffectNode::ReconfigOutputBuffers(const AudioEffectConfig &confi
         samplingRate, channels, frameLen);
 }
 
+void HpaeSessionEffectNode::ReconfigRawBypassBuffers(const AudioEffectConfig &config)
+{
+    uint32_t samplingRate = config.inputCfg.samplingRate != 0 ?
+        config.inputCfg.samplingRate : static_cast<uint32_t>(GetSampleRate());
+    uint32_t channels = config.inputCfg.channels != 0 ? config.inputCfg.channels : GetChannelCount();
+    uint32_t frameLen = static_cast<uint32_t>(GetFrameLen());
+    CHECK_AND_RETURN_LOG(samplingRate != 0 && channels != 0 && frameLen != 0,
+        "ReconfigRawBypassBuffers skipped: samplingRate=%{public}u channels=%{public}u "
+        "frameLen=%{public}u", samplingRate, channels, frameLen);
+    size_t frameBytes = 0;
+    uint32_t rawFrames = RAW_BYPASS_FIFO_MIN_FRAMES;
+    if (GetPcmByteLen(frameLen, channels, frameBytes) && frameBytes != 0) {
+        size_t targetFrames = prebufTargetBytes_ / frameBytes + RAW_BYPASS_FIFO_EXTRA_FRAMES;
+        rawFrames = static_cast<uint32_t>(std::max<size_t>(targetFrames, RAW_BYPASS_FIFO_MIN_FRAMES));
+    }
+
+    rawBypassBufferInfo_ = PcmBufferInfo(channels, frameLen, samplingRate,
+        config.inputCfg.channelLayout, rawFrames);
+    rawBypassBufferInfo_.isMultiFrames = true;
+    rawBypassOutputBufferInfo_ = PcmBufferInfo(channels, frameLen, samplingRate, config.inputCfg.channelLayout);
+    interceptingRawData_.assign(frameBytes / sizeof(float), 0.0f);
+
+    {
+        std::lock_guard<std::mutex> lock(rawBypassMutex_);
+        rawBypassBuffer_.ReConfig(rawBypassBufferInfo_);
+        rawBypassOutputData_.ReConfig(rawBypassOutputBufferInfo_);
+        rawBypassBuffer_.Reset();
+        rawBypassOutputData_.Reset();
+    }
+    rawBypassCv_.notify_all();
+}
+
+void HpaeSessionEffectNode::ClearRawBypassBuffer()
+{
+    {
+        std::lock_guard<std::mutex> lock(rawBypassMutex_);
+        rawBypassBuffer_.Reset();
+        pendingRawBypassBlocks_.store(0, std::memory_order_relaxed);
+    }
+    rawBypassCv_.notify_all();
+}
+
+bool HpaeSessionEffectNode::WaitRawBypassBufferWritable()
+{
+    std::unique_lock<std::mutex> lock(rawBypassMutex_);
+    rawBypassCv_.wait_for(lock, std::chrono::milliseconds(RAW_BYPASS_FULL_WAIT_MS), [this]() {
+        return stopRequested_.load() || rawBypassBuffer_.GetCurFrames() < rawBypassBuffer_.GetFrames();
+    });
+    return !stopRequested_.load() && rawBypassBuffer_.GetCurFrames() < rawBypassBuffer_.GetFrames();
+}
+
+bool HpaeSessionEffectNode::PushRawBypassBuffer(HpaePcmBuffer *buf)
+{
+    CHECK_AND_RETURN_RET(buf != nullptr && buf->IsValid(), false);
+    // Bypass not required yet (first warmup): succeed without enqueueing upstream data.
+    CHECK_AND_RETURN_RET(!rawBypassNeeded_, true);
+    bool pushed = false;
+    {
+        std::lock_guard<std::mutex> lock(rawBypassMutex_);
+        if (rawBypassBuffer_.GetCurFrames() < rawBypassBuffer_.GetFrames()) {
+            pushed = rawBypassBuffer_.PushFrameData(*buf);
+        }
+    }
+    if (pushed) {
+        rawBypassCv_.notify_all();
+    }
+    return pushed;
+}
+
+HpaePcmBuffer *HpaeSessionEffectNode::PopRawBypassBuffer()
+{
+    CHECK_AND_RETURN_RET(!rawBypassNeeded_, nullptr);
+    bool popped = false;
+    {
+        std::unique_lock<std::mutex> lock(rawBypassMutex_, std::defer_lock);
+        CHECK_AND_RETURN_RET(lock.try_lock(), nullptr);
+        if (rawBypassBuffer_.GetCurFrames() > 0) {
+            popped = rawBypassBuffer_.GetFrameData(rawBypassOutputData_);
+            rawBypassOutputData_.SetBufferValid(true);
+            rawBypassOutputData_.SetBufferSilence(false);
+            rawBypassOutputData_.SetSplitStreamType(GetNodeInfo().GetSplitStreamType());
+            rawBypassOutputData_.SetAudioStreamType(GetNodeInfo().streamType);
+            rawBypassOutputData_.SetAudioStreamUsage(GetNodeInfo().effectInfo.streamUsage);
+        }
+    }
+    if (!popped) {
+        return nullptr;
+    }
+    rawBypassCv_.notify_all();
+    return &rawBypassOutputData_;
+}
+
+bool HpaeSessionEffectNode::WriteRawBypassOutput()
+{
+    HpaePcmBuffer *rawOut = PopRawBypassBuffer();
+    CHECK_AND_RETURN_RET(rawOut != nullptr, false);
+    outputStream_.WriteDataToOutput(ProcessRawBypassOutput(rawOut));
+    return true;
+}
+
+bool HpaeSessionEffectNode::HandleWarmingUpRawBypass()
+{
+    if (prebufFilled_.load()) {
+        AUDIO_INFO_LOG("[SE::SessionEffectNode] WARMING_UP->INTERCEPTING reason=prebuffer filled "
+            "sessionId=%{public}u prebufBytes=%{public}zu",
+            GetSessionId(), prebufTargetBytes_);
+        status_ = STATUS::INTERCEPTING;
+        return false;
+    }
+    if (!WriteRawBypassOutput()) {
+        stats_.underrunCount++;
+        outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
+    }
+    return true;
+}
+
 int32_t HpaeSessionEffectNode::CreateEffectWithInstance(const std::string &effectName,
     std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
 {
@@ -289,6 +399,7 @@ int32_t HpaeSessionEffectNode::CreateEffectWithInstance(const std::string &effec
     audioConfig_ = config;
     ReconfigOutputBuffers(config);
     UpdatePrebufTargetBytes();
+    ReconfigRawBypassBuffers(config);
     AUDIO_INFO_LOG("create effect with instance %{public}s", effectName.c_str());
     return 0;
 }
@@ -306,6 +417,7 @@ int32_t HpaeSessionEffectNode::DropEffect()
     status_ = STATUS::IDLE;
     prebufTargetBytes_ = 0;
     preheatSuspendedForGraphSwitch_ = false;
+    ClearRawBypassBuffer();
     ResetAccounting();
     ResetTailPaddingState();
     return 0;
@@ -329,6 +441,7 @@ int32_t HpaeSessionEffectNode::DetachEffectForReload()
     pauseStartTime_ = std::chrono::steady_clock::time_point {};
     preheatNoDataStartTime_ = std::chrono::steady_clock::time_point {};
     prebufTargetBytes_ = 0;
+    ClearRawBypassBuffer();
     ResetAccounting();
     ResetTailPaddingState();
     return 0;
@@ -384,6 +497,7 @@ void HpaeSessionEffectNode::RestartPreheat()
 {
     stopRequested_ = false;
     prebufFilled_ = false;
+    ClearRawBypassBuffer();
     if (prebufTargetBytes_ > 0) {
         StartPreheatThread();
     } else {
@@ -417,7 +531,7 @@ int32_t HpaeSessionEffectNode::StartEffect()
 
     AUDIO_INFO_LOG("StartEffect: prebufTargetBytes_=%{public}zu", prebufTargetBytes_);
 
-    // Record warmup start timestamp for time-based skip calculation
+    // Keep warmup timestamp for pause/resume bookkeeping; skip is based on raw bypass blocks.
     warmupStartTime_ = std::chrono::steady_clock::now();
     pauseAccumulatedUs_ = 0;
 
@@ -437,6 +551,7 @@ int32_t HpaeSessionEffectNode::PauseEffect()
     if (status_ == STATUS::WARMING_UP) {
         StopPreheatThread();
     }
+    ClearRawBypassBuffer();
 
     // Set paused flag — status_ preserved for resume
     isPaused_ = true;
@@ -453,6 +568,7 @@ int32_t HpaeSessionEffectNode::FlushEffect()
     if (!effectInstance_) return 0;
     int32_t ret = effectInstance_->Flush();
     pauseAccumulatedUs_ = 0;
+    ClearRawBypassBuffer();
     ResetAccounting();
     ResetTailPaddingState();
 
@@ -497,20 +613,17 @@ void HpaeSessionEffectNode::DoProcess()
         StartEffect();
     }
 
-    if (status_ == STATUS::WARMING_UP) {
-        if (prebufFilled_.load()) {
-            // Prebuf filled -> transition to INTERCEPTING
-            AUDIO_INFO_LOG("[SE::SessionEffectNode] WARMING_UP→INTERCEPTING reason=prebuffer filled "
-                "sessionId=%{public}u prebufBytes=%{public}zu",
-                GetSessionId(), prebufTargetBytes_);
-            status_ = STATUS::INTERCEPTING;
-            // Fall through to normal DoProcess (pull upstream + SignalProcess)
-        } else {
-            // Disconnect: don't pull upstream, output silence directly
-            outputStream_.WriteDataToOutput(PrepareSilenceBuffer(silenceData_));
+    if (status_ == STATUS::WARMING_UP && HandleWarmingUpRawBypass()) {
+        return;
+    }
+    if (status_ == STATUS::INTERCEPTING) {
+        HpaePcmBuffer *rawOut = PopRawBypassBuffer();
+        if (rawOut != nullptr) {
+            outputStream_.WriteDataToOutput(ProcessInterceptingRaw(rawOut, false));
             return;
         }
     }
+
     // Normal flow: pull upstream → SignalProcess (with timing)
     auto t0 = std::chrono::steady_clock::now();
     HpaePcmBuffer *tempOut = nullptr;
@@ -561,12 +674,14 @@ void HpaeSessionEffectNode::PreheatThreadFunc()
             AUDIO_WARNING_LOG("PreheatThread exiting: effectInstance is null");
             break;
         }
+        CHECK_AND_CONTINUE(WaitRawBypassBufferWritable());
 
         std::vector<HpaePcmBuffer *> &upstreamData = inputStream_.ReadPreOutputData();
 
         bool hasData = HasValidPcmInput(upstreamData);
         if (hasData) {
-            size_t fedBytes = FeedInputFromBuffer(upstreamData[0]);
+            bool pushed = PushRawBypassBuffer(upstreamData[0]);
+            size_t fedBytes = pushed ? FeedInputFromBuffer(upstreamData[0]) : 0;
             if (fedBytes > 0) {
                 noDataTimerActive = false;
                 backoffMs = 0;
@@ -592,6 +707,7 @@ void HpaeSessionEffectNode::PreheatThreadFunc()
         }
     }
 
+    rawBypassNeeded_ = rawBypassNeeded_ || stopRequested_;
     prebufFilled_.store(true);
     AUDIO_INFO_LOG("PreheatThread exiting, stopRequested=%{public}d", stopRequested_.load());
 }
@@ -636,36 +752,79 @@ void HpaeSessionEffectNode::StopPreheatThread()
 {
     if (!preheatThread_.joinable()) return;
     stopRequested_ = true;
+    rawBypassCv_.notify_all();
     preheatThread_.join();
     AUDIO_INFO_LOG("PreheatThread joined");
 }
 
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessIntercepting(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    FeedInputFromBuffer(inputs[0]);
+    CHECK_AND_RETURN_RET(!inputs.empty(), &silenceData_);
+    return ProcessInterceptingRaw(inputs[0], true);
+}
 
-    HpaePcmBuffer *inputBuf = inputs[0];
+HpaePcmBuffer *HpaeSessionEffectNode::ProcessRawBypassOutput(HpaePcmBuffer *rawBuf)
+{
+    CHECK_AND_RETURN_RET(rawBuf != nullptr, &silenceData_);
+    size_t byteLen = 0;
+    CHECK_AND_RETURN_RET(GetPcmByteLen(rawBuf->GetFrameLen(), audioConfig_.inputCfg.channels, byteLen), &silenceData_);
+    rawBuf->SetBufferValid(true);
+    rawBuf->SetBufferSilence(false);
+    AccountOutput(byteLen);
+    pendingRawBypassBlocks_.fetch_add(1, std::memory_order_relaxed);
+    return rawBuf;
+}
+
+void HpaeSessionEffectNode::ConsumePendingRawBypassBlocks(size_t skipRequest, uint32_t skipRemaining)
+{
+    size_t remaining = std::min<size_t>(skipRemaining, skipRequest);
+    size_t consumed = skipRequest - remaining;
+    if (consumed == 0) {
+        return;
+    }
+
+    size_t current = pendingRawBypassBlocks_.load(std::memory_order_relaxed);
+    while (current > 0) {
+        size_t next = current > consumed ? current - consumed : 0;
+        CHECK_AND_RETURN(!pendingRawBypassBlocks_.compare_exchange_weak(current, next, std::memory_order_relaxed));
+    }
+}
+
+HpaePcmBuffer *HpaeSessionEffectNode::ProcessInterceptingRaw(HpaePcmBuffer *inputBuf, bool feedInput)
+{
+    CHECK_AND_RETURN_RET(inputBuf != nullptr && effectInstance_ != nullptr, &silenceData_);
     size_t channels = audioConfig_.inputCfg.channels;
-    size_t byteLen = inputBuf->GetFrameLen() * channels * sizeof(float);
+    size_t byteLen = 0;
+    CHECK_AND_RETURN_RET(GetPcmByteLen(inputBuf->GetFrameLen(), channels, byteLen), &silenceData_);
 
-    uint32_t computedSkipFrames = ComputeSkipFrames();
-    totalBytesOut_ = static_cast<size_t>(computedSkipFrames) * byteLen;
+    size_t sampleCount = static_cast<size_t>(inputBuf->GetFrameLen()) * channels;
+    CHECK_AND_RETURN_RET(interceptingRawData_.size() >= sampleCount, &silenceData_);
 
-    uint32_t skipFrames = computedSkipFrames;
+    std::copy_n(inputBuf->GetPcmDataBuffer(), sampleCount, interceptingRawData_.data());
+    if (feedInput) {
+        FeedInputFromBuffer(inputBuf);
+    }
+
+    size_t skipRequest = pendingRawBypassBlocks_.load(std::memory_order_relaxed);
+    skipRequest = std::min<size_t>(skipRequest, std::numeric_limits<uint32_t>::max());
+    uint32_t skipFrames = static_cast<uint32_t>(skipRequest);
     int32_t ret = effectInstance_->ReadOutput(
         reinterpret_cast<uint8_t *>(inputBuf->GetPcmDataBuffer()), byteLen,
         &skipFrames);
+    ConsumePendingRawBypassBlocks(skipRequest, skipFrames);
     if (ret > 0) {
         inputBuf->SetBufferValid(true);
         inputBuf->SetBufferSilence(false);
-        ApplyInterceptingFadeIn(inputBuf->GetPcmDataBuffer(),
-            inputBuf->GetFrameLen() * audioConfig_.inputCfg.channels);
+        ApplyInterceptingFadeIn(inputBuf->GetPcmDataBuffer(), interceptingRawData_.data(), sampleCount);
         status_ = STATUS::ACTIVE;
+        rawBypassNeeded_ = true;
+        pendingRawBypassBlocks_.store(0);
         AccountOutput(byteLen);
         return inputBuf;
     }
-
-    return PrepareSilenceBuffer(silenceData_);
+    CHECK_AND_RETURN_RET(!rawBypassNeeded_, PrepareSilenceBuffer(silenceData_));
+    std::copy_n(interceptingRawData_.data(), sampleCount, inputBuf->GetPcmDataBuffer());
+    return ProcessRawBypassOutput(inputBuf);
 }
 
 HpaePcmBuffer *HpaeSessionEffectNode::ProcessActive(const std::vector<HpaePcmBuffer *> &inputs)
@@ -830,15 +989,18 @@ void HpaeSessionEffectNode::CloseSessionEffectCore()
     }
     ResetAccounting();
     // Step 4: Enter bypass mode
+    ClearRawBypassBuffer();
     status_ = STATUS::IDLE;
     isPaused_ = false;
     AUDIO_INFO_LOG("CloseSE: node bypass, sessionId=%{public}u", GetSessionId());
 }
 
-void HpaeSessionEffectNode::ApplyInterceptingFadeIn(float *algoOutput, size_t sampleCount)
+void HpaeSessionEffectNode::ApplyInterceptingFadeIn(float *algoOutput, const float *rawInput, size_t sampleCount)
 {
+    CHECK_AND_RETURN(!rawBypassNeeded_);
     for (size_t i = 0; i < sampleCount; ++i) {
-        algoOutput[i] *= static_cast<float>(i + 1) / static_cast<float>(sampleCount);
+        float t = sampleCount > 1 ? static_cast<float>(i) / static_cast<float>(sampleCount - 1) : 1.0f;
+        algoOutput[i] = rawInput[i] * (1.0f - t) + algoOutput[i] * t;
     }
 }
 

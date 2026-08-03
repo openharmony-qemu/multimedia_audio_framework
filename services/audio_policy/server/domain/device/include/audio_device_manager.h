@@ -115,7 +115,7 @@ public:
     void UpdateWirelessDeviceSilentState(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     bool RestoreWirelessDeviceSilentState();
 
-    bool HasWirelessDevicesConnected();
+    bool HasSpecificDevicesConnected();
 
 private:
     AudioDeviceManager();

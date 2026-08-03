@@ -196,5 +196,211 @@ HWTEST_F(VADeviceManagerUnitTest, VADeviceManagerUnitTest_008, TestSize.Level1) 
     EXPECT_EQ(*streamInfo.samplingRate.begin(), 44100);
 }
 
+/**
+ * @tc.name  : ConvertVADeviceToDescriptor_009
+ * @tc.desc  : Test ConvertVADeviceToDescriptor with nullptr VA device
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, ConvertVADeviceToDescriptor_009, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    auto desc = vaDeviceManager.ConvertVADeviceToDescriptor(nullptr);
+    EXPECT_EQ(desc, nullptr);
+}
+
+/**
+ * @tc.name  : ConvertVADeviceToDescriptor_010
+ * @tc.desc  : Test ConvertVADeviceToDescriptor with NONE type and NONE role
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, ConvertVADeviceToDescriptor_010, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    auto vaDevice = std::make_shared<VADevice>();
+    vaDevice->configuration_.name_ = "test_none";
+    vaDevice->configuration_.type_ = VA_DEVICE_TYPE_NONE;
+    vaDevice->configuration_.role_ = static_cast<VADeviceRole>(0);
+    vaDevice->configuration_.address_ = "test_addr_none";
+    vaDevice->configuration_.isUnidirectional_ = false;
+
+    auto desc = vaDeviceManager.ConvertVADeviceToDescriptor(vaDevice);
+    ASSERT_NE(desc, nullptr);
+    EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(desc->deviceRole_, DEVICE_ROLE_NONE);
+}
+
+/**
+ * @tc.name  : ConvertVADeviceToDescriptor_011
+ * @tc.desc  : Test ConvertVADeviceToDescriptor with OUTPUT role
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, ConvertVADeviceToDescriptor_011, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    auto vaDevice = std::make_shared<VADevice>();
+    vaDevice->configuration_.name_ = "test_out";
+    vaDevice->configuration_.type_ = VA_DEVICE_TYPE_BT_SPP;
+    vaDevice->configuration_.role_ = VA_DEVICE_ROLE_OUT;
+    vaDevice->configuration_.address_ = "test_addr_out";
+    vaDevice->configuration_.isUnidirectional_ = true;
+
+    auto desc = vaDeviceManager.ConvertVADeviceToDescriptor(vaDevice);
+    ASSERT_NE(desc, nullptr);
+    EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_BT_SPP);
+    EXPECT_EQ(desc->deviceRole_, OUTPUT_DEVICE);
+    EXPECT_TRUE(desc->isUnidirectional_);
+}
+
+/**
+ * @tc.name  : CalculateBufferSize_001
+ * @tc.desc  : Test CalculateBufferSize with valid inputs
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, CalculateBufferSize_001, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    VAAudioStreamProperty streamProp;
+    streamProp.sampleFormat_ = SAMPLE_S16LE;
+    streamProp.channelLayout_ = CH_LAYOUT_STEREO;
+    streamProp.sampleRate_ = 48000;
+    streamProp.samplesPerCycle_ = 960;
+
+    uint32_t bufferSize = vaDeviceManager.CalculateBufferSize(streamProp);
+    EXPECT_GT(bufferSize, 0u);
+}
+
+/**
+ * @tc.name  : CalculateBufferSize_002
+ * @tc.desc  : Test CalculateBufferSize with zero samplesPerCycle (calculated from sampleRate)
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, CalculateBufferSize_002, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    VAAudioStreamProperty streamProp;
+    streamProp.sampleFormat_ = SAMPLE_S16LE;
+    streamProp.channelLayout_ = CH_LAYOUT_STEREO;
+    streamProp.sampleRate_ = 48000;
+    streamProp.samplesPerCycle_ = 0;
+
+    uint32_t bufferSize = vaDeviceManager.CalculateBufferSize(streamProp);
+    EXPECT_GT(bufferSize, 0u);
+}
+
+/**
+ * @tc.name  : CalculateBufferSize_003
+ * @tc.desc  : Test CalculateBufferSize with invalid samplesPerCycle (too large)
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, CalculateBufferSize_003, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    VAAudioStreamProperty streamProp;
+    streamProp.sampleFormat_ = SAMPLE_S16LE;
+    streamProp.channelLayout_ = CH_LAYOUT_STEREO;
+    streamProp.sampleRate_ = 48000;
+    streamProp.samplesPerCycle_ = 999999;
+
+    uint32_t bufferSize = vaDeviceManager.CalculateBufferSize(streamProp);
+    EXPECT_EQ(bufferSize, 0u);
+}
+
+/**
+ * @tc.name  : CalculateBufferSize_004
+ * @tc.desc  : Test CalculateBufferSize with unknown channel layout
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, CalculateBufferSize_004, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    VAAudioStreamProperty streamProp;
+    streamProp.sampleFormat_ = SAMPLE_S16LE;
+    streamProp.channelLayout_ = CH_LAYOUT_UNKNOWN;
+    streamProp.sampleRate_ = 48000;
+    streamProp.samplesPerCycle_ = 960;
+
+    uint32_t bufferSize = vaDeviceManager.CalculateBufferSize(streamProp);
+    EXPECT_EQ(bufferSize, 0u);
+}
+
+/**
+ * @tc.name  : OnDevicesConnected_001
+ * @tc.desc  : Test OnDevicesConnected with nullptr VA device
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, OnDevicesConnected_001, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    sptr<IVADeviceController> controller = nullptr;
+    vaDeviceManager.OnDevicesConnected(nullptr, controller);
+    EXPECT_FALSE(vaDeviceManager.connectedVADeviceMap_["1"]);
+}
+
+/**
+ * @tc.name  : OnDevicesDisconnected_001
+ * @tc.desc  : Test OnDevicesDisconnected with nullptr VA device
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, OnDevicesDisconnected_001, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    vaDeviceManager.OnDevicesDisconnected(nullptr);
+    EXPECT_FALSE(vaDeviceManager.connectedVADeviceMap_["1"]);
+}
+
+/**
+ * @tc.name  : SetNoiseReductionMode_001
+ * @tc.desc  : Test SetNoiseReductionMode with nullptr VA device
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, SetNoiseReductionMode_001, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    vaDeviceManager.SetNoiseReductionMode(nullptr, 0);
+    EXPECT_FALSE(vaDeviceManager.connectedVADeviceMap_["1"]);
+}
+
+/**
+ * @tc.name  : UpdateNoiseReductionCapability_001
+ * @tc.desc  : Test UpdateNoiseReductionCapability with nullptr VA device
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, UpdateNoiseReductionCapability_001, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    vaDeviceManager.UpdateNoiseReductionCapability(nullptr, desc);
+    EXPECT_TRUE(desc);
+}
+
+/**
+ * @tc.name  : UpdateNoiseReductionCapability_002
+ * @tc.desc  : Test UpdateNoiseReductionCapability with nullptr descriptor
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, UpdateNoiseReductionCapability_002, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    auto vaDevice = std::make_shared<VADevice>();
+    vaDevice->configuration_.name_ = "test_nr";
+    vaDeviceManager.UpdateNoiseReductionCapability(vaDevice, nullptr);
+    EXPECT_TRUE(vaDevice);
+}
+
+/**
+ * @tc.name  : UpdateNoiseReductionCapability_003
+ * @tc.desc  : Test UpdateNoiseReductionCapability with empty supported modes
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, UpdateNoiseReductionCapability_003, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    auto vaDevice = std::make_shared<VADevice>();
+    vaDevice->configuration_.name_ = "test_nr_empty";
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    vaDeviceManager.UpdateNoiseReductionCapability(vaDevice, desc);
+    EXPECT_TRUE(desc);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

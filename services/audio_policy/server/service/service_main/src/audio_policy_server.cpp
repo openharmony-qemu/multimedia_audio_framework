@@ -100,6 +100,8 @@ constexpr uid_t UID_AVSESSION_SERVICE = 6700;
 const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
 const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
+const char* MUTE_VOIP_PLAYBACK_PERMISSION = "ohos.permission.MUTE_VOIP_PLAYBACK";
+const char* MUTE_VOIP_CAPTURE_PERMISSION = "ohos.permission.MUTE_VOIP_CAPTURE";
 const std::string CALLER_NAME = "audio_server";
 static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
 const std::string HIVIEWCARE_PERMISSION = "ohos.permission.ACCESS_HIVIEWCARE";
@@ -1258,6 +1260,8 @@ int32_t AudioPolicyServer::SetAdjustVolumeForZone(int32_t zoneId)
 int32_t AudioPolicyServer::SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted,
     const sptr<IRemoteObject> &callerObj)
 {
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MUTE_VOIP_PLAYBACK_PERMISSION),
+        ERR_PERMISSION_DENIED, "No mute voip permission");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
         ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(appUid, streamId), ERR_INVALID_PARAM,
@@ -1274,6 +1278,8 @@ int32_t AudioPolicyServer::SetVoipRendererMute(int32_t appUid, int64_t streamId,
 int32_t AudioPolicyServer::SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted,
     const sptr<IRemoteObject> &callerObj)
 {
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MUTE_VOIP_CAPTURE_PERMISSION),
+        ERR_PERMISSION_DENIED, "No mute voip permission");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
         ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(appUid, streamId), ERR_INVALID_PARAM,
@@ -2127,6 +2133,8 @@ int32_t AudioPolicyServer::GetInputDevice(const sptr<AudioCapturerFilter> &audio
     }
     deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
+
+    AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
@@ -3021,6 +3029,8 @@ int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateInterrupt(int32_t zoneId
 int32_t AudioPolicyServer::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
 {
     if (interruptService_ != nullptr) {
+        bool ret = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppConcurrencyMode: No system permission");
         return StandaloneModeManager::GetInstance().SetAppConcurrencyMode(IPCSkeleton::GetCallingPid(), appUid, mode);
     }
     return ERR_UNKNOWN;
@@ -3345,7 +3355,7 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
 }
 
 int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    uint32_t &flag, uint32_t &sessionId, std::string &networkId)
+    StreamFlagInfo &flagInfo, uint32_t &sessionId, std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr && eventEntry_ != nullptr, ERR_NULL_POINTER,
         "Core service not inited");
@@ -3354,10 +3364,10 @@ int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescr
         std::string bundleName = AudioBundleManager::GetBundleName();
         streamDesc->SetBundleName(bundleName);
     }
-    uint32_t flagIn = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfoIn;
     std::string networkIdIn = LOCAL_NETWORK_ID;
-    int32_t ret = eventEntry_->CreateRendererClient(streamDesc, flagIn, sessionId, networkIdIn);
-    flag = flagIn;
+    int32_t ret = eventEntry_->CreateRendererClient(streamDesc, flagInfoIn, sessionId, networkIdIn);
+    flagInfo = flagInfoIn;
     networkId = networkIdIn;
     return ret;
 }
@@ -5246,12 +5256,14 @@ int32_t AudioPolicyServer::SetDeviceVolumeBehavior(const std::string &networkId,
         return ERR_PERMISSION_DENIED;
     }
     FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "SetDeviceVolumeBehavior_1", ROUTER_TYPE_USER_SELECT};
+    info.isRunning = true;
     auto mediaDeviceList = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!mediaDeviceList.empty(), ERROR, "mediaDeviceList is empty");
     std::shared_ptr<AudioDeviceDescriptor> newMediaDescriptor = mediaDeviceList.front();
     CHECK_AND_RETURN_RET_LOG(newMediaDescriptor != nullptr, ERROR, "newMediaDescriptor is nullptr");
 
     info = { STREAM_USAGE_VOICE_COMMUNICATION, "SetDeviceVolumeBehavior_2", ROUTER_TYPE_USER_SELECT};
+    info.isRunning = true;
     auto callDeviceList = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!callDeviceList.empty(), ERROR, "callDeviceList is empty");
     std::shared_ptr<AudioDeviceDescriptor> newCallDescriptor = callDeviceList.front();

@@ -558,22 +558,6 @@ HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Stop_001, TestSize.Level0)
     EXPECT_EQ(testNode_->GetState(), HPAE_SESSION_STOPPED);
 }
 
-HWTEST_F(HpaeOffloadRendererManagerWhiteBoxTest, Stop_activeSessionEffect_pausesNode, TestSize.Level0)
-{
-    // This test verifies that Stop handles sessionEffectNode_ correctly
-    HpaeNodeInfo nodeInfo = testNode_->GetNodeInfo();
-    manager_->sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(nodeInfo);
-    manager_->sessionEffectSessionId_ = TEST_SESSION_ID;
-    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
-
-    int32_t ret = manager_->Stop(TEST_SESSION_ID);
-    EXPECT_EQ(ret, SUCCESS);
-    manager_->HandleMsg();
-
-    // Verify node transitioned to STOPPED
-    EXPECT_EQ(testNode_->GetState(), HPAE_SESSION_STOPPED);
-}
-
 /**
  * @tc.name    : Flush_001
  * @tc.type    : FUNC

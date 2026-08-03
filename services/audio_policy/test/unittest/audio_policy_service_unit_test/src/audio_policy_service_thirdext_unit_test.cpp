@@ -467,37 +467,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnA2dpPlayingStateChanged_008, TestSi
 }
 
 /**
-* @tc.name  : Test ErasePreferredDeviceByType.
-* @tc.number: ErasePreferredDeviceByType_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ErasePreferredDeviceByType_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ErasePreferredDeviceByType_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    AudioPolicyUtils::GetInstance().isBTReconnecting_ = true;
-    const PreferredType preferredType = AUDIO_MEDIA_RENDER;
-    auto ret = AudioPolicyUtils::GetInstance().ErasePreferredDeviceByType(preferredType);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test ErasePreferredDeviceByType.
-* @tc.number: ErasePreferredDeviceByType_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ErasePreferredDeviceByType_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ErasePreferredDeviceByType_002 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    const PreferredType preferredType = AUDIO_MEDIA_RENDER;
-    auto ret = AudioPolicyUtils::GetInstance().ErasePreferredDeviceByType(preferredType);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
 * @tc.name  : Test UpdateSessionConnectionState.
 * @tc.number: UpdateSessionConnectionState_001
 * @tc.desc  : Test UpdateSessionConnectionState interfaces.

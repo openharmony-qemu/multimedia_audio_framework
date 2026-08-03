@@ -29,6 +29,7 @@
 #include "audio_strategy_router_parser.h"
 #include "audio_usage_strategy_parser.h"
 #include "wireless_conflict_handler.h"
+#include "input_conflict_handler.h"
 #include <mutex>
 #include <unordered_map>
 
@@ -115,6 +116,7 @@ private:
         }
 
         wirelessConflictHandler_ = std::make_shared<WirelessConflictHandler>();
+        inputConflictHandler_ = std::make_shared<InputConflictHandler>();
     }
 
     ~AudioRouterCenter() {}
@@ -184,8 +186,9 @@ private:
     void StartArbiterContext(const FetchDeviceInfo &deviceInfo);
     void StartArbiterContext();
     void StopArbiterContext();
-    bool HasWirelessDevicesConnected();
+    bool HasSpecificDevicesConnected();
     std::shared_ptr<WirelessConflictHandler> wirelessConflictHandler_;
+    std::shared_ptr<InputConflictHandler> inputConflictHandler_;
     std::mutex routerMutex_;
 
     template<typename Func>
