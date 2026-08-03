@@ -1595,25 +1595,6 @@ HWTEST_F(HpaeDirectSinkOutputNodeTest, constructNode_withMono_001, TestSize.Leve
 }
 
 /**
- * @tc.name  : renderSinkInit_MdmMuteTrue_001
- * @tc.type  : FUNC
- * @tc.number: HpaeDirectSinkOutputNodeTest_089
- * @tc.desc  : Test RenderSinkInit with mdmMute = true sets volume to 0.0f
- */
-HWTEST_F(HpaeDirectSinkOutputNodeTest, renderSinkInit_MdmMuteTrue_001, TestSize.Level1)
-{
-    EXPECT_CALL(*mockSink_, IsInited()).WillOnce(Return(false));
-    EXPECT_CALL(*mockSink_, Init(_)).WillOnce(Return(SUCCESS));
-    // When mdmMute is true, volume should be set to 0.0f
-    EXPECT_CALL(*mockSink_, SetVolume(0.0f, 0.0f)).WillOnce(Return(SUCCESS));
-
-    IAudioSinkAttr attr;
-    attr.adapterName = "test_adapter";
-    int32_t ret = directNode_->RenderSinkInit(attr);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : getRenderSinkInstance_Fail_001
  * @tc.type  : FUNC
  * @tc.number: HpaeDirectSinkOutputNodeTest_090

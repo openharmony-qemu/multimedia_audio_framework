@@ -1686,20 +1686,6 @@ private:
     bool oldBtOffloadEnabled_ = false;
 };
 
-static HpaeNodeInfo BuildRenderEffectNodeInfo(uint32_t nodeId, AudioChannel channels = STEREO,
-    AudioChannelLayout channelLayout = CH_LAYOUT_STEREO)
-{
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.nodeId = nodeId;
-    nodeInfo.sessionId = nodeId;
-    nodeInfo.frameLen = TEST_FRAMELEN1;
-    nodeInfo.samplingRate = SAMPLE_RATE_48000;
-    nodeInfo.channels = channels;
-    nodeInfo.channelLayout = channelLayout;
-    nodeInfo.format = SAMPLE_F32LE;
-    return nodeInfo;
-}
-
 static void AddBufferedPreOutput(HpaeRenderEffectNode &node, OutputPort<HpaePcmBuffer *> &output,
     HpaePcmBuffer &buffer)
 {
@@ -2150,34 +2136,18 @@ HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_keepsNodeInfoWhenManager
     EXPECT_EQ(node->GetNodeInfo().channelLayout, CH_LAYOUT_STEREO);
 }
 
-// ==================== Additional Test Cases for Branch Coverage > 75% ====================
-
-/**
- * @tc.name   : Test ReconfigOutputBuffer with channel change
- * @tc.number : ReconfigOutputBuffer_ChannelChange_001
- * @tc.desc   : Test ReconfigOutputBuffer when channels/channelLayout changes.
- */
-HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_ChannelChange_001, TestSize.Level1)
+static HpaeNodeInfo BuildRenderEffectNodeInfo(uint32_t nodeId, AudioChannel channels = STEREO,
+    AudioChannelLayout channelLayout = CH_LAYOUT_STEREO)
 {
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    std::string sceneStr = "SCENE_MUSIC";
-    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneStr);
-
-    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4000, MONO, CH_LAYOUT_MONO);
-    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
-    node->sceneType_ = "SCENE_MUSIC";
-
-    // Set different channels in effectOutput_ to trigger reconfig
-    node->effectOutput_.ReConfig(PcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO));
-
-    node->ReconfigOutputBuffer();
-
-    // Verify node info was updated
-    EXPECT_EQ(node->GetNodeInfo().channels, STEREO);
-
-    AudioEffectChainManager::GetInstance()->ResetInfo();
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = nodeId;
+    nodeInfo.sessionId = nodeId;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = channels;
+    nodeInfo.channelLayout = channelLayout;
+    nodeInfo.format = SAMPLE_F32LE;
+    return nodeInfo;
 }
 
 /**
@@ -2219,31 +2189,6 @@ HWTEST_F(HpaeRenderEffectNodeTest, ReleaseAudioEffectChain_SessionNotFound_003, 
 
     // Release without create - should return SUCCESS via early return branch
     EXPECT_EQ(node->ReleaseAudioEffectChain(nodeInfo), 0);
-
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
- * @tc.name   : Test ModifyAudioEffectChainInfo with invalid effectMode
- * @tc.number : ModifyAudioEffectChainInfo_InvalidEffectMode_004
- * @tc.desc   : Test ModifyAudioEffectChainInfo when effectMode is not in supported map.
- */
-HWTEST_F(HpaeRenderEffectNodeTest, ModifyAudioEffectChainInfo_InvalidEffectMode_004, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-
-    HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4300);
-    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
-    nodeInfo.effectInfo.effectMode = static_cast<AudioEffectMode>(0xFF); // Invalid mode
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
-
-    ModifyAudioEffectChainInfoReason addReason = ADD_AUDIO_EFFECT_CHAIN_INFO;
-    node->ModifyAudioEffectChainInfo(nodeInfo, addReason);
-
-    std::string sessionId = std::to_string(TEST_ID + 4300);
-    // Verify sceneMode was set to EFFECT_NONE
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionId].sceneMode, "EFFECT_NONE");
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }

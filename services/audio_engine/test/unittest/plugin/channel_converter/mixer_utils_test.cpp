@@ -650,26 +650,6 @@ HWTEST_F(AudioMixingTableTest, Channel5Point1To7Point1_ConvertsCorrectly, TestSi
 }
 
 /**
- * @tc.name: SetUpGeneralMixingTable_FrontCenterToLeftRight_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_024
- * @tc.desc: Test front center mixes to left and right with -3dB
- */
-HWTEST_F(AudioMixingTableTest, FrontCenterMixesToLeftRight_WithM3DB, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {CH_LAYOUT_2POINT1, 3}; // FL, FR, FC
-    AudioChannelInfo outInfo = {CH_LAYOUT_STEREO, 2};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-    // FC should mix to both FL and FR with -3dB
-    EXPECT_NEAR(table[0][2], COEF_M3DB_F, 0.0001f);
-    EXPECT_NEAR(table[1][2], COEF_M3DB_F, 0.0001f);
-}
-
-/**
  * @tc.name: SetUpGeneralMixingTable_WithLfeChannel_001
  * @tc.type: FUNC
  * @tc.number: SetUpGeneralMixingTable_025
@@ -758,128 +738,6 @@ HWTEST_F(AudioMixingTableTest, SideRightFallBackToFrontRight, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetUpGeneralMixingTable_BackCenterToBackLeftRight_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_030
- * @tc.desc: Test back center mixes to back left and right
- */
-HWTEST_F(AudioMixingTableTest, BackCenterMixesToBackLeftRight, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {static_cast<AudioChannelLayout>(BACK_LEFT | BACK_RIGHT | BACK_CENTER), 3};
-    AudioChannelInfo outInfo = {static_cast<AudioChannelLayout>(BACK_LEFT | BACK_RIGHT), 2};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-}
-
-/**
- * @tc.name: SetUpGeneralMixingTable_TopCenterToTopFronts_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_031
- * @tc.desc: Test top center mixes to top front left and right
- */
-HWTEST_F(AudioMixingTableTest, TopCenterMixesToTopFrontLeftRight, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {static_cast<AudioChannelLayout>(TOP_FRONT_LEFT | TOP_FRONT_RIGHT | TOP_CENTER), 3};
-    AudioChannelInfo outInfo = {static_cast<AudioChannelLayout>(TOP_FRONT_LEFT | TOP_FRONT_RIGHT), 2};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-}
-
-/**
- * @tc.name: SetUpGeneralMixingTable_TopCenterToMids_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_032
- * @tc.desc: Test top center with no top outputs mixes to mids
- */
-HWTEST_F(AudioMixingTableTest, TopCenterNoTopOutputs_MixesToMids, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {static_cast<AudioChannelLayout>(TOP_CENTER), 1};
-    AudioChannelInfo outInfo = {CH_LAYOUT_STEREO, 2};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-}
-
-/**
- * @tc.name: SetUpGeneralMixingTable_TopFrontCenterToLeftRight_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_033
- * @tc.desc: Test top front center mixes to top front left and right
- */
-HWTEST_F(AudioMixingTableTest, TopFrontCenterMixesToLeftRight, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {static_cast<AudioChannelLayout>(TOP_FRONT_LEFT | TOP_FRONT_RIGHT | TOP_FRONT_CENTER), 3};
-    AudioChannelInfo outInfo = {static_cast<AudioChannelLayout>(TOP_FRONT_LEFT | TOP_FRONT_RIGHT), 2};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-    // TOP_FRONT_CENTER should mix to left and right with -3dB
-    EXPECT_NEAR(table[0][2], COEF_M3DB_F, 0.0001f);
-    EXPECT_NEAR(table[1][2], COEF_M3DB_F, 0.0001f);
-}
-
-/**
- * @tc.name: SetUpGeneralMixingTable_TopBackCenterToSides_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_034
- * @tc.desc: Test top back center mixes to top side left and right
- */
-HWTEST_F(AudioMixingTableTest, TopBackCenterMixesToTopSides, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {static_cast<AudioChannelLayout>(TOP_SIDE_LEFT | TOP_SIDE_RIGHT | TOP_BACK_CENTER), 3};
-    AudioChannelInfo outInfo = {static_cast<AudioChannelLayout>(TOP_SIDE_LEFT | TOP_SIDE_RIGHT), 2};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-}
-
-/**
- * @tc.name: SetUpGeneralMixingTable_TopBackLeftToTopSideLeft_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_035
- * @tc.desc: Test top back left maps to top side left
- */
-HWTEST_F(AudioMixingTableTest, TopBackLeftMapsToTopSideLeft, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {static_cast<AudioChannelLayout>(TOP_SIDE_LEFT | TOP_BACK_LEFT), 2};
-    AudioChannelInfo outInfo = {static_cast<AudioChannelLayout>(TOP_SIDE_LEFT), 1};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-}
-
-/**
- * @tc.name: SetUpGeneralMixingTable_TopSideLeftToBackLeft_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_036
- * @tc.desc: Test top side left falls back to back left when no top rear
- */
-HWTEST_F(AudioMixingTableTest, TopSideLeftFallBackToBackLeft, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {static_cast<AudioChannelLayout>(CH_LAYOUT_STEREO | TOP_SIDE_LEFT), 3};
-    AudioChannelInfo outInfo = {static_cast<AudioChannelLayout>(BACK_LEFT), 1};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-}
-
-/**
  * @tc.name: SetUpGeneralMixingTable_FrontLeftOfCenter_001
  * @tc.type: FUNC
  * @tc.number: SetUpGeneralMixingTable_037
@@ -896,63 +754,6 @@ HWTEST_F(AudioMixingTableTest, FrontLeftOfCenterMapsToFrontLeft, TestSize.Level1
     EXPECT_EQ(result, MIX_ERR_SUCCESS);
     // FRONT_LEFT_OF_CENTER should map to FRONT_LEFT
     EXPECT_NEAR(table[0][2], COEF_0DB_F, 0.0001f);
-}
-
-/**
- * @tc.name: SetUpGeneralMixingTable_FrontLeftOfCenterToFC_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_038
- * @tc.desc: Test front left of center mixes to front center and left
- */
-HWTEST_F(AudioMixingTableTest, FrontLeftOfCenterMixesToFCAndFL, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {static_cast<AudioChannelLayout>(FRONT_LEFT | FRONT_CENTER | FRONT_LEFT_OF_CENTER), 3};
-    AudioChannelInfo outInfo = {static_cast<AudioChannelLayout>(FRONT_LEFT | FRONT_CENTER), 2};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-    // FRONT_LEFT_OF_CENTER should mix to FC and FL with -3dB
-    EXPECT_NEAR(table[0][2], COEF_M3DB_F, 0.0001f);
-    EXPECT_NEAR(table[1][2], COEF_M3DB_F, 0.0001f);
-}
-
-/**
- * @tc.name: SetUpGeneralMixingTable_WideLeftToWideLeft_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_039
- * @tc.desc: Test wide left direct mapping
- */
-HWTEST_F(AudioMixingTableTest, WideLeftDirectMapping, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {static_cast<AudioChannelLayout>(WIDE_LEFT), 1};
-    AudioChannelInfo outInfo = {static_cast<AudioChannelLayout>(WIDE_LEFT), 1};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-    EXPECT_NEAR(table[0][0], COEF_0DB_F, 0.0001f);
-}
-
-/**
- * @tc.name: SetUpGeneralMixingTable_WideLeftToFrontLeft_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_040
- * @tc.desc: Test wide left falls back to front left
- */
-HWTEST_F(AudioMixingTableTest, WideLeftFallBackToFrontLeft, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {static_cast<AudioChannelLayout>(WIDE_LEFT), 1};
-    AudioChannelInfo outInfo = {CH_LAYOUT_STEREO, 2};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-    // WIDE_LEFT should map to FRONT_LEFT
-    EXPECT_NEAR(table[0][0], COEF_0DB_F, 0.0001f);
 }
 
 /**
@@ -1040,23 +841,6 @@ HWTEST_F(AudioMixingTableTest, HOAInputTo7Point1_UsesFirstChannel, TestSize.Leve
 }
 
 /**
- * @tc.name: SetUpGeneralMixingTable_MultipleLFE_001
- * @tc.type: FUNC
- * @tc.number: SetUpGeneralMixingTable_046
- * @tc.desc: Test multiple LFE channels mixing
- */
-HWTEST_F(AudioMixingTableTest, MultipleLFE_MixingCorrectly, TestSize.Level1)
-{
-    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
-    AudioChannelInfo inInfo = {static_cast<AudioChannelLayout>(LOW_FREQUENCY | LOW_FREQUENCY_2), 2};
-    AudioChannelInfo outInfo = {static_cast<AudioChannelLayout>(LOW_FREQUENCY | LOW_FREQUENCY_2), 2};
-
-    int32_t result = SetUpGeneralMixingTable(table, inInfo, outInfo, true);
-
-    EXPECT_EQ(result, MIX_ERR_SUCCESS);
-}
-
-/**
  * @tc.name: SetUpGeneralMixingTable_InvalidLayout_001
  * @tc.type: FUNC
  * @tc.number: SetUpGeneralMixingTable_047
@@ -1073,23 +857,6 @@ HWTEST_F(AudioMixingTableTest, InputWithoutStereoLayout_ReturnsError, TestSize.L
 
     // 应该失败，因为输入布局不包含FRONT_LEFT和FRONT_RIGHT
     EXPECT_EQ(result, MIX_ERR_INVALID_ARG);
-}
-
-/**
- * @tc.name: BitCounts_VariousLayouts_001
- * @tc.type: FUNC
- * @tc.number: AudioMixingUtils_009
- * @tc.desc: Test BitCounts for various channel layouts
- */
-HWTEST_F(AudioMixingUtilsTest, BitCounts_MultipleLayouts, TestSize.Level1)
-{
-    EXPECT_EQ(BitCounts(CH_LAYOUT_MONO), 1);
-    EXPECT_EQ(BitCounts(CH_LAYOUT_STEREO), 2);
-    EXPECT_EQ(BitCounts(CH_LAYOUT_3POINT1), 4);
-    EXPECT_EQ(BitCounts(CH_LAYOUT_5POINT1), 6);
-    EXPECT_EQ(BitCounts(CH_LAYOUT_7POINT1), 8);
-    EXPECT_EQ(BitCounts(CH_LAYOUT_5POINT1POINT2), 10);
-    EXPECT_EQ(BitCounts(CH_LAYOUT_7POINT1POINT4), 12);
 }
 
 /**

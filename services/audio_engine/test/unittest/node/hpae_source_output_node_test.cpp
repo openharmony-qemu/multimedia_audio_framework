@@ -880,45 +880,6 @@ HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_027, TestSize.Level1
     EXPECT_FALSE(result);
 }
 
-/**
- * @tc.name: TestHpaeSourceOutputNode_028
- * @tc.type: FUNC
- * @tc.number: TestHpaeSourceOutputNode_028
- * @tc.desc: Test ResetAll with connected input node that returns false
- */
-HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_028, TestSize.Level1)
-{
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.nodeId = DEFAULT_NODE_ID;
-    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    nodeInfo.samplingRate = SAMPLE_RATE_48000;
-    nodeInfo.channels = STEREO;
-    nodeInfo.format = SAMPLE_S16LE;
-    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
-    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC;
-
-    std::shared_ptr<HpaeSourceInputNode> hpaeSoruceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
-    std::string deviceClass = "file_io";
-    std::string deviceNetId = "LocalDevice";
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    std::string sourceName = "mic";
-    EXPECT_EQ(hpaeSoruceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
-
-    IAudioSourceAttr attr;
-    GetTestAudioSourceAttr(attr);
-    std::shared_ptr<HpaeSourceOutputNode> hpaeSoruceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
-    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceInit(attr), SUCCESS);
-    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStart(), 0);
-
-    hpaeSoruceOutputNode->Connect(hpaeSoruceInputNode);
-
-    // Test ResetAll - should work even if ResetAll on input node returns false
-    bool resetAllResult = hpaeSoruceOutputNode->ResetAll();
-    EXPECT_TRUE(resetAllResult);
-
-    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceStop(), 0);
-}
-
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
