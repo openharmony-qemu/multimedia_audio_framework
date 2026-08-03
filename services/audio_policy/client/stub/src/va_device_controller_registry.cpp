@@ -34,8 +34,24 @@ void VADeviceControllerRegistry::RegisterController(const std::string &address,
             address.empty(), controller == nullptr);
         return;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
-    controllerMap_[address] = controller;
+    sptr<IRemoteObject> object = controller->AsObject();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        controllerMap_[address] = controller;
+    }
+    if (object == nullptr) {
+        AUDIO_WARNING_LOG("controller object is null, addressLen=%{public}zu", address.size());
+        return;
+    }
+    sptr<VADeviceControllerDeathRecipient> recipient = new (std::nothrow) VADeviceControllerDeathRecipient(
+        [address]() { VADeviceControllerRegistry::GetInstance().UnregisterController(address); });
+    if (recipient == nullptr) {
+        AUDIO_WARNING_LOG("create death recipient failed, addressLen=%{public}zu", address.size());
+        return;
+    }
+    if (!object->AddDeathRecipient(recipient)) {
+        AUDIO_WARNING_LOG("AddDeathRecipient failed, addressLen=%{public}zu", address.size());
+    }
 }
 
 void VADeviceControllerRegistry::UnregisterController(const std::string &address)

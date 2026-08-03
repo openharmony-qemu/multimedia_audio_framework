@@ -19,7 +19,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include "audio_effect.h"
 #include "audio_info.h"
+#include "effect_instance.h"
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
 #include "audio_device_info.h"
@@ -557,6 +559,69 @@ void RefreshProcessClusterByDeviceFuzzTest()
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     CHECK_AND_RETURN(rendererManager != nullptr);
     rendererManager->RefreshProcessClusterByDevice();
+}
+
+// RefreshProcessClusterByDevice's body iterates sinkInputNodeMap_; the existing case
+// above calls it on an empty manager so the loop never runs and
+// RefreshProcessClusterByDeviceInner stays uncovered. Create + Start a stream first so
+// the loop body executes on a real RUNNING node.
+void RefreshProcessClusterByDeviceWithStreamFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    CHECK_AND_RETURN(hpaeRendererManager != nullptr);
+    hpaeRendererManager->Init();
+    WaitForMsgProcessing(hpaeRendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    hpaeRendererManager->CreateStream(streamInfo);
+    std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    uint32_t sessionId = GetData<bool>() ? streamInfo.sessionId : GetData<uint32_t>();
+    hpaeRendererManager->RegisterWriteCallback(sessionId, writeIncDataCb);
+    hpaeRendererManager->Start(sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    hpaeRendererManager->RefreshProcessClusterByDevice();
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    hpaeRendererManager->Stop(sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
+    hpaeRendererManager->DestroyStream(sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
+    hpaeRendererManager->DeInit();
+}
+
+// SetAudioEffectMode reaches UpdateProcessClusterConnection only when the session is
+// RUNNING, connected and the mode actually changes (hpae_renderer_manager.cpp:1536).
+// The existing SetAudioEffectMode case uses a random sessionId on an empty manager and
+// early-returns. Create + Start a stream, then switch the mode away from the EFFECT_NONE
+// default so the change branch (and UpdateProcessClusterConnection) runs.
+void SetAudioEffectModeWithRunningStreamFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    CHECK_AND_RETURN(hpaeRendererManager != nullptr);
+    hpaeRendererManager->Init();
+    WaitForMsgProcessing(hpaeRendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    hpaeRendererManager->CreateStream(streamInfo);
+    std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    uint32_t sessionId = GetData<bool>() ? streamInfo.sessionId : GetData<uint32_t>();
+    hpaeRendererManager->RegisterWriteCallback(sessionId, writeIncDataCb);
+    hpaeRendererManager->Start(sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    hpaeRendererManager->SetAudioEffectMode(sessionId, static_cast<int32_t>(EFFECT_DEFAULT));
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    hpaeRendererManager->Stop(sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
+    hpaeRendererManager->DestroyStream(sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
+    hpaeRendererManager->DeInit();
 }
 
 void DeleteInputSessionFuzzTest()
@@ -1104,6 +1169,54 @@ void SessionEffectLifecycleFuzzTest()
     rendererManager->DeInit();
 }
 
+// The lifecycle test above passes a nullptr instance, so CreateSessionEffect early-returns at the
+// null-instance guard and the deep path (cluster lookup + CreateSessionEffectNode + attach-state +
+// OnSessionEffectMaterialized) is never reached; with no SE node ever created, DestroySessionEffect's
+// success path is unreachable too. Use a real EffectInstance (Init without an injected library is a
+// safe no-op, per MakeTestEffectInstance in hpae_direct_renderer_manager_session_effect_test.cpp) so
+// Create proceeds, the SE node materializes, and Destroy/SetParameter/HasSessionEffect reach their
+// deep branches. Mirrors UT SE_Create_001 (CreateStream + Start + real instance -> node created).
+void SessionEffectDeepLifecycleFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    CHECK_AND_RETURN(rendererManager != nullptr);
+    rendererManager->Init();
+    WaitForMsgProcessing(rendererManager);
+    HpaeStreamInfo streamInfo;
+    InitRenderStreamInfo(streamInfo);
+    rendererManager->CreateStream(streamInfo);
+    rendererManager->Start(streamInfo.sessionId);
+    WaitForMsgProcessing(rendererManager);
+
+    AudioEffectConfig effectConfig;
+    effectConfig.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    effectConfig.inputCfg.channels = STEREO;
+    effectConfig.inputCfg.format = SAMPLE_S16LE;
+    effectConfig.outputCfg = effectConfig.inputCfg;
+    auto instance = std::make_shared<EffectInstance>();
+    instance->Init("audio_aiss_enhance", effectConfig);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    rendererManager->PostCreateSessionEffect(sessionId, "audio_aiss_enhance", instance, effectConfig);
+    WaitForMsgProcessing(rendererManager);
+    (void)rendererManager->HasSessionEffect(sessionId);
+    rendererManager->PostSetSessionEffectParameter(sessionId, GetData<int32_t>(), GetData<float>());
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->PostDestroySessionEffect(sessionId);
+    WaitForMsgProcessing(rendererManager);
+    // Random (likely absent) sessionId -> DestroySessionEffect not-found branch.
+    rendererManager->PostDestroySessionEffect(GetData<uint32_t>());
+    WaitForMsgProcessing(rendererManager);
+
+    rendererManager->Stop(sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DestroyStream(sessionId);
+    WaitForMsgProcessing(rendererManager);
+    rendererManager->DeInit();
+}
+
 // Exercise the session-effect API with a sessionId that was never created via CreateStream,
 // plus IsValidSession and the async Post* wrappers. Hits the not-found / false early-return
 // branches (and IsValidSession / PostCreateSessionEffect, which the lifecycle test never calls).
@@ -1180,6 +1293,8 @@ TestFuncs g_testFuncs[] = {
     CreateDefaultProcessClusterFuzzTest,
     CreateProcessClusterInnerSwitchCaseFuzzTest,
     RefreshProcessClusterByDeviceFuzzTest,
+    RefreshProcessClusterByDeviceWithStreamFuzzTest,
+    SetAudioEffectModeWithRunningStreamFuzzTest,
     DeleteInputSessionFuzzTest,
     DeleteProcessClusterFuzzTest,
     ConnectInputSessionFuzzTest,
@@ -1196,6 +1311,7 @@ TestFuncs g_testFuncs[] = {
     CoBufferConnectDisconnectSequenceFuzzTest,
     ConnectProcessClusterFullFlowFuzzTest,
     SessionEffectLifecycleFuzzTest,
+    SessionEffectDeepLifecycleFuzzTest,
     SessionEffectInvalidSessionFuzzTest,
     HDFDumpFuzzTest,
     StartWithSyncIdFuzzTest,

@@ -32,8 +32,10 @@ public:
     static uint32_t SerializeToUint32(const DfxStatInt32 &data);
     static std::string SerializeToJSONString(const RendererStats &data);
     static std::string SerializeToJSONString(const std::vector<InterruptEffect> &data);
-    template<class T>
-    static std::string SerializeToJSONString(const std::vector<T> &data);
+    static std::string SerializeToJSONString(const std::vector<uint8_t> &data);
+    static std::string SerializeToJSONString(const std::vector<uint32_t> &data);
+    static std::string SerializeToJSONString(const std::vector<uint64_t> &data);
+    static std::string SerializeToJSONString(const std::vector<std::string> &data);
     static std::string SerializeToJSONString(const CapturerStats &data);
 };
 

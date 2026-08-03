@@ -33,6 +33,7 @@
 #include "microphone_descriptor.h"
 #include "audio_spatialization_types.h"
 #include "audio_stream_descriptor.h"
+#include "stream_flag_info.h"
 #include "audio_debug_info.h"
 #include "virtual_audio_interface.h"
 #include "audio_capturer_options.h"
@@ -351,7 +352,7 @@ public:
         const std::shared_ptr<SystemVolumeChangeByFilterCallback> &callback);
 
     int32_t CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        uint32_t &flag, uint32_t &sessionId, std::string &networkId);
+        StreamFlagInfo &flagInfo, uint32_t &sessionId, std::string &networkId);
 
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);

@@ -256,13 +256,13 @@ int32_t HdiAdapterManager::SetExtraParameters(HdiDeviceManagerType type, const s
     return SetAudioParameter(type, adapterName, AudioParamKey::NONE, condition, value);
 }
 
-int32_t HdiAdapterManager::GetExtraParameters(const std::vector<std::string> &subKeys,
+int32_t HdiAdapterManager::GetExtraParameters(const std::string &adapterName, const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
     std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
     for (const std::string &subKey : subKeys) {
-        std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, subKey);
+        std::string value = deviceManager->GetAudioParameter(adapterName, AudioParamKey::NONE, subKey);
         result.emplace_back(subKey, value);
     }
     return SUCCESS;

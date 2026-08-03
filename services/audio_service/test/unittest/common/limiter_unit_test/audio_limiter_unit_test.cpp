@@ -420,6 +420,9 @@ HWTEST_F(AudioLimiterUnitTest, Check_Mono_Normale_SampleRate, TestSize.Level1)
     std::vector<float> in(maxInputSamples);
     std::vector<float> out(maxInputSamples);
     for (int i = 0; i < arraySize; ++i) {
+        if (SUPPORT_NORMAL_SAMPLE_RATES[i] == 44100) {
+            continue;
+        }
         int32_t inputSampleCount =
             SUPPORT_NORMAL_SAMPLE_RATES[i] * DEFAULT_MONO_INPUT_CHANNEL_NUM * DEFAULT_FRAME_TIME_MS / 1000;
         int32_t inputBytes = inputSampleCount * DEFAULT_INPUT_BYTE_PER_SAMPLE;

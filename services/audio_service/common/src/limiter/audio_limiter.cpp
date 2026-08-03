@@ -76,7 +76,7 @@ int32_t AudioLimiter::ValidateConfigParams(int32_t inputFrameBytes, int32_t byte
                                  bytePerSample == AUDIO_LMT_ALGO_BYTE_PER_SAMPLE,
         ERR_INVALID_PARAM,
         "Invalid input parameters");
-    CHECK_AND_RETURN_RET_LOG((inputFrameBytes / bytePerSample / channels) % PROC_COUNT == 0,
+    CHECK_AND_RETURN_RET_LOG((inputFrameBytes / bytePerSample) % PROC_COUNT == 0,
         ERR_INVALID_PARAM,
         "Invalid inputFrameBytes, frameLen must be an even number, intput frameLen is %{public}d",
         inputFrameBytes / (bytePerSample * channels));
@@ -86,13 +86,6 @@ int32_t AudioLimiter::ValidateConfigParams(int32_t inputFrameBytes, int32_t byte
         ERR_INVALID_PARAM,
         "Invalid inputFrameBytes, min request frameBytes is %{public}d",
         bytePerSample * PROC_COUNT * channels);
-
-    CHECK_AND_RETURN_RET_LOG(newAlgoFrameLen % channels == 0,
-        ERR_INVALID_PARAM,
-        "Invalid algoFrameLen, algoFrameLen must be divisible by channels, algoFrameLen is %{public}d,"
-        " channels is %{public}d",
-        newAlgoFrameLen,
-        channels);
     return SUCCESS;
 }
 
@@ -138,7 +131,7 @@ int32_t AudioLimiter::SetConfig(int32_t inputFrameBytes, int32_t bytePerSample, 
     algoFrameLen_ = newAlgoFrameLen;
 
     sampleRate_ = static_cast<uint32_t>(sampleRate);
-    channels_ = static_cast<uint32_t>(channels);
+    channels_ = channels;
     OpenDumpFiles(sampleRate, channels);
 
     AUDIO_INFO_LOG("SetConfig Success, inputFrameBytes = %{public}d, bytePerSample = %{public}d, sampleRate = "

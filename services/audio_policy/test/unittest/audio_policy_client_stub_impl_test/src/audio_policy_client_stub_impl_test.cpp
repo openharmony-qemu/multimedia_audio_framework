@@ -2239,5 +2239,377 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_095, TestSize.Le
     EXPECT_TRUE(cb1->isCallbackInvoked_);
     EXPECT_TRUE(cb2->isCallbackInvoked_);
 }
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_096
+* @tc.desc  : Test OnVolumeKeyEvent with expired callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_096, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto mockCallback = std::make_shared<ConcreteVolumeKeyEventCallback>();
+    EXPECT_EQ(audioPolicyClient->AddVolumeKeyEventCallback(mockCallback), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->volumeKeyEventCallbackList_.size(), 1);
+
+    mockCallback.reset();
+    VolumeEvent volumeEvent;
+    EXPECT_EQ(audioPolicyClient->OnVolumeKeyEvent(volumeEvent), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_097
+* @tc.desc  : Test RemoveDeviceChangeCallback with non-matching callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_097, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb0 = std::make_shared<ConcreteAudioManagerDeviceChangeCallback>();
+    std::shared_ptr<AudioManagerDeviceChangeCallback> cb1 =
+        std::make_shared<ConcreteAudioManagerDeviceChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG, cb0), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->deviceChangeCallbackList_.size(), 1);
+
+    EXPECT_EQ(audioPolicyClient->RemoveDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG, cb1), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->deviceChangeCallbackList_.size(), 1);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_098
+* @tc.desc  : Test OnRendererDeviceChange with non-registered sessionId.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_098, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    AudioDeviceDescriptor preDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+    EXPECT_EQ(audioPolicyClient->OnRendererDeviceChange(9999, deviceInfo, reason, preDeviceInfo),
+        ERR_OPERATION_FAILED);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_099
+* @tc.desc  : Test OnCapturerStateChange with no registered callbacks.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_099, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    EXPECT_EQ(audioPolicyClient->OnCapturerStateChange(audioCapturerChangeInfos), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_100
+* @tc.desc  : Test AddSpatializationEnabledChangeCallback with existing callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_100, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioSpatializationEnabledChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddSpatializationEnabledChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->AddSpatializationEnabledChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetSpatializationEnabledChangeCallbackSize(), 2);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_101
+* @tc.desc  : Test RemoveSpatializationEnabledChangeCallback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_101, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioSpatializationEnabledChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddSpatializationEnabledChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetSpatializationEnabledChangeCallbackSize(), 1);
+    EXPECT_EQ(audioPolicyClient->RemoveSpatializationEnabledChangeCallback(), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetSpatializationEnabledChangeCallbackSize(), 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_102
+* @tc.desc  : Test OnSpatializationEnabledChange with nullptr callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_102, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<AudioSpatializationEnabledChangeCallback> nullCb = nullptr;
+    audioPolicyClient->AddSpatializationEnabledChangeCallback(nullCb);
+    bool enabled = true;
+    EXPECT_EQ(audioPolicyClient->OnSpatializationEnabledChange(enabled), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_103
+* @tc.desc  : Test AddHeadTrackingEnabledChangeCallback with existing callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_103, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioHeadTrackingEnabledChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddHeadTrackingEnabledChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->AddHeadTrackingEnabledChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetHeadTrackingEnabledChangeCallbacSize(), 2);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_104
+* @tc.desc  : Test RemoveHeadTrackingEnabledChangeCallback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_104, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioHeadTrackingEnabledChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddHeadTrackingEnabledChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetHeadTrackingEnabledChangeCallbacSize(), 1);
+    EXPECT_EQ(audioPolicyClient->RemoveHeadTrackingEnabledChangeCallback(), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetHeadTrackingEnabledChangeCallbacSize(), 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_105
+* @tc.desc  : Test OnHeadTrackingEnabledChange with nullptr callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_105, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> nullCb = nullptr;
+    audioPolicyClient->AddHeadTrackingEnabledChangeCallback(nullCb);
+    bool enabled = true;
+    EXPECT_EQ(audioPolicyClient->OnHeadTrackingEnabledChange(enabled), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_106
+* @tc.desc  : Test AddRingerModeCallback with existing callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_106, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioRingerModeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddRingerModeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->AddRingerModeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->ringerModeCallbackList_.size(), 2);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_107
+* @tc.desc  : Test AddAudioSessionCallback with existing callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_107, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioSessionCallback>();
+    EXPECT_EQ(audioPolicyClient->AddAudioSessionCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->AddAudioSessionCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetAudioSessionCallbackSize(), 2);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_108
+* @tc.desc  : Test AddMicStateChangeCallback with existing callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_108, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioManagerMicStateChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddMicStateChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->AddMicStateChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetMicStateChangeCallbackSize(), 2);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_109
+* @tc.desc  : Test AddCapturerStateChangeCallback with existing callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_109, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioCapturerStateChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddCapturerStateChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->AddCapturerStateChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetCapturerStateChangeCallbackSize(), 2);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_110
+* @tc.desc  : Test AddDeviceChangeCallback with existing callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_110, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioManagerDeviceChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG, cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->AddDeviceChangeCallback(DeviceFlag::ALL_DEVICES_FLAG, cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->deviceChangeCallbackList_.size(), 2);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_111
+* @tc.desc  : Test AddRendererStateChangeCallback with existing callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_111, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioRendererStateChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddRendererStateChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetRendererStateChangeCallbackSize(), 1);
+    EXPECT_EQ(audioPolicyClient->AddRendererStateChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetRendererStateChangeCallbackSize(), 2);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_112
+* @tc.desc  : Test RemoveVolumeKeyEventCallback with non-existent callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_112, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb0 = std::make_shared<ConcreteVolumeKeyEventCallback>();
+    auto cb1 = std::make_shared<ConcreteVolumeKeyEventCallback>();
+    EXPECT_EQ(audioPolicyClient->AddVolumeKeyEventCallback(cb0), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->volumeKeyEventCallbackList_.size(), 1);
+    EXPECT_EQ(audioPolicyClient->RemoveVolumeKeyEventCallback(cb1), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->volumeKeyEventCallbackList_.size(), 1);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_113
+* @tc.desc  : Test OnSpatializationEnabledChangeForAnyDevice with nullptr callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_113, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<AudioSpatializationEnabledChangeCallback> nullCb = nullptr;
+    audioPolicyClient->AddSpatializationEnabledChangeCallback(nullCb);
+    bool enabled = true;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_EQ(audioPolicyClient->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_114
+* @tc.desc  : Test OnHeadTrackingEnabledChangeForAnyDevice with nullptr callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_114, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> nullCb = nullptr;
+    audioPolicyClient->AddHeadTrackingEnabledChangeCallback(nullCb);
+    bool enabled = true;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_EQ(audioPolicyClient->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, enabled), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_115
+* @tc.desc  : Test OnRingerModeUpdated with nullptr callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_115, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<AudioRingerModeCallback> nullCb = nullptr;
+    audioPolicyClient->AddRingerModeCallback(nullCb);
+    EXPECT_EQ(audioPolicyClient->ringerModeCallbackList_.size(), 1);
+    audioPolicyClient->OnRingerModeUpdated(AudioRingerMode::RINGER_MODE_SILENT);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_116
+* @tc.desc  : Test OnAudioSessionDeactive with nullptr callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_116, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<AudioSessionCallback> nullCb = nullptr;
+    audioPolicyClient->AddAudioSessionCallback(nullCb);
+    EXPECT_EQ(audioPolicyClient->GetAudioSessionCallbackSize(), 1);
+    int32_t deactiveEvent = 0;
+    EXPECT_EQ(audioPolicyClient->OnAudioSessionDeactive(deactiveEvent), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_117
+* @tc.desc  : Test OnMicStateUpdated with nullptr callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_117, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<AudioManagerMicStateChangeCallback> nullCb = nullptr;
+    audioPolicyClient->AddMicStateChangeCallback(nullCb);
+    EXPECT_EQ(audioPolicyClient->GetMicStateChangeCallbackSize(), 1);
+    MicStateChangeEvent micStateChangeEvent;
+    EXPECT_EQ(audioPolicyClient->OnMicStateUpdated(micStateChangeEvent), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_118
+* @tc.desc  : Test OnCapturerStateChange with expired callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_118, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioCapturerStateChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddCapturerStateChangeCallback(cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->GetCapturerStateChangeCallbackSize(), 1);
+
+    cb.reset();
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    EXPECT_EQ(audioPolicyClient->OnCapturerStateChange(audioCapturerChangeInfos), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_119
+* @tc.desc  : Test OnSpatializationEnabledChangeForCurrentDevice with nullptr callback.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_119, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> nullCb = nullptr;
+    audioPolicyClient->AddSpatializationEnabledChangeForCurrentDeviceCallback(nullCb);
+    bool enabled = true;
+    EXPECT_EQ(audioPolicyClient->OnSpatializationEnabledChangeForCurrentDevice(enabled), SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_120
+* @tc.desc  : Test RemoveDeviceChangeCallback with non-matching flag.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_120, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioManagerDeviceChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->AddDeviceChangeCallback(DeviceFlag::OUTPUT_DEVICES_FLAG, cb), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->deviceChangeCallbackList_.size(), 1);
+
+    std::shared_ptr<AudioManagerDeviceChangeCallback> cb2 =
+        std::make_shared<ConcreteAudioManagerDeviceChangeCallback>();
+    EXPECT_EQ(audioPolicyClient->RemoveDeviceChangeCallback(DeviceFlag::OUTPUT_DEVICES_FLAG, cb2), SUCCESS);
+    EXPECT_EQ(audioPolicyClient->deviceChangeCallbackList_.size(), 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS

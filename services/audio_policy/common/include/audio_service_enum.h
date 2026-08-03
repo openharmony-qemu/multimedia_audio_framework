@@ -24,6 +24,7 @@ enum SessionOperation : uint32_t {
     SESSION_OPERATION_STOP,
     SESSION_OPERATION_RELEASE,
     SESSION_OPERATION_STANDBY,
+    SESSION_OPERATION_CREATE,
 };
 
 enum SessionOperationMsg : uint32_t {

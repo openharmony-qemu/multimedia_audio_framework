@@ -1601,13 +1601,17 @@ bool AudioDeviceManager::CheckAllStreamsSilentOrStandByOnDevice()
     return hasRunningSilentStream ;
 }
 
-bool AudioDeviceManager::HasWirelessDevicesConnected()
+// This function is only used in AudioRouterCenter
+bool AudioDeviceManager::HasSpecificDevicesConnected()
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &deviceDesc : connectedDevices_) {
         CHECK_AND_CONTINUE(deviceDesc != nullptr);
-        if (AudioPolicyUtils::GetInstance().IsWirelessDevice(deviceDesc->deviceType_) &&
-            deviceDesc->connectState_ != VIRTUAL_CONNECTED) {
+        if ((AudioPolicyUtils::GetInstance().IsWirelessDevice(deviceDesc->deviceType_) &&
+            deviceDesc->connectState_ != VIRTUAL_CONNECTED) ||
+            deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET ||
+            deviceDesc->deviceType_ == DEVICE_TYPE_ACCESSORY ||
+            deviceDesc->deviceType_ == DEVICE_TYPE_BT_SPP) {
             return true;
         }
     }

@@ -716,34 +716,6 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
     return streamDescs;
 }
 
-bool AudioPipeManager::HasRunningScoOutputStream()
-{
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    for (auto &it : curPipeList_) {
-        if (it == nullptr || it->pipeRole_ != PIPE_ROLE_OUTPUT) {
-            continue;
-        }
-        for (auto &desc : it->streamDescriptors_) {
-            if (desc == nullptr || desc->streamStatus_ != STREAM_STATUS_STARTED || desc->newDeviceDescs_.empty()) {
-                continue;
-            }
-            if (desc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-                return true;
-            }
-        }
-    }
-    for (auto &entry : modemCommunicationIdMap_) {
-        if (entry.second == nullptr || entry.second->streamStatus_ != STREAM_STATUS_STARTED ||
-            entry.second->newDeviceDescs_.empty()) {
-            continue;
-        }
-        if (entry.second->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-            return true;
-        }
-    }
-    return false;
-}
-
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetStreamDescsByIoHandle(AudioIOHandle id)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -1380,49 +1352,6 @@ bool AudioPipeManager::IsStreamUseUltraFastRoute(uint32_t sessionId)
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             CHECK_AND_CONTINUE(desc->GetSessionId() == sessionId);
             return pipeInfo->GetUltraFastFlag();
-        }
-    }
-    return false;
-}
-
-bool AudioPipeManager::HasRunningRecognitionCapturerStream(DeviceType type)
-{
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    for (auto &pipeInfo : curPipeList_) {
-        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
-        for (auto &desc : pipeInfo->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
-            (desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
-            desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
-            ((type == DEVICE_TYPE_NONE) ||
-                (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
-                desc->newDeviceDescs_[0]->deviceType_ == type &&
-                desc->newDeviceDescs_[0]->isVrSupported_))) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-bool AudioPipeManager::HasRunningNormalCapturerStream(DeviceType type)
-{
-    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    for (auto &pipeInfo : curPipeList_) {
-        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
-        for (auto &desc : pipeInfo->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
-                (desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_RECOGNITION &&
-                 desc->capturerInfo_.sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
-                ((type == DEVICE_TYPE_NONE) ||
-                 (!desc->newDeviceDescs_.empty() && desc->newDeviceDescs_[0] != nullptr &&
-                  desc->newDeviceDescs_[0]->deviceType_ == type))) {
-                AUDIO_INFO_LOG("Running Normal Capturer stream : %{public}d with device %{public}d",
-                    desc->sessionId_, type);
-                return true;
-            }
         }
     }
     return false;

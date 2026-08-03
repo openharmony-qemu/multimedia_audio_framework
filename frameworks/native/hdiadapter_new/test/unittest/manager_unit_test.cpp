@@ -561,7 +561,7 @@ HWTEST_F(ManagerUnitTest, GetExtraParameters_001, TestSize.Level1)
     EXPECT_CALL(*mockDeviceManager, GetAudioParameter("primary", AudioParamKey::NONE, "subkey_2"))
         .WillOnce(testing::Return("value_2"));
 
-    int32_t ret = manager.GetExtraParameters(subKeys, result);
+    int32_t ret = manager.GetExtraParameters("primary", subKeys, result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_THAT(result, testing::UnorderedElementsAre(
         std::make_pair(std::string("subkey_1"), std::string("value_1")),
@@ -585,7 +585,7 @@ HWTEST_F(ManagerUnitTest, GetExtraParameters_002, TestSize.Level1)
     EXPECT_CALL(*mockDeviceManager, GetAudioParameter("primary", AudioParamKey::NONE, "subkey_3"))
         .WillOnce(testing::Return("value_3"));
 
-    int32_t ret = manager.GetExtraParameters(subKeys, result);
+    int32_t ret = manager.GetExtraParameters("primary", subKeys, result);
     EXPECT_EQ(ret, SUCCESS);
     ASSERT_EQ(1u, result.size());
     EXPECT_EQ("subkey_3", result[0].first);

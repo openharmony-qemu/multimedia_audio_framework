@@ -716,16 +716,6 @@ void MicIndicatorFuzzTest()
     (void)RecordPrivacyManager::GetInstance().StopUsingMicrophone(
         capturerInServer_->processConfig_.appInfo.appTokenId);
     (void)capturerInServer_->CheckBgRecordPermission(CAPTURER_RUNNING);
-    SwitchStreamInfo info = {
-        capturerInServer_->streamIndex_,
-        capturerInServer_->processConfig_.callerUid,
-        capturerInServer_->processConfig_.appInfo.appUid,
-        capturerInServer_->processConfig_.appInfo.appPid,
-        capturerInServer_->processConfig_.appInfo.appTokenId,
-        CAPTURER_RUNNING,
-    };
-    (void)SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
-    (void)SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
     (void)capturerInServer_->CheckBgRecordPermission(CAPTURER_RUNNING);
     capturerInServer_->isMicIndicatorOn_ = g_fuzzUtils.GetData<bool>();
     (void)capturerInServer_->TurnOnMicIndicator();

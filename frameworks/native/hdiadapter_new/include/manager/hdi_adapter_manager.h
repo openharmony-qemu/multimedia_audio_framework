@@ -71,7 +71,7 @@ public:
     void UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force = false);
     int32_t SetExtraParameters(HdiDeviceManagerType type, const std::string &adapterName,
         const std::string &condition, const std::string &value);
-    int32_t GetExtraParameters(const std::vector<std::string> &subKeys,
+    int32_t GetExtraParameters(const std::string &adapterName, const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
 
     int32_t ProcessSink(const std::function<int32_t(uint32_t, std::shared_ptr<IAudioRenderSink>)> &processFunc);

@@ -40,7 +40,6 @@ namespace AudioStandard {
 namespace {
 const int64_t RENDER_FRAME_LIMIT = 50; // 50ms
 const int64_t RENDER_FRAME_REPORT_LIMIT = 100000000; // 100ms
-static constexpr uint32_t AUDIO_TTS = 11;
 
 const std::unordered_map<std::string, HdiRenderOffset> HALNAME_TO_HDI_OFFSET = {
     {HDI_ID_INFO_USB, HDI_RENDER_OFFSET_USB},
@@ -987,7 +986,7 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
         param.type = AUDIO_IN_COMMUNICATION;
         param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP));
     } else if (halName_ == HDI_ID_INFO_VOICE_CALL_ASSISTANT) {
-        param.type = static_cast<AudioCategory>(AUDIO_TTS);
+        param.type = AUDIO_TTS;
         param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE,
             HDI_RENDER_OFFSET_VOICE_CALL_ASSISTANT));
     }

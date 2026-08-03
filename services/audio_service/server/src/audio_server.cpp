@@ -78,6 +78,7 @@
 #include "audio_injector_service.h"
 #include "audio_sink_latency_fetcher.h"
 #include "audio_system_load_listener.h"
+#include "cJSON.h"
 #ifdef FEATURE_CALL_MANAGER
 #include "call_manager_client.h"
 #include "securec.h"
@@ -114,6 +115,7 @@ const std::string AUDIO_EFFECT_KEY = "audio_effect";
 const std::string NETWORK_ID_KEY = "NETWORK_ID";
 const std::string ZONE_ID_CHANGE = "zone_id_change";
 const std::string MAIN_KEY_DFX = "dfx";
+const std::string ACCESSORY_EXTRA_KEY = "accessory_extra";
 const std::string SUB_KEY_UPDATE_WAKEUP_TRACE_RESULT = "update_wakeup_trace_result";
 constexpr int32_t UID_CALL_MANAGER_SA = 1001;
 const unsigned int TIME_OUT_SECONDS = 10;
@@ -1102,16 +1104,18 @@ void AudioServer::HapReportWakeupEvent(const std::string &key,
     CHECK_AND_RETURN(key == MAIN_KEY_DFX);
     for (const auto &kvPair : kvpairs) {
         CHECK_AND_CONTINUE(kvPair.first == SUB_KEY_UPDATE_WAKEUP_TRACE_RESULT);
-        nlohmann::json json;
-        CHECK_AND_BREAK_LOG(nlohmann::json::accept(kvPair.second) == true,
-            "Failed to parse dfx: invalid JSON format");
-        json = nlohmann::json::parse(kvPair.second);
-        CHECK_AND_BREAK_LOG((json.contains("stage") && json.contains("result") && json.contains("errCode") &&
-            json["stage"].is_string() && json["result"].is_string() && json["errCode"].is_string()),
-            "Failed to parse update_wakeup_trace_result: contains or type check error");
-        std::string stageStr = json["stage"].get<std::string>();
-        std::string resultStr = json["result"].get<std::string>();
-        std::string errCodeStr = json["errCode"].get<std::string>();
+        cJSON *root = cJSON_Parse(kvPair.second.c_str());
+        CHECK_AND_RETURN_LOG(root != nullptr, "parse json failed");
+        cJSON *stageObj = cJSON_GetObjectItem(root, "stage");
+        cJSON *resultObj = cJSON_GetObjectItem(root, "result");
+        cJSON *errCodeObj = cJSON_GetObjectItem(root, "errCode");
+        CHECK_AND_CALL_FUNC_RETURN_LOG(stageObj != nullptr && resultObj != nullptr && errCodeObj != nullptr &&
+            cJSON_IsString(stageObj) && cJSON_IsString(resultObj) && cJSON_IsString(errCodeObj),
+            cJSON_Delete(root), "invalid json fields");
+        std::string stageStr = stageObj->valuestring;
+        std::string resultStr = resultObj->valuestring;
+        std::string errCodeStr = errCodeObj->valuestring;
+        cJSON_Delete(root);
 
         int32_t stage = 0;
         int32_t result = 0;
@@ -1251,7 +1255,13 @@ int32_t AudioServer::SetCommonExtraParameters(const std::string &key,
     bool isParamValid = ProcessKeyValuePairs(key, kvpairs, mainKeyIt->second, value);
     CHECK_AND_RETURN_RET(isParamValid, ERR_INVALID_PARAM);
 
-    return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_LOCAL, "primary", "", value);
+    if (key == ACCESSORY_EXTRA_KEY) {
+        return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_LOCAL,
+            "accessory", "", value);
+    } else {
+        return HdiAdapterManager::GetInstance().SetExtraParameters(HDI_DEVICE_MANAGER_TYPE_LOCAL,
+            "primary", "", value);
+    }
 }
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,
@@ -1525,7 +1535,7 @@ int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
     } else if (mainKey == COCKPIT_DIRECT_KEY) {
         CHECK_AND_RETURN_RET_LOG(IsCockpitDirectCallerAllowed(), ERR_PERMISSION_DENIED,
             "get cockpit direct extra parameters failed: invalid caller uid");
-        return HdiAdapterManager::GetInstance().GetExtraParameters(subKeys, result);
+        return HdiAdapterManager::GetInstance().GetExtraParameters("primary", subKeys, result);
     }
 
     if (audioParameterKeys.empty()) {
@@ -1553,7 +1563,12 @@ int32_t AudioServer::GetExtraParametersInner(const std::string &mainKey,
             validSubKeys.emplace_back(subKey);
         }
     }
-    return HdiAdapterManager::GetInstance().GetExtraParameters(validSubKeys, result);
+
+    if (mainKey == ACCESSORY_EXTRA_KEY) {
+        return HdiAdapterManager::GetInstance().GetExtraParameters("accessory", validSubKeys, result);
+    } else {
+        return HdiAdapterManager::GetInstance().GetExtraParameters("primary", validSubKeys, result);
+    }
 }
 
 int32_t AudioServer::GetAudioParameter(const std::string &key, std::string &value)
@@ -2987,20 +3002,6 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
     AppInfo appInfo = config.appInfo;
     if (PermissionUtil::VerifyBackgroundCapture(appInfo.appTokenId, appInfo.appFullTokenId)) {
         // check success
-        return true;
-    }
-
-    SwitchStreamInfo info = {
-        config.originalSessionId,
-        config.callerUid,
-        config.appInfo.appUid,
-        config.appInfo.appPid,
-        config.appInfo.appTokenId,
-        CAPTURER_PREPARED,
-    };
-    if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
-        AUDIO_INFO_LOG("switchStream is recreating, callerUid:%{public}d", config.callerUid);
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
         return true;
     }
 

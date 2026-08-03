@@ -291,5 +291,118 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, IsSameDevice_006, TestSize.Level1)
     EXPECT_TRUE(result);
 }
 
+/**
+* @tc.name  : Test IsSameDevice.
+* @tc.number: IsSameDevice_007
+* @tc.desc  : Test IsSameDevice with USB device and mismatched roles.
+*/
+HWTEST_F(AudioDeviceCommonUnitNextTest, IsSameDevice_007, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->networkId_ = "LocalNetworkId";
+    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->connectState_ = CONNECTED;
+    desc->deviceRole_ = INPUT_DEVICE;
+
+    AudioDeviceDescriptor deviceDesc = AudioDeviceDescriptor(*desc);
+    deviceDesc.deviceRole_ = OUTPUT_DEVICE;
+    bool result = audioDeviceCommon.IsSameDevice(desc, deviceDesc);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test IsSameDevice.
+* @tc.number: IsSameDevice_008
+* @tc.desc  : Test IsSameDevice with USB ARM headset and mismatched roles.
+*/
+HWTEST_F(AudioDeviceCommonUnitNextTest, IsSameDevice_008, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->networkId_ = "LocalNetworkId";
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    desc->macAddress_ = "card=2;device=0";
+    desc->connectState_ = CONNECTED;
+    desc->deviceRole_ = INPUT_DEVICE;
+
+    AudioDeviceDescriptor deviceDesc = AudioDeviceDescriptor(*desc);
+    deviceDesc.deviceRole_ = OUTPUT_DEVICE;
+    bool result = audioDeviceCommon.IsSameDevice(desc, deviceDesc);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test IsSameDevice.
+* @tc.number: IsSameDevice_009
+* @tc.desc  : Test IsSameDevice with different connectState.
+*/
+HWTEST_F(AudioDeviceCommonUnitNextTest, IsSameDevice_009, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->networkId_ = "LocalNetworkId";
+    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->connectState_ = CONNECTED;
+    desc->deviceRole_ = INPUT_DEVICE;
+
+    AudioDeviceDescriptor deviceDesc = AudioDeviceDescriptor(*desc);
+    deviceDesc.connectState_ = VIRTUAL_CONNECTED;
+    bool result = audioDeviceCommon.IsSameDevice(desc, deviceDesc);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test IsSameDevice.
+* @tc.number: IsSameDevice_010
+* @tc.desc  : Test IsSameDevice with different macAddress.
+*/
+HWTEST_F(AudioDeviceCommonUnitNextTest, IsSameDevice_010, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->networkId_ = "LocalNetworkId";
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->connectState_ = CONNECTED;
+
+    AudioDeviceDescriptor deviceDesc = AudioDeviceDescriptor(*desc);
+    deviceDesc.macAddress_ = "AA:BB:CC:DD:EE:FF";
+    bool result = audioDeviceCommon.IsSameDevice(desc, deviceDesc);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test IsSameDevice.
+* @tc.number: IsSameDevice_011
+* @tc.desc  : Test IsSameDevice with USB ARM headset and same roles.
+*/
+HWTEST_F(AudioDeviceCommonUnitNextTest, IsSameDevice_011, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->networkId_ = "LocalNetworkId";
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    desc->macAddress_ = "card=2;device=0";
+    desc->connectState_ = CONNECTED;
+    desc->deviceRole_ = INPUT_DEVICE;
+
+    AudioDeviceDescriptor deviceDesc = AudioDeviceDescriptor(*desc);
+    bool result = audioDeviceCommon.IsSameDevice(desc, deviceDesc);
+    EXPECT_TRUE(result);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

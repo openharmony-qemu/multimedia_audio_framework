@@ -1,0 +1,52 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../../../../../accessibility.gni")
+import("../../../../../../appgallery.gni")
+import("../../../../../../bluetooth_part.gni")
+import("../../../../../../config.gni")
+
+module_output_path = "audio_framework/audio_framework_policy/audio_policy"
+
+ohos_unittest("window_utils_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./unittest/window_utils_unit_test/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = cflags
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+  ]
+
+  sources = [ "./unittest/window_utils_unit_test/src/window_utils_unit_test.cpp" ]
+
+  deps = [
+    "../../../../../audio_policy:audio_policy_service_static",
+  ]
+}

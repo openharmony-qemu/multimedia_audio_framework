@@ -213,9 +213,7 @@ void AudioInterruptStrategy::UpdateVoipCaptureFocusStrategy(const AudioInterrupt
 {
     if (currentInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
         incomingInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
-        incomingInterrupt.behaviorFlags_.voipCaptureMixWithOthers &&
-        PermissionUtil::VerifyPermission(VOIP_CAPTURE_CONCURRENCY_PERMISSION, IPCSkeleton::GetCallingTokenID()) &&
-        PermissionUtil::VerifySystemPermission()) {
+        incomingInterrupt.voipCaptureMixWithOthersFlag) {
         AUDIO_INFO_LOG("voip capture mix with others voip capture, current streamId:%{public}d, "
             "incoming streamId:%{public}d", currentInterrupt.streamId, incomingInterrupt.streamId);
         focusEntry.actionOn = INCOMING;

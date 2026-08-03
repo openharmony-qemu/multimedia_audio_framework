@@ -2741,6 +2741,7 @@ ohos_unittest("audio_router_center_unit_test") {
     "./unittest/audio_router_center_unit_test/src/audio_router_center_unit_test.cpp",
     "./unittest/audio_router_center_unit_test/src/default_router_unit_test.cpp",
     "./unittest/audio_router_center_unit_test/src/wireless_conflict_handler_unit_test.cpp",
+    "./unittest/audio_router_center_unit_test/src/input_conflict_handler_unit_test.cpp",
   ]
 
   deps = [

@@ -67,7 +67,7 @@ private:
     float gainRelease_;
     std::vector<float> bufHis_;
     uint32_t sampleRate_;
-    uint32_t channels_;
+    int32_t channels_;
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
     std::string dumpFileNameIn_ = "";

@@ -1142,6 +1142,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "power_manager:powermgr_client",
     "ability_runtime:extension_manager",
     "init:libbegetutil",
+    "cJSON:cjson",
   ]
 
   defines = []

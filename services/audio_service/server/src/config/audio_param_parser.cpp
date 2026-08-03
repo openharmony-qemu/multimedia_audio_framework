@@ -23,6 +23,24 @@
 #include "config_policy_utils.h"
 #endif
 
+namespace {
+static std::set<std::string> SplitUsageList(const std::string &usage)
+{
+    std::set<std::string> result;
+    size_t start = 0;
+    while (start <= usage.size()) {
+        size_t end = usage.find(',', start);
+        if (end == std::string::npos) {
+            result.insert(usage.substr(start));
+            break;
+        }
+        result.insert(usage.substr(start, end - start));
+        start = end + 1;
+    }
+    return result;
+}
+} // namespace
+
 namespace OHOS {
 namespace AudioStandard {
 AudioParamParser::AudioParamParser()
@@ -125,23 +143,16 @@ void AudioParamParser::ParseSubKeys(std::shared_ptr<AudioXmlNode> curNode, std::
     std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> &audioParameterKeys)
 {
     std::unordered_map<std::string, std::set<std::string>> subKeyMap = {};
-    std::set<std::string> supportedUsage;
     curNode->MoveToChildren();
 
     while (curNode->IsNodeValid()) {
         if (curNode->IsElementNode()) {
             std::string subKeyName;
             std::string usage;
-            std::regex regexDelimiter(",");
             curNode->GetProp("name", subKeyName);
             curNode->GetProp("usage", usage);
 
-            const std::sregex_token_iterator itEnd;
-            for (std::sregex_token_iterator it(usage.begin(), usage.end(), regexDelimiter, -1); it != itEnd; it++) {
-                supportedUsage.insert(it->str());
-            }
-            subKeyMap.emplace(subKeyName, supportedUsage);
-            supportedUsage.clear();
+            subKeyMap.emplace(subKeyName, SplitUsageList(usage));
         }
         curNode->MoveToNext();
     }

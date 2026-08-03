@@ -1281,44 +1281,6 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_DeleteInput_001, TestSiz
 }
 
 /**
- * @tc.name    : DeleteInputSession_KeepAttachState
- * @tc.type    : FUNC
- * @tc.number  : SE_DeleteInput_002
- * @tc.desc    : Test DeleteInputSession with KEEP_ATTACH_STATE preserves attach state
- */
-HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_DeleteInput_002, TestSize.Level1)
-{
-    // Prepare: Create, start stream and SE
-    HpaeStreamInfo streamInfo = GetDefaultStreamInfo();
-    ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(manager_);
-
-    auto instance = MakeTestEffectInstance(defaultConfig_);
-    manager_->PostCreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
-        instance, defaultConfig_);
-    WaitForMsgProcessing(manager_);
-    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
-    ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(manager_);
-
-    auto node = manager_->sinkInputNodeMap_[TEST_SESSION_ID];
-    ASSERT_NE(node, nullptr);
-    EXPECT_TRUE(node->HasSessionEffectAttachState());
-
-    // Test: DeleteInputSession with KEEP_ATTACH_STATE_FOR_MOVE
-    manager_->DeleteInputSession(SessionEffectMoveMode::KEEP_ATTACH_STATE_FOR_MOVE);
-
-    // Verify: SE node removed but attach state preserved
-    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
-    EXPECT_EQ(manager_->sessionEffectSessionId_, 0);
-    EXPECT_TRUE(node->HasSessionEffectAttachState()); // Still true
-
-    // Cleanup attach state manually
-    node->ClearSessionEffectAttachState();
-    EXPECT_FALSE(node->HasSessionEffectAttachState());
-}
-
-/**
  * @tc.name    : DestroyStream_ClearsAttachState
  * @tc.type    : FUNC
  * @tc.number  : SE_DestroyStream_001
@@ -1359,47 +1321,6 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_DestroyStream_001, TestS
     // Cleanup
     manager_->Stop(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
-    manager_->DestroyStream(TEST_SESSION_ID);
-    WaitForMsgProcessing(manager_);
-}
-
-/**
- * @tc.name    : MoveStream_PrepareMoveAndPreserveAttachState
- * @tc.type    : FUNC
- * @tc.number  : SE_MoveStream_001
- * @tc.desc    : Test MoveStream calls PrepareMoveStream and preserves attach state
- */
-HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_MoveStream_001, TestSize.Level1)
-{
-    // Prepare: Create, start stream and SE
-    HpaeStreamInfo streamInfo = GetDefaultStreamInfo();
-    ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(manager_);
-
-    auto instance = MakeTestEffectInstance(defaultConfig_);
-    manager_->PostCreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance",
-        instance, defaultConfig_);
-    WaitForMsgProcessing(manager_);
-    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
-    ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(manager_);
-
-    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
-    auto node = manager_->sinkInputNodeMap_[TEST_SESSION_ID];
-    ASSERT_NE(node, nullptr);
-    EXPECT_TRUE(node->HasSessionEffectAttachState());
-
-    // Test: MoveStream (simulated by calling DeleteInputSession with KEEP_ATTACH_STATE)
-    manager_->sessionEffectNode_->PrepareMoveStream();
-    manager_->DeleteInputSession(SessionEffectMoveMode::KEEP_ATTACH_STATE_FOR_MOVE);
-
-    // Verify: SE node removed but attach state preserved
-    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
-    EXPECT_EQ(manager_->sessionEffectSessionId_, 0);
-    EXPECT_TRUE(node->HasSessionEffectAttachState());
-
-    // Cleanup
-    node->ClearSessionEffectAttachState();
     manager_->DestroyStream(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
 }

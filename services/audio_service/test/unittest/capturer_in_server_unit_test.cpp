@@ -1435,17 +1435,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038A, TestSize.Level
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
     ASSERT_TRUE(capturerInServer_ != nullptr);
     capturerInServer_->streamIndex_ = 123;
-    SwitchStreamInfo info = {
-        capturerInServer_->streamIndex_,
-        processConfig.callerUid,
-        processConfig.appInfo.appUid,
-        processConfig.appInfo.appPid,
-        processConfig.appInfo.appTokenId,
-        CAPTURER_RUNNING,
-    };
 
-    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
-    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
     EXPECT_TRUE(capturerInServer_->CheckBgRecordPermission(CAPTURER_RUNNING));
     EXPECT_TRUE(capturerInServer_->TurnOffMicIndicator(CAPTURER_RELEASED));
 }
@@ -1533,17 +1523,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038E, TestSize.Level
     capturerInServer_->streamIndex_ = 123;
     capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
     capturerInServer_->isMicIndicatorOn_ = true;
-    SwitchStreamInfo info = {
-        capturerInServer_->streamIndex_,
-        processConfig.callerUid,
-        processConfig.appInfo.appUid,
-        processConfig.appInfo.appPid,
-        processConfig.appInfo.appTokenId,
-        CAPTURER_RUNNING,
-    };
 
-    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
-    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
     EXPECT_EQ(capturerInServer_->StartInner(), ERROR);
     EXPECT_TRUE(capturerInServer_->isMicIndicatorOn_);
 }
@@ -1567,17 +1547,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038K, TestSize.Level
     capturerInServer_->status_ = I_STATUS_IDLE;
     capturerInServer_->streamIndex_ = 125;
     capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
-    SwitchStreamInfo info = {
-        capturerInServer_->streamIndex_,
-        processConfig.callerUid,
-        processConfig.appInfo.appUid,
-        processConfig.appInfo.appPid,
-        processConfig.appInfo.appTokenId,
-        CAPTURER_RUNNING,
-    };
 
-    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
-    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
     EXPECT_EQ(capturerInServer_->StartInner(), ERR_PERMISSION_DENIED);
     EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
 }
@@ -1600,17 +1570,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038F, TestSize.Level
     capturerInServer_->status_ = I_STATUS_IDLE;
     capturerInServer_->streamIndex_ = 124;
     capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
-    SwitchStreamInfo info = {
-        capturerInServer_->streamIndex_,
-        processConfig.callerUid,
-        processConfig.appInfo.appUid,
-        processConfig.appInfo.appPid,
-        processConfig.appInfo.appTokenId,
-        CAPTURER_RUNNING,
-    };
 
-    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
-    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
     EXPECT_EQ(capturerInServer_->StartInner(), ERROR);
     EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
 }

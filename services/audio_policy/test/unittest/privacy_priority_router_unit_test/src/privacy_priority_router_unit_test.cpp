@@ -568,7 +568,7 @@ HWTEST(PrivacyPriorityRouterUnitTest, IsA2dpDisable_001, TestSize.Level4)
     bool isA2dpDisable = router.IsA2dpDisable(desc);
     EXPECT_EQ(isA2dpDisable, true);
 }
- 
+
 /**
  * @tc.name  : Test PrivacyPriorityRouter.
  * @tc.number: GetRecordCaptureDevice_019
@@ -718,6 +718,114 @@ HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_025, TestSize.Level1
     AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
     EXPECT_GE(descs.size(), 0);
 }
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter GetMediaRenderDevice.
+ * @tc.number: PrivacyPriorityRouter_026
+ * @tc.desc  : Test GetMediaRenderDevice with STREAM_USAGE_MUSIC.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_026, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+    AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.clear();
+    auto dev = router.GetMediaRenderDevice(STREAM_USAGE_MUSIC, 0);
+    EXPECT_NE(dev, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter GetCallRenderDevice.
+ * @tc.number: PrivacyPriorityRouter_027
+ * @tc.desc  : Test GetCallRenderDevice with VOICE_TRANSFER_COMMUNICATION.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_027, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
+    auto dev = router.GetCallRenderDevice(STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION, 0);
+    EXPECT_NE(dev, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter GetCallCaptureDevice.
+ * @tc.number: PrivacyPriorityRouter_028
+ * @tc.desc  : Test GetCallCaptureDevice with SOURCE_TYPE_VOICE_RECOGNITION.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_028, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+    AudioDeviceManager::GetAudioDeviceManager().commCapturePrivacyDevices_.clear();
+    auto dev = router.GetCallCaptureDevice(SOURCE_TYPE_VOICE_RECOGNITION, 0);
+    EXPECT_NE(dev, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter GetToneRenderDevice.
+ * @tc.number: PrivacyPriorityRouter_029
+ * @tc.desc  : Test GetToneRenderDevice returns empty descriptor.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_029, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+    auto dev = router.GetToneRenderDevice(STREAM_USAGE_MEDIA, 0);
+    ASSERT_NE(dev, nullptr);
+    EXPECT_EQ(dev->getType(), DeviceType::DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter GetRouterType.
+ * @tc.number: PrivacyPriorityRouter_030
+ * @tc.desc  : Test GetRouterType returns ROUTER_TYPE_PRIVACY_PRIORITY.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_030, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+    EXPECT_EQ(router.GetRouterType(), ROUTER_TYPE_PRIVACY_PRIORITY);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter GetClassName.
+ * @tc.number: PrivacyPriorityRouter_031
+ * @tc.desc  : Test GetClassName returns correct name.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_031, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+    EXPECT_EQ(router.GetClassName(), "privacy_priority_router");
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter GetRecordCaptureDevice with invalid source.
+ * @tc.number: GetRecordCaptureDevice_014
+ * @tc.desc  : Test GetRecordCaptureDevice with SOURCE_TYPE_INVALID.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_014, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    int32_t clientUID = TEST_CLIENT_UID;
+    auto result = router.GetRecordCaptureDevice(sourceType, clientUID, TEST_SESSION_ID);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter GetRingRenderDevices with ALARM.
+ * @tc.number: PrivacyPriorityRouter_032
+ * @tc.desc  : Test GetRingRenderDevices with STREAM_USAGE_ALARM and media privacy devices.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_032, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+    router.audioPolicyManager_.SetRingerMode(RINGER_MODE_NORMAL);
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc->connectState_ = CONNECTED;
+    desc->isEnable_ = true;
+    desc->exceptionFlag_ = false;
+    AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.clear();
+    AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.push_back(desc);
+    auto descs = router.GetRingRenderDevices(STREAM_USAGE_ALARM, 1);
+    AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.clear();
+    EXPECT_GE(descs.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
- 

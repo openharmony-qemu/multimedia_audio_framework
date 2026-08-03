@@ -824,18 +824,18 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectInputStreamDevices()
     return inputDevices;
 }
 
-bool AudioRouterCenter::HasWirelessDevicesConnected()
+bool AudioRouterCenter::HasSpecificDevicesConnected()
 {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
-    return deviceManager.HasWirelessDevicesConnected();
+    return deviceManager.HasSpecificDevicesConnected();
 }
 
 void AudioRouterCenter::StartArbiterContext(const FetchDeviceInfo &deviceInfo)
 {
     ClearConflictHandlers();
 
-    // Fast check: skip arbiter context setup when no wireless devices connected
-    if (!HasWirelessDevicesConnected()) {
+    // Fast check: skip arbiter context setup when no specific devices connected
+    if (!HasSpecificDevicesConnected()) {
         return;
     }
 
@@ -846,6 +846,11 @@ void AudioRouterCenter::StartArbiterContext(const FetchDeviceInfo &deviceInfo)
         wirelessConflictHandler_->SetSelectedDevices(std::move(outputDevices), std::move(inputDevices));
         RegisterConflictHandlers(wirelessConflictHandler_);
     }
+
+    if (inputConflictHandler_ != nullptr) {
+        inputConflictHandler_->FindHighestPriorityDevice();
+        RegisterConflictHandlers(inputConflictHandler_);
+    }
 }
 
 void AudioRouterCenter::StartArbiterContext()
@@ -853,7 +858,7 @@ void AudioRouterCenter::StartArbiterContext()
     ClearConflictHandlers();
 
     // Fast check: skip arbiter context setup when no wireless devices connected
-    if (!HasWirelessDevicesConnected()) {
+    if (!HasSpecificDevicesConnected()) {
         return;
     }
 
@@ -864,6 +869,11 @@ void AudioRouterCenter::StartArbiterContext()
         wirelessConflictHandler_->SetSelectedDevices(std::move(outputDevices), std::move(inputDevices));
         RegisterConflictHandlers(wirelessConflictHandler_);
     }
+
+    if (inputConflictHandler_ != nullptr) {
+        inputConflictHandler_->FindHighestPriorityDevice();
+        RegisterConflictHandlers(inputConflictHandler_);
+    }
 }
 
 void AudioRouterCenter::StopArbiterContext()
@@ -871,6 +881,9 @@ void AudioRouterCenter::StopArbiterContext()
     ClearConflictHandlers();
     if (wirelessConflictHandler_ != nullptr) {
         wirelessConflictHandler_->ClearSelectedDevices();
+    }
+    if (inputConflictHandler_ != nullptr) {
+        inputConflictHandler_->ClearHighestPriorityDevice();
     }
 }
 

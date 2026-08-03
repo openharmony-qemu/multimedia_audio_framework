@@ -14,7 +14,8 @@
  */
 
 #include "dfx_utils.h"
-#include "nlohmann/json.hpp"
+#include "audio_log.h"
+#include "cJSON.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,65 +37,120 @@ uint32_t DfxUtils::SerializeToUint32(const DfxStatInt32 &data)
 
 std::string DfxUtils::SerializeToJSONString(const RendererStats &data)
 {
-    std::string ret{};
-    nlohmann::json json;
-    json["sampleRate"] = data.samplingRate;
-    json["duration"] = data.duration;
-    json["underrunCnt"] = data.underrunCnt;
-    json["originalFlag"] = data.originalFlag;
-    json["zeroDataPercent"] = data.zeroDataPercent;
-    json["frameWritten"] = data.frameWritten;
-
-    ret = json.dump();
+    cJSON *json = cJSON_CreateObject();
+    CHECK_AND_RETURN_RET(json != nullptr, std::string{});
+    cJSON_AddNumberToObject(json, "sampleRate", static_cast<double>(data.samplingRate));
+    cJSON_AddNumberToObject(json, "duration", static_cast<double>(data.duration));
+    cJSON_AddNumberToObject(json, "underrunCnt", static_cast<double>(data.underrunCnt));
+    cJSON_AddNumberToObject(json, "originalFlag", static_cast<double>(data.originalFlag));
+    cJSON_AddNumberToObject(json, "zeroDataPercent", static_cast<double>(data.zeroDataPercent));
+    cJSON_AddNumberToObject(json, "frameWritten", static_cast<double>(data.frameWritten));
+    char *pChar = cJSON_PrintUnformatted(json);
+    cJSON_Delete(json);
+    std::string ret = (pChar != nullptr) ? std::string(pChar) : std::string{};
+    cJSON_free(pChar);
     return ret;
 }
 
 std::string DfxUtils::SerializeToJSONString(const CapturerStats &data)
 {
-    std::string ret{};
-    nlohmann::json json;
-    json["sampleRate"] = data.samplingRate;
-    json["duration"] = data.duration;
-    ret = json.dump();
-
+    cJSON *json = cJSON_CreateObject();
+    CHECK_AND_RETURN_RET(json != nullptr, std::string{});
+    cJSON_AddNumberToObject(json, "sampleRate", static_cast<double>(data.samplingRate));
+    cJSON_AddNumberToObject(json, "duration", static_cast<double>(data.duration));
+    char *pChar = cJSON_PrintUnformatted(json);
+    cJSON_Delete(json);
+    std::string ret = (pChar != nullptr) ? std::string(pChar) : std::string{};
+    cJSON_free(pChar);
     return ret;
 }
 
 std::string DfxUtils::SerializeToJSONString(const std::vector<InterruptEffect> &data)
 {
-    std::string ret{};
-    nlohmann::json jsonArray;
+    cJSON *jsonArray = cJSON_CreateArray();
+    CHECK_AND_RETURN_RET(jsonArray != nullptr, std::string{});
     for (auto &item : data) {
-        nlohmann::json json;
-        json["bundleName"] = item.bundleName;
-        json["streamUsage"] = item.streamUsage;
-        json["appState"] = item.appState;
-        json["interruptEvent"] = item.interruptEvent;
-        jsonArray.push_back(json);
+        cJSON *json = cJSON_CreateObject();
+        CHECK_AND_CONTINUE(json != nullptr);
+        cJSON_AddStringToObject(json, "bundleName", item.bundleName.c_str());
+        cJSON_AddNumberToObject(json, "streamUsage", static_cast<double>(item.streamUsage));
+        cJSON_AddNumberToObject(json, "appState", static_cast<double>(item.appState));
+        cJSON_AddNumberToObject(json, "interruptEvent", static_cast<double>(item.interruptEvent));
+        cJSON_AddItemToArray(jsonArray, json);
     }
-
-    ret = jsonArray.dump();
+    char *pChar = cJSON_PrintUnformatted(jsonArray);
+    cJSON_Delete(jsonArray);
+    std::string ret = (pChar != nullptr) ? std::string(pChar) : std::string{};
+    cJSON_free(pChar);
     return ret;
 }
 
-template<class T>
-std::string DfxUtils::SerializeToJSONString(const std::vector<T> &data)
+std::string DfxUtils::SerializeToJSONString(const std::vector<uint8_t> &data)
 {
-    std::string ret{};
-    nlohmann::json jsonArray;
+    cJSON *jsonArray = cJSON_CreateArray();
+    CHECK_AND_RETURN_RET(jsonArray != nullptr, std::string{});
     for (auto &item : data) {
-        nlohmann::json json;
-        json["value"] = item;
-        jsonArray.push_back(json);
+        cJSON *json = cJSON_CreateObject();
+        CHECK_AND_CONTINUE(json != nullptr);
+        cJSON_AddNumberToObject(json, "value", static_cast<double>(item));
+        cJSON_AddItemToArray(jsonArray, json);
     }
-
-    ret = jsonArray.dump();
+    char *pChar = cJSON_PrintUnformatted(jsonArray);
+    cJSON_Delete(jsonArray);
+    std::string ret = (pChar != nullptr) ? std::string(pChar) : std::string{};
+    cJSON_free(pChar);
     return ret;
 }
 
-template std::string DfxUtils::SerializeToJSONString<uint8_t>(const std::vector<uint8_t> &data);
-template std::string DfxUtils::SerializeToJSONString<uint32_t>(const std::vector<uint32_t> &data);
-template std::string DfxUtils::SerializeToJSONString<uint64_t>(const std::vector<uint64_t> &data);
-template std::string DfxUtils::SerializeToJSONString<std::string>(const std::vector<std::string> &data);
+std::string DfxUtils::SerializeToJSONString(const std::vector<uint32_t> &data)
+{
+    cJSON *jsonArray = cJSON_CreateArray();
+    CHECK_AND_RETURN_RET(jsonArray != nullptr, std::string{});
+    for (auto &item : data) {
+        cJSON *json = cJSON_CreateObject();
+        CHECK_AND_CONTINUE(json != nullptr);
+        cJSON_AddNumberToObject(json, "value", static_cast<double>(item));
+        cJSON_AddItemToArray(jsonArray, json);
+    }
+    char *pChar = cJSON_PrintUnformatted(jsonArray);
+    cJSON_Delete(jsonArray);
+    std::string ret = (pChar != nullptr) ? std::string(pChar) : std::string{};
+    cJSON_free(pChar);
+    return ret;
+}
+
+std::string DfxUtils::SerializeToJSONString(const std::vector<uint64_t> &data)
+{
+    cJSON *jsonArray = cJSON_CreateArray();
+    CHECK_AND_RETURN_RET(jsonArray != nullptr, std::string{});
+    for (auto &item : data) {
+        cJSON *json = cJSON_CreateObject();
+        CHECK_AND_CONTINUE(json != nullptr);
+        cJSON_AddNumberToObject(json, "value", static_cast<double>(item));
+        cJSON_AddItemToArray(jsonArray, json);
+    }
+    char *pChar = cJSON_PrintUnformatted(jsonArray);
+    cJSON_Delete(jsonArray);
+    std::string ret = (pChar != nullptr) ? std::string(pChar) : std::string{};
+    cJSON_free(pChar);
+    return ret;
+}
+
+std::string DfxUtils::SerializeToJSONString(const std::vector<std::string> &data)
+{
+    cJSON *jsonArray = cJSON_CreateArray();
+    CHECK_AND_RETURN_RET(jsonArray != nullptr, std::string{});
+    for (auto &item : data) {
+        cJSON *json = cJSON_CreateObject();
+        CHECK_AND_CONTINUE(json != nullptr);
+        cJSON_AddStringToObject(json, "value", item.c_str());
+        cJSON_AddItemToArray(jsonArray, json);
+    }
+    char *pChar = cJSON_PrintUnformatted(jsonArray);
+    cJSON_Delete(jsonArray);
+    std::string ret = (pChar != nullptr) ? std::string(pChar) : std::string{};
+    cJSON_free(pChar);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

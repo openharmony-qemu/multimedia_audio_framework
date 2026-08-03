@@ -249,5 +249,128 @@ HWTEST_F(AudioArmDeviceBehaviorUnitTest, ActivateDevice_ConfigRoleMismatch, Test
         AudioStreamDeviceChangeReasonExt(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE));
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+ * @tc.name: ActivateDevice_NullptrStreamDesc
+ * @tc.desc: Test ActivateDevice with nullptr streamDesc
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, ActivateDevice_NullptrStreamDesc, TestSize.Level1)
+{
+    int32_t result = armDeviceBehavior_.ActivateDevice(nullptr,
+        AudioStreamDeviceChangeReasonExt(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE));
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name: ActivateDevice_EmptyNewDeviceDescs
+ * @tc.desc: Test ActivateDevice with empty newDeviceDescs
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, ActivateDevice_EmptyNewDeviceDescs, TestSize.Level1)
+{
+    auto streamDesc = MakeEmptyStreamDesc();
+    int32_t result = armDeviceBehavior_.ActivateDevice(streamDesc,
+        AudioStreamDeviceChangeReasonExt(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE));
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name: ActivateDevice_NullptrDeviceDesc
+ * @tc.desc: Test ActivateDevice with nullptr deviceDesc in newDeviceDescs
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, ActivateDevice_NullptrDeviceDesc, TestSize.Level1)
+{
+    auto streamDesc = MakeNullDeviceDescStreamDesc();
+    int32_t result = armDeviceBehavior_.ActivateDevice(streamDesc,
+        AudioStreamDeviceChangeReasonExt(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE));
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name: ActivateDevice_SameAddressAlreadyActive
+ * @tc.desc: Test ActivateDevice with same address already active -> SUCCESS early
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, ActivateDevice_SameAddressAlreadyActive, TestSize.Level1)
+{
+    SetEcFeatureEnable(false);
+    armDeviceBehavior_.activeArmOutputAddr_ = TEST_USB_ADDR;
+    auto streamDesc = MakeStreamDesc(OUTPUT_DEVICE, TEST_USB_ADDR);
+    int32_t result = armDeviceBehavior_.ActivateDevice(streamDesc,
+        AudioStreamDeviceChangeReasonExt(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE));
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: ActivateDevice_DifferentAddressAlreadyActive
+ * @tc.desc: Test ActivateDevice with different address already active
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, ActivateDevice_DifferentAddressAlreadyActive, TestSize.Level1)
+{
+    SetEcFeatureEnable(false);
+    armDeviceBehavior_.activeArmOutputAddr_ = TEST_USB_ADDR_ALT;
+    RemoveUsbIOHandle(TEST_USB_SINK_MODULE_NAME);
+    auto streamDesc = MakeStreamDesc(OUTPUT_DEVICE, TEST_USB_ADDR);
+    int32_t result = armDeviceBehavior_.ActivateDevice(streamDesc,
+        AudioStreamDeviceChangeReasonExt(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE));
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: DeactivateDevice_001
+ * @tc.desc: Test DeactivateDevice with nullptr deviceDesc
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, DeactivateDevice_001, TestSize.Level1)
+{
+    int32_t result = armDeviceBehavior_.DeactivateDevice(nullptr);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name: DeactivateDevice_002
+ * @tc.desc: Test DeactivateDevice with non-matching address -> SUCCESS
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, DeactivateDevice_002, TestSize.Level1)
+{
+    armDeviceBehavior_.activeArmOutputAddr_ = TEST_USB_ADDR_ALT;
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->macAddress_ = TEST_USB_ADDR;
+    int32_t result = armDeviceBehavior_.DeactivateDevice(deviceDesc);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: DeactivateDevice_003
+ * @tc.desc: Test DeactivateDevice with matching address
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, DeactivateDevice_003, TestSize.Level1)
+{
+    armDeviceBehavior_.activeArmOutputAddr_ = TEST_USB_ADDR;
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->macAddress_ = TEST_USB_ADDR;
+    int32_t result = armDeviceBehavior_.DeactivateDevice(deviceDesc);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: DeactivateDevice_004
+ * @tc.desc: Test DeactivateDevice without parameter
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioArmDeviceBehaviorUnitTest, DeactivateDevice_004, TestSize.Level1)
+{
+    armDeviceBehavior_.activeArmOutputAddr_ = TEST_USB_ADDR;
+    int32_t result = armDeviceBehavior_.DeactivateDevice();
+    EXPECT_EQ(result, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
