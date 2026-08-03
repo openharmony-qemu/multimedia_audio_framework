@@ -17,16 +17,21 @@
 #define LOG_TAG "AudioSuiteClientPolicy"
 #endif
 
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 #include "audio_suite_client_policy.h"
 #include "audio_suite_log.h"
 #include "audio_errors.h"
-#include "audio_suite_download_manager.h"
+#include "audio_suite_download_callback_stub_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-AudioSuiteClientPolicy::AudioSuiteClientPolicy() : connected_(false), needsReconnect_(false)
+static constexpr int32_t SA_ID = 3015;
+static constexpr int32_t LOAD_TIMEOUT_MS = 5000;
+
+AudioSuiteClientPolicy::AudioSuiteClientPolicy()
 {
     AUDIO_INFO_LOG("AudioSuiteClientPolicy constructor");
 }
@@ -34,10 +39,28 @@ AudioSuiteClientPolicy::AudioSuiteClientPolicy() : connected_(false), needsRecon
 AudioSuiteClientPolicy::~AudioSuiteClientPolicy()
 {
     AUDIO_INFO_LOG("AudioSuiteClientPolicy destructor");
-    DisconnectService();
+    UnregisterDownloadStatusCallback();
+    UnregisterDownloadInterfaceCallback();
 
-    downloadCallback_.reset();
-    downloadCallbackStub_ = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (proxy_ != nullptr && deathRecipient_ != nullptr) {
+            proxy_->AsObject()->RemoveDeathRecipient(deathRecipient_);
+        }
+        deathRecipient_ = nullptr;
+    }
+
+    DisconnectService();
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (statusCallbackStub_ != nullptr) {
+        statusCallbackStub_->ClearCallback();
+        statusCallbackStub_ = nullptr;
+    }
+
+    if (downloadCallbackStub_ != nullptr) {
+        downloadCallbackStub_->ClearCallback();
+        downloadCallbackStub_ = nullptr;
+    }
 }
 
 AudioSuiteClientPolicy& AudioSuiteClientPolicy::GetInstance()
@@ -46,216 +69,222 @@ AudioSuiteClientPolicy& AudioSuiteClientPolicy::GetInstance()
     return instance;
 }
 
-int32_t AudioSuiteClientPolicy::Init()
+void AudioSuiteClientPolicy::DisconnectService()
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::Init");
-
     std::lock_guard<std::mutex> lock(mutex_);
-    return EnsureConnected() ? SUCCESS : ERR_NOT_STARTED;
-}
-
-void AudioSuiteClientPolicy::DeInit()
-{
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::DeInit");
-    DisconnectService();
+    proxy_ = nullptr;
+    connected_ = false;
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::DisconnectService");
 }
 
 bool AudioSuiteClientPolicy::ConnectService()
 {
+    if (connected_ && proxy_ != nullptr) {
+        return true;
+    }
+
     AUDIO_INFO_LOG("AudioSuiteClientPolicy::ConnectService");
-
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (samgr == nullptr) {
-        AUDIO_ERR_LOG("GetSystemAbilityManager failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, false, "GetSystemAbilityManager failed");
 
-    constexpr int32_t LOAD_TIMEOUT_MS = 5000;
     auto object = samgr->LoadSystemAbility(SA_ID, LOAD_TIMEOUT_MS);
-    if (object == nullptr) {
-        AUDIO_ERR_LOG("LoadSystemAbility(%{public}d) failed, SA not registered or cannot start", SA_ID);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, false, "LoadSystemAbility audio suite sa failed.");
 
-    proxy_ = iface_cast<IAudioSuiteSaService>(object);
-    if (proxy_ == nullptr) {
-        AUDIO_ERR_LOG("Create proxy failed");
-        return false;
-    }
+    proxy_ = iface_cast<IAudioSuiteService>(object);
+    CHECK_AND_RETURN_RET_LOG(proxy_ != nullptr, false, "iface_cast audio suite sa proxy failed.");
 
     connected_ = true;
-    needsReconnect_ = false;
     AUDIO_INFO_LOG("ConnectService success");
+
+    sptr<AudioSuiteServerDeathRecipient> deathRecipient = new(std::nothrow) AudioSuiteServerDeathRecipient();
+    if (deathRecipient != nullptr && object->AddDeathRecipient(deathRecipient)) {
+        deathRecipient_ = deathRecipient;
+        AUDIO_INFO_LOG("AddDeathRecipient deathRecipient success");
+    }
     return true;
 }
 
-void AudioSuiteClientPolicy::DisconnectService()
+int32_t AudioSuiteClientPolicy::RegisterDownloadStatusCallback(std::shared_ptr<DownloadStatusCallback> callback)
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::DisconnectService");
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::RegisterDownloadStatusCallback");
     std::lock_guard<std::mutex> lock(mutex_);
-    proxy_ = nullptr;
-    connected_ = false;
-    needsReconnect_ = false;
-}
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-bool AudioSuiteClientPolicy::EnsureConnected()
-{
-    if (needsReconnect_ || !connected_) {
-        AUDIO_INFO_LOG("AudioSuiteClientPolicy: connecting (reconnect=%{public}d)", needsReconnect_);
-        if (!ConnectService()) {
-            AUDIO_ERR_LOG("Connect failed");
-            return false;
-        }
-        needsReconnect_ = false;
+    if (statusCallbackStub_ != nullptr) {
+        statusCallbackStub_->ClearCallback();
+        statusCallbackStub_ = nullptr;
     }
-    return connected_ && proxy_ != nullptr;
-}
+    statusCallbackStub_ = new(std::nothrow) AudioSuiteStatusCallbackStubImpl();
+    CHECK_AND_RETURN_RET_LOG(statusCallbackStub_ != nullptr, ERROR, "statusCallbackStub_ is nullptr");
 
-int32_t AudioSuiteClientPolicy::RegisterDownloadCallback(std::shared_ptr<IDownloadCallbackListener> callback)
-{
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::RegisterDownloadCallback");
-
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    if (!EnsureConnected()) {
-        AUDIO_ERR_LOG("Service not connected");
-        return ERR_NOT_STARTED;
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->RegisterDownloadStatusCallback(statusCallbackStub_->AsObject(), result);
+    if (ret != SUCCESS || result != SUCCESS) {
+        statusCallbackStub_ = nullptr;
     }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterDownloadStatusCallback IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "RegisterDownloadStatusCallback result: %{public}d", result);
 
-    downloadCallback_ = callback;
-
-    if (downloadCallbackStub_ == nullptr) {
-        downloadCallbackStub_ = new DownloadCallbackStubImpl();
-    }
-
-    ErrCode result = SUCCESS;
-    proxy_->RegisterDownloadCallback(downloadCallbackStub_->AsObject(), result);
-    AUDIO_INFO_LOG("RegisterDownloadCallback IPC result: %{public}d", result);
-
-    if (result != SUCCESS) {
-        AUDIO_ERR_LOG("RegisterDownloadCallback IPC failed: %{public}d", result);
-        return result;
-    }
-
-    if (downloadCallback_ != nullptr) {
-        downloadCallbackStub_->SetCallback([this](const DownloadStatus& status) {
-            if (downloadCallback_) {
-                downloadCallback_->OnDownloadStatusChanged(status);
-            }
-        });
-    } else {
-        downloadCallbackStub_->ClearCallback();
-    }
+    statusCallbackStub_->SetCallback(callback);
     return SUCCESS;
 }
 
-int32_t AudioSuiteClientPolicy::UnregisterDownloadCallback()
+int32_t AudioSuiteClientPolicy::UnregisterDownloadStatusCallback()
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::UnregisterDownloadCallback");
-
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::UnregisterDownloadStatusCallback");
     std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+    CHECK_AND_RETURN_RET_LOG(statusCallbackStub_ != nullptr, SUCCESS, "not RegisterDownloadStatusCallback");
 
-    if (!EnsureConnected()) {
-        AUDIO_ERR_LOG("Service not connected");
-        return ERR_NOT_STARTED;
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->UnregisterDownloadStatusCallback(result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UnregisterDownloadStatusCallback IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "UnregisterDownloadStatusCallback result: %{public}d", result);
+
+    if (statusCallbackStub_ != nullptr) {
+        statusCallbackStub_->ClearCallback();
+        statusCallbackStub_ = nullptr;
     }
 
-    downloadCallback_ = nullptr;
+    return SUCCESS;
+}
+
+int32_t AudioSuiteClientPolicy::StartDownload(const std::string& featureName)
+{
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::StartDownload, featureName=%{public}s", featureName.c_str());
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->StartDownload(featureName, result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartDownload IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "StartDownload result: %{public}d", result);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteClientPolicy::PauseDownload(const std::string& featureName)
+{
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::PauseDownload, featureName=%{public}s", featureName.c_str());
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->PauseDownload(featureName, result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "PauseDownload IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "PauseDownload result: %{public}d", result);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteClientPolicy::CancelDownload(const std::string& featureName)
+{
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::CancelDownload, featureName=%{public}s", featureName.c_str());
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->CancelDownload(featureName, result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CancelDownload IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CancelDownload result: %{public}d", result);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteClientPolicy::StartBackgroundDownload(const std::string& featureName)
+{
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::StartBackgroundDownload, featureName=%{public}s", featureName.c_str());
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->StartBackgroundDownload(featureName, result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartBackgroundDownload IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "StartBackgroundDownload result: %{public}d", result);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteClientPolicy::GetDownloadStatus(const std::string& featureName, AudioSuiteDownloadStatusInfo& status)
+{
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::GetDownloadStatus, featureName=%{public}s", featureName.c_str());
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->GetDownloadStatus(featureName, status, result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetDownloadStatus IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "GetDownloadStatus result: %{public}d", result);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteClientPolicy::UninstallCloudRom(const std::string& featureName)
+{
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::UninstallCloudRom, featureName=%{public}s", featureName.c_str());
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
+
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->UninstallCloudRom(featureName, result);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UninstallCloudRom IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "UninstallCloudRom result: %{public}d", result);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteClientPolicy::RegisterDownloadInterfaceCallback(
+    const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback)
+{
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::RegisterDownloadInterfaceCallback");
+
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
     if (downloadCallbackStub_ != nullptr) {
         downloadCallbackStub_->ClearCallback();
+        downloadCallbackStub_ = nullptr;
     }
 
-    ErrCode result = SUCCESS;
-    proxy_->UnregisterDownloadCallback(result);
-    AUDIO_INFO_LOG("UnregisterDownloadCallback IPC result: %{public}d", result);
+    downloadCallbackStub_ = new(std::nothrow) AudioSuiteDownloadCallbackStubImpl();
+    CHECK_AND_RETURN_RET_LOG(downloadCallbackStub_ != nullptr, ERROR, "downloadCallbackStub_ is nullptr");
 
-    if (result != SUCCESS) {
-        AUDIO_ERR_LOG("UnregisterDownloadCallback IPC failed: %{public}d", result);
-        return result;
+    downloadCallbackStub_->SetAudioSuiteRomDownloadCallback(callback);
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->RegisterDownloadInterfaceCallback(downloadCallbackStub_->AsObject(), result);
+    if (ret != SUCCESS || result != SUCCESS) {
+        downloadCallbackStub_ = nullptr;
     }
-
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UninstallCloudRom IPC ret: %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "UninstallCloudRom result: %{public}d", result);
     return SUCCESS;
 }
 
-int32_t AudioSuiteClientPolicy::StartDownload(const std::string& version)
+int32_t AudioSuiteClientPolicy::UnregisterDownloadInterfaceCallback()
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::StartDownload, version=%{public}s", version.c_str());
-
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::UnregisterDownloadInterfaceCallback");
     std::lock_guard<std::mutex> lock(mutex_);
-
-    if (!EnsureConnected()) {
-        AUDIO_ERR_LOG("Service not connected");
-        return ERR_NOT_STARTED;
+    if (downloadCallbackStub_ != nullptr) {
+        downloadCallbackStub_->ClearCallback();
+        downloadCallbackStub_ = nullptr;
     }
-
-    ErrCode result = SUCCESS;
-    proxy_->StartDownload(version, result);
-    return result;
+    return SUCCESS;
 }
 
-int32_t AudioSuiteClientPolicy::CancelDownload()
+void AudioSuiteClientPolicy::OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status)
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::CancelDownload");
-
     std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_LOG(ConnectService(), "audio suite service not connected");
 
-    if (!EnsureConnected()) {
-        AUDIO_ERR_LOG("Service not connected");
-        return ERR_NOT_STARTED;
-    }
-
-    ErrCode result = SUCCESS;
-    proxy_->CancelDownload(result);
-    return result;
+    proxy_->OnDownloadStatusChanged(status);
 }
 
-int32_t AudioSuiteClientPolicy::StartBackgroundDownload(const std::string& version)
+void AudioSuiteClientPolicy::AudioSuiteServerDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::StartBackgroundDownload, version=%{public}s",
-        version.c_str());
-
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    if (!EnsureConnected()) {
-        AUDIO_ERR_LOG("Service not connected");
-        return ERR_NOT_STARTED;
-    }
-
-    ErrCode result = SUCCESS;
-    proxy_->StartBackgroundDownload(version, result);
-    return result;
-}
-
-int32_t AudioSuiteClientPolicy::GetDownloadStatus(DownloadStatus& status, const std::string& version)
-{
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::GetDownloadStatus");
-
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    if (!EnsureConnected()) {
-        AUDIO_ERR_LOG("Service not connected");
-        return ERR_NOT_STARTED;
-    }
-
-    ErrCode result = SUCCESS;
-    proxy_->GetDownloadStatus(status, version, result);
-    return result;
-}
-
-int32_t AudioSuiteClientPolicy::UninstallCloudRom(const std::string& version)
-{
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::UninstallCloudRom, version=%{public}s", version.c_str());
-
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    if (!EnsureConnected()) {
-        AUDIO_ERR_LOG("Service not connected");
-        return ERR_NOT_STARTED;
-    }
-
-    ErrCode result = SUCCESS;
-    proxy_->UninstallCloudRom(version, result);
-    return result;
+    AudioSuiteClientPolicy::GetInstance().DisconnectService();
+    AUDIO_INFO_LOG("AudioSuiteServerDeathRecipient::OnRemoteDied DisconnectService");
 }
 
 }  // namespace AudioSuite

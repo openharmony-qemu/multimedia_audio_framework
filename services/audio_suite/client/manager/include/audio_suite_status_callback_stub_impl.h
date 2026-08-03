@@ -13,36 +13,36 @@
  * limitations under the License.
  */
 
-#ifndef DOWNLOAD_CALLBACK_STUB_IMPL_H
-#define DOWNLOAD_CALLBACK_STUB_IMPL_H
+#ifndef AUDIO_SUITE_STATUS_CALLBACK_STUB_IMPL_H
+#define AUDIO_SUITE_STATUS_CALLBACK_STUB_IMPL_H
 
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
-#include "download_callback_stub.h"
+#include "audio_suite_download_manager.h"
+#include "audio_suite_status_callback_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-class DownloadCallbackStubImpl : public DownloadCallbackStub {
+class AudioSuiteStatusCallbackStubImpl : public AudioSuiteStatusCallbackStub {
 public:
-    using DownloadStatusCallback = std::function<void(const DownloadStatus&)>;
+    AudioSuiteStatusCallbackStubImpl();
+    virtual ~AudioSuiteStatusCallbackStubImpl();
 
-    DownloadCallbackStubImpl();
-    virtual ~DownloadCallbackStubImpl();
-
-    void SetCallback(DownloadStatusCallback callback);
+    void SetCallback(std::shared_ptr<DownloadStatusCallback> callback);
     void ClearCallback();
-    ErrCode OnDownloadStatusChanged(const DownloadStatus &status) override;
+    ErrCode OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status) override;
+
 private:
     std::mutex mutex_;
-    DownloadStatusCallback downloadCallback_;
+    std::shared_ptr<DownloadStatusCallback> downloadStatusCallback_ = nullptr;
 };
 
 } // namespace AudioSuite
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // DOWNLOAD_CALLBACK_STUB_IMPL_H
+#endif // AUDIO_SUITE_STATUS_CALLBACK_STUB_IMPL_H

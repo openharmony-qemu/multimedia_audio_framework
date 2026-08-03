@@ -16,6 +16,7 @@
 #include "audio_log.h"
 #include "../fuzz_utils.h"
 #include "native_audio_suite_base.h"
+#include "native_audio_suite_download_manager.h"
 #include "OHAudioSuiteEngine.h"
 #include <thread>
 #include <mutex>
@@ -40,10 +41,14 @@ static const uint32_t MAX_PIPELINE_NUM = 2;
 static const uint32_t MAX_NODE_NUM = 5;
 static const uint32_t MAX_FRAME_SIZE = 1000;
 static const uint32_t MAX_USER_DATA_SIZE = 1000;
+static const uint32_t MAX_FEATURE_NAME_SIZE = 256;
 OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
 OH_AudioNodeBuilder *builder = nullptr;
 OH_AudioSuitePipeline *audioSuitePipeline[MAX_PIPELINE_NUM] = {nullptr};
 OH_AudioNode *audioNode[MAX_NODE_NUM] = {nullptr};
+OH_AudioSuite_DownloadManager *downloadManager = nullptr;
+OH_AudioSuite_DownloadCallback downloadCallback = [](OH_AudioSuite_DownloadStatusInfoArray *) {};
+OH_AudioSuite_DownloadCallback *downloadCallbackPtr = &downloadCallback;
 
 typedef void (*TestPtr)();
 
@@ -400,6 +405,102 @@ void AudioSuiteEngineGetSpaceRenderExtensionParamsFuzzTest()
     OH_AudioSuiteEngine_GetSpaceRenderExtensionParams(audioNode[nodeIndex], &spaceRenderExtension);
 }
 
+void AudioSuiteEngineGetDownloadManagerFuzzTest()
+{
+    OH_AudioSuite_GetDownloadManager(&downloadManager);
+}
+
+void AudioSuiteEngineRegisterDownloadCallbackFuzzTest()
+{
+    OH_AudioSuite_RegisterDownloadCallback(downloadManager, downloadCallbackPtr);
+}
+
+void AudioSuiteEngineUnregisterDownloadCallbackFuzzTest()
+{
+    OH_AudioSuite_UnregisterDownloadCallback(downloadManager, downloadCallbackPtr);
+}
+
+void AudioSuiteEngineStartDownloadFuzzTest()
+{
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    OH_AudioSuite_StartDownload(downloadManager, featureName);
+}
+
+void AudioSuiteEngineCancelDownloadFuzzTest()
+{
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    OH_AudioSuite_CancelDownload(downloadManager, featureName);
+}
+
+void AudioSuiteEngineStartBackgroundDownloadFuzzTest()
+{
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    OH_AudioSuite_StartBackgroundDownload(downloadManager, featureName);
+}
+
+void AudioSuiteEngineGetDownloadStatusFuzzTest()
+{
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    OH_AudioSuite_DownloadStatusInfo status;
+    OH_AudioSuite_GetDownloadStatus(downloadManager, featureName, &status);
+}
+
+void AudioSuiteEngineUninstallCloudRomFuzzTest()
+{
+    char featureName[MAX_FEATURE_NAME_SIZE] = {0};
+    uint32_t nameLen = GetData<uint32_t>() % MAX_FEATURE_NAME_SIZE;
+    for (uint32_t i = 0; i < nameLen; i++) {
+        featureName[i] = GetData<uint8_t>();
+    }
+    if (nameLen == 0) {
+        featureName[0] = 'v';
+        featureName[1] = '\0';
+    } else {
+        featureName[nameLen] = '\0';
+    }
+    OH_AudioSuite_UninstallCloudRom(downloadManager, featureName);
+}
+
 vector g_testFuncs = {
     AudioSuiteEngineCreateEngineFuzzTest,
     AudioSuiteEngineDestroyEngineFuzzTest,
@@ -441,6 +542,14 @@ vector g_testFuncs = {
     AudioSuiteEngineGetSpaceRenderRotationParamsFuzzTest,
     AudioSuiteEngineSetSpaceRenderExtensionParamsFuzzTest,
     AudioSuiteEngineGetSpaceRenderExtensionParamsFuzzTest,
+    AudioSuiteEngineGetDownloadManagerFuzzTest,
+    AudioSuiteEngineRegisterDownloadCallbackFuzzTest,
+    AudioSuiteEngineUnregisterDownloadCallbackFuzzTest,
+    AudioSuiteEngineStartDownloadFuzzTest,
+    AudioSuiteEngineCancelDownloadFuzzTest,
+    AudioSuiteEngineStartBackgroundDownloadFuzzTest,
+    AudioSuiteEngineGetDownloadStatusFuzzTest,
+    AudioSuiteEngineUninstallCloudRomFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

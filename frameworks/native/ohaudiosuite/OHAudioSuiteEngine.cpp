@@ -254,7 +254,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_MultiRenderFrame(OH_AudioSuitePipeline 
 }
 
 int32_t OH_AudioSuiteEngine_MetaRenderFrame(OH_AudioSuitePipeline *audioSuitePipeline,
-    OH_AudioMetaFrame *metaFrame, int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
+    OH_AudioSuite_MetaFrame *metaFrame, int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
 {
     OHAudioSuitePipeline *pipeline = ConvertAudioSuitePipeline(audioSuitePipeline);
     CHECK_AND_RETURN_RET_LOG(pipeline != nullptr,
@@ -371,7 +371,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetAudioFormat(OH_AudioNode *audioNode,
 }
 
 int32_t OH_AudioSuiteEngineSystem_SetAudioFormat(
-    OH_AudioNode *audioNode, OH_AudioSystemNodeFormat *audioFormat)
+    OH_AudioNode *audioNode, OH_AudioSuite_SystemNodeFormat *audioFormat)
 {
     OHAudioNode *node = ConvertAudioNode(audioNode);
     CHECK_AND_RETURN_RET_LOG(node != nullptr,
@@ -723,7 +723,7 @@ int32_t OHSuiteInputNodeRequestMetaDataCallBack::OnRequestDataCallBack(
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, 0, "OnRequestDataCallBack callback is nullptr");
     CHECK_AND_RETURN_RET_LOG(audioNode_ != nullptr, 0, "OnRequestDataCallBack OH_audioNode is nullptr");
 
-    OH_AudioMetaFrame metaData;
+    OH_AudioSuite_MetaFrame metaData;
     metaData.audioData = metaFrame.audioData;
     metaData.audioDataSize = metaFrame.audioDataSize;
     metaData.metaData = metaFrame.metaData;
@@ -1040,7 +1040,7 @@ int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *au
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioSystemNodeFormat *audioFormat)
+int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioSuite_SystemNodeFormat *audioFormat)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetAudioFormat failed, node is nullptr.");
     CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,

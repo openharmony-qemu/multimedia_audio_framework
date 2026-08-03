@@ -728,7 +728,7 @@ int32_t AudioSuiteEngine::MetaRenderFrame(uint32_t pipelineId, AudioMetaFrame &m
     int32_t *responseAudioSize, int32_t *responseMetaSize, bool *finishedFlag)
 {
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not MetaRenderFrame.");
-    auto request = [this, pipelineId, metaFrame, responseAudioSize, responseMetaSize, finishedFlag]() {
+    auto request = [this, pipelineId, &metaFrame, responseAudioSize, responseMetaSize, finishedFlag]() {
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine MetaRenderFrame failed, pipeline id is invailed.");
             managerCallback_.OnMetaRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, pipelineId);
@@ -740,8 +740,7 @@ int32_t AudioSuiteEngine::MetaRenderFrame(uint32_t pipelineId, AudioMetaFrame &m
             managerCallback_.OnMetaRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, pipelineId);
             return;
         }
-        pipeline->MetaRenderFrame(
-            const_cast<AudioMetaFrame&>(metaFrame), responseAudioSize, responseMetaSize, finishedFlag);
+        pipeline->MetaRenderFrame(metaFrame, responseAudioSize, responseMetaSize, finishedFlag);
     };
 
     SendRequest(request, __func__);
@@ -856,7 +855,6 @@ int32_t AudioSuiteEngine::SetSystemNodeParam(uint32_t nodeId, std::vector<uint8_
             managerCallback_.OnSetSystemNodeParam(ret);
             return;
         }
-        managerCallback_.OnSetSystemNodeParam(SUCCESS);
     };
 
     SendRequest(request, __func__);
@@ -893,7 +891,6 @@ int32_t AudioSuiteEngine::GetSystemNodeParam(uint32_t nodeId, std::vector<uint8_
             managerCallback_.OnGetSystemNodeParam(ret);
             return;
         }
-        managerCallback_.OnGetSystemNodeParam(SUCCESS);
     };
 
     SendRequest(request, __func__);
@@ -930,7 +927,6 @@ int32_t AudioSuiteEngine::GetSystemNodeInOutSize(uint32_t nodeId, uint32_t &inSi
             managerCallback_.OnGetSystemNodeInOutSize(ret);
             return;
         }
-        managerCallback_.OnGetSystemNodeInOutSize(SUCCESS);
     };
 
     SendRequest(request, __func__);

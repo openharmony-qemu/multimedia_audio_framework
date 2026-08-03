@@ -29,14 +29,18 @@ public:
     AudioSuiteDownloadManagerImpl(const AudioSuiteDownloadManagerImpl&) = delete;
     AudioSuiteDownloadManagerImpl& operator=(const AudioSuiteDownloadManagerImpl&) = delete;
 
-    int32_t RegisterDownloadCallback(std::shared_ptr<IDownloadCallbackListener> callback) override;
-    int32_t UnregisterDownloadCallback() override;
-    int32_t StartDownload(const std::string& version) override;
-    int32_t CancelDownload() override;
-    int32_t StartBackgroundDownload(const std::string& version) override;
-    int32_t GetDownloadStatus(DownloadStatus& status, const std::string& version) override;
-    int32_t UninstallCloudRom(const std::string& version) override;
-    int32_t Init();
+    int32_t RegisterDownloadStatusCallback(std::shared_ptr<DownloadStatusCallback> callback) override;
+    int32_t UnregisterDownloadStatusCallback() override;
+    int32_t StartDownload(const std::string& featureName) override;
+    int32_t PauseDownload(const std::string& featureName) override;
+    int32_t CancelDownload(const std::string& featureName) override;
+    int32_t StartBackgroundDownload(const std::string& featureName) override;
+    int32_t GetDownloadStatus(const std::string& featureName, AudioSuiteDownloadStatusInfo& status) override;
+    int32_t UninstallCloudRom(const std::string& featureName) override;
+
+    int32_t RegisterDownloadInterfaceCallback(const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback) override;
+    int32_t UnregisterDownloadInterfaceCallback() override;
+    void OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status) override;
 };
 
 }  // namespace AudioSuite
