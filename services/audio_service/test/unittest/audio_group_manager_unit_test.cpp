@@ -257,6 +257,157 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level1)
     int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_APP, false, deviceType);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetMute_005
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_005, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_DISTRIBUTED;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE;
+    int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_MUSIC, true, deviceType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetMute_006
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_006, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_DISTRIBUTED;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_INVALID;
+    int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_RING, false, deviceType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetMute_007
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_007, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE;
+    int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_MUSIC, true, deviceType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetMute_008
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_008, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE;
+    int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_ALL, false, deviceType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetMute_009
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_009, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_INVALID;
+    int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_VOICE_CALL, true, deviceType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetMute_010
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_010, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE;
+    int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_WAKEUP, false, deviceType);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetMute_011
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_011, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE;
+    int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_CAMCORDER, true, deviceType);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetMute_012
+* @tc.desc  : Test SetMute with volumeFlag for supported volume type.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_012, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE;
+    int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_MUSIC, true, deviceType, 1);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetMute_013
+* @tc.desc  : Test SetMute with volumeFlag for supported volume type.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_013, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE;
+    int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_MUSIC, false, deviceType, 1);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test Audio API
+* @tc.type  : FUNC
+* @tc.number: SetMute_014
+* @tc.desc  : Test SetMute with volumeFlag for unsupported volume type.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_014, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE;
+    int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_WAKEUP, false, deviceType, 1);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
 /**
 * @tc.name  : Test Audio API
 * @tc.type  : FUNC
