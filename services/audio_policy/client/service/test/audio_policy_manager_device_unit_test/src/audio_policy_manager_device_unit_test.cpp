@@ -655,7 +655,8 @@ HWTEST(AudioPolicyManagerDevice, UnsetDeviceChangeCallback_002, TestSize.Level1)
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
-    auto cb = std::make_shared<AudioManagerDeviceChangeCallbackTest>();
+    std::shared_ptr<AudioManagerDeviceChangeCallback> cb(
+        new AudioManagerDeviceChangeCallbackTest());
     int32_t ret = mgr->UnsetDeviceChangeCallback(1, OUTPUT_DEVICES_FLAG, cb);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -685,7 +686,8 @@ HWTEST(AudioPolicyManagerDevice, UnsetDeviceInfoUpdateCallback_003, TestSize.Lev
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
     mgr->audioPolicyClientStubCB_->deviceInfoUpdateCallbackList_.clear();
-    auto cb = std::make_shared<ConcreteAudioManagerDeviceInfoUpdateCallback>();
+    std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> cb(
+        new ConcreteAudioManagerDeviceInfoUpdateCallback());
     int32_t ret = mgr->UnsetDeviceInfoUpdateCallback(1, cb);
     EXPECT_EQ(ret, SUCCESS);
 }
