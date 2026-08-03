@@ -521,6 +521,7 @@ void AudioActiveDevice::UpdateStreamDeviceMapForOutput(std::string source)
             desc->rendererInfo_.streamUsage, desc->GetNewDevicesInfo().c_str(),
             desc->newDeviceDescs_.front()->hasStreamRunning_, desc->streamStatus_,
             desc->newDeviceDescs_.front()->GetDevicePrivacyType(), desc->bundleName_.c_str());
+        CHECK_AND_CONTINUE(desc->IsRunning());
         UpdateVolumeTypeDeviceMap(desc);
         UpdateStreamUsageDeviceMap(desc);
 
