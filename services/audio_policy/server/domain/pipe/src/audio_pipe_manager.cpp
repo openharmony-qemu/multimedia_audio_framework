@@ -477,7 +477,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
         CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
         if (pipe->streamDescriptors_.empty() && (IsSpecialPipe(pipe->routeFlag_) ||
             (pipe->adapterName_ == ADAPTER_TYPE_VA &&
-            pipe->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL) || pipe->moduleInfo_.className == "primary_extra")) {
+            pipe->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL) || pipe->moduleInfo_.className == PRIMARY_EXTRA_CLASS)) {
             newList.push_back(pipe);
         }
     }

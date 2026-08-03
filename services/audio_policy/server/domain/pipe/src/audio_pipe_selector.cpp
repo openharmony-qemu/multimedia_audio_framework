@@ -1627,7 +1627,7 @@ static void FillSpecialPipeInfoExt(AudioPipeInfo &info, std::shared_ptr<AdapterP
     }
 
     if (IsMultiStreamPrimary(pipeInfoPtr->name_)) {
-        info.moduleInfo_.className = "primary_extra";
+        info.moduleInfo_.className = PRIMARY_EXTRA_CLASS;
         info.moduleInfo_.networkId = info.moduleInfo_.name;
     } else if (IsMultiStreamCaptureInfo(pipeInfoPtr->name_)) {
         info.moduleInfo_.className = "primary_extra_capturer";

@@ -59,6 +59,41 @@ private:
     const std::string portName_;
 };
 
+class WaitActiveDeviceByClassAction : public AsyncActionHandler::AsyncAction {
+public:
+    WaitActiveDeviceByClassAction(int32_t muteDuration, const std::string &className,
+        const std::string &info) : muteDuration_(muteDuration), className_(className), info_(info)
+    {}
+
+    void Exec() override
+    {
+        AudioIOHandleMap::GetInstance().UnmutePortAfterMuteDurationByClass(
+            muteDuration_, className_, info_);
+    }
+
+private:
+    int32_t muteDuration_;
+    const std::string className_;
+    const std::string info_;
+};
+
+class UnmutePortByClassAction : public AsyncActionHandler::AsyncAction {
+public:
+    UnmutePortByClassAction(int32_t muteDuration, const std::string &className,
+        const std::string &info) : muteDuration_(muteDuration), className_(className), info_(info)
+    {}
+
+    void Exec() override
+    {
+        AudioIOHandleMap::GetInstance().DoUnmutePortByClass(muteDuration_, className_, info_);
+    }
+
+private:
+    int32_t muteDuration_;
+    const std::string className_;
+    const std::string info_;
+};
+
 static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS = 5000; // 5s
@@ -273,6 +308,25 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
     }
 }
 
+void AudioIOHandleMap::MuteSinkPortByClass(const std::string &className, const std::string &info,
+    int32_t duration, bool isSleepEnabled)
+{
+    AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(className, duration, true, info);
+
+    std::shared_ptr<WaitActiveDeviceByClassAction> action =
+        std::make_shared<WaitActiveDeviceByClassAction>(duration, className, info);
+    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    if (asyncHandler_ != nullptr) {
+        asyncHandler_->PostAsyncAction(desc);
+    }
+
+    if (isSleepEnabled) {
+        usleep(WAIT_SET_MUTE_LATENCY_TIME_US);
+    }
+}
+
 void AudioIOHandleMap::MuteDefaultSinkPort(std::string networkID, std::string sinkName)
 {
     if (networkID != LOCAL_NETWORK_ID || sinkName != PRIMARY_SPEAKER) {
@@ -329,6 +383,40 @@ void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &por
     } else {
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, false);
     }
+}
+
+void AudioIOHandleMap::UnmutePortAfterMuteDurationByClass(int32_t muteDuration, const std::string &className,
+    const std::string &info)
+{
+    Trace trace("UnmutePortAfterMuteDurationByClass:" + className);
+
+    if (!moveDeviceFinished_.load()) {
+        std::unique_lock<std::mutex> lock(moveDeviceMutex_);
+        bool loadWaiting = moveDeviceCV_.wait_for(lock,
+            std::chrono::milliseconds(WAIT_MOVE_DEVICE_MUTE_TIME_MAX_MS),
+            [this] { return moveDeviceFinished_.load(); });
+        if (!loadWaiting) {
+            AUDIO_ERR_LOG("move device time out");
+        }
+    }
+    AUDIO_INFO_LOG("%{public}d us for class[%{public}s]", muteDuration, className.c_str());
+
+    std::shared_ptr<UnmutePortByClassAction> action =
+        std::make_shared<UnmutePortByClassAction>(muteDuration, className, info);
+    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.delayTimeMs = muteDuration / US_PER_MS;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    if (asyncHandler_ != nullptr) {
+        asyncHandler_->PostAsyncAction(desc);
+    }
+}
+
+void AudioIOHandleMap::DoUnmutePortByClass(int32_t muteDuration, const std::string &className,
+    const std::string &info)
+{
+    AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(className,
+        muteDuration, false, info);
 }
 
 int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeInfo> &pipeInfo,

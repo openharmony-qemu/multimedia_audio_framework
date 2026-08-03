@@ -739,8 +739,12 @@ private:
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     bool HandleMuteBeforeDeviceSwitch(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         const AudioStreamDeviceChangeReasonExt reason);
+    void CaptureOldPipeInfo(bool isEnhancedRouting,
+        const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList, uint32_t sessionId,
+        std::string &oldClassName, std::string &oldModuleName);
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        const AudioStreamDeviceChangeReasonExt reason);
+        const AudioStreamDeviceChangeReasonExt reason, const std::string &oldClassName = "",
+        const std::string &oldModuleName = "");
     void CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSleepBeforeRingDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void HandlePrimaryNonDualOutputStreamMuteForDualRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
@@ -752,7 +756,10 @@ private:
     bool IsSceneRequireMuteAndSleep();
     void SetVoiceCallMuteForSwitchDevice();
     void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
-        AudioStreamDeviceChangeReasonExt reason);
+        AudioStreamDeviceChangeReasonExt reason,
+        const std::string &oldClassName = "", const std::string &oldModuleName = "");
+    void MuteOldSinkByClassOrPort(const std::string &oldSinkName,
+        const std::string &oldClassName, const std::string &oldModuleName, int64_t muteTime);
     void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
     void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
