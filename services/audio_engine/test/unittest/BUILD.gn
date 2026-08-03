@@ -87,7 +87,7 @@ ohos_unittest("hpae_render_manager_test") {
 
   sanitize = {
     cfi = true
-    cfi_cross_dso = false
+    cfi_cross_dso = true
     boundary_sanitize = true
     debug = false
     integer_overflow = true

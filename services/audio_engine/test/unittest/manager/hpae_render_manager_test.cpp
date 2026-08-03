@@ -4591,6 +4591,7 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectStatusCallback, TestSize.Level0)
     constexpr uint32_t testNodeId = 101;
 
     AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+    EXPECT_EQ(hpaeRendererManager_->Init(), SUCCESS);
 
     AudioEffectConfig config;
     config.inputCfg.samplingRate = SAMPLE_RATE_48000;
@@ -4614,6 +4615,7 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectStatusCallback, TestSize.Level0)
     // DISABLED is emitted by the deferred FinalizeClose; drain the queue before asserting.
     WaitForMsgProcessing(hpaeRendererManager_);
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(hpaeRendererManager_->DeInit(), SUCCESS);
 }
 
 // Rapid recreate: Create arriving while the old node is STOPPING is not rejected as duplicate;
@@ -4624,6 +4626,7 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyThenCreateRequeues, TestSi
     constexpr uint32_t testNodeId = 1101;
 
     AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+    EXPECT_EQ(hpaeRendererManager_->Init(), SUCCESS);
 
     AudioEffectConfig config;
     config.inputCfg.samplingRate = SAMPLE_RATE_48000;
@@ -4652,6 +4655,7 @@ HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyThenCreateRequeues, TestSi
     EXPECT_TRUE(hpaeRendererManager_->HasSessionEffect(sessionId));
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
     EXPECT_GE(callback->Count(sessionId, OPERATION_SESSION_EFFECT_ENABLED), 2u);
+    EXPECT_EQ(hpaeRendererManager_->DeInit(), SUCCESS);
 }
 
 HWTEST_F(HpaeRendererManagerTest, HasSessionEffectUsesProcessorTypeWhenSessionSceneIsStale, TestSize.Level0)

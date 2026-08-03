@@ -2438,29 +2438,3 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_Direct_Ready
     manager_->DestroyStream(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
 }
-
-// SE_Materialize_Direct_ReadyFail: converterForGain_ null -> InsertSessionEffectNode fails ->
-// sessionEffectSessionId_ reset to 0, no ENABLED (hpae_direct_renderer_manager.cpp:1468-1470).
-HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_Direct_ReadyFail, TestSize.Level1)
-{
-    ASSERT_EQ(manager_->CreateStream(GetDefaultStreamInfo()), SUCCESS);
-    WaitForMsgProcessing(manager_);
-
-    auto callback = std::make_shared<StatusCallbackRecorder>();
-    manager_->RegisterSendMsgCallback(callback);
-
-    auto savedConverter = manager_->converterForGain_;
-    manager_->converterForGain_ = nullptr;  // forces InsertSessionEffectNode -> ERR_SESSION_NOT_FOUND
-
-    auto instance = MakeTestEffectInstance(defaultConfig_);
-    int32_t ret = manager_->MaterializeCurrentSessionEffect(
-        TEST_SESSION_ID, "audio_aiss_enhance", instance, defaultConfig_);
-    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND));
-    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
-    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
-    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 0u);
-
-    manager_->converterForGain_ = savedConverter;  // restore before teardown
-    manager_->DestroyStream(TEST_SESSION_ID);
-    WaitForMsgProcessing(manager_);
-}

@@ -834,6 +834,7 @@ HWTEST_F(HpaeOffloadSeDataflowTest, warmingUp_outputsSilence, TestSize.Level0)
     manager_->InsertSessionEffectNode("test_effect", instance, config_);
 
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    manager_->sessionEffectNode_->rawBypassNeeded_ = true;
     manager_->sessionEffectNode_->StartEffect();
     EXPECT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 
@@ -854,6 +855,7 @@ HWTEST_F(HpaeOffloadSeDataflowTest, intercepting_feedsAndOutputsSilence, TestSiz
     fake_.SetPreheatFrames(0);
     auto instance = CreateEffectInstance();
     manager_->InsertSessionEffectNode("test_effect", instance, config_);
+    manager_->sessionEffectNode_->rawBypassNeeded_ = true;
     manager_->sessionEffectNode_->StartEffect();
 
     // Transition WARMING_UP -> INTERCEPTING (prebufFilled=true from SetPreheatFrames(0))
@@ -881,8 +883,10 @@ HWTEST_F(HpaeOffloadSeDataflowTest, active_outputsAlgoData, TestSize.Level0)
     fake_.SetPreheatFrames(0);
     fake_.SetProcessThreshold(1920);
     fake_.SetProcessDelayMs(0);
+    fake_.SetOutputPersistent(true);  // getOutput won't consume buffer — safe for skip-stale-frames path to ACTIVE
     auto instance = CreateEffectInstance();
     manager_->InsertSessionEffectNode("test_effect", instance, config_);
+    manager_->sessionEffectNode_->rawBypassNeeded_ = true;
     manager_->sessionEffectNode_->StartEffect();
 
     // Drive to ACTIVE
@@ -909,8 +913,10 @@ HWTEST_F(HpaeOffloadSeDataflowTest, remove_restoresPassthrough, TestSize.Level0)
     fake_.SetPreheatFrames(0);
     fake_.SetProcessThreshold(1920);
     fake_.SetProcessDelayMs(0);
+    fake_.SetOutputPersistent(true);  // getOutput won't consume buffer — safe for skip-stale-frames path to ACTIVE
     auto instance = CreateEffectInstance();
     manager_->InsertSessionEffectNode("test_effect", instance, config_);
+    manager_->sessionEffectNode_->rawBypassNeeded_ = true;
     manager_->sessionEffectNode_->StartEffect();
 
     // Drive to ACTIVE
@@ -972,9 +978,11 @@ HWTEST_F(HpaeOffloadSeDataflowTest, pauseStart_resumesSE, TestSize.Level0)
     fake_.SetPreheatFrames(0);
     fake_.SetProcessThreshold(1920);
     fake_.SetProcessDelayMs(0);
+    fake_.SetOutputPersistent(true);  // getOutput won't consume buffer — safe for skip-stale-frames path to ACTIVE
     auto instance = CreateEffectInstance();
     manager_->InsertSessionEffectNode("test_effect", instance, config_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    manager_->sessionEffectNode_->rawBypassNeeded_ = true;
 
     // Drive to ACTIVE
     manager_->sessionEffectNode_->StartEffect();
@@ -1016,9 +1024,11 @@ HWTEST_F(HpaeOffloadSeDataflowTest, pauseFlushStart_stateTransitions, TestSize.L
     fake_.SetPreheatFrames(0);
     fake_.SetProcessThreshold(1920);
     fake_.SetProcessDelayMs(0);
+    fake_.SetOutputPersistent(true);  // getOutput won't consume buffer — safe for skip-stale-frames path to ACTIVE
     auto instance = CreateEffectInstance();
     manager_->InsertSessionEffectNode("test_effect", instance, config_);
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    manager_->sessionEffectNode_->rawBypassNeeded_ = true;
 
     // Drive to ACTIVE state
     manager_->sessionEffectNode_->StartEffect();

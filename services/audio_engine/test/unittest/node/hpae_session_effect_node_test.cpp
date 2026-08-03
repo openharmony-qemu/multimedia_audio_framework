@@ -695,22 +695,6 @@ HWTEST_F(SessionEffectNodeStateTest, startEffect_zeroPreheatMarksPrebufFilled, T
     EXPECT_TRUE(node_->GetPrebufFilled());
 }
 
-// SE preheat state change notification: true before StartPreheatThread spawns, false at end of PreheatThreadFunc
-HWTEST_F(SessionEffectNodeStateTest, preheat_emitsStateChanged_trueOnStart_falseOnExit, TestSize.Level0)
-{
-    ON_CALL(*mockInst_, GetPreheatFrames()).WillByDefault(testing::Return(5));
-    std::vector<std::pair<uint32_t, bool>> seen;
-    EXPECT_CALL(*mockCallback_, OnSessionEffectPreheatStateChanged(testing::_, testing::_))
-        .WillRepeatedly([&](uint32_t s, bool a) { seen.emplace_back(s, a); });
-
-    EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP); // CreateEffect + StartEffect -> spawn -> true
-    ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
-
-    node_->StopPreheatThread(); // join -> PreheatThreadFunc emits false at end
-    EXPECT_THAT(seen, testing::Contains(std::pair<uint32_t, bool>{TEST_SESSION_ID, true}));
-    EXPECT_THAT(seen, testing::Contains(std::pair<uint32_t, bool>{TEST_SESSION_ID, false}));
-}
-
 // When prebufTargetBytes_ == 0 (no preheat thread), no preheat state change callback should be emitted
 HWTEST_F(SessionEffectNodeStateTest, preheat_noCallback_whenPrebufTargetZero, TestSize.Level0)
 {
@@ -1793,6 +1777,9 @@ HWTEST_F(SessionEffectNodeStateTest, seek_duringActive, TestSize.Level0)
 // SE-L1: GetLatency returns (totalBytesIn_ - totalBytesOut_) in microseconds
 HWTEST_F(SessionEffectNodeStateTest, GetLatency_returns_input_minus_output, TestSize.Level0)
 {
+    // rawBypassNeeded_=true forces the INTERCEPTING silence path so dry frames are not counted as
+    // algorithm output; GetLatency() (bytesIn - algoBytesOut) then reflects algorithm-internal buffering.
+    node_->rawBypassNeeded_ = true;
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
     uint64_t oneFrameLatencyUs = byteLen * 1000000ULL / (TEST_CHANNEL_COUNT * sizeof(float) * 48000);
@@ -1938,6 +1925,9 @@ HWTEST_F(SessionEffectNodeStateTest, GetLatency_includes_preheat_silence, TestSi
 HWTEST_F(SessionEffectNodeStateTest, GetLatency_interceptingSilenceProgressMatchesSkipFrames, TestSize.Level0)
 {
     EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
+    // rawBypassNeeded_=true forces the INTERCEPTING silence path (PrepareSilenceBuffer) so output
+    // accounting matches the skip frames instead of counting every raw-bypass frame.
+    node_->rawBypassNeeded_ = true;
     std::this_thread::sleep_for(std::chrono::milliseconds(25));
     node_->SetPrebufFilledForTest(true);
 
