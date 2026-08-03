@@ -156,6 +156,7 @@ describe("AudioRendererInterruptUnitTest", function() {
             await release(render,done)
             await release(render1,done)
             console.log(" AudioRendererInterrupt:start success.")
+            done()
         } catch (err) {
             console.log(" AudioRendererInterrupt:start err:" + JSON.stringify(err))
             expect(false).assertEqual(true)
