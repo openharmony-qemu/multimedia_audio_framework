@@ -243,10 +243,10 @@ void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
         return;
     }
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
-    AudioRawFormat rawFormat;
-    rawFormat.format = SAMPLE_F32LE;
-    rawFormat.channels = GetChannelCount();
     if (GetNodeInfo().fadeType == FadeType::SHORT_FADE) {
+        AudioRawFormat rawFormat;
+        rawFormat.format = SAMPLE_F32LE;
+        rawFormat.channels = GetChannelCount();
         uint32_t byteLen = static_cast<float>(GetSampleRate()) * SHORT_FADE_PERIOD *
             rawFormat.channels * sizeof(float);
         auto ret = ProcessVol(data, byteLen, rawFormat, FADE_LOW, FADE_HIGH);
@@ -254,6 +254,19 @@ void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
         return;
     }
+    ProcessDefaultFadeIn(input, data, fadeInState, processedBytes, totalFadeBytes);
+#else
+    fadeInState = false;
+#endif
+}
+
+void HpaeGainNode::ProcessDefaultFadeIn(HpaePcmBuffer *input, uint8_t *data,
+    bool &fadeInState, uint32_t &processedBytes, uint32_t &totalFadeBytes)
+{
+#ifndef CONFIG_FACTORY_VERSION
+    AudioRawFormat rawFormat;
+    rawFormat.format = SAMPLE_F32LE;
+    rawFormat.channels = GetChannelCount();
     if (processedBytes == 0) {
         uint32_t byteLen = 0;
         uint32_t byteOffset = GetFadeInLength(byteLen, input);
@@ -279,8 +292,6 @@ void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
         fadeInState = false;
         processedBytes = 0;
     }
-#else
-    fadeInState = false;
 #endif
 }
 
