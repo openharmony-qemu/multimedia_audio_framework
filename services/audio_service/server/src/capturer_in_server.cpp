@@ -70,6 +70,8 @@ enum CallbackHandlerEvent : uint32_t {
     NOTIFY_VOIP_START = 0,
 };
 
+static constexpr int32_t MAX_AUDIO_CHANNELS = 32;
+
 bool IsCapturerConfigValid(const AudioProcessConfig &config)
 {
     if (config.appInfo.appUid < 0) {
@@ -84,7 +86,7 @@ bool IsCapturerConfigValid(const AudioProcessConfig &config)
         AUDIO_ERR_LOG("Invalid samplingRate in capturer config: %{public}d", config.streamInfo.samplingRate);
         return false;
     }
-    if (config.streamInfo.channels <= 0 || config.streamInfo.channels > 32) {
+    if (config.streamInfo.channels <= 0 || config.streamInfo.channels > MAX_AUDIO_CHANNELS) {
         AUDIO_ERR_LOG("Invalid channels in capturer config: %{public}d", config.streamInfo.channels);
         return false;
     }
