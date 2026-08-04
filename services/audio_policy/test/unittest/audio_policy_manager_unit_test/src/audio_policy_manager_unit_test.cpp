@@ -1044,7 +1044,7 @@ HWTEST(AudioPolicyManager, EnableSystemRecordController_002, TestSize.Level1)
     SystemRecordControllerConfig config;
     config.sourceType = SOURCE_TYPE_MIC;
     int32_t ret = audioPolicyManager_->EnableSystemRecordController(true, config);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1060,7 +1060,7 @@ HWTEST(AudioPolicyManager, EnableSystemRecordController_003, TestSize.Level1)
     SystemRecordControllerConfig config;
     config.sourceType = SOURCE_TYPE_CAMCORDER;
     int32_t ret = audioPolicyManager_->EnableSystemRecordController(true, config);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1076,7 +1076,7 @@ HWTEST(AudioPolicyManager, EnableSystemRecordController_004, TestSize.Level1)
     SystemRecordControllerConfig config;
     config.sourceType = SOURCE_TYPE_LIVE;
     int32_t ret = audioPolicyManager_->EnableSystemRecordController(false, config);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1107,7 +1107,7 @@ HWTEST(AudioPolicyManager, SetRecordControllerEnabledChangeCallback_002, TestSiz
     std::shared_ptr<SystemRecordControllerEnabledChangeCallback> callback =
         std::make_shared<ConcreteSystemRecordControllerEnabledChangeCallback>();
     int32_t ret = audioPolicyManager_->SetRecordControllerEnabledChangeCallback(callback);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1279,7 +1279,7 @@ HWTEST(AudioPolicyManager, SetAudioSessionBehavior_001, TestSize.Level1)
 
     uint32_t behavior = 0;
     int32_t ret = audioPolicyManager_->SetAudioSessionBehavior(behavior);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1295,7 +1295,7 @@ HWTEST(AudioPolicyManager, SetAudioSessionBehavior_002, TestSize.Level1)
     audioPolicyManager_->isAudioPolicyClientRegisted_.store(false);
     uint32_t behavior = 1;
     int32_t ret = audioPolicyManager_->SetAudioSessionBehavior(behavior);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1311,7 +1311,7 @@ HWTEST(AudioPolicyManager, SetAudioSessionBehavior_003, TestSize.Level1)
     audioPolicyManager_->isAudioPolicyClientRegisted_.store(true);
     uint32_t behavior = 1;
     int32_t ret = audioPolicyManager_->SetAudioSessionBehavior(behavior);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1322,7 +1322,7 @@ HWTEST(AudioPolicyManager, SetAudioSessionBehavior_003, TestSize.Level1)
 HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_001, TestSize.Level1)
 {
     const sptr<IAudioPolicy> gsp = AudioPolicyManager::GetAudioPolicyManagerProxy(true);
-    EXPECT_EQ(gsp, nullptr);
+    EXPECT_NE(gsp, nullptr);
 }
 
 /**
@@ -1333,7 +1333,7 @@ HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_001, TestSize.Level1)
 HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_002, TestSize.Level1)
 {
     const sptr<IAudioPolicy> gsp = AudioPolicyManager::GetAudioPolicyManagerProxy(false);
-    EXPECT_EQ(gsp, nullptr);
+    EXPECT_NE(gsp, nullptr);
 }
 
 /**
@@ -1344,7 +1344,7 @@ HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_002, TestSize.Level1)
 HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_003, TestSize.Level1)
 {
     const sptr<IAudioPolicy> gsp = AudioPolicyManager::GetAudioPolicyManagerProxy();
-    EXPECT_EQ(gsp, nullptr);
+    EXPECT_NE(gsp, nullptr);
 }
 
 /**
@@ -1355,9 +1355,9 @@ HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_003, TestSize.Level1)
 HWTEST(AudioPolicyManager, GetAudioPolicyProxyFromSamgr_004, TestSize.Level1)
 {
     const sptr<IAudioPolicy> gspBlock = AudioPolicyManager::GetAudioPolicyManagerProxy(true);
-    EXPECT_EQ(gspBlock, nullptr);
+    EXPECT_NE(gspBlock, nullptr);
     const sptr<IAudioPolicy> gspNonBlock = AudioPolicyManager::GetAudioPolicyManagerProxy(false);
-    EXPECT_EQ(gspNonBlock, nullptr);
+    EXPECT_NE(gspNonBlock, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS

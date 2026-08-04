@@ -23,7 +23,7 @@
 #include "audio_device_manager.h"
 #include "audio_device_factory.h"
 #include "audio_scene_manager.h"
-#include "audio_route_map.h"
+#include "audio_router_map.h"
 #include "audio_pipe_manager.h"
 #include "audio_router_center.h"
 #include "audio_server_proxy.h"
@@ -35,7 +35,6 @@
 #include "stream_dfx_manager.h"
 #include "sle_audio_device_manager.h"
 #include "bluetooth_device_manager.h"
-#include "ipc_skeleton.h"
 
 using namespace testing::ext;
 
