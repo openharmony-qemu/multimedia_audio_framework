@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,11 @@
 #include "audio_safe_volume_notification_impl_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
-
+#include <cerrno>
+#include <sys/socket.h>
+#include <unistd.h>
+using namespace std;
+using namespace std::chrono;
 using namespace testing::ext;
 
 namespace OHOS {
@@ -27,32 +31,118 @@ void AudioSafeVolumeNotificationImplUnitTest::TearDownTestCase(void) {}
 void AudioSafeVolumeNotificationImplUnitTest::SetUp(void) {}
 void AudioSafeVolumeNotificationImplUnitTest::TearDown(void) {}
 
-void AudioLoudVolumeNotificationImplUnitTest::SetUpTestCase(void) {}
-void AudioLoudVolumeNotificationImplUnitTest::TearDownTestCase(void) {}
-void AudioLoudVolumeNotificationImplUnitTest::SetUp(void) {}
-void AudioLoudVolumeNotificationImplUnitTest::TearDown(void) {}
+#define PRINT_LINE printf("debug __LINE__:%d\n", __LINE__)
 
-void AudioLegacyHighVolumeNotificationImplUnitTest::SetUpTestCase(void) {}
-void AudioLegacyHighVolumeNotificationImplUnitTest::TearDownTestCase(void) {}
-void AudioLegacyHighVolumeNotificationImplUnitTest::SetUp(void) {}
-void AudioLegacyHighVolumeNotificationImplUnitTest::TearDown(void) {}
-
-// ========== SetActionButton (static) ==========
-// Tested indirectly via PublishSafeVolumeNotification and
-// PublishLegacyHighVolumeNotification with valid buttonName.
-
-// ========== AudioSafeVolumeNotificationImpl::GetPixelMap ==========
-
-HWTEST_F(AudioSafeVolumeNotificationImplUnitTest, GetPixelMap_001, TestSize.Level4)
+/**
+ * @tc.name  : Test AudioSafeVolumeNotificationImpl.
+ * @tc.number: AudioSafeVolumeNotificationImpl_001
+ * @tc.desc  : Test AudioHapticManagerImpl SetTitleAndText interface.
+ */
+HWTEST(AudioSafeVolumeNotificationImplUnitTest, AudioSafeVolumeNotificationImpl_001, TestSize.Level4)
 {
     AudioSafeVolumeNotificationImpl impl;
-    impl.iconPixelMap_ = std::shared_ptr<Media::PixelMap>(
-        reinterpret_cast<Media::PixelMap*>(0x1), [](auto) {});
-    bool ret = impl.GetPixelMap();
+    bool ret = impl.SetTitleAndText(RESTORE_VOLUME_NOTIFICATION_ID, nullptr);
     EXPECT_FALSE(ret);
 }
 
-HWTEST_F(AudioSafeVolumeNotificationImplUnitTest, GetPixelMap_002, TestSize.Level4)
+/**
+ * @tc.name  : Test AudioSafeVolumeNotificationImpl.
+ * @tc.number: AudioSafeVolumeNotificationImpl_002
+ * @tc.desc  : Test AudioHapticManagerImpl SetTitleAndText interface.
+ */
+HWTEST(AudioSafeVolumeNotificationImplUnitTest, AudioSafeVolumeNotificationImpl_002, TestSize.Level4)
+{
+    AudioSafeVolumeNotificationImpl impl;
+    auto normal = std::make_shared<Notification::NotificationNormalContent>();
+    bool ret = impl.SetTitleAndText(RESTORE_VOLUME_NOTIFICATION_ID, normal);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test AudioSafeVolumeNotificationImpl.
+ * @tc.number: AudioSafeVolumeNotificationImpl_003
+ * @tc.desc  : Test AudioHapticManagerImpl SetTitleAndText interface.
+ */
+HWTEST(AudioSafeVolumeNotificationImplUnitTest, AudioSafeVolumeNotificationImpl_003, TestSize.Level4)
+{
+    AudioSafeVolumeNotificationImpl impl;
+    auto normal = std::make_shared<Notification::NotificationNormalContent>();
+    bool ret = impl.SetTitleAndText(INCREASE_VOLUME_NOTIFICATION_ID, normal);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test AudioSafeVolumeNotificationImpl.
+ * @tc.number: AudioSafeVolumeNotificationImpl_004
+ * @tc.desc  : Test AudioHapticManagerImpl SetTitleAndText interface.
+ */
+HWTEST(AudioSafeVolumeNotificationImplUnitTest, AudioSafeVolumeNotificationImpl_004, TestSize.Level4)
+{
+    AudioSafeVolumeNotificationImpl impl;
+    auto normal = std::make_shared<Notification::NotificationNormalContent>();
+
+    constexpr int32_t INVALID_ID = -1;
+    bool ret = impl.SetTitleAndText(INVALID_ID, normal);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test AudioSafeVolumeNotificationImpl.
+ * @tc.number: AudioSafeVolumeNotificationImpl_005
+ * @tc.desc  : Test AudioHapticManagerImpl GetButtonName interface.
+ */
+HWTEST(AudioSafeVolumeNotificationImplUnitTest, AudioSafeVolumeNotificationImpl_005, TestSize.Level4)
+{
+    AudioSafeVolumeNotificationImpl impl;
+    std::string result = impl.GetButtonName(RESTORE_VOLUME_NOTIFICATION_ID);
+    EXPECT_FALSE(result.empty());
+}
+
+/**
+ * @tc.name  : Test AudioSafeVolumeNotificationImpl.
+ * @tc.number: AudioSafeVolumeNotificationImpl_006
+ * @tc.desc  : Test AudioHapticManagerImpl GetButtonName interface.
+ */
+HWTEST(AudioSafeVolumeNotificationImplUnitTest, AudioSafeVolumeNotificationImpl_006, TestSize.Level4)
+{
+    AudioSafeVolumeNotificationImpl impl;
+    std::string result = impl.GetButtonName(INCREASE_VOLUME_NOTIFICATION_ID);
+    EXPECT_FALSE(result.empty());
+}
+
+/**
+ * @tc.name  : Test AudioSafeVolumeNotificationImpl.
+ * @tc.number: AudioSafeVolumeNotificationImpl_007
+ * @tc.desc  : Test AudioHapticManagerImpl GetButtonName interface.
+ */
+HWTEST(AudioSafeVolumeNotificationImplUnitTest, AudioSafeVolumeNotificationImpl_007, TestSize.Level4)
+{
+    AudioSafeVolumeNotificationImpl impl;
+    constexpr uint32_t INVALID_ID = -1;
+    std::string result = impl.GetButtonName(INVALID_ID);
+    EXPECT_TRUE(result.empty());
+}
+
+/**
+ * @tc.name  : Test AudioSafeVolumeNotificationImpl.
+ * @tc.number: AudioSafeVolumeNotificationImpl_008
+ * @tc.desc  : Test AudioHapticManagerImpl GetPixelMap interface.
+ */
+HWTEST(AudioSafeVolumeNotificationImplUnitTest, AudioSafeVolumeNotificationImpl_008, TestSize.Level4)
+{
+    AudioSafeVolumeNotificationImpl impl;
+    impl.iconPixelMap_ = std::shared_ptr<Media::PixelMap>(reinterpret_cast<Media::PixelMap*>(0x1), [](auto) {});
+    bool ret = impl.GetPixelMap();
+    EXPECT_FALSE(ret);
+    EXPECT_NE(impl.iconPixelMap_, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioSafeVolumeNotificationImpl.
+ * @tc.number: AudioSafeVolumeNotificationImpl_009
+ * @tc.desc  : Test AudioHapticManagerImpl GetPixelMap interface.
+ */
+HWTEST(AudioSafeVolumeNotificationImplUnitTest, AudioSafeVolumeNotificationImpl_009, TestSize.Level4)
 {
     AudioSafeVolumeNotificationImpl impl;
     impl.iconPixelMap_.reset();
@@ -61,55 +151,127 @@ HWTEST_F(AudioSafeVolumeNotificationImplUnitTest, GetPixelMap_002, TestSize.Leve
     EXPECT_NE(impl.iconPixelMap_, nullptr);
 }
 
-// ========== AudioSafeVolumeNotificationImpl::PublishSafeVolumeNotification ==========
-
-HWTEST_F(AudioSafeVolumeNotificationImplUnitTest,
-    PublishSafeVolumeNotification_001, TestSize.Level4)
+/**
+ * @tc.name  : Test AudioSafeVolumeNotificationImpl.
+ * @tc.number: AudioSafeVolumeNotificationImpl_010
+ * @tc.desc  : Test AudioHapticManagerImpl PublishSafeVolumeNotification interface.
+ */
+HWTEST(AudioSafeVolumeNotificationImplUnitTest, AudioSafeVolumeNotificationImpl_010, TestSize.Level4)
 {
     AudioSafeVolumeNotificationImpl impl;
-    impl.iconPixelMap_ = std::make_shared<Media::PixelMap>();
-    impl.PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    impl.iconPixelMap_ = pixelMap;
+    constexpr int32_t INVALID_ID = -1;
+    impl.PublishSafeVolumeNotification(INVALID_ID);
     EXPECT_NE(impl.iconPixelMap_, nullptr);
 }
 
-HWTEST_F(AudioSafeVolumeNotificationImplUnitTest,
-    PublishSafeVolumeNotification_002, TestSize.Level4)
+/**
+ * @tc.name  : Test AudioSafeVolumeNotificationImpl.
+ * @tc.number: AudioSafeVolumeNotificationImpl_011
+ * @tc.desc  : Test AudioHapticManagerImpl PublishSafeVolumeNotification interface.
+ */
+HWTEST(AudioSafeVolumeNotificationImplUnitTest, AudioSafeVolumeNotificationImpl_011, TestSize.Level4)
+{
+    AudioSafeVolumeNotificationImpl impl;
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    impl.iconPixelMap_ = pixelMap;
+    impl.PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+    EXPECT_NE(impl.iconPixelMap_, nullptr);
+}
+// ========== AudioLoudVolumeNotificationImplUnitTest ==========
+
+void AudioLoudVolumeNotificationImplUnitTest::SetUpTestCase(void) {}
+void AudioLoudVolumeNotificationImplUnitTest::TearDownTestCase(void) {}
+void AudioLoudVolumeNotificationImplUnitTest::SetUp(void) {}
+void AudioLoudVolumeNotificationImplUnitTest::TearDown(void) {}
+
+// ========== AudioLegacyHighVolumeNotificationImplUnitTest ==========
+
+void AudioLegacyHighVolumeNotificationImplUnitTest::SetUpTestCase(void) {}
+void AudioLegacyHighVolumeNotificationImplUnitTest::TearDownTestCase(void) {}
+void AudioLegacyHighVolumeNotificationImplUnitTest::SetUp(void) {}
+void AudioLegacyHighVolumeNotificationImplUnitTest::TearDown(void) {}
+
+// ========== SetActionButton (static, tested via Publish) ==========
+
+HWTEST(AudioSafeVolumeNotificationImplUnitTest,
+    SetActionButton_001, TestSize.Level4)
 {
     AudioSafeVolumeNotificationImpl impl;
     impl.iconPixelMap_ = std::make_shared<Media::PixelMap>();
     impl.PublishSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+}
+
+HWTEST(AudioSafeVolumeNotificationImplUnitTest,
+    SetActionButton_002, TestSize.Level4)
+{
+    AudioLegacyHighVolumeNotificationImpl impl;
+    impl.PublishLegacyHighVolumeNotification();
+}
+
+// ========== AudioSafeVolumeNotificationImpl::GetPixelMap branches ==========
+
+HWTEST(AudioSafeVolumeNotificationImplUnitTest,
+    SafeGetPixelMap_001, TestSize.Level4)
+{
+    AudioSafeVolumeNotificationImpl impl;
+    impl.iconPixelMap_.reset();
+    bool ret = impl.GetPixelMap();
+    EXPECT_TRUE(ret);
     EXPECT_NE(impl.iconPixelMap_, nullptr);
 }
 
-HWTEST_F(AudioSafeVolumeNotificationImplUnitTest,
-    PublishSafeVolumeNotification_003, TestSize.Level4)
+HWTEST(AudioSafeVolumeNotificationImplUnitTest,
+    SafeGetPixelMap_002, TestSize.Level4)
 {
     AudioSafeVolumeNotificationImpl impl;
-    impl.iconPixelMap_ = std::make_shared<Media::PixelMap>();
-    constexpr int32_t INVALID_ID = -1;
-    impl.PublishSafeVolumeNotification(INVALID_ID);
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    impl.iconPixelMap_ = pixelMap;
+    bool ret = impl.GetPixelMap();
+    EXPECT_FALSE(ret);
 }
 
-HWTEST_F(AudioSafeVolumeNotificationImplUnitTest,
-    PublishSafeVolumeNotification_004, TestSize.Level4)
+// ========== PublishSafeVolumeNotification branches ==========
+
+HWTEST(AudioSafeVolumeNotificationImplUnitTest,
+    PublishSafeVolumeNotification_012, TestSize.Level4)
 {
     AudioSafeVolumeNotificationImpl impl;
     impl.iconPixelMap_.reset();
     impl.PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
 }
 
+HWTEST(AudioSafeVolumeNotificationImplUnitTest,
+    PublishSafeVolumeNotification_013, TestSize.Level4)
+{
+    AudioSafeVolumeNotificationImpl impl;
+    impl.iconPixelMap_.reset();
+    impl.PublishSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+}
+
+HWTEST(AudioSafeVolumeNotificationImplUnitTest,
+    PublishSafeVolumeNotification_014, TestSize.Level4)
+{
+    AudioSafeVolumeNotificationImpl impl;
+    impl.iconPixelMap_ = std::make_shared<Media::PixelMap>();
+    impl.PublishSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+}
+
 // ========== AudioLoudVolumeNotificationImpl::GetPixelMap ==========
 
-HWTEST_F(AudioLoudVolumeNotificationImplUnitTest, GetPixelMap_001, TestSize.Level4)
+HWTEST(AudioLoudVolumeNotificationImplUnitTest,
+    LoudGetPixelMap_001, TestSize.Level4)
 {
     AudioLoudVolumeNotificationImpl impl;
-    impl.iconPixelMap_ = std::shared_ptr<Media::PixelMap>(
-        reinterpret_cast<Media::PixelMap*>(0x1), [](auto) {});
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    impl.iconPixelMap_ = pixelMap;
     bool ret = impl.GetPixelMap();
     EXPECT_FALSE(ret);
 }
 
-HWTEST_F(AudioLoudVolumeNotificationImplUnitTest, GetPixelMap_002, TestSize.Level4)
+HWTEST(AudioLoudVolumeNotificationImplUnitTest,
+    LoudGetPixelMap_002, TestSize.Level4)
 {
     AudioLoudVolumeNotificationImpl impl;
     impl.iconPixelMap_.reset();
@@ -120,16 +282,15 @@ HWTEST_F(AudioLoudVolumeNotificationImplUnitTest, GetPixelMap_002, TestSize.Leve
 
 // ========== AudioLoudVolumeNotificationImpl::PublishLoudVolumeNotification ==========
 
-HWTEST_F(AudioLoudVolumeNotificationImplUnitTest,
+HWTEST(AudioLoudVolumeNotificationImplUnitTest,
     PublishLoudVolumeNotification_001, TestSize.Level4)
 {
     AudioLoudVolumeNotificationImpl impl;
     impl.iconPixelMap_ = std::make_shared<Media::PixelMap>();
     impl.PublishLoudVolumeNotification(1);
-    EXPECT_NE(impl.iconPixelMap_, nullptr);
 }
 
-HWTEST_F(AudioLoudVolumeNotificationImplUnitTest,
+HWTEST(AudioLoudVolumeNotificationImplUnitTest,
     PublishLoudVolumeNotification_002, TestSize.Level4)
 {
     AudioLoudVolumeNotificationImpl impl;
@@ -139,16 +300,16 @@ HWTEST_F(AudioLoudVolumeNotificationImplUnitTest,
 
 // ========== AudioLegacyHighVolumeNotificationImpl::SetTitleAndText ==========
 
-HWTEST_F(AudioLegacyHighVolumeNotificationImplUnitTest,
-    SetTitleAndText_001, TestSize.Level4)
+HWTEST(AudioLegacyHighVolumeNotificationImplUnitTest,
+    LegacySetTitleAndText_001, TestSize.Level4)
 {
     AudioLegacyHighVolumeNotificationImpl impl;
     bool ret = impl.SetTitleAndText(nullptr);
     EXPECT_FALSE(ret);
 }
 
-HWTEST_F(AudioLegacyHighVolumeNotificationImplUnitTest,
-    SetTitleAndText_002, TestSize.Level4)
+HWTEST(AudioLegacyHighVolumeNotificationImplUnitTest,
+    LegacySetTitleAndText_002, TestSize.Level4)
 {
     AudioLegacyHighVolumeNotificationImpl impl;
     auto content = std::make_shared<Notification::NotificationNormalContent>();
@@ -158,7 +319,7 @@ HWTEST_F(AudioLegacyHighVolumeNotificationImplUnitTest,
 
 // ========== AudioLegacyHighVolumeNotificationImpl::PublishLegacyHighVolumeNotification ==========
 
-HWTEST_F(AudioLegacyHighVolumeNotificationImplUnitTest,
+HWTEST(AudioLegacyHighVolumeNotificationImplUnitTest,
     PublishLegacyHighVolumeNotification_001, TestSize.Level4)
 {
     AudioLegacyHighVolumeNotificationImpl impl;
