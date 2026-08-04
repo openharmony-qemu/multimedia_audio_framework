@@ -85,6 +85,20 @@ void RunHpaeRenderEffectNodeTest(OHOS::AudioStandard::AudioSampleFormat format_v
     EXPECT_NE(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo), 0);
 }
 
+static HpaeNodeInfo BuildRenderEffectNodeInfo(uint32_t nodeId, AudioChannel channels = STEREO,
+    AudioChannelLayout channelLayout = CH_LAYOUT_STEREO)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = nodeId;
+    nodeInfo.sessionId = nodeId;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = channels;
+    nodeInfo.channelLayout = channelLayout;
+    nodeInfo.format = SAMPLE_F32LE;
+    return nodeInfo;
+}
+
 #define DECLARE_HPARE_RENDER_EFFECT_NODE_TEST(format_val, sample_rate_val, channels_val, test_name) \
 HWTEST_F(HpaeRenderEffectNodeTest, test_name, TestSize.Level2) \
 { \
@@ -2134,20 +2148,6 @@ HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_keepsNodeInfoWhenManager
 
     EXPECT_EQ(node->GetNodeInfo().channels, STEREO);
     EXPECT_EQ(node->GetNodeInfo().channelLayout, CH_LAYOUT_STEREO);
-}
-
-static HpaeNodeInfo BuildRenderEffectNodeInfo(uint32_t nodeId, AudioChannel channels = STEREO,
-    AudioChannelLayout channelLayout = CH_LAYOUT_STEREO)
-{
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.nodeId = nodeId;
-    nodeInfo.sessionId = nodeId;
-    nodeInfo.frameLen = TEST_FRAMELEN1;
-    nodeInfo.samplingRate = SAMPLE_RATE_48000;
-    nodeInfo.channels = channels;
-    nodeInfo.channelLayout = channelLayout;
-    nodeInfo.format = SAMPLE_F32LE;
-    return nodeInfo;
 }
 
 /**
