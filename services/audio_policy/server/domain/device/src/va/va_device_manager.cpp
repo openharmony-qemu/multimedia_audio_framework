@@ -20,12 +20,36 @@
 #include "va_device_manager.h"
 #include "audio_policy_log.h"
 #include "audio_module_info.h"
+#include "audio_effect_service.h"
+#include "audio_noise_reduction_types.h"
+#include "audio_pipe_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 static const std::string VA_DEVICE_INFO_NAME = "Virtual Audio";
 static const std::string VA_INPUT_PIPE_INFO_NAME = "va_input";
+
+namespace {
+constexpr uint32_t CYCLES_PER_SECOND = 50;
+ 
+uint32_t GetSampleBytes(AudioSampleFormat format)
+{
+    switch (format) {
+        case SAMPLE_U8:
+            return 1;
+        case SAMPLE_S16LE:
+            return 2;
+        case SAMPLE_S24LE:
+            return 3;
+        case SAMPLE_S32LE:
+        case SAMPLE_F32LE:
+            return 4;
+        default:
+            return 0;
+    }
+}
+}
 
 VADeviceManager &VADeviceManager::GetInstance()
 {
@@ -63,6 +87,7 @@ std::shared_ptr<AudioDeviceDescriptor> VADeviceManager::ConvertVADeviceToDescrip
             break;
     }
     desc->macAddress_ = config.address_;
+    desc->isUnidirectional_ = config.isUnidirectional_;
 
     for (const auto &streamProp : config.properties_) {
         std::shared_ptr<DeviceStreamInfo> streamInfo = ConvertVAStreamPropertyToInfo(streamProp);
@@ -99,6 +124,9 @@ void VADeviceManager::OnDevicesConnected(
     AddVAStreamPropToMap(vaDevice->configuration_.properties_);
     statusMutex_.unlock();
     AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceStatusUpdated(*descriptor, true);
+    CHECK_AND_RETURN(descriptor->isUnidirectional_);
+    SetAssociatedMacAddresses(descriptor->macAddress_, false);
+    UpdateNoiseReductionCapability(vaDevice, descriptor);
 }
 
 void VADeviceManager::OnDevicesDisconnected(const std::shared_ptr<VADevice> &vaDevice)
@@ -196,18 +224,79 @@ std::shared_ptr<PipeStreamPropInfo> VADeviceManager::ConvertVADeviceStreamProper
 
 uint32_t VADeviceManager::CalculateBufferSize(const VAAudioStreamProperty &vaStreamProperty)
 {
-    const uint32_t cyclesPerSecond = 50;
-    if (vaStreamProperty.samplesPerCycle_ >
-            static_cast<uint32_t>(AudioSamplingRate::SAMPLE_RATE_192000) / cyclesPerSecond) {
+    uint32_t samplesPerCycle = vaStreamProperty.samplesPerCycle_ != 0 ? vaStreamProperty.samplesPerCycle_ :
+        vaStreamProperty.sampleRate_ / CYCLES_PER_SECOND;
+    if (samplesPerCycle > static_cast<uint32_t>(AudioSamplingRate::SAMPLE_RATE_192000) / CYCLES_PER_SECOND) {
         AUDIO_ERR_LOG("invalid samplesPerCycle");
         return 0;
     }
     uint8_t channels = ConvertLayoutToAudioChannel(vaStreamProperty.channelLayout_);
-    uint32_t samplesPerCycle_ = vaStreamProperty.samplesPerCycle_;
-    uint32_t bitWidth = 2;
-    uint32_t bufferSize = channels * samplesPerCycle_ * bitWidth;
+    uint32_t sampleBytes = GetSampleBytes(vaStreamProperty.sampleFormat_);
+    if (channels == CHANNEL_UNKNOW || sampleBytes == 0 || samplesPerCycle == 0) {
+        AUDIO_ERR_LOG("invalid stream property");
+        return 0;
+    }
+    uint32_t bufferSize = channels * samplesPerCycle * sampleBytes;
     AUDIO_INFO_LOG("calculate buffer size: %{public}d", bufferSize);
     return bufferSize;
+}
+
+void VADeviceManager::SetAssociatedMacAddresses(const std::string &macAddress, bool isEnable)
+{
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(
+        DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE);
+    deviceDesc->macAddress_ = macAddress;
+    deviceDesc->isEnable_ = isEnable;
+    deviceDesc->isExclusiveMicScoUnavailable_ = !isEnable;
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+ 
+    AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceInfoUpdated(
+        *deviceDesc, DeviceInfoUpdateCommand::ENABLE_UPDATE);
+}
+
+void VADeviceManager::SetNoiseReductionMode(
+    const std::shared_ptr<VADevice> &vaDevice, int32_t noiseReductionMode)
+{
+    CHECK_AND_RETURN_LOG(vaDevice != nullptr, "vaDevice is nullptr");
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_LOG(pipeManager != nullptr, "pipeManager is nullptr");
+    std::vector<int32_t> clientUids;
+    std::string targetMacAddress = vaDevice->configuration_.address_;
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> inputStreamDescs =
+        pipeManager->GetAllInputStreamDescs();
+    for (const auto &streamDesc : inputStreamDescs) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr && streamDesc->streamStatus_ == STREAM_STATUS_STARTED);
+        SourceType sourceType = streamDesc->capturerInfo_.sourceType;
+        CHECK_AND_CONTINUE(sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_CAMCORDER ||
+            sourceType == SOURCE_TYPE_LIVE);
+        bool hasSppDevice = false;
+        for (const auto &deviceDesc : streamDesc->newDeviceDescs_) {
+            if (deviceDesc != nullptr && deviceDesc->deviceType_ == DEVICE_TYPE_BT_SPP &&
+                deviceDesc->macAddress_ == targetMacAddress) {
+                hasSppDevice = true;
+                break;
+            }
+        }
+        if (hasSppDevice) {
+            clientUids.push_back(streamDesc->callerUid_);
+        }
+    }
+    CHECK_AND_RETURN_LOG(!clientUids.empty(),
+        "No running recording stream with SPP device found for noise reduction mode setting");
+    auto deviceDesc = ConvertVADeviceToDescriptor(vaDevice);
+    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
+    NoiseReductionMode mode = static_cast<NoiseReductionMode>(noiseReductionMode);
+    for (int32_t clientUid : clientUids) {
+    }
+}
+ 
+void VADeviceManager::UpdateNoiseReductionCapability(const std::shared_ptr<VADevice> &vaDevice,
+    const std::shared_ptr<AudioDeviceDescriptor> &descriptor)
+{
+    CHECK_AND_RETURN_LOG(vaDevice != nullptr, "vaDevice is nullptr");
+    CHECK_AND_RETURN_LOG(descriptor != nullptr, "descriptor is nullptr");
+    CHECK_AND_RETURN_LOG(!vaDevice->configuration_.noiseReductionCapability_.supportedModes_.empty(),
+        "noiseReductionCapability supportedModes is empty");
 }
 }  // namespace VirtualAudioDevice
 }  // namespace OHOS

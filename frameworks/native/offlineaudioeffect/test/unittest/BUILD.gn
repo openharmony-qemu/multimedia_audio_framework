@@ -57,6 +57,7 @@ if (!audio_framework_feature_offline_effect) {
       "hilog:libhilog",
       "hitrace:hitrace_meter",
       "ipc:ipc_single",
+      "samgr:samgr_proxy",
     ]
 
     part_name = "audio_framework"

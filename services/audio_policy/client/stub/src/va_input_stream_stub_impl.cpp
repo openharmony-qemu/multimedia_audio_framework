@@ -33,42 +33,42 @@ VAInputStreamStubImpl::~VAInputStreamStubImpl()
 int32_t VAInputStreamStubImpl::SetVAInputStreamCallback(
     const std::shared_ptr<VAInputStreamCallback> &callback)
 {
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
     vaInputStreamCallback_ = callback;
     return SUCCESS;
 }
 
 int32_t VAInputStreamStubImpl::GetStreamProperty(VAAudioStreamProperty& streamProp)
 {
-    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERR_ILLEGAL_STATE, "vaInputStreamCallback_ is nullptr");
     vaInputStreamCallback_->GetStreamProperty(streamProp);
     return SUCCESS;
 }
 
 int32_t VAInputStreamStubImpl::RequestSharedMem(const VASharedMemInfo& memInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERR_ILLEGAL_STATE, "vaInputStreamCallback_ is nullptr");
     vaInputStreamCallback_->RequestSharedMem(memInfo);
     return SUCCESS;
 }
 
 int32_t VAInputStreamStubImpl::Start()
 {
-    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERR_ILLEGAL_STATE, "vaInputStreamCallback_ is nullptr");
     vaInputStreamCallback_->Start();
     return SUCCESS;
 }
 
 int32_t VAInputStreamStubImpl::Stop()
 {
-    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERR_ILLEGAL_STATE, "vaInputStreamCallback_ is nullptr");
     vaInputStreamCallback_->Stop();
     return SUCCESS;
 }
 
 int32_t VAInputStreamStubImpl::Close()
 {
-    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERR_ILLEGAL_STATE, "vaInputStreamCallback_ is nullptr");
     vaInputStreamCallback_->Close();
     return SUCCESS;
 }
@@ -76,7 +76,7 @@ int32_t VAInputStreamStubImpl::Close()
 
 int32_t VAInputStreamStubImpl::GetCapturePosition(uint64_t &attr_1, uint64_t &attr_2)
 {
-    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(vaInputStreamCallback_ != nullptr, ERR_ILLEGAL_STATE, "vaInputStreamCallback_ is nullptr");
     vaInputStreamCallback_->GetCapturePosition(attr_1, attr_2);
     return SUCCESS;
 }

@@ -15,6 +15,10 @@
   global:
     *GetInstance*;
     *AudioPolicyManager*;
+    *VADeviceBrokerWrapperImpl*;
+    *VADeviceControllerStubImpl*;
+    *VADeviceControllerRegistry*;
+    *VAInputStreamStubImpl*;
     *AudioRecordControlManager*;
     *AudioServiceLoad*;
     *ParseGlobalConfigXml*;

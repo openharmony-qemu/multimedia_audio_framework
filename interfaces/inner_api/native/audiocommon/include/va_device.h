@@ -27,17 +27,20 @@ namespace OHOS {
 namespace AudioStandard {
 struct VADevice : public Parcelable {
     std::string implementor_;
+    std::string modelNumber_;
     VADeviceConfiguration configuration_;
 
     VADevice() = default;
 
     bool Marshalling(Parcel& parcel)const override
     {
-        return parcel.WriteString(implementor_) && configuration_.Marshalling(parcel);
+        return parcel.WriteString(implementor_) && parcel.WriteString(modelNumber_) &&
+            configuration_.Marshalling(parcel);
     }
     void UnmarshallingSelf(Parcel& parcel)
     {
         implementor_ = parcel.ReadString();
+        modelNumber_ = parcel.ReadString();
         configuration_.UnmarshallingSelf(parcel);
     }
     static VADevice* Unmarshalling(Parcel& parcel)

@@ -1725,10 +1725,6 @@ int32_t AudioCaptureSource::UpdateActiveDeviceWithoutLock(DeviceType inputDevice
             attr_.sourceType);
         return SUCCESS;
     }
-    if (currentScoExcludeFlag_) {
-        AUDIO_INFO_LOG("currentScoExcludeFlag is true.");
-        return SUCCESS;
-    }
 
     int32_t ret = DoSetInputRoute(inputDevice);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);

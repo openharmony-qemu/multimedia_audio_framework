@@ -37,6 +37,7 @@ ohos_unittest("audio_routing_manager_test") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "samgr:samgr_proxy",
   ]
   sources = [ "src/audio_routing_manager_unit_test.cpp" ]
   deps = [

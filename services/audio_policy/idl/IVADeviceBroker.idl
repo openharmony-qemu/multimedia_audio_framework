@@ -21,4 +21,6 @@ sequenceable va_device..OHOS.AudioStandard.VADevice;
 interface IVADeviceBroker {
     void OnDevicesConnected([in] VADevice device, [in] IRemoteObject controller);
     void OnDevicesDisconnected([in] VADevice device);
+    void SetAssociatedMacAddresses([in] String macAddress, [in] boolean isEnable);
+    void SetNoiseReductionMode([in] VADevice device, [in] int noiseReductionMode);
 };

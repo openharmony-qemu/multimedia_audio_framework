@@ -27,6 +27,7 @@
 #include "audio_dump_pcm.h"
 
 #include "manager/hdi_adapter_manager.h"
+#include "va_device_controller_registry.h"
 
 #include "hisysevent.h"
 
@@ -35,6 +36,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint32_t CYCLES_PER_SECOND = 50;
 
 VACaptureSource::VACaptureSource(const uint32_t captureId) : captureId_(captureId)
 {
@@ -74,7 +76,38 @@ int32_t VACaptureSource::CreateCapture()
 {
     Trace trace("VACaptureSource::CreateCapture");
     std::string macAddress = attr_.macAddress;
+    AUDIO_INFO_LOG("va create capture begin, addressLen=%{public}zu, sampleRate=%{public}u, "
+        "format=%{public}d, channel=%{public}u, channelLayout=%{public}" PRIu64,
+        macAddress.size(), attr_.sampleRate, static_cast<int32_t>(attr_.format), attr_.channel,
+        static_cast<uint64_t>(attr_.channelLayout));
+    accessoryDeviceController_ = VADeviceControllerRegistry::GetInstance().GetController(macAddress);
+    if (accessoryDeviceController_ != nullptr) {
+        return CreateAccessoryCapture();
+    }
+    return CreateRemoteCapture();
+}
 
+int32_t VACaptureSource::CreateAccessoryCapture()
+{
+    CHECK_AND_RETURN_RET_LOG(accessoryDeviceController_ != nullptr, ERR_OPERATION_FAILED,
+        "accessory controller is null");
+    std::shared_ptr<VAAudioStreamProperty> prop = MakeVAStreamPropertyFromIAudioSourceAttr();
+    std::shared_ptr<VAInputStreamAttribute> attribute = MakeVAStreamAttributeFromIAudioSourceAttr();
+    sptr<IRemoteObject> inputStreamRemote;
+    int ret = accessoryDeviceController_->OpenInputStream(*prop, *attribute, inputStreamRemote);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "open accessory input stream failed ret = %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(inputStreamRemote != nullptr, ERR_OPERATION_FAILED,
+        "accessory input stream remote is null");
+    accessoryInputStream_ = iface_cast<IVAInputStream>(inputStreamRemote);
+    CHECK_AND_RETURN_RET_LOG(accessoryInputStream_ != nullptr, ERR_OPERATION_FAILED,
+        "accessory input stream is nullptr");
+    return SUCCESS;
+}
+
+int32_t VACaptureSource::CreateRemoteCapture()
+{
+    std::string macAddress = attr_.macAddress;
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(samgr != nullptr, ERR_OPERATION_FAILED, "failed to obtain system ability manager");
     
@@ -109,6 +142,7 @@ std::shared_ptr<VAAudioStreamProperty> VACaptureSource::MakeVAStreamPropertyFrom
 {
     std::shared_ptr<VAAudioStreamProperty> streamProp = std::make_shared<VAAudioStreamProperty>();
     streamProp->sampleRate_ = attr_.sampleRate;
+    streamProp->samplesPerCycle_ = streamProp->sampleRate_ / CYCLES_PER_SECOND;
     streamProp->sampleFormat_ = attr_.format;
     streamProp->channelLayout_ = static_cast<AudioChannelLayout>(attr_.channelLayout);
     return streamProp;
@@ -123,7 +157,7 @@ std::shared_ptr<VAInputStreamAttribute> VACaptureSource::MakeVAStreamAttributeFr
 
 int32_t VACaptureSource::InitOperator()
 {
-    CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is nullptr");
+    CHECK_AND_RETURN_RET_LOG(HasInputStream(), ERR_OPERATION_FAILED, "input stream is nullptr");
     const uint32_t bufferFactor = 10;
     uint32_t bufferCapacity = attr_.bufferSize * bufferFactor;
     std::shared_ptr<VASharedBuffer> vaBuffer = VASharedBuffer::CreateFromLocal(bufferCapacity);
@@ -134,8 +168,48 @@ int32_t VACaptureSource::InitOperator()
 
     VASharedMemInfo memInfo;
     vaBuffer->GetVASharedMemInfo(memInfo);
-    int ret = inputStream_->RequestSharedMem(memInfo);
-    return ret;
+    return RequestSharedMem(memInfo);
+}
+
+int32_t VACaptureSource::RequestSharedMem(const VASharedMemInfo &memInfo)
+{
+    if (accessoryInputStream_ != nullptr) {
+        return accessoryInputStream_->RequestSharedMem(memInfo);
+    }
+    CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is nullptr");
+    return inputStream_->RequestSharedMem(memInfo);
+}
+ 
+int32_t VACaptureSource::StartInputStream()
+{
+    if (accessoryInputStream_ != nullptr) {
+        return accessoryInputStream_->Start();
+    }
+    CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is nullptr");
+    return inputStream_->Start();
+}
+ 
+int32_t VACaptureSource::StopInputStream()
+{
+    if (accessoryInputStream_ != nullptr) {
+        return accessoryInputStream_->Stop();
+    }
+    CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is nullptr");
+    return inputStream_->Stop();
+}
+ 
+int32_t VACaptureSource::CloseInputStream()
+{
+    if (accessoryInputStream_ != nullptr) {
+        return accessoryInputStream_->Close();
+    }
+    CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is nullptr");
+    return inputStream_->Close();
+}
+ 
+bool VACaptureSource::HasInputStream() const
+{
+    return accessoryInputStream_ != nullptr || inputStream_ != nullptr;
 }
 
 void VACaptureSource::DeInit(void)
@@ -144,7 +218,7 @@ void VACaptureSource::DeInit(void)
 
     Trace trace("VACaptureSource::DeInit");
     CHECK_AND_RETURN_LOG(sourceInited_.load(), "sourceInited_ is false");
-    CHECK_AND_RETURN_LOG(inputStream_ != nullptr, "input stream is null");
+    CHECK_AND_RETURN_LOG(HasInputStream(), "input stream is null");
 
     if (started_.load()) {
         AUDIO_WARNING_LOG("va capture source is still started.");
@@ -152,11 +226,14 @@ void VACaptureSource::DeInit(void)
     }
 
     std::lock_guard<std::mutex> lock(statusMutex_);
-    inputStream_->Close();
+    CloseInputStream();
 
     sourceInited_.store(false);
     started_.store(false);
+    accessoryInputStream_ = nullptr;
+    accessoryDeviceController_ = nullptr;
     inputStream_ = nullptr;
+    deviceController_ = nullptr;
     bufferOperator_ = nullptr;
 }
 
@@ -173,7 +250,7 @@ bool VACaptureSource::IsStarted(void)
 int32_t VACaptureSource::Start(void)
 {
     AUDIO_INFO_LOG("VACaptureSource::Start called");
-    CHECK_AND_RETURN_RET_LOG(bufferOperator_ != nullptr && inputStream_ != nullptr, ERR_OPERATION_FAILED, "BadStatus");
+    CHECK_AND_RETURN_RET_LOG(bufferOperator_ != nullptr && HasInputStream(), ERR_OPERATION_FAILED, "BadStatus");
     std::lock_guard<std::mutex> lock(statusMutex_);
 
     dumpFileName_ = "_va_source_" + std::to_string(attr_.sourceType) + "_" + GetTime() + "_" +
@@ -189,7 +266,7 @@ int32_t VACaptureSource::Start(void)
         audioSrcClock_->Reset();
     }
     callback_.OnCaptureState(true);
-    int ret = inputStream_->Start();
+    int ret = StartInputStream();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "va start failed");
     started_.store(true);
 
@@ -202,10 +279,10 @@ int32_t VACaptureSource::Stop(void)
     Trace trace("VACaptureSource::Stop");
     AUDIO_INFO_LOG("VACaptureSource::Stop called");
     std::lock_guard<std::mutex> lock(statusMutex_);
-    CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is null");
+    CHECK_AND_RETURN_RET_LOG(HasInputStream(), ERR_OPERATION_FAILED, "input stream is null");
     CHECK_AND_RETURN_RET_LOG(started_.load(), SUCCESS, "already stopped");
     
-    int ret = inputStream_->Stop();
+    int ret = StopInputStream();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "stop fail");
     started_.store(false);
     callback_.OnCaptureState(false);
@@ -237,7 +314,7 @@ int32_t VACaptureSource::Reset(void)
 int32_t VACaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
     CHECK_AND_RETURN_RET_LOG(bufferOperator_ != nullptr, ERR_OPERATION_FAILED, "buffer operator is null");
-    CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is null");
+    CHECK_AND_RETURN_RET_LOG(HasInputStream(), ERR_OPERATION_FAILED, "input stream is null");
 
     AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
     int64_t stamp = ClockTime::GetCurNano();
@@ -256,6 +333,11 @@ int32_t VACaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64
 
 std::string VACaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
+    if (accessoryDeviceController_ != nullptr) {
+        std::string value;
+        accessoryDeviceController_->GetParameters(std::to_string(static_cast<int>(key)), value);
+        return value;
+    }
     CHECK_AND_RETURN_RET_LOG(deviceController_ != nullptr, "", "device controller is null");
     std::string value;
     deviceController_->GetParameters(std::to_string(static_cast<int>(key)), value);
@@ -268,6 +350,10 @@ void VACaptureSource::SetAudioParameter(const AudioParamKey key, const std::stri
 {
     AUDIO_INFO_LOG("set audio parameter for va device: {\"key\":\"%{public}d\", \"value\":\"%{public}s\"}",
         key, value.c_str());
+    if (accessoryDeviceController_ != nullptr) {
+        accessoryDeviceController_->SetParameters(std::to_string(static_cast<int>(key)), value);
+        return;
+    }
     CHECK_AND_RETURN_LOG(deviceController_ != nullptr, "device controller is null");
     deviceController_->SetParameters(std::to_string(static_cast<int>(key)), value);
 }

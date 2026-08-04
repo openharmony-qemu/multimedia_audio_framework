@@ -18,6 +18,7 @@ config("audio_config") {
   include_dirs = [
     "../audiocapturer/include",
     "../audiorenderer/include",
+    "../audioaccessory/include",
     "../audioutils/include/",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../interfaces/inner_api/native/audiocapturer/include",
@@ -51,8 +52,14 @@ ohos_shared_library("ohaudio") {
     "../../../interfaces/kits/c/audio_renderer/",
     "../../../interfaces/kits/c/audio_capturer/",
     "../../../interfaces/kits/c/audio_manager/",
+    "../audioaccessory/include",
+    "../../../services/audio_policy/client/stub/include",
+    "../../../services/audio_service/common/include",
     "../../../services/audio_service/common/include/dfx",
     "../../native/audiopolicy/include/",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../../interfaces/inner_api/native/audiostream/include",
   ]
 
   configs = [ ":audio_config" ]
@@ -63,6 +70,8 @@ ohos_shared_library("ohaudio") {
     "./OHAudioDeviceDescriptor.cpp",
     "./OHAudioDeviceEnhanceManager.cpp",
     "./OHAudioManager.cpp",
+    "./OHAudioAccessoryManager.cpp",
+    "./OHAudioAccessoryInputStreamManager.cpp",
     "./OHAudioDebuggingManager.cpp",
     "./OHAudioRenderer.cpp",
     "./OHAudioRoutingManager.cpp",
@@ -75,14 +84,17 @@ ohos_shared_library("ohaudio") {
   ]
 
   deps = [
+    "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_client",
     "../../../services/audio_service:audio_engine_manager",
     "../../../services/audio_service:audio_policy_manager",
     "../../../services/audio_service:audio_stream_client",
+    "../../../services/audio_service/idl:audio_framework_interface",
     "../audio_debug_manager:audio_debug_manager",
     "../audiocapturer:audio_capturer",
     "../audiorenderer:audio_renderer",
+    "../audioaccessory:audio_accessory",
   ]
   cflags = [
     "-Werror",
@@ -94,6 +106,8 @@ ohos_shared_library("ohaudio") {
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
   ]
 
   innerapi_tags = [ "ndk" ]

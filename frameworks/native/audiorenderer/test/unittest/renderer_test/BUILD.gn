@@ -115,6 +115,7 @@ ohos_unittest("audio_fast_renderer_unit_test") {
     "googletest:gtest",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "samgr:samgr_proxy",
   ]
 
   defines = []
@@ -166,6 +167,7 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "samgr:samgr_proxy",
   ]
 
   defines = []
@@ -217,6 +219,7 @@ ohos_unittest("capture_renderer_interrupt_unit_test") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "samgr:samgr_proxy",
   ]
 
   resource_config_file =

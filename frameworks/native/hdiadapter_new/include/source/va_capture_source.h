@@ -31,6 +31,7 @@
 #include "va_device_info.h"
 #include "iv_a_input_stream.h"
 #include "iv_a_device_controller.h"
+#include "virtual_audio_interface.h"
 #include "va_shared_buffer.h"
 #include "va_shared_buffer_operator.h"
 
@@ -78,6 +79,8 @@ private:
     static constexpr uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
     sptr<IVADeviceController> deviceController_;
     sptr<IVAInputStream> inputStream_;
+    sptr<IVADeviceController> accessoryDeviceController_;
+    sptr<IVAInputStream> accessoryInputStream_;
     std::shared_ptr<VASharedBufferOperator> bufferOperator_;
     uint32_t captureId_ = HDI_INVALID_ID;
     IAudioSourceAttr attr_ = {};
@@ -100,7 +103,14 @@ private:
     int64_t startTimestamp = 0;
 
     int32_t CreateCapture();
+    int32_t CreateAccessoryCapture();
+    int32_t CreateRemoteCapture();
     int32_t InitOperator();
+    int32_t RequestSharedMem(const VASharedMemInfo &memInfo);
+    int32_t StartInputStream();
+    int32_t StopInputStream();
+    int32_t CloseInputStream();
+    bool HasInputStream() const;
     void PrintUsageTimeDfx(int64_t useTime);
 
     std::shared_ptr<VAAudioStreamProperty> MakeVAStreamPropertyFromIAudioSourceAttr();
