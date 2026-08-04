@@ -16,6 +16,7 @@
 #include "audio_errors.h"
 #include "audio_policy_manager_device_unit_test.h"
 #include "audio_unit_test.h"
+#include "audio_info.h"
 #include "audio_anahs_manager_listener.h"
 #include "audio_routing_manager_listener.h"
 #include "audio_zone_types.h"
