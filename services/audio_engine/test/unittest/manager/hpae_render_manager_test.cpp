@@ -5880,4 +5880,46 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_DeferredViaHandleMsg, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
+// DestroySessionEffect on an already-STOPPING node must NOT re-Begin (double-rewind / re-arm crossfade /
+// duplicate Finalize) — cancel pending create + return SUCCESS, mirroring derived managers.
+// pendingSeCreateMap_ is the discriminator (only the guard erases it).
+HWTEST_F(HpaeRendererManagerTest, DestroySessionEffect_AlreadyStopping_IsNoOp, TestSize.Level1)
+{
+    constexpr uint32_t sessionId = 90018;
+    constexpr uint32_t nodeId = 308;
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, nodeId);  // NONE-scene cluster
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    // Put the SE node into STOPPING exactly as the first DestroySessionEffect does (BeginClose),
+    // leaving it in the cluster map until a later Finalize cycle erases it.
+    auto cluster = hpaeRendererManager_->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE];
+    ASSERT_NE(cluster, nullptr);
+    ASSERT_TRUE(cluster->HasSessionEffectNode(sessionId));
+    uint64_t latency = 0;
+    std::weak_ptr<HpaeSessionEffectNode> weakNode;
+    ASSERT_EQ(cluster->BeginDestroySessionEffectNode(sessionId, latency, weakNode), 0);
+    ASSERT_TRUE(cluster->IsSessionEffectNodeStopping(sessionId));  // precondition: STOPPING
+
+    // A deferred create pending behind this STOPPING node (rapid recreate path).
+    hpaeRendererManager_->pendingSeCreateMap_[sessionId] = {1, instance};
+    ASSERT_EQ(hpaeRendererManager_->pendingSeCreateMap_.count(sessionId), 1u);
+
+    // Second DestroySessionEffect while STOPPING: must short-circuit (cancel pending, SUCCESS),
+    // without re-BeginClose and without emitting an extra DISABLED synchronously.
+    EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_EQ(hpaeRendererManager_->pendingSeCreateMap_.count(sessionId), 0u);  // guard cancelled it
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 0u);  // no sync DISABLED
+}
+
 }  // namespace

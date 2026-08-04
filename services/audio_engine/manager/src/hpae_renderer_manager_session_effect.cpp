@@ -123,6 +123,15 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
         return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
     }
 
+    // STOPPING: a prior BeginClose is still deferred; skip re-Begin (would double-rewind /
+    // re-arm crossfade / queue a duplicate Finalize) — cancel pending recreate, mirror derived managers.
+    if (processCluster->IsSessionEffectNodeStopping(sessionId)) {
+        CancelPendingSessionEffectCreate(sessionId);
+        AUDIO_INFO_LOG("DestroySessionEffect: session %{public}u already STOPPING, skip re-Begin",
+            sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
+    }
+
     // BeginClose: enter STOPPING (node stays in the cluster map), get combined SE+upstream-converter
     // latency + a weak identity handle for Finalize.
     uint64_t latency = 0;
