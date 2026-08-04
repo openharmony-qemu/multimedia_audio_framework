@@ -222,23 +222,15 @@ OH_AudioCommon_Result OHAudioAccessoryManager::NotifyConnected(OH_AudioAccessory
         acc = it->second;
     }
 
-    int32_t ret = acc->NotifyConnected();
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("NotifyConnected failed: %{public}d", ret);
-        CHECK_AND_RETURN_RET(ret != ERR_ILLEGAL_STATE, AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE);
-        CHECK_AND_RETURN_RET(ret != ERR_PERMISSION_DENIED && ret != ERR_SYSTEM_PERMISSION_DENIED,
-            AUDIOCOMMON_RESULT_ERROR_PERMISSION_DENIED);
-        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
-    }
-
-    VADeviceBrokerWrapperImpl brokerWrapper;
-    ret = RegisterControllerToAudioServer(acc->GetMacAddress(), acc);
+    int32_t ret = RegisterControllerToAudioServer(acc->GetMacAddress(), acc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
         "register va device controller failed");
-    ret = brokerWrapper.OnDevicesConnected(acc->MakeVADevice(), acc);
+
+    ret = acc->NotifyConnected();
     if (ret != SUCCESS) {
         (void)UnregisterControllerFromAudioServer(acc->GetMacAddress());
-        AUDIO_ERR_LOG("notify va device connected failed: %{public}d", ret);
+        AUDIO_ERR_LOG("NotifyConnected failed: %{public}d", ret);
+        CHECK_AND_RETURN_RET(ret != ERR_ILLEGAL_STATE, AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE);
         CHECK_AND_RETURN_RET(ret != ERR_PERMISSION_DENIED && ret != ERR_SYSTEM_PERMISSION_DENIED,
             AUDIOCOMMON_RESULT_ERROR_PERMISSION_DENIED);
         return AUDIOCOMMON_RESULT_ERROR_SYSTEM;

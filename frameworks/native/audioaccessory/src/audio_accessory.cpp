@@ -187,18 +187,22 @@ int32_t AudioAccessory::NotifyConnected()
         return ERR_ILLEGAL_STATE;
     }
 
+    isConnected_ = true;
     std::shared_ptr<VADeviceBrokerWrapper> vaBroker;
     int32_t result = AudioPolicyManager::GetInstance().GetVADeviceBroker(vaBroker);
     if (result != SUCCESS || vaBroker == nullptr) {
+        isConnected_ = false;
         AUDIO_ERR_LOG("AudioAccessory::NotifyConnected failed to get VA broker");
         return result;
     }
 
     auto selfShared = std::shared_ptr<AudioAccessory>(this, [](AudioAccessory*) {});
     result = vaBroker->OnDevicesConnected(*this, selfShared);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
-        "AudioAccessory::NotifyConnected failed to connect device");
-    isConnected_ = true;
+    if (result != SUCCESS) {
+        isConnected_ = false;
+        AUDIO_ERR_LOG("AAudioAccessory::NotifyConnected failed to connect device");
+        return result;
+    }
     CHECK_AND_RETURN_RET(onNoiseReduction_ != nullptr, SUCCESS);
     return SUCCESS;
 }
