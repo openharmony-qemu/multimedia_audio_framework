@@ -50,6 +50,7 @@ bool g_hasPermission = false;
 bool g_hasServerInit = false;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
 constexpr int32_t CHANNEL_STEREO = 2;
+constexpr int32_t STREAM_DEFAULT_PRIORITY_VALUE = 100;
 
 static std::shared_ptr<AudioCoreService::EventEntry> CreateEventEntry(
     const std::shared_ptr<AudioCoreService> &coreService)
@@ -94,6 +95,32 @@ void ResetGetActiveAudioInterruptZoneTestEnv()
     AudioZoneService::GetInstance().DeInit();
 }
 
+void InitDefaultVolumeTypePriorities(AudioInterruptService &interruptService)
+{
+    interruptService.volumeTypePriorities_ = {
+        {STREAM_VOICE_CALL, 0},
+        {STREAM_VOICE_CALL_ASSISTANT, 0},
+        {STREAM_VOICE_COMMUNICATION, 0},
+        {STREAM_VOICE_MESSAGE, 1},
+        {STREAM_VOICE_ASSISTANT_SYSTEM, 2},
+        {STREAM_VOICE_ASSISTANT, 3},
+        {STREAM_RING, 4},
+        {STREAM_VOICE_RING, 4},
+        {STREAM_ALARM, 5},
+        {STREAM_ANNOUNCEMENT, 5},
+        {STREAM_EMERGENCY, 5},
+        {STREAM_NAVIGATION, 6},
+        {STREAM_MUSIC, 7},
+        {STREAM_MOVIE, 7},
+        {STREAM_SPEECH, 7},
+        {STREAM_GAME, 7},
+        {STREAM_DTMF, STREAM_DEFAULT_PRIORITY_VALUE},
+        {STREAM_SYSTEM, STREAM_DEFAULT_PRIORITY_VALUE},
+        {STREAM_SYSTEM_ENFORCED, STREAM_DEFAULT_PRIORITY_VALUE},
+        {STREAM_NOTIFICATION, STREAM_DEFAULT_PRIORITY_VALUE},
+    };
+}
+
 int32_t PrepareActiveZone(AudioStreamType streamType, bool hasVolumeControllableDevice)
 {
     auto interruptService = std::make_shared<AudioInterruptService>();
@@ -117,6 +144,7 @@ int32_t PrepareActiveZone(AudioStreamType streamType, bool hasVolumeControllable
     auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
     audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt, AudioFocuState::ACTIVE);
     interruptService->zonesMap_[zoneId] = audioInterruptZone;
+    InitDefaultVolumeTypePriorities(*interruptService);
     return zoneId;
 }
 

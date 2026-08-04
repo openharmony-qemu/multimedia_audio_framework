@@ -270,5 +270,98 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_007, TestSize.Level4)
     int32_t ret = zoneManager->GetCurrentRendererChangeInfosForZone(0, infos);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+* @tc.name  : Test AudiZoneClientUnitTest.
+* @tc.number: AudiZoneClientUnitTest_008
+* @tc.desc  : Test AddAudioInterruptCallback (overload without deviceTag) with key already in map.
+*/
+HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_008, TestSize.Level4)
+{
+    auto audioZoneClient = std::make_shared<AudioZoneClient>();
+    int32_t zoneId = 0;
+    auto callback = std::make_shared<AudioZoneInterruptCallbackStub>();
+    std::string key = std::to_string(zoneId) + "&";
+    audioZoneClient->audioZoneInterruptCallbackMap_[key] = callback;
+    auto ret = audioZoneClient->AddAudioInterruptCallback(zoneId, callback);
+    EXPECT_EQ(SUCCESS, ret);
+    audioZoneClient->audioZoneInterruptCallbackMap_.erase(key);
+}
+
+/**
+* @tc.name  : Test AudiZoneClientUnitTest.
+* @tc.number: AudiZoneClientUnitTest_009
+* @tc.desc  : Test AddAudioInterruptCallback (overload without deviceTag) with key not in map, report succeeds.
+*/
+HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_009, TestSize.Level4)
+{
+    GetPermission();
+    auto audioZoneClient = std::make_shared<AudioZoneClient>();
+    int32_t zoneId = 0;
+    auto callback = std::make_shared<AudioZoneInterruptCallbackStub>();
+    std::string key = std::to_string(zoneId) + "&";
+    audioZoneClient->audioZoneInterruptCallbackMap_.erase(key);
+    auto ret = audioZoneClient->AddAudioInterruptCallback(zoneId, callback);
+    EXPECT_EQ(SUCCESS, ret);
+    audioZoneClient->audioZoneInterruptCallbackMap_.erase(key);
+}
+
+/**
+* @tc.name  : Test AudiZoneClientUnitTest.
+* @tc.number: AudiZoneClientUnitTest_010
+* @tc.desc  : Test AddAudioInterruptCallback with key not in map, report fails (invalid zoneId).
+*/
+HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_010, TestSize.Level4)
+{
+    GetPermission();
+    auto audioZoneClient = std::make_shared<AudioZoneClient>();
+    int32_t zoneId = -1;
+    std::string deviceTag = "failTag";
+    auto callback = std::make_shared<AudioZoneInterruptCallbackStub>();
+    std::string key = std::to_string(zoneId) + "&" + deviceTag;
+    audioZoneClient->audioZoneInterruptCallbackMap_.erase(key);
+    auto ret = audioZoneClient->AddAudioInterruptCallback(zoneId, deviceTag, callback);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(audioZoneClient->audioZoneInterruptCallbackMap_.find(key),
+        audioZoneClient->audioZoneInterruptCallbackMap_.end());
+}
+
+/**
+* @tc.name  : Test AudiZoneClientUnitTest.
+* @tc.number: AudiZoneClientUnitTest_011
+* @tc.desc  : Test AddAudioZoneChangeCallback with zoneId not in map, report succeeds.
+*/
+HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_011, TestSize.Level4)
+{
+    GetPermission();
+    auto audioZoneClient = std::make_shared<AudioZoneClient>();
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneManager::GetInstance()->CreateAudioZone("TestZoneForChange", context);
+    ASSERT_NE(zoneId, 0);
+    auto callback = std::make_shared<AudioZoneChangeCallbackStub>();
+    audioZoneClient->audioZoneChangeCallbackMap_.erase(zoneId);
+    auto ret = audioZoneClient->AddAudioZoneChangeCallback(zoneId, callback);
+    EXPECT_EQ(SUCCESS, ret);
+    audioZoneClient->RemoveAudioZoneChangeCallback(zoneId);
+    AudioZoneManager::GetInstance()->ReleaseAudioZone(zoneId);
+}
+
+/**
+* @tc.name  : Test AudiZoneClientUnitTest.
+* @tc.number: AudiZoneClientUnitTest_012
+* @tc.desc  : Test AddAudioZoneChangeCallback with zoneId not in map, report fails (zone not exist).
+*/
+HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_012, TestSize.Level4)
+{
+    GetPermission();
+    auto audioZoneClient = std::make_shared<AudioZoneClient>();
+    int32_t zoneId = 999999;
+    auto callback = std::make_shared<AudioZoneChangeCallbackStub>();
+    audioZoneClient->audioZoneChangeCallbackMap_.erase(zoneId);
+    auto ret = audioZoneClient->AddAudioZoneChangeCallback(zoneId, callback);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(audioZoneClient->audioZoneChangeCallbackMap_.find(zoneId),
+        audioZoneClient->audioZoneChangeCallbackMap_.end());
+}
 } // namespace AudioStandard
 } // namespace OHOS

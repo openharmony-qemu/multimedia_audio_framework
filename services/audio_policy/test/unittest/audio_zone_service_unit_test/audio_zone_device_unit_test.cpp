@@ -87,5 +87,30 @@ HWTEST_F(AudioZoneDeviceUnitTest, AudioZoneDevice_001, TestSize.Level1)
     EXPECT_NE(fechInputDevice, nullptr);
     EXPECT_EQ(fechInputDevice->IsSameDeviceDesc(*device2), true);
 }
+
+/**
+* @tc.name  : Test AudioZone.
+* @tc.number: AudioZoneDevice_002
+* @tc.desc  : Test FetchOutputDevices with invalid zoneId (zone not found).
+*/
+HWTEST_F(AudioZoneDeviceUnitTest, AudioZoneDevice_002, TestSize.Level1)
+{
+    int32_t invalidZoneId = zoneId1_ + zoneId2_ + 100;
+    auto devices = AudioZoneService::GetInstance().FetchOutputDevices(invalidZoneId,
+        STREAM_USAGE_MUSIC, 0, ROUTER_TYPE_DEFAULT);
+    EXPECT_EQ(devices.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioZone.
+* @tc.number: AudioZoneDevice_003
+* @tc.desc  : Test FetchOutputDevices with valid zoneId but no devices bound (empty result).
+*/
+HWTEST_F(AudioZoneDeviceUnitTest, AudioZoneDevice_003, TestSize.Level1)
+{
+    auto devices = AudioZoneService::GetInstance().FetchOutputDevices(zoneId2_,
+        STREAM_USAGE_MUSIC, 0, ROUTER_TYPE_DEFAULT);
+    EXPECT_EQ(devices.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
