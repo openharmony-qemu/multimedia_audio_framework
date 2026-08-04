@@ -163,6 +163,14 @@ int32_t HpaeRemoteOutputCluster::GetConverterNodeCount()
     return sceneConverterMap_.size();
 }
 
+void HpaeRemoteOutputCluster::SetUpmixCoef(HpaeProcessorType sceneType, float coef)
+{
+    auto converter = SafeGetMap(sceneConverterMap_, sceneType);
+    CHECK_AND_RETURN_LOG(converter != nullptr,
+        "SetUpmixCoef: sceneType %{public}u converter not found, skip", sceneType);
+    converter->SetUpmixCoef(coef);
+}
+
 int32_t HpaeRemoteOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
     const std::string &macAddress)
 {

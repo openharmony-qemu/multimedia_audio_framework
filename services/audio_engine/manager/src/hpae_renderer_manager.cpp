@@ -30,6 +30,7 @@
 #include "audio_engine_log.h"
 #include "hpae_output_cluster.h"
 #include "hpae_remote_output_cluster.h"
+#include "mixer_utils.h"
 #include "hpae_message_queue_monitor.h"
 #include "hpae_stream_move_monitor.h"
 #include "util/id_handler.h"
@@ -371,6 +372,10 @@ void HpaeRendererManager::OnSessionEffectMaterialized(uint32_t sessionId)
     auto route = BuildChannelOverrideRoute(sessionId);
     if (route.has_value()) {
         SetChannelOverrideForRoute(route.value());
+    }
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
+    if (outputCluster_ != nullptr) {
+        outputCluster_->SetUpmixCoef(sceneType, HPAE::COEF_M6DB_F);
     }
 }
 

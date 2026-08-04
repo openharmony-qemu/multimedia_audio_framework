@@ -533,7 +533,8 @@ uint64_t HpaeProcessCluster::GetLatency(uint32_t sessionId)
 }
 
 int32_t HpaeProcessCluster::CreateSessionEffectNode(uint32_t sessionId, const std::string &effectName,
-    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+    bool aissSwitchEnabled)
 {
     if (SafeGetMap(idSessionEffectMap_, sessionId) != nullptr) {
         AUDIO_WARNING_LOG("sessionId %{public}u already has session effect node", sessionId);
@@ -549,7 +550,7 @@ int32_t HpaeProcessCluster::CreateSessionEffectNode(uint32_t sessionId, const st
     HpaeNodeInfo nodeInfo = converterNode->GetNodeInfo();
     auto sessionEffectNode = std::make_shared<HpaeSessionEffectNode>(nodeInfo);
 
-    int32_t ret = sessionEffectNode->CreateEffectWithInstance(effectName, instance, config);
+    int32_t ret = sessionEffectNode->CreateEffectWithInstance(effectName, instance, config, aissSwitchEnabled);
     if (ret != 0) {
         AUDIO_WARNING_LOG("sessionId %{public}u create effect failed, ret=%{public}d", sessionId, ret);
         return ret;

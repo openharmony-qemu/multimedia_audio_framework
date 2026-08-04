@@ -639,9 +639,9 @@ protected:
     }
 
     // Helper: drive node to specified state
-    void EnterState(HpaeSessionEffectNode::STATUS state)
+    void EnterState(HpaeSessionEffectNode::STATUS state, bool aissSwitchEnabled = true)
     {
-        node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
+        node_->CreateEffectWithInstance("test_effect", mockInst_, config_, aissSwitchEnabled);
         size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
         switch (state) {
             case HpaeSessionEffectNode::STATUS::WARMING_UP:
@@ -1779,8 +1779,10 @@ HWTEST_F(SessionEffectNodeStateTest, GetLatency_returns_input_minus_output, Test
 {
     // rawBypassNeeded_=true forces the INTERCEPTING silence path so dry frames are not counted as
     // algorithm output; GetLatency() (bytesIn - algoBytesOut) then reflects algorithm-internal buffering.
+    // CreateEffectWithInstance must run with aissSwitchEnabled=false, otherwise it resets
+    // rawBypassNeeded_=false and the INTERCEPTING dry frame would be accounted as output.
     node_->rawBypassNeeded_ = true;
-    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
+    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE, false);
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
     uint64_t oneFrameLatencyUs = byteLen * 1000000ULL / (TEST_CHANNEL_COUNT * sizeof(float) * 48000);
 

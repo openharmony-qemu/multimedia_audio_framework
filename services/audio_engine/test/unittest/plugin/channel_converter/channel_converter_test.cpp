@@ -537,6 +537,89 @@ HWTEST_F(ChannelConverterTest, ChannelConverter_Reset_001, TestSize.Level1)
     int32_t ret = converter.Process(5, in.data(), in.size()*4, out.data(), out.size()*4);
     EXPECT_NE(ret, MIX_ERR_SUCCESS);
 }
+
+// SetParam 之后设置系数也应立即生效(等价于 SetParam 前设 0.5 的 UpmixGain_Attenuated_001)
+HWTEST_F(ChannelConverterTest, ChannelConverter_UpmixGain_AfterSetParam_001, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_6POINT0, 6};
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    ASSERT_EQ(ret, MIX_ERR_SUCCESS);
+
+    converter.SetUpmixCoef(0.5f); // 改造前不生效 -> 输出 clipping(>1.51)使本断言失败
+
+    std::vector<float> in(2 * TEST_BUFFER_LEN, 1.0f);
+    std::vector<float> out(6 * TEST_BUFFER_LEN, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    for (uint32_t i = 0; i < 6 * TEST_BUFFER_LEN; i++) {
+        EXPECT_LE(out[i], 1.51f); // 与 UpmixGain_Attenuated_001 同一边界
+    }
+}
+
+// 事后切换系数(不重新 SetParam)也能即时生效:0.5 衰减 -> 1.0 恢复 clipping
+HWTEST_F(ChannelConverterTest, ChannelConverter_UpmixGain_AfterSetParam_Switch_001, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_6POINT0, 6};
+    ASSERT_EQ(converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_SUCCESS);
+
+    std::vector<float> in(2 * TEST_BUFFER_LEN, 1.0f);
+
+    converter.SetUpmixCoef(0.5f);
+    std::vector<float> outAtt(6 * TEST_BUFFER_LEN, 0.0f);
+    ASSERT_EQ(converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+        outAtt.data(), outAtt.size() * sizeof(float)), MIX_ERR_SUCCESS);
+
+    converter.SetUpmixCoef(1.0f); // 事后切回 1.0,应恢复 clipping(改造前不生效,保持衰减)
+    std::vector<float> outFull(6 * TEST_BUFFER_LEN, 0.0f);
+    ASSERT_EQ(converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+        outFull.data(), outFull.size() * sizeof(float)), MIX_ERR_SUCCESS);
+
+    for (uint32_t i = 0; i < 6 * TEST_BUFFER_LEN; i++) {
+        EXPECT_LE(outAtt[i], 1.51f);
+    }
+    bool foundClipping = false;
+    for (uint32_t i = 0; i < 6 * TEST_BUFFER_LEN; i++) {
+        if (outFull[i] > 1.01f) {
+            foundClipping = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(foundClipping);
+}
+
+// 幂等:重复设置相同系数不叠加;与单次设置结果逐样本相等
+HWTEST_F(ChannelConverterTest, ChannelConverter_UpmixGain_Idempotent_001, TestSize.Level0)
+{
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_6POINT0, 6};
+    std::vector<float> in(2 * TEST_BUFFER_LEN, 1.0f);
+
+    ChannelConverter once;
+    ASSERT_EQ(once.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_SUCCESS);
+    once.SetUpmixCoef(0.5f);
+    std::vector<float> outOnce(6 * TEST_BUFFER_LEN, 0.0f);
+    ASSERT_EQ(once.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+        outOnce.data(), outOnce.size() * sizeof(float)), MIX_ERR_SUCCESS);
+
+    ChannelConverter repeat;
+    ASSERT_EQ(repeat.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_SUCCESS);
+    repeat.SetUpmixCoef(0.5f);
+    repeat.SetUpmixCoef(0.5f); // 重复设置,改造若用"再乘一次"会叠加 -> 与 once 不等 -> 失败
+    std::vector<float> outRepeat(6 * TEST_BUFFER_LEN, 0.0f);
+    ASSERT_EQ(repeat.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+        outRepeat.data(), outRepeat.size() * sizeof(float)), MIX_ERR_SUCCESS);
+
+    for (uint32_t i = 0; i < 6 * TEST_BUFFER_LEN; i++) {
+        EXPECT_FLOAT_EQ(outRepeat[i], outOnce[i]);
+    }
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

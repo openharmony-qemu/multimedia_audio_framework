@@ -27,22 +27,21 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 bool HpaeRendererManager::TryDeferSessionEffectCreate(
-    const std::shared_ptr<HpaeProcessCluster> &processCluster, uint32_t sessionId,
-    const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
-    const AudioEffectConfig &config)
+    uint32_t sessionId, const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
+    const AudioEffectConfig &config, bool aissSwitchEnabled)
 {
     // The physical SE node is still finalizing its deferred close (STOPPING). Defer this Create
     // until that node is gone: record a cancelable/ownership token and requeue. Do NOT write
     // attach state, create a node, or send ENABLE here.
-    if (!processCluster->IsSessionEffectNodeStopping(sessionId)) {
-        return false;
-    }
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
+    auto processCluster = SafeGetMap(sceneClusterMap_, sceneType);
+    CHECK_AND_RETURN_RET(processCluster != nullptr && processCluster->IsSessionEffectNodeStopping(sessionId), false);
     uint64_t generation = SetPendingSessionEffectCreate(sessionId, instance);
-    Request retry = [this, sessionId, effectName, instance, config, generation]() {
+    Request retry = [this, sessionId, effectName, instance, config, generation, aissSwitchEnabled]() {
         // superseded by a newer Create, or cancelled by Destroy/DestroyStream/Move/Reload
         CHECK_AND_RETURN(IsPendingSessionEffectCreate(sessionId, generation, instance));
         CancelPendingSessionEffectCreate(sessionId);
-        CreateSessionEffect(sessionId, effectName, instance, config);
+        CreateSessionEffect(sessionId, effectName, instance, config, aissSwitchEnabled);
     };
     hpaeNoLockQueue_.PushRequest(std::move(retry));
     if (hpaeSignalProcessThread_ != nullptr) {
@@ -53,7 +52,8 @@ bool HpaeRendererManager::TryDeferSessionEffectCreate(
 }
 
 int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
-    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+    bool aissSwitchEnabled)
 {
     auto it = sessionNodeMap_.find(sessionId);
     if (it == sessionNodeMap_.end()) {
@@ -69,9 +69,10 @@ int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::
         AUDIO_WARNING_LOG("CreateSessionEffect: cluster not found for sceneType %{public}d", sceneType);
         return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
     }
-    CHECK_AND_RETURN_RET(!TryDeferSessionEffectCreate(processCluster, sessionId, effectName, instance, config),
+    CHECK_AND_RETURN_RET(!TryDeferSessionEffectCreate(sessionId, effectName, instance, config, aissSwitchEnabled),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
-    int32_t ret = processCluster->CreateSessionEffectNode(sessionId, effectName, instance, config);
+    int32_t ret = processCluster->CreateSessionEffectNode(sessionId, effectName, instance, config,
+        aissSwitchEnabled);
     if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
         AUDIO_WARNING_LOG("CreateSessionEffect failed for session %{public}u, ret %{public}d", sessionId, ret);
     } else {
@@ -121,6 +122,15 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
     if (!processCluster) {
         AUDIO_WARNING_LOG("DestroySessionEffect: cluster not found for sceneType %{public}d", sceneType);
         return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
+    }
+
+    // STOPPING: a prior BeginClose is still deferred; skip re-Begin (would double-rewind /
+    // re-arm crossfade / queue a duplicate Finalize) — cancel pending recreate, mirror derived managers.
+    if (processCluster->IsSessionEffectNodeStopping(sessionId)) {
+        CancelPendingSessionEffectCreate(sessionId);
+        AUDIO_INFO_LOG("DestroySessionEffect: session %{public}u already STOPPING, skip re-Begin",
+            sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
     }
 
     // BeginClose: enter STOPPING (node stays in the cluster map), get combined SE+upstream-converter
@@ -269,10 +279,11 @@ bool HpaeRendererManager::IsValidSession(uint32_t sessionId) const
 }
 
 void HpaeRendererManager::PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
-    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+    bool aissSwitchEnabled)
 {
-    auto request = [this, sessionId, effectName, instance, config]() {
-        int32_t ret = CreateSessionEffect(sessionId, effectName, instance, config);
+    auto request = [this, sessionId, effectName, instance, config, aissSwitchEnabled]() {
+        int32_t ret = CreateSessionEffect(sessionId, effectName, instance, config, aissSwitchEnabled);
         if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
             AUDIO_WARNING_LOG("PostCreateSessionEffect: CreateSessionEffect failed for session %{public}u,"
                 " ret=%{public}d (system abnormal state, no rollback)", sessionId, ret);
