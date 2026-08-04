@@ -2867,7 +2867,9 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
             std::string oldClassName;
             std::string oldModuleName;
             CaptureOldPipeInfo(isEnhancedRouting, pipeList, streamDesc->sessionId_, oldClassName, oldModuleName);
-            MuteSinkPortForSwitchDevice(streamDesc, muteReason, oldClassName, oldModuleName);
+            std::string overrideCls = (oldClassName == PRIMARY_EXTRA_CLASS) ? oldClassName : "";
+            std::string overrideInfo = (oldClassName == PRIMARY_EXTRA_CLASS) ? oldModuleName : "";
+            MuteSinkPortForSwitchDevice(streamDesc, muteReason, overrideCls, overrideInfo);
 #endif
         }
     }
@@ -3118,7 +3120,7 @@ void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::s
         }
         MutePrimaryOrOffloadSink(newSinkName, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, SELECT_DEVICE_MUTE_MS, true, false);
-        MuteOldSinkByClassOrPort(oldSinkName, oldClassName, oldModuleName, muteTime);
+        audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true, false, oldClassName, oldModuleName);
     } else if (reason == AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE) {
         int64_t muteTime = NEW_DEVICE_AVALIABLE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
@@ -3126,19 +3128,9 @@ void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::s
         }
         MutePrimaryOrOffloadSink(oldSinkName, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true, false);
-        MuteOldSinkByClassOrPort(oldSinkName, oldClassName, oldModuleName, muteTime);
+        audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true, false, oldClassName, oldModuleName);
     }
     MuteSinkPortLogic(oldSinkName, newSinkName, reason);
-}
-
-void AudioCoreService::MuteOldSinkByClassOrPort(const std::string &oldSinkName,
-    const std::string &oldClassName, const std::string &oldModuleName, int64_t muteTime)
-{
-    if (oldClassName == PRIMARY_EXTRA_CLASS && !oldModuleName.empty()) {
-        audioIOHandleMap_.MuteSinkPortByClass(PRIMARY_EXTRA_CLASS, oldModuleName, muteTime, false);
-    } else {
-        audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true, false);
-    }
 }
 
 void AudioCoreService::MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime)

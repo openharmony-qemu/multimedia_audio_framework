@@ -3057,7 +3057,7 @@ HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_003, TestSize.
  * @tc.name  : Test AudioCoreService.
  * @tc.number: MuteSinkPortForSwitchDevice_PrimaryExtra_001
  * @tc.desc  : Test MuteSinkPortForSwitchDevice with primary_extra oldClassName and
- *             Override reason; MuteOldSinkByClassOrPort routes to MuteSinkPortByClass
+ *             Override reason; MuteSinkPort uses overrideClassName/overrideInfo params
  *             while MutePrimaryOrOffloadSink/MuteSinkPortLogic run.
  */
 HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_PrimaryExtra_001, TestSize.Level1)
@@ -3085,7 +3085,7 @@ HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_PrimaryExtra_0
  * @tc.name  : Test AudioCoreService.
  * @tc.number: MuteSinkPortForSwitchDevice_PrimaryExtra_002
  * @tc.desc  : Test MuteSinkPortForSwitchDevice with empty oldClassName and Override
- *             reason; MuteOldSinkByClassOrPort routes to MuteSinkPort (default primary)
+ *             reason; MuteSinkPort uses default portName lookup path
  *             while MutePrimaryOrOffloadSink/MuteSinkPortLogic run.
  */
 HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_PrimaryExtra_002, TestSize.Level1)
@@ -3113,8 +3113,8 @@ HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_PrimaryExtra_0
  * @tc.name  : Test AudioCoreService.
  * @tc.number: MuteSinkPortForSwitchDevice_PrimaryExtra_003
  * @tc.desc  : Test MuteSinkPortForSwitchDevice with primary_extra oldClassName and
- *             NEW_DEVICE_AVAILABLE reason; MuteOldSinkByClassOrPort routes to
- *             MuteSinkPortByClass while MutePrimaryOrOffloadSink/MuteSinkPortLogic run.
+ *             NEW_DEVICE_AVAILABLE reason; MuteSinkPort uses overrideClassName/overrideInfo
+ *             params while MutePrimaryOrOffloadSink/MuteSinkPortLogic run.
  */
 HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_PrimaryExtra_003, TestSize.Level1)
 {
@@ -3142,8 +3142,8 @@ HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_PrimaryExtra_0
  * @tc.name  : Test AudioCoreService.
  * @tc.number: MuteSinkPortForSwitchDevice_PrimaryExtra_004
  * @tc.desc  : Test MuteSinkPortForSwitchDevice with empty oldClassName and
- *             NEW_DEVICE_AVAILABLE reason; MuteOldSinkByClassOrPort routes to
- *             MuteSinkPort while MutePrimaryOrOffloadSink/MuteSinkPortLogic run.
+ *             NEW_DEVICE_AVAILABLE reason; MuteSinkPort uses default portName lookup
+ *             while MutePrimaryOrOffloadSink/MuteSinkPortLogic run.
  */
 HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_PrimaryExtra_004, TestSize.Level1)
 {

@@ -758,8 +758,6 @@ private:
     void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason,
         const std::string &oldClassName = "", const std::string &oldModuleName = "");
-    void MuteOldSinkByClassOrPort(const std::string &oldSinkName,
-        const std::string &oldClassName, const std::string &oldModuleName, int64_t muteTime);
     void MutePrimaryOrOffloadSink(const std::string &sinkName, int64_t muteTime);
     void MuteSinkPortLogic(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);

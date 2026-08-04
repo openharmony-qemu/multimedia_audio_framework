@@ -58,16 +58,14 @@ public:
         bool softLinkFlag = false);
 
     void NotifyUnmutePort();
-    void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync, bool isSleepEnabled = true);
-    void MuteSinkPortByClass(const std::string &className, const std::string &info,
-        int32_t duration, bool isSleepEnabled);
+    void MuteSinkPort(const std::string &portName, int32_t duration, bool isSync, bool isSleepEnabled = true,
+        const std::string &overrideClassName = "", const std::string &overrideInfo = "");
     void SetMoveFinish(bool flag);
     void MuteDefaultSinkPort(std::string networkID, std::string sinkName);
-    void UnmutePortAfterMuteDuration(int32_t muteDuration, const std::string &portName);
-    void UnmutePortAfterMuteDurationByClass(int32_t muteDuration, const std::string &className,
-        const std::string &info);
-    void DoUnmutePort(int32_t muteDuration, const std::string &portName);
-    void DoUnmutePortByClass(int32_t muteDuration, const std::string &className, const std::string &info);
+    void UnmutePortAfterMuteDuration(int32_t muteDuration, const std::string &portName,
+        const std::string &overrideClassName = "", const std::string &overrideInfo = "");
+    void DoUnmutePort(int32_t muteDuration, const std::string &portName,
+        const std::string &overrideClassName = "", const std::string &overrideInfo = "");
     std::string GetClassNameByPortAndNetworkId(const std::string &portName, const std::string &networkId);
 
 private:
