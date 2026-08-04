@@ -3422,8 +3422,9 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
     if (streamChangeInfoIn.audioCapturerChangeInfo.capturerInfo.sourceType == SOURCE_TYPE_VOICE_DOWNLINK &&
         queryBundleNameListCallback_ != nullptr) {
         uint32_t sessionId = streamChangeInfoIn.audioCapturerChangeInfo.sessionId;
+        std::string phoneNum = streamChangeInfoIn.audioCapturerChangeInfo.capturerInfo.cellularRecordPhoneNum;
         AUDIO_INFO_LOG("About to start voice broadcast thread for sessionId: %{public}u", sessionId);
-        queryBundleNameListCallback_->StartVoiceBroadcast(sessionId);
+        queryBundleNameListCallback_->StartVoiceBroadcast(sessionId, phoneNum);
         AUDIO_INFO_LOG("StartVoiceBroadcast completed for sessionId: %{public}u", sessionId);
     }
     RegisterClientDeathRecipient(object, TRACKER_CLIENT);
