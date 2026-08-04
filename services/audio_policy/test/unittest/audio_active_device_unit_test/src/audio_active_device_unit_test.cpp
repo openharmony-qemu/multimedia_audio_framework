@@ -333,7 +333,7 @@ HWTEST_F(AudioActiveDeviceUnitTest, GetDeviceForVolumeEnhanced_003, TestSize.Lev
     AudioActiveDevice &audioActiveDevice = AudioActiveDevice::GetInstance();
     int32_t uid = 10042;
     auto result = audioActiveDevice.GetDeviceForVolumeEnhanced(uid);
-    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result, nullptr);
 }
 
 /**

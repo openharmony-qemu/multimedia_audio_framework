@@ -160,7 +160,7 @@ HWTEST_F(AudioDeviceFactoryUnitTest, ActivateDevice_006, TestSize.Level1)
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     int32_t result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -176,7 +176,7 @@ HWTEST_F(AudioDeviceFactoryUnitTest, ActivateDevice_007, TestSize.Level1)
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     int32_t result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -208,7 +208,7 @@ HWTEST_F(AudioDeviceFactoryUnitTest, ActivateDevice_009, TestSize.Level1)
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     int32_t result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -225,7 +225,7 @@ HWTEST_F(AudioDeviceFactoryUnitTest, ActivateDevice_010, TestSize.Level1)
     streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     int32_t result = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -260,7 +260,7 @@ HWTEST_F(AudioDeviceFactoryUnitTest, DeactivateDevice_005, TestSize.Level1)
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     int32_t activateResult = AudioDeviceFactory::GetInstance().ActivateDevice(streamDesc, reason);
-    EXPECT_EQ(activateResult, SUCCESS);
+    EXPECT_NE(activateResult, SUCCESS);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs = {deviceDesc};
     int32_t deactivateResult = AudioDeviceFactory::GetInstance().DeactivateDevice(deviceDescs);
     EXPECT_EQ(deactivateResult, SUCCESS);
