@@ -397,7 +397,8 @@ bool HpaeSessionEffectNode::HandleWarmingUpRawBypass()
 }
 
 int32_t HpaeSessionEffectNode::CreateEffectWithInstance(const std::string &effectName,
-    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+    bool aissSwitchEnabled)
 {
     if (instance == nullptr) {
         return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_CREATE_FAILED);
@@ -408,6 +409,12 @@ int32_t HpaeSessionEffectNode::CreateEffectWithInstance(const std::string &effec
     ReconfigOutputBuffers(config);
     UpdatePrebufTargetBytes();
     ReconfigRawBypassBuffers(config);
+    // SetAissEnabledSync enables algorithm routing (raw bypass off) during first warmup; other
+    // create paths (move-stream / attach-state rebind) keep the default raw bypass on. Algorithm
+    // output or a stop transitions it back on (see PreheatThreadFunc / ProcessInterceptingRaw).
+    if (aissSwitchEnabled) {
+        rawBypassNeeded_ = false;
+    }
     AUDIO_INFO_LOG("create effect with instance %{public}s", effectName.c_str());
     return 0;
 }

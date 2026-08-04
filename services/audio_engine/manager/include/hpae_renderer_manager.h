@@ -111,11 +111,13 @@ public:
 
     // Session Effect (synchronous — must be called from SignalProcessThread)
     int32_t CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
-        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+        bool aissSwitchEnabled = false) override;
     int32_t DestroySessionEffect(uint32_t sessionId) override;
     // Session Effect (async — dispatches to SignalProcessThread, safe to call from any thread)
     void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
-        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+        bool aissSwitchEnabled = false) override;
     void PostDestroySessionEffect(uint32_t sessionId) override;
     bool HasSessionEffect(uint32_t sessionId) const override;
     bool IsValidSession(uint32_t sessionId) const override;
@@ -213,9 +215,9 @@ private:
     void CancelPendingSessionEffectCreate(uint32_t sessionId);
     // Returns true (and requeues a retry) when the cluster's SE node for this session is
     // STOPPING; false otherwise.
-    bool TryDeferSessionEffectCreate(const std::shared_ptr<HpaeProcessCluster> &processCluster,
-        uint32_t sessionId, const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
-        const AudioEffectConfig &config);
+    bool TryDeferSessionEffectCreate(uint32_t sessionId, const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+        bool aissSwitchEnabled = false);
     int32_t InitOutputCluster();
 
 private:

@@ -1227,7 +1227,8 @@ void HpaeOffloadRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 // === Session Effect ===
 
 int32_t HpaeOffloadRendererManager::InsertSessionEffectNode(const std::string &effectName,
-    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+    bool aissSwitchEnabled)
 {
     CHECK_AND_RETURN_RET_LOG(sessionEffectNode_ == nullptr,
         static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_ALREADY_BOUND),
@@ -1238,7 +1239,7 @@ int32_t HpaeOffloadRendererManager::InsertSessionEffectNode(const std::string &e
 
     HpaeNodeInfo nodeInfo = converterForLoudness_->GetNodeInfo();
     sessionEffectNode_ = std::make_shared<HpaeSessionEffectNode>(nodeInfo);
-    int32_t ret = sessionEffectNode_->CreateEffectWithInstance(effectName, instance, config);
+    int32_t ret = sessionEffectNode_->CreateEffectWithInstance(effectName, instance, config, aissSwitchEnabled);
     if (ret != 0) {
         AUDIO_ERR_LOG("InsertSessionEffectNode: CreateEffectWithInstance failed, ret=%{public}d", ret);
         sessionEffectNode_->DropEffect();
@@ -1406,7 +1407,7 @@ void HpaeOffloadRendererManager::DetachSessionEffectNodeForReload()
 
 bool HpaeOffloadRendererManager::TryDeferSessionEffectCreate(uint32_t sessionId,
     const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
-    const AudioEffectConfig &config)
+    const AudioEffectConfig &config, bool aissSwitchEnabled)
 {
     // The curNode's physical SE node is still finalizing its deferred close (STOPPING).
     // Defer this Create until that node is gone: record a cancelable/ownership token and
@@ -1415,12 +1416,12 @@ bool HpaeOffloadRendererManager::TryDeferSessionEffectCreate(uint32_t sessionId,
         sessionEffectNode_ != nullptr &&
         sessionEffectNode_->GetStatus() == HpaeSessionEffectNode::STATUS::STOPPING, false);
     uint64_t generation = SetPendingSessionEffectCreate(sessionId, instance);
-    Request retry = [this, sessionId, effectName, instance, config, generation]() {
+    Request retry = [this, sessionId, effectName, instance, config, generation, aissSwitchEnabled]() {
         // superseded by a newer Create, or cancelled by Destroy/DestroyStream/Move/Reload
         CHECK_AND_RETURN(IsPendingSessionEffectCreate(sessionId, generation, instance));
         CancelPendingSessionEffectCreate(sessionId);
         if (SafeGetMap(sinkInputNodeMap_, sessionId) != nullptr) {
-            CreateSessionEffect(sessionId, effectName, instance, config);
+            CreateSessionEffect(sessionId, effectName, instance, config, aissSwitchEnabled);
         }
     };
     hpaeNoLockQueue_.PushRequest(std::move(retry));
@@ -1433,7 +1434,7 @@ bool HpaeOffloadRendererManager::TryDeferSessionEffectCreate(uint32_t sessionId,
 
 int32_t HpaeOffloadRendererManager::MaterializeCurrentSessionEffect(uint32_t sessionId,
     const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
-    const AudioEffectConfig &config)
+    const AudioEffectConfig &config, bool aissSwitchEnabled)
 {
     // Caller guarantees curNode_ != nullptr && curNode_->GetSessionId() == sessionId.
     if (converterForLoudness_ == nullptr || loudnessGainNode_ == nullptr) {
@@ -1445,7 +1446,7 @@ int32_t HpaeOffloadRendererManager::MaterializeCurrentSessionEffect(uint32_t ses
         return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
     }
     sessionEffectSessionId_ = sessionId;
-    int32_t ret = InsertSessionEffectNode(effectName, instance, config);
+    int32_t ret = InsertSessionEffectNode(effectName, instance, config, aissSwitchEnabled);
     if (ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, curNode_->GetState(),
             OPERATION_SESSION_EFFECT_ENABLED);
@@ -1457,10 +1458,10 @@ int32_t HpaeOffloadRendererManager::MaterializeCurrentSessionEffect(uint32_t ses
 
 int32_t HpaeOffloadRendererManager::CreateSessionEffect(uint32_t sessionId,
     const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
-    const AudioEffectConfig &config)
+    const AudioEffectConfig &config, bool aissSwitchEnabled)
 {
     auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
-    CHECK_AND_RETURN_RET(!TryDeferSessionEffectCreate(sessionId, effectName, instance, config),
+    CHECK_AND_RETURN_RET(!TryDeferSessionEffectCreate(sessionId, effectName, instance, config, aissSwitchEnabled),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
     // Reject a duplicate bind BEFORE touching attach state, so a rejected Create does not
@@ -1484,7 +1485,7 @@ int32_t HpaeOffloadRendererManager::CreateSessionEffect(uint32_t sessionId,
 
     // If session is curNode_, materialize immediately (chain readiness checked inside)
     if (curNode_ != nullptr && curNode_->GetSessionId() == sessionId) {
-        return MaterializeCurrentSessionEffect(sessionId, effectName, instance, config);
+        return MaterializeCurrentSessionEffect(sessionId, effectName, instance, config, aissSwitchEnabled);
     }
     // Not curNode_ -> attach state sits on SinkInputNode, waits for ConnectInputSession
     HpaeSessionState state = (node != nullptr) ? node->GetState() : HPAE_SESSION_NEW;
@@ -1496,10 +1497,10 @@ int32_t HpaeOffloadRendererManager::CreateSessionEffect(uint32_t sessionId,
 
 void HpaeOffloadRendererManager::PostCreateSessionEffect(uint32_t sessionId,
     const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
-    const AudioEffectConfig &config)
+    const AudioEffectConfig &config, bool aissSwitchEnabled)
 {
-    auto request = [this, sessionId, effectName, instance, config]() {
-        CreateSessionEffect(sessionId, effectName, instance, config);
+    auto request = [this, sessionId, effectName, instance, config, aissSwitchEnabled]() {
+        CreateSessionEffect(sessionId, effectName, instance, config, aissSwitchEnabled);
     };
     SendRequest(std::move(request), __func__);
 }

@@ -45,7 +45,8 @@ public:
 
     // Effect lifecycle — node receives pre-created instances from manager layer
     int32_t CreateEffectWithInstance(const std::string &effectName,
-        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+        bool aissSwitchEnabled = true);
     int32_t DropEffect();  // Release node reference without destroying algorithm instance
     int32_t DetachEffectForReload();
 
@@ -182,7 +183,7 @@ private:
     HpaePcmBuffer rawBypassBuffer_;
     PcmBufferInfo rawBypassOutputBufferInfo_;
     HpaePcmBuffer rawBypassOutputData_;
-    bool rawBypassNeeded_ = false;
+    bool rawBypassNeeded_ = true;
     std::vector<float> interceptingRawData_;
     std::mutex rawBypassMutex_;
     std::condition_variable rawBypassCv_;

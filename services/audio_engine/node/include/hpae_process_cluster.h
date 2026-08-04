@@ -75,7 +75,8 @@ public:
 
     // Session Effect management
     int32_t CreateSessionEffectNode(uint32_t sessionId, const std::string &effectName,
-        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+        bool aissSwitchEnabled = false);
     // Synchronous immediate destroy (Begin+Finalize in one call; no smooth-close opportunity).
     int32_t DestroySessionEffectNode(uint32_t sessionId, uint64_t &outLatency);
     // Two-phase smooth close: Begin enters STOPPING (node stays in map) and returns the combined
