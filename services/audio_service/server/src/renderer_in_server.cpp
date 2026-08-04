@@ -92,6 +92,7 @@ namespace {
     constexpr int32_t SILENT_TYPE_SILENT_SESSION = 0;
     constexpr int32_t SILENT_TYPE_MUTE_SESSION = 1;
     constexpr int32_t FIRST_SOUND_BUFFER = 1;
+    static constexpr int32_t MAX_AUDIO_CHANNELS = 32;
 
     bool IsRendererConfigValid(const AudioProcessConfig &config)
     {
@@ -107,7 +108,7 @@ namespace {
             AUDIO_ERR_LOG("Invalid samplingRate in renderer config: %{public}d", config.streamInfo.samplingRate);
             return false;
         }
-        if (config.streamInfo.channels <= 0 || config.streamInfo.channels > 32) {
+        if (config.streamInfo.channels <= 0 || config.streamInfo.channels > MAX_AUDIO_CHANNELS) {
             AUDIO_ERR_LOG("Invalid channels in renderer config: %{public}d", config.streamInfo.channels);
             return false;
         }
