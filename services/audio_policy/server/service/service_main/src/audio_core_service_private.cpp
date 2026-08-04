@@ -111,7 +111,7 @@ static const std::unordered_map<std::string, int32_t> MOVE_STREAM_FAST_PIPE_DELA
     {"fast_a2dp_output", A2DP_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS},
     {"fast_usb_arm_output", ARMUSB_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS},
     {"fast_usb_arm_input", ARMUSB_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS},
-}
+};
 static int32_t GetFastPipeDelayReleaseTimeMs(const std::string &pipeName, const bool hasMoveStream, const bool isUltraFast)
 {
     if (hasMoveStream && isUltraFast) {
@@ -1117,11 +1117,11 @@ bool AudioCoreService::IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDesc
 void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag)
 {
     std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();
-    hasMoveStream_ = false;
+    bool hasMoveStream_ = false;
     for (auto desc : pipeInfo->streamDescriptors_) {
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
-        bool hasMoveStream = hasMoveStream_ != true && desc->streamAction_ != AUDIO_STREAM_ACTION_MOVE ? false : true;
+        hasMoveStream = hasMoveStream != true && desc->streamAction_ != AUDIO_STREAM_ACTION_MOVE ? false : true;
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
                 flag = desc->routeFlag_;
@@ -2860,7 +2860,7 @@ void AudioCoreService::DelayReleaseFastPipe(std::shared_ptr<AudioPipeInfo> pipeI
     const bool hasMoveStream = pipeInfo->GetHasMoveStream();
     const bool ultraFastFlag = pipeInfo->GetUltraFastFlag();
     int32_t delayMs = GetFastPipeDelayReleaseTimeMs(pipeName, hasMoveStream, ultraFastFlag);
-    AUDIO_INFO_LOG("DelayReleaseFastPipe id:%{public}u, paIndex:%{public}u, pipeName:%{public}s, delay:%{public}dms ", \
+    AUDIO_INFO_LOG("DelayReleaseFastPipe id:%{public}u, paIndex:%{public}u, pipeName:%{public}s, delay:%{public}dms " \
         "hasMoveStream:%{public}s, ultraFastFlag:%{public}s",
         id, paIndex, pipeName.c_str(), delayMs, hasMoveStream ? "true" : "false", ultraFastFlag ? "true" : "false");
     std::lock_guard<std::mutex> lock(fastCloseMutex_);
