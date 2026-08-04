@@ -574,7 +574,7 @@ HWTEST(AudioPolicyManagerDevice, UnsetPreferredInputDeviceChangeCallback_Removes
 HWTEST(AudioPolicyManagerDevice, GetExcludedDevices_002, TestSize.Level1)
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
-    mgr->audioPolicyClientProxy_ = nullptr;
+    mgr->audioPolicyClientStubCB_ = nullptr;
     auto ret = mgr->GetExcludedDevices(AudioDeviceUsage::MEDIA_OUTPUT_DEVICES);
     EXPECT_TRUE(ret.empty());
 }
@@ -582,7 +582,7 @@ HWTEST(AudioPolicyManagerDevice, GetExcludedDevices_002, TestSize.Level1)
 HWTEST(AudioPolicyManagerDevice, GetDevicesInner_002, TestSize.Level1)
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
-    mgr->audioPolicyClientProxy_ = nullptr;
+    mgr->audioPolicyClientStubCB_ = nullptr;
     auto ret = mgr->GetDevicesInner(DeviceFlag::OUTPUT_DEVICES_FLAG);
     EXPECT_TRUE(ret.empty());
 }
@@ -590,7 +590,7 @@ HWTEST(AudioPolicyManagerDevice, GetDevicesInner_002, TestSize.Level1)
 HWTEST(AudioPolicyManagerDevice, GetPreferredOutputDeviceDescriptors_001, TestSize.Level1)
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
-    mgr->audioPolicyClientProxy_ = nullptr;
+    mgr->audioPolicyClientStubCB_ = nullptr;
     AudioRendererInfo info;
     auto ret = mgr->GetPreferredOutputDeviceDescriptors(info, false);
     EXPECT_TRUE(ret.empty());
@@ -606,7 +606,7 @@ HWTEST(AudioPolicyManagerDevice, GetPreferredOutputDeviceDescriptors_002, TestSi
 HWTEST(AudioPolicyManagerDevice, GetPreferredInputDeviceDescriptors_001, TestSize.Level1)
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
-    mgr->audioPolicyClientProxy_ = nullptr;
+    mgr->audioPolicyClientStubCB_ = nullptr;
     AudioCapturerInfo info;
     auto ret = mgr->GetPreferredInputDeviceDescriptors(info);
     EXPECT_TRUE(ret.empty());
@@ -622,7 +622,7 @@ HWTEST(AudioPolicyManagerDevice, GetPreferredInputDeviceDescriptors_002, TestSiz
 HWTEST(AudioPolicyManagerDevice, GetOutputDevice_001, TestSize.Level1)
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
-    mgr->audioPolicyClientProxy_ = nullptr;
+    mgr->audioPolicyClientStubCB_ = nullptr;
     sptr<AudioRendererFilter> filter = new AudioRendererFilter();
     auto ret = mgr->GetOutputDevice(filter);
     EXPECT_TRUE(ret.empty());
@@ -638,7 +638,7 @@ HWTEST(AudioPolicyManagerDevice, GetOutputDevice_002, TestSize.Level1)
 HWTEST(AudioPolicyManagerDevice, GetInputDevice_001, TestSize.Level1)
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
-    mgr->audioPolicyClientProxy_ = nullptr;
+    mgr->audioPolicyClientStubCB_ = nullptr;
     sptr<AudioCapturerFilter> filter = new AudioCapturerFilter();
     auto ret = mgr->GetInputDevice(filter);
     EXPECT_TRUE(ret.empty());
@@ -780,7 +780,7 @@ HWTEST(AudioPolicyManagerDevice, UnregisterDeviceChangeWithInfoCallback_NullStub
 HWTEST(AudioPolicyManagerDevice, GetAvailableDevices_002, TestSize.Level1)
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
-    mgr->audioPolicyClientProxy_ = nullptr;
+    mgr->audioPolicyClientStubCB_ = nullptr;
     auto ret = mgr->GetAvailableDevices(MEDIA_OUTPUT_DEVICES);
     EXPECT_TRUE(ret.empty());
 }
@@ -809,7 +809,7 @@ HWTEST(AudioPolicyManagerDevice, UnsetAvailableDeviceChangeCallback_Specific, Te
 HWTEST(AudioPolicyManagerDevice, SetCallDeviceActive_001, TestSize.Level1)
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
-    mgr->audioPolicyClientProxy_ = nullptr;
+    mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->SetCallDeviceActive(DEVICE_TYPE_SPEAKER, true, "", 0);
     EXPECT_EQ(ret, -1);
 }
@@ -824,7 +824,7 @@ HWTEST(AudioPolicyManagerDevice, SetCallDeviceActive_002, TestSize.Level1)
 HWTEST(AudioPolicyManagerDevice, GetActiveBluetoothDevice_001, TestSize.Level1)
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
-    mgr->audioPolicyClientProxy_ = nullptr;
+    mgr->audioPolicyClientStubCB_ = nullptr;
     auto ret = mgr->GetActiveBluetoothDevice();
     EXPECT_NE(ret, nullptr);
 }

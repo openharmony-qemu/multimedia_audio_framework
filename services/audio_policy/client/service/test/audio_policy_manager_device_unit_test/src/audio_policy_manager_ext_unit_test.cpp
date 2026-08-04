@@ -1073,7 +1073,7 @@ HWTEST(AudioPolicyManagerDevice, GmUpdateDevInfo_NullDesc, TestSize.Level1)
     auto *gm = AudioGeneralManager::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> nullDesc;
     int32_t ret = gm->UpdateDeviceInfo(
-        nullDesc, DeviceInfoUpdateCommand::UPDATE_DEVICE_VOLUME);
+        nullDesc, CONNECTSTATE_UPDATE);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -1219,23 +1219,21 @@ HWTEST(AudioPolicyManagerDevice, GmSetPreferredDevice, TestSize.Level1)
     auto *gm = AudioGeneralManager::GetInstance();
     auto desc = std::make_shared<AudioDeviceDescriptor>();
     int32_t ret = gm->SetPreferredDevice(
-        PreferredType::PREFERRED_FOR_MEDIA, desc);
+        PreferredType::AUDIO_MEDIA_RENDER, desc);
     EXPECT_NE(ret, SUCCESS);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmSetAsrVoiceMuteMode_NullGasp, TestSize.Level1)
 {
     auto *gm = AudioGeneralManager::GetInstance();
-    g_asManagerProxy = nullptr;
     int32_t ret = gm->SetAsrVoiceMuteMode(
-        AsrVoiceMuteMode::ASR_VOICE_MUTE_OFF, true);
+        AsrVoiceMuteMode::OUTPUT_MUTE, true);
     EXPECT_EQ(ret, 0);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmSetExtraParams_NullGasp, TestSize.Level1)
 {
     auto *gm = AudioGeneralManager::GetInstance();
-    g_asManagerProxy = nullptr;
     std::vector<std::pair<std::string, std::string>> kv;
     int32_t ret = gm->SetExtraParameters("key", kv);
     EXPECT_EQ(ret, 0);
@@ -1244,7 +1242,6 @@ HWTEST(AudioPolicyManagerDevice, GmSetExtraParams_NullGasp, TestSize.Level1)
 HWTEST(AudioPolicyManagerDevice, GmNotifySensitive_NullGasp, TestSize.Level1)
 {
     auto *gm = AudioGeneralManager::GetInstance();
-    g_asManagerProxy = nullptr;
     int32_t ret = gm->NotifySensitiveRecordPermit(1, true);
     EXPECT_EQ(ret, 0);
 }
