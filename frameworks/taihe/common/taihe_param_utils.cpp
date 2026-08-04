@@ -215,6 +215,28 @@ int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &aud
     return AUDIO_OK;
 }
 
+int32_t TaiheParamUtils::GetMicInStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
+    AudioStreamInfo const &in)
+{
+    int32_t intValue = GetIntValueFromSamplingRateUnion(in.samplingRate);
+    if (!IsValidAudioSamplingRate(intValue)) {
+        AUDIO_ERR_LOG("invaild micIn samplingRate");
+        return AUDIO_ERR;
+    }
+    audioStreamInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
+    audioStreamInfo.channels =
+        static_cast<OHOS::AudioStandard::AudioChannel>(in.channels.get_value());
+    audioStreamInfo.format =
+        static_cast<OHOS::AudioStandard::AudioSampleFormat>(in.sampleFormat.get_value());
+    audioStreamInfo.encoding =
+        static_cast<OHOS::AudioStandard::AudioEncodingType>(in.encodingType.get_value());
+    if (in.channelLayout.has_value()) {
+        audioStreamInfo.channelLayout =
+            static_cast<OHOS::AudioStandard::AudioChannelLayout>(in.channelLayout.value().get_value());
+    }
+    return AUDIO_OK;
+}
+
 int32_t TaiheParamUtils::GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo &audioCapturerInfo,
     AudioCapturerInfo const &in)
 {
@@ -273,6 +295,11 @@ int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOp
     
     status = GetPreferredInputDevice(opts, options);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse PreferredInputDevice failed");
+
+    if (options.micInStreamInfo.has_value()) {
+        status = GetMicInStreamInfo(opts->micInStreamInfo, options.micInStreamInfo.value());
+        CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse MicInStreamInfo failed");
+    }
 
     status = GetPlaybackCaptureMode(opts, options);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParsePlaybackCaptureMode failed");

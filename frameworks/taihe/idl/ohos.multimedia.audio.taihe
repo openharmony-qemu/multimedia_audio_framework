@@ -1039,6 +1039,7 @@ struct AudioCapturerOptions {
   streamInfo: AudioStreamInfo;
   capturerInfo: AudioCapturerInfo;
   preferredInputDevice: Optional<AudioDeviceDescriptor>;
+  @optional micInStreamInfo: Optional<AudioStreamInfo>;
   @optional playbackCaptureMode: Optional<AudioPlaybackCaptureMode>;
   @optional playbackCaptureUid: Optional<i32>;
 }
@@ -1418,6 +1419,10 @@ union AudioCapturerOrNull {
 @gen_async("createAudioCapturer")
 @gen_promise("createAudioCapturer")
 function CreateAudioCapturerSync(options: AudioCapturerOptions): AudioCapturerOrNull;
+
+@gen_async("createMicInAudioCapturer")
+@gen_promise("createMicInAudioCapturer")
+function CreateMicInAudioCapturerSync(options: AudioCapturerOptions): AudioCapturerOrNull;
 
 union AudioRendererOrNull {
   type_audioRenderer: AudioRenderer;

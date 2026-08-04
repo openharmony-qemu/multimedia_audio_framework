@@ -1130,6 +1130,12 @@ AudioCapturerOrNull CreateAudioCapturerSync(AudioCapturerOptions const &options)
     }
     return AudioCapturerImpl::CreateAudioCapturerWrapper(capturerOptions);
 }
+
+AudioCapturerOrNull CreateMicInAudioCapturerSync(AudioCapturerOptions const &options)
+{
+    return CreateAudioCapturerSync(options);
+}
 } // namespace ANI::Audio
 
 TH_EXPORT_CPP_API_CreateAudioCapturerSync(ANI::Audio::CreateAudioCapturerSync);
+TH_EXPORT_CPP_API_CreateMicInAudioCapturerSync(ANI::Audio::CreateMicInAudioCapturerSync);

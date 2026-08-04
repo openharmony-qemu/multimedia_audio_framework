@@ -43,6 +43,8 @@ public:
         AudioCapturerOptions const &options);
     static int32_t GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
         AudioRendererOptions const &options);
+    static int32_t GetMicInStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
+        AudioStreamInfo const &in);
     static int32_t GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo &audioCapturerInfo,
         AudioCapturerInfo const &in);
     static int32_t GetPreferredInputDevice(OHOS::AudioStandard::AudioCapturerOptions *opts,
