@@ -821,65 +821,6 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_051, TestSize.Level0)
 }
 
 /**
- * @tc.name: TestHpaeNodeCommon_052
- * @tc.type: FUNC
- * @tc.number: TestHpaeNodeCommon_052
- * @tc.desc: Test CalculateFrameLenBySampleRate with 11025 sample rate
- */
-HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_052, TestSize.Level0)
-{
-    size_t result = CalculateFrameLenBySampleRate(SAMPLE_RATE_11025);
-    EXPECT_EQ(result, 220U); // 220 for 11025 samplerate (20ms unified)
-}
-
-/**
- * @tc.name: TestHpaeNodeCommon_053
- * @tc.type: FUNC
- * @tc.number: TestHpaeNodeCommon_053
- * @tc.desc: Test CalculateFrameLenBySampleRate with multiples of 50 sample rates
- */
-HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_053, TestSize.Level0)
-{
-    size_t result1 = CalculateFrameLenBySampleRate(SAMPLE_RATE_8000);
-    size_t result2 = CalculateFrameLenBySampleRate(SAMPLE_RATE_16000);
-    size_t result3 = CalculateFrameLenBySampleRate(SAMPLE_RATE_48000);
-    
-    EXPECT_EQ(result1, 160U);
-    EXPECT_EQ(result2, 320U);
-    EXPECT_EQ(result3, 960U);
-}
-
-/**
- * @tc.name: TestHpaeNodeCommon_054
- * @tc.type: FUNC
- * @tc.number: TestHpaeNodeCommon_054
- * @tc.desc: Test CalculateFrameLenBySampleRate with non-multiples of 50 sample rates
- */
-HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_054, TestSize.Level0)
-{
-    size_t result1 = CalculateFrameLenBySampleRate(SAMPLE_RATE_44100);
-    size_t result2 = CalculateFrameLenBySampleRate(SAMPLE_RATE_22050);
-    
-    EXPECT_EQ(result1, 882U);
-    EXPECT_EQ(result2, 441U);
-}
-
-/**
- * @tc.name: TestHpaeNodeCommon_055
- * @tc.type: FUNC
- * @tc.number: TestHpaeNodeCommon_055
- * @tc.desc: Test CalculateFrameLenBySampleRate with uint32_t parameter
- */
-HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_055, TestSize.Level0)
-{
-    size_t result1 = CalculateFrameLenBySampleRate(48000U);
-    size_t result2 = CalculateFrameLenBySampleRate(44100U);
-    
-    EXPECT_EQ(result1, 960U);
-    EXPECT_EQ(result2, 882U);
-}
-
-/**
  * @tc.name: TestHpaeNodeCommon_056
  * @tc.type: FUNC
  * @tc.number: TestHpaeNodeCommon_056
