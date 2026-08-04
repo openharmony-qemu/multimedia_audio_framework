@@ -5981,6 +5981,12 @@ int32_t AudioPolicyServer::SetLoopbackVolume(float volume, bool &ret)
         "SetLoopbackVolume invalid volume %{public}f", volume);
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
+    bool isBack = true;
+    const int32_t result = GetAppBackGroundState(callerPid, isBack);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !isBack, SUCCESS,
+        "SetLoopbackVolume skipped, callingPid %{public}d, result %{public}d, isBack %{public}d",
+        callerPid, result, isBack);
+
     AUDIO_INFO_LOG("SetLoopbackVolume callingPid %{public}d, volume %{public}f", callerPid, volume);
     loopbackVolume_.store(volume, std::memory_order_relaxed);
     ret = true;
