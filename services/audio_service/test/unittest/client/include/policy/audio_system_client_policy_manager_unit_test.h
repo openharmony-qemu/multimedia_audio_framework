@@ -94,7 +94,7 @@ public:
     {
         return false;
     }
-    void StartVoiceBroadcast(uint32_t sessionId) override {}
+    void StartVoiceBroadcast(uint32_t sessionId, const std::string &cellularRecordPhoneNum) override {}
 };
 
 class MockAudioRingerModeCallback : public AudioRingerModeCallback {
