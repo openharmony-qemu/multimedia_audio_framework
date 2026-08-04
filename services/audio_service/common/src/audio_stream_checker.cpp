@@ -31,6 +31,8 @@ const int64_t NORMAL_FRAME_PER_TIME = 20000000;  // 20ms
 const int64_t FAST_FRAME_PER_TIME = 5000000;  // 5ms
 }
 
+static constexpr int32_t MAX_AUDIO_CHANNELS = 32;
+
 static bool IsAudioProcessConfigValid(const AudioProcessConfig &cfg)
 {
     if (cfg.appInfo.appUid < 0) {
@@ -41,8 +43,8 @@ static bool IsAudioProcessConfigValid(const AudioProcessConfig &cfg)
         AUDIO_ERR_LOG("Invalid appPid: %{public}d", cfg.appInfo.appPid);
         return false;
     }
-    if (cfg.originalSessionId != 0 && (cfg.originalSessionId < 100000 ||
-        cfg.originalSessionId > UINT32_MAX - 100000)) {
+    if (cfg.originalSessionId != 0 && (cfg.originalSessionId < MIN_SESSIONID ||
+        cfg.originalSessionId > UINT32_MAX - MAX_SESSIONID)) {
         AUDIO_ERR_LOG("Invalid originalSessionId: %{public}u", cfg.originalSessionId);
         return false;
     }
@@ -50,7 +52,7 @@ static bool IsAudioProcessConfigValid(const AudioProcessConfig &cfg)
         AUDIO_ERR_LOG("Invalid samplingRate: %{public}d", cfg.streamInfo.samplingRate);
         return false;
     }
-    if (cfg.streamInfo.channels <= 0 || cfg.streamInfo.channels > 32) {
+    if (cfg.streamInfo.channels <= 0 || cfg.streamInfo.channels > MAX_AUDIO_CHANNELS) {
         AUDIO_ERR_LOG("Invalid channels: %{public}d", cfg.streamInfo.channels);
         return false;
     }
