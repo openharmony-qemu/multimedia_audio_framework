@@ -238,6 +238,10 @@ void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
         return;
     }
 #ifndef CONFIG_FACTORY_VERSION
+    if (GetNodeInfo().fadeType == FadeType::NONE_FADE) {
+        fadeInState = false;
+        return;
+    }
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
     AudioRawFormat rawFormat;
     rawFormat.format = SAMPLE_F32LE;
@@ -275,6 +279,8 @@ void HpaeGainNode::ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
         fadeInState = false;
         processedBytes = 0;
     }
+#else
+    fadeInState = false;
 #endif
 }
 
