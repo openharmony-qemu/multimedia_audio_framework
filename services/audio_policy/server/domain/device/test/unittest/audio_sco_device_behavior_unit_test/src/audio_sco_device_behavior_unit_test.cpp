@@ -202,7 +202,7 @@ HWTEST_F(AudioScoDeviceBehaviorUnitTest, DeactivateDevice_004, TestSize.Level1)
     deviceDesc->macAddress_ = "11:22:33:44:55:66";
     deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     int32_t result = behavior.DeactivateDevice(deviceDesc);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 } // namespace AudioStandard

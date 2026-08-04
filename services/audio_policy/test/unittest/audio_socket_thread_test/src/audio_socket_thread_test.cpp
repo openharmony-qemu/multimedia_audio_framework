@@ -906,6 +906,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_033, TestSize.Level1)
     audioSocketThread.UpdateDeviceState(snprintfFailEvent);
     AudioEvent snprintfSuccessEvent = {1, 2, "device", "address", "anahs"};
     audioSocketThread.UpdateDeviceState(snprintfSuccessEvent);
+    EXPECT_TRUE(AudioSocketThread::audioSocketEvent_.eventType == 1);
 }
 
 /**
