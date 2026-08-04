@@ -83,7 +83,7 @@ public:
     AudioQueryBundleNameListCallbackFuzzTest() {}
     bool OnQueryBundleNameIsInList(const std::string &bundleName,
         const std::string &listType) override { return false; }
-    void StartVoiceBroadcast(uint32_t sessionId) override { return; }
+    void StartVoiceBroadcast(uint32_t sessionId, const std::string &cellularRecordPhoneNum) override { return; }
 };
 
 class AudioRouteCallbackFuzzTest : public AudioRouteCallback {
