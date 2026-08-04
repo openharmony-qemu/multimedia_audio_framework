@@ -2823,10 +2823,6 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
         RECORD_DEVICE_SWITCH_OPERATION_FAILED, "UpdatePlaybackCaptureConfig Failed", true));
 
-    bool restartResult = RestartAudioStream(newAudioStream, previousState);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(restartResult, false,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-        RECORD_DEVICE_SWITCH_OPERATION_FAILED, "start new stream failed", true), "start new stream failed.");
     return true;
 }
 
@@ -2921,7 +2917,20 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
 
     // Activate audio interrupt again when restoring for audio server died.
     if (restoreInfo.restoreReason == SERVER_DIED) {
-        HandleAudioInterruptWhenServerDied();
+        HandleAudioInterruptWhenServerDied(previousState);
+    }
+
+    bool restartResult = RestartAudioStream(audioStream_, previousState);
+    if (!restartResult) {
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            RECORD_DEVICE_SWITCH_OPERATION_FAILED, "start new stream failed", true);
+        int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
+        if (ret != 0) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_DEVICE_SWITCH_OPERATION_FAILED, "DeactivateAudioInterrupt Failed", true);
+            AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
+        }
+        return false;
     }
 
     isSwitching_ = false;
@@ -2930,11 +2939,11 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     return switchResult;
 }
 
-void AudioCapturerPrivate::HandleAudioInterruptWhenServerDied()
+void AudioCapturerPrivate::HandleAudioInterruptWhenServerDied(CapturerState previousState)
 {
     int32_t ret = InitAudioInterruptCallback(true);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init audio interrupt callback failed when restoring from server died");
-    if (GetStatusInner() == CAPTURER_RUNNING) {
+    if (previousState == CAPTURER_RUNNING) {
         AudioInterrupt audioInterrupt = audioInterrupt_;
         ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
         if (ret != SUCCESS) {

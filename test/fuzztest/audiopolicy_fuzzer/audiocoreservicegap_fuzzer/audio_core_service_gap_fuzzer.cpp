@@ -134,7 +134,6 @@ std::shared_ptr<AudioStreamDescriptor> MakeCapturerDesc(FuzzedDataProvider &fdp)
     streamDesc->capturerInfo_.capturerFlags = fdp.ConsumeBool() ? AUDIO_FLAG_FORCED_NORMAL : AUDIO_FLAG_NORMAL;
     streamDesc->streamStatus_ = fdp.ConsumeBool() ? STREAM_STATUS_STARTED : STREAM_STATUS_NEW;
     streamDesc->bundleName_ = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
-    streamDesc->voipPrivacyMuted_.store(false);
     streamDesc->newDeviceDescs_.push_back(MakeDevice(fdp, INPUT_DEVICE));
     return streamDesc;
 }
@@ -262,33 +261,6 @@ void AudioCoreServiceSelectionGapFuzzTest(FuzzedDataProvider &fdp)
     audioCoreService->NotifyRemoteDeviceStatusUpdate(nullptr);
 }
 
-void AudioCoreServiceVoipPrivacyGapFuzzTest(FuzzedDataProvider &fdp)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    if (audioCoreService == nullptr) {
-        return;
-    }
-    auto streamDesc = MakeCapturerDesc(fdp);
-    if (streamDesc == nullptr) {
-        return;
-    }
-
-    bool hasActiveVoipPrivacyCapturer = fdp.ConsumeBool();
-    audioCoreService->IsVoipPrivacyMuteCandidateSource(streamDesc->capturerInfo_.sourceType);
-    audioCoreService->IsVoipPrivacyMuteBypassedForUltrasonic(streamDesc->capturerInfo_.sourceType);
-    audioCoreService->ShouldMuteCapturerByVoipPrivacy(streamDesc, hasActiveVoipPrivacyCapturer);
-    audioCoreService->WriteVoipMutedCaptureStats(streamDesc, fdp.ConsumeBool());
-
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = { nullptr, streamDesc };
-    audioCoreService->EvaluateActiveVoipPrivacyPresence(streamDescs, hasActiveVoipPrivacyCapturer);
-    std::unordered_set<uint32_t> targetMuteSessions;
-    audioCoreService->CollectSessionsToMuteByVoipPrivacy(streamDescs, hasActiveVoipPrivacyCapturer,
-        targetMuteSessions);
-    targetMuteSessions.clear();
-    audioCoreService->SyncVoipPrivacyMuteState(streamDescs, targetMuteSessions);
-    audioCoreService->NotifyVoipPriorityLoweredByMute(streamDesc->sessionId_, fdp.ConsumeBool());
-}
-
 void AudioCoreServiceVolumeGapFuzzTest(FuzzedDataProvider &fdp)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -312,7 +284,6 @@ void Test(FuzzedDataProvider &fdp)
         AudioCoreServiceRecordFlagGapFuzzTest,
         AudioCoreServiceClientStateGapFuzzTest,
         AudioCoreServiceSelectionGapFuzzTest,
-        AudioCoreServiceVoipPrivacyGapFuzzTest,
         AudioCoreServiceVolumeGapFuzzTest,
     });
     func(fdp);
