@@ -182,6 +182,8 @@ public:
 
     bool GetHasMoveStream() { return hasMoveStream_; }
 
+    size_t GetStreamSize() const { return streamDescriptors_.size(); }
+
 private:
     void DumpCommonAttrs(std::string &dumpString);
 

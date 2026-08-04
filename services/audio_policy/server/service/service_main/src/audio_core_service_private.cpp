@@ -1117,7 +1117,7 @@ bool AudioCoreService::IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDesc
 void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag)
 {
     std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();
-    bool hasMoveStream_ = false;
+    bool hasMoveStream = false;
     for (auto desc : pipeInfo->streamDescriptors_) {
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
@@ -1141,7 +1141,7 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
                 break;
         }
     }
-    pipeInfo->SetHasMoveStream(hasMoveStream_);
+    pipeInfo->SetHasMoveStream(hasMoveStream);
     pipeManager_->UpdateAudioPipeInfo(pipeInfo);
 }
 
@@ -2878,7 +2878,7 @@ void AudioCoreService::DelayReleaseFastPipe(std::shared_ptr<AudioPipeInfo> pipeI
 int32_t AudioCoreService::ReleaseFastPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
     const std::string &moduleName, int32_t delayMs)
 {
-    HILOG_COMM_INFO("[ReleaseFastPipe]unload FAST module, delay:%{public}dms, pipeName:%{public}s",
+    AUDIO_INFO_LOG("[ReleaseFastPipe]unload FAST module, delay:%{public}dms, pipeName:%{public}s",
         delayMs, pipeName.c_str());
     {
         std::unique_lock<std::mutex> lock(fastCloseMutex_);
@@ -2893,7 +2893,7 @@ int32_t AudioCoreService::ReleaseFastPipe(AudioIOHandle id, uint32_t paIndex, co
 
 void AudioCoreService::UpdateFastState(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
-    CHECK_AND_RETURN(pipeInfo != nullptr && pipeInfo->streamDescriptors_.size() > 0);
+    CHECK_AND_RETURN(pipeInfo != nullptr && pipeInfo->GetStreamSize() > 0);
     CHECK_AND_RETURN(pipeInfo->IsRouteFast());
     {
         std::lock_guard<std::mutex> lock(fastCloseMutex_);
