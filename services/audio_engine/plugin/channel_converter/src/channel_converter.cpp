@@ -158,8 +158,13 @@ void ChannelConverter::SetUpmixCoef(float coef)
         AUDIO_ERR_LOG("set upmix coef invalid");
         return;
     }
+    CHECK_AND_RETURN(coef != upmixCoef_);
+    float oldCoef = upmixCoef_;
     AUDIO_INFO_LOG("set upmix coef from %{public}f to %{public}f", upmixCoef_, coef);
     upmixCoef_ = coef;
+    if (isInitialized_ && inChannelInfo_.numChannels <= outChannelInfo_.numChannels && oldCoef != 0.0f) {
+        ApplyUpmixGainRatio(coef / oldCoef);
+    }
 }
  
 int32_t ChannelConverter::Process(uint32_t frameLen, float* in, uint32_t inByteSize, float* out, uint32_t outByteSize)
@@ -211,9 +216,8 @@ int32_t ChannelConverter::MixProcess(bool isDmix, uint32_t frameLen, float* in, 
     }
     return MIX_ERR_SUCCESS;
 }
-// used to add gain adjustment to upmix
-// apply configured gain to output channel that is not in input channelmap
-void ChannelConverter::UpmixGainAttenuation()
+
+void ChannelConverter::ApplyUpmixGainRatio(float ratio)
 {
     if (inChannelInfo_.numChannels == 1) {
         return;
@@ -225,12 +229,17 @@ void ChannelConverter::UpmixGainAttenuation()
         for (uint32_t j = 0; j < inChannelInfo_.numChannels; j++) {
             uint64_t inBit = inChMsk & (~inChMsk + 1);
             if (inBit != outBit) {
-                mixTable_[j][i] *= upmixCoef_;
+                mixTable_[j][i] *= ratio;
             }
             inChMsk ^= inBit;
         }
         outChMsk ^= outBit;
     }
+}
+
+void ChannelConverter::UpmixGainAttenuation()
+{
+    ApplyUpmixGainRatio(upmixCoef_);
 }
 
 } // HPAE

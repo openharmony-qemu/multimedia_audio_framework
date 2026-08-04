@@ -33,11 +33,12 @@ public:
     int32_t SetInChannelInfo(AudioChannelInfo inChannelInfo);
     int32_t SetOutChannelInfo(AudioChannelInfo outChannelInfo);
     void SetDownmixNormalization(bool normalizing);
-    void SetUpmixCoef(float coef); // take effect before SetParam
+    void SetUpmixCoef(float coef); // takes effect immediately; re-applied to the baked mix table via ratio
     void Reset();
 private:
     int32_t MixProcess(bool isDmix, uint32_t frameLen, float* in, float* out);
     void UpmixGainAttenuation();
+    void ApplyUpmixGainRatio(float ratio);
     DownMixer downMixer_;
     float mixTable_[MAX_CHANNELS][MAX_CHANNELS] = {{0}};
     AudioChannelInfo inChannelInfo_;

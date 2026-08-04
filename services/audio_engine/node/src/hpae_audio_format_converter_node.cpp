@@ -889,6 +889,11 @@ void HpaeAudioFormatConverterNode::SetDownmixNormalization(bool normalizing)
     channelConverter_.SetDownmixNormalization(normalizing);
 }
 
+void HpaeAudioFormatConverterNode::SetUpmixCoef(float coef)
+{
+    channelConverter_.SetUpmixCoef(coef);
+}
+
 void HpaeAudioFormatConverterNode::FlushBuffers()
 {
     AUDIO_INFO_LOG("NodeId %{public}d: FlushBuffers, discarding "
