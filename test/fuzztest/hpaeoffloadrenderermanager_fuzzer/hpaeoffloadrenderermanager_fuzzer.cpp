@@ -50,6 +50,7 @@ constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
+constexpr int32_t TEST_STREAM_UID = 1000;
 constexpr int32_t DEFAULT_NODE_ID = 1;
 
 // Rewind and flush test constants
@@ -98,6 +99,11 @@ constexpr uint32_t MIN_FRAME_LENGTH = 1;
 constexpr uint32_t SMALL_FRAME_LENGTH = 2;
 constexpr uint32_t ZERO_FRAME_LENGTH = 0;
 constexpr size_t FUZZ_MAX_LEN_INCREMENT = 1;
+// customSampleRate flows into historyFrameCount = HISTORY_INTERVAL_S(7) * customSampleRate /
+// frameLen, which sizes the SinkInputNode history buffer (~7*customSampleRate*ch*bytes). An
+// unbounded fuzzed value allocates gigabytes and OOMs the process (seen: 4.2GB). Cap it to a
+// realistic 192kHz so the buffer stays ~10MB.
+constexpr uint32_t FUZZ_MAX_CUSTOM_SAMPLE_RATE = 192000;
 
 // Thread sleep constants
 constexpr int32_t CONCURRENT_THREAD_SLEEP_MS = 5;
@@ -174,11 +180,10 @@ void RoundVal(T &roundVal, const std::vector<T>& list)
         roundVal = GetData<T>();
         return;
     }
-    if (GetData<bool>()) {
-        roundVal = GetData<T>();
-    } else {
-        roundVal = list[GetData<uint32_t>() % list.size()];
-    }
+    // Always pick from the safe list. The previous GetData<bool>() branch returned an unbounded
+    // GetData<T>() ~50% of the time; for allocation-driving fields (samplingRate/channels/format)
+    // that blew up SinkInputNode buffers (std::bad_alloc / OOM) whenever isInit_ was true.
+    roundVal = list[GetData<uint32_t>() % list.size()];
 }
 
 std::string GetFuzzString(size_t maxLen = FUZZ_STRING_DEFAULT_LENGTH)
@@ -231,7 +236,7 @@ static void InitRenderStreamInfo(HpaeStreamInfo &streamInfo)
     streamInfo.fadeType = GetData<FadeType>();
     streamInfo.pipeType = GetData<AudioPipeType>();
     RoundVal(streamInfo.samplingRate, SUPPORTED_SAMPLE_RATES);
-    streamInfo.customSampleRate = GetData<uint32_t>();
+    streamInfo.customSampleRate = GetData<uint32_t>() % (FUZZ_MAX_CUSTOM_SAMPLE_RATE + 1);
     RoundVal(streamInfo.format, SUPPORTED_FORMATS);
     RoundVal(streamInfo.channels, SUPPORTED_CHANNELS);
     streamInfo.channelLayout = GetData<uint64_t>();
@@ -1400,7 +1405,7 @@ void HpaeOffloadRendererManagerIntegerOverflowFuzzTest()
     // Create stream with extreme customSampleRate value
     HpaeStreamInfo streamInfo;
     InitRenderStreamInfo(streamInfo);
-    streamInfo.customSampleRate = GetData<uint32_t>();  // May be UINT32_MAX
+    streamInfo.customSampleRate = GetData<uint32_t>() % (FUZZ_MAX_CUSTOM_SAMPLE_RATE + 1);  // bounded
     streamInfo.frameLen = GetData<uint32_t>();
     if (streamInfo.frameLen == 0) {
         streamInfo.frameLen = MIN_FRAME_LENGTH;  // Avoid division by zero
@@ -2117,7 +2122,7 @@ void HpaeOffloadRendererManagerHistoryFrameCountOverflowFuzzTest()
     // Test 1: Maximum overflow scenario - customSampleRate = UINT32_MAX, frameLen = 1
     HpaeStreamInfo streamInfo;
     InitRenderStreamInfo(streamInfo);
-    streamInfo.customSampleRate = UINT32_MAX;  // Maximum sample rate
+    streamInfo.customSampleRate = FUZZ_MAX_CUSTOM_SAMPLE_RATE;  // capped: huge values OOM the history buffer
     streamInfo.frameLen = MIN_FRAME_LENGTH;  // Minimum frame length - causes division by 1 (maximizes overflow)
 
     offloadRendererManager->CreateStream(streamInfo);
@@ -2127,7 +2132,7 @@ void HpaeOffloadRendererManagerHistoryFrameCountOverflowFuzzTest()
     HpaeStreamInfo streamInfo2;
     InitRenderStreamInfo(streamInfo2);
     streamInfo2.sessionId = TEST_STREAM_SESSION_ID + SESSION_ID_OFFSET_1;
-    streamInfo2.customSampleRate = UINT32_MAX / HALF_DIVISOR;  // Half of max
+    streamInfo2.customSampleRate = FUZZ_MAX_CUSTOM_SAMPLE_RATE / HALF_DIVISOR;  // half of cap
     streamInfo2.frameLen = SMALL_FRAME_LENGTH;  // Small frame len
 
     offloadRendererManager->CreateStream(streamInfo2);
@@ -2189,7 +2194,7 @@ void HpaeOffloadRendererManagerCombinedCriticalEdgeCasesFuzzTest()
     // Create stream with overflow-prone parameters
     HpaeStreamInfo streamInfo;
     InitRenderStreamInfo(streamInfo);
-    streamInfo.customSampleRate = GetData<uint32_t>();
+    streamInfo.customSampleRate = GetData<uint32_t>() % (FUZZ_MAX_CUSTOM_SAMPLE_RATE + 1);
     streamInfo.frameLen = GetData<uint32_t>();
     if (streamInfo.frameLen == 0) {
         streamInfo.frameLen = MIN_FRAME_LENGTH;
@@ -2605,6 +2610,233 @@ void HpaeOffloadRendererManagerMultichannelLimiterFuzzTest()
     offloadRendererManager->DeInit();
 }
 
+// === White-box injection helpers (mirror HpaeOffloadRendererManagerWhiteBoxTest UT) ===
+// Real Init() cannot succeed in the fuzz env (no HDI -> RenderSinkInit fails -> isInit_ stays
+// false), so SendRequest() refuses to enqueue and every runtime lambda body stays dead. These
+// helpers inject the "initialized + worker" state directly (-fno-access-control in BUILD.gn),
+// exactly like the engine UT HpaeOffloadRendererManagerWhiteBoxTest::SetUp. The worker thread
+// object is constructed but NOT activated, so there is no live consumer; requests are drained
+// synchronously via HandleMsg() on this thread (single-threaded push+drain, no race).
+static std::shared_ptr<HpaeSinkInputNode> MakeTestSinkInputNode(uint32_t sessionId, HpaeSessionState state)
+{
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.streamType = STREAM_MUSIC;
+    auto node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    node->SetState(state);
+    return node;
+}
+
+// Deterministic, allocation-safe HpaeStreamInfo for white-box cases. InitRenderStreamInfo uses
+// RoundVal(), which ~50% of the time returns an unbounded GetData<T>() instead of the safe list
+// value — so samplingRate/channels/format can be huge, blowing up the SinkInputNode buffer in
+// InitPcmProcess (std::bad_alloc, because these drive historyFrameCount/ch/frameBytes). Mirror
+// the engine UT CreateStream_001 (fixed 48k/STEREO/S16LE/960) so the node ctor stays bounded.
+static HpaeStreamInfo MakeSafeStreamInfo(uint32_t sessionId)
+{
+    HpaeStreamInfo si;
+    si.sessionId = sessionId;
+    si.channels = STEREO;
+    si.samplingRate = SAMPLE_RATE_48000;
+    si.format = SAMPLE_S16LE;
+    si.frameLen = FRAME_LENGTH_960;
+    si.streamType = STREAM_MUSIC;
+    si.uid = TEST_STREAM_UID;
+    si.customSampleRate = 0;
+    si.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    return si;
+}
+
+static void ForceInitWhiteBox(std::shared_ptr<HpaeOffloadRendererManager> &mgr, bool injectSink)
+{
+    mgr->isInit_.store(true);
+    if (mgr->hpaeSignalProcessThread_ == nullptr) {
+        mgr->hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+    }
+    // A bare HpaeOffloadSinkOutputNode (audioRendererSink_ == nullptr) is safe here: every HDI
+    // method it exposes is null-guarded and returns early, so node-chain paths
+    // (CreateOffloadNodes / ConnectInputSession / DisConnectInputSession) run without a crash.
+    if (injectSink && mgr->sinkOutputNode_ == nullptr) {
+        HpaeNodeInfo sinkNodeInfo;
+        sinkNodeInfo.frameLen = FRAME_LENGTH_960;
+        sinkNodeInfo.samplingRate = SAMPLE_RATE_48000;
+        sinkNodeInfo.channels = STEREO;
+        sinkNodeInfo.format = SAMPLE_S16LE;
+        sinkNodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
+        mgr->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(sinkNodeInfo);
+    }
+}
+
+// Case A: drive the runtime lambdas with a pre-set RUNNING curNode_ (UT WhiteBox style).
+// Covers CreateStream/CreateInputSession/AddNodeToMap, Start (non-curNode), Drain, Flush,
+// Pause + TearDownCurrentNodePipeline, Stop, DestroyStream (both branches), RemoveNodeFromMap,
+// DeleteInputSession, SetCurrentNode, FlushPipelineNodes, DisConnectInputSession (early return).
+void HpaeOffloadRendererManagerWhiteBoxLifecycleFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto mgr = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (mgr == nullptr) {
+        return;
+    }
+    ForceInitWhiteBox(mgr, true);
+
+    uint32_t sid = TEST_STREAM_SESSION_ID;
+    auto runNode = MakeTestSinkInputNode(sid, HPAE_SESSION_RUNNING);
+    mgr->sinkInputNodeMap_[sid] = runNode;
+    mgr->curNode_ = runNode;
+
+    // New session -> CreateInputSession + AddNodeToMap (curNode_ already set, no CreateOffloadNodes).
+    uint32_t sid2 = sid + SESSION_ID_OFFSET_1;
+    HpaeStreamInfo si2 = MakeSafeStreamInfo(sid2);
+    mgr->CreateStream(si2);
+    mgr->HandleMsg();
+
+    // Non-curNode Start: SetState RUNNING, no ConnectInputSession.
+    mgr->Start(sid2);
+    mgr->HandleMsg();
+
+    // Drain on curNode; Flush on the non-curNode session (skips sinkOutputNode_->FlushStream).
+    mgr->Drain(sid);
+    mgr->HandleMsg();
+    mgr->Flush(sid2);
+    mgr->HandleMsg();
+
+    // Pause on RUNNING curNode -> TearDownCurrentNodePipeline flush path.
+    mgr->Pause(sid);
+    mgr->HandleMsg();
+    // Stop on (now PAUSED) curNode -> TearDown non-running branch.
+    mgr->Stop(sid);
+    mgr->HandleMsg();
+
+    // DestroyStream on non-curNode -> RemoveNodeFromMap non-curNode path.
+    mgr->DestroyStream(sid2);
+    mgr->HandleMsg();
+    // DestroyStream on curNode -> DeleteInputSession + SetCurrentNode (empty map).
+    mgr->DestroyStream(sid);
+    mgr->HandleMsg();
+
+    mgr->DeInit();
+}
+
+// Case B: assemble the real node chain by adding the FIRST stream to an empty manager, then
+// Start drives the full ConnectInputSession + MaterializeSessionEffectFromAttachState, and
+// Stop/DestroyStream exercise DisConnectInputSession (deep) + DestroyOffloadNodes (deep).
+void HpaeOffloadRendererManagerWhiteBoxChainFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    sinkInfo.channels = STEREO;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    auto mgr = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (mgr == nullptr) {
+        return;
+    }
+    ForceInitWhiteBox(mgr, true);
+
+    uint32_t sid = TEST_STREAM_SESSION_ID;
+    HpaeStreamInfo si = MakeSafeStreamInfo(sid);
+
+    // First stream on empty manager -> AddNodeToMap sets curNode_ + CreateOffloadNodes.
+    mgr->CreateStream(si);
+    mgr->HandleMsg();
+
+    // Start -> ConnectInputSession (full chain connect + RenderSinkStart on the bare guarded
+    // sink) + MaterializeSessionEffectFromAttachState (entry, no attach state yet).
+    mgr->Start(sid);
+    mgr->HandleMsg();
+
+    // Stop on RUNNING curNode with chain connected -> TearDownCurrentNodePipeline deep
+    // (DisConnectInputSession deep + FlushPipelineNodes deep).
+    mgr->Stop(sid);
+    mgr->HandleMsg();
+
+    // DestroyStream on curNode -> DeleteInputSession + RemoveNodeFromMap -> DestroyOffloadNodes.
+    mgr->DestroyStream(sid);
+    mgr->HandleMsg();
+
+    mgr->DeInit();
+}
+
+// Case C: with isInit_ forced true and the real node chain built (loudnessGainNode_/curNode_
+// exist), drive the public setters and the Session Effect family whose SendRequest lambdas are
+// dead under real Init(). A non-null instance makes CreateEffectWithInstance return SUCCESS, so
+// InsertSessionEffectNode materializes the SE node and the deep Remove/SetParameter paths run.
+// Covers SetSpeed, SetLoudnessGain, SetOffloadRenderCallbackType, TriggerAppsUidUpdate,
+// GetNodeInputFormatInfo (deep, both pre-SE and with-SE branches), CreateSessionEffect +
+// InsertSessionEffectNode, SetSessionEffectParameter, DestroySessionEffect +
+// RemoveSessionEffectNode + StopOffloadSinkIfRunning.
+void HpaeOffloadRendererManagerWhiteBoxSettersAndSessionEffectFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    sinkInfo.channels = STEREO;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    auto mgr = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (mgr == nullptr) {
+        return;
+    }
+    ForceInitWhiteBox(mgr, true);
+
+    uint32_t sid = TEST_STREAM_SESSION_ID;
+    HpaeStreamInfo si = MakeSafeStreamInfo(sid);
+
+    mgr->CreateStream(si);  // -> CreateOffloadNodes (chain built, curNode_ = sid)
+    mgr->HandleMsg();
+    mgr->Start(sid);        // -> curNode RUNNING + ConnectInputSession
+    mgr->HandleMsg();
+
+    // Public setters whose SendRequest lambdas never run when isInit_ is false.
+    mgr->SetSpeed(sid, NORMAL_PLAYBACK_SPEED);
+    mgr->HandleMsg();
+    mgr->SetLoudnessGain(sid, GetData<float>());
+    mgr->HandleMsg();
+    mgr->SetOffloadRenderCallbackType(sid, GetData<int32_t>());
+    mgr->HandleMsg();
+    mgr->TriggerAppsUidUpdate(sid);
+    mgr->HandleMsg();
+
+    // GetNodeInputFormatInfo (direct): loudnessGainNode_ now exists, SE node not yet -> the
+    // non-SE return path (rate/channels taken from sinkInfo_).
+    AudioBasicFormat basicFormat;
+    mgr->GetNodeInputFormatInfo(sid, basicFormat);
+
+    // Session Effect family. A non-null StubEffectInstance makes CreateEffectWithInstance
+    // succeed (it only stores the instance + reconfigs buffers), so InsertSessionEffectNode
+    // materializes sessionEffectNode_.
+    // NOTE: insert/remove call sinkOutputNode_->SetPolicyState(0). This is safe on the bare
+    // (null audioRendererSink_) sink ONLY because OFFLOAD_ACTIVE_FOREGROUND==0: SetPolicyState
+    // early-returns at its preState!=state guard and never reaches SetBufferSize(), which would
+    // dereference audioRendererSink_ unguarded (sinkoutput_node.cpp:502). Do NOT set a non-default
+    // offload policy on this node — that would reach SetBufferSize and crash.
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.inputCfg.format = SAMPLE_S16LE;
+    config.outputCfg = config.inputCfg;
+    auto stubInstance = std::make_shared<StubEffectInstance>();
+    mgr->PostCreateSessionEffect(sid, "audio_aiss_enhance", stubInstance, config);
+    mgr->HandleMsg();
+
+    // With SE materialized: GetNodeInputFormatInfo SE branch (force 48k stereo) and
+    // SetSessionEffectParameter forwarding to the SE node.
+    mgr->GetNodeInputFormatInfo(sid, basicFormat);
+    mgr->PostSetSessionEffectParameter(sid, GetData<int32_t>(), GetData<float>());
+    mgr->HandleMsg();
+
+    // Destroy -> RemoveSessionEffectNode (crossfade flag + DropEffect + chain restore) ->
+    // StopOffloadSinkIfRunning (curNode RUNNING -> guarded StopStream).
+    mgr->PostDestroySessionEffect(sid);
+    mgr->HandleMsg();
+
+    mgr->DestroyStream(sid);
+    mgr->HandleMsg();
+    mgr->DeInit();
+}
+
 typedef void (*TestFuncs)();
 TestFuncs g_testFuncs[] = {
     HpaeOffloadRendererManagerConstructFuzzTest,
@@ -2695,6 +2927,17 @@ TestFuncs g_testFuncs[] = {
     HpaeOffloadRendererManagerOnRewindBufferFuzzTest,
     HpaeOffloadRendererManagerPauseWithStandbyFuzzTest,
     HpaeOffloadRendererManagerMultichannelLimiterFuzzTest,
+    // Round 4: white-box injection (mirror UT) to run the runtime lambdas that stay dead when
+    // isInit_ is false in the fuzz env. Covers CreateInputSession, AddNodeToSink, RemoveNodeFromMap,
+    // SetCurrentNode, AddSingleNodeToSink, AddAllNodesToSink, CreateStream/DestroyStream lambdas,
+    // DeleteInputSession, CreateOffloadNodes, DestroyOffloadNodes, ConnectInputSession,
+    // MaterializeSessionEffectFromAttachState, Start, DisConnectInputSession, Pause, Stop,
+    // TearDownCurrentNodePipeline, Flush, FlushPipelineNodes, Drain.
+    HpaeOffloadRendererManagerWhiteBoxLifecycleFuzzTest,
+    HpaeOffloadRendererManagerWhiteBoxChainFuzzTest,
+    // Round 4b: setters + Session Effect family (SetSpeed/SetLoudnessGain/SetOffloadRenderCallbackType/
+    // TriggerAppsUidUpdate/GetNodeInputFormatInfo + Create/Insert/SetParam/Destroy/Remove SE node).
+    HpaeOffloadRendererManagerWhiteBoxSettersAndSessionEffectFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
