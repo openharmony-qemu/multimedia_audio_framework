@@ -156,14 +156,15 @@ int32_t AudioPolicyManagerListenerStubImpl::OnQueryBundleNameIsInList(const std:
     return SUCCESS;
 }
 
-int32_t AudioPolicyManagerListenerStubImpl::StartVoiceBroadcast(uint32_t sessionId)
+int32_t AudioPolicyManagerListenerStubImpl::StartVoiceBroadcast(uint32_t sessionId,
+    const std::string &cellularRecordPhoneNum)
 {
     std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback =
         audioQueryBundleNameListCallback_.lock();
 
     CHECK_AND_RETURN_RET_LOG(audioQueryBundleNameListCallback != nullptr, AUDIO_INVALID_PARAM,
         "audioQueryBundleNameListCallback_ is nullptr");
-    audioQueryBundleNameListCallback->StartVoiceBroadcast(sessionId);
+    audioQueryBundleNameListCallback->StartVoiceBroadcast(sessionId, cellularRecordPhoneNum);
     return SUCCESS;
 }
 

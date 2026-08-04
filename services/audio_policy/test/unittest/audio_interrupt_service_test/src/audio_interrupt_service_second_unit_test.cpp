@@ -113,7 +113,7 @@ public:
         return SUCCESS;
     }
 
-    ErrCode StartVoiceBroadcast(uint32_t sessionId) override
+    ErrCode StartVoiceBroadcast(uint32_t sessionId, const std::string &cellularRecordPhoneNum) override
     {
         return SUCCESS;
     }
