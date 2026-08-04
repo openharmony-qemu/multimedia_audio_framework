@@ -45,7 +45,7 @@ public:
     int32_t OnQueryDeviceVolumeBehavior(VolumeBehavior &volumeBehavior) override;
     int32_t OnQueryIsForceGetDevByVolumeType(const std::string &bundleName, bool &ret) override;
     int32_t OnQueryUseSystemPreferredDeviceForVolume(const std::string &bundleName, bool &ret) override;
-    int32_t StartVoiceBroadcast(uint32_t sessionId) override;
+    int32_t StartVoiceBroadcast(uint32_t sessionId, const std::string &cellularRecordPhoneNum) override;
     // AudioManagerListenerStubImpl
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
     void SetAudioRouteCallback(const std::weak_ptr<AudioRouteCallback> &callback);
