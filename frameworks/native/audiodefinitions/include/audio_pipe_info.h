@@ -178,6 +178,10 @@ public:
 
     bool IsNormalSourcePipe(bool isEcFeatureEnable) const;
 
+    void SetHasMoveStream(bool hasMoveStram) { hasMoveStream_ = hasMoveStram; }
+
+    bool GetHasMoveStream() { return hasMoveStream_; }
+
 private:
     void DumpCommonAttrs(std::string &dumpString);
 
@@ -186,6 +190,8 @@ private:
     void DumpInputAttrs(std::string &dumpString);
 
     bool ultraFastPipe_ = false;
+
+    bool hasMoveStream_ = false;
 };
 
 } // namespace AudioStandard

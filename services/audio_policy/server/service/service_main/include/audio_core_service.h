@@ -735,8 +735,7 @@ private:
     int32_t ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
         const std::string &moduleName);
     void UpdatePrimaryExtraState(std::shared_ptr<AudioPipeInfo> pipeInfo);
-    void DelayReleaseFastPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
-        const std::string &moduleName, uint32_t routeFlag);
+    void DelayReleaseFastPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
     int32_t ReleaseFastPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
         const std::string &moduleName, int32_t delayMs);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
