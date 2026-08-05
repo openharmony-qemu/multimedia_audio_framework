@@ -503,7 +503,7 @@ int32_t AudioAdapterManager::SetVoipCapturerMute(int32_t callerUid, int32_t appU
         voipCapturerMuteMap_.erase(appUid);
     }
 
-    // To do: SetVoipCapturerMute(appUid, streamId, shouldMute)
+    audioServiceAdapter_->SetCaptureMicMuteByTargetStream(streamId, shouldMute);
 
     return SUCCESS;
 }
@@ -538,7 +538,7 @@ int32_t AudioAdapterManager::ClearVoipMuteByCallerUidInner(std::unordered_map<in
             if (isRenderer) {
                 AudioVolume::GetInstance()->SetVoipRendererMute(callerUid, appUid, streamId, shouldMute);
             } else {
-                // To do: SetVoipCapturerMute(appUid, streamId, shouldMute)
+                audioServiceAdapter_->SetCaptureMicMuteByTargetStream(streamId, shouldMute);
             }
 
             if (stIt->second.empty()) {
