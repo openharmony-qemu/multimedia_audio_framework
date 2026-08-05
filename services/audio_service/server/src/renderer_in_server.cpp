@@ -2701,10 +2701,7 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_.store(on);
     bool isMuted = (isMuted_ || on || muteFlag_);
-    float volume = audioServerBuffer_ ? audioServerBuffer_->GetStreamVolume() : 1.0f;
-    bool isMutedOrVolumeZero = (isMuted ||
-        std::abs(volume - 0.0f) <= std::numeric_limits<float>::epsilon());
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMutedOrVolumeZero,
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
         std::weak_ptr<RendererInServer>(shared_from_this()));
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
@@ -2817,10 +2814,7 @@ int32_t RendererInServer::SetMute(bool isMute)
     isMuted_ = isMute;
     AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
     bool isMuted = (isMute || silentModeAndMixWithOthers_ || muteFlag_);
-    float volume = audioServerBuffer_ ? audioServerBuffer_->GetStreamVolume() : 1.0f;
-    bool isMutedOrVolumeZero = (isMuted ||
-        std::abs(volume - 0.0f) <= std::numeric_limits<float>::epsilon());
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMutedOrVolumeZero,
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
         std::weak_ptr<RendererInServer>(shared_from_this()));
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
@@ -3056,10 +3050,7 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
     AudioVolume::GetInstance()->SetNonInterruptMute(streamIndex_, muteFlag);
 
     bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag);
-    float volume = audioServerBuffer_ ? audioServerBuffer_->GetStreamVolume() : 1.0f;
-    bool isMutedOrVolumeZero = (isMuted ||
-        std::abs(volume - 0.0f) <= std::numeric_limits<float>::epsilon());
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMutedOrVolumeZero,
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
         std::weak_ptr<RendererInServer>(shared_from_this()));
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
