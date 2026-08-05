@@ -16,6 +16,7 @@
 #include "audio_stream_checker.h"
 #include "audio_renderer_log.h"
 #include "audio_utils.h"
+#include "audio_info.h"
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker_thread.h"
 #include "volume_tools.h"
