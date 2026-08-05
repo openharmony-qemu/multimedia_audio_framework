@@ -1082,7 +1082,7 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
             GetAvailableDevicesWithUsage(usage, deviceInfos, desc, audioDeviceDescriptors);
         }
         if (dev->deviceType_ == DEVICE_TYPE_BT_SPP && dev->isUnidirectional_ && ((usage & MEDIA_INPUT_DEVICES) != 0)) {
-            resultDevices.push_back(std::make_shared<AudioDeviceDescriptor>(*dev));
+            audioDeviceDescriptors.push_back(std::make_shared<AudioDeviceDescriptor>(*dev));
         }
     }
     // If there are distributed devices, place them at a higher priority in the sorting order.
