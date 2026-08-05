@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("../../../../../config.gni")
+
+module_output_path = "audio_framework/audio_framework_common/opensles_obj"
+
+config("opensles_obj_aiut_config") {
+  include_dirs = [
+    "./include",
+    "../../../include",
+    "../../../../../test/unittest/common/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+}
+
+ohos_unittest("opensles_obj_aiut") {
+  testonly = true
+  module_out_path = module_output_path
+
+  configs = [ ":opensles_obj_aiut_config" ]
+
+  sources = [
+    "src/opensles_obj_aiut.cpp",
+    "../../../opensles/src/obj/engine_obj.cpp",
+    "../../../opensles/src/obj/output_mix_obj.cpp",
+  ]
+
+  deps = [
+    "../../../opensles:opensles",
+  ]
+
+  external_deps = [
+    "hilog:libhilog",
+  ]
+}
+
+group("opensles_obj_aiut_group") {
+  testonly = true
+  deps = [ ":opensles_obj_aiut" ]
+}
