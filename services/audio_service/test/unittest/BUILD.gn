@@ -448,6 +448,7 @@ ohos_unittest("audio_service_unit_test") {
     "../../../../services/audio_policy/server/include",
     "../../../../services/audio_engine/manager/include",
     "../../../../services/audio_engine/plugin/resample/include",
+    "../../../../test/unittest/common/include",
   ]
 
   sources = [
@@ -464,7 +465,9 @@ ohos_unittest("audio_service_unit_test") {
     "./common/limiter_unit_test/audio_limiter_manager_unit_test.cpp",
     "./common/limiter_unit_test/audio_limiter_unit_test.cpp",
     "./common/oh_audio_buffer_base_unit_test.cpp",
+    "./common/oh_audio_buffer_base_aiut.cpp",
     "./common/oh_audio_buffer_unit_test.cpp",
+    "./common/oh_audio_buffer_aiut.cpp",
     "./common/volume_tools_unit_test.cpp",
     "./server/audio_server_unit_test.cpp",
     "./client/i_audio_stream_unit_test.cpp",
