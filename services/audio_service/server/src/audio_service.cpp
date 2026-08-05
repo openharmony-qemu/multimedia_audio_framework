@@ -614,6 +614,12 @@ bool AudioService::ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, st
 bool AudioService::CheckShouldCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId)
 {
     InnerCapFilterPolicy filterPolicy = GetInnerCapFilterPolicy(innerCapId);
+    if (workingConfigs_[innerCapId].filterOptions.playbackCaptureUid != PLAYBACKCAPTURER_RECORD_ALL) {
+        CHECK_AND_RETURN_RET_LOG(
+            (workingConfigs_[innerCapId].filterOptions.playbackCaptureUid == rendererConfig.appInfo.appUid),
+            false, "only %{public}d need be recorded, current %{public}d is invalid",
+            workingConfigs_[innerCapId].filterOptions.playbackCaptureUid, rendererConfig.appInfo.appUid);
+    }
     bool res = false;
     switch (filterPolicy) {
         case POLICY_INVALID:
