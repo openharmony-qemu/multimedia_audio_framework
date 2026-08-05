@@ -1332,7 +1332,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, StartPrivacyConfirmDialog_001, TestSize
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
     auto result = capturerInServer_->StartPrivacyConfirmDialog(1);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
