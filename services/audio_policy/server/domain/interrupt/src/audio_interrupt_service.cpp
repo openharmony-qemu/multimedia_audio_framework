@@ -1309,9 +1309,9 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     uint32_t incomingStreamId = currAudioInterrupt.streamId;
     SourceType incomingSourceType = (currAudioInterrupt.audioFocusType).sourceType;
     HILOG_COMM_INFO("[ActivateAudioInterruptInternal]streamId: %{public}u pid: %{public}d streamType: %{public}d "
-        " zoneId: %{public}d usage: %{public}d source: %{public}d",
+        " zoneId: %{public}d usage: %{public}d source: %{public}d isCheckMuteStream: %{public}d",
         incomingStreamId, currAudioInterrupt.pid, streamType, zoneId,
-        currAudioInterrupt.streamUsage, incomingSourceType);
+        currAudioInterrupt.streamUsage, incomingSourceType, currAudioInterrupt.isCheckMuteStream);
 
     if (AudioInterruptIsStandbyInFocusList(zoneId, incomingStreamId) ||
             (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId) && !isUpdatedAudioStrategy)) {
@@ -3867,6 +3867,11 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioSceneFromAllZones()
 int32_t AudioInterruptService::FindAudioZoneByStreamId(const uint32_t streamId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    return FindAudioZoneByStreamIdInternal(streamId);
+}
+
+int32_t AudioInterruptService::FindAudioZoneByStreamIdInternal(const uint32_t streamId)
+{
     for (const auto &[zoneId, audioInterruptZone] : zonesMap_) {
         CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
         auto audioFocusInfoList = audioInterruptZone->audioFocusInfoList;

@@ -333,7 +333,7 @@ interface IAudioPolicy {
     void GetAudioSceneFromAllZones([out] int audioScene);
     void UpdateContextForAudioZone([in] int zoneId, [in] AudioZoneContext context);
     void SetCustomAudioMix([in] String zoneName, [in] List<AudioZoneMix> audioMixes);
-    void NotifyStreamSilentChange([in] int clientPid, [in] unsigned int streamId);
+    [oneway] void NotifyStreamSilentChange([in] int clientPid, [in] unsigned int streamId);
     void IsAdaptiveSpatialRenderingEnabled([in] String address, [out] boolean ret);
     void SetAdaptiveSpatialRenderingEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
     void GetCurrentSpatialAudioSourceType([out] int ret);
