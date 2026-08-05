@@ -20,7 +20,6 @@
 #include "audio_interrupt_strategy.h"
 #include "audio_log.h"
 #include "audio_policy_log.h"
-#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
