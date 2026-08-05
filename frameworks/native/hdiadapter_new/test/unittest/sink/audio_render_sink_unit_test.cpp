@@ -1347,7 +1347,9 @@ HWTEST_F(AudioRenderSinkUnitTest, DeInitClearsDeviceCallback_001, TestSize.Level
         // Re-Init the cached sink (simulates sink reuse by a new HpaeOutputCluster).
         attr_.deviceType = DEVICE_TYPE_SPEAKER;
         int32_t ret = primarySink_->Init(attr_);
-        EXPECT_EQ(ret, SUCCESS);
+        // Init is a precondition for the UpdateActiveDevice call below; abort the test
+        // on failure rather than operating on an uninitialized sink.
+        ASSERT_EQ(ret, SUCCESS);
 
         // Trigger HandleDeviceCallback again. A device different from the pre-DeInit
         // active device is used so UpdateActiveDevice does not short-circuit and
