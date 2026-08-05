@@ -29,6 +29,8 @@
 #include "audio_suite_unittest_tools.h"
 #include "audio_suite_output_node.h"
 #include "audio_suite_manager_test_common.h"
+#include "audio_suite_system_music_master_node.h"
+#include "audio_suite_system_dialogue_enhance_node.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -1667,4 +1669,213 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, PrintInfoMultipleConnectionsTest, Test
     engine.pipelineMap_.erase(100);
     engine.DeInit();
 }
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, MetaRenderFrameTest, TestSize.Level0)
+{
+    AudioSuiteManagerCallbackTestImpl callback;
+    AudioSuiteEngine engine(callback);
+    engine.Init();
+    EXPECT_EQ(engine.IsInit(), true);
+
+    auto pipeline = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
+    pipeline->Init();
+
+    AudioMetaFrame metaFrame {nullptr, 0, nullptr, 0};
+    int32_t responseAudioSize = 0;
+    int32_t responseMetaSize = 0;
+    bool finishedFlag = false;
+    int32_t ret = pipeline->MetaRenderFrame(metaFrame, &responseAudioSize, &responseMetaSize, &finishedFlag);
+    EXPECT_EQ(ret, SUCCESS);
+    pipeline->DeInit();
+    pipeline->Init();
+
+    pipeline->pipelineState_ = PIPELINE_RUNNING;
+    ret = pipeline->MetaRenderFrame(metaFrame, &responseAudioSize, &responseMetaSize, &finishedFlag);
+    EXPECT_EQ(ret, SUCCESS);
+    pipeline->DeInit();
+    pipeline->Init();
+
+    AudioFormat format = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000};
+    pipeline->outputNode_ = std::make_shared<AudioOutputNode>(format);
+    ret = pipeline->MetaRenderFrame(metaFrame, &responseAudioSize, &responseMetaSize, &finishedFlag);
+    EXPECT_EQ(ret, SUCCESS);
+    pipeline->DeInit();
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, SetSystemNodeParamTest, TestSize.Level0)
+{
+    AudioSuiteManagerCallbackTestImpl callback;
+    AudioSuiteEngine engine(callback);
+    engine.Init();
+    EXPECT_EQ(engine.IsInit(), true);
+
+    auto pipeline = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
+    pipeline->Init();
+    pipeline->pipelineState_ = PIPELINE_RUNNING;
+
+    std::vector<uint8_t> param;
+    int32_t ret = pipeline->SetSystemNodeParam(0, param);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    pipeline->pipelineState_ = PIPELINE_STOPPED;
+    ret = pipeline->SetSystemNodeParam(0, param);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    pipeline->nodeMap_[0] = nullptr;
+    ret = pipeline->SetSystemNodeParam(0, param);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    std::shared_ptr<AudioNode> node = std::make_shared<AudioSuiteSystemMusicMasterNode>();
+    pipeline->nodeMap_[node->GetAudioNodeId()] = node;
+    ret = pipeline->SetSystemNodeParam(node->GetAudioNodeId(), param);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    param.resize(1);
+    ret = pipeline->SetSystemNodeParam(node->GetAudioNodeId(), param);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    node = std::make_shared<AudioSuiteSystemDialogueEnhanceNode>();
+    pipeline->nodeMap_[node->GetAudioNodeId()] = node;
+    ret = pipeline->SetSystemNodeParam(node->GetAudioNodeId(), param);
+    EXPECT_EQ(ret, SUCCESS);
+    pipeline->DeInit();
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, GetSystemNodeParamTest, TestSize.Level0)
+{
+    AudioSuiteManagerCallbackTestImpl callback;
+    AudioSuiteEngine engine(callback);
+    engine.Init();
+    EXPECT_EQ(engine.IsInit(), true);
+
+    auto pipeline = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
+    pipeline->Init();
+    pipeline->pipelineState_ = PIPELINE_RUNNING;
+
+    std::vector<uint8_t> param;
+    int32_t ret = pipeline->GetSystemNodeParam(0, param);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    pipeline->pipelineState_ = PIPELINE_STOPPED;
+    ret = pipeline->GetSystemNodeParam(0, param);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    pipeline->nodeMap_[0] = nullptr;
+    ret = pipeline->GetSystemNodeParam(0, param);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    std::shared_ptr<AudioNode> node = std::make_shared<AudioSuiteSystemMusicMasterNode>();
+    pipeline->nodeMap_[node->GetAudioNodeId()] = node;
+    ret = pipeline->GetSystemNodeParam(node->GetAudioNodeId(), param);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    param.resize(1);
+    ret = pipeline->GetSystemNodeParam(node->GetAudioNodeId(), param);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    node = std::make_shared<AudioSuiteSystemDialogueEnhanceNode>();
+    pipeline->nodeMap_[node->GetAudioNodeId()] = node;
+    ret = pipeline->GetSystemNodeParam(node->GetAudioNodeId(), param);
+    EXPECT_EQ(ret, SUCCESS);
+    pipeline->DeInit();
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, GetSystemNodeInOutSizeTest, TestSize.Level0)
+{
+    AudioSuiteManagerCallbackTestImpl callback;
+    AudioSuiteEngine engine(callback);
+    engine.Init();
+    EXPECT_EQ(engine.IsInit(), true);
+
+    auto pipeline = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
+    pipeline->Init();
+    pipeline->pipelineState_ = PIPELINE_RUNNING;
+
+    pipeline->DeInit();
+    pipeline->Init();
+    uint32_t inSize = 0;
+    uint32_t outSize = 0;
+    int32_t ret = pipeline->GetSystemNodeInOutSize(0, inSize, outSize);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    pipeline->pipelineState_ = PIPELINE_STOPPED;
+    ret = pipeline->GetSystemNodeInOutSize(0, inSize, outSize);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    pipeline->nodeMap_[0] = nullptr;
+    ret = pipeline->GetSystemNodeInOutSize(0, inSize, outSize);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    std::shared_ptr<AudioNode> node = std::make_shared<AudioSuiteSystemMusicMasterNode>();
+    pipeline->nodeMap_[node->GetAudioNodeId()] = node;
+    ret = pipeline->GetSystemNodeInOutSize(node->GetAudioNodeId(), inSize, outSize);
+    EXPECT_EQ(ret, SUCCESS);
+
+    node = std::make_shared<AudioSuiteSystemDialogueEnhanceNode>();
+    pipeline->nodeMap_[node->GetAudioNodeId()] = node;
+    ret = pipeline->GetSystemNodeInOutSize(node->GetAudioNodeId(), inSize, outSize);
+    EXPECT_EQ(ret, SUCCESS);
+    pipeline->DeInit();
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, SetRequestMetaDataCallbackTest, TestSize.Level0)
+{
+    AudioSuiteManagerCallbackTestImpl callback;
+    AudioSuiteEngine engine(callback);
+    engine.Init();
+    EXPECT_EQ(engine.IsInit(), true);
+
+    auto pipeline = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
+    pipeline->Init();
+    pipeline->pipelineState_ = PIPELINE_RUNNING;
+    int32_t ret = pipeline->SetRequestMetaDataCallback(0, nullptr);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    pipeline->pipelineState_ = PIPELINE_STOPPED;
+    ret = pipeline->SetRequestMetaDataCallback(0, nullptr);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    EXPECT_EQ(ret, SUCCESS);
+    pipeline->nodeMap_[0] = nullptr;
+    ret = pipeline->SetRequestMetaDataCallback(0, nullptr);
+    EXPECT_EQ(ret, SUCCESS);
+
+    pipeline->DeInit();
+    pipeline->Init();
+    std::shared_ptr<AudioNode> node = std::make_shared<AudioSuiteSystemMusicMasterNode>();
+    pipeline->nodeMap_[node->GetAudioNodeId()] = node;
+    ret = pipeline->SetRequestMetaDataCallback(node->GetAudioNodeId(), nullptr);
+    EXPECT_EQ(ret, SUCCESS);
+    pipeline->DeInit();
+}
+
 }  // namespace

@@ -1600,6 +1600,12 @@ int32_t AudioSuitePipeline::SetRequestMetaDataCallback(uint32_t nodeId,
         }
 
         auto node = nodeMap_[nodeId];
+        if (node == nullptr) {
+            AUDIO_ERR_LOG("SetRequestMetaDataCallback failed, node ptr nullptr.");
+            TriggerCallback(SET_WRITEDATA_CALLBACK, ERR_INVALID_PARAM);
+            return;
+        }
+
         if (node->GetNodeType() != NODE_TYPE_INPUT) {
             AUDIO_ERR_LOG("SetRequestMetaDataCallback failed, node type must input type.");
             TriggerCallback(SET_WRITEDATA_CALLBACK, ERR_INVALID_PARAM);
