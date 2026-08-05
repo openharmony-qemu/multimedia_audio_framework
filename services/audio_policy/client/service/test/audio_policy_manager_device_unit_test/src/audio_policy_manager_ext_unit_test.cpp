@@ -27,6 +27,8 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+constexpr uint32_t MIN_STREAMID = 100000;
+
 class AudioDeviceAnahsTest : public AudioDeviceAnahs {
 public:
     int32_t OnExtPnpDeviceStatusChanged(
