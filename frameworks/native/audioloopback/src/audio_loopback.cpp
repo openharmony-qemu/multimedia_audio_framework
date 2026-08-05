@@ -82,6 +82,7 @@ static void RegisterAudioLoopbackDebugManager(const std::shared_ptr<AudioLoopbac
     int32_t ret = AudioDebugManager::GetInstance().RegisterAudioLoopback(debugKey, debugCallback);
     if (ret != SUCCESS || debugKey == 0) {
         AUDIO_WARNING_LOG("Register loopback debug manager failed, ret:%{public}d, debugKey:%{public}u", ret, debugKey);
+        return;
     }
     AUDIO_INFO_LOG("Register loopback debug manager success, debugKey:%{public}u", debugKey);
 }

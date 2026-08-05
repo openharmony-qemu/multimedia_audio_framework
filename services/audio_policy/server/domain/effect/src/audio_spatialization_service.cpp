@@ -405,9 +405,8 @@ void AudioSpatializationService::HandleDeviceConfigChanged(const std::shared_ptr
     &selectedAudioDevice)
 {
     AUDIO_INFO_LOG("handle device config changed callback is triggered");
-    if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendDeviceConfigChangedEvent(selectedAudioDevice);
-    }
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
+    audioPolicyServerHandler_->SendDeviceConfigChangedEvent(selectedAudioDevice);
 }
 
 void AudioSpatializationService::HandleAdaptiveSpatialRenderingEnabledChange(

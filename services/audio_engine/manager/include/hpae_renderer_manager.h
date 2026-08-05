@@ -189,6 +189,7 @@ private:
     void ConnectCoBufferFromConnectOutputCluster(HpaeProcessorType sceneType);
     void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
     void ReloadRenderManagerInner(const HpaeSinkInfo &sinkInfo, bool isReload, bool isNeedCallBack);
+    void InitDefaultNodeInfoFromInitManager(bool isReload);
     void StopInterphoneSinkIfNeeded();
     void DetachSessionEffectNodeForRefresh(uint32_t sessionId, HpaeProcessorType oldSceneType);
     void MaterializeSessionEffectFromAttachState(uint32_t sessionId, HpaeProcessorType sceneType);

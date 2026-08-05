@@ -225,9 +225,7 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
         HILOG_COMM_INFO("[UpdateCollaborativeStateReal]current collaborative enabled state changed to %{public}d "
             "for Mac address %{public}s", isCollaborativeStateEnabled_, GetEncryptAddr(curDeviceAddress_).c_str());
         UpdateCollaborativeStateToHdi(isCollaborativeStateEnabled_);
-        CollaborationState isCollaborationEnabled = isCollaborativeStateEnabled_ ?
-            COLLABORATION_BLUETOOTH_OPEN : COLLABORATION_CLOSE;
-        return audioPolicyManager_.UpdateCollaborativeState(isCollaborationEnabled);
+        return audioPolicyManager_.UpdateCollaborativeState(isCollaborativeStateEnabled_);
     }
     AUDIO_INFO_LOG("No need to real collaborative state: %{public}d", isCollaborativeStateEnabled_);
     return SUCCESS;
