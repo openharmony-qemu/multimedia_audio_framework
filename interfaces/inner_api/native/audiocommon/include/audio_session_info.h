@@ -44,6 +44,7 @@ struct AudioSessionActiveBehaviors {
     bool muteWhenInterruptFlag = false;  // MUTE_WHEN_INTERRUPT
     bool pauseWhenInterruptFlag = false; // PAUSE_WHEN_INTERRUPT
     bool aibaseMuteVoip = false;
+    bool voipCaptureMixWithOthers = false;
 };
 
 enum class AudioSessionType {
@@ -201,12 +202,14 @@ enum class AudioSessionBehaviorFlags {
      */
     PAUSE_WHEN_INTERRUPTED = 0x00000004,
 
+    VOIP_CAPTURE_MIX_WITH_OTHERS = 0x20000000,
+
     AIBASE_MUTE_VOIP = 0x80000000,
 
     /**
      * Behavior validation mask.
      */
-    MASK_VALID_BEHAVIOR = 0x80000006,
+    MASK_VALID_BEHAVIOR = 0xA0000006,
 };
 } // namespace AudioStandard
 } // namespace OHOS
