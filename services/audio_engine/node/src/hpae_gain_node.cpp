@@ -147,6 +147,20 @@ void HpaeGainNode::ResetVolume()
     AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
 }
 
+void HpaeGainNode::ResetFadeState()
+{
+    // A reused/reconnected GainNode may carry stale fade state from its previous lifecycle
+    // (e.g. DONE_FADEOUT left by a Pause). DONE_FADEOUT makes SignalProcess silence every frame,
+    // so it must be cleared; otherwise the reused node stays muted permanently.
+    fadeOutState_ = FadeOutState::NO_FADEOUT;
+    fadeInState_ = true; // fade-in on reconnect to avoid pop
+    fadeProcessedBytes_ = 0;
+    collFadeOutState_ = FadeOutState::NO_FADEOUT;
+    collFadeInState_ = false;
+    collFadeProcessedBytes_ = 0;
+    AUDIO_INFO_LOG("ResetFadeState, session:%{public}u", GetSessionId());
+}
+
 float HpaeGainNode::GetClientVolume()
 {
     return curGain_;

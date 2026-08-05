@@ -761,6 +761,7 @@ void HpaeRendererManager::ConnectInputCluster(uint32_t sessionId, HpaeProcessorT
     std::shared_ptr<HpaeGainNode> sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
     if (sessionGainNode != nullptr) {
         sessionGainNode->ResetVolume();
+        sessionGainNode->ResetFadeState(); // clear stale fade (e.g. DONE_FADEOUT) on reconnect
     }
     // Materialize physical SE node from attach-state (survives reload/disconnect).
     // CreateSessionEffectNode has a duplicate-guard, so calling it when the node already exists is safe.
