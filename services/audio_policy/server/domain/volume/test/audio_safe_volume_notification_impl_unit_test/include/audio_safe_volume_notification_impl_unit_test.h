@@ -36,6 +36,22 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void);
 };
+
+class AudioLoudVolumeNotificationImplUnitTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp(void);
+    void TearDown(void);
+};
+
+class AudioLegacyHighVolumeNotificationImplUnitTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp(void);
+    void TearDown(void);
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif //AUDIO_SAFE_VOLUME_NOTIFICATION_IMPL_UNIT_TEST_H
