@@ -103,10 +103,6 @@ void AudioRecordingManagerImpl::EnableSystemRecordControllerPromise(bool show,
 void AudioRecordingManagerImpl::EnableSystemRecordControllerSync(bool show,
     SystemRecordControllerConfig const &config)
 {
-    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
-        return;
-    }
     if (audioMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return;
