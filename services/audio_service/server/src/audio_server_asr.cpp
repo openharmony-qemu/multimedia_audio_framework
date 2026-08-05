@@ -29,6 +29,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/i_audio_render_sink.h"
+#include "util/audio_hdi_version_manager.h"
 
 using namespace std;
 
