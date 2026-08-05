@@ -16,7 +16,6 @@
 #include "audio_stream_checker.h"
 #include "audio_renderer_log.h"
 #include "audio_utils.h"
-#include "audio_info.h"
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker_thread.h"
 #include "volume_tools.h"
@@ -44,8 +43,8 @@ static bool IsAudioProcessConfigValid(const AudioProcessConfig &cfg)
         AUDIO_ERR_LOG("Invalid appPid: %{public}d", cfg.appInfo.appPid);
         return false;
     }
-    if (cfg.originalSessionId != 0 && (cfg.originalSessionId < MIN_SESSIONID ||
-        cfg.originalSessionId > MAX_SESSIONID)) {
+    if (cfg.originalSessionId != 0 && (cfg.originalSessionId < MIN_STREAMID ||
+        cfg.originalSessionId > MIN_STREAMID)) {
         AUDIO_ERR_LOG("Invalid originalSessionId: %{public}u", cfg.originalSessionId);
         return false;
     }
