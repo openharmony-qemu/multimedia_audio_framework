@@ -191,7 +191,7 @@ void AudioInjectorPolicy::ResetInjectorModeIfNeeded()
 int32_t AudioInjectorPolicy::PrepareLegacyRenderer(uint32_t renderId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
-    CHECK_AND_RETURN_RET_LOG(injectorWorkMode_ == INJECTOR_MODE_NONE, ERR_NOT_SUPPORTED,
+    CHECK_AND_RETURN_RET_LOG(injectorWorkMode_ != INJECTOR_MODE_STREAM_ID_TARGET, ERR_NOT_SUPPORTED,
         "Injector::precise target mode is active");
     injectorWorkMode_ = INJECTOR_MODE_LEGACY_TARGET;
     injectCaptureTargetUidMap_.erase(renderId);
@@ -206,7 +206,7 @@ int32_t AudioInjectorPolicy::PreparePreciseRenderer(uint32_t renderId, int32_t t
     CHECK_AND_RETURN_RET_LOG(targetUid >= 0, ERR_INVALID_PARAM, "Injector::invalid targetUid");
     CHECK_AND_RETURN_RET_LOG(ValidStreamId(targetStreamId), ERR_INVALID_PARAM,
         "Injector::invalid targetStreamId");
-    CHECK_AND_RETURN_RET_LOG(injectorWorkMode_ == INJECTOR_MODE_NONE, ERR_NOT_SUPPORTED,
+    CHECK_AND_RETURN_RET_LOG(injectorWorkMode_ != INJECTOR_MODE_LEGACY_TARGET, ERR_NOT_SUPPORTED,
         "Injector::legacy target mode is active");
     if (injectorWorkMode_ == INJECTOR_MODE_STREAM_ID_TARGET &&
         (activeTargetUid_ != targetUid || activeTargetStreamId_ != targetStreamId)) {
