@@ -96,6 +96,14 @@ public:
 
     int32_t SetAppVolumeMutedDB(int32_t appUid, bool muted);
 
+    int32_t SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
+
+    int32_t SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted);
+
+    int32_t ClearVoipMuteByCallerUid(int32_t callerUid);
+
+    int32_t ClearVoipMuteByStreamId(int64_t streamId);
+
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
     int32_t GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
@@ -439,6 +447,8 @@ private:
     void SetAppAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, int32_t appUid, float volumeDb);
     int32_t SetSystemAppVolumeDb(int32_t appUid, DeviceType deviceType);
     void SetSystemAppAudioVolume(int32_t appUid, float volumeDb);
+    int32_t ClearVoipMuteByCallerUidInner(std::unordered_map<int32_t,
+        std::unordered_map<int64_t, std::unordered_set<int32_t>>> muteMap, int32_t uid, bool isRenderer);
     void SendOffloadVolume();
     bool GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType,
         int32_t zoneId = 0);
@@ -562,6 +572,8 @@ private:
     int32_t safeActiveVolume_ = 0;
     int32_t safeActiveBtVolume_ = 0;
     int32_t safeActiveSleVolume_ = 0;
+    std::unordered_map<int32_t, std::unordered_map<int64_t, std::unordered_set<int32_t>>> voipRendererMuteMap_;
+    std::unordered_map<int32_t, std::unordered_map<int64_t, std::unordered_set<int32_t>>> voipCapturerMuteMap_;
     bool isWiredBoot_ = true;
     bool isBtBoot_ = true;
     bool isSleBoot_ = true;
