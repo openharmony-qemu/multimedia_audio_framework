@@ -21,6 +21,7 @@
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include "audio_core_service.h"
+#include "stream_flag_info.h"
 #include "audio_debug_info.h"
 #include "audio_errors.h"
 #include "audio_pipe_selector.h"
@@ -321,8 +322,9 @@ void AudioCoreServicePrivateOutputFetchGapFuzzTest(FuzzedDataProvider &fdp)
         return;
     }
     uint32_t sessionId = streamDesc->sessionId_;
-    uint32_t audioFlag = AUDIO_FLAG_NONE;
-    audioCoreService->FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag,
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_FLAG_NONE;
+    audioCoreService->FetchRendererPipeAndExecute(streamDesc, sessionId, flagInfo,
         ConsumeEnum<AudioStreamDeviceChangeReasonExt::ExtEnum>(fdp));
     audioCoreService->HandleFetchOutputWhenNoRunningStream(
         ConsumeEnum<AudioStreamDeviceChangeReasonExt::ExtEnum>(fdp));

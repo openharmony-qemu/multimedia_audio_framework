@@ -748,8 +748,8 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_WithSplitStream002, TestSize.Level1)
         std::make_shared<HpaeLimiterNode>(nodeInfo);
 
     int32_t ret = hpaeLimiterNode->SetupAudioLimiter();
-    EXPECT_NE(ret, SUCCESS);
-    EXPECT_FALSE(hpaeLimiterNode->IsLimiterInited());
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(hpaeLimiterNode->IsLimiterInited());
 }
 
 /**
@@ -840,4 +840,72 @@ HWTEST_F(HpaeLimiterNodeTest, FaultCode_SignalProcess_InvalidInputBuffer, TestSi
     EXPECT_NE(result, nullptr);
     // Should return input buffer directly since it's not valid
     EXPECT_EQ(result, &inputBuffer);
+}
+
+HWTEST_F(HpaeLimiterNodeTest, constructHpaeLimiterNode_Mono, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = 480; // mono frame len
+    nodeInfo.samplingRate = DEFAULT_SAMPLE_RATE;
+    nodeInfo.channels = MONO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.deviceClass = "primary";
+
+    std::shared_ptr<HpaeLimiterNode> hpaeLimiterNode = std::make_shared<HpaeLimiterNode>(nodeInfo);
+
+    EXPECT_EQ(hpaeLimiterNode->GetSampleRate(), nodeInfo.samplingRate);
+    EXPECT_EQ(hpaeLimiterNode->GetFrameLen(), nodeInfo.frameLen);
+    EXPECT_EQ(hpaeLimiterNode->GetChannelCount(), nodeInfo.channels);
+    EXPECT_EQ(hpaeLimiterNode->GetBitWidth(), nodeInfo.format);
+}
+
+HWTEST_F(HpaeLimiterNodeTest, setupAudioLimiter_Mono_Success, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = 480; // mono frame len
+    nodeInfo.samplingRate = DEFAULT_SAMPLE_RATE;
+    nodeInfo.channels = MONO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    std::shared_ptr<HpaeLimiterNode> hpaeLimiterNode = std::make_shared<HpaeLimiterNode>(nodeInfo);
+
+    int32_t ret = hpaeLimiterNode->SetupAudioLimiter();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(hpaeLimiterNode->IsLimiterInited());
+}
+
+HWTEST_F(HpaeLimiterNodeTest, initAudioLimiter_Mono_VariousConfigs, TestSize.Level1)
+{
+    struct TestConfig {
+        uint32_t frameLen;
+        AudioChannel channels;
+        AudioSamplingRate sampleRate;
+        AudioChannelLayout layout;
+    };
+
+    std::vector<TestConfig> configs = {
+        {480, MONO, SAMPLE_RATE_48000, CH_LAYOUT_MONO},
+        {240, MONO, SAMPLE_RATE_48000, CH_LAYOUT_MONO},
+        {960, MONO, SAMPLE_RATE_44100, CH_LAYOUT_MONO},
+        {1024, MONO, SAMPLE_RATE_16000, CH_LAYOUT_MONO}
+    };
+
+    for (auto &config : configs) {
+        HpaeNodeInfo nodeInfo;
+        nodeInfo.nodeId = DEFAULT_NODE_ID;
+        nodeInfo.frameLen = config.frameLen;
+        nodeInfo.samplingRate = config.sampleRate;
+        nodeInfo.channels = config.channels;
+        nodeInfo.channelLayout = config.layout;
+        nodeInfo.format = SAMPLE_F32LE;
+
+        std::shared_ptr<HpaeLimiterNode> hpaeLimiterNode =
+            std::make_shared<HpaeLimiterNode>(nodeInfo);
+
+        int32_t ret = hpaeLimiterNode->InitAudioLimiter();
+        EXPECT_EQ(ret, SUCCESS);
+        EXPECT_TRUE(hpaeLimiterNode->IsLimiterInited());
+    }
 }

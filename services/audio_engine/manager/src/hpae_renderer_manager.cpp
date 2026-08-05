@@ -30,6 +30,7 @@
 #include "audio_engine_log.h"
 #include "hpae_output_cluster.h"
 #include "hpae_remote_output_cluster.h"
+#include "mixer_utils.h"
 #include "hpae_message_queue_monitor.h"
 #include "hpae_stream_move_monitor.h"
 #include "util/id_handler.h"
@@ -372,6 +373,10 @@ void HpaeRendererManager::OnSessionEffectMaterialized(uint32_t sessionId)
     if (route.has_value()) {
         SetChannelOverrideForRoute(route.value());
     }
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
+    if (outputCluster_ != nullptr) {
+        outputCluster_->SetUpmixCoef(sceneType, HPAE::COEF_M6DB_F);
+    }
 }
 
 void HpaeRendererManager::DisconnectNodeFromEffectChain(HpaeNodeInfo &nodeInfo)
@@ -517,6 +522,8 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId,
     SessionEffectMoveMode moveMode)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSession");
+    // Invalidate any deferred Create so a stale retry cannot (re)materialize a node after teardown.
+    CancelPendingSessionEffectCreate(sessionId);
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
     CHECK_AND_RETURN_RET(sinkInputNode != nullptr, SUCCESS);
     auto sessionIt = sessionNodeMap_.find(sessionId);
@@ -1895,7 +1902,8 @@ int32_t HpaeRendererManager::UpdateCollaborativeState(CollaborationState isColla
 
 int32_t HpaeRendererManager::HandlePriPaPower(uint32_t sessionId)
 {
-    if (!SafeGetMap(sinkInputNodeMap_, sessionId) || sinkInfo_.deviceClass != "primary") {
+    if (!SafeGetMap(sinkInputNodeMap_, sessionId) ||
+        (sinkInfo_.deviceClass != "primary" && sinkInfo_.deviceClass != "primary_extra")) {
         return ERR_INVALID_OPERATION;
     }
     auto &nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();

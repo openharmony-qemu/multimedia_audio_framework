@@ -839,6 +839,11 @@ void HpaeAudioFormatConverterNode::MoveUnprocessedToProcessed(uint32_t channels)
     unprocessedFrames_ = 0;
 }
 
+void HpaeAudioFormatConverterNode::SetSourceBufferType(HpaeSourceBufferType type)
+{
+    converterOutput_.SetSourceBufferType(type);
+}
+
 void HpaeAudioFormatConverterNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
     HpaeNodeInfo &nodeInfo)
 {
@@ -882,6 +887,11 @@ uint64_t HpaeAudioFormatConverterNode::GetLatency(uint32_t sessionId)
 void HpaeAudioFormatConverterNode::SetDownmixNormalization(bool normalizing)
 {
     channelConverter_.SetDownmixNormalization(normalizing);
+}
+
+void HpaeAudioFormatConverterNode::SetUpmixCoef(float coef)
+{
+    channelConverter_.SetUpmixCoef(coef);
 }
 
 void HpaeAudioFormatConverterNode::FlushBuffers()

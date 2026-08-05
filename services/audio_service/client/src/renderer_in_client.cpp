@@ -64,6 +64,9 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
+const uint64_t ULTRA_FAST_BUF_DURATION_IN_USEC = 2500;
+const uint64_t FAST_BUF_DURATION_IN_USEC = 5000;
+const uint64_t VOIP_BUF_DURATION_IN_USEC = 20000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const int64_t MUTE_PLAY_MIN_DURAION = 3000000000; // 3S
 const int64_t MUTE_PLAY_MAX_DURAION = 30000000000; // 30S
@@ -305,25 +308,15 @@ bool RendererInClientInner::IsLowLatencyRenderer() const
 
 uint64_t RendererInClientInner::GetDefaultCallbackBufferDurationInUs() const
 {
-    if (!IsLowLatencyRenderer()) {
-        return OLD_BUF_DURATION_IN_USEC;
+    AUDIO_INFO_LOG("Static check flag %{public}x", staticCheckFlag_);
+    if (IsUltraFastStreamRequested() && isSupportUltraFast_) {
+        return ULTRA_FAST_BUF_DURATION_IN_USEC;
+    } else if (staticCheckFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+        return FAST_BUF_DURATION_IN_USEC;
+    } else if (staticCheckFlag_ & AUDIO_OUTPUT_FLAG_VOIP) {
+        return VOIP_BUF_DURATION_IN_USEC;
     }
-    uint32_t sampleRate = curStreamParams_.customSampleRate == 0 ? curStreamParams_.samplingRate :
-        curStreamParams_.customSampleRate;
-    if (sampleRate == 0) {
-        return OLD_BUF_DURATION_IN_USEC;
-    }
-    // For low-latency callback mode, the callback quantum should follow one server span.
-    // cacheSizeInFrame_ comes from server engine size, which is typically span * 2.
-    uint32_t spanSize = spanSizeInFrame_.load();
-    uint32_t frameCount = spanSize > 0 ? spanSize : cacheSizeInFrame_.load();
-    if (frameCount == 0) {
-        return OLD_BUF_DURATION_IN_USEC;
-    }
-    uint64_t durationInUs = static_cast<uint64_t>(frameCount) * AUDIO_US_PER_S / sampleRate;
-    AUDIO_INFO_LOG("GetDefaultCallbackBufferDurationInUs low latency, frameCount:%{public}u sampleRate:%{public}u "
-        "durationInUs:%{public}" PRIu64, frameCount, sampleRate, durationInUs);
-    return durationInUs;
+    return OLD_BUF_DURATION_IN_USEC;
 }
 
 int32_t RendererInClientInner::GetBufferWaitTimeoutInMs() const
@@ -1494,8 +1487,6 @@ int32_t RendererInClientInner::CallStartWhenInStandby()
 
 bool RendererInClientInner::CheckRendererAttrInfoFromSpan(RendererAttrInfo &attr)
 {
-    AUDIO_DEBUG_LOG("CheckRendererAttrInfoFromSpan enter, sessionId:%{public}u", sessionId_);
-
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientBuffer_ is nullptr");
 
     uint64_t spanSize = clientBuffer_->GetAndClearPendingSpanSize(attr.engineSize, attr.routeFlag);
@@ -1524,16 +1515,13 @@ void RendererInClientInner::RefreshRendererAttrInfoFromSpan(const RendererAttrIn
         AUDIO_ERR_LOG("Invalid span size %{public}u, skip update", attr.spanSizeInFrame);
     }
     cacheSizeInFrame_ = attr.engineSize;
-    if (attr.routeFlag != 0) {
-        rendererInfo_.audioFlag = attr.routeFlag;
-        if ((attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) == 0) {
-            rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-        } else if (attr.routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
-            rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
-        } else {
-            rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-        }
-        AUDIO_INFO_LOG("Updated rendererFlags to 0x%{public}x", rendererInfo_.rendererFlags);
+    rendererInfo_.audioFlag = attr.routeFlag;
+    if ((attr.routeFlag & AUDIO_OUTPUT_FLAG_FAST) == 0) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
+    } else if (attr.routeFlag & AUDIO_OUTPUT_FLAG_VOIP) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
+    } else {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
     }
     AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}u "
         "rendererFlags:0x%{public}x",
@@ -1544,7 +1532,7 @@ void RendererInClientInner::RefreshRendererAttrInfoFromSpan(const RendererAttrIn
 bool RendererInClientInner::SyncRendererAttrFromSpan()
 {
     RendererAttrInfo attr;
-    CHECK_AND_RETURN_RET_LOG(CheckRendererAttrInfoFromSpan(attr), false, "No rendererAttr to refresh");
+    CHECK_AND_RETURN_RET(CheckRendererAttrInfoFromSpan(attr), false);
     RefreshRendererAttrInfoFromSpan(attr);
     return true;
 }
@@ -1553,7 +1541,6 @@ bool RendererInClientInner::JudgeFastStreamByRendererAttr()
 {
     SyncRendererAttrFromSpan();
     bool isFast = IsFastStream();
-    AUDIO_DEBUG_LOG("isFast:%{public}d, sessionId:%{public}u", isFast, sessionId_);
     return isFast;
 }
 

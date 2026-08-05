@@ -406,7 +406,7 @@ HWTEST_F(CoreServiceProviderStubUnitTest, CoreServiceProviderWrapper_SetRenderer
     uint32_t lastTarget = 0;
     uint32_t sessionId = 0;
     int32_t ret = 0;
-    int32_t result = wrapper.SetRendererTarget(target, lastTarget, sessionId, ret);
+    int32_t result = wrapper.SetRendererTarget(target, lastTarget, sessionId, INVALID_UID, INVALID_STREAM_ID, ret);
     AUDIO_INFO_LOG("CSPWrapper_SetRendererTarget_001 result:%{public}d", result);
     EXPECT_EQ(result, AUDIO_INIT_FAIL);
 }
@@ -430,7 +430,7 @@ HWTEST_F(CoreServiceProviderStubUnitTest, CoreServiceProviderWrapper_SetRenderer
     uint32_t lastTarget = NORMAL_PLAYBACK;
     uint32_t sessionId = 1;
     int32_t ret = 0;
-    int32_t result = wrapper.SetRendererTarget(target, lastTarget, sessionId, ret);
+    int32_t result = wrapper.SetRendererTarget(target, lastTarget, sessionId, INVALID_UID, INVALID_STREAM_ID, ret);
     AUDIO_INFO_LOG("CSPWrapper_SetRendererTarget_002 result:%{public}d", result);
     EXPECT_EQ(result, SUCCESS);
 }

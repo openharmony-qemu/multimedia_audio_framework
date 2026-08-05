@@ -584,7 +584,7 @@ bool AudioSessionService::IsStreamAllowedToSetDevice(const uint32_t streamId)
             } else {
                 DeviceType deviceType;
                 pair.second->GetSessionDefaultOutputDevice(deviceType);
-                return deviceType == DEVICE_TYPE_INVALID;
+                return deviceType == DEVICE_TYPE_INVALID || deviceType == DEVICE_TYPE_DEFAULT;
             }
             return true;
         }

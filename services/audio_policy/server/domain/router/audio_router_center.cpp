@@ -134,12 +134,13 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(Strea
 }
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchRingRenderDevices(StreamUsage streamUsage,
-    int32_t clientUID, RouterType &routerType)
+    int32_t clientUID, RouterType &routerType, const RouterType &bypassType)
 {
     bool isTransferRing = (streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE);
     
     for (auto &router : ringRenderRouters_) {
         CHECK_AND_CONTINUE_LOG(router != nullptr, "Invalid router.");
+        CHECK_AND_CONTINUE(bypassType != router->GetRouterType());
         vector<shared_ptr<AudioDeviceDescriptor>> descs = router->GetRingRenderDevices(streamUsage, clientUID);
         CHECK_AND_CONTINUE_LOG(!descs.empty(), "FetchRingRenderDevices is empty.");
         if (descs.front() != nullptr && descs.front()->deviceType_ != DEVICE_TYPE_NONE) {
@@ -417,7 +418,7 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
                 AudioPipeManager::GetPipeManager()->GetLastestRunningCallStreamUsage();
     bool isVoipStream = AudioStreamCollector::GetAudioStreamCollector().IsCallStreamUsage(callStreamUsage);
     if (Util::IsEnhancedRoutingSupported()) {
-        descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType);
+        descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType, info.bypassType);
     } else if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
         (audioScene == AUDIO_SCENE_VOICE_RINGING && isVoipStream)) {
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
@@ -430,9 +431,9 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
         descs.push_back(move(desc));
     } else if (IsAlarmFollowRingStrategy(audioScene, info.streamUsage)) {
         AUDIO_INFO_LOG("alarm follow ring strategy, replace usage alarm to ringtone");
-        descs = FetchRingRenderDevices(STREAM_USAGE_RINGTONE, info.clientUID, routerType);
+        descs = FetchRingRenderDevices(STREAM_USAGE_RINGTONE, info.clientUID, routerType, info.bypassType);
     } else {
-        descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType);
+        descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType, info.bypassType);
     }
 }
 
@@ -823,18 +824,18 @@ std::vector<StreamDeviceInfo> AudioRouterCenter::CollectInputStreamDevices()
     return inputDevices;
 }
 
-bool AudioRouterCenter::HasWirelessDevicesConnected()
+bool AudioRouterCenter::HasSpecificDevicesConnected()
 {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
-    return deviceManager.HasWirelessDevicesConnected();
+    return deviceManager.HasSpecificDevicesConnected();
 }
 
 void AudioRouterCenter::StartArbiterContext(const FetchDeviceInfo &deviceInfo)
 {
     ClearConflictHandlers();
 
-    // Fast check: skip arbiter context setup when no wireless devices connected
-    if (!HasWirelessDevicesConnected()) {
+    // Fast check: skip arbiter context setup when no specific devices connected
+    if (!HasSpecificDevicesConnected()) {
         return;
     }
 
@@ -845,6 +846,11 @@ void AudioRouterCenter::StartArbiterContext(const FetchDeviceInfo &deviceInfo)
         wirelessConflictHandler_->SetSelectedDevices(std::move(outputDevices), std::move(inputDevices));
         RegisterConflictHandlers(wirelessConflictHandler_);
     }
+
+    if (inputConflictHandler_ != nullptr) {
+        inputConflictHandler_->FindHighestPriorityDevice();
+        RegisterConflictHandlers(inputConflictHandler_);
+    }
 }
 
 void AudioRouterCenter::StartArbiterContext()
@@ -852,7 +858,7 @@ void AudioRouterCenter::StartArbiterContext()
     ClearConflictHandlers();
 
     // Fast check: skip arbiter context setup when no wireless devices connected
-    if (!HasWirelessDevicesConnected()) {
+    if (!HasSpecificDevicesConnected()) {
         return;
     }
 
@@ -863,6 +869,11 @@ void AudioRouterCenter::StartArbiterContext()
         wirelessConflictHandler_->SetSelectedDevices(std::move(outputDevices), std::move(inputDevices));
         RegisterConflictHandlers(wirelessConflictHandler_);
     }
+
+    if (inputConflictHandler_ != nullptr) {
+        inputConflictHandler_->FindHighestPriorityDevice();
+        RegisterConflictHandlers(inputConflictHandler_);
+    }
 }
 
 void AudioRouterCenter::StopArbiterContext()
@@ -870,6 +881,9 @@ void AudioRouterCenter::StopArbiterContext()
     ClearConflictHandlers();
     if (wirelessConflictHandler_ != nullptr) {
         wirelessConflictHandler_->ClearSelectedDevices();
+    }
+    if (inputConflictHandler_ != nullptr) {
+        inputConflictHandler_->ClearHighestPriorityDevice();
     }
 }
 

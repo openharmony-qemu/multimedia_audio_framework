@@ -466,7 +466,9 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
         AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
             activeInterrupt.streamId, streamId);
         SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
-        DeactivateAudioInterruptInternal(activeZoneId, activeInterrupt);
+        if (activeInterrupt.uid != AUDIO_ID) {
+            DeactivateAudioInterruptInternal(activeZoneId, activeInterrupt);
+        }
         ret = true;
     }
     return ret;

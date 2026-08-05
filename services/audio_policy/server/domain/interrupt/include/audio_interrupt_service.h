@@ -214,6 +214,7 @@ private:
     void CacheFocusAndCallback(const uint32_t &sessionId, const InterruptEventInternal &interruptEvent,
         const AudioInterrupt &audioInterrupt);
     void GameRecogSetParam(ClientType clientType, SourceType sourceType, bool switchOn);
+    void VerifyFocusPermission(AudioInterrupt &audioInterrupt);
 
     // Inner class for death handler
     class AudioInterruptDeathRecipient : public IRemoteObject::DeathRecipient {
@@ -323,9 +324,11 @@ private:
     void WriteServiceStartupError();
     // systemapp debug interfaces
     void WriteCallSessionEvent(int32_t strategyValue);
-    void ActivateAudioSessionErrorEvent(const int32_t zoneId, const int32_t callerPid);
+    void ActivateAudioSessionErrorEvent(const int32_t zoneId, const int32_t callerPid, bool isActivated);
     void DeactivateAudioSessionErrorEvent(const std::vector<AudioInterrupt> &streamsInSession,
         const int32_t callerPid);
+    void RecordSilentWithPauseStrategyEvent(const AudioInterrupt &incomingInterrupt,
+        const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry);
     void AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
 
     // interfaces about audio session.
@@ -376,7 +379,7 @@ private:
     void WriteSessionTimeoutDfxEvent(const int32_t pid);
 
     bool AudioFocusInfoListRemovalCondition(const AudioInterrupt &audioInterrupt,
-        const std::pair<AudioInterrupt, AudioFocuState> &audioFocus);
+        const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo);
     AudioScene RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
         AudioScene &highestPriorityAudioScene);
     void PostRefreshAudioSceneAction(const int32_t zoneId);

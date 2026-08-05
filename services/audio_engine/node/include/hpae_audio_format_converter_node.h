@@ -35,7 +35,9 @@ public:
         HpaeNodeInfo &nodeInfo) override;
     uint64_t GetLatency(uint32_t sessionId = 0) override;
     void SetDownmixNormalization(bool normalizing);
+    void SetUpmixCoef(float coef);
     void FlushBuffers();
+    void SetSourceBufferType(HpaeSourceBufferType type);
 protected:
     HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*>& inputs) override;
 private:

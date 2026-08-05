@@ -206,5 +206,157 @@ HWTEST_F(AudioActiveDeviceUnitTest, GetUidVolumeDevicesForEnhancedRouting_UidFou
 
     audioActiveDevice.uidVolumeDeviceMap_.clear();
 }
+
+/**
+ * @tc.name  : Test AudioActiveDevice.
+ * @tc.number: AudioActiveDeviceUnitTest_003.
+ * @tc.desc  : Test GetActiveA2dpDeviceStreamInfo with BLUETOOTH_A2DP_IN.
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_003, TestSize.Level1)
+{
+    AudioStreamInfo streamInfo;
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    bool result = audioActiveDevice->GetActiveA2dpDeviceStreamInfo(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+        streamInfo);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test AudioActiveDevice.
+ * @tc.number: AudioActiveDeviceUnitTest_004.
+ * @tc.desc  : Test GetMaxAmplitude with BLUETOOTH_SCO device.
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_004, TestSize.Level1)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    desc->deviceId_ = 2001;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+
+    int32_t deviceId = AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice().deviceId_;
+    AudioInterrupt audioInterrupt;
+    float result = audioActiveDevice->GetMaxAmplitude(deviceId, audioInterrupt);
+    EXPECT_FLOAT_EQ(result, 0.0f);
+}
+
+/**
+ * @tc.name  : Test AudioActiveDevice.
+ * @tc.number: AudioActiveDeviceUnitTest_005.
+ * @tc.desc  : Test IsDirectSupportedDevice with BLUETOOTH_A2DP.
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_005, TestSize.Level1)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->deviceId_ = 2002;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    bool result = audioActiveDevice->IsDirectSupportedDevice();
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test AudioActiveDevice.
+ * @tc.number: AudioActiveDeviceUnitTest_006.
+ * @tc.desc  : Test IsDeviceActive with BLUETOOTH_A2DP.
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_006, TestSize.Level1)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    auto desc = make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->deviceId_ = 2003;
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+    bool result = audioActiveDevice->IsDeviceActive(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test AudioActiveDevice.
+ * @tc.number: GetCurrentInputDeviceMacAddr_002.
+ * @tc.desc  : Test GetCurrentInputDeviceMacAddr with BLUETOOTH_SCO device.
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, GetCurrentInputDeviceMacAddr_002, TestSize.Level1)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE);
+    desc->deviceId_ = 2004;
+    desc->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentInputDevice(SYSTEM_UID, {desc});
+    string ret = audioActiveDevice->GetCurrentInputDeviceMacAddr();
+    EXPECT_EQ(ret, "AA:BB:CC:DD:EE:FF");
+}
+
+/**
+ * @tc.name  : Test AudioActiveDevice.
+ * @tc.number: GetCurrentOutputDeviceCategory_002.
+ * @tc.desc  : Test GetCurrentOutputDeviceCategory with BLUETOOTH_SCO device.
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, GetCurrentOutputDeviceCategory_002, TestSize.Level1)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    desc->deviceId_ = 2005;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    AudioRouterSelectStrategy::GetInstance().UpdateCurrentOutputDevice(SYSTEM_UID, {desc});
+
+    DeviceCategory ret = audioActiveDevice->GetCurrentOutputDeviceCategory();
+    EXPECT_EQ(ret, CATEGORY_DEFAULT);
+}
+
+/**
+ * @tc.name  : Test AudioActiveDevice.
+ * @tc.number: WriteOutputRouteChangeEvent_002.
+ * @tc.desc  : Test WriteOutputRouteChangeEvent with BLUETOOTH_SCO device.
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, WriteOutputRouteChangeEvent_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+
+    audioActiveDevice->WriteOutputRouteChangeEvent(deviceDescriptor, reason);
+    EXPECT_EQ(deviceDescriptor->deviceId_, 0);
+}
+
+/**
+ * @tc.name  : GetDeviceForVolumeEnhanced_RegularUid
+ * @tc.number: GetDeviceForVolumeEnhanced_003
+ * @tc.desc  : Test GetDeviceForVolumeEnhanced with a regular non-system UID.
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, GetDeviceForVolumeEnhanced_003, TestSize.Level1)
+{
+    AudioActiveDevice &audioActiveDevice = AudioActiveDevice::GetInstance();
+    int32_t uid = 10042;
+    auto result = audioActiveDevice.GetDeviceForVolumeEnhanced(uid);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name  : GetUidVolumeDevicesForEnhancedRouting_UidNotInMap
+ * @tc.number: GetUidVolumeDevicesForEnhancedRouting_003
+ * @tc.desc  : Test GetUidVolumeDevicesForEnhancedRouting with UID that has no entry in the map.
+ */
+HWTEST_F(AudioActiveDeviceUnitTest, GetUidVolumeDevicesForEnhancedRouting_003, TestSize.Level1)
+{
+    AudioActiveDevice &audioActiveDevice = AudioActiveDevice::GetInstance();
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+    int32_t uid = 10042;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    audioActiveDevice.uidVolumeDeviceMap_[uid] = {desc};
+
+    auto result = audioActiveDevice.GetUidVolumeDevicesForEnhancedRouting(9999);
+    EXPECT_TRUE(result.empty());
+
+    result = audioActiveDevice.GetUidVolumeDevicesForEnhancedRouting(uid);
+    EXPECT_EQ(result.size(), 1);
+
+    audioActiveDevice.uidVolumeDeviceMap_.clear();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

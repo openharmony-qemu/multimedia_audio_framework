@@ -108,7 +108,8 @@ void HpaeVirtualProcessCluster::DisConnect(const std::shared_ptr<OutputNode<Hpae
 
 int32_t HpaeVirtualProcessCluster::SetupAudioLimiter()
 {
-    return SUCCESS;
+    CHECK_AND_RETURN_RET(mixerNode_ != nullptr, ERROR, "mixerNode_ is nullptr");
+    return mixerNode_->SetupAudioLimiter();
 }
 
 void HpaeVirtualProcessCluster::CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo)
@@ -136,4 +137,4 @@ std::shared_ptr<HpaeGainNode> HpaeVirtualProcessCluster::GetGainNodeById(const u
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
-}  // namespace OHOS
+}  // namespace OHOS

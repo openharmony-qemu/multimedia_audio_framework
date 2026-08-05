@@ -76,6 +76,8 @@ public:
     std::atomic<bool> isSilent_{false};
     // Flag to indicate VoIP stream should be excluded from priority comparison during mute callback
     std::atomic<bool> voipPriorityLowered_{false};
+    // Flag to indicate RendererInServer/CapturerInServer has been created successfully
+    std::atomic<bool> isServerStreamCreated_{false};
 
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);

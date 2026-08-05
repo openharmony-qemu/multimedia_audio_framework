@@ -519,7 +519,7 @@ class AudioQueryBundleNameListCallback {
 public:
     virtual ~AudioQueryBundleNameListCallback() = default;
     virtual bool OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType) = 0;
-    virtual void StartVoiceBroadcast(uint32_t sessionId) = 0;
+    virtual void StartVoiceBroadcast(uint32_t sessionId, const std::string &cellularRecordPhoneNum) = 0;
 };
 
 /**

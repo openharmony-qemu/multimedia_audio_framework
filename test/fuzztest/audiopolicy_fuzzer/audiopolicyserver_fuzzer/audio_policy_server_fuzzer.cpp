@@ -1809,9 +1809,11 @@ void AudioPolicyServerCreateRendererClientFuzzTest()
         return;
     }
     uint32_t flag = GetData<uint32_t>();
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = flag;
     uint32_t sessionId = GetData<uint32_t>();
     std::string networkId = "abc";
-    server->CreateRendererClient(streamDesc, flag, sessionId, networkId);
+    server->CreateRendererClient(streamDesc, flagInfo, sessionId, networkId);
 }
 
 void AudioPolicyServerCreateCapturerClientFuzzTest()

@@ -43,8 +43,16 @@ public:
 
 private:
     float CalculateEnvelopeEnergy(float *inBuffer);
-    void ApplyGainToStereoFrame(float *inBuffer, float *outBuffer, float &lastGain, float deltaGain);
+    void ApplyGainToFrame(float *inBuffer, float *outBuffer, float &lastGain, float deltaGain);
     void ProcessAlgo(float *inBuffer, float *outBuffer);
+    int32_t ValidateConfigParams(int32_t inputFrameBytes, int32_t bytePerSample, int32_t sampleRate,
+        int32_t channels, int32_t &newAlgoFrameLen);
+    int32_t AllocateHistoryBuffer(int32_t newAlgoFrameLen);
+    void OpenDumpFiles(int32_t sampleRate, int32_t channels);
+    void CalculateEnvelopeStereo(float *inBuffer, float &maxEnvelopeLevel);
+    void CalculateEnvelopeMono(float *inBuffer, float &maxEnvelopeLevel);
+    void ApplyGainStereo(float *inBuffer, float *outBuffer, float &lastGain, float deltaGain);
+    void ApplyGainMono(float *inBuffer, float *outBuffer, float &lastGain, float deltaGain);
     uint32_t latency_;
     int32_t sinkIndex_;
     int32_t algoFrameLen_;
@@ -59,7 +67,7 @@ private:
     float gainRelease_;
     std::vector<float> bufHis_;
     uint32_t sampleRate_;
-    uint32_t channels_;
+    int32_t channels_;
     FILE *dumpFileInput_ = nullptr;
     FILE *dumpFileOutput_ = nullptr;
     std::string dumpFileNameIn_ = "";

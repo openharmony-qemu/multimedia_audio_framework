@@ -522,6 +522,11 @@ public:
         return sharedAudioRenderer_->SetTarget(target);
     }
 
+    int32_t SetTarget(RenderTarget target, int32_t targetUid, uint32_t targetStreamId) override
+    {
+        return sharedAudioRenderer_->SetTarget(target, targetUid, targetStreamId);
+    }
+
     RenderTarget GetTarget() const override
     {
         return sharedAudioRenderer_->GetTarget();

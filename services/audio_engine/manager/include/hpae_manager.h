@@ -206,8 +206,11 @@ public:
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
     void RemoveCaptureInjector(
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
-    int32_t PeekAudioData(
-        const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
+    void AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        uint32_t targetStreamId) override;
+    void RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        uint32_t targetStreamId) override;
+    void SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute) override;
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
     void UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled) override;
     bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) override;
@@ -229,7 +232,7 @@ public:
     void SetSinkMuteForSwitchDevice(const std::string &deviceClass, bool mute) override;
 
 private:
-    int32_t BindAndCreateAiss(uint32_t sessionId);
+    int32_t BindAndCreateAiss(uint32_t sessionId, bool aissSwitchEnabled = false);
     void TryBindSessionEffectOnStart(uint32_t sessionId);
     uint32_t FindRunningMusicSession(int32_t uid);
     int32_t EnableAissByUid(int32_t uid);

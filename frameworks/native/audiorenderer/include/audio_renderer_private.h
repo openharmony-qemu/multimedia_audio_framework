@@ -115,6 +115,7 @@ public:
     int32_t SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override;
     uint32_t GetUnderflowCount() const override;
     int32_t SetTarget(RenderTarget target) override;
+    int32_t SetTarget(RenderTarget target, int32_t targetUid, uint32_t targetStreamId) override;
     RenderTarget GetTarget() const override;
     int32_t GetKeepRunning(bool &keepRunning) const override;
 
@@ -237,7 +238,7 @@ private:
     int32_t CheckAndStopAudioRenderer(std::string callingFunc);
     bool WaitSwitchStreamIfNeeded(bool needWait = false);
     int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
-        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag);
+        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, StreamFlagInfo &flagInfo);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
     std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);

@@ -32,6 +32,7 @@ public:
 
     static AudioRouterSelectStrategy& GetInstance();
 
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetHighestPriorityMediaInputDevice();
     virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaInputDevice(int32_t uid, uint32_t streamId,
         SourceType sourceType) = 0;
     virtual void SetMediaInputDevice(int32_t uid, uint32_t streamId,

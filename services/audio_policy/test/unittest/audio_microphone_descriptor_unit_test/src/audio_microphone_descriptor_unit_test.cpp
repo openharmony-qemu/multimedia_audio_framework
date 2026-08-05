@@ -259,5 +259,72 @@ HWTEST_F(AudioMicrophoneDescriptorUnitTest, RemoveAudioCapturerMicrophoneDescrip
     descriptor->RemoveAudioCapturerMicrophoneDescriptor(uid);
     EXPECT_TRUE(descriptor->audioCaptureMicrophoneDescriptor_.empty());
 }
+
+/**
+ * @tc.name  : Test AddMicrophoneDescriptor with OUTPUT_DEVICE role.
+ * @tc.number: AddMicrophoneDescriptor_001
+ * @tc.desc  : Verify that no microphone is added when device role is OUTPUT_DEVICE.
+ */
+HWTEST_F(AudioMicrophoneDescriptorUnitTest, AddMicrophoneDescriptor_001, TestSize.Level4)
+{
+    std::shared_ptr<AudioMicrophoneDescriptor> descriptor = std::make_shared<AudioMicrophoneDescriptor>();
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    descriptor->connectedMicrophones_.clear();
+    size_t prevSize = descriptor->connectedMicrophones_.size();
+
+    descriptor->AddMicrophoneDescriptor(desc);
+
+    EXPECT_EQ(descriptor->connectedMicrophones_.size(), prevSize);
 }
+
+/**
+ * @tc.name  : Test AddMicrophoneDescriptor with DEVICE_TYPE_FILE_SOURCE.
+ * @tc.number: AddMicrophoneDescriptor_002
+ * @tc.desc  : Verify that no microphone is added when device type is FILE_SOURCE.
+ */
+HWTEST_F(AudioMicrophoneDescriptorUnitTest, AddMicrophoneDescriptor_002, TestSize.Level4)
+{
+    std::shared_ptr<AudioMicrophoneDescriptor> descriptor = std::make_shared<AudioMicrophoneDescriptor>();
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_FILE_SOURCE, INPUT_DEVICE);
+    descriptor->connectedMicrophones_.clear();
+    size_t prevSize = descriptor->connectedMicrophones_.size();
+
+    descriptor->AddMicrophoneDescriptor(desc);
+
+    EXPECT_EQ(descriptor->connectedMicrophones_.size(), prevSize);
 }
+
+/**
+ * @tc.name  : Test RemoveAudioCapturerMicrophoneDescriptorBySessionID with non-existent session ID.
+ * @tc.number: RemoveAudioCapturerMicrophoneDescriptorBySessionID_002
+ * @tc.desc  : Verify that nothing is removed when session ID does not exist.
+ */
+HWTEST_F(AudioMicrophoneDescriptorUnitTest, RemoveAudioCapturerMicrophoneDescriptorBySessionID_002, TestSize.Level4)
+{
+    std::shared_ptr<AudioMicrophoneDescriptor> descriptor = std::make_shared<AudioMicrophoneDescriptor>();
+    int32_t existingSessionId = 5001;
+    descriptor->AddAudioCapturerMicrophoneDescriptor(existingSessionId, DEVICE_TYPE_NONE);
+
+    descriptor->RemoveAudioCapturerMicrophoneDescriptorBySessionID(99999);
+
+    auto& descriptorMap = descriptor->audioCaptureMicrophoneDescriptor_;
+    EXPECT_NE(descriptorMap.find(existingSessionId), descriptorMap.end());
+}
+
+/**
+ * @tc.name  : Test GetAudioCapturerMicrophoneDescriptors with non-existent session ID.
+ * @tc.number: GetAudioCapturerMicrophoneDescriptors_003
+ * @tc.desc  : Verify that an empty list is returned when session ID does not exist in map.
+ */
+HWTEST_F(AudioMicrophoneDescriptorUnitTest, GetAudioCapturerMicrophoneDescriptors_003, TestSize.Level4)
+{
+    std::shared_ptr<AudioMicrophoneDescriptor> descriptor = std::make_shared<AudioMicrophoneDescriptor>();
+    int32_t existingSessionId = 6001;
+    descriptor->AddAudioCapturerMicrophoneDescriptor(existingSessionId, DEVICE_TYPE_NONE);
+
+    std::vector<sptr<MicrophoneDescriptor>> result = descriptor->GetAudioCapturerMicrophoneDescriptors(99999);
+
+    EXPECT_TRUE(result.empty());
+}
+} // namespace AudioStandard
+} // namespace OHOS

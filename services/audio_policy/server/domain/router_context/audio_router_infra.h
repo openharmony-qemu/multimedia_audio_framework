@@ -75,6 +75,8 @@ public:
     void ClearStreamSelectDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
     void ClearSystemSelectDevice(SelectDeviceType type,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
+    void SetBtConnecting(bool flag);
+    int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
 
     void UpdatePreferredInputCategory(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferredInputCategory(int32_t uid);
@@ -192,6 +194,7 @@ private:
     std::atomic<bool> isScoExcluded_ {false};
     bool isSkipped_ {false};
     std::vector<DeviceType> skippedDeviceTypes_;
+    bool isBTReconnecting_ = false;
 };
 
 }

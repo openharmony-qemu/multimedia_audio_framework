@@ -291,6 +291,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_028, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, audioDeviceDescriptorSptrVector);
+    EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
 }
 
 /**
@@ -375,7 +376,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_032, TestSize.Level1)
     EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
 }
 
-/**    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+/**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_033
 * @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForOutputDevice interface.
@@ -396,9 +397,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_033, TestSize.Level1)
     EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
 }
 
-/**    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
+/**
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_033
+* @tc.number: AudioDeviceCommon_038
 * @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForOutputDevice interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_038, TestSize.Level1)
@@ -419,7 +420,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_038, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_030
+* @tc.number: AudioDeviceCommon_039
 * @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForInputDevice interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_039, TestSize.Level1)
@@ -887,7 +888,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, ExcludeIndirectUsbArmInput_RegisteredDeviceI
     EXPECT_TRUE(strategy.IsDeviceExcluded(registeredDesc, MEDIA_INPUT_DEVICES));
     EXPECT_TRUE(strategy.IsDeviceExcluded(registeredDesc, CALL_INPUT_DEVICES));
     strategy.UnexcludeDevices(excludeDescs, ALL_INPUT_DEVICES);
-    EXPECT_FALSE(strategy.IsDeviceExcluded(registeredDesc, MEDIA_INPUT_DEVICES));
+    EXPECT_TRUE(strategy.IsDeviceExcluded(registeredDesc, MEDIA_INPUT_DEVICES));
 }
 
 HWTEST_F(AudioDeviceCommonUnitTest, ExcludeIndirectUsbArmInput_OldDeviceIdNotMatch_001, TestSize.Level1)
@@ -957,7 +958,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, ExcludeIndirectUsbArmInput_DisconnectUnexclu
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> unexcludeDescs{*it};
     strategy.UnexcludeDevices(unexcludeDescs, ALL_INPUT_DEVICES);
-    EXPECT_FALSE(strategy.IsDeviceExcluded(registeredDesc, MEDIA_INPUT_DEVICES));
+    EXPECT_TRUE(strategy.IsDeviceExcluded(registeredDesc, MEDIA_INPUT_DEVICES));
 }
 
 HWTEST_F(AudioDeviceCommonUnitTest, UpdateDevicePrivacyType_001, TestSize.Level1)
@@ -972,6 +973,353 @@ HWTEST_F(AudioDeviceCommonUnitTest, UpdateDevicePrivacyType_001, TestSize.Level1
     desc->deviceCategory_ = BT_UNWEAR_HEADPHONE;
     audioDeviceCommon.UpdateDevicePrivacyType(desc);
     EXPECT_EQ(desc->GetDevicePrivacyType(), AudioDevicePrivacyType::TYPE_PRIVACY);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_100
+* @tc.desc  : Test UpdateDeviceInfo with hasBTPermission true and hasSystemPermission false.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_100, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor deviceInfo;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceName_ = "BT_Device";
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    desc->volumeGroupId_ = 1;
+    desc->interruptGroupId_ = 2;
+    bool hasBTPermission = true;
+    bool hasSystemPermission = false;
+    audioDeviceCommon.UpdateDeviceInfo(deviceInfo, desc, hasBTPermission, hasSystemPermission);
+    EXPECT_EQ("BT_Device", deviceInfo.deviceName_);
+    EXPECT_EQ("00:11:22:33:44:55", deviceInfo.macAddress_);
+    EXPECT_EQ(BT_UNWEAR_HEADPHONE, deviceInfo.deviceCategory_);
+    EXPECT_EQ("", deviceInfo.networkId_);
+    EXPECT_EQ(GROUP_ID_NONE, deviceInfo.volumeGroupId_);
+    EXPECT_EQ(GROUP_ID_NONE, deviceInfo.interruptGroupId_);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_101
+* @tc.desc  : Test UpdateDeviceInfo with DEVICE_TYPE_BLUETOOTH_A2DP.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_101, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    AudioDeviceDescriptor deviceInfo;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    BluetoothOffloadState state = A2DP_OFFLOAD;
+    audioDeviceCommon.audioA2dpOffloadFlag_.SetA2dpOffloadFlag(state);
+    bool hasBTPermission = true;
+    bool hasSystemPermission = true;
+    audioDeviceCommon.UpdateDeviceInfo(deviceInfo, desc, hasBTPermission, hasSystemPermission);
+    EXPECT_EQ(A2DP_OFFLOAD, deviceInfo.a2dpOffloadFlag_);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_102
+* @tc.desc  : Test IsRendererStreamRunning with non-voice usage and not running.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_102, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    rendererChangeInfo->rendererState = RENDERER_STOPPED;
+    rendererChangeInfo->prerunningState = false;
+    bool ret = audioDeviceCommon.IsRendererStreamRunning(rendererChangeInfo);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_103
+* @tc.desc  : Test IsRendererStreamRunning with non-voice usage and running.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_103, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    rendererChangeInfo->rendererState = RENDERER_RUNNING;
+    bool ret = audioDeviceCommon.IsRendererStreamRunning(rendererChangeInfo);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_104
+* @tc.desc  : Test IsRendererStreamRunning with non-voice usage and prerunningState true.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_104, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    rendererChangeInfo->rendererState = RENDERER_STOPPED;
+    rendererChangeInfo->prerunningState = true;
+    bool ret = audioDeviceCommon.IsRendererStreamRunning(rendererChangeInfo);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_105
+* @tc.desc  : Test IsRendererStreamRunning with voice transfer and phone call scene.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_105, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION;
+    audioDeviceCommon.audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    bool ret = audioDeviceCommon.IsRendererStreamRunning(rendererChangeInfo);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_106
+* @tc.desc  : Test IsSameDevice with A2DP offload mismatch properly setting flag to offload.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_106, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor deviceInfo;
+    desc->networkId_ = "";
+    deviceInfo.networkId_ = "";
+    desc->macAddress_ = "";
+    deviceInfo.macAddress_ = "";
+    desc->connectState_ = CONNECTED;
+    deviceInfo.connectState_ = CONNECTED;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceInfo.a2dpOffloadFlag_ = A2DP_NOT_OFFLOAD;
+    audioDeviceCommon.audioA2dpOffloadFlag_.SetA2dpOffloadFlag(A2DP_OFFLOAD);
+    bool ret = audioDeviceCommon.IsSameDevice(desc, deviceInfo);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_107
+* @tc.desc  : Test IsSameDevice with USB device and different roles.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_107, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor deviceInfo;
+    desc->networkId_ = "";
+    deviceInfo.networkId_ = "";
+    desc->macAddress_ = "";
+    deviceInfo.macAddress_ = "";
+    desc->connectState_ = CONNECTED;
+    deviceInfo.connectState_ = CONNECTED;
+    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    deviceInfo.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    desc->deviceRole_ = INPUT_DEVICE;
+    deviceInfo.deviceRole_ = OUTPUT_DEVICE;
+    bool ret = audioDeviceCommon.IsSameDevice(desc, deviceInfo);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_108
+* @tc.desc  : Test IsSameDevice with different networkId.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_108, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor deviceInfo;
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    deviceInfo.networkId_ = REMOTE_NETWORK_ID;
+    desc->macAddress_ = "";
+    deviceInfo.macAddress_ = "";
+    desc->connectState_ = CONNECTED;
+    deviceInfo.connectState_ = CONNECTED;
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+    bool ret = audioDeviceCommon.IsSameDevice(desc, deviceInfo);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_109
+* @tc.desc  : Test IsSameDevice with USB ARM headset and same roles.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_109, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor deviceInfo;
+    desc->networkId_ = "";
+    deviceInfo.networkId_ = "";
+    desc->macAddress_ = "";
+    deviceInfo.macAddress_ = "";
+    desc->connectState_ = CONNECTED;
+    deviceInfo.connectState_ = CONNECTED;
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    desc->deviceRole_ = INPUT_DEVICE;
+    deviceInfo.deviceRole_ = INPUT_DEVICE;
+    bool ret = audioDeviceCommon.IsSameDevice(desc, deviceInfo);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_110
+* @tc.desc  : Test IsSameDevice with USB ARM headset and different roles.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_110, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor deviceInfo;
+    desc->networkId_ = "";
+    deviceInfo.networkId_ = "";
+    desc->macAddress_ = "";
+    deviceInfo.macAddress_ = "";
+    desc->connectState_ = CONNECTED;
+    deviceInfo.connectState_ = CONNECTED;
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    desc->deviceRole_ = INPUT_DEVICE;
+    deviceInfo.deviceRole_ = OUTPUT_DEVICE;
+    bool ret = audioDeviceCommon.IsSameDevice(desc, deviceInfo);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_111
+* @tc.desc  : Test IsSameDevice with non-USB non-A2DP matching device.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_111, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor deviceInfo;
+    desc->networkId_ = "";
+    deviceInfo.networkId_ = "";
+    desc->macAddress_ = "";
+    deviceInfo.macAddress_ = "";
+    desc->connectState_ = CONNECTED;
+    deviceInfo.connectState_ = CONNECTED;
+    desc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    deviceInfo.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    bool ret = audioDeviceCommon.IsSameDevice(desc, deviceInfo);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_112
+* @tc.desc  : Test IsRingDualToneOnPrimarySpeaker with size 1.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_112, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    descs.push_back(std::make_shared<AudioDeviceDescriptor>());
+    EXPECT_FALSE(audioDeviceCommon.IsRingDualToneOnPrimarySpeaker(descs, 1));
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_113
+* @tc.desc  : Test DeviceParamsCheck with INPUT_DEVICE and correct input device type.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_113, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    DeviceRole targetRole = INPUT_DEVICE;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_MIC;
+    desc->deviceRole_ = INPUT_DEVICE;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descVector;
+    descVector.push_back(desc);
+    int32_t ret = audioDeviceCommon.DeviceParamsCheck(targetRole, descVector);
+    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_114
+* @tc.desc  : Test IsSameDevice with A2DP offload match.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_114, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor deviceInfo;
+    desc->networkId_ = "";
+    deviceInfo.networkId_ = "";
+    desc->macAddress_ = "";
+    deviceInfo.macAddress_ = "";
+    desc->connectState_ = CONNECTED;
+    deviceInfo.connectState_ = CONNECTED;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceInfo.a2dpOffloadFlag_ = A2DP_OFFLOAD;
+    audioDeviceCommon.audioA2dpOffloadFlag_.SetA2dpOffloadFlag(A2DP_OFFLOAD);
+    bool ret = audioDeviceCommon.IsSameDevice(desc, deviceInfo);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_115
+* @tc.desc  : Test IsSameDevice with different macAddress.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_115, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor deviceInfo;
+    desc->networkId_ = "";
+    deviceInfo.networkId_ = "";
+    desc->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    deviceInfo.macAddress_ = "11:22:33:44:55:66";
+    desc->connectState_ = CONNECTED;
+    deviceInfo.connectState_ = CONNECTED;
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+    bool ret = audioDeviceCommon.IsSameDevice(desc, deviceInfo);
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceCommon.
+* @tc.number: AudioDeviceCommon_116
+* @tc.desc  : Test IsSameDevice with different connectState.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_116, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioDeviceDescriptor deviceInfo;
+    desc->networkId_ = "";
+    deviceInfo.networkId_ = "";
+    desc->macAddress_ = "";
+    deviceInfo.macAddress_ = "";
+    desc->connectState_ = CONNECTED;
+    deviceInfo.connectState_ = VIRTUAL_CONNECTED;
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+    bool ret = audioDeviceCommon.IsSameDevice(desc, deviceInfo);
+    EXPECT_FALSE(ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

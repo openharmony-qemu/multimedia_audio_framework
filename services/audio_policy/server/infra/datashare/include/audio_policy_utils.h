@@ -54,7 +54,6 @@ public:
     std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
     std::string GetRemoteNetworkId(const std::string &sinkName, DeviceRole role);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
-    void SetBtConnecting(bool flag);
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const int32_t uid = INVALID_UID, const std::string caller = "");
     bool IsSelectedByMediaController();
@@ -134,7 +133,6 @@ private:
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioConfigManager_(AudioCoreConfigManager::GetInstance()) {}
     ~AudioPolicyUtils() {}
-    int32_t ErasePreferredDeviceByType(const PreferredType preferredType);
 public:
     static int32_t startDeviceId;
     static std::map<std::string, ClassType> portStrToEnum;
@@ -142,7 +140,6 @@ public:
     static std::set<DeviceType> needDeclaredDevices;
 private:
     std::mutex mutex_;
-    bool isBTReconnecting_ = false;
     bool isScoExcluded_ = false;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
     std::map<std::string, std::set<DeviceType>> alreadyDeclaredDevicesByApp_;

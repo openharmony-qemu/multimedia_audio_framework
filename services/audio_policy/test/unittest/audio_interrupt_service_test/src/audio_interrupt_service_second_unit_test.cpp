@@ -113,7 +113,7 @@ public:
         return SUCCESS;
     }
 
-    ErrCode StartVoiceBroadcast(uint32_t sessionId) override
+    ErrCode StartVoiceBroadcast(uint32_t sessionId, const std::string &cellularRecordPhoneNum) override
     {
         return SUCCESS;
     }
@@ -599,6 +599,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_018, TestSize.
     audioInterrupt.audioFocusType.streamType = STREAM_VOICE_ASSISTANT;
     audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, ACTIVE});
     audioInterruptService->zonesMap_[0] = audioInterruptZone;
+    audioInterruptService->volumeTypePriorities_ = { {STREAM_VOICE_ASSISTANT, 3}, {STREAM_ALARM, 5} };
     auto ret = audioInterruptService->GetStreamInFocusInternal(uid, 0);
     EXPECT_EQ(STREAM_VOICE_ASSISTANT, ret);
 
@@ -1884,7 +1885,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_068, TestSize.
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = 0;
     audioInterrupt.pid = pid;
-    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, STOP});
+    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, ACTIVE});
     audioInterruptService->ReactivateAudioInterrupts(zoneId, pid, updateScene);
     EXPECT_TRUE(updateScene);
 }

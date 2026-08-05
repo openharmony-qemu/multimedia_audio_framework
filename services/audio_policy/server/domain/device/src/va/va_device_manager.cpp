@@ -123,6 +123,16 @@ void VADeviceManager::OnDevicesConnected(
     }
     AddVAStreamPropToMap(vaDevice->configuration_.properties_);
     statusMutex_.unlock();
+    sptr<IRemoteObject> controllerObj = controller->AsObject();
+    if (controllerObj != nullptr) {
+        std::shared_ptr<VADevice> vaDeviceForCb = vaDevice;
+        sptr<VADeviceDeathRecipient> recipient = new (std::nothrow) VADeviceDeathRecipient(
+            [vaDeviceForCb]() { VADeviceManager::GetInstance().OnDevicesDisconnected(vaDeviceForCb); });
+        if (recipient != nullptr && !controllerObj->AddDeathRecipient(recipient)) {
+            AUDIO_ERR_LOG("AddDeathRecipient failed for va device: %{public}s",
+                vaDevice->configuration_.name_.c_str());
+        }
+    }
     AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceStatusUpdated(*descriptor, true);
     CHECK_AND_RETURN(descriptor->isUnidirectional_);
     SetAssociatedMacAddresses(descriptor->macAddress_, false);
@@ -136,12 +146,20 @@ void VADeviceManager::OnDevicesDisconnected(const std::shared_ptr<VADevice> &vaD
         vaDevice->configuration_.name_.c_str(),
         vaDevice->configuration_.type_);
     std::shared_ptr<AudioDeviceDescriptor> descriptor = ConvertVADeviceToDescriptor(vaDevice);
-    AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceStatusUpdated(*descriptor, false);
-    std::lock_guard<std::mutex> lock(statusMutex_);
-    connectedVADeviceMap_.erase(vaDevice->configuration_.address_);
-    if (connectedVADeviceMap_.size() <= 0) {
-        config_.UnregisterAdapter(AudioAdapterType::TYPE_VA);
+    {
+        std::lock_guard<std::mutex> lock(statusMutex_);
+        auto it = connectedVADeviceMap_.find(vaDevice->configuration_.address_);
+        if (it == connectedVADeviceMap_.end()) {
+            AUDIO_INFO_LOG("va device already disconnected, addressLen=%{public}zu",
+                vaDevice->configuration_.address_.size());
+            return;
+        }
+        connectedVADeviceMap_.erase(it);
+        if (connectedVADeviceMap_.empty()) {
+            config_.UnregisterAdapter(AudioAdapterType::TYPE_VA);
+        }
     }
+    AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceStatusUpdated(*descriptor, false);
 }
 
 void VADeviceManager::GetDeviceController(const std::string macAddr, sptr<IRemoteObject> &controller)

@@ -137,7 +137,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_002, TestSize.Level1)
     event2.anahsName = "AnahsName2";
     EXPECT_EQ(audioSocketThread_.IsUpdatePnpDeviceState(&event2), true);
 
-    //Test events where both eventType and eventType are different
+    //Test events where both eventType and deviceType are different
     AudioEvent event3;
     event3.eventType = 2;
     event3.deviceType = 2;
@@ -190,10 +190,10 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_003, TestSize.Level1)
 
     audioSocketThread_.UpdatePnpDeviceState(&event1);
 
-    //Test events with different eventType, eventType, and name
+    //Test events with different eventType, deviceType, and name
     AudioEvent event2;
     event2.eventType = 2;
-    event2.eventType = 2;
+    event2.deviceType = 2;
     event2.name = "Device2";
     event2.address = "Address1";
     event2.anahsName = "AnahsName1";
@@ -202,7 +202,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_003, TestSize.Level1)
     //Test events with different eventType, name, and address
     AudioEvent event3;
     event3.eventType = 2;
-    event3.eventType = 2;
+    event3.deviceType = 2;
     event3.name = "Device2";
     event3.address = "Address1";
     event3.anahsName = "AnahsName1";
@@ -211,16 +211,16 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_003, TestSize.Level1)
     //Test for events where name, address, and anahsName are different
     AudioEvent event4;
     event4.eventType = 2;
-    event4.eventType = 2;
+    event4.deviceType = 2;
     event4.name = "Device2";
     event4.address = "Address1";
     event4.anahsName = "AnahsName1";
     EXPECT_EQ(audioSocketThread_.IsUpdatePnpDeviceState(&event4), true);
 
-    // Test foraddress,anahsName and eventType are different
+    // Test foraddress,anahsName and deviceType are different
     AudioEvent event5;
     event5.eventType = 2;
-    event5.eventType = 1;
+    event5.deviceType = 1;
     event5.name = "Device1";
     event5.address = "Address2";
     event5.anahsName = "AnahsName2";
@@ -229,7 +229,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_003, TestSize.Level1)
     //Test for events where address, anahsName, and eventType are different
     AudioEvent event6;
     event6.eventType = 2;
-    event6.eventType = 2;
+    event6.deviceType = 2;
     event6.name = "Device1";
     event6.address = "Address1";
     event6.anahsName = "AnahsName2";
@@ -252,7 +252,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_004, TestSize.Level1)
 
     audioSocketThread_.UpdatePnpDeviceState(&event1);
 
-    //Test events that are different for eventType, eventType, name, and adress
+    //Test events that are different for eventType, deviceType, name, and address
     AudioEvent event2;
     event2.eventType = 2;
     event2.deviceType = 2;
@@ -301,7 +301,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_004, TestSize.Level1)
 /**
 * @tc.name  : Test AudioSocketThread.
 * @tc.number: AudioSocketThread_005
-* @tc.desc  : Test SetAudioPnpUevent REMOVE_AUDIO_DEVICE
+* @tc.desc  : Test SetAudioPnpUevent with non-switch subsystem
 */
 HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_005, TestSize.Level1)
 {
@@ -897,7 +897,6 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_033, TestSize.Level1)
     AudioSocketThread audioSocketThread;
     //Test: No update required
     AudioEvent noUpdateEvent = {1, 1, "device", "address", "anahs"};
-    AudioEvent audioSocketEvent_ = noUpdateEvent;
     audioSocketThread.UpdateDeviceState(noUpdateEvent);
     //Test: Successful update
     AudioEvent successUpdateEvent = {1, 2, "device", "address", "anahs"};
@@ -907,6 +906,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_033, TestSize.Level1)
     audioSocketThread.UpdateDeviceState(snprintfFailEvent);
     AudioEvent snprintfSuccessEvent = {1, 2, "device", "address", "anahs"};
     audioSocketThread.UpdateDeviceState(snprintfSuccessEvent);
+    EXPECT_TRUE(AudioSocketThread::audioSocketEvent_.eventType == 1);
 }
 
 /**
@@ -1690,5 +1690,118 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_103, TestSize.Level4)
     EXPECT_EQ(ret, SUCCESS);
     delete audioPnpUevent;
 }
+
+/**
+ * @tc.name  : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_104
+ * @tc.desc  : Test IsUpdatePnpDeviceState with same event values
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_104, TestSize.Level4)
+{
+    AudioEvent event1;
+    event1.eventType = AUDIO_EVENT_UNKNOWN;
+    event1.deviceType = AUDIO_DEVICE_UNKNOWN;
+    event1.name = "test";
+    event1.address = "addr";
+    event1.anahsName = "anahs";
+    AudioSocketThread::audioSocketEvent_ = event1;
+    bool result = AudioSocketThread::IsUpdatePnpDeviceState(&event1);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_105
+ * @tc.desc  : Test IsUpdatePnpDeviceState with different action
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_105, TestSize.Level4)
+{
+    AudioEvent event1;
+    event1.eventType = AUDIO_EVENT_UNKNOWN;
+    event1.deviceType = AUDIO_DEVICE_UNKNOWN;
+    event1.name = "test";
+    event1.address = "addr";
+    event1.anahsName = "anahs";
+    AudioSocketThread::audioSocketEvent_ = event1;
+    AudioEvent event2;
+    event2.eventType = PNP_EVENT_DEVICE_ADD;
+    event2.deviceType = AUDIO_DEVICE_UNKNOWN;
+    event2.name = "test2";
+    event2.address = "addr2";
+    event2.anahsName = "anahs2";
+    bool result = AudioSocketThread::IsUpdatePnpDeviceState(&event2);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_106
+ * @tc.desc  : Test UpdateDeviceState with invalid action event type
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_106, TestSize.Level4)
+{
+    AudioEvent audioEvent;
+    audioEvent.eventType = AUDIO_EVENT_UNKNOWN;
+    audioEvent.deviceType = AUDIO_DEVICE_UNKNOWN;
+    AudioSocketThread::UpdateDeviceState(audioEvent);
+    EXPECT_TRUE(AudioSocketThread::audioSocketEvent_.deviceType != AUDIO_HEARING_AID_DEVICE);
+}
+
+/**
+ * @tc.name  : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_107
+ * @tc.desc  : Test AudioPnpUeventParse with valid message
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_107, TestSize.Level4)
+{
+    std::string message;
+    message += "ACTION=add";
+    message += '\0';
+    message += "SUBSYSTEM=switch";
+    message += '\0';
+    message += "SWITCH_NAME=h2w";
+    message += '\0';
+    message += "SWITCH_STATE=1";
+    message += '\0';
+    message += "NAME=headset";
+    bool result = AudioSocketThread::AudioPnpUeventParse(message.c_str(), message.length());
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_108
+ * @tc.desc  : Test AudioPnpUeventParse with empty message
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_108, TestSize.Level4)
+{
+    std::string message = "";
+    bool result = AudioSocketThread::AudioPnpUeventParse(message.c_str(), message.length());
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test AudioSocketThread.
+ * @tc.number: AudioSocketThread_109
+ * @tc.desc  : Test AudioMicBlockDevice with mic_blocked
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_109, TestSize.Level4)
+{
+    auto audioSocketThread = std::make_shared<AudioSocketThread>();
+    EXPECT_NE(audioSocketThread, nullptr);
+    struct AudioPnpUevent *audioPnpUevent = new AudioPnpUevent();
+    EXPECT_NE(audioPnpUevent, nullptr);
+    audioPnpUevent->name = "mic_blocked";
+    int32_t ret = audioSocketThread->AudioMicBlockDevice(audioPnpUevent);
+    EXPECT_EQ(ret, SUCCESS);
+    delete audioPnpUevent;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

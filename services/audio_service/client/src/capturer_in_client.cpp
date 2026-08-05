@@ -2511,8 +2511,6 @@ void CapturerInClientInner::SetSensitiveRecordPermitCallback(
 
 bool CapturerInClientInner::CheckCapturerAttrInfoFromSpan(CapturerAttrInfo &attr)
 {
-    AUDIO_DEBUG_LOG("CheckCapturerAttrInfoFromSpan enter, sessionId:%{public}u", sessionId_);
-
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientBuffer_ is nullptr");
 
     uint64_t spanSize = clientBuffer_->GetAndClearPendingSpanSize(attr.engineSize, attr.routeFlag);
@@ -2555,7 +2553,6 @@ void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrIn
             capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
             NotifyFastStatusChange(FASTSTATUS_FAST);
         }
-        AUDIO_INFO_LOG("Updated capturerFlags to 0x%{public}x", capturerInfo_.capturerFlags);
     }
     clientBuffer_->UpdateSpanBasicInfo(spanSizeInFrame_, cacheSizeInByte_, sizePerFrameInByte_);
     AUDIO_INFO_LOG("Updated spanSize:%{public}u clientSpanByte:%{public}zu cacheSize:%{public}zu "
@@ -2566,7 +2563,7 @@ void CapturerInClientInner::RefreshCapturerAttrInfoFromSpan(const CapturerAttrIn
 bool CapturerInClientInner::SyncCapturerAttrFromSpan()
 {
     CapturerAttrInfo attr;
-    CHECK_AND_RETURN_RET_LOG(CheckCapturerAttrInfoFromSpan(attr), false, "No capturerAttr to refresh");
+    CHECK_AND_RETURN_RET(CheckCapturerAttrInfoFromSpan(attr), false);
     RefreshCapturerAttrInfoFromSpan(attr);
     return true;
 }
@@ -2575,8 +2572,6 @@ bool CapturerInClientInner::JudgeFastStreamByCapturerAttr()
 {
     SyncCapturerAttrFromSpan();
     bool isFast = (fastStatus_ == FASTSTATUS_FAST);
-    AUDIO_DEBUG_LOG("isFast:%{public}d, fastStatus:%{public}d, sessionId:%{public}u",
-        isFast, static_cast<int32_t>(fastStatus_), sessionId_);
     return isFast;
 }
 } // namespace AudioStandard

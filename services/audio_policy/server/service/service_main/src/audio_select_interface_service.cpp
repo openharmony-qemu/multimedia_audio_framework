@@ -856,11 +856,10 @@ void AudioSelectInterfaceService::OnPrivacyDeviceSelected(DeviceType devType, co
     AUDIO_INFO_LOG("Entry");
     AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID,
         std::make_shared<AudioDeviceDescriptor>(), caller);
-    auto type = static_cast<Media::MediaMonitor::PreferredType>(AUDIO_CALL_RENDER);
-    Media::MediaMonitor::MediaMonitorManager::GetInstance().ErasePreferredDeviceByType(type);
 
     bool hasUsablePrivateCallDevice {false};
     FetchDeviceInfo info = { STREAM_USAGE_VOICE_COMMUNICATION, "OnPrivacyDeviceSelected", ROUTER_TYPE_USER_SELECT};
+    info.isRunning = true;
     auto devs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
     auto pDevs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
     for (auto &dev : devs) {

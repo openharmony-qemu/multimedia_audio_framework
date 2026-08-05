@@ -1027,16 +1027,12 @@ bool HpaeManager::CheckMoveSinkInput(uint32_t sinkInputId, const std::string &si
     }
     if (sinkName.empty()) {
         HILOG_COMM_INFO("[CheckMoveSinkInput]move session:%{public}u failed,sink name is empty.", sinkInputId);
-        HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sinkInputId, HPAE_STREAM_CLASS_TYPE_PLAY,
-            rendererIdSinkNameMap_[sinkInputId], sinkName, "sink name is empty");
         return false;
     }
     std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
     if (rendererManager == nullptr || !rendererManager->IsInit()) {
         HILOG_COMM_INFO("[CheckMoveSinkInput]move session:%{public}u failed, can not find sink:%{public}s "
             "or sink is not open.", sinkInputId, GetEncryptStr(sinkName).c_str());
-        HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sinkInputId, HPAE_STREAM_CLASS_TYPE_PLAY,
-            rendererIdSinkNameMap_[sinkInputId], sinkName, "dest sink is not open");
         return false;
     }
     if (!rendererIdStreamInfoMap_[sinkInputId].streamInfo.isMoveAble) {
@@ -1839,6 +1835,7 @@ int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32
                 "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->StartWithSyncId(sessionId, syncId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
+            TryBindSessionEffectOnStart(sessionId);
             UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STARTED, sessionId);
         } else {
             AUDIO_WARNING_LOG("StartWithSyncId can not find sessionId streamClassType %{public}d,"
@@ -2912,18 +2909,66 @@ void HpaeManager::RemoveCaptureInjector(
     SendRequest(request, __func__);
 }
 
-int32_t HpaeManager::PeekAudioData(
-    const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
+void HpaeManager::AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
 {
-    std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
-    auto sinkVirtualOutputNode = SafeGetMap(sinkVirtualOutputNodeMap_, sinkPortIndex);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sinkVirtualOutputNode != nullptr, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-                BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "sinkPort not exit", false),
-        "sinkPort[%{public}u] not exit", sinkPortIndex);
-    return sinkVirtualOutputNode->PeekAudioData(buffer, bufferSize, streamInfo);
+    auto request = [this, sinkPortIndex, sourcePortIndex, targetStreamId] {
+        AUDIO_INFO_LOG("add injection from sink[%{public}u] to source[%{public}u], targetStreamId[%{public}u]",
+            sinkPortIndex, sourcePortIndex, targetStreamId);
+        CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
+            "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
+        std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
+        auto rendererManager = SafeGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
+        CHECK_AND_RETURN_LOG(rendererManager, "sink[%{public}s] is in wrong state",
+            sinkIdSinkNameMap_[sinkPortIndex].c_str());
+        CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
+            "sourcePortIndex[%{public}u] not exit", sourcePortIndex);
+        auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
+        CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
+            sourceIdSourceNameMap_[sourcePortIndex].c_str());
+        capturerManager->AddCaptureInjectorByTargetStream(sinkVirtualOutputNodeMap_[sinkPortIndex],
+            targetStreamId);
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
+{
+    auto request = [this, sinkPortIndex, sourcePortIndex, targetStreamId] {
+        AUDIO_INFO_LOG("remove injection from sink[%{public}u] to source[%{public}u], targetStreamId[%{public}u]",
+            sinkPortIndex, sourcePortIndex, targetStreamId);
+        CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
+            "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
+        std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
+        auto rendererManager = SafeGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
+        CHECK_AND_RETURN_LOG(rendererManager, "sink[%{public}s] is in wrong state",
+            GetEncryptStr(sinkIdSinkNameMap_[sinkPortIndex]).c_str());
+        CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
+            "sourcePortIndex[%{public}u] not exit", sourcePortIndex);
+        auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
+        CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
+            sourceIdSourceNameMap_[sourcePortIndex].c_str());
+        capturerManager->RemoveCaptureInjectorByTargetStream(sinkVirtualOutputNodeMap_[sinkPortIndex],
+            targetStreamId);
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+{
+    auto request = [this, targetStreamId, isMute] {
+        AUDIO_INFO_LOG("set mic mute targetStreamId[%{public}u] isMute[%{public}d]",
+            targetStreamId, isMute);
+        std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
+        if (capturerIdSourceNameMap_.find(targetStreamId) != capturerIdSourceNameMap_.end()) {
+            CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[targetStreamId]),
+                "cannot find device:%{public}s", capturerIdSourceNameMap_[targetStreamId].c_str());
+            capturerManagerMap_[capturerIdSourceNameMap_[targetStreamId]]->SetCaptureMicMuteByTargetStream(
+                targetStreamId, isMute);
+        }
+    };
+    SendRequest(request, __func__);
 }
 
 void HpaeManager::DeleteRendererManager(const std::string &name)
@@ -3124,7 +3169,7 @@ void HpaeManager::TryBindSessionEffectOnStart(uint32_t sessionId)
     }
 }
 
-int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId)
+int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId, bool aissSwitchEnabled)
 {
     // AISS only supports real stereo playback streams.
     auto it = rendererIdStreamInfoMap_.find(sessionId);
@@ -3145,7 +3190,8 @@ int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId)
 
     auto rendererManager = GetRendererManagerById(sessionId);
     if (rendererManager != nullptr) {
-        rendererManager->PostCreateSessionEffect(sessionId, AUDIO_AISS_ENHANCE_EFFECT_NAME, instance, audioConfig);
+        rendererManager->PostCreateSessionEffect(sessionId, AUDIO_AISS_ENHANCE_EFFECT_NAME, instance, audioConfig,
+            aissSwitchEnabled);
     }
     return SUCCESS;
 }
@@ -3226,7 +3272,7 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
         return SUCCESS;
     }
 
-    int32_t ret = BindAndCreateAiss(targetSessionId);
+    int32_t ret = BindAndCreateAiss(targetSessionId, true);
     if (ret == static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED)) {
         AUDIO_INFO_LOG("EnableAissByUid: running music stream %{public}u is unsupported, keep pending",
             targetSessionId);
@@ -3279,7 +3325,7 @@ int32_t HpaeManager::SetAissEnabledSync(uint32_t sessionId, bool enabled)
                 ClearAissSession(oldSessionId, true);
             }
 
-            int32_t ret = BindAndCreateAiss(sessionId);
+            int32_t ret = BindAndCreateAiss(sessionId, true);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
                 "SetAissEnabledSync: BindAndCreateAiss failed for session %{public}u", sessionId);
             return SUCCESS;

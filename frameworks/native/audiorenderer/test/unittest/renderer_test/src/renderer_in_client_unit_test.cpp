@@ -119,7 +119,8 @@ public:
 
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return 0; } // renderer only
 
-    virtual int32_t SetTarget(int32_t target, int32_t &ret) override { return 0; } // renderer only
+    virtual int32_t SetTarget(int32_t target, int32_t targetUid,
+        uint32_t targetStreamId, int32_t &ret) override { return 0; } // renderer only
 
     virtual int32_t UnsetOffloadMode() override { return 0; } // renderer only
 
@@ -1864,9 +1865,11 @@ HWTEST(RendererInClientInnerUnitTest, SetSpeed_001, TestSize.Level0)
     ptrRendererInClientInner->offloadEnable_ = true;
     ptrRendererInClientInner->eStreamType_ = STREAM_MOVIE;
     ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
-    ptrRendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    ptrRendererInClientInner->NotifyRouteUpdate(flagInfo, LOCAL_NETWORK_ID);
     ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
-    ptrRendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
+    ptrRendererInClientInner->NotifyRouteUpdate(flagInfo, LOCAL_NETWORK_ID);
 
     int32_t ret = ptrRendererInClientInner->SetSpeed(1.0f);
     EXPECT_EQ(ret, SUCCESS);
@@ -1883,9 +1886,10 @@ HWTEST(RendererInClientInnerUnitTest, SetSpeed_001, TestSize.Level0)
     ptrRendererInClientInner->offloadEnable_ = true;
     ptrRendererInClientInner->eStreamType_ = STREAM_MOVIE;
     ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
-    ptrRendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    ptrRendererInClientInner->NotifyRouteUpdate(flagInfo, LOCAL_NETWORK_ID);
     ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
-    ptrRendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
+    ptrRendererInClientInner->NotifyRouteUpdate(flagInfo, LOCAL_NETWORK_ID);
 }
 
 /**
@@ -4314,7 +4318,8 @@ public:
     int32_t SetPrivacyType(int32_t privacyType) override { return SUCCESS; }
     int32_t GetPrivacyType(int32_t &privacyType) override { return SUCCESS; }
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return SUCCESS; }
-    int32_t SetTarget(int32_t target, int32_t &ret) override { return SUCCESS; }
+    int32_t SetTarget(int32_t target, int32_t targetUid,
+        uint32_t targetStreamId, int32_t &ret) override { return SUCCESS; }
     int32_t UnsetOffloadMode() override { return SUCCESS; }
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override { return SUCCESS; }
@@ -5066,8 +5071,9 @@ HWTEST(RendererInClientPublicNewUnitTest, GetLatencyWithFlag_LowLatency_NoFlag_0
 HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_001, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    
-    rendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_FAST, LOCAL_NETWORK_ID);
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    rendererInClientInner->NotifyRouteUpdate(flagInfo, LOCAL_NETWORK_ID);
     EXPECT_TRUE(true);
 }
 
@@ -5080,10 +5086,13 @@ HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_001, TestSize.Level1
 HWTEST(RendererInClientPublicNewUnitTest, NotifyRouteUpdate_002, TestSize.Level1)
 {
     auto rendererInClientInner = std::make_shared<RendererInClientInner>(STREAM_MUSIC, getpid());
-    
-    rendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_VOIP, LOCAL_NETWORK_ID);
-    rendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD, LOCAL_NETWORK_ID);
-    rendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
+    StreamFlagInfo flagInfo;
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_VOIP;
+    rendererInClientInner->NotifyRouteUpdate(flagInfo, LOCAL_NETWORK_ID);
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD;
+    rendererInClientInner->NotifyRouteUpdate(flagInfo, LOCAL_NETWORK_ID);
+    flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    rendererInClientInner->NotifyRouteUpdate(flagInfo, LOCAL_NETWORK_ID);
     EXPECT_TRUE(true);
 }
 

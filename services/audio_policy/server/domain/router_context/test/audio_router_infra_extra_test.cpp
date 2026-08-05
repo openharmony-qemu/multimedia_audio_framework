@@ -801,5 +801,40 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_AppendSkippedDevic
     routerInfra.skippedDeviceTypes_ = {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_A2DP};
     EXPECT_EQ(routerInfra.AppendSkippedDeviceTypes(""), string(" skip device types [7:8]"));
 }
+
+/**
+ * @tc.name  : Test WriteSelectOutputSysEvents with valid device
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_WriteSelectOutputSysEvents_001
+ * @tc.desc  : Test WriteSelectOutputSysEvents writes event when device is valid.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_WriteSelectOutputSysEvents_001, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    auto device = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    auto simpleDesc = std::make_shared<AudioDeviceSimpleDescriptor>(
+        device->deviceType_, device->deviceRole_,
+        device->deviceId_, device->networkId_, device->macAddress_);
+
+    EXPECT_NO_THROW(routerInfra.WriteSelectOutputSysEvents(simpleDesc, SelectDeviceType::MEDIA_OUTPUT));
+    EXPECT_NO_THROW(routerInfra.WriteSelectOutputSysEvents(simpleDesc, SelectDeviceType::CALL_OUTPUT));
+    EXPECT_NO_THROW(routerInfra.WriteSelectOutputSysEvents(simpleDesc, SelectDeviceType::INVALID_TYPE));
+}
+
+/**
+ * @tc.name  : Test WriteSelectOutputSysEvents with null device
+ * @tc.type  : FUNC
+ * @tc.number: AudioRouterInfraExtraTest_WriteSelectOutputSysEvents_002
+ * @tc.desc  : Test WriteSelectOutputSysEvents erases preferred device when device is null.
+ */
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_WriteSelectOutputSysEvents_002, TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    std::shared_ptr<AudioDeviceSimpleDescriptor> nullDevice = nullptr;
+    EXPECT_NO_THROW(routerInfra.WriteSelectOutputSysEvents(nullDevice, SelectDeviceType::MEDIA_OUTPUT));
+    EXPECT_NO_THROW(routerInfra.WriteSelectOutputSysEvents(nullDevice, SelectDeviceType::CALL_OUTPUT));
+    EXPECT_NO_THROW(routerInfra.WriteSelectOutputSysEvents(nullDevice, SelectDeviceType::INVALID_TYPE));
+}
 }
 }

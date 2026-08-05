@@ -229,6 +229,7 @@ public:
                 AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(highestPriorityDevice->macAddress_,
                     OUTPUT_DEVICE);
             CHECK_AND_CONTINUE(activeScoDevice != nullptr && activeScoDevice->deviceType_ != DEVICE_TYPE_NONE);
+            activeScoDevice->connectTimeStamp_ = AudioPolicyUtils::GetInstance().GetCurrentTimeMS();
             deviceList.push_back(activeScoDevice);
         }
     }

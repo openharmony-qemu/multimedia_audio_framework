@@ -19,7 +19,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <nlohmann/json.hpp>
+#include "cJSON.h"
 
 #include "ability_connect_callback_interface.h"
 #include "ability_connect_callback_stub.h"
@@ -67,13 +67,17 @@ public:
         data.WriteString16(abilityNameU16);
 
         data.WriteString16(u"parameters");
-        nlohmann::json param;
-        param["ability.want.params.uiExtensionType"] = "sys/commonUI";
-        param["sysDialogZOrder"] = ORDER_SIZE;
-        param["sessionId"] = sessionId_;
-        param["uid"] = uid_;
+        cJSON *param = cJSON_CreateObject();
+        CHECK_AND_RETURN_LOG(param != nullptr, "cJSON_CreateObject failed");
+        cJSON_AddStringToObject(param, "ability.want.params.uiExtensionType", "sys/commonUI");
+        cJSON_AddNumberToObject(param, "sysDialogZOrder", static_cast<double>(ORDER_SIZE));
+        cJSON_AddNumberToObject(param, "sessionId", static_cast<double>(sessionId_));
+        cJSON_AddNumberToObject(param, "uid", static_cast<double>(uid_));
 
-        std::string paramStr = param.dump(-1, ' ', true);
+        char *pChar = cJSON_PrintUnformatted(param);
+        std::string paramStr = (pChar != nullptr) ? std::string(pChar) : std::string{};
+        cJSON_free(pChar);
+        cJSON_Delete(param);
         std::u16string paramStrU16(paramStr.begin(), paramStr.end());
         data.WriteString16(paramStrU16);
     

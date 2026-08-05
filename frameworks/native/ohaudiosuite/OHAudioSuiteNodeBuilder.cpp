@@ -288,6 +288,10 @@ bool CheckAudioFormat(OH_AudioSuite_SystemNodeFormat audioFormat)
     CHECK_AND_RETURN_RET_LOG(audioFormat.encoding == 0 ||
         audioFormat.encoding == static_cast<int32_t>(AudioStreamEncodingType::ENCODING_METADATA), false,
         "SetFormat failed AudioFormat encoding invalid.");
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUITE_SUPPORTED_SAMPLING_RATES, audioFormat.samplingRate),
+        false, "input format samplingRate:%{public}d, not supported", audioFormat.samplingRate);
+    CHECK_AND_RETURN_RET_LOG(!NotContain(AUDIO_SUPPORTED_SAMPLE_FORMAT, audioFormat.sampleFormat),
+        false, "input format sampleFormat%{public}d not supported", audioFormat.sampleFormat);
     return true;
 }
 

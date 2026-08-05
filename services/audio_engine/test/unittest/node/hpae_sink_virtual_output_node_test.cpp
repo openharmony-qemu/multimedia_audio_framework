@@ -62,37 +62,6 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, ConstructHpaeSinkVirtualOutputNode, Test
     EXPECT_EQ(node->ringCache_ != nullptr, true);
 }
 
-HWTEST_F(HpaeSinkVirtualOutputNodeTest, PeekAudioDataInvalidBufferSize, TestSize.Level1)
-{
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    uint8_t* buffer = nullptr;
-    AudioStreamInfo audioStreamInfo;
-    
-    int32_t result = node->PeekAudioData(buffer, 1, audioStreamInfo);
-    EXPECT_EQ(result, ERROR_INVALID_PARAM);
-}
-
-HWTEST_F(HpaeSinkVirtualOutputNodeTest, PeekAudioDataSuccess, TestSize.Level1)
-{
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    size_t validSize = nodeInfo_.frameLen * nodeInfo_.channels * GetSizeFromFormat(nodeInfo_.format);
-    std::vector<uint8_t> buffer(validSize, 1);
-    AudioStreamInfo audioStreamInfo;
-    
-    EXPECT_EQ(node->PeekAudioData(buffer.data(), validSize, audioStreamInfo), SUCCESS);
-    EXPECT_EQ(buffer[0], 0);
-    EXPECT_EQ(audioStreamInfo.format, nodeInfo_.format);
-    EXPECT_EQ(audioStreamInfo.samplingRate, nodeInfo_.samplingRate);
-    EXPECT_EQ(audioStreamInfo.channels, nodeInfo_.channels);
-
-    std::fill(buffer.begin(), buffer.end(), 1);
-    EXPECT_EQ(node->PeekAudioData(buffer.data(), validSize - 1, audioStreamInfo), SUCCESS);
-    EXPECT_EQ(buffer[0], 0);
-    std::fill(buffer.begin(), buffer.end(), 1);
-    EXPECT_EQ(node->PeekAudioData(buffer.data(), validSize + 1, audioStreamInfo), SUCCESS);
-    EXPECT_EQ(buffer[0], 0);
-}
-
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, ResetNode, TestSize.Level1)
 {
     std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
@@ -233,22 +202,6 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, HpaeSinkVirtualOutputNodeTestReload, Tes
     EXPECT_EQ(node->ringCache_ == nullptr, true);
     node->ReloadNode(nodeInfo_);
     EXPECT_EQ(node->ringCache_ != nullptr, true);
-}
-
-/**
- * @tc.name  : FaultCode_PeekAudioData_NullBuffer
- * @tc.type  : FUNC
- * @tc.desc  : Test PeekAudioData returns ERROR_INVALID_PARAM when buffer is nullptr,
- *             covering PLAY_SEND_INVALID_PARAM fault code path.
- */
-HWTEST_F(HpaeSinkVirtualOutputNodeTest, FaultCode_PeekAudioData_NullBuffer, TestSize.Level1)
-{
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node =
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    AudioStreamInfo audioStreamInfo;
-
-    int32_t result = node->PeekAudioData(nullptr, 0, audioStreamInfo);
-    EXPECT_EQ(result, ERROR_INVALID_PARAM);
 }
 
 /**

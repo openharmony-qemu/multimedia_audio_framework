@@ -62,6 +62,8 @@ private:
     void ApplyFadeOut(HpaePcmBuffer *input, FadeOutState &fadeOutState, bool isCollFade);
     void ApplyFadeIn(HpaePcmBuffer *input, bool &fadeInState,
         uint32_t &processedBytes, uint32_t &totalFadeBytes);
+    void ProcessDefaultFadeIn(HpaePcmBuffer *input, uint8_t *data,
+        bool &fadeInState, uint32_t &processedBytes, uint32_t &totalFadeBytes);
     void SilenceData(HpaePcmBuffer *pcmBuffer);
     bool IsSilentData(HpaePcmBuffer *pcmBuffer);
     uint32_t GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input);

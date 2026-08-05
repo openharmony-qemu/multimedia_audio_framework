@@ -92,6 +92,7 @@ private:
     static constexpr int64_t ONE_MILLISECOND_DURATION_NS = 1000000;
     static constexpr int64_t THREE_MILLISECOND_DURATION_NS = 3000000;
     static constexpr int64_t RELATIVE_SLEEP_TIME_NS = 5000000;
+    static constexpr int64_t MIN_TIME_TO_NEXT_DSP_READ_NS = 1000000;
     static constexpr int64_t MAX_WAKEUP_TIME_NS = 2000000000;
     static constexpr int64_t DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS = 4000000000;
     static constexpr uint32_t FRAME_LEN_MS_DEFAULT = 20;

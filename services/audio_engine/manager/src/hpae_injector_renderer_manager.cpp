@@ -581,6 +581,9 @@ void HpaeInjectorRendererManager::InitManager(bool isReload)
     AUDIO_INFO_LOG("init devicename:%{public}s", sinkInfo_.deviceName.c_str());
     HpaeNodeInfo nodeInfo = sinkOutputNode_ ->GetNodeInfo();
     sceneCluster_ = std::make_shared<HpaeVirtualProcessCluster>(nodeInfo);
+    if (sceneCluster_->SetupAudioLimiter() != SUCCESS) {
+        AUDIO_WARNING_LOG("SetupAudioLimiter failed!");
+    }
     int32_t ret = sinkOutputNode_->RenderSinkInit();
     isInit_.store(ret == SUCCESS);
     AUDIO_INFO_LOG("HpaeInjectorRendererManager init %{public}s", ret == SUCCESS ? "success" : "fail");

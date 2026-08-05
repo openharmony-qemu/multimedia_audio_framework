@@ -138,6 +138,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
             CheckInnerCapForRenderer(sessionId, renderer);
 #endif
             CheckRenderSessionMuteState(sessionId, renderer);
+            CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId, SESSION_OPERATION_CREATE);
         }
     }
     if (ipcStreamInServer != nullptr && config.audioMode == AUDIO_MODE_RECORD) {
@@ -146,6 +147,7 @@ sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &con
         if (capturer != nullptr && capturer->GetSessionId(sessionId) == SUCCESS) {
             InsertCapturer(sessionId, capturer); // for all renderers
             CheckCaptureSessionMuteState(sessionId, capturer);
+            CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId, SESSION_OPERATION_CREATE);
         }
     }
 

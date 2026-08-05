@@ -19,7 +19,6 @@
 #include <set>
 #include <unordered_map>
 #include <string>
-#include <regex>
 #include <cstdlib>
 #include <cerrno>
 #include <climits>
@@ -87,7 +86,7 @@ private:
     void GetCommontAudioModuleInfo(std::shared_ptr<AdapterPipeInfo> &pipeInfo, AudioModuleInfo &audioModuleInfo);
     std::string GetAudioModuleInfoName(std::string &pipeInfoName,
             std::list<std::shared_ptr<AdapterDeviceInfo>> &deviceInfos);
-    bool ValidatePipeInfo(AudioAdapterType adapterType, uint32_t currentRole, const AdapterPipeInfo &pipeInfo);
+    bool ValidatePipeInfo(AudioAdapterType adapterType, AudioPipeRole currentRole, const AdapterPipeInfo &pipeInfo);
 
     std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     AudioCoreConfigManager &configManager_;

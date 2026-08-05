@@ -38,6 +38,7 @@ ohos_shared_library("audio_safe_volume_notification_impl") {
   deps = [ "../../../../audio_policy:audio_policy_common" ]
 
   external_deps = [
+    "ability_base:configuration",
     "ability_base:want",
     "ability_base:zuri",
     "ability_runtime:wantagent_innerkits",

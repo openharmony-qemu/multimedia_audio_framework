@@ -703,7 +703,23 @@ int32_t RendererInClientInner::SetRenderTarget(RenderTarget renderTarget)
     CHECK_AND_RETURN_RET_LOG(renderTarget_ != renderTarget, SUCCESS, "Set same renderTarget");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
     int32_t ret = ERROR;
-    int32_t ipcRet = ipcStream_->SetTarget(renderTarget, ret);
+    int32_t ipcRet = ipcStream_->SetTarget(renderTarget, INVALID_UID, INVALID_STREAM_ID, ret);
+    CHECK_AND_RETURN_RET_LOG(ipcRet == SUCCESS, ret, "ipcStream error: %{public}d", ipcRet);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set render target error: %{public}d", ret);
+    renderTarget_ = renderTarget;
+    return ret;
+}
+
+int32_t RendererInClientInner::SetRenderTarget(RenderTarget renderTarget, int32_t targetUid,
+    uint32_t targetStreamId)
+{
+    bool noTargetParams = (targetUid == INVALID_UID && targetStreamId == INVALID_STREAM_ID);
+    bool hasTargetParams = (targetUid != INVALID_UID && targetStreamId != INVALID_STREAM_ID);
+    CHECK_AND_RETURN_RET_LOG(noTargetParams || hasTargetParams, ERR_INVALID_PARAM,
+        "targetUid and targetStreamId must be set together");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
+    int32_t ret = ERROR;
+    int32_t ipcRet = ipcStream_->SetTarget(renderTarget, targetUid, targetStreamId, ret);
     CHECK_AND_RETURN_RET_LOG(ipcRet == SUCCESS, ret, "ipcStream error: %{public}d", ipcRet);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set render target error: %{public}d", ret);
     renderTarget_ = renderTarget;
@@ -783,15 +799,21 @@ bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
     return true;
 }
 
-void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId)
+void RendererInClientInner::NotifyRouteUpdate(const StreamFlagInfo &flagInfo, const std::string &networkId)
 {
-    AUDIO_DEBUG_LOG("NotifyRouteUpdate: routeFlag=0x%{public}x networkId=%{public}s",
-        routeFlag, networkId.c_str());
+    AUDIO_INFO_LOG("AudioFlag=0x%{public}x staticCheckFlag=0x%{public}x, isSupportUltraFast=%{public}d",
+        flagInfo.audioFlag, flagInfo.staticCheckFlag, flagInfo.isSupportUltraFast);
+
+    if (flagInfo.staticCheckFlag != 0) {
+        staticCheckFlag_ = flagInfo.staticCheckFlag;
+        isSupportUltraFast_ = flagInfo.isSupportUltraFast;
+    }
+
+    uint32_t routeFlag = flagInfo.audioFlag;
     
-    // rendererFlags 更新已通过共享内存 pendingRouteFlag 传递
-    // CheckAndProcessPendingSpanSize 中处理，延迟通知不唤醒暂停客户端
-    
-    // offload speed 处理
+    // rendererFlags' update is in CheckAndProcessPendingSpanSize
+    // Delayed notification does not wake up the paused client.
+    // offload speed operation
     std::lock_guard lock(speedMutex_);
     bool isOffload = routeFlag & (AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD | AUDIO_OUTPUT_FLAG_LOWPOWER);
     bool curIsHdiSpeed = isOffload && (networkId != LOCAL_NETWORK_ID || (eStreamType_ == STREAM_MOVIE &&
@@ -1414,6 +1436,21 @@ void RendererInClientInner::ReportExceptionForInterval()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+void RendererInClientInner::ReportPreferredFrameSizeOutOfRange(int32_t frameSize, size_t minByte, size_t maxByte)
+{
+    std::string appName = AppBundleManager::GetSelfBundleName();
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("APP_NAME", appName);
+    bean->Add("STREAM_TYPE", eStreamType_);
+    bean->Add("TYPE", TYPE_FAST_PREFERRED_FRAME_SIZE_OUT_OF_RANGE);
+    AUDIO_ERR_LOG("ReportPreferredFrameSizeOutOfRange: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, "
+        "frameSize:%{public}d, minByte:%{public}zu, maxByte:%{public}zu",
+        appName.c_str(), eStreamType_, frameSize, minByte, maxByte);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 void RendererInClientInner::HandleStopSuccess()
 {
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
@@ -1642,14 +1679,18 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize, bool isRecr
         "playing audiovivid, frameSize is always 1024.");
     size_t maxCbBufferSize =
         static_cast<size_t>(MAX_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
-    size_t minSize = static_cast<size_t>(JudgeFastStreamByRendererAttr() ?
-        DEFAULT_FAST_CBBUF_IN_USEC : MIN_CBBUF_IN_USEC);
+    size_t minSize = static_cast<size_t>(
+        (staticCheckFlag_ & AUDIO_OUTPUT_FLAG_FAST) ? DEFAULT_FAST_CBBUF_IN_USEC : MIN_CBBUF_IN_USEC);
     size_t minCbBufferSize =
         static_cast<size_t>(minSize * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     size_t preferredCbBufferSize = static_cast<size_t>(frameSize) * sizePerFrameInByte_;
+    bool isOutOfRange = preferredCbBufferSize > maxCbBufferSize || preferredCbBufferSize < minCbBufferSize;
+    if ((staticCheckFlag_ & AUDIO_OUTPUT_FLAG_FAST) && isOutOfRange) {
+        ReportPreferredFrameSizeOutOfRange(frameSize, minCbBufferSize, maxCbBufferSize);
+    }
     SetCacheSize(frameSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
-    cbBufferSize_ = (preferredCbBufferSize > maxCbBufferSize || preferredCbBufferSize < minCbBufferSize) ?
+    cbBufferSize_ = isOutOfRange ?
         (preferredCbBufferSize > maxCbBufferSize ? maxCbBufferSize : minCbBufferSize) : preferredCbBufferSize;
     AUDIO_INFO_LOG("Set CallbackBuffer with byte size: %{public}zu", cbBufferSize_);
     cbBuffer_ = std::make_unique<uint8_t[]>(cbBufferSize_);
@@ -2224,6 +2265,11 @@ void RendererInClientInner::CheckAndReportTimestamp()
         logStopCallCount_ = true;
     }
     lastTriggerTime_ = currentTime;
+}
+
+bool RendererInClientInner::IsUltraFastStreamRequested() const
+{
+    return clientConfig_.ultraFastFlag & ULTRA_REQUESTED;
 }
 
 int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)

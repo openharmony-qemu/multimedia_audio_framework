@@ -473,10 +473,13 @@ int32_t AudioDeviceStatus::UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &upd
         SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(STREAM_MUSIC, updatedDesc);
     audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_MUSIC, volume);
 
-    volume =
-        SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(STREAM_VOICE_CALL, updatedDesc);
-    audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_VOICE_CALL, volume);
     if (!VolumeUtils::IsPCVolumeEnable()) {
+        // No need to set voice call volume for PC nearlink device.
+        volume =
+            SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(STREAM_VOICE_CALL, updatedDesc);
+        audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_VOICE_CALL, volume);
+
+        // Set max volume to voice assistant for nearlink device.
         volume = audioVolumeManager_.GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT);
         audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_VOICE_ASSISTANT, volume);
         audioVolumeManager_.SetStreamMute(STREAM_VOICE_ASSISTANT, false, STREAM_USAGE_UNKNOWN, DEVICE_TYPE_NEARLINK);
@@ -1327,6 +1330,7 @@ void AudioDeviceStatus::OnPrivacyDeviceSelected(DeviceType devType, const std::s
     FetchDeviceInfo info = {
         STREAM_USAGE_VOICE_COMMUNICATION, "OnPrivacyDeviceSelected", ROUTER_TYPE_USER_SELECT
     };
+    info.isRunning = true;
     auto devs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
     auto pDevs = audioDeviceManager_.GetCommRenderPrivacyDevices();
     for (auto &dev : devs) {
@@ -1400,7 +1404,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
 void AudioDeviceStatus::OnConnectFailed(AudioDeviceDescriptor &desc)
 {
     CHECK_AND_RETURN(AudioRouterSelectStrategy::GetInstance().IsPreferredDevice(desc));
-    AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::SELECTED_DEVICE_CONNECT_FAILED};
+    AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::DEVICE_RESELECT};
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnConnectFailed", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnConnectFailed", reason);
 
@@ -1646,6 +1650,7 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     FetchDeviceInfo info = {
         STREAM_USAGE_MEDIA, "ClearPreferredWhenCategoryUpdated_1", ROUTER_TYPE_USER_SELECT
     };
+    info.isRunning = true; // Treat the stream as running for device selection and force-select judgment
     auto mediaFetched = AudioRouterCenter::GetAudioRouterCenter().FetchMediaOutputDevices(info);
     if ((usage & MEDIA) == MEDIA &&
         NeedClearPreferredWhenCategoryUpdated(*existed, {mediaFetched, info.routerType},
@@ -1656,6 +1661,7 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     info = {
         STREAM_USAGE_VOICE_COMMUNICATION, "ClearPreferredWhenCategoryUpdated_2", ROUTER_TYPE_USER_SELECT
     };
+    info.isRunning = true; // Treat the stream as running for device selection and force-select judgment
     auto callFetched = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
     if ((usage & VOICE) == VOICE &&
         NeedClearPreferredWhenCategoryUpdated(*existed, {callFetched, ROUTER_TYPE_NONE},

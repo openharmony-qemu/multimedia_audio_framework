@@ -50,6 +50,22 @@ constexpr uint32_t DEFAULT_FRAME_LEN = 960;
 constexpr uint32_t DEFAULT_SESSION_ID = 100;
 constexpr float DEFAULT_VOLUME = 1.0f;
 constexpr float TEST_VOLUME_1 = 0.5f;
+// Synthetic id whose HDI id base bits (bit12-13, see id_handler.h:69-73) encode
+// HDI_ID_BASE_CAPTURE (= 0x1000u = HDI_ID_BASE_CAPTURE << HDI_ID_BASE_OFFSET).
+// IdHandler::CheckId requires base == HDI_ID_BASE_RENDER (hdi_adapter_info.h:22-25),
+// so this CAPTURE-base id fails CheckId's first guard → HdiAdapterManager::GetRenderSink
+// returns nullptr (hdi_adapter_manager.cpp:143). It is != HDI_INVALID_ID (0xFFFFFFFF),
+// so HpaeVolumeSyncNode::GetRenderSink()'s re-fetch guard does not fire. Used to force
+// SetSinkVolume()'s else branch (audioRendererSink == nullptr).
+constexpr uint32_t BOGUS_CAPTURE_BASE_RENDER_ID = 0x1000u;
+// Compile-time guard against HDI id-layout drift. HDI_ID_BASE_OFFSET (12) is
+// IdHandler-private (id_handler.h:69) and cannot be referenced from tests, but
+// HDI_ID_BASE_CAPTURE (hdi_adapter_info.h:24) IS visible; assert the composed value so
+// a change to the HdiIdBase enum order fails the build instead of silently mis-routing
+// this case (whose whole point is ParseBase != RENDER).
+static_assert(BOGUS_CAPTURE_BASE_RENDER_ID == static_cast<uint32_t>(HDI_ID_BASE_CAPTURE) << 12,
+    "BOGUS_CAPTURE_BASE_RENDER_ID must equal HDI_ID_BASE_CAPTURE(1) << 12; update this "
+    "constant and the comment above if the HDI id base/offset encoding changed");
 
 /**
  * @tc.name  : constructHpaeVolumeSyncNode_001
@@ -731,12 +747,14 @@ HWTEST_F(HpaeVolumeSyncNodeTest, privateMember_renderId_initial_001, TestSize.Le
 }
 
 /**
- * @tc.name  : getRenderSink_invalidId_001
+ * @tc.name  : getRenderSink_ctorAssignedId_001
  * @tc.type  : FUNC
  * @tc.number: HpaeVolumeSyncNodeTest_026
- * @tc.desc  : Test GetRenderSink when renderId_ is HDI_INVALID_ID (calls HdiAdapterManager)
+ * @tc.desc  : Test GetRenderSink with a ctor-assigned (non-INVALID) renderId_: the re-fetch
+ *             guard (renderId_ == HDI_INVALID_ID) is skipped, exercising the cached path.
+ *             The TRUE/re-fetch branch is covered by #039.
  */
-HWTEST_F(HpaeVolumeSyncNodeTest, getRenderSink_invalidId_001, TestSize.Level0)
+HWTEST_F(HpaeVolumeSyncNodeTest, getRenderSink_ctorAssignedId_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
@@ -749,10 +767,11 @@ HWTEST_F(HpaeVolumeSyncNodeTest, getRenderSink_invalidId_001, TestSize.Level0)
     std::shared_ptr<HpaeVolumeSyncNode> volumeSyncNode = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
     EXPECT_NE(volumeSyncNode->renderId_, HDI_INVALID_ID);
 
-    // Call GetRenderSink - should try to get ID from HdiAdapterManager
-    // In test environment, no real adapter, so it returns nullptr
+    // renderId_ is already valid (ctor-assigned), so GetRenderSink skips its re-fetch
+    // guard and uses the cached id (the TRUE/re-fetch path is covered by #039).
+    // In the test environment no real adapter exists, so the cached lookup returns nullptr.
     auto sink = volumeSyncNode->GetRenderSink();
-    // renderId_ should have been updated (no longer HDI_INVALID_ID)
+    // On the cached path renderId_ is unchanged (still non-INVALID).
     EXPECT_NE(volumeSyncNode->renderId_, HDI_INVALID_ID);
 }
 
@@ -1072,5 +1091,121 @@ HWTEST_F(HpaeVolumeSyncNodeTest, signalProcess_epsilonVolume_001, TestSize.Level
     std::vector<HpaePcmBuffer *> inputs = { &pcmBuffer };
     HpaePcmBuffer *result = volumeSyncNode->SignalProcess(inputs);
     EXPECT_EQ(result, &pcmBuffer);
+}
+
+/**
+ * @tc.name  : dfxNodeAdminCallback_constructDestruct_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeVolumeSyncNodeTest_038
+ * @tc.desc  : Cover ENABLE_HIDUMP_DFX TRUE bodies in ctor (OnNotifyDfxNodeAdmin(true, ...))
+ *             and dtor (OnNotifyDfxNodeAdmin(false, ...)) by injecting a live statusCallback.
+ */
+HWTEST_F(HpaeVolumeSyncNodeTest, dfxNodeAdminCallback_constructDestruct_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.deviceClass = "primary";
+
+    // Inject a live statusCallback so GetNodeStatusCallback().lock() succeeds in ctor/dtor.
+    auto callback = std::make_shared<NiceMock<MockNodeCallback>>();
+    nodeInfo.statusCallback = callback;
+
+    // Each EXPECT_CALL discriminates its own branch body: deleting the matching
+    // production line makes the corresponding Times(1) fail.
+    EXPECT_CALL(*callback, OnNotifyDfxNodeAdmin(true, _)).Times(1);
+    EXPECT_CALL(*callback, OnNotifyDfxNodeAdmin(false, _)).Times(1);
+    {
+        // Construction triggers the true branch; destruction (on scope exit) triggers
+        // the false branch while callback's shared_ptr is still alive.
+        std::shared_ptr<HpaeVolumeSyncNode> volumeSyncNode = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
+        EXPECT_NE(volumeSyncNode, nullptr);
+    }
+}
+
+/**
+ * @tc.name  : getRenderSink_forcedInvalidId_resets_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeVolumeSyncNodeTest_039
+ * @tc.desc  : Cover GetRenderSink TRUE body (renderId_ == HDI_INVALID_ID) by forcing renderId_
+ *             back to HDI_INVALID_ID after construction, then invoking GetRenderSink.
+ */
+HWTEST_F(HpaeVolumeSyncNodeTest, getRenderSink_forcedInvalidId_resets_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.deviceClass = "primary";
+
+    std::shared_ptr<HpaeVolumeSyncNode> volumeSyncNode = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
+    ASSERT_NE(volumeSyncNode, nullptr);
+    // Constructor already assigned a valid (non-INVALID) id via HdiAdapterManager.
+    EXPECT_NE(volumeSyncNode->renderId_, HDI_INVALID_ID);
+
+    // Force the TRUE-branch precondition so GetRenderSink re-runs HdiAdapterManager::GetId.
+    volumeSyncNode->renderId_ = HDI_INVALID_ID;
+    EXPECT_EQ(volumeSyncNode->renderId_, HDI_INVALID_ID);
+
+    // Returned shared_ptr<IAudioRenderSink> is intentionally not bound/asserted: it is the
+    // real HdiAdapterManager::GetRenderSink create path (device-dependent). The discriminating
+    // signal here is the renderId_ side effect, asserted below.
+    volumeSyncNode->GetRenderSink();
+    // Discriminating: if the TRUE body assignment line is removed, renderId_ stays INVALID.
+    EXPECT_NE(volumeSyncNode->renderId_, HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : setSinkVolume_nullSink_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeVolumeSyncNodeTest_040
+ * @tc.desc  : Cover SetSinkVolume else branch (sink == nullptr) by forcing renderId_ to
+ *             BOGUS_CAPTURE_BASE_RENDER_ID (CAPTURE base: ≠ RENDER → GetRenderSink returns nullptr,
+ *             ≠ INVALID → re-fetch guard skipped). Branch-coverage case; the deviceClass note and
+ *             branch-discrimination rationale are documented inline in the test body below.
+ */
+HWTEST_F(HpaeVolumeSyncNodeTest, setSinkVolume_nullSink_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.deviceClass = "primary";
+    nodeInfo.sessionId = DEFAULT_SESSION_ID;
+
+    std::shared_ptr<HpaeVolumeSyncNode> volumeSyncNode = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
+    ASSERT_NE(volumeSyncNode, nullptr);
+
+    // Force renderId_ to a CAPTURE-base bogus id (see BOGUS_CAPTURE_BASE_RENDER_ID comment):
+    // IdHandler::CheckId(_, HDI_ID_BASE_RENDER) fails on ParseBase mismatch (first guard),
+    // so HdiAdapterManager::GetRenderSink returns nullptr. The id is not HDI_INVALID_ID, so
+    // GetRenderSink()'s own re-fetch guard (if (renderId_ == HDI_INVALID_ID)) does not fire
+    // and cannot overwrite the bogus value with a valid one.
+    // NOTE on deviceClass: the ctor hardcodes renderId_ to the voip render id regardless of
+    // deviceClass, so this bogus-id overwrite — not deviceClass — is what nulls the sink;
+    // merely changing deviceClass would leave renderId_ valid and the sink non-null.
+    volumeSyncNode->renderId_ = BOGUS_CAPTURE_BASE_RENDER_ID;
+
+    // Precondition lock (PRIMARY discriminator): sink must be null, proving SetSinkVolume will
+    // take the else branch rather than the if branch. Deleting this EXPECT_EQ does not affect
+    // coverage; it exists to fail-fast if setup forgets to corrupt renderId_ (sink would then
+    // be non-null and the case would silently cover the wrong branch).
+    EXPECT_EQ(volumeSyncNode->GetRenderSink(), nullptr);
+
+    // Invoke private SetSinkVolume (-fno-access-control enabled). With sink == nullptr the if
+    // guard is false → else body runs (the AUDIO_WARNING_LOG line targeted by this case).
+    volumeSyncNode->SetSinkVolume(TEST_VOLUME_1);
+
+    // Guard delete-line discrimination: trivial assertion proving the process survived the call.
+    // If the production `if (audioRendererSink != nullptr)` guard were removed, the if-body would
+    // dereference null via SetVolume() → sanitizer abort → this line would never execute → fail.
+    EXPECT_EQ(volumeSyncNode->GetSessionId(), DEFAULT_SESSION_ID);
 }
 }  // namespace

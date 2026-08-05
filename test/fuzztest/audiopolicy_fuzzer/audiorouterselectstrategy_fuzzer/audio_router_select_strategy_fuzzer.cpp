@@ -306,9 +306,6 @@ void FuzzFollowMediaInputBranches(FuzzedDataProvider &fdp)
     SourceType effectiveSourceType = sourceType;
 
     SeedFollowStrategyState(strategy, fdp, uid, streamId);
-    strategy.GetMediaInputDeviceWhenHasRunningStream(effectiveSourceType, category);
-    strategy.GetMediaInputDeviceWhenNoRunningStream(uid, category, sourceType);
-    strategy.GetMediaInputDeviceWhenNoRunningStream(INVALID_UID, category, sourceType);
     strategy.GetMediaInputDeviceByPriority(uid, category, fdp.ConsumeBool());
     strategy.GetMediaInputDevice(uid, streamId, sourceType);
     strategy.SetMediaInputDevice(uid, INVALID_STREAM_ID, fdp.ConsumeBool() ? nullptr : MakeDevice(fdp));

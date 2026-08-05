@@ -2701,7 +2701,10 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_.store(on);
     bool isMuted = (isMuted_ || on || muteFlag_);
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
+    float volume = audioServerBuffer_ ? audioServerBuffer_->GetStreamVolume() : 1.0f;
+    bool isMutedOrVolumeZero = (isMuted ||
+        std::abs(volume - 0.0f) <= std::numeric_limits<float>::epsilon());
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMutedOrVolumeZero,
         std::weak_ptr<RendererInServer>(shared_from_this()));
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
@@ -2814,7 +2817,10 @@ int32_t RendererInServer::SetMute(bool isMute)
     isMuted_ = isMute;
     AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
     bool isMuted = (isMute || silentModeAndMixWithOthers_ || muteFlag_);
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
+    float volume = audioServerBuffer_ ? audioServerBuffer_->GetStreamVolume() : 1.0f;
+    bool isMutedOrVolumeZero = (isMuted ||
+        std::abs(volume - 0.0f) <= std::numeric_limits<float>::epsilon());
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMutedOrVolumeZero,
         std::weak_ptr<RendererInServer>(shared_from_this()));
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
@@ -3050,7 +3056,10 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
     AudioVolume::GetInstance()->SetNonInterruptMute(streamIndex_, muteFlag);
 
     bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag);
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
+    float volume = audioServerBuffer_ ? audioServerBuffer_->GetStreamVolume() : 1.0f;
+    bool isMutedOrVolumeZero = (isMuted ||
+        std::abs(volume - 0.0f) <= std::numeric_limits<float>::epsilon());
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMutedOrVolumeZero,
         std::weak_ptr<RendererInServer>(shared_from_this()));
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
@@ -3388,21 +3397,37 @@ bool RendererInServer::IsMovieStream()
     processConfig_.rendererInfo.originalFlag == AUDIO_FLAG_PCM_OFFLOAD;
 }
 
-int32_t RendererInServer::SetTarget(RenderTarget target, int32_t &ret)
+int32_t RendererInServer::SetTarget(RenderTarget target, int32_t targetUid, uint32_t targetStreamId, int32_t &ret)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
         ERR_SYSTEM_PERMISSION_DENIED, "verify system permission failed");
-    if (target == lastTarget_) {
+    bool noTargetParams = (targetUid == INVALID_UID && targetStreamId == INVALID_STREAM_ID);
+    bool hasTargetParams = (targetUid != INVALID_UID && targetStreamId != INVALID_STREAM_ID);
+    if (!noTargetParams && !hasTargetParams) {
+        AUDIO_ERR_LOG("targetUid and targetStreamId must be set together");
+        ret = ERR_INVALID_PARAM;
+        return ret;
+    }
+    if (target == NORMAL_PLAYBACK) {
+        targetUid = INVALID_UID;
+        targetStreamId = INVALID_STREAM_ID;
+        noTargetParams = true;
+    }
+    if (target == lastTarget_ && noTargetParams) {
         ret = SUCCESS;
         return ret;
     }
     if (target == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
         auto tokenId = IPCSkeleton::GetCallingTokenID();
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyPermission(INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION, tokenId),
-            ERR_PERMISSION_DENIED, "verify permission failed");
+        if (!PermissionUtil::VerifyPermission(INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION, tokenId)) {
+            AUDIO_ERR_LOG("verify permission failed");
+            ret = ERR_PERMISSION_DENIED;
+            return ret;
+        }
     }
     if (status_ == I_STATUS_IDLE || status_ == I_STATUS_PAUSED || status_ == I_STATUS_STOPPED) {
-        ret = CoreServiceHandler::GetInstance().SetRendererTarget(target, lastTarget_, streamIndex_);
+        ret = CoreServiceHandler::GetInstance().SetRendererTarget(target, lastTarget_, streamIndex_,
+            targetUid, targetStreamId);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Injector::SetRendererTarget failed");
         lastTarget_ = target;
         ClearInnerCapBufferForInject();
@@ -3415,6 +3440,7 @@ int32_t RendererInServer::SetTarget(RenderTarget target, int32_t &ret)
 void RendererInServer::ClearInnerCapBufferForInject()
 {
     CHECK_AND_RETURN(lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE);
+    std::lock_guard<std::mutex> lock(dupMutex_);
     for (auto &capInfo : captureInfos_) {
         CHECK_AND_CONTINUE(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
             innerCapIdToDupStreamCallbackMap_.end());

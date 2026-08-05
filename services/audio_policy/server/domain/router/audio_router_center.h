@@ -29,6 +29,7 @@
 #include "audio_strategy_router_parser.h"
 #include "audio_usage_strategy_parser.h"
 #include "wireless_conflict_handler.h"
+#include "input_conflict_handler.h"
 #include <mutex>
 #include <unordered_map>
 
@@ -115,6 +116,7 @@ private:
         }
 
         wirelessConflictHandler_ = std::make_shared<WirelessConflictHandler>();
+        inputConflictHandler_ = std::make_shared<InputConflictHandler>();
     }
 
     ~AudioRouterCenter() {}
@@ -133,7 +135,7 @@ private:
         const RouterType &bypassWithSco = RouterType::ROUTER_TYPE_NONE);
     bool HasScoDevice();
     vector<shared_ptr<AudioDeviceDescriptor>> FetchRingRenderDevices(StreamUsage streamUsage, int32_t clientUID,
-        RouterType &routerType);
+        RouterType &routerType, const RouterType &bypassType = RouterType::ROUTER_TYPE_NONE);
     void DealRingRenderRouters(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         FetchDeviceInfo &info, RouterType &routerType);
     shared_ptr<AudioDeviceDescriptor> FetchCallCaptureDevice(SourceType sourceType, int32_t clientUID,
@@ -184,8 +186,9 @@ private:
     void StartArbiterContext(const FetchDeviceInfo &deviceInfo);
     void StartArbiterContext();
     void StopArbiterContext();
-    bool HasWirelessDevicesConnected();
+    bool HasSpecificDevicesConnected();
     std::shared_ptr<WirelessConflictHandler> wirelessConflictHandler_;
+    std::shared_ptr<InputConflictHandler> inputConflictHandler_;
     std::mutex routerMutex_;
 
     template<typename Func>

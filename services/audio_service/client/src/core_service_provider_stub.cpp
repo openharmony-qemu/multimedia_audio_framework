@@ -112,11 +112,11 @@ int32_t CoreServiceProviderWrapper::A2dpOffloadGetRenderPosition(uint32_t &delay
 }
 
 int32_t CoreServiceProviderWrapper::SetRendererTarget(uint32_t target, uint32_t lastTarget,
-    uint32_t sessionId, int32_t &ret)
+    uint32_t sessionId, int32_t targetUid, uint32_t targetStreamId, int32_t &ret)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "Injector::coreServiceWorker_ is null");
     ret = coreServiceWorker_->SetRendererTarget(static_cast<RenderTarget>(target),
-        static_cast<RenderTarget>(lastTarget), sessionId);
+        static_cast<RenderTarget>(lastTarget), sessionId, targetUid, targetStreamId);
     return SUCCESS;
 }
 

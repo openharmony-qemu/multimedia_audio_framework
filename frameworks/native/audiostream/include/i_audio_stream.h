@@ -27,6 +27,7 @@
 #include "audio_errors.h"
 #include "audio_debug_info.h"
 #include "audio_shared_memory.h"
+#include "stream_flag_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -215,6 +216,12 @@ public:
     virtual void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) = 0;
     virtual int32_t SetRenderTarget(RenderTarget target) { return ERR_NOT_SUPPORTED; }
+    virtual int32_t SetRenderTarget(RenderTarget target, int32_t targetUid, uint32_t targetStreamId)
+    {
+        (void)targetUid;
+        (void)targetStreamId;
+        return SetRenderTarget(target);
+    }
     virtual RenderTarget GetRenderTarget() { return NORMAL_PLAYBACK; }
     virtual int32_t GetKeepRunning(bool &keepRunning) const { return -1; }
 
@@ -384,7 +391,7 @@ public:
 
     virtual void ResetFirstFrameState() {}
 
-    virtual void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) {}
+    virtual void NotifyRouteUpdate(const StreamFlagInfo &flagInfo, const std::string &networkId) {}
 
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
 

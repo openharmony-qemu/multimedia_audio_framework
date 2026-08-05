@@ -555,6 +555,7 @@ int32_t AudioZoneService::FindAudioZoneByKey(int32_t uid, const std::string &dev
         }
     }
 #ifdef MULTI_USER_ZONE
+    CHECK_AND_RETURN_RET(uid >= 0, 0);
     int32_t userId = -1;
     ErrCode errCode = AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);
     CHECK_AND_RETURN_RET_LOG(errCode == ERR_OK, 0, "get userId failed for uid %{public}d", uid);
@@ -989,7 +990,14 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZoneService::GetAvailab
 
     if (isSystemService) {
         devices = globalDevices;
-        devices.insert(devices.end(), zoneDevices.begin(), zoneDevices.end());
+        for (const auto &zoneDevice : zoneDevices) {
+            bool hasSameDevice = std::any_of(devices.begin(), devices.end(),
+                [&zoneDevice](const std::shared_ptr<AudioDeviceDescriptor> &device) {
+                    return device != nullptr && device->IsSameDeviceDescPtr(zoneDevice);
+                });
+            CHECK_AND_CONTINUE(!hasSameDevice);
+            devices.push_back(zoneDevice);
+        }
     } else {
         JUDGE_AND_WARNING_LOG(zoneDevices.empty(), "zoneDevices for usage %{public}d is empty", usage);
         devices = zoneDevices;

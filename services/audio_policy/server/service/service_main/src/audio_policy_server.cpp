@@ -100,6 +100,8 @@ constexpr uid_t UID_AVSESSION_SERVICE = 6700;
 const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
 const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
+const char* MUTE_VOIP_PLAYBACK_PERMISSION = "ohos.permission.MUTE_VOIP_PLAYBACK";
+const char* MUTE_VOIP_CAPTURE_PERMISSION = "ohos.permission.MUTE_VOIP_CAPTURE";
 const std::string CALLER_NAME = "audio_server";
 static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
 const std::string HIVIEWCARE_PERMISSION = "ohos.permission.ACCESS_HIVIEWCARE";
@@ -359,8 +361,12 @@ void AudioPolicyServer::OnStart()
 
 void AudioPolicyServer::AddSystemAbilityListeners()
 {
-    AddSystemAbilityListener(ACCESS_TOKEN_MANAGER_SERVICE_ID);
-    AddSystemAbilityListener(INPUT_METHOD_SYSTEM_ABILITY_ID);
+    /**
+     * NOTICE:
+     * If the listening SA has already started, it immediately runs a callback on the main thread.
+     * Don't randomly change the current listening order.
+     * Otherwise, OnStart() might take too long.
+     */
     AddSystemAbilityListener(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
@@ -377,6 +383,8 @@ void AudioPolicyServer::AddSystemAbilityListeners()
 #ifdef SUPPORT_USER_ACCOUNT
     AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
 #endif
+    AddSystemAbilityListener(ACCESS_TOKEN_MANAGER_SERVICE_ID);
+    AddSystemAbilityListener(INPUT_METHOD_SYSTEM_ABILITY_ID);
 }
 
 // Adds SA listeners that should be registered only after audioserver startup.
@@ -1252,6 +1260,8 @@ int32_t AudioPolicyServer::SetAdjustVolumeForZone(int32_t zoneId)
 int32_t AudioPolicyServer::SetVoipRendererMute(int32_t appUid, int64_t streamId, bool muted,
     const sptr<IRemoteObject> &callerObj)
 {
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MUTE_VOIP_PLAYBACK_PERMISSION),
+        ERR_PERMISSION_DENIED, "No mute voip permission");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
         ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(appUid, streamId), ERR_INVALID_PARAM,
@@ -1268,6 +1278,8 @@ int32_t AudioPolicyServer::SetVoipRendererMute(int32_t appUid, int64_t streamId,
 int32_t AudioPolicyServer::SetVoipCapturerMute(int32_t appUid, int64_t streamId, bool muted,
     const sptr<IRemoteObject> &callerObj)
 {
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MUTE_VOIP_CAPTURE_PERMISSION),
+        ERR_PERMISSION_DENIED, "No mute voip permission");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
         ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(appUid, streamId), ERR_INVALID_PARAM,
@@ -2121,6 +2133,8 @@ int32_t AudioPolicyServer::GetInputDevice(const sptr<AudioCapturerFilter> &audio
     }
     deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
+
+    AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
@@ -3015,6 +3029,8 @@ int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateInterrupt(int32_t zoneId
 int32_t AudioPolicyServer::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
 {
     if (interruptService_ != nullptr) {
+        bool ret = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppConcurrencyMode: No system permission");
         return StandaloneModeManager::GetInstance().SetAppConcurrencyMode(IPCSkeleton::GetCallingPid(), appUid, mode);
     }
     return ERR_UNKNOWN;
@@ -3339,7 +3355,7 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
 }
 
 int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    uint32_t &flag, uint32_t &sessionId, std::string &networkId)
+    StreamFlagInfo &flagInfo, uint32_t &sessionId, std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr && eventEntry_ != nullptr, ERR_NULL_POINTER,
         "Core service not inited");
@@ -3348,10 +3364,10 @@ int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescr
         std::string bundleName = AudioBundleManager::GetBundleName();
         streamDesc->SetBundleName(bundleName);
     }
-    uint32_t flagIn = AUDIO_OUTPUT_FLAG_NORMAL;
+    StreamFlagInfo flagInfoIn;
     std::string networkIdIn = LOCAL_NETWORK_ID;
-    int32_t ret = eventEntry_->CreateRendererClient(streamDesc, flagIn, sessionId, networkIdIn);
-    flag = flagIn;
+    int32_t ret = eventEntry_->CreateRendererClient(streamDesc, flagInfoIn, sessionId, networkIdIn);
+    flagInfo = flagInfoIn;
     networkId = networkIdIn;
     return ret;
 }
@@ -3408,8 +3424,9 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
     if (streamChangeInfoIn.audioCapturerChangeInfo.capturerInfo.sourceType == SOURCE_TYPE_VOICE_DOWNLINK &&
         queryBundleNameListCallback_ != nullptr) {
         uint32_t sessionId = streamChangeInfoIn.audioCapturerChangeInfo.sessionId;
+        std::string phoneNum = streamChangeInfoIn.audioCapturerChangeInfo.capturerInfo.cellularRecordPhoneNum;
         AUDIO_INFO_LOG("About to start voice broadcast thread for sessionId: %{public}u", sessionId);
-        queryBundleNameListCallback_->StartVoiceBroadcast(sessionId);
+        queryBundleNameListCallback_->StartVoiceBroadcast(sessionId, phoneNum);
         AUDIO_INFO_LOG("StartVoiceBroadcast completed for sessionId: %{public}u", sessionId);
     }
     RegisterClientDeathRecipient(object, TRACKER_CLIENT);
@@ -5240,12 +5257,14 @@ int32_t AudioPolicyServer::SetDeviceVolumeBehavior(const std::string &networkId,
         return ERR_PERMISSION_DENIED;
     }
     FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "SetDeviceVolumeBehavior_1", ROUTER_TYPE_USER_SELECT};
+    info.isRunning = true;
     auto mediaDeviceList = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!mediaDeviceList.empty(), ERROR, "mediaDeviceList is empty");
     std::shared_ptr<AudioDeviceDescriptor> newMediaDescriptor = mediaDeviceList.front();
     CHECK_AND_RETURN_RET_LOG(newMediaDescriptor != nullptr, ERROR, "newMediaDescriptor is nullptr");
 
     info = { STREAM_USAGE_VOICE_COMMUNICATION, "SetDeviceVolumeBehavior_2", ROUTER_TYPE_USER_SELECT};
+    info.isRunning = true;
     auto callDeviceList = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!callDeviceList.empty(), ERROR, "callDeviceList is empty");
     std::shared_ptr<AudioDeviceDescriptor> newCallDescriptor = callDeviceList.front();
@@ -5962,6 +5981,12 @@ int32_t AudioPolicyServer::SetLoopbackVolume(float volume, bool &ret)
         "SetLoopbackVolume invalid volume %{public}f", volume);
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
+    bool isBack = true;
+    const int32_t result = GetAppBackGroundState(callerPid, isBack);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !isBack, SUCCESS,
+        "SetLoopbackVolume skipped, callingPid %{public}d, result %{public}d, isBack %{public}d",
+        callerPid, result, isBack);
+
     AUDIO_INFO_LOG("SetLoopbackVolume callingPid %{public}d, volume %{public}f", callerPid, volume);
     loopbackVolume_.store(volume, std::memory_order_relaxed);
     ret = true;
@@ -6421,6 +6446,24 @@ int32_t AudioPolicyServer::DestroyLoopback(int32_t type, int32_t &ret)
     CHECK_AND_RETURN_RET_LOG(loopbackManager_ != nullptr, ERR_NULL_POINTER, "loopbackManager is nullptr");
     int32_t pid = IPCSkeleton::GetCallingPid();
     ret = loopbackManager_->DestroyLoopback(static_cast<LoopbackType>(type), pid);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetAppBackGroundState(int32_t pid, bool &isBack)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    int32_t callingPid = IPCSkeleton::GetCallingPid();
+    if (callingUid != MEDIA_SERVICE_UID && pid != callingPid) {
+        AUDIO_ERR_LOG("permission denied, callingUid: %{public}d, callingPid: %{public}d, pid: %{public}d",
+            callingUid, callingPid, pid);
+        return ERR_PERMISSION_DENIED;
+    }
+    AppExecFwk::RunningProcessInfo processInfo;
+    int32_t ret = appManager_.GetRunningProcessInfoByPid(pid, processInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == AppExecFwk::AppMgrResultCode::RESULT_OK, ERR_INVALID_PARAM,
+        "GetRunningProcessInfoByPid failed, pid: %{public}d", pid);
+    isBack = !(processInfo.state_ == AppExecFwk::AppProcessState::APP_STATE_FOREGROUND);
+    AUDIO_INFO_LOG("pid: %{public}d, isBack: %{public}d", pid, isBack);
     return SUCCESS;
 }
 

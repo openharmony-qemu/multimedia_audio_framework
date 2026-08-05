@@ -29,8 +29,6 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 static constexpr uint32_t REQUEST_DATA_TRY_COUNTS = 3;
-static constexpr uint32_t CACHE_FRAME_DEFAULT_LEN = 3;
-static constexpr uint32_t CACHE_FRAME_SAMPLE_RATE_11025_LEN = 2;
 
 AudioInputNode::AudioInputNode(AudioFormat format) : AudioNode(AudioNodeType::NODE_TYPE_INPUT, format)
 {
@@ -63,7 +61,7 @@ int32_t AudioInputNode::Init()
     } else {
         inPcmData_.ResizePcmBuffer(inPcmFormat);
         outPcmData_.ResizePcmBuffer(inPcmFormat);
-        singleRequestSize_ = inPcmData_.GetDataSize();
+        singleRequestSize_ = outPcmData_.GetDataSize();
     }
     return SUCCESS;
 }
@@ -79,6 +77,7 @@ int32_t AudioInputNode::Flush()
     AUDIO_INFO_LOG("AudioInputNode::Flush");
     cachedBuffer_.ClearBuffer();
     SetAudioNodeDataFinishedFlag(false);
+    nextNodeNeedDataLength_ = 0;
     return SUCCESS;
 }
 
@@ -86,19 +85,20 @@ int32_t AudioInputNode::InitCacheBuffer(uint32_t needDataLength)
 {
     int32_t ret = outPcmData_.ResizePcmBuffer(outPcmData_.GetPcmBufferFormat(), needDataLength);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ERROR, "outPcmData Failed to initialize storage.");
-    uint32_t singleRequestSize =
-        singleRequestSize_ >= outPcmData_.GetDataSize() ? singleRequestSize_ : outPcmData_.GetDataSize();
-    
-    uint32_t frames = GetAudioNodeFormat().rate == AudioSamplingRate::SAMPLE_RATE_11025
-                            ? CACHE_FRAME_SAMPLE_RATE_11025_LEN
-                            : CACHE_FRAME_DEFAULT_LEN;
-    cachedBuffer_.ResizeBuffer(singleRequestSize * frames);
-    singleRequestSize = needDataLength >= inPcmData_.GetDataDuration() ? needDataLength : inPcmData_.GetDataDuration();
-    ret = inPcmData_.ResizePcmBuffer(inPcmData_.GetPcmBufferFormat(), singleRequestSize);
-    if (GetAudioNodeFormat().rate != AudioSamplingRate::SAMPLE_RATE_11025) {
-        singleRequestSize_ = inPcmData_.GetDataSize();
+
+    if (outPcmData_.GetDataSize() > singleRequestSize_) {
+        singleRequestSize_ = outPcmData_.GetDataSize();
     }
+    cachedBuffer_.ResizeBuffer(singleRequestSize_);
+
+    uint32_t inDuration = needDataLength >= inPcmData_.GetDataDuration() ?
+        needDataLength : inPcmData_.GetDataDuration();
+    ret = inPcmData_.ResizePcmBuffer(inPcmData_.GetPcmBufferFormat(), inDuration);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ERROR, "inPcmData Failed to initialize storage.");
+    AUDIO_INFO_LOG("cachedBufferSize:%{public}u, singleRequestSize_:%{public}u, "
+        "inPcmDataSize:%{public}u, outPcmDataSize:%{public}u",
+        cachedBuffer_.GetRestSpace(), singleRequestSize_, inPcmData_.GetDataSize(), outPcmData_.GetDataSize());
+
     return SUCCESS;
 }
 
@@ -120,6 +120,7 @@ int32_t AudioInputNode::DoProcess(uint32_t needDataLength)
         int32_t ret = InitCacheBuffer(needDataLength);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ERROR, "Failed to initialize storage.");
         nextNodeNeedDataLength_ = needDataLength;
+        AUDIO_INFO_LOG("AudioInputNode nextNodeNeedDataLength_:%{public}u", nextNodeNeedDataLength_);
     }
     CHECK_AND_RETURN_RET(GetDataFromUser() == SUCCESS, ERR_WRITE_FAILED, "Get data from user fail");
     CHECK_AND_RETURN_RET(GeneratePushBuffer() == SUCCESS, ERR_WRITE_FAILED, "Get data from buffer fail");
@@ -170,6 +171,7 @@ int32_t AudioInputNode::GetDataFromUser()
     }
 
     uint32_t needSize = cachedBuffer_.GetRestSpace();
+    AUDIO_DEBUG_LOG("needSize:%{public}u, singleRequestSize_:%{public}u.", needSize, singleRequestSize_);
     if (needSize < singleRequestSize_) {
         return SUCCESS;
     }
@@ -190,6 +192,7 @@ int32_t AudioInputNode::GetDataFromUser()
                 (static_cast<uint32_t>(getSize) <= inPcmData_.GetDataSize() - singleGetSize),
                 ERROR, "OnRequestDataCallBack error, ret = %{public}d", singleGetSize);
             singleGetSize += static_cast<uint32_t>(getSize);
+            AUDIO_DEBUG_LOG("RequestData getSize:%{public}d, singleGetSize:%{public}u.", getSize, singleGetSize);
         }
 
         if ((singleGetSize == inPcmData_.GetDataSize()) || isFinished) {

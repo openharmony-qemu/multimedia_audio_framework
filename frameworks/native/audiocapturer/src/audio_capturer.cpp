@@ -40,6 +40,7 @@
 #include "audio_debug_callback.h"
 #include "stream_dfx_manager.h"
 #include "securec.h"
+#include "ipc_skeleton.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
@@ -666,8 +667,9 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         return nullptr;
     }
     capturer->SetCapturerInfoByOptions(capturerOptions, appInfo);
-    if (capturer->SetParams(params) != SUCCESS) {
-        AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
+    int32_t setParamsRet = capturer->SetParams(params);
+    if (setParamsRet != SUCCESS) {
+        AudioCapturer::SendCapturerCreateError(sourceType, setParamsRet);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CREATE_OPERATION_FAILED, "SetParams failed", true);
         capturer = nullptr;
@@ -716,6 +718,8 @@ int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCap
 void AudioCapturer::SendCapturerCreateError(const SourceType &sourceType,
     const int32_t &errorCode)
 {
+    CHECK_AND_RETURN_LOG(ShouldReportCapturerCreateError(errorCode),
+        "No need to report capturer create error for errorCode:%{public}d", errorCode);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_CREATE_ERROR_STATS,
         Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
@@ -724,6 +728,11 @@ void AudioCapturer::SendCapturerCreateError(const SourceType &sourceType,
     bean->Add("STREAM_TYPE", sourceType);
     bean->Add("ERROR_CODE", errorCode);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+bool AudioCapturer::ShouldReportCapturerCreateError(const int32_t &errorCode)
+{
+    return errorCode != ERR_PERMISSION_DENIED;
 }
 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)
@@ -3457,6 +3466,12 @@ int32_t AudioCapturerPrivate::SetIndependentAudioSessionStrategy(
         PermissionUtil::VerifySystemPermission()) {
         audioInterrupt_.behaviorFlags_.aibaseMuteVoip = true;
         AUDIO_INFO_LOG("Capturer id: %{public}d activated AIBASE_MUTE_VOIP success", sessionID_);
+    }
+    if ((behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_CAPTURE_MIX_WITH_OTHERS)) &&
+        PermissionUtil::VerifyPermission(VOIP_CAPTURE_CONCURRENCY_PERMISSION, IPCSkeleton::GetCallingTokenID()) &&
+        PermissionUtil::VerifySystemPermission()) {
+        audioInterrupt_.behaviorFlags_.voipCaptureMixWithOthers = true;
+        AUDIO_INFO_LOG("Capturer id: %{public}d activated VOIP_CAPTURE_MIX_WITH_OTHERS success", sessionID_);
     }
     audioInterrupt_.independentStrategy = strategy;
     AUDIO_INFO_LOG("Capturer id: %{public}d set independentStrategy: %{public}d",

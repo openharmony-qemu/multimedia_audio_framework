@@ -866,6 +866,7 @@ void AudioRouterInfra::ExcludeDevice(const std::shared_ptr<AudioDeviceSimpleDesc
 void AudioRouterInfra::UnexcludeDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
     AudioDeviceUsage usage)
 {
+    CHECK_AND_RETURN_LOG(!isBTReconnecting_, "skip when recovering");
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     if (device == nullptr) {
         return;
@@ -921,6 +922,21 @@ bool AudioRouterInfra::IsDeviceExcluded(const std::shared_ptr<AudioDeviceSimpleD
     return (it->second & usage) != 0;
 }
 
+void AudioRouterInfra::SetBtConnecting(bool flag)
+{
+    isBTReconnecting_ = flag;
+}
+
+int32_t AudioRouterInfra::ErasePreferredDeviceByType(const PreferredType preferredType)
+{
+    CHECK_AND_RETURN_RET_LOG(!isBTReconnecting_, SUCCESS, "skip when recovering");
+    auto type = static_cast<Media::MediaMonitor::PreferredType>(preferredType);
+    int32_t ret = Media::MediaMonitor::MediaMonitorManager::GetInstance().ErasePreferredDeviceByType(type);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+        "Erase preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
+    return SUCCESS;
+}
+
 void AudioRouterInfra::SetScoExcluded(bool scoExcluded)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -949,7 +965,7 @@ void AudioRouterInfra::WriteExcludeOutputSysEvents(const AudioDeviceUsage audioD
         bean->Add("EXCLUSION_STATUS", UNEXCLUDED);
     }
     bean->Add("AUDIO_DEVICE_USAGE", static_cast<int32_t>(audioDevUsage));
-    bean->Add("DEVICE_TYPE", 0);
+    bean->Add("DEVICE_TYPE", deviceDesc->deviceType_);
     bean->Add("NETWORKID", deviceDesc->networkId_);
     bean->Add("ADDRESS", deviceDesc->macAddress_);
     bean->Add("DEVICE_NAME", "");
@@ -960,7 +976,21 @@ void AudioRouterInfra::WriteExcludeOutputSysEvents(const AudioDeviceUsage audioD
 void AudioRouterInfra::WriteSelectOutputSysEvents(
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, SelectDeviceType type)
 {
-    CHECK_AND_RETURN(device != nullptr);
+    if (device == nullptr) {
+        switch (type) {
+            case SelectDeviceType::MEDIA_OUTPUT:
+                ErasePreferredDeviceByType(PreferredType::AUDIO_MEDIA_RENDER);
+                break;
+            case SelectDeviceType::CALL_OUTPUT:
+                ErasePreferredDeviceByType(PreferredType::AUDIO_CALL_RENDER);
+                break;
+            default:
+                AUDIO_ERR_LOG("Invalid select device type: %{public}d", type);
+                break;
+        }
+        return;
+    }
+
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::SET_FORCE_USE_AUDIO_DEVICE,
         Media::MediaMonitor::BEHAVIOR_EVENT);

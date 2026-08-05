@@ -28,6 +28,7 @@
 #include "audio_stream_descriptor.h"
 #include "audio_device_descriptor.h"
 #include "audio_info.h"
+#include "stream_flag_info.h"
 #include "audio_debug_info.h"
 #include "audio_ec_info.h"
 #include "microphone_descriptor.h"
@@ -123,7 +124,7 @@ public:
 
         // Stream operations
         int32_t CreateRendererClient(
-            std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId,
+            std::shared_ptr<AudioStreamDescriptor> &streamDesc, StreamFlagInfo &flagInfo, uint32_t &sessionId,
             std::string &networkId);
         int32_t CreateCapturerClient(
             std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
@@ -237,6 +238,8 @@ public:
         int32_t ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
             const std::string &moduleName);
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
+        int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId,
+            int32_t targetUid, uint32_t targetStreamId) override;
         int32_t StartInjection(uint32_t sessionId) override;
         void RemoveIdForInjector(uint32_t streamId) override;
         void ReleaseCaptureInjector() override;
@@ -344,7 +347,7 @@ public:
     // Called by EventEntry - with lock
     // Stream operations
     int32_t CreateRendererClient(
-        std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &audioFlag, uint32_t &sessionId,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc, StreamFlagInfo &flagInfo, uint32_t &sessionId,
         std::string &networkId);
     void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t CreateCapturerClient(
@@ -369,6 +372,7 @@ public:
     int32_t StopClient(uint32_t sessionId);
     int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT,
         bool needRemoveFromMap = false);
+    void MarkServerStreamCreated(uint32_t sessionId);
     void ForceStopInterphoneRenderer();
 
     // ICoreServiceProvider from EventEntry
@@ -506,6 +510,8 @@ public:
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsA2dpOffloadStream(uint sessionId);
     int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId);
+    int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId,
+        int32_t targetUid, uint32_t targetStreamId);
     int32_t StartInjection(uint32_t sessionId);
     void RemoveIdForInjector(uint32_t sessionId);
     void ReleaseCaptureInjector();
@@ -591,7 +597,7 @@ private:
     void NotifyUnmuteVoiceCall();
     void SetUpdateModemRouteFinished(bool flag);
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
-    void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
+    void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
         const AudioStreamDeviceChangeReasonExt reason);
     void RecordSelectDevice(const std::string &history);
     std::string ParsePreferredInputDeviceHistory(std::shared_ptr<AudioStreamDescriptor> streamDesc);
@@ -608,11 +614,11 @@ private:
     int32_t FetchDeviceAndRoute(std::string caller,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        uint32_t &sessionId, uint32_t &audioFlag,
+        uint32_t &sessionId, StreamFlagInfo &flagInfo,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    void ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
+    void ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
         const AudioStreamDeviceChangeReasonExt reason);
-    void ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
+    void ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, StreamFlagInfo &flagInfo,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t FetchCapturerPipeAndExecute(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
@@ -702,6 +708,7 @@ private:
 
     void AddSessionId(const uint32_t sessionId);
     void DeleteSessionId(const uint32_t sessionId);
+    void ClearMuteVoipState(const std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t sessionId);
 
     int32_t HandleFetchOutputWhenNoRunningStream(const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleFetchInputWhenNoRunningStream();
@@ -781,8 +788,12 @@ private:
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     void FetchDevicesForDescs(
-        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,
-        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inStreamDescs);
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,
+ 	    std::vector<std::shared_ptr<AudioStreamDescriptor>> &inStreamDescs);
+    bool HasRunningScoOutputStream(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs);
+    bool HasRunningScoNormalCapturerStream(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs);
+    bool HasRunningScoRecognitionCapturerStream(
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs);
     void DeactivateBluetoothDevice(bool isRunning);
     bool DeactivateA2dpAfterExclude(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &excludeDeviceDescs,
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs);
@@ -821,9 +832,9 @@ private:
     void HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     void CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool forceUpdate);
     void ForceStopInterphoneStreamsIfNecessary(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
-    int32_t CheckStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc, uint32_t& audioFlag);
+    int32_t CheckStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc, StreamFlagInfo& flagInfo);
     int32_t CreateCallCommunicationRenderer(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        uint32_t &audioFlag, uint32_t sessionId);
+        StreamFlagInfo &flagInfo, uint32_t sessionId);
     int32_t CheckCapturerStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc);
     void LoadInnerCapturerSink(std::string moduleName, AudioStreamInfo streamInfo);
     void UnloadInnerCapturerSink(std::string moduleName);

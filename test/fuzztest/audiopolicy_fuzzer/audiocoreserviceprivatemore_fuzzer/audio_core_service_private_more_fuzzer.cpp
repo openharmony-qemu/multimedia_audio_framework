@@ -342,7 +342,6 @@ void TriggerRecreateCapturerStreamCallbackFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     audioCoreService->SetCallbackHandler(handler);
     audioCoreService->TriggerRecreateCapturerStreamCallback(streamDesc);
-    SwitchStreamUtil::RemoveAllRecordBySessionId(streamDesc->sessionId_);
 }
 
 void ProcessInputPipeUpdateFuzzTest(FuzzedDataProvider& fdp)
