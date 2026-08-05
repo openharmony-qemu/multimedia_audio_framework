@@ -6319,6 +6319,9 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "./unittest/audio_pipe_manager_unit_test/include",
     "../../../services/audio_policy/services/pipe/include",
     "../../../frameworks/native/audiodefinitions/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../frameworks/native/audioutils/include",
+    "../../../test/unittest/common/include",
   ]
 
   use_exceptions = true
@@ -6334,6 +6337,7 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_unit_test.cpp",
     "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_extended_test.cpp",
     "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_required_pipe_test.cpp",
+    "./unittest/audio_pipe_manager_unit_test/src/audio_core_config_manager_query_aiut.cpp",
   ]
 
   deps = [
