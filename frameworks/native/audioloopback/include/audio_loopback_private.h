@@ -61,6 +61,7 @@ public:
     virtual ~AudioLoopbackPrivate();
 
     bool Enable(bool enable) override;
+    uint32_t debugKey_ = 0;
     AudioLoopbackStatus GetStatus() override;
     int32_t SetVolume(float volume) override;
     float GetVolume() override;
@@ -74,6 +75,7 @@ public:
     bool SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) override;
     AudioLoopbackEqualizerPreset GetEqualizerPreset() override;
     int32_t GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const override;
+    uint32_t GetDebugKey() const override { return debugKey_; }
 
     std::vector<AudioDevicePair> GetSupportedDevicePairs() override;
 
