@@ -27,6 +27,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int32_t TEST_MAX_REQUEST = 7680;  // buffer size for 20ms 2channel 48000Hz
+const int32_t TEST_MONO_MAX_REQUEST = 3840; // buffer size for 20ms 1channel 48000Hz
 const int32_t AUDIO_MS_PER_S = 1000;
 const int32_t PROC_COUNT = 4;  // process 4 times
 static AudioLmtManager *limiterManager;
@@ -115,8 +116,8 @@ HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_002, TestSize.Level1)
     int32_t sinkIndex = 0;
     int32_t ret = limiterManager->CreateLimiter(sinkIndex);
     EXPECT_EQ(ret, SUCCESS);
-    ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MONO_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -256,6 +257,35 @@ HWTEST_F(AudioLimiterManagerUnitTest, GetLatency_002, TestSize.Level1)
         TEST_MAX_REQUEST * AUDIO_MS_PER_S /
             (static_cast<uint8_t>(SAMPLE_F32LE) * static_cast<uint32_t>(SAMPLE_RATE_48000) *
                 static_cast<uint8_t>(STEREO) * PROC_COUNT));
+}
+
+HWTEST_F(AudioLimiterManagerUnitTest, SetLimiterConfig_Mono_001, TestSize.Level1)
+{
+    EXPECT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MONO_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(AudioLimiterManagerUnitTest, ProcessLimiter_Mono_001, TestSize.Level1)
+{
+    EXPECT_NE(limiterManager, nullptr);
+
+    int32_t sinkIndex = 0;
+    int32_t ret = limiterManager->CreateLimiter(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MONO_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, SUCCESS);
+    int32_t frameLen = TEST_MONO_MAX_REQUEST / SAMPLE_F32LE;
+    std::vector<float> inBufferVector(frameLen, 0);
+    std::vector<float> outBufferVector(frameLen, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
+    ret = limiterManager->ProcessLimiter(sinkIndex, frameLen, inBuffer, outBuffer);
+    EXPECT_EQ(ret, SUCCESS);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -37,8 +37,7 @@ AudioInjectorService::AudioInjectorService()
 int32_t AudioInjectorService::PeekAudioData(const uint32_t sinkPortIndex, uint8_t *buffer, const size_t bufferSize,
     AudioStreamInfo &streamInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERROR, "buffer is null");
-    return HPAE::IHpaeManager::GetHpaeManager().PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
+    return ERROR;
 }
 
 void AudioInjectorService::SetSinkPortIdx(uint32_t sinkPortIdx)

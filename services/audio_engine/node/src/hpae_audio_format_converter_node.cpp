@@ -842,6 +842,11 @@ void HpaeAudioFormatConverterNode::MoveUnprocessedToProcessed(uint32_t channels)
     unprocessedFrames_ = 0;
 }
 
+void HpaeAudioFormatConverterNode::SetSourceBufferType(HpaeSourceBufferType type)
+{
+    converterOutput_.SetSourceBufferType(type);
+}
+
 void HpaeAudioFormatConverterNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
     HpaeNodeInfo &nodeInfo)
 {

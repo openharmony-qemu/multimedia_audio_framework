@@ -733,6 +733,69 @@ int32_t HpaeFastCapturerManager::RemoveCaptureInjector(
     return SUCCESS;
 }
 
+int32_t HpaeFastCapturerManager::AddCaptureInjectorByTargetStream(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
+{
+    auto request = [this, sinkOutputNode, targetStreamId] {
+        Trace trace("HpaeFastCapturerManager::AddCaptureInjectorByTargetStream");
+        AUDIO_INFO_LOG("add capture injector to target stream %{public}u", targetStreamId);
+        CHECK_AND_RETURN_LOG(sinkOutputNode != nullptr, "sinkOutputNode is nullptr");
+        auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
+        CHECK_AND_RETURN_LOG(sourceOutputNode != nullptr, "target sourceOutputNode is nullptr");
+
+        // Dual-upstream: keep original converter/mixer upstream, add injector converter as the
+        // second upstream, tagged INJECTOR so GetAndValidateOutput picks it.
+        auto converter = std::make_shared<HpaeAudioFormatConverterNode>(
+            sinkOutputNode->GetNodeInfo(), sourceOutputNode->GetNodeInfo());
+        converter->SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_INJECTOR);
+        sourceOutputNode->Connect(converter);
+        converter->Connect(sinkOutputNode);
+        sourceOutputNode->SetInjectorState(true);
+        sourceOutputNode->SetupAudioLimiter();
+        injectorFmtConverterNodeMap_[sinkOutputNode] = converter;
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeFastCapturerManager::RemoveCaptureInjectorByTargetStream(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
+{
+    auto request = [this, sinkOutputNode, targetStreamId] {
+        Trace trace("HpaeFastCapturerManager::RemoveCaptureInjectorByTargetStream");
+        AUDIO_INFO_LOG("remove capture injector from target stream %{public}u", targetStreamId);
+        CHECK_AND_RETURN_LOG(sinkOutputNode != nullptr, "sinkOutputNode is nullptr");
+        auto converter = SafeGetMap(injectorFmtConverterNodeMap_, sinkOutputNode);
+        CHECK_AND_RETURN_LOG(converter != nullptr, "injector converter not exist for sinkOutputNode");
+        auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
+        if (sourceOutputNode != nullptr) {
+            sourceOutputNode->DisConnect(converter);
+            sourceOutputNode->SetInjectorState(false);
+            sourceOutputNode->SetMicMute(false);
+            sourceOutputNode->ResetAudioLimiter();
+        }
+        converter->DisConnect(sinkOutputNode);
+        injectorFmtConverterNodeMap_.erase(sinkOutputNode);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeFastCapturerManager::SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+{
+    auto request = [this, targetStreamId, isMute] {
+        Trace trace("HpaeFastCapturerManager::SetCaptureMicMuteByTargetStream");
+        AUDIO_INFO_LOG("set capture mic mute targetStreamId %{public}u isMute %{public}d",
+            targetStreamId, isMute);
+        auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
+        CHECK_AND_RETURN_LOG(sourceOutputNode != nullptr,
+            "targetStreamId[%{public}u] sourceOutputNode not exist", targetStreamId);
+        sourceOutputNode->SetMicMute(isMute);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 void HpaeFastCapturerManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {

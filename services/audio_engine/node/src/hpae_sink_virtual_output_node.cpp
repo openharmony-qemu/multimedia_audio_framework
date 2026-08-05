@@ -107,38 +107,6 @@ void HpaeSinkVirtualOutputNode::DoProcessInner()
     }
 }
 
-int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t *buffer, const size_t &bufferSize,
-    AudioStreamInfo &streamInfo)
-{
-    Trace trace("HpaeSinkVirtualOutputNode::PeekAudioData " + GetTraceInfo());
-    std::lock_guard<std::mutex> lock(mutex_);
-    DoProcessInner();
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(buffer != nullptr, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-                BusinessScenario::SEND_DATA, ERR_INVALID_PARAM),
-            "Invalid nullptr buffer provided", false),
-        "Invalid nullptr buffer provided");
-    memset_s(buffer, bufferSize, 0, bufferSize);
-    size_t outputSizeInt = outputAudioBuffer_.DataSize() * static_cast<size_t>(GetSizeFromFormat(GetBitWidth())) /
-        sizeof(float);
-    if (bufferSize > outputSizeInt) {
-        AUDIO_WARNING_LOG("peek buffersize[%{public}zu] > sinnVirtualOutputNode bufferSize[%{public}zu]!",
-            bufferSize, outputSizeInt);
-    } else if (bufferSize < outputSizeInt) {
-        AUDIO_WARNING_LOG("peek buffersize[%{public}zu] < sinnVirtualOutputNode bufferSize[%{public}zu]!",
-            bufferSize, outputSizeInt);
-    }
-    uint64_t length = bufferSize / GetBitWidth();
-    ConvertFromFloat(GetBitWidth(), std::min(static_cast<uint64_t>(GetChannelCount() * GetFrameLen()), length),
-        outputAudioBuffer_.GetPcmDataBuffer(), buffer);
-
-    streamInfo.format = GetBitWidth();
-    streamInfo.samplingRate = GetSampleRate();
-    streamInfo.channels = GetChannelCount();
-    return SUCCESS;
-}
-
 bool HpaeSinkVirtualOutputNode::Reset()
 {
     const auto preOutputMap = inputStream_.GetPreOutputMap();

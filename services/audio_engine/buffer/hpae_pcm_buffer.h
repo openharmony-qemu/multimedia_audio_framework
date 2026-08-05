@@ -32,6 +32,7 @@ enum HpaeSourceBufferType {
     HPAE_SOURCE_BUFFER_TYPE_MIC,
     HPAE_SOURCE_BUFFER_TYPE_EC,
     HPAE_SOURCE_BUFFER_TYPE_MICREF,
+    HPAE_SOURCE_BUFFER_TYPE_INJECTOR,
 };
 
 enum PcmBufferState : uint32_t {
@@ -136,7 +137,7 @@ public:
     {
         return pcmBufferInfo_.channelLayout;
     }
- 
+
     void ReConfig(const PcmBufferInfo &pcmBufferInfo)
     {
         pcmBufferInfo_ = pcmBufferInfo;

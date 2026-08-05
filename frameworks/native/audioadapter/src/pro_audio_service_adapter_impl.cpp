@@ -586,6 +586,28 @@ void ProAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPortI
     IHpaeManager::GetHpaeManager().RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
 }
 
+void ProAudioServiceAdapterImpl::AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().AddCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex,
+        targetStreamId);
+}
+
+void ProAudioServiceAdapterImpl::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().RemoveCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex,
+        targetStreamId);
+}
+
+void ProAudioServiceAdapterImpl::SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().SetCaptureMicMuteByTargetStream(targetStreamId, isMute);
+}
+
 void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex,
     const AudioModuleInfo &audioPortInfo)
 {

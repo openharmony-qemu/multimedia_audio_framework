@@ -256,6 +256,24 @@ public:
         const SourceType &sourceType) = 0;
     virtual void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) = 0;
+    virtual void AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        uint32_t targetStreamId)
+    {
+        (void)targetStreamId;
+        AddCaptureInjector(sinkPortIndex, sourcePortIndex, SOURCE_TYPE_VOICE_COMMUNICATION);
+    }
+    virtual void RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
+        const uint32_t &sourcePortIndex, uint32_t targetStreamId)
+    {
+        (void)targetStreamId;
+        RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, SOURCE_TYPE_VOICE_COMMUNICATION);
+    }
+
+    virtual void SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+    {
+        (void)targetStreamId;
+        (void)isMute;
+    }
     virtual void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) = 0;
     /**
      * @brief Check is channelLayout support for multichannel render manager

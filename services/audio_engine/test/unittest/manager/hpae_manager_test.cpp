@@ -48,8 +48,6 @@ constexpr int32_t TEST_STREAM_UID = 111111;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t SESSION_ID_NOEXIST = 100000;
-constexpr uint32_t DEFAULT_FRAME_LEN_MS = 20;
-constexpr uint32_t MS_PER_SECOND = 1000;
 
 class HpaeManagerUnitTest : public testing::Test {
 public:
@@ -1991,17 +1989,6 @@ HWTEST_F(HpaeManagerUnitTest, InjectorToEndPointCapturer, TestSize.Level1)
     hpaeManager_->Start(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
 
-    size_t bufferSize = nodeInfo.samplingRate * nodeInfo.channels * DEFAULT_FRAME_LEN_MS *
-        static_cast<size_t>(GetSizeFromFormat(nodeInfo.format)) / MS_PER_SECOND;
-    std::vector<uint8_t> buffer(bufferSize);
-    AudioStreamInfo retStreamInfo;
-    for (size_t i = 0; i < 10; i++) { // 10 for loop times
-        EXPECT_EQ(hpaeManager_->PeekAudioData(injectorPortId, buffer.data(), bufferSize, retStreamInfo), SUCCESS);
-        EXPECT_EQ(retStreamInfo.format, nodeInfo.format);
-        EXPECT_EQ(retStreamInfo.samplingRate, nodeInfo.samplingRate);
-        EXPECT_EQ(retStreamInfo.channels, nodeInfo.channels);
-        std::this_thread::sleep_for(std::chrono::milliseconds(50)); // 50ms for sleep
-    }
     hpaeManager_->Stop(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->CloseAudioPort(injectorPortId);

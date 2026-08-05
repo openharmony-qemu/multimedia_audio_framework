@@ -131,7 +131,7 @@ void SetRendererTarget(FuzzedDataProvider &provider)
     uint32_t lastTarget = provider.ConsumeIntegralInRange<uint32_t>(0, 1);
     uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     int32_t ret = provider.ConsumeIntegral<int32_t>();
-    coreServiceProviderWrapper.SetRendererTarget(target, lastTarget, sessionId, ret);
+    coreServiceProviderWrapper.SetRendererTarget(target, lastTarget, sessionId, INVALID_UID, INVALID_STREAM_ID, ret);
 }
 
 void StartInjection(FuzzedDataProvider &provider)

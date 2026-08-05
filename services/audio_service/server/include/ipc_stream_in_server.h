@@ -144,7 +144,7 @@ public:
     
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
 
-    int32_t SetTarget(int32_t target, int32_t &ret) override;
+    int32_t SetTarget(int32_t target, int32_t targetUid, uint32_t targetStreamId, int32_t &ret) override;
 
     int32_t SetRebuildFlag() override;
 

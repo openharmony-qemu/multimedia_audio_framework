@@ -28,6 +28,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int32_t TEST_MAX_REQUEST = 7680; // buffer size for 20ms 2channel 48000Hz
+const int32_t TEST_MONO_MAX_REQUEST = 3840; // buffer size for 20ms 1channel 48000Hz
 
 class AudioLimiterAdapterUnitTest : public testing::Test {
 public:
@@ -99,8 +100,8 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_002, TestSize.Leve
     int32_t sinkIndex = 1;
     int32_t ret = LimiterManagerCreate(sinkIndex);
     EXPECT_EQ(ret, SUCCESS);
-    ret = LimiterManagerSetConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    ret = LimiterManagerSetConfig(sinkIndex, TEST_MONO_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -195,6 +196,31 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerRelease_002, TestSize.Level1
     EXPECT_EQ(ret, SUCCESS);
     ret = LimiterManagerRelease(sinkIndex);
     EXPECT_EQ(ret, ERROR);
+}
+
+HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_Mono_001, TestSize.Level1)
+{
+    int32_t sinkIndex = 1;
+    int32_t ret = LimiterManagerCreate(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = LimiterManagerSetConfig(sinkIndex, TEST_MONO_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerProcess_Mono_001, TestSize.Level1)
+{
+    int32_t sinkIndex = 1;
+    int32_t ret = LimiterManagerCreate(sinkIndex);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = LimiterManagerSetConfig(sinkIndex, TEST_MONO_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, SUCCESS);
+    int32_t frameLen = TEST_MONO_MAX_REQUEST / SAMPLE_F32LE;
+    std::vector<float> inBufferVector(frameLen, 0);
+    std::vector<float> outBufferVector(frameLen, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
+    ret = LimiterManagerProcess(sinkIndex, frameLen, inBuffer, outBuffer);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS
