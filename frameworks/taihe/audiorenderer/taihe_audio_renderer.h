@@ -82,7 +82,7 @@ public:
     void SetLoudnessGainSync(double loudnessGain);
     double GetLoudnessGain();
     int32_t GetLatency(AudioLatencyType type);
-    void SetTargetSync(RenderTarget target);
+    void SetTargetSync(RenderTarget target, optional_view<AudioRendererTargetParams> targetParams);
     RenderTarget GetTarget();
     void SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior);
 
