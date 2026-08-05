@@ -20,6 +20,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <thread>
 using namespace std;
 
 namespace OHOS {
@@ -485,12 +486,9 @@ void AudioVolumeManagerInitializeFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioVolumeManagerSetDataShareReadyFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    CHECK_AND_RETURN(audioAdapterManager != nullptr);
     static std::shared_ptr<AudioAdapterManager> staticAudioAdapterManager = std::make_shared<AudioAdapterManager>();
     CHECK_AND_RETURN(staticAudioAdapterManager != nullptr);
     std::atomic<bool> isDataShareReady = fdp.ConsumeBool();
-    audioAdapterManager->SetDataShareReady(isDataShareReady.load());
     staticAudioAdapterManager->SetDataShareReady(isDataShareReady.load());
 }
 
