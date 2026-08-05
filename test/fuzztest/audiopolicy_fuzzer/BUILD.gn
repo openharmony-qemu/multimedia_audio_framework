@@ -19,6 +19,7 @@ group("fuzztest") {
     "audioa2dpoffloadmanager_fuzzer:fuzztest",
     "audioactivedevice_fuzzer:fuzztest",
     "audioadaptermanager_fuzzer:fuzztest",
+    "audiogeneralmanager_fuzzer:fuzztest",
     "audiobackgroundmanager_fuzzer:fuzztest",
     "audioclienttrackercallbacklistener_fuzzer:fuzztest",
     # "audiocollaborativeservice_fuzzer:fuzztest",
