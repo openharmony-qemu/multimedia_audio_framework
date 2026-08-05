@@ -71,7 +71,7 @@ ohos_shared_library("audio_definitions") {
 }
 
 ohos_unittest("audio_definitions_unit_test") {
-  module_out_path = "audio_framework/audio_framework_route/audiodefinitions"
+  module_out_path = "audio_framework/audio_framework_common/audio_stream_descriptor"
 
   cflags = [
     "-Wall",
@@ -108,4 +108,47 @@ ohos_unittest("audio_definitions_unit_test") {
     "hilog:libhilog",
     "ipc:ipc_single",
   ]
+}
+
+ohos_unittest("audio_stream_descriptor_aiut") {
+  testonly = true
+  module_out_path = "audio_framework/audio_framework_common/audio_stream_descriptor"
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  include_dirs = [
+    "./test/unittest",
+    "../../../frameworks/native/audioutils/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../services/audio_policy/common/include",
+    "../../../test/unittest/audio_test_utils/include",
+  ]
+
+  sources = [
+    "test/unittest/audio_definitions_unit_test_utils.cpp",
+    "test/unittest/audio_stream_descriptor_aiut.cpp",
+  ]
+
+  deps = [
+    ":audio_definitions",
+    "../audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "c_utils:utils",
+    "ipc:ipc_single",
+  ]
+}
+
+group("audio_stream_descriptor_aiut_group") {
+  testonly = true
+  deps = [ ":audio_stream_descriptor_aiut" ]
 }

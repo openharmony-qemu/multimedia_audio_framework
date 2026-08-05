@@ -21,7 +21,9 @@ group("audio_framework_common_aiut") {
   deps = [
     "../../frameworks/native/audioutils:audio_utils_aiut",
     "../../frameworks/native/audio_debug_manager:audio_debug_manager_test",
-    "../../frameworks/native/opensles/test/unittest/opensles_obj_aiut:opensles_obj_aiut_group",
+    "../../frameworks/native/ohaudio/test/unittest/oh_audio_stream_manager_test:oh_audio_stream_manager_aiut_group",
+    "../../frameworks/native/ohaudio/test/unittest/oh_audio_workgroup_test:oh_audio_workgroup_aiut_group",
+    "../../frameworks/native/audiodefinitions:audio_stream_descriptor_aiut_group",
   ]
 
   if (speex_enable == true) {
