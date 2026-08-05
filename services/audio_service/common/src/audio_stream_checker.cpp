@@ -44,7 +44,7 @@ static bool IsAudioProcessConfigValid(const AudioProcessConfig &cfg)
         return false;
     }
     if (cfg.originalSessionId != 0 && (cfg.originalSessionId < MIN_SESSIONID ||
-        cfg.originalSessionId > UINT32_MAX - MAX_SESSIONID)) {
+        cfg.originalSessionId > MAX_SESSIONID)) {
         AUDIO_ERR_LOG("Invalid originalSessionId: %{public}u", cfg.originalSessionId);
         return false;
     }
