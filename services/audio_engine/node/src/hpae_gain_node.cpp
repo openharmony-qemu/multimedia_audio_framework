@@ -155,9 +155,11 @@ void HpaeGainNode::ResetFadeState()
     fadeOutState_ = FadeOutState::NO_FADEOUT;
     fadeInState_ = true; // fade-in on reconnect to avoid pop
     fadeProcessedBytes_ = 0;
+    totalFadeBytes_ = 0;
     collFadeOutState_ = FadeOutState::NO_FADEOUT;
     collFadeInState_ = false;
     collFadeProcessedBytes_ = 0;
+    collTotalFadeBytes_ = 0;
     AUDIO_INFO_LOG("ResetFadeState, session:%{public}u", GetSessionId());
 }
 

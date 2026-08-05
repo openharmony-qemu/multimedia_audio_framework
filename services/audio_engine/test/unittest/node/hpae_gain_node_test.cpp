@@ -831,7 +831,9 @@ HWTEST_F(HpaeGainNodeTest, ResetFadeState_ClearsStaleDoneFadeout, TestSize.Level
     hpaeGainNode->fadeInState_ = false;
     hpaeGainNode->collFadeInState_ = true;
     hpaeGainNode->fadeProcessedBytes_ = 100;
+    hpaeGainNode->totalFadeBytes_ = 7680;
     hpaeGainNode->collFadeProcessedBytes_ = 200;
+    hpaeGainNode->collTotalFadeBytes_ = 7680;
 
     hpaeGainNode->ResetFadeState();
 
@@ -840,7 +842,9 @@ HWTEST_F(HpaeGainNodeTest, ResetFadeState_ClearsStaleDoneFadeout, TestSize.Level
     EXPECT_EQ(hpaeGainNode->fadeInState_, true);
     EXPECT_EQ(hpaeGainNode->collFadeInState_, false);
     EXPECT_EQ(hpaeGainNode->fadeProcessedBytes_, 0);
+    EXPECT_EQ(hpaeGainNode->totalFadeBytes_, 0);
     EXPECT_EQ(hpaeGainNode->collFadeProcessedBytes_, 0);
+    EXPECT_EQ(hpaeGainNode->collTotalFadeBytes_, 0);
 }
 
 HWTEST_F(HpaeGainNodeTest, ResetFadeState_PreventsSilenceOnReusedNode, TestSize.Level0)
