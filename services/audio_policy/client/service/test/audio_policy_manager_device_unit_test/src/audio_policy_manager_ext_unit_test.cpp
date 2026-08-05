@@ -27,8 +27,6 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-constexpr uint32_t MIN_STREAMID = 100000;
-
 class AudioDeviceAnahsTest : public AudioDeviceAnahs {
 public:
     int32_t OnExtPnpDeviceStatusChanged(
@@ -788,7 +786,7 @@ HWTEST(AudioPolicyManagerDevice, ZmAddStreams_EmptyStreams, TestSize.Level1)
 HWTEST(AudioPolicyManagerDevice, ZmAddStreamId_InvalidZone, TestSize.Level1)
 {
     auto *zm = AudioZoneManager::GetInstance();
-    int32_t ret = zm->AddStreamIdToAudioZone(0, MIN_STREAMID);
+    int32_t ret = zm->AddStreamIdToAudioZone(0, 100000);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -802,7 +800,7 @@ HWTEST(AudioPolicyManagerDevice, ZmAddStreamId_InvalidStreamId, TestSize.Level1)
 HWTEST(AudioPolicyManagerDevice, ZmRemoveStreamId_InvalidZone, TestSize.Level1)
 {
     auto *zm = AudioZoneManager::GetInstance();
-    int32_t ret = zm->RemoveStreamIdFromAudioZone(0, MIN_STREAMID);
+    int32_t ret = zm->RemoveStreamIdFromAudioZone(0, 100000);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
