@@ -69,7 +69,7 @@ public:
     ErrCode OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status) override;
 
 protected:
-    virtual bool CheckPermission(ErrCode &result);
+    bool VerifyIsSystemApp(ErrCode& result);
 
 private:
     void PostDelayUnloadTask();

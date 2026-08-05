@@ -30,6 +30,8 @@ namespace AudioSuite {
 static constexpr int32_t DOWNLOAD_REGISTER_TIMEOUT_MS = 1000;  // 回调注册超时时间 1 秒
 #endif
 
+static constexpr int32_t FEATURE_INSTALL_SUCCESS = 36;
+
 DownloadManager::DownloadManager()
 {
     AUDIO_INFO_LOG("DownloadManager constructor");
@@ -47,14 +49,9 @@ DownloadManager::~DownloadManager()
         std::unique_lock<std::mutex> statusCallbacksLock(statusCallbacksMutex_);
         statusCallbacks_.clear();
     }
-
-    CHECK_AND_RETURN_LOG(downloadCallback_ != nullptr, "downloadCallback_ is null.");
-    int32_t funcResult = 0;
-    int32_t ret = downloadCallback_->UnregisterDownloadStatusCallback(funcResult);
+    std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
     downloadCallback_ = nullptr;
     isDownloadCallbackRegistered_ = false;
-    CHECK_AND_RETURN_LOG(ret == SUCCESS && funcResult == SUCCESS, "UnregisterDownloadStatusCallback failed, "
-        "ret:%{public}d, funcResult:%{public}d", ret, funcResult);
 }
 
 int32_t DownloadManager::StartDownload(const std::string& featureName)
@@ -161,6 +158,8 @@ int32_t DownloadManager::StartBackgroundDownload(const std::string& featureName)
 
     int32_t funcResult = SUCCESS;
     AudioSuiteCloudRomVersionInfo newVersionInfo;
+    std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
+    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
     int32_t ret = downloadCallback_->GetFeatureNewVersion(featureName, newVersionInfo, funcResult);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureNewVersion failed, ret=%{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
@@ -198,18 +197,24 @@ int32_t DownloadManager::GetDownloadStatus(const std::string& featureName, Audio
         "GetFeatureStatus failed, errorCode=%{public}d", status.errorCode);
     CHECK_AND_RETURN_RET_LOG(status.featureName == featureName, ERR_INVALID_PARAM,
         "GetFeatureStatus: failed, status.featureName:%{public}s", status.featureName.c_str());
+    status.size = 0;
+    
+    // Do not search for packages upon successful installation.
+    if (status.state == FEATURE_INSTALL_SUCCESS) {
+        AUDIO_INFO_LOG("%{public}s Installation successful.", status.featureName.c_str());
+        return SUCCESS;
+    }
 
     AudioSuiteCloudRomVersionInfo newVersionInfo;
     ret = downloadCallback_->GetFeatureNewVersion(featureName, newVersionInfo, funcResult);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureNewVersion failed, ret=%{public}d", ret);
-    CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
-        "GetFeatureNewVersion failed, funcResult=%{public}d", funcResult);
-    CHECK_AND_RETURN_RET_LOG(newVersionInfo.errorCode == 0, newVersionInfo.errorCode,
-        "GetFeatureNewVersion failed, errorCode=%{public}d", newVersionInfo.errorCode);
-    CHECK_AND_RETURN_RET_LOG(newVersionInfo.featureName == featureName, ERR_INVALID_PARAM,
-        "GetFeatureNewVersion: failed, newVersionInfo.featureName:%{public}s", newVersionInfo.featureName.c_str());
-    status.size = newVersionInfo.size;
-
+    if (ret == SUCCESS && funcResult == SUCCESS && newVersionInfo.errorCode == 0 &&
+        newVersionInfo.featureName == featureName) {
+        status.size = newVersionInfo.size;
+    } else {
+        AUDIO_ERR_LOG("Failed to search for the %{public}s ret = %{public}d, funcResult = %{public}d, errorCode = "
+                      "%{public}d, newVersionInfo.featureName = %{public}s.", featureName.c_str(), ret, funcResult,
+                      newVersionInfo.errorCode, newVersionInfo.featureName.c_str());
+    }
     AUDIO_INFO_LOG("GetDownloadStatus success, state=%{public}d, progress=%{public}u", status.state, status.progress);
     return SUCCESS;
 }

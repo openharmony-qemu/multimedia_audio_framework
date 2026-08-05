@@ -90,6 +90,7 @@ if (audio_framework_feature_audiosuite_support) {
       "googletest:gtest",
       "googletest:gmock",
       "hilog:libhilog",
+      "samgr:samgr_proxy",
       "ipc:ipc_core",
       "init:libbegetutil",
       "netmanager_base:net_conn_manager_if",
