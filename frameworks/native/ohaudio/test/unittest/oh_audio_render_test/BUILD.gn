@@ -84,5 +84,6 @@ ohos_unittest("audio_oh_render_unit_test") {
     "googletest:gtest",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "samgr:samgr_proxy",
   ]
 }

@@ -45,5 +45,6 @@ ohos_unittest("audio_volume_change_unit_test") {
     "access_token:libtokensetproc_shared",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "samgr:samgr_proxy",
   ]
 }

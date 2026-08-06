@@ -34,6 +34,7 @@
 #include "audio_spatialization_types.h"
 #include "audio_stream_descriptor.h"
 #include "audio_debug_info.h"
+#include "virtual_audio_interface.h"
 #include "audio_capturer_options.h"
 #include "boot_animation_state_info.h"
 #include "audio_separation_effect_enabled_change_callback.h"
@@ -800,6 +801,7 @@ public:
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
     int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
+    int32_t GetVADeviceBroker(std::shared_ptr<VADeviceBrokerWrapper> &vaBroker);
     bool IsCollaborativePlaybackSupported();
     bool IsCollaborativePlaybackSupportedForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);

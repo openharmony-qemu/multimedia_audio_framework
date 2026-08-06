@@ -1204,6 +1204,7 @@ bool AudioPolicyUtils::UpdateEnableState(std::vector<std::shared_ptr<AudioDevice
         if (IsDeviceMatch(desc, devDesc) && desc->isEnable_ != devDesc->isEnable_) {
             descForCb.push_back(make_shared<AudioDeviceDescriptor>(*desc));
             desc->isEnable_ = devDesc->isEnable_;
+            desc->isExclusiveMicScoUnavailable_ = devDesc->isExclusiveMicScoUnavailable_;
             descForCb.push_back(make_shared<AudioDeviceDescriptor>(*desc));
             updateFlag = true;
             AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);

@@ -46,5 +46,6 @@ ohos_unittest("audio_stream_manager_unit_test") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "samgr:samgr_proxy",
   ]
 }

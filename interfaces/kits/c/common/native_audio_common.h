@@ -43,7 +43,6 @@
 #define NATIVE_AUDIO_COMMON_H
 
 #include <stdint.h>
-#include "stdbool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +58,13 @@ typedef enum {
      * @error The call was successful.
      */
     AUDIOCOMMON_RESULT_SUCCESS = 0,
+
+    /**
+     * @error This means that caller does not have the required permission.
+     *
+     * @since 26.0.0
+     */
+    AUDIOCOMMON_RESULT_ERROR_PERMISSION_DENIED = 201,
 
     /**
      * @error This means that the input parameter is invalid.
@@ -81,17 +87,24 @@ typedef enum {
     AUDIOCOMMON_RESULT_ERROR_UNSUPPORTED = 6800104,
 
     /**
-     * @error This means the operation is timeout.
+     * @error This means the operation timed out.
      */
     AUDIOCOMMON_RESULT_ERROR_TIMEOUT = 6800105,
 
     /**
-     * @error This means reached stream limit.
+     * @error This means the input audio data does not match the required frame length.
+     *
+     * @since 26.0.0
+     */
+    AUDIOCOMMON_RESULT_ERROR_FRAME_LENGTH_MISMATCH = 6800106,
+
+    /**
+     * @error This means the stream limit is reached.
      */
     AUDIOCOMMON_RESULT_ERROR_STREAM_LIMIT = 6800201,
 
     /**
-     * @error An system error has occurred.
+     * @error A system error has occurred.
      */
     AUDIOCOMMON_RESULT_ERROR_SYSTEM = 6800301,
 } OH_AudioCommon_Result;
@@ -158,35 +171,36 @@ typedef enum {
 } OH_AudioRingerMode;
 
 /**
-* @brief Enumerates the noise reduction modes.
-*
-* @since 26.0.0
-*/
+ * @brief Enumerates the noise reduction modes.
+ *
+ * @since 26.0.0
+ */
 typedef enum {
     /**
-    * @brief Fidelity mode, no noise reduction.
-    *
-    * @since 26.0.0
-    */
+     * @brief Fidelity mode, no noise reduction.
+     *
+     * @since 26.0.0
+     */
     AUDIO_NOISE_REDUCTION_MODE_FIDELITY = 0,
 
     /**
-    * @brief Pure vocals mode, strong noise reduction.
-    *
-    * @since 26.0.0
-    */
+     * @brief Pure vocals mode, strong noise reduction.
+     *
+     * @since 26.0.0
+     */
     AUDIO_NOISE_REDUCTION_MODE_PURE_VOCALS = 1,
 
     /**
-    * @brief Standard mode, weak noise reduction.
-    *
-    * @since 26.0.0
-    */
+     * @brief Standard mode, weak noise reduction.
+     *
+     * @since 26.0.0
+     */
     AUDIO_NOISE_REDUCTION_MODE_STANDARD = 2,
 } OH_AudioNoiseReductionMode;
 
 #ifdef __cplusplus
 }
 #endif
-/** @} */
+
 #endif // NATIVE_AUDIO_COMMON_H
+/** @} */

@@ -35,7 +35,7 @@ VADeviceControllerStubImpl::~VADeviceControllerStubImpl()
 int32_t VADeviceControllerStubImpl::SetVADeviceControllerCallback(
     const std::shared_ptr<VADeviceControllerCallback> &callback)
 {
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is null");
     std::lock_guard<std::mutex> lock(vaDeviceControllerMutex_);
     vaDeviceControllerCallback_ = callback;
 
@@ -47,18 +47,18 @@ int32_t VADeviceControllerStubImpl::OpenInputStream(const VAAudioStreamProperty 
                                                     sptr<IRemoteObject> &inputStream)
 {
     std::lock_guard<std::mutex> lock(vaDeviceControllerMutex_);
-    CHECK_AND_RETURN_RET_LOG(vaDeviceControllerCallback_ != nullptr, ERROR);
-    lock.unlock();
-    
+    CHECK_AND_RETURN_RET_LOG(
+        vaDeviceControllerCallback_ != nullptr, ERR_ILLEGAL_STATE, "vaDeviceControllerCallback_ is null");
+
     std::shared_ptr<VAInputStreamCallback> inputStreamCallback;
     vaDeviceControllerCallback_->OpenInputStream(prop, attr, inputStreamCallback);
-    CHECK_AND_RETURN_RET_LOG(inputStreamCallback != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(inputStreamCallback != nullptr, ERR_OPERATION_FAILED, "inputStreamCallback is null");
     auto vaInputStreamStubImpl = sptr<VAInputStreamStubImpl>::MakeSptr();
-    CHECK_AND_RETURN_RET_LOG(vaInputStreamStubImpl != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(vaInputStreamStubImpl != nullptr, ERR_OPERATION_FAILED, "vaInputStreamStubImpl is null");
     vaInputStreamStubImpl->SetVAInputStreamCallback(inputStreamCallback);
     inputStream = vaInputStreamStubImpl->AsObject();
     if (inputStream == nullptr) {
-        AUDIO_ERR_LOG("weird, inputStream is nullptr");
+        AUDIO_ERR_LOG("Weird, inputStream is nullptr");
         return ERROR;
     }
     return SUCCESS;
@@ -67,7 +67,8 @@ int32_t VADeviceControllerStubImpl::OpenInputStream(const VAAudioStreamProperty 
 int32_t VADeviceControllerStubImpl::GetParameters(const std::string& key, std::string& value)
 {
     std::lock_guard<std::mutex> lock(vaDeviceControllerMutex_);
-    CHECK_AND_RETURN_RET_LOG(vaDeviceControllerCallback_ != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(
+        vaDeviceControllerCallback_ != nullptr, ERR_ILLEGAL_STATE, "vaDeviceControllerCallback_ is null");
 
     vaDeviceControllerCallback_->GetParameters(key, value);
 
@@ -77,7 +78,8 @@ int32_t VADeviceControllerStubImpl::GetParameters(const std::string& key, std::s
 int32_t VADeviceControllerStubImpl::SetParameters(const std::string& key, const std::string& value)
 {
     std::lock_guard<std::mutex> lock(vaDeviceControllerMutex_);
-    CHECK_AND_RETURN_RET_LOG(vaDeviceControllerCallback_ != nullptr, ERROR);
+    CHECK_AND_RETURN_RET_LOG(
+        vaDeviceControllerCallback_ != nullptr, ERR_ILLEGAL_STATE, "vaDeviceControllerCallback_ is null");
     
     vaDeviceControllerCallback_->SetParameters(key, value);
 

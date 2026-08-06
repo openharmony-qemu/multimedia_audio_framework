@@ -78,6 +78,8 @@ class Util {
 public:
     static bool IsScoSupportSource(const SourceType sourceType);
 
+    static bool IsSppSupportSource(const SourceType sourceType);
+
     static bool IsDualToneStreamType(const AudioStreamType streamType);
 
     static bool IsRingerOrAlarmerStreamUsage(const StreamUsage &usage);

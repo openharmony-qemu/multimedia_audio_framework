@@ -674,10 +674,6 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
         return SUCCESS;
     }
-    if (currentScoExcludeFlag_) {
-        AUDIO_INFO_LOG("currentScoExcludeFlag is true.");
-        return SUCCESS;
-    }
     forceSetRouteFlag_ = false;
     currentActiveDevice_ = outputDevices[0];
     currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());

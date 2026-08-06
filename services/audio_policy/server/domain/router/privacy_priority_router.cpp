@@ -150,37 +150,36 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
     int32_t clientUID, const uint32_t sessionID)
 {
     const bool isScoSupportSource = Util::IsScoSupportSource(sourceType);
+    const bool isSppSupportSource = Util::IsSppSupportSource(sourceType);
+    auto sppDevice = AudioDeviceManager::GetAudioDeviceManager().GetSingleMicSppDevice();
     if (isScoSupportSource) {
         vector<shared_ptr<AudioDeviceDescriptor>> descs =
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
+        if (sppDevice) {
+            descs.erase(
+                remove_if(descs.begin(), descs.end(), [&sppDevice](const shared_ptr<AudioDeviceDescriptor> &desc) {
+                return desc != nullptr && desc->macAddress_ == sppDevice->macAddress_ &&
+                    desc->deviceType_ == sppDevice->deviceType_;
+                }), descs.end());
+        }
         shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
-        if (desc->deviceType_ != DEVICE_TYPE_NONE && !IsA2dpDisable(desc)) {
+        if (desc && desc->deviceType_ != DEVICE_TYPE_NONE && !IsA2dpDisable(desc)) {
             AUDIO_DEBUG_LOG("Recognition sourceType %{public}d clientUID %{public}d fetch device %{public}d",
                 sourceType, clientUID, desc->deviceType_);
             return desc;
         }
     }
+
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
-    // a2dp_in exclusion for SOURCE_TYPE_VOICE_TRANSCRIPTION and SOURCE_TYPE_VOICE_RECOGNITION
-    if (isScoSupportSource) {
-        auto isA2dpInputDevice = [](const std::shared_ptr<AudioDeviceDescriptor> &desc) {
-            return desc != nullptr && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
-        };
-        descs.erase(
-            remove_if(descs.begin(), descs.end(), isA2dpInputDevice), descs.end());
+    if (isSppSupportSource && sppDevice) {
+        descs.push_back(sppDevice);
     }
     RouterBase::ClearConflictDevice(descs, GetRouterType());
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, make_shared<AudioDeviceDescriptor>(), "nullptr desc");
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,
         clientUID, desc->deviceType_);
-
-    // bluetooth sco device, need skip
-    if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        AUDIO_INFO_LOG("record scene, skip bluetooth sco router");
-        return make_shared<AudioDeviceDescriptor>();
-    }
 
     return desc;
 }

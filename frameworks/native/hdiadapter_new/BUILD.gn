@@ -79,6 +79,7 @@ ohos_shared_library("hdiadapter_new") {
   ]
 
   deps = [
+    "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_setting_provider",
     "../../../services/audio_service:audio_common",
     "../audioeffect:audio_effect",
@@ -222,6 +223,7 @@ ohos_unittest("hdiadapter_unit_test") {
 
   deps = [
     ":hdiadapter_new",
+    "../../../services/audio_policy:audio_policy_client",
     "../audioclock:audio_clock",
     "../audioutils:audio_utils",
   ]

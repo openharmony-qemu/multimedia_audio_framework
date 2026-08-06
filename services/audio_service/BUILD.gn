@@ -201,7 +201,10 @@ config("audio_client_public_config") {
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
   }
-  external_deps = []
+  external_deps = [
+    "ipc:ipc_core",
+    "samgr:samgr_proxy",
+  ]
   if (sonic_enable == true) {
     external_deps += [ "sonic:sonic" ]
   }
@@ -826,6 +829,7 @@ audio_ohos_library("audio_service") {
     ":audio_common",
     ":audio_process_service",
     ":audio_policy_manager",
+    "../audio_policy:audio_policy_client",
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioinnercall:audio_inner_call",

@@ -279,6 +279,9 @@ public:
         const IAudioSourceAttr &attr, uint32_t& captureId) override;
     int32_t CreateSourcePort(uint32_t idBase, uint32_t idType, const std::string &idInfo,
         const IAudioSourceAttr &attr, uint32_t& captureId) override;
+    int32_t RegisterVADeviceController(const std::string &macAddress,
+        const sptr<IRemoteObject> &controller) override;
+    int32_t UnregisterVADeviceController(const std::string &macAddress) override;
     int32_t DestroyHdiPort(uint32_t id) override;
     int32_t SetDeviceConnectedFlag(bool flag) override;
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool& isSupported) override;
