@@ -24,10 +24,8 @@ namespace AudioStandard {
 
 class AudioPipeSelectorAiut : public testing::Test {
 public:
-    void SetUpTestCase(void);
-    void TearDownTestCase(void);
-    void SetUp(void);
-    void TearDown(void);
+    // GTest fixture methods (SetUpTestCase/TearDownTestCase/SetUp/TearDown)
+    // are inherited from testing::Test; derived classes override as needed.
 };
 
 } // namespace AudioStandard
