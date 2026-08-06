@@ -239,7 +239,7 @@ HWTEST_F(AudioCoreConfigManagerQueryAiutTest, GetAvailStreamProp_002, TestSize.L
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
     auto propInfo = std::make_shared<PipeStreamPropInfo>();
-    propInfo->supportDeviceMap_[DEVICE_TYPE_SPEAKER] = true;
+    propInfo->supportDeviceMap_[DEVICE_TYPE_SPEAKER] = nullptr;
     std::list<std::shared_ptr<PipeStreamPropInfo>> infos = {propInfo};
     auto result = configManager.GetAvailableStreamPropInfoForDevice(infos, DEVICE_TYPE_SPEAKER);
     AIUT_ASSERT_NE_INFO_LOG(result, nullptr, "result should not be nullptr for matching device");
