@@ -958,16 +958,24 @@ void HpaeManagerImpl::RemoveCaptureInjector(
     manager_->RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
 }
 
-int32_t HpaeManagerImpl::PeekAudioData(
-    const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
+void HpaeManagerImpl::AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
 {
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "manager is nullptr", false),
-        "manager is nullptr");
-    return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->AddCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex, targetStreamId);
+}
+
+void HpaeManagerImpl::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->RemoveCaptureInjectorByTargetStream(sinkPortIndex, sourcePortIndex, targetStreamId);
+}
+
+void HpaeManagerImpl::SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->SetCaptureMicMuteByTargetStream(targetStreamId, isMute);
 }
 
 void HpaeManagerImpl::UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled)

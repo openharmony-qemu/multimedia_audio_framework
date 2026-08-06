@@ -56,6 +56,8 @@ private:
         const std::string &incomingBundleName, AudioFocusEntry &focusEntry);
     void UpdateAIBaseFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
+    void UpdateVoipCaptureFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
+        AudioFocusEntry &focusEntry);
     void UpdateMapFocusStrategy(const std::string &bundleName,
         AudioFocusEntry &focusEntry, bool isExistMediaStream, SourceType incomingSourceType);
     void UpdateFocusStrategy(const std::string& bundleName,

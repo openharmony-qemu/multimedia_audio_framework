@@ -37,7 +37,9 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
       sourceOutputData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels),
       framesRead_(0), totalFrames_(0), isMute_(false), highpassFilter_(nullptr), filterChannelCount_(0),
-      isSupportHighpassFilter_(false)
+      isSupportHighpassFilter_(false),
+      pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
+      mixedOutput_(pcmBufferInfo_), tmpOutput_(pcmBufferInfo_), silenceData_(pcmBufferInfo_)
 {
     AUDIO_INFO_LOG("sourceType: %{public}d, PC_ENABLE_STATE: %{public}d", GetSourceType(), PC_ENABLE_STATE);
     if (GetSourceType() == SOURCE_TYPE_ULTRASONIC && PC_ENABLE_STATE != 0) {
@@ -128,17 +130,93 @@ HpaePcmBuffer *HpaeSourceOutputNode::GetAndValidateOutput()
         AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), data read is empty", GetSessionId());
         return nullptr;
     }
-    HpaePcmBuffer *outputData = outputVec.front();
+    HpaePcmBuffer *outputData = SelectOutputData(outputVec);
+    if (outputData == nullptr) {
+        return nullptr;
+    }
     if (!outputData->IsValid() && GetNodeInfo().sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         return nullptr;
     }
     return outputData;
 }
 
-void HpaeSourceOutputNode::ProcessAudioData(HpaePcmBuffer *outputData)
+HpaePcmBuffer *HpaeSourceOutputNode::SelectOutputData(const std::vector<HpaePcmBuffer *> &outputVec)
+{
+    if (!isInjector_) {
+        return outputVec.front();
+    }
+    // mix mode: sum all upstream buffers (mic + injector) with limiter
+    if (!isMicMute_) {
+        return MixInputs(outputVec);
+    }
+    // solo mode: only the INJECTOR buffer (ignore mic), fall back to silence if absent
+    for (auto *buffer : outputVec) {
+        if (buffer != nullptr && buffer->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_INJECTOR) {
+            return buffer;
+        }
+    }
+    return &silenceData_;
+}
+
+void HpaeSourceOutputNode::SetInjectorState(bool isInjector)
+{
+    isInjector_ = isInjector;
+}
+
+void HpaeSourceOutputNode::SetMicMute(bool isMute)
+{
+    isMicMute_ = isMute;
+}
+
+int32_t HpaeSourceOutputNode::SetupAudioLimiter()
+{
+    if (limiter_ != nullptr) {
+        AUDIO_INFO_LOG("sessionId %{public}u limiter already setup", GetSessionId());
+        return ERROR;
+    }
+    limiter_ = std::make_unique<AudioLimiter>(GetNodeId());
+    int32_t ret = limiter_->SetConfig(GetFrameLen() * GetChannelCount() * sizeof(float), sizeof(float),
+        GetSampleRate(), GetChannelCount());
+    if (ret == SUCCESS) {
+        AUDIO_INFO_LOG("sessionId %{public}u limiter init success", GetSessionId());
+    } else {
+        limiter_ = nullptr;
+        AUDIO_ERR_LOG("sessionId %{public}u limiter init fail ret=%{public}d", GetSessionId(), ret);
+    }
+    return ret;
+}
+
+void HpaeSourceOutputNode::ResetAudioLimiter()
+{
+    limiter_.reset();
+}
+
+HpaePcmBuffer *HpaeSourceOutputNode::MixInputs(const std::vector<HpaePcmBuffer *> &inputs)
+{
+    mixedOutput_.Reset();
+    uint32_t bufferState = PCM_BUFFER_STATE_INVALID | PCM_BUFFER_STATE_SILENCE;
+    if (limiter_ == nullptr) {
+        for (auto *input : inputs) {
+            mixedOutput_ += *input;
+            bufferState &= input->GetBufferState();
+        }
+    } else {
+        tmpOutput_.Reset();
+        for (auto *input : inputs) {
+            tmpOutput_ += *input;
+            bufferState &= input->GetBufferState();
+        }
+        limiter_->Process(GetFrameLen() * GetChannelCount(),
+            tmpOutput_.GetPcmDataBuffer(), mixedOutput_.GetPcmDataBuffer());
+    }
+    mixedOutput_.SetBufferState(bufferState);
+    return &mixedOutput_;
+}
+
+void HpaeSourceOutputNode::ProcessAudioData(HpaePcmBuffer *outputData, bool isMute)
 {
     int32_t ret = ERROR;
-    if (isMute_) {
+    if (isMute) {
         ret = memset_s(sourceOutputData_.data(), sourceOutputData_.size(), 0, sourceOutputData_.size());
         CHECK_AND_RETURN_LOG(ret == EOK, "memset_s failed with error:%{public}d", ret);
     } else {
@@ -185,13 +263,14 @@ void HpaeSourceOutputNode::WriteDataAndUpdateFrames()
 
 void HpaeSourceOutputNode::DoProcess()
 {
+    bool isMute = isMute_ || (!isInjector_ && isMicMute_);
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo() +
-        (isMute_ ? "_[Mute]" : "_[unMute]"));
+        (isMute ? "_[Mute]" : "_[unMute]"));
     HpaePcmBuffer *outputData = GetAndValidateOutput();
     if (outputData == nullptr) {
         return;
     }
-    ProcessAudioData(outputData);
+    ProcessAudioData(outputData, isMute);
     WriteDataAndUpdateFrames();
 }
 

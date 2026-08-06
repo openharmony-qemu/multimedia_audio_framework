@@ -16,6 +16,8 @@
 #define AUDIO_INJECTOR_POLICY_H
 
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include "audio_module_info.h"
 #include "audio_pipe_info.h"
 #include "audio_iohandle_map.h"
@@ -29,6 +31,12 @@ enum VoipType {
     NO_VOIP = 0,
     NORMAL_VOIP = 1,
     FAST_VOIP = 2,
+};
+
+enum InjectorWorkMode {
+    INJECTOR_MODE_NONE = 0,
+    INJECTOR_MODE_LEGACY_TARGET,
+    INJECTOR_MODE_STREAM_ID_TARGET,
 };
 
 class AudioPolicyServerHandler;
@@ -54,14 +62,25 @@ public:
     AudioModuleInfo& GetAudioModuleInfo();
     bool GetIsConnected();
     void SetVoipType(VoipType type);
+    int32_t PrepareLegacyRenderer(uint32_t renderId);
+    int32_t PreparePreciseRenderer(uint32_t renderId, int32_t targetUid, uint32_t targetStreamId);
+    void ClearRendererTarget(uint32_t renderId);
+    bool IsPreciseRenderer(uint32_t renderId);
     int32_t AddCaptureInjector();
     int32_t AddCaptureInjectorInner();
+    int32_t AddCaptureInjectorByTargetStream(uint32_t renderId);
+    int32_t AddCaptureInjectorByTargetStreamInner(uint32_t targetStreamId);
     int32_t RemoveCaptureInjector(bool noCapturer);
     int32_t RemoveCaptureInjectorInner(bool noCapturer);
+    int32_t RemoveCaptureInjectorByTargetStreamInner(bool noCapturer);
     void ReleaseCaptureInjector();
     void RebuildCaptureInjector(uint32_t streamId);
+    void RebuildCaptureInjectorByTargetStream(uint32_t streamId);
     std::shared_ptr<AudioPipeInfo> FindCaptureVoipPipe(
         std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, uint32_t &streamId);
+    std::shared_ptr<AudioPipeInfo> FindCaptureVoipPipeByTarget(
+        std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, int32_t targetUid, uint32_t targetStreamId,
+        VoipType &type, int32_t &ret);
     std::shared_ptr<AudioPipeInfo> FindPipeByStreamId(
         std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, VoipType &type, uint32_t &streamId);
     void FetchCapDeviceInjectPreProc(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos,
@@ -82,6 +101,7 @@ private:
     AudioInjectorPolicy();
     AudioInjectorPolicy(const AudioInjectorPolicy&) = delete;
     AudioInjectorPolicy& operator=(const AudioInjectorPolicy&) = delete;
+    void ResetInjectorModeIfNeeded();
 private:
     AudioModuleInfo moduleInfo_;
     uint32_t capturePortIdx_;
@@ -97,6 +117,11 @@ private:
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
     std::shared_mutex injectLock_;
     std::unordered_set<uint32_t> injectorStreamIds_;
+    InjectorWorkMode injectorWorkMode_ = INJECTOR_MODE_NONE;
+    int32_t activeTargetUid_ = INVALID_UID;
+    uint32_t activeTargetStreamId_ = INVALID_STREAM_ID;
+    std::unordered_map<uint32_t, int32_t> injectCaptureTargetUidMap_ = {};
+    std::unordered_map<uint32_t, uint32_t> injectCaptureTargetStreamIdMap_ = {};
     bool isNeedMuteRenderer_ = false;
 };
 } //  namespace AudioStandard

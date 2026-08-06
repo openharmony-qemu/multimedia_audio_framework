@@ -82,7 +82,7 @@ int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &proces
     attr.micChannels = static_cast<uint32_t>(sourceInfo_.channels);
     attr.ecChannels = static_cast<uint32_t>(sourceInfo_.ecChannels);
     attr.micRefChannels = static_cast<uint32_t>(sourceInfo_.micRefChannels);
-    
+
     int32_t ret = sceneClusterMap_[processorType]->CaptureEffectCreate(sceneKeyCode, attr);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERROR,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -106,7 +106,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     } else {
         nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     }
-    
+
     nodeInfo.statusCallback = weak_from_this();
 
     // todo: sourceType->processorType->sceneType => sourceType->sceneType
@@ -154,7 +154,7 @@ void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioE
     clusterNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
 
     UpdateClusterNodeInfoForRecognition(clusterNodeInfo);
-    
+
     sceneClusterMap_[sceneType] = std::make_shared<HpaeSourceProcessCluster>(clusterNodeInfo);
     CHECK_AND_RETURN(CaptureEffectCreate(sceneType, enhanceScene) != SUCCESS);
     // not erase effect processcluster for inject
@@ -241,7 +241,7 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId, bool keepSe
         sourceInputClusterMap_[mainMicType_]->GetOutputPortNum() == 0) {
         CapturerSourceStop();
     }
-    
+
     HpaeSessionState outputState = sourceOutputNodeMap_[sessionId]->GetState();
     CapturerState state = outputState == HPAE_SESSION_RELEASED ? CAPTURER_INVALID : CAPTURER_RELEASED;
     NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
@@ -380,7 +380,7 @@ int32_t HpaeCapturerManager::ConnectOutputSession(uint32_t sessionId)
             "ConnectOutputSession error, sessionId can not find in sourceOutputNodeMap",
             false),
         "ConnectOutputSession error, sessionId can not find in sourceOutputNodeMap, sessionId %{public}u", sessionId);
-    
+
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     auto scnenCluster = SafeGetMap(sceneClusterMap_, sceneType);
     if (sceneType != HPAE_SCENE_EFFECT_NONE && scnenCluster != nullptr) {
@@ -498,7 +498,7 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId, bool isStandby)
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
             HPAE_SESSION_PAUSED, OPERATION_PAUSED);
         NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, CAPTURER_PAUSED);
-        
+
         StopInterphoneSourceIfNeeded();
     };
     SendRequest(request, __func__);
@@ -768,7 +768,7 @@ int32_t HpaeCapturerManager::InitCapturer()
     IAudioSourceAttr attr;
     CreateSourceAttr(attr);
     UpdateSourceAttr(attr);
-    
+
     int32_t ret = sourceInputClusterMap_[mainMicType_]->CapturerSourceInit(attr);
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -902,7 +902,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     nodeInfo.sourceType = sourceInfo_.sourceType;
     nodeInfo.routeFlag = sourceInfo_.routeFlag;
     mainMicType_ = sourceInfo_.ecType == HPAE_EC_TYPE_SAME_ADAPTER ? HPAE_SOURCE_MIC_EC : HPAE_SOURCE_MIC;
-    
+
     UpdateSourceInputNodeInfoForRecognition(nodeInfo);
 
     if (mainMicType_ == HPAE_SOURCE_MIC_EC) {
@@ -994,7 +994,7 @@ int32_t HpaeCapturerManager::DeInit(bool isMoveDefault)
         sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceDeInit();
     }
     isInit_.store(false);
-    
+
     if (isMoveDefault) {
         std::string name = "";
         std::vector<uint32_t> ids;
@@ -1307,6 +1307,76 @@ int32_t HpaeCapturerManager::RemoveCaptureInjector(const std::shared_ptr<OutputN
         auto inputCluster = SafeGetMap(sourceInputClusterMap_, mainMicType_);
         CHECK_AND_RETURN_LOG(inputCluster != nullptr, "mainMic is nullptr, remove inject state failed");
         inputCluster->SetInjectState(false);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeCapturerManager::AddCaptureInjectorByTargetStream(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
+{
+    auto request = [this, sinkOutputNode, targetStreamId] {
+        Trace trace("HpaeCapturerManager::AddCaptureInjectorByTargetStream");
+        AUDIO_INFO_LOG("add capture injector to target stream %{public}u", targetStreamId);
+        CHECK_AND_RETURN_LOG(sinkOutputNode != nullptr, "sinkOutputNode is nullptr");
+        auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
+        CHECK_AND_RETURN_LOG(sourceOutputNode != nullptr, "target sourceOutputNode is nullptr");
+
+        // Dual-upstream: keep original mic/sceneCluster upstream, add injector converter as the
+        // second upstream. converterOutput is tagged INJECTOR so GetAndValidateOutput picks it
+        // (plain Connect is used, so converter.ConnectWithInfo will NOT overwrite the tag).
+        auto converter = std::make_shared<HpaeAudioFormatConverterNode>(
+            sinkOutputNode->GetNodeInfo(), sourceOutputNode->GetNodeInfo());
+        converter->SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_INJECTOR);
+        sourceOutputNode->Connect(converter);
+        converter->Connect(sinkOutputNode);
+        sourceOutputNode->SetInjectorState(true);
+        sourceOutputNode->SetupAudioLimiter();
+        injectorFmtConverterNodeMap_[sinkOutputNode] = converter;
+        auto inputCluster = SafeGetMap(sourceInputClusterMap_, mainMicType_);
+        CHECK_AND_RETURN_LOG(inputCluster != nullptr, "mainMic is nullptr, set inject state failed");
+        inputCluster->SetInjectState(true);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeCapturerManager::RemoveCaptureInjectorByTargetStream(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
+{
+    auto request = [this, sinkOutputNode, targetStreamId] {
+        Trace trace("HpaeCapturerManager::RemoveCaptureInjectorByTargetStream");
+        AUDIO_INFO_LOG("remove capture injector from target stream %{public}u", targetStreamId);
+        CHECK_AND_RETURN_LOG(sinkOutputNode != nullptr, "sinkOutputNode is nullptr");
+        auto converter = SafeGetMap(injectorFmtConverterNodeMap_, sinkOutputNode);
+        CHECK_AND_RETURN_LOG(converter != nullptr, "injector converter not exist for sinkOutputNode");
+        auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
+        if (sourceOutputNode != nullptr) {
+            sourceOutputNode->DisConnect(converter);
+            sourceOutputNode->SetInjectorState(false);
+            sourceOutputNode->SetMicMute(false);
+            sourceOutputNode->ResetAudioLimiter();
+        }
+        converter->DisConnect(sinkOutputNode);
+        injectorFmtConverterNodeMap_.erase(sinkOutputNode);
+        auto inputCluster = SafeGetMap(sourceInputClusterMap_, mainMicType_);
+        CHECK_AND_RETURN_LOG(inputCluster != nullptr, "mainMic is nullptr, remove inject state failed");
+        inputCluster->SetInjectState(false);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeCapturerManager::SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+{
+    auto request = [this, targetStreamId, isMute] {
+        Trace trace("HpaeCapturerManager::SetCaptureMicMuteByTargetStream");
+        AUDIO_INFO_LOG("set capture mic mute targetStreamId %{public}u isMute %{public}d",
+            targetStreamId, isMute);
+        auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, targetStreamId);
+        CHECK_AND_RETURN_LOG(sourceOutputNode != nullptr,
+            "targetStreamId[%{public}u] sourceOutputNode not exist", targetStreamId);
+        sourceOutputNode->SetMicMute(isMute);
     };
     SendRequest(request, __func__);
     return SUCCESS;

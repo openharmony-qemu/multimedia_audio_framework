@@ -32,6 +32,7 @@ const int32_t PROC_COUNT = 4;  // process 4 times
 constexpr int32_t DEFAULT_INPUT_BYTE_PER_SAMPLE = sizeof(float);
 constexpr int32_t DEFAULT_INPUT_SAMPLE_RATE = 48000;
 constexpr int32_t DEFAULT_INPUT_CHANNEL_NUM = 2;
+constexpr int32_t DEFAULT_MONO_INPUT_CHANNEL_NUM = 1;
 constexpr int32_t DEFAULT_FRAME_TIME_MS = 20;
 constexpr int32_t DEFAULT_INPUT_SAMPLE_COUNT =
     DEFAULT_INPUT_SAMPLE_RATE * DEFAULT_INPUT_CHANNEL_NUM * DEFAULT_FRAME_TIME_MS / 1000;
@@ -41,6 +42,12 @@ constexpr int32_t SPECIAL_INPUT_SAMPLE_RATE = 22050;
 constexpr int32_t SPECIAL_INPUT_SAMPLE_COUNT =
     SPECIAL_INPUT_SAMPLE_RATE * DEFAULT_INPUT_CHANNEL_NUM * SPECIAL_FRAME_TIME_MS / 1000;
 constexpr int32_t SPECIAL_INPUT_FRAME_BYTES = SPECIAL_INPUT_SAMPLE_COUNT * DEFAULT_INPUT_BYTE_PER_SAMPLE;
+
+constexpr int32_t MONO_INPUT_SAMPLE_RATE = 48000;
+constexpr int32_t MONO_INPUT_FRAME_TIME_MS = 20;
+constexpr int32_t MONO_INPUT_SAMPLE_COUNT =
+    MONO_INPUT_SAMPLE_RATE * DEFAULT_MONO_INPUT_CHANNEL_NUM * MONO_INPUT_FRAME_TIME_MS / 1000;
+constexpr int32_t MONO_INPUT_FRAME_BYTES = MONO_INPUT_SAMPLE_COUNT * DEFAULT_INPUT_BYTE_PER_SAMPLE;
 
 constexpr int32_t SUPPORT_NORMAL_SAMPLE_RATES[] = {
     8000, 12000, 16000, 24000, 32000, 44100, 48000, 64000, 88200, 96000, 176400, 192000};
@@ -86,8 +93,8 @@ HWTEST_F(AudioLimiterUnitTest, SetConfig_002, TestSize.Level1)
 {
     EXPECT_NE(limiter_, nullptr);
 
-    int32_t ret = limiter_->SetConfig(BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    int32_t ret = limiter_->SetConfig(MONO_INPUT_FRAME_BYTES, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -177,8 +184,8 @@ HWTEST_F(AudioLimiterUnitTest, SetConfig_WillFailed_While_BytePerSample_NE32, Te
 HWTEST_F(AudioLimiterUnitTest, SetConfig_WillFailed_While_SampleRate_NotVaild, TestSize.Level1)
 {
     int32_t ret =
-        limiter_->SetConfig(DEFAULT_INPUT_FRAME_BYTES, DEFAULT_INPUT_BYTE_PER_SAMPLE, DEFAULT_INPUT_SAMPLE_RATE, 1);
-    EXPECT_EQ(ret, static_cast<int32_t>(ERR_INVALID_PARAM));
+        limiter_->SetConfig(MONO_INPUT_FRAME_BYTES, DEFAULT_INPUT_BYTE_PER_SAMPLE, DEFAULT_INPUT_SAMPLE_RATE, 1);
+    EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
     ret = limiter_->SetConfig(DEFAULT_INPUT_FRAME_BYTES, DEFAULT_INPUT_BYTE_PER_SAMPLE, DEFAULT_INPUT_SAMPLE_RATE, 0);
     EXPECT_EQ(ret, static_cast<int32_t>(ERR_INVALID_PARAM));
     ret = limiter_->SetConfig(DEFAULT_INPUT_FRAME_BYTES, DEFAULT_INPUT_BYTE_PER_SAMPLE, DEFAULT_INPUT_SAMPLE_RATE, -1);
@@ -191,8 +198,8 @@ HWTEST_F(AudioLimiterUnitTest, SetConfig_WillFailed_While_ChannelNum_NE2, TestSi
         limiter_->SetConfig(DEFAULT_INPUT_FRAME_BYTES, DEFAULT_INPUT_BYTE_PER_SAMPLE, DEFAULT_INPUT_SAMPLE_RATE, 0);
     EXPECT_EQ(ret, static_cast<int32_t>(ERR_INVALID_PARAM));
 
-    ret = limiter_->SetConfig(DEFAULT_INPUT_FRAME_BYTES, DEFAULT_INPUT_BYTE_PER_SAMPLE, DEFAULT_INPUT_SAMPLE_RATE, 1);
-    EXPECT_EQ(ret, static_cast<int32_t>(ERR_INVALID_PARAM));
+    ret = limiter_->SetConfig(MONO_INPUT_FRAME_BYTES, DEFAULT_INPUT_BYTE_PER_SAMPLE, DEFAULT_INPUT_SAMPLE_RATE, 1);
+    EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
 
     ret = limiter_->SetConfig(DEFAULT_INPUT_FRAME_BYTES, DEFAULT_INPUT_BYTE_PER_SAMPLE, DEFAULT_INPUT_SAMPLE_RATE, -1);
     EXPECT_EQ(ret, static_cast<int32_t>(ERR_INVALID_PARAM));
@@ -353,6 +360,82 @@ HWTEST_F(AudioLimiterUnitTest, Check_Special_SampleRate, TestSize.Level1)
 
     ret = limiter_->Process(inputSampleCount, in.data(), out.data());
     EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
+}
+
+HWTEST_F(AudioLimiterUnitTest, SetConfig_Mono_001, TestSize.Level1)
+{
+    EXPECT_NE(limiter_, nullptr);
+
+    int32_t ret = limiter_->SetConfig(MONO_INPUT_FRAME_BYTES, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(AudioLimiterUnitTest, Process_Mono_001, TestSize.Level1)
+{
+    EXPECT_NE(limiter_, nullptr);
+
+    int32_t ret = limiter_->SetConfig(MONO_INPUT_FRAME_BYTES, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, SUCCESS);
+    std::vector<float> inBufferVector(MONO_INPUT_SAMPLE_COUNT, 0);
+    std::vector<float> outBufferVector(MONO_INPUT_SAMPLE_COUNT, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
+    ret = limiter_->Process(MONO_INPUT_SAMPLE_COUNT, inBuffer, outBuffer);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(AudioLimiterUnitTest, Process_Mono_002, TestSize.Level1)
+{
+    EXPECT_NE(limiter_, nullptr);
+
+    int32_t ret = limiter_->SetConfig(MONO_INPUT_FRAME_BYTES, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, SUCCESS);
+    float in;
+    float out;
+    ret = limiter_->Process(MONO_INPUT_SAMPLE_COUNT + 1, &in, &out);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    ret = limiter_->Process(0, &in, &out);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST_F(AudioLimiterUnitTest, GetLatency_Mono_001, TestSize.Level1)
+{
+    EXPECT_NE(limiter_, nullptr);
+
+    int32_t ret = limiter_->SetConfig(MONO_INPUT_FRAME_BYTES, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = limiter_->GetLatency();
+    EXPECT_EQ(ret,
+        MONO_INPUT_FRAME_BYTES * AUDIO_MS_PER_S /
+            (static_cast<uint8_t>(SAMPLE_F32LE) * static_cast<uint32_t>(SAMPLE_RATE_48000) *
+                static_cast<uint8_t>(MONO) * PROC_COUNT));
+}
+
+HWTEST_F(AudioLimiterUnitTest, Check_Mono_Normale_SampleRate, TestSize.Level1)
+{
+    const int arraySize = sizeof(SUPPORT_NORMAL_SAMPLE_RATES) / sizeof(SUPPORT_NORMAL_SAMPLE_RATES[0]);
+    int32_t ret;
+    const size_t maxInputSamples = 192000 * DEFAULT_MONO_INPUT_CHANNEL_NUM * DEFAULT_FRAME_TIME_MS / 1000;
+    std::vector<float> in(maxInputSamples);
+    std::vector<float> out(maxInputSamples);
+    for (int i = 0; i < arraySize; ++i) {
+        if (SUPPORT_NORMAL_SAMPLE_RATES[i] == 44100) {
+            continue;
+        }
+        int32_t inputSampleCount =
+            SUPPORT_NORMAL_SAMPLE_RATES[i] * DEFAULT_MONO_INPUT_CHANNEL_NUM * DEFAULT_FRAME_TIME_MS / 1000;
+        int32_t inputBytes = inputSampleCount * DEFAULT_INPUT_BYTE_PER_SAMPLE;
+        in.resize(inputSampleCount);
+        out.resize(inputSampleCount);
+
+        ret = limiter_->SetConfig(
+            inputBytes, DEFAULT_INPUT_BYTE_PER_SAMPLE, SUPPORT_NORMAL_SAMPLE_RATES[i], DEFAULT_MONO_INPUT_CHANNEL_NUM);
+        EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
+
+        ret = limiter_->Process(inputSampleCount, in.data(), out.data());
+        EXPECT_EQ(ret, static_cast<int32_t>(SUCCESS));
+    }
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

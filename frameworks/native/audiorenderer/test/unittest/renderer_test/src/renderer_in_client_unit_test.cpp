@@ -118,7 +118,8 @@ public:
 
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return 0; } // renderer only
 
-    virtual int32_t SetTarget(int32_t target, int32_t &ret) override { return 0; } // renderer only
+    virtual int32_t SetTarget(int32_t target, int32_t targetUid,
+            uint32_t targetStreamId, int32_t &ret) override { return 0; } // renderer only
 
     virtual int32_t UnsetOffloadMode() override { return 0; } // renderer only
 
@@ -4112,7 +4113,8 @@ public:
     int32_t SetPrivacyType(int32_t privacyType) override { return SUCCESS; }
     int32_t GetPrivacyType(int32_t &privacyType) override { return SUCCESS; }
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return SUCCESS; }
-    int32_t SetTarget(int32_t target, int32_t &ret) override { return SUCCESS; }
+    int32_t SetTarget(int32_t target, int32_t targetUid,
+            uint32_t targetStreamId, int32_t &ret) override { return SUCCESS; }
     int32_t UnsetOffloadMode() override { return SUCCESS; }
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override { return SUCCESS; }

@@ -20,6 +20,7 @@
 #include "audio_service_enum.h"
 #include "audio_device_info.h"
 #include "audio_device_descriptor.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,6 +42,13 @@ public:
     virtual ~ICoreServiceProvider() = default;
     virtual int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) = 0;
     virtual int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) = 0;
+    virtual int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId,
+        int32_t targetUid, uint32_t targetStreamId)
+    {
+        (void)targetUid;
+        (void)targetStreamId;
+        return SetRendererTarget(target, lastTarget, sessionId);
+    }
     virtual int32_t StartInjection(uint32_t sessionId) = 0;
     virtual void RemoveIdForInjector(uint32_t streamId) = 0;
     virtual void ReleaseCaptureInjector() = 0;

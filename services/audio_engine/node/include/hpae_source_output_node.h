@@ -21,6 +21,7 @@
 #include "audio_info.h"
 #include "i_capturer_stream.h"
 #include "audio_highpass_filter.h"
+#include "audio_limiter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,13 +50,19 @@ public:
     uint32_t GetTokenId();
     void SetMute(bool isMute);
     bool GetMute();
+    void SetInjectorState(bool isInjector);
+    void SetMicMute(bool isMute);
+    int32_t SetupAudioLimiter();
+    void ResetAudioLimiter();
     static int32_t GetPcEnableState();
     static void SetPcEnableState(int32_t val);
 private:
     uint64_t GetTimestamp();
     void ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer);
     HpaePcmBuffer *GetAndValidateOutput();
-    void ProcessAudioData(HpaePcmBuffer *outputData);
+    HpaePcmBuffer *SelectOutputData(const std::vector<HpaePcmBuffer *> &outputVec);
+    HpaePcmBuffer *MixInputs(const std::vector<HpaePcmBuffer *> &inputs);
+    void ProcessAudioData(HpaePcmBuffer *outputData, bool isMute);
     void WriteDataAndUpdateFrames();
 private:
     InputPort<HpaePcmBuffer *> inputStream_;
@@ -69,9 +76,18 @@ private:
     int32_t appUid_ = -1;
     uint32_t tokenId_ = 0;
     bool isMute_;
+    bool isInjector_ = false;
+    bool isMicMute_ = false;
     std::unique_ptr<AudioHighPassFilter> highpassFilter_;
     int32_t filterChannelCount_;
     bool isSupportHighpassFilter_;
+
+    // injector mix resources (mix mic + injector with limiter when isInjector_ && !isMicMute_)
+    PcmBufferInfo pcmBufferInfo_;
+    HpaePcmBuffer mixedOutput_;
+    HpaePcmBuffer tmpOutput_;
+    HpaePcmBuffer silenceData_;
+    std::unique_ptr<AudioLimiter> limiter_ = nullptr;
 };
 
 }  // namespace HPAE

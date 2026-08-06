@@ -15,6 +15,7 @@
 
 #ifndef HPAE_I_CAPTURER_MANAGER_H
 #define HPAE_I_CAPTURER_MANAGER_H
+#include "audio_errors.h"
 #include "audio_info.h"
 #include "i_capturer_stream.h"
 #include "hpae_stream_manager.h"
@@ -66,6 +67,26 @@ public:
         const SourceType &sourceType) = 0;
     virtual int32_t RemoveCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
         const SourceType &sourceType) = 0;
+    virtual int32_t AddCaptureInjectorByTargetStream(
+        const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
+    {
+        (void)sinkOutputNode;
+        (void)targetStreamId;
+        return ERR_NOT_SUPPORTED;
+    }
+    virtual int32_t RemoveCaptureInjectorByTargetStream(
+        const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, uint32_t targetStreamId)
+    {
+        (void)sinkOutputNode;
+        (void)targetStreamId;
+        return ERR_NOT_SUPPORTED;
+    }
+    virtual int32_t SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+    {
+        (void)targetStreamId;
+        (void)isMute;
+        return ERR_NOT_SUPPORTED;
+    }
     virtual void TriggerAppsUidUpdate(uint32_t sessionId) { return; };
     virtual int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) { return 0; };
 private:

@@ -141,11 +141,12 @@ int32_t CoreServiceHandler::A2dpOffloadGetRenderPosition(uint32_t &delayValue, u
     return ret;
 }
 
-int32_t CoreServiceHandler::SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId)
+int32_t CoreServiceHandler::SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId,
+    int32_t targetUid, uint32_t targetStreamId)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "Injector::iCoreServiceProvider_ is nullptr!");
     int32_t ret = ERROR;
-    iCoreServiceProvider_->SetRendererTarget(target, lastTarget, sessionId, ret);
+    iCoreServiceProvider_->SetRendererTarget(target, lastTarget, sessionId, targetUid, targetStreamId, ret);
     return ret;
 }
 

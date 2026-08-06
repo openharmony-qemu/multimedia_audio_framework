@@ -148,7 +148,7 @@ void ExecutePartTwo(sptr<IpcStreamInServer> ptrIpcStreamStub, FuzzedDataProvider
     ptrIpcStreamStub->SetAudioHapticsSyncId(audioHapticsSyncId);
     int32_t target = provider.ConsumeIntegral<uint32_t>();
     int32_t targetRet = provider.ConsumeIntegral<uint32_t>();
-    ptrIpcStreamStub->SetTarget(target, targetRet);
+    ptrIpcStreamStub->SetTarget(target, INVALID_UID, INVALID_STREAM_ID, targetRet);
     ptrIpcStreamStub->SetRebuildFlag();
     ptrIpcStreamStub->Flush();
     ptrIpcStreamStub->Pause();

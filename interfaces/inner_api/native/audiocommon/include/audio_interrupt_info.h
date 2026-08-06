@@ -340,6 +340,8 @@ public:
     bool activatedRegisterCallbackFlag = false;
     bool isCallWaitingTone = false;
     bool isCheckMuteStream = false;
+    // no serialization required
+    bool voipCaptureMixWithOthersFlag = false;
 
     AudioInterrupt() = default;
     AudioInterrupt(StreamUsage streamUsage_, ContentType contentType_, AudioFocusType audioFocusType_,
@@ -394,6 +396,7 @@ public:
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.muteWhenInterruptFlag);
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.pauseWhenInterruptFlag);
         res = res && parcel.WriteBool(interrupt.behaviorFlags_.aibaseMuteVoip);
+        res = res && parcel.WriteBool(interrupt.behaviorFlags_.voipCaptureMixWithOthers);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.independentStrategy.concurrencyMode));
         res = res && parcel.WriteBool(interrupt.mixWithWakeUp);
         res = res && parcel.WriteInt64(interrupt.startTimeNs);
@@ -435,6 +438,7 @@ public:
         interrupt.behaviorFlags_.muteWhenInterruptFlag = parcel.ReadBool();
         interrupt.behaviorFlags_.pauseWhenInterruptFlag = parcel.ReadBool();
         interrupt.behaviorFlags_.aibaseMuteVoip = parcel.ReadBool();
+        interrupt.behaviorFlags_.voipCaptureMixWithOthers = parcel.ReadBool();
         interrupt.independentStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(parcel.ReadInt32());
         interrupt.mixWithWakeUp = parcel.ReadBool();
         interrupt.startTimeNs = parcel.ReadInt64();

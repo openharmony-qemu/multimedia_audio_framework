@@ -115,6 +115,7 @@ public:
     int32_t SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override;
     uint32_t GetUnderflowCount() const override;
     int32_t SetTarget(RenderTarget target) override;
+    int32_t SetTarget(RenderTarget target, int32_t targetUid, uint32_t targetStreamId) override;
     RenderTarget GetTarget() const override;
     int32_t GetKeepRunning(bool &keepRunning) const override;
 

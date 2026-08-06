@@ -460,7 +460,7 @@ int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo,
         }
         return sinkNameSinkIdMap_[audioModuleInfo.name];
     }
-    
+
     return CreateRendererManager(audioModuleInfo, sinkSourceIndex);
 }
 
@@ -576,7 +576,7 @@ uint32_t HpaeManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo)
                 ReloadRenderManager(audioModuleInfo, true);
                 return;
             }
-        
+
             AUDIO_INFO_LOG("currect device:%{public}s not exist.", GetEncryptStr(audioModuleInfo.name).c_str());
             uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
             CreateRendererManager(audioModuleInfo, sinkSourceIndex, true);
@@ -591,7 +591,7 @@ uint32_t HpaeManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo)
                 ReloadCaptureManager(sourceInfo, true);
                 return;
             }
-        
+
             AUDIO_INFO_LOG("currect device:%{public}s not exist.", GetEncryptStr(audioModuleInfo.name).c_str());
             uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
             CreateCaptureManager(sourceInfo, sinkSourceIndex, true);
@@ -853,7 +853,7 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
             AUDIO_INFO_LOG("source is same as default source");
             return;
         }
-        
+
         std::shared_ptr<IHpaeCapturerManager> newCapturerManager = GetCapturerManagerByName(name);
         if (newCapturerManager == nullptr || !newCapturerManager->IsInit()) {
             AUDIO_WARNING_LOG("source: %{public}s not exist or not init, do not change default source", name.c_str());
@@ -2656,13 +2656,13 @@ void HpaeManager::NotifySettingsDataReady()
     HpaePolicyManager::GetInstance().LoadEffectProperties();
     LoadEffectLive();
 }
-    
+
 void HpaeManager::NotifyAccountsChanged()
 {
     HpaePolicyManager::GetInstance().LoadEffectProperties();
     LoadEffectLive();
 }
-    
+
  bool HpaeManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
  {
     if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
@@ -2747,7 +2747,7 @@ bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string
     }
     return true;
 }
-    
+
 bool HpaeManager::GetEffectLiveParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
@@ -2915,18 +2915,66 @@ void HpaeManager::RemoveCaptureInjector(
     SendRequest(request, __func__);
 }
 
-int32_t HpaeManager::PeekAudioData(
-    const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
+void HpaeManager::AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
 {
-    std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
-    auto sinkVirtualOutputNode = SafeGetMap(sinkVirtualOutputNodeMap_, sinkPortIndex);
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(sinkVirtualOutputNode != nullptr, ERROR_INVALID_PARAM,
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::PLAY,
-                BusinessScenario::QUERY, ERR_NULL_POINTER),
-            "sinkPort not exit", false),
-        "sinkPort[%{public}u] not exit", sinkPortIndex);
-    return sinkVirtualOutputNode->PeekAudioData(buffer, bufferSize, streamInfo);
+    auto request = [this, sinkPortIndex, sourcePortIndex, targetStreamId] {
+        AUDIO_INFO_LOG("add injection from sink[%{public}u] to source[%{public}u], targetStreamId[%{public}u]",
+            sinkPortIndex, sourcePortIndex, targetStreamId);
+        CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
+            "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
+        std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
+        auto rendererManager = SafeGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
+        CHECK_AND_RETURN_LOG(rendererManager, "sink[%{public}s] is in wrong state",
+            sinkIdSinkNameMap_[sinkPortIndex].c_str());
+        CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
+            "sourcePortIndex[%{public}u] not exit", sourcePortIndex);
+        auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
+        CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
+            sourceIdSourceNameMap_[sourcePortIndex].c_str());
+        capturerManager->AddCaptureInjectorByTargetStream(sinkVirtualOutputNodeMap_[sinkPortIndex],
+            targetStreamId);
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, uint32_t targetStreamId)
+{
+    auto request = [this, sinkPortIndex, sourcePortIndex, targetStreamId] {
+        AUDIO_INFO_LOG("remove injection from sink[%{public}u] to source[%{public}u], targetStreamId[%{public}u]",
+            sinkPortIndex, sourcePortIndex, targetStreamId);
+        CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
+            "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
+        std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
+        auto rendererManager = SafeGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
+        CHECK_AND_RETURN_LOG(rendererManager, "sink[%{public}s] is in wrong state",
+            GetEncryptStr(sinkIdSinkNameMap_[sinkPortIndex]).c_str());
+        CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
+            "sourcePortIndex[%{public}u] not exit", sourcePortIndex);
+        auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
+        CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
+            sourceIdSourceNameMap_[sourcePortIndex].c_str());
+        capturerManager->RemoveCaptureInjectorByTargetStream(sinkVirtualOutputNodeMap_[sinkPortIndex],
+            targetStreamId);
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::SetCaptureMicMuteByTargetStream(uint32_t targetStreamId, bool isMute)
+{
+    auto request = [this, targetStreamId, isMute] {
+        AUDIO_INFO_LOG("set mic mute targetStreamId[%{public}u] isMute[%{public}d]",
+            targetStreamId, isMute);
+        std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
+        if (capturerIdSourceNameMap_.find(targetStreamId) != capturerIdSourceNameMap_.end()) {
+            CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[targetStreamId]),
+                "cannot find device:%{public}s", capturerIdSourceNameMap_[targetStreamId].c_str());
+            capturerManagerMap_[capturerIdSourceNameMap_[targetStreamId]]->SetCaptureMicMuteByTargetStream(
+                targetStreamId, isMute);
+        }
+    };
+    SendRequest(request, __func__);
 }
 
 void HpaeManager::DeleteRendererManager(const std::string &name)
@@ -3063,7 +3111,7 @@ std::shared_ptr<IHpaeRendererManager> HpaeManager::GetAuxiliaryRendererManager()
     std::shared_ptr<IHpaeRendererManager> usbSpkManager = GetRendererManagerByName(USB_SINK_NAME);
     CHECK_AND_RETURN_RET(usbSpkManager != nullptr, btSpkManager);
     CHECK_AND_RETURN_RET(btSpkManager != nullptr, usbSpkManager);
-    
+
     bool isBtRunning = btSpkManager->IsRunning();
     bool isUsbRunning = usbSpkManager->IsRunning();
     CHECK_AND_RETURN_RET_LOG(isUsbRunning, btSpkManager, "get bt, usb not running");
@@ -3076,7 +3124,7 @@ int32_t HpaeManager::SetAuxiliarySinkEnable(bool isEnabled)
 {
     AUDIO_INFO_LOG("set to isEnabled:[%{public}s]", isEnabled ? "true" : "false");
     auxSinkEnable_ = isEnabled;
-    
+
     auto request = [this, isEnabled]() {
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetAuxiliaryRendererManager();
         CHECK_AND_RETURN_LOG(rendererManager != nullptr, "can not find bt_speaker and usb_speaker");
@@ -3352,7 +3400,7 @@ void HpaeManager::UpdateBypassSpatializationForStereo(bool bypass)
     AUDIO_INFO_LOG("HpaeManager::UpdateBypassSpatializationForStereo %{public}d", bypass);
     HpaePolicyManager::GetInstance().SetBypassSpatializationForStereo(bypass && adaptiveSpatialRenderingEnabled_);
 }
- 
+
 void HpaeManager::HandleBypassSpatializationForStereo(bool bypass)
 {
     AUDIO_INFO_LOG("HpaeManager::HandleBypassSpatializationForStereo %{public}d", bypass);

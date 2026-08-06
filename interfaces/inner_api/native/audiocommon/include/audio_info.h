@@ -107,6 +107,7 @@ const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTI
 const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
 const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
 const char* INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION = "ohos.permission.INJECT_PLAYBACK_TO_AUDIO_CAPTURE";
+const char* VOIP_CAPTURE_CONCURRENCY_PERMISSION = "ohos.permission.VOIP_CAPTURE_CONCURRENCY";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
 const char* INNER_CAPTURER_SINK = "InnerCapturerSink_";
@@ -115,6 +116,7 @@ const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
 const char* VIRTUAL_INJECTOR = "Virtual_Injector";
 inline constexpr std::string_view PRIMARY_ZONE_NAME = "primary_zone";
+constexpr int32_t PLAYBACKCAPTURER_RECORD_ALL = -1;
 
 // For ipc
 constexpr uint32_t MAX_COMMON_IPC_ARRAY_SIZE = 1000;
@@ -1175,6 +1177,8 @@ struct CaptureFilterOptions {
     std::vector<int32_t> pids;
     FilterMode pidFilterMode {FilterMode::INCLUDE};
     bool capturePrivatePrivacyStreams = false;
+    int32_t playbackCaptureUid = PLAYBACKCAPTURER_RECORD_ALL;
+    int32_t playbackCaptureMode = 0;
 
     CaptureFilterOptions() = default;
     CaptureFilterOptions(const std::vector<StreamUsage> &usage, FilterMode uFilterMode,
@@ -1194,7 +1198,9 @@ struct CaptureFilterOptions {
         std::sort(pids.begin(), pids.end());
         return (filter.usages == usages && filter.usageFilterMode == usageFilterMode
             && filter.pids == pids && filter.pidFilterMode == pidFilterMode
-            && filter.capturePrivatePrivacyStreams == capturePrivatePrivacyStreams);
+            && filter.capturePrivatePrivacyStreams == capturePrivatePrivacyStreams &&
+            filter.playbackCaptureUid == playbackCaptureUid &&
+            filter.playbackCaptureMode == playbackCaptureMode);
     }
 };
 
@@ -1241,6 +1247,8 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
         // filterOptions.pidFilterMode
         parcel.WriteUint32(filterOptions.pidFilterMode);
         parcel.WriteBool(filterOptions.capturePrivatePrivacyStreams);
+        parcel.WriteInt32(filterOptions.playbackCaptureUid);
+        parcel.WriteInt32(filterOptions.playbackCaptureMode);
 
         // silentCapture
         parcel.WriteBool(silentCapture);
@@ -1252,6 +1260,8 @@ private:
     static AudioPlaybackCaptureConfig *ReadPlaybackCaptureFlags(Parcel &parcel, AudioPlaybackCaptureConfig *config)
     {
         config->filterOptions.capturePrivatePrivacyStreams = parcel.ReadBool();
+        config->filterOptions.playbackCaptureUid = parcel.ReadInt32();
+        config->filterOptions.playbackCaptureMode = parcel.ReadInt32();
         // silentCapture
         config->silentCapture = parcel.ReadBool();
         config->isModernInnerCapturer = parcel.ReadBool();

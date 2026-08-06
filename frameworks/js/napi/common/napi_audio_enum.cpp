@@ -332,6 +332,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::playbackCaptureStartStateMap
 const std::map<std::string, int32_t> NapiAudioEnum::playbackCaptureModeMap = {
     {"MODE_DEFAULT", 0x0},
     {"MODE_MEDIA", 0x1},
+    {"MODE_ONLY_VOIP", 0x4000},
     {"MODE_EXCLUDING_SELF", 0x8000},
 };
 
@@ -626,6 +627,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioSessionBehaviorFlagsMap
     {"DEFAULT_BEHAVIOR", static_cast<int32_t>(AudioSessionBehaviorFlags::DEFAULT)},
     {"MUTE_WHEN_INTERRUPTED", static_cast<int32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)},
     {"PAUSE_WHEN_INTERRUPTED", static_cast<int32_t>(AudioSessionBehaviorFlags::PAUSE_WHEN_INTERRUPTED)},
+    {"VOIP_CAPTURE_MIX_WITH_OTHERS", static_cast<int32_t>(AudioSessionBehaviorFlags::VOIP_CAPTURE_MIX_WITH_OTHERS)},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioSeparationVolumeTypeMap = {

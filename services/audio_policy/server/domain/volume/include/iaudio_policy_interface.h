@@ -84,6 +84,14 @@ public:
 
     virtual int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) = 0;
 
+    virtual int32_t SetVoipRendererMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted) = 0;
+
+    virtual int32_t SetVoipCapturerMute(int32_t callerUid, int32_t appUid, int64_t streamId, bool muted) = 0;
+
+    virtual int32_t ClearVoipMuteByCallerUid(int32_t callerUid) = 0;
+
+    virtual int32_t ClearVoipMuteByStreamId(int64_t streamId) = 0;
+
     virtual int32_t GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
 
     virtual int32_t SetSystemAppVolumeLevel(int32_t appUid, int32_t volumeLevel, DeviceType deviceType) = 0;
@@ -294,6 +302,18 @@ public:
         const SourceType &sourceType) = 0;
     virtual void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) = 0;
+    virtual void AddCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        uint32_t targetStreamId)
+    {
+        (void)targetStreamId;
+        AddCaptureInjector(sinkPortIndex, sourcePortIndex, SOURCE_TYPE_VOICE_COMMUNICATION);
+    }
+    virtual void RemoveCaptureInjectorByTargetStream(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        uint32_t targetStreamId)
+    {
+        (void)targetStreamId;
+        RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, SOURCE_TYPE_VOICE_COMMUNICATION);
+    }
     virtual void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) = 0;
     virtual int32_t AddCaptureInjector() = 0;
     virtual int32_t RemoveCaptureInjector() = 0;

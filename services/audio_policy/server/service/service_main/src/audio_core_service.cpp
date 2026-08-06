@@ -1785,6 +1785,8 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         RemoveUnusedRecordPipe();
     }
     DeleteSessionId(sessionId);
+    ClearMuteVoipState(streamDesc, sessionId);
+
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             ReleaseCaptureInjector();
@@ -3031,16 +3033,32 @@ bool AudioCoreService::IsA2dpOffloadStream(uint sessionId)
 
 int32_t AudioCoreService::SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId)
 {
+    return SetRendererTarget(target, lastTarget, sessionId, INVALID_UID, INVALID_STREAM_ID);
+}
+
+int32_t AudioCoreService::SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId,
+    int32_t targetUid, uint32_t targetStreamId)
+{
     int32_t ret = ERROR;
+    bool noTargetParams = (targetUid == INVALID_UID && targetStreamId == INVALID_STREAM_ID);
+    bool hasTargetParams = (targetUid != INVALID_UID && targetStreamId != INVALID_STREAM_ID);
+    CHECK_AND_RETURN_RET_LOG(noTargetParams || hasTargetParams, ERR_INVALID_PARAM,
+        "targetUid and targetStreamId must be set together");
     if (lastTarget == NORMAL_PLAYBACK && target == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        if (hasTargetParams) {
+            ret = audioInjectorPolicy_.PreparePreciseRenderer(sessionId, targetUid, targetStreamId);
+        } else {
+            ret = audioInjectorPolicy_.PrepareLegacyRenderer(sessionId);
+        }
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Prepare injector renderer failed: %{public}d", ret);
         ret = PlayBackToInjection(sessionId);
-        if (ret == SUCCESS) {
-            AudioInjectorPolicy::GetInstance().AddInjectorStreamId(sessionId);
+        if (ret != SUCCESS) {
+            audioInjectorPolicy_.ClearRendererTarget(sessionId);
         }
     } else if (lastTarget == INJECT_TO_VOICE_COMMUNICATION_CAPTURE && target == NORMAL_PLAYBACK) {
         ret = InjectionToPlayBack(sessionId);
         if (ret == SUCCESS) {
-            AudioInjectorPolicy::GetInstance().DeleteInjectorStreamId(sessionId);
+            audioInjectorPolicy_.ClearRendererTarget(sessionId);
         }
     }
     return ret;
@@ -3050,11 +3068,16 @@ int32_t AudioCoreService::StartInjection(uint32_t streamId)
 {
     bool isConnected = audioInjectorPolicy_.GetIsConnected();
     CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "Injector::pipeManager_ is null");
-    if (!isConnected && pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
+    if (!isConnected && !audioInjectorPolicy_.IsPreciseRenderer(streamId) &&
+        pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
         return ERR_ILLEGAL_STATE;
     }
     int32_t ret = ERROR;
-    ret = audioInjectorPolicy_.AddCaptureInjector();
+    if (audioInjectorPolicy_.IsPreciseRenderer(streamId)) {
+        ret = audioInjectorPolicy_.AddCaptureInjectorByTargetStream(streamId);
+    } else {
+        ret = audioInjectorPolicy_.AddCaptureInjector();
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Injector::AddCaptureInjector failed");
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(streamId);
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERROR, "Injector::get streamDesc failed");

@@ -542,7 +542,7 @@ double AudioRendererImpl::GetSpeed()
     return ret;
 }
 
-void AudioRendererImpl::SetTargetSync(RenderTarget target)
+void AudioRendererImpl::SetTargetSync(RenderTarget target, optional_view<AudioRendererTargetParams> targetParams)
 {
     if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "Caller is not a system application.");
@@ -557,7 +557,13 @@ void AudioRendererImpl::SetTargetSync(RenderTarget target)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "Parameter verification failed.");
         return;
     }
-    int32_t ret = audioRenderer_->SetTarget(static_cast<OHOS::AudioStandard::RenderTarget>(renderTarget));
+    int32_t ret;
+    if (targetParams.has_value()) {
+        ret = audioRenderer_->SetTarget(static_cast<OHOS::AudioStandard::RenderTarget>(renderTarget),
+            targetParams.value().uid, targetParams.value().streamId);
+    } else {
+        ret = audioRenderer_->SetTarget(static_cast<OHOS::AudioStandard::RenderTarget>(renderTarget));
+    }
     switch (ret) {
         case OHOS::AudioStandard::SUCCESS:
             break;

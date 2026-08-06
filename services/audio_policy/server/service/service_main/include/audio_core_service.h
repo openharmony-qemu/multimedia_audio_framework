@@ -239,6 +239,8 @@ public:
         int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
         int32_t ReleaseMultiChannelPipe(AudioIOHandle id, uint32_t paIndex);
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
+        int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId,
+            int32_t targetUid, uint32_t targetStreamId) override;
         int32_t StartInjection(uint32_t sessionId) override;
         void RemoveIdForInjector(uint32_t streamId) override;
         void ReleaseCaptureInjector() override;
@@ -508,6 +510,8 @@ public:
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsA2dpOffloadStream(uint sessionId);
     int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId);
+    int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId,
+        int32_t targetUid, uint32_t targetStreamId);
     int32_t StartInjection(uint32_t sessionId);
     void RemoveIdForInjector(uint32_t sessionId);
     void ReleaseCaptureInjector();
@@ -700,6 +704,7 @@ private:
 
     void AddSessionId(const uint32_t sessionId);
     void DeleteSessionId(const uint32_t sessionId);
+    void ClearMuteVoipState(const std::shared_ptr<AudioStreamDescriptor> streamDesc, const uint32_t sessionId);
 
     int32_t HandleFetchOutputWhenNoRunningStream(const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleFetchInputWhenNoRunningStream();

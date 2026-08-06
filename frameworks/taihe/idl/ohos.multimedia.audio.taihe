@@ -352,6 +352,11 @@ struct ActiveStreamVolumeInfo {
   @readonly clientUid: i32;
 }
 
+struct AudioRendererTargetParams {
+  uid: i32;
+  streamId: i64;
+}
+
 interface AudioManager {
   @gen_promise("setExtraParameters")
   SetExtraParametersSync(mainKey: String, kvpairs: @record Map<String, String>): void;
@@ -886,6 +891,7 @@ enum AudioSessionBehaviorFlags: i32 {
   DEFAULT_BEHAVIOR = 0x00000000,
   MUTE_WHEN_INTERRUPTED = 0x00000002,
   PAUSE_WHEN_INTERRUPTED = 0x00000004,
+  VOIP_CAPTURE_MIX_WITH_OTHERS = 0x20000000,
 }
 
 enum OutputDeviceChangeRecommendedAction: i32 {
@@ -1018,6 +1024,7 @@ struct AudioCapturerInfo {
 enum AudioPlaybackCaptureMode: i32 {
   MODE_DEFAULT = 0,
   MODE_MEDIA = 1,
+  MODE_ONLY_VOIP = 16384,
   MODE_EXCLUDING_SELF = 32768,
 }
 
@@ -1026,6 +1033,7 @@ struct AudioCapturerOptions {
   capturerInfo: AudioCapturerInfo;
   preferredInputDevice: Optional<AudioDeviceDescriptor>;
   @optional playbackCaptureMode: Optional<AudioPlaybackCaptureMode>;
+  @optional playbackCaptureUid: Optional<i32>;
 }
 
 enum PlaybackCaptureStartState: i32 {
@@ -1206,7 +1214,7 @@ interface AudioRenderer {
   SetVolumeSync(volume: f64): void;
 
   @gen_promise("setTarget")
-  SetTargetSync(target: RenderTarget): void;
+  SetTargetSync(target: RenderTarget, targetParams: Optional<AudioRendererTargetParams>): void;
 
   GetTarget(): RenderTarget;
 

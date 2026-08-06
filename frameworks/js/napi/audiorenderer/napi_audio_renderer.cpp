@@ -611,6 +611,24 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
         context->status = NapiParamUtils::GetValueInt32(env, context->target, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get Target failed",
             NAPI_ERR_INVALID_PARAM);
+        CHECK_AND_RETURN(argc >= ARGS_TWO && context->target != NORMAL_PLAYBACK);
+        napi_valuetype valueType = napi_undefined;
+        context->status = napi_typeof(env, argv[PARAM1], &valueType);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok && valueType == napi_object,
+            "targetParams must be object", NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, "uid", context->targetUid, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get target uid failed",
+            NAPI_ERR_INVALID_PARAM);
+        int64_t streamId = INVALID_STREAM_ID;
+        context->status = NapiParamUtils::GetValueInt64(env, "streamId", streamId, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok && streamId > 0 && streamId <= UINT32_MAX,
+            "get target streamId failed", NAPI_ERR_INVALID_PARAM);
+        context->targetStreamId = static_cast<uint32_t>(streamId);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, ValidStreamId(context->targetStreamId),
+            "invalid target streamId", NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->targetUid >= 0, "invalid target uid",
+            NAPI_ERR_INVALID_PARAM);
+        context->hasTargetParams = true;
     };
     context->GetCbInfo(env, info, inputParser);
     auto executor = [context]() {
@@ -625,12 +643,19 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
             return;
         }
         RenderTarget target = static_cast<RenderTarget>(context->target);
-        context->intValue = napiAudioRenderer->audioRenderer_->SetTarget(target);
+        if (context->hasTargetParams) {
+            context->intValue = napiAudioRenderer->audioRenderer_->SetTarget(target,
+                context->targetUid, context->targetStreamId);
+        } else {
+            context->intValue = napiAudioRenderer->audioRenderer_->SetTarget(target);
+        }
         CHECK_AND_RETURN(context->intValue != SUCCESS);
         if (context->intValue == ERR_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_NO_PERMISSION, "Permission denied.");
         } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_PERMISSION_DENIED, "Caller is not a system application.");
+        } else if (context->intValue == ERR_INVALID_PARAM) {
+            context->SignError(NAPI_ERR_INVALID_PARAM, "Parameter verification failed.");
         } else if (context->intValue == ERR_ILLEGAL_STATE) {
             context->SignError(NAPI_ERR_ILLEGAL_STATE, "Operation not permit at running and release state.");
         } else if (context->intValue == ERR_NOT_SUPPORTED) {
