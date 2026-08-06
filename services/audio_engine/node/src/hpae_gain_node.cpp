@@ -166,6 +166,7 @@ void HpaeGainNode::ResetFadeState()
     collFadeInState_ = false;
     collFadeProcessedBytes_ = 0;
     collTotalFadeBytes_ = 0;
+    operation_ = OPERATION_INVALID; // clear stale op; harmless (SetFadeState reassigns before use)
     AUDIO_INFO_LOG("ResetFadeState, session:%{public}u", GetSessionId());
 }
 
