@@ -343,7 +343,7 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(uint32_t &sinkLatency)
         std::shared_lock<std::shared_mutex> lock(latencyMutex_);
         deviceClass = deviceClass_;
         deviceNetId = deviceNetId_;
-        // 由于刚起播上层无法预估准确位置，需要调用底层获取时延接口
+        // Upper layer cannot estimate position at playback start, so query the underlying latency interface.
         if (offloadEnable_ && hdiPos_.first != 0) {
             sinkLatency = GetOffloadLatency();
             return SUCCESS;

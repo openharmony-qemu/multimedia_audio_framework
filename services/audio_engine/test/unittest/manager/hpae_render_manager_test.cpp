@@ -5922,4 +5922,40 @@ HWTEST_F(HpaeRendererManagerTest, DestroySessionEffect_AlreadyStopping_IsNoOp, T
     EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 0u);  // no sync DISABLED
 }
 
+/**
+ * @tc.name  : ConnectOutputCluster_NullOutputCluster_001
+ * @tc.type  : FUNC
+ * @tc.number: ConnectOutputCluster_NullOutputCluster_001
+ * @tc.desc  : Test ConnectOutputCluster returns safely (no null deref) when
+ *             outputCluster_ is nullptr while sceneClusterMap_ has an entry.
+ *             This covers the half-zombie state after Init/Reload failure where
+ *             SafeGetMap passes but outputCluster_ was never constructed.
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectOutputCluster_NullOutputCluster_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    ASSERT_NE(hpaeRendererManager, nullptr);
+
+    // Half-zombie state: sceneClusterMap_ has an entry (SafeGetMap passes the first
+    // guard) but outputCluster_ is null because Init/Reload failed to construct it.
+    HpaeNodeInfo nodeInfo;
+    // HpaeProcessCluster ctor builds mixer/effect nodes that need valid params
+    // (esp. channels); a default nodeInfo (channels=0) crashes in HpaeMixerNode.
+    nodeInfo.sceneType = HPAE_SCENE_DEFAULT;
+    nodeInfo.frameLen = sinkInfo.frameLen;
+    nodeInfo.samplingRate = sinkInfo.samplingRate;
+    nodeInfo.channels = sinkInfo.channels;
+    nodeInfo.format = sinkInfo.format;
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_DEFAULT] =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    hpaeRendererManager->outputCluster_ = nullptr;
+
+    // Before the fix: SafeGetMap returns the cluster, then the code dereferences a
+    // null outputCluster_ (outputCluster_->IsProcessClusterConnected) -> SEGV.
+    // After the fix: CHECK_AND_RETURN_LOG(outputCluster_ != nullptr, ...) returns safely.
+    hpaeRendererManager->ConnectOutputCluster(1u, HPAE_SCENE_DEFAULT);
+    SUCCEED(); // Reaching here without crashing means the null guard works.
+}
+
 }  // namespace
