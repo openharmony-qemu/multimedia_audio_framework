@@ -29,6 +29,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/i_audio_render_sink.h"
+#include "util/audio_hdi_version_manager.h"
 
 using namespace std;
 
@@ -102,6 +103,13 @@ static const std::map<std::string, AsrVoiceControlMode> VC_MODE_MAP = {
     {"audiomix2voicetxex", AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX},
 };
 
+static const std::map<AsrVoiceControlMode, std::string> VC_MODE_MAP_VERSE_V61 = {
+    {AsrVoiceControlMode::AUDIO_2_VOICETX, "asraudio2voicetx"},
+    {AsrVoiceControlMode::AUDIO_MIX_2_VOICETX, "asraudiomix2voicetx"},
+    {AsrVoiceControlMode::AUDIO_2_VOICE_TX_EX, "asraudio2voicetxex"},
+    {AsrVoiceControlMode::AUDIO_MIX_2_VOICE_TX_EX, "asraudiomix2voicetxex"},
+};
+
 static const std::map<AsrVoiceControlMode, std::string> VC_MODE_MAP_VERSE = {
     {AsrVoiceControlMode::AUDIO_2_VOICETX, "audio2voicetx"},
     {AsrVoiceControlMode::AUDIO_MIX_2_VOICETX, "audiomix2voicetx"},
@@ -172,6 +180,14 @@ std::vector<std::string> splitString(const std::string& str, const std::string& 
         pos = strs.find(pattern);
     }
     return res;
+}
+
+const std::map<AsrVoiceControlMode, std::string>& GetVcModeMapVerse()
+{
+    if (AudioHdiVersionManager::GetInstance().IsV61OrAbove()) {
+        return VC_MODE_MAP_VERSE_V61;
+    }
+    return VC_MODE_MAP_VERSE;
 }
 
 int32_t AudioServer::SetAsrAecMode(int32_t asrAecMode)
@@ -415,10 +431,10 @@ int32_t AudioServer::SetAsrVoiceControlMode(int32_t asrVoiceControlMode, bool on
     std::string value = key + "=";
 
     AsrVoiceControlMode asrVoiceControlModeTmp = static_cast<AsrVoiceControlMode>(asrVoiceControlMode);
-    auto itVerse = VC_MODE_MAP_VERSE.find(asrVoiceControlModeTmp);
+    auto itVerse = GetVcModeMapVerse().find(asrVoiceControlModeTmp);
     auto itCallAssistant = VOICE_CALL_ASSISTANT_SUPPRESSION.find(asrVoiceControlModeTmp);
     auto res = RES_MAP_VERSE.find(on);
-    if (itVerse == VC_MODE_MAP_VERSE.end() && itCallAssistant == VOICE_CALL_ASSISTANT_SUPPRESSION.end()) {
+    if (itVerse == GetVcModeMapVerse().end() && itCallAssistant == VOICE_CALL_ASSISTANT_SUPPRESSION.end()) {
         AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
     }
@@ -427,7 +443,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(int32_t asrVoiceControlMode, bool on
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
-    if (itVerse != VC_MODE_MAP_VERSE.end()) {
+    if (itVerse != GetVcModeMapVerse().end()) {
         value = itVerse->second + "=" + res->second;
         AudioServer::audioParameters[key] = value;
         deviceManager->SetAudioParameter("primary", paramKey, "", value);
