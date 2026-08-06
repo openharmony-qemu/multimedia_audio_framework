@@ -199,9 +199,6 @@ private:
     void HandleEmptyInputPipeReload(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         const std::unordered_map<uint32_t, std::shared_ptr<AudioPipeInfo>> &oldPipeMap,
         const std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList);
-    bool ShouldAdjustConcedeAction(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
-        const std::shared_ptr<AudioStreamDescriptor> &incomingStream,
-        const std::shared_ptr<AudioStreamDescriptor> &targetStream);
     bool IsUpdateActionForDeviceLevelHdPlay(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
     void MatchCollaborativePipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,

@@ -1386,46 +1386,26 @@ ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
     return action;
 }
 
-bool AudioPipeSelector::ShouldAdjustConcedeAction(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
-    const std::shared_ptr<AudioStreamDescriptor> &incomingStream,
-    const std::shared_ptr<AudioStreamDescriptor> &targetStream)
-{
-    CHECK_AND_RETURN_RET_LOG(targetStream != nullptr, false, "targetStream is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!targetStream->IsLoopbackStream(), false,
-        "target stream %{public}u is loopback, skip adjust", targetStream->GetSessionId());
-    CHECK_AND_RETURN_RET(IsUpdateActionForDeviceLevelHdPlay(existingStream, incomingStream), false);
-    CHECK_AND_RETURN_RET(targetStream->GetRoute() != (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_DIRECT), false);
-
-    CHECK_AND_RETURN_RET_LOG(!((existingStream->GetRoute() & AUDIO_OUTPUT_FLAG_LOWPOWER) &&
-        existingStream->streamStatus_ != STREAM_STATUS_STARTED &&
-        incomingStream->GetRoute() == AUDIO_OUTPUT_FLAG_FAST), false,
-        "offload stream in non-running state, fast stream skip adjust.");
-    return true;
-}
-
 void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamDescriptor> existingStream,
     std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action)
 {
     CHECK_AND_RETURN(action == CONCEDE_INCOMING || action == CONCEDE_EXISTING);
+    CHECK_AND_RETURN_LOG(existingStream != nullptr && incomingStream != nullptr,
+        "existingStream or incomingStream is nullptr");
+    CHECK_AND_RETURN_LOG(existingStream->IsRunning() || incomingStream->IsRunning(),
+        "both streams are not running");
 
     std::shared_ptr<AudioStreamDescriptor> targetStream =
         (action == CONCEDE_INCOMING) ? existingStream : incomingStream;
-    CHECK_AND_RETURN(ShouldAdjustConcedeAction(existingStream, incomingStream, targetStream));
+    CHECK_AND_RETURN_LOG(!targetStream->IsLoopbackStream(),
+        "target stream %{public}u is loopback, skip adjust", targetStream->GetSessionId());
+    CHECK_AND_RETURN(IsUpdateActionForDeviceLevelHdPlay(existingStream, incomingStream));
+    CHECK_AND_RETURN(targetStream->GetRoute() != (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_DIRECT));
 
-    bool isStreamInSwitch = AudioPipeManager::GetPipeManager()->IsSwitchStreamExist(targetStream->sessionId_);
-    // Stream is in persistenly pasued state, unrelated to trigger recreation.
-    if (targetStream->streamStatus_ != STREAM_STATUS_STARTED && !isStreamInSwitch) {
+    if (!targetStream->IsRunning()) {
         action = (action == CONCEDE_EXISTING) ? CONCEDE_INCOMING : CONCEDE_EXISTING;
-        AUDIO_INFO_LOG("[AdjustConcedeActionByStatus] sessionId_: %{public}u, streamStatus_: %{public}u,"
-            " isStreamInSwitch: %{public}d, action: %{public}d", targetStream->sessionId_,
-            targetStream->streamStatus_, isStreamInSwitch, action);
-    }
-    // Stream requires triggerrecreate to normal pipe, pending execution.
-    if (isStreamInSwitch && targetStream->IsFutureRouteNormal()) {
-        action = (action == CONCEDE_EXISTING) ? CONCEDE_INCOMING : CONCEDE_EXISTING;
-        AUDIO_INFO_LOG("[AdjustConcedeActionByStatus] sessionId_: %{public}u, isStreamInSwitch: %{public}d,"
-            " futureRouteFlag: %{public}u, action: %{public}d", targetStream->sessionId_,
-            isStreamInSwitch, targetStream->futureRouteFlag_, action);
+        AUDIO_INFO_LOG("sessionId_: %{public}u, streamStatus_: %{public}u, action: %{public}d",
+            targetStream->sessionId_, targetStream->streamStatus_, action);
     }
 }
 
