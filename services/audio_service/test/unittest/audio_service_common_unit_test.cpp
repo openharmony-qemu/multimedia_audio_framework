@@ -2280,6 +2280,108 @@ HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_0010, TestSize.Level1)
 }
 
 /**
+* @tc.name   : Test VASharedBufferOperator Read when readable size is 0
+* @tc.type   : FUNC
+* @tc.number : VASharedBufferOperator_Read_001
+* @tc.desc   : Test VASharedBufferOperator Read when GetReadableSizeNoLock returns 0.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_Read_001, TestSize.Level1)
+{
+    const size_t bufferSize = 1024;
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(bufferSize);
+    EXPECT_NE(buffer, nullptr);
+
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = bufferSize;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    VASharedBufferOperator* operator_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(operator_, nullptr);
+
+    operator_->SetMinReadSize(100);
+    uint8_t readData[100] = {0};
+    size_t readSize = operator_->Read(readData, 100);
+    EXPECT_EQ(readSize, 0);
+
+    delete operator_;
+}
+
+/**
+* @tc.name   : Test VASharedBufferOperator wrap-around Read
+* @tc.type   : FUNC
+* @tc.number : VASharedBufferOperator_Read_002
+* @tc.desc   : Test VASharedBufferOperator Read when data wraps around buffer boundary.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_Read_002, TestSize.Level1)
+{
+    const size_t bufferSize = 100;
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(bufferSize);
+    EXPECT_NE(buffer, nullptr);
+
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = bufferSize;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    VASharedBufferOperator* operator_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(operator_, nullptr);
+
+    uint8_t writeData[bufferSize] = {0};
+    for (size_t i = 0; i < bufferSize; ++i) {
+        writeData[i] = static_cast<uint8_t>(i);
+    }
+    size_t writeSize = operator_->Write(writeData, bufferSize);
+    EXPECT_EQ(writeSize, bufferSize);
+
+    uint8_t readData[bufferSize] = {0};
+    size_t readSize = operator_->Read(readData, bufferSize);
+    EXPECT_EQ(readSize, bufferSize);
+
+    for (size_t i = 0; i < bufferSize; ++i) {
+        EXPECT_EQ(readData[i], static_cast<uint8_t>(i));
+    }
+
+    delete operator_;
+}
+
+/**
+* @tc.name   : Test VASharedBufferOperator Write wrap-around
+* @tc.type   : FUNC
+* @tc.number : VASharedBufferOperator_Write_001
+* @tc.desc   : Test VASharedBufferOperator Write when data wraps around buffer boundary.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_Write_001, TestSize.Level1)
+{
+    const size_t bufferSize = 100;
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(bufferSize);
+    EXPECT_NE(buffer, nullptr);
+
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = bufferSize;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    VASharedBufferOperator* operator_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(operator_, nullptr);
+
+    uint8_t writeData[bufferSize] = {0};
+    for (size_t i = 0; i < bufferSize; ++i) {
+        writeData[i] = static_cast<uint8_t>(i + 100);
+    }
+    size_t writeSize = operator_->Write(writeData, bufferSize);
+    EXPECT_EQ(writeSize, bufferSize);
+
+    delete operator_;
+}
+
+/**
  * @tc.name  : Test  API
  * @tc.type  : FUNC
  * @tc.number: IncreaseBufferEndCallbackSendTimes_001
