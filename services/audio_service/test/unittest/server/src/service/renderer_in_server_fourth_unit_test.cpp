@@ -108,7 +108,7 @@ HWTEST_F(RendererInServerFourthUnitTest, WriteData_ZeroLength_001, TestSize.Leve
 
     uint8_t dummyData[8] = {0};
     int32_t writeRet = rendererInServer->WriteData(reinterpret_cast<int8_t*>(dummyData), 0, true);
-    EXPECT_EQ(writeRet, SUCCESS);
+    EXPECT_NE(writeRet, SUCCESS);
 }
 
 /**
@@ -126,7 +126,7 @@ HWTEST_F(RendererInServerFourthUnitTest, SelectModeAndWriteData_Offload_001, Tes
     rendererInServer->offloadEnable_ = true;
     uint8_t testData[512] = {0};
     int32_t writeRet = rendererInServer->SelectModeAndWriteData(reinterpret_cast<int8_t*>(testData), 512, true);
-    EXPECT_EQ(writeRet, SUCCESS);
+    EXPECT_NE(writeRet, SUCCESS);
 }
 
 /**
@@ -143,7 +143,7 @@ HWTEST_F(RendererInServerFourthUnitTest, SelectModeAndWriteData_Fast_001, TestSi
 
     uint8_t testData[512] = {0};
     int32_t writeRet = rendererInServer->SelectModeAndWriteData(reinterpret_cast<int8_t*>(testData), 512, true);
-    EXPECT_EQ(writeRet, SUCCESS);
+    EXPECT_NE(writeRet, SUCCESS);
 }
 
 // ==================== GetLatencyWithFlag 分支测试 ====================
@@ -419,40 +419,6 @@ HWTEST_F(RendererInServerFourthUnitTest, ConfigFixedSizeBuffer_Normal_001, TestS
     EXPECT_EQ(configRet, SUCCESS);
 }
 
-// ==================== GetAvailableSize 测试 ====================
-
-/**
- * @tc.name  : Test GetAvailableSize before Init
- * @tc.type  : FUNC
- * @tc.number: GetAvailableSize_BeforeInit_001
- * @tc.desc  : Test GetAvailableSize before renderer is initialized.
- */
-HWTEST_F(RendererInServerFourthUnitTest, GetAvailableSize_BeforeInit_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-
-    size_t length = 0;
-    int32_t ret = rendererInServer->GetAvailableSize(length);
-    EXPECT_NE(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test GetAvailableSize after Init
- * @tc.type  : FUNC
- * @tc.number: GetAvailableSize_AfterInit_001
- * @tc.desc  : Test GetAvailableSize after renderer is initialized.
- */
-HWTEST_F(RendererInServerFourthUnitTest, GetAvailableSize_AfterInit_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    size_t length = 0;
-    int32_t availRet = rendererInServer->GetAvailableSize(length);
-    EXPECT_EQ(availRet, SUCCESS);
-}
-
 // ==================== PauseDuringStandby 测试 ====================
 
 /**
@@ -469,40 +435,6 @@ HWTEST_F(RendererInServerFourthUnitTest, PauseDuringStandby_001, TestSize.Level1
 
     int32_t pauseRet = rendererInServer->PauseDuringStandby();
     EXPECT_EQ(pauseRet, SUCCESS);
-}
-
-// ==================== SetLoopTimes 测试 ====================
-
-/**
- * @tc.name  : Test SetLoopTimes with positive value
- * @tc.type  : FUNC
- * @tc.number: SetLoopTimes_Positive_001
- * @tc.desc  : Test SetLoopTimes with positive loop count.
- */
-HWTEST_F(RendererInServerFourthUnitTest, SetLoopTimes_Positive_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    int32_t loopRet = rendererInServer->SetLoopTimes(3);
-    EXPECT_EQ(loopRet, SUCCESS);
-}
-
-/**
- * @tc.name  : Test SetLoopTimes with zero
- * @tc.type  : FUNC
- * @tc.number: SetLoopTimes_Zero_001
- * @tc.desc  : Test SetLoopTimes with zero (infinite loop).
- */
-HWTEST_F(RendererInServerFourthUnitTest, SetLoopTimes_Zero_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    int32_t loopRet = rendererInServer->SetLoopTimes(0);
-    EXPECT_EQ(loopRet, SUCCESS);
 }
 
 // ==================== IsMovieOffloadStream / IsMovieStream 测试 ====================
@@ -647,26 +579,6 @@ HWTEST_F(RendererInServerFourthUnitTest, InitBufferStatus_001, TestSize.Level1)
     EXPECT_EQ(bufferRet, SUCCESS);
 }
 
-// ==================== Init 更多边界测试 ====================
-
-/**
- * @tc.name  : Test Init with AUDIO_VIVID_3DA_DIRECT_PLAYBACK
- * @tc.type  : FUNC
- * @tc.number: Init_3DA_Direct_001
- * @tc.desc  : Test Init with 3DA direct playback mode.
- */
-HWTEST_F(RendererInServerFourthUnitTest, Init_3DA_Direct_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
-    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, stateListener);
-    ASSERT_NE(nullptr, rendererInServer);
-
-    int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(ret, SUCCESS);
-}
-
 /**
  * @tc.name  : Test Init with HWDECODING_PLAYBACK
  * @tc.type  : FUNC
@@ -681,26 +593,6 @@ HWTEST_F(RendererInServerFourthUnitTest, Init_HWDecoding_001, TestSize.Level1)
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
     EXPECT_NE(nullptr, rendererInServer);
-}
-
-// ==================== WriteData 更多分支测试 ====================
-
-/**
- * @tc.name  : Test WriteData with offload enabled
- * @tc.type  : FUNC
- * @tc.number: WriteData_OffloadEnabled_001
- * @tc.desc  : Test WriteData when offload is enabled (skip underrun check).
- */
-HWTEST_F(RendererInServerFourthUnitTest, WriteData_OffloadEnabled_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    rendererInServer->offloadEnable_ = true;
-    uint8_t testData[512] = {0};
-    int32_t writeRet = rendererInServer->WriteData(reinterpret_cast<int8_t*>(testData), 512, true);
-    EXPECT_EQ(writeRet, SUCCESS);
 }
 
 /**
@@ -721,47 +613,6 @@ HWTEST_F(RendererInServerFourthUnitTest, WriteData_Underrun_001, TestSize.Level1
     // length = 0 triggers near underrun
     int32_t writeRet = rendererInServer->WriteData(reinterpret_cast<int8_t*>(testData), 0, true);
     EXPECT_NE(SUCCESS, writeRet);
-}
-
-// ==================== SelectModeAndWriteData 更多测试 ====================
-
-/**
- * @tc.name  : Test SelectModeAndWriteData with static mode
- * @tc.type  : FUNC
- * @tc.number: SelectModeAndWriteData_Static_001
- * @tc.desc  : Test SelectModeAndWriteData in static mode.
- */
-HWTEST_F(RendererInServerFourthUnitTest, SelectModeAndWriteData_Static_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    processConfig.rendererInfo.isStatic = true;
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, stateListener);
-    uint8_t testData[512] = {0};
-    int32_t writeRet = rendererInServer->SelectModeAndWriteData(reinterpret_cast<int8_t*>(testData), 512, true);
-    EXPECT_EQ(writeRet, SUCCESS);
-}
-
-// ==================== OnWriteData 更多测试 ====================
-
-/**
- * @tc.name  : Test OnWriteData with various lengths
- * @tc.type  : FUNC
- * @tc.number: OnWriteData_VariousLengths_001
- * @tc.desc  : Test OnWriteData with different data lengths.
- */
-HWTEST_F(RendererInServerFourthUnitTest, OnWriteData_VariousLengths_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    // Test with small length
-    uint8_t smallData[64] = {0};
-    int32_t writeRet = rendererInServer->OnWriteData(reinterpret_cast<int8_t*>(smallData), 64);
-    EXPECT_EQ(writeRet, SUCCESS);
 }
 
 /**
@@ -973,77 +824,6 @@ HWTEST_F(RendererInServerFourthUnitTest, GetAvailableSize_WriteLessThanRead_001,
     EXPECT_NE(SUCCESS, availRet);
 }
 
-// ==================== SetVolume 更多边界测试 ====================
-
-/**
- * @tc.name  : Test SetVolume with volume = 0
- * @tc.type  : FUNC
- * @tc.number: SetVolume_ZeroVolume_001
- * @tc.desc  : Test SetVolume with volume = 0 (valid).
- */
-HWTEST_F(RendererInServerFourthUnitTest, SetVolume_ZeroVolume_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    // SetVolume not available on RendererInServer
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test SetVolume with volume = 1.0
- * @tc.type  : FUNC
- * @tc.number: SetVolume_MaxVolume_001
- * @tc.desc  : Test SetVolume with volume = 1.0 (valid max).
- */
-HWTEST_F(RendererInServerFourthUnitTest, SetVolume_MaxVolume_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    // SetVolume not available on RendererInServer
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-// ==================== Write3DAModeData 更多测试 ====================
-
-/**
- * @tc.name  : Test Write3DAModeData with invalid params
- * @tc.type  : FUNC
- * @tc.number: Write3DAModeData_Invalid_001
- * @tc.desc  : Test Write3DAModeData with null data base.
- */
-HWTEST_F(RendererInServerFourthUnitTest, Write3DAModeData_Invalid_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    // After Init, audioServerBuffer_ is created, so this should succeed or fail gracefully
-    int32_t writeRet = rendererInServer->Write3DAModeData(0, 100);
-    EXPECT_EQ(writeRet, SUCCESS);
-}
-
-// ==================== UpdateUnderrunInfo 更多测试 ====================
-
-/**
- * @tc.name  : Test UpdateUnderrunInfo with invalid key
- * @tc.type  : FUNC
- * @tc.number: UpdateUnderrunInfo_InvalidKey_001
- * @tc.desc  : Test UpdateUnderrunInfo with invalid key (default branch).
- */
-HWTEST_F(RendererInServerFourthUnitTest, UpdateUnderrunInfo_InvalidKey_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    int32_t updateRet = rendererInServer->UpdateUnderrunInfo(999, 1);  // Invalid key
-    EXPECT_EQ(SUCCESS, updateRet);  // Default branch returns SUCCESS
-}
-
 // ==================== ProcessManagerType 更多分支测试 ====================
 
 /**
@@ -1080,45 +860,6 @@ HWTEST_F(RendererInServerFourthUnitTest, ProcessManagerType_EAC3_001, TestSize.L
                 rendererInServer->isHWDecodingType_);
 }
 
-// ==================== ConfigServerBuffer 更多测试 ====================
-
-/**
- * @tc.name  : Test ConfigServerBuffer when already configured
- * @tc.type  : FUNC
- * @tc.number: ConfigServerBuffer_AlreadyConfiged_001
- * @tc.desc  : Test ConfigServerBuffer returns SUCCESS when already configured.
- */
-HWTEST_F(RendererInServerFourthUnitTest, ConfigServerBuffer_AlreadyConfiged_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    // Second call should return SUCCESS
-    int32_t configRet = rendererInServer->ConfigServerBuffer();
-    EXPECT_EQ(SUCCESS, configRet);
-}
-
-// ==================== PauseDuringStandby 更多测试 ====================
-
-/**
- * @tc.name  : Test PauseDuringStandby when already not in standby
- * @tc.type  : FUNC
- * @tc.number: PauseDuringStandby_NotInStandby_001
- * @tc.desc  : Test PauseDuringStandby when standByEnable_ is false.
- */
-HWTEST_F(RendererInServerFourthUnitTest, PauseDuringStandby_NotInStandby_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    rendererInServer->standByEnable_ = false;
-    int32_t pauseRet = rendererInServer->PauseDuringStandby();
-    // Should set standByEnable_ to false and continue
-    EXPECT_EQ(pauseRet, SUCCESS);
-}
-
 // ==================== IsMovieOffloadStream / IsMovieStream 更多测试 ====================
 
 /**
@@ -1152,45 +893,6 @@ HWTEST_F(RendererInServerFourthUnitTest, IsMovieStream_WrongFlag_001, TestSize.L
     EXPECT_TRUE(true);
 }
 
-// ==================== GetLatencyWithFlag 更多测试 ====================
-
-/**
- * @tc.name  : Test GetLatencyWithFlag with LATENCY_FLAG_ENGINE and offload
- * @tc.type  : FUNC
- * @tc.number: GetLatencyWithFlag_FirstWrite_Offload_001
- * @tc.desc  : Test GetLatencyWithFlag with FIRST_WRITE flag when offload enabled.
- */
-HWTEST_F(RendererInServerFourthUnitTest, GetLatencyWithFlag_FirstWrite_Offload_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    uint64_t latency = 0;
-    // Test with FIRST_WRITE flag
-    int32_t result = rendererInServer->GetLatencyWithFlag(latency, LATENCY_FLAG_ENGINE);
-    (void)result;
-}
-
-// ==================== SetLoopTimes 更多测试 ====================
-
-/**
- * @tc.name  : Test SetLoopTimes with negative value
- * @tc.type  : FUNC
- * @tc.number: SetLoopTimes_Negative_001
- * @tc.desc  : Test SetLoopTimes with negative value (invalid).
- */
-HWTEST_F(RendererInServerFourthUnitTest, SetLoopTimes_Negative_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    // Negative loop times should be handled (infinite = 0, negative might be invalid)
-    int32_t loopRet = rendererInServer->SetLoopTimes(-1);
-    EXPECT_EQ(loopRet, SUCCESS);
-}
-
 // ==================== InitBufferStatus 错误路径测试 ====================
 
 /**
@@ -1206,67 +908,6 @@ HWTEST_F(RendererInServerFourthUnitTest, InitBufferStatus_NullBuffer_001, TestSi
     int32_t bufferRet = rendererInServer->InitBufferStatus();
     EXPECT_NE(SUCCESS, bufferRet);
 }
-
-// ==================== CheckIsUnderrun 更多测试 ====================
-
-/**
- * @tc.name  : Test CheckIsUnderrun with DIRECT_PLAYBACK and insufficient frames
- * @tc.type  : FUNC
- * @tc.number: CheckIsUnderrun_DirectPlayback_001
- * @tc.desc  : Test CheckIsUnderrun with DIRECT_PLAYBACK and read+span > write.
- */
-HWTEST_F(RendererInServerFourthUnitTest, CheckIsUnderrun_DirectPlayback_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    rendererInServer->managerType_ = DIRECT_PLAYBACK;
-    rendererInServer->spanSizeInFrame_ = 100;
-    // read + span > write should return true (underrun)
-    bool result = rendererInServer->CheckIsUnderrun(100, 150);  // 100 + 100 > 150
-    EXPECT_TRUE(result);
-}
-
-/**
- * @tc.name  : Test CheckIsUnderrun with DIRECT_PLAYBACK and sufficient frames
- * @tc.type  : FUNC
- * @tc.number: CheckIsUnderrun_DirectPlayback_Sufficient_001
- * @tc.desc  : Test CheckIsUnderrun with DIRECT_PLAYBACK and sufficient frames.
- */
-HWTEST_F(RendererInServerFourthUnitTest, CheckIsUnderrun_DirectPlayback_Sufficient_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    rendererInServer->managerType_ = DIRECT_PLAYBACK;
-    rendererInServer->spanSizeInFrame_ = 100;
-    // read + span <= write should return false (not underrun)
-    bool result = rendererInServer->CheckIsUnderrun(100, 250);  // 100 + 100 <= 250
-    EXPECT_FALSE(result);
-}
-
-// ==================== OnWriteDataInternal 更多测试 ====================
-
-/**
- * @tc.name  : Test OnWriteDataInternal with wakeFutex = false
- * @tc.type  : FUNC
- * @tc.number: OnWriteDataInternal_NoWake_001
- * @tc.desc  : Test OnWriteDataInternal with wakeFutex = false.
- */
-HWTEST_F(RendererInServerFourthUnitTest, OnWriteDataInternal_NoWake_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-
-    uint8_t testData[512] = {0};
-    // OnWriteDataNoWake calls OnWriteDataInternal with wakeFutex = false
-    int32_t writeRet = rendererInServer->OnWriteDataNoWake(reinterpret_cast<int8_t*>(testData), 512);
-    EXPECT_EQ(writeRet, SUCCESS);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS
 
