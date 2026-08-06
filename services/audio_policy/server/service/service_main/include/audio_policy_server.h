@@ -897,7 +897,7 @@ private:
     // Permission and privacy
     bool VerifyPermission(const std::string &permissionName, uint32_t tokenId = 0, bool isRecording = false);
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
-        const int32_t pid = INVALID_PID);
+        const int32_t pid = INVALID_PID, bool isInternal = false);
     bool VerifySessionId(uint32_t sessionId, uint32_t clientUid);
 
     // externel function call

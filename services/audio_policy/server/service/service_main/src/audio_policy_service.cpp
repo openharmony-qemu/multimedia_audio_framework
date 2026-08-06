@@ -417,7 +417,8 @@ int32_t AudioPolicyService::SetAvailableDeviceChangeCallback(const int32_t clien
         auto cb = std::make_shared<AudioPolicyManagerListenerCallback>(callback);
         CHECK_AND_RETURN_RET_LOG(cb != nullptr, SUCCESS, "AudioPolicyManagerListenerCallback create failed");
         cb->hasBTPermission_ = hasBTPermission;
-        cb->isSystemService_ = PermissionUtil::VerifySystemPermission() && !PermissionUtil::VerifyIsSystemApp();
+        cb->isSystemService_ = PermissionUtil::VerifySystemPermission() &&
+            !PermissionUtil::VerifyIsSystemAppWithoutRoot();
 
         if (audioPolicyServerHandler_ != nullptr) {
             audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientId, usage, cb);
@@ -513,6 +514,46 @@ void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<std::shared_ptr<Aud
             copyDesc->macAddress_ = "";
             desc = copyDesc;
         }
+    }
+}
+
+bool AudioPolicyService::IsScoExistedInDescs(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+    size_t targetIdx)
+{
+    const auto &target = descs[targetIdx];
+    for (size_t i = 0; i < descs.size(); i++) {
+        if (i == targetIdx) {
+            continue;
+        }
+        CHECK_AND_CONTINUE(descs[i] != nullptr);
+        if (descs[i]->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO ||
+            target->macAddress_ == "" ||
+            descs[i]->macAddress_ != target->macAddress_ ||
+            descs[i]->deviceRole_ != target->deviceRole_ ||
+            descs[i]->networkId_ != target->networkId_) {
+            continue;
+        }
+        return true;
+    }
+    return false;
+}
+
+void AudioPolicyService::SyncInputDeviceScoId(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    for (size_t i = 0; i < descs.size(); i++) {
+        CHECK_AND_CONTINUE(descs[i] != nullptr);
+        bool isA2dpIn = (descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+        bool isSppUnidirectional = (descs[i]->deviceType_ == DEVICE_TYPE_BT_SPP && descs[i]->isUnidirectional_);
+        CHECK_AND_CONTINUE(isA2dpIn || isSppUnidirectional);
+        CHECK_AND_CONTINUE(descs[i]->macAddress_ != "");
+        if (IsScoExistedInDescs(descs, i)) {
+            continue;
+        }
+        auto sco = std::make_shared<AudioDeviceDescriptor>(descs[i]);
+        sco->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+        auto descPtr = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(sco);
+        CHECK_AND_CONTINUE(descPtr != nullptr && descPtr->deviceType_ != DEVICE_TYPE_NONE);
+        descs[i]->deviceId_ = descPtr->deviceId_;
     }
 }
 

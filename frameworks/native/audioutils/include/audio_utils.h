@@ -182,6 +182,7 @@ public:
     static bool VerifyIsAudioBroker();
     static bool VerifyIsShell();
     static bool VerifyIsSystemApp();
+    static bool VerifyIsSystemAppWithoutRoot();
     static bool VerifySelfPermission();
     static bool VerifySystemPermission();
     static bool IsHap();

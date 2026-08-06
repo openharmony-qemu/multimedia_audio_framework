@@ -1644,7 +1644,7 @@ int32_t AudioInterruptService::CreateAudioInterruptZone(const int32_t zoneId,
     return zoneManager_.CreateAudioInterruptZone(zoneId, context);
 }
 
-int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
+int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal)
 {
     std::unique_lock<std::mutex> lock(mutex_);
     int32_t ret = zoneManager_.ReleaseAudioInterruptZone(zoneId, func);
@@ -1653,7 +1653,7 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, ZONEID_DEFAULT, true, isInternal);
     return SUCCESS;
 }
 
@@ -3128,7 +3128,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternalContinue(const int32
 }
 
 bool AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audioScene,
-    AudioInterruptChangeType changeType, int32_t zoneId, bool notFromInterrupt)
+    AudioInterruptChangeType changeType, int32_t zoneId, bool notFromInterrupt, bool isInternal)
 {
     Trace trace("AudioInterruptService::UpdateAudioSceneFromInterrupt");
     CHECK_AND_RETURN_RET_LOG(policyServer_ != nullptr, false, "policyServer nullptr");
@@ -3159,7 +3159,7 @@ bool AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
             return false;
     }
     CHECK_AND_RETURN_RET(notFromInterrupt, true);
-    policyServer_->SetAudioSceneInternal(audioScene, ownerUid_, ownerPid_);
+    policyServer_->SetAudioSceneInternal(audioScene, ownerUid_, ownerPid_, isInternal);
     return false;
 }
 

@@ -233,10 +233,11 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
 
         // update current output device
-        if (needUpdateActiveDevice && streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+        if ((Util::IsEnhancedRoutingSupported() || needUpdateActiveDevice) &&
+            streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
             !pipeManager_->IsFocusStandby(streamDesc->sessionId_)) {
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
-                reason);
+                reason) || isUpdateActiveDevice;
             needUpdateActiveDevice = !isUpdateActiveDevice;
             uid = GetRealUid(streamDesc);
         }
@@ -277,7 +278,7 @@ void AudioCoreService::UpdateMultiChannelState(std::shared_ptr<AudioPipeInfo> pi
 void AudioCoreService::UpdatePrimaryExtraState(std::shared_ptr<AudioPipeInfo> pipeInfo)
 {
     CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0);
-    CHECK_AND_RETURN(pipeInfo->moduleInfo_.className == "primary_extra");
+    CHECK_AND_RETURN(pipeInfo->moduleInfo_.className == PRIMARY_EXTRA_CLASS);
     {
         std::lock_guard<std::mutex> lock(primaryExtraCloseMutex_);
         isPrimaryExtraOpenedMap_[pipeInfo->name_] = true;
@@ -1145,7 +1146,7 @@ void AudioCoreService::RemoveUnusedPipe()
             pipeInfo->isCollaborationEnable_ = false;
             UpdateNearLinkCollaborativeState(false);
         } else if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_NORMAL) &&
-            pipeInfo->moduleInfo_.className == "primary_extra") {
+            pipeInfo->moduleInfo_.className == PRIMARY_EXTRA_CLASS) {
             DelayReleasePrimaryExtraPipe(pipeInfo->id_, pipeInfo->paIndex_, pipeInfo->name_,
                 pipeInfo->moduleInfo_.name);
             continue;
@@ -2851,16 +2852,25 @@ void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &
 bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
+    bool isEnhancedRouting = Util::IsEnhancedRoutingSupported();
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
+    if (isEnhancedRouting) {
+        pipeList = pipeManager_->GetPipeList();
+    }
     for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
-        // running stream need to mute when switch device
         if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
 #ifndef MUTE_SINK_DISABLE
             AudioScene lastAudioScene = audioSceneManager_.GetLastAudioScene();
             AudioScene audioScene = audioSceneManager_.GetAudioScene();
             auto muteReason = reason.IsSetAudioScene() && IsCallOrRingToDefault(lastAudioScene, audioScene) ?
                 AudioStreamDeviceChangeReasonExt::ExtEnum::CALL_OR_RING_TO_DEFAULT : reason;
-            MuteSinkPortForSwitchDevice(streamDesc, muteReason);
+            std::string oldClassName;
+            std::string oldModuleName;
+            CaptureOldPipeInfo(isEnhancedRouting, pipeList, streamDesc->sessionId_, oldClassName, oldModuleName);
+            std::string overrideCls = (oldClassName == PRIMARY_EXTRA_CLASS) ? oldClassName : "";
+            std::string overrideInfo = (oldClassName == PRIMARY_EXTRA_CLASS) ? oldModuleName : "";
+            MuteSinkPortForSwitchDevice(streamDesc, muteReason, overrideCls, overrideInfo);
 #endif
         }
     }
@@ -2868,8 +2878,20 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
     return true;
 }
 
+void AudioCoreService::CaptureOldPipeInfo(bool isEnhancedRouting,
+    const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList, uint32_t sessionId,
+    std::string &oldClassName, std::string &oldModuleName)
+{
+    CHECK_AND_RETURN(isEnhancedRouting);
+    auto pipeInfo = pipeManager_->FindPipeBySessionId(pipeList, sessionId);
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    oldClassName = pipeInfo->moduleInfo_.className;
+    oldModuleName = pipeInfo->moduleInfo_.name;
+}
+
 void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    const AudioStreamDeviceChangeReasonExt reason)
+    const AudioStreamDeviceChangeReasonExt reason, const std::string &oldClassName,
+    const std::string &oldModuleName)
 {
     Trace trace("AudioCoreService::MuteSinkPortForSwitchDevice");
     CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->oldDeviceDescs_.empty() &&
@@ -2902,7 +2924,7 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
     newSinkPortName = GetFinalSinkPortName(streamDesc->routeFlag_, newSinkPortName);
 
     AUDIO_INFO_LOG("mute sink new:[%{public}s]", newSinkPortName.c_str());
-    MuteSinkPort(oldSinkPortName, newSinkPortName, reason);
+    MuteSinkPort(oldSinkPortName, newSinkPortName, reason, oldClassName, oldModuleName);
 }
 
 /**
@@ -3088,7 +3110,8 @@ void AudioCoreService::SetVoiceCallMuteForSwitchDevice()
 }
 
 void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
-    AudioStreamDeviceChangeReasonExt reason)
+    AudioStreamDeviceChangeReasonExt reason,
+    const std::string &oldClassName, const std::string &oldModuleName)
 {
     if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsCallOrRingToDefault() ||
         reason.IsDeviceReselect()) {
@@ -3098,7 +3121,7 @@ void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::s
         }
         MutePrimaryOrOffloadSink(newSinkName, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, SELECT_DEVICE_MUTE_MS, true, false);
-        audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true, false);
+        audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true, false, oldClassName, oldModuleName);
     } else if (reason == AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE) {
         int64_t muteTime = NEW_DEVICE_AVALIABLE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
@@ -3106,7 +3129,7 @@ void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::s
         }
         MutePrimaryOrOffloadSink(oldSinkName, muteTime);
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_AVALIABLE_MUTE_MS, true, false);
-        audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true, false);
+        audioIOHandleMap_.MuteSinkPort(oldSinkName, muteTime, true, false, oldClassName, oldModuleName);
     }
     MuteSinkPortLogic(oldSinkName, newSinkName, reason);
 }
@@ -3190,8 +3213,8 @@ void AudioCoreService::HandleSceneChangePreferredDevice(AudioScene audioScene, A
     SetSleVoiceStatusFlag(audioScene);
     OnAudioSceneChange(audioScene);
     auto currentOutputDevice = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
-    if (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
-        lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT) {
+    if (Util::IsEnhancedRoutingSupported() || (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT)) {
         OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN);
     }
     if (audioScene == AUDIO_SCENE_DEFAULT && currentOutputDevice.IsRemoteDevice()) {

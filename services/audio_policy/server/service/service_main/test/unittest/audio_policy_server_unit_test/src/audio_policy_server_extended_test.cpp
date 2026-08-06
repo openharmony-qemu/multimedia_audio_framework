@@ -663,5 +663,32 @@ HWTEST_F(AudioPolicyServerUnitTest, GetAppBackGroundState_PidMatchesCallingPid, 
     int32_t result = audioPolicyServer_->GetAppBackGroundState(callingPid, isBack);
     EXPECT_NE(result, ERR_PERMISSION_DENIED);
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: SetAudioSceneInternal_001
+* @tc.desc  : Test SetAudioSceneInternal with isInternal true.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, SetAudioSceneInternal_001, TestSize.Level4)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    int32_t ret = audioPolicyServer_->SetAudioSceneInternal(AUDIO_SCENE_PHONE_CALL, 1, 1, true);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: SetAudioSceneInternal_002
+* @tc.desc  : Test SetAudioSceneInternal with isInternal false.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, SetAudioSceneInternal_002, TestSize.Level4)
+{
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
+    int32_t ret = audioPolicyServer_->SetAudioSceneInternal(AUDIO_SCENE_PHONE_CALL, 1, 1, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // AudioStandard
 } // OHOS

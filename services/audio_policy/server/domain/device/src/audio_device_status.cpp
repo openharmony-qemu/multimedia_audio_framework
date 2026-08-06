@@ -1428,12 +1428,12 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
         CheckAndActiveHfpDevice(updatedDesc);
 #endif
     } else {
-        audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
-        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
 #ifdef MULTI_USER_ZONE
         auto descPtr = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
         AudioZoneService::GetInstance().RemoveDeviceToGlobalFromZones(descPtr);
 #endif
+        audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
+        reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
         CheckForA2dpSuspend(updatedDesc);
         // fix pop, fetch device before unload module
         if (IsOutputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
@@ -1725,12 +1725,13 @@ void AudioDeviceStatus::RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDe
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
 }
 
-void AudioDeviceStatus::AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc)
+void AudioDeviceStatus::AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc, bool isNeedFetch)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     AUDIO_INFO_LOG("add device back to global list only");
     audioConnectedDevice_.AddConnectedDevice(desc);
     audioDeviceManager_.AddNewDevice(desc);
+    CHECK_AND_RETURN(isNeedFetch);
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("AddDeviceBackToGlobalOnly");
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("AddDeviceBackToGlobalOnly");
 }

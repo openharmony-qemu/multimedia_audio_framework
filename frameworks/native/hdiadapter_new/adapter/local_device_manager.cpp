@@ -25,6 +25,7 @@
 #include "ipc_skeleton.h"
 #include "media_monitor_manager.h"
 #include "audio_bundle_manager.h"
+#include "util/audio_hdi_version_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -411,8 +412,24 @@ static void AudioHostOnRemoteDied(struct HdfDeathRecipient *recipent, struct Hdf
 void LocalDeviceManager::InitAudioManager(void)
 {
     CHECK_AND_RETURN_LOG(audioManager_ == nullptr, "audio manager already inited");
-    AUDIO_INFO_LOG("init audio manager");
-    audioManager_ = IAudioManagerGet(false);
+    AUDIO_INFO_LOG("init audio manager 6.1.");
+    audioManager_ = IAudioManagerGetV6_1(false);
+    if (audioManager_ == NULL) {
+        AUDIO_INFO_LOG("init audio manager.");
+        audioManager_ = IAudioManagerGet(false);
+    }
+    if (audioManager_ != NULL) {
+        AUDIO_INFO_LOG("GetVersion start");
+        uint32_t majorVersion = 0;
+        uint32_t minorVersion = 0;
+        int32_t ret = audioManager_->GetVersion(audioManager_, &majorVersion, &minorVersion);
+        if (ret != SUCCESS) {
+            AUDIO_INFO_LOG("GetVersion failed");
+        }
+        AudioHdiVersionManager::GetInstance().SetVersion(majorVersion, minorVersion);
+        AUDIO_INFO_LOG("GetVersion majorVersion=%{public}d, minorVersion=%{public}d",
+            majorVersion, minorVersion);
+    }
     if (audioManager_ == nullptr) {
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, 0,
             "get hdi manager fail");
@@ -421,7 +438,6 @@ void LocalDeviceManager::InitAudioManager(void)
 
     CHECK_AND_RETURN_LOG(hdfRemoteService_ == nullptr, "hdf remote service already inited");
     hdfRemoteService_ = audioManager_->AsObject(audioManager_);
-    // Don't need to free, existing with process
     hdfDeathRecipient_ = (struct HdfDeathRecipient *)calloc(1, sizeof(*hdfDeathRecipient_));
     CHECK_AND_RETURN_LOG(hdfDeathRecipient_ != nullptr, "create hdf death recipient fail");
     hdfDeathRecipient_->OnRemoteDied = AudioHostOnRemoteDied;

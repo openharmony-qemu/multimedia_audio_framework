@@ -29,6 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 static const char* PRIMARY_CLASS = "primary";
+static const char* PRIMARY_EXTRA_CLASS = "primary_extra";
 static const char* A2DP_CLASS = "a2dp";
 static const char* HEARING_AID_CLASS = "hearing_aid";
 static const char* USB_CLASS = "usb";

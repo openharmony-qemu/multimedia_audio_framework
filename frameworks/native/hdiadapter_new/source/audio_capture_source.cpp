@@ -39,6 +39,7 @@
 #include "audio_utils.h"
 #include "audio_stream_enum.h"
 #include "securec.h"
+#include "util/audio_hdi_version_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1361,6 +1362,11 @@ int32_t AudioCaptureSource::CreateCapture(void)
 
 int32_t AudioCaptureSource::RegisterCamcorderMetadataCallback()
 {
+    if (!AudioHdiVersionManager::GetInstance().IsV61OrAbove()) {
+        AUDIO_INFO_LOG("CamcorderMetadataCallback need HDI above v6.1, skip RegCallback");
+        return SUCCESS;
+    }
+
     AUDIO_INFO_LOG("RegisterCamcorderMetadataCallback enter.");
     CHECK_AND_RETURN_RET(attr_.sourceType == SOURCE_TYPE_CAMCORDER, SUCCESS);
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");

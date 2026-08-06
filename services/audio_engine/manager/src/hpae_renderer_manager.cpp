@@ -782,6 +782,9 @@ void HpaeRendererManager::ConnectOutputCluster(uint32_t sessionId, HpaeProcessor
 {
     auto cluster = SafeGetMap(sceneClusterMap_, sceneType);
     CHECK_AND_RETURN_LOG(cluster, "sceneType %{public}d not in sceneClusterMap", sceneType);
+    CHECK_AND_RETURN_LOG(outputCluster_ != nullptr,
+        "outputCluster_ is nullptr, sessionId %{public}u sceneType %{public}d, init/reload may have failed",
+        sessionId, static_cast<int32_t>(sceneType));
     if (!outputCluster_->IsProcessClusterConnected(sceneType) && !cluster->GetConnectedFlag()) {
         outputCluster_->Connect(cluster);
         cluster->SetConnectedFlag(true);

@@ -85,7 +85,7 @@ public:
     void OnConnectFailed(AudioDeviceDescriptor &desc);
     uint16_t GetDmDeviceType();
     void RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc, const int32_t zoneId = 0);
-    void AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
+    void AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc, bool isNeedFetch = true);
     uint32_t GetPaIndexByPortName(const std::string &portName);
     void TriggerDeviceInfoUpdatedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devChangeDesc);
     void NotifyPreferredDeviceSet(PreferredType preferredType,

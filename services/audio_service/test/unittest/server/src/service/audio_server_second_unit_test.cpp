@@ -409,6 +409,48 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerSetSinkMuteForSwitchDevice_001, T
 }
 
 /**
+ * @tc.name  : Test SetSinkMuteForSwitchDevice primary_extra info passthrough
+ * @tc.type  : FUNC
+ * @tc.number: SetSinkMuteForSwitchDevice_PrimaryExtra_001
+ * @tc.desc  : Test SetSinkMuteForSwitchDevice with primary_extra does not crash.
+ */
+HWTEST_F(AudioServerSecondUnitTest, SetSinkMuteForSwitchDevice_PrimaryExtra_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    int32_t ret = audioServer->SetSinkMuteForSwitchDevice("primary_extra", 100, true, "Wired_Speaker");
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test LoadHdiEffectModel API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerLoadHdiEffectModel_001
+ * @tc.desc  : Test LoadHdiEffectModel interface.
+ */
+HWTEST_F(AudioServerSecondUnitTest, AudioServerLoadHdiEffectModel_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    
+    int32_t ret = audioServer->LoadHdiEffectModel();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test UpdateEffectBtOffloadSupported API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerUpdateEffectBtOffloadSupported_001
+ * @tc.desc  : Test UpdateEffectBtOffloadSupported interface.
+ */
+HWTEST_F(AudioServerSecondUnitTest, AudioServerUpdateEffectBtOffloadSupported_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    
+    int32_t ret = audioServer->UpdateEffectBtOffloadSupported(true);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
  * @tc.name  : Test SetRotationToEffect API
  * @tc.type  : FUNC
  * @tc.number: AudioServerSetRotationToEffect_001
