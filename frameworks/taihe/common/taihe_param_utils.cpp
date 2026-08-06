@@ -168,21 +168,23 @@ int32_t TaiheParamUtils::GetRendererInfo(OHOS::AudioStandard::AudioRendererInfo 
 int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
     AudioCapturerOptions const &options)
 {
-    int32_t intValue = GetIntValueFromSamplingRateUnion(options.streamInfo.samplingRate);
+    CHECK_AND_RETURN_RET_LOG(options.streamInfo.has_value(), AUDIO_ERR, "streamInfo is empty");
+    const AudioStreamInfo &streamInfo = options.streamInfo.value();
+    int32_t intValue = GetIntValueFromSamplingRateUnion(streamInfo.samplingRate);
     if (!IsValidAudioSamplingRate(intValue)) {
         AUDIO_ERR_LOG("invaild samplingRate");
         return AUDIO_ERR;
     }
     audioStreamInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
     audioStreamInfo.channels =
-        static_cast<OHOS::AudioStandard::AudioChannel>(options.streamInfo.channels.get_value());
+        static_cast<OHOS::AudioStandard::AudioChannel>(streamInfo.channels.get_value());
     audioStreamInfo.format =
-        static_cast<OHOS::AudioStandard::AudioSampleFormat>(options.streamInfo.sampleFormat.get_value());
+        static_cast<OHOS::AudioStandard::AudioSampleFormat>(streamInfo.sampleFormat.get_value());
     audioStreamInfo.encoding =
-        static_cast<OHOS::AudioStandard::AudioEncodingType>(options.streamInfo.encodingType.get_value());
-    if (options.streamInfo.channelLayout.has_value()) {
+        static_cast<OHOS::AudioStandard::AudioEncodingType>(streamInfo.encodingType.get_value());
+    if (streamInfo.channelLayout.has_value()) {
         audioStreamInfo.channelLayout =
-            static_cast<OHOS::AudioStandard::AudioChannelLayout>(options.streamInfo.channelLayout.value().get_value());
+            static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
     }
     return AUDIO_OK;
 }
@@ -237,6 +239,12 @@ int32_t TaiheParamUtils::GetMicInStreamInfo(OHOS::AudioStandard::AudioStreamInfo
     return AUDIO_OK;
 }
 
+int32_t TaiheParamUtils::GetEcStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
+    AudioStreamInfo const &in)
+{
+    return GetMicInStreamInfo(audioStreamInfo, in);
+}
+
 int32_t TaiheParamUtils::GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo &audioCapturerInfo,
     AudioCapturerInfo const &in)
 {
@@ -282,6 +290,35 @@ static int32_t GetPlaybackCaptureMode(OHOS::AudioStandard::AudioCapturerOptions 
     return AUDIO_OK;
 }
 
+static int32_t GetCapturerSubStreamOptions(OHOS::AudioStandard::AudioCapturerOptions *opts,
+    AudioCapturerOptions const &options)
+{
+    CHECK_AND_RETURN_RET_LOG(opts != nullptr, AUDIO_ERR, "opts is nullptr");
+    int32_t status = AUDIO_OK;
+    if (options.processedStreamInfo.has_value()) {
+        status = TaiheParamUtils::GetMicInStreamInfo(opts->streamInfo, options.processedStreamInfo.value());
+        CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse ProcessedStreamInfo failed");
+    }
+
+    if (options.micInStreamInfo.has_value()) {
+        OHOS::AudioStandard::AudioStreamInfo *targetMicInStreamInfo = &(opts->micInStreamInfo);
+        if (opts->capturerInfo.sourceType == OHOS::AudioStandard::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+            targetMicInStreamInfo = &(opts->streamInfo);
+            AUDIO_INFO_LOG("ParseCapturerOptions, sourceType is UNPROCESSED_VOICE_ASSISTANT, "
+                "micInStreamInfo is mapped to streamInfo");
+        }
+        status = TaiheParamUtils::GetMicInStreamInfo(*targetMicInStreamInfo, options.micInStreamInfo.value());
+        CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse MicInStreamInfo failed");
+    }
+
+    if (options.ecStreamInfo.has_value()) {
+        status = TaiheParamUtils::GetEcStreamInfo(opts->ecStreamInfo, options.ecStreamInfo.value());
+        CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse EcStreamInfo failed");
+    }
+
+    return AUDIO_OK;
+}
+
 int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOptions *opts,
     AudioCapturerOptions const &options)
 {
@@ -296,13 +333,33 @@ int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOp
     status = GetPreferredInputDevice(opts, options);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse PreferredInputDevice failed");
 
-    if (options.micInStreamInfo.has_value()) {
-        status = GetMicInStreamInfo(opts->micInStreamInfo, options.micInStreamInfo.value());
-        CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse MicInStreamInfo failed");
-    }
+    status = GetCapturerSubStreamOptions(opts, options);
+    CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse CapturerSubStreamOptions failed");
 
     status = GetPlaybackCaptureMode(opts, options);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParsePlaybackCaptureMode failed");
+
+    return AUDIO_OK;
+}
+
+int32_t TaiheParamUtils::GetCapturerMicInConfig(OHOS::AudioStandard::AudioCapturerOptions *opts,
+    AudioCapturerOptions const &options)
+{
+    CHECK_AND_RETURN_RET_LOG(opts != nullptr, AUDIO_ERR, "opts is nullptr");
+    int32_t status = AUDIO_OK;
+    if (options.streamInfo.has_value()) {
+        status = GetStreamInfo(opts->streamInfo, options);
+        CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParseStreamInfo failed");
+    }
+
+    status = GetCapturerInfo(opts->capturerInfo, options.capturerInfo);
+    CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParseCapturerInfo failed");
+
+    status = GetPreferredInputDevice(opts, options);
+    CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse PreferredInputDevice failed");
+
+    status = GetCapturerSubStreamOptions(opts, options);
+    CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse CapturerSubStreamOptions failed");
 
     return AUDIO_OK;
 }

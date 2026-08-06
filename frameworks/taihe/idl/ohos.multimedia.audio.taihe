@@ -1021,6 +1021,7 @@ enum SourceType: i32 {
   SOURCE_TYPE_CAMCORDER = 13,
   SOURCE_TYPE_UNPROCESSED = 14,
   SOURCE_TYPE_LIVE = 17,
+  SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT = 19,
 }
 
 struct AudioCapturerInfo {
@@ -1036,10 +1037,12 @@ enum AudioPlaybackCaptureMode: i32 {
 }
 
 struct AudioCapturerOptions {
-  streamInfo: AudioStreamInfo;
+  @optional streamInfo: Optional<AudioStreamInfo>;
   capturerInfo: AudioCapturerInfo;
   preferredInputDevice: Optional<AudioDeviceDescriptor>;
+  @optional processedStreamInfo: Optional<AudioStreamInfo>;
   @optional micInStreamInfo: Optional<AudioStreamInfo>;
+  @optional ecStreamInfo: Optional<AudioStreamInfo>;
   @optional playbackCaptureMode: Optional<AudioPlaybackCaptureMode>;
   @optional playbackCaptureUid: Optional<i32>;
 }

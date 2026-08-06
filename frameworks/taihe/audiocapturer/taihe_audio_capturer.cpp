@@ -1133,7 +1133,14 @@ AudioCapturerOrNull CreateAudioCapturerSync(AudioCapturerOptions const &options)
 
 AudioCapturerOrNull CreateMicInAudioCapturerSync(AudioCapturerOptions const &options)
 {
-    return CreateAudioCapturerSync(options);
+    OHOS::AudioStandard::AudioCapturerOptions capturerOptions;
+    if (TaiheParamUtils::GetCapturerMicInConfig(&capturerOptions, options) != AUDIO_OK) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INPUT_INVALID,
+            "parameter verification failed: The param of options must be interface AudioCapturerOptions");
+        AUDIO_ERR_LOG("get captureOptions failed");
+        return AudioCapturerOrNull::make_type_null();
+    }
+    return AudioCapturerImpl::CreateAudioCapturerWrapper(capturerOptions);
 }
 } // namespace ANI::Audio
 

@@ -45,11 +45,15 @@ public:
         AudioRendererOptions const &options);
     static int32_t GetMicInStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
         AudioStreamInfo const &in);
+    static int32_t GetEcStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
+        AudioStreamInfo const &in);
     static int32_t GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo &audioCapturerInfo,
         AudioCapturerInfo const &in);
     static int32_t GetPreferredInputDevice(OHOS::AudioStandard::AudioCapturerOptions *opts,
         AudioCapturerOptions const &options);
     static int32_t GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOptions *opts,
+        AudioCapturerOptions const &options);
+    static int32_t GetCapturerMicInConfig(OHOS::AudioStandard::AudioCapturerOptions *opts,
         AudioCapturerOptions const &options);
     static int32_t GetRendererOptions(OHOS::AudioStandard::AudioRendererOptions *opts,
         AudioRendererOptions const &options);
