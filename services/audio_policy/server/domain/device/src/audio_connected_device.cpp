@@ -507,7 +507,8 @@ void AudioConnectedDevice::UpdateSpatializationSupported(const std::string macAd
     std::shared_lock<std::shared_mutex> lock(mutex_);
     for (auto device : connectedDevices_) {
         std::string encryAddress = GetSha256EncryptAddress(device->macAddress_);
-        if (encryAddress == macAddress && device->deviceType_ ==  DEVICE_TYPE_BLUETOOTH_A2DP &&
+        if (encryAddress == macAddress &&
+            (device->deviceType_ ==  DEVICE_TYPE_BLUETOOTH_A2DP || device->deviceType_ ==  DEVICE_TYPE_NEARLINK) &&
             device->spatializationSupported_ != support) {
             device->spatializationSupported_ = support;
             AUDIO_INFO_LOG("spatializationSupported is set to %{public}d", support);
