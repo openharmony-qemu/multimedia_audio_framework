@@ -1608,7 +1608,7 @@ StreamUsage AudioPipeManager::GetLastestRunningCallStreamUsage()
             }
         }
     }
-    return STREAM_USAGE_UNKNOWN;
+    return STREAM_USAGE_VOICE_COMMUNICATION;
 }
 
 bool AudioPipeManager::IsOnlyAppLevelHdPlaySupported(std::shared_ptr<AudioPipeInfo> pipeInfo)

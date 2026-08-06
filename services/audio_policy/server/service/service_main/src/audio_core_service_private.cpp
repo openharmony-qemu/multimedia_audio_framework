@@ -2504,8 +2504,13 @@ bool AudioCoreService::IsOffloadAllowedForUid(uint32_t uid) const
 int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStreamDeviceChangeReasonExt reason)
 {
     FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "HandleFetchOutputWhenNoRunningStream" };
-    if (audioRouterCenter_.IsMediaFollowCallStrategy(audioSceneManager_.GetAudioScene(true))) {
-        info.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    AudioScene audioScene = audioSceneManager_.GetAudioScene(true);
+    if (!Util::IsEnhancedRoutingSupported()) {
+        if (audioScene == AUDIO_SCENE_PHONE_CALL) {
+            info.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+        } else if (audioScene == AUDIO_SCENE_PHONE_CHAT) {
+            info.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+        }
     }
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), ERROR, "descs is empty");
