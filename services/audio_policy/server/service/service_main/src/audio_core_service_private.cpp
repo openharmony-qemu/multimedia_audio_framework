@@ -112,7 +112,8 @@ static const std::unordered_map<std::string, int32_t> MOVE_STREAM_FAST_PIPE_DELA
     {"fast_usb_arm_output", ARMUSB_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS},
     {"fast_usb_arm_input", ARMUSB_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS},
 };
-static int32_t GetFastPipeDelayReleaseTimeMs(const std::string &pipeName, const bool hasMoveStream, const bool isUltraFast)
+static int32_t GetFastPipeDelayReleaseTimeMs(const std::string &pipeName, const bool hasMoveStream,
+    const bool isUltraFast)
 {
     if (hasMoveStream && isUltraFast) {
         return MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS;
