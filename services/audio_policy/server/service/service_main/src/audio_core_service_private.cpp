@@ -2883,6 +2883,7 @@ int32_t AudioCoreService::ReleaseFastPipe(AudioIOHandle id, uint32_t paIndex, co
         delayMs, pipeName.c_str());
     {
         std::unique_lock<std::mutex> lock(fastCloseMutex_);
+        // Shared condition variable: each wait checks only its own pipeName key.
         fastCloseCondition_.wait_for(lock, std::chrono::milliseconds(delayMs), [this, &pipeName] () {
             return isFastOpenedMap_[pipeName];
         });
