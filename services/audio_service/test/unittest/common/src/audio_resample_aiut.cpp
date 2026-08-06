@@ -47,7 +47,7 @@ HWTEST_F(AudioResampleAiut, AudioResample_Constructor_ValidParams, TestSize.Leve
     uint32_t channels = 2;
     uint32_t inRate = 48000;
     uint32_t outRate = 44100;
-    int32_t quantity = 16;
+    int32_t quantity = 10;
     auto resample = std::make_unique<AudioResample>(channels, inRate, outRate, quantity);
     AIUT_ASSERT_NE_INFO_LOG(resample, nullptr, "AudioResample create failed, ptr=%p", resample.get());
     AIUT_EXPECT_TRUE_INFO_LOG(resample->IsResampleInit(), "IsResampleInit should return true after construction");
@@ -61,7 +61,7 @@ HWTEST_F(AudioResampleAiut, AudioResample_Constructor_ValidParams, TestSize.Leve
 HWTEST_F(AudioResampleAiut, AudioResample_IsResampleInit_ValidResampler, TestSize.Level1)
 {
     AIUT_INFO_LOG("entry");
-    AudioResample resample(2, 48000, 44100, 16);
+    AudioResample resample(2, 48000, 44100, 10);
     AIUT_EXPECT_TRUE_INFO_LOG(resample.IsResampleInit(), "IsResampleInit should return true");
 }
 
@@ -73,7 +73,7 @@ HWTEST_F(AudioResampleAiut, AudioResample_IsResampleInit_ValidResampler, TestSiz
 HWTEST_F(AudioResampleAiut, AudioResample_IsResampleInit_NullResampler, TestSize.Level1)
 {
     AIUT_INFO_LOG("entry");
-    AudioResample resample(2, 48000, 44100, 16);
+    AudioResample resample(2, 48000, 44100, 10);
     resample.resampler_ = nullptr;
     AIUT_EXPECT_FALSE_INFO_LOG(resample.IsResampleInit(), "IsResampleInit should return false when resampler_ is null");
 }
@@ -86,7 +86,7 @@ HWTEST_F(AudioResampleAiut, AudioResample_IsResampleInit_NullResampler, TestSize
 HWTEST_F(AudioResampleAiut, AudioResample_ProcessFloatResample_NullResampler, TestSize.Level1)
 {
     AIUT_INFO_LOG("entry");
-    AudioResample resample(2, 48000, 44100, 16);
+    AudioResample resample(2, 48000, 44100, 10);
     resample.resampler_ = nullptr;
     std::vector<float> input(10, 0.5f);
     std::vector<float> output(10, 0.0f);
@@ -103,7 +103,7 @@ HWTEST_F(AudioResampleAiut, AudioResample_ProcessFloatResample_NullResampler, Te
 HWTEST_F(AudioResampleAiut, AudioResample_ProcessFloatResample_ValidInput, TestSize.Level1)
 {
     AIUT_INFO_LOG("entry");
-    AudioResample resample(0, 48000, 44100, 16);
+    AudioResample resample(0, 48000, 44100, 10);
     std::vector<float> input(10, 0.5f);
     std::vector<float> output(10, 0.0f);
     int32_t ret = resample.ProcessFloatResample(input, output);
@@ -119,7 +119,7 @@ HWTEST_F(AudioResampleAiut, AudioResample_ProcessFloatResample_ValidInput, TestS
 HWTEST_F(AudioResampleAiut, AudioResample_ProcessFloatResample_InputSizeNotDivisible, TestSize.Level1)
 {
     AIUT_INFO_LOG("entry");
-    AudioResample resample(2, 48000, 44100, 16);
+    AudioResample resample(2, 48000, 44100, 10);
     std::vector<float> input(3, 0.5f);
     std::vector<float> output(4, 0.0f);
     int32_t ret = resample.ProcessFloatResample(input, output);
@@ -135,7 +135,7 @@ HWTEST_F(AudioResampleAiut, AudioResample_ProcessFloatResample_InputSizeNotDivis
 HWTEST_F(AudioResampleAiut, AudioResample_ProcessFloatResample_OutputSizeNotDivisible, TestSize.Level1)
 {
     AIUT_INFO_LOG("entry");
-    AudioResample resample(2, 48000, 44100, 16);
+    AudioResample resample(2, 48000, 44100, 10);
     std::vector<float> input(4, 0.5f);
     std::vector<float> output(3, 0.0f);
     int32_t ret = resample.ProcessFloatResample(input, output);
@@ -151,7 +151,7 @@ HWTEST_F(AudioResampleAiut, AudioResample_ProcessFloatResample_OutputSizeNotDivi
 HWTEST_F(AudioResampleAiut, AudioResample_ProcessFloatResample_ValidInputAndOutput, TestSize.Level1)
 {
     AIUT_INFO_LOG("entry");
-    AudioResample resample(2, 48000, 44100, 16);
+    AudioResample resample(2, 48000, 44100, 10);
     std::vector<float> input(10, 0.5f);
     std::vector<float> output(10, 0.0f);
     int32_t ret = resample.ProcessFloatResample(input, output);
@@ -167,7 +167,7 @@ HWTEST_F(AudioResampleAiut, AudioResample_ProcessFloatResample_ValidInputAndOutp
 HWTEST_F(AudioResampleAiut, AudioResample_Destructor_ValidResampler, TestSize.Level1)
 {
     AIUT_INFO_LOG("entry");
-    auto resample = std::make_unique<AudioResample>(2, 48000, 44100, 16);
+    auto resample = std::make_unique<AudioResample>(2, 48000, 44100, 10);
     AIUT_ASSERT_NE_INFO_LOG(resample, nullptr, "AudioResample create failed, ptr=%p", resample.get());
     resample.reset();
     AIUT_INFO_LOG("destructor completed successfully");
@@ -181,7 +181,7 @@ HWTEST_F(AudioResampleAiut, AudioResample_Destructor_ValidResampler, TestSize.Le
 HWTEST_F(AudioResampleAiut, AudioResample_Destructor_NullResampler, TestSize.Level1)
 {
     AIUT_INFO_LOG("entry");
-    auto resample = std::make_unique<AudioResample>(2, 48000, 44100, 16);
+    auto resample = std::make_unique<AudioResample>(2, 48000, 44100, 10);
     resample->resampler_ = nullptr;
     resample.reset();
     AIUT_INFO_LOG("destructor with null resampler_ completed successfully");
