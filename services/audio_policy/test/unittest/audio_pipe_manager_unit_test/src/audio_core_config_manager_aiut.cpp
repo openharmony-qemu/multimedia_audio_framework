@@ -40,6 +40,11 @@ const char *TEST_GROUP_NAME = "group1";
 const char *TEST_INTERRUPT_GROUP = "interrupt1";
 const uint64_t TEST_LATENCY = 100;
 const uint32_t TEST_SINK_LATENCY = 200;
+
+// Local test constants mirroring file-scope constants in audio_core_config_manager.cpp
+const int32_t TEST_DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
+const int32_t TEST_DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
+const int32_t TEST_DEFAULT_MAX_FAST_NORMAL_INSTANCES = 6;
 } // namespace
 
 class AudioCoreConfigManagerAiutTest : public testing::Test {
@@ -256,7 +261,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, OnGlobalConfigsParsed_001, TestSize.Lev
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
     PolicyGlobalConfigs configs;
-    CommonConfig commonConfig;
+    PolicyConfigInfo commonConfig;
     commonConfig.name_ = "test";
     commonConfig.value_ = "val";
     configs.commonConfigs_.push_back(commonConfig);
@@ -503,7 +508,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, GetMaxRendererInstances_001, TestSize.L
 {
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
-    CommonConfig config;
+    PolicyConfigInfo config;
     config.name_ = "maxRenderers";
     config.value_ = "64";
     configManager.globalConfigs_.commonConfigs_ = {config};
@@ -520,12 +525,12 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, GetMaxRendererInstances_002, TestSize.L
 {
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
-    CommonConfig config;
+    PolicyConfigInfo config;
     config.name_ = "other";
     config.value_ = "64";
     configManager.globalConfigs_.commonConfigs_ = {config};
     int32_t result = configManager.GetMaxRendererInstances();
-    AIUT_EXPECT_EQ_INFO_LOG(result, DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
+    AIUT_EXPECT_EQ_INFO_LOG(result, TEST_DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
         "GetMaxRendererInstances should return default");
 }
 
@@ -538,12 +543,12 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, GetMaxRendererInstances_003, TestSize.L
 {
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
-    CommonConfig config;
+    PolicyConfigInfo config;
     config.name_ = "maxRenderers";
     config.value_ = "invalid";
     configManager.globalConfigs_.commonConfigs_ = {config};
     int32_t result = configManager.GetMaxRendererInstances();
-    AIUT_EXPECT_EQ_INFO_LOG(result, DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
+    AIUT_EXPECT_EQ_INFO_LOG(result, TEST_DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
         "GetMaxRendererInstances should return default for invalid value");
 }
 
@@ -556,7 +561,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, GetMaxCapturersInstances_001, TestSize.
 {
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
-    CommonConfig config;
+    PolicyConfigInfo config;
     config.name_ = "maxCapturers";
     config.value_ = "8";
     configManager.globalConfigs_.commonConfigs_ = {config};
@@ -575,7 +580,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, GetMaxCapturersInstances_002, TestSize.
     auto &configManager = AudioCoreConfigManager::GetInstance();
     configManager.globalConfigs_.commonConfigs_.clear();
     int32_t result = configManager.GetMaxCapturersInstances();
-    AIUT_EXPECT_EQ_INFO_LOG(result, DEFAULT_MAX_INPUT_NORMAL_INSTANCES,
+    AIUT_EXPECT_EQ_INFO_LOG(result, TEST_DEFAULT_MAX_INPUT_NORMAL_INSTANCES,
         "GetMaxCapturersInstances should return default");
 }
 
@@ -588,7 +593,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, GetMaxFastRenderersInstances_001, TestS
 {
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
-    CommonConfig config;
+    PolicyConfigInfo config;
     config.name_ = "maxFastRenderers";
     config.value_ = "4";
     configManager.globalConfigs_.commonConfigs_ = {config};
@@ -607,7 +612,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, GetMaxFastRenderersInstances_002, TestS
     auto &configManager = AudioCoreConfigManager::GetInstance();
     configManager.globalConfigs_.commonConfigs_.clear();
     int32_t result = configManager.GetMaxFastRenderersInstances();
-    AIUT_EXPECT_EQ_INFO_LOG(result, DEFAULT_MAX_FAST_NORMAL_INSTANCES,
+    AIUT_EXPECT_EQ_INFO_LOG(result, TEST_DEFAULT_MAX_FAST_NORMAL_INSTANCES,
         "GetMaxFastRenderersInstances should return default");
 }
 
@@ -638,7 +643,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, IsSupportInnerCaptureOffload_002, TestS
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
     configManager.isSupportInnerCaptureOffload_ = std::nullopt;
-    CommonConfig config;
+    PolicyConfigInfo config;
     config.name_ = "offloadInnerCaptureSupport";
     config.value_ = "true";
     configManager.globalConfigs_.commonConfigs_ = {config};
@@ -656,7 +661,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, IsSupportInnerCaptureOffload_003, TestS
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
     configManager.isSupportInnerCaptureOffload_ = std::nullopt;
-    CommonConfig config;
+    PolicyConfigInfo config;
     config.name_ = "offloadInnerCaptureSupport";
     config.value_ = "false";
     configManager.globalConfigs_.commonConfigs_ = {config};
@@ -748,7 +753,7 @@ HWTEST_F(AudioCoreConfigManagerAiutTest, GetGlobalConfigs_001, TestSize.Level1)
 {
     AIUT_INFO_LOG("entry");
     auto &configManager = AudioCoreConfigManager::GetInstance();
-    CommonConfig config;
+    PolicyConfigInfo config;
     config.name_ = "test_global";
     configManager.globalConfigs_.commonConfigs_ = {config};
     PolicyGlobalConfigs configs;
