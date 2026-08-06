@@ -992,6 +992,11 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
                 audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
             }
             break;
+        case ALL_OUTPUT_DEVICES:
+            if (static_cast<uint32_t>(dev->deviceRole_) & OUTPUT_DEVICE) {
+                audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
+            }
+            break;
         case CALL_INPUT_DEVICES:
             if ((static_cast<uint32_t>(dev->deviceRole_) & INPUT_DEVICE) &&
                 (static_cast<uint32_t>(deviceInfo.deviceUsage) & VOICE)) {
