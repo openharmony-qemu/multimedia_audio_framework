@@ -199,6 +199,8 @@ public:
 
     void UpdateDescWhenNoBTPermission(vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
 
+    void SyncInputDeviceScoId(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
@@ -307,6 +309,8 @@ private:
     void UpdateInputDeviceWhenStopping(const bool &isSupported);
 
     void SetDefaultDeviceLoadFlag(bool isLoad);
+
+    bool IsScoExistedInDescs(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, size_t targetIdx);
 
     void OnServiceConnected(AudioServiceIndex serviceIndex);
 

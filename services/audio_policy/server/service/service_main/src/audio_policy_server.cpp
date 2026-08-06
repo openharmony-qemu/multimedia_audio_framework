@@ -2023,6 +2023,17 @@ int32_t AudioPolicyServer::GetExcludedDevices(int32_t audioDevUsageIn,
     return SUCCESS;
 }
 
+static void SanitizeDescForNonSystemApp(std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN(desc != nullptr);
+    desc->networkId_ = "";
+    desc->interruptGroupId_ = GROUP_ID_NONE;
+    desc->volumeGroupId_ = GROUP_ID_NONE;
+    if (desc->deviceType_ == DEVICE_TYPE_BT_SPP || desc->deviceType_ == DEVICE_TYPE_NEARLINK_PORT) {
+        desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    }
+}
+
 int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
@@ -2046,6 +2057,7 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
 
     deviceDescs = eventEntry_->GetDevices(deviceFlag);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
+    audioPolicyService_.SyncInputDeviceScoId(deviceDescs);
     AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
@@ -2059,12 +2071,7 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
             desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
         }
         if (!hasSystemPermission) {
-            desc->networkId_ = "";
-            desc->interruptGroupId_ = GROUP_ID_NONE;
-            desc->volumeGroupId_ = GROUP_ID_NONE;
-            if (desc->deviceType_ == DEVICE_TYPE_BT_SPP || desc->deviceType_ == DEVICE_TYPE_NEARLINK_PORT) {
-                desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-            }
+            SanitizeDescForNonSystemApp(desc);
         }
     }
 
@@ -2134,6 +2141,7 @@ int32_t AudioPolicyServer::GetInputDevice(const sptr<AudioCapturerFilter> &audio
     deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(deviceDescs);
 
+    audioPolicyService_.SyncInputDeviceScoId(deviceDescs);
     AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
@@ -4233,16 +4241,12 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
 
     descs = GetAvailableDevicesInner(usage);
     AudioPolicyUtils::GetInstance().FilterDevicesByTokenId(descs);
+    audioPolicyService_.SyncInputDeviceScoId(descs);
     AudioDeviceDescriptor::MapInputDeviceType(descs);
 
     if (!hasSystemPermission) {
         for (auto &desc : descs) {
-            CHECK_AND_CONTINUE(desc != nullptr);
-            desc->networkId_ = "";
-            desc->interruptGroupId_ = GROUP_ID_NONE;
-            desc->volumeGroupId_ = GROUP_ID_NONE;
-            desc->deviceType_ = (desc->deviceType_ == DEVICE_TYPE_BT_SPP ||
-                desc->deviceType_ == DEVICE_TYPE_NEARLINK_PORT) ? DEVICE_TYPE_BLUETOOTH_SCO : desc->deviceType_;
+            SanitizeDescForNonSystemApp(desc);
         }
     }
 
