@@ -31,8 +31,42 @@ const int64_t NORMAL_FRAME_PER_TIME = 20000000;  // 20ms
 const int64_t FAST_FRAME_PER_TIME = 5000000;  // 5ms
 }
 
-AudioStreamChecker::AudioStreamChecker(AudioProcessConfig cfg) : streamConfig_(cfg)
+static constexpr int32_t MAX_AUDIO_CHANNELS = 32;
+
+static bool IsAudioProcessConfigValid(const AudioProcessConfig &cfg)
 {
+    if (cfg.appInfo.appUid < 0) {
+        AUDIO_ERR_LOG("Invalid appUid: %{public}d", cfg.appInfo.appUid);
+        return false;
+    }
+    if (cfg.appInfo.appPid < 0) {
+        AUDIO_ERR_LOG("Invalid appPid: %{public}d", cfg.appInfo.appPid);
+        return false;
+    }
+    if (cfg.originalSessionId != 0 && (cfg.originalSessionId < MIN_STREAMID ||
+        cfg.originalSessionId > MIN_STREAMID)) {
+        AUDIO_ERR_LOG("Invalid originalSessionId: %{public}u", cfg.originalSessionId);
+        return false;
+    }
+    if (cfg.streamInfo.samplingRate <= 0) {
+        AUDIO_ERR_LOG("Invalid samplingRate: %{public}d", cfg.streamInfo.samplingRate);
+        return false;
+    }
+    if (cfg.streamInfo.channels <= 0 || cfg.streamInfo.channels > MAX_AUDIO_CHANNELS) {
+        AUDIO_ERR_LOG("Invalid channels: %{public}d", cfg.streamInfo.channels);
+        return false;
+    }
+    return true;
+}
+
+AudioStreamChecker::AudioStreamChecker(AudioProcessConfig cfg)
+{
+    if (!IsAudioProcessConfigValid(cfg)) {
+        AUDIO_ERR_LOG("AudioStreamChecker constructed with invalid config, using defaults");
+        streamConfig_ = AudioProcessConfig();
+    } else {
+        streamConfig_ = cfg;
+    }
     monitorSwitch_ = true;
 }
 

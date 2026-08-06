@@ -69,6 +69,29 @@ static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
 enum CallbackHandlerEvent : uint32_t {
     NOTIFY_VOIP_START = 0,
 };
+
+static constexpr int32_t MAX_AUDIO_CHANNELS = 32;
+
+bool IsCapturerConfigValid(const AudioProcessConfig &config)
+{
+    if (config.appInfo.appUid < 0) {
+        AUDIO_ERR_LOG("Invalid appUid in capturer config: %{public}d", config.appInfo.appUid);
+        return false;
+    }
+    if (config.appInfo.appPid < 0) {
+        AUDIO_ERR_LOG("Invalid appPid in capturer config: %{public}d", config.appInfo.appPid);
+        return false;
+    }
+    if (config.streamInfo.samplingRate <= 0) {
+        AUDIO_ERR_LOG("Invalid samplingRate in capturer config: %{public}d", config.streamInfo.samplingRate);
+        return false;
+    }
+    if (config.streamInfo.channels <= 0 || config.streamInfo.channels > MAX_AUDIO_CHANNELS) {
+        AUDIO_ERR_LOG("Invalid channels in capturer config: %{public}d", config.streamInfo.channels);
+        return false;
+    }
+    return true;
+}
 }
 
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -76,7 +99,13 @@ CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_p
     processConfig_ = processConfig;
     streamListener_ = streamListener;
     innerCapId_ = processConfig.innerCapId;
-    audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
+    if (!IsCapturerConfigValid(processConfig)) {
+        AUDIO_ERR_LOG("Invalid processConfig for AudioStreamChecker in capturer, using default");
+        AudioProcessConfig defaultConfig;
+        audioStreamChecker_ = std::make_shared<AudioStreamChecker>(defaultConfig);
+    } else {
+        audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
+    }
     deviceId_ = processConfig.appInfo.deviceId;
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
 }
@@ -541,6 +570,10 @@ void CapturerInServer::ReadData(size_t length)
 {
     // Loopback should not copy data to the buffer
     CHECK_AND_RETURN(!processConfig_.capturerInfo.isLoopback);
+    if (audioServerBuffer_ == nullptr) {
+        AUDIO_ERR_LOG("CapturerInServer::ReadData audioServerBuffer_ is nullptr");
+        return;
+    }
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     int32_t ret = CheckForReadData(length, currentWriteFrame);
     CHECK_AND_CALL_FUNC_RETURN(ret == SUCCESS,
@@ -624,6 +657,10 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 {
     // Loopback should not copy data to the buffer
     CHECK_AND_RETURN_RET(!processConfig_.capturerInfo.isLoopback, SUCCESS);
+    if (audioServerBuffer_ == nullptr) {
+        AUDIO_ERR_LOG("CapturerInServer::OnReadData audioServerBuffer_ is nullptr");
+        return ERR_READ_FAILED;
+    }
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     int32_t ret = CheckForOnReadData(requestDataLen, currentWriteFrame);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret == ERR_READ_FAILED ? ERR_READ_FAILED : ERR_WRITE_FAILED,
