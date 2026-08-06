@@ -229,16 +229,6 @@ __attribute__((unused)) static void ExpectBufferEquals(HpaePcmBuffer *buf, float
     }
 }
 
-static void ExpectBufferSilence(HpaePcmBuffer *buf)
-{
-    ASSERT_NE(buf, nullptr);
-    float *data = buf->GetPcmDataBuffer();
-    size_t n = buf->GetFrameLen() * buf->GetChannelCount();
-    for (size_t i = 0; i < n; i++) {
-        EXPECT_FLOAT_EQ(data[i], 0.0f) << " non-zero at sample " << i;
-    }
-}
-
 class HpaeProcessClusterSeDataflowTest : public ::testing::Test {
 protected:
     void SetUp() override
