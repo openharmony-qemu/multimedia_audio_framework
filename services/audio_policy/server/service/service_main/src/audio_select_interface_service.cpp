@@ -575,8 +575,8 @@ int32_t AudioSelectInterfaceService::SelectInputDeviceByUid(const std::shared_pt
     int32_t uid)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, SUCCESS, "deviceDesc is null");
-    auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceDesc->deviceId_);
-    
+    auto desc = (deviceDesc->deviceType_ == DEVICE_TYPE_NONE ?
+        deviceDesc : AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceDesc->deviceId_));
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, SUCCESS, "not connected device");
     SetDeviceEnableAndUsage(desc, desc->deviceUsage_);
     AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(uid, INVALID_STREAM_ID, desc);
