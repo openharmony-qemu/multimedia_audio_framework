@@ -1117,15 +1117,8 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
         sessionId, sourceInfo_.sourceName.c_str());
     CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceoutputnode is null");
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
-    nodeInfo.deviceClass = sourceInfo_.deviceClass;
-    nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
-    HpaeNodeInfo inNodeInfo;
-    inNodeInfo.frameLen = sourceInfo_.frameLen;
-    inNodeInfo.samplingRate = sourceInfo_.samplingRate;
-    AdjustFrameLen(nodeInfo, inNodeInfo);
-    moveInfo.sourceOutputNode->SetNodeInfo(nodeInfo);
     TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
         static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_RECORD);
 #ifdef ENABLE_HIDUMP_DFX
