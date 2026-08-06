@@ -421,14 +421,10 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
         descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType, info.bypassType);
     } else if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
         (audioScene == AUDIO_SCENE_VOICE_RINGING && isVoipStream)) {
-        shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
-        if (desc->deviceType_ == DEVICE_TYPE_NONE) {
-            info.streamUsage = callStreamUsage;
-            AUDIO_INFO_LOG("Ring follow call strategy, replace usage %{public}d to %{public}d",
-                info.preStreamUsage, info.streamUsage);
-            desc = FetchCallRenderDevice(info.streamUsage, info.clientUID, routerType);
-        }
-        descs.push_back(move(desc));
+        info.streamUsage = callStreamUsage;
+        AUDIO_INFO_LOG("Ring follow call strategy, replace usage %{public}d to %{public}d",
+            info.preStreamUsage, info.streamUsage);
+        descs.push_back(FetchCallRenderDevice(info.streamUsage, info.clientUID, routerType));
     } else if (IsAlarmFollowRingStrategy(audioScene, info.streamUsage)) {
         AUDIO_INFO_LOG("alarm follow ring strategy, replace usage alarm to ringtone");
         descs = FetchRingRenderDevices(STREAM_USAGE_RINGTONE, info.clientUID, routerType, info.bypassType);
