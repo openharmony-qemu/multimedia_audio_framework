@@ -1492,6 +1492,7 @@ int32_t HpaeDirectRendererManager::CreateSessionEffect(uint32_t sessionId,
 
     // Create accepted — persist the logical binding on the SinkInputNode
     if (node != nullptr) {
+        node->EnsureHistoryBufferForAiss(instance->GetPreheatFrames());
         SessionEffectAttachState st;
         st.enabled = true;
         st.effectName = effectName;
