@@ -2328,6 +2328,33 @@ HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_002, TestSize.Level0
 }
 
 /**
+ * @tc.name  : connectInputSession_003
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_159
+ * @tc.desc  : Test ConnectInputSession returns ERROR (not crash) when converterForOutput_ is null,
+ *             i.e. CreateDirectNodes did not create the node due to sink init/reload failure
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_003, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // Simulate the half-initialized state: sink init/reload failed so CreateDirectNodes returned
+    // early and converterForOutput_ was never created, while the session keeps RUNNING.
+    // ConnectInputSession must bail out with ERROR instead of dereferencing the null node.
+    ASSERT_NE(directManager_->curNode_, nullptr);
+    directManager_->converterForOutput_ = nullptr;
+    directManager_->curNode_->SetState(HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(directManager_->ConnectInputSession(), ERROR);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
  * @tc.name  : disconnectInputSession_001
  * @tc.type  : FUNC
  * @tc.number: HpaeDirectRendererManagerTest_102
