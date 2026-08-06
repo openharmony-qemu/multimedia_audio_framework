@@ -24,6 +24,5 @@ ohos_js_unittest("AudioRendererJsUnitTest") {
 
 group("jsunittest") {
   testonly = true
-  # deps = [ ":AudioRendererJsUnitTest" ]
   deps = []
 }

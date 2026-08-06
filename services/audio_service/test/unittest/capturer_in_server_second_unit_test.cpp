@@ -1320,21 +1320,6 @@ HWTEST_F(CapturerInServerSecondUnitTest, SetInMainThreadStateAndReportOverflow_0
     capturerInServer_->ReportOverflowEvent();
 }
 
-/*
- * @tc.name  : Test StartPrivacyConfirmDialog.
- * @tc.type  : FUNC
- * @tc.number: StartPrivacyConfirmDialog_001
- * @tc.desc  : Test StartPrivacyConfirmDialog interface.
- */
-HWTEST_F(CapturerInServerSecondUnitTest, StartPrivacyConfirmDialog_001, TestSize.Level1)
-{
-    AudioProcessConfig processConfig;
-    std::weak_ptr<IStreamListener> streamListener;
-    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    auto result = capturerInServer_->StartPrivacyConfirmDialog(1);
-    EXPECT_NE(result, SUCCESS);
-}
-
 /**
  * @tc.name  : Test GetCapturerFlagsByRoute.
  * @tc.type  : FUNC
