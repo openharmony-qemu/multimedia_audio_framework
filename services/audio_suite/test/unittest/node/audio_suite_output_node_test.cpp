@@ -30,6 +30,8 @@
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_aiss_node.h"
 #include "audio_suite_unittest_tools.h"
+#include "audio_suite_eq_node.h"
+#include "audio_suite_system_music_master_node.h"
 #include "securec.h"
 
 using namespace testing::ext;
@@ -379,6 +381,23 @@ HWTEST_F(AudioSuiteOutputNodeTest, Connection_003, TestSize.Level0)
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
+HWTEST_F(AudioSuiteOutputNodeTest, Connection_004, TestSize.Level0)
+{
+    AudioFormat format;
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(format);
+    EXPECT_NE(outputNode, nullptr);
+
+    std::shared_ptr<AudioSuiteSystemMusicMasterNode> node = std::make_shared<AudioSuiteSystemMusicMasterNode>();
+    auto ret = outputNode->Connect(node);
+    EXPECT_EQ(ret, SUCCESS);
+    outputNode->SetAudioNodeFormat(format);
+
+    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(format);
+    ret = outputNode->Connect(inputNode);
+    EXPECT_EQ(ret, SUCCESS);
+    outputNode->SetAudioNodeFormat(format);
+}
+
 HWTEST_F(AudioSuiteOutputNodeTest, ParamCheck_001, TestSize.Level0)
 {
     AudioFormat outformat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
@@ -674,6 +693,35 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_MultipleCalls, TestSize.Level0)
     
     auto ret2 = outputNode->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret2, ERROR);
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_MetaData, TestSize.Level0)
+{
+    AudioMetaFrame metaFrame = {nullptr, 0, nullptr, 0};
+    AudioFormat outformat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(outformat);
+    EXPECT_NE(outputNode, nullptr);
+    outputNode->Init();
+
+    int32_t ret = outputNode->DoProcess(metaFrame, nullptr, nullptr, nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    int32_t responseAudioSize = 0;
+    int32_t responseMetaSize = 0;
+    bool finishedFlag = false;
+
+    ret = outputNode->DoProcess(metaFrame, &responseAudioSize, nullptr, nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    ret = outputNode->DoProcess(metaFrame, &responseAudioSize, &responseMetaSize, nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    ret = outputNode->DoProcess(metaFrame, &responseAudioSize, &responseMetaSize, &finishedFlag);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    uint8_t data[1];
+    metaFrame.audioData = reinterpret_cast<void *>(&data);
+    ret = outputNode->DoProcess(metaFrame, &responseAudioSize, &responseMetaSize, &finishedFlag);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    metaFrame.metaData = reinterpret_cast<void *>(&data);
+    ret = outputNode->DoProcess(metaFrame, &responseAudioSize, &responseMetaSize, &finishedFlag);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
 HWTEST_F(AudioSuiteOutputNodeTest, SetAudioNodeFormat_DifferentRates, TestSize.Level0)

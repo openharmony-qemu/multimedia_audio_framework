@@ -20,6 +20,8 @@
 #include <securec.h>
 #include "audio_errors.h"
 #include "audio_suite_input_node.h"
+#include "audio_suite_eq_node.h"
+#include "audio_suite_system_music_master_node.h"
 #include "securec.h"
 
 using namespace OHOS;
@@ -93,7 +95,33 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeConnect_001, TestSize.Level
     ret = inputNode->Init();
     EXPECT_EQ(ret, SUCCESS);
 
+    audioFormat.encodingType = AudioStreamEncodingType::ENCODING_METADATA;
+    ret = inputNode->Init();
+    EXPECT_EQ(ret, SUCCESS);
+
     ret = inputNode->DeInit();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeConnect_002, TestSize.Level0)
+{
+    AudioFormat audioFormat = GetTestAudioFormat();
+    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
+    std::shared_ptr<AudioSuiteSystemMusicMasterNode> node = std::make_shared<AudioSuiteSystemMusicMasterNode>();
+    std::shared_ptr<AudioNode> eqNode = std::make_shared<AudioSuiteEqNode>();
+    auto ret = node->Connect(inputNode);
+    EXPECT_EQ(ret, SUCCESS);
+    inputNode->SetAudioNodeFormat(audioFormat);
+    
+    ret = node->DisConnect(inputNode);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = inputNode->Init();
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = eqNode->Connect(inputNode);
+    inputNode->SetAudioNodeFormat(audioFormat);
+    ret = eqNode->DisConnect(inputNode);
     EXPECT_EQ(ret, SUCCESS);
 }
 

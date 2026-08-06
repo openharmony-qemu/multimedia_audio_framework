@@ -46,6 +46,7 @@ if (audio_framework_feature_audiosuite_support) {
       "../../../audio_service/common/include/limiter",
       "../../../../interfaces/inner_api/native/audiocommon/include",
       "../../../../interfaces/inner_api/native/audiosuite/include",
+      "../../../../interfaces/inner_api/native/offlineaudioeffect/include",
       "../../../../interfaces/inner_api/native/audio_pcm_process/include",
       "../../../../interfaces/kits/c/audio_suite/",
       "../../../../interfaces/kits/c/common",
@@ -120,6 +121,7 @@ if (audio_framework_feature_audiosuite_support) {
       "node/audio_suite_space_render_node_test.cpp",
       "node/audio_suite_mixer_processor_node_test.cpp",
       "node/audio_suite_hoa_render_node_test.cpp",
+      "node/audio_suite_system_node_test.cpp",
       "converter/src/audio_suite_converter_test.cpp",
     ]
 
