@@ -32,7 +32,7 @@ namespace {
 class TestAudioParameterCallback : public AudioParameterCallback {
 public:
     void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
-        const std::string condition, const std::string value) override
+        const std::string &condition, const std::string &value) override
     {
         (void)networkId;
         (void)key;
