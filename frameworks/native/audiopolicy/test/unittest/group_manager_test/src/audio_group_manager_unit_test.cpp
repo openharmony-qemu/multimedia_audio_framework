@@ -21,6 +21,9 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_policy_log.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -31,6 +34,43 @@ namespace {
     constexpr int32_t MAX_VOL = 15;
     constexpr int32_t MIN_VOL = 0;
     std::string networkId = "LocalDevice";
+}
+
+bool g_hasPermission = false;
+
+static void GetPermission()
+{
+    if (!g_hasPermission) {
+        uint64_t tokenId;
+        constexpr int perNum = 10;
+        const char *perms[perNum] = {
+            "ohos.permission.MICROPHONE",
+            "ohos.permission.MANAGE_INTELLIGENT_VOICE",
+            "ohos.permission.MANAGE_AUDIO_CONFIG",
+            "ohos.permission.MICROPHONE_CONTROL",
+            "ohos.permission.MODIFY_AUDIO_SETTINGS",
+            "ohos.permission.ACCESS_NOTIFICATION_POLICY",
+            "ohos.permission.USE_BLUETOOTH",
+            "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO",
+            "ohos.permission.RECORD_VOICE_CALL",
+            "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+        };
+
+        NativeTokenInfoParams infoInstance = {
+            .dcapsNum = 0,
+            .permsNum = 10,
+            .aclsNum = 0,
+            .dcaps = nullptr,
+            .perms = perms,
+            .acls = nullptr,
+            .processName = "audiofuzztest",
+            .aplStr = "system_basic",
+        };
+        tokenId = GetAccessTokenId(&infoInstance);
+        SetSelfTokenID(tokenId);
+        OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+        g_hasPermission = true;
+    }
 }
 
 void AudioGroupManagerUnitTest::SetUpTestCase(void) {}
@@ -441,6 +481,46 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level0)
         bool isMute;
         ret = audioGroupMngr_->IsStreamMute(AudioVolumeType::STREAM_RING, isMute);
         EXPECT_EQ(false, isMute);
+    }
+}
+
+/**
+* @tc.name  : Test SetMute IsStreamMute API
+* @tc.number: SetMute_005
+* @tc.desc  : Test unmute functionality of media stream
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_005, TestSize.Level2)
+{
+    GetPermission();
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_MUSIC, true, DEVICE_TYPE_NONE, 1);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
+/**
+* @tc.name  : Test SetMute IsStreamMute API
+* @tc.number: SetMute_006
+* @tc.desc  : Test unmute functionality of media stream
+* @tc.require: issueI5M1XV
+*/
+HWTEST(AudioGroupManagerUnitTest, SetMute_006, TestSize.Level2)
+{
+    GetPermission();
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        auto ret = audioGroupMngr_->SetMute(AudioVolumeType::STREAM_MUSIC, false, DEVICE_TYPE_NONE, 1);
+        EXPECT_EQ(SUCCESS, ret);
     }
 }
 
