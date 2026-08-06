@@ -47,9 +47,12 @@ HWTEST_F(AudioPipeSelectorAiut, BuildRouteSelectInfo_Playback_001, TestSize.Leve
 
     auto routeSelectInfo = audioPipeSelector->BuildRouteSelectInfo(streamDesc);
     AIUT_ASSERT_NE_INFO_LOG(routeSelectInfo, nullptr, "routeSelectInfo is nullptr");
-    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->audioMode, static_cast<int32_t>(AUDIO_MODE_PLAYBACK), "audioMode mismatch");
-    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->streamUsage, static_cast<int32_t>(STREAM_USAGE_MUSIC), "streamUsage mismatch");
-    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->sourceType, static_cast<int32_t>(SOURCE_TYPE_INVALID), "sourceType should be invalid");
+    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->audioMode, static_cast<int32_t>(AUDIO_MODE_PLAYBACK),
+        "audioMode mismatch");
+    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->streamUsage, static_cast<int32_t>(STREAM_USAGE_MUSIC),
+        "streamUsage mismatch");
+    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->sourceType, static_cast<int32_t>(SOURCE_TYPE_INVALID),
+        "sourceType should be invalid");
     AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->bundleName, "com.test.playback", "bundleName mismatch");
     AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->routeFlag, static_cast<AudioFlag>(streamDesc->routeFlag_),
         "routeFlag mismatch");
@@ -74,9 +77,12 @@ HWTEST_F(AudioPipeSelectorAiut, BuildRouteSelectInfo_Record_002, TestSize.Level1
 
     auto routeSelectInfo = audioPipeSelector->BuildRouteSelectInfo(streamDesc);
     AIUT_ASSERT_NE_INFO_LOG(routeSelectInfo, nullptr, "routeSelectInfo is nullptr");
-    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->audioMode, static_cast<int32_t>(AUDIO_MODE_RECORD), "audioMode mismatch");
-    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->streamUsage, static_cast<int32_t>(STREAM_USAGE_UNKNOWN), "streamUsage should be unknown");
-    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->sourceType, static_cast<int32_t>(SOURCE_TYPE_VOICE_CALL), "sourceType mismatch");
+    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->audioMode, static_cast<int32_t>(AUDIO_MODE_RECORD),
+        "audioMode mismatch");
+    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->streamUsage, static_cast<int32_t>(STREAM_USAGE_UNKNOWN),
+        "streamUsage should be unknown");
+    AIUT_EXPECT_EQ_INFO_LOG(routeSelectInfo->sourceType, static_cast<int32_t>(SOURCE_TYPE_VOICE_CALL),
+        "sourceType mismatch");
 }
 
 /**
