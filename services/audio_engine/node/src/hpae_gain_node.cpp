@@ -153,6 +153,12 @@ void HpaeGainNode::ResetFadeState()
     // (e.g. DONE_FADEOUT left by a Pause). DONE_FADEOUT makes SignalProcess silence every frame,
     // so it must be cleared; otherwise the reused node stays muted permanently.
     fadeOutState_ = FadeOutState::NO_FADEOUT;
+    // fadeInState_=true but collFadeInState_=false is intentional:
+    //  - fadeOutState_==DONE_FADEOUT is a per-frame SilenceData gate in SignalProcess, so a
+    //    reused node was muted; fade-in avoids the silence->full-volume pop on reconnect.
+    //  - collFadeOutState_==DONE_FADEOUT is NOT a silence gate (DoCollFading only acts on
+    //    DO_FADEOUT), so clearing it needs no fade-in; coll fade-in is driven by collaboration
+    //    logic (SetCollFadeState), not by reconnect.
     fadeInState_ = true; // fade-in on reconnect to avoid pop
     fadeProcessedBytes_ = 0;
     totalFadeBytes_ = 0;
