@@ -127,6 +127,14 @@ int32_t AudioSuiteClientPolicy::RegisterDownloadStatusCallback(std::shared_ptr<D
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "RegisterDownloadStatusCallback result: %{public}d", result);
 
     statusCallbackStub_->SetCallback(callback);
+    if (statusListener_ == nullptr) {
+        statusListener_ = sptr<AudioSuiteSystemAbilityListener>(new (std::nothrow) AudioSuiteSystemAbilityListener());
+        sptr<ISystemAbilityManager> samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        CHECK_AND_RETURN_RET_LOG(
+            samgrProxy != nullptr, ERR_NOT_STARTED, "SubscribeSystemAbility GetSystemAbilityManager failed");
+        result = samgrProxy->SubscribeSystemAbility(SA_ID, statusListener_);
+        CHECK_AND_RETURN_RET_LOG(result == ERR_OK, SUCCESS, "SubcribeSystemAbility result is %{public}d!", result);
+    }
     return SUCCESS;
 }
 
@@ -145,6 +153,15 @@ int32_t AudioSuiteClientPolicy::UnregisterDownloadStatusCallback()
     if (statusCallbackStub_ != nullptr) {
         statusCallbackStub_->ClearCallback();
         statusCallbackStub_ = nullptr;
+    }
+
+    if (statusListener_ != nullptr) {
+        sptr<ISystemAbilityManager> samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        CHECK_AND_RETURN_RET_LOG(
+            samgrProxy != nullptr, ERR_NOT_STARTED, "UnSubscribeSystemAbility GetSystemAbilityManager failed");
+        result = samgrProxy->UnSubscribeSystemAbility(SA_ID, statusListener_);
+        statusListener_ = nullptr;
+        CHECK_AND_RETURN_RET_LOG(result == ERR_OK, SUCCESS, "SubcribeSystemAbility result is %{public}d!", result);
     }
 
     return SUCCESS;
@@ -285,6 +302,34 @@ void AudioSuiteClientPolicy::AudioSuiteServerDeathRecipient::OnRemoteDied(const 
 {
     AudioSuiteClientPolicy::GetInstance().DisconnectService();
     AUDIO_INFO_LOG("AudioSuiteServerDeathRecipient::OnRemoteDied DisconnectService");
+}
+
+void AudioSuiteClientPolicy::AudioSuiteServerRecover(int32_t &systemAbilityId)
+{
+    CHECK_AND_RETURN_LOG(systemAbilityId == SA_ID, "Restart failed, invalid SA ID");
+    AUDIO_INFO_LOG("OnAddSystemAbility, systemAbilityId=%{public}d", systemAbilityId);
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_LOG(statusCallbackStub_ != nullptr, "OnAddSystemAbility: no callback to re-register");
+    CHECK_AND_RETURN_LOG(ConnectService(), "OnAddSystemAbility: ConnectService failed");
+
+    int32_t result = SUCCESS;
+    ErrCode ret = proxy_->RegisterDownloadStatusCallback(statusCallbackStub_->AsObject(), result);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS && result == SUCCESS,
+                         "OnAddSystemAbility: re-register status callback failed, ret=%{public}d result=%{public}d",
+                         ret, result);
+    AUDIO_INFO_LOG("OnAddSystemAbility: re-register status callback success");
+}
+
+void AudioSuiteSystemAbilityListener::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
+{
+    AudioSuiteClientPolicy::GetInstance().AudioSuiteServerRecover(systemAbilityId);
+    AUDIO_INFO_LOG("AudioSuiteSystemAbilityListener::OnAddSystemAbility RecoverAudioSuiteService");
+}
+
+void AudioSuiteSystemAbilityListener::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
+{
+    AUDIO_INFO_LOG("OnRemoveSystemAbility, systemAbilityId=%{public}d", systemAbilityId);
 }
 
 }  // namespace AudioSuite

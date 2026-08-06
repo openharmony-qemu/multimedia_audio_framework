@@ -92,6 +92,7 @@ if (audio_framework_feature_audiosuite_support) {
       "googletest:gtest",
       "googletest:gmock",
       "hilog:libhilog",
+      "samgr:samgr_proxy",
       "ipc:ipc_core",
       "init:libbegetutil",
       "bounds_checking_function:libsec_shared",

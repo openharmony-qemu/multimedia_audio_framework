@@ -30,10 +30,7 @@
 #include <unistd.h>
 #include <ctime>
 
-// AccessToken 相关头文件
 #include "ipc_skeleton.h"
-#include "accesstoken_kit.h"
-#include "access_token.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,6 +40,7 @@ namespace AudioSuite {
 static constexpr const char* TASK_ID = "AudioSuiteSaUnloadTask";
 static constexpr int32_t AUDIO_SUITE_SA_ID = 3015;
 static constexpr int32_t DELAY_TIME = 300000; // 5 minutes in milliseconds
+static constexpr int32_t AUDIO_SUITE_SERVICE_IMPL_TIMEOUT = 10; // 10s
 #endif
 
 #ifndef AUDIOSUITE_SA_UT
@@ -100,8 +98,14 @@ void AudioSuiteService::OnStop()
 ErrCode AudioSuiteService::RegisterDownloadStatusCallback(const sptr<IRemoteObject>& object, ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::RegisterDownloadStatusCallback");
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::RegisterDownloadStatusCallback", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] RegisterDownloadStatusCallback timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
     PostDelayUnloadTask();
-    CHECK_AND_RETURN_RET_LOG(CheckPermission(result), SUCCESS, "RegisterDownloadStatusCallback: not permission");
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "RegisterDownloadStatusCallback: not permission");
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     result = downloadManager_.RegisterDownloadStatusCallback(callerPid, object);
@@ -113,8 +117,14 @@ ErrCode AudioSuiteService::RegisterDownloadStatusCallback(const sptr<IRemoteObje
 ErrCode AudioSuiteService::UnregisterDownloadStatusCallback(ErrCode &result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::UnregisterDownloadStatusCallback");
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::UnregisterDownloadStatusCallback", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] UnregisterDownloadStatusCallback timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
     PostDelayUnloadTask();
-    CHECK_AND_RETURN_RET_LOG(CheckPermission(result), SUCCESS, "UnregisterDownloadStatusCallback: not permission");
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "UnregisterDownloadStatusCallback: not permission");
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     result = downloadManager_.UnregisterDownloadStatusCallback(callerPid);
@@ -126,8 +136,13 @@ ErrCode AudioSuiteService::UnregisterDownloadStatusCallback(ErrCode &result)
 ErrCode AudioSuiteService::RegisterDownloadInterfaceCallback(const sptr<IRemoteObject> &object, ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::RegisterDownloadInterfaceCallback");
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::RegisterDownloadInterfaceCallback", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] RegisterDownloadInterfaceCallback timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
     PostDelayUnloadTask();
-    CHECK_AND_RETURN_RET_LOG(CheckPermission(result), SUCCESS, "RegisterDownloadInterfaceCallback: not permission");
 
     result = downloadManager_.SetUpdateEngineCallback(object);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS,
@@ -138,8 +153,15 @@ ErrCode AudioSuiteService::RegisterDownloadInterfaceCallback(const sptr<IRemoteO
 ErrCode AudioSuiteService::UnregisterDownloadInterfaceCallback(ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::UnregisterDownloadInterfaceCallback");
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie(
+        "AudioSuiteService::UnregisterDownloadInterfaceCallback",
+        AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) { AUDIO_ERR_LOG("[xcollie] UnregisterDownloadInterfaceCallback timeout"); },
+        nullptr,
+        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
     PostDelayUnloadTask();
-    CHECK_AND_RETURN_RET_LOG(CheckPermission(result), SUCCESS, "UnregisterDownloadInterfaceCallback: not permission");
 
     result = downloadManager_.SetUpdateEngineCallback(nullptr);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS,
@@ -150,8 +172,14 @@ ErrCode AudioSuiteService::UnregisterDownloadInterfaceCallback(ErrCode& result)
 ErrCode AudioSuiteService::StartDownload(const std::string& featureName, ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::StartDownload, featureName=%{public}s", featureName.c_str());
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::StartDownload", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] StartDownload timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
     PostDelayUnloadTask();
-    CHECK_AND_RETURN_RET_LOG(CheckPermission(result), SUCCESS, "RegisterDownloadStatusCallback: not permission");
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "StartDownload: not permission");
 
     result = downloadManager_.StartDownload(featureName);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "StartDownload failed, result:%{public}d", result);
@@ -161,8 +189,14 @@ ErrCode AudioSuiteService::StartDownload(const std::string& featureName, ErrCode
 ErrCode AudioSuiteService::PauseDownload(const std::string& featureName, ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::PauseDownload, featureName=%{public}s", featureName.c_str());
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::PauseDownload", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] PauseDownload timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
     PostDelayUnloadTask();
-    CHECK_AND_RETURN_RET_LOG(CheckPermission(result), SUCCESS, "RegisterDownloadStatusCallback: not permission");
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "PauseDownload: not permission");
 
     result = downloadManager_.PauseDownload(featureName);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "PauseDownload failed, result:%{public}d", result);
@@ -172,8 +206,14 @@ ErrCode AudioSuiteService::PauseDownload(const std::string& featureName, ErrCode
 ErrCode AudioSuiteService::CancelDownload(const std::string& featureName, ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::CancelDownload, featureName=%{public}s", featureName.c_str());
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::CancelDownload", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] CancelDownload timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
     PostDelayUnloadTask();
-    CHECK_AND_RETURN_RET_LOG(CheckPermission(result), SUCCESS, "RegisterDownloadStatusCallback: not permission");
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "CancelDownload: not permission");
 
     result = downloadManager_.CancelDownload(featureName);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "CancelDownload failed, result:%{public}d", result);
@@ -183,8 +223,14 @@ ErrCode AudioSuiteService::CancelDownload(const std::string& featureName, ErrCod
 ErrCode AudioSuiteService::StartBackgroundDownload(const std::string& featureName, ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::StartBackgroundDownload, featureName=%{public}s", featureName.c_str());
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::StartBackgroundDownload", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] StartBackgroundDownload timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
     PostDelayUnloadTask();
-    CHECK_AND_RETURN_RET_LOG(CheckPermission(result), SUCCESS, "RegisterDownloadStatusCallback: not permission");
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "StartBackgroundDownload: not permission");
 
     result = downloadManager_.StartBackgroundDownload(featureName);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "StartBackgroundDownload failed, result:%{public}d", result);
@@ -194,8 +240,14 @@ ErrCode AudioSuiteService::StartBackgroundDownload(const std::string& featureNam
 ErrCode AudioSuiteService::UninstallCloudRom(const std::string &featureName, ErrCode &result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::UninstallCloudRom");
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::UninstallCloudRom", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] UninstallCloudRom timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
     PostDelayUnloadTask();
-    CHECK_AND_RETURN_RET_LOG(CheckPermission(result), SUCCESS, "RegisterDownloadStatusCallback: not permission");
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "UninstallCloudRom: not permission");
  
     result = downloadManager_.UninstallCloudRom(featureName);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "UninstallCloudRom failed, result:%{public}d", result);
@@ -206,8 +258,14 @@ ErrCode AudioSuiteService::GetDownloadStatus(
     const std::string &featureName, AudioSuiteDownloadStatusInfo &status, ErrCode &result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::GetDownloadStatus");
+#ifndef AUDIOSUITE_SA_UT
+    AudioXCollie audioXCollie("AudioSuiteService::GetDownloadStatus", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] GetDownloadStatus timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+#endif
     PostDelayUnloadTask();
-    CHECK_AND_RETURN_RET_LOG(CheckPermission(result), SUCCESS, "RegisterDownloadStatusCallback: not permission");
+    CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "GetDownloadStatus: not permission");
 
     result = downloadManager_.GetDownloadStatus(featureName, status);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "GetDownloadStatus failed, result:%{public}d", result);
@@ -225,17 +283,14 @@ ErrCode AudioSuiteService::OnDownloadStatusChanged(const std::vector<AudioSuiteD
     return SUCCESS;
 }
 
-bool AudioSuiteService::CheckPermission(ErrCode &result)
+bool AudioSuiteService::VerifyIsSystemApp(ErrCode& result)
 {
 #ifndef AUDIOSUITE_SA_UT
-    Security::AccessToken::AccessTokenID token = OHOS::IPCSkeleton::GetCallingTokenID();
-    Security::AccessToken::ATokenTypeEnum type = Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(token);
-    if (type != Security::AccessToken::TOKEN_NATIVE && type != Security::AccessToken::TOKEN_HAP &&
-        type != Security::AccessToken::TOKEN_SHELL) {
-        AUDIO_ERR_LOG("CheckPermission: Invalid token type=%{public}d", type);
-        result = ERR_PERMISSION_DENIED;
+    if (!PermissionUtil::VerifySystemPermission()) {
+        result = ERR_SYSTEM_PERMISSION_DENIED;
         return false;
     }
+    return true;
 #endif
     return true;
 }
