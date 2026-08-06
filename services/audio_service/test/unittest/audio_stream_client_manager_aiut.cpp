@@ -29,7 +29,7 @@ public:
         (void)info;
         called_ = true;
     }
-    void OnMuteStateChange(int32_t uid, uint32_t sessionId, bool isMuted) override
+    void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override
     {
         (void)uid;
         (void)sessionId;

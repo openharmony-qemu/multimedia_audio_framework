@@ -31,8 +31,8 @@ namespace AudioStandard {
 namespace {
 class TestAudioParameterCallback : public AudioParameterCallback {
 public:
-    void OnAudioParameterChange(const std::string &networkId, AudioParamKey key,
-        const std::string &condition, const std::string &value) override
+    void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+        const std::string condition, const std::string value) override
     {
         (void)networkId;
         (void)key;
@@ -70,7 +70,7 @@ public:
         (void)info;
         called_ = true;
     }
-    void OnMuteStateChange(int32_t uid, uint32_t sessionId, bool isMuted) override
+    void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override
     {
         (void)uid;
         (void)sessionId;
