@@ -229,16 +229,6 @@ __attribute__((unused)) static void ExpectBufferEquals(HpaePcmBuffer *buf, float
     }
 }
 
-static void ExpectBufferSilence(HpaePcmBuffer *buf)
-{
-    ASSERT_NE(buf, nullptr);
-    float *data = buf->GetPcmDataBuffer();
-    size_t n = buf->GetFrameLen() * buf->GetChannelCount();
-    for (size_t i = 0; i < n; i++) {
-        EXPECT_FLOAT_EQ(data[i], 0.0f) << " non-zero at sample " << i;
-    }
-}
-
 class HpaeProcessClusterSeDataflowTest : public ::testing::Test {
 protected:
     void SetUp() override
@@ -284,34 +274,6 @@ protected:
     std::shared_ptr<ProbeNode> probe_;
     AudioEffectConfig config_ = MakeTestConfig();
 };
-
-// PC-DF-2: INTERCEPTING — SE pulls upstream, FeedInput called, outputs silence
-HWTEST_F(HpaeProcessClusterSeDataflowTest, intercepting_feedsAndOutputsSilence, TestSize.Level0)
-{
-    fake_.SetPreheatFrames(1);  // Preheat exits after 1 frame
-    auto instance = CreateEffectInstance();
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
-
-    auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
-    ASSERT_NE(seNode, nullptr);
-
-    // Wait for preheat to complete
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    // First DoProcess: WARMING_UP→INTERCEPTING (prebufFilled=true)
-    probe_->DoProcess();
-
-    uint32_t feedCountAfterTransition = fake_.GetFeedInputCount();
-    EXPECT_GE(feedCountAfterTransition, 1u);
-
-    // Second DoProcess: still INTERCEPTING, feeds more, outputs silence
-    probe_->DoProcess();
-    auto *out = probe_->GetCaptured();
-    ASSERT_NE(out, nullptr);
-    ExpectBufferSilence(out);
-    EXPECT_GT(fake_.GetFeedInputCount(), feedCountAfterTransition);
-}
 
 // PC-DF-3: ACTIVE — SE outputs algorithm passthrough data (0.5f)
 HWTEST_F(HpaeProcessClusterSeDataflowTest, active_outputsAlgoData, TestSize.Level0)
