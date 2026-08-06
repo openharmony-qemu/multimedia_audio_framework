@@ -233,10 +233,11 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
 
         // update current output device
-        if (needUpdateActiveDevice && streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+        if ((Util::IsEnhancedRoutingSupported() || needUpdateActiveDevice) &&
+            streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
             !pipeManager_->IsFocusStandby(streamDesc->sessionId_)) {
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
-                reason);
+                reason) || isUpdateActiveDevice;
             needUpdateActiveDevice = !isUpdateActiveDevice;
             uid = GetRealUid(streamDesc);
         }
@@ -3190,8 +3191,8 @@ void AudioCoreService::HandleSceneChangePreferredDevice(AudioScene audioScene, A
     SetSleVoiceStatusFlag(audioScene);
     OnAudioSceneChange(audioScene);
     auto currentOutputDevice = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
-    if (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
-        lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT) {
+    if (Util::IsEnhancedRoutingSupported() || (currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        lastAudioScene == AUDIO_SCENE_DEFAULT && audioScene != AUDIO_SCENE_DEFAULT)) {
         OnPreferredOutputDeviceUpdated(currentOutputDevice, AudioStreamDeviceChangeReason::UNKNOWN);
     }
     if (audioScene == AUDIO_SCENE_DEFAULT && currentOutputDevice.IsRemoteDevice()) {
