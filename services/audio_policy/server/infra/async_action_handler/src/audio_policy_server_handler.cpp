@@ -1635,6 +1635,7 @@ void AudioPolicyServerHandler::ProcessPreferredInputDeviceForClient(int32_t clie
     for (auto capturerFilter : capturerFilterList) {
         auto deviceDescs = AudioCoreService::GetCoreService()->
             GetPreferredInputDeviceDescInner(capturerFilter.capturerInfo, LOCAL_NETWORK_ID, capturerFilter.uid);
+        AudioPolicyService::GetAudioPolicyService().SyncInputDeviceScoId(deviceDescs);
         AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
         if (!clientHolder->hasBTPermission_) {
             AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
