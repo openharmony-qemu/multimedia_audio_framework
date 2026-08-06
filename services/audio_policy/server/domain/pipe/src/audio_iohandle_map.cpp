@@ -29,34 +29,44 @@ namespace AudioStandard {
 
 class WaitActiveDeviceAction : public AsyncActionHandler::AsyncAction {
 public:
-    WaitActiveDeviceAction(int32_t muteDuration, const std::string &portName)
-        : muteDuration_(muteDuration), portName_(portName)
+    WaitActiveDeviceAction(int32_t muteDuration, const std::string &portName,
+        const std::string &overrideClassName = "", const std::string &overrideInfo = "")
+        : muteDuration_(muteDuration), portName_(portName),
+          overrideClassName_(overrideClassName), overrideInfo_(overrideInfo)
     {}
 
     void Exec() override
     {
-        AudioIOHandleMap::GetInstance().UnmutePortAfterMuteDuration(muteDuration_, portName_);
+        AudioIOHandleMap::GetInstance().UnmutePortAfterMuteDuration(
+            muteDuration_, portName_, overrideClassName_, overrideInfo_);
     }
 
 private:
     int32_t muteDuration_;
     const std::string portName_;
+    const std::string overrideClassName_;
+    const std::string overrideInfo_;
 };
 
 class UnmutePortAction : public AsyncActionHandler::AsyncAction {
 public:
-    UnmutePortAction(int32_t muteDuration, const std::string &portName)
-        : muteDuration_(muteDuration), portName_(portName)
+    UnmutePortAction(int32_t muteDuration, const std::string &portName,
+        const std::string &overrideClassName = "", const std::string &overrideInfo = "")
+        : muteDuration_(muteDuration), portName_(portName),
+          overrideClassName_(overrideClassName), overrideInfo_(overrideInfo)
     {}
 
     void Exec() override
     {
-        AudioIOHandleMap::GetInstance().DoUnmutePort(muteDuration_, portName_);
+        AudioIOHandleMap::GetInstance().DoUnmutePort(
+            muteDuration_, portName_, overrideClassName_, overrideInfo_);
     }
 
 private:
     int32_t muteDuration_;
     const std::string portName_;
+    const std::string overrideClassName_;
+    const std::string overrideInfo_;
 };
 
 static const int64_t WAIT_SET_MUTE_LATENCY_TIME_US = 80000; // 80ms
@@ -247,20 +257,22 @@ int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleNam
     return SUCCESS;
 }
 
-void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duration, bool isSync, bool isSleepEnabled)
+void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duration, bool isSync,
+    bool isSleepEnabled, const std::string &overrideClassName, const std::string &overrideInfo)
 {
-    std::string networkId = AudioPolicyUtils::GetInstance().GetRemoteNetworkId(portName, OUTPUT_DEVICE);
-    std::string className = GetClassNameByPortAndNetworkId(portName, networkId);
+    std::string networkId = overrideInfo.empty() ?
+        AudioPolicyUtils::GetInstance().GetRemoteNetworkId(portName, OUTPUT_DEVICE) : overrideInfo;
+    std::string className = overrideClassName.empty() ?
+        GetClassNameByPortAndNetworkId(portName, networkId) : overrideClassName;
     if (!className.empty()) {
-        // Mute by render sink. (primary、a2dp、usb、dp、offload、remote)
         AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(className,
             duration, true, networkId);
     } else {
-        // Mute by pa.
         AudioPolicyManagerFactory::GetAudioPolicyManager().SetSinkMute(portName, true, isSync);
     }
 
-    std::shared_ptr<WaitActiveDeviceAction> action = std::make_shared<WaitActiveDeviceAction>(duration, portName);
+    std::shared_ptr<WaitActiveDeviceAction> action = std::make_shared<WaitActiveDeviceAction>(
+        duration, portName, overrideClassName, overrideInfo);
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     AsyncActionHandler::AsyncActionDesc desc;
     desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
@@ -269,7 +281,7 @@ void AudioIOHandleMap::MuteSinkPort(const std::string &portName, int32_t duratio
     }
 
     if (isSleepEnabled) {
-        usleep(WAIT_SET_MUTE_LATENCY_TIME_US); // sleep fix data cache pop.
+        usleep(WAIT_SET_MUTE_LATENCY_TIME_US);
     }
 }
 
@@ -293,7 +305,8 @@ void AudioIOHandleMap::NotifyUnmutePort()
     moveDeviceCV_.notify_all();
 }
 
-void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, const std::string &portName)
+void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, const std::string &portName,
+    const std::string &overrideClassName, const std::string &overrideInfo)
 {
     Trace trace("UnmutePortAfterMuteDuration:" + portName + " for " + std::to_string(muteDuration) + "us");
 
@@ -309,7 +322,8 @@ void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, const s
     }
     AUDIO_INFO_LOG("%{public}d us for device type[%{public}s]", muteDuration, portName.c_str());
 
-    std::shared_ptr<UnmutePortAction> action = std::make_shared<UnmutePortAction>(muteDuration, portName);
+    std::shared_ptr<UnmutePortAction> action = std::make_shared<UnmutePortAction>(
+        muteDuration, portName, overrideClassName, overrideInfo);
     CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
     AsyncActionHandler::AsyncActionDesc desc;
     desc.delayTimeMs = muteDuration / US_PER_MS;
@@ -319,10 +333,13 @@ void AudioIOHandleMap::UnmutePortAfterMuteDuration(int32_t muteDuration, const s
     }
 }
 
-void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &portName)
+void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &portName,
+    const std::string &overrideClassName, const std::string &overrideInfo)
 {
-    std::string networkId = AudioPolicyUtils::GetInstance().GetRemoteNetworkId(portName, OUTPUT_DEVICE);
-    std::string className = GetClassNameByPortAndNetworkId(portName, networkId);
+    std::string networkId = overrideInfo.empty() ?
+        AudioPolicyUtils::GetInstance().GetRemoteNetworkId(portName, OUTPUT_DEVICE) : overrideInfo;
+    std::string className = overrideClassName.empty() ?
+        GetClassNameByPortAndNetworkId(portName, networkId) : overrideClassName;
     if (!className.empty()) {
         AudioServerProxy::GetInstance().SetSinkMuteForSwitchDeviceProxy(className,
             muteDuration, false, networkId);

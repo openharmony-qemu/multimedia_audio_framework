@@ -3297,7 +3297,12 @@ int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &deviceClass, 
         AudioService::GetInstance()->SetEndpointMuteForSwitchDevice(deviceClass, mute);
     }
 
-    std::string info = networkId == LOCAL_NETWORK_ID ? HDI_ID_INFO_DEFAULT : networkId;
+    std::string info;
+    if (deviceClass == PRIMARY_EXTRA_CLASS) {
+        info = networkId;
+    } else {
+        info = networkId == LOCAL_NETWORK_ID ? HDI_ID_INFO_DEFAULT : networkId;
+    }
     uint32_t id = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "has no valid sink");
