@@ -98,7 +98,6 @@ ohos_fuzztest("AudioScheduleFuzzTest") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
-    "qos_manager:concurrent_task_client",
   ]
   if (sonic_enable == true) {
     external_deps += [ "sonic:sonic" ]
