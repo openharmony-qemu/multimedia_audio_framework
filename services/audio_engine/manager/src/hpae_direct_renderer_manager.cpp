@@ -390,6 +390,8 @@ int32_t HpaeDirectRendererManager::ConnectInputSession()
     CHECK_AND_RETURN_RET_LOG(sinkOutputNode_ != nullptr, ERROR, "sinkOutputNode_ is null");
     CHECK_AND_RETURN_RET_LOG(sinkOutputNode_->GetSinkState() != STREAM_MANAGER_NEW, ERROR,
         "sink output node is not init");
+    CHECK_AND_RETURN_RET_LOG(gainNode_ != nullptr || volumeSyncNode_ != nullptr, ERROR,
+        "neither gainNode_ nor volumeSyncNode_ exists");
     // Connect nodes: sinkOutputNode <- converterForOutput <- [limiterNode]
     // <- gainNode/volumeSyncNode <- converterForGain <- curNode
     // Note: limiterNode is only present when channels > STEREO

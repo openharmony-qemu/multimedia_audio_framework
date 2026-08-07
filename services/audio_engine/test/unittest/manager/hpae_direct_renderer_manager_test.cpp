@@ -2458,6 +2458,34 @@ HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_006, TestSize.Level0
 }
 
 /**
+ * @tc.name  : connectInputSession_007
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_164
+ * @tc.desc  : Test ConnectInputSession returns ERROR when both gainNode_ and volumeSyncNode_ are null
+ *             (matches DestroyDirectNodes contract: gainNode_ || volumeSyncNode_)
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_007, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // primary_direct (non-VOIP) creates gainNode_ and leaves volumeSyncNode_ null. Null gainNode_ to
+    // force the state where neither gain path exists; verify the guard matches DestroyDirectNodes.
+    ASSERT_NE(directManager_->curNode_, nullptr);
+    ASSERT_NE(directManager_->converterForOutput_, nullptr);
+    ASSERT_EQ(directManager_->volumeSyncNode_, nullptr);
+    directManager_->gainNode_ = nullptr;
+    directManager_->curNode_->SetState(HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(directManager_->ConnectInputSession(), ERROR);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
  * @tc.name  : disconnectInputSession_001
  * @tc.type  : FUNC
  * @tc.number: HpaeDirectRendererManagerTest_102
