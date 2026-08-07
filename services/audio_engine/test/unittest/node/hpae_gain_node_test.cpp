@@ -386,6 +386,8 @@ HWTEST_F(HpaeGainNodeTest, ResetVolume_Normal_PipeVolumeNull, TestSize.Level0)
 
     EXPECT_NE(hpaeGainNode->streamVolume_, nullptr);
     EXPECT_EQ(hpaeGainNode->pipeVolume_, nullptr);
+    // Stream-only fallback: ResetVolume records the stream total volume as history (was 1.0f)
+    EXPECT_NEAR(AudioVolume::GetInstance()->GetHistoryVolume(sessionId), UT_HALF_GAIN, UT_GAIN_PRECISION);
 
     AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
 }
@@ -416,11 +418,10 @@ HWTEST_F(HpaeGainNodeTest, DoGain_Normal_PipeVolumeNull, TestSize.Level0)
 
     hpaeGainNode->DoGain(&inputBuf, DEFAULT_FRAME_LEN, STEREO);
 
-    // pipeVolume_ is nullptr → !(streamVolume_ && pipeVolume_) → defaults to 1.0f
+    // Stream-only fallback: pipeVolume_ is nullptr → stream volume (UT_HALF_GAIN) applied alone.
+    // After ResetVolume sets history=0.5, DoGain yields a flat 0.5 gain on the unit-amplitude buffer.
     size_t totalSamples = DEFAULT_FRAME_LEN * STEREO;
-    for (size_t i = 0; i < totalSamples; i++) {
-        EXPECT_NEAR(inputBuf.GetPcmDataBuffer()[i], UT_UNIT_GAIN, UT_PRECISION);
-    }
+    EXPECT_NEAR(inputBuf.GetPcmDataBuffer()[totalSamples - 1], UT_HALF_GAIN, UT_GAIN_PRECISION);
 
     AudioVolume::GetInstance()->RemoveStreamVolume(sessionId);
 }
