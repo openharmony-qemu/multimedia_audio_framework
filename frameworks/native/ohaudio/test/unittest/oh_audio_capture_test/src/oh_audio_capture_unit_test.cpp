@@ -2014,7 +2014,8 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturerOnPlaybackCaptureStartCallback_001
 }
 
 /**
-* @tc.name  : Test OHAudioCapturerModeCallback::OnReadData API via READ_DATA_CALLBACK_WITH_RESULT with length <= bufLength.
+* @tc.name  : Test OHAudioCapturerModeCallback::OnReadData API via 
+*             READ_DATA_CALLBACK_WITH_RESULT with length <= bufLength.
 * @tc.number: OHAudioCapturerModeCallback_005
 * @tc.desc  : Test OnReadData when length is less than or equal to bufDesc.bufLength.
 */
