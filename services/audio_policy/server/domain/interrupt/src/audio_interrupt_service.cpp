@@ -1783,7 +1783,7 @@ AudioVolumeType AudioInterruptService::GetHighestPriorityVolumeTypeFromStreams(
 
 int32_t AudioInterruptService::SetVolumeControlPriority(const std::unordered_map<AudioVolumeType, int32_t> &priorities)
 {
-    int32_t size = priorities.size();
+    int32_t size = static_cast<int32_t>(priorities.size());
     AUDIO_INFO_LOG("priorities.size() [%{public}d]", size);
 
     volumeTypePriorities_ = priorities;
