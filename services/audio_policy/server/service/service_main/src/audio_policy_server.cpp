@@ -6072,6 +6072,19 @@ int32_t AudioPolicyServer::GetLoopbackSupportedDevicePairs(
             outputDevices.push_back(output);
         }
     }
+
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    AudioDeviceDescriptor::ClientInfo clientInfo { GetApiTargetVersion() };
+    std::string bundleName = AudioBundleManager::GetBundleName();
+    // no nearlink_in
+    for (auto &desc : outputDevices) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(bundleName, desc->deviceType_,
+            hasSystemPermission);
+        desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
+        desc->SetClientInfo(clientInfo);
+    }
+
     AUDIO_INFO_LOG("Find %{public}zu Supported device pair", inputDevices.size());
     ret = SUCCESS;
 
