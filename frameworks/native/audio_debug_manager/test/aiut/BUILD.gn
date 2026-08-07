@@ -155,8 +155,6 @@ group("audio_debug_manager_aiut") {
   testonly = true
   deps = [
     ":audio_debugging_manager_aiut",
-    ":audio_renderer_debugging_manager_aiut",
-    ":audio_capturer_debugging_manager_aiut",
     ":audio_loopback_debugging_manager_aiut",
     ":audio_session_debugging_manager_aiut",
   ]
