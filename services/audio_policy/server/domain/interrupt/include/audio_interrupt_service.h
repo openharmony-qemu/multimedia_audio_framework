@@ -55,7 +55,8 @@ struct CachedFocusInfo {
 struct MuteFocusInfo {
     uint32_t currStreamId;
     uint32_t incomingStreamId;
-    AudioInterrupt interrupt;
+    AudioInterrupt currInterrupt;
+    AudioInterrupt incomingInterrupt;
     InterruptEventInternal interruptEvent;
 };
 
