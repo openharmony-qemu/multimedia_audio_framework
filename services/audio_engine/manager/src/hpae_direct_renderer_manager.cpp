@@ -1489,7 +1489,9 @@ int32_t HpaeDirectRendererManager::CreateSessionEffect(uint32_t sessionId,
         "CreateSessionEffect: curNode already has materialized SE for session %{public}u", sessionId);
     CHECK_AND_RETURN_RET_LOG(volumeSyncNode_ == nullptr, static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED),
         "CreateSessionEffect: VOIP mode does not support SE for session %{public}u", sessionId);
-
+    CHECK_AND_RETURN_RET_LOG(instance != nullptr,
+        static_cast<int32_t>(SessionEffectErrCode::ERR_INVALID_PARAMETER),
+        "CreateSessionEffect: effect instance is null for session %{public}u", sessionId);
     // Create accepted — persist the logical binding on the SinkInputNode
     if (node != nullptr) {
         node->EnsureHistoryBufferForAiss(instance->GetPreheatFrames());
