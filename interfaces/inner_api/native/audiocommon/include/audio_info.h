@@ -1667,6 +1667,8 @@ struct AudioProcessConfig : public Parcelable {
 
     int32_t innerCapId = 0;
 
+    bool isModernInnerCapturer = false;
+
     StaticBufferInfo staticBufferInfo{};
 
     AudioProcessConfig() {}
@@ -1725,6 +1727,7 @@ struct AudioProcessConfig : public Parcelable {
         // Original session id for re-create stream
         parcel.WriteUint32(originalSessionId);
         parcel.WriteInt32(innerCapId);
+        parcel.WriteBool(isModernInnerCapturer);
 
         // StaticAudioRenderer
         if (rendererInfo.isStatic) {
@@ -1793,6 +1796,7 @@ struct AudioProcessConfig : public Parcelable {
         // Original session id for re-create stream
         config->originalSessionId = parcel.ReadUint32();
         config->innerCapId = parcel.ReadInt32();
+        config->isModernInnerCapturer = parcel.ReadBool();
 
         // Static Audiorenderer
         if (config->rendererInfo.isStatic) {

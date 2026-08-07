@@ -857,7 +857,7 @@ int32_t CapturerInServer::Start(bool hasNoCallback)
             "Sensitive record not permitted");
     }
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE ||
-        filterConfig_.isModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
+        processConfig_.isModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
         ERR_INVALID_OPERATION,
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_START_ILLEGAL_STATE, "New Innercapturer mode and not requestUserPrivacyAuthority", false),

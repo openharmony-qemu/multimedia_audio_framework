@@ -2245,6 +2245,7 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config,
     if (config.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         config.isInnerCapturer = true;
         config.innerCapMode = LEGACY_INNER_CAP;
+        config.isModernInnerCapturer = filterConfig.isModernInnerCapturer;
         if (PermissionUtil::VerifyPermission(CAPTURE_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
             AUDIO_INFO_LOG("CAPTURE_PLAYBACK permission granted");
             config.innerCapMode = MODERN_INNER_CAP;
