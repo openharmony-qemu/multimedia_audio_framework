@@ -2409,6 +2409,55 @@ HWTEST_F(HpaeDirectRendererManagerTest, start_rollbackOnConnectFailure_001, Test
 }
 
 /**
+ * @tc.name  : connectInputSession_005
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_162
+ * @tc.desc  : Test ConnectInputSession returns ERROR when sinkOutputNode_ is null (StopOuputNode nulls
+ *             it independently of converter nodes which are destroyed by DestroyDirectNodes)
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_005, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // StopOuputNode nulls sinkOutputNode_ without touching converter nodes (destroyed separately by
+    // DestroyDirectNodes). Force this partial state to verify the sinkOutputNode_ guard fires.
+    ASSERT_NE(directManager_->curNode_, nullptr);
+    ASSERT_NE(directManager_->converterForOutput_, nullptr);
+    directManager_->sinkOutputNode_ = nullptr;
+    directManager_->curNode_->SetState(HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(directManager_->ConnectInputSession(), ERROR);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : connectInputSession_006
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_163
+ * @tc.desc  : Test ConnectInputSession returns ERROR (not crash) when curNode_ is null
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_006, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // Force the invariant-violation state; the entry guard must short-circuit before GetState() deref.
+    directManager_->curNode_ = nullptr;
+
+    EXPECT_EQ(directManager_->ConnectInputSession(), ERROR);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
  * @tc.name  : disconnectInputSession_001
  * @tc.type  : FUNC
  * @tc.number: HpaeDirectRendererManagerTest_102

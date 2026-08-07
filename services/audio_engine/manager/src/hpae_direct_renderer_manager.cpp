@@ -382,10 +382,12 @@ int32_t HpaeDirectRendererManager::DestroyDirectNodes()
 
 int32_t HpaeDirectRendererManager::ConnectInputSession()
 {
+    CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr, ERROR, "curNode_ is null");
     CHECK_AND_RETURN_RET(curNode_->GetState() == HPAE_SESSION_RUNNING, SUCCESS);
     CHECK_AND_RETURN_RET_LOG(converterForOutput_ != nullptr && converterForGain_ != nullptr, ERROR,
         "direct nodes not ready (converterForOutput_/converterForGain_ is null): "
         "CreateDirectNodes failed, sink init/reload may have failed");
+    CHECK_AND_RETURN_RET_LOG(sinkOutputNode_ != nullptr, ERROR, "sinkOutputNode_ is null");
     CHECK_AND_RETURN_RET_LOG(sinkOutputNode_->GetSinkState() != STREAM_MANAGER_NEW, ERROR,
         "sink output node is not init");
     // Connect nodes: sinkOutputNode <- converterForOutput <- [limiterNode]
