@@ -2355,6 +2355,60 @@ HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_003, TestSize.Level0
 }
 
 /**
+ * @tc.name  : connectInputSession_004
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_160
+ * @tc.desc  : Test ConnectInputSession returns ERROR when converterForGain_ is null (guard covers all
+ *             required nodes unconditionally dereferenced, not only converterForOutput_)
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_004, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // CreateDirectNodes creates converterForOutput_ and converterForGain_ as a pair. Force the partial
+    // state where converterForGain_ is null while converterForOutput_ is not, to verify the entry guard
+    // also catches the unconditional converterForGain_ dereference at the tail of ConnectInputSession.
+    ASSERT_NE(directManager_->curNode_, nullptr);
+    directManager_->converterForGain_ = nullptr;
+    directManager_->curNode_->SetState(HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(directManager_->ConnectInputSession(), ERROR);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : start_rollbackOnConnectFailure_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_161
+ * @tc.desc  : Test Start rolls back session to PREPARED (not stuck RUNNING) when ConnectInputSession fails
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, start_rollbackOnConnectFailure_001, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // Force ConnectInputSession to fail inside Start by nulling a required node.
+    ASSERT_NE(directManager_->curNode_, nullptr);
+    directManager_->converterForOutput_ = nullptr;
+
+    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // Session must be rolled back to PREPARED, not left as a half-init RUNNING zombie.
+    EXPECT_EQ(directManager_->curNode_->GetState(), HPAE_SESSION_PREPARED);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
  * @tc.name  : disconnectInputSession_001
  * @tc.type  : FUNC
  * @tc.number: HpaeDirectRendererManagerTest_102

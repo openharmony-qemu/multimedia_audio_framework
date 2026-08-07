@@ -383,8 +383,9 @@ int32_t HpaeDirectRendererManager::DestroyDirectNodes()
 int32_t HpaeDirectRendererManager::ConnectInputSession()
 {
     CHECK_AND_RETURN_RET(curNode_->GetState() == HPAE_SESSION_RUNNING, SUCCESS);
-    CHECK_AND_RETURN_RET_LOG(converterForOutput_ != nullptr, ERROR,
-        "converterForOutput_ is null: CreateDirectNodes failed (sink init/reload may have failed)");
+    CHECK_AND_RETURN_RET_LOG(converterForOutput_ != nullptr && converterForGain_ != nullptr, ERROR,
+        "direct nodes not ready (converterForOutput_/converterForGain_ is null): "
+        "CreateDirectNodes failed, sink init/reload may have failed");
     CHECK_AND_RETURN_RET_LOG(sinkOutputNode_->GetSinkState() != STREAM_MANAGER_NEW, ERROR,
         "sink output node is not init");
     // Connect nodes: sinkOutputNode <- converterForOutput <- [limiterNode]
@@ -452,7 +453,13 @@ int32_t HpaeDirectRendererManager::Start(uint32_t sessionId)
         AUDIO_INFO_LOG("Start sessionId %{public}u", sessionId);
         node->SetState(HPAE_SESSION_RUNNING);
         if (sessionId == curNode_->GetSessionId()) {
-            ConnectInputSession();
+            int32_t ret = ConnectInputSession();
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("ConnectInputSession failed %{public}d, roll back session %{public}u to PREPARED",
+                    ret, sessionId);
+                node->SetState(HPAE_SESSION_PREPARED);
+                return;
+            }
             // Start SE if active for this session
             if (sessionEffectNode_ != nullptr && sessionEffectSessionId_ == sessionId) {
                 sessionEffectNode_->StartEffect();
