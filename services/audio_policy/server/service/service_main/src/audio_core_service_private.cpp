@@ -3301,16 +3301,35 @@ void AudioCoreService::ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDes
     streamDesc->ResetOriginalFlag();
 }
 
+void AudioCoreService::BatchFetchAndStartOutputStreams(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs, const std::string &caller)
+{
+    std::string fetchCaller = caller + "FetchOutputDeviceAndRoute";
+    std::vector<FetchDeviceInfo> outInfos;
+    for (auto &streamDesc : outputStreamDescs) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
+        CHECK_AND_CONTINUE(VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_.load());
+        CHECK_AND_CONTINUE(streamDesc->rendererTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE);
+        StreamUsage streamUsage = audioSessionService_.GetAudioSessionStreamUsageForDevice(GetRealPid(streamDesc));
+        streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
+            streamDesc->rendererInfo_.streamUsage;
+        FetchDeviceInfo info = { streamUsage, GetRealUid(streamDesc), streamDesc->GetRenderPrivacyType(),
+            fetchCaller, streamDesc->bundleName_ };
+        info.streamId = streamDesc->sessionId_;
+        outInfos.push_back(info);
+    }
+    auto outResult = audioRouterCenter_.FetchOutputDevicesForAllOutputStreams(outInfos);
+    for (auto &streamDesc : outputStreamDescs) {
+        UpdateStreamDevicesForStart(streamDesc, fetchCaller, outResult);
+    }
+}
+
 void AudioCoreService::UpdateStreamDevicesForStart(
-    std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller)
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller,
+    const AudioRouterCenter::OutputDeviceMap &outResult)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
-
-    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
-    streamUsage = audioSessionService_.GetAudioSessionStreamUsageForDevice(GetRealPid(streamDesc));
-    streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
-    streamDesc->rendererInfo_.streamUsage;
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_.load()) {
@@ -3323,12 +3342,13 @@ void AudioCoreService::UpdateStreamDevicesForStart(
                 DeviceRole::OUTPUT_DEVICE)
         };
     } else {
-        FetchDeviceInfo info = { streamUsage, GetRealUid(streamDesc), streamDesc->GetRenderPrivacyType(), caller,
-            streamDesc->bundleName_ };
-        info.streamId = streamDesc->sessionId_;
-        devices = audioRouterCenter_.FetchOutputDevices(info);
+        auto it = outResult.find(streamDesc->sessionId_);
+        if (it != outResult.end()) {
+            devices = it->second;
+        }
     }
 
+    CHECK_AND_RETURN_LOG(!devices.empty(), "devices is empty");
     pipeManager_->UpdateNewDeviceDescWithCheck(streamDesc, devices);
     if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         !streamDesc->oldDeviceDescs_.empty() && streamDesc->oldDeviceDescs_.front() &&
@@ -3685,29 +3705,40 @@ bool AudioCoreService::HasRunningScoRecognitionCapturerStream(
 void AudioCoreService::FetchDevicesForDescs(std::vector<std::shared_ptr<AudioStreamDescriptor>> &outStreamDescs,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &inStreamDescs)
 {
+    std::vector<FetchDeviceInfo> outInfos;
     for (auto &desc : outStreamDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
-        desc = std::make_shared<AudioStreamDescriptor>(desc);
         FetchDeviceInfo info = { desc->rendererInfo_.streamUsage, GetRealUid(desc),
             desc->rendererInfo_.privacyType, "Arbiter", desc->bundleName_ };
         info.streamId = desc->sessionId_;
-        auto newDescs = audioRouterCenter_.FetchOutputDevices(info);
-        pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
-        desc->UpdateNewDeviceWithoutCheck(newDescs);
+        outInfos.push_back(info);
     }
-    for (auto &desc : inStreamDescs) {
-        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+    auto outResult = audioRouterCenter_.FetchOutputDevicesForAllOutputStreams(outInfos);
+    for (auto &desc : outStreamDescs) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        auto it = outResult.find(desc->sessionId_);
+        CHECK_AND_CONTINUE(it != outResult.end());
         desc = std::make_shared<AudioStreamDescriptor>(desc);
+        desc->UpdateNewDeviceWithoutCheck(it->second);
+    }
+    std::vector<FetchDeviceInfo> inInfos;
+    for (auto &desc : inStreamDescs) {
+        CHECK_AND_CONTINUE(desc != nullptr);
         FetchDeviceInfo info;
         info.sourceType = desc->capturerInfo_.sourceType;
         info.clientUID = GetRealUid(desc);
         info.streamId = desc->sessionId_;
         info.caller = "Arbiter";
-        auto newDesc = audioRouterCenter_.FetchInputDevice(info);
-        if (newDesc != nullptr) {
-            std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = {newDesc};
-            desc->UpdateNewDeviceWithoutCheck(devices);
-        }
+        inInfos.push_back(info);
+    }
+    auto inResult = audioRouterCenter_.FetchInputDeviceForAllInputStreams(inInfos);
+    for (auto &desc : inStreamDescs) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        auto it = inResult.find(desc->sessionId_);
+        CHECK_AND_CONTINUE(it != inResult.end() && it->second != nullptr);
+        desc = std::make_shared<AudioStreamDescriptor>(desc);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = {it->second};
+        desc->UpdateNewDeviceWithoutCheck(devices);
     }
 }
 

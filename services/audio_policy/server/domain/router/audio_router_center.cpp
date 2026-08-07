@@ -507,6 +507,22 @@ AudioRouterCenter::InputDeviceMap AudioRouterCenter::FetchInputDeviceForAllInput
     return result;
 }
 
+AudioRouterCenter::OutputDeviceMap AudioRouterCenter::FetchOutputDevicesForAllOutputStreams(
+    std::vector<FetchDeviceInfo> &infos)
+{
+    std::lock_guard<std::mutex> lock(routerMutex_);
+    StartArbiterContext();
+
+    OutputDeviceMap result;
+
+    for (auto &info : infos) {
+        result[info.streamId] = FetchOutputDevicesInner(info);
+    }
+
+    StopArbiterContext();
+    return result;
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchInputDeviceInner(FetchDeviceInfo &info)
 {
     SourceType sourceType = info.sourceType;

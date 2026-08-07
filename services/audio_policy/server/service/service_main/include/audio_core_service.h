@@ -773,7 +773,10 @@ private:
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SelectA2dpType(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     void UpdateStreamDevicesForCreate(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
-    void UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
+    void UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller,
+        const AudioRouterCenter::OutputDeviceMap &outResult);
+    void BatchFetchAndStartOutputStreams(
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs, const std::string &caller);
     void PrepareInputFetchInfos(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs,
         std::vector<FetchDeviceInfo> &infos);
     bool IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs);
