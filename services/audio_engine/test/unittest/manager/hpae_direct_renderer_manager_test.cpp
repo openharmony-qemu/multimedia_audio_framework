@@ -2328,6 +2328,164 @@ HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_002, TestSize.Level0
 }
 
 /**
+ * @tc.name  : connectInputSession_003
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_159
+ * @tc.desc  : Test ConnectInputSession returns ERROR (not crash) when converterForOutput_ is null,
+ *             i.e. CreateDirectNodes did not create the node due to sink init/reload failure
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_003, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // Simulate the half-initialized state: sink init/reload failed so CreateDirectNodes returned
+    // early and converterForOutput_ was never created, while the session keeps RUNNING.
+    // ConnectInputSession must bail out with ERROR instead of dereferencing the null node.
+    ASSERT_NE(directManager_->curNode_, nullptr);
+    directManager_->converterForOutput_ = nullptr;
+    directManager_->curNode_->SetState(HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(directManager_->ConnectInputSession(), ERROR);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : connectInputSession_004
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_160
+ * @tc.desc  : Test ConnectInputSession returns ERROR when converterForGain_ is null (guard covers all
+ *             required nodes unconditionally dereferenced, not only converterForOutput_)
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_004, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // CreateDirectNodes creates converterForOutput_ and converterForGain_ as a pair. Force the partial
+    // state where converterForGain_ is null while converterForOutput_ is not, to verify the entry guard
+    // also catches the unconditional converterForGain_ dereference at the tail of ConnectInputSession.
+    ASSERT_NE(directManager_->curNode_, nullptr);
+    directManager_->converterForGain_ = nullptr;
+    directManager_->curNode_->SetState(HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(directManager_->ConnectInputSession(), ERROR);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : start_rollbackOnConnectFailure_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_161
+ * @tc.desc  : Test Start rolls back session to PREPARED (not stuck RUNNING) when ConnectInputSession fails
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, start_rollbackOnConnectFailure_001, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // Force ConnectInputSession to fail inside Start by nulling a required node.
+    ASSERT_NE(directManager_->curNode_, nullptr);
+    directManager_->converterForOutput_ = nullptr;
+
+    EXPECT_EQ(directManager_->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // Session must be rolled back to PREPARED, not left as a half-init RUNNING zombie.
+    EXPECT_EQ(directManager_->curNode_->GetState(), HPAE_SESSION_PREPARED);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : connectInputSession_005
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_162
+ * @tc.desc  : Test ConnectInputSession returns ERROR when sinkOutputNode_ is null (StopOuputNode nulls
+ *             it independently of converter nodes which are destroyed by DestroyDirectNodes)
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_005, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // StopOuputNode nulls sinkOutputNode_ without touching converter nodes (destroyed separately by
+    // DestroyDirectNodes). Force this partial state to verify the sinkOutputNode_ guard fires.
+    ASSERT_NE(directManager_->curNode_, nullptr);
+    ASSERT_NE(directManager_->converterForOutput_, nullptr);
+    directManager_->sinkOutputNode_ = nullptr;
+    directManager_->curNode_->SetState(HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(directManager_->ConnectInputSession(), ERROR);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : connectInputSession_006
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_163
+ * @tc.desc  : Test ConnectInputSession returns ERROR (not crash) when curNode_ is null
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_006, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // Force the invariant-violation state; the entry guard must short-circuit before GetState() deref.
+    directManager_->curNode_ = nullptr;
+
+    EXPECT_EQ(directManager_->ConnectInputSession(), ERROR);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : connectInputSession_007
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectRendererManagerTest_164
+ * @tc.desc  : Test ConnectInputSession returns ERROR when both gainNode_ and volumeSyncNode_ are null
+ *             (matches DestroyDirectNodes contract: gainNode_ || volumeSyncNode_)
+ */
+HWTEST_F(HpaeDirectRendererManagerTest, connectInputSession_007, TestSize.Level0)
+{
+    EXPECT_EQ(directManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    EXPECT_EQ(directManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(directManager_);
+
+    // primary_direct (non-VOIP) creates gainNode_ and leaves volumeSyncNode_ null. Null gainNode_ to
+    // force the state where neither gain path exists; verify the guard matches DestroyDirectNodes.
+    ASSERT_NE(directManager_->curNode_, nullptr);
+    ASSERT_NE(directManager_->converterForOutput_, nullptr);
+    ASSERT_EQ(directManager_->volumeSyncNode_, nullptr);
+    directManager_->gainNode_ = nullptr;
+    directManager_->curNode_->SetState(HPAE_SESSION_RUNNING);
+
+    EXPECT_EQ(directManager_->ConnectInputSession(), ERROR);
+
+    EXPECT_EQ(directManager_->DeInit(), SUCCESS);
+}
+
+/**
  * @tc.name  : disconnectInputSession_001
  * @tc.type  : FUNC
  * @tc.number: HpaeDirectRendererManagerTest_102
