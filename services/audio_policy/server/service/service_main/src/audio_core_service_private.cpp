@@ -1330,6 +1330,16 @@ void AudioCoreService::ClearMuteVoipState(
     audioVolumeManager_.ClearVoipMuteByStreamId(sessionId);
 }
 
+void AudioCoreService::UnmuteDualStreamAfterAlarm(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN(streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_ALARM);
+    for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+        audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
+    }
+    streamsWhenRingDualOnPrimarySpeaker_.clear();
+}
+
 bool AudioCoreService::IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(sessionIdMutex_);
