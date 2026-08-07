@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2042,7 +2042,8 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturerModeCallback_005, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test OHAudioCapturerModeCallback::OnReadData API via READ_DATA_CALLBACK_WITH_RESULT with length > bufLength.
+* @tc.name  : Test OHAudioCapturerModeCallback::OnReadData API via
+*             READ_DATA_CALLBACK_WITH_RESULT with length > bufLength.
 * @tc.number: OHAudioCapturerModeCallback_006
 * @tc.desc  : Test OnReadData when length is greater than bufDesc.bufLength.
 */
