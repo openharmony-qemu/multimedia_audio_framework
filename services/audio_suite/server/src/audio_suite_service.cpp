@@ -290,7 +290,6 @@ bool AudioSuiteService::VerifyIsSystemApp(ErrCode& result)
         result = ERR_SYSTEM_PERMISSION_DENIED;
         return false;
     }
-    return true;
 #endif
     return true;
 }

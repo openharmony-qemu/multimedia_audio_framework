@@ -129,6 +129,9 @@ int32_t AudioSuiteClientPolicy::RegisterDownloadStatusCallback(std::shared_ptr<D
     statusCallbackStub_->SetCallback(callback);
     if (statusListener_ == nullptr) {
         statusListener_ = sptr<AudioSuiteSystemAbilityListener>(new (std::nothrow) AudioSuiteSystemAbilityListener());
+        CHECK_AND_RETURN_RET_LOG(statusListener_ != nullptr,
+                                 ERR_NOT_STARTED,
+                                 "Failed to create the AudioSuiteSystemAbilityListener variable.");
         sptr<ISystemAbilityManager> samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         CHECK_AND_RETURN_RET_LOG(
             samgrProxy != nullptr, ERR_NOT_STARTED, "SubscribeSystemAbility GetSystemAbilityManager failed");
@@ -157,11 +160,10 @@ int32_t AudioSuiteClientPolicy::UnregisterDownloadStatusCallback()
 
     if (statusListener_ != nullptr) {
         sptr<ISystemAbilityManager> samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_RET_LOG(
-            samgrProxy != nullptr, ERR_NOT_STARTED, "UnSubscribeSystemAbility GetSystemAbilityManager failed");
-        result = samgrProxy->UnSubscribeSystemAbility(SA_ID, statusListener_);
+        if (samgrProxy != nullptr) {
+            samgrProxy->UnSubscribeSystemAbility(SA_ID, statusListener_);
+        }
         statusListener_ = nullptr;
-        CHECK_AND_RETURN_RET_LOG(result == ERR_OK, SUCCESS, "SubcribeSystemAbility result is %{public}d!", result);
     }
 
     return SUCCESS;
