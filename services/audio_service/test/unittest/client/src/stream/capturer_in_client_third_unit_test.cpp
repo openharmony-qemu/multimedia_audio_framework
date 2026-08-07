@@ -928,5 +928,35 @@ HWTEST(CapturerInClientThirdUnitTest, CheckRestoreStatus_002, TestSize.Level2)
     EXPECT_NE(status, NEED_RESTORE_TO_NORMAL);
 }
 
+/**
+ * @tc.name  : Test ReleaseAudioStream API (double release in destructor)
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseAudioStream_004
+ * @tc.desc  : Test ReleaseAudioStream when already released in destructor
+ */
+HWTEST(CapturerInClientThirdUnitTest, ReleaseAudioStream_004, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->state_ = RELEASED;
+    bool result = capturerInClientInner->ReleaseAudioStream(true, false, true);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test ReleaseAudioStream API (double release by user)
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseAudioStream_005
+ * @tc.desc  : Test ReleaseAudioStream when already released by user
+ */
+HWTEST(CapturerInClientThirdUnitTest, ReleaseAudioStream_005, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->state_ = RELEASED;
+    bool result = capturerInClientInner->ReleaseAudioStream(true, false, false);
+    EXPECT_EQ(result, true);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

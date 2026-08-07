@@ -116,7 +116,7 @@ CapturerInClientInner::~CapturerInClientInner()
 {
     AUDIO_INFO_LOG("~CapturerInClientInner()");
     DumpFileUtil::CloseDumpFile(&dumpInFd_);
-    CapturerInClientInner::ReleaseAudioStream(true);
+    CapturerInClientInner::ReleaseAudioStream(true, false, true);
     AUDIO_INFO_LOG("[%{public}s] volume data counts: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
@@ -1648,12 +1648,19 @@ bool CapturerInClientInner::StopAudioStream()
 
 bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
+    return ReleaseAudioStream(releaseRunner, isSwitchStream, false);
+}
+
+bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream, bool fromDestructor)
+{
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         DumpFileUtil::CloseDumpFile(&dumpMetaDataFile_);
         dumpMetaDataFileName_.clear();
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            RECORD_RELEASE_ILLEGAL_STATE, "Already release, do nothing", true);
+        if (!fromDestructor) {
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                RECORD_RELEASE_ILLEGAL_STATE, "Already release, do nothing", true);
+        }
         AUDIO_WARNING_LOG("Already release, do nothing");
         return true;
     }
