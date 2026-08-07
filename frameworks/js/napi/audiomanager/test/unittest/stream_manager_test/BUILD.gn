@@ -26,5 +26,5 @@ ohos_js_unittest("AudioStreamManagerJsTest") {
 group("jsunittest") {
   testonly = true
 
-  deps = [ ":AudioStreamManagerJsTest" ]
+  deps = []
 }
