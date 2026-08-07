@@ -617,7 +617,7 @@ HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetParam_VerifyData, TestSize.Le
  */
 HWTEST_F(OfflineAudioEffectServerChainUnitTest, SetParam_SizeTooLarge, TestSize.Level1)
 {
-    std::vector<uint8_t> param(4096); // PARAM_MAX_SIZE
+    std::vector<uint8_t> param(8192); // PARAM_MAX_SIZE
     serverChain->controller_ = mockControl;
     int32_t ret = serverChain->SetParam(param);
     EXPECT_EQ(ret, ERROR);
