@@ -589,7 +589,15 @@ bool AudioLoopbackPrivate::EnableLoopback()
 {
     Trace trace("AudioLoopbackPrivate::EnableLoopback");
     karaokeParams_[KaraokeParamType::KARAOKE_PARAM_ENABLE] = 1;
+    // Restore legacy dispatch order: send ENABLE first so the nearlink karaoke
+    // transition (gated on ENABLE downstream) starts before the other params, as it
+    // did when karaokeParams_ was a map<string> iterated in lexicographic order.
+    CHECK_AND_RETURN_RET_LOG(
+        SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_ENABLE, 1), false, "EnableLoopback failed");
     for (auto &param : karaokeParams_) {
+        if (param.first == KaraokeParamType::KARAOKE_PARAM_ENABLE) {
+            continue;
+        }
         auto ret = SetKaraokeParameters(param.first, param.second);
         CHECK_AND_RETURN_RET_LOG(ret, false, "EnableLoopback failed");
     }

@@ -284,9 +284,9 @@ void AudioServerProxyIsAcousticEchoCancelerSupportedFuzzTest()
 void AudioServerProxySetKaraokeParametersFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
-    DeviceType deviceType = DEVICE_TYPE_NONE;
-    KaraokeParamType paramType = KARAOKE_PARAM_VOLUME;
-    int32_t value = 50;
+    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    KaraokeParamType paramType = static_cast<KaraokeParamType>(GetData<int32_t>());
+    int32_t value = GetData<int32_t>();
     audioServerProxy.SetKaraokeParameters(deviceType, paramType, value);
 }
  

@@ -80,16 +80,28 @@ inline std::string KaraokeVolumeToString(int32_t value, bool &valid)
     return std::to_string(value);
 }
 
+// Boolean-encoded values (ENABLE / CAPTURE_REVERB) accept only 0 or 1; any other
+// value is rejected so the string dispatched to HDI stays consistent with the
+// nearlink transition gate in AudioPolicyServer::SetKaraokeParameters.
+inline std::string KaraokeBoolToString(int32_t value, bool &valid, const char *onTrue, const char *onFalse)
+{
+    if (value != 0 && value != 1) {
+        valid = false;
+        return "";
+    }
+    return value == 1 ? onTrue : onFalse;
+}
+
 // Encode a (paramType, value) pair into its value string. Sets valid=false on
-// any invalid input (unknown type / out-of-range volume / unknown preset).
+// any invalid input (unknown type / out-of-range volume / unknown preset / non-boolean).
 inline std::string KaraokeValueToString(int32_t paramType, int32_t value, bool &valid)
 {
     switch (paramType) {
         case KARAOKE_PARAM_VOLUME: return KaraokeVolumeToString(value, valid);
         case KARAOKE_PARAM_REVERB_MODE: return KaraokeLookup(GetKaraokeReverbMap(), value, valid);
         case KARAOKE_PARAM_EQ_MODE: return KaraokeLookup(GetKaraokeEqMap(), value, valid);
-        case KARAOKE_PARAM_ENABLE: return (value != 0) ? "enable" : "disable";
-        case KARAOKE_PARAM_CAPTURE_REVERB: return (value != 0) ? "true" : "false";
+        case KARAOKE_PARAM_ENABLE: return KaraokeBoolToString(value, valid, "enable", "disable");
+        case KARAOKE_PARAM_CAPTURE_REVERB: return KaraokeBoolToString(value, valid, "true", "false");
         default: valid = false; return "";
     }
 }

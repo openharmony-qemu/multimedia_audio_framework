@@ -789,6 +789,10 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerKaraokeParamHelper_002, TestSize.
     EXPECT_FALSE(valid);
     EXPECT_EQ("", BuildKaraokeParamString(KARAOKE_PARAM_EQ_MODE, 999, valid));
     EXPECT_FALSE(valid);
+    EXPECT_EQ("", BuildKaraokeParamString(KARAOKE_PARAM_ENABLE, 2, valid));
+    EXPECT_FALSE(valid);
+    EXPECT_EQ("", BuildKaraokeParamString(KARAOKE_PARAM_CAPTURE_REVERB, 2, valid));
+    EXPECT_FALSE(valid);
 }
 
 /**
