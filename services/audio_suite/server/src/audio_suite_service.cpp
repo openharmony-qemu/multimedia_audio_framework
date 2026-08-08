@@ -136,12 +136,6 @@ ErrCode AudioSuiteService::UnregisterDownloadStatusCallback(ErrCode &result)
 ErrCode AudioSuiteService::RegisterDownloadInterfaceCallback(const sptr<IRemoteObject> &object, ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::RegisterDownloadInterfaceCallback");
-#ifndef AUDIOSUITE_SA_UT
-    AudioXCollie audioXCollie("AudioSuiteService::RegisterDownloadInterfaceCallback", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
-        [](void *) {
-            AUDIO_ERR_LOG("[xcollie] RegisterDownloadInterfaceCallback timeout");
-        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-#endif
     PostDelayUnloadTask();
 
     result = downloadManager_.SetUpdateEngineCallback(object);
@@ -153,14 +147,6 @@ ErrCode AudioSuiteService::RegisterDownloadInterfaceCallback(const sptr<IRemoteO
 ErrCode AudioSuiteService::UnregisterDownloadInterfaceCallback(ErrCode& result)
 {
     AUDIO_INFO_LOG("AudioSuiteService::UnregisterDownloadInterfaceCallback");
-#ifndef AUDIOSUITE_SA_UT
-    AudioXCollie audioXCollie(
-        "AudioSuiteService::UnregisterDownloadInterfaceCallback",
-        AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
-        [](void *) { AUDIO_ERR_LOG("[xcollie] UnregisterDownloadInterfaceCallback timeout"); },
-        nullptr,
-        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-#endif
     PostDelayUnloadTask();
 
     result = downloadManager_.SetUpdateEngineCallback(nullptr);
