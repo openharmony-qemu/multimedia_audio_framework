@@ -3308,8 +3308,8 @@ void AudioCoreService::BatchFetchAndStartOutputStreams(
     std::vector<FetchDeviceInfo> outInfos;
     for (auto &streamDesc : outputStreamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
-        CHECK_AND_CONTINUE(VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_.load());
-        CHECK_AND_CONTINUE(streamDesc->rendererTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE);
+        CHECK_AND_CONTINUE(!(VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_.load()));
+        CHECK_AND_CONTINUE(streamDesc->rendererTarget_ != INJECT_TO_VOICE_COMMUNICATION_CAPTURE);
         StreamUsage streamUsage = audioSessionService_.GetAudioSessionStreamUsageForDevice(GetRealPid(streamDesc));
         streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
             streamDesc->rendererInfo_.streamUsage;
