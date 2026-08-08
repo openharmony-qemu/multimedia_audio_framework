@@ -1625,7 +1625,7 @@ int32_t AudioPolicyServer::GetSystemVolumeInDb(int32_t volumeTypeIn,
 
 int32_t AudioPolicyServer::SetVolumeControlPriority(const std::vector<int32_t> &prioritiesIn, int32_t &result)
 {
-    int32_t size = static_cast<int32_t>(prioritiesIn.size();
+    int32_t size = static_cast<int32_t>(prioritiesIn.size());
     AUDIO_INFO_LOG("priorities.size() [%{public}d]", size);
 
     if (!PermissionUtil::VerifySystemPermission()) {
