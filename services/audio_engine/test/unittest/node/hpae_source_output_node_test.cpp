@@ -880,6 +880,173 @@ HWTEST_F(HpaeSourceOutputNodeTest, TestHpaeSourceOutputNode_027, TestSize.Level1
     EXPECT_FALSE(result);
 }
 
+/**
+ * @tc.name: SetupAudioLimiter_andReset_001
+ * @tc.type: FUNC
+ * @tc.number: SetupAudioLimiter_andReset_001
+ * @tc.desc: Cover SetupAudioLimiter create path (cpp:174 FALSE) + SetConfig success (cpp:181 TRUE),
+ *           the already-setup early return (cpp:174 TRUE -> ERROR), and ResetAudioLimiter.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, SetupAudioLimiter_andReset_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    // First call: limiter_ == nullptr -> create path runs (cpp:174 FALSE). With valid config
+    // SetConfig returns SUCCESS -> cpp:181 TRUE branch.
+    int32_t ret1 = node->SetupAudioLimiter();
+    EXPECT_EQ(ret1, SUCCESS);
+
+    // Second call: limiter_ already non-null -> cpp:174 TRUE -> early return ERROR.
+    int32_t ret2 = node->SetupAudioLimiter();
+    EXPECT_EQ(ret2, ERROR);
+
+    // ResetAudioLimiter puts limiter_ back to nullptr (statement coverage).
+    node->ResetAudioLimiter();
+    EXPECT_EQ(node->limiter_, nullptr);
+}
+
+/**
+ * @tc.name: MixInputs_withoutLimiter_001
+ * @tc.type: FUNC
+ * @tc.number: MixInputs_withoutLimiter_001
+ * @tc.desc: Cover MixInputs no-limiter path (cpp:199 TRUE): plain element-wise sum into mixedOutput_.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, MixInputs_withoutLimiter_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    EXPECT_EQ(node->limiter_, nullptr);  // precondition: no limiter -> cpp:199 TRUE path
+
+    PcmBufferInfo info(node->GetChannelCount(), node->GetFrameLen(), node->GetSampleRate());
+    HpaePcmBuffer a(info);
+    HpaePcmBuffer b(info);
+    std::vector<HpaePcmBuffer *> inputs = { &a, &b };
+    HpaePcmBuffer *out = node->MixInputs(inputs);  // private; -fno-access-control
+    EXPECT_EQ(out, &node->mixedOutput_);
+}
+
+/**
+ * @tc.name: MixInputs_withLimiter_001
+ * @tc.type: FUNC
+ * @tc.number: MixInputs_withLimiter_001
+ * @tc.desc: Cover MixInputs limiter path (cpp:199 FALSE): sum into tmpOutput_ then limiter->Process.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, MixInputs_withLimiter_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    ASSERT_EQ(node->SetupAudioLimiter(), SUCCESS);  // limiter_ now non-null
+    ASSERT_NE(node->limiter_, nullptr);
+
+    PcmBufferInfo info(node->GetChannelCount(), node->GetFrameLen(), node->GetSampleRate());
+    HpaePcmBuffer a(info);
+    HpaePcmBuffer b(info);
+    std::vector<HpaePcmBuffer *> inputs = { &a, &b };
+    HpaePcmBuffer *out = node->MixInputs(inputs);  // cpp:199 FALSE -> tmpOutput + limiter->Process
+    EXPECT_EQ(out, &node->mixedOutput_);
+}
+
+/**
+ * @tc.name: SelectOutputData_injectorMixMode_001
+ * @tc.type: FUNC
+ * @tc.number: SelectOutputData_injectorMixMode_001
+ * @tc.desc: Cover SelectOutputData injector+unmuted path (cpp:146 FALSE, cpp:150 TRUE -> MixInputs).
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, SelectOutputData_injectorMixMode_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    node->SetInjectorState(true);   // cpp:146 FALSE (!isInjector_ == false -> skip front())
+    node->SetMicMute(false);        // cpp:150 TRUE (!isMicMute_ == true -> MixInputs)
+
+    PcmBufferInfo info(node->GetChannelCount(), node->GetFrameLen(), node->GetSampleRate());
+    HpaePcmBuffer micBuf(info);
+    micBuf.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_MIC);
+    std::vector<HpaePcmBuffer *> vec = { &micBuf };
+    HpaePcmBuffer *out = node->SelectOutputData(vec);  // private; -fno-access-control
+    EXPECT_EQ(out, &node->mixedOutput_);  // mix mode returns the node-internal mixed buffer
+}
+
+/**
+ * @tc.name: SelectOutputData_injectorSoloMode_withInjector_001
+ * @tc.type: FUNC
+ * @tc.number: SelectOutputData_injectorSoloMode_withInjector_001
+ * @tc.desc: Cover SelectOutputData solo mode (cpp:150 FALSE) that finds the INJECTOR buffer
+ *           (cpp:155 TRUE arm) and returns it directly.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, SelectOutputData_injectorSoloMode_withInjector_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    node->SetInjectorState(true);
+    node->SetMicMute(true);   // solo mode: cpp:150 FALSE (!isMicMute_ == false) -> injector-only loop
+
+    PcmBufferInfo info(node->GetChannelCount(), node->GetFrameLen(), node->GetSampleRate());
+    HpaePcmBuffer micBuf(info);
+    micBuf.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_MIC);  // skipped: type != INJECTOR
+    HpaePcmBuffer injBuf(info);
+    injBuf.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_INJECTOR);  // matched: cpp:155 TRUE
+    std::vector<HpaePcmBuffer *> vec = { &micBuf, &injBuf };
+    HpaePcmBuffer *out = node->SelectOutputData(vec);
+    EXPECT_EQ(out, &injBuf);
+}
+
+/**
+ * @tc.name: SelectOutputData_injectorSoloMode_noInjector_001
+ * @tc.type: FUNC
+ * @tc.number: SelectOutputData_injectorSoloMode_noInjector_001
+ * @tc.desc: Cover SelectOutputData solo mode with no INJECTOR buffer present: the loop matches
+ *           nothing (cpp:155 FALSE arm) and falls back to &silenceData_.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, SelectOutputData_injectorSoloMode_noInjector_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    node->SetInjectorState(true);
+    node->SetMicMute(true);
+
+    PcmBufferInfo info(node->GetChannelCount(), node->GetFrameLen(), node->GetSampleRate());
+    HpaePcmBuffer micBuf(info);
+    micBuf.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_MIC);  // cpp:155 FALSE: type != INJECTOR
+    std::vector<HpaePcmBuffer *> vec = { &micBuf };
+    HpaePcmBuffer *out = node->SelectOutputData(vec);
+    EXPECT_EQ(out, &node->silenceData_);  // fallback when no injector buffer found
+}
+
+/**
+ * @tc.name: ProcessAudioData_voiceDownlink_001
+ * @tc.type: FUNC
+ * @tc.number: ProcessAudioData_voiceDownlink_001
+ * @tc.desc: Cover ProcessAudioData non-mute path for SOURCE_TYPE_VOICE_DOWNLINK: the downlink
+ *           CopyRightToLeft branch (cpp:234 TRUE). Highpass filter is disabled (not ULTRASONIC),
+ *           so cpp:224 stays FALSE.
+ */
+HWTEST_F(HpaeSourceOutputNodeTest, ProcessAudioData_voiceDownlink_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    nodeInfo.sourceType = SOURCE_TYPE_VOICE_DOWNLINK;
+    nodeInfo.format = SAMPLE_S16LE;
+    auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+
+    PcmBufferInfo info(node->GetChannelCount(), node->GetFrameLen(), node->GetSampleRate());
+    HpaePcmBuffer outBuf(info);  // zero-filled float buffer matches node frame/channel dims
+    // isMute=false -> else branch; isSupportHighpassFilter_=false -> cpp:224 FALSE; then
+    // sourceType == VOICE_DOWNLINK -> cpp:234 TRUE (CopyRightToLeft).
+    node->ProcessAudioData(&outBuf, false);  // private; -fno-access-control
+    SUCCEED();
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

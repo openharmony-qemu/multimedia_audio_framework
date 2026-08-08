@@ -86,7 +86,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, TestGetReadFinishAndResetAll, TestSize.L
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetSharedInstance, TestSize.Level1)
 {
     std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+
     std::shared_ptr<HpaeNode> sharedInstance = node->GetSharedInstance();
     EXPECT_EQ(sharedInstance, node);
 }
@@ -94,7 +94,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetSharedInstance, TestSize.Level1)
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetOutputPort, TestSize.Level1)
 {
     std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+
     OutputPort<HpaePcmBuffer*>* port = node->GetOutputPort();
     EXPECT_NE(port, nullptr);
 }
@@ -110,7 +110,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkInitNullRingCache, TestSize.Le
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkInitSuccess, TestSize.Level1)
 {
     std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+
     int32_t result = node->RenderSinkInit();
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(node->GetState(), STREAM_MANAGER_IDLE);
@@ -119,7 +119,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkInitSuccess, TestSize.Level1)
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkDeInit, TestSize.Level1)
 {
     std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+
     int32_t result = node->RenderSinkDeInit();
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(node->GetState(), STREAM_MANAGER_RELEASED);
@@ -169,16 +169,16 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetLatency, TestSize.Level1)
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, ReloadNode, TestSize.Level1)
 {
     std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+
     HpaeNodeInfo newInfo = nodeInfo_;
     newInfo.samplingRate = SAMPLE_RATE_44100;
     newInfo.frameLen = 882; // 20ms at 44.1kHz
     newInfo.channels = MONO;
     newInfo.format = SAMPLE_S16LE;
-    
+
     int32_t result = node->ReloadNode(newInfo);
     EXPECT_EQ(result, SUCCESS);
-    
+
     EXPECT_EQ(node->GetSampleRate(), newInfo.samplingRate);
     EXPECT_EQ(node->GetFrameLen(), newInfo.frameLen);
     EXPECT_EQ(node->GetChannelCount(), newInfo.channels);
@@ -190,7 +190,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetRingCacheSize, TestSize.Level1)
     std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     size_t expectedSize = nodeInfo_.channels * nodeInfo_.samplingRate * DEFAULT_FRAME_LEN_MS *
         DEFAULT_RING_BUFFER_NUM * static_cast<size_t>(GetSizeFromFormat(nodeInfo_.format)) / MS_PER_SECOND;
-    
+
     size_t actualSize = node->GetRingCacheSize();
     EXPECT_EQ(actualSize, expectedSize);
 }
@@ -218,6 +218,108 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, FaultCode_RenderSinkInit_NullRingCache, 
 
     int32_t result = node->RenderSinkInit();
     EXPECT_EQ(result, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : SilenceData_U8Format
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SilenceData SAMPLE_U8 branch via RenderSinkStop, buffer filled with 0x80.
+ */
+HWTEST_F(HpaeSinkVirtualOutputNodeTest, SilenceData_U8Format, TestSize.Level1)
+{
+    HpaeNodeInfo info = nodeInfo_;
+    info.format = SAMPLE_U8;
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(info);
+    ASSERT_NE(node, nullptr);
+    // RenderSinkStop internally calls SilenceData; SAMPLE_U8 path fills buffer with 0x80
+    EXPECT_EQ(node->RenderSinkStop(), SUCCESS);
+    EXPECT_EQ(node->GetState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : SilenceData_InvalidFormat
+ * @tc.type  : FUNC
+ * @tc.desc  : Test SilenceData INVALID_WIDTH branch via RenderSinkStop, only logs warning.
+ */
+HWTEST_F(HpaeSinkVirtualOutputNodeTest, SilenceData_InvalidFormat, TestSize.Level1)
+{
+    HpaeNodeInfo info = nodeInfo_;
+    info.format = INVALID_WIDTH;
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(info);
+    ASSERT_NE(node, nullptr);
+    // RenderSinkStop internally calls SilenceData; INVALID_WIDTH path only logs warning
+    EXPECT_EQ(node->RenderSinkStop(), SUCCESS);
+    EXPECT_EQ(node->GetState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : DoRenderProcess_NoInput
+ * @tc.type  : FUNC
+ * @tc.desc  : Test DoRenderProcess with no upstream connected, ReadPreOutputData empty early return.
+ */
+HWTEST_F(HpaeSinkVirtualOutputNodeTest, DoRenderProcess_NoInput, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    ASSERT_NE(node, nullptr);
+    // No upstream connected: ReadPreOutputData returns empty vector -> early return
+    node->DoRenderProcess();
+    // Verify no crash and state unchanged
+    EXPECT_EQ(node->GetState(), STREAM_MANAGER_NEW);
+}
+
+/**
+ * @tc.name  : DoRenderProcess_WithDataFlow
+ * @tc.type  : FUNC
+ * @tc.desc  : Test DoRenderProcess pulls upstream data into ringCache (Enqueue success), then
+ *             DoProcess dequeues (Dequeue success) and triggers OnNotifyQueue callback.
+ */
+HWTEST_F(HpaeSinkVirtualOutputNodeTest, DoRenderProcess_WithDataFlow, TestSize.Level1)
+{
+    HpaeNodeInfo info = nodeInfo_;
+    // Set status callback so the OnNotifyQueue callback branch is reachable
+    info.statusCallback = std::make_shared<NodeStatusCallback>();
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(info);
+    ASSERT_NE(node, nullptr);
+
+    // Build upstream SinkInputNode and feed fixed data via write callback
+    std::shared_ptr<HpaeSinkInputNode> sinkInputNode = std::make_shared<HpaeSinkInputNode>(info);
+    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_F32LE);
+    sinkInputNode->RegisterWriteCallback(writeCb);
+    node->Connect(sinkInputNode);
+    ASSERT_EQ(node->GetPreOutNum(), static_cast<size_t>(1));
+
+    // DoRenderProcess pulls upstream data and enqueues into ringCache
+    node->DoRenderProcess();
+
+    // DoProcess dequeues from ringCache and triggers OnNotifyQueue callback
+    node->DoProcess();
+
+    node->DisConnect(sinkInputNode);
+}
+
+/**
+ * @tc.name  : DoRenderProcess_RingCacheFull
+ * @tc.type  : FUNC
+ * @tc.desc  : Test DoRenderProcess when ringCache is full, Enqueue fails and returns early.
+ */
+HWTEST_F(HpaeSinkVirtualOutputNodeTest, DoRenderProcess_RingCacheFull, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    ASSERT_NE(node, nullptr);
+
+    // Build upstream SinkInputNode and feed fixed data via write callback
+    std::shared_ptr<HpaeSinkInputNode> sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo_);
+    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_F32LE);
+    sinkInputNode->RegisterWriteCallback(writeCb);
+    node->Connect(sinkInputNode);
+    ASSERT_EQ(node->GetPreOutNum(), static_cast<size_t>(1));
+
+    // First DoRenderProcess fills ringCache to capacity (one frame == cache size)
+    node->DoRenderProcess();
+    // Second DoRenderProcess: ringCache is full, Enqueue fails -> CHECK_AND_RETURN_LOG early return
+    node->DoRenderProcess();
+
+    node->DisConnect(sinkInputNode);
 }
 } // namespace HPAE
 } // namespace AudioStandard

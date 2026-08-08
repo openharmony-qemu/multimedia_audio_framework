@@ -369,6 +369,78 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, HandlePcmDumping_DefaultCase_001, TestSiz
     // Use an invalid stream type to trigger default case
     remoteNode->HandlePcmDumping(static_cast<SplitStreamType>(999), dataPtr, dataSize);
 }
+
+// ==================== Delegate-arm coverage (audioRendererSink_ non-null) ====================
+// Every Render* / GetCurrentOutputDevice has a `if (audioRendererSink_ == nullptr) return ERROR;`
+// guard. Existing cases cover only the null arm. To drive the delegate arm we obtain a REAL sink
+// via GetRenderSinkInstance (the same path constructNode_01 relies on; the test env yields a
+// RemoteAudioRenderSink whose vtable is complete). A NiceMock<MockAudioRenderSink> is NOT used:
+// hpae_mocks.h's MockAudioRenderSink is stale vs the current IAudioRenderSink pipe API (it omits
+// GetOutputPipeInfo/InitPipeInfo/ChangePipeStatus/ChangePipeDevice/ChangePipeStream/DeinitPipeInfo
+// and transitively pulls in SinkCallbackWrapper), leaving 6 virtuals un-overridden -> undefined
+// vtable at link time. Real-sink method returns are not asserted to fixed values; the goal is to
+// execute the delegate arms, so those calls are intentionally soft.
+
+constexpr uint32_t TEST_REMOTE_NODE_ID = 1001;   // 1001: node id
+constexpr uint32_t TEST_REMOTE_FRAME_LEN = 960;  // 960: frameLen
+
+/**
+ * @tc.name  : RenderSinkDelegates_RealSink_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Cover all Render* / GetCurrentOutputDevice delegate arms with a real sink obtained
+ *             via GetRenderSinkInstance (cpp:288/296/306/314/216 FALSE -> cpp:291/299-301/309/
+ *             317-322/219). Hard-asserts the sink is obtained; method returns are soft (real sink).
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, RenderSinkDelegates_RealSink_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_REMOTE_NODE_ID;
+    nodeInfo.frameLen = TEST_REMOTE_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    // Real sink path (links cleanly; constructNode_01 proves this returns SUCCESS in the test env).
+    ASSERT_EQ(node->GetRenderSinkInstance("remote", "LocalDevice"), SUCCESS);
+    ASSERT_NE(node->audioRendererSink_, nullptr);
+
+    // Each call now skips its null guard and delegates to the real sink.
+    (void)node->RenderSinkFlush();        // cpp:291
+    (void)node->RenderSinkPause();        // cpp:299-301 (Pause + SetSinkState SUSPENDED + SUCCESS)
+    (void)node->RenderSinkReset();        // cpp:309
+    (void)node->RenderSinkResume();       // cpp:317-322 (one arm of cpp:318 on the real Resume() ret)
+    (void)node->GetCurrentOutputDevice(); // cpp:219
+
+    node->RenderSinkDeInit(); // cleanup: nulls audioRendererSink_ + ReleaseId
+    SUCCEED();
+}
+
+/**
+ * @tc.name  : GetRenderSinkInstance_NullSinkPath_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Cover GetRenderSinkInstance null path (cpp:203-210): a bogus device class yields no
+ *             adapter -> GetRenderSink returns null -> ReleaseId + ERROR. Non-empty deviceNetId
+ *             also exercises the cpp:200 ternary's non-empty arm.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, GetRenderSinkInstance_NullSinkPath_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_REMOTE_NODE_ID;
+    nodeInfo.frameLen = TEST_REMOTE_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    auto node = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    // Bogus device class -> no adapter -> null sink -> cpp:203-210 (ReleaseId + ERROR).
+    int32_t result = node->GetRenderSinkInstance("nonexistent_remote_class", "fakeNetworkId123");
+    EXPECT_EQ(result, ERROR);
+    EXPECT_EQ(node->audioRendererSink_, nullptr); // confirms the null path ran
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
