@@ -89,7 +89,7 @@ int32_t HpaeFastRendererManager::CreateFastNodes(const HpaeNodeInfo &nodeInfo)
     auto converter = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
     converter->SetDownmixNormalization(false);
     converterNodeMap_[nodeInfo.sessionId] = converter;
-    gainNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeGainNode>(outputNodeInfo);
+    gainNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeGainNode>(outputNodeInfo, true);
     return SUCCESS;
 }
 
