@@ -180,7 +180,6 @@ private:
     int32_t StopImpl() const override;
     int32_t ReleaseImpl() override;
     int32_t CheckAndRestoreAudioCapturer(std::string callingFunc);
-    int32_t AsyncCheckAudioCapturer(std::string callingFunc);
     int32_t CheckAudioCapturer(std::string callingFunc);
     int32_t CheckAndStopAudioCapturer(std::string callingFunc);
     int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
@@ -274,10 +273,8 @@ private:
     std::mutex policyServiceDiedCallbackMutex_;
     std::mutex audioInterruptMutex_;
     int32_t callbackLoopTid_ = -1;
-    std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
     std::shared_ptr<AudioCapturerFastStatusChangeCallback> fastStatusChangeCallback_ = nullptr;
     std::mutex fastStatusChangeCallbackMutex_;
-    AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
     std::condition_variable taskLoopCv_;
     std::mutex inSwitchingMtx_;
     bool inSwitchingFlag_ = false;
