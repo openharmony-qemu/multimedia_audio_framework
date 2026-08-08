@@ -22,6 +22,78 @@
 namespace OHOS {
 namespace AudioStandard {
 
+// Single source of truth: KaraokeParamType -> legacy "Karaoke_<key>".
+inline const std::map<int32_t, std::string> &GetKaraokeTypeToKeyMap()
+{
+    static const std::map<int32_t, std::string> typeToKey = {
+        { KARAOKE_PARAM_VOLUME,         "Karaoke_volume" },
+        { KARAOKE_PARAM_REVERB_MODE,    "Karaoke_reverb_mode" },
+        { KARAOKE_PARAM_EQ_MODE,        "Karaoke_eq_mode" },
+        { KARAOKE_PARAM_ENABLE,         "Karaoke_enable" },
+        { KARAOKE_PARAM_CAPTURE_REVERB, "Karaoke_capture_reverb" },
+    };
+    return typeToKey;
+}
+
+// Reverb preset ordinal -> legacy HDI reverb string.
+inline const std::map<int32_t, std::string> &GetKaraokeReverbMap()
+{
+    static const std::map<int32_t, std::string> reverbToString = {
+        { REVERB_PRESET_ORIGINAL, "disable" },
+        { REVERB_PRESET_KTV,      "ktv" },
+        { REVERB_PRESET_THEATER,  "theatre" },
+        { REVERB_PRESET_CONCERT,  "concert" },
+    };
+    return reverbToString;
+}
+
+// Equalizer preset ordinal -> legacy HDI eq string.
+inline const std::map<int32_t, std::string> &GetKaraokeEqMap()
+{
+    static const std::map<int32_t, std::string> eqToString = {
+        { EQUALIZER_PRESET_FLAT,   "disable" },
+        { EQUALIZER_PRESET_FULL,   "full" },
+        { EQUALIZER_PRESET_BRIGHT, "bright" },
+    };
+    return eqToString;
+}
+
+// Generic table lookup; sets valid=false and returns "" when key is absent.
+inline std::string KaraokeLookup(const std::map<int32_t, std::string> &table,
+    int32_t key, bool &valid)
+{
+    auto it = table.find(key);
+    if (it == table.end()) {
+        valid = false;
+        return "";
+    }
+    return it->second;
+}
+
+// Volume is the only plain integer value (0-100); reject out-of-range.
+inline std::string KaraokeVolumeToString(int32_t value, bool &valid)
+{
+    if (value < 0 || value > 100) {
+        valid = false;
+        return "";
+    }
+    return std::to_string(value);
+}
+
+// Encode a (paramType, value) pair into its value string. Sets valid=false on
+// any invalid input (unknown type / out-of-range volume / unknown preset).
+inline std::string KaraokeValueToString(int32_t paramType, int32_t value, bool &valid)
+{
+    switch (paramType) {
+        case KARAOKE_PARAM_VOLUME: return KaraokeVolumeToString(value, valid);
+        case KARAOKE_PARAM_REVERB_MODE: return KaraokeLookup(GetKaraokeReverbMap(), value, valid);
+        case KARAOKE_PARAM_EQ_MODE: return KaraokeLookup(GetKaraokeEqMap(), value, valid);
+        case KARAOKE_PARAM_ENABLE: return (value != 0) ? "enable" : "disable";
+        case KARAOKE_PARAM_CAPTURE_REVERB: return (value != 0) ? "true" : "false";
+        default: valid = false; return "";
+    }
+}
+
 /**
  * @brief Build the legacy "key=value" audio parameter string for a Karaoke setting.
  *
@@ -38,68 +110,12 @@ namespace AudioStandard {
 inline std::string BuildKaraokeParamString(int32_t paramType, int32_t value, bool &valid)
 {
     valid = true;
-    static const std::map<int32_t, std::string> typeToKey = {
-        { KARAOKE_PARAM_VOLUME,         "Karaoke_volume" },
-        { KARAOKE_PARAM_REVERB_MODE,    "Karaoke_reverb_mode" },
-        { KARAOKE_PARAM_EQ_MODE,        "Karaoke_eq_mode" },
-        { KARAOKE_PARAM_ENABLE,         "Karaoke_enable" },
-        { KARAOKE_PARAM_CAPTURE_REVERB, "Karaoke_capture_reverb" },
-    };
-    static const std::map<int32_t, std::string> reverbToString = {
-        { REVERB_PRESET_ORIGINAL, "disable" },
-        { REVERB_PRESET_KTV,      "ktv" },
-        { REVERB_PRESET_THEATER,  "theatre" },
-        { REVERB_PRESET_CONCERT,  "concert" },
-    };
-    static const std::map<int32_t, std::string> eqToString = {
-        { EQUALIZER_PRESET_FLAT,   "disable" },
-        { EQUALIZER_PRESET_FULL,   "full" },
-        { EQUALIZER_PRESET_BRIGHT, "bright" },
-    };
-
-    auto keyIt = typeToKey.find(paramType);
-    if (keyIt == typeToKey.end()) {
-        valid = false;
+    std::string key = KaraokeLookup(GetKaraokeTypeToKeyMap(), paramType, valid);
+    if (!valid) {
         return "";
     }
-    std::string valueStr;
-    switch (paramType) {
-        case KARAOKE_PARAM_VOLUME:
-            if (value < 0 || value > 100) {
-                valid = false;
-                return "";
-            }
-            valueStr = std::to_string(value);
-            break;
-        case KARAOKE_PARAM_REVERB_MODE: {
-            auto it = reverbToString.find(value);
-            if (it == reverbToString.end()) {
-                valid = false;
-                return "";
-            }
-            valueStr = it->second;
-            break;
-        }
-        case KARAOKE_PARAM_EQ_MODE: {
-            auto it = eqToString.find(value);
-            if (it == eqToString.end()) {
-                valid = false;
-                return "";
-            }
-            valueStr = it->second;
-            break;
-        }
-        case KARAOKE_PARAM_ENABLE:
-            valueStr = (value != 0) ? "enable" : "disable";
-            break;
-        case KARAOKE_PARAM_CAPTURE_REVERB:
-            valueStr = (value != 0) ? "true" : "false";
-            break;
-        default:
-            valid = false;
-            return "";
-    }
-    return keyIt->second + "=" + valueStr;
+    std::string valueStr = KaraokeValueToString(paramType, value, valid);
+    return valid ? (key + "=" + valueStr) : "";
 }
 
 } // namespace AudioStandard
