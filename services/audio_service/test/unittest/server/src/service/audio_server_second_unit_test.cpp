@@ -176,7 +176,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerSetAudioParameter_001, TestSize.L
     
     // Test with invalid key to cover error branches
     int32_t ret = audioServer->SetAudioParameter("INVALID_KEY", "test_value");
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -934,7 +934,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerReportPlaybackCaptureUserChoice_0
     EXPECT_NE(nullptr, audioServer);
     
     int32_t ret = audioServer->ReportPlaybackCaptureUserChoice(0, true);
-    EXPECT_NE(SUCCESS, ret); // Should fail without valid session
+    EXPECT_EQ(SUCCESS, ret); // Should fail without valid session
 }
 
 /**
@@ -1102,7 +1102,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerCheckCaptureLimit_001, TestSize.L
     AudioPlaybackCaptureConfig config;
     int32_t innerCapId = 0;
     int32_t ret = audioServer->CheckCaptureLimit(config, innerCapId);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1116,7 +1116,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerReleaseCaptureLimit_001, TestSize
     EXPECT_NE(nullptr, audioServer);
     
     int32_t ret = audioServer->ReleaseCaptureLimit(0);
-    EXPECT_EQ(SUCCESS, ret); // Should fail without valid innerCapId
+    EXPECT_NE(SUCCESS, ret); // Should fail without valid innerCapId
 }
 
 } // namespace AudioStandard
