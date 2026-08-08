@@ -32,6 +32,7 @@ namespace HPAE {
 namespace {
     constexpr size_t FAST_REQUEST_COUNT = 5000;
     constexpr float SUSPEND_TIME_OUT_S = 3; // prevent stop not success
+    constexpr char VOIP_FAST_DEVICE_CLASS[] = "primary_mmap_voip";
 }
 
 HpaeFastRendererManager::HpaeFastRendererManager(HpaeSinkInfo &sinkInfo)
@@ -45,6 +46,11 @@ HpaeFastRendererManager::~HpaeFastRendererManager()
     if (isInit_.load()) {
         DeInit();
     }
+}
+
+bool HpaeFastRendererManager::IsVoipFastSink() const
+{
+    return sinkInfo_.deviceClass == VOIP_FAST_DEVICE_CLASS;
 }
 
 std::shared_ptr<HpaeSinkInputNode> HpaeFastRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo)
@@ -89,7 +95,11 @@ int32_t HpaeFastRendererManager::CreateFastNodes(const HpaeNodeInfo &nodeInfo)
     auto converter = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
     converter->SetDownmixNormalization(false);
     converterNodeMap_[nodeInfo.sessionId] = converter;
-    gainNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeGainNode>(outputNodeInfo);
+    if (IsVoipFastSink()) {
+        volumeSyncNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeVolumeSyncNode>(outputNodeInfo);
+    } else {
+        gainNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeGainNode>(outputNodeInfo);
+    }
     return SUCCESS;
 }
 
@@ -99,6 +109,7 @@ int32_t HpaeFastRendererManager::DeleteSessionNodes(uint32_t sessionId)
     DisConnectInputCluster(sessionId);
     gainNodeMap_.erase(sessionId);
     converterNodeMap_.erase(sessionId);
+    volumeSyncNodeMap_.erase(sessionId);
     AUDIO_INFO_LOG("SessionId %{public}u, session nodes deleted", sessionId);
     return SUCCESS;
 }
@@ -108,16 +119,26 @@ int32_t HpaeFastRendererManager::ConnectInputCluster(uint32_t sessionId)
     Trace trace("HpaeFastRendererManager::ConnectInputCluster id[" + std::to_string(sessionId) + "]");
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
     CHECK_AND_RETURN_RET_LOG(sinkInputNode != nullptr, ERROR, "node not found");
-    auto gainNode = SafeGetMap(gainNodeMap_, sessionId);
     auto converter = SafeGetMap(converterNodeMap_, sessionId);
-    CHECK_AND_RETURN_RET_LOG(gainNode != nullptr, ERR_NULL_POINTER, "gainNode not found");
     CHECK_AND_RETURN_RET_LOG(converter != nullptr, ERR_NULL_POINTER, "converter not found");
-    gainNode->ResetVolume();
-    mixerNode_->Connect(gainNode);
-    gainNode->Connect(converter);
+    CHECK_AND_RETURN_RET_LOG(mixerNode_ != nullptr, ERR_NULL_POINTER, "mixerNode_ not found");
+    const bool isVoipFastSink = IsVoipFastSink();
+    if (isVoipFastSink) {
+        auto volumeSyncNode = SafeGetMap(volumeSyncNodeMap_, sessionId);
+        CHECK_AND_RETURN_RET_LOG(volumeSyncNode != nullptr, ERR_NULL_POINTER, "volumeSyncNode not found");
+        volumeSyncNode->ResetVolume();
+        mixerNode_->Connect(volumeSyncNode);
+        volumeSyncNode->Connect(converter);
+    } else {
+        auto gainNode = SafeGetMap(gainNodeMap_, sessionId);
+        CHECK_AND_RETURN_RET_LOG(gainNode != nullptr, ERR_NULL_POINTER, "gainNode not found");
+        gainNode->ResetVolume();
+        mixerNode_->Connect(gainNode);
+        gainNode->Connect(converter);
+    }
     converter->Connect(sinkInputNode);
-    AUDIO_INFO_LOG("SessionId %{public}u, input cluster connected, hasConverter=%{public}d",
-        sessionId, converter != nullptr ? 1 : 0);
+    AUDIO_INFO_LOG("SessionId %{public}u, input cluster connected, volumeNode=%{public}s",
+        sessionId, isVoipFastSink ? "volumeSync" : "gain");
     // 3s 停流
     if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
         UpdateAppsUid();
@@ -131,14 +152,23 @@ int32_t HpaeFastRendererManager::DisConnectInputCluster(uint32_t sessionId)
     Trace trace("HpaeFastRendererManager::DisConnectInputCluster id[" + std::to_string(sessionId) + "]");
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
     CHECK_AND_RETURN_RET_LOG(sinkInputNode != nullptr, ERROR, "node not found");
-    auto gainNode = SafeGetMap(gainNodeMap_, sessionId);
     auto converter = SafeGetMap(converterNodeMap_, sessionId);
-    CHECK_AND_RETURN_RET_LOG(gainNode != nullptr, ERROR, "gainNode not found");
     CHECK_AND_RETURN_RET_LOG(converter != nullptr, ERROR, "converter not found");
     CHECK_AND_RETURN_RET_LOG(mixerNode_ != nullptr, ERROR, "mixerNode_ not found");
-    converter->DisConnect(sinkInputNode);
-    gainNode->DisConnect(converter);
-    mixerNode_->DisConnect(gainNode);
+    const bool isVoipFastSink = IsVoipFastSink();
+    if (isVoipFastSink) {
+        auto volumeSyncNode = SafeGetMap(volumeSyncNodeMap_, sessionId);
+        CHECK_AND_RETURN_RET_LOG(volumeSyncNode != nullptr, ERROR, "volumeSyncNode not found");
+        converter->DisConnect(sinkInputNode);
+        volumeSyncNode->DisConnect(converter);
+        mixerNode_->DisConnect(volumeSyncNode);
+    } else {
+        auto gainNode = SafeGetMap(gainNodeMap_, sessionId);
+        CHECK_AND_RETURN_RET_LOG(gainNode != nullptr, ERROR, "gainNode not found");
+        converter->DisConnect(sinkInputNode);
+        gainNode->DisConnect(converter);
+        mixerNode_->DisConnect(gainNode);
+    }
     AUDIO_INFO_LOG("SessionId %{public}u, input cluster disconnected", sessionId);
     return SUCCESS;
 }
@@ -342,8 +372,7 @@ IAudioSinkAttr HpaeFastRendererManager::CreateSinkAttr()
     attr.deviceNetworkId = sinkInfo_.deviceNetId.c_str();
     attr.filePath = sinkInfo_.filePath.c_str();
     attr.aux = sinkInfo_.splitMode.c_str();
-    attr.audioStreamFlag = sinkInfo_.deviceClass == "primary_mmap_voip" ?
-        AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
+    attr.audioStreamFlag = IsVoipFastSink() ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     attr.isLoopback = sinkInfo_.isLoopback;
     if (attr.adapterName == "dp") {
         AUDIO_INFO_LOG("DP adapter can only use dp pin");

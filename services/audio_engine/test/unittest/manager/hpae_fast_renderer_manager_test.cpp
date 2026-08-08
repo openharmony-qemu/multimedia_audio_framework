@@ -95,8 +95,8 @@ static void InitWithMockSink(std::shared_ptr<HpaeFastRendererManager> &manager)
     nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.nodeId = 0;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
-    nodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    nodeInfo.deviceClass = "primary_mmap";
+    nodeInfo.deviceNetId = manager->sinkInfo_.deviceNetId;
+    nodeInfo.deviceClass = manager->sinkInfo_.deviceClass;
     auto mixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
     manager->sinkOutputNode_->Connect(mixerNode);
     manager->mixerNode_ = mixerNode;
@@ -1227,6 +1227,118 @@ HWTEST_F(HpaeFastRendererManagerTest, connectInputCluster_WhileSuspend_001, Test
     WaitForMsgProcessing(fastManager_);
 }
 
+/**
+ * @tc.name  : connectInputCluster_VoipVolumeSyncNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_143
+ * @tc.desc  : Test VOIP fast stream uses volume sync node instead of gain node
+ */
+HWTEST_F(HpaeFastRendererManagerTest, connectInputCluster_VoipVolumeSyncNode_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetVoipFastSinkInfo();
+    auto manager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    WaitForMsgProcessing(manager);
+    InitWithMockSink(manager);
+
+    EXPECT_EQ(manager->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->gainNodeMap_.count(TEST_STREAM_SESSION_ID), 0);
+    EXPECT_EQ(manager->volumeSyncNodeMap_.count(TEST_STREAM_SESSION_ID), 1);
+    EXPECT_EQ(manager->ConnectInputCluster(TEST_STREAM_SESSION_ID), SUCCESS);
+    manager->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->SetState(HPAE_SESSION_RUNNING);
+    EXPECT_EQ(manager->SetSessionFade(TEST_STREAM_SESSION_ID, OPERATION_PAUSED), false);
+    EXPECT_EQ(manager->sinkInputNodeMap_[TEST_STREAM_SESSION_ID]->GetState(), HPAE_SESSION_PAUSED);
+    EXPECT_EQ(manager->DisConnectInputCluster(TEST_STREAM_SESSION_ID), SUCCESS);
+
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(manager);
+}
+
+/**
+ * @tc.name  : connectInputCluster_NullVoipVolumeSyncNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_144
+ * @tc.desc  : Test VOIP connect fails safely when volume sync node is missing
+ */
+HWTEST_F(HpaeFastRendererManagerTest, connectInputCluster_NullVoipVolumeSyncNode_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetVoipFastSinkInfo();
+    auto manager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    WaitForMsgProcessing(manager);
+    InitWithMockSink(manager);
+
+    EXPECT_EQ(manager->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(manager);
+    manager->volumeSyncNodeMap_.erase(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(manager->ConnectInputCluster(TEST_STREAM_SESSION_ID), ERR_NULL_POINTER);
+
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(manager);
+}
+
+/**
+ * @tc.name  : connectInputCluster_NullMixer_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_145
+ * @tc.desc  : Test connect fails safely when mixer is missing
+ */
+HWTEST_F(HpaeFastRendererManagerTest, connectInputCluster_NullMixer_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+
+    fastManager_->mixerNode_ = nullptr;
+    EXPECT_EQ(fastManager_->ConnectInputCluster(TEST_STREAM_SESSION_ID), ERR_NULL_POINTER);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : isVoipFastSink_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_146
+ * @tc.desc  : Test VoIP fast sink identification
+ */
+HWTEST_F(HpaeFastRendererManagerTest, isVoipFastSink_001, TestSize.Level0)
+{
+    HpaeSinkInfo voipSinkInfo = GetVoipFastSinkInfo();
+    auto voipManager = std::make_shared<HpaeFastRendererManager>(voipSinkInfo);
+    EXPECT_TRUE(voipManager->IsVoipFastSink());
+    EXPECT_FALSE(fastManager_->IsVoipFastSink());
+}
+
+/**
+ * @tc.name  : deleteSessionNodes_VoipNodes_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_147
+ * @tc.desc  : Test deleting a VoIP session clears all per-stream nodes
+ */
+HWTEST_F(HpaeFastRendererManagerTest, deleteSessionNodes_VoipNodes_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetVoipFastSinkInfo();
+    auto manager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    WaitForMsgProcessing(manager);
+    InitWithMockSink(manager);
+
+    EXPECT_EQ(manager->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(manager);
+    ASSERT_EQ(manager->converterNodeMap_.count(TEST_STREAM_SESSION_ID), 1);
+    ASSERT_EQ(manager->volumeSyncNodeMap_.count(TEST_STREAM_SESSION_ID), 1);
+    EXPECT_EQ(manager->DeleteSessionNodes(TEST_STREAM_SESSION_ID), SUCCESS);
+    EXPECT_EQ(manager->converterNodeMap_.count(TEST_STREAM_SESSION_ID), 0);
+    EXPECT_EQ(manager->volumeSyncNodeMap_.count(TEST_STREAM_SESSION_ID), 0);
+
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(manager);
+}
+
 // ==================== DisConnectInputCluster branch tests ====================
 
 /**
@@ -1238,6 +1350,92 @@ HWTEST_F(HpaeFastRendererManagerTest, connectInputCluster_WhileSuspend_001, Test
 HWTEST_F(HpaeFastRendererManagerTest, disConnectInputCluster_NullSinkInputNode_001, TestSize.Level0)
 {
     EXPECT_EQ(fastManager_->DisConnectInputCluster(99999), ERROR);
+}
+
+/**
+ * @tc.name  : disConnectInputCluster_NullConverter_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_148
+ * @tc.desc  : Test disconnect fails safely when converter is missing
+ */
+HWTEST_F(HpaeFastRendererManagerTest, disConnectInputCluster_NullConverter_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+
+    fastManager_->converterNodeMap_.erase(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(fastManager_->DisConnectInputCluster(TEST_STREAM_SESSION_ID), ERROR);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : disConnectInputCluster_NullMixer_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_149
+ * @tc.desc  : Test disconnect fails safely when mixer is missing
+ */
+HWTEST_F(HpaeFastRendererManagerTest, disConnectInputCluster_NullMixer_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+
+    fastManager_->mixerNode_ = nullptr;
+    EXPECT_EQ(fastManager_->DisConnectInputCluster(TEST_STREAM_SESSION_ID), ERROR);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : disConnectInputCluster_NullGainNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_150
+ * @tc.desc  : Test non-VoIP disconnect fails safely when gain node is missing
+ */
+HWTEST_F(HpaeFastRendererManagerTest, disConnectInputCluster_NullGainNode_001, TestSize.Level1)
+{
+    EXPECT_EQ(fastManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+    InitWithMockSink(fastManager_);
+    EXPECT_EQ(fastManager_->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+
+    fastManager_->gainNodeMap_.erase(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(fastManager_->DisConnectInputCluster(TEST_STREAM_SESSION_ID), ERROR);
+
+    EXPECT_EQ(fastManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(fastManager_);
+}
+
+/**
+ * @tc.name  : disConnectInputCluster_NullVoipVolumeSyncNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastRendererManagerTest_151
+ * @tc.desc  : Test VoIP disconnect fails safely when volume sync node is missing
+ */
+HWTEST_F(HpaeFastRendererManagerTest, disConnectInputCluster_NullVoipVolumeSyncNode_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetVoipFastSinkInfo();
+    auto manager = std::make_shared<HpaeFastRendererManager>(sinkInfo);
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    WaitForMsgProcessing(manager);
+    InitWithMockSink(manager);
+    EXPECT_EQ(manager->CreateStream(MakeStreamInfo(TEST_STREAM_SESSION_ID)), SUCCESS);
+    WaitForMsgProcessing(manager);
+
+    manager->volumeSyncNodeMap_.erase(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(manager->DisConnectInputCluster(TEST_STREAM_SESSION_ID), ERROR);
+
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(manager);
 }
 
 // ==================== ConnectInputSession branch tests ====================
