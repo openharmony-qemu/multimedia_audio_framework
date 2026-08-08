@@ -1748,6 +1748,8 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
             streamDesc->callerPid_, streamDesc->GetSourceType());
     }
 
+    UnmuteDualStreamAfterAlarm(streamDesc);
+
     return SUCCESS;
 }
 
@@ -1785,6 +1787,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     }
     DeleteSessionId(sessionId);
     ClearMuteVoipState(streamDesc, sessionId);
+    UnmuteDualStreamAfterAlarm(streamDesc);
 
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
