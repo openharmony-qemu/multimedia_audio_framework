@@ -8,6 +8,7 @@
         "dump_level": 1,
         "start-on-demand": true,
         "stop-on-demand": true,
+        "auto-restart":true,
         "min_hdi_proxy_version": []
     }]
 }

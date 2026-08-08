@@ -26,10 +26,17 @@
 #include "audio_suite_download_manager.h"
 #include "audio_suite_status_callback_stub_impl.h"
 #include "audio_suite_download_callback_stub_impl.h"
+#include "system_ability_status_change_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
+
+class AudioSuiteSystemAbilityListener : public SystemAbilityStatusChangeStub {
+public:
+    void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
+    void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
+};
 
 class AudioSuiteClientPolicy {
 public:
@@ -52,6 +59,7 @@ public:
     void OnDownloadStatusChanged(const std::vector<AudioSuiteDownloadStatusInfo>& status);
 
     void DisconnectService();
+    void AudioSuiteServerRecover(int32_t& systemAbilityId);
 
 private:
     AudioSuiteClientPolicy();
@@ -72,6 +80,7 @@ private:
     sptr<AudioSuiteStatusCallbackStubImpl> statusCallbackStub_ = nullptr;
     sptr<AudioSuiteDownloadCallbackStubImpl> downloadCallbackStub_ = nullptr;
     sptr<AudioSuiteServerDeathRecipient> deathRecipient_ = nullptr;
+    sptr<ISystemAbilityStatusChange> statusListener_ = nullptr;
 };
 
 }  // namespace AudioSuite
