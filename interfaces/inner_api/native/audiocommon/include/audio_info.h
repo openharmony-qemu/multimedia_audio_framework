@@ -2153,6 +2153,11 @@ enum RouterType {
      * @since 12
      */
     ROUTER_TYPE_USER_SELECT,
+    /**
+     * Negative priority router.
+     * @since 12
+     */
+    ROUTER_TYPE_NEGATIVE_PRIORITY,
 };
 
 enum RenderMode {

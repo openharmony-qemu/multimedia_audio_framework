@@ -99,6 +99,11 @@ void AudioDeviceManager::OnXmlParsingCompleted(
     if (publicDevices != devicePrivacyMaps_.end()) {
         publicDeviceList_ = publicDevices->second;
     }
+
+    auto negativeDevices = devicePrivacyMaps_.find(AudioDevicePrivacyType::TYPE_NEGATIVE);
+    if (negativeDevices != devicePrivacyMaps_.end()) {
+        negativeDeviceList_ = negativeDevices->second;
+    }
 }
 
 bool AudioDeviceManager::CheckNearlinkInHQRecordingSupport(
@@ -123,6 +128,8 @@ bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor>
         deviceList = privacyDeviceList_;
     } else if (privacyType == TYPE_PUBLIC) {
         deviceList = publicDeviceList_;
+    } else if (privacyType == TYPE_NEGATIVE) {
+        deviceList = negativeDeviceList_;
     } else {
         return false;
     }
@@ -480,10 +487,14 @@ void AudioDeviceManager::AddCommunicationDevices(const shared_ptr<AudioDeviceDes
         commRenderPrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, OUTPUT_DEVICE, VOICE, "communication render public device",
         commRenderPublicDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_NEGATIVE, OUTPUT_DEVICE, VOICE, "communication render negative device",
+        commRenderNegativeDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, VOICE, "communication capture privacy device",
         commCapturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, VOICE, "communication capture public device",
         commCapturePublicDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_NEGATIVE, INPUT_DEVICE, VOICE, "communication capture negative device",
+        commCaptureNegativeDevices_);
 }
 
 void AudioDeviceManager::AddMediaDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -492,10 +503,14 @@ void AudioDeviceManager::AddMediaDevices(const shared_ptr<AudioDeviceDescriptor>
         mediaRenderPrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, OUTPUT_DEVICE, MEDIA, "media render public device",
         mediaRenderPublicDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_NEGATIVE, OUTPUT_DEVICE, MEDIA, "media render negative device",
+        mediaRenderNegativeDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, MEDIA, "media capture privacy device",
         mediaCapturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, MEDIA, "media capture public device",
         mediaCapturePublicDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_NEGATIVE, INPUT_DEVICE, MEDIA, "media capture negative device",
+        mediaCaptureNegativeDevices_);
 }
 
 void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -504,6 +519,8 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
         capturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, ALL_USAGE, "capture public device",
         capturePublicDevices_);
+    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_NEGATIVE, INPUT_DEVICE, ALL_USAGE, "capture negative device",
+        captureNegativeDevices_);
     if (devDesc->isVrSupported_ == true) {
         AUDIO_INFO_LOG("Device supports recognition in");
         FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECOGNITION,
@@ -820,6 +837,71 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRecongnitionCap
     std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : reconCapturePrivacyDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
+        descs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+    }
+    return descs;
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderNegativeDevices()
+{
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    for (const auto &desc : commRenderNegativeDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
+        descs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+    }
+    return descs;
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCaptureNegativeDevices()
+{
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    for (const auto &desc : commCaptureNegativeDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
+        descs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+    }
+    return descs;
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderNegativeDevices()
+{
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    for (const auto &desc : mediaRenderNegativeDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
+        descs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+    }
+    return descs;
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCaptureNegativeDevices()
+{
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    for (const auto &desc : mediaCaptureNegativeDevices_) {
+        if (desc == nullptr) {
+            continue;
+        }
+        descs.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+    }
+    return descs;
+}
+
+vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCaptureNegativeDevices()
+{
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    for (const auto &desc : captureNegativeDevices_) {
         if (desc == nullptr) {
             continue;
         }
@@ -1257,22 +1339,27 @@ void AudioDeviceManager::RemoveCommunicationDevices(const AudioDeviceDescriptor 
 {
     RemoveMatchDeviceInArray(devDesc, "communication render privacy device", commRenderPrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "communication render public device", commRenderPublicDevices_);
+    RemoveMatchDeviceInArray(devDesc, "communication render negative device", commRenderNegativeDevices_);
     RemoveMatchDeviceInArray(devDesc, "communication capture privacy device", commCapturePrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "communication capture public device", commCapturePublicDevices_);
+    RemoveMatchDeviceInArray(devDesc, "communication capture negative device", commCaptureNegativeDevices_);
 }
 
 void AudioDeviceManager::RemoveMediaDevices(const AudioDeviceDescriptor &devDesc)
 {
     RemoveMatchDeviceInArray(devDesc, "media render privacy device", mediaRenderPrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "media render public device", mediaRenderPublicDevices_);
+    RemoveMatchDeviceInArray(devDesc, "media render negative device", mediaRenderNegativeDevices_);
     RemoveMatchDeviceInArray(devDesc, "media capture privacy device", mediaCapturePrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "media capture public device", mediaCapturePublicDevices_);
+    RemoveMatchDeviceInArray(devDesc, "media capture negative device", mediaCaptureNegativeDevices_);
 }
 
 void AudioDeviceManager::RemoveCaptureDevices(const AudioDeviceDescriptor &devDesc)
 {
     RemoveMatchDeviceInArray(devDesc, "capture privacy device", capturePrivacyDevices_);
     RemoveMatchDeviceInArray(devDesc, "capture public device", capturePublicDevices_);
+    RemoveMatchDeviceInArray(devDesc, "capture negative device", captureNegativeDevices_);
     RemoveMatchDeviceInArray(devDesc, "capture recognition privacy device", reconCapturePrivacyDevices_);
 }
 
