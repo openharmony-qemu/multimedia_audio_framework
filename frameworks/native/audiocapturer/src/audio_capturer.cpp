@@ -1650,7 +1650,8 @@ int32_t AudioCapturerPrivate::CheckForStartImpl(CapturerState state)
         audioStream_->FlushAudioStream();
     }
     if (capturerInfo_.loopBackEffectEnabled) {
-        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=true");
+        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER,
+            KaraokeParamType::KARAOKE_PARAM_CAPTURE_REVERB, 1);
     }
     return SUCCESS;
 }
@@ -1697,7 +1698,7 @@ int32_t AudioCapturerPrivate::StartImpl()
         AUDIO_ERR_LOG("Start audio stream failed");
         if (capturerInfo_.loopBackEffectEnabled) {
             AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER,
-                "Karaoke_capture_reverb=false");
+                KaraokeParamType::KARAOKE_PARAM_CAPTURE_REVERB, 0);
         }
         ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
         if (ret != 0) {
@@ -1779,7 +1780,8 @@ bool AudioCapturerPrivate::Pause() const
         SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()), RECORD_PAUSE_ILLEGAL_STATE,
             "isVoiceCallCapturer_ skip", true, state));
     if (capturerInfo_.loopBackEffectEnabled) {
-        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
+        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER,
+            KaraokeParamType::KARAOKE_PARAM_CAPTURE_REVERB, 0);
     }
     return audioStream_->PauseAudioStream();
 }
@@ -1811,7 +1813,8 @@ int32_t AudioCapturerPrivate::StopImpl() const
         SendAudioErrorEventAndProcessOther(static_cast<int32_t>(getuid()),
             RECORD_STOP_ILLEGAL_STATE, "isVoiceCallCapturer_ skip", true, state));
     if (capturerInfo_.loopBackEffectEnabled) {
-        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
+        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER,
+            KaraokeParamType::KARAOKE_PARAM_CAPTURE_REVERB, 0);
     }
 
     return audioStream_->StopAudioStream() ? SUCCESS : ERROR;
@@ -1857,7 +1860,8 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
     RemoveCapturerPolicyServiceDiedCallback(audioStream_);
     UnregisterAudioCapturerDebugManager(debugKey_);
     if (capturerInfo_.loopBackEffectEnabled) {
-        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
+        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER,
+            KaraokeParamType::KARAOKE_PARAM_CAPTURE_REVERB, 0);
     }
 
     ResetNoiseReductionModeOnRelease();

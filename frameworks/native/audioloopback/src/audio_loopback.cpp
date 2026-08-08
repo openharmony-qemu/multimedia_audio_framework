@@ -37,17 +37,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const int32_t VALUE_HUNDRED = 100;
-    const std::map<AudioLoopbackReverbPreset, std::string> audioLoopbackReverbPresetMap = {
-        {REVERB_PRESET_ORIGINAL, "disable"},
-        {REVERB_PRESET_KTV, "ktv"},
-        {REVERB_PRESET_THEATER, "theatre"},
-        {REVERB_PRESET_CONCERT, "concert"},
-    };
-    const std::map<AudioLoopbackEqualizerPreset, std::string> audioLoopbackEqualizerPresetMap = {
-        {EQUALIZER_PRESET_FLAT, "disable"},
-        {EQUALIZER_PRESET_FULL, "full"},
-        {EQUALIZER_PRESET_BRIGHT, "bright"},
-    };
     static const std::unordered_set<DeviceType> g_deviceMaybeSupportedSet = {
         DEVICE_TYPE_USB_HEADSET,
         DEVICE_TYPE_USB_ARM_HEADSET,
@@ -145,10 +134,10 @@ AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo
         appInfo_.appUid = static_cast<int32_t>(getuid());
     }
     mode_ = mode;
-    karaokeParams_["Karaoke_enable"] = "disable";
-    karaokeParams_["Karaoke_reverb_mode"] = "theatre";
-    karaokeParams_["Karaoke_eq_mode"] = "full";
-    karaokeParams_["Karaoke_volume"] = "50";
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_ENABLE] = 0;
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_REVERB_MODE] = REVERB_PRESET_THEATER;
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_EQ_MODE] = EQUALIZER_PRESET_FULL;
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_VOLUME] = 50;
     rendererOptions_ = GenerateRendererConfig();
     capturerOptions_ = GenerateCapturerConfig();
     InitStatus();
@@ -275,10 +264,11 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
         return ERR_INVALID_PARAM;
     }
     std::lock_guard<std::mutex> lock(loopbackMutex_);
-    karaokeParams_["Karaoke_volume"] = std::to_string(static_cast<int>(volume * VALUE_HUNDRED));
+    int32_t volInt = static_cast<int32_t>(volume * VALUE_HUNDRED);
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_VOLUME] = volInt;
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
-        std::string parameters = "Karaoke_volume=" + karaokeParams_["Karaoke_volume"];
-        CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), ERROR, "SetVolume failed");
+        CHECK_AND_RETURN_RET_LOG(
+            SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_VOLUME, volInt), ERROR, "SetVolume failed");
         AudioPolicyManager::GetInstance().SetLoopbackVolume(volume);
     }
     return SUCCESS;
@@ -294,13 +284,16 @@ bool AudioLoopbackPrivate::SetReverbPreset(AudioLoopbackReverbPreset preset)
 {
     Trace trace("AudioLoopbackPrivate::SetReverbPreset");
     std::lock_guard<std::mutex> lock(loopbackMutex_);
-    auto it = audioLoopbackReverbPresetMap.find(preset);
-    CHECK_AND_RETURN_RET_LOG(it != audioLoopbackReverbPresetMap.end(), false, "preset invalid");
+    int32_t ord = static_cast<int32_t>(preset);
+    CHECK_AND_RETURN_RET_LOG(
+        ord == REVERB_PRESET_ORIGINAL || ord == REVERB_PRESET_KTV ||
+            ord == REVERB_PRESET_THEATER || ord == REVERB_PRESET_CONCERT,
+        false, "preset invalid");
     currentReverbPreset_ = preset;
-    karaokeParams_["Karaoke_reverb_mode"] = it->second;
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_REVERB_MODE] = ord;
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
-        std::string parameters = "Karaoke_reverb_mode=" + karaokeParams_["Karaoke_reverb_mode"];
-        CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), false, "SetReverbPreset failed");
+        CHECK_AND_RETURN_RET_LOG(
+            SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_REVERB_MODE, ord), false, "SetReverbPreset failed");
     }
     return true;
 }
@@ -315,13 +308,15 @@ bool AudioLoopbackPrivate::SetEqualizerPreset(AudioLoopbackEqualizerPreset prese
 {
     Trace trace("AudioLoopbackPrivate::SetEqualizerPreset");
     std::lock_guard<std::mutex> lock(loopbackMutex_);
-    auto it = audioLoopbackEqualizerPresetMap.find(preset);
-    CHECK_AND_RETURN_RET_LOG(it != audioLoopbackEqualizerPresetMap.end(), false, "preset invalid");
+    int32_t ord = static_cast<int32_t>(preset);
+    CHECK_AND_RETURN_RET_LOG(
+        ord == EQUALIZER_PRESET_FLAT || ord == EQUALIZER_PRESET_FULL || ord == EQUALIZER_PRESET_BRIGHT,
+        false, "preset invalid");
     currentEqualizerPreset_ = preset;
-    karaokeParams_["Karaoke_eq_mode"] = it->second;
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_EQ_MODE] = ord;
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
-        std::string parameters = "Karaoke_eq_mode=" + karaokeParams_["Karaoke_eq_mode"];
-        CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), false, "SetEqualizerPreset failed");
+        CHECK_AND_RETURN_RET_LOG(
+            SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_EQ_MODE, ord), false, "SetEqualizerPreset failed");
     }
     return true;
 }
@@ -369,23 +364,9 @@ int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debug
     // Volume from karaokeParams_
     {
         std::lock_guard<std::mutex> lock(loopbackMutex_);
-        auto it = karaokeParams_.find("Karaoke_volume");
-        if (it != karaokeParams_.end() && !it->second.empty()) {
-            int32_t val = 0;
-            constexpr int32_t maxVolume = 100;
-            constexpr int32_t base = 10;
-            for (char c : it->second) {
-                if (c < '0' || c > '9') {
-                    val = 0;
-                    break;
-                }
-                val = val * base + (c - '0');
-                if (val > maxVolume) {
-                    val = maxVolume;
-                    break;
-                }
-            }
-            debugInfo.volume = val;
+        auto it = karaokeParams_.find(KaraokeParamType::KARAOKE_PARAM_VOLUME);
+        if (it != karaokeParams_.end()) {
+            debugInfo.volume = it->second;
         }
     }
 
@@ -396,9 +377,9 @@ int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debug
     return SUCCESS;
 }
 
-bool AudioLoopbackPrivate::SetKaraokeParameters(const std::string &parameters)
+bool AudioLoopbackPrivate::SetKaraokeParameters(KaraokeParamType paramType, int32_t value)
 {
-    bool ret = AudioPolicyManager::GetInstance().SetKaraokeParameters(activeOutputDevice_, parameters);
+    bool ret = AudioPolicyManager::GetInstance().SetKaraokeParameters(activeOutputDevice_, paramType, value);
     if (!ret) {
         HILOG_COMM_INFO("[SetKaraokeParameters]failed");
     }
@@ -496,10 +477,10 @@ void AudioLoopbackPrivate::ReportUsingDuration(uint64_t usingDuration)
 
 void AudioLoopbackPrivate::DisableLoopback()
 {
-    if (karaokeParams_["Karaoke_enable"] == "enable") {
-        karaokeParams_["Karaoke_enable"] = "disable";
-        std::string parameters = "Karaoke_enable=" + karaokeParams_["Karaoke_enable"];
-        CHECK_AND_RETURN_LOG(SetKaraokeParameters(parameters), "DisableLoopback failed");
+    if (karaokeParams_[KaraokeParamType::KARAOKE_PARAM_ENABLE] == 1) {
+        karaokeParams_[KaraokeParamType::KARAOKE_PARAM_ENABLE] = 0;
+        CHECK_AND_RETURN_LOG(
+            SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_ENABLE, 0), "DisableLoopback failed");
     }
 
     CHECK_AND_RETURN(usingDuration_ != 0);
@@ -607,13 +588,10 @@ AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
 bool AudioLoopbackPrivate::EnableLoopback()
 {
     Trace trace("AudioLoopbackPrivate::EnableLoopback");
-    karaokeParams_["Karaoke_enable"] = "enable";
-    std::string parameters = "";
+    karaokeParams_[KaraokeParamType::KARAOKE_PARAM_ENABLE] = 1;
     for (auto &param : karaokeParams_) {
-        parameters = param.first + "=" + param.second + ";";
-        auto ret = SetKaraokeParameters(parameters);
-        CHECK_AND_RETURN_RET_LOG(ret, false,
-            "EnableLoopback failed");
+        auto ret = SetKaraokeParameters(param.first, param.second);
+        CHECK_AND_RETURN_RET_LOG(ret, false, "EnableLoopback failed");
     }
 
     auto timeNow = std::chrono::system_clock::now();

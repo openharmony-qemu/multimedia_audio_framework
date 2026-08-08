@@ -735,7 +735,7 @@ public:
     AudioDevicePair GetLoopbackPreferredDevicePair();
     bool IsSupportInnerCaptureOffload();
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
-    bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
+    bool SetKaraokeParameters(DeviceType deviceType, KaraokeParamType paramType, int32_t value);
     bool SetLoopbackVolume(float volume);
     float GetLoopbackVolume();
     int32_t CreateLoopback(AudioLoopbackMode mode, LoopbackType type,

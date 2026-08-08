@@ -402,7 +402,7 @@ public:
     int32_t GetLoopbackPreferredDevicePair(std::shared_ptr<AudioDeviceDescriptor> &inputDevice,
         std::shared_ptr<AudioDeviceDescriptor> &outputDevice, int32_t &ret) override;
     int32_t IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret) override;
-    int32_t SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret) override;
+    int32_t SetKaraokeParameters(int32_t deviceType, int32_t paramType, int32_t value, bool &ret) override;
     int32_t SetLoopbackVolume(float volume, bool &ret) override;
     int32_t GetLoopbackVolume(float &volume, bool &ret) override;
 

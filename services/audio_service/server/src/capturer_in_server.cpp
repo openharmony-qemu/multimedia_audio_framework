@@ -121,7 +121,8 @@ CapturerInServer::~CapturerInServer()
     }
     TurnOffRemoteMicIndicator();
     if (processConfig_.capturerInfo.loopBackEffectEnabled) {
-        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "Karaoke_capture_reverb=false");
+        AudioPolicyManager::GetInstance().SetKaraokeParameters(DEVICE_TYPE_SPEAKER,
+            KaraokeParamType::KARAOKE_PARAM_CAPTURE_REVERB, 0);
     }
 }
 

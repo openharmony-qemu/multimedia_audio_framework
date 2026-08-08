@@ -5970,18 +5970,13 @@ int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, b
 }
 
 
-int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret)
+int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, int32_t paramType, int32_t value, bool &ret)
 {
-    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(static_cast<DeviceType>(deviceType), parameters);
-    bool enable = false;
-    if (parameters.starts_with("Karaoke_enable=enable")) {
-        enable = true;
-    } else if (parameters.starts_with("Karaoke_enable=disable")) {
-        enable = false;
-    } else {
-        return SUCCESS;
+    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(
+        static_cast<DeviceType>(deviceType), static_cast<KaraokeParamType>(paramType), value);
+    if (static_cast<KaraokeParamType>(paramType) == KaraokeParamType::KARAOKE_PARAM_ENABLE) {
+        (void)audioVolumeManager_.StartNearlinkKaraokeTransition(value != 0);
     }
-    (void)audioVolumeManager_.StartNearlinkKaraokeTransition(enable);
     return SUCCESS;
 }
 

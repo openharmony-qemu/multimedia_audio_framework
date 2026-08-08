@@ -3525,12 +3525,13 @@ bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return isSupport;
 }
 
-bool AudioPolicyManager::SetKaraokeParameters(const DeviceType deviceType, const std::string &parameters)
+bool AudioPolicyManager::SetKaraokeParameters(const DeviceType deviceType,
+    KaraokeParamType paramType, int32_t value)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
-    gsp->SetKaraokeParameters(deviceType, parameters, ret);
+    gsp->SetKaraokeParameters(deviceType, static_cast<int32_t>(paramType), value, ret);
     return ret;
 }
 
