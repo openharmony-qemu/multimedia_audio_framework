@@ -236,7 +236,7 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
                 int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
                 CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
                 activatedList.push_back(streamDesc->newDeviceDescs_[0]->deviceId_);
-            }
+        }
 
         // update current output device
         if ((Util::IsEnhancedRoutingSupported() || needUpdateActiveDevice) &&
