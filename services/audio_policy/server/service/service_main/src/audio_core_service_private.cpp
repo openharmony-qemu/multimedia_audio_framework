@@ -223,14 +223,20 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     int32_t uid = SYSTEM_UID;
+    std::vector<int32_t> activatedList;
     for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
         // if streamDesc select bluetooth or headset, active it.
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
             continue;
         }
 
-        int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
-        CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
+        if (streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+            streamDesc->newDeviceDescs_[0] != nullptr && std::count(activatedList.begin(),
+            activatedList.end(), streamDesc->newDeviceDescs_[0]->deviceId_) <= 0) {
+                int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
+                CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
+                activatedList.push_back(streamDesc->newDeviceDescs_[0]->deviceId_);
+            }
 
         // update current output device
         if ((Util::IsEnhancedRoutingSupported() || needUpdateActiveDevice) &&
@@ -3360,7 +3366,8 @@ void AudioCoreService::UpdateStreamDevicesForStart(
 
     CHECK_AND_RETURN_LOG(!devices.empty(), "devices is empty");
     pipeManager_->UpdateNewDeviceDescWithCheck(streamDesc, devices);
-    if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+    if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+        streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         !streamDesc->oldDeviceDescs_.empty() && streamDesc->oldDeviceDescs_.front() &&
         streamDesc->oldDeviceDescs_.front()->deviceType_ != devices[0]->deviceType_) {
         WriteScoStateFaultEvent(devices[0]);
