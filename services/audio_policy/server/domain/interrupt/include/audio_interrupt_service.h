@@ -215,6 +215,7 @@ private:
         const AudioInterrupt &audioInterrupt);
     void GameRecogSetParam(ClientType clientType, SourceType sourceType, bool switchOn);
     void VerifyFocusPermission(AudioInterrupt &audioInterrupt);
+    AudioScene MapToTargetAudioScene(const AudioScene audioScene) const;
 
     // Inner class for death handler
     class AudioInterruptDeathRecipient : public IRemoteObject::DeathRecipient {
