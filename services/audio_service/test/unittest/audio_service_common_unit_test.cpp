@@ -1426,7 +1426,6 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_006, TestSize.Le
     CaptureFilterOptions filterOptions = {{STREAM_USAGE_MUSIC}, FilterMode::INCLUDE, {1}, FilterMode::EXCLUDE};
     filterOptions.capturePrivatePrivacyStreams = true;
     AudioPlaybackCaptureConfig config = {filterOptions, false};
-    config.isModernInnerCapturer = true;
 
     EXPECT_TRUE(config.Marshalling(parcel));
     std::unique_ptr<AudioPlaybackCaptureConfig> unmarshalled(AudioPlaybackCaptureConfig::Unmarshalling(parcel));
