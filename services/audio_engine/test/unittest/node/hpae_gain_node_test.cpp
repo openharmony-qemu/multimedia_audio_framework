@@ -810,4 +810,73 @@ HWTEST_F(HpaeGainNodeTest, EnsureVolumeAvailable_RetryFails_StillNull, TestSize.
     EXPECT_EQ(hpaeGainNode->streamVolume_, nullptr);
     EXPECT_EQ(hpaeGainNode->pipeVolume_, nullptr);
 }
+
+// --- Tests for ResetFadeState (clear stale fade state when a node is reused/reconnected) ---
+
+HWTEST_F(HpaeGainNodeTest, ResetFadeState_ClearsStaleDoneFadeout, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    // Simulate a node left dormant with stale fade state from a previous lifecycle
+    // (e.g. DONE_FADEOUT left by a Pause before the node was reused on a device switch).
+    hpaeGainNode->fadeOutState_ = FadeOutState::DONE_FADEOUT;
+    hpaeGainNode->collFadeOutState_ = FadeOutState::DONE_FADEOUT;
+    hpaeGainNode->fadeInState_ = false;
+    hpaeGainNode->collFadeInState_ = true;
+    hpaeGainNode->fadeProcessedBytes_ = 100;
+    hpaeGainNode->totalFadeBytes_ = 7680;
+    hpaeGainNode->collFadeProcessedBytes_ = 200;
+    hpaeGainNode->collTotalFadeBytes_ = 7680;
+
+    hpaeGainNode->ResetFadeState();
+
+    EXPECT_EQ(hpaeGainNode->fadeOutState_, FadeOutState::NO_FADEOUT);
+    EXPECT_EQ(hpaeGainNode->collFadeOutState_, FadeOutState::NO_FADEOUT);
+    EXPECT_EQ(hpaeGainNode->fadeInState_, true);
+    EXPECT_EQ(hpaeGainNode->collFadeInState_, false);
+    EXPECT_EQ(hpaeGainNode->fadeProcessedBytes_, 0);
+    EXPECT_EQ(hpaeGainNode->totalFadeBytes_, 0);
+    EXPECT_EQ(hpaeGainNode->collFadeProcessedBytes_, 0);
+    EXPECT_EQ(hpaeGainNode->collTotalFadeBytes_, 0);
+}
+
+HWTEST_F(HpaeGainNodeTest, ResetFadeState_PreventsSilenceOnReusedNode, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    nodeInfo.deviceClass = UT_DEVICE_CLASS_PRIMARY;
+    nodeInfo.fadeType = DEFAULT_FADE;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+
+    PcmBufferInfo bufInfo(STEREO, DEFAULT_FRAME_LEN, SAMPLE_RATE_48000);
+
+    // Stale DONE_FADEOUT silences every frame via SignalProcess (the bug).
+    hpaeGainNode->fadeOutState_ = FadeOutState::DONE_FADEOUT;
+    HpaePcmBuffer inputBuf(bufInfo);
+    FillBuffer(inputBuf, UT_UNIT_GAIN);
+    std::vector<HpaePcmBuffer *> inputs = {&inputBuf};
+    hpaeGainNode->SignalProcess(inputs);
+    EXPECT_EQ(inputBuf.GetPcmDataBuffer()[DEFAULT_FRAME_LEN * STEREO - 1], 0.0f); // silenced
+
+    // After ResetFadeState the reused node no longer silences data.
+    hpaeGainNode->ResetFadeState();
+    HpaePcmBuffer inputBuf2(bufInfo);
+    FillBuffer(inputBuf2, UT_UNIT_GAIN);
+    std::vector<HpaePcmBuffer *> inputs2 = {&inputBuf2};
+    hpaeGainNode->SignalProcess(inputs2);
+    EXPECT_NE(inputBuf2.GetPcmDataBuffer()[DEFAULT_FRAME_LEN * STEREO - 1], 0.0f); // not silenced
+}
 }  // namespace
