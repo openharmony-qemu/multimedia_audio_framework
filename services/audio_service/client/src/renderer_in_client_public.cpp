@@ -1260,7 +1260,8 @@ int64_t RendererInClientInner::GetFramesRead()
     return -1;
 }
 
-void RendererInClientInner::SetInnerCapturerState(bool isInnerCapturer)
+void RendererInClientInner::SetInnerCapturerState(bool isInnerCapturer,
+    int32_t playbackCaptureMode, bool isModernInnerCapturer)
 {
     AUDIO_ERR_LOG("SetInnerCapturerState is not supported");
     return;

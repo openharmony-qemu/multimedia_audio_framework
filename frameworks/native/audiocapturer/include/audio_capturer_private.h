@@ -171,6 +171,9 @@ public:
         audioStreamParams.micInEncoding = params.audioMicInEncoding;
         audioStreamParams.micInChannelLayout = params.micInChannelLayout;
 
+        audioStreamParams.playbackCaptureMode = params.playbackCaptureMode;
+        audioStreamParams.isModernInnerCapturer = params.isModernInnerCapturer;
+
         return audioStreamParams;
     }
 

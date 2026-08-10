@@ -2245,12 +2245,11 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config,
     if (config.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         config.isInnerCapturer = true;
         config.innerCapMode = LEGACY_INNER_CAP;
-        config.isModernInnerCapturer = filterConfig.isModernInnerCapturer;
         if (PermissionUtil::VerifyPermission(CAPTURE_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
             AUDIO_INFO_LOG("CAPTURE_PLAYBACK permission granted");
             config.innerCapMode = MODERN_INNER_CAP;
         } else if (config.callerUid == MEDIA_SERVICE_UID || config.callerUid == VASSISTANT_UID ||
-            filterConfig.isModernInnerCapturer) {
+            config.isModernInnerCapturer) {
             config.innerCapMode = MODERN_INNER_CAP;
         } else if (GetHapBuildApiVersion(config.callerUid) >= MODERN_INNER_API_VERSION) { // check build api-version
             config.innerCapMode = LEGACY_MUTE_CAP;
@@ -2623,7 +2622,7 @@ bool AudioServer::HandleCheckCaptureLimit(AudioProcessConfig &resetConfig,
     const AudioPlaybackCaptureConfig &filterConfig)
 {
     if (resetConfig.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        if (filterConfig.filterOptions.playbackCaptureMode == PLAYBACK_CAPTURE_MODE_ONLY_VOIP) {
+        if (resetConfig.playbackCaptureMode == PLAYBACK_CAPTURE_MODE_ONLY_VOIP) {
             CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), false,
                 "Check permission failed, no system permission");
             CHECK_AND_RETURN_RET_LOG(IsOnlyVoipPlaybackCaptureUsages(filterConfig.filterOptions.usages), false,

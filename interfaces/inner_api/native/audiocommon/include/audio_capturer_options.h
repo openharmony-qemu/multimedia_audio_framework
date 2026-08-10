@@ -48,6 +48,7 @@ struct AudioCapturerOptions {
     AudioDeviceDescriptor preferredInputDevice;
     AudioStreamInfo micInStreamInfo;
     AudioStreamInfo ecStreamInfo;
+    StaticAudioPlaybackCaptureConfig staticPlaybackCaptureConfig;
     bool mixWithWakeUp = false;
 };
 }  //namespace AudioStandard

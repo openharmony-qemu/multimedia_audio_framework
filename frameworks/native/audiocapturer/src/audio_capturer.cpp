@@ -656,6 +656,8 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         capturerOptions.streamInfo.channels;
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
+    params.playbackCaptureMode = capturerOptions.staticPlaybackCaptureConfig.playbackCaptureMode;
+    params.isModernInnerCapturer = capturerOptions.staticPlaybackCaptureConfig.isModernInnerCapturer;
     FillCreateCapturerParams(params, capturerOptions);
     auto capturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
 
@@ -1183,7 +1185,8 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
     audioStream_->SetClientDeviceId(appInfo_.deviceId);
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        audioStream_->SetInnerCapturerState(true);
+        audioStream_->SetInnerCapturerState(true, audioStreamParams.playbackCaptureMode,
+            audioStreamParams.isModernInnerCapturer);
     } else if (capturerInfo_.sourceType == SourceType::SOURCE_TYPE_WAKEUP) {
         audioStream_->SetWakeupCapturerState(true);
     }

@@ -131,7 +131,8 @@ public:
     int64_t GetFramesRead() override;
     int32_t SetSourceDuration(int64_t duration) override;
 
-    void SetInnerCapturerState(bool isInnerCapturer) override;
+    void SetInnerCapturerState(bool isInnerCapturer,
+        int32_t playbackCaptureMode, bool isModernInnerCapturer) override;
     void SetWakeupCapturerState(bool isWakeupCapturer) override;
     void SetCapturerSource(int capturerSource) override;
     void SetPrivacyType(AudioPrivacyType privacyType) override;

@@ -701,7 +701,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_017, TestSize.Level1
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
 
     bool isInnerCapturer = true;
-    ptrRendererInClientInner->SetInnerCapturerState(isInnerCapturer);
+    ptrRendererInClientInner->SetInnerCapturerState(isInnerCapturer, 0, false);
 }
 
 /**
