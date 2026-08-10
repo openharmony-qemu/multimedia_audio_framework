@@ -143,11 +143,6 @@ void NotifySilentStateAction::Exec()
             AudioVolume::GetInstance()->SetStreamVolume(sessionId_, volume_);
         }
     }
-    // Guarantee offload volume is sent at least once
-    auto renderer = renderer_.lock();
-    if (renderer != nullptr) {
-        renderer->OffloadSetVolume();
-    }
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -2607,13 +2602,6 @@ int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, 
     return stream_->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
 }
 
-void RendererInServer::OffloadSetVolume()
-{
-    if (offloadEnable_) {
-        OffloadSetVolumeInner();
-    }
-}
-
 int32_t RendererInServer::OffloadSetVolumeInner()
 {
     return stream_->OffloadSetVolume();
@@ -2658,8 +2646,7 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_.store(on);
     bool isMuted = (isMuted_ || on || muteFlag_);
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
-        std::weak_ptr<RendererInServer>(shared_from_this()));
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted);
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
 
@@ -2707,8 +2694,7 @@ int32_t RendererInServer::SetClientVolume()
 
     auto action = std::make_shared<NotifySilentStateAction>(streamIndex_,
         std::abs(clientVolume - 0.0f) <= std::numeric_limits<float>::epsilon() ||
-        isMuted_ || silentModeAndMixWithOthers_.load() || muteFlag_, clientVolume,
-        std::weak_ptr<RendererInServer>(shared_from_this()));
+        isMuted_ || silentModeAndMixWithOthers_.load() || muteFlag_, clientVolume);
     ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
 
@@ -2771,8 +2757,7 @@ int32_t RendererInServer::SetMute(bool isMute)
     isMuted_ = isMute;
     AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
     bool isMuted = (isMute || silentModeAndMixWithOthers_ || muteFlag_);
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
-        std::weak_ptr<RendererInServer>(shared_from_this()));
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted);
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
 
@@ -3007,8 +2992,7 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
     AudioVolume::GetInstance()->SetNonInterruptMute(streamIndex_, muteFlag);
 
     bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag);
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
-        std::weak_ptr<RendererInServer>(shared_from_this()));
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted);
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
     {

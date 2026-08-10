@@ -60,16 +60,14 @@ private:
 class NotifySilentStateAction : public AsyncActionHandler::AsyncAction {
 public:
     // For SetClientVolume: carry actual volume value
-    NotifySilentStateAction(uint32_t sessionId, bool isInSilentState, float volume,
-        std::weak_ptr<RendererInServer> renderer)
+    NotifySilentStateAction(uint32_t sessionId, bool isInSilentState, float volume)
         : sessionId_(sessionId), isInSilentState_(isInSilentState),
-          volume_(volume), isMuteUpdate_(false), renderer_(renderer) {}
+          volume_(volume), isMuteUpdate_(false) {}
 
     // For SetSilentModeAndMixWithOthers: mute-only update, no volume value needed
-    NotifySilentStateAction(uint32_t sessionId, bool isInSilentState,
-        std::weak_ptr<RendererInServer> renderer)
+    NotifySilentStateAction(uint32_t sessionId, bool isInSilentState)
         : sessionId_(sessionId), isInSilentState_(isInSilentState),
-          volume_(0.0f), isMuteUpdate_(true), renderer_(renderer) {}
+          volume_(0.0f), isMuteUpdate_(true) {}
 
     void Exec() override;
 private:
@@ -77,7 +75,6 @@ private:
     bool isInSilentState_;
     float volume_;
     bool isMuteUpdate_;
-    std::weak_ptr<RendererInServer> renderer_;
 };
 
 class StreamCallbacks : public IStatusCallback, public IWriteCallback {
@@ -227,7 +224,6 @@ public:
     bool IsWriteFirst() const noexcept;
     int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount);
     void ReportExceptionForOffload();
-    void OffloadSetVolume();
 public:
     AudioProcessConfig processConfig_;
 private:
