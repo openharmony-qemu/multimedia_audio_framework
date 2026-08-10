@@ -151,7 +151,6 @@ public:
     static bool IsCapturerChannelValid(uint8_t channel);
     static bool IsEncodingTypeValid(uint8_t encodingType);
     static bool IsSamplingRateValid(uint32_t samplingRate);
-    static bool IsCustomSampleRateValid(uint32_t customSampleRate);
     static bool IsRendererChannelLayoutValid(uint64_t channelLayout);
     static bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
     static bool IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t channelLayout,

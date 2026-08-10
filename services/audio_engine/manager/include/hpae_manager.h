@@ -232,7 +232,7 @@ public:
     void SetSinkMuteForSwitchDevice(const std::string &deviceClass, bool mute) override;
 
 private:
-    int32_t BindAndCreateAiss(uint32_t sessionId);
+    int32_t BindAndCreateAiss(uint32_t sessionId, bool aissSwitchEnabled = false);
     void TryBindSessionEffectOnStart(uint32_t sessionId);
     uint32_t FindRunningMusicSession(int32_t uid);
     int32_t EnableAissByUid(int32_t uid);

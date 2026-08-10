@@ -129,7 +129,8 @@ public:
 
     // Session Effect (async — dispatches to SignalProcessThread, safe to call from any thread)
     virtual void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
-        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) {}
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+        bool aissSwitchEnabled = false) {}
     virtual void PostDestroySessionEffect(uint32_t sessionId) {}
     virtual void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) {}
 
@@ -138,7 +139,8 @@ protected:
 
     // Session Effect (synchronous — must be called from SignalProcessThread)
     virtual int32_t CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
-        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) { return 0; }
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+        bool aissSwitchEnabled = false) { return 0; }
     virtual int32_t DestroySessionEffect(uint32_t sessionId) { return 0; }
     virtual bool HasSessionEffect(uint32_t sessionId) const { return false; }
     virtual bool IsValidSession(uint32_t sessionId) const { return false; }

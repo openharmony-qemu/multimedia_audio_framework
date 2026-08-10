@@ -75,8 +75,19 @@ public:
 
     // Session Effect management
     int32_t CreateSessionEffectNode(uint32_t sessionId, const std::string &effectName,
-        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config);
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+        bool aissSwitchEnabled = false);
+    // Synchronous immediate destroy (Begin+Finalize in one call; no smooth-close opportunity).
     int32_t DestroySessionEffectNode(uint32_t sessionId, uint64_t &outLatency);
+    // Two-phase smooth close: Begin enters STOPPING (node stays in map) and returns the combined
+    // SE+upstream-converter latency + a weak identity handle; Finalize (next queue cycle) does the
+    // identity-checked disconnect+drop+erase. pendingInstance drives same-instance handoff.
+    int32_t BeginDestroySessionEffectNode(uint32_t sessionId, uint64_t &outLatency,
+        std::weak_ptr<HpaeSessionEffectNode> &outWeakNode);
+    bool FinalizeDestroySessionEffectNode(uint32_t sessionId,
+        const std::weak_ptr<HpaeSessionEffectNode> &closingNode,
+        std::shared_ptr<IEffectInstance> pendingInstance);
+    bool IsSessionEffectNodeStopping(uint32_t sessionId) const;
     bool HasSessionEffectNode(uint32_t sessionId) const;
     int32_t SessionEffectStart(uint32_t sessionId);
     int32_t SessionEffectFlush(uint32_t sessionId);

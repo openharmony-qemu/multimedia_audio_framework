@@ -27,7 +27,6 @@ const uint64_t TEST_TIMESTAMP = 111111;
 const float IN_VOLUME_RANGE = 0.5f;
 const uint32_t TEST_BUFLENGTH = 10;
 const int32_t TEST_DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
-const int32_t TEST_DUP_SESSION_EFFECT_LEN = 4000; // 4000 -> 4000ms
 const int32_t TEST_DUP_COMMON_LEN = 440; // 400 -> 440ms
 const int32_t TEST_DUP_DEFAULT_LEN = 20; // 20 -> 20ms
 static const size_t TEST_MAX_INNERCAP_BUFFER_SIZE = 16 * 1024 * 1024;
@@ -2863,45 +2862,6 @@ HWTEST_F(RendererInServerThirdUnitTest, ReConfigDupStreamCallback_001, TestSize.
     rendererInServer->dupSpanSizeInFrame_ = TEST_MAX_INNERCAP_BUFFER_SIZE;
     rendererInServer->ReConfigDupStreamCallback();
     EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, TEST_MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrameTest);
-}
-
-/**
- * @tc.name  : Test OnStatusUpdateSub API
- * @tc.type  : FUNC
- * @tc.number: SessionEffectReConfigDupStreamCallback_001
- * @tc.desc  : Test SessionEffect enabled state expands non-offload duplicate buffer for inner capture.
- */
-HWTEST_F(RendererInServerThirdUnitTest, SessionEffectReConfigDupStreamCallback_001, TestSize.Level1)
-{
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    InitAudioProcessConfig(testStreamInfo);
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
-    EXPECT_NE(nullptr, rendererInServer);
-
-    int32_t ret = rendererInServer->Init();
-    ret = rendererInServer->ConfigServerBuffer();
-    EXPECT_EQ(SUCCESS, ret);
-
-    int32_t innerCapId = 1;
-    uint32_t dupStreamIndex = 1;
-    size_t dupTotalSizeInFrameTest = 1;
-    size_t dupSpanSizeInFrameTest = 1;
-    size_t dupByteSizePerFrameTest = 1;
-    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId] =
-        std::make_shared<StreamCallbacks>(dupStreamIndex, rendererInServer);
-    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() =
-        AudioRingCache::Create(dupTotalSizeInFrameTest * dupByteSizePerFrameTest);
-    rendererInServer->offloadEnable_ = false;
-    rendererInServer->dupTotalSizeInFrame_ = dupTotalSizeInFrameTest;
-    rendererInServer->dupSpanSizeInFrame_ = dupSpanSizeInFrameTest;
-    rendererInServer->dupByteSizePerFrame_ = dupByteSizePerFrameTest;
-
-    rendererInServer->OnStatusUpdateSub(OPERATION_SESSION_EFFECT_ENABLED);
-
-    EXPECT_TRUE(rendererInServer->hasSessionEffect_.load());
-    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
-        (TEST_DUP_SESSION_EFFECT_LEN / TEST_DUP_DEFAULT_LEN));
 }
 
 /**

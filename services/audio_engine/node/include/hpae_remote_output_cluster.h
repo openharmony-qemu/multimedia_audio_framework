@@ -51,6 +51,7 @@ public:
     const char *GetFrameData(void) override;
     StreamManagerState GetState(void) override;
     bool IsProcessClusterConnected(HpaeProcessorType sceneType) override;
+    void SetUpmixCoef(HpaeProcessorType sceneType, float coef) override;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) override;
     void UpdateStreamInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> preNode) override;
     uint64_t GetLatency(HpaeProcessorType sceneType) override;

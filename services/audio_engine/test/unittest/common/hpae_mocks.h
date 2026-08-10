@@ -133,6 +133,7 @@ public:
     MOCK_METHOD(void, OnRequestLatency, (uint32_t, uint64_t &), (override));
     MOCK_METHOD(void, OnRewindAndFlush, (uint64_t, uint64_t), (override));
     MOCK_METHOD(void, OnRewindBuffer, (uint32_t, uint64_t), (override));
+    MOCK_METHOD(void, OnSessionEffectPreheatStateChanged, (uint32_t, bool), (override));
     MOCK_METHOD(void, OnNotifyQueue, (), (override));
     MOCK_METHOD(void, OnDisConnectProcessCluster, (HpaeProcessorType), (override));
     MOCK_METHOD(void, OnNotifyDfxNodeInfo, (bool, uint32_t, uint32_t), (override));

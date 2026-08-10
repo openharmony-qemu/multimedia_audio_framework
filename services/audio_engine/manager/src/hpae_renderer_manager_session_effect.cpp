@@ -26,8 +26,34 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+bool HpaeRendererManager::TryDeferSessionEffectCreate(
+    uint32_t sessionId, const std::string &effectName, std::shared_ptr<IEffectInstance> instance,
+    const AudioEffectConfig &config, bool aissSwitchEnabled)
+{
+    // The physical SE node is still finalizing its deferred close (STOPPING). Defer this Create
+    // until that node is gone: record a cancelable/ownership token and requeue. Do NOT write
+    // attach state, create a node, or send ENABLE here.
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
+    auto processCluster = SafeGetMap(sceneClusterMap_, sceneType);
+    CHECK_AND_RETURN_RET(processCluster != nullptr && processCluster->IsSessionEffectNodeStopping(sessionId), false);
+    uint64_t generation = SetPendingSessionEffectCreate(sessionId, instance);
+    Request retry = [this, sessionId, effectName, instance, config, generation, aissSwitchEnabled]() {
+        // superseded by a newer Create, or cancelled by Destroy/DestroyStream/Move/Reload
+        CHECK_AND_RETURN(IsPendingSessionEffectCreate(sessionId, generation, instance));
+        CancelPendingSessionEffectCreate(sessionId);
+        CreateSessionEffect(sessionId, effectName, instance, config, aissSwitchEnabled);
+    };
+    hpaeNoLockQueue_.PushRequest(std::move(retry));
+    if (hpaeSignalProcessThread_ != nullptr) {
+        hpaeSignalProcessThread_->Notify();
+    }
+    AUDIO_INFO_LOG("CreateSessionEffect: session %{public}u deferred behind STOPPING node", sessionId);
+    return true;
+}
+
 int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
-    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+    bool aissSwitchEnabled)
 {
     auto it = sessionNodeMap_.find(sessionId);
     if (it == sessionNodeMap_.end()) {
@@ -43,7 +69,10 @@ int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::
         AUDIO_WARNING_LOG("CreateSessionEffect: cluster not found for sceneType %{public}d", sceneType);
         return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
     }
-    int32_t ret = processCluster->CreateSessionEffectNode(sessionId, effectName, instance, config);
+    CHECK_AND_RETURN_RET(!TryDeferSessionEffectCreate(sessionId, effectName, instance, config, aissSwitchEnabled),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    int32_t ret = processCluster->CreateSessionEffectNode(sessionId, effectName, instance, config,
+        aissSwitchEnabled);
     if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
         AUDIO_WARNING_LOG("CreateSessionEffect failed for session %{public}u, ret %{public}d", sessionId, ret);
     } else {
@@ -64,12 +93,25 @@ int32_t HpaeRendererManager::CreateSessionEffect(uint32_t sessionId, const std::
         AUDIO_INFO_LOG("[SE::RendererManager] CreateSessionEffect sessionId=%{public}u", sessionId);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, it->second.state,
             OPERATION_SESSION_EFFECT_ENABLED);
+        OnSessionEffectMaterialized(sessionId);
     }
     return ret;
 }
 
+void HpaeRendererManager::OnSessionEffectPreheatStateChanged(uint32_t sessionId, bool active)
+{
+    auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_LOG(sinkInputNode != nullptr,
+        "OnSessionEffectPreheatStateChanged: sinkInputNode not found, session=%{public}u", sessionId);
+    sinkInputNode->SetSessionEffectPreheatActive(active);
+}
+
 int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
 {
+    // Route via GetProcessorType to match the key used at override-set time
+    // (OnSessionEffectMaterialized); cluster lookup below uses GetConnectedProcessorType
+    // for a different purpose (find cluster to destroy). Both are intentional.
+    auto route = BuildChannelOverrideRoute(sessionId);
     auto it = sessionNodeMap_.find(sessionId);
     if (it == sessionNodeMap_.end()) {
         AUDIO_WARNING_LOG("DestroySessionEffect: session %{public}u not found", sessionId);
@@ -82,16 +124,28 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
         return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
     }
 
+    // STOPPING: a prior BeginClose is still deferred; skip re-Begin (would double-rewind /
+    // re-arm crossfade / queue a duplicate Finalize) — cancel pending recreate, mirror derived managers.
+    if (processCluster->IsSessionEffectNodeStopping(sessionId)) {
+        CancelPendingSessionEffectCreate(sessionId);
+        AUDIO_INFO_LOG("DestroySessionEffect: session %{public}u already STOPPING, skip re-Begin",
+            sessionId);
+        return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
+    }
+
+    // BeginClose: enter STOPPING (node stays in the cluster map), get combined SE+upstream-converter
+    // latency + a weak identity handle for Finalize.
     uint64_t latency = 0;
-    int32_t ret = processCluster->DestroySessionEffectNode(sessionId, latency);
+    std::weak_ptr<HpaeSessionEffectNode> weakNode;
+    int32_t ret = processCluster->BeginDestroySessionEffectNode(sessionId, latency, weakNode);
     if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
-        AUDIO_WARNING_LOG("DestroySessionEffect failed for session %{public}u, ret %{public}d", sessionId, ret);
+        // SE may still be processing; preserve channel override to keep the chain at 2ch.
+        AUDIO_WARNING_LOG("DestroySessionEffect: BeginClose failed ret=%{public}d; channel override preserved"
+            " sessionId=%{public}u", ret, sessionId);
         return ret;
     }
 
-    // RewindHistoryBuffer: return unconsumed data to SinkInputNode
-    // Phase 2: latency=0, RewindBuffer(0) is no-op
-    // Phase 3: latency>0, RewindBuffer returns data to historyBuffer
+    // Rewind upstream history by the combined latency; clear the logical binding now.
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
     if (sinkInputNode != nullptr) {
         if (latency > 0) {
@@ -100,14 +154,70 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
         sinkInputNode->ClearSessionEffectAttachState();
         AUDIO_INFO_LOG("[SE::RendererManager] AttachState cleared sessionId=%{public}u", sessionId);
     }
-    AUDIO_INFO_LOG("[SE::RendererManager] DestroySessionEffect sessionId=%{public}u", sessionId);
-    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, it->second.state,
-        OPERATION_SESSION_EFFECT_DISABLED);
+    // FinalizeClose on the next queue batch (DoProcess stack already unwound): identity-checked
+    // disconnect+drop+erase, then clear channel override + DISABLED. Override stays during the
+    // STOPPING window so the chain remains 2ch while the SE node is still in line.
+    HpaeSessionState state = it->second.state;
+    Request finalize = [this, sessionId, route, state, weakNode]() {
+        FinalizeSessionEffectClose(sessionId, route, state, weakNode);
+    };
+    hpaeNoLockQueue_.PushRequest(std::move(finalize));
+    if (hpaeSignalProcessThread_ != nullptr) {
+        hpaeSignalProcessThread_->Notify();
+    }
+    AUDIO_INFO_LOG("[SE::RendererManager] DestroySessionEffect BeginClose sessionId=%{public}u", sessionId);
     return ret;
+}
+
+void HpaeRendererManager::FinalizeSessionEffectClose(uint32_t sessionId,
+    std::optional<ChannelOverrideRoute> route, HpaeSessionState state,
+    const std::weak_ptr<HpaeSessionEffectNode> &closingNode)
+{
+    HpaeProcessorType sceneType = GetConnectedProcessorType(sessionId);
+    auto processCluster = SafeGetMap(sceneClusterMap_, sceneType);
+    CHECK_AND_RETURN(processCluster);
+    // Feed the pending create's instance so the cluster can hand off a reused instance without
+    // Flush/Stop; null -> cluster releases normally.
+    std::shared_ptr<IEffectInstance> pendingInst;
+    auto pendingIt = pendingSeCreateMap_.find(sessionId);
+    if (pendingIt != pendingSeCreateMap_.end()) {
+        pendingInst = pendingIt->second.second.lock();
+    }
+    bool finalized = processCluster->FinalizeDestroySessionEffectNode(sessionId, closingNode, pendingInst);
+    CHECK_AND_RETURN(finalized);
+    if (route.has_value()) {
+        ClearChannelOverrideForRoute(route.value());
+    }
+    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state,
+        OPERATION_SESSION_EFFECT_DISABLED);
+    AUDIO_INFO_LOG("[SE::RendererManager] FinalizeSessionEffectClose sessionId=%{public}u", sessionId);
+}
+
+uint64_t HpaeRendererManager::SetPendingSessionEffectCreate(uint32_t sessionId,
+    const std::shared_ptr<IEffectInstance> &instance)
+{
+    ++pendingSeCreateGeneration_;
+    pendingSeCreateMap_[sessionId] = {pendingSeCreateGeneration_, instance};
+    return pendingSeCreateGeneration_;
+}
+
+bool HpaeRendererManager::IsPendingSessionEffectCreate(uint32_t sessionId, uint64_t generation,
+    const std::shared_ptr<IEffectInstance> &instance) const
+{
+    auto it = pendingSeCreateMap_.find(sessionId);
+    return it != pendingSeCreateMap_.end() && it->second.first == generation &&
+        instance != nullptr && it->second.second.lock().get() == instance.get();
+}
+
+void HpaeRendererManager::CancelPendingSessionEffectCreate(uint32_t sessionId)
+{
+    pendingSeCreateMap_.erase(sessionId);
 }
 
 void HpaeRendererManager::DetachSessionEffectNodeForRefresh(uint32_t sessionId, HpaeProcessorType oldSceneType)
 {
+    // Invalidate any deferred Create so a stale retry cannot (re)materialize after the refresh.
+    CancelPendingSessionEffectCreate(sessionId);
     // Remove the physical SE node from the OLD cluster before a refresh-driven disconnect, WITHOUT
     // clearing attach state, so ConnectInputSession re-materializes it in the NEW cluster.
     auto processCluster = SafeGetMap(sceneClusterMap_, oldSceneType);
@@ -116,20 +226,15 @@ void HpaeRendererManager::DetachSessionEffectNodeForRefresh(uint32_t sessionId, 
         static_cast<int32_t>(oldSceneType));
     CHECK_AND_RETURN_LOG(processCluster->HasSessionEffectNode(sessionId),
         "DetachSessionEffectNodeForRefresh: no SE node for session %{public}u", sessionId);
-    // Capture lastSeStatus before destroy so materialize can restart preheat.
-    auto seNode = processCluster->GetSessionEffectNode(sessionId);
     auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
-    if (seNode != nullptr && sinkInputNode != nullptr && sinkInputNode->HasSessionEffectAttachState()) {
-        auto st = sinkInputNode->GetSessionEffectAttachState();
-        if (st.has_value()) {
-            st->lastSeStatus = static_cast<int32_t>(seNode->GetStatus());
-            sinkInputNode->SetSessionEffectAttachState(st.value());
-        }
-    }
     uint64_t latency = 0;
     int32_t ret = processCluster->DestroySessionEffectNode(sessionId, latency);
     CHECK_AND_RETURN_LOG(ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS),
         "DetachSessionEffectNodeForRefresh: destroy failed session %{public}u ret %{public}d", sessionId, ret);
+    auto oldRoute = BuildChannelOverrideRouteFromProcessorType(oldSceneType);
+    if (oldRoute.has_value()) {
+        ClearChannelOverrideForRoute(oldRoute.value());
+    }
     AUDIO_INFO_LOG("[SE::RendererManager] Detached SE node for refresh sessionId=%{public}u oldSceneType=%{public}d",
         sessionId, static_cast<int32_t>(oldSceneType));
     CHECK_AND_RETURN(latency > 0 && sinkInputNode != nullptr);
@@ -144,6 +249,10 @@ void HpaeRendererManager::HandleSessionEffectMaterializeFailure(uint32_t session
     HpaeSessionState sessionState = (sessionIt != sessionNodeMap_.end())
         ? sessionIt->second.state : HPAE_SESSION_NEW;
     sinkInputNode->ClearSessionEffectAttachState();
+    auto route = BuildChannelOverrideRoute(sessionId);
+    if (route.has_value()) {
+        ClearChannelOverrideForRoute(route.value());
+    }
     TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionState,
         OPERATION_SESSION_EFFECT_DISABLED);
     AUDIO_WARNING_LOG("[SE::RendererManager] Materialize failure permanent, attach-state cleared, "
@@ -170,10 +279,11 @@ bool HpaeRendererManager::IsValidSession(uint32_t sessionId) const
 }
 
 void HpaeRendererManager::PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
-    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+    bool aissSwitchEnabled)
 {
-    auto request = [this, sessionId, effectName, instance, config]() {
-        int32_t ret = CreateSessionEffect(sessionId, effectName, instance, config);
+    auto request = [this, sessionId, effectName, instance, config, aissSwitchEnabled]() {
+        int32_t ret = CreateSessionEffect(sessionId, effectName, instance, config, aissSwitchEnabled);
         if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
             AUDIO_WARNING_LOG("PostCreateSessionEffect: CreateSessionEffect failed for session %{public}u,"
                 " ret=%{public}d (system abnormal state, no rollback)", sessionId, ret);

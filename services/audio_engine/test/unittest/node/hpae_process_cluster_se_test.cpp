@@ -275,6 +275,53 @@ protected:
     AudioEffectConfig config_ = MakeTestConfig();
 };
 
+// PC-DF-1: WARMING_UP -- SE outputs silence, does not pull upstream
+HWTEST_F(HpaeProcessClusterSeDataflowTest, warmingUp_outputsSilence, TestSize.Level0)
+{
+    auto instance = CreateEffectInstance();
+    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(TEST_SESSION_ID);
+
+    auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(seNode, nullptr);
+    EXPECT_EQ(seNode->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+    seNode->rawBypassNeeded_ = true;
+
+    probe_->DoProcess();
+
+    auto *out = probe_->GetCaptured();
+    ASSERT_NE(out, nullptr);
+    ExpectBufferSilence(out);
+}
+
+// PC-DF-2: INTERCEPTING — SE pulls upstream, FeedInput called, outputs silence
+HWTEST_F(HpaeProcessClusterSeDataflowTest, intercepting_feedsAndOutputsSilence, TestSize.Level0)
+{
+    fake_.SetPreheatFrames(1);  // Preheat exits after 1 frame
+    auto instance = CreateEffectInstance();
+    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
+    cluster_->SessionEffectStart(TEST_SESSION_ID);
+
+    auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
+    ASSERT_NE(seNode, nullptr);
+    seNode->rawBypassNeeded_ = true;
+    // Wait for preheat to complete
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    // First DoProcess: WARMING_UP→INTERCEPTING (prebufFilled=true)
+    probe_->DoProcess();
+
+    uint32_t feedCountAfterTransition = fake_.GetFeedInputCount();
+    EXPECT_GE(feedCountAfterTransition, 1u);
+
+    // Second DoProcess: still INTERCEPTING, feeds more, outputs silence
+    probe_->DoProcess();
+    auto *out = probe_->GetCaptured();
+    ASSERT_NE(out, nullptr);
+    ExpectBufferSilence(out);
+    EXPECT_GT(fake_.GetFeedInputCount(), feedCountAfterTransition);
+}
+
 // PC-DF-3: ACTIVE — SE outputs algorithm passthrough data (0.5f)
 HWTEST_F(HpaeProcessClusterSeDataflowTest, active_outputsAlgoData, TestSize.Level0)
 {

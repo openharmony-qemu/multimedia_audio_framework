@@ -98,6 +98,8 @@ public:
     static std::vector<std::string> SplitString(const std::string& str, char delimiter);
 
     static bool IsEnhancedRoutingSupported();
+
+    static bool IsCustomSampleRateValid(uint32_t customSampleRate);
 };
 
 class AudioTypeUtils {
