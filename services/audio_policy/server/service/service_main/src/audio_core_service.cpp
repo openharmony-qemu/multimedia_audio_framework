@@ -1246,12 +1246,6 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
 {
     if (!forceUpdate) {
         CHECK_AND_RETURN(!audioSceneManager_.IsVoiceCallRelatedScene());
-        CHECK_AND_RETURN(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
-        streamDesc->newDeviceDescs_[0] != nullptr);
-        CHECK_AND_RETURN(streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
-            audioDeviceManager_.GetScoState());
-        CHECK_AND_RETURN(streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO ||
-            streamDesc->streamStatus_ != STREAM_STATUS_STARTED);
     }
 
     auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModem();
