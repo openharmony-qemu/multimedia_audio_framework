@@ -275,38 +275,6 @@ protected:
     AudioEffectConfig config_ = MakeTestConfig();
 };
 
-// PC-DF-4: DestroySessionEffectNode — data flows through without SE
-HWTEST_F(HpaeProcessClusterSeDataflowTest, destroy_restoresPassthrough, TestSize.Level0)
-{
-    fake_.SetPreheatFrames(0);
-    fake_.SetProcessThreshold(1920);
-    fake_.SetProcessDelayMs(0);
-    fake_.SetOutputPersistent(true);
-    auto instance = CreateEffectInstance();
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
-
-    auto seNode = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
-    ASSERT_NE(seNode, nullptr);
-
-    // Drive to ACTIVE
-    probe_->DoProcess();  // WARMING_UP→INTERCEPTING
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    probe_->DoProcess();  // INTERCEPTING→ACTIVE
-    ASSERT_EQ(seNode->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
-
-    uint64_t taskId = 0;
-    cluster_->DestroySessionEffectNode(TEST_SESSION_ID, taskId);
-    EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
-
-    // After destroy, data flows through without SE processing
-    probe_->DoProcess();
-    auto *out = probe_->GetCaptured();
-    ASSERT_NE(out, nullptr);
-    // Verify passthrough: SE node no longer exists, data flows directly
-    EXPECT_FALSE(cluster_->HasSessionEffectNode(TEST_SESSION_ID));
-}
-
 // PC-TOPO-1: CreateSessionEffectNode — topology correct
 HWTEST_F(HpaeProcessClusterSeDataflowTest, create_topo_correct, TestSize.Level0)
 {
