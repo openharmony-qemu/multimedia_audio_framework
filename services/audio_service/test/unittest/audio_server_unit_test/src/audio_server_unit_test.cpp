@@ -962,6 +962,35 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioProcess_002, TestSize.Level1
 }
 
 /**
+ * @tc.name  : Test CreateAudioProcess API without microphone permission
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCreateAudioProcess_003
+ * @tc.desc  : Test record permission failures keep ERR_PERMISSION_DENIED error code.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioProcess_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    config.streamInfo.channels = MONO;
+    config.streamInfo.channelLayout = CH_LAYOUT_MONO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
+    sptr<IRemoteObject> ret = nullptr;
+    int32_t errorCode = SUCCESS;
+    audioServer->isAudioPolicyReady_ = true;
+
+    audioServer->CreateAudioProcess(config, errorCode, filterConfig, ret);
+
+    EXPECT_EQ(ret, nullptr);
+    EXPECT_EQ(errorCode, ERR_PERMISSION_DENIED);
+}
+
+/**
  * @tc.name  : Test ResetRecordConfig API
  * @tc.type  : FUNC
  * @tc.number: AudioServerResetRecordConfig_001
