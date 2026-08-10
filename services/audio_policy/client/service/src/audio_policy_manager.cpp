@@ -3604,6 +3604,7 @@ std::vector<AudioDevicePair> AudioPolicyManager::GetLoopbackSupportedDevicePairs
     for (size_t i = 0; i < inputDevices.size(); i++) {
         devicePairs.push_back(std::make_pair(inputDevices[i], outputDevices[i]));
     }
+    AUDIO_INFO_LOG("get [%{public}zu] devices", devicePairs.size());
 
     return devicePairs;
 }
@@ -3620,6 +3621,8 @@ AudioDevicePair AudioPolicyManager::GetLoopbackPreferredDevicePair()
     gsp->GetLoopbackPreferredDevicePair(inputDevice, outputDevice, ret);
 
     CHECK_AND_RETURN_RET(ret == SUCCESS && inputDevice != nullptr && outputDevice != nullptr, {});
+    AUDIO_INFO_LOG("input:%{public}s output:%{public}s ", inputDevice->GetDeviceTypeString().c_str(),
+        outputDevice->GetDeviceTypeString().c_str());
 
     return std::make_pair(inputDevice, outputDevice);
 }

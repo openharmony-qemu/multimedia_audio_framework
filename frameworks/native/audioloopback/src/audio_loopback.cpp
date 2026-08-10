@@ -249,6 +249,7 @@ AudioLoopbackStatus AudioLoopbackPrivate::GetStatus()
     if (status == LOOPBACK_UNAVAILABLE_SCENE || status == LOOPBACK_UNAVAILABLE_DEVICE) {
         currentState_ = LOOPBACK_STATE_IDLE;
     }
+    AUDIO_INFO_LOG("current status:%{public}d, return status:%{public}d", currentState_, status);
     return status;
 }
 
