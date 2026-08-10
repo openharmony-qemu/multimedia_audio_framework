@@ -316,8 +316,10 @@ int32_t RendererInServer::Init()
             PLAY_CREATE_OPERATION_FAILED, "Construct rendererInServer failed", false),
         HILOG_COMM_ERROR("[Init]Construct rendererInServer failed: %{public}d", ret));
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
+    int32_t volumeAppUid = Util::IsEnhancedRoutingSupported() ?
+        processConfig_.originalAppInfo.appUid : processConfig_.appInfo.appUid;
     StreamVolumeParams streamVolumeParams = { streamIndex_, processConfig_.streamType,
-        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
+        processConfig_.rendererInfo.streamUsage, volumeAppUid, processConfig_.appInfo.appPid,
         isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     traceTag_ = "[" + std::to_string(streamIndex_) + "]RendererInServer"; // [100001]RendererInServer:
@@ -2229,6 +2231,35 @@ int32_t RendererInServer::DisableInnerCapHandle(int32_t innerCapId)
     return SUCCESS;
 }
 
+int32_t RendererInServer::CreateDupRender(int32_t innerCapId, CaptureInfo &capInfo)
+{
+    AudioProcessConfig dupConfig = processConfig_;
+    dupConfig.innerCapId = innerCapId;
+    return IStreamManager::GetDupPlaybackManager().CreateRender(dupConfig, capInfo.dupStream);
+}
+
+void RendererInServer::AddDupStreamVolume(uint32_t dupStreamIndex)
+{
+    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
+    int32_t volumeAppUid = Util::IsEnhancedRoutingSupported() ?
+        processConfig_.originalAppInfo.appUid : processConfig_.appInfo.appUid;
+    StreamVolumeParams streamVolumeParams = { dupStreamIndex, processConfig_.streamType,
+        processConfig_.rendererInfo.streamUsage, volumeAppUid, processConfig_.appInfo.appPid,
+        isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+}
+
+int32_t RendererInServer::GetInnerCapPrebuf()
+{
+    if (offloadEnable_) {
+        return OFFLOAD_INNER_CAP_PREBUF;
+    }
+    if (isNonStandardSampleRate_) {
+        return NON_STANDARD_INNER_CAP_PREBUF;
+    }
+    return DEFAULT_INNER_CAP_PREBUF;
+}
+
 int32_t RendererInServer::InitDupStream(int32_t innerCapId)
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.rendererFlags != AUDIO_FLAG_3DA_DIRECT, ERR_NOT_SUPPORTED,
@@ -2241,17 +2272,11 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         return SUCCESS;
     }
     auto &capInfo = captureInfos_[innerCapId];
-    AudioProcessConfig dupConfig = processConfig_;
-    dupConfig.innerCapId = innerCapId;
-    int32_t ret = IStreamManager::GetDupPlaybackManager().CreateRender(dupConfig, capInfo.dupStream);
+    int32_t ret = CreateDupRender(innerCapId, capInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && capInfo.dupStream != nullptr,
         ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
     uint32_t dupStreamIndex = capInfo.dupStream->GetStreamIndex();
-    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
-    StreamVolumeParams streamVolumeParams = { dupStreamIndex, processConfig_.streamType,
-        processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-        isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
-    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+    AddDupStreamVolume(dupStreamIndex);
     innerCapIdToDupStreamCallbackMap_[innerCapId] = std::make_shared<StreamCallbacks>(dupStreamIndex,
         shared_from_this());
     int32_t engineFlag = GetEngineFlag();
@@ -2274,13 +2299,7 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
         capInfo.dupStream->Start();
     }
-    if (offloadEnable_) {
-        renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = OFFLOAD_INNER_CAP_PREBUF;
-    } else if (isNonStandardSampleRate_) {
-        renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = NON_STANDARD_INNER_CAP_PREBUF;
-    } else {
-        renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = DEFAULT_INNER_CAP_PREBUF;
-    }
+    renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = GetInnerCapPrebuf();
     return SUCCESS;
 }
 
@@ -2355,8 +2374,10 @@ int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
         dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
         AUDIO_INFO_LOG("init dual tone renderer:[%{public}u]", dualToneStreamIndex_);
         bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
+        int32_t volumeAppUid = Util::IsEnhancedRoutingSupported() ?
+            processConfig_.originalAppInfo.appUid : processConfig_.appInfo.appUid;
         StreamVolumeParams streamVolumeParams = { dualToneStreamIndex_, processConfig_.streamType,
-            processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
+            processConfig_.rendererInfo.streamUsage, volumeAppUid, processConfig_.appInfo.appPid,
             isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
         AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
