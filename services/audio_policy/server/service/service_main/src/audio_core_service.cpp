@@ -1489,7 +1489,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId, SessionOperationMsg op
     CheckAndSleepBeforeRingDeviceSet(streamDesc);
     pipeManager_->StartClient(sessionId);
     // Update all wireless devices silent state after stream started
-    audioDeviceManager_.RestoreWirelessDeviceSilentState();
+    audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
     CHECK_AND_CALL_FUNC_RETURN_RET(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[StartClient]newDeviceDescs_ is empty"));
     // [Capturer NOTE 1.0] be careful device may be changed.
@@ -1572,6 +1572,7 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
     }
     ForceRemoveSleStreamType(streamDesc);
 
+    audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
     CheckScoState(streamDesc, false);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         HandlePlaybackStoppingOperations(streamDesc, "PauseClient");
@@ -1637,7 +1638,8 @@ void AudioCoreService::NotifySilentStateChange(uint32_t sessionId, bool isSilent
 {
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
     bool isSilentChanged = pipeManager_->SetMuteSilentState(sessionId, isSilent);
-    if (isSilentChanged && !isSilent) {
+    // Update device only when isSilent_ state changed
+    if (isSilentChanged) {
         AUDIO_INFO_LOG("NotifySilentStateChange: session %{public}u, isSilent %{public}d", sessionId, isSilent);
         audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
         AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
@@ -1649,7 +1651,8 @@ void AudioCoreService::NotifyDataTransSilentStateChange(uint32_t sessionId, bool
 {
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
     bool isSilentChanged = pipeManager_->SetDataTransSilentState(sessionId, isSilent);
-    if (isSilentChanged && !isSilent) {
+    // Update device only when isSilent_ state changed
+    if (isSilentChanged) {
         AUDIO_INFO_LOG("NotifyDataTransSilentStateChange: session %{public}u, isSilent %{public}d",
             sessionId, isSilent);
         audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
@@ -1730,6 +1733,7 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
             streamDesc->capturerInfo_.sourceType, CapturerState::CAPTURER_STOPPED);
     }
     ForceRemoveSleStreamType(streamDesc);
+    audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
             streamDesc->rendererInfo_.streamUsage, RendererState::RENDERER_STOPPED);
@@ -1769,6 +1773,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     ForceRemoveSleStreamType(streamDesc);
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
+    audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
 
     CheckScoState(streamDesc, false);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {

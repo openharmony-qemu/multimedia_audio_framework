@@ -92,7 +92,6 @@ namespace {
     static const int32_t THREE_DA_BYTES_PER_FRAME = 1;
     constexpr int32_t SILENT_TYPE_SILENT_SESSION = 0;
     constexpr int32_t SILENT_TYPE_MUTE_SESSION = 1;
-    constexpr int32_t FIRST_SOUND_BUFFER = 1;
 
     size_t GetDupBufferLenMs(bool offloadEnable, bool hasSessionEffect)
     {
@@ -790,9 +789,6 @@ void RendererInServer::WriteMuteDataSysEvent(BufferDesc &bufferDesc)
     if (silentModeAndMixWithOthers_) {
         return;
     }
-    if (volumeDataCount_ == FIRST_SOUND_BUFFER) {
-        audioStreamChecker_->DataResume();
-    }
     if (IsInvalidBuffer(bufferDesc.buffer, bufferDesc.bufLength)) {
         if (startMuteTime_ == 0) {
             startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -816,6 +812,7 @@ void RendererInServer::WriteMuteDataSysEvent(BufferDesc &bufferDesc)
         if (isInSilentState_) {
             AUDIO_WARNING_LOG("begin write valid data in server");
             isInSilentState_ = false;
+            audioStreamChecker_->DataResume();
 
             std::unordered_map<std::string, std::string> payload;
             payload["uid"] = std::to_string(processConfig_.appInfo.appUid);

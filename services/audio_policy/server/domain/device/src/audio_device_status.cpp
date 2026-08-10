@@ -53,7 +53,6 @@ const std::string DEFAULT_BUFFER_SIZE_8000 = "320";
 
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const int32_t DEFAULT_UID = -1;
-const int32_t DISABLE_USAGE = 3;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -1472,6 +1471,13 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
         GetEncryptAddr(desc.macAddress_).c_str(), desc.deviceType_, command, desc.deviceCategory_,
         desc.connectState_, desc.isEnable_, desc.deviceUsage_);
 
+    // Update silent state on wireless device status change: triggered when device is enabled or usage changes
+    if (AudioPolicyUtils::GetInstance().IsWirelessDevice(desc.deviceType_)) {
+        if ((command == ENABLE_UPDATE && desc.isEnable_) || command == USAGE_UPDATE) {
+            audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
+        }
+    }
+
     std::string portNeedClose = "";
     uint32_t oldPaIndex = OPEN_PORT_FAILURE;
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
@@ -1494,13 +1500,6 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     if (isStatusUpdated) {
         OnPreferredStateUpdated(desc, command, reason);
     }
-
-    // Update silent state on wireless device status change: triggered when device is enabled or usage changes
-    if (isManagerUpdated && ((command == ENABLE_UPDATE && desc.isEnable_) ||
-            (command == USAGE_UPDATE && static_cast<int32_t>(desc.deviceUsage_) > DISABLE_USAGE))) {
-        audioDeviceManager_.UpdateAllWirelessDevicesSilentState();
-    }
-
 #ifdef BLUETOOTH_ENABLE
     ClearActiveHfpDevice(desc, command, reason);
 #endif
