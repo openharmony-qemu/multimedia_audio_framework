@@ -235,7 +235,7 @@ static void CleanupStreamAndPipeVolume(uint32_t sessionId)
 {
     auto *audioVolume = AudioVolume::GetInstance();
     audioVolume->RemoveStreamVolume(sessionId);
-    audioVolume->RemovePipeVolume(UT_PIPE_ID, STREAM_MUSIC);
+    audioVolume->RemovePipeVolume(UT_PIPE_ID);
 }
 
 static void FillBuffer(HpaePcmBuffer &buf, float value)
