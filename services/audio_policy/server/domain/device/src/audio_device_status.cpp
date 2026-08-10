@@ -37,6 +37,7 @@
 #include "audio_zone_service.h"
 #include "audio_collaborative_service.h"
 #include "audio_router_select_strategy.h"
+#include "audio_pipe_manager.h"
 #include "stream_dfx_manager.h"
 #include "ipc_skeleton.h"
 
@@ -928,6 +929,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
         GetEncryptStr(statusInfo.networkId).c_str(), statusInfo.model.c_str());
     if (isStop) {
         std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
+        StopStreamWhenDeviceDisconnect(statusInfo.networkId);
         AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
 
         HandleOfflineDistributedDevice();
@@ -1016,6 +1018,7 @@ void AudioDeviceStatus::HandleDistributedDeviceDisConnected(DStatusInfo &statusI
     AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output");
     AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "multichannel_distributed_output");
     std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
+    StopStreamWhenDeviceDisconnect(networkId);
     AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
     audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
     reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE;
@@ -1900,6 +1903,38 @@ bool AudioDeviceStatus::CheckIsIndexValidAndHandleErr(std::vector<std::shared_pt
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("RestoreNewA2dpPort", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("RestoreNewA2dpPort", reason);
     return false;
+}
+
+void AudioDeviceStatus::SetStopStreamInfoWhenDisconnect(const std::string &networkId,
+    const std::vector<StreamUsage> &usages, const std::vector<int32_t> &uids)
+{
+    std::lock_guard<std::mutex> lock(stopStreamInfoMutex_);
+    usagesNeedStop_[networkId] = usages;
+    uidsNeedStop_[networkId] = uids;
+}
+
+void AudioDeviceStatus::StopStreamWhenDeviceDisconnect(const std::string &networkId)
+{
+    std::lock_guard<std::mutex> lock(stopStreamInfoMutex_);
+    CHECK_AND_RETURN(usagesNeedStop_.find(networkId) != usagesNeedStop_.end() &&
+        uidsNeedStop_.find(networkId) != uidsNeedStop_.end());
+    std::vector<StreamUsage> usagesToStop = usagesNeedStop_.at(networkId);
+    std::vector<int32_t> uidsToStop = uidsNeedStop_.at(networkId);
+    std::vector<std::pair<uint32_t, int32_t>> sessionsToStop = {};
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> allStreamDesc =
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
+    for (const auto &iter : allStreamDesc) {
+        CHECK_AND_CONTINUE(iter != nullptr && (iter->GetFirstNewDeviceDesc()->networkId_ == networkId));
+        CHECK_AND_CONTINUE(std::find(usagesToStop.begin(), usagesToStop.end(), iter->GetRenderUsage()) !=
+            usagesToStop.end());
+        CHECK_AND_CONTINUE(std::find(uidsToStop.begin(), uidsToStop.end(), iter->appInfo_.appUid) != uidsToStop.end());
+        AUDIO_INFO_LOG("uid: %{public}d sessionId: %{public}d", iter->appInfo_.appUid, iter->sessionId_);
+        sessionsToStop.push_back(std::make_pair(iter->sessionId_, iter->appInfo_.appPid));
+    }
+    CHECK_AND_RETURN(sessionsToStop.size() > 0);
+    AudioZoneService::GetInstance().StopAudioFocusBySessionIds(0, sessionsToStop);
+    usagesNeedStop_.erase(networkId);
+    uidsNeedStop_.erase(networkId);
 }
 }
 }

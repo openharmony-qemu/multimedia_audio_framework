@@ -768,6 +768,18 @@ int32_t AudioPolicyManager::SetDeviceVolumeBehavior(const std::string &networkId
     return gsp->SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
 }
 
+int32_t AudioPolicyManager::SetStopStreamInfoWhenDisconnect(const std::string &networkId,
+    const std::vector<StreamUsage> &usages, const std::vector<int32_t> &uids)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
+    std::vector<int32_t> usagesNeedStop = {};
+    for (const auto usage : usages) {
+        usagesNeedStop.emplace_back(static_cast<int32_t>(usage));
+    }
+    return gsp->SetStopStreamInfoWhenDisconnect(networkId, usagesNeedStop, uids);
+}
+
 int32_t AudioPolicyManager::SetQueryDeviceVolumeBehaviorCallback(
     const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback)
 {

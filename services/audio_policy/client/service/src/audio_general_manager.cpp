@@ -95,6 +95,12 @@ int32_t AudioGeneralManager::SetDeviceVolumeBehavior(const std::string &networkI
     return AudioPolicyManager::GetInstance().SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
 }
 
+int32_t AudioGeneralManager::SetStopStreamInfoWhenDisconnect(const std::string &networkId,
+    const std::vector<StreamUsage> &usages, const std::vector<int32_t> &uids)
+{
+    return AudioPolicyManager::GetInstance().SetStopStreamInfoWhenDisconnect(networkId, usages, uids);
+}
+
 int32_t AudioGeneralManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     return AudioPolicyManager::GetInstance().TriggerFetchDevice(reason);

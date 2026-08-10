@@ -717,6 +717,9 @@ public:
 
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
 
+    int32_t SetStopStreamInfoWhenDisconnect(const std::string &networkId, const std::vector<StreamUsage> &usages,
+        const std::vector<int32_t> &uids);
+
     int32_t SetQueryDeviceVolumeBehaviorCallback(
         const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
 

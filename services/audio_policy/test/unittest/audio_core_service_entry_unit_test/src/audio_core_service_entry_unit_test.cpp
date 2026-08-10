@@ -989,7 +989,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_041, TestSize.Level1)
     std::string macAddress = "macAddress";
     auto &audioRouter = AudioRouterCenter::GetAudioRouterCenter();
     audioRouter.renderConfigMap_[STREAM_USAGE_VOICE_COMMUNICATION] == "CallRenderRouters";
-    AudioDeviceStatus audioDeviceStatus =  AudioDeviceStatus::GetInstance();
+    AudioDeviceStatus &audioDeviceStatus =  AudioDeviceStatus::GetInstance();
     auto devDesc = make_shared<AudioDeviceDescriptor>();
     devDesc->deviceId_ = 114914;
     devDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
@@ -999,6 +999,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_041, TestSize.Level1)
         nullptr, devDesc, nullptr, nullptr));
     audioDeviceStatus.audioDeviceManager_.commRenderPrivacyDevices_.push_back(devDesc);
     audioDeviceStatus.OnPrivacyDeviceSelected(devType, macAddress);
+    audioDeviceStatus.audioDeviceManager_.commRenderPrivacyDevices_.pop_back();
 }
 
 /**
