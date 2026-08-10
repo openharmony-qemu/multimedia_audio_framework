@@ -5976,7 +5976,8 @@ int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, int32_t para
         static_cast<DeviceType>(deviceType), static_cast<KaraokeParamType>(paramType), value);
     // Only drive the nearlink transition when the downstream AudioServer actually accepted
     // the ENABLE parameter (passed BuildKaraokeParamString validation + HDI dispatch).
-    CHECK_AND_RETURN_RET(ret && static_cast<KaraokeParamType>(paramType) == KaraokeParamType::KARAOKE_PARAM_ENABLE, SUCCESS);
+    CHECK_AND_RETURN_RET(ret && static_cast<KaraokeParamType>(paramType) ==
+        KaraokeParamType::KARAOKE_PARAM_ENABLE, SUCCESS);
     audioVolumeManager_.StartNearlinkKaraokeTransition(value != 0);
     return SUCCESS;
 }
