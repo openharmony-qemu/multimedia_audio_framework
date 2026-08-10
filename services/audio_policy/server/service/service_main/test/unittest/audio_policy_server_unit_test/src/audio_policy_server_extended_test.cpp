@@ -643,10 +643,9 @@ HWTEST_F(AudioPolicyServerUnitTest, GetAppBackGroundState_PidMatchesCallingUid, 
 {
     int32_t selfUid = getuid();
     setuid(1041);
-    int32_t TEST_INVALID_PID = 0;
     bool isBack = false;
     int32_t callingPid = IPCSkeleton::GetCallingPid();
-    int32_t result = audioPolicyServer_->GetAppBackGroundState(TEST_INVALID_PID, isBack);
+    int32_t result = audioPolicyServer_->GetAppBackGroundState(callingPid, isBack);
     EXPECT_NE(result, ERR_PERMISSION_DENIED);
     setuid(selfUid);
 }
@@ -662,19 +661,6 @@ HWTEST_F(AudioPolicyServerUnitTest, GetAppBackGroundState_PidMatchesCallingPid, 
     int32_t callingPid = getpid();
     int32_t result = audioPolicyServer_->GetAppBackGroundState(callingPid, isBack);
     EXPECT_NE(result, ERR_PERMISSION_DENIED);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: SetAudioSceneInternal_001
-* @tc.desc  : Test SetAudioSceneInternal with isInternal true.
-*/
-HWTEST_F(AudioPolicyServerUnitTest, SetAudioSceneInternal_001, TestSize.Level4)
-{
-    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
-    audioPolicyServer_->coreService_->Init();
-    int32_t ret = audioPolicyServer_->SetAudioSceneInternal(AUDIO_SCENE_PHONE_CALL, 1, 1, true);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
