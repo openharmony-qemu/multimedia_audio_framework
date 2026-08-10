@@ -666,8 +666,9 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         return nullptr;
     }
     capturer->SetCapturerInfoByOptions(capturerOptions, appInfo);
-    if (capturer->SetParams(params) != SUCCESS) {
-        AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
+    int32_t setParamsRet = capturer->SetParams(params);
+    if (setParamsRet != SUCCESS) {
+        AudioCapturer::SendCapturerCreateError(sourceType, setParamsRet);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CREATE_OPERATION_FAILED, "SetParams failed", true);
         capturer = nullptr;
