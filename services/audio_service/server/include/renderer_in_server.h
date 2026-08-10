@@ -166,6 +166,9 @@ public:
     int32_t EnableInnerCap(int32_t innerCapId);
     int32_t DisableInnerCap(int32_t innerCapId);
     int32_t InitDupStream(int32_t innerCapId);
+    int32_t CreateDupRender(int32_t innerCapId, CaptureInfo &capInfo);
+    void AddDupStreamVolume(uint32_t dupStreamIndex);
+    int32_t GetInnerCapPrebuf();
     int32_t DisableAllInnerCap();
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 

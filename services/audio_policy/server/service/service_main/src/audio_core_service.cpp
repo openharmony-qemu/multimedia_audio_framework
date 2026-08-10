@@ -1800,6 +1800,10 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         pipeManager_->RemoveSwitchStream(sessionId);
     }
 
+    if (!isFirstScreenOn_.load()) {
+        AUDIO_ERR_LOG("Did not receive screen-on broadcast, force set isFirstScreenOn_ to true as fallback");
+        isFirstScreenOn_.store(true);
+    }
     return SUCCESS;
 }
 
@@ -2274,6 +2278,15 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
 
+void AudioCoreService::MarkServerStreamCreated(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
+    auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN(streamDesc != nullptr);
+    streamDesc->isServerStreamCreated_.store(true);
+    AUDIO_INFO_LOG("Session %{public}u server stream created flag set", sessionId);
+}
+
 void AudioCoreService::SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object)
 {
     CHECK_AND_RETURN_LOG(object != nullptr, "object is nullptr");
@@ -2331,8 +2344,15 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
     auto sessionIds = pipeManager_->GetStreamIdsByUidAndPid(curUid, curPid);
     for (auto sessionId : sessionIds) {
-        ReleaseClient(sessionId);
-        pipeManager_->RemoveSwitchStream(sessionId);
+        auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+        if (streamDesc == nullptr) {
+            AUDIO_INFO_LOG("Session %{public}u already removed from pipeManager, skip ReleaseClient", sessionId);
+        } else if (streamDesc->isServerStreamCreated_.load()) {
+            AUDIO_INFO_LOG("Session %{public}u server stream alive, skip ReleaseClient", sessionId);
+        } else {
+            ReleaseClient(sessionId);
+            pipeManager_->RemoveSwitchStream(sessionId);
+        }
         UnsetAudioRouteCallback(sessionId);
     }
     FetchOutputDeviceAndRoute("RegisteredTrackerClientDied");
@@ -2797,7 +2817,6 @@ void AudioCoreService::PrepareInputFetchInfos(
         CHECK_AND_CONTINUE(streamDesc != nullptr);
 
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
-        pipeManager_->UpdateNewDeviceDesc(streamDesc, {});
 
         FetchDeviceInfo info;
         info.sourceType = streamDesc->capturerInfo_.sourceType;
@@ -3021,7 +3040,7 @@ bool AudioCoreService::IsStreamActive(uint32_t sessionId)
 
 void AudioCoreService::SetFirstScreenOn()
 {
-    isFirstScreenOn_ = true;
+    isFirstScreenOn_.store(true);
 }
 
 bool AudioCoreService::IsA2dpOffloadStream(uint sessionId)

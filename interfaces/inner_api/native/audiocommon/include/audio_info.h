@@ -1623,6 +1623,11 @@ struct AudioProcessConfig : public Parcelable {
 
     AppInfo appInfo;
 
+    // Snapshot of the client-side appInfo captured in audio_server before the
+    // auth rewrite of `appInfo`. Used to key per-app volume on the real app uid.
+    // Not marshalled: populated and consumed server-side only.
+    AppInfo originalAppInfo;
+
     AudioStreamInfo streamInfo;
 
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;

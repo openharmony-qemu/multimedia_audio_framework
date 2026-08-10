@@ -170,7 +170,8 @@ int32_t AudioRenderSink::Start(void)
     if (started_) {
         return SUCCESS;
     }
-    RefreshSpeakerDeviceForEnhancedRouting();
+
+    CheckActiveDeviceValidForStart();
 
     int32_t ret = audioRender_->Start(audioRender_);
     if (ret != SUCCESS) {
@@ -188,11 +189,13 @@ int32_t AudioRenderSink::Start(void)
     return SUCCESS;
 }
 
-void AudioRenderSink::RefreshSpeakerDeviceForEnhancedRouting()
+void AudioRenderSink::CheckActiveDeviceValidForStart()
 {
-    if (halName_ == "primary" && Util::IsEnhancedRoutingSupported()) {
-        std::vector<DeviceType> speakerDevices = {DEVICE_TYPE_SPEAKER};
-        UpdateActiveDevice(speakerDevices);
+    if (currentActiveDevice_ == DEVICE_TYPE_NONE && lastValidActiveDevice_ != DEVICE_TYPE_NONE) {
+        AUDIO_INFO_LOG("currentActiveDevice is NONE before start, restore to %{public}d from lastValidActiveDevice_",
+            lastValidActiveDevice_);
+        std::vector<DeviceType> restoreDevices = { lastValidActiveDevice_ };
+        UpdateActiveDevice(restoreDevices);
     }
 }
 
@@ -223,7 +226,7 @@ int32_t AudioRenderSink::Stop(void)
     int32_t ret = audioRender_->Stop(audioRender_);
     UpdateSinkState(false);
     ChangePipeStatus(PIPE_STATUS_STANDBY);
-    if (halName_ == "primary" && Util::IsEnhancedRoutingSupported()) {
+    if (Util::IsEnhancedRoutingSupported()) {
         std::vector<DeviceType> noneDevices = {DEVICE_TYPE_NONE};
         UpdateActiveDevice(noneDevices);
     }
@@ -676,6 +679,9 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
     }
     forceSetRouteFlag_ = false;
     currentActiveDevice_ = outputDevices[0];
+    if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
+        lastValidActiveDevice_ = currentActiveDevice_;
+    }
     currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
     SetAudioRouteInfoForEnhanceChain();
     bool isA2dp = false;

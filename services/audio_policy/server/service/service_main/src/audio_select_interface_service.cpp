@@ -861,6 +861,7 @@ void AudioSelectInterfaceService::OnPrivacyDeviceSelected(DeviceType devType, co
 
     bool hasUsablePrivateCallDevice {false};
     FetchDeviceInfo info = { STREAM_USAGE_VOICE_COMMUNICATION, "OnPrivacyDeviceSelected", ROUTER_TYPE_USER_SELECT};
+    info.isRunning = true;
     auto devs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info);
     auto pDevs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPrivacyDevices();
     for (auto &dev : devs) {

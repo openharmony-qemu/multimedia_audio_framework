@@ -373,6 +373,7 @@ public:
     int32_t StopClient(uint32_t sessionId);
     int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT,
         bool needRemoveFromMap = false);
+    void MarkServerStreamCreated(uint32_t sessionId);
     void ForceStopInterphoneRenderer();
 
     // ICoreServiceProvider from EventEntry
@@ -975,7 +976,7 @@ private:
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
     };
-    bool isFirstScreenOn_ = false;
+    std::atomic<bool> isFirstScreenOn_ = false;
     bool isCreateProcess_ = false;
     std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
     std::unordered_map<uint32_t, SourceType> sessionSourceTypeMap_;
