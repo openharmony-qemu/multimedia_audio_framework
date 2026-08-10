@@ -47,6 +47,10 @@ static const char *SessionOperationToString(SessionOperation operation)
             return "OPERATION_STOP";
         case SESSION_OPERATION_RELEASE:
             return "OPERATION_RELEASE";
+        case SESSION_OPERATION_STANDBY:
+            return "OPERATION_STANDBY";
+        case SESSION_OPERATION_CREATE:
+            return "OPERATION_CREATE";
         default:
             return "OPERATION_UNKNOWN";
     }
@@ -161,6 +165,9 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
             return coreService_->StopClient(sessionId);
         case SESSION_OPERATION_RELEASE:
             return coreService_->ReleaseClient(sessionId, opMsg, needRemoveFromMap);
+        case SESSION_OPERATION_CREATE:
+            coreService_->MarkServerStreamCreated(sessionId);
+            return SUCCESS;
         default:
             return SUCCESS;
     }

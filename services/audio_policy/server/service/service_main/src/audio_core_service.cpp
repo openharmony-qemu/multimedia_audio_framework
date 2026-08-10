@@ -2274,6 +2274,15 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
 
+void AudioCoreService::MarkServerStreamCreated(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
+    auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN(streamDesc != nullptr);
+    streamDesc->isServerStreamCreated_.store(true);
+    AUDIO_INFO_LOG("Session %{public}u server stream created flag set", sessionId);
+}
+
 void AudioCoreService::SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object)
 {
     CHECK_AND_RETURN_LOG(object != nullptr, "object is nullptr");
@@ -2331,8 +2340,15 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
     auto sessionIds = pipeManager_->GetStreamIdsByUidAndPid(curUid, curPid);
     for (auto sessionId : sessionIds) {
-        ReleaseClient(sessionId);
-        pipeManager_->RemoveSwitchStream(sessionId);
+        auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+        if (streamDesc == nullptr) {
+            AUDIO_INFO_LOG("Session %{public}u already removed from pipeManager, skip ReleaseClient", sessionId);
+        } else if (streamDesc->isServerStreamCreated_.load()) {
+            AUDIO_INFO_LOG("Session %{public}u server stream alive, skip ReleaseClient", sessionId);
+        } else {
+            ReleaseClient(sessionId);
+            pipeManager_->RemoveSwitchStream(sessionId);
+        }
         UnsetAudioRouteCallback(sessionId);
     }
     FetchOutputDeviceAndRoute("RegisteredTrackerClientDied");
