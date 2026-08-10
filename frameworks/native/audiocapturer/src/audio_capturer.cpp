@@ -1580,29 +1580,6 @@ bool AudioCapturerPrivate::IsRestoreOrStopNeeded()
     return audioStream_->IsRestoreNeeded() || audioStream_->GetStopFlag();
 }
 
-int32_t AudioCapturerPrivate::AsyncCheckAudioCapturer(std::string callingFunc)
-{
-    if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
-        return SUCCESS;
-    }
-    auto weakCapturer = weak_from_this();
-    taskLoop_.PostTask([weakCapturer, callingFunc] () {
-        auto sharedCapturer = weakCapturer.lock();
-        CHECK_AND_CALL_FUNC_RETURN_LOG(sharedCapturer,
-            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-                RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "capturer is null", true),
-            "capturer is null");
-        uint32_t taskCount;
-        do {
-            taskCount = sharedCapturer->switchStreamInNewThreadTaskCount_.load();
-            sharedCapturer->SetInSwitchingFlag(true);
-            sharedCapturer->CheckAudioCapturer(callingFunc + "withNewThread");
-            sharedCapturer->SetInSwitchingFlag(false);
-        } while (sharedCapturer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
-    });
-    return SUCCESS;
-}
-
 void AudioCapturerPrivate::CheckStartResultAndReport(bool result)
 {
     AudioWakeupErrorCode errCode = (result == true)

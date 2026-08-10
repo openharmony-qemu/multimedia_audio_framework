@@ -1597,20 +1597,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetOverflowCount_001, TestSize.Leve
 }
 #endif
 /**
- * @tc.name  : AudioCapturer_AsyncCheckAudioCapturer_001
- * @tc.number: AsyncCheckAudioCapturer_001
- * @tc.desc  : Test AsyncCheckAudioCapturer() for different cases
- */
-HWTEST(AudioCapturerUnitTest, AsyncCheckAudioCapturer_001, TestSize.Level4)
-{
-    AppInfo appInfo = {};
-    auto testCapturerInner = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-
-    // Test not need restore case
-    int32_t res = testCapturerInner->AsyncCheckAudioCapturer("Test");
-    EXPECT_EQ(SUCCESS, res);
-}
-/**
  * @tc.name  : AudioCapturer_SetIndependentAudioSessionStrategy_002
  * @tc.number: SetIndependentAudioSessionStrategy_002
  * @tc.desc  : Test SetIndependentAudioSessionStrategy with PAUSE_WHEN_INTERRUPTED flag
