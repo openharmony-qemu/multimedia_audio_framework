@@ -954,6 +954,7 @@ ohos_shared_library("audio_manager_client") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "cJSON:cjson",
