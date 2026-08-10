@@ -1556,5 +1556,89 @@ HWTEST_F(CapturerInServerSecondUnitTest, StartInner_TurnOnMicIndicatorAncoUid_00
     auto ret = capturerInServer_->TurnOnMicIndicator();
     EXPECT_EQ(ret, false);
 }
+
+/**
+ * @tc.name  : Test RecordPrivacyManager NotifyPrivacyStart via already exists token.
+ * @tc.type  : FUNC
+ * @tc.number: RecordPrivacyManager_NotifyPrivacyStart_001
+ * @tc.desc  : Test NotifyPrivacyStart when tokenId already exists but new sessionId.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RecordPrivacyManager_NotifyPrivacyStart_001, TestSize.Level1)
+{
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+
+    uint32_t tokenId = 1001;
+    uint32_t sessionId1 = 100;
+    uint32_t sessionId2 = 200;
+
+    manager.tokenIdRecordMap_[tokenId].emplace(sessionId1);
+    EXPECT_EQ(manager.tokenIdRecordMap_[tokenId].size(), 1);
+
+    bool result = manager.NotifyPrivacyStart(tokenId, sessionId2);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(manager.tokenIdRecordMap_[tokenId].size(), 2);
+
+    manager.NotifyPrivacyStop(tokenId, sessionId1);
+    manager.NotifyPrivacyStop(tokenId, sessionId2);
+    manager.tokenIdRecordMap_.clear();
+}
+
+/**
+ * @tc.name  : Test RecordPrivacyManager NeedTurnOnMicIndicator via special source types.
+ * @tc.type  : FUNC
+ * @tc.number: RecordPrivacyManager_NeedTurnOnMicIndicator_001
+ * @tc.desc  : Test NeedTurnOnMicIndicator returns false for PLAYBACK_CAPTURE source type.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RecordPrivacyManager_NeedTurnOnMicIndicator_001, TestSize.Level1)
+{
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+
+    bool result = manager.NeedTurnOnMicIndicator(1000, false, SOURCE_TYPE_PLAYBACK_CAPTURE);
+    EXPECT_FALSE(result);
+
+    result = manager.NeedTurnOnMicIndicator(1000, false, SOURCE_TYPE_REMOTE_CAST);
+    EXPECT_FALSE(result);
+
+    result = manager.NeedTurnOnMicIndicator(1000, false, SOURCE_TYPE_VOICE_CALL);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test RecordPrivacyManager NeedTurnOnMicIndicator via loopback.
+ * @tc.type  : FUNC
+ * @tc.number: RecordPrivacyManager_NeedTurnOnMicIndicator_002
+ * @tc.desc  : Test NeedTurnOnMicIndicator returns false when isLoopback is true.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RecordPrivacyManager_NeedTurnOnMicIndicator_002, TestSize.Level1)
+{
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+
+    bool result = manager.NeedTurnOnMicIndicator(1000, true, SOURCE_TYPE_MIC);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test RecordPrivacyManager NeedTurnOnMicIndicator via internal UIDs.
+ * @tc.type  : FUNC
+ * @tc.number: RecordPrivacyManager_NeedTurnOnMicIndicator_003
+ * @tc.desc  : Test NeedTurnOnMicIndicator returns false for internal skip UIDs.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RecordPrivacyManager_NeedTurnOnMicIndicator_003, TestSize.Level1)
+{
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+
+    bool result = manager.NeedTurnOnMicIndicator(6699, false, SOURCE_TYPE_MIC);
+    EXPECT_FALSE(result);
+
+    result = manager.NeedTurnOnMicIndicator(1042, false, SOURCE_TYPE_MIC);
+    EXPECT_FALSE(result);
+
+    result = manager.NeedTurnOnMicIndicator(5527, false, SOURCE_TYPE_MIC);
+    EXPECT_FALSE(result);
+}
 } // namespace AudioStandard
 } // namespace OHOS
