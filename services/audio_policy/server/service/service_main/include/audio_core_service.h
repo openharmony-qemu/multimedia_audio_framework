@@ -970,7 +970,7 @@ private:
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
     };
-    bool isFirstScreenOn_ = false;
+    std::atomic<bool> isFirstScreenOn_ = false;
     bool isCreateProcess_ = false;
     std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
     std::unordered_map<uint32_t, SourceType> sessionSourceTypeMap_;
