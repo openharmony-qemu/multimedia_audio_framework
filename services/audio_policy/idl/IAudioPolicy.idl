@@ -175,11 +175,9 @@ interface IAudioPolicy {
     void IsHeadTrackingSupported([out] boolean ret);
     void IsHeadTrackingSupportedForDevice([in] String address, [out] boolean ret);
     void UpdateSpatialDeviceState([in] AudioSpatialDeviceState audioSpatialDeviceState);
-    void RegisterSpatializationStateEventListener([in] unsigned int sessionID, [in] int streamUsage, [in] IRemoteObject object);
     void ConfigDistributedRoutingRole([in] sharedptr<AudioDeviceDescriptor> descriptor, [in] int type);
     void SetDistributedRoutingRoleCallback([in] IRemoteObject object);
     void UnsetDistributedRoutingRoleCallback();
-    void UnregisterSpatializationStateEventListener([in] unsigned int sessionID);
     void RegisterPolicyCallbackClient(
         [in] IRemoteObject object,
         [in] int zoneID /* default value: 0 -- local device */);

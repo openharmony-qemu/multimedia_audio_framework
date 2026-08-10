@@ -538,17 +538,12 @@ public:
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState &audioSpatialDeviceState) override;
 
-    int32_t RegisterSpatializationStateEventListener(uint32_t sessionID, int32_t streamUsage,
-        const sptr<IRemoteObject> &object) override;
-
     int32_t ConfigDistributedRoutingRole(
         const std::shared_ptr<AudioDeviceDescriptor> &descriptor, int32_t type) override;
 
     int32_t SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetDistributedRoutingRoleCallback() override;
-
-    int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID) override;
 
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, int32_t zoneId) override;
 

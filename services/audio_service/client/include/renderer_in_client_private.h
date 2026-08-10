@@ -46,7 +46,6 @@ namespace AudioStandard {
 namespace {
 const int32_t LOG_COUNT_LIMIT = 200;
 } // namespace
-class SpatializationStateChangeCallbackImpl;
 
 class RendererInClientInner : public RendererInClient, public IStreamListener, public IHandler,
     public std::enable_shared_from_this<RendererInClientInner> {
@@ -205,7 +204,6 @@ public:
     void HandleRenderMarkReachedEvent(int64_t rendererMarkPosition);
     void HandleRenderPeriodReachedEvent(int64_t rendererPeriodNumber);
 
-    void OnSpatializationStateChange(const AudioSpatializationState &spatializationState);
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
 
     void GetStreamSwitchInfo(SwitchInfo &info);
@@ -341,10 +339,6 @@ private:
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
     void HandleStatusChangeOperation(Operation operation);
-
-    int32_t RegisterSpatializationStateEventListener();
-
-    int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
 
     void FirstFrameProcess();
 
@@ -595,11 +589,6 @@ private:
     std::atomic<uint64_t> lastPrintTimestamp_ = 0;
 
     std::string traceTag_;
-    std::string spatializationEnabled_ = "Invalid";
-    std::string headTrackingEnabled_ = "Invalid";
-    uint32_t spatializationRegisteredSessionID_ = 0;
-    bool firstSpatializationRegistered_ = true;
-    std::shared_ptr<SpatializationStateChangeCallbackImpl> spatializationStateChangeCallback_ = nullptr;
     std::time_t startMuteTime_ = 0;
     bool isUpEvent_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
@@ -659,17 +648,6 @@ private:
     std::string bundleName = "";
 
     std::atomic<bool> needNotifyStreamSilentChange_ = true;
-};
-
-class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {
-public:
-    SpatializationStateChangeCallbackImpl();
-    virtual ~SpatializationStateChangeCallbackImpl();
-
-    void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) override;
-    void SetRendererInClientPtr(std::shared_ptr<RendererInClientInner> rendererInClientPtr);
-private:
-    std::weak_ptr<RendererInClientInner> rendererInClientPtr_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

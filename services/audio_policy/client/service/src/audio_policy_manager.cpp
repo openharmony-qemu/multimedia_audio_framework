@@ -27,7 +27,6 @@
 #include "audio_utils.h"
 #include "audio_policy_proxy.h"
 #include "audio_server_death_recipient.h"
-#include "audio_spatialization_state_change_listener.h"
 #include "boot_animation_state_info.h"
 #include "stream_dfx_manager.h"
 #include <unistd.h>
@@ -2539,34 +2538,6 @@ int32_t AudioPolicyManager::UpdateSpatialDeviceState(const AudioSpatialDeviceSta
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
     return gsp->UpdateSpatialDeviceState(audioSpatialDeviceState);
-}
-
-int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint32_t sessionID,
-    const StreamUsage streamUsage, const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
-
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Spatialization state callback is nullptr");
-
-    sptr<AudioSpatializationStateChangeListener> spatializationStateChangeListenerStub =
-        new(std::nothrow) AudioSpatializationStateChangeListener();
-    CHECK_AND_RETURN_RET_LOG(spatializationStateChangeListenerStub != nullptr, ERROR, "object null");
-
-    spatializationStateChangeListenerStub->SetCallback(callback);
-
-    sptr<IRemoteObject> object = spatializationStateChangeListenerStub->AsObject();
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "IPC object creation failed");
-
-    return gsp->RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
-}
-
-int32_t AudioPolicyManager::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
-
-    return gsp->UnregisterSpatializationStateEventListener(sessionID);
 }
 
 ConverterConfig AudioPolicyManager::GetConverterConfig()

@@ -457,9 +457,7 @@ void AudioPolicyServiceUpdateA2dpOffloadFlagBySpatialServiceFuzztest(const uint8
         return;
     }
     std::string macAddress = "11-22-33-44-55-66";
-    std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnableMap;
-    GetServerPtr()->audioPolicyService_.UpdateA2dpOffloadFlagBySpatialService(macAddress,
-        sessionIDToSpatializationEnableMap);
+    GetServerPtr()->audioPolicyService_.UpdateA2dpOffloadFlagBySpatialService(macAddress);
 }
 
 void AudioPolicyServiceRegisterRemoteDevStatusCallbackFuzztest(const uint8_t *rawData, size_t size)

@@ -361,8 +361,7 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetA2dpOffloadFlag_001, TestSize.Level
  */
 HWTEST_F(AudioA2dpOffloadManagerUnitTest, UpdateA2dpOffloadFlagForSpatializationChanged_001, TestSize.Level4)
 {
-    std::unordered_map<uint32_t, bool> testSpatializationEnabledMap;
-    testManager_->UpdateA2dpOffloadFlagForSpatializationChanged(testSpatializationEnabledMap, DEVICE_TYPE_SPEAKER);
+    testManager_->UpdateA2dpOffloadFlagForSpatializationChanged(DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(A2DP_OFFLOAD, testManager_->GetA2dpOffloadFlag());
 }
 

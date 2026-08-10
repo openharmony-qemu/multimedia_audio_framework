@@ -296,13 +296,11 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDes
     audioDeviceLock_.OnDeviceStatusUpdated(updatedDesc, isConnected);
 }
 
-void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(
-    const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap)
+void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(const std::string& macAddress)
 {
     DeviceType spatialDevice = audioDeviceCommon_.GetSpatialDeviceType(macAddress);
     if (audioA2dpOffloadManager_) {
-        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForSpatializationChanged(
-            sessionIDToSpatializationEnableMap, spatialDevice);
+        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForSpatializationChanged(spatialDevice);
     }
 }
 
