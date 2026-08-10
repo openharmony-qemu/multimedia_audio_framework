@@ -737,10 +737,11 @@ void SetBtHdiInvalidState(FuzzedDataProvider &provider)
 void SetKaraokeParameters(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    std::string parameters = provider.ConsumeRandomLengthString();
+    int32_t paramType = provider.ConsumeIntegral<int32_t>();
+    int32_t value = provider.ConsumeIntegral<int32_t>();
     bool ret = provider.ConsumeBool();
     int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    audioServer->SetKaraokeParameters(deviceType, parameters, ret);
+    audioServer->SetKaraokeParameters(deviceType, paramType, value, ret);
 }
 
 void IsAudioLoopbackSupported(FuzzedDataProvider &provider)
