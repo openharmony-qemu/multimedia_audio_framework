@@ -1178,6 +1178,23 @@ enum FilterMode : uint32_t {
     MAX_FILTER_MODE
 };
 
+struct StaticAudioPlaybackCaptureConfig {
+    int32_t playbackCaptureMode = 0;
+    bool isModernInnerCapturer = false;
+
+    StaticAudioPlaybackCaptureConfig() = default;
+    StaticAudioPlaybackCaptureConfig(const int32_t mode, const bool modernInnerCapturerFlag)
+        : playbackCaptureMode(mode), isModernInnerCapturer(modernInnerCapturerFlag)
+    {
+    }
+
+    bool operator ==(StaticAudioPlaybackCaptureConfig& filter)
+    {
+        return (filter.playbackCaptureMode == playbackCaptureMode &&
+            filter.isModernInnerCapturer == isModernInnerCapturer);
+    }
+};
+
 // 1.If the size of usages or pids is 0, FilterMode will not work.
 // 2.Filters will only works with FileterMode INCLUDE or EXCLUDE while the vector size is not zero.
 // 3.If usages and pids are both not empty, the result is the intersection of the two Filter.
@@ -1190,7 +1207,6 @@ struct CaptureFilterOptions {
     FilterMode pidFilterMode {FilterMode::INCLUDE};
     bool capturePrivatePrivacyStreams = false;
     int32_t playbackCaptureUid = PLAYBACKCAPTURER_RECORD_ALL;
-    int32_t playbackCaptureMode = 0;
 
     CaptureFilterOptions() = default;
     CaptureFilterOptions(const std::vector<StreamUsage> &usage, FilterMode uFilterMode,
@@ -1211,8 +1227,7 @@ struct CaptureFilterOptions {
         return (filter.usages == usages && filter.usageFilterMode == usageFilterMode
             && filter.pids == pids && filter.pidFilterMode == pidFilterMode
             && filter.capturePrivatePrivacyStreams == capturePrivatePrivacyStreams &&
-            filter.playbackCaptureUid == playbackCaptureUid &&
-            filter.playbackCaptureMode == playbackCaptureMode);
+            filter.playbackCaptureUid == playbackCaptureUid);
     }
 };
 
@@ -1222,7 +1237,6 @@ inline constexpr uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
 struct AudioPlaybackCaptureConfig : public Parcelable {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
-    bool isModernInnerCapturer = false;
 
     AudioPlaybackCaptureConfig() = default;
     AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool silent)
@@ -1260,11 +1274,9 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
         parcel.WriteUint32(filterOptions.pidFilterMode);
         parcel.WriteBool(filterOptions.capturePrivatePrivacyStreams);
         parcel.WriteInt32(filterOptions.playbackCaptureUid);
-        parcel.WriteInt32(filterOptions.playbackCaptureMode);
 
         // silentCapture
         parcel.WriteBool(silentCapture);
-        parcel.WriteBool(isModernInnerCapturer);
         return true;
     }
 
@@ -1273,10 +1285,8 @@ private:
     {
         config->filterOptions.capturePrivatePrivacyStreams = parcel.ReadBool();
         config->filterOptions.playbackCaptureUid = parcel.ReadInt32();
-        config->filterOptions.playbackCaptureMode = parcel.ReadInt32();
         // silentCapture
         config->silentCapture = parcel.ReadBool();
-        config->isModernInnerCapturer = parcel.ReadBool();
         return config;
     }
 
@@ -1667,6 +1677,10 @@ struct AudioProcessConfig : public Parcelable {
 
     int32_t innerCapId = 0;
 
+    int32_t playbackCaptureMode = 0;
+
+    bool isModernInnerCapturer = false;
+
     StaticBufferInfo staticBufferInfo{};
 
     AudioProcessConfig() {}
@@ -1725,6 +1739,8 @@ struct AudioProcessConfig : public Parcelable {
         // Original session id for re-create stream
         parcel.WriteUint32(originalSessionId);
         parcel.WriteInt32(innerCapId);
+        parcel.WriteInt32(playbackCaptureMode);
+        parcel.WriteBool(isModernInnerCapturer);
 
         // StaticAudioRenderer
         if (rendererInfo.isStatic) {
@@ -1793,6 +1809,8 @@ struct AudioProcessConfig : public Parcelable {
         // Original session id for re-create stream
         config->originalSessionId = parcel.ReadUint32();
         config->innerCapId = parcel.ReadInt32();
+        config->playbackCaptureMode = parcel.ReadInt32();
+        config->isModernInnerCapturer = parcel.ReadBool();
 
         // Static Audiorenderer
         if (config->rendererInfo.isStatic) {

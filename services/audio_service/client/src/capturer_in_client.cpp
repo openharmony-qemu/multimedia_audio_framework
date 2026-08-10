@@ -600,6 +600,8 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.isInnerCapturer = isInnerCapturer_;
     config.isWakeupCapturer = isWakeupCapturer_;
     config.innerCapId = innerCapId_;
+    config.playbackCaptureMode = playbackCaptureMode_;
+    config.isModernInnerCapturer = isModernInnerCapturer_;
 
     clientConfig_ = config;
     return config;
@@ -1406,9 +1408,12 @@ int64_t CapturerInClientInner::GetFramesRead()
 }
 
 // Will only take effect before SetAudioStreaminfo
-void CapturerInClientInner::SetInnerCapturerState(bool isInnerCapturer)
+void CapturerInClientInner::SetInnerCapturerState(bool isInnerCapturer,
+    int32_t playbackCaptureMode, bool isModernInnerCapturer)
 {
     isInnerCapturer_ = isInnerCapturer;
+    playbackCaptureMode_ = playbackCaptureMode;
+    isModernInnerCapturer_ = isModernInnerCapturer;
     AUDIO_INFO_LOG("SetInnerCapturerState %{public}s", (isInnerCapturer_ ? "true" : "false"));
     return;
 }

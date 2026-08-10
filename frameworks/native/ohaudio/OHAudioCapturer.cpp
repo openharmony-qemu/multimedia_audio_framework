@@ -550,7 +550,7 @@ OHAudioCapturer::~OHAudioCapturer()
 bool OHAudioCapturer::Initialize(const AudioCapturerOptions& capturerOptions)
 {
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
-    isModernInnerCapturer_ = capturerOptions.playbackCaptureConfig.isModernInnerCapturer;
+    isModernInnerCapturer_ = capturerOptions.staticPlaybackCaptureConfig.isModernInnerCapturer;
     return audioCapturer_ != nullptr;
 }
 
