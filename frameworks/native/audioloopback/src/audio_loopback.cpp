@@ -595,9 +595,7 @@ bool AudioLoopbackPrivate::EnableLoopback()
     CHECK_AND_RETURN_RET_LOG(
         SetKaraokeParameters(KaraokeParamType::KARAOKE_PARAM_ENABLE, 1), false, "EnableLoopback failed");
     for (auto &param : karaokeParams_) {
-        if (param.first == KaraokeParamType::KARAOKE_PARAM_ENABLE) {
-            continue;
-        }
+        CHECK_AND_CONTINUE(param.first != KaraokeParamType::KARAOKE_PARAM_ENABLE);
         auto ret = SetKaraokeParameters(param.first, param.second);
         CHECK_AND_RETURN_RET_LOG(ret, false, "EnableLoopback failed");
     }
