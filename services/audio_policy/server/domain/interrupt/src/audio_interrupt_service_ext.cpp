@@ -612,5 +612,64 @@ bool AudioInterruptService::IsIndependentStrategyValid(const AudioInterrupt &int
     return concurrencyMode != AudioConcurrencyMode::INVALID &&
         concurrencyMode != AudioConcurrencyMode::DEFAULT;
 }
+
+static bool IsResponseCheckSupported(InterruptHint hintType)
+{
+    return hintType == INTERRUPT_HINT_RESUME || hintType == INTERRUPT_HINT_STOP ||
+        hintType == INTERRUPT_HINT_PAUSE || hintType == INTERRUPT_HINT_DUCK ||
+        hintType == INTERRUPT_HINT_MUTE;
+}
+
+static bool ShouldExcludeCurrentStream(InterruptHint hintType)
+{
+    // RESUME expects the stream to restart (current stream should reappear)
+    // STOP expects the stream to stop (current stream should not reappear)
+    return hintType == INTERRUPT_HINT_RESUME || hintType == INTERRUPT_HINT_STOP;
+}
+
+void AudioInterruptService::ScheduleInterruptResponseCheck(
+    const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt)
+{
+    CHECK_AND_RETURN_LOG(!IsGameAvoidCallbackCase(audioInterrupt), "game app skip interrupt response check");
+    CHECK_AND_RETURN_LOG(IsResponseCheckSupported(interruptEvent.hintType),
+        "hintType %{public}d not in response check range", interruptEvent.hintType);
+
+    InterruptResponseCheckInfo info;
+    info.hintType = interruptEvent.hintType;
+    info.streamId = audioInterrupt.streamId;
+    info.pid = audioInterrupt.pid;
+    info.streamType = audioInterrupt.audioFocusType.streamType;
+    info.sourceType = audioInterrupt.audioFocusType.sourceType;
+    info.appName = AudioInterruptUtils::GetAudioInterruptBundleName(audioInterrupt);
+
+    int32_t zoneId = FindAudioZoneByStreamIdInternal(audioInterrupt.streamId);
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusList;
+    auto itZone = zonesMap_.find(zoneId);
+    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
+        focusList = itZone->second->audioFocusInfoList;
+    }
+
+    CHECK_AND_RETURN(interruptDfx_ != nullptr);
+    // snapshot same-type streams at interrupt time
+    // compare with current focusList after 1s delay to check whether the app responded correctly
+    info.originalStreamIdSet = interruptDfx_->CollectSameTypeStreamIds(info, focusList,
+        ShouldExcludeCurrentStream(interruptEvent.hintType));
+
+    auto service = shared_from_this();
+    std::thread([service, info, zoneId] {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> currentFocusList;
+        {
+            std::lock_guard<std::mutex> lock(service->mutex_);
+            auto currZone = service->zonesMap_.find(zoneId);
+            if (currZone != service->zonesMap_.end() && currZone->second != nullptr) {
+                currentFocusList = currZone->second->audioFocusInfoList;
+            }
+        }
+        service->interruptDfx_->CheckInterruptResponse(info, currentFocusList);
+    }).detach();
+    AUDIO_INFO_LOG("ScheduleInterruptResponseCheck for streamId %{public}u zoneId %{public}d",
+        info.streamId, zoneId);
+}
 }
 } // namespace OHOS

@@ -31,6 +31,18 @@ namespace AudioStandard {
 
 const int64_t LONG_PLAYBACK_TIME_NS = 3LL * 60 * 1000 * 1000 * 1000;
 
+static std::string GetHintTypeName(InterruptHint hintType)
+{
+    switch (hintType) {
+        case INTERRUPT_HINT_RESUME: return "RESUME";
+        case INTERRUPT_HINT_STOP: return "STOP";
+        case INTERRUPT_HINT_PAUSE: return "PAUSE";
+        case INTERRUPT_HINT_DUCK: return "DUCK";
+        case INTERRUPT_HINT_MUTE: return "MUTE";
+        default: return "";
+    }
+}
+
 AudioInterruptDfx::AudioInterruptDfx()
     : sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance())
 {}
@@ -350,6 +362,97 @@ void AudioInterruptDfx::WriteInterruptOrSessionCallbackErrorEvent(int32_t usage,
         " type: " + std::to_string(type);
     interruptError.errorInfo = "MisuseOfInterfaces";
     WriteAudioInterruptErrorEvent(interruptError);
+}
+
+void AudioInterruptDfx::WriteInterruptResponseErrorEvent(const std::string &appName,
+    InterruptHint hintType, const std::string &rendererInfo, const std::string &errorInfo)
+{
+    AudioFocusErrorEvent interruptError;
+    interruptError.hintType = hintType;
+    interruptError.errorInfo = errorInfo;
+    interruptError.interruptedAppName = appName;
+    interruptError.interruptedRendererInfo = rendererInfo;
+    WriteAudioInterruptErrorEvent(interruptError);
+}
+
+std::set<uint32_t> AudioInterruptDfx::CollectSameTypeStreamIds(const InterruptResponseCheckInfo &info,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList, bool excludeCurrent)
+{
+    std::set<uint32_t> streamIdSet;
+    bool isCapturer = info.sourceType != SOURCE_TYPE_INVALID;
+    for (const auto &entry : focusList) {
+        if (entry.first.pid != info.pid) continue;
+        bool typeMatch = isCapturer ? entry.first.audioFocusType.sourceType == info.sourceType :
+            entry.first.audioFocusType.streamType == info.streamType;
+        if (!typeMatch) continue;
+        if (excludeCurrent && entry.first.streamId == info.streamId) continue;
+        streamIdSet.insert(entry.first.streamId);
+    }
+    return streamIdSet;
+}
+
+bool AudioInterruptDfx::HasNewSameTypeStream(const InterruptResponseCheckInfo &info,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
+{
+    // compare current focusList with the snapshot to check if any new same-type stream appeared
+    auto currentSet = CollectSameTypeStreamIds(info, focusList, false);
+    for (uint32_t id : currentSet) {
+        if (info.originalStreamIdSet.count(id) == 0) return true;
+    }
+    return false;
+}
+
+const std::pair<AudioInterrupt, AudioFocuState>* AudioInterruptDfx::FindStreamById(uint32_t streamId,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
+{
+    for (const auto &entry : focusList) {
+        if (entry.first.streamId == streamId) return &entry;
+    }
+    return nullptr;
+}
+
+ResponseResult AudioInterruptDfx::EvaluateResponse(const InterruptResponseCheckInfo &info,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
+{
+    // RESUME/STOP only check for new streams; PAUSE/DUCK/MUTE also check if the stream is still ACTIVE
+    bool hasNew = HasNewSameTypeStream(info, focusList);
+    bool expectRestart = (info.hintType == INTERRUPT_HINT_RESUME);
+
+    // RESUME expects restart (new stream should appear), STOP expects no restart
+    if (info.hintType == INTERRUPT_HINT_RESUME || info.hintType == INTERRUPT_HINT_STOP) {
+        if (expectRestart && !hasNew) return ResponseResult::NOT_RESTARTED;
+        if (!expectRestart && hasNew) return ResponseResult::RESTARTED;
+        return ResponseResult::NORMAL;
+    }
+    // PAUSE/DUCK/MUTE: stream should not remain ACTIVE nor restart; absent means already stopped
+    auto *entry = FindStreamById(info.streamId, focusList);
+    if (entry == nullptr) return ResponseResult::STOPPED;
+    if (entry->second == ACTIVE || hasNew) return ResponseResult::RESTARTED;
+    return ResponseResult::NORMAL;
+}
+
+static std::string GetResponseResultSuffix(ResponseResult result)
+{
+    switch (result) {
+        case ResponseResult::NOT_RESTARTED: return "_NOT_RESTART";
+        case ResponseResult::RESTARTED: return "_RESTART";
+        case ResponseResult::STOPPED: return "_STOP";
+        default: return "";
+    }
+}
+
+void AudioInterruptDfx::CheckInterruptResponse(const InterruptResponseCheckInfo &info,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
+{
+    auto result = EvaluateResponse(info, focusList);
+    CHECK_AND_RETURN(result != ResponseResult::NORMAL);
+
+    std::string errorDetail = GetHintTypeName(info.hintType) + GetResponseResultSuffix(result);
+    std::string rendererInfo = "streamType: " + std::to_string(info.streamType) +
+        " sourceType: " + std::to_string(info.sourceType) +
+        " streamId: " + std::to_string(info.streamId);
+    std::string errorInfo = "InterruptResponseAbnormal_" + errorDetail;
+    WriteInterruptResponseErrorEvent(info.appName, info.hintType, rendererInfo, errorInfo);
 }
 
 void AudioInterruptDfx::AudioSessionTimeoutErrorEvent(const AudioInterrupt &audioInterrupt)

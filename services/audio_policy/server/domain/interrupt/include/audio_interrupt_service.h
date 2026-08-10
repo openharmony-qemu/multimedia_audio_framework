@@ -502,6 +502,9 @@ private:
     std::shared_ptr<AudioInterruptDfx> interruptDfx_;
     std::unique_ptr<AudioInterruptStrategy> interruptStrategy_;
 
+    void ScheduleInterruptResponseCheck(const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &audioInterrupt);
+
     AudioStreamCollector& streamCollector_;
     std::map<uint32_t, std::vector<AudioFocusBehavior>> audioFocusHisMap_;
 };
