@@ -153,13 +153,13 @@ void LinearPosTimeModel::SetSpanCount(uint64_t spanCountInFrame)
     return;
 }
 
-int64_t LinearPosTimeModel::GetTimeOfPos(uint64_t posInFrame)
+int64_t LinearPosTimeModel::GetTimeOfPos(uint64_t posInFrame, bool isStarted)
 {
     int64_t deltaFrame = 0;
     int64_t invalidTime = -1;
     CHECK_AND_RETURN_RET_LOG(isConfiged, invalidTime, "SampleRate is not configed!");
     if (posInFrame >= stampFrame_) {
-        if (posInFrame - stampFrame_ >= (uint64_t)sampleRate_) {
+        if (posInFrame - stampFrame_ >= (uint64_t)sampleRate_ && isStarted) {
             AUDIO_WARNING_LOG("posInFrame %{public}" PRIu64" is too"
                 " large, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
         }

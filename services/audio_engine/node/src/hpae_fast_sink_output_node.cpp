@@ -762,7 +762,7 @@ int64_t HpaeFastSinkOutputNode::GetPredictNextReadTime(uint64_t posInFrame)
         }
     }
 
-    int64_t nextHdiReadTime = readTimeModel_.GetTimeOfPos(posInFrame);
+    int64_t nextHdiReadTime = readTimeModel_.GetTimeOfPos(posInFrame, isStarted_);
     return nextHdiReadTime;
 }
 
