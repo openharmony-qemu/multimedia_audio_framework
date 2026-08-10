@@ -414,7 +414,7 @@ const std::pair<AudioInterrupt, AudioFocuState>* AudioInterruptDfx::FindStreamBy
 ResponseResult AudioInterruptDfx::EvaluateResponse(const InterruptResponseCheckInfo &info,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
 {
-    // RESUME/STOP only check for new streams; PAUSE/DUCK/MUTE also check if the stream is still ACTIVE
+    // RESUME/STOP only check for new streams; PAUSE also checks if the stream is still ACTIVE
     bool hasNew = HasNewSameTypeStream(info, focusList);
     bool expectRestart = (info.hintType == INTERRUPT_HINT_RESUME);
 
@@ -424,10 +424,13 @@ ResponseResult AudioInterruptDfx::EvaluateResponse(const InterruptResponseCheckI
         if (!expectRestart && hasNew) return ResponseResult::RESTARTED;
         return ResponseResult::NORMAL;
     }
-    // PAUSE/DUCK/MUTE: stream should not remain ACTIVE nor restart; absent means already stopped
+    // PAUSE/DUCK/MUTE: absent means already stopped
     auto *entry = FindStreamById(info.streamId, focusList);
     if (entry == nullptr) return ResponseResult::STOPPED;
-    if (entry->second == ACTIVE || hasNew) return ResponseResult::RESTARTED;
+    // PAUSE: stream should not remain ACTIVE nor restart
+    if (info.hintType == INTERRUPT_HINT_PAUSE && (entry->second == ACTIVE || hasNew)) {
+        return ResponseResult::RESTARTED;
+    }
     return ResponseResult::NORMAL;
 }
 
