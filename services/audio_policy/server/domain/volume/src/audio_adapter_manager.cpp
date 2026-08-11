@@ -4369,7 +4369,9 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
 {
     std::lock_guard<std::mutex> lock1(activeDeviceMutex_);
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
-    AudioVolume::GetInstance()->SetCurrentActiveDevice(audioActiveDevice_.GetCurrentOutputDeviceType());
+    auto desc = audioActiveDevice_.GetDeviceForVolume();	 
+    CHECK_AND_RETURN_LOG(desc != nullptr, "active device desc is null"); 
+    AudioVolume::GetInstance()->SetCurrentActiveDevice(desc->deviceType_);
     if (device->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
         device->volumeBehavior_.controlMode == HILINK_MODE) {
         VolumeValue volumeValue{GetMaxVolumeLevel(volumeType, device->deviceType_), MAX_VOLUME_DEGREE, false};
