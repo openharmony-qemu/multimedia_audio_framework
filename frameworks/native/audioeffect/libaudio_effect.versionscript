@@ -108,6 +108,8 @@
     *UpdatePersonalizedSpatializationState*;
     *SetPersonalizedSpatializationStateResultCallback*;
     *IsStreamUsageSupported*;
+    *SetChannelOverride*;
+    *ClearChannelOverride*;
   local:
     *;
 };

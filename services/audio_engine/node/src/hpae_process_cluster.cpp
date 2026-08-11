@@ -231,6 +231,7 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
         idConverterMap_[sessionId]->DisConnect(preNode);
         auto seNode = SafeGetMap(idSessionEffectMap_, sessionId);
         if (seNode) {
+            seNode->PauseEffect();
             idLoudnessGainNodeMap_[sessionId]->DisConnect(seNode);
         } else {
             idLoudnessGainNodeMap_[sessionId]->DisConnect(idConverterMap_[sessionId]);
@@ -344,6 +345,8 @@ int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasi
     // SessionEffectNode (AISS) requires 48kHz input
     if (SafeGetMap(idSessionEffectMap_, sessionId)) {
         basicFormat.rate = SAMPLE_RATE_48000;
+        basicFormat.audioChannelInfo.numChannels = STEREO;
+        basicFormat.audioChannelInfo.channelLayout = CH_LAYOUT_STEREO;
     }
     return ret;
 }
@@ -531,7 +534,8 @@ uint64_t HpaeProcessCluster::GetLatency(uint32_t sessionId)
 }
 
 int32_t HpaeProcessCluster::CreateSessionEffectNode(uint32_t sessionId, const std::string &effectName,
-    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config)
+    std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+    bool aissSwitchEnabled)
 {
     if (SafeGetMap(idSessionEffectMap_, sessionId) != nullptr) {
         AUDIO_WARNING_LOG("sessionId %{public}u already has session effect node", sessionId);
@@ -547,7 +551,7 @@ int32_t HpaeProcessCluster::CreateSessionEffectNode(uint32_t sessionId, const st
     HpaeNodeInfo nodeInfo = converterNode->GetNodeInfo();
     auto sessionEffectNode = std::make_shared<HpaeSessionEffectNode>(nodeInfo);
 
-    int32_t ret = sessionEffectNode->CreateEffectWithInstance(effectName, instance, config);
+    int32_t ret = sessionEffectNode->CreateEffectWithInstance(effectName, instance, config, aissSwitchEnabled);
     if (ret != 0) {
         AUDIO_WARNING_LOG("sessionId %{public}u create effect failed, ret=%{public}d", sessionId, ret);
         return ret;
@@ -568,19 +572,52 @@ int32_t HpaeProcessCluster::CreateSessionEffectNode(uint32_t sessionId, const st
 
 int32_t HpaeProcessCluster::DestroySessionEffectNode(uint32_t sessionId, uint64_t &outLatency)
 {
+    // Synchronous immediate destroy: Begin + Finalize in one call (no smooth-close opportunity).
+    // Used by non-smooth paths (cluster refresh) and focused tests.
+    std::weak_ptr<HpaeSessionEffectNode> weakNode;
+    int32_t ret = BeginDestroySessionEffectNode(sessionId, outLatency, weakNode);
+    CHECK_AND_RETURN_RET(ret == 0, ret);
+    FinalizeDestroySessionEffectNode(sessionId, weakNode, nullptr);
+    return 0;
+}
+
+int32_t HpaeProcessCluster::BeginDestroySessionEffectNode(uint32_t sessionId, uint64_t &outLatency,
+    std::weak_ptr<HpaeSessionEffectNode> &outWeakNode)
+{
     outLatency = 0;
     auto node = SafeGetMap(idSessionEffectMap_, sessionId);
     if (node == nullptr) {
-        AUDIO_WARNING_LOG("sessionId %{public}u session effect node not found", sessionId);
+        AUDIO_WARNING_LOG("BeginDestroySessionEffectNode: sessionId %{public}u SE node not found",
+            sessionId);
         return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
     }
 
-    // Close SE flow: mark crossfade (Phase 2: no-op in bypass, Phase 3: real crossfade)
-    node->StartCloseCrossfade();
     node->StopPreheatThread();
-
-    // Get latency before disconnect (Phase 2: returns 0, Phase 3: returns real latency)
+    // Pipeline latency the wet output lags behind upstream dry = SE + the converter immediately
+    // upstream of the SE insert point. Flush it; the manager rewinds SinkInputNode by this total.
     outLatency = node->GetLatency(sessionId);
+    auto converterNode = SafeGetMap(idConverterMap_, sessionId);
+    if (converterNode != nullptr) {
+        outLatency += converterNode->GetLatency();
+        converterNode->FlushBuffers();
+    }
+    // Enter STOPPING; node stays in idSessionEffectMap_ until Finalize (next queue cycle) erases it.
+    node->StartCloseCrossfade();
+    outWeakNode = node;
+    AUDIO_INFO_LOG("BeginDestroySessionEffectNode: session %{public}u BeginClose, latency=%{public}llu",
+        sessionId, (unsigned long long)outLatency);
+    return 0;
+}
+
+bool HpaeProcessCluster::FinalizeDestroySessionEffectNode(uint32_t sessionId,
+    const std::weak_ptr<HpaeSessionEffectNode> &closingNode,
+    std::shared_ptr<IEffectInstance> pendingInstance)
+{
+    auto node = closingNode.lock();
+    auto current = SafeGetMap(idSessionEffectMap_, sessionId);
+    // Identity check: no-op if the closing node was already replaced/destroyed (DestroyStream,
+    // Reload, DestroyNodes, or a recreated node).
+    CHECK_AND_RETURN_RET(node != nullptr && current == node, false);
 
     auto converterNode = SafeGetMap(idConverterMap_, sessionId);
     auto loudnessGainNode = SafeGetMap(idLoudnessGainNodeMap_, sessionId);
@@ -589,14 +626,28 @@ int32_t HpaeProcessCluster::DestroySessionEffectNode(uint32_t sessionId, uint64_
         loudnessGainNode->DisConnect(node);
         node->DisConnect(converterNode);
         loudnessGainNode->Connect(converterNode);
-        converterNode->FlushBuffers();  // Clear residual SE output from processedBuffer_
     }
 
-    node->DropEffect();  // Don't destroy algorithm — SessionEffectManager manages lifecycle
+    // If a pending rapid-recreate will reuse this exact instance, do NOT Flush/Stop it — the new
+    // binding takes the instance over. Otherwise release normally.
+    auto closingInst = node->GetEffectInstance();
+    bool sameInstanceReuse = pendingInstance != nullptr && closingInst != nullptr &&
+        pendingInstance.get() == closingInst.get();
+    if (sameInstanceReuse) {
+        node->DetachEffectForReload();
+    } else {
+        node->DropEffect();
+    }
     idSessionEffectMap_.erase(sessionId);
-    AUDIO_INFO_LOG("sessionId %{public}u session effect node destroyed, latency=%{public}llu",
-        sessionId, (unsigned long long)outLatency);
-    return 0;
+    AUDIO_INFO_LOG("FinalizeDestroySessionEffectNode: session %{public}u finalized (sameInstance=%{public}d)",
+        sessionId, static_cast<int>(sameInstanceReuse));
+    return true;
+}
+
+bool HpaeProcessCluster::IsSessionEffectNodeStopping(uint32_t sessionId) const
+{
+    auto node = SafeGetMap(idSessionEffectMap_, sessionId);
+    return node != nullptr && node->GetStatus() == HpaeSessionEffectNode::STATUS::STOPPING;
 }
 
 bool HpaeProcessCluster::HasSessionEffectNode(uint32_t sessionId) const

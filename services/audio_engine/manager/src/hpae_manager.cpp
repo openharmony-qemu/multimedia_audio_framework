@@ -1841,6 +1841,7 @@ int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32
                 "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->StartWithSyncId(sessionId, syncId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
+            TryBindSessionEffectOnStart(sessionId);
             UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STARTED, sessionId);
         } else {
             AUDIO_WARNING_LOG("StartWithSyncId can not find sessionId streamClassType %{public}d,"
@@ -3147,11 +3148,6 @@ bool IsAissStreamSupported(const HpaeStreamInfo &streamInfo, uint32_t sessionId,
             caller, streamInfo.sourceType, sessionId);
         return false;
     }
-    if (streamInfo.channels > STEREO) {
-        AUDIO_INFO_LOG("%{public}s: skip non-stereo stream channels=%{public}u session=%{public}u",
-            caller, streamInfo.channels, sessionId);
-        return false;
-    }
     return true;
 }
 }  // namespace
@@ -3180,7 +3176,7 @@ void HpaeManager::TryBindSessionEffectOnStart(uint32_t sessionId)
     }
 }
 
-int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId)
+int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId, bool aissSwitchEnabled)
 {
     // AISS only supports real stereo playback streams.
     auto it = rendererIdStreamInfoMap_.find(sessionId);
@@ -3201,7 +3197,8 @@ int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId)
 
     auto rendererManager = GetRendererManagerById(sessionId);
     if (rendererManager != nullptr) {
-        rendererManager->PostCreateSessionEffect(sessionId, AUDIO_AISS_ENHANCE_EFFECT_NAME, instance, audioConfig);
+        rendererManager->PostCreateSessionEffect(sessionId, AUDIO_AISS_ENHANCE_EFFECT_NAME, instance, audioConfig,
+            aissSwitchEnabled);
     }
     return SUCCESS;
 }
@@ -3282,7 +3279,7 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
         return SUCCESS;
     }
 
-    int32_t ret = BindAndCreateAiss(targetSessionId);
+    int32_t ret = BindAndCreateAiss(targetSessionId, true);
     if (ret == static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED)) {
         AUDIO_INFO_LOG("EnableAissByUid: running music stream %{public}u is unsupported, keep pending",
             targetSessionId);
@@ -3335,7 +3332,7 @@ int32_t HpaeManager::SetAissEnabledSync(uint32_t sessionId, bool enabled)
                 ClearAissSession(oldSessionId, true);
             }
 
-            int32_t ret = BindAndCreateAiss(sessionId);
+            int32_t ret = BindAndCreateAiss(sessionId, true);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
                 "SetAissEnabledSync: BindAndCreateAiss failed for session %{public}u", sessionId);
             return SUCCESS;

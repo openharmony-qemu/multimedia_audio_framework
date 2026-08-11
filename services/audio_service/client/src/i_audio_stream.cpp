@@ -134,12 +134,10 @@ void IAudioStream::CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>,
 
 int32_t IAudioStream::CheckRendererAudioStreamInfo(const AudioStreamParams info)
 {
-    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
-        !((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
-        (info.customSampleRate != 0 && IsCustomSampleRateValid(info.customSampleRate)))) {
-        AUDIO_ERR_LOG("Unsupported audio renderer parameter");
-        return ERR_NOT_SUPPORTED;
-    }
+    CHECK_AND_RETURN_RET_LOG(IsFormatValid(info.format) && IsEncodingTypeValid(info.encoding) &&
+        ((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
+        (info.customSampleRate != 0 && Util::IsCustomSampleRateValid(info.customSampleRate))),
+        ERR_NOT_SUPPORTED, "Unsupported audio renderer parameter");
     CHECK_AND_RETURN_RET(IsPlaybackChannelRelatedInfoValid(info.encoding, info.channels, info.channelLayout),
         ERR_NOT_SUPPORTED);
     return SUCCESS;
@@ -407,12 +405,6 @@ bool IAudioStream::IsSamplingRateValid(uint32_t samplingRate)
                != AUDIO_SUPPORTED_SAMPLING_RATES.end());
     AUDIO_DEBUG_LOG("AudioStream: IsSamplingRateValid: %{public}s", isValidSamplingRate ? "true" : "false");
     return isValidSamplingRate;
-}
-
-bool IAudioStream::IsCustomSampleRateValid(uint32_t customSampleRate)
-{
-    return (customSampleRate >= SAMPLE_RATE_8000 && customSampleRate <= SAMPLE_RATE_384000 &&
-        customSampleRate % SAMPLE_RATE_RESOLUTION_10 == 0) || customSampleRate == SAMPLE_RATE_11025;
 }
 
 bool IAudioStream::IsRendererChannelLayoutValid(uint64_t channelLayout)

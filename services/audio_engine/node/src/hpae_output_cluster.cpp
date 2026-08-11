@@ -158,6 +158,14 @@ int32_t HpaeOutputCluster::GetConverterNodeCount()
     return sceneConverterMap_.size();
 }
 
+void HpaeOutputCluster::SetUpmixCoef(HpaeProcessorType sceneType, float coef)
+{
+    auto converter = SafeGetMap(sceneConverterMap_, sceneType);
+    CHECK_AND_RETURN_LOG(converter != nullptr,
+        "SetUpmixCoef: sceneType %{public}u converter not found, skip", sceneType);
+    converter->SetUpmixCoef(coef);
+}
+
 int32_t HpaeOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
     const std::string &macAddress)
 {

@@ -42,6 +42,7 @@ public:
     virtual const char *GetFrameData(void) = 0;
     virtual StreamManagerState GetState(void) = 0;
     virtual bool IsProcessClusterConnected(HpaeProcessorType sceneType) = 0;
+    virtual void SetUpmixCoef(HpaeProcessorType sceneType, float coef) = 0;
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) = 0;
     virtual int32_t SetPriPaPower(void) { return 0; };
     virtual int32_t SetSyncId(int32_t syncId) { return 0; };

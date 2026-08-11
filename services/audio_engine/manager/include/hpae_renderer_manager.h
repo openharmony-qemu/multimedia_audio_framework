@@ -21,6 +21,7 @@
 #include <string>
 #include <mutex>
 #include <shared_mutex>
+#include <optional>
 #include "hpae_signal_process_thread.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_process_cluster.h"
@@ -35,7 +36,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
 class HpaeRendererManager : public IHpaeRendererManager {
 public:
     HpaeRendererManager(HpaeSinkInfo &sinkInfo);
@@ -91,6 +91,7 @@ public:
     void OnFadeDone(uint32_t sessionId) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
     void OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs) override;
+    void OnSessionEffectPreheatStateChanged(uint32_t sessionId, bool active) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     int32_t DumpSinkInfo() override;
@@ -110,11 +111,13 @@ public:
 
     // Session Effect (synchronous — must be called from SignalProcessThread)
     int32_t CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
-        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+        bool aissSwitchEnabled = false) override;
     int32_t DestroySessionEffect(uint32_t sessionId) override;
     // Session Effect (async — dispatches to SignalProcessThread, safe to call from any thread)
     void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
-        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config) override;
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+        bool aissSwitchEnabled = false) override;
     void PostDestroySessionEffect(uint32_t sessionId) override;
     bool HasSessionEffect(uint32_t sessionId) const override;
     bool IsValidSession(uint32_t sessionId) const override;
@@ -159,6 +162,12 @@ private:
     bool CheckIsStreamRunning();
     HpaeProcessorType GetProcessorType(uint32_t sessionId) const;
     HpaeProcessorType GetConnectedProcessorType(uint32_t sessionId) const;
+    std::optional<ChannelOverrideRoute> BuildChannelOverrideRoute(uint32_t sessionId) const;
+    std::optional<ChannelOverrideRoute> BuildChannelOverrideRouteFromProcessorType(
+        HpaeProcessorType sceneType) const;
+    void SetChannelOverrideForRoute(const ChannelOverrideRoute &route);
+    void ClearChannelOverrideForRoute(const ChannelOverrideRoute &route);
+    void OnSessionEffectMaterialized(uint32_t sessionId);
     HpaeProcessorType TransToProperSceneType(StreamUsage streamUsage, AudioEffectScene effectScene);
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
@@ -195,7 +204,20 @@ private:
     void MaterializeSessionEffectFromAttachState(uint32_t sessionId, HpaeProcessorType sceneType);
     void HandleSessionEffectMaterializeFailure(uint32_t sessionId, int32_t ret,
         const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
-
+    // Deferred close: runs on the next HandleMsg batch (recursive DoProcess stack already
+    // unwound). Clears channel override + emits DISABLED only if the cluster actually finalized.
+    void FinalizeSessionEffectClose(uint32_t sessionId, std::optional<ChannelOverrideRoute> route,
+        HpaeSessionState state, const std::weak_ptr<HpaeSessionEffectNode> &closingNode);
+    uint64_t SetPendingSessionEffectCreate(uint32_t sessionId,
+        const std::shared_ptr<IEffectInstance> &instance);
+    bool IsPendingSessionEffectCreate(uint32_t sessionId, uint64_t generation,
+        const std::shared_ptr<IEffectInstance> &instance) const;
+    void CancelPendingSessionEffectCreate(uint32_t sessionId);
+    // Returns true (and requeues a retry) when the cluster's SE node for this session is
+    // STOPPING; false otherwise.
+    bool TryDeferSessionEffectCreate(uint32_t sessionId, const std::string &effectName,
+        std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
+        bool aissSwitchEnabled = false);
     int32_t InitOutputCluster();
 
 private:
@@ -217,6 +239,12 @@ private:
     CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
     int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
     std::unordered_map<uint32_t, bool> isNeedInitEffectBufferFlagMap_;
+
+    // Pending SessionEffect create deferred behind a STOPPING node (rapid recreate), per session:
+    // sessionId -> {monotonic generation, weak instance}. Single-stream SE in practice, but
+    // per-session keyed so concurrent close+recreate on different sessions cannot drop a request.
+    uint64_t pendingSeCreateGeneration_ = 0;
+    std::unordered_map<uint32_t, std::pair<uint64_t, std::weak_ptr<IEffectInstance>>> pendingSeCreateMap_;
 
     int64_t lastOnUnderrunTime_ = 0;
     int64_t lastSessionStateChangeTime_ = 0;

@@ -302,32 +302,18 @@ HWTEST_F(HpaeSessionEffectNodeTest, setParameter_delegatesToInstance, TestSize.L
     EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 }
 
-// SE-CF1: StartCloseCrossfade sets pending flag
-HWTEST_F(HpaeSessionEffectNodeTest, startCloseCrossfade_setsFlag, TestSize.Level0)
+// SE-CF1: StartCloseCrossfade moves a no-instance/IDLE node to STOPPING without pending
+HWTEST_F(HpaeSessionEffectNodeTest, startCloseCrossfade_idleEntersStoppingNoPending, TestSize.Level0)
 {
     EXPECT_FALSE(node_->IsCloseCrossfadePending());
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
     node_->StartCloseCrossfade();
-    EXPECT_TRUE(node_->IsCloseCrossfadePending());
-}
-
-// SE-CF2: Crossfade clears flag on process
-HWTEST_F(HpaeSessionEffectNodeTest, crossfade_clearsFlagOnProcess, TestSize.Level0)
-{
-    node_->StartCloseCrossfade();
-    EXPECT_TRUE(node_->IsCloseCrossfadePending());
-
-    PcmBufferInfo bufInfo;
-    bufInfo.ch = 2;
-    bufInfo.frameLen = TEST_FRAME_LEN;
-    bufInfo.rate = 48000;
-    HpaePcmBuffer pcmBuf(bufInfo);
-
-    std::vector<HpaePcmBuffer *> inputs = {&pcmBuf};
-    node_->SignalProcess(inputs);
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+    // No effect instance / not ACTIVE -> no queued wet, so no pending crossfade.
     EXPECT_FALSE(node_->IsCloseCrossfadePending());
 }
 
-// SE-CF3: Crossfade bypass returns input (Phase 2 no-op)
+// SE-CF3: Crossfade bypass returns input (STOPPING bypass for a no-instance node)
 HWTEST_F(HpaeSessionEffectNodeTest, crossfade_bypassReturnsInput, TestSize.Level0)
 {
     node_->StartCloseCrossfade();
@@ -592,9 +578,9 @@ protected:
     }
 
     // Helper: drive node to specified state
-    void EnterState(HpaeSessionEffectNode::STATUS state)
+    void EnterState(HpaeSessionEffectNode::STATUS state, bool aissSwitchEnabled = true)
     {
-        node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
+        node_->CreateEffectWithInstance("test_effect", mockInst_, config_, aissSwitchEnabled);
         size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
         switch (state) {
             case HpaeSessionEffectNode::STATUS::WARMING_UP:
@@ -647,6 +633,19 @@ HWTEST_F(SessionEffectNodeStateTest, startEffect_zeroPreheatMarksPrebufFilled, T
     EXPECT_EQ(node_->GetPrebufTargetBytes(), 0u);
     EXPECT_TRUE(node_->GetPrebufFilled());
 }
+
+// When prebufTargetBytes_ == 0 (no preheat thread), no preheat state change callback should be emitted
+HWTEST_F(SessionEffectNodeStateTest, preheat_noCallback_whenPrebufTargetZero, TestSize.Level0)
+{
+    EXPECT_CALL(*mockInst_, GetPreheatFrames()).WillOnce(testing::Return(0));
+    EXPECT_CALL(*mockCallback_, OnSessionEffectPreheatStateChanged(testing::_, testing::_)).Times(0);
+
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config_);
+    EXPECT_EQ(node_->StartEffect(), 0);
+    ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
+    EXPECT_EQ(node_->GetPrebufTargetBytes(), 0u);
+}
+
 
 HWTEST_F(SessionEffectNodeStateTest, doProcess_autoStartsFromIdleWhenInstanceBound, TestSize.Level0)
 {
@@ -1493,7 +1492,12 @@ HWTEST_F(SessionEffectNodeStateTest, seek_duringActive, TestSize.Level0)
 // SE-L1: GetLatency returns (totalBytesIn_ - totalBytesOut_) in microseconds
 HWTEST_F(SessionEffectNodeStateTest, GetLatency_returns_input_minus_output, TestSize.Level0)
 {
-    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
+    // rawBypassNeeded_=true forces the INTERCEPTING silence path so dry frames are not counted as
+    // algorithm output; GetLatency() (bytesIn - algoBytesOut) then reflects algorithm-internal buffering.
+    // CreateEffectWithInstance must run with aissSwitchEnabled=false, otherwise it resets
+    // rawBypassNeeded_=false and the INTERCEPTING dry frame would be accounted as output.
+    node_->rawBypassNeeded_ = true;
+    EnterState(HpaeSessionEffectNode::STATUS::ACTIVE, false);
     size_t byteLen = TEST_FRAME_LEN * TEST_CHANNEL_COUNT * sizeof(float);
     uint64_t oneFrameLatencyUs = byteLen * 1000000ULL / (TEST_CHANNEL_COUNT * sizeof(float) * 48000);
 
@@ -1638,6 +1642,9 @@ HWTEST_F(SessionEffectNodeStateTest, GetLatency_includes_preheat_silence, TestSi
 HWTEST_F(SessionEffectNodeStateTest, GetLatency_interceptingSilenceProgressMatchesSkipFrames, TestSize.Level0)
 {
     EnterState(HpaeSessionEffectNode::STATUS::WARMING_UP);
+    // rawBypassNeeded_=true forces the INTERCEPTING silence path (PrepareSilenceBuffer) so output
+    // accounting matches the skip frames instead of counting every raw-bypass frame.
+    node_->rawBypassNeeded_ = true;
     std::this_thread::sleep_for(std::chrono::milliseconds(25));
     node_->SetPrebufFilledForTest(true);
 
@@ -1746,8 +1753,9 @@ HWTEST_F(SessionEffectNodeCrossfadeTest, Crossfade_silence_to_algo_output, TestS
     }
 }
 
-// SE-CF2: Close SE crossfade — algo output fade-out + raw input fade-in
-HWTEST_F(SessionEffectNodeCrossfadeTest, Crossfade_algo_to_bypass, TestSize.Level0)
+// SE-CF2: Close crossfade drains queued wet without feeding dry back into the closing
+// algorithm, then stays STOPPING (FinalizeClose owns deletion).
+HWTEST_F(SessionEffectNodeCrossfadeTest, Crossfade_algoToBypass_usesQueuedWetWithoutFeed, TestSize.Level0)
 {
     AudioEffectConfig config = MakeTestConfig();
     node_->CreateEffectWithInstance("test_effect", mockInst_, config);
@@ -1756,73 +1764,75 @@ HWTEST_F(SessionEffectNodeCrossfadeTest, Crossfade_algo_to_bypass, TestSize.Leve
     size_t sampleCount = TEST_FRAME_LEN * TEST_CHANNEL_COUNT;
     size_t byteLen = sampleCount * sizeof(float);
 
-    // Input: all 0.5f
-    PcmBufferInfo bufInfo;
-    bufInfo.ch = TEST_CHANNEL_COUNT;
-    bufInfo.frameLen = TEST_FRAME_LEN;
-    bufInfo.rate = 48000;
-    HpaePcmBuffer inputBuf(bufInfo);
-    float *rawData = inputBuf.GetPcmDataBuffer();
-    std::fill(rawData, rawData + sampleCount, 0.5f);
-
-    // Mock: algorithm outputs all 1.0f
-    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_))
-        .WillOnce(testing::DoAll(
-            testing::WithArgs<0, 1>(testing::Invoke(
-                [](uint8_t *dst, size_t len) {
-                    auto *f = reinterpret_cast<float *>(dst);
-                    std::fill(f, f + len / sizeof(float), 1.0f);
-                })),
-            testing::Return(static_cast<int32_t>(byteLen))));
-    EXPECT_CALL(*mockInst_, FeedInput(testing::_, byteLen)).WillOnce(testing::Return(0));
-
-    // Trigger crossfade
-    node_->StartCloseCrossfade();
-    std::vector<HpaePcmBuffer *> inputs = {&inputBuf};
-    HpaePcmBuffer *result = node_->SignalProcess(inputs);
-
-    // After crossfade: status -> IDLE, pending cleared
-    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
-    EXPECT_FALSE(node_->IsCloseCrossfadePending());
-
-    // Verify: output[i] = algo[i]*(1-t) + raw[i]*t = 1.0*(1-t) + 0.5*t = 1.0 - 0.5*t
-    float *out = result->GetPcmDataBuffer();
-    for (size_t i = 0; i < sampleCount; ++i) {
-        float t = static_cast<float>(i + 1) / static_cast<float>(sampleCount);
-        float expected = 1.0f - 0.5f * t;
-        EXPECT_NEAR(out[i], expected, 1e-6f);
-    }
-}
-
-HWTEST_F(SessionEffectNodeCrossfadeTest, Crossfade_algoReadFailRestoresRawInput, TestSize.Level0)
-{
-    AudioEffectConfig config = MakeTestConfig();
-    node_->CreateEffectWithInstance("test_effect", mockInst_, config);
-    node_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
-
-    size_t sampleCount = TEST_FRAME_LEN * TEST_CHANNEL_COUNT;
-    size_t byteLen = sampleCount * sizeof(float);
-
+    // Input dry: all 0.5f
     PcmBufferInfo bufInfo;
     bufInfo.ch = TEST_CHANNEL_COUNT;
     bufInfo.frameLen = TEST_FRAME_LEN;
     bufInfo.rate = TEST_SAMPLE_RATE;
     HpaePcmBuffer inputBuf(bufInfo);
-    float *rawData = inputBuf.GetPcmDataBuffer();
-    std::fill(rawData, rawData + sampleCount, 0.25f);
+    std::fill(inputBuf.GetPcmDataBuffer(), inputBuf.GetPcmDataBuffer() + sampleCount, 0.5f);
 
-    EXPECT_CALL(*mockInst_, FeedInput(testing::_, byteLen)).WillOnce(testing::Return(0));
-    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_)).WillOnce(testing::Return(0));
+    // Closing algorithm must NOT be fed this dry block; it only drains queued wet (all 1.0f).
+    EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).Times(0);
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_))
+        .WillOnce(testing::DoAll(
+            testing::WithArgs<0, 1>(testing::Invoke([](uint8_t *dst, size_t len) {
+                auto *wet = reinterpret_cast<float *>(dst);
+                std::fill(wet, wet + len / sizeof(float), 1.0f);
+            })),
+            testing::Return(static_cast<int32_t>(byteLen))));
 
     node_->StartCloseCrossfade();
-    std::vector<HpaePcmBuffer *> inputs = {&inputBuf};
-    HpaePcmBuffer *result = node_->SignalProcess(inputs);
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+    HpaePcmBuffer *result = node_->SignalProcess({&inputBuf});
 
-    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
     ASSERT_EQ(result, &inputBuf);
-    float *out = result->GetPcmDataBuffer();
+    EXPECT_FALSE(node_->IsCloseCrossfadePending());
+    EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+    // Per-frame wet->dry: out[frame][ch] = wet*(1-t) + dry*t, t=(frame+1)/frameLen.
+    for (size_t frame = 0; frame < TEST_FRAME_LEN; ++frame) {
+        float t = static_cast<float>(frame + 1) / static_cast<float>(TEST_FRAME_LEN);
+        float expected = 1.0f * (1.0f - t) + 0.5f * t;
+        for (size_t channel = 0; channel < TEST_CHANNEL_COUNT; ++channel) {
+            EXPECT_NEAR(result->GetPcmDataBuffer()[frame * TEST_CHANNEL_COUNT + channel],
+                expected, 1e-6f);
+        }
+    }
+}
+
+// SE-CF2b: Without a full wet block the close frame returns dry untouched, stays STOPPING,
+// and silenceData_ stays zero (the close frame writes wet into tailOutputData_, never silenceData_).
+HWTEST_F(SessionEffectNodeCrossfadeTest, StoppingWithoutFullWet_returnsDryAndKeepsSilenceZero, TestSize.Level0)
+{
+    AudioEffectConfig config = MakeTestConfig();
+    node_->CreateEffectWithInstance("test_effect", mockInst_, config);
+    node_->SetStatusForTest(HpaeSessionEffectNode::STATUS::ACTIVE);
+
+    size_t sampleCount = TEST_FRAME_LEN * TEST_CHANNEL_COUNT;
+    size_t byteLen = sampleCount * sizeof(float);
+    PcmBufferInfo bufInfo;
+    bufInfo.ch = TEST_CHANNEL_COUNT;
+    bufInfo.frameLen = TEST_FRAME_LEN;
+    bufInfo.rate = TEST_SAMPLE_RATE;
+    HpaePcmBuffer inputBuf(bufInfo);
+    std::fill(inputBuf.GetPcmDataBuffer(), inputBuf.GetPcmDataBuffer() + sampleCount, 0.25f);
+
+    EXPECT_CALL(*mockInst_, FeedInput(testing::_, testing::_)).Times(0);
+    EXPECT_CALL(*mockInst_, ReadOutput(testing::_, byteLen, testing::_))
+        .WillOnce(testing::Return(0));
+
+    node_->StartCloseCrossfade();
+    EXPECT_EQ(node_->SignalProcess({&inputBuf}), &inputBuf);  // close frame: no full wet -> dry
+    EXPECT_EQ(node_->SignalProcess({&inputBuf}), &inputBuf);  // STOPPING bypass -> dry
     for (size_t i = 0; i < sampleCount; ++i) {
-        EXPECT_FLOAT_EQ(out[i], 0.25f);
+        EXPECT_FLOAT_EQ(inputBuf.GetPcmDataBuffer()[i], 0.25f);
+    }
+
+    node_->SetStatusForTest(HpaeSessionEffectNode::STATUS::WARMING_UP);
+    auto *silence = node_->SignalProcess({&inputBuf});
+    ASSERT_EQ(silence, node_->GetSilenceDataForTest());
+    for (size_t i = 0; i < sampleCount; ++i) {
+        EXPECT_FLOAT_EQ(silence->GetPcmDataBuffer()[i], 0.0f);
     }
 }
 
@@ -1845,7 +1855,7 @@ HWTEST_F(SessionEffectNodeCrossfadeTest, SignalProcess_handlesIdleWarmingStoppin
     EXPECT_EQ(node_->SignalProcess(inputs), node_->GetSilenceDataForTest());
 
     node_->SetStatusForTest(HpaeSessionEffectNode::STATUS::STOPPING);
-    EXPECT_EQ(node_->SignalProcess(inputs), node_->GetSilenceDataForTest());
+    EXPECT_EQ(node_->SignalProcess(inputs), &inputBuf);
 
     node_->SetStatusForTest(static_cast<HpaeSessionEffectNode::STATUS>(999));
     EXPECT_EQ(node_->SignalProcess(inputs), &inputBuf);
