@@ -807,6 +807,17 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_029, TestSize.Level0)
     EXPECT_EQ(nullptr, audioCapturer);
 }
 
+/**
+ * @tc.name  : Test capturer create error report filter.
+ * @tc.number: Audio_Capturer_ShouldReportCreateError_001
+ * @tc.desc  : Test permission denied create failures are not reported as create error stats.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_ShouldReportCreateError_001, TestSize.Level0)
+{
+    EXPECT_FALSE(AudioCapturer::ShouldReportCapturerCreateError(ERR_PERMISSION_DENIED));
+    EXPECT_TRUE(AudioCapturer::ShouldReportCapturerCreateError(ERR_OPERATION_FAILED));
+}
+
 #ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test SetParams API via legal input

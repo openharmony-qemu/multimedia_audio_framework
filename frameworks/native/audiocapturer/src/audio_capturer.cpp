@@ -666,8 +666,9 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         return nullptr;
     }
     capturer->SetCapturerInfoByOptions(capturerOptions, appInfo);
-    if (capturer->SetParams(params) != SUCCESS) {
-        AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
+    int32_t setParamsRet = capturer->SetParams(params);
+    if (setParamsRet != SUCCESS) {
+        AudioCapturer::SendCapturerCreateError(sourceType, setParamsRet);
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_CREATE_OPERATION_FAILED, "SetParams failed", true);
         capturer = nullptr;
@@ -716,6 +717,8 @@ int32_t AudioCapturerPrivate::UpdatePlaybackCaptureConfig(const AudioPlaybackCap
 void AudioCapturer::SendCapturerCreateError(const SourceType &sourceType,
     const int32_t &errorCode)
 {
+    CHECK_AND_RETURN_LOG(ShouldReportCapturerCreateError(errorCode),
+        "No need to report capturer create error for errorCode:%{public}d", errorCode);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_CREATE_ERROR_STATS,
         Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
@@ -724,6 +727,11 @@ void AudioCapturer::SendCapturerCreateError(const SourceType &sourceType,
     bean->Add("STREAM_TYPE", sourceType);
     bean->Add("ERROR_CODE", errorCode);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+bool AudioCapturer::ShouldReportCapturerCreateError(const int32_t &errorCode)
+{
+    return errorCode != ERR_PERMISSION_DENIED;
 }
 
 AudioCapturerPrivate::AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)

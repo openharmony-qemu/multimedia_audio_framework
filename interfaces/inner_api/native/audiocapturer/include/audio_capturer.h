@@ -1002,6 +1002,7 @@ private:
     virtual int32_t ReleaseImpl() { return 0; }
     static void SendCapturerCreateError(const SourceType &sourceType,
         const int32_t &errorCode);
+    static bool ShouldReportCapturerCreateError(const int32_t &errorCode);
     static int32_t CheckAndReportErrorEvent(SourceType sourceType, const AudioCapturerOptions &capturerOptions);
 };
 }  // namespace AudioStandard
