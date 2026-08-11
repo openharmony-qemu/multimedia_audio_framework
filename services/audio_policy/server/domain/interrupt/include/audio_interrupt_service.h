@@ -57,7 +57,7 @@ struct MuteFocusInfo {
     uint32_t incomingStreamId;
     AudioInterrupt currInterrupt;
     AudioInterrupt incomingInterrupt;
-    InterruptEventInternal interruptEvent;
+    AudioFocusEntry focusEntry;
 };
 
 class AudioPolicyServerHandler;
@@ -435,8 +435,7 @@ private:
     void RemoveInterruptFocusInfoList(const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo,
         std::list<int32_t> &removeFocusInfoPidList);
     void MuteCheckFocusStrategy(AudioFocusEntry &focusEntry,
-        const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt,
-        bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
+        const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt);
     void RemoveMuteCheckRecord(const AudioInterrupt &audioInterrupt);
     void ResetInterruptMuteState(const AudioInterrupt &audioInterrupt);
     bool ScheduleDeferredUnmuteOrResume(AudioFocuState oldState, AudioFocuState newState,
@@ -453,6 +452,13 @@ private:
         AudioFocuState &incomingState);
     bool VerifyStreamType(const AudioInterrupt &audioInterrupt);
     int32_t FindAudioZoneByStreamIdInternal(const uint32_t streamId);
+    bool CheckAudioConcurrencyForInterrupt(const AudioInterrupt &activateInterrupt,
+        const AudioInterrupt &incomingInterrupt);
+    bool IsInterruptExist(uint32_t streamId,
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
+        std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
+    void UpdateIsCheckMuteStreamByPid(int32_t callerPid);
+    bool ProcessSilentChangeInterrupt(const MuteFocusInfo &audioFocusInfo);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
