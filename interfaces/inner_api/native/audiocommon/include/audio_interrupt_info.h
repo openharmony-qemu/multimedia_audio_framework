@@ -106,7 +106,7 @@ enum InterruptForceType {
 struct InterruptEvent : public Parcelable {
     InterruptEvent() {}
     InterruptEvent(InterruptType eventTypeIn, InterruptForceType forceTypeIn,
-        InterruptHint hintType, bool callbackToAppIn = true, bool handleForceStreamIn = true)
+        InterruptHint hintType, bool callbackToAppIn = true)
         : eventType(eventTypeIn), forceType(forceTypeIn), hintType(hintType), callbackToApp(callbackToAppIn) {}
     bool Marshalling(Parcel &parcel) const override
     {
