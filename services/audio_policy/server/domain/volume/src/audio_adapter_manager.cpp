@@ -1362,9 +1362,7 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
     auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     static const AudioVolumeType voiceCallType = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_VOICE_CALL);
 
-    auto devForCall = audioActiveDevice_.GetDeviceForVolume(voiceCallType);
-    CHECK_AND_RETURN_LOG(devForCall != nullptr, "device is null");
-    if (device->networkId_ != devForCall->networkId_) {
+    if (device->networkId_ != audioActiveDevice_.GetCurrentOutputDeviceNetworkId()) {
         AUDIO_INFO_LOG("[streamType:%{public}d] volume only depressed in same device", streamType);
         return;
     }
@@ -4370,9 +4368,7 @@ void AudioAdapterManager::UpdateTypeVolumeForPipe(AudioVolumeType volumeType,
 {
     std::lock_guard<std::mutex> lock1(activeDeviceMutex_);
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
-    auto desc = audioActiveDevice_.GetDeviceForVolume();
-    CHECK_AND_RETURN_LOG(desc != nullptr, "active device desc is null");
-    AudioVolume::GetInstance()->SetCurrentActiveDevice(desc->deviceType_);
+    AudioVolume::GetInstance()->SetCurrentActiveDevice(audioActiveDevice_.GetCurrentOutputDeviceType());
     if (device->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
         device->volumeBehavior_.controlMode == HILINK_MODE) {
         VolumeValue volumeValue{GetMaxVolumeLevel(volumeType, device->deviceType_), MAX_VOLUME_DEGREE, false};
