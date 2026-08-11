@@ -453,5 +453,19 @@ HWTEST(StreamDfxManagerUnitTest, AudioCapturerDfxCollector_FlushDfxMsg_002, Test
     dfxCollector.FlushDfxMsg(index, validAppUid);
 }
 
+/**
+ * @tc.name  : Test AudioCapturerDfxCollector FlushDfxMsg with DFX_INVALID_APP_UID.
+ * @tc.number: AudioCapturerDfxCollector_FlushDfxMsg_003
+ * @tc.desc  : Test FlushDfxMsg returns early when appUid equals DFX_INVALID_APP_UID (-1).
+ */
+HWTEST(StreamDfxManagerUnitTest, AudioCapturerDfxCollector_FlushDfxMsg_003, TestSize.Level1)
+{
+    AudioCapturerDfxCollector dfxCollector;
+    uint32_t index = 0;
+    int32_t invalidAppUid = DFX_INVALID_APP_UID;
+
+    dfxCollector.FlushDfxMsg(index, invalidAppUid);
+}
+
 } // AudioStandard
 } // OHOS
