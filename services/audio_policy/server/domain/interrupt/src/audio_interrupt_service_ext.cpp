@@ -620,13 +620,6 @@ static bool IsResponseCheckSupported(InterruptHint hintType)
         hintType == INTERRUPT_HINT_MUTE;
 }
 
-static bool ShouldExcludeCurrentStream(InterruptHint hintType)
-{
-    // RESUME expects the stream to restart (current stream should reappear)
-    // STOP expects the stream to stop (current stream should not reappear)
-    return hintType == INTERRUPT_HINT_RESUME || hintType == INTERRUPT_HINT_STOP;
-}
-
 void AudioInterruptService::ScheduleInterruptResponseCheck(
     const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt)
 {
@@ -650,10 +643,8 @@ void AudioInterruptService::ScheduleInterruptResponseCheck(
     }
 
     CHECK_AND_RETURN(interruptDfx_ != nullptr);
-    // snapshot same-type streams at interrupt time
-    // compare with current focusList after 1s delay to check whether the app responded correctly
-    info.originalStreamIdSet = interruptDfx_->CollectSameTypeStreamIds(info, focusList,
-        ShouldExcludeCurrentStream(interruptEvent.hintType));
+    // stream ids of same app and same type in focus list at interrupt time
+    info.originalStreamIdSet = interruptDfx_->CollectSameTypeStreamIds(info, focusList);
 
     auto service = shared_from_this();
     std::thread([service, info, zoneId] {
@@ -666,6 +657,7 @@ void AudioInterruptService::ScheduleInterruptResponseCheck(
                 currentFocusList = currZone->second->audioFocusInfoList;
             }
         }
+        CHECK_AND_RETURN(service->interruptDfx_ != nullptr);
         service->interruptDfx_->CheckInterruptResponse(info, currentFocusList);
     }).detach();
     AUDIO_INFO_LOG("ScheduleInterruptResponseCheck for streamId %{public}u zoneId %{public}d",

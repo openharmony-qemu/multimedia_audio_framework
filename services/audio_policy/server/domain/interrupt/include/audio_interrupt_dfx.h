@@ -55,15 +55,7 @@ struct InterruptResponseCheckInfo {
     AudioStreamType streamType;
     SourceType sourceType;
     std::string appName;
-    // snapshot of same-type streams at interrupt time, used for later comparison
     std::set<uint32_t> originalStreamIdSet;
-};
-
-enum class ResponseResult {
-    NORMAL,
-    NOT_RESTARTED,
-    RESTARTED,
-    STOPPED,
 };
 
 enum InterruptErrorCode {
@@ -93,7 +85,7 @@ public:
     void CheckInterruptResponse(const InterruptResponseCheckInfo &info,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
     std::set<uint32_t> CollectSameTypeStreamIds(const InterruptResponseCheckInfo &info,
-        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList, bool excludeCurrent);
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
     void AudioSessionTimeoutErrorEvent(const AudioInterrupt &audioInterrupt);
 
 private:
@@ -105,13 +97,11 @@ private:
         const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt);
     void CheckMuteInterruptEvent(uint32_t streamId);
     void CheckShortInterruptEvent(uint32_t streamId);
-    ResponseResult EvaluateResponse(const InterruptResponseCheckInfo &info,
+    bool IsResponseAbnormal(const InterruptResponseCheckInfo &info,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
     void WriteInterruptResponseErrorEvent(const std::string &appName, InterruptHint hintType,
         const std::string &rendererInfo, const std::string &errorInfo);
-    bool HasNewSameTypeStream(const InterruptResponseCheckInfo &info,
-        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
-    const std::pair<AudioInterrupt, AudioFocuState>* FindStreamById(uint32_t streamId,
+    bool IsStreamRestarted(const InterruptResponseCheckInfo &info,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
     bool IsCheckDfxStream(AudioStreamType audioStreamType);
     void WriteInterruptOrSessionCallbackErrorEvent(const int32_t usage, const int32_t uid, const int32_t type);

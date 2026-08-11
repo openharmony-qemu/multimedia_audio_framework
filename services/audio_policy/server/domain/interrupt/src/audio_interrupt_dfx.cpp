@@ -31,18 +31,6 @@ namespace AudioStandard {
 
 const int64_t LONG_PLAYBACK_TIME_NS = 3LL * 60 * 1000 * 1000 * 1000;
 
-static std::string GetHintTypeName(InterruptHint hintType)
-{
-    switch (hintType) {
-        case INTERRUPT_HINT_RESUME: return "RESUME";
-        case INTERRUPT_HINT_STOP: return "STOP";
-        case INTERRUPT_HINT_PAUSE: return "PAUSE";
-        case INTERRUPT_HINT_DUCK: return "DUCK";
-        case INTERRUPT_HINT_MUTE: return "MUTE";
-        default: return "";
-    }
-}
-
 AudioInterruptDfx::AudioInterruptDfx()
     : sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance())
 {}
@@ -376,86 +364,71 @@ void AudioInterruptDfx::WriteInterruptResponseErrorEvent(const std::string &appN
 }
 
 std::set<uint32_t> AudioInterruptDfx::CollectSameTypeStreamIds(const InterruptResponseCheckInfo &info,
-    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList, bool excludeCurrent)
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
 {
+    // Collect stream ids of same app and same type from focus list
     std::set<uint32_t> streamIdSet;
     bool isCapturer = info.sourceType != SOURCE_TYPE_INVALID;
     for (const auto &entry : focusList) {
-        if (entry.first.pid != info.pid) continue;
-        bool typeMatch = isCapturer ? entry.first.audioFocusType.sourceType == info.sourceType :
-            entry.first.audioFocusType.streamType == info.streamType;
-        if (!typeMatch) continue;
-        if (excludeCurrent && entry.first.streamId == info.streamId) continue;
+        CHECK_AND_CONTINUE(entry.first.pid == info.pid &&
+            (isCapturer ? entry.first.audioFocusType.sourceType == info.sourceType :
+             entry.first.audioFocusType.streamType == info.streamType));
         streamIdSet.insert(entry.first.streamId);
     }
     return streamIdSet;
 }
 
-bool AudioInterruptDfx::HasNewSameTypeStream(const InterruptResponseCheckInfo &info,
+bool AudioInterruptDfx::IsStreamRestarted(const InterruptResponseCheckInfo &info,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
 {
-    // compare current focusList with the snapshot to check if any new same-type stream appeared
-    auto currentSet = CollectSameTypeStreamIds(info, focusList, false);
+    for (const auto &entry : focusList) {
+        CHECK_AND_RETURN_RET(entry.first.streamId != info.streamId ||
+            entry.second != ACTIVE, true);
+    }
+    auto currentSet = CollectSameTypeStreamIds(info, focusList);
     for (uint32_t id : currentSet) {
-        if (info.originalStreamIdSet.count(id) == 0) return true;
+        CHECK_AND_RETURN_RET(info.originalStreamIdSet.count(id) != 0, true);
     }
     return false;
 }
 
-const std::pair<AudioInterrupt, AudioFocuState>* AudioInterruptDfx::FindStreamById(uint32_t streamId,
+bool AudioInterruptDfx::IsResponseAbnormal(const InterruptResponseCheckInfo &info,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
 {
-    for (const auto &entry : focusList) {
-        if (entry.first.streamId == streamId) return &entry;
-    }
-    return nullptr;
-}
+    bool restarted = IsStreamRestarted(info, focusList);
 
-ResponseResult AudioInterruptDfx::EvaluateResponse(const InterruptResponseCheckInfo &info,
-    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
-{
-    // RESUME/STOP only check for new streams; PAUSE also checks if the stream is still ACTIVE
-    bool hasNew = HasNewSameTypeStream(info, focusList);
-    bool expectRestart = (info.hintType == INTERRUPT_HINT_RESUME);
-
-    // RESUME expects restart (new stream should appear), STOP expects no restart
-    if (info.hintType == INTERRUPT_HINT_RESUME || info.hintType == INTERRUPT_HINT_STOP) {
-        if (expectRestart && !hasNew) return ResponseResult::NOT_RESTARTED;
-        if (!expectRestart && hasNew) return ResponseResult::RESTARTED;
-        return ResponseResult::NORMAL;
-    }
-    // PAUSE/DUCK/MUTE: absent means already stopped
-    auto *entry = FindStreamById(info.streamId, focusList);
-    if (entry == nullptr) return ResponseResult::STOPPED;
-    // PAUSE: stream should not remain ACTIVE nor restart
-    if (info.hintType == INTERRUPT_HINT_PAUSE && (entry->second == ACTIVE || hasNew)) {
-        return ResponseResult::RESTARTED;
-    }
-    return ResponseResult::NORMAL;
-}
-
-static std::string GetResponseResultSuffix(ResponseResult result)
-{
-    switch (result) {
-        case ResponseResult::NOT_RESTARTED: return "_NOT_RESTART";
-        case ResponseResult::RESTARTED: return "_RESTART";
-        case ResponseResult::STOPPED: return "_STOP";
-        default: return "";
+    switch (info.hintType) {
+        case INTERRUPT_HINT_RESUME:
+        case INTERRUPT_HINT_STOP: {
+            // If the app does not restart the stream after receiving RESUME event,
+            // or restarts after receiving STOP event, it is abnormal
+            bool expectRestart = (info.hintType == INTERRUPT_HINT_RESUME);
+            return expectRestart != restarted;
+        }
+        case INTERRUPT_HINT_DUCK:
+        case INTERRUPT_HINT_MUTE: {
+            // If the app stops the stream after receiving DUCK or MUTE event, it is abnormal
+            for (const auto &entry : focusList) {
+                CHECK_AND_RETURN_RET(entry.first.streamId != info.streamId, false);
+            }
+            return true;
+        }
+        case INTERRUPT_HINT_PAUSE:
+            // If the app restarts the stream after receiving PAUSE event, it is abnormal
+            return restarted;
+        default:
+            return false;
     }
 }
 
 void AudioInterruptDfx::CheckInterruptResponse(const InterruptResponseCheckInfo &info,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
 {
-    auto result = EvaluateResponse(info, focusList);
-    CHECK_AND_RETURN(result != ResponseResult::NORMAL);
-
-    std::string errorDetail = GetHintTypeName(info.hintType) + GetResponseResultSuffix(result);
+    CHECK_AND_RETURN(IsResponseAbnormal(info, focusList));
     std::string rendererInfo = "streamType: " + std::to_string(info.streamType) +
         " sourceType: " + std::to_string(info.sourceType) +
         " streamId: " + std::to_string(info.streamId);
-    std::string errorInfo = "InterruptResponseAbnormal_" + errorDetail;
-    WriteInterruptResponseErrorEvent(info.appName, info.hintType, rendererInfo, errorInfo);
+    WriteInterruptResponseErrorEvent(info.appName, info.hintType, rendererInfo, "InterruptResponseAbnormal");
 }
 
 void AudioInterruptDfx::AudioSessionTimeoutErrorEvent(const AudioInterrupt &audioInterrupt)
