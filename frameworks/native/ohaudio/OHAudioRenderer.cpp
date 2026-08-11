@@ -1112,6 +1112,11 @@ int32_t OHAudioRenderer::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
 int32_t OHAudioRenderer::SelectOutputDevice(OH_AudioDeviceDescriptor *desc) const
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERR_INVALID_PARAM, "renderer client is nullptr");
+    if (desc == nullptr) {
+        auto clearDesc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NONE,
+            DeviceRole::OUTPUT_DEVICE);
+        return audioRenderer_->SelectOutputDevice(clearDesc);
+    }
     return audioRenderer_->SelectOutputDevice(OHAudioCommon::ConvertDevice(desc));
 }
 

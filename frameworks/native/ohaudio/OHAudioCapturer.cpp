@@ -782,6 +782,11 @@ int32_t OHAudioCapturer::SelectInputDevice(OH_AudioDeviceDescriptor *desc) const
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
             RECORD_DEVICE_SWITCH_ILLEGAL_STATE, "capturer client is nullptr", true),
         "capturer client is nullptr");
+    if (desc == nullptr) {
+        auto clearDesc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NONE,
+            DeviceRole::INPUT_DEVICE);
+        return audioCapturer_->SelectInputDevice(clearDesc);
+    }
     return audioCapturer_->SelectInputDevice(OHAudioCommon::ConvertDevice(desc));
 }
 
