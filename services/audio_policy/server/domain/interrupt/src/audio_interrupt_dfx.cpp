@@ -363,31 +363,26 @@ void AudioInterruptDfx::WriteInterruptResponseErrorEvent(const std::string &appN
     WriteAudioInterruptErrorEvent(interruptError);
 }
 
-std::set<uint32_t> AudioInterruptDfx::CollectSameTypeStreamIds(const InterruptResponseCheckInfo &info,
-    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
-{
-    // Collect stream ids of same app and same type from focus list
-    std::set<uint32_t> streamIdSet;
-    bool isCapturer = info.sourceType != SOURCE_TYPE_INVALID;
-    for (const auto &entry : focusList) {
-        CHECK_AND_CONTINUE(entry.first.pid == info.pid &&
-            (isCapturer ? entry.first.audioFocusType.sourceType == info.sourceType :
-             entry.first.audioFocusType.streamType == info.streamType));
-        streamIdSet.insert(entry.first.streamId);
-    }
-    return streamIdSet;
-}
-
 bool AudioInterruptDfx::IsStreamRestarted(const InterruptResponseCheckInfo &info,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
 {
+    bool isCapturer = info.sourceType != SOURCE_TYPE_INVALID;
     for (const auto &entry : focusList) {
-        CHECK_AND_RETURN_RET(entry.first.streamId != info.streamId ||
-            entry.second != ACTIVE, true);
-    }
-    auto currentSet = CollectSameTypeStreamIds(info, focusList);
-    for (uint32_t id : currentSet) {
-        CHECK_AND_RETURN_RET(info.originalStreamIdSet.count(id) != 0, true);
+        // only check same app and same type streams
+        CHECK_AND_CONTINUE(entry.first.pid == info.pid &&
+            (isCapturer ? entry.first.audioFocusType.sourceType == info.sourceType :
+             entry.first.audioFocusType.streamType == info.streamType));
+        // case restart the same stream
+        CHECK_AND_RETURN_RET(entry.first.streamId != info.streamId || entry.second != ACTIVE, true);
+        // case restart a new stream
+        bool inOriginalList = false;
+        for (const auto &orig : info.originalFocusList) {
+            if (orig.first.streamId == entry.first.streamId) {
+                inOriginalList = true;
+                break;
+            }
+        }
+        CHECK_AND_RETURN_RET(inOriginalList, true);
     }
     return false;
 }
@@ -395,15 +390,13 @@ bool AudioInterruptDfx::IsStreamRestarted(const InterruptResponseCheckInfo &info
 bool AudioInterruptDfx::IsResponseAbnormal(const InterruptResponseCheckInfo &info,
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
 {
-    bool restarted = IsStreamRestarted(info, focusList);
-
     switch (info.hintType) {
         case INTERRUPT_HINT_RESUME:
         case INTERRUPT_HINT_STOP: {
             // If the app does not restart the stream after receiving RESUME event,
             // or restarts after receiving STOP event, it is abnormal
             bool expectRestart = (info.hintType == INTERRUPT_HINT_RESUME);
-            return expectRestart != restarted;
+            return expectRestart != IsStreamRestarted(info, focusList);
         }
         case INTERRUPT_HINT_DUCK:
         case INTERRUPT_HINT_MUTE: {
@@ -415,7 +408,7 @@ bool AudioInterruptDfx::IsResponseAbnormal(const InterruptResponseCheckInfo &inf
         }
         case INTERRUPT_HINT_PAUSE:
             // If the app restarts the stream after receiving PAUSE event, it is abnormal
-            return restarted;
+            return IsStreamRestarted(info, focusList);
         default:
             return false;
     }

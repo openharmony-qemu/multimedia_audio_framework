@@ -641,10 +641,7 @@ void AudioInterruptService::ScheduleInterruptResponseCheck(
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
         focusList = itZone->second->audioFocusInfoList;
     }
-
-    CHECK_AND_RETURN(interruptDfx_ != nullptr);
-    // stream ids of same app and same type in focus list at interrupt time
-    info.originalStreamIdSet = interruptDfx_->CollectSameTypeStreamIds(info, focusList);
+    info.originalFocusList = focusList;
 
     auto service = shared_from_this();
     std::thread([service, info, zoneId] {
