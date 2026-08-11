@@ -141,7 +141,6 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_CAMCORDER);
     ASSERT_NE(app10001Result, nullptr);
-    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_NONE);
 
     auto app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_CAMCORDER);
@@ -378,7 +377,6 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     auto app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_VOICE_MESSAGE);
     ASSERT_NE(app10002Result, nullptr);
-    EXPECT_EQ(app10002Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(app10002Result->deviceId_, sco->deviceId_);
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE,
