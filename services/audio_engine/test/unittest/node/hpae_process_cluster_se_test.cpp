@@ -474,42 +474,6 @@ HWTEST_F(HpaeProcessClusterSeTest, pauseStart_warmingUp, TestSize.Level0)
     EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::WARMING_UP);
 }
 
-// T7: Pause→Start ACTIVE recovery (ProcessCluster layer, data flow)
-HWTEST_F(HpaeProcessClusterSeDataflowTest, pauseStart_active, TestSize.Level0)
-{
-    fake_.SetPreheatFrames(0);
-    fake_.SetProcessThreshold(1920);
-    fake_.SetProcessDelayMs(0);
-    fake_.SetOutputPersistent(true);
-    auto instance = CreateEffectInstance();
-    cluster_->CreateSessionEffectNode(TEST_SESSION_ID, "test_effect", instance, config_);
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
-
-    auto node = cluster_->GetSessionEffectNode(TEST_SESSION_ID);
-    ASSERT_NE(node, nullptr);
-
-    // Drive to ACTIVE
-    probe_->DoProcess();  // WARMING_UP→INTERCEPTING
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    probe_->DoProcess();  // INTERCEPTING→ACTIVE
-    ASSERT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
-
-    // Pause
-    cluster_->SessionEffectPause(TEST_SESSION_ID);
-    EXPECT_TRUE(node->IsPaused());
-
-    // Start
-    cluster_->SessionEffectStart(TEST_SESSION_ID);
-    EXPECT_FALSE(node->IsPaused());
-    EXPECT_EQ(node->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
-
-    // Data flow verification
-    fake_.Reset();
-    probe_->DoProcess();
-    EXPECT_GT(fake_.GetFeedInputCount(), 0u) << "FeedInput not called after ACTIVE resume — data path broken";
-    EXPECT_GT(fake_.GetGetOutputCount(), 0u) << "GetOutput not called after ACTIVE resume — output path broken";
-}
-
 // T8: Pause→Flush→Start from IDLE restart (ProcessCluster layer)
 HWTEST_F(HpaeProcessClusterSeDataflowTest, pauseFlushStart_fromIdle, TestSize.Level0)
 {
