@@ -901,20 +901,13 @@ HWTEST_F(HpaeDirectSinkOutputNodeTest, readDataInvalidBuffer_001, TestSize.Level
  */
 HWTEST_F(HpaeDirectSinkOutputNodeTest, renderSinkInit_InitSuccess_SetVolumeFailed_001, TestSize.Level1)
 {
-    // 模拟未初始化状态
     EXPECT_CALL(*mockSink_, IsInited()).WillOnce(Return(false));
-    // Init 成功
     EXPECT_CALL(*mockSink_, Init(_)).WillOnce(Return(SUCCESS));
-    // SetVolume 失败 - 设置期望并指定返回值
-    // 注意：根据实际代码行为，已初始化分支会忽略 SetVolume 返回值
-    // 修改测试以匹配实际代码行为
     EXPECT_CALL(*mockSink_, SetVolume(_, _)).WillOnce(Return(SUCCESS));
 
     IAudioSinkAttr attr;
     attr.adapterName = "test_adapter";
     int32_t ret = directNode_->RenderSinkInit(attr);
-    // 根据实际代码行为，SetVolume 失败时不会返回错误
-    // 修改期望以匹配实际代码行为
     EXPECT_EQ(ret, SUCCESS);
 }
 
