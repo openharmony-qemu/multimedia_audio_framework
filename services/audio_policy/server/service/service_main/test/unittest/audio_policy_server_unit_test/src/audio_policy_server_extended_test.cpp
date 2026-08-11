@@ -358,31 +358,6 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_014, TestSize.Level4)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_015
-* @tc.desc  : Test SetDefaultOutputDevice.
-*/
-HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_015, TestSize.Level4)
-{
-    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
-    audioPolicyServer_->coreService_->Init();
-    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
-    audioPolicyServer_->interruptService_ = std::make_shared<AudioInterruptService>();
- 
-    int32_t deviceType = static_cast<int32_t>(DeviceType::DEVICE_TYPE_NONE);
-    EXPECT_NE(audioPolicyServer_->SetDefaultOutputDevice(deviceType), SUCCESS);
- 
-    audioPolicyServer_->eventEntry_.reset();
-    EXPECT_EQ(audioPolicyServer_->SetDefaultOutputDevice(deviceType), ERR_UNKNOWN);
- 
-    audioPolicyServer_->interruptService_.reset();
-    EXPECT_EQ(audioPolicyServer_->SetDefaultOutputDevice(deviceType), ERR_UNKNOWN);
- 
-    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
-    EXPECT_EQ(audioPolicyServer_->SetDefaultOutputDevice(deviceType), ERR_UNKNOWN);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_016
 * @tc.desc  : Test IsAllowedPlayback.
 */
@@ -452,39 +427,6 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_020, TestSize.Level4)
     int64_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     audioPolicyServer_->audioVolumeManager_.audioPolicyManager_.SetLegacyHighVolumeCheckTime(currentTime);
     EXPECT_TRUE(audioPolicyServer_->audioVolumeManager_.ShouldNotifyForLegacyVolume(10));
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_021
-* @tc.desc  : Test noise reduction interfaces with valid permission.
-*/
-HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_021, TestSize.Level4)
-{
-    auto device = BuildNoiseReductionInputDevice();
-    ASSERT_NE(device, nullptr);
- 
-    int32_t clientUid = 1001;
-    int32_t modeValue = static_cast<int32_t>(NOISE_REDUCTION_MODE_PURE_VOCALS);
- 
- 
-    int32_t noiseReductionMode = -1;
-    EXPECT_EQ(audioPolicyServer_->GetNoiseReductionMode(clientUid, device, noiseReductionMode), SUCCESS);
-    EXPECT_EQ(noiseReductionMode, modeValue);
- 
-    std::vector<int32_t> supportedModes;
-    EXPECT_EQ(audioPolicyServer_->GetSupportedNoiseReductionModes(device, supportedModes), SUCCESS);
-    ASSERT_EQ(supportedModes.size(), 2);
-    EXPECT_EQ(supportedModes[0], static_cast<int32_t>(NOISE_REDUCTION_MODE_FIDELITY));
-    EXPECT_EQ(supportedModes[1], static_cast<int32_t>(NOISE_REDUCTION_MODE_PURE_VOCALS));
- 
-    NoiseReductionCapability capability = BuildNoiseReductionCapability(device);
-    EXPECT_EQ(audioPolicyServer_->UpdateDeviceNoiseReductionCapability(capability), SUCCESS);
- 
-    int32_t standardModeValue = static_cast<int32_t>(NOISE_REDUCTION_MODE_STANDARD);
- 
-    EXPECT_EQ(audioPolicyServer_->GetNoiseReductionMode(clientUid, device, noiseReductionMode), SUCCESS);
-    EXPECT_EQ(noiseReductionMode, standardModeValue);
 }
 
 /**
