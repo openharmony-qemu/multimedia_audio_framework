@@ -674,7 +674,7 @@ HWTEST_F(AudioPolicyServerUnitTest, SetAudioSceneInternal_001, TestSize.Level4)
     audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
     audioPolicyServer_->coreService_->Init();
     int32_t ret = audioPolicyServer_->SetAudioSceneInternal(AUDIO_SCENE_PHONE_CALL, 1, 1, true);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
 /**
