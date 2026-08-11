@@ -19,10 +19,12 @@
 #include <chrono>
 #include "test_case_common.h"
 #include "audio_errors.h"
+#include "audio_pipe_types.h"
 #include "hpae_capturer_manager.h"
 #include "hpae_fast_capturer_manager.h"
 #include "i_hpae_capturer_manager.h"
 #include "hpae_node_common.h"
+#include "hpae_capture_move_info.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -3095,6 +3097,97 @@ HWTEST_F(HpaeCapturerManagerTest, MoveAllStream_MoveSingle_001, TestSize.Level1)
 
     std::vector<uint32_t> sessionIds;
     EXPECT_EQ(capturerManager->MoveAllStream(DEFAULT_SOURCE_NAME, sessionIds, MOVE_SINGLE), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/**
+ * @tc.name  : Test AddNodeToSource for accessory device with 40ms frame len
+ * @tc.type  : FUNC
+ * @tc.number: AddNodeToSource_Accessory_40ms_001
+ * @tc.desc  : Test AddNodeToSource for accessory device with 40ms frame len (halved span size branch)
+ */
+HWTEST_F(HpaeCapturerManagerTest, AddNodeToSource_Accessory_40ms_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.deviceType = DEVICE_TYPE_ACCESSORY;
+    sourceInfo.frameLen = 1920;
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    nodeInfo.sessionId = streamInfo.sessionId;
+
+    auto sourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
+    EXPECT_NE(sourceOutputNode, nullptr);
+
+    HpaeCaptureMoveInfo moveInfo;
+    moveInfo.sessionId = streamInfo.sessionId;
+    moveInfo.sourceOutputNode = sourceOutputNode;
+    moveInfo.sessionInfo.state = HPAE_SESSION_PREPARED;
+
+    EXPECT_EQ(capturerManager->AddNodeToSource(moveInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/**
+ * @tc.name  : Test MoveStream for normal stream
+ * @tc.type  : FUNC
+ * @tc.number: MoveStream_IsLowLatencyStream_001
+ * @tc.desc  : Test MoveStream for normal stream
+ */
+HWTEST_F(HpaeCapturerManagerTest, MoveStream_IsLowLatencyStream_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->MoveStream(streamInfo.sessionId, DEFAULT_SOURCE_NAME), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/**
+ * @tc.name  : Test MoveAllStreamToNewSource for normal stream
+ * @tc.type  : FUNC
+ * @tc.number: MoveAllStreamToNewSource_IsLowLatencyStream_001
+ * @tc.desc  : Test MoveAllStreamToNewSource for normal stream
+ */
+HWTEST_F(HpaeCapturerManagerTest, MoveAllStreamToNewSource_IsLowLatencyStream_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    std::vector<uint32_t> sessionIds = {streamInfo.sessionId};
+    EXPECT_EQ(capturerManager->MoveAllStream(DEFAULT_SOURCE_NAME, sessionIds, MOVE_ALL), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
     EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
