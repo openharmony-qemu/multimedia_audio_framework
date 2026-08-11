@@ -137,9 +137,7 @@ float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId, AudioInterrupt 
     if (AudioRouterSelectStrategy::GetInstance().IsCurrentInputDevice(deviceId, uid)) {
         std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(
             desc->deviceType_);
-        std::string deviceClass = AudioPolicyUtils::GetInstance().GetInputDeviceClassBySourcePortName(sourceName);
-        return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(false, deviceClass,
-            audioInterrupt.audioFocusType.sourceType);
+        return AudioServerProxy::GetInstance().GetInputMaxAmplitudeProxy(sourceName);
     }
 
     return 0;

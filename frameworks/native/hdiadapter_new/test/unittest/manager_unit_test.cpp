@@ -133,6 +133,114 @@ public:
     }
 };
 
+class MockCaptureSource final : public IAudioCaptureSource {
+public:
+    explicit MockCaptureSource(std::string expectedSourceName, float amplitude, bool shouldMatch)
+        : expectedSourceName_(std::move(expectedSourceName)), amplitude_(amplitude), shouldMatch_(shouldMatch) {}
+
+    int32_t Init(const IAudioSourceAttr &attr) override
+    {
+        (void)attr;
+        return SUCCESS;
+    }
+
+    void DeInit(void) override {}
+    bool IsInited(void) override { return true; }
+    int32_t Start(void) override { return SUCCESS; }
+    int32_t Stop(void) override { return SUCCESS; }
+    int32_t Resume(void) override { return SUCCESS; }
+    int32_t Pause(void) override { return SUCCESS; }
+    int32_t Flush(void) override { return SUCCESS; }
+    int32_t Reset(void) override { return SUCCESS; }
+    int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override
+    {
+        (void)frame;
+        (void)requestBytes;
+        (void)replyBytes;
+        return SUCCESS;
+    }
+
+    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override
+    {
+        (void)key;
+        (void)condition;
+        return "";
+    }
+
+    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override
+    {
+        (void)key;
+        (void)condition;
+        (void)value;
+    }
+
+    int32_t SetVolume(float left, float right) override
+    {
+        (void)left;
+        (void)right;
+        return SUCCESS;
+    }
+
+    int32_t GetVolume(float &left, float &right) override
+    {
+        left = 0.0f;
+        right = 0.0f;
+        return SUCCESS;
+    }
+
+    int32_t SetMute(bool isMute) override
+    {
+        (void)isMute;
+        return SUCCESS;
+    }
+
+    int32_t GetMute(bool &isMute) override
+    {
+        isMute = false;
+        return SUCCESS;
+    }
+
+    int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override
+    {
+        frames = 0;
+        timeSec = 0;
+        timeNanoSec = 0;
+        return SUCCESS;
+    }
+
+    bool GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude) override
+    {
+        if (!shouldMatch_ || sourceName != expectedSourceName_) {
+            return false;
+        }
+        normalMaxAmplitude = amplitude_;
+        return true;
+    }
+
+    int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) override
+    {
+        (void)appsUid;
+        (void)size;
+        return SUCCESS;
+    }
+
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) override
+    {
+        (void)appsUid;
+        return SUCCESS;
+    }
+
+    void DumpInfo(std::string &dumpString) override
+    {
+        (void)dumpString;
+    }
+
+private:
+    std::string expectedSourceName_;
+    float amplitude_ = 0.0f;
+    bool shouldMatch_ = false;
+};
+
 class ManagerUnitTest : public testing::Test {
 public:
     static void SetUpTestCase() {}
@@ -142,6 +250,8 @@ public:
         HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
         manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL].reset();
         manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_REMOTE].reset();
+        manager.captureSources_.clear();
+        manager.renderSinks_.clear();
     }
 
     virtual void TearDown()
@@ -149,6 +259,8 @@ public:
         HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
         manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_LOCAL].reset();
         manager.deviceManagers_[HDI_DEVICE_MANAGER_TYPE_REMOTE].reset();
+        manager.captureSources_.clear();
+        manager.renderSinks_.clear();
     }
 
     static void ThreadFunc(bool *isDone);
@@ -478,6 +590,28 @@ HWTEST_F(ManagerUnitTest, GetExtraParameters_002, TestSize.Level1)
     ASSERT_EQ(1u, result.size());
     EXPECT_EQ("subkey_3", result[0].first);
     EXPECT_EQ("value_3", result[0].second);
+}
+
+/**
+ * @tc.name   : GetCaptureSourceMaxAmplitude_001
+ * @tc.number : GetCaptureSourceMaxAmplitude_001
+ * @tc.desc   : Verify source max amplitude is filtered by sourceName.
+ */
+HWTEST_F(ManagerUnitTest, GetCaptureSourceMaxAmplitude_001, TestSize.Level1)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    manager.captureSources_[1].source_ = std::make_shared<MockCaptureSource>("primary", 0.31f, true);
+    manager.captureSources_[2].source_ = std::make_shared<MockCaptureSource>("usb", 0.64f, true);
+    manager.captureSources_[3].source_ = std::make_shared<MockCaptureSource>("usb", 0.88f, false);
+
+    float amplitude = manager.GetCaptureSourceMaxAmplitude("usb");
+    EXPECT_FLOAT_EQ(0.64f, amplitude);
+
+    amplitude = manager.GetCaptureSourceMaxAmplitude("primary");
+    EXPECT_FLOAT_EQ(0.31f, amplitude);
+
+    amplitude = manager.GetCaptureSourceMaxAmplitude("not_exist");
+    EXPECT_FLOAT_EQ(0.0f, amplitude);
 }
 } // namespace AudioStandard
 } // namespace OHOS

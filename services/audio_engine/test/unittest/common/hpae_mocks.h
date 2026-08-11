@@ -176,7 +176,7 @@ public:
     MOCK_METHOD(int32_t, GetMute, (bool &isMute), (override));
     MOCK_METHOD(int32_t, GetPresentationPosition, (uint64_t &frames, int64_t &timeSec,
         int64_t &timeNanoSec), (override));
-    MOCK_METHOD(float, GetMaxAmplitude, (), (override));
+    MOCK_METHOD(bool, GetMaxAmplitude, (const std::string &sourceName, float &normalMaxAmplitude), (override));
     MOCK_METHOD(int32_t, SetAudioScene,
         (AudioScene audioScene, bool scoExcludeFlag, int32_t phoneCallSceneType), (override));
     MOCK_METHOD(int32_t, UpdateActiveDevice, (DeviceType inputDevice), (override));

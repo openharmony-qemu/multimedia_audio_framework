@@ -278,10 +278,10 @@ int32_t RemoteFastAudioCaptureSource::GetPresentationPosition(uint64_t &frames, 
     return ERR_NOT_SUPPORTED;
 }
 
-float RemoteFastAudioCaptureSource::GetMaxAmplitude(void)
+bool RemoteFastAudioCaptureSource::GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude)
 {
     AUDIO_INFO_LOG("not support");
-    return 0;
+    return false;
 }
 
 int32_t RemoteFastAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,

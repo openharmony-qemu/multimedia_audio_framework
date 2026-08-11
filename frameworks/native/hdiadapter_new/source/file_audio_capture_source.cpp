@@ -139,10 +139,10 @@ int32_t FileAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_
     return SUCCESS;
 }
 
-float FileAudioCaptureSource::GetMaxAmplitude(void)
+bool FileAudioCaptureSource::GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude)
 {
     AUDIO_INFO_LOG("not support");
-    return 0;
+    return false;
 }
 
 int32_t FileAudioCaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)

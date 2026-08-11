@@ -56,6 +56,7 @@ int32_t VACaptureSource::Init(const IAudioSourceAttr &attr)
     AUDIO_INFO_LOG("VACaptureSource::Init called");
     std::lock_guard<std::mutex> lock(statusMutex_);
     attr_ = attr;
+    sourceName_ = attr_.sourceName;
     CHECK_AND_RETURN_RET_LOG(!sourceInited_.load(), SUCCESS, "va source already inited");
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
 
@@ -393,11 +394,15 @@ int32_t VACaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &time
     return SUCCESS;
 }
 
-float VACaptureSource::GetMaxAmplitude(void)
+bool VACaptureSource::GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude)
 {
+    if (sourceName != sourceName_ || !IsStarted()) {
+        return false;
+    }
     lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
     startUpdate_ = true;
-    return maxAmplitude_;
+    normalMaxAmplitude = maxAmplitude_;
+    return true;
 }
 
 void VACaptureSource::CheckUpdateState(char *frame, size_t replyBytes)

@@ -48,6 +48,7 @@ int32_t RemoteAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
     AUDIO_INFO_LOG("in");
     attr_ = attr;
+    sourceName_ = attr_.sourceName;
     sourceInited_.store(true);
     SetMute(muteState_);
     AUDIO_DEBUG_LOG("end");
@@ -285,11 +286,15 @@ int32_t RemoteAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int6
     return ERR_NOT_SUPPORTED;
 }
 
-float RemoteAudioCaptureSource::GetMaxAmplitude(void)
+bool RemoteAudioCaptureSource::GetMaxAmplitude(const std::string &sourceName, float &normalMaxAmplitude)
 {
+    if (sourceName != sourceName_ || !IsStarted()) {
+        return false;
+    }
     lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
     startUpdate_ = true;
-    return maxAmplitude_;
+    normalMaxAmplitude = maxAmplitude_;
+    return true;
 }
 
 int32_t RemoteAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag,

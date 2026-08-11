@@ -241,5 +241,49 @@ HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_010, TestSize.Le
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+ * @tc.name   : Test remote source max amplitude source name mismatch
+ * @tc.number : RemoteSourceUnitTest_011
+ * @tc.desc   : Verify max amplitude rejects a different source name.
+ */
+HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_011, TestSize.Level1)
+{
+    auto source = std::make_shared<RemoteAudioCaptureSource>(0, "test");
+    source->sourceName_ = "remote";
+    float maxAmplitude = 0.0f;
+    EXPECT_FALSE(source->GetMaxAmplitude("not_exist", maxAmplitude));
+}
+
+/**
+ * @tc.name   : Test remote source max amplitude before start
+ * @tc.number : RemoteSourceUnitTest_012
+ * @tc.desc   : Verify max amplitude rejects an unstarted matching source.
+ */
+HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_012, TestSize.Level1)
+{
+    auto source = std::make_shared<RemoteAudioCaptureSource>(0, "test");
+    source->sourceName_ = "remote";
+    float maxAmplitude = 0.0f;
+    EXPECT_FALSE(source->GetMaxAmplitude("remote", maxAmplitude));
+}
+
+/**
+ * @tc.name   : Test remote source max amplitude after start
+ * @tc.number : RemoteSourceUnitTest_013
+ * @tc.desc   : Verify max amplitude is returned for a started matching source.
+ */
+HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_013, TestSize.Level1)
+{
+    auto source = std::make_shared<RemoteAudioCaptureSource>(0, "test");
+    source->sourceName_ = "remote";
+    source->started_.store(true);
+    source->maxAmplitude_ = 0.625f;
+
+    float maxAmplitude = 0.0f;
+    EXPECT_TRUE(source->GetMaxAmplitude("remote", maxAmplitude));
+    EXPECT_FLOAT_EQ(maxAmplitude, 0.625f);
+    EXPECT_TRUE(source->startUpdate_);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

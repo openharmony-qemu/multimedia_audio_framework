@@ -187,7 +187,8 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_007, TestSize.Le
 HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_009, TestSize.Level1)
 {
     EXPECT_TRUE(source_);
-    float maxAmplitude = source_->GetMaxAmplitude();
+    float maxAmplitude = 0.0f;
+    EXPECT_FALSE(source_->GetMaxAmplitude("", maxAmplitude));
     EXPECT_EQ(maxAmplitude, 0.0f);
 }
  
