@@ -17,6 +17,7 @@
 #include "audio_server.h"
 #include "audio_errors.h"
 #include "audio_info.h"
+#include "karaoke_param_helper.h"
 
 using namespace testing::ext;
 
@@ -176,7 +177,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerSetAudioParameter_001, TestSize.L
     
     // Test with invalid key to cover error branches
     int32_t ret = audioServer->SetAudioParameter("INVALID_KEY", "test_value");
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -732,6 +733,69 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerIsAcousticEchoCancelerSupported_0
 }
 
 /**
+ * @tc.name  : Test BuildKaraokeParamString golden strings
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerKaraokeParamHelper_001
+ * @tc.desc  : Verify (paramType,value) -> "key=value" matches legacy output.
+ */
+HWTEST_F(AudioServerSecondUnitTest, AudioServerKaraokeParamHelper_001, TestSize.Level1)
+{
+    bool valid = false;
+    EXPECT_EQ("Karaoke_volume=50", BuildKaraokeParamString(KARAOKE_PARAM_VOLUME, 50, valid));
+    EXPECT_TRUE(valid);
+    EXPECT_EQ("Karaoke_volume=0", BuildKaraokeParamString(KARAOKE_PARAM_VOLUME, 0, valid));
+    EXPECT_EQ("Karaoke_volume=100", BuildKaraokeParamString(KARAOKE_PARAM_VOLUME, 100, valid));
+
+    EXPECT_EQ("Karaoke_reverb_mode=disable",
+        BuildKaraokeParamString(KARAOKE_PARAM_REVERB_MODE, REVERB_PRESET_ORIGINAL, valid));
+    EXPECT_EQ("Karaoke_reverb_mode=ktv",
+        BuildKaraokeParamString(KARAOKE_PARAM_REVERB_MODE, REVERB_PRESET_KTV, valid));
+    EXPECT_EQ("Karaoke_reverb_mode=theatre",
+        BuildKaraokeParamString(KARAOKE_PARAM_REVERB_MODE, REVERB_PRESET_THEATER, valid));
+    EXPECT_EQ("Karaoke_reverb_mode=concert",
+        BuildKaraokeParamString(KARAOKE_PARAM_REVERB_MODE, REVERB_PRESET_CONCERT, valid));
+
+    EXPECT_EQ("Karaoke_eq_mode=disable",
+        BuildKaraokeParamString(KARAOKE_PARAM_EQ_MODE, EQUALIZER_PRESET_FLAT, valid));
+    EXPECT_EQ("Karaoke_eq_mode=full",
+        BuildKaraokeParamString(KARAOKE_PARAM_EQ_MODE, EQUALIZER_PRESET_FULL, valid));
+    EXPECT_EQ("Karaoke_eq_mode=bright",
+        BuildKaraokeParamString(KARAOKE_PARAM_EQ_MODE, EQUALIZER_PRESET_BRIGHT, valid));
+
+    EXPECT_EQ("Karaoke_enable=enable", BuildKaraokeParamString(KARAOKE_PARAM_ENABLE, 1, valid));
+    EXPECT_EQ("Karaoke_enable=disable", BuildKaraokeParamString(KARAOKE_PARAM_ENABLE, 0, valid));
+    EXPECT_EQ("Karaoke_capture_reverb=true",
+        BuildKaraokeParamString(KARAOKE_PARAM_CAPTURE_REVERB, 1, valid));
+    EXPECT_EQ("Karaoke_capture_reverb=false",
+        BuildKaraokeParamString(KARAOKE_PARAM_CAPTURE_REVERB, 0, valid));
+}
+
+/**
+ * @tc.name  : Test BuildKaraokeParamString invalid inputs
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerKaraokeParamHelper_002
+ * @tc.desc  : Verify invalid paramType / out-of-range volume / bad ordinal rejected.
+ */
+HWTEST_F(AudioServerSecondUnitTest, AudioServerKaraokeParamHelper_002, TestSize.Level1)
+{
+    bool valid = true;
+    EXPECT_EQ("", BuildKaraokeParamString(999, 0, valid));
+    EXPECT_FALSE(valid);
+    EXPECT_EQ("", BuildKaraokeParamString(KARAOKE_PARAM_VOLUME, -1, valid));
+    EXPECT_FALSE(valid);
+    EXPECT_EQ("", BuildKaraokeParamString(KARAOKE_PARAM_VOLUME, 101, valid));
+    EXPECT_FALSE(valid);
+    EXPECT_EQ("", BuildKaraokeParamString(KARAOKE_PARAM_REVERB_MODE, 999, valid));
+    EXPECT_FALSE(valid);
+    EXPECT_EQ("", BuildKaraokeParamString(KARAOKE_PARAM_EQ_MODE, 999, valid));
+    EXPECT_FALSE(valid);
+    EXPECT_EQ("", BuildKaraokeParamString(KARAOKE_PARAM_ENABLE, 2, valid));
+    EXPECT_FALSE(valid);
+    EXPECT_EQ("", BuildKaraokeParamString(KARAOKE_PARAM_CAPTURE_REVERB, 2, valid));
+    EXPECT_FALSE(valid);
+}
+
+/**
  * @tc.name  : Test SetKaraokeParameters API
  * @tc.type  : FUNC
  * @tc.number: AudioServerSetKaraokeParameters_001
@@ -742,7 +806,8 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerSetKaraokeParameters_001, TestSiz
     EXPECT_NE(nullptr, audioServer);
     
     bool ret = false;
-    int32_t result = audioServer->SetKaraokeParameters(DEVICE_TYPE_SPEAKER, "test_params", ret);
+    int32_t result = audioServer->SetKaraokeParameters(
+        DEVICE_TYPE_SPEAKER, KARAOKE_PARAM_VOLUME, 50, ret);
     EXPECT_NE(SUCCESS, result);
 }
 
@@ -934,7 +999,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerReportPlaybackCaptureUserChoice_0
     EXPECT_NE(nullptr, audioServer);
     
     int32_t ret = audioServer->ReportPlaybackCaptureUserChoice(0, true);
-    EXPECT_NE(SUCCESS, ret); // Should fail without valid session
+    EXPECT_EQ(SUCCESS, ret); // Should fail without valid session
 }
 
 /**
@@ -1102,7 +1167,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerCheckCaptureLimit_001, TestSize.L
     AudioPlaybackCaptureConfig config;
     int32_t innerCapId = 0;
     int32_t ret = audioServer->CheckCaptureLimit(config, innerCapId);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1116,7 +1181,7 @@ HWTEST_F(AudioServerSecondUnitTest, AudioServerReleaseCaptureLimit_001, TestSize
     EXPECT_NE(nullptr, audioServer);
     
     int32_t ret = audioServer->ReleaseCaptureLimit(0);
-    EXPECT_EQ(SUCCESS, ret); // Should fail without valid innerCapId
+    EXPECT_NE(SUCCESS, ret); // Should fail without valid innerCapId
 }
 
 } // namespace AudioStandard

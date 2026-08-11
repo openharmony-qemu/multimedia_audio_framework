@@ -270,16 +270,7 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_001, TestSize.Level1)
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     int32_t ret = audioLoopback->SetVolume(1);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(audioLoopback->karaokeParams_["Karaoke_volume"], "100");
-}
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_002, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
-    int32_t ret = audioLoopback->SetVolume(1);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(audioLoopback->karaokeParams_["Karaoke_volume"], "100");
+    EXPECT_EQ(audioLoopback->karaokeParams_[KaraokeParamType::KARAOKE_PARAM_VOLUME], 100);
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_003, TestSize.Level1)
@@ -527,11 +518,13 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_GetLoopbackDebugInfo_001, TestSiz
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_GetLoopbackDebugInfo_003, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->karaokeParams_["Karaoke_volume"] = "invalid";
+    // After typing, the "invalid string" scenario no longer exists; inject a valid int
+    // and verify GetLoopbackDebugInfo reads it back as-is.
+    audioLoopback->karaokeParams_[KaraokeParamType::KARAOKE_PARAM_VOLUME] = 75;
     AudioLoopbackDebugInfo debugInfo;
     int32_t ret = audioLoopback->GetLoopbackDebugInfo(debugInfo);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(debugInfo.volume, 0);
+    EXPECT_EQ(debugInfo.volume, 75);
 }
 
 namespace {

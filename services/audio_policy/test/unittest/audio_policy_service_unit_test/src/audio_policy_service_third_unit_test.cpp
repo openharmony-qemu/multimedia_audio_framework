@@ -1053,9 +1053,8 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, UpdateA2dpOffloadFlagBySpatialService_
     ASSERT_NE(nullptr, server);
 
     std::string macAddress = "00:11:22:33:44:55";
-    std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnableMap;
 
-    server->audioPolicyService_.UpdateA2dpOffloadFlagBySpatialService(macAddress, sessionIDToSpatializationEnableMap);
+    server->audioPolicyService_.UpdateA2dpOffloadFlagBySpatialService(macAddress);
     EXPECT_NE(server->audioPolicyService_.audioA2dpOffloadManager_, nullptr);
 }
 

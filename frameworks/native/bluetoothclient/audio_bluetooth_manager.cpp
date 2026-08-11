@@ -681,12 +681,14 @@ bool AudioHfpManager::IsAudioScoStateConnect()
 ScoCategory AudioHfpManager::JudgeScoCategory()
 {
     bool isInbandRingEnabled = false;
-    BluetoothHfpInterface::GetInstance().IsInbandRingingEnabled(isInbandRingEnabled);
 
     auto scene = scene_.load();
-    if ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING) && !isInbandRingEnabled) {
-        AUDIO_WARNING_LOG("The inbandRing switch is off, ignore the ring scene.");
-        return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
+    if ((scene == AUDIO_SCENE_RINGING || scene == AUDIO_SCENE_VOICE_RINGING)) {
+        BluetoothHfpInterface::GetInstance().IsInbandRingingEnabled(isInbandRingEnabled);
+        if (!isInbandRingEnabled) {
+            AUDIO_WARNING_LOG("The inbandRing switch is off, ignore the ring scene.");
+            return isRecognitionScene_.load() ? ScoCategory::SCO_RECOGNITION : ScoCategory::SCO_DEFAULT;
+        }
     }
 
     if (scene == AUDIO_SCENE_VOICE_RINGING || scene == AUDIO_SCENE_PHONE_CALL) {

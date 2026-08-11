@@ -130,7 +130,8 @@ public:
     int64_t GetFramesRead() override;
     int64_t GetFramesWritten() override;
 
-    void SetInnerCapturerState(bool isInnerCapturer) override;
+    void SetInnerCapturerState(bool isInnerCapturer,
+        int32_t playbackCaptureMode, bool isModernInnerCapturer) override;
     void SetWakeupCapturerState(bool isWakeupCapturer) override;
     void SetPrivacyType(AudioPrivacyType privacyType) override;
     void SetCapturerSource(int capturerSource) override;
@@ -418,6 +419,9 @@ private:
     std::shared_ptr<AudioCapturerSensitiveRecordPermitCallback> sensitiveRecordPermitCallback_ = nullptr;
 
     std::string bundleName = "";
+
+    int32_t playbackCaptureMode_ = 0;
+    bool isModernInnerCapturer_ = false;
 
     enum {
         STATE_CHANGE_EVENT = 0,

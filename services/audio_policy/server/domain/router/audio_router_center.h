@@ -39,12 +39,14 @@ namespace AudioStandard {
 class AudioRouterCenter {
 public:
     using InputDeviceMap = std::unordered_map<uint32_t, std::shared_ptr<AudioDeviceDescriptor>>;
+    using OutputDeviceMap = std::unordered_map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>>;
     static AudioRouterCenter& GetAudioRouterCenter()
     {
         static AudioRouterCenter audioRouterCenter;
         return audioRouterCenter;
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(FetchDeviceInfo &info);
+    OutputDeviceMap FetchOutputDevicesForAllOutputStreams(std::vector<FetchDeviceInfo> &infos);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchDupDevices(const FetchDeviceInfo &fetchDeviceInfo);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(FetchDeviceInfo &info);
     InputDeviceMap FetchInputDeviceForAllInputStreams(std::vector<FetchDeviceInfo> &infos);

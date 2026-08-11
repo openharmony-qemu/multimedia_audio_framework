@@ -367,7 +367,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_014, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:66";
     
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -395,7 +395,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_015, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:55";
     
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -423,7 +423,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_016, TestSize.Level1)
     inputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     inputDevice->macAddress_ = "00:11:22:33:44:66";
     
-    EXPECT_TRUE(handler.Detect(inputDevice, ROUTER_TYPE_DEFAULT));
+    EXPECT_TRUE(handler.Detect(inputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -451,10 +451,10 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_018, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_NEARLINK;
     outputDevice->macAddress_ = "00:11:22:33:44:66";
     
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
     
     outputDevice->macAddress_ = "00:11:22:33:44:55";
-    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
+    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**
@@ -537,10 +537,10 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_022, TestSize.Level1)
     auto outputDevice = std::make_shared<AudioDeviceDescriptor>();
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:66";
-    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
+    EXPECT_TRUE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 
     outputDevice->macAddress_ = "00:11:22:33:44:55";
-    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_DEFAULT));
+    EXPECT_FALSE(handler.Detect(outputDevice, ROUTER_TYPE_USER_SELECT));
 }
 
 /**

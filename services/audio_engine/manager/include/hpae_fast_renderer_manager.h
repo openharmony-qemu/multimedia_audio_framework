@@ -31,6 +31,7 @@
 #include "hpae_audio_format_converter_node.h"
 #include "hpae_mixer_node.h"
 #include "hpae_gain_node.h"
+#include "hpae_volume_sync_node.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -143,11 +144,13 @@ private:
     void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state,
         uint32_t appUid = INVALID_UID);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &inputNode);
+    bool IsVoipFastSink() const;
 
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
 
     // Per-stream nodes
     std::unordered_map<uint32_t, std::shared_ptr<HpaeGainNode>> gainNodeMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<HpaeVolumeSyncNode>> volumeSyncNodeMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> converterNodeMap_;
 
     // Mixer node (shared across all streams)

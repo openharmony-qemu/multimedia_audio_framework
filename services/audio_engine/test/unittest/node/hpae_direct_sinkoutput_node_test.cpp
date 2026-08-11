@@ -1641,6 +1641,80 @@ HWTEST_F(HpaeDirectSinkOutputNodeTest, connect_SinkNotInited_001, TestSize.Level
     // Verify connection was not made by checking inputStream_
     EXPECT_EQ(directNode_->inputStream_.GetPreOutputMap().size(), 0u);
 }
+
+/**
+ * @tc.name  : readData_durationMismatch_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectSinkOutputNodeTest_092
+ * @tc.desc  : Test ReadDataAndConvertFormat resizes buffer when upstream duration differs from node duration
+ */
+HWTEST_F(HpaeDirectSinkOutputNodeTest, readData_durationMismatch_001, TestSize.Level1)
+{
+    // directNode_ from SetUp uses frameLen=960 @ 48kHz -> outDurationMs=20ms.
+    // Build an upstream chain (sinkInputNode -> converterNode) producing 40ms buffers
+    // (frameLen=1920 @ 48kHz) so inDurationMs(40) != outDurationMs(20), which triggers
+    // the resize branch guarded by renderFrameData_.size()==renderSize_ (lines 87-91).
+    const uint32_t upstreamFrameLen = 1920;
+    HpaeNodeInfo upstreamInfo;
+    upstreamInfo.nodeId = DEFAULT_NODE_ID;
+    upstreamInfo.frameLen = upstreamFrameLen;
+    upstreamInfo.samplingRate = SAMPLE_RATE_48000;
+    upstreamInfo.channels = STEREO;
+    upstreamInfo.format = SAMPLE_F32LE;
+    upstreamInfo.streamType = STREAM_MUSIC;
+
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(upstreamInfo);
+    auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(upstreamInfo, upstreamInfo);
+    converterNode->SetDownmixNormalization(false);
+
+    // Connect requires audioRendererSink_->IsInited() == true
+    EXPECT_CALL(*mockSink_, IsInited()).WillRepeatedly(Return(true));
+    converterNode->Connect(sinkInputNode);
+    directNode_->Connect(converterNode);
+
+    auto writeCb = std::make_shared<WriteFixedDataCb>(SAMPLE_F32LE);
+    sinkInputNode->RegisterWriteCallback(writeCb);
+
+    // Precondition: buffer not yet resized (size == renderSize_)
+    size_t initialRenderSize = directNode_->renderSize_;
+    EXPECT_EQ(directNode_->renderFrameData_.size(), initialRenderSize);
+
+    EXPECT_EQ(directNode_->ReadDataAndConvertFormat(), true);
+
+    // The resize branch fired: outputSize_ recomputed from upstream frameLen/channels/format
+    const size_t expectedOutputSize = upstreamFrameLen * STEREO * GetSizeFromFormat(SAMPLE_F32LE);
+    EXPECT_EQ(directNode_->outputSize_, expectedOutputSize);
+    // renderFrameData_ grew to outputSize_ + renderSize_
+    EXPECT_GT(directNode_->renderFrameData_.size(), initialRenderSize);
+    EXPECT_EQ(directNode_->renderFrameData_.size(), expectedOutputSize + initialRenderSize);
+
+    directNode_->DisConnect(converterNode);
+    converterNode->DisConnect(sinkInputNode);
+}
+
+/**
+ * @tc.name  : getRenderSinkInstance_NullSink_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeDirectSinkOutputNodeTest_093
+ * @tc.desc  : Test GetRenderSinkInstance returns ERROR and keeps sink null for unrecognized device class
+ */
+HWTEST_F(HpaeDirectSinkOutputNodeTest, getRenderSinkInstance_NullSink_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto node = std::make_shared<HpaeDirectSinkOutputNode>(nodeInfo);
+    ASSERT_NE(node, nullptr);
+    // Fresh node has no sink assigned yet
+    EXPECT_EQ(node->audioRendererSink_, nullptr);
+
+    // Unrecognized deviceClass -> IdHandler::GetRenderIdByDeviceClass returns HDI_INVALID_ID
+    // -> HdiAdapterManager::GetRenderSink returns nullptr -> lines 190-195 fire -> ERROR.
+    const std::string unknownDeviceClass = "nonexistent_device_class";
+    int32_t ret = node->GetRenderSinkInstance(unknownDeviceClass, "LocalDevice");
+
+    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(node->audioRendererSink_, nullptr);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

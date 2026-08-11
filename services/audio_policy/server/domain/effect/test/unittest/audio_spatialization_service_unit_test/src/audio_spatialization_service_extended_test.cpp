@@ -44,14 +44,6 @@ void AudioSpatializationServiceUnitTest::TearDown(void)
     sSpatializationService_.reset();
 }
 
-class MockAudioSpatializationStateChangeCallback : public AudioSpatializationStateChangeCallback {
-public:
-    MockAudioSpatializationStateChangeCallback() = default;
-    virtual ~MockAudioSpatializationStateChangeCallback() = default;
-
-    void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) {}
-};
-
 /**
 * @tc.name  : Test AudioSpatializationService.
 * @tc.number: AudioSpatializationService_001
@@ -205,25 +197,6 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_007, Tes
     sSpatializationService_->currSpatialDeviceType_ = EARPHONE_TYPE_OTHERS;
     sSpatializationService_->UpdateCurrentDevice(selectedAudioDevice);
     EXPECT_EQ(sSpatializationService_->currSpatialDeviceType_, EARPHONE_TYPE_NONE);
-}
-
-/**
-* @tc.name  : Test AudioSpatializationService.
-* @tc.number: AudioSpatializationService_008
-* @tc.desc  : Test HandleSpatializationStateChange.
-*/
-HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_008, TestSize.Level4)
-{
-    uint32_t spatializationStateCBIndex = 1;
-    auto mockAudioSpatializationStateChangeCallback1 = std::make_shared<MockAudioSpatializationStateChangeCallback>();
-    sSpatializationService_->spatializationStateCBMap_.emplace(spatializationStateCBIndex,
-        std::make_pair(mockAudioSpatializationStateChangeCallback1, StreamUsage::STREAM_USAGE_MEDIA));
-    spatializationStateCBIndex = 2;
-    auto mockAudioSpatializationStateChangeCallback2 = std::make_shared<MockAudioSpatializationStateChangeCallback>();
-    sSpatializationService_->spatializationStateCBMap_.emplace(spatializationStateCBIndex,
-        std::make_pair(mockAudioSpatializationStateChangeCallback2, StreamUsage::STREAM_USAGE_GAME));
-    EXPECT_NO_THROW(sSpatializationService_->HandleSpatializationStateChange(true));
-    EXPECT_NO_THROW(sSpatializationService_->HandleSpatializationStateChange(false));
 }
 
 /**

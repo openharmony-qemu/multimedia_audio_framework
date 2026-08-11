@@ -195,7 +195,7 @@ void AudioAdapterManager::InitSafeVolumeParams()
     safeVolumeDegree_ = VolumeUtils::VolumeLevelToDegree(safeVolume_, maxVolumeLevel);
 
     char safeVolumeTimeout[6] = {0};
-    ret = GetParameter("persist.multimedia.audio.safevolume.timeout", "1140",
+    ret = GetParameter("persist.multimedia.audio.safevolume.timeout", "1080",
         safeVolumeTimeout, sizeof(safeVolumeTimeout));
     if (ret > 0) {
         safeVolumeTimeout_ = atoi(safeVolumeTimeout);
@@ -4275,9 +4275,7 @@ void AudioAdapterManager::RemoveAudioPipeVolume(uint32_t IoHandle)
 {
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
-    for (auto volumeType : defaultVolumeTypeList_) {
-        audioVolume->RemovePipeVolume(IoHandle, volumeType);
-    }
+    audioVolume->RemovePipeVolume(IoHandle);
 }
 
 void AudioAdapterManager::UpdateAudioPipeVolume(std::vector<PipeDeviceVolumeGroup> pipeDeviceVolumeGroups)

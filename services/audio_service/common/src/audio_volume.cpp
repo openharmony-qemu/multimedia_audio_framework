@@ -910,15 +910,16 @@ void AudioVolume::SetPipeVolumeMute(uint32_t pipeId, AudioVolumeType volumeType,
     }
 }
 
-void AudioVolume::RemovePipeVolume(uint32_t pipeId, AudioVolumeType volumeType)
+void AudioVolume::RemovePipeVolume(uint32_t pipeId)
 {
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
-    std::string key = std::to_string(pipeId) + "|" + std::to_string(volumeType);
-    auto it = pipeVolume_.find(key);
-    if (it != pipeVolume_.end()) {
-        pipeVolume_.erase(key);
-    } else {
-        AUDIO_ERR_LOG("pipe volume already delete, key:%{public}s", key.c_str());
+    std::string prefix = std::to_string(pipeId) + "|";
+    for (auto it = pipeVolume_.begin(); it != pipeVolume_.end();) {
+        if (it->first.compare(0, prefix.size(), prefix) == 0) {
+            it = pipeVolume_.erase(it);
+        } else {
+            ++it;
+        }
     }
 }
 

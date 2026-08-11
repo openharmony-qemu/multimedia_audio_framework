@@ -1748,6 +1748,8 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
             streamDesc->callerPid_, streamDesc->GetSourceType());
     }
 
+    UnmuteDualStreamAfterAlarm(streamDesc);
+
     return SUCCESS;
 }
 
@@ -1785,6 +1787,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     }
     DeleteSessionId(sessionId);
     ClearMuteVoipState(streamDesc, sessionId);
+    UnmuteDualStreamAfterAlarm(streamDesc);
 
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
@@ -2680,9 +2683,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     CheckRingAndVoipScene(reason);
 
     AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
-    for (auto &streamDesc : outputStreamDescs) {
-        UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute");
-    }
+    BatchFetchAndStartOutputStreams(outputStreamDescs, caller);
     // todo fix
     HandleA2dpSuspendWhenFetch(reason, audioRouterSelectStrategy_.Get1stCurrentOutputDevice(), outputStreamDescs);
     // this will update volume device map
@@ -2716,22 +2717,24 @@ std::map<uint32_t, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> AudioCor
         "PreviewOutputDeviceSelection: pipeManager_ is nullptr");
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
-    if (outputStreamDescs.empty()) {
-        return previewResults;
-    }
+    CHECK_AND_RETURN_RET(!outputStreamDescs.empty(), previewResults);
 
     AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
+    std::vector<FetchDeviceInfo> outInfos;
     for (auto &streamDesc : outputStreamDescs) {
         CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "PreviewOutputDeviceSelection: streamDesc is nullptr");
-
         StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
-
         FetchDeviceInfo info = { streamUsage, GetRealUid(streamDesc), streamDesc->GetRenderPrivacyType(),
             caller + "_Preview", streamDesc->bundleName_ };
         info.streamId = streamDesc->sessionId_;
-        auto devices = audioRouterCenter_.FetchOutputDevices(info);
-
-        previewResults[streamDesc->sessionId_] = devices;
+        outInfos.push_back(info);
+    }
+    auto outResult = audioRouterCenter_.FetchOutputDevicesForAllOutputStreams(outInfos);
+    for (auto &streamDesc : outputStreamDescs) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
+        auto it = outResult.find(streamDesc->sessionId_);
+        CHECK_AND_CONTINUE(it != outResult.end());
+        previewResults[streamDesc->sessionId_] = it->second;
     }
 
     return previewResults;

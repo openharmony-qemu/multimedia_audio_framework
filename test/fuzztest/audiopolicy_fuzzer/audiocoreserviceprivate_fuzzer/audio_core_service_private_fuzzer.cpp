@@ -1072,7 +1072,8 @@ void UpdateSessionConnectionStateFuzzTest()
     audioCoreService->CheckAndSleepBeforeRingDeviceSet(audioStreamDescriptor);
     audioCoreService->ResetOriginalFlagForRemote(audioStreamDescriptor);
     std::string caller = "caller";
-    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, caller);
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, caller,
+        AudioRouterCenter::OutputDeviceMap{});
     bool isRunning = GetData<bool>();
     audioCoreService->DeactivateBluetoothDevice(isRunning);
     int32_t result = GetData<int32_t>();

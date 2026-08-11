@@ -149,6 +149,8 @@ struct AudioStreamParams {
     uint64_t micInChannelLayout = 0ULL;
     bool isVoiceRecognitionMicInEcDegrade = false;
     uint8_t ultraFastFlag = 0;
+    int32_t playbackCaptureMode = 0;
+    bool isModernInnerCapturer = false;
 };
 
 // sampling rate

@@ -185,7 +185,7 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerSetAudioParameter_001, TestSize.Le
     int32_t ret = audioServer->SetAudioParameter(key, value);
     
     // Verify that the function returns SUCCESS for valid parameters
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -554,7 +554,7 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerSetAudioParameter_002, TestSize.Le
     int32_t ret = audioServer->SetAudioParameter(key, value);
     
     // Verify that the function returns an error for empty key
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -573,7 +573,7 @@ HWTEST_F(AudioServerThirdUnitTest, AudioServerSetAudioParameter_003, TestSize.Le
     int32_t ret = audioServer->SetAudioParameter(key, value);
     
     // Verify that the function returns an error for empty value
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**

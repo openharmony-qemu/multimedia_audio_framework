@@ -86,9 +86,6 @@ public:
     bool IsHeadTrackingSupportedForDevice(const std::string address);
     bool IsPersonalizedSpatializationSupported();
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
-    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
-        const sptr<IRemoteObject> &object);
-    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
     void UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice);
     AudioSpatializationSceneType GetSpatializationSceneType();
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
@@ -154,10 +151,7 @@ private:
     AudioSpatialDeviceType currSpatialDeviceType_{ EARPHONE_TYPE_OTHERS };
     std::vector<AudioRendererInfoForSpatialization> spatializationRendererInfoList_;
     std::mutex spatializationServiceMutex_;
-    std::mutex spatializationStateChangeListnerMutex_;
     std::mutex rendererInfoChangingMutex_;
-    std::unordered_map<uint32_t, std::pair<std::shared_ptr<AudioSpatializationStateChangeCallback>, StreamUsage>>
-        spatializationStateCBMap_;
     std::map<std::string, AudioSpatialDeviceState> addressToSpatialDeviceStateMap_;
     SpatialAudioSourceType spatialAudioSourceType_ = SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
     IAudioPolicyInterface& audioPolicyManager_;

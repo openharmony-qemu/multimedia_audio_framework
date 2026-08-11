@@ -1783,7 +1783,7 @@ AudioVolumeType AudioInterruptService::GetHighestPriorityVolumeTypeFromStreams(
 
 int32_t AudioInterruptService::SetVolumeControlPriority(const std::unordered_map<AudioVolumeType, int32_t> &priorities)
 {
-    int32_t size = priorities.size();
+    int32_t size = static_cast<int32_t>(priorities.size());
     AUDIO_INFO_LOG("priorities.size() [%{public}d]", size);
 
     volumeTypePriorities_ = priorities;
@@ -4112,6 +4112,24 @@ void AudioInterruptService::AddFocusHistory(uint32_t streamId, const AudioFocusB
     if (audioFocusHisMap_[streamId].size() > MAX_HISTORY_SIZE) {
         audioFocusHisMap_[streamId].erase(audioFocusHisMap_[streamId].begin());
     }
+}
+
+void AudioInterruptService::StopAudioFocusBySessionIds(const int32_t zoneId,
+    const std::vector<std::pair<uint32_t, int32_t>> &sessions)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<uint32_t> sessionIdsToStop = {};
+    for (const auto &session : sessions) {
+        uint32_t sessionId = session.first;
+        int32_t callerPid = session.second;
+        bool isActivated = sessionService_.IsAudioSessionFocusMode(callerPid);
+        if (isActivated) {
+            sessionId = sessionService_.GetFakeStreamId(callerPid);
+            CHECK_AND_CONTINUE(sessionId != 0);
+        }
+        sessionIdsToStop.emplace_back(sessionId);
+    }
+    zoneManager_.StopAudioFocusBySessionIds(zoneId, sessionIdsToStop);
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

@@ -218,6 +218,24 @@ public:
         }
     }
 
+    void ReplaceConflictA2dpWithSco(std::shared_ptr<AudioDeviceDescriptor> &perDev, RouterType routerType)
+    {
+        CHECK_AND_RETURN(perDev != nullptr);
+        for (auto &handler : handlers) {
+            CHECK_AND_CONTINUE(handler != nullptr);
+            auto highestPriorityDevice = handler->GetHighestPriorityDevice();
+            CHECK_AND_CONTINUE(highestPriorityDevice != nullptr);
+            if (highestPriorityDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+                perDev->macAddress_ == highestPriorityDevice->macAddress_) {
+                auto scoDevice = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(
+                    perDev->macAddress_, OUTPUT_DEVICE);
+                CHECK_AND_RETURN(scoDevice != nullptr && scoDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
+                perDev = scoDevice;
+                return;
+            }
+        }
+    }
+
     void AppendActiveScoDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList)
     {
         CHECK_AND_RETURN(handlers.size() != 0);
@@ -229,7 +247,6 @@ public:
                 AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(highestPriorityDevice->macAddress_,
                     OUTPUT_DEVICE);
             CHECK_AND_CONTINUE(activeScoDevice != nullptr && activeScoDevice->deviceType_ != DEVICE_TYPE_NONE);
-            activeScoDevice->connectTimeStamp_ = AudioPolicyUtils::GetInstance().GetCurrentTimeMS();
             deviceList.push_back(activeScoDevice);
         }
     }

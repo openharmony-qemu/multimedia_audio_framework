@@ -21,8 +21,6 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
-#include "audio_spatialization_state_change_listener.h"
-#include "audio_spatialization_state_change_callback.h"
 #include "audio_policy_service.h"
 #include "audio_setting_provider.h"
 #include "istandard_audio_service.h"
@@ -520,32 +518,6 @@ int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialD
     return SPATIALIZATION_SERVICE_OK;
 }
 
-int32_t AudioSpatializationService::RegisterSpatializationStateEventListener(const uint32_t sessionID,
-    const StreamUsage streamUsage, const sptr<IRemoteObject> &object)
-{
-    std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
-        "set spatialization state event listener object is nullptr");
-    sptr<IStandardSpatializationStateChangeListener> listener =
-        iface_cast<IStandardSpatializationStateChangeListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "spatialization state obj cast failed");
-
-    std::shared_ptr<AudioSpatializationStateChangeCallback> callback =
-        std::make_shared<AudioSpatializationStateChangeListenerCallback>(listener);
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "failed to create spatialization state cb obj");
-
-    spatializationStateCBMap_[sessionID] = std::make_pair(callback, streamUsage);
-    return SUCCESS;
-}
-
-int32_t AudioSpatializationService::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
-{
-    std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
-    spatializationStateCBMap_.erase(sessionID);
-    return SUCCESS;
-}
-
 void AudioSpatializationService::UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice)
 {
     AUDIO_INFO_LOG("UpdateCurrentDevice Entered");
@@ -786,39 +758,12 @@ void AudioSpatializationService::UpdateSpatialDeviceType(AudioSpatialDeviceType 
 void AudioSpatializationService::HandleSpatializationStateChange(bool outputDeviceChange)
 {
     AUDIO_INFO_LOG("Spatialization State callback is triggered");
-    std::lock_guard<std::mutex> lock(spatializationStateChangeListnerMutex_);
-
-    AudioSpatializationState spatializationState = {spatializationEnabledReal_, headTrackingEnabledReal_};
-    AudioSpatializationState spatializationNotSupported = {false, false};
-    std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnabledMap;
-
-    for (auto it = spatializationStateCBMap_.begin(); it != spatializationStateCBMap_.end();) {
-        std::shared_ptr<AudioSpatializationStateChangeCallback> spatializationStateChangeCb = (it->second).first;
-        if (spatializationStateChangeCb == nullptr) {
-            AUDIO_ERR_LOG("spatializationStateChangeCb : nullptr for sessionID : %{public}d",
-                static_cast<int32_t>(it->first));
-            it = spatializationStateCBMap_.erase(it);
-            continue;
-        }
-        if (!IsSpatializationSupportedUsage((it->second).second)) {
-            if (!outputDeviceChange) {
-                sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, false));
-            }
-            spatializationStateChangeCb->OnSpatializationStateChange(spatializationNotSupported);
-        } else {
-            if (!outputDeviceChange) {
-                sessionIDToSpatializationEnabledMap.insert(std::make_pair(it->first, spatializationEnabledReal_));
-            }
-            spatializationStateChangeCb->OnSpatializationStateChange(spatializationState);
-        }
-        ++it;
-    }
 
     if (!outputDeviceChange) {
         AUDIO_INFO_LOG("notify offload entered");
-        std::thread notifyOffloadThread = std::thread([=] () mutable {
-            AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(
-                currentDevice_.macAddress_, sessionIDToSpatializationEnabledMap);
+        std::string macAddress = currentDevice_.macAddress_;
+        std::thread notifyOffloadThread = std::thread([macAddress] () mutable {
+            AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(macAddress);
         });
         notifyOffloadThread.detach();
     }

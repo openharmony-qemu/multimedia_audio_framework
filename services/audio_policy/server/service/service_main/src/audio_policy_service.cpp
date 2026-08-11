@@ -296,13 +296,11 @@ void AudioPolicyService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDes
     audioDeviceLock_.OnDeviceStatusUpdated(updatedDesc, isConnected);
 }
 
-void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(
-    const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap)
+void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(const std::string& macAddress)
 {
     DeviceType spatialDevice = audioDeviceCommon_.GetSpatialDeviceType(macAddress);
     if (audioA2dpOffloadManager_) {
-        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForSpatializationChanged(
-            sessionIDToSpatializationEnableMap, spatialDevice);
+        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForSpatializationChanged(spatialDevice);
     }
 }
 
@@ -542,9 +540,7 @@ void AudioPolicyService::SyncInputDeviceScoId(std::vector<std::shared_ptr<AudioD
 {
     for (size_t i = 0; i < descs.size(); i++) {
         CHECK_AND_CONTINUE(descs[i] != nullptr);
-        bool isA2dpIn = (descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
-        bool isSppUnidirectional = (descs[i]->deviceType_ == DEVICE_TYPE_BT_SPP && descs[i]->isUnidirectional_);
-        CHECK_AND_CONTINUE(isA2dpIn || isSppUnidirectional);
+        CHECK_AND_CONTINUE(descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
         CHECK_AND_CONTINUE(descs[i]->macAddress_ != "");
         if (IsScoExistedInDescs(descs, i)) {
             continue;

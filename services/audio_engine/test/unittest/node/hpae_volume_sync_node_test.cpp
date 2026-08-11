@@ -1208,4 +1208,78 @@ HWTEST_F(HpaeVolumeSyncNodeTest, setSinkVolume_nullSink_001, TestSize.Level0)
     // dereference null via SetVolume() → sanitizer abort → this line would never execute → fail.
     EXPECT_EQ(volumeSyncNode->GetSessionId(), DEFAULT_SESSION_ID);
 }
+
+/**
+ * @tc.name  : setSinkVolume_validSink_success_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeVolumeSyncNodeTest_041
+ * @tc.desc  : Cover SetSinkVolume non-null path: inject a live MockAudioRenderSink into
+ *             HdiAdapterManager::renderSinks_ so GetRenderSink() (cpp:60-67) cache-hits and
+ *             returns it, forcing the `if (audioRendererSink != nullptr)` TRUE body (cpp:115).
+ *             With SetVolume returning SUCCESS, the inner `if (ret != SUCCESS)` is FALSE (cpp:117).
+ */
+HWTEST_F(HpaeVolumeSyncNodeTest, setSinkVolume_validSink_success_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.deviceClass = "primary";
+    nodeInfo.sessionId = DEFAULT_SESSION_ID;
+
+    auto volumeSyncNode = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
+    ASSERT_NE(volumeSyncNode, nullptr);
+    uint32_t id = volumeSyncNode->renderId_;
+    ASSERT_NE(id, HDI_INVALID_ID);
+
+    // Seed the singleton cache so GetRenderSink() returns our mock instead of nullptr (which
+    // is what the test env yields for the voip id). This is what unlocks the cpp:115 TRUE arm;
+    // changing deviceClass alone cannot, because the ctor hardcodes renderId_ to the voip id.
+    auto mockSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
+    HdiAdapterManager::GetInstance().renderSinks_[id].sink_ = mockSink;
+    // Precondition discriminator: cache hit must return the mock, proving cpp:115 will take TRUE.
+    ASSERT_NE(volumeSyncNode->GetRenderSink(), nullptr);
+
+    // SetVolume returns SUCCESS -> cpp:117 condition false -> warning body skipped (FALSE arm).
+    EXPECT_CALL(*mockSink, SetVolume(TEST_VOLUME_1, TEST_VOLUME_1)).WillOnce(Return(SUCCESS));
+    volumeSyncNode->SetSinkVolume(TEST_VOLUME_1);  // private; -fno-access-control enabled
+
+    HdiAdapterManager::GetInstance().renderSinks_.erase(id);  // cleanup singleton cache
+}
+
+/**
+ * @tc.name  : setSinkVolume_validSink_failure_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeVolumeSyncNodeTest_042
+ * @tc.desc  : Cover SetSinkVolume `if (ret != SUCCESS)` TRUE arm (cpp:117-119): same mock-sink
+ *             injection as #041, but SetVolume returns a non-SUCCESS code so the warning body runs.
+ */
+HWTEST_F(HpaeVolumeSyncNodeTest, setSinkVolume_validSink_failure_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.deviceClass = "primary";
+    nodeInfo.sessionId = DEFAULT_SESSION_ID;
+
+    auto volumeSyncNode = std::make_shared<HpaeVolumeSyncNode>(nodeInfo);
+    ASSERT_NE(volumeSyncNode, nullptr);
+    uint32_t id = volumeSyncNode->renderId_;
+    ASSERT_NE(id, HDI_INVALID_ID);
+
+    auto mockSink = std::make_shared<NiceMock<MockAudioRenderSink>>();
+    HdiAdapterManager::GetInstance().renderSinks_[id].sink_ = mockSink;
+    ASSERT_NE(volumeSyncNode->GetRenderSink(), nullptr);
+
+    // SetVolume returns a non-SUCCESS code -> cpp:117 condition true -> AUDIO_WARNING_LOG runs.
+    EXPECT_CALL(*mockSink, SetVolume(TEST_VOLUME_1, TEST_VOLUME_1)).WillOnce(Return(ERR_INVALID_OPERATION));
+    volumeSyncNode->SetSinkVolume(TEST_VOLUME_1);
+
+    HdiAdapterManager::GetInstance().renderSinks_.erase(id);  // cleanup singleton cache
+}
 }  // namespace
