@@ -1121,6 +1121,15 @@ void HpaeDirectRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &l
     return;
 }
 
+void HpaeDirectRendererManager::OnRewindBuffer(uint32_t sessionId, uint64_t rewindTimeUs)
+{
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr,
+        "HpaeDirectRendererManager::OnRewindBuffer curNode_ is null");
+    curNode_->RewindHistoryBuffer(rewindTimeUs);
+    AUDIO_INFO_LOG("OnRewindBuffer: session %{public}u rewound %{public}" PRIu64 "us",
+        sessionId, rewindTimeUs);
+}
+
 int32_t HpaeDirectRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
 {
     CHECK_AND_RETURN_RET_LOG(loudnessGainNode_, ERROR,

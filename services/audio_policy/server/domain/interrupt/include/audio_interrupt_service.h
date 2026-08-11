@@ -195,6 +195,7 @@ public:
     void GetFocusDebugInfoByStreamId(uint32_t streamId, AudioDebugInfo &audioDebugInfo);
     int32_t GetSessionDebugInfo(int32_t pid, AudioSessionDebugInfo &sessionDebugInfo);
     std::vector<int32_t> FindAudioZonesByPid(int32_t pid);
+    void StopAudioFocusBySessionIds(const int32_t zoneId, const std::vector<std::pair<uint32_t, int32_t>> &sessions);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -451,10 +452,6 @@ private:
     bool UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry, AudioFocuState &activeState,
         AudioFocuState &incomingState);
     bool VerifyStreamType(const AudioInterrupt &audioInterrupt);
-    bool IsAncoAudioMediaInterrupt(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
-        const AudioInterrupt &incomingInterrupt);
-    bool CheckAudioConcurrencyForInterrupt(const AudioInterrupt &activeInterrupt,
-        const AudioInterrupt &incomingInterrupt);
     int32_t FindAudioZoneByStreamIdInternal(const uint32_t streamId);
 
     // interrupt members

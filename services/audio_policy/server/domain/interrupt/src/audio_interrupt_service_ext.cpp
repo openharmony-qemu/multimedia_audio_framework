@@ -466,9 +466,7 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
         AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
             activeInterrupt.streamId, streamId);
         SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
-        if (activeInterrupt.uid != AUDIO_ID) {
-            DeactivateAudioInterruptInternal(activeZoneId, activeInterrupt);
-        }
+        DeactivateAudioInterruptInternal(activeZoneId, activeInterrupt);
         ret = true;
     }
     return ret;
@@ -568,14 +566,6 @@ void AudioInterruptService::HandleMuteInterruptEvent(const AudioInterrupt &audio
     } else {
         SetNonInterruptMute(audioInterrupt.streamId, muteFlag);
     }
-}
-
-bool AudioInterruptService::IsAncoAudioMediaInterrupt(const AudioFocusEntry &focusEntry,
-    const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt)
-{
-    return (focusEntry.hintType == INTERRUPT_HINT_STOP && currentInterrupt.uid == AUDIO_ID &&
-        AudioInterruptUtils::IsMediaStream(currentInterrupt.audioFocusType.streamType) &&
-        AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType));
 }
 
 bool AudioInterruptService::IsStreamActive(uint32_t streamId)

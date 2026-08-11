@@ -717,6 +717,9 @@ public:
 
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
 
+    int32_t SetStopStreamInfoWhenDisconnect(const std::string &networkId, const std::vector<StreamUsage> &usages,
+        const std::vector<int32_t> &uids);
+
     int32_t SetQueryDeviceVolumeBehaviorCallback(
         const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
 
@@ -730,7 +733,7 @@ public:
     AudioDevicePair GetLoopbackPreferredDevicePair();
     bool IsSupportInnerCaptureOffload();
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
-    bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
+    bool SetKaraokeParameters(DeviceType deviceType, KaraokeParamType paramType, int32_t value);
     bool SetLoopbackVolume(float volume);
     float GetLoopbackVolume();
     int32_t CreateLoopback(AudioLoopbackMode mode, LoopbackType type,

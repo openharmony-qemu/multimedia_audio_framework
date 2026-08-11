@@ -610,7 +610,6 @@ void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig 
 {
     std::vector<StreamUsage> &usages = config.filterOptions.usages;
     if (mode & AUDIOSTREAM_PLAYBACKCAPTURE_MODE_MEDIA) {
-        config.isModernInnerCapturer = true;
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MEDIA);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MUSIC);
@@ -618,7 +617,6 @@ void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig 
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_GAME);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_AUDIOBOOK);
     } else {
-        config.isModernInnerCapturer = true;
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MEDIA);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MUSIC);
@@ -672,6 +670,8 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
 
     if (modernInnerCapturer_) {
         InitPlaybackCaptureConfig(options.playbackCaptureConfig, playbackCaptureMode_);
+        options.staticPlaybackCaptureConfig.isModernInnerCapturer = true;
+        options.staticPlaybackCaptureConfig.playbackCaptureMode = playbackCaptureMode_;
     }
 
     OHAudioCapturer *audioCapturer = new OHAudioCapturer();

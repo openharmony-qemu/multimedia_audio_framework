@@ -43,7 +43,6 @@ void InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig &config, uint32_t mode
     auto &filterOptions = config.filterOptions;
     filterOptions.usageFilterMode = FilterMode::INCLUDE;
     filterOptions.pidFilterMode = FilterMode::INCLUDE;
-    config.isModernInnerCapturer = true;
 
     if (mode == PLAYBACK_CAPTURE_MODE_ONLY_VOIP) {
         filterOptions.usages.push_back(STREAM_USAGE_VOICE_COMMUNICATION);
@@ -948,7 +947,8 @@ static napi_status GetPlaybackCaptureMode(const napi_env &env, AudioCapturerOpti
 
     opts->capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
     InitPlaybackCaptureConfig(opts->playbackCaptureConfig, static_cast<uint32_t>(mode));
-    opts->playbackCaptureConfig.filterOptions.playbackCaptureMode = mode;
+    opts->staticPlaybackCaptureConfig.isModernInnerCapturer = true;
+    opts->staticPlaybackCaptureConfig.playbackCaptureMode = mode;
     bool hasPlaybackCaptureUid = false;
     status = napi_has_named_property(env, in, "playbackCaptureUid", &hasPlaybackCaptureUid);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetPlaybackCaptureMode has playbackCaptureUid failed");

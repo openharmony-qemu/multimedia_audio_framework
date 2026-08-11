@@ -5274,6 +5274,19 @@ int32_t AudioPolicyServer::SetDeviceVolumeBehavior(const std::string &networkId,
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetStopStreamInfoWhenDisconnect(const std::string &networkId,
+    const std::vector<int32_t> &usages, const std::vector<int32_t> &uids)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_AUDIO, ERR_PERMISSION_DENIED, "No permission");
+    std::vector<StreamUsage> usagesNeedStop = {};
+    for (const auto &usage : usages) {
+        usagesNeedStop.emplace_back(static_cast<StreamUsage>(usage));
+    }
+    audioDeviceStatus_.SetStopStreamInfoWhenDisconnect(networkId, usagesNeedStop, uids);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object)
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "SetAudioDeviceAnahsCallback object is nullptr");
@@ -5951,18 +5964,15 @@ int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, b
 }
 
 
-int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret)
+int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, int32_t paramType, int32_t value, bool &ret)
 {
-    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(static_cast<DeviceType>(deviceType), parameters);
-    bool enable = false;
-    if (parameters.starts_with("Karaoke_enable=enable")) {
-        enable = true;
-    } else if (parameters.starts_with("Karaoke_enable=disable")) {
-        enable = false;
-    } else {
-        return SUCCESS;
-    }
-    (void)audioVolumeManager_.StartNearlinkKaraokeTransition(enable);
+    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(
+        static_cast<DeviceType>(deviceType), static_cast<KaraokeParamType>(paramType), value);
+    // Only drive the nearlink transition when the downstream AudioServer actually accepted
+    // the ENABLE parameter (passed BuildKaraokeParamString validation + HDI dispatch).
+    CHECK_AND_RETURN_RET(ret && static_cast<KaraokeParamType>(paramType) ==
+        KaraokeParamType::KARAOKE_PARAM_ENABLE, SUCCESS);
+    audioVolumeManager_.StartNearlinkKaraokeTransition(value != 0);
     return SUCCESS;
 }
 

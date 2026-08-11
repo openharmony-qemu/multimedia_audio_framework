@@ -326,7 +326,7 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
     napiCapturer->sourceType_ = sCapturerOptions_->capturerInfo.sourceType;
 
     AudioCapturerOptions capturerOptions = *sCapturerOptions_;
-    napiCapturer->isModernInnerCapturer_ = capturerOptions.playbackCaptureConfig.isModernInnerCapturer;
+    napiCapturer->isModernInnerCapturer_ = capturerOptions.staticPlaybackCaptureConfig.isModernInnerCapturer;
 
     /* NapiAudioCapturer not support other capturerFlags, only support flag 0 */
     if (capturerOptions.capturerInfo.capturerFlags != 0) {

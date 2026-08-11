@@ -274,7 +274,7 @@ interface IAudioPolicy {
     void SetCallbackStreamUsageInfo([in] Set<int> streamUsages);
     void UpdateDeviceInfo([in] sharedptr<AudioDeviceDescriptor> deviceDesc, [in] int command);
     void SetSleAudioOperationCallback([in] IRemoteObject object);
-    void SetKaraokeParameters([in] int deviceType, [in] String parameters, [out] boolean ret);
+    void SetKaraokeParameters([in] int deviceType, [in] int paramType, [in] int value, [out] boolean ret);
     void SetLoopbackVolume([in] float volume, [out] boolean ret);
     void GetLoopbackVolume([out] float volume, [out] boolean ret);
     void IsAudioLoopbackSupported([in] int mode, [in] int deviceType, [out] boolean isSupported);
@@ -373,4 +373,5 @@ interface IAudioPolicy {
     void SetVolumeControlPriority([in] List<int> priorities, [out] int ret);
     void SetVoipRendererMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
     void SetVoipCapturerMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
+    void SetStopStreamInfoWhenDisconnect([in] String networkId, [in] List<int> usages, [in] List<int> uids);
 }

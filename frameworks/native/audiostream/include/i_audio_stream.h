@@ -288,7 +288,8 @@ public:
     virtual int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) = 0;
 
     // for inner capturer
-    virtual void SetInnerCapturerState(bool isInnerCapturer) = 0;
+    virtual void SetInnerCapturerState(bool isInnerCapturer,
+        int32_t playbackCaptureMode, bool isModernInnerCapturer) = 0;
     virtual void SetPrivacyType(AudioPrivacyType privacyType) = 0;
 
     virtual uint32_t GetUnderflowCount() = 0;

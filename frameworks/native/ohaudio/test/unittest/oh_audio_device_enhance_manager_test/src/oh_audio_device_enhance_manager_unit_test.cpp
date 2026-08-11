@@ -18,6 +18,8 @@
 #include <cstdlib>
 
 #include "OHAudioDeviceEnhanceManager.h"
+#include "OHAudioRenderer.h"
+#include "OHAudioCapturer.h"
 #include "audio_errors.h"
 #include "native_audio_device_enhance_manager.h"
 
@@ -230,6 +232,76 @@ HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_SelectI
     TestSize.Level0)
 {
     auto ret = OH_AudioDeviceEnhanceManager_SelectInputDeviceForAudioCapturer(nullptr, nullptr, nullptr);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioDeviceEnhanceManager_SelectOutputDevice.
+ * @tc.number: OH_AudioDeviceEnhanceManager_SelectOutputDevice_002
+ * @tc.desc  : Test nullptr descriptor clears app-level output selection.
+ */
+HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_SelectOutputDevice_002, TestSize.Level0)
+{
+    OH_AudioDeviceEnhanceManager *manager = nullptr;
+    auto ret = OH_AudioManager_GetAudioDeviceEnhanceManager(&manager);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(manager, nullptr);
+
+    ret = OH_AudioDeviceEnhanceManager_SelectOutputDevice(manager, nullptr);
+    EXPECT_NE(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioDeviceEnhanceManager_SelectInputDevice.
+ * @tc.number: OH_AudioDeviceEnhanceManager_SelectInputDevice_002
+ * @tc.desc  : Test nullptr descriptor clears app-level input selection.
+ */
+HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_SelectInputDevice_002, TestSize.Level0)
+{
+    OH_AudioDeviceEnhanceManager *manager = nullptr;
+    auto ret = OH_AudioManager_GetAudioDeviceEnhanceManager(&manager);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(manager, nullptr);
+
+    ret = OH_AudioDeviceEnhanceManager_SelectInputDevice(manager, nullptr);
+    EXPECT_NE(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioDeviceEnhanceManager_SelectOutputDeviceForAudioRenderer.
+ * @tc.number: OH_AudioDeviceEnhanceManager_SelectOutputDeviceForAudioRenderer_004
+ * @tc.desc  : Test nullptr descriptor with valid renderer object does not crash and is not rejected at NDK param check.
+ */
+HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_SelectOutputDeviceForAudioRenderer_004,
+    TestSize.Level0)
+{
+    OH_AudioDeviceEnhanceManager *manager = nullptr;
+    auto ret = OH_AudioManager_GetAudioDeviceEnhanceManager(&manager);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(manager, nullptr);
+
+    OHAudioRenderer renderer;
+    auto *rendererPtr = reinterpret_cast<OH_AudioRenderer *>(&renderer);
+    ret = OH_AudioDeviceEnhanceManager_SelectOutputDeviceForAudioRenderer(manager, rendererPtr, nullptr);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioDeviceEnhanceManager_SelectInputDeviceForAudioCapturer.
+ * @tc.number: OH_AudioDeviceEnhanceManager_SelectInputDeviceForAudioCapturer_004
+ * @tc.desc  : Test nullptr descriptor with valid capturer object does not crash and is not rejected at NDK param check.
+ */
+HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_SelectInputDeviceForAudioCapturer_004,
+    TestSize.Level0)
+{
+    OH_AudioDeviceEnhanceManager *manager = nullptr;
+    auto ret = OH_AudioManager_GetAudioDeviceEnhanceManager(&manager);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(manager, nullptr);
+
+    OHAudioCapturer capturer;
+    auto *capturerPtr = reinterpret_cast<OH_AudioCapturer *>(&capturer);
+    ret = OH_AudioDeviceEnhanceManager_SelectInputDeviceForAudioCapturer(manager, capturerPtr, nullptr);
     EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 } // namespace AudioStandard

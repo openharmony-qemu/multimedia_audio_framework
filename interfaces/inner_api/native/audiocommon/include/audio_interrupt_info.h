@@ -106,16 +106,14 @@ enum InterruptForceType {
 struct InterruptEvent : public Parcelable {
     InterruptEvent() {}
     InterruptEvent(InterruptType eventTypeIn, InterruptForceType forceTypeIn,
-        InterruptHint hintType, bool callbackToAppIn = true, bool handleForceStreamIn = true)
-        : eventType(eventTypeIn), forceType(forceTypeIn), hintType(hintType),
-          callbackToApp(callbackToAppIn), handleForceStream(handleForceStreamIn) {}
+        InterruptHint hintType, bool callbackToAppIn = true)
+        : eventType(eventTypeIn), forceType(forceTypeIn), hintType(hintType), callbackToApp(callbackToAppIn) {}
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteInt32(static_cast<int32_t>(eventType));
         parcel.WriteInt32(static_cast<int32_t>(forceType));
         parcel.WriteInt32(static_cast<int32_t>(hintType));
         parcel.WriteBool(callbackToApp);
-        parcel.WriteBool(handleForceStream);
         return true;
     }
 
@@ -129,7 +127,6 @@ struct InterruptEvent : public Parcelable {
         info->forceType = static_cast<InterruptForceType>(parcel.ReadInt32());
         info->hintType = static_cast<InterruptHint>(parcel.ReadInt32());
         info->callbackToApp = parcel.ReadBool();
-        info->handleForceStream = parcel.ReadBool();
         return info;
     }
 
@@ -151,11 +148,6 @@ struct InterruptEvent : public Parcelable {
      * If false, interruptEvent should not callback to app.
      */
     bool callbackToApp = true;
-    /**
-     * handle force stream. Default true;
-     * If false, only send callback to app.
-     */
-    bool handleForceStream = true;
 };
 
 // Used internally only by AudioFramework
@@ -166,7 +158,6 @@ struct InterruptEventInternal : public Parcelable {
     float duckVolume = 1.0f;
     bool callbackToApp = true;
     int64_t eventTimestamp = 0;
-    bool handleForceStream = true;
 
     InterruptEventInternal() = default;
 
@@ -187,8 +178,7 @@ struct InterruptEventInternal : public Parcelable {
             && parcel.WriteInt32(static_cast<int32_t>(hintType))
             && parcel.WriteFloat(duckVolume)
             && parcel.WriteBool(callbackToApp)
-            && parcel.WriteInt64(eventTimestamp)
-            && parcel.WriteBool(handleForceStream);
+            && parcel.WriteInt64(eventTimestamp);
     }
 
     static InterruptEventInternal *Unmarshalling(Parcel &parcel)
@@ -203,7 +193,6 @@ struct InterruptEventInternal : public Parcelable {
         interrupt->duckVolume = parcel.ReadFloat();
         interrupt->callbackToApp = parcel.ReadBool();
         interrupt->eventTimestamp = parcel.ReadInt64();
-        interrupt->handleForceStream = parcel.ReadBool();
         return interrupt;
     }
 };

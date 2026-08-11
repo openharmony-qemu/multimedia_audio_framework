@@ -41,8 +41,9 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
     ret = CheckDpStreamUsage(perDev_, streamUsage);
     CHECK_AND_RETURN_RET(!ret, make_shared<AudioDeviceDescriptor>());
     vector<shared_ptr<AudioDeviceDescriptor>> mediaDevices =
-        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES);
+        AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
     RouterBase::ClearConflictDevice(mediaDevices, GetRouterType());
+    RouterBase::ReplaceConflictA2dpWithSco(perDev_, GetRouterType());
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(MEDIA_OUTPUT_DEVICES, perDev_)) {
         AUDIO_DEBUG_LOG(" PreferredMediaRenderDevice is null or device is not available now");
         return make_shared<AudioDeviceDescriptor>();
