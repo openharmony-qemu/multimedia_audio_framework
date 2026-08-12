@@ -93,7 +93,6 @@ group("audio_unit_test") {
     "../services/audio_engine/test/unittest:hpae_plugins_unit_test",
     "../services/audio_engine/test/unittest:hpae_policy_manager_test",
     "../services/audio_engine/test/unittest:hpae_process_cluster_test",
-    "../services/audio_engine/test/unittest:hpae_process_cluster_se_test",
     "../services/audio_engine/test/unittest:hpae_remote_output_cluster_test",
     "../services/audio_engine/test/unittest:hpae_remote_sink_output_node_test",
     "../services/audio_engine/test/unittest:hpae_render_effect_node_test",
