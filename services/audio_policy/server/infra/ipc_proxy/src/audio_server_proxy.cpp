@@ -625,13 +625,13 @@ bool AudioServerProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return isSupported;
 }
 
-bool AudioServerProxy::SetKaraokeParameters(DeviceType deviceType, const std::string &parameters)
+bool AudioServerProxy::SetKaraokeParameters(DeviceType deviceType, KaraokeParamType paramType, int32_t value)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     bool res = false;
-    gsp->SetKaraokeParameters(deviceType, parameters, res);
+    gsp->SetKaraokeParameters(deviceType, static_cast<int32_t>(paramType), value, res);
     IPCSkeleton::SetCallingIdentity(identity);
     return res;
 }
