@@ -46,7 +46,7 @@ public:
         if (service_ == nullptr) {
             return;
         }
-        service_->DoInterruptResponseCheck(zoneId_, info_);
+        service_->CheckInterruptResponseAfterDelay(zoneId_, info_);
     }
 
 private:
@@ -640,7 +640,7 @@ static bool IsResponseCheckSupported(InterruptHint hintType)
         hintType == INTERRUPT_HINT_MUTE;
 }
 
-void AudioInterruptService::ScheduleInterruptResponseCheck(
+void AudioInterruptService::PostInterruptResponseCheckAction(
     const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt)
 {
     CHECK_AND_RETURN_LOG(!IsGameAvoidCallbackCase(audioInterrupt), "game app skip interrupt response check");
@@ -668,14 +668,14 @@ void AudioInterruptService::ScheduleInterruptResponseCheck(
         shared_from_this(), zoneId, std::move(info));
     AsyncActionHandler::AsyncActionDesc desc;
     desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
-    desc.delayTimeMs = 1000;
+    desc.delayTimeMs = INTERRUPT_RESPONSE_CHECK_DELAY;
     desc.priority = AsyncActionHandler::ActionPriority::LOW;
     asyncHandler_->PostAsyncAction(desc);
-    AUDIO_INFO_LOG("ScheduleInterruptResponseCheck for streamId %{public}u zoneId %{public}d",
+    AUDIO_INFO_LOG("PostInterruptResponseCheckAction for streamId %{public}u zoneId %{public}d",
         info.streamId, zoneId);
 }
 
-void AudioInterruptService::DoInterruptResponseCheck(const int32_t zoneId,
+void AudioInterruptService::CheckInterruptResponseAfterDelay(const int32_t zoneId,
     const InterruptResponseCheckInfo &info)
 {
     std::list<std::pair<AudioInterrupt, AudioFocuState>> currentFocusList;
