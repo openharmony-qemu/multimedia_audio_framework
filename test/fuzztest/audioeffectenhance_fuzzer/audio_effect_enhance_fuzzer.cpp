@@ -22,7 +22,6 @@
 #include "audio_effect_log.h"
 #include "audio_effect_chain.h"
 #ifdef SUPPORT_OLD_ENGINE
-#include "audio_effect_chain_adapter.h"
 #include "audio_enhance_chain_adapter.h"
 #endif
 #include "audio_effect_chain_manager.h"

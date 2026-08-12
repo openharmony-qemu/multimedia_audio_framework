@@ -85,15 +85,6 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
     "samgr:samgr_proxy",
   ]
   defines = []
-  if (!audio_framework_feature_new_engine_flag) {
-    sources += [
-      "src/audio_effect_chain_adapter_unit_test.cpp",
-    ]
-    external_deps += [
-      "pulseaudio:pulse",
-    ]
-    defines += [ "SUPPORT_OLD_ENGINE" ]
-  }
   if (sensor_enable == true) {
     cflags += [ "-DSENSOR_ENABLE" ]
     external_deps += [ "sensor:sensor_interface_native" ]
