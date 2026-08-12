@@ -1442,8 +1442,11 @@ int32_t AudioCoreService::StartClientForPlayback(uint32_t sessionId,
     CheckFastToNormalForPlayback(streamDesc, opMsg);
     int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
-    deviceDesc = streamDesc->GetMainNewDeviceDesc();
-    CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr");
+    auto latestStreamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_RET_LOG(latestStreamDesc != nullptr, ERR_NULL_POINTER,
+        "StartClientForPlayback: streamDesc is nullptr after activate");
+    deviceDesc = latestStreamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr");
     CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
     audioPolicyManager_.UpdateVolumeForAllPipes();
     audioVolumeManager_.SetVoiceCallVolumeOnDeviceSwitch(deviceDesc, true, streamDesc);
@@ -1476,6 +1479,11 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     int32_t inputRet = ActivateInputDevice(streamDesc);
     CHECK_AND_RETURN_RET_LOG(inputRet != REFETCH_DEVICE, SUCCESS, "Activate input device failed, refetch device");
     CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
+    auto latestStreamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_RET_LOG(latestStreamDesc != nullptr, ERR_NULL_POINTER,
+        "StartClientForRecord: streamDesc is nullptr after activate");
+    deviceDesc = latestStreamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr after activate");
     CheckAndSetCurrentInputDevice(deviceDesc, GetRealUid(streamDesc));
     audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
         pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
