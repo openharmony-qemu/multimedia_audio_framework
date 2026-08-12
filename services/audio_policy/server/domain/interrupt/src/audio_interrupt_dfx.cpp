@@ -137,6 +137,27 @@ void AudioInterruptDfx::AddInterruptErrorEvent(const AudioInterrupt &audioInterr
     }
 }
 
+void AudioInterruptDfx::RecordSilentWithPauseStrategyEvent(const AudioInterrupt &incomingInterrupt,
+    const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
+{
+    AudioFocusErrorEvent interruptError;
+    interruptError.appName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
+    interruptError.isAppInForeground = AudioInterruptUtils::GetAppState(incomingInterrupt.pid);
+    interruptError.rendererInfo += "streamType: " + std::to_string(incomingInterrupt.audioFocusType.streamType) +
+        " sourceType: " + std::to_string(incomingInterrupt.audioFocusType.sourceType) + ";";
+    interruptError.hintType = focusEntry.hintType;
+    interruptError.errorInfo = "PauseWithMuteStrategy";
+    interruptError.audiosessionInfo = "sessionConcurrencyMode:" +
+        std::to_string(static_cast<int32_t>(sessionService_.GetSessionStrategy(incomingInterrupt.pid))) +
+        " streamConcurrencyMode:" +
+        std::to_string(static_cast<int32_t>(incomingInterrupt.sessionStrategy.concurrencyMode));
+    interruptError.interruptedAppName = AudioInterruptUtils::GetAudioInterruptBundleName(activeInterrupt);
+    interruptError.interruptedRendererInfo += "streamType: " +
+        std::to_string(activeInterrupt.audioFocusType.streamType) +
+        " sourceType: " + std::to_string(activeInterrupt.audioFocusType.sourceType) + ";";
+    WriteAudioInterruptErrorEvent(interruptError);
+}
+
 std::string AudioInterruptDfx::GetInterruptRendererInfo(const AudioInterrupt &audioInterrupt)
 {
     std::string rendererInfoStr = "";
