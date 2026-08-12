@@ -1229,7 +1229,7 @@ HWTEST(AudioPolicyManagerDevice, GmSetAsrVoiceMuteMode_NullGasp, TestSize.Level1
     auto *gm = AudioGeneralManager::GetInstance();
     int32_t ret = gm->SetAsrVoiceMuteMode(
         AsrVoiceMuteMode::OUTPUT_MUTE, true);
-    EXPECT_EQ(ERR_SYSTEM_PERMISSION_DENIED, 0);
+    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmSetExtraParams_NullGasp, TestSize.Level1)
@@ -1237,14 +1237,14 @@ HWTEST(AudioPolicyManagerDevice, GmSetExtraParams_NullGasp, TestSize.Level1)
     auto *gm = AudioGeneralManager::GetInstance();
     std::vector<std::pair<std::string, std::string>> kv;
     int32_t ret = gm->SetExtraParameters("key", kv);
-    EXPECT_EQ(ERR_SYSTEM_PERMISSION_DENIED, 0);
+    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmNotifySensitive_NullGasp, TestSize.Level1)
 {
     auto *gm = AudioGeneralManager::GetInstance();
     int32_t ret = gm->NotifySensitiveRecordPermit(1, true);
-    EXPECT_EQ(ERR_PERMISSION_DENIED, 0);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmGetPrefOutDev, TestSize.Level1)
