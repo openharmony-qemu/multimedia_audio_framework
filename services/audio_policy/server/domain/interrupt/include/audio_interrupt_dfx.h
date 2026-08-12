@@ -57,6 +57,13 @@ struct InterruptResponseCheckInfo {
     std::list<std::pair<AudioInterrupt, AudioFocuState>> originalFocusList;
 };
 
+enum class ResponseResult {
+    NORMAL,
+    NOT_RESTARTED,
+    RESTARTED,
+    STOPPED,
+};
+
 enum InterruptErrorCode {
     TYPE_MEDIA_PLAYBACK_NOT_LISTENING_INTERRUPT_CHANGE,
     TYPE_MEDIA_PLAYBACK_ACTIVATED_LISTENING_INTERRUPT_CHANGE,
@@ -94,7 +101,7 @@ private:
         const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt);
     void CheckMuteInterruptEvent(uint32_t streamId);
     void CheckShortInterruptEvent(uint32_t streamId);
-    bool IsResponseAbnormal(const InterruptResponseCheckInfo &info,
+    ResponseResult EvaluateResponse(const InterruptResponseCheckInfo &info,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
     void WriteInterruptResponseErrorEvent(const std::string &appName, InterruptHint hintType,
         const std::string &rendererInfo, const std::string &errorInfo);
