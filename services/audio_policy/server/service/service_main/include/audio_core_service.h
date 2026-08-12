@@ -740,8 +740,7 @@ private:
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     bool HandleMuteBeforeDeviceSwitch(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         const AudioStreamDeviceChangeReasonExt reason);
-    void CaptureOldPipeInfo(bool isEnhancedRouting,
-        const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList, uint32_t sessionId,
+    void CaptureOldPipeInfo(bool isEnhancedRouting, uint32_t sessionId,
         std::string &oldClassName, std::string &oldModuleName);
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason, const std::string &oldClassName = "",
