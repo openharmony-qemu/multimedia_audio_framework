@@ -222,7 +222,7 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_001, TestSize.Level1)
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     int32_t ret = audioLoopback->SetVolume(1);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(audioLoopback->karaokeParams_["Karaoke_volume"], "100");
+    EXPECT_EQ(audioLoopback->karaokeParams_[KaraokeParamType::KARAOKE_PARAM_VOLUME], 100);
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_002, TestSize.Level1)
@@ -231,7 +231,7 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_002, TestSize.Level1)
     audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
     int32_t ret = audioLoopback->SetVolume(1);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(audioLoopback->karaokeParams_["Karaoke_volume"], "100");
+    EXPECT_EQ(audioLoopback->karaokeParams_[KaraokeParamType::KARAOKE_PARAM_VOLUME], 100);
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_003, TestSize.Level1)

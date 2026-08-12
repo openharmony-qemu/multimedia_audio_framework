@@ -120,14 +120,14 @@ private:
     void DisableLoopback();
     void StartAudioLoopback();
     AudioLoopbackStatus StateToStatus(AudioLoopbackState state);
-    bool SetKaraokeParameters(const std::string &parameters);
+    bool SetKaraokeParameters(KaraokeParamType paramType, int32_t value);
     AudioLoopbackReportInfo GetReportInfo(AudioLoopbackErrorScope scope, AudioLoopbackErrorType type);
     void GetValidDevice();
 
     AudioRendererOptions rendererOptions_;
     AudioCapturerOptions capturerOptions_;
     AppInfo appInfo_ = {};
-    std::map<std::string, std::string> karaokeParams_ = {};
+    std::map<KaraokeParamType, int32_t> karaokeParams_ = {};
     std::shared_ptr<AudioRenderer> audioRenderer_;
     std::shared_ptr<AudioCapturer> audioCapturer_;
     std::mutex loopbackMutex_;

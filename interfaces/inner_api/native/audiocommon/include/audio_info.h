@@ -633,6 +633,21 @@ enum AudioLoopbackEqualizerPreset {
     EQUALIZER_PRESET_BRIGHT = 3,
 };
 
+/**
+ * @brief Type of a Karaoke parameter carried together with an int32_t value.
+ *
+ * Used by SetKaraokeParameters across IPC. The meaning of the paired value:
+ * VOLUME -> 0..100; REVERB_MODE -> AudioLoopbackReverbPreset; EQ_MODE ->
+ * AudioLoopbackEqualizerPreset; ENABLE/CAPTURE_REVERB -> 0 or 1.
+ */
+enum KaraokeParamType {
+    KARAOKE_PARAM_VOLUME = 0,
+    KARAOKE_PARAM_REVERB_MODE = 1,
+    KARAOKE_PARAM_EQ_MODE = 2,
+    KARAOKE_PARAM_ENABLE = 3,
+    KARAOKE_PARAM_CAPTURE_REVERB = 4,
+};
+
 enum UltraFastFlags : uint32_t {
     /**
      * Client has not set the ultra fast flag, and the current stream is not using the server's ultra fast route(pipe).
