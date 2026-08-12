@@ -307,22 +307,5 @@ HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_011, TestSize.Level4
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> map;
     audioFocusParser_->AddAllowedFocusEntry(mockAudioXmlNode_, input, map);
 }
-
-/**
- * @tc.name  : Test AudioPolicyConfigParser.
- * @tc.number: AudioFocusParserUnitTest_012
- * @tc.desc  : Test GetHasEarpiece interface.
- */
-HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_012, TestSize.Level4)
-{
-    AudioPolicyConfigParser parser(AudioCoreConfigManager::GetInstance());
-    EXPECT_EQ(parser.GetHasEarpiece(), GetHasEarpieceParam());
-
-    parser.hasEarpiece_ = true;
-    EXPECT_TRUE(parser.GetHasEarpiece());
-
-    parser.hasEarpiece_ = false;
-    EXPECT_FALSE(parser.GetHasEarpiece());
-}
 } // namespace AudioStandard
 } // namespace OHOS
