@@ -70,6 +70,7 @@ ohos_fuzztest("AudioPolicyServerConfigFuzzTest") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
   if (accessibility_enable == true) {
     external_deps += [

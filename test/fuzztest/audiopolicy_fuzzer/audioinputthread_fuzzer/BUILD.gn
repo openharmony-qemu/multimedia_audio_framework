@@ -50,6 +50,7 @@ ohos_fuzztest("AudioInputThreadFuzzTest") {
     "hdf_core:libhdi",
     "hdf_core:libhdf_host",
     "hdf_core:libpub_utils",
+    "ffrt:libffrt",
   ]
 
   defines = []

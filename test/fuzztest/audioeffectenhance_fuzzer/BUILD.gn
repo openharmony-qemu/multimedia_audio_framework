@@ -82,6 +82,7 @@ ohos_fuzztest("AudioEffectEnhanceFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "bluetooth:btframework",
+    "ffrt:libffrt",
   ]
   defines = []
   if (!audio_framework_feature_new_engine_flag) {

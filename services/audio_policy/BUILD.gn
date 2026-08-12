@@ -455,9 +455,8 @@ audio_ohos_library("audio_policy_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "init:libbeget_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]

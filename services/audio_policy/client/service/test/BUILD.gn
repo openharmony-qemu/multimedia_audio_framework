@@ -99,6 +99,7 @@ ohos_unittest("audio_policy_manager_device_unit_test") {
     "samgr:samgr_proxy",
     "accessibility:accessibility_common",
     "accessibility:accessibilityconfig",
+    "ffrt:libffrt",
   ]
 
   sources = [
@@ -170,6 +171,7 @@ ohos_unittest("audio_record_control_manager_unit_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_record_control_manager_unit_test/src/audio_record_control_manager_unit_test.cpp" ]

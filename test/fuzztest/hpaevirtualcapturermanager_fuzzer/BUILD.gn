@@ -94,6 +94,7 @@ ohos_fuzztest("HpaeVirtualCapturerManagerFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "bluetooth:btframework",
+    "ffrt:libffrt",
   ]
   if (sonic_enable == true) {
     external_deps += [ "sonic:sonic" ]

@@ -99,6 +99,7 @@ ohos_fuzztest("AudioEffectVolumeFuzzTest") {
     "ipc:ipc_single",
     "safwk:system_ability_fwk",
     "qos_manager:concurrent_task_client",
+    "ffrt:libffrt",
   ]
   if (sonic_enable == true) {
     external_deps += [ "sonic:sonic" ]
