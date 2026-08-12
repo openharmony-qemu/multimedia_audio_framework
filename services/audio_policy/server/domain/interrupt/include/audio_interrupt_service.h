@@ -192,6 +192,7 @@ public:
     int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
         int32_t callerUid = INVALID_UID);
     void RefreshAudioSceneAfterDelay(const int32_t zoneId);
+    void DoInterruptResponseCheck(const int32_t zoneId, const InterruptResponseCheckInfo &info);
     void GetFocusDebugInfoByStreamId(uint32_t streamId, AudioDebugInfo &audioDebugInfo);
     int32_t GetSessionDebugInfo(int32_t pid, AudioSessionDebugInfo &sessionDebugInfo);
     std::vector<int32_t> FindAudioZonesByPid(int32_t pid);

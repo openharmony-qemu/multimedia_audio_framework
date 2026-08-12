@@ -35,6 +35,26 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class InterruptResponseCheckAction : public AsyncActionHandler::AsyncAction {
+public:
+    explicit InterruptResponseCheckAction(std::shared_ptr<AudioInterruptService> service,
+        const int32_t zoneId, InterruptResponseCheckInfo info)
+        : service_(service), zoneId_(zoneId), info_(std::move(info)) {}
+
+    void Exec() override
+    {
+        if (service_ == nullptr) {
+            return;
+        }
+        service_->DoInterruptResponseCheck(zoneId_, info_);
+    }
+
+private:
+    std::shared_ptr<AudioInterruptService> service_;
+    const int32_t zoneId_;
+    InterruptResponseCheckInfo info_;
+};
+
 void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
 {
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> audioInterruptZonesMapDump;
@@ -641,24 +661,33 @@ void AudioInterruptService::ScheduleInterruptResponseCheck(
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
         focusList = itZone->second->audioFocusInfoList;
     }
-    info.originalFocusList = focusList;
+    info.originalFocusList = std::move(focusList);
 
-    auto service = shared_from_this();
-    std::thread([service, info, zoneId] {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::list<std::pair<AudioInterrupt, AudioFocuState>> currentFocusList;
-        {
-            std::lock_guard<std::mutex> lock(service->mutex_);
-            auto currZone = service->zonesMap_.find(zoneId);
-            if (currZone != service->zonesMap_.end() && currZone->second != nullptr) {
-                currentFocusList = currZone->second->audioFocusInfoList;
-            }
-        }
-        CHECK_AND_RETURN(service->interruptDfx_ != nullptr);
-        service->interruptDfx_->CheckInterruptResponse(info, currentFocusList);
-    }).detach();
+    CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "asyncHandler is nullptr");
+    auto action = std::make_shared<InterruptResponseCheckAction>(
+        shared_from_this(), zoneId, std::move(info));
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    desc.delayTimeMs = 1000;
+    desc.priority = AsyncActionHandler::ActionPriority::LOW;
+    asyncHandler_->PostAsyncAction(desc);
     AUDIO_INFO_LOG("ScheduleInterruptResponseCheck for streamId %{public}u zoneId %{public}d",
         info.streamId, zoneId);
+}
+
+void AudioInterruptService::DoInterruptResponseCheck(const int32_t zoneId,
+    const InterruptResponseCheckInfo &info)
+{
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> currentFocusList;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto currZone = zonesMap_.find(zoneId);
+        if (currZone != zonesMap_.end() && currZone->second != nullptr) {
+            currentFocusList = currZone->second->audioFocusInfoList;
+        }
+    }
+    CHECK_AND_RETURN(interruptDfx_ != nullptr);
+    interruptDfx_->CheckInterruptResponse(info, currentFocusList);
 }
 }
 } // namespace OHOS
