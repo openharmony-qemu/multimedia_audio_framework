@@ -1040,6 +1040,7 @@ private:
     int32_t loudVolumeSupportMode_ = 0;
 #endif
     bool isHighResolutionExist_ = false;
+    std::atomic<bool> sleVoiceFlagFromNearlink_ {false};
     std::atomic<float> loopbackVolume_ = 0.0f;
     std::mutex descLock_;
 
