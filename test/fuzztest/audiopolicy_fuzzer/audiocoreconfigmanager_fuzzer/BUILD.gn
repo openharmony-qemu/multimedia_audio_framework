@@ -54,6 +54,7 @@ ohos_fuzztest("AudioCoreConfigManagerFuzzTest") {
     "data_share:datashare_consumer",
     "bluetooth:btframework",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
   ]
 
   defines = []

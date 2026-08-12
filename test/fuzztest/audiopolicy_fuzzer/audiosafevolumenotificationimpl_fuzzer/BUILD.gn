@@ -75,6 +75,7 @@ ohos_fuzztest("AudioSafeVolumeNotificationImplFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "distributed_notification_service:ans_innerkits",
+    "ffrt:libffrt",
   ]
 
   defines = []

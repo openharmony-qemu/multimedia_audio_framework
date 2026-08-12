@@ -65,6 +65,7 @@ ohos_fuzztest("HAudioManagerListenerStubImplFuzzTest") {
     "access_token:libtokensetproc_shared",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
   if (sonic_enable == true) {
     external_deps += [ "sonic:sonic" ]

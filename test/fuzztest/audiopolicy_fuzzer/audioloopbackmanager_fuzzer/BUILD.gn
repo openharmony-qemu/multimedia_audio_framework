@@ -65,6 +65,7 @@ ohos_fuzztest("AudioLoopbackManagerFuzzTest") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 
   defines = []

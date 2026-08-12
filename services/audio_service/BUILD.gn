@@ -519,7 +519,7 @@ ohos_shared_library("audio_client") {
     "c_utils:utils",
   ]
 
-  public_external_deps = [ "c_utils:utils", ]
+  public_external_deps = [ "c_utils:utils" ]
 
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]

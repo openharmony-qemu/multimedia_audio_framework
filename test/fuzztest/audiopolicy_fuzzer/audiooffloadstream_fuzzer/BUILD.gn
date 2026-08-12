@@ -54,6 +54,7 @@ ohos_fuzztest("AudioOffloadStreamFuzzTest") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "ffrt:libffrt",
   ]
 
   defines = []

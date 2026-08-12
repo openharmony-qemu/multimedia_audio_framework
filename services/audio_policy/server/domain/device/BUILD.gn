@@ -78,6 +78,7 @@ ohos_unittest("audio_device_common_unit_next_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 
   sources = [

@@ -46,6 +46,7 @@ ohos_fuzztest("AudioPnpServerFuzzTest") {
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_utils",
     "hilog:libhilog",
+    "ffrt:libffrt",
   ]
 
   defines = []
