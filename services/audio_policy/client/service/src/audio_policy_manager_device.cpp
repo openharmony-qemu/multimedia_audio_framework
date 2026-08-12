@@ -95,17 +95,6 @@ int32_t AudioPolicyManager::RestoreOutputDevice(sptr<AudioRendererFilter> audioR
     return gsp->RestoreOutputDevice(audioRendererFilter);
 }
 
-std::string AudioPolicyManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(), "", "No system permission");
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET(gsp != nullptr, "");
-
-    std::string out{};
-    gsp->GetSelectedDeviceInfo(uid, pid, streamType, out);
-    return out;
-}
-
 int32_t AudioPolicyManager::SetMediaOutputDevice(DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

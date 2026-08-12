@@ -132,7 +132,6 @@ public:
 
     int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
-    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
     int32_t SetMediaOutputDevice(DeviceType deviceType);
 
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,

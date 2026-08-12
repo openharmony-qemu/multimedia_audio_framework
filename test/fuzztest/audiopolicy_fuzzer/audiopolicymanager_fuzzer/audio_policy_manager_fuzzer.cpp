@@ -535,7 +535,6 @@ void AudioPolicyManagerDeviceOneFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<AudioPreferredInputDeviceChangeCallback> inputDeviceChangeCallback;
 
     AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
-    AudioPolicyManager::GetInstance().GetSelectedDeviceInfo(uid, pid, streamType);
     AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
     AudioPolicyManager::GetInstance().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     AudioPolicyManager::GetInstance().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);

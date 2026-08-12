@@ -63,19 +63,6 @@ HWTEST(AudioPolicyManagerDevice, SelectOutputDevice_002, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyManagerDevice.
-* @tc.number: GetSelectedDeviceInfo_001.
-* @tc.desc  : Test GetSelectedDeviceInfo.
-*/
-HWTEST(AudioPolicyManagerDevice, GetSelectedDeviceInfo_001, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    EXPECT_NE(audioPolicyManager_, nullptr);
-    auto ret = audioPolicyManager_->GetSelectedDeviceInfo(0, 0, AudioStreamType::STREAM_VOICE_CALL);
-    EXPECT_NE(ret, "test");
-}
-
-/**
-* @tc.name  : Test AudioPolicyManagerDevice.
 * @tc.number: SelectInputDevice_001.
 * @tc.desc  : Test SelectInputDevice.
 */
