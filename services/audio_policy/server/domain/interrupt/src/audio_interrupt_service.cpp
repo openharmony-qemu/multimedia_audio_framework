@@ -3346,6 +3346,7 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
             RemoveStreamIdSuggestionRecord(streamId);
         }
         SetStreamInterruptMute(interruptEvent, streamId, audioInterrupt);
+        PostInterruptResponseCheckAction(interruptEvent, audioInterrupt);
     }
 }
 
