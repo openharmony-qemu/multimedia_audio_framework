@@ -4895,7 +4895,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_OffloadBypass_001,
 * @tc.number : ApplyAudioEffectChain_OffloadBypass_RenderId_001
 * @tc.desc   : Test ApplyAudioEffectChain with renderId returns EFFECT_OFFLOAD_BYPASS when spkOffloadEnabled_ is true.
 */
-HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_OffloadBypass_001, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_OffloadBypass_RenderId_001, TestSize.Level1)
 {
     float* bufIn;
     float* bufOut;
