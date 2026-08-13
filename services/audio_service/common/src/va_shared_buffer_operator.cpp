@@ -184,24 +184,16 @@ FutexCode VASharedBufferOperator::WaitForFutex(int64_t timeoutInNs, const std::f
 {
     auto futex = GetFutex();
     CHECK_AND_RETURN_RET_LOG(futex != nullptr, FUTEX_INVALID_PARAMS, "futex is null");
-    int64_t startTime = ClockTime::GetCurNano();
-    int64_t curTime = ClockTime::GetCurNano();
-    while (curTime - startTime < timeoutInNs) {
-        uint32_t expected = LOCK_RELEASED;
-        if (pred() && futex->compare_exchange_weak(expected, LOCK_OWNED)) {
-            return FUTEX_SUCCESS;
-        }
-        std::this_thread::yield();
-        curTime = ClockTime::GetCurNano();
-    }
-    return FUTEX_TIMEOUT;
+    return FutexTool::FutexWait(futex, timeoutInNs, [&pred] () {
+        return pred();
+    });
 }
 
 void VASharedBufferOperator::WakeFutex()
 {
     auto futex = GetFutex();
     CHECK_AND_RETURN_LOG(futex != nullptr, "futex is null");
-    futex->store(LOCK_RELEASED);
+    FutexTool::FutexWake(futex, IS_READY);
 }
 
 bool VASharedBufferOperator::HasEnoughReadableData()
