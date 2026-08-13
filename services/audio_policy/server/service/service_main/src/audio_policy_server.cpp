@@ -5962,7 +5962,7 @@ int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, int32_t para
     // the ENABLE parameter (passed BuildKaraokeParamString validation + HDI dispatch).
     CHECK_AND_RETURN_RET(ret && static_cast<KaraokeParamType>(paramType) ==
         KaraokeParamType::KARAOKE_PARAM_ENABLE, SUCCESS);
-    audioVolumeManager_.StartNearlinkKaraokeTransition(value != 0);
+    audioVolumeManager_.SetNearlinkKaraokeVolumeMode(value != 0);
     return SUCCESS;
 }
 
