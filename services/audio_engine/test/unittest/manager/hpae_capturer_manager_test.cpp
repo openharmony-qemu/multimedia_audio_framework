@@ -3101,6 +3101,60 @@ HWTEST_F(HpaeCapturerManagerTest, MoveAllStream_MoveSingle_001, TestSize.Level1)
     WaitForMsgProcessing(capturerManager);
 }
 
+/*
+ * tc.name   : Test scene cluster survives while effect ref count > 0
+ * tc.type   : FUNC
+ * tc.number : SceneClusterEffectRefCount_001
+ * tc.desc   : DeleteOutputSession must not release/erase the shared scene cluster while the effect
+ *             ref count is > 0, and must erase it once the count drops to 0.
+ */
+HWTEST_F(HpaeCapturerManagerTest, SceneClusterEffectRefCount_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // two recording streams sharing the same scene cluster
+    HpaeStreamInfo streamInfoA;
+    InitReloadStreamInfo(streamInfoA);
+    streamInfoA.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfoA) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfoB;
+    InitReloadStreamInfo(streamInfoB);
+    streamInfoB.sourceType = SOURCE_TYPE_MIC;
+    streamInfoB.sessionId = DEFAULT_SESSION_ID + 1; // 1 for another session id
+    EXPECT_EQ(capturerManager->CreateStream(streamInfoB) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfoA.sourceType);
+    ASSERT_EQ(capturerManager->sceneClusterMap_.count(sceneType), 1);
+    auto sceneCluster = capturerManager->sceneClusterMap_[sceneType];
+    ASSERT_NE(sceneCluster, nullptr);
+
+    // UT env cannot instantiate the real algo chain: effect node is invalid and ref count is 0,
+    // so IncSceneClusterEffectRef is a no-op here. Simulate two alive streams depending on the
+    // effect (what the runtime would produce with a valid effect), then exercise the release path.
+    EXPECT_EQ(sceneCluster->IsEffectNodeValid(), false);
+    EXPECT_EQ(capturerManager->GetSceneClusterEffectRefCount(sceneType), 0);
+    sceneCluster->IncEffectRefCount(); // stream A
+    sceneCluster->IncEffectRefCount(); // stream B
+    EXPECT_EQ(capturerManager->GetSceneClusterEffectRefCount(sceneType), 2);
+
+    // release stream B: ref 2 -> 1, the shared cluster/effect must survive (the bug being fixed)
+    capturerManager->DeleteOutputSession(streamInfoB.sessionId);
+    EXPECT_EQ(capturerManager->sceneClusterMap_.count(sceneType), 1);
+    EXPECT_EQ(capturerManager->GetSceneClusterEffectRefCount(sceneType), 1);
+
+    // release stream A (last dependent): ref 1 -> 0, cluster is released and erased
+    capturerManager->DeleteOutputSession(streamInfoA.sessionId);
+    EXPECT_EQ(capturerManager->sceneClusterMap_.count(sceneType), 0);
+    EXPECT_EQ(capturerManager->GetSceneClusterEffectRefCount(sceneType), 0);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
