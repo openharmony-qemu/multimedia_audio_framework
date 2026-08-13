@@ -197,7 +197,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     }
 
     ReconfigOutputBuffer(outchannels, outChannelLayout);
-    if (ret == EFFECT_OFFLODA_BYPASS) {
+    if (ret == EFFECT_OFFLOAD_BYPASS) {
         return inputs[0];
     }
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, inputs[0],
@@ -478,7 +478,7 @@ void HpaeRenderEffectNode::UpdateAudioEffectChainInfo(HpaeNodeInfo &nodeInfo)
     audioEffectChainManager->UpdateStreamUsage();
 }
 
-void HpaeRenderEffectNode::ReconfigOutputBuffer(outchannels, outChannelLayout)
+void HpaeRenderEffectNode::ReconfigOutputBuffer(uint32_t channels, uint64_t channelLayout)
 {
     if (channels == 0 || channelLayout == 0) {
         AUDIO_WARNING_LOG("output channel info incorrect, scene type: %{public}s, "

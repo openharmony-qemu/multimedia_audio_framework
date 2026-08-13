@@ -582,7 +582,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     std::lock_guard<std::mutex> lock(dynamicMutex_);
 
     if (GetOffloadEnabled()) {
-        return EFFECT_OFFLODA_BYPASS;
+        return EFFECT_OFFLOAD_BYPASS;
     }
 
     auto it = sceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey);
@@ -618,7 +618,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     std::lock_guard<std::mutex> lock(dynamicMutex_);
 
     if (GetOffloadEnabled()) {
-        return EFFECT_OFFLODA_BYPASS;
+        return EFFECT_OFFLOAD_BYPASS;
     }
 
     auto it = sceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey);

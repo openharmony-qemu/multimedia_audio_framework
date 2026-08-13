@@ -718,7 +718,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, testReconfigOutputBufferWithRenderId_001, Tes
     hpaeRenderEffectNode->renderId_ = 100;
     hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
     EXPECT_NE(hpaeRenderEffectNode, nullptr);
-    // ReconfigOutputBuffer calls GetOutputChannelInfo with renderId
+    // ReconfigOutputBuffer reconfigures node buffer with the given channel info
     hpaeRenderEffectNode->ReconfigOutputBuffer(STEREO, CH_LAYOUT_STEREO);
     // Verify node info is still valid after reconfig
     HpaeNodeInfo afterInfo = hpaeRenderEffectNode->GetNodeInfo();
