@@ -119,6 +119,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     sessionNodeMap_[streamInfo.sessionId].mixWithWakeUp = streamInfo.mixWithWakeUp;
 
     CreateSceneCluster(sceneType, enhanceScene);
+    IncSceneClusterEffectRef(sceneType);
 
     return SUCCESS;
 }
@@ -176,6 +177,21 @@ int32_t HpaeCapturerManager::CaptureEffectRelease(const HpaeProcessorType &scene
     return SUCCESS;
 }
 
+void HpaeCapturerManager::IncSceneClusterEffectRef(const HpaeProcessorType &sceneType)
+{
+    auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
+    CHECK_AND_RETURN(sceneType != HPAE_SCENE_EFFECT_NONE && sceneCluster != nullptr &&
+        sceneCluster->IsEffectNodeValid());
+    sceneCluster->IncEffectRefCount();
+}
+
+uint32_t HpaeCapturerManager::GetSceneClusterEffectRefCount(const HpaeProcessorType &sceneType)
+{
+    auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
+    CHECK_AND_RETURN_RET(sceneCluster != nullptr, 0);
+    return sceneCluster->GetEffectRefCount();
+}
+
 void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProcessorType &sceneType)
 {
     auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
@@ -225,10 +241,11 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId, bool keepSe
 
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     if (sceneType != HPAE_SCENE_EFFECT_NONE && SafeGetMap(sceneClusterMap_, sceneType)) {
+        sceneClusterMap_[sceneType]->DecEffectRefCount();
         sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(
             sceneClusterMap_[sceneType], sourceOutputNodeMap_[sessionId]->GetNodeInfo());
         DisConnectSceneClusterFromSourceInputCluster(sceneType);
-        if (sceneClusterMap_[sceneType]->GetOutputPortNum() == 0) {
+        if (sceneClusterMap_[sceneType]->GetEffectRefCount() == 0) {
             CaptureEffectRelease(sceneType);
             sceneClusterMap_.erase(sceneType);
         }
@@ -1135,6 +1152,7 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     AudioEnhanceScene enhanceScene = TransProcessType2EnhanceScene(sceneType);
     CreateSceneCluster(sceneType, enhanceScene);
+    IncSceneClusterEffectRef(sceneType);
 
     if (moveInfo.sessionInfo.state == HPAE_SESSION_RUNNING) {
         ConnectOutputSession(sessionId);
