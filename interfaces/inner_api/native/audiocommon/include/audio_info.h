@@ -754,7 +754,7 @@ enum KaraokeParamType {
     KARAOKE_PARAM_CAPTURE_REVERB = 4,
 };
 
-enum UltraFastFlags : uint32_t {
+enum UltraFastFlags : uint8_t {
     /**
      * Client has not set the ultra fast flag, and the current stream is not using the server's ultra fast route(pipe).
      */
