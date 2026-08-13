@@ -251,10 +251,9 @@ int32_t DownloadManager::RegisterDownloadStatusCallback(const int32_t callerPid,
     if (!registerStatusCallback_) {
         int32_t funcResult = 0;
         int32_t ret = downloadCallback_->RegisterDownloadStatusCallback(funcResult);
-        if (ret != 0 || funcResult != 0) {
-            AUDIO_ERR_LOG("RegisterDownloadStatusCallback failed, ret:%{public}d", ret);
-            return false;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterDownloadStatusCallback failed, ret=%{public}d", ret);
+        CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
+        "RegisterDownloadStatusCallback failed, funcResult=%{public}d", funcResult);
         registerStatusCallback_ = true;
     }
 
