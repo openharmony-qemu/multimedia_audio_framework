@@ -56,6 +56,9 @@ int32_t VADeviceBrokerStubImpl::OnDevicesConnected(const VADevice &device, const
 
     VADeviceManager::GetInstance().OnDevicesConnected(sharedDevice, vaDeviceController);
 
+    ScheduleReportProcessQosLevel(IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(),
+        AppBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid()).c_str());
+
     return SUCCESS;
 }
 
@@ -66,6 +69,8 @@ int32_t VADeviceBrokerStubImpl::OnDevicesDisconnected(const VADevice &device)
         ERR_PERMISSION_DENIED, "connect virtual audio denied: no MANAGE_AUDIO_ACCESSORY permission");
     auto sharedDevice = std::make_shared<VADevice>(device);
     VADeviceManager::GetInstance().OnDevicesDisconnected(sharedDevice);
+    UnscheduleReportProcessQosLevel(IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(),
+        AppBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid()).c_str());
     return SUCCESS;
 }
 

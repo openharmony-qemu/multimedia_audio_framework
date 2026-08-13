@@ -25,6 +25,8 @@ extern "C" {
 
 void ScheduleReportData(pid_t pid, pid_t tid, const char *bundleName);
 void ScheduleReportDataWithQosLevel(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLevel);
+void ScheduleReportProcessQosLevel(pid_t pid, uid_t uid, const char *bundleName);
+void UnscheduleReportProcessQosLevel(pid_t pid, uid_t uid, const char *bundleName);
 void ScheduleThreadInServer(pid_t pid, pid_t tid);
 void UnscheduleThreadInServer(pid_t pid, pid_t tid);
 void OnAddResSchedService(uint32_t audioServerPid);

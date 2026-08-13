@@ -50,6 +50,7 @@ static std::mutex g_rssMutex;
 static std::set<uint32_t> g_tidToReport = {};
 constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
 constexpr int64_t g_value = 0;
+constexpr uint32_t g_procType = OHOS::ResourceSchedule::ResType::RES_TYPE_PROCESS_QOS_CHANGE;
 constexpr int32_t AUDIO_PROC_QOS_TABLE = 7;
 constexpr int32_t SCHED_PRIORITY_NUM_4 = 4;
 std::atomic<bool> g_audioServerAuthQosFinish = false;
@@ -63,6 +64,15 @@ void ConfigPayload(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLeve
     std::string strQos = std::to_string(qosLevel);
     mapPayload["pid"] = strPid;
     mapPayload[strTid] = strQos;
+    mapPayload["bundleName"] = strBundleName;
+}
+
+void ConfigProcessPayload(pid_t pid, uid_t uid, const char *bundleName,
+    std::unordered_map<std::string, std::string> &mapPayload)
+{
+    std::string strBundleName = bundleName;
+    mapPayload["pid"] = std::to_string(pid);
+    mapPayload["uid"] = std::to_string(uid);
     mapPayload["bundleName"] = strBundleName;
 }
 
@@ -92,6 +102,18 @@ void ScheduleReportDataWithQosLevel(pid_t pid, pid_t tid, const char *bundleName
     ScheduleReportDataInner(pid, tid, bundleName, qosLevel);
 }
 
+void ScheduleReportProcessQosLevel(pid_t pid, uid_t uid, const char *bundleName)
+{
+    AudioXCollie audioXcollie("RSS::ReportProcessData with qos level " + std::to_string(AUDIO_QOS_LEVEL) +
+        ", pid " + std::to_string(pid) + ", uid " + std::to_string(uid), REPORTDATA_TIMEOUT,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    AUDIO_INFO_LOG("Report pid %{public}d uid %{public}u to qosLevel %{public}u", pid, uid, AUDIO_QOS_LEVEL);
+    std::unordered_map<std::string, std::string> mapPayload;
+    ConfigProcessPayload(pid, uid, bundleName, mapPayload);
+    OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(
+        g_procType, static_cast<int64_t>(AUDIO_QOS_LEVEL), mapPayload);
+}
+
 void UnscheduleReportData(pid_t pid, pid_t tid, const char* bundleName)
 {
     AudioXCollie audioXcollie("RSS::ReportData with qos level -1, pid " + std::to_string(pid) +
@@ -101,6 +123,18 @@ void UnscheduleReportData(pid_t pid, pid_t tid, const char* bundleName)
     std::unordered_map<std::string, std::string> mapPayload;
     ConfigPayload(pid, tid, bundleName, DEFAULT_QOS_LEVEL, mapPayload);
     OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(g_type, g_value, mapPayload);
+}
+
+void UnscheduleReportProcessQosLevel(pid_t pid, uid_t uid, const char *bundleName)
+{
+    AudioXCollie audioXcollie("RSS::ReportProcessData with qos level -1, pid " + std::to_string(pid) +
+        ", uid " + std::to_string(uid), REPORTDATA_TIMEOUT,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    Trace trace("Rss::ReportProcessData with qos level -1");
+    std::unordered_map<std::string, std::string> mapPayload;
+    ConfigProcessPayload(pid, uid, bundleName, mapPayload);
+    OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(
+        g_procType, static_cast<int64_t>(DEFAULT_QOS_LEVEL), mapPayload);
 }
 
 void UnscheduleThreadInServer(pid_t pid, pid_t tid)
@@ -202,6 +236,8 @@ void OnAddResSchedService(uint32_t audioServerPid) {};
 void SetProcessDataThreadPriority(int32_t priority) {};
 void ResetProcessDataThreadPriority(void) {};
 void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
+void ScheduleReportProcessQosLevel(pid_t /* pid */, uid_t /* uid */, const char* /* bundleName */) {};
+void UnscheduleReportProcessQosLevel(pid_t /* pid */, uid_t /* uid */, const char* /* bundleName */) {};
 bool SetEndpointThreadPriority() { return false; };
 bool ResetEndpointThreadPriority() { return false; };
 void AuthQosForAudio() {}
