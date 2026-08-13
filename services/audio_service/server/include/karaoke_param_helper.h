@@ -58,15 +58,18 @@ inline const std::map<int32_t, std::string> &GetKaraokeEqMap()
     return eqToString;
 }
 
-// Generic table lookup; sets valid=false and returns "" when key is absent.
-inline std::string KaraokeLookup(const std::map<int32_t, std::string> &table,
+// Generic table lookup; sets valid=true on hit, valid=false and returns "" when absent.
+// Returns a const reference into the (static) table to avoid a string copy on hit.
+inline const std::string &KaraokeLookup(const std::map<int32_t, std::string> &table,
     int32_t key, bool &valid)
 {
     auto it = table.find(key);
     if (it == table.end()) {
         valid = false;
-        return "";
+        static const std::string empty;
+        return empty;
     }
+    valid = true;
     return it->second;
 }
 
@@ -122,7 +125,7 @@ inline std::string KaraokeValueToString(int32_t paramType, int32_t value, bool &
 inline std::string BuildKaraokeParamString(int32_t paramType, int32_t value, bool &valid)
 {
     valid = true;
-    std::string key = KaraokeLookup(GetKaraokeTypeToKeyMap(), paramType, valid);
+    const std::string &key = KaraokeLookup(GetKaraokeTypeToKeyMap(), paramType, valid);
     if (!valid) {
         return "";
     }
