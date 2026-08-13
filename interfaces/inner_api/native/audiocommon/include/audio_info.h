@@ -1084,6 +1084,11 @@ enum AudioScene : int32_t {
      */
     AUDIO_SCENE_VOICE_RINGING,
     /**
+     * Call waiting tone audio scene
+     * Only available for system inner.
+     */
+    AUDIO_SCENE_CALL_WAITING_TONE,
+    /**
      * Max
      */
     AUDIO_SCENE_MAX,
