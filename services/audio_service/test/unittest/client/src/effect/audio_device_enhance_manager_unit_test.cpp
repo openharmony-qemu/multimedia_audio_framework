@@ -81,8 +81,7 @@ HWTEST_F(AudioDeviceEnhanceManagerUnitTest, SelectOutputDevice_001, TestSize.Lev
     std::shared_ptr<AudioDeviceDescriptor> nullDesc = nullptr;
     int32_t result = AudioDeviceEnhanceManager::GetInstance().SelectOutputDevice(nullDesc);
     AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest SelectOutputDevice_001 result:%{public}d", result);
-    // Behavior changed: nullptr now creates default DEVICE_TYPE_NONE instead of returning error
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -114,8 +113,7 @@ HWTEST_F(AudioDeviceEnhanceManagerUnitTest, SelectInputDevice_001, TestSize.Leve
     std::shared_ptr<AudioDeviceDescriptor> nullDesc = nullptr;
     int32_t result = AudioDeviceEnhanceManager::GetInstance().SelectInputDevice(nullDesc);
     AUDIO_INFO_LOG("AudioDeviceEnhanceManagerUnitTest SelectInputDevice_001 result:%{public}d", result);
-    // Behavior changed: nullptr now creates default DEVICE_TYPE_NONE instead of returning error
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**

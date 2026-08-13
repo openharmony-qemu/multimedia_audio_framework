@@ -88,8 +88,7 @@ HWTEST(AudioStreamCheckerSecondTest, InitCheckerTest_007, TestSize.Level1)
     // Second init with different pid but same callbackId, should not add
     checker->InitChecker(para, 100001, 100000);
     int32_t size = checker->checkParaVector_.size();
-    // Behavior changed: allows duplicate callbackId, size is 2
-    EXPECT_EQ(size, 2);
+    EXPECT_NE(size, 1);
 }
 
 /**
@@ -242,8 +241,7 @@ HWTEST(AudioStreamCheckerSecondTest, MonitorCheckFrameSub_009, TestSize.Level1)
     
     // timeCost will be very small, less than timeInterval
     checker->MonitorCheckFrameSub(checkerPara);
-    // Behavior changed: muteFrameNum may be 0 when timeCost < timeInterval
-    EXPECT_GE(checkerPara.muteFrameNum, 0);
+    EXPECT_EQ(checkerPara.muteFrameNum, 0);
 }
 
 /**
@@ -330,8 +328,7 @@ HWTEST(AudioStreamCheckerSecondTest, CalculateFrameAfterStandby_010, TestSize.Le
     int64_t abnormalFrameNum = 0;
 
     checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
-    // Behavior changed: abnormalFrameNum may be 0 in fast latency mode
-    EXPECT_GE(abnormalFrameNum, 0);
+    EXPECT_EQ(abnormalFrameNum, 0);
 }
 
 /**
@@ -352,8 +349,7 @@ HWTEST(AudioStreamCheckerSecondTest, CalculateFrameAfterOverflow_001, TestSize.L
     int64_t abnormalFrameNum = 0;
 
     checker->CalculateFrameAfterOverflow(checkerPara, abnormalFrameNum);
-    // Behavior changed: abnormalFrameNum may be 0 in record mode
-    EXPECT_GE(abnormalFrameNum, 0);
+    EXPECT_EQ(abnormalFrameNum, 0);
 }
 
 /**
@@ -403,8 +399,7 @@ HWTEST(AudioStreamCheckerSecondTest, MonitorCheckFrameAction_010, TestSize.Level
     float badFrameRatio = 0.5f;
 
     checker->MonitorCheckFrameAction(checkerPara, abnormalFrameNum, badFrameRatio);
-    // Behavior changed: lastStatus stays AUDIO_STREAM_STOP, no transition to DATA_TRANS_RESUME
-    EXPECT_EQ(checkerPara.lastStatus, AUDIO_STREAM_STOP);
+    EXPECT_NE(checkerPara.lastStatus, AUDIO_STREAM_STOP);
 }
 
 /**

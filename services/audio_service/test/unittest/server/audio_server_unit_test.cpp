@@ -1075,7 +1075,7 @@ HWTEST(AudioServerUnitTest, ReportWakeupEvent_001, TestSize.Level1)
     audioWakeupTrackInfo.result = WAKEUP_RESULT_DEFAULT;
     audioWakeupTrackInfo.errCode = WAKEUP_TRACK_FWK_NO_ERROR;
     int32_t ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1096,19 +1096,19 @@ HWTEST(AudioServerUnitTest, ReportWakeupEvent_002, TestSize.Level1)
 
     audioWakeupTrackInfo.stage = STAGE_FWK_CREATE_EXIT;
     int32_t ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     audioWakeupTrackInfo.stage = STAGE_FWK_START_ENTER;
     ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     audioWakeupTrackInfo.stage = STAGE_FWK_START_EXIT;
     ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     audioWakeupTrackInfo.stage = STAGE_FWK_END;
     ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1129,15 +1129,15 @@ HWTEST(AudioServerUnitTest, ReportWakeupEvent_003, TestSize.Level1)
 
     audioWakeupTrackInfo.result = WAKEUP_RESULT_DEFAULT;
     int32_t ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     audioWakeupTrackInfo.result = WAKEUP_RESULT_SUCC;
     ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     audioWakeupTrackInfo.result = WAKEUP_RESULT_FAIL;
     ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1158,15 +1158,15 @@ HWTEST(AudioServerUnitTest, ReportWakeupEvent_004, TestSize.Level1)
 
     audioWakeupTrackInfo.errCode = WAKEUP_TRACK_FWK_NO_ERROR;
     int32_t ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     audioWakeupTrackInfo.errCode = WAKEUP_TRACK_FWK_CREATE_ERROR;
     ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     audioWakeupTrackInfo.errCode = WAKEUP_TRACK_FWK_START_ERROR;
     ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**

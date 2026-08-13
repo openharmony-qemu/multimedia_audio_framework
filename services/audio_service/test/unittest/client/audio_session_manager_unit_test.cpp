@@ -45,7 +45,6 @@ HWTEST(AudioSessionManagerUnitTest, ActivateAudioSession_001, TestSize.Level1)
     strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
 
     int32_t result = AudioSessionManager::GetInstance()->ActivateAudioSession(strategy);
-    // UT environment: IPC to AudioPolicyServer fails, returns error code
     EXPECT_NE(result, SUCCESS);
 
     result = AudioSessionManager::GetInstance()->SetDefaultOutputDevice(DEVICE_TYPE_INVALID);
@@ -64,7 +63,6 @@ HWTEST(AudioSessionManagerUnitTest, ActivateAudioSession_001, TestSize.Level1)
 HWTEST(AudioSessionManagerUnitTest, UnsetAudioSessionStateChangeCallback_001, TestSize.Level1)
 {
     int32_t result = AudioSessionManager::GetInstance()->UnsetAudioSessionStateChangeCallback();
-    // UT environment: IPC to AudioPolicyServer fails, returns error code
     EXPECT_NE(result, SUCCESS);
 }
 
@@ -77,7 +75,6 @@ HWTEST(AudioSessionManagerUnitTest, UnsetAudioSessionStateChangeCallback_001, Te
 HWTEST(AudioSessionManagerUnitTest, UnsetAudioSessionCurrentDeviceChangeCallback_001, TestSize.Level1)
 {
     int32_t result = AudioSessionManager::GetInstance()->UnsetAudioSessionCurrentDeviceChangeCallback();
-    // UT environment: IPC to AudioPolicyServer fails, returns error code
     EXPECT_NE(result, SUCCESS);
 }
 
