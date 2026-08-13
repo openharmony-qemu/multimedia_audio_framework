@@ -180,9 +180,10 @@ int32_t HpaeCapturerManager::CaptureEffectRelease(const HpaeProcessorType &scene
 void HpaeCapturerManager::IncSceneClusterEffectRef(const HpaeProcessorType &sceneType)
 {
     auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
-    CHECK_AND_RETURN(sceneType != HPAE_SCENE_EFFECT_NONE && sceneCluster != nullptr &&
-        sceneCluster->IsEffectNodeValid());
+    CHECK_AND_RETURN(sceneType != HPAE_SCENE_EFFECT_NONE && sceneCluster != nullptr);
     sceneCluster->IncEffectRefCount();
+    AUDIO_INFO_LOG("sceneType:%{public}u effect cluster count: %{public}u", sceneType,
+        sceneCluster->GetEffectRefCount());
 }
 
 uint32_t HpaeCapturerManager::GetSceneClusterEffectRefCount(const HpaeProcessorType &sceneType)
@@ -241,10 +242,12 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId, bool keepSe
 
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     if (sceneType != HPAE_SCENE_EFFECT_NONE && SafeGetMap(sceneClusterMap_, sceneType)) {
-        sceneClusterMap_[sceneType]->DecEffectRefCount();
         sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(
             sceneClusterMap_[sceneType], sourceOutputNodeMap_[sessionId]->GetNodeInfo());
         DisConnectSceneClusterFromSourceInputCluster(sceneType);
+        sceneClusterMap_[sceneType]->DecEffectRefCount();
+        AUDIO_INFO_LOG("sceneType:%{public}u effect cluster count: %{public}u", sceneType,
+            sceneClusterMap_[sceneType]->GetEffectRefCount());
         if (sceneClusterMap_[sceneType]->GetEffectRefCount() == 0) {
             CaptureEffectRelease(sceneType);
             sceneClusterMap_.erase(sceneType);
