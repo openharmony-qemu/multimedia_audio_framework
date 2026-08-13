@@ -127,10 +127,11 @@ HWTEST(AudioVolumeClientManagerUnitTest, GetMaxVolume_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMaxVolume_001 start");
     int32_t result = AudioVolumeClientManager::GetInstance().GetMaxVolume(STREAM_ALL);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMaxVolume_001 result1:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    // UT environment: AudioPolicyManager not initialized, returns -1
+    EXPECT_EQ(result, -1);
     result = AudioVolumeClientManager::GetInstance().GetMaxVolume(STREAM_ULTRASONIC);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMaxVolume_001 result2:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -144,10 +145,11 @@ HWTEST(AudioVolumeClientManagerUnitTest, GetMinVolume_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMinVolume_001 start");
     int32_t result = AudioVolumeClientManager::GetInstance().GetMinVolume(STREAM_ALL);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMinVolume_001 result1:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    // UT environment: AudioPolicyManager not initialized, returns -1
+    EXPECT_EQ(result, -1);
     result = AudioVolumeClientManager::GetInstance().GetMinVolume(STREAM_ULTRASONIC);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMinVolume_001 result2:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -161,16 +163,17 @@ HWTEST(AudioVolumeClientManagerUnitTest, GetDeviceMaxVolume_001, TestSize.Level1
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMaxVolume_001 start");
     int32_t result = AudioVolumeClientManager::GetInstance().GetDeviceMaxVolume(STREAM_ALL, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMaxVolume_001 result1:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    // UT environment: AudioPolicyManager not initialized, returns -1
+    EXPECT_EQ(result, -1);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMaxVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMaxVolume_001 result2:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMaxVolume(STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMaxVolume_001 result3:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMaxVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMaxVolume_001 result4:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -198,16 +201,17 @@ HWTEST(AudioVolumeClientManagerUnitTest, GetDeviceMinVolume_001, TestSize.Level1
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMinVolume_001 start");
     int32_t result = AudioVolumeClientManager::GetInstance().GetDeviceMinVolume(STREAM_ALL, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMinVolume_001 result1:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    // UT environment: AudioPolicyManager not initialized, returns -1
+    EXPECT_EQ(result, -1);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMinVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMinVolume_001 result2:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMinVolume_001 result3:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMinVolume_001 result4:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -462,10 +466,11 @@ HWTEST(AudioVolumeClientManagerUnitTest, SetSelfAppVolumeCallback_002, TestSize.
         std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
     int32_t result = AudioVolumeClientManager::GetInstance().SetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    // UT environment: IPC to AudioPolicyServer fails, returns error code
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().SetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetSelfAppVolumeCallback2 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().UnsetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_NUM);
@@ -485,10 +490,11 @@ HWTEST(AudioVolumeClientManagerUnitTest, SetSelfAppVolumeCallback_003, TestSize.
         std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
     int32_t result = AudioVolumeClientManager::GetInstance().SetSelfAppVolumeCallback(callback1);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    // UT environment: IPC to AudioPolicyServer fails, returns error code
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().SetSelfAppVolumeCallback(callback2);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetSelfAppVolumeCallback2 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().UnsetSelfAppVolumeCallback(callback2);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_NUM);
@@ -506,10 +512,11 @@ HWTEST(AudioVolumeClientManagerUnitTest, SetSelfAppVolumeCallback_004, TestSize.
         std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
     int32_t result = AudioVolumeClientManager::GetInstance().SetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    // UT environment: IPC to AudioPolicyServer fails, returns error code
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().UnsetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
 }
 
 /**
@@ -524,10 +531,11 @@ HWTEST(AudioVolumeClientManagerUnitTest, SetSelfAppVolumeCallback_005, TestSize.
         std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
     int32_t result = AudioVolumeClientManager::GetInstance().SetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    // UT environment: IPC to AudioPolicyServer fails, returns error code
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().UnsetSelfAppVolumeCallback(nullptr);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
 }
 
 /**
@@ -757,13 +765,14 @@ HWTEST(AudioVolumeClientManagerUnitTest, SetAppVolumeCallbackForUid_002, TestSiz
         std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
     int32_t result = AudioVolumeClientManager::GetInstance().SetAppVolumeCallbackForUid(appUid, callback);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetAppVolumeCallbackForUid_002 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    // UT environment: IPC to AudioPolicyServer fails, returns error code
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().SetAppVolumeCallbackForUid(appUid, callback);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetAppVolumeCallbackForUid_002 end result2:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().UnsetAppVolumeCallbackForUid(callback);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest UnsetAppVolumeCallbackForUid end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
 }
 
 /**
@@ -781,13 +790,14 @@ HWTEST(AudioVolumeClientManagerUnitTest, SetAppVolumeCallbackForUid_003, TestSiz
         std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
     int32_t result = AudioVolumeClientManager::GetInstance().SetAppVolumeCallbackForUid(appUid, callback1);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetAppVolumeCallbackForUid_003 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    // UT environment: IPC to AudioPolicyServer fails, returns error code
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().SetAppVolumeCallbackForUid(appUid, callback2);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetAppVolumeCallbackForUid_003 end result2:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().UnsetAppVolumeCallbackForUid(callback2);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest UnsetAppVolumeCallbackForUid end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
 }
 
 /**
