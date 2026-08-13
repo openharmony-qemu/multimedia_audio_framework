@@ -4321,9 +4321,10 @@ void AudioAdapterManager::UpdatePipeVolumeWhenVgsStatusChanged()
 }
 
 int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDeviceDescriptor> desc,
-    AudioStreamType volumeType, int32_t zoneId)
+    AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is null");
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     SaveNotificationVolumeToLocal(desc, volumeType);
     if (desc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
         AudioIOHandle ioHandle;
