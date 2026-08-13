@@ -106,7 +106,7 @@ void ScheduleReportProcessQosLevel(pid_t pid, uid_t uid, const char *bundleName)
 {
     AudioXCollie audioXcollie("RSS::ReportProcessData with qos level " + std::to_string(AUDIO_QOS_LEVEL) +
         ", pid " + std::to_string(pid) + ", uid " + std::to_string(uid), REPORTDATA_TIMEOUT,
-         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+        nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AUDIO_INFO_LOG("Report pid %{public}d uid %{public}u to qosLevel %{public}u", pid, uid, AUDIO_QOS_LEVEL);
     std::unordered_map<std::string, std::string> mapPayload;
     ConfigProcessPayload(pid, uid, bundleName, mapPayload);
@@ -129,7 +129,7 @@ void UnscheduleReportProcessQosLevel(pid_t pid, uid_t uid, const char *bundleNam
 {
     AudioXCollie audioXcollie("RSS::ReportProcessData with qos level -1, pid " + std::to_string(pid) +
         ", uid " + std::to_string(uid), REPORTDATA_TIMEOUT,
-         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+        nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace("Rss::ReportProcessData with qos level -1");
     std::unordered_map<std::string, std::string> mapPayload;
     ConfigProcessPayload(pid, uid, bundleName, mapPayload);

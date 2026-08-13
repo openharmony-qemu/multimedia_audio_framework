@@ -21,6 +21,8 @@
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_schedule.h"
+#include "audio_bundle_manager.h"
 
 #include "va_device_manager.h"
 #include "audio_policy_server.h"
@@ -57,7 +59,7 @@ int32_t VADeviceBrokerStubImpl::OnDevicesConnected(const VADevice &device, const
     VADeviceManager::GetInstance().OnDevicesConnected(sharedDevice, vaDeviceController);
 
     ScheduleReportProcessQosLevel(IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(),
-        AppBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid()).c_str());
+        AudioBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid()).c_str());
 
     return SUCCESS;
 }
@@ -70,7 +72,7 @@ int32_t VADeviceBrokerStubImpl::OnDevicesDisconnected(const VADevice &device)
     auto sharedDevice = std::make_shared<VADevice>(device);
     VADeviceManager::GetInstance().OnDevicesDisconnected(sharedDevice);
     UnscheduleReportProcessQosLevel(IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(),
-        AppBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid()).c_str());
+        AudioBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid()).c_str());
     return SUCCESS;
 }
 
