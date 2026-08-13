@@ -18,6 +18,8 @@
 
 #include "gtest/gtest.h"
 #include "audio_policy_client_stub_impl.h"
+#include "audio_separation_effect_enabled_change_callback.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,6 +52,12 @@ class ConcreteAudioManagerDeviceChangeCallback : public AudioManagerDeviceChange
 public:
     ConcreteAudioManagerDeviceChangeCallback() {}
     void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override {}
+};
+
+class ConcreteAudioManagerDeviceInfoUpdateCallback : public AudioManagerDeviceInfoUpdateCallback {
+public:
+    ConcreteAudioManagerDeviceInfoUpdateCallback() {}
+    void OnDeviceInfoUpdate(const DeviceChangeAction &deviceChangeAction) override {}
 };
 
 class ConcreteAudioRingerModeCallback : public AudioRingerModeCallback {
@@ -175,6 +183,35 @@ class ConcreteSystemRecordControllerEnabledChangeCallback : public SystemRecordC
     }
     bool isCallbackInvoked_ = false;
     SystemRecordControllerChangeInfo lastChangeInfo_;
+};
+
+class ConcreteSystemVolumeChangeByFilterCallback : public SystemVolumeChangeByFilterCallback {
+    void OnSystemVolumeChangeByFilter(const VolumeEvent &volumeEvent) override {}
+};
+
+class ConcreteAudioSpatialAudioSourceTypeChangeCallback : public AudioSpatialAudioSourceTypeChangeCallback {
+    void OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode) override {}
+};
+
+class ConcreteAudioNnStateChangeCallback : public AudioNnStateChangeCallback {
+    void OnNnStateChange(const int32_t &nnState) override {}
+};
+
+class ConcreteAudioSeparationEffectEnabledChangeCallback : public AudioSeparationEffectEnabledChangeCallback {
+    void OnAudioSeparationEffectEnabledChange(bool enabled) override {}
+};
+
+class ConcreteAudioRouteSelector : public AudioRouteSelector {
+    int32_t OnAudioRouteSelect(const std::shared_ptr<AudioRouteSelectInfo> &routeSelectInfo,
+        int32_t &selectResult) override
+    {
+        selectResult = AudioRouteSelector::ROUTE_SELECT_RESULT_SUCCESS;
+        return SUCCESS;
+    }
+};
+
+class ConcreteAudioQueryDeviceVolumeBehaviorCallback : public AudioQueryDeviceVolumeBehaviorCallback {
+    VolumeBehavior OnQueryDeviceVolumeBehavior() override { return VolumeBehavior{}; }
 };
 } // namespace AudioStandard
 } // namespace OHOS

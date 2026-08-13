@@ -910,5 +910,157 @@ HWTEST(AudioPolicyManagerDevice, UnsetPreferredInputDeviceChangeCallback_InvUid,
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: RestoreOutputDevice_001.
+* @tc.desc  : Test RestoreOutputDevice.
+*/
+HWTEST(AudioPolicyManagerDevice, RestoreOutputDevice_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    int32_t ret = audioPolicyManager_->RestoreOutputDevice(audioRendererFilter);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: RestoreOutputDevice_002.
+* @tc.desc  : Test RestoreOutputDevice with nullptr filter.
+*/
+HWTEST(AudioPolicyManagerDevice, RestoreOutputDevice_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    int32_t ret = audioPolicyManager_->RestoreOutputDevice(nullptr);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: SetDeclaredDeviceTypes_001.
+* @tc.desc  : Test SetDeclaredDeviceTypes with valid device types.
+*/
+HWTEST(AudioPolicyManagerDevice, SetDeclaredDeviceTypes_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    std::vector<DeviceType> deviceTypes = {DEVICE_TYPE_SPEAKER, DEVICE_TYPE_WIRED_HEADSET};
+    int32_t ret = audioPolicyManager_->SetDeclaredDeviceTypes(deviceTypes);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: SetDeclaredDeviceTypes_002.
+* @tc.desc  : Test SetDeclaredDeviceTypes with invalid device type.
+*/
+HWTEST(AudioPolicyManagerDevice, SetDeclaredDeviceTypes_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    std::vector<DeviceType> deviceTypes = {DEVICE_TYPE_NONE};
+    int32_t ret = audioPolicyManager_->SetDeclaredDeviceTypes(deviceTypes);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: SetDeclaredDeviceTypes_003.
+* @tc.desc  : Test SetDeclaredDeviceTypes with empty vector.
+*/
+HWTEST(AudioPolicyManagerDevice, SetDeclaredDeviceTypes_003, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    std::vector<DeviceType> deviceTypes;
+    int32_t ret = audioPolicyManager_->SetDeclaredDeviceTypes(deviceTypes);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: SkipDeviceTypes_001.
+* @tc.desc  : Test SkipDeviceTypes.
+*/
+HWTEST(AudioPolicyManagerDevice, SkipDeviceTypes_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    std::vector<DeviceType> deviceTypes = {DEVICE_TYPE_BLUETOOTH_SCO};
+    int32_t ret = audioPolicyManager_->SkipDeviceTypes(true, deviceTypes);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: SkipDeviceTypes_002.
+* @tc.desc  : Test SkipDeviceTypes with empty vector.
+*/
+HWTEST(AudioPolicyManagerDevice, SkipDeviceTypes_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    std::vector<DeviceType> deviceTypes;
+    int32_t ret = audioPolicyManager_->SkipDeviceTypes(false, deviceTypes);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: UnsetAudioDeviceAnahsCallback_001.
+* @tc.desc  : Test UnsetAudioDeviceAnahsCallback.
+*/
+HWTEST(AudioPolicyManagerDevice, UnsetAudioDeviceAnahsCallback_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    int32_t ret = audioPolicyManager_->UnsetAudioDeviceAnahsCallback();
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: SetQueryDeviceVolumeBehaviorCallback_001.
+* @tc.desc  : Test SetQueryDeviceVolumeBehaviorCallback with nullptr.
+*/
+HWTEST(AudioPolicyManagerDevice, SetQueryDeviceVolumeBehaviorCallback_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    int32_t ret = audioPolicyManager_->SetQueryDeviceVolumeBehaviorCallback(nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: UpdateDeviceInfo_001.
+* @tc.desc  : Test UpdateDeviceInfo.
+*/
+HWTEST(AudioPolicyManagerDevice, UpdateDeviceInfo_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    int32_t ret = audioPolicyManager_->UpdateDeviceInfo(deviceDesc, DeviceInfoUpdateCommand::ENABLE_UPDATE);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: SetSleAudioOperationCallback_001.
+* @tc.desc  : Test SetSleAudioOperationCallback with nullptr.
+*/
+HWTEST(AudioPolicyManagerDevice, SetSleAudioOperationCallback_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    int32_t ret = audioPolicyManager_->SetSleAudioOperationCallback(nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManagerDevice.
+* @tc.number: GetVADeviceBroker_001.
+* @tc.desc  : Test GetVADeviceBroker.
+*/
+HWTEST(AudioPolicyManagerDevice, GetVADeviceBroker_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    std::shared_ptr<VADeviceBrokerWrapper> vaBroker;
+    int32_t ret = audioPolicyManager_->GetVADeviceBroker(vaBroker);
+    EXPECT_NE(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
