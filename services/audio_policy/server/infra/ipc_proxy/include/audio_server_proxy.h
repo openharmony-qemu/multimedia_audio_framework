@@ -115,7 +115,7 @@ public:
     void SetDeviceConnectedFlag(bool flag);
     void NotifySettingsDataReady();
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
-    bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
+    bool SetKaraokeParameters(DeviceType deviceType, KaraokeParamType paramType, int32_t value);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);

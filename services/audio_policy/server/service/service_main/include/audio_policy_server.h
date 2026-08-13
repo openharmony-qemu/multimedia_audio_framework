@@ -378,7 +378,7 @@ public:
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret) override;
     int32_t IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, bool &ret) override;
     int32_t IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret) override;
-    int32_t SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret) override;
+    int32_t SetKaraokeParameters(int32_t deviceType, int32_t paramType, int32_t value, bool &ret) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 

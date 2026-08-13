@@ -646,7 +646,7 @@ public:
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
     bool IsSupportInnerCaptureOffload();
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
-    bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
+    bool SetKaraokeParameters(DeviceType deviceType, KaraokeParamType paramType, int32_t value);
     int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
     int32_t UnsetAudioRouteCallback(uint32_t sessionId);
 

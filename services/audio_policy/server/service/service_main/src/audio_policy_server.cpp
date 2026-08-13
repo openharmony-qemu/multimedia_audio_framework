@@ -5578,9 +5578,10 @@ int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, b
 }
 
 
-int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret)
+int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, int32_t paramType, int32_t value, bool &ret)
 {
-    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(static_cast<DeviceType>(deviceType), parameters);
+    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(
+        static_cast<DeviceType>(deviceType), static_cast<KaraokeParamType>(paramType), value);
     return SUCCESS;
 }
 
