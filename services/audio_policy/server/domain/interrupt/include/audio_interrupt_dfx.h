@@ -54,7 +54,6 @@ struct InterruptResponseCheckInfo {
     AudioStreamType streamType;
     SourceType sourceType;
     std::string appName;
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> originalFocusList;
 };
 
 enum class ResponseResult {
@@ -105,8 +104,6 @@ private:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
     void WriteInterruptResponseErrorEvent(const std::string &appName, InterruptHint hintType,
         const std::string &rendererInfo, const std::string &errorInfo);
-    bool IsStreamRestarted(const InterruptResponseCheckInfo &info,
-        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
     bool IsCheckDfxStream(AudioStreamType audioStreamType);
     void WriteInterruptOrSessionCallbackErrorEvent(const int32_t usage, const int32_t uid, const int32_t type);
 

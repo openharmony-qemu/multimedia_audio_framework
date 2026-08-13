@@ -655,15 +655,8 @@ void AudioInterruptService::PostInterruptResponseCheckAction(
     info.sourceType = audioInterrupt.audioFocusType.sourceType;
     info.appName = AudioInterruptUtils::GetAudioInterruptBundleName(audioInterrupt);
 
-    int32_t zoneId = FindAudioZoneByStreamIdInternal(audioInterrupt.streamId);
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusList;
-    auto itZone = zonesMap_.find(zoneId);
-    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
-        focusList = itZone->second->audioFocusInfoList;
-    }
-    info.originalFocusList = std::move(focusList);
-
     CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "asyncHandler is nullptr");
+    int32_t zoneId = FindAudioZoneByStreamIdInternal(audioInterrupt.streamId);
     auto action = std::make_shared<InterruptResponseCheckAction>(
         shared_from_this(), zoneId, std::move(info));
     AsyncActionHandler::AsyncActionDesc desc;
