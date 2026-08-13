@@ -1696,6 +1696,8 @@ struct AudioProcessConfig : public Parcelable {
 
     bool isModernInnerCapturer = false;
 
+    bool hasMicInChannel = false;
+
     StaticBufferInfo staticBufferInfo{};
 
     AudioProcessConfig() {}
@@ -1756,6 +1758,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(innerCapId);
         parcel.WriteInt32(playbackCaptureMode);
         parcel.WriteBool(isModernInnerCapturer);
+        parcel.WriteBool(hasMicInChannel);
 
         // StaticAudioRenderer
         if (rendererInfo.isStatic) {
@@ -1826,6 +1829,7 @@ struct AudioProcessConfig : public Parcelable {
         config->innerCapId = parcel.ReadInt32();
         config->playbackCaptureMode = parcel.ReadInt32();
         config->isModernInnerCapturer = parcel.ReadBool();
+        config->hasMicInChannel = parcel.ReadBool();
 
         // Static Audiorenderer
         if (config->rendererInfo.isStatic) {

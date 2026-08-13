@@ -74,6 +74,7 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.isMoveAble = true;
     streamInfo.privacyType = processConfig_.privacyType;
     streamInfo.mixWithWakeUp =  processConfig_.capturerInfo.mixWithWakeUp;
+    streamInfo.hasMicInChannel = processConfig_.hasMicInChannel;
     auto &hpaeManager = IHpaeManager::GetHpaeManager();
     int32_t ret = hpaeManager.CreateStream(streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR_INVALID_PARAM, "CreateStream is error");

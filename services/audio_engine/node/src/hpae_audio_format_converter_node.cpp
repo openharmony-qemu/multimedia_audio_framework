@@ -35,6 +35,20 @@ constexpr uint32_t FRAME_LEN_100MS = 100;
 constexpr uint32_t UNPROCESSED_BUFFER_CAPACITY_MULTIPLIER = 2;
 constexpr uint32_t PROCESSED_BUFFER_CAPACITY_MULTIPLIER = 2;
 constexpr uint32_t PROCESSED_BUFFER_COMPACTION_DIVISOR = 2;
+
+// For a camcorder split-layout source (main + micIn), the converter consumes only the leading
+// main block. Returns the effective input channel count (= main); returns preNodeInfo.channels
+// when front-extract does not apply. channelLayout is left untouched (the real layout is used).
+uint32_t CalcFrontExtractInChannels(const HpaeNodeInfo &preNodeInfo, const HpaeNodeInfo &nodeInfo)
+{
+    uint32_t micInChannels = static_cast<uint32_t>(nodeInfo.micInChannels);
+    uint32_t preChannels = static_cast<uint32_t>(preNodeInfo.channels);
+    if (nodeInfo.sourceType == SOURCE_TYPE_CAMCORDER && micInChannels > 0 &&
+        micInChannels < preChannels) {
+        return preChannels - micInChannels;
+    }
+    return preChannels;
+}
 }
 HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
@@ -47,13 +61,16 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
     // use ProResamppler as default
     resampler_ = std::make_unique<ProResampler>(preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate :
         preNodeInfo.customSampleRate, nodeInfo.samplingRate,
-        std::min(preNodeInfo.channels, nodeInfo.channels), REASAMPLE_QUAILTY);
+        std::min(CalcFrontExtractInChannels(preNodeInfo, nodeInfo), static_cast<uint32_t>(nodeInfo.channels)),
+        REASAMPLE_QUAILTY);
 
+    InitFrontExtractMode(preNodeInfo, nodeInfo);
     UpdateTmpOutPcmBufferInfo(pcmBufferInfo_);
-    
+
     AudioChannelInfo inChannelInfo = {
         .channelLayout = preNodeInfo.channelLayout,
-        .numChannels = preNodeInfo.channels,
+        .numChannels = frontChannelExtractMode_
+            ? effectiveInChannels_ : static_cast<uint32_t>(preNodeInfo.channels),
     };
     AudioChannelInfo outChannelInfo = {
         .channelLayout = nodeInfo.channelLayout,
@@ -152,7 +169,8 @@ void HpaeAudioFormatConverterNode::AccumulateInputAndPullAhead(HpaePcmBuffer *in
 {
     float *srcData = input->GetPcmDataBuffer();
     uint32_t inputFrameLen = input->GetFrameLen();
-    uint32_t inputChannels = input->GetChannelCount();
+    uint32_t inputChannels = frontChannelExtractMode_ ? effectiveInChannels_
+        : input->GetChannelCount();
 
     // Step 1: Append input data to unprocessedBuffer_
     CHECK_AND_RETURN_LOG(AppendToUnprocessedBuffer(srcData, inputFrameLen, inputChannels),
@@ -311,7 +329,10 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
 // update channel info from processCluster. For now sample rate will not change
 bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
 {
-    uint32_t numChannels = input->GetChannelCount();
+    // In front-extract mode the effective input channel count is frozen to the main block
+    // (effectiveInChannels_); channelLayout and sampleRate still follow the upstream buffer.
+    uint32_t numChannels = frontChannelExtractMode_ ? effectiveInChannels_
+        : input->GetChannelCount();
     uint64_t channelLayout = input->GetChannelLayout();
     uint32_t sampleRate = input->GetSampleRate();
     AudioChannelInfo curInChannelInfo = channelConverter_.GetInChannelInfo();
@@ -349,18 +370,33 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     return isInfoUpdated;
 }
 
+void HpaeAudioFormatConverterNode::InitFrontExtractMode(const HpaeNodeInfo &preNodeInfo,
+    const HpaeNodeInfo &nodeInfo)
+{
+    effectiveInChannels_ = CalcFrontExtractInChannels(preNodeInfo, nodeInfo);
+    frontChannelExtractMode_ = (effectiveInChannels_ != static_cast<uint32_t>(preNodeInfo.channels) &&
+        !nodeInfo.hasMicInChannel);
+    if (frontChannelExtractMode_) {
+        AUDIO_INFO_LOG("NodeId %{public}d: front-extract on, raw in %{public}u ch -> main %{public}u ch "
+            "(micIn %{public}u dropped)", GetNodeId(), static_cast<uint32_t>(preNodeInfo.channels),
+            effectiveInChannels_, static_cast<uint32_t>(nodeInfo.micInChannels));
+    }
+}
+
 void HpaeAudioFormatConverterNode::UpdateTmpOutPcmBufferInfo(const PcmBufferInfo &outPcmBufferInfo)
 {
-    if (outPcmBufferInfo.ch == preNodeInfo_.channels || outPcmBufferInfo.rate == resampler_->GetInRate()) {
+    uint32_t inChannels = frontChannelExtractMode_ ? effectiveInChannels_
+        : static_cast<uint32_t>(preNodeInfo_.channels);
+    if (outPcmBufferInfo.ch == inChannels || outPcmBufferInfo.rate == resampler_->GetInRate()) {
         // do not need tmpOutput Buffer
         return;
     }
     PcmBufferInfo tmpOutPcmBufferInfo = outPcmBufferInfo;
-    if (outPcmBufferInfo.ch < preNodeInfo_.channels) { // downmix, then resample
+    if (outPcmBufferInfo.ch < inChannels) { // downmix, then resample
         tmpOutPcmBufferInfo.rate = resampler_->GetInRate();
         tmpOutPcmBufferInfo.frameLen = preNodeInfo_.frameLen;
     } else { // resample, then upmix
-        tmpOutPcmBufferInfo.ch = preNodeInfo_.channels;
+        tmpOutPcmBufferInfo.ch = inChannels;
     }
     AUDIO_INFO_LOG("NodeId: %{public}d, updated tmp buffer rate %{public}d, frameLen %{public}d, channels %{public}d",
         GetNodeId(), tmpOutPcmBufferInfo.rate, tmpOutPcmBufferInfo.frameLen, tmpOutPcmBufferInfo.ch);
@@ -569,7 +605,8 @@ bool HpaeAudioFormatConverterNode::TryPullOneFrame()
     }
     float *data = newInputs[0]->GetPcmDataBuffer();
     uint32_t frameLen = newInputs[0]->GetFrameLen();
-    uint32_t channels = newInputs[0]->GetChannelCount();
+    uint32_t channels = frontChannelExtractMode_ ? effectiveInChannels_
+        : newInputs[0]->GetChannelCount();
     return AppendToUnprocessedBuffer(data, frameLen, channels);
 }
 

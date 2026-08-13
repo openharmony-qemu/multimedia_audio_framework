@@ -115,6 +115,7 @@ struct HpaeStreamInfo {
     bool isLoopback = false;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
     bool mixWithWakeUp = false;
+    bool hasMicInChannel = false;
 };
 
 struct HpaeSinkInfo {

@@ -45,6 +45,7 @@ private:
     bool CheckUpdateOutInfo();
     void CheckAndUpdateInfo(HpaePcmBuffer *input);
     void UpdateTmpOutPcmBufferInfo(const PcmBufferInfo &outPcmBufferInfo);
+    void InitFrontExtractMode(const HpaeNodeInfo &preNodeInfo, const HpaeNodeInfo &nodeInfo);
 
     // --- Dual-buffer mechanism for non-standard sample rate handling ---
     bool AppendToUnprocessedBuffer(const float *data, uint32_t frameLen, uint32_t channels);
@@ -72,6 +73,10 @@ private:
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer converterOutput_;
     HpaeNodeInfo preNodeInfo_;
+    // front-extract mode: for a camcorder split-layout (main + micIn) source, only the leading
+    // main-channel block is consumed and the micIn tail is dropped.
+    bool frontChannelExtractMode_ = false;
+    uint32_t effectiveInChannels_ = 0; // = main channels actually consumed
     std::unique_ptr<Resampler> resampler_ = nullptr;
     ChannelConverter channelConverter_;
     HpaePcmBuffer tmpOutBuf_; // cache between resample and converter

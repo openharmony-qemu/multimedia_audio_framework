@@ -130,6 +130,7 @@ struct HpaeDfxNodeInfo {
     uint32_t customSampleRate = 0;
     AudioSampleFormat format = AudioSampleFormat::SAMPLE_F32LE;
     AudioChannel channels;
+    AudioChannel micInChannels = CHANNEL_UNKNOW; // camcorder/recognition: micIn tail channels
     AudioChannelLayout channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     FadeType fadeType = NONE_FADE;
     AudioStreamType streamType = STREAM_DEFAULT;
@@ -141,6 +142,7 @@ struct HpaeDfxNodeInfo {
     SourceType sourceType;
     uint32_t routeFlag = 0;
     bool keepRunning = false;
+    bool hasMicInChannel = false;
     int32_t deviceType = 0;
     uint32_t renderId = HDI_INVALID_RENDER_ID;
 
