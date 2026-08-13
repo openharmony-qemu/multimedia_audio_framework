@@ -1232,10 +1232,11 @@ void AudioPolicyServerSetKaraokeParametersFuzzTest()
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
 
     int32_t deviceType = GetData<int32_t>();
-    std::string parameters = "test_parameters";
+    int32_t paramType = GetData<int32_t>();
+    int32_t value = GetData<int32_t>();
     bool ret = GetData<bool>();
 
-    audioPolicyServer->SetKaraokeParameters(deviceType, parameters, ret);
+    audioPolicyServer->SetKaraokeParameters(deviceType, paramType, value, ret);
 }
 
 void AudioPolicyServerUpdateDeviceInfoFuzzTest()
