@@ -53,6 +53,7 @@ constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
 
 class MockNodeFormatInfoCallback : public INodeFormatInfoCallback {
 public:
+    virtual ~MockNodeFormatInfoCallback() = default;
     AudioBasicFormat formatToReturn_;
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override
     {
