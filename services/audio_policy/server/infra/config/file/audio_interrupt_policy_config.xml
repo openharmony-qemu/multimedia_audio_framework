@@ -1388,8 +1388,6 @@
     <focus_type value="SOURCE_TYPE_VOICE_CALL">
         <focus_table>
             <deny>
-                <focus_type value="STREAM_RING"/>
-                <focus_type value="STREAM_VOICE_RING"/>
                 <focus_type value="SOURCE_TYPE_MIC"/>
                 <focus_type value="SOURCE_TYPE_CAMCORDER"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION"/>
@@ -1423,6 +1421,8 @@
                 <focus_type value="SOURCE_TYPE_REMOTE_CAST" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_VOICE_ASSISTANT" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_VOICE_ASSISTANT_SYSTEM" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_RING" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_VOICE_RING" is_forced="true" action_type="PLAY" action_on="incoming"/>
             </shared>
             <private>
                 <focus_type value="STREAM_INTERNAL_FORCE_STOP" is_forced="true" action_type="STOP" action_on="existing"/>
