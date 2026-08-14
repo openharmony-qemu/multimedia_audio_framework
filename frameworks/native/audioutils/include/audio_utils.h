@@ -100,6 +100,8 @@ public:
     static bool IsEnhancedRoutingSupported();
 
     static bool IsCustomSampleRateValid(uint32_t customSampleRate);
+
+    static bool IsCamcorderMicInSupportedInputDeviceType(DeviceType deviceType);
 };
 
 class AudioTypeUtils {

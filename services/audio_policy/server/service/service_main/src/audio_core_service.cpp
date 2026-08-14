@@ -289,6 +289,27 @@ static bool IsDegradeInputStream(const std::shared_ptr<AudioStreamDescriptor> &s
     return HasDegradeInputDevice(streamDesc->newDeviceDescs_) || HasDegradeInputDevice(streamDesc->oldDeviceDescs_);
 }
 
+static bool IsCamcorderMicInSupportedInputDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    return deviceDesc != nullptr && deviceDesc->networkId_ == LOCAL_NETWORK_ID &&
+        Util::IsCamcorderMicInSupportedInputDeviceType(deviceDesc->deviceType_);
+}
+
+static bool HasCamcorderDegradeInputDevice(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+{
+    return std::any_of(deviceDescs.begin(), deviceDescs.end(), [](const auto &deviceDesc) {
+        return deviceDesc != nullptr && !IsCamcorderMicInSupportedInputDevice(deviceDesc);
+    });
+}
+
+static bool IsCamcorderDegradeInputStream(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
+    return HasCamcorderDegradeInputDevice(streamDesc->newDeviceDescs_) ||
+        HasCamcorderDegradeInputDevice(streamDesc->oldDeviceDescs_);
+}
+
 static bool IsVoiceRecognitionMicInEcRequested(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
@@ -301,6 +322,7 @@ static bool IsCamcorderMicInRequested(const std::shared_ptr<AudioStreamDescripto
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
     return streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_CAMCORDER &&
+        !IsCamcorderDegradeInputStream(streamDesc) &&
         streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW;
 }
 
