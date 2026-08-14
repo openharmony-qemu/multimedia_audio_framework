@@ -49,7 +49,8 @@ public:
     int32_t OnAudioDupDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         const FetchDeviceInfo &fetchDeviceInfo) override { return 0; }
     int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) override { return 0; }
+        RouterType routerType, SourceType sourceType,
+        int32_t clientUid, AudioPipeType audioPipeType) override { return 0; }
     int32_t GetSplitInfoRefined(std::string &splitInfo) override { return 0; }
     int32_t OnDistributedOutputChange(bool isRemote) override { return 0; }
     int32_t OnDistributedServiceOnline() override { return 0; }
@@ -126,13 +127,15 @@ public:
 class AudioCapturerStateChangeCallbackFuzzTest : public AudioCapturerStateChangeCallback {
 public:
     AudioCapturerStateChangeCallbackFuzzTest() {}
-    void OnCapturerStateChange(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override {}
+    void OnCapturerStateChange(
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override {}
 };
 
 class AudioRendererStateChangeCallbackFuzzTest : public AudioRendererStateChangeCallback {
 public:
     AudioRendererStateChangeCallbackFuzzTest() {}
-    void OnRendererStateChange(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override {}
+    void OnRendererStateChange(
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override {}
 };
 
 class PreferredDeviceSetCallbackFuzzTest : public PreferredDeviceSetCallback {
@@ -154,7 +157,8 @@ public:
     int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t timeoutMs) override { return 0; }
     int32_t StopPlaying(const std::string &device, uint32_t streamType) override { return 0; }
     int32_t ConnectAllowedProfiles(const std::string &remoteAddr) const override { return 0; }
-    int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) override { return 0; }
+    int32_t SetDeviceAbsVolume(const std::string &remoteAddr,
+        uint32_t volume, uint32_t streamType) override { return 0; }
     int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t eventType) override { return 0; }
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override { return 0; }
     int32_t GetDeviceProductId(const std::string &remoteAddr, std::string &productId) override { return 0; }
@@ -170,11 +174,15 @@ const vector<AudioVolumeType> g_testVolumeTypes = {
     STREAM_VOICE_ASSISTANT,
     STREAM_ALARM,
     STREAM_SYSTEM,
-    STREAM_ACCESSIBILITY,
+    STREAM_TTS,
     STREAM_VOICE_RING,
     STREAM_ULTRASONIC,
     STREAM_ALL,
 };
+
+constexpr int32_t CONTENT_TYPE_MODULUS = 10;
+constexpr int32_t STREAM_USAGE_MODULUS = 20;
+constexpr int32_t SOURCE_TYPE_MODULUS = 10;
 
 const vector<DeviceType> g_testDeviceTypes = {
     DEVICE_TYPE_NONE,
@@ -301,8 +309,10 @@ sptr<AudioRendererFilter> CreateAudioRendererFilter(FuzzedDataProvider& fdp)
 AudioRendererInfo CreateAudioRendererInfo(FuzzedDataProvider& fdp)
 {
     AudioRendererInfo rendererInfo;
-    rendererInfo.contentType = static_cast<ContentType>(fdp.ConsumeIntegral<int32_t>() % 10);
-    rendererInfo.streamUsage = static_cast<StreamUsage>(fdp.ConsumeIntegral<int32_t>() % 20);
+    rendererInfo.contentType = static_cast<ContentType>(
+        fdp.ConsumeIntegral<int32_t>() % CONTENT_TYPE_MODULUS);
+    rendererInfo.streamUsage = static_cast<StreamUsage>(
+        fdp.ConsumeIntegral<int32_t>() % STREAM_USAGE_MODULUS);
     rendererInfo.rendererFlags = fdp.ConsumeIntegral<int32_t>();
     return rendererInfo;
 }
@@ -310,7 +320,8 @@ AudioRendererInfo CreateAudioRendererInfo(FuzzedDataProvider& fdp)
 AudioCapturerInfo CreateAudioCapturerInfo(FuzzedDataProvider& fdp)
 {
     AudioCapturerInfo capturerInfo;
-    capturerInfo.sourceType = static_cast<SourceType>(fdp.ConsumeIntegral<int32_t>() % 10);
+    capturerInfo.sourceType = static_cast<SourceType>(
+        fdp.ConsumeIntegral<int32_t>() % SOURCE_TYPE_MODULUS);
     capturerInfo.capturerFlags = fdp.ConsumeIntegral<int32_t>();
     return capturerInfo;
 }
