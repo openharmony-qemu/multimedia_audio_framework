@@ -3158,9 +3158,9 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NullInputWithProcess, TestS
  * @tc.name  : MicInZeroPad_Detection_001
  * @tc.type  : FUNC
  * @tc.number: MicInZeroPad_Detection_001
- * @tc.desc  : Scenario C (CAMCORDER, HAL micInChannels==0, app micInChannelCount>0) sets
+ * @tc.desc  : Scenario C (CAMCORDER, HAL micInChannels==0, app appMicInChannelCount>0) sets
  *             micInZeroPadMode_=true, frontChannelExtractMode_=false,
- *             effectiveInChannels_ = nodeInfo.channels - micInChannelCount.
+ *             effectiveInChannels_ = nodeInfo.channels - appMicInChannelCount.
  */
 HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_Detection_001, TestSize.Level0)
 {
@@ -3174,7 +3174,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_Detection_001, TestSize.
     out.channels = static_cast<AudioChannel>(6);   // app total = main(4) + micIn(2)
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;            // HAL reports no micIn (==0)
-    out.micInChannelCount = 2;                      // app wants 2 micIn slots
+    out.appMicInChannelCount = 2;                      // app wants 2 micIn slots
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     EXPECT_TRUE(node->micInZeroPadMode_);
@@ -3200,7 +3200,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_Detection_002, TestSize.
     out.channels = static_cast<AudioChannel>(4);   // app wants main only
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = static_cast<AudioChannel>(2);
-    out.micInChannelCount = 0;
+    out.appMicInChannelCount = 0;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     EXPECT_TRUE(node->frontChannelExtractMode_);
@@ -3226,7 +3226,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_Detection_003, TestSize.
     out.channels = static_cast<AudioChannel>(6);
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = static_cast<AudioChannel>(2);
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     EXPECT_FALSE(node->frontChannelExtractMode_);
@@ -3252,7 +3252,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_ConverterConfig_001, Tes
     out.channels = static_cast<AudioChannel>(6);
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     EXPECT_EQ(node->channelConverter_.GetOutChannelInfo().numChannels, 4u);
@@ -3278,7 +3278,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_ConverterConfig_002, Tes
     out.channels = static_cast<AudioChannel>(6);
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     EXPECT_EQ(node->effectiveInChannels_, 4u);
@@ -3305,7 +3305,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_ConverterConfig_003, Tes
     out.channels = static_cast<AudioChannel>(6);
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     EXPECT_EQ(node->effectiveInChannels_, 4u);
@@ -3332,7 +3332,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_BufferCapacity_001, Test
     out.channels = static_cast<AudioChannel>(6);
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     ASSERT_EQ(node->effectiveInChannels_, 4u);
@@ -3360,7 +3360,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_LockOutCh_001, TestSize.
     out.channels = static_cast<AudioChannel>(6);
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     auto cb = std::make_shared<MockNodeFormatInfoCallback>();
@@ -3390,7 +3390,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_ExtractOutput_001, TestS
     out.channels = static_cast<AudioChannel>(6);   // total = main4 + micIn2
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     ASSERT_EQ(node->effectiveInChannels_, 4u);
@@ -3441,7 +3441,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_NodeChStaysTotal_001, Te
     out.channels = static_cast<AudioChannel>(6);
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     auto cb = std::make_shared<MockNodeFormatInfoCallback>();
@@ -3472,7 +3472,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_E2E_SameRate_001, TestSi
     out.channels = static_cast<AudioChannel>(6);
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     uint32_t inCh = 4;
@@ -3514,7 +3514,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_E2E_Upmix_001, TestSize.
     out.channels = static_cast<AudioChannel>(6);
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     ASSERT_EQ(node->effectiveInChannels_, 4u);
@@ -3553,7 +3553,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_Detection_004, TestSize.
     out.channels = static_cast<AudioChannel>(4);
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;
-    out.micInChannelCount = 0;
+    out.appMicInChannelCount = 0;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     EXPECT_FALSE(node->frontChannelExtractMode_);
@@ -3580,7 +3580,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_ScenarioA_RateConv_001, 
     out.channels = static_cast<AudioChannel>(6);
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = static_cast<AudioChannel>(2);
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     ASSERT_FALSE(node->frontChannelExtractMode_);
@@ -3631,7 +3631,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_E2E_RateConv_001, TestSi
     out.channels = static_cast<AudioChannel>(6);     // total = main4 + micIn2
     out.sourceType = SOURCE_TYPE_CAMCORDER;
     out.micInChannels = CHANNEL_UNKNOW;
-    out.micInChannelCount = 2;
+    out.appMicInChannelCount = 2;
 
     auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
     ASSERT_TRUE(node->micInZeroPadMode_);

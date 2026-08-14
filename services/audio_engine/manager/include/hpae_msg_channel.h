@@ -142,7 +142,7 @@ struct HpaeDfxNodeInfo {
     SourceType sourceType;
     uint32_t routeFlag = 0;
     bool keepRunning = false;
-    uint8_t micInChannelCount = 0;
+    uint8_t appMicInChannelCount = 0;
     int32_t deviceType = 0;
     uint32_t renderId = HDI_INVALID_RENDER_ID;
 

@@ -176,7 +176,7 @@ static bool IsAudioProcessConfigEqual(const AudioProcessConfig &a, const AudioPr
         a.isWakeupCapturer == b.isWakeupCapturer &&
         a.originalSessionId == b.originalSessionId &&
         a.innerCapId == b.innerCapId &&
-        a.micInChannelCount == b.micInChannelCount;
+        a.appMicInChannelCount == b.appMicInChannelCount;
 }
 
 void InitAudioStreamInfo(AudioStreamInfo &info)
@@ -1128,7 +1128,7 @@ HWTEST(AudioIpcSerializationUnitTest, AudioProcessConfig_001, TestSize.Level1)
     config.isWakeupCapturer = false;
     config.originalSessionId = TEST_VALUE_3;
     config.innerCapId = TEST_VALUE_4;
-    config.micInChannelCount = 2; // camcorder mic-in request count
+    config.appMicInChannelCount = 2; // camcorder mic-in request count
 
     EXPECT_TRUE(config.Marshalling(parcel));
     auto newConfig = std::shared_ptr<AudioProcessConfig>(AudioProcessConfig::Unmarshalling(parcel));
