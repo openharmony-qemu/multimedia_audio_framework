@@ -350,6 +350,7 @@ private:
     std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
     std::string bundleNameByUid_ = "";
     std::string bundleNameByAppUid_ = "";
+    std::string ancoBundleName_ = "";
 
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
     int32_t audioHapticsSyncId_ = 0;

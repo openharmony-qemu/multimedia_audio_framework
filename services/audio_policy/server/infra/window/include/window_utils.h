@@ -16,6 +16,7 @@
 #define AUDIO_WINDOW_UTILS_H
 
 #include <cstdint>
+#include <string>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -23,6 +24,7 @@ namespace AudioStandard {
 class WindowUtils {
 public:
     static bool CheckWindowState(const int32_t pid);
+    static bool CheckAncoWindowState(const std::string &bundleName);
 };
 }
 }

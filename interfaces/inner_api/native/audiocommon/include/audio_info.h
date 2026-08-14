@@ -1351,6 +1351,7 @@ struct AudioRendererOptions {
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
     AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
     AppInfo appInfo;
+    std::string ancoBundleName;
 };
 
 struct BufferQueueState {
