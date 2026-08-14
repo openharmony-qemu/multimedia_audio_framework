@@ -2006,7 +2006,7 @@ bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor>
     CHECK_AND_RETURN_RET(streamDesc != nullptr && pipeInfo != nullptr, false);
 
     CHECK_AND_RETURN_RET(pipeInfo->GetRoute() == streamDesc->GetRoute() && pipeInfo->IsSameAdapter(adapterName) &&
-        pipeInfo->IsSameName(pipeName), false);
+        (pipeInfo->IsSameName(pipeName) || pipeInfo->IsSameAdapter("remote")), false);
 
     // Use networkId to distinguish multiple remote devices that may exist
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
