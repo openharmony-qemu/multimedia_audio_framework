@@ -130,6 +130,8 @@ private:
     void StopInterphoneSourceIfNeeded();
 
 private:
+    void UpdateSpanSize(HpaeNodeInfo &nodeInfo, const std::shared_ptr<HpaeSourceOutputNode> &sourceOutputNode,
+        uint32_t sessionId, uint32_t frameLen);
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::unordered_map<uint32_t, HpaeCapturerSessionInfo> sessionNodeMap_;

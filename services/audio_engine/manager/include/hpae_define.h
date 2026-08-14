@@ -23,6 +23,8 @@ namespace AudioStandard {
 namespace HPAE {
 constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
 constexpr uint32_t FRAME_LEN_20MS = 20; // 20ms
+constexpr uint32_t ACCESSORY_FRAME_LEN_NEED_HALVE = 40; // accessory 40ms need halve to 20ms
+constexpr uint32_t FRAME_LEN_HALVE_RATIO = 2; // halve ratio for 40ms to 20ms
 
 struct HpaeSessionInfo {
     HpaeStreamInfo streamInfo;
