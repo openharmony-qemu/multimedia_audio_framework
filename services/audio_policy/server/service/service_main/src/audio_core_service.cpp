@@ -2685,10 +2685,20 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
         return HandleFetchOutputWhenNoRunningStream(reason);
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
-    CheckModemScene(modemDescs, reason);
+    int32_t modemRet = CheckModemScene(modemDescs, reason);
+    if (modemRet == REFETCH_DEVICE) {
+        AUDIO_INFO_LOG("[FetchOutputDeviceAndRoute]CheckModemScene returned REFETCH_DEVICE by %{public}s, "
+            "device refetched, skip remaining steps", caller.c_str());
+        return SUCCESS;
+    }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> transferRingtoneDescs;
     CheckTransferRingtoneScene(transferRingtoneDescs, reason);
-    CheckRingAndVoipScene(reason);
+    int32_t ringRet = CheckRingAndVoipScene(reason);
+    if (ringRet == REFETCH_DEVICE) {
+        AUDIO_INFO_LOG("[FetchOutputDeviceAndRoute]CheckRingAndVoipScene returned REFETCH_DEVICE by %{public}s, "
+            "device refetched, skip remaining steps", caller.c_str());
+        return SUCCESS;
+    }
 
     AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
     BatchFetchAndStartOutputStreams(outputStreamDescs, caller);

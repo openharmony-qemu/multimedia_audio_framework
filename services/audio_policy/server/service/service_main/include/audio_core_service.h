@@ -582,12 +582,12 @@ private:
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchCapturerPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
-    void CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+    int32_t CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
          const AudioStreamDeviceChangeReasonExt reason);
     int32_t GetPhoneCallSceneType(AudioScene audioScene, AudioScene lastAudioScene);
     void CheckTransferRingtoneScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
          const AudioStreamDeviceChangeReasonExt reason);
-    void CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason);
+    int32_t CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason);
     bool CheckRingAndVoipStreamRunning();
     int32_t UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     void CheckAndCreateCallTransferForTransferCall(
