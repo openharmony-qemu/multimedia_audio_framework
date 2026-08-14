@@ -466,6 +466,7 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     rendererInfo_.isCallWaitingTone = rendererOptions.rendererInfo.isCallWaitingTone;
     strategy_ = rendererOptions.strategy;
     originalStrategy_ = rendererOptions.strategy;
+    ancoBundleName_ = rendererOptions.ancoBundleName;
 }
 
 std::shared_ptr<AudioRendererPrivate> AudioRenderer::CreateAndInitRendererObject(
@@ -712,6 +713,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
     audioInterrupt_.api = rendererInfo_.playerType;
     audioInterrupt_.isCallWaitingTone = rendererInfo_.isCallWaitingTone;
     audioInterrupt_.bundleName = audioStream_->GetBundleName();
+    audioInterrupt_.ancoBundleName = ancoBundleName_;
     if (audioInterrupt_.bundleName.empty()) {
         audioInterrupt_.bundleName = AppBundleManager::GetSelfBundleName();
     }

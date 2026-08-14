@@ -329,6 +329,7 @@ public:
     bool activatedRegisterCallbackFlag = false;
     bool isCallWaitingTone = false;
     bool isCheckMuteStream = false;
+    std::string ancoBundleName = "";
     // no serialization required
     bool voipCaptureMixWithOthersFlag = false;
 
@@ -399,6 +400,7 @@ public:
         res = res && parcel.WriteBool(interrupt.activatedRegisterCallbackFlag);
         res = res && parcel.WriteBool(interrupt.isCallWaitingTone);
         res = res && parcel.WriteBool(interrupt.isCheckMuteStream);
+        res = res && parcel.WriteString(interrupt.ancoBundleName);
         return res;
     }
     static void Unmarshalling(Parcel &parcel, AudioInterrupt &interrupt)
@@ -441,6 +443,7 @@ public:
         interrupt.activatedRegisterCallbackFlag = parcel.ReadBool();
         interrupt.isCallWaitingTone = parcel.ReadBool();
         interrupt.isCheckMuteStream = parcel.ReadBool();
+        interrupt.ancoBundleName = parcel.ReadString();
     }
 
     bool Marshalling(Parcel &parcel) const override

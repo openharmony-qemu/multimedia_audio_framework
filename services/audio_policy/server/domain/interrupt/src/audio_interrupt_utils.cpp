@@ -63,5 +63,18 @@ bool AudioInterruptUtils::IsInterPhoneInterrupt(const AudioInterrupt &audioInter
     return (audioInterrupt.audioFocusType.streamType == STREAM_INTERPHONE ||
         audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INTERPHONE);
 }
+
+bool AudioInterruptUtils::GetWindowState(const AudioInterrupt &audioInterrupt)
+{
+#ifdef HAS_WINDOW_MANAGER
+    if (audioInterrupt.uid == AUDIO_ID) {
+        return WindowUtils::CheckAncoWindowState(audioInterrupt.ancoBundleName);
+    } else {
+        return WindowUtils::CheckWindowState(audioInterrupt.pid);
+    }
+#else
+    return false;
+#endif
+}
 } // namespace AudioStandard
 } // namespace OHOS

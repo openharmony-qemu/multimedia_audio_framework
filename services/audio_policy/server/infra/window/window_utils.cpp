@@ -64,6 +64,31 @@ static int32_t CheckVirtualDisplay(const int32_t pid, bool &isVirtualDisplay)
     return SUCCESS;
 }
 
+bool WindowUtils::CheckAncoWindowState(const std::string &bundleName)
+{
+    auto sceneSessionManager = Rosen::SessionManagerLite::GetInstance().GetSceneSessionManagerLiteProxy();
+    if (sceneSessionManager == nullptr) {
+        AUDIO_ERR_LOG("sceneSessionManager is null manager");
+        return false;
+    }
+    std::vector<OHOS::Rosen::MainWindowInfo> mainWindowInfo;
+    if (sceneSessionManager->GetAllMainWindowInfos(mainWindowInfo) != Rosen::WMError::WM_OK) {
+        AUDIO_ERR_LOG("GetAllMainWindowInfos failed");
+        return false;
+    }
+    for (auto &windowInfo : mainWindowInfo) {
+        AUDIO_DEBUG_LOG("pid:%{public}d app, bundleName = %{public}s",
+            windowInfo.pid_, windowInfo.bundleName_.c_str());
+        if (bundleName == windowInfo.bundleName_) {
+            bool isforeground = CheckWindowState(windowInfo.pid_);
+            AUDIO_INFO_LOG("pid:%{public}d app, bundleName = %{public}s, isforeground = %{public}d",
+                windowInfo.pid_, windowInfo.bundleName_.c_str(), isforeground);
+            return isforeground;
+        }
+    }
+    return false;
+}
+
 bool WindowUtils::CheckWindowState(const int32_t pid)
 {
     AUDIO_INFO_LOG("CheckWindowState pid:%{public}d", pid);
