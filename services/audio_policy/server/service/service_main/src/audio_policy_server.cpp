@@ -568,11 +568,17 @@ int32_t AudioPolicyServer::ReloadLoudVolumeMode(
 
 void AudioPolicyServer::ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus)
 {
-    if (streamInFocus == AudioStreamType::STREAM_VOICE_ASSISTANT &&
-        ((audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP &&
-            audioPolicyManager_.IsAbsVolumeScene()) ||
-            audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK)) {
+    if (streamInFocus != AudioStreamType::STREAM_VOICE_ASSISTANT) {
+        return;
+    }
+    auto currentDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    if (currentDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP && audioPolicyManager_.IsAbsVolumeScene()) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
+        return;
+    }
+    if (currentDeviceType == DEVICE_TYPE_NEARLINK) {
+        streamInFocus = sleVoiceFlagFromNearlink_ ? AudioStreamType::STREAM_VOICE_CALL
+                                                  : AudioStreamType::STREAM_MUSIC;
     }
 }
 
@@ -4168,6 +4174,7 @@ int32_t AudioPolicyServer::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
     std::vector<uid_t> allowedUids = { UID_NEARLINK_SA };
     bool ret = PermissionUtil::CheckCallingUidPermission(allowedUids);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "Uid Check Failed");
+    sleVoiceFlagFromNearlink_ = isSleVoiceStatus;
     return audioVolumeManager_.SetSleVoiceStatusFlag(isSleVoiceStatus);
 }
 
