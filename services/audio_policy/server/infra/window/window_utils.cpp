@@ -72,7 +72,7 @@ bool WindowUtils::CheckAncoWindowState(const std::string &bundleName)
         return false;
     }
     std::vector<OHOS::Rosen::MainWindowInfo> mainWindowInfo;
-    if(!sceneSessionManager->GetAllMainWindowInfos(mainWindowInfo)) {
+    if (!sceneSessionManager->GetAllMainWindowInfos(mainWindowInfo)) {
         AUDIO_ERR_LOG("GetAllMainWindowInfos failed");
         return false;
     }
