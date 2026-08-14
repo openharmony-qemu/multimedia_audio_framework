@@ -1156,9 +1156,10 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     uint32_t frameLenInMs = (sourceInfo_.samplingRate != 0) ?
         (sourceInfo_.frameLen * MILLISECOND_PER_SECOND / sourceInfo_.samplingRate) : 0;
-    uint32_t updatedFrameLen = (frameLenInMs == ACCESSORY_FRAME_LEN_40MS) ?
-        (sourceInfo_.frameLen / FRAME_LEN_HALVE_RATIO) : sourceInfo_.frameLen;
-    if (sourceInfo_.deviceType == DEVICE_TYPE_ACCESSORY && frameLenInMs == ACCESSORY_FRAME_LEN_40MS) {
+    // If the device is an accessory and the underlying interval is 40ms, the process still needs to execute,
+    //  but updates are sent upward at a 20ms interval.
+    if (sourceInfo_.deviceType == DEVICE_TYPE_ACCESSORY && frameLenInMs == ACCESSORY_FRAME_LEN_NEED_HALVE) {
+        uint32_t updatedFrameLen = sourceInfo_.frameLen / FRAME_LEN_HALVE_RATIO;
         UpdateSpanSize(nodeInfo, moveInfo.sourceOutputNode, sessionId, updatedFrameLen);
     } else {
         UpdateSpanSize(nodeInfo, moveInfo.sourceOutputNode, sessionId, sourceInfo_.frameLen);
