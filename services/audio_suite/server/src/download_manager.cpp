@@ -49,7 +49,7 @@ DownloadManager::~DownloadManager()
         std::unique_lock<std::mutex> statusCallbacksLock(statusCallbacksMutex_);
         statusCallbacks_.clear();
     }
-
+    std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
     downloadCallback_ = nullptr;
     isDownloadCallbackRegistered_ = false;
 }
@@ -158,6 +158,8 @@ int32_t DownloadManager::StartBackgroundDownload(const std::string& featureName)
 
     int32_t funcResult = SUCCESS;
     AudioSuiteCloudRomVersionInfo newVersionInfo;
+    std::unique_lock<std::mutex> downloadLock(downloadInterfaceMutex_);
+    CHECK_AND_RETURN_RET_LOG(downloadCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED, "donwload callback is null");
     int32_t ret = downloadCallback_->GetFeatureNewVersion(featureName, newVersionInfo, funcResult);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetFeatureNewVersion failed, ret=%{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
