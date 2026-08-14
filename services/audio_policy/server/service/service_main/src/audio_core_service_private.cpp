@@ -231,8 +231,10 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         }
 
         if (streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
-            streamDesc->newDeviceDescs_[0] != nullptr && std::count(activatedList.begin(),
-            activatedList.end(), streamDesc->newDeviceDescs_[0]->deviceId_) <= 0) {
+            streamDesc->newDeviceDescs_[0] != nullptr &&
+            (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_NEARLINK ||
+            std::count(activatedList.begin(),
+            activatedList.end(), streamDesc->newDeviceDescs_[0]->deviceId_) <= 0)) {
                 int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
                 CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
                 activatedList.push_back(streamDesc->newDeviceDescs_[0]->deviceId_);
