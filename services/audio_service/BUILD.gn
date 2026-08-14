@@ -318,11 +318,6 @@ ohos_shared_library("audio_stream_client") {
     "c_utils:utils",
   ]
 
-  defines = []
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
-  }
-
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
   cflags = [ "-Os" ]
@@ -525,11 +520,6 @@ ohos_shared_library("audio_client") {
   ]
 
   public_external_deps = [ "c_utils:utils" ]
-
-  defines = []
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
-  }
 
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
@@ -768,10 +758,6 @@ audio_ohos_library("audio_process_service") {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
-  }
-
   if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
     defines += [
       "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
@@ -921,10 +907,6 @@ audio_ohos_library("audio_service") {
 
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
-  }
-
-  if (audio_framework_feature_multi_zone_volume) {
-    defines += [ "FEATURE_AUDIO_ZONE_VOLUME" ]
   }
 
   cflags = [ "-Os" ]

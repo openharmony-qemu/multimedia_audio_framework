@@ -54,6 +54,8 @@ constexpr uint32_t g_procType = OHOS::ResourceSchedule::ResType::RES_TYPE_PROCES
 constexpr int32_t AUDIO_PROC_QOS_TABLE = 7;
 constexpr int32_t SCHED_PRIORITY_NUM_4 = 4;
 std::atomic<bool> g_audioServerAuthQosFinish = false;
+constexpr int32_t RES_VALUE_PROCESS_QOS_ENABLE = 0;
+constexpr int32_t RES_VALUE_PROCESS_QOS_DISABLE = 1;
 
 void ConfigPayload(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLevel,
     std::unordered_map<std::string, std::string> &mapPayload)
@@ -104,14 +106,14 @@ void ScheduleReportDataWithQosLevel(pid_t pid, pid_t tid, const char *bundleName
 
 void ScheduleReportProcessQosLevel(pid_t pid, uid_t uid, const char *bundleName)
 {
-    AudioXCollie audioXcollie("RSS::ReportProcessData with qos level " + std::to_string(AUDIO_QOS_LEVEL) +
-        ", pid " + std::to_string(pid) + ", uid " + std::to_string(uid), REPORTDATA_TIMEOUT,
+    AudioXCollie audioXcollie("RSS::ReportProcessData, pid " + std::to_string(pid) +
+        ", uid " + std::to_string(uid), REPORTDATA_TIMEOUT,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    AUDIO_INFO_LOG("Report pid %{public}d uid %{public}u to qosLevel %{public}u", pid, uid, AUDIO_QOS_LEVEL);
+    AUDIO_INFO_LOG("Report pid %{public}d uid %{public}u", pid, uid);
     std::unordered_map<std::string, std::string> mapPayload;
     ConfigProcessPayload(pid, uid, bundleName, mapPayload);
     OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(
-        g_procType, static_cast<int64_t>(AUDIO_QOS_LEVEL), mapPayload);
+        g_procType, static_cast<int64_t>(RES_VALUE_PROCESS_QOS_ENABLE), mapPayload);
 }
 
 void UnscheduleReportData(pid_t pid, pid_t tid, const char* bundleName)
@@ -127,14 +129,14 @@ void UnscheduleReportData(pid_t pid, pid_t tid, const char* bundleName)
 
 void UnscheduleReportProcessQosLevel(pid_t pid, uid_t uid, const char *bundleName)
 {
-    AudioXCollie audioXcollie("RSS::ReportProcessData with qos level -1, pid " + std::to_string(pid) +
+    AudioXCollie audioXcollie("RSS::ReportProcessData, pid " + std::to_string(pid) +
         ", uid " + std::to_string(uid), REPORTDATA_TIMEOUT,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    Trace trace("Rss::ReportProcessData with qos level -1");
+    AUDIO_INFO_LOG("Report pid %{public}d uid %{public}u", pid, uid);
     std::unordered_map<std::string, std::string> mapPayload;
     ConfigProcessPayload(pid, uid, bundleName, mapPayload);
     OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(
-        g_procType, static_cast<int64_t>(DEFAULT_QOS_LEVEL), mapPayload);
+        g_procType, static_cast<int64_t>(RES_VALUE_PROCESS_QOS_DISABLE), mapPayload);
 }
 
 void UnscheduleThreadInServer(pid_t pid, pid_t tid)

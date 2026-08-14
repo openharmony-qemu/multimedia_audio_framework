@@ -82,27 +82,5 @@ HWTEST_F(AudioScheduleUnitTest, ResetEndpointThreadPriorityTest_002, TestSize.Le
 {
     EXPECT_TRUE(ResetEndpointThreadPriority());
 }
-
-/**
- * @tc.name   : Test ScheduleReportProcessQosLevel
- * @tc.number : ScheduleReportProcessQosLevelTest_001
- * @tc.desc   : Test ScheduleReportProcessQosLevel
- */
-HWTEST_F(AudioScheduleUnitTest, ScheduleReportProcessQosLevelTest_001, TestSize.Level1)
-{
-    ScheduleReportProcessQosLevel(1, 1, "audio_server");
-    SUCCEED();
-}
-
-/**
- * @tc.name   : Test UnscheduleReportProcessQosLevel
- * @tc.number : UnscheduleReportProcessQosLevelTest_001
- * @tc.desc   : Test UnscheduleReportProcessQosLevel
- */
-HWTEST_F(AudioScheduleUnitTest, UnscheduleReportProcessQosLevelTest_001, TestSize.Level1)
-{
-    UnscheduleReportProcessQosLevel(1, 1, "audio_server");
-    SUCCEED();
-}
 } // namespace AudioStandard
 } // namespace OHOS

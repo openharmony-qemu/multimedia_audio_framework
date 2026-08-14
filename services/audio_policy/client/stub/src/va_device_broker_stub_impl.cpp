@@ -55,13 +55,13 @@ int32_t VADeviceBrokerStubImpl::OnDevicesConnected(const VADevice &device, const
         ERR_PERMISSION_DENIED, "connect virtual audio denied: no MANAGE_AUDIO_ACCESSORY permission");
     sptr<IVADeviceController> vaDeviceController = iface_cast<IVADeviceController>(controller);
     CHECK_AND_RETURN_RET_LOG(vaDeviceController != nullptr, ERR_INVALID_PARAM, "controller is null");
-    auto sharedDevice = std::make_shared<VADevice>(device);
-
-    VADeviceManager::GetInstance().OnDevicesConnected(sharedDevice, vaDeviceController);
 
     VADeviceControllerRegistry::GetInstance().SetProcessInfo(
         IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(),
         AudioBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid()));
+
+    auto sharedDevice = std::make_shared<VADevice>(device);
+    VADeviceManager::GetInstance().OnDevicesConnected(sharedDevice, vaDeviceController);
 
     return SUCCESS;
 }
