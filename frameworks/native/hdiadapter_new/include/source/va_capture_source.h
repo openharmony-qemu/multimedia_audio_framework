@@ -21,6 +21,7 @@
 #include <iostream>
 #include <cstring>
 #include <mutex>
+#include <sys/types.h>
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "util/callback_wrapper.h"
@@ -86,6 +87,10 @@ private:
     uint32_t captureId_ = HDI_INVALID_ID;
     std::string sourceName_ = "";
     IAudioSourceAttr attr_ = {};
+    pid_t pid_ = 0;
+    uid_t uid_ = 0;
+    std::string bundleName_;
+    bool processQosScheduled_ = false;
     std::atomic<bool> sourceInited_ = false;
     std::atomic<bool> started_ = false;
     std::mutex statusMutex_;

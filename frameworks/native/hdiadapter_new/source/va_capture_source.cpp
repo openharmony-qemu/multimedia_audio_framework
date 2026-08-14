@@ -29,6 +29,7 @@
 
 #include "manager/hdi_adapter_manager.h"
 #include "va_device_controller_registry.h"
+#include "audio_schedule.h"
 
 #include "hisysevent.h"
 
@@ -185,6 +186,10 @@ int32_t VACaptureSource::RequestSharedMem(const VASharedMemInfo &memInfo)
 int32_t VACaptureSource::StartInputStream()
 {
     if (accessoryInputStream_ != nullptr) {
+        if (VADeviceControllerRegistry::GetInstance().GetProcessInfo(pid_, uid_, bundleName_)) {
+            ScheduleReportProcessQosLevel(pid_, uid_, bundleName_.c_str());
+            processQosScheduled_ = true;
+        }
         return accessoryInputStream_->Start();
     }
     CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is nullptr");
@@ -194,7 +199,12 @@ int32_t VACaptureSource::StartInputStream()
 int32_t VACaptureSource::StopInputStream()
 {
     if (accessoryInputStream_ != nullptr) {
-        return accessoryInputStream_->Stop();
+        int32_t ret = accessoryInputStream_->Stop();
+        if (processQosScheduled_) {
+            UnscheduleReportProcessQosLevel(pid_, uid_, bundleName_.c_str());
+            processQosScheduled_ = false;
+        }
+        return ret;
     }
     CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is nullptr");
     return inputStream_->Stop();
