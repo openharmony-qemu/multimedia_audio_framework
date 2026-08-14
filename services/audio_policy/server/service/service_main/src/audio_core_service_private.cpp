@@ -4023,11 +4023,14 @@ void AudioCoreService::GetFlagForUltraFastStream(
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
         streamDesc->newDeviceDescs_.front() != nullptr, "Invalid stream desc");
-    CHECK_AND_RETURN_LOG(isSupportUltraFast_, "Ultra fast is not supported");
+    DeviceType deviceType = streamDesc->newDeviceDescs_.front()->getType();
+    bool isUltraFastSupported = (deviceType == DEVICE_TYPE_USB_ARM_HEADSET)
+        ? isSupportArmUsbUltraFast_
+        : isSupportUltraFast_;
+    CHECK_AND_RETURN_LOG(isUltraFastSupported, "Ultra fast is not supported for device type %{public}d", deviceType);
     CHECK_AND_RETURN_LOG(
         supportUltraFastBundleSet_.find(streamDesc->GetBundleName()) != supportUltraFastBundleSet_.end(),
         "Bundle name %{public}s is not in ultra fast support list", streamDesc->GetBundleName().c_str());
-    DeviceType deviceType = streamDesc->newDeviceDescs_.front()->getType();
     if (!pipeManager_->IsUltraFastSupportedDevice(deviceType)) {
         AUDIO_INFO_LOG("Device type %{public}d is not support ultra fast mode", deviceType);
         // Issue: Missing check for recreate triggered route reselection.

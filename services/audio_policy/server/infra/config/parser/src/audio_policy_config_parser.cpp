@@ -96,6 +96,8 @@ bool AudioPolicyConfigParser::LoadConfiguration()
     configManager_.OnVolumeGroupParsed(volumeGroupMap_);
     configManager_.OnInterruptGroupParsed(interruptGroupMap_);
     configManager_.OnGlobalConfigsParsed(globalConfigs_);
+    configManager_.OnSupportUltraFast(supportUltraFast_);
+    configManager_.OnSupportArmUsbUltraFast(supportArmUsbUltraFast_);
 
     AUDIO_INFO_LOG("Done");
     return true;
@@ -346,6 +348,9 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
     } else if (attributeInfo.name_ == "support_ultra_fast") {
         AUDIO_INFO_LOG("Support ultra fast");
         supportUltraFast_ = (attributeInfo.value_ == "true");
+    } else if (attributeInfo.name_ == "support_arm_usb_ultra_fast") {
+        AUDIO_INFO_LOG("Support arm usb ultra fast");
+        supportArmUsbUltraFast_ = (attributeInfo.value_ == "true");
     } else if (attributeInfo.name_ == "notuse_vendorid_productid") {
         if (attributeInfo.value_ == "All") {
             pipeInfo->allUsbDeviceDisable_ = true;

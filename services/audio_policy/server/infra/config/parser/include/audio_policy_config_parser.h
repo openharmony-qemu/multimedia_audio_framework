@@ -97,6 +97,7 @@ private:
     PolicyGlobalConfigs globalConfigs_;
     bool shouldOpenMicSpeaker_ = false;
     bool supportUltraFast_ = false;
+    bool supportArmUsbUltraFast_ = false;
     bool parseEarpiece_ = true;
     bool hasEarpiece_ = false;
     bool isVendorConfig_ = false;

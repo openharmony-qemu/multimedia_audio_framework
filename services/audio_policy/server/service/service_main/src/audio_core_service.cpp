@@ -469,6 +469,7 @@ void AudioCoreService::Init()
         AUDIO_ERR_LOG("Register for device status events failed");
     }
     isSupportUltraFast_ = pipeManager_->GetUltraFastFlag();
+    isSupportArmUsbUltraFast_ = pipeManager_->GetArmUsbUltraFastFlag();
 }
 
 void AudioCoreService::DeInit()
@@ -760,7 +761,9 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
     ret = FetchRendererPipeAndExecute(streamDesc, sessionId, flagInfo);
     flagInfo.staticCheckFlag = static_cast<uint32_t>(streamDesc->audioFlag_);
-    flagInfo.isSupportUltraFast = static_cast<bool>(isSupportUltraFast_);
+    flagInfo.isSupportUltraFast = (streamDesc->newDeviceDescs_.front()->getType() == DEVICE_TYPE_USB_ARM_HEADSET)
+        ? isSupportArmUsbUltraFast_
+        : isSupportUltraFast_;
     networkId = streamDesc->newDeviceDescs_.front()->networkId_;
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);

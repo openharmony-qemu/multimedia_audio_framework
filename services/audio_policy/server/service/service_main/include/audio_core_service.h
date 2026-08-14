@@ -1047,6 +1047,7 @@ private:
 
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     int32_t isSupportUltraFast_ = 0;
+    int32_t isSupportArmUsbUltraFast_ = 0;
 
     MultiConditionNotifier readyConditionNotifier_;
 };
