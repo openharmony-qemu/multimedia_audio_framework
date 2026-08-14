@@ -574,7 +574,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
             streamParams_.ecChannels);
     } else if (IsCamcorderMicInRequest(capturerInfo_, streamParams_)) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.micInChannels);
-        config.hasMicInChannel = true;
+        config.micInChannelCount = streamParams_.micInChannels;
     } else {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
     }
