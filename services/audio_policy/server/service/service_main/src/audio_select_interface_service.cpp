@@ -511,6 +511,7 @@ int32_t AudioSelectInterfaceService::SelectInputDeviceInner(sptr<AudioCapturerFi
         AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]",
             audioCapturerFilter->uid, GetEncryptStr(selectedDesc->networkId_).c_str());
         coreService->FetchInputDeviceAndRoute("SelectInputDevice_1");
+        coreService->FetchOutputDeviceAndRoute("SelectInputDevice_1");
         coreService->ReloadSourceForDeviceChange(AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(),
             AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(), "SelectInputDevice fast");
         return SUCCESS;
@@ -528,6 +529,7 @@ int32_t AudioSelectInterfaceService::SelectInputDeviceInner(sptr<AudioCapturerFi
 
     NotifyBtForInputDeviceSelection(selectedDesc, srcType);
     coreService->FetchInputDeviceAndRoute("SelectInputDevice_2");
+    coreService->FetchOutputDeviceAndRoute("SelectInputDevice_2");
 
     coreService->ReloadSourceForDeviceChange(AudioRouterSelectStrategy::GetInstance().Get1stCurrentInputDevice(),
         AudioRouterSelectStrategy::GetInstance().Get1stCurrentOutputDevice(), "SelectInputDevice");
@@ -544,6 +546,7 @@ int32_t AudioSelectInterfaceService::SelectInputDevice(sptr<AudioCapturerFilter>
             static_cast<uint32_t>(audioCapturerFilter->streamId), selectedDesc[0]);
         auto coreService = AudioCoreService::GetCoreService();
         CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
+        coreService->FetchOutputDeviceAndRoute("SelectInputDevice(clear)");
         coreService->FetchInputDeviceAndRoute("SelectInputDevice(clear)");
         return SUCCESS;
     }
@@ -591,6 +594,7 @@ int32_t AudioSelectInterfaceService::SelectInputDeviceByUid(const std::shared_pt
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
     coreService->FetchInputDeviceAndRoute("SelectInputDeviceByUid");
+    coreService->FetchOutputDeviceAndRoute("SelectInputDeviceByUid");
     return SUCCESS;
 }
 
