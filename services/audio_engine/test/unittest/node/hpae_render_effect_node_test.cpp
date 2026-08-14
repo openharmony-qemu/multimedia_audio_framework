@@ -1251,7 +1251,13 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_Create_001, TestSiz
     // Constructor with NearLink collaboration state
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
     EXPECT_NE(node, nullptr);
-    EXPECT_EQ(node->isCollaborationEnabled_, COLLABORATION_NEARLINK_OPEN);
+    // COLLABORATION_NEARLINK_OPEN + SCENE_COLLABORATIVE routes into the NearLink branch,
+    // which allocates tempEffectBuffer_ and leaves the BT-style outputs unset. Assert on
+    // these observable side effects: the isCollaborationEnabled_ name collides with the
+    // HpaeTempEffectBuffer base member, so reading it directly is not reliable.
+    EXPECT_NE(node->tempEffectBuffer_, nullptr);
+    EXPECT_EQ(node->directOutput_, nullptr);
+    EXPECT_EQ(node->collaborativeOutput_, nullptr);
 }
 
 /**
@@ -1271,7 +1277,12 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_Bt_Create_002, TestSize.Leve
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
     EXPECT_NE(node, nullptr);
-    EXPECT_EQ(node->isCollaborationEnabled_, COLLABORATION_BLUETOOTH_OPEN);
+    // COLLABORATION_BLUETOOTH_OPEN + SCENE_COLLABORATIVE takes the else branch, allocating
+    // directOutput_/collaborativeOutput_ and leaving tempEffectBuffer_ unset. Assert on these
+    // observable side effects (isCollaborationEnabled_ is not reliably readable).
+    EXPECT_EQ(node->tempEffectBuffer_, nullptr);
+    EXPECT_NE(node->directOutput_, nullptr);
+    EXPECT_NE(node->collaborativeOutput_, nullptr);
 }
 
 /**
@@ -1398,7 +1409,13 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_DefaultScene_008, T
     nodeInfo.sceneType = HPAE_SCENE_DEFAULT;
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
     EXPECT_NE(node, nullptr);
-    EXPECT_EQ(node->isCollaborationEnabled_, COLLABORATION_NEARLINK_OPEN);
+    // With HPAE_SCENE_DEFAULT the constructor maps sceneType_ to "SCENE_DEFAULT" and skips
+    // the SCENE_COLLABORATIVE block entirely, so no collaborative outputs are allocated
+    // even though the NearLink state was requested.
+    EXPECT_EQ(node->sceneType_, "SCENE_DEFAULT");
+    EXPECT_EQ(node->tempEffectBuffer_, nullptr);
+    EXPECT_EQ(node->directOutput_, nullptr);
+    EXPECT_EQ(node->collaborativeOutput_, nullptr);
 }
 
 // --- Phase 3D-2: AudioRenderer/OffloadRenderer lifecycle coverage ---
