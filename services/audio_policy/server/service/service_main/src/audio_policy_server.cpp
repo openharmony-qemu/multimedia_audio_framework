@@ -1898,16 +1898,6 @@ int32_t AudioPolicyServer::RestoreOutputDevice(const sptr<AudioRendererFilter> &
     return eventEntry_->SelectOutputDevice(audioRendererFilter, restoreDescs, 0);
 }
 
-int32_t AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamTypeIn,
-    std::string &info)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
-        "SelectInputDevice: No system permission");
-    AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
-    info = audioPolicyService_.GetSelectedDeviceInfo(uid, pid, streamType);
-    return SUCCESS;
-}
-
 int32_t AudioPolicyServer::SetMediaOutputDevice(int32_t deviceTypeIn)
 {
     CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERROR, "eventEntry_ is nullptr");
@@ -5972,7 +5962,7 @@ int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, int32_t para
     // the ENABLE parameter (passed BuildKaraokeParamString validation + HDI dispatch).
     CHECK_AND_RETURN_RET(ret && static_cast<KaraokeParamType>(paramType) ==
         KaraokeParamType::KARAOKE_PARAM_ENABLE, SUCCESS);
-    audioVolumeManager_.StartNearlinkKaraokeTransition(value != 0);
+    audioVolumeManager_.SetNearlinkKaraokeVolumeMode(value != 0);
     return SUCCESS;
 }
 

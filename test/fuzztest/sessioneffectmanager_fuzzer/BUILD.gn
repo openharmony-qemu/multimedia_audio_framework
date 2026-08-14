@@ -87,6 +87,7 @@ ohos_fuzztest("SessionEffectManagerFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "bluetooth:btframework",
+    "ffrt:libffrt",
   ]
 
   defines = []

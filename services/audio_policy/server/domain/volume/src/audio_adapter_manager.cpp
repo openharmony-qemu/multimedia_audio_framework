@@ -1362,19 +1362,18 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
     auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     static const AudioVolumeType voiceCallType = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_VOICE_CALL);
 
-    auto devForCall = audioActiveDevice_.GetDeviceForVolume(voiceCallType);
-    CHECK_AND_RETURN_LOG(devForCall != nullptr, "device is null");
-    if (device->networkId_ != devForCall->networkId_) {
-        AUDIO_INFO_LOG("[streamType:%{public}d] volume only depressed in same device", streamType);
-        return;
-    }
-
     auto &sceneManager = AudioSceneManager::GetInstance();
     AudioScene curScene = sceneManager.GetAudioScene(true);
 
     bool streamInCall = curScene == AUDIO_SCENE_PHONE_CALL || curScene == AUDIO_SCENE_PHONE_CHAT;
     bool updateLimit = volumeType == voiceCallType || volumeLimit_.load() == MAX_STREAM_VOLUME;
     if (streamInCall) {
+        auto devForCall = audioActiveDevice_.GetDeviceForVolume(voiceCallType);
+        CHECK_AND_RETURN_LOG(devForCall != nullptr, "device is null");
+        if (device->networkId_ != devForCall->networkId_) {
+            AUDIO_INFO_LOG("[streamType:%{public}d] volume only depressed in same device", streamType);
+            return;
+        }
         if (updateLimit) {
             int32_t volumeLevelForCall = GetStreamVolumeInternal(device, voiceCallType);
             float newLimit = volumeType == voiceCallType?

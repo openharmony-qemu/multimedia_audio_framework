@@ -82,6 +82,7 @@ ohos_fuzztest("AudioCoreServicePrivateGapFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "bluetooth:btframework",
+    "ffrt:libffrt",
   ]
 
   if (sonic_enable == true) {

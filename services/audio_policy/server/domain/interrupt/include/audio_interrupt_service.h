@@ -192,6 +192,7 @@ public:
     int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
         int32_t callerUid = INVALID_UID);
     void RefreshAudioSceneAfterDelay(const int32_t zoneId);
+    void CheckInterruptResponseAfterDelay(const int32_t zoneId, const InterruptResponseCheckInfo &info);
     void GetFocusDebugInfoByStreamId(uint32_t streamId, AudioDebugInfo &audioDebugInfo);
     int32_t GetSessionDebugInfo(int32_t pid, AudioSessionDebugInfo &sessionDebugInfo);
     std::vector<int32_t> FindAudioZonesByPid(int32_t pid);
@@ -204,6 +205,7 @@ private:
     static constexpr int32_t DEFAULT_APP_PID = -1;
     static constexpr int32_t RSS_UID = 1096;
     static constexpr int32_t SET_SCENE_DELAY = 120;
+    static constexpr int32_t INTERRUPT_RESPONSE_CHECK_DELAY = 1000;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
     std::unordered_map<int32_t, std::vector<CachedFocusInfo>> cachedFocusMap_;
@@ -216,6 +218,7 @@ private:
         const AudioInterrupt &audioInterrupt);
     void GameRecogSetParam(ClientType clientType, SourceType sourceType, bool switchOn);
     void VerifyFocusPermission(AudioInterrupt &audioInterrupt);
+    AudioScene MapToTargetAudioScene(const AudioScene audioScene) const;
 
     // Inner class for death handler
     class AudioInterruptDeathRecipient : public IRemoteObject::DeathRecipient {
@@ -498,6 +501,9 @@ private:
     std::unique_ptr<AudioInterruptCustom> interruptCustom_;
     std::shared_ptr<AudioInterruptDfx> interruptDfx_;
     std::unique_ptr<AudioInterruptStrategy> interruptStrategy_;
+
+    void PostInterruptResponseCheckAction(const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &audioInterrupt);
 
     AudioStreamCollector& streamCollector_;
     std::map<uint32_t, std::vector<AudioFocusBehavior>> audioFocusHisMap_;

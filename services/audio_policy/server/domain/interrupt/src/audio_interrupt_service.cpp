@@ -72,7 +72,7 @@ static const map<InterruptHint, InterruptStage> HINT_STAGE_MAP = {
 AudioScene GetAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
     if (audioInterrupt.isCallWaitingTone) {
-        return AUDIO_SCENE_DEFAULT;
+        return AUDIO_SCENE_CALL_WAITING_TONE;
     }
     if (audioInterrupt.audioFocusType.streamType == STREAM_RING) {
         return AUDIO_SCENE_RINGING;
@@ -111,10 +111,11 @@ private:
 
 static const std::unordered_map<const AudioScene, const int32_t> SCENE_PRIORITY = {
     // from high to low
-    {AUDIO_SCENE_PHONE_CALL, 5},
-    {AUDIO_SCENE_VOICE_RINGING, 4},
-    {AUDIO_SCENE_PHONE_CHAT, 3},
-    {AUDIO_SCENE_RINGING, 2},
+    {AUDIO_SCENE_PHONE_CALL, 6},
+    {AUDIO_SCENE_VOICE_RINGING, 5},
+    {AUDIO_SCENE_PHONE_CHAT, 4},
+    {AUDIO_SCENE_RINGING, 3},
+    {AUDIO_SCENE_CALL_WAITING_TONE, 2},
     {AUDIO_SCENE_DEFAULT, 1}
 };
 
@@ -2921,6 +2922,14 @@ void AudioInterruptService::HandleIncomingState(const int32_t &zoneId, const Aud
     }
 }
 
+AudioScene AudioInterruptService::MapToTargetAudioScene(const AudioScene audioScene) const
+{
+    if (audioScene == AUDIO_SCENE_CALL_WAITING_TONE) {
+        return AUDIO_SCENE_RINGING;
+    }
+    return audioScene;
+}
+
 AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zoneId) const
 {
     AudioScene audioScene = AUDIO_SCENE_DEFAULT;
@@ -2955,8 +2964,7 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
             ownerUid_ = interrupt.uid;
         }
     }
-
-    return audioScene;
+    return MapToTargetAudioScene(audioScene);
 }
 
 AudioScene AudioInterruptService::GetHighestPriorityAudioSceneFromAudioSession(
@@ -3338,6 +3346,7 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
             RemoveStreamIdSuggestionRecord(streamId);
         }
         SetStreamInterruptMute(interruptEvent, streamId, audioInterrupt);
+        PostInterruptResponseCheckAction(interruptEvent, audioInterrupt);
     }
 }
 
@@ -3441,7 +3450,8 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
         highestPriorityAudioScene = RefreshAudioSceneFromAudioInterrupt(
             focusInfo.first, highestPriorityAudioScene);
     }
-    UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(MapToTargetAudioScene(highestPriorityAudioScene),
+        DEACTIVATE_AUDIO_INTERRUPT, zoneId);
     
     bool isExistActiveInjectFocus = IsActiveInjectFocusExist(audioFocusInfoList);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList = SimulateFocusEntry(zoneId);
@@ -3552,8 +3562,8 @@ void AudioInterruptService::RefreshAudioSceneAfterDelay(const int32_t zoneId)
         highestPriorityAudioScene = RefreshAudioSceneFromAudioInterrupt(
             focusInfo.first, highestPriorityAudioScene);
     }
-
-    UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(MapToTargetAudioScene(highestPriorityAudioScene),
+        DEACTIVATE_AUDIO_INTERRUPT, zoneId);
     AUDIO_INFO_LOG("Refreshed audio scene for zone %{public}d after delay, scene: %{public}d",
         zoneId, highestPriorityAudioScene);
 }

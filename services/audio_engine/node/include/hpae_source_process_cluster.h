@@ -51,6 +51,9 @@ public:
     int32_t CaptureEffectRelease(uint64_t sceneKeyCode);
     bool IsEffectNodeValid();
     int32_t SetAppsEnhanceMuteState(bool isMute);
+    void IncEffectRefCount();
+    void DecEffectRefCount();
+    uint32_t GetEffectRefCount();
 
     // for ut test
     uint32_t GetMixerNodeUseCount();
@@ -60,6 +63,7 @@ public:
 private:
     std::shared_ptr<HpaeCaptureEffectNode> captureEffectNode_;
     std::shared_ptr<HpaeMixerNode> mixerNode_;
+    uint32_t effectRefCount_ = 0;
     std::unordered_map<std::string, std::shared_ptr<HpaeAudioFormatConverterNode>> fmtConverterNodeMap_;
     std::unordered_map<std::shared_ptr<OutputNode<HpaePcmBuffer*>>,
         std::shared_ptr<HpaeAudioFormatConverterNode>> injectorFmtConverterNodeMap_;

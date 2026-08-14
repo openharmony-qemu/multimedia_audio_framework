@@ -236,5 +236,69 @@ HWTEST_F(MultiConditionWaiterUnitTest, WaitFor_WaitLimitIndependentWaiters_001, 
     EXPECT_EQ(firstWaitTask.get(), MultiConditionWaiter::WaitResult::SUCCESS);
     EXPECT_EQ(secondWaitTask.get(), MultiConditionWaiter::WaitResult::SUCCESS);
 }
+
+/**
+ * @tc.name  : Wait_AlreadyCompleted_001
+ * @tc.number: Wait_AlreadyCompleted_001
+ * @tc.desc  : Test Wait returns success immediately when target condition is already completed.
+ */
+HWTEST_F(MultiConditionWaiterUnitTest, Wait_AlreadyCompleted_001, TestSize.Level4)
+{
+    MultiConditionNotifier notifier;
+    MultiConditionWaiter waiter = notifier.CreateWaiter();
+
+    notifier.NotifySuccess(FIRST_CONDITION);
+    auto result = waiter.Wait(FIRST_CONDITION);
+
+    EXPECT_EQ(result, MultiConditionWaiter::WaitResult::SUCCESS);
+}
+
+/**
+ * @tc.name  : Wait_WaiterLimitExceeded_001
+ * @tc.number: Wait_WaiterLimitExceeded_001
+ * @tc.desc  : Test Wait returns wait limit exceeded when concurrent wait count reaches the limit.
+ */
+HWTEST_F(MultiConditionWaiterUnitTest, Wait_WaiterLimitExceeded_001, TestSize.Level4)
+{
+    constexpr int32_t waitLimit = 1;
+    MultiConditionNotifier notifier;
+    MultiConditionWaiter waiter = notifier.CreateWaiter();
+
+    auto firstWaitTask = std::async(std::launch::async, [&waiter]() {
+        return waiter.Wait(FIRST_CONDITION, waitLimit);
+    });
+    std::this_thread::sleep_for(SHORT_WAIT_TIME);
+
+    auto secondResult = waiter.Wait(FIRST_CONDITION, waitLimit);
+    EXPECT_EQ(secondResult, MultiConditionWaiter::WaitResult::WAIT_LIMIT_EXCEEDED);
+
+    notifier.NotifySuccess(FIRST_CONDITION);
+    EXPECT_EQ(firstWaitTask.get(), MultiConditionWaiter::WaitResult::SUCCESS);
+}
+
+/**
+ * @tc.name  : Wait_WaitLimitIndependentWaiters_001
+ * @tc.number: Wait_WaitLimitIndependentWaiters_001
+ * @tc.desc  : Test wait count limit is independent for waiters sharing the same notifier data.
+ */
+HWTEST_F(MultiConditionWaiterUnitTest, Wait_WaitLimitIndependentWaiters_001, TestSize.Level4)
+{
+    constexpr int32_t waitLimit = 1;
+    MultiConditionNotifier notifier;
+    MultiConditionWaiter firstWaiter = notifier.CreateWaiter();
+    MultiConditionWaiter secondWaiter = notifier.CreateWaiter();
+
+    auto firstWaitTask = std::async(std::launch::async, [&firstWaiter]() {
+        return firstWaiter.Wait(FIRST_CONDITION, waitLimit);
+    });
+    auto secondWaitTask = std::async(std::launch::async, [&secondWaiter]() {
+        return secondWaiter.Wait(FIRST_CONDITION, waitLimit);
+    });
+    std::this_thread::sleep_for(SHORT_WAIT_TIME);
+
+    notifier.NotifySuccess(FIRST_CONDITION);
+    EXPECT_EQ(firstWaitTask.get(), MultiConditionWaiter::WaitResult::SUCCESS);
+    EXPECT_EQ(secondWaitTask.get(), MultiConditionWaiter::WaitResult::SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

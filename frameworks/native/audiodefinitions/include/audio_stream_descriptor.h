@@ -515,7 +515,7 @@ public:
 
 private:
     bool WriteDeviceDescVectorToParcel(
-        Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const;
+        Parcel &parcel, const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const;
     void UnmarshallingDeviceDescVector(Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 
     void DumpCommonAttrs(std::string &dumpString);
@@ -523,7 +523,7 @@ private:
     void DumpCapturerStreamAttrs(std::string &dumpString);
     void DumpDeviceAttrs(std::string &dumpString);
 
-    std::mutex lock_;
+    mutable std::mutex lock_;
     std::shared_mutex ultraFastFlagLock_;
     uint32_t ultraFastFlag_ = ULTRA_NONE;
     std::atomic<bool> forcedNormalFlag_ = false;

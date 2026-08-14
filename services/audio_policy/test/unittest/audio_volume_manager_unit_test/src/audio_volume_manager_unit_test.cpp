@@ -1991,5 +1991,103 @@ HWTEST_F(AudioVolumeManagerUnitTest, ClearLoudVolumeHoldMapForCall_002, TestSize
     int32_t ret = audioVolumeManager->ClearLoudVolumeHoldMapForCall();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+// ---------------------------------------------------------------------------
+// Nearlink karaoke volume mode UT
+// Coverage scope: guard / idempotent / error branches that do not require a
+// real nearlink device to be active. The device-dependent happy paths
+// (enable/disable main flow, RefreshKaraokePipeVolume, ApplyKaraokeAbsVolume
+// success) need an active nearlink device + HAL and are left to integration
+// tests. Private members/methods are reachable via -fno-access-control.
+// ---------------------------------------------------------------------------
+
+/**
+* @tc.name  : Test IsNearlinkKaraokeVolumeManaged.
+* @tc.number: IsNearlinkKaraokeVolumeManaged_001
+* @tc.desc  : Non-MUSIC stream is not managed by nearlink karaoke volume.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, IsNearlinkKaraokeVolumeManaged_001, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    // streamType != STREAM_MUSIC branch -> false
+    EXPECT_FALSE(audioVolumeManager.IsNearlinkKaraokeVolumeManaged(STREAM_VOICE_CALL));
+}
+
+/**
+* @tc.name  : Test IsNearlinkKaraokeVolumeManaged.
+* @tc.number: IsNearlinkKaraokeVolumeManaged_002
+* @tc.desc  : MUSIC on non-nearlink output is not managed by nearlink karaoke volume.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, IsNearlinkKaraokeVolumeManaged_002, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    // active output device is not nearlink branch -> false
+    EXPECT_FALSE(audioVolumeManager.IsNearlinkKaraokeVolumeManaged(STREAM_MUSIC));
+}
+
+/**
+* @tc.name  : Test SetNearlinkKaraokeVolumeMode.
+* @tc.number: SetNearlinkKaraokeVolumeMode_001
+* @tc.desc  : Enable returns ERROR when no nearlink device is active (device check guard).
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetNearlinkKaraokeVolumeMode_001, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    // curOutputDeviceType != DEVICE_TYPE_NEARLINK -> ERROR
+    EXPECT_EQ(audioVolumeManager.SetNearlinkKaraokeVolumeMode(true), ERROR);
+}
+
+/**
+* @tc.name  : Test SetNearlinkKaraokeVolumeMode.
+* @tc.number: SetNearlinkKaraokeVolumeMode_002
+* @tc.desc  : Disable returns ERROR when no nearlink device is active (device check guard).
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetNearlinkKaraokeVolumeMode_002, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    // curOutputDeviceType != DEVICE_TYPE_NEARLINK -> ERROR
+    EXPECT_EQ(audioVolumeManager.SetNearlinkKaraokeVolumeMode(false), ERROR);
+}
+
+/**
+* @tc.name  : Test EnableNearlinkKaraokeVolume idempotent.
+* @tc.number: EnableNearlinkKaraokeVolume_001
+* @tc.desc  : Enable returns SUCCESS immediately when already in FWK mode (idempotent guard).
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, EnableNearlinkKaraokeVolume_001, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+    // already VOLUME_FWK -> idempotent return SUCCESS before touching device/HAL
+    audioVolumeManager->nearlinkKaraokeMode_ = NearlinkKaraokeVolumeMode::VOLUME_FWK;
+    EXPECT_EQ(audioVolumeManager->EnableNearlinkKaraokeVolume("00:00:00:00:00"), SUCCESS);
+}
+
+/**
+* @tc.name  : Test DisableNearlinkKaraokeVolume idempotent.
+* @tc.number: DisableNearlinkKaraokeVolume_001
+* @tc.desc  : Disable returns SUCCESS immediately when already in NEARLINK mode (idempotent guard).
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, DisableNearlinkKaraokeVolume_001, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+    // already VOLUME_NEARLINK -> idempotent return SUCCESS before touching device/HAL
+    audioVolumeManager->nearlinkKaraokeMode_ = NearlinkKaraokeVolumeMode::VOLUME_NEARLINK;
+    EXPECT_EQ(audioVolumeManager->DisableNearlinkKaraokeVolume("00:00:00:00:00"), SUCCESS);
+}
+
+/**
+* @tc.name  : Test ApplyKaraokeAbsVolume.
+* @tc.number: ApplyKaraokeAbsVolume_001
+* @tc.desc  : ApplyKaraokeAbsVolume returns error when the device is not registered.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, ApplyKaraokeAbsVolume_001, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+    // unregistered mac -> SetDeviceAbsVolume fails (device not found) -> error returned
+    EXPECT_EQ(audioVolumeManager->ApplyKaraokeAbsVolume("invalid_mac_addr", 5), ERR_INVALID_PARAM);
+}
 } // namespace AudioStandard
 } // namespace OHOS

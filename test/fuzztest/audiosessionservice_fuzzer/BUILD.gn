@@ -46,6 +46,7 @@ ohos_fuzztest("AudioSessionServiceFuzzTest") {
     "hilog:libhilog",
     "eventhandler:libeventhandler",
     "ipc:ipc_single",
+    "ffrt:libffrt",
   ]
 
   defines = []

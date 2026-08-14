@@ -255,6 +255,22 @@ bool HpaeSourceProcessCluster::IsEffectNodeValid()
     return captureEffectNode_ != nullptr;
 }
 
+void HpaeSourceProcessCluster::IncEffectRefCount()
+{
+    effectRefCount_++;
+}
+
+void HpaeSourceProcessCluster::DecEffectRefCount()
+{
+    CHECK_AND_RETURN(effectRefCount_ > 0);
+    effectRefCount_--;
+}
+
+uint32_t HpaeSourceProcessCluster::GetEffectRefCount()
+{
+    return effectRefCount_;
+}
+
 // for ut test
 uint32_t HpaeSourceProcessCluster::GetMixerNodeUseCount()
 {

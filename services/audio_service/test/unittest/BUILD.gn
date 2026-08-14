@@ -917,6 +917,7 @@ ohos_unittest("capturer_in_client_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 }
 
@@ -1143,6 +1144,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "ability_runtime:extension_manager",
     "init:libbegetutil",
     "cJSON:cjson",
+    "ffrt:libffrt",
   ]
 
   defines = []

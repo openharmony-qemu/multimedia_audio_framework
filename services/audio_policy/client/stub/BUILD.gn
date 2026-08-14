@@ -114,6 +114,7 @@ ohos_unittest("audio_zone_client_unit_test") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
     "access_token:libtokensetproc_shared",
+    "ffrt:libffrt",
   ]
 
   sources = [
@@ -207,6 +208,7 @@ ohos_unittest("audio_policy_manager_listener_stub_impl_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 
   sources = [ 
@@ -304,6 +306,7 @@ ohos_unittest("sle_audio_operation_callback_stub_impl_unit_test") {
     "accessibility:accessibility_common",
     "accessibility:accessibilityconfig",
     "ability_runtime:wantagent_innerkits",
+    "ffrt:libffrt",
   ]
 
   sources = [

@@ -168,26 +168,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_005, TestSize.Lev
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: AudioPolicyServiceTest_006
-* @tc.desc  : Test GetSelectedDeviceInfo interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_006, TestSize.Level1)
-{
-    int32_t uid = 123, pid = 123;
-    auto ret = AudioPolicyService::GetAudioPolicyService().GetSelectedDeviceInfo(uid, pid, STREAM_MUSIC);
-    EXPECT_EQ("", ret);
-
-    AudioRouteMap::GetInstance().AddRouteMapInfo(uid, "LocalDevice", pid);
-    ret = AudioPolicyService::GetAudioPolicyService().GetSelectedDeviceInfo(uid, pid, STREAM_MUSIC);
-    EXPECT_EQ("", ret);
-
-    AudioRouteMap::GetInstance().AddRouteMapInfo(uid, "test", pid);
-    ret = AudioPolicyService::GetAudioPolicyService().GetSelectedDeviceInfo(uid, pid, STREAM_MUSIC);
-    EXPECT_EQ("", ret);
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
 * @tc.number: AudioPolicyServiceTest_07
 * @tc.desc  : Test LoadModernOffloadCapSource interfaces.
 */

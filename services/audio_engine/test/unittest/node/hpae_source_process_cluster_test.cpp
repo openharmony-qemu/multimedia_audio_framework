@@ -702,6 +702,34 @@ HWTEST_F(HpaeSourceProcessClusterTest, FaultCode_GetOutputPort_001, TestSize.Lev
     OutputPort<HpaePcmBuffer *> *port = cluster->GetOutputPort(differentNodeInfo, false);
     EXPECT_NE(port, nullptr);
 }
+
+/**
+ * @tc.name  : EffectRefCount_001
+ * @tc.type  : FUNC
+ * @tc.number: EffectRefCount_001
+ * @tc.desc  : Test IncEffectRefCount/DecEffectRefCount/GetEffectRefCount; counter is clamped at 0.
+ */
+HWTEST_F(HpaeSourceProcessClusterTest, EffectRefCount_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    auto cluster = std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
+
+    EXPECT_EQ(cluster->GetEffectRefCount(), 0);
+
+    cluster->IncEffectRefCount();
+    cluster->IncEffectRefCount();
+    EXPECT_EQ(cluster->GetEffectRefCount(), 2);
+
+    cluster->DecEffectRefCount();
+    EXPECT_EQ(cluster->GetEffectRefCount(), 1);
+
+    cluster->DecEffectRefCount();
+    EXPECT_EQ(cluster->GetEffectRefCount(), 0);
+
+    // underflow guard: DecEffectRefCount on a zero counter is a no-op
+    cluster->DecEffectRefCount();
+    EXPECT_EQ(cluster->GetEffectRefCount(), 0);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

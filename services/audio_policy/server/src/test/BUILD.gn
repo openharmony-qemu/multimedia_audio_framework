@@ -99,6 +99,7 @@ ohos_unittest("audio_policy_manager_listener_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./src/audio_policy_manager_listener_unit_test.cpp" ]

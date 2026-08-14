@@ -59,6 +59,7 @@ ohos_fuzztest("DfxUtilsFuzzTest") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
+    "ffrt:libffrt",
   ]
   if (sonic_enable == true) {
     external_deps += [ "sonic:sonic" ]

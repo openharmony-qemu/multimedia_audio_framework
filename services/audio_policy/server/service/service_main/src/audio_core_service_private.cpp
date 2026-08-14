@@ -2874,10 +2874,6 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
     bool isEnhancedRouting = Util::IsEnhancedRoutingSupported();
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
-    if (isEnhancedRouting) {
-        pipeList = pipeManager_->GetPipeList();
-    }
     for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
         if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
@@ -2888,7 +2884,7 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
                 AudioStreamDeviceChangeReasonExt::ExtEnum::CALL_OR_RING_TO_DEFAULT : reason;
             std::string oldClassName;
             std::string oldModuleName;
-            CaptureOldPipeInfo(isEnhancedRouting, pipeList, streamDesc->sessionId_, oldClassName, oldModuleName);
+            CaptureOldPipeInfo(isEnhancedRouting, streamDesc->sessionId_, oldClassName, oldModuleName);
             std::string overrideCls = (oldClassName == PRIMARY_EXTRA_CLASS) ? oldClassName : "";
             std::string overrideInfo = (oldClassName == PRIMARY_EXTRA_CLASS) ? oldModuleName : "";
             MuteSinkPortForSwitchDevice(streamDesc, muteReason, overrideCls, overrideInfo);
@@ -2899,15 +2895,13 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
     return true;
 }
 
-void AudioCoreService::CaptureOldPipeInfo(bool isEnhancedRouting,
-    const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList, uint32_t sessionId,
+void AudioCoreService::CaptureOldPipeInfo(bool isEnhancedRouting, uint32_t sessionId,
     std::string &oldClassName, std::string &oldModuleName)
 {
     CHECK_AND_RETURN(isEnhancedRouting);
-    auto pipeInfo = pipeManager_->FindPipeBySessionId(pipeList, sessionId);
-    CHECK_AND_RETURN(pipeInfo != nullptr);
-    oldClassName = pipeInfo->moduleInfo_.className;
-    oldModuleName = pipeInfo->moduleInfo_.name;
+    CHECK_AND_RETURN(pipeManager_ != nullptr);
+    oldClassName = pipeManager_->GetClassNameBySessionId(sessionId);
+    oldModuleName = pipeManager_->GetModuleNameBySessionId(sessionId);
 }
 
 void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,

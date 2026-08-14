@@ -52,6 +52,7 @@ ohos_fuzztest("AudioRouterInfraFuzzTest") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
+    "ffrt:libffrt",
   ]
 
   defines = []

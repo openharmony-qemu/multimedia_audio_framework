@@ -64,6 +64,7 @@ ohos_unittest("audio_router_context_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./audio_router_context_test_base.cpp",

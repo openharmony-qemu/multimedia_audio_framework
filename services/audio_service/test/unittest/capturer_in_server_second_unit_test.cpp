@@ -1640,5 +1640,56 @@ HWTEST_F(CapturerInServerSecondUnitTest, RecordPrivacyManager_NeedTurnOnMicIndic
     result = manager.NeedTurnOnMicIndicator(5527, false, SOURCE_TYPE_MIC);
     EXPECT_FALSE(result);
 }
+/**
+ * @tc.name  : Test RecordPrivacyManager NotifyPrivacyStart when sessionId already exists.
+ * @tc.type  : FUNC
+ * @tc.number: RecordPrivacyManager_NotifyPrivacyStart_003
+ * @tc.desc  : Test NotifyPrivacyStart when tokenId exists and sessionId already exists.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RecordPrivacyManager_NotifyPrivacyStart_003, TestSize.Level1)
+{
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+
+    uint32_t tokenId = 1001;
+    uint32_t sessionId = 100;
+
+    manager.tokenIdRecordMap_[tokenId].emplace(sessionId);
+    EXPECT_EQ(manager.tokenIdRecordMap_[tokenId].size(), 1);
+
+    bool result = manager.NotifyPrivacyStart(tokenId, sessionId);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(manager.tokenIdRecordMap_[tokenId].size(), 1);
+
+    manager.tokenIdRecordMap_.clear();
+}
+
+/**
+ * @tc.name  : Test RecordPrivacyManager NotifyPrivacyStop when set is not empty after erase.
+ * @tc.type  : FUNC
+ * @tc.number: RecordPrivacyManager_NotifyPrivacyStop_002
+ * @tc.desc  : Test NotifyPrivacyStop when there are still other sessionIds in the set.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RecordPrivacyManager_NotifyPrivacyStop_002, TestSize.Level1)
+{
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+
+    uint32_t tokenId = 1001;
+    uint32_t sessionId1 = 100;
+    uint32_t sessionId2 = 200;
+
+    manager.tokenIdRecordMap_[tokenId].emplace(sessionId1);
+    manager.tokenIdRecordMap_[tokenId].emplace(sessionId2);
+    EXPECT_EQ(manager.tokenIdRecordMap_[tokenId].size(), 2);
+
+    bool result = manager.NotifyPrivacyStop(tokenId, sessionId1);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(manager.tokenIdRecordMap_[tokenId].size(), 1);
+    EXPECT_NE(manager.tokenIdRecordMap_.find(tokenId), manager.tokenIdRecordMap_.end());
+
+    manager.tokenIdRecordMap_.clear();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

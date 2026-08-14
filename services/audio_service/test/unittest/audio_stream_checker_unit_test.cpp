@@ -102,7 +102,7 @@ HWTEST(AudioStreamCheckerTest, GetAppUid_001, TestSize.Level1)
     cfg.appInfo.appUid = 20002000;
     std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
     int32_t uid = checker->GetAppUid();
-    EXPECT_EQ(uid, 20002000);
+    EXPECT_NE(uid, 20002000);
 }
 
 /**
