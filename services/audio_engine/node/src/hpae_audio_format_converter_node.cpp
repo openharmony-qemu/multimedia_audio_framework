@@ -41,6 +41,9 @@ constexpr uint32_t PROCESSED_BUFFER_COMPACTION_DIVISOR = 2;
 //  - Scenario B: HAL has a split layout (micInChannels>0) but the app only wants main -> main = pre - halMicIn.
 //  - Scenario C: app wants micIn (micInChannelCount>0) but the HAL has none (micInChannels==0) -> main = total - appMicIn.
 // Returns preNodeInfo.channels otherwise (passthrough / full-channel path).
+// channelLayout is deliberately left untouched: ChannelConverter::IsValidChLayout self-corrects a
+// layout whose bit count mismatches numChannels to the default layout, so pairing a total-channel
+// layout with a main-only count cannot corrupt the downmix/upmix matrix.
 uint32_t CalcEffectiveInChannels(const HpaeNodeInfo &preNodeInfo, const HpaeNodeInfo &nodeInfo)
 {
     uint32_t preChannels = static_cast<uint32_t>(preNodeInfo.channels);
@@ -370,6 +373,11 @@ void HpaeAudioFormatConverterNode::UpdateNodeInfoOnOutChange(uint32_t numChannel
     nodeInfo.channels = micInZeroPadMode_
         ? static_cast<AudioChannel>(effectiveInChannels_ + static_cast<uint32_t>(nodeInfo.micInChannelCount))
         : static_cast<AudioChannel>(numChannels);
+    // Partition contract (zero-pad): channelLayout keeps the app's total-channel layout, while the
+    // actual buffer is NON-interleaved [main block][micIn zero block]. Downstream consumers of a
+    // camcorder micIn stream already interpret the buffer as partitioned per the HAL passthrough
+    // convention (established by front-extract); the layout is metadata only (DFX/dump) and is
+    // never used to interleave-decode this stream.
     nodeInfo.channelLayout = (AudioChannelLayout)channelLayout;
     uint32_t newOutRate = resampler_->GetOutRate();
     nodeInfo.samplingRate = (AudioSamplingRate)newOutRate;
@@ -390,6 +398,16 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
         : input->GetChannelCount();
     uint64_t channelLayout = input->GetChannelLayout();
     uint32_t sampleRate = input->GetSampleRate();
+    // MicIn split modes freeze the effective width at construction; if the upstream source is
+    // reconfigured mid-stream (channel count changed), the frozen width is silently wrong.
+    // Keep this observable: warn and let the graph owner rebuild the node.
+    if ((frontChannelExtractMode_ || micInZeroPadMode_) && lastUpstreamChannels_ != 0 &&
+        input->GetChannelCount() != lastUpstreamChannels_) {
+        AUDIO_WARNING_LOG("NodeId %{public}d: upstream channels changed %{public}u -> %{public}u, "
+            "frozen effectiveInChannels_ %{public}u may be stale, node rebuild required",
+            GetNodeId(), lastUpstreamChannels_, input->GetChannelCount(), effectiveInChannels_);
+    }
+    lastUpstreamChannels_ = input->GetChannelCount();
     AudioChannelInfo curInChannelInfo = channelConverter_.GetInChannelInfo();
     bool isInfoUpdated = false;
     // update channels and channelLayout
@@ -445,6 +463,20 @@ void HpaeAudioFormatConverterNode::InitFrontExtractMode(const HpaeNodeInfo &preN
         AUDIO_INFO_LOG("NodeId %{public}d: micIn-zero-pad on, main %{public}u ch resampled, "
             "micIn %{public}u ch zero-filled (total %{public}u)", GetNodeId(),
             effectiveInChannels_, nodeInfo.micInChannelCount, totalChannels);
+    } else if (nodeInfo.sourceType == SOURCE_TYPE_CAMCORDER &&
+        (nodeInfo.micInChannelCount > 0 || static_cast<uint32_t>(nodeInfo.micInChannels) > 0) &&
+        (totalChannels != preChannels || static_cast<uint32_t>(nodeInfo.micInChannels) >= preChannels ||
+        nodeInfo.micInChannelCount >= totalChannels)) {
+        // Neither split mode engaged although micIn info is present: either pre/total channel
+        // counts disagree (fields not synced on this creation path -- only
+        // HpaeCapturerManager::CreateOutputSession fills them) or the combination is malformed
+        // (halMicIn >= preChannels / appMicIn >= totalChannels). Behavior degrades to legacy
+        // interleaved passthrough -- keep that observable for field diagnosis.
+        AUDIO_WARNING_LOG("NodeId %{public}d: camcorder micIn combo not engaged "
+            "(micInChannels %{public}u, micInChannelCount %{public}u, pre %{public}u ch, total %{public}u ch), "
+            "fall back to interleaved passthrough", GetNodeId(),
+            static_cast<uint32_t>(nodeInfo.micInChannels), nodeInfo.micInChannelCount,
+            preChannels, totalChannels);
     }
 }
 

@@ -88,6 +88,9 @@ private:
     // scenario C (camcorder, app wants micIn but HAL micInChannels==0): resample main,
     // then zero-fill the trailing micIn block of the partitioned output.
     bool micInZeroPadMode_ = false;
+    // upstream channel count seen last cycle; used to detect mid-stream source reconfig
+    // while the micIn modes keep the effective width frozen (warning only).
+    uint32_t lastUpstreamChannels_ = 0;
     std::unique_ptr<Resampler> resampler_ = nullptr;
     ChannelConverter channelConverter_;
     HpaePcmBuffer tmpOutBuf_; // cache between resample and converter
