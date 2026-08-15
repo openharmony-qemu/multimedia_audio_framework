@@ -585,7 +585,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     }
 
     auto it = sceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey);
-    if (it == sceneTypeToEffectChainMap_.end() || it->second == nullptr) {\
+    if (it == sceneTypeToEffectChainMap_.end() || it->second == nullptr) {
         AUDIO_WARNING_LOG("effect chain not found for scene type: %{public}s", sceneTypeAndDeviceKey.c_str());
         return ERROR;
     }
