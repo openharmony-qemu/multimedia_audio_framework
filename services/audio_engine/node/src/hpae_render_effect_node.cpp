@@ -179,13 +179,8 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     uint64_t outChannelLayout = effectNodeInfo.channelLayout;
 
     auto eBufferAttr = std::make_unique<EffectBufferAttr>(
-        inputs[0]->GetPcmDataBuffer(),
-        effectOutput_.GetPcmDataBuffer(),
-        static_cast<int32_t>(inputs[0]->GetChannelCount()),
-        static_cast<int32_t>(inputs[0]->GetFrameLen()),
-        0,
-        0
-    );
+        inputs[0]->GetPcmDataBuffer(), effectOutput_.GetPcmDataBuffer(),
+        static_cast<int32_t>(inputs[0]->GetChannelCount()), static_cast<int32_t>(inputs[0]->GetFrameLen()), 0, 0);
 
     int32_t ret;
     if (Util::IsEnhancedRoutingSupported()) {
@@ -195,17 +190,21 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
         ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, eBufferAttr,
             outchannels, outChannelLayout);
     }
-
-    ReconfigOutputBuffer(outchannels, outChannelLayout);
-    if (ret == EFFECT_OFFLOAD_BYPASS) {
-        return inputs[0];
+    switch (ret) {
+        case EFFECT_OFFLOAD_BYPASS:
+            return inputs[0];
+        case EFFECT_NEED_RECONFIG:
+            ReconfigOutputBuffer(outchannels, outChannelLayout);
+            return inputs[0];
+        case ERROR:
+            AUDIO_ERR_LOG("apply audio effect chain fail, ret: %{public}d", ret);
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED), "apply audio effect chain fail", false);
+            return inputs[0];
+        default:
+            break;
     }
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, inputs[0],
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-                BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
-            "apply audio effect chain fail", false),
-        "apply audio effect chain fail, ret: %{public}d", ret);
 
     effectOutput_.SetBufferState(inputs[0]->GetBufferState());
     effectOutput_.SetBufferValid(true);

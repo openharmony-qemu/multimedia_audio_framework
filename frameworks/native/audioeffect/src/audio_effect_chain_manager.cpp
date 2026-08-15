@@ -578,7 +578,6 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     Trace trace("AudioEffectChainManager::ApplyAudioEffectChain: " + sceneType + " frameLen: " +
         std::to_string(bufferAttr->frameLen) + " numChans: " + std::to_string(bufferAttr->numChans));
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    size_t totLen = static_cast<size_t>(bufferAttr->frameLen * bufferAttr->numChans * sizeof(float));
     std::lock_guard<std::mutex> lock(dynamicMutex_);
 
     if (GetOffloadEnabled()) {
@@ -586,19 +585,17 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     }
 
     auto it = sceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey);
-    if (it == sceneTypeToEffectChainMap_.end() || it->second == nullptr) {
-        CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
-            "memcpy error when no effect applied");
+    if (it == sceneTypeToEffectChainMap_.end() || it->second == nullptr) {\
+        AUDIO_WARNING_LOG("effect chain not found for scene type: %{public}s", sceneTypeAndDeviceKey.c_str());
         return ERROR;
     }
 
     auto audioEffectChain = it->second;
     uint32_t currentChannels = outChannels;
+    uint64_t currentChannelLayout = outChannelLayout;
     audioEffectChain->UpdateBufferConfig(outChannels, outChannelLayout);
-    if (outChannels != currentChannels) {
-        CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
-            "memcpy error when channel changed, need reconfig");
-        return ERROR;
+    if (outChannels != currentChannels || outChannelLayout != currentChannelLayout) {
+        return EFFECT_NEED_RECONFIG;
     }
     AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
@@ -614,7 +611,6 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
         "_r_" + std::to_string(renderId) + " frameLen: " +
         std::to_string(bufferAttr->frameLen) + " numChans: " + std::to_string(bufferAttr->numChans));
     std::string sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneType, deviceType, renderId);
-    size_t totLen = static_cast<size_t>(bufferAttr->frameLen * bufferAttr->numChans * sizeof(float));
     std::lock_guard<std::mutex> lock(dynamicMutex_);
 
     if (GetOffloadEnabled()) {
@@ -623,18 +619,16 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
 
     auto it = sceneTypeToEffectChainMap_.find(sceneTypeAndDeviceKey);
     if (it == sceneTypeToEffectChainMap_.end() || it->second == nullptr) {
-        CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
-            "memcpy error when no effect applied");
+        AUDIO_WARNING_LOG("effect chain not found for scene type: %{public}s", sceneTypeAndDeviceKey.c_str());
         return ERROR;
     }
 
     auto audioEffectChain = it->second;
     uint32_t currentChannels = outChannels;
+    uint64_t currentChannelLayout = outChannelLayout;
     audioEffectChain->UpdateBufferConfig(outChannels, outChannelLayout);
-    if (outChannels != currentChannels) {
-        CHECK_AND_RETURN_RET_LOG(memcpy_s(bufferAttr->bufOut, totLen, bufferAttr->bufIn, totLen) == 0, ERROR,
-            "memcpy error when channel changed, need reconfig");
-        return ERROR;
+    if (outChannels != currentChannels || outChannelLayout != currentChannelLayout) {
+        return EFFECT_NEED_RECONFIG;
     }
     AudioEffectProcInfo procInfo = {headTrackingEnabled_, btOffloadEnabled_};
     audioEffectChain->ApplyEffectChain(bufferAttr->bufIn, bufferAttr->bufOut, bufferAttr->frameLen, procInfo);
