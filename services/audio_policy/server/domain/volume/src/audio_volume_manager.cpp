@@ -620,13 +620,14 @@ int32_t AudioVolumeManager::SetNearlinkKaraokeVolumeMode(bool enable)
 {
     Trace trace("AudioVolumeManager::SetNearlinkKaraokeVolumeMode");
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    CHECK_AND_RETURN_RET_LOG(curOutputDeviceType == DEVICE_TYPE_NEARLINK, ERROR,
-        "KARAOKE: nearlink karaoke volume mode only supports nearlink output");
-    std::string curOutputDeviceMacAddr = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
-    if (enable) {
-        return EnableNearlinkKaraokeVolume(curOutputDeviceMacAddr);
+    if (curOutputDeviceType != DEVICE_TYPE_NEARLINK) {
+        CHECK_AND_RETURN_RET_LOG(!enable, ERROR, "KARAOKE: nearlink karaoke volume mode only supports nearlink output");
+        std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
+        nearlinkKaraokeMode_ = NearlinkKaraokeVolumeMode::VOLUME_NEARLINK;
+        AUDIO_INFO_LOG("KARAOKE: reset karaoke mode, no nearlink device active");
+        return ERROR;
     }
-    return DisableNearlinkKaraokeVolume(curOutputDeviceMacAddr);
+    return enable ? EnableNearlinkKaraokeVolume() : DisableNearlinkKaraokeVolume();
 }
 
 int32_t AudioVolumeManager::RefreshKaraokePipeVolume()
@@ -636,19 +637,8 @@ int32_t AudioVolumeManager::RefreshKaraokePipeVolume()
     return audioPolicyManager_.SetVolumeDbForDeviceInPipe(deviceDesc, STREAM_MUSIC);
 }
 
-int32_t AudioVolumeManager::ApplyKaraokeAbsVolume(const std::string &macAddr, int32_t volumeLevel)
+int32_t AudioVolumeManager::EnableNearlinkKaraokeVolume()
 {
-    int32_t ret = SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddr, STREAM_MUSIC, volumeLevel);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "KARAOKE: set nearlink abs volume failed");
-    VolumeScale absVolume(volumeLevel);
-    ret = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceVolume(macAddr, STREAM_MUSIC, absVolume);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "KARAOKE: set nearlink device volume failed");
-    return SUCCESS;
-}
-
-int32_t AudioVolumeManager::EnableNearlinkKaraokeVolume(const std::string &macAddr)
-{
-    int32_t nearlinkMaxVolumeLevel = GetMaxVolumeLevel(STREAM_MUSIC, DEVICE_TYPE_NEARLINK);
     {
         std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
         if (nearlinkKaraokeMode_ == NearlinkKaraokeVolumeMode::VOLUME_FWK) {
@@ -658,34 +648,22 @@ int32_t AudioVolumeManager::EnableNearlinkKaraokeVolume(const std::string &macAd
     }
     int32_t ret = RefreshKaraokePipeVolume();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-    ret = ApplyKaraokeAbsVolume(macAddr, nearlinkMaxVolumeLevel);
-    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-    AUDIO_INFO_LOG("KARAOKE: enable karaoke, absVolume=max(%{public}d)", nearlinkMaxVolumeLevel);
+    AUDIO_INFO_LOG("KARAOKE: enable karaoke volume mode");
     return SUCCESS;
 }
 
-int32_t AudioVolumeManager::DisableNearlinkKaraokeVolume(const std::string &macAddr)
+int32_t AudioVolumeManager::DisableNearlinkKaraokeVolume()
 {
     {
         std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
         if (nearlinkKaraokeMode_ == NearlinkKaraokeVolumeMode::VOLUME_NEARLINK) {
             return SUCCESS;
         }
-    }
-    auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
-    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERROR, "KARAOKE: get device for volume failed");
-    int32_t curFwkVolume = audioPolicyManager_.GetSystemVolumeLevel(deviceDesc, STREAM_MUSIC, 0);
-    int32_t nearlinkMaxVolumeLevel = GetMaxVolumeLevel(STREAM_MUSIC, DEVICE_TYPE_NEARLINK);
-    int32_t targetAbsVolume = curFwkVolume > nearlinkMaxVolumeLevel ? nearlinkMaxVolumeLevel : curFwkVolume;
-    int32_t ret = ApplyKaraokeAbsVolume(macAddr, targetAbsVolume);
-    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-    {
-        std::lock_guard<std::mutex> lock(nearlinkKaraokeMutex_);
         nearlinkKaraokeMode_ = NearlinkKaraokeVolumeMode::VOLUME_NEARLINK;
     }
-    ret = RefreshKaraokePipeVolume();
+    int32_t ret = RefreshKaraokePipeVolume();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-    AUDIO_INFO_LOG("KARAOKE: disable karaoke, absVolume=%{public}d", targetAbsVolume);
+    AUDIO_INFO_LOG("KARAOKE: disable karaoke volume mode");
     return SUCCESS;
 }
 
