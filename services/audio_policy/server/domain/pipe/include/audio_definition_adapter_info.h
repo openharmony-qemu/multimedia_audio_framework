@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -225,6 +224,7 @@ class AudioPolicyConfigData {
 public:
     static AudioPolicyConfigData&  GetInstance();
     void Reorganize();
+    void ReorganizeInternal();
     void SelfCheck();
 
     void SetVersion(const std::string &version);
