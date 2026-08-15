@@ -3652,7 +3652,6 @@ void RendererInServer::MarkStaticFadeIn(bool isRefresh)
 {
     CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
     CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
-    staticBufferProvider_->NeedProcessFadeIn();
 
     if (isRefresh) {
         staticBufferProvider_->ResetStaticPlayPosition();

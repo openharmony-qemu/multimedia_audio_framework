@@ -182,6 +182,7 @@ void AudioStaticBufferProvider::RefreshBufferStatus()
     sharedBuffer_->SetIsNeedSendLoopEndCallback(false);
     AUDIO_INFO_LOG("RefreshBufferStatus, curTotalLoopTimes %{public}" PRId64, totalLoopTimes_);
     delayRefreshBufferStatus_ = false;
+    needFadeOut_ = false;
 }
 
 int32_t AudioStaticBufferProvider::IncreaseCurrentLoopTimes()
