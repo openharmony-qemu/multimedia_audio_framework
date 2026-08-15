@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -115,8 +114,8 @@ int32_t AudioAccessory::OpenInputStreamInternal(std::shared_ptr<VAInputStreamCal
 
 int32_t AudioAccessory::CloseInputStream(std::shared_ptr<VAInputStreamCallback> inputStream)
 {
-    // Stream will be released by the framework
-    return SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(inputStream != nullptr, ERR_INVALID_PARAM, "inputStream is nullptr");
+    return inputStream->Close();
 }
 
 void AudioAccessory::SetCapabilities(const OH_AudioAccessoryCapabilities& caps)
@@ -168,17 +167,17 @@ OH_AudioNoiseReductionMode AudioAccessory::GetNoiseReductionMode() const
 int32_t AudioAccessory::OpenInputStream(const VAAudioStreamProperty &prop, const VAInputStreamAttribute &attr,
                                         std::shared_ptr<VAInputStreamCallback> &inputStream)
 {
-    return OpenInputStreamInternal(inputStream, nullptr, nullptr);
+    return OpenInputStreamInternal(inputStream, reinterpret_cast<OH_AudioAccessory*>(this), nullptr);
 }
 
 int32_t AudioAccessory::GetParameters(const std::string& key, std::string& value)
 {
-    return SUCCESS;
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t AudioAccessory::SetParameters(const std::string& key, const std::string& value)
 {
-    return SUCCESS;
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t AudioAccessory::NotifyConnected()
