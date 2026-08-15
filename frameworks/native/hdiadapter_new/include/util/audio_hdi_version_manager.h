@@ -21,34 +21,14 @@
 namespace OHOS {
 namespace AudioStandard {
 
-// Get and save HDI version, add for flex version. Use for new HDI define compatible.
-class AudioHdiVersionManager {
-public:
-    static AudioHdiVersionManager& GetInstance()
-    {
-        static AudioHdiVersionManager instance;
-        return instance;
-    }
-
-    void SetVersion(uint32_t major, uint32_t minor)
-    {
-        majorVersion_ = major;
-        minorVersion_ = minor;
-    }
-
-    uint32_t GetMajorVersion() const { return majorVersion_; }
-    uint32_t GetMinorVersion() const { return minorVersion_; }
-    bool IsV61OrAbove() const { return (majorVersion_ == 6 && minorVersion_ >= 1) || majorVersion_ > 6; }
-
-private:
-    AudioHdiVersionManager() = default;
-    ~AudioHdiVersionManager() = default;
-    AudioHdiVersionManager(const AudioHdiVersionManager&) = delete;
-    AudioHdiVersionManager &operator=(const AudioHdiVersionManager&) = delete;
-
-    uint32_t majorVersion_ = 0;
-    uint32_t minorVersion_ = 0;
-};
+// Both functions are defined in libhdiadapter_new.z.so (see util/audio_hdi_version_manager.cpp).
+// Explicit default visibility is required: audio_service calls IsAudioHdiV61OrAbove() across
+// DSO boundaries, and some unit tests compile production sources (e.g. local_device_manager.cpp)
+// directly into the test binary. The explicit attribute overrides any global
+// -fvisibility=hidden that may come from build templates outside this repository.
+// Add for flex version. Use for new HDI define compatible.
+__attribute__((visibility("default"))) bool IsAudioHdiV61OrAbove();
+__attribute__((visibility("default"))) void SetAudioHdiVersion(uint32_t majorVersion, uint32_t minorVersion);
 
 }
 }
