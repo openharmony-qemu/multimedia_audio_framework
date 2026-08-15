@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -77,6 +76,12 @@ void AudioPolicyConfigData::SetSupportDeviceAndPipeMap(std::shared_ptr<AdapterPi
 }
 
 void AudioPolicyConfigData::Reorganize()
+{
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    ReorganizeInternal();
+}
+ 
+void AudioPolicyConfigData::ReorganizeInternal()
 {
     std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> tmpDeviceInfoMap;
 
@@ -263,7 +268,7 @@ void AudioPolicyConfigData::RegisterAdapter(std::shared_ptr<PolicyAdapterInfo> a
     CHECK_AND_RETURN_LOG(
         adapterInfoMap.find(adapterInfoPtr->GetTypeEnum()) == adapterInfoMap.end(), "adapter already exists");
     adapterInfoMap.insert({adapterInfoPtr->GetTypeEnum(), adapterInfoPtr});
-    Reorganize();
+    ReorganizeInternal();
 }
 
 void AudioPolicyConfigData::UnregisterAdapter(AudioAdapterType adapterType)
@@ -276,7 +281,7 @@ void AudioPolicyConfigData::UnregisterAdapter(AudioAdapterType adapterType)
             deviceInfoMap.erase(deviceMapKey);
         }
         adapterInfoMap.erase(adapterType);
-        Reorganize();
+        ReorganizeInternal();
     }
 }
 
@@ -298,7 +303,7 @@ void AudioPolicyConfigData::RegisterStreamProperty(
             pipeInfoPtr->streamPropInfos_.push_back(streamProp);
         }
     }
-    Reorganize();
+    ReorganizeInternal();
 }
 
 AudioPin AudioPolicyConfigData::DecideAudioPin(DeviceType type, DeviceRole role)
