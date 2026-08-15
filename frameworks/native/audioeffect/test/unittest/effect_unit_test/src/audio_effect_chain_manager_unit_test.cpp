@@ -6941,6 +6941,21 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneType_003, TestSize
 }
 
 /**
+ * @tc.name   : Test IsChannelLayoutSupportedForDspEffect null hdi param
+ * @tc.number : IsChannelLayoutSupportedForDspEffect_002
+ * @tc.desc   : Null hdi param returns false.
+ */
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffect_002, TestSize.Level1)
+{
+    auto hdiParamBak = AudioEffectChainManager::GetInstance()->audioEffectHdiParam_;
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = nullptr;
+    EXPECT_FALSE(AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        static_cast<AudioChannelLayout>(0x3)));
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = hdiParamBak;
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
 * @tc.name   : Test SetInitEffectBufferFlag
 * @tc.number : SetInitEffectBufferFlag_001
 * @tc.desc   : When flag is false InitAudioEffectChainDynamic returns SUCCESS without locking.
