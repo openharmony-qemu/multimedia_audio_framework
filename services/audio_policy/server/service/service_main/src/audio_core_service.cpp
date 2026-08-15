@@ -1488,6 +1488,8 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
         pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
     streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
+    int32_t outputRet = FetchOutputDeviceAndRoute("StartClient");
+    JUDGE_AND_WARNING_LOG(outputRet != SUCCESS, "FetchOutputDeviceAndRoute failed");
     return SUCCESS;
 }
 
