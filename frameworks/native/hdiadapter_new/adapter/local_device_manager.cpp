@@ -426,7 +426,7 @@ void LocalDeviceManager::InitAudioManager(void)
         if (ret != SUCCESS) {
             AUDIO_INFO_LOG("GetVersion failed");
         }
-        SetAudioHdiVersion(majorVersion, minorVersion);
+        AudioHdiVersionManager::GetInstance().SetVersion(majorVersion, minorVersion);
         AUDIO_INFO_LOG("GetVersion majorVersion=%{public}d, minorVersion=%{public}d",
             majorVersion, minorVersion);
     }

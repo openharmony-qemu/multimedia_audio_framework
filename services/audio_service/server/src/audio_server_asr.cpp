@@ -184,7 +184,7 @@ std::vector<std::string> splitString(const std::string& str, const std::string& 
 
 const std::map<AsrVoiceControlMode, std::string>& GetVcModeMapVerse()
 {
-    if (IsAudioHdiV61OrAbove()) {
+    if (AudioHdiVersionManager::GetInstance().IsV61OrAbove()) {
         return VC_MODE_MAP_VERSE_V61;
     }
     return VC_MODE_MAP_VERSE;

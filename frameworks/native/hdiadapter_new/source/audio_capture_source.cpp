@@ -1362,7 +1362,7 @@ int32_t AudioCaptureSource::CreateCapture(void)
 
 int32_t AudioCaptureSource::RegisterCamcorderMetadataCallback()
 {
-    if (!IsAudioHdiV61OrAbove()) {
+    if (!AudioHdiVersionManager::GetInstance().IsV61OrAbove()) {
         AUDIO_INFO_LOG("CamcorderMetadataCallback need HDI above v6.1, skip RegCallback");
         return SUCCESS;
     }

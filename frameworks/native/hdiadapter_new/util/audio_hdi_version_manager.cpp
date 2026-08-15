@@ -18,42 +18,10 @@
 namespace OHOS {
 namespace AudioStandard {
 
-namespace {
-class AudioHdiVersionManager {
-public:
-    static AudioHdiVersionManager& GetInstance()
-    {
-        static AudioHdiVersionManager instance;
-        return instance;
-    }
-
-    void SetVersion(uint32_t major, uint32_t minor)
-    {
-        majorVersion_ = major;
-        minorVersion_ = minor;
-    }
-
-    bool IsV61OrAbove() const { return (majorVersion_ == 6 && minorVersion_ >= 1) || majorVersion_ > 6; }
-
-private:
-    AudioHdiVersionManager() = default;
-    ~AudioHdiVersionManager() = default;
-    AudioHdiVersionManager(const AudioHdiVersionManager&) = delete;
-    AudioHdiVersionManager &operator=(const AudioHdiVersionManager&) = delete;
-
-    uint32_t majorVersion_ = 0;
-    uint32_t minorVersion_ = 0;
-};
-} // namespace
-
-bool IsAudioHdiV61OrAbove()
+AudioHdiVersionManager& AudioHdiVersionManager::GetInstance()
 {
-    return AudioHdiVersionManager::GetInstance().IsV61OrAbove();
-}
-
-void SetAudioHdiVersion(uint32_t majorVersion, uint32_t minorVersion)
-{
-    AudioHdiVersionManager::GetInstance().SetVersion(majorVersion, minorVersion);
+    static AudioHdiVersionManager instance;
+    return instance;
 }
 
 }
