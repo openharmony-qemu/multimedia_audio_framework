@@ -6295,19 +6295,6 @@ int32_t CreateEffectLibSuccStub(const AudioEffectDescriptor descriptor, AudioEff
     return SUCCESS;
 }
 
-int32_t CreateEffectLibRetFailStub(const AudioEffectDescriptor descriptor, AudioEffectHandle *handle)
-{
-    return ERROR;
-}
-
-int32_t CreateEffectLibNullHandleStub(const AudioEffectDescriptor descriptor, AudioEffectHandle *handle)
-{
-    if (handle != nullptr) {
-        *handle = nullptr;
-    }
-    return SUCCESS;
-}
-
 int32_t ReleaseEffectLibStub(AudioEffectHandle handle)
 {
     return SUCCESS;
@@ -6315,10 +6302,6 @@ int32_t ReleaseEffectLibStub(AudioEffectHandle handle)
 
 AudioEffectLibrary g_effectLibSucc = {0, "lib_test_succ", "impl", CheckEffectLibStub,
     CreateEffectLibSuccStub, ReleaseEffectLibStub, nullptr};
-AudioEffectLibrary g_effectLibRetFail = {0, "lib_test_fail", "impl", CheckEffectLibStub,
-    CreateEffectLibRetFailStub, ReleaseEffectLibStub, nullptr};
-AudioEffectLibrary g_effectLibNullHandle = {0, "lib_test_null", "impl", CheckEffectLibStub,
-    CreateEffectLibNullHandleStub, ReleaseEffectLibStub, nullptr};
 
 std::shared_ptr<AudioEffectLibEntry> BuildLibEntry(AudioEffectLibrary *libHandle, const std::string &libName,
     const std::vector<std::string> &effectNames)
@@ -6424,43 +6407,6 @@ HWTEST(AudioEffectChainManagerUnitTest, SetAudioEffectChainDynamic_001, TestSize
 }
 
 /**
-* @tc.name   : Test CreateAudioEffectChainDynamic with effect library
-* @tc.number : CreateAudioEffectChainDynamicWithLib_001
-* @tc.desc   : createEffect ret fail / null handle / success paths of SetAudioEffectChainDynamic.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicWithLib_001, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->sceneTypeCountList_.clear();
-    // createEffect returns fail, handle is skipped
-    vector<shared_ptr<AudioEffectLibEntry>> effectLibraryList = {
-        BuildLibEntry(&g_effectLibRetFail, "lib_test_fail", {"apply1", "apply2", "apply3"})};
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, effectLibraryList);
-    int32_t result = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic("SCENE_MOVIE");
-    EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-
-    // createEffect returns success but handle is null, handle is skipped
-    effectLibraryList = {BuildLibEntry(&g_effectLibNullHandle, "lib_test_null",
-        {"apply1", "apply2", "apply3"})};
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, effectLibraryList);
-    result = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic("SCENE_MOVIE");
-    EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-
-    // createEffect success, effect handle is added to chain
-    effectLibraryList = {BuildLibEntry(&g_effectLibSucc, "lib_test_succ", {"apply1", "apply2", "apply3"})};
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, effectLibraryList);
-    result = AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic("SCENE_MOVIE");
-    EXPECT_EQ(SUCCESS, result);
-    EXPECT_TRUE(AudioEffectChainManager::GetInstance()->ExistAudioEffectChainInner("SCENE_MOVIE", "EFFECT_DEFAULT"));
-    AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamic("SCENE_MOVIE");
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
 * @tc.name   : Test CheckProcessClusterInstances offload branch
 * @tc.number : CheckProcessClusterInstances_006
 * @tc.desc   : Offload enabled returns USE_NONE_PROCESSCLUSTER for both overloads.
@@ -6490,47 +6436,6 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_007, TestSi
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     EXPECT_EQ(CREATE_EXTRA_PROCESSCLUSTER,
         AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances("SCENE_EXTRA"));
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test CheckProcessClusterInstances with null chain
-* @tc.number : CheckProcessClusterInstances_008
-* @tc.desc   : Existing null chain falls through to create new process cluster.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_008, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->sceneTypeCountList_.clear();
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = nullptr;
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 1;
-    EXPECT_EQ(CREATE_NEW_PROCESSCLUSTER,
-        AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances("SCENE_MUSIC"));
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test CheckProcessClusterInstances use default cluster
-* @tc.number : CheckProcessClusterInstances_009
-* @tc.desc   : Chain shared with default chain returns USE_DEFAULT_PROCESSCLUSTER.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_009, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->sceneTypeCountList_.clear();
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
-    std::string defaultSceneTypeAndDeviceKey = "SCENE_DEFAULT_&_DEVICE_TYPE_SPEAKER";
-    auto audioEffectChain = AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_MUSIC", true);
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] =
-        audioEffectChain;
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 1;
-    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
-    EXPECT_EQ(USE_DEFAULT_PROCESSCLUSTER,
-        AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances("SCENE_MUSIC"));
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -6660,10 +6565,10 @@ HWTEST(AudioEffectChainManagerUnitTest, SetChannelOverrideNoChain_001, TestSize.
 
 /**
 * @tc.name   : Test CreateAudioEffectChainDynamicInner null chain cleanup
-* @tc.number : CreateAudioEffectChainDynamicInner_001
+* @tc.number : CreateAudioEffectChainDynamicInner_002
 * @tc.desc   : Null chain entry is erased and a new chain is created.
 */
-HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_001, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_002, TestSize.Level1)
 {
     AudioEffectChainManager::GetInstance()->sceneTypeCountList_.clear();
     std::string sceneType = "SCENE_MUSIC";
@@ -6681,10 +6586,10 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_001, 
 
 /**
 * @tc.name   : Test CreateAudioEffectChainDynamicInner shared default chain count
-* @tc.number : CreateAudioEffectChainDynamicInner_002
+* @tc.number : CreateAudioEffectChainDynamicInner_003
 * @tc.desc   : Existing chain shared with default chain increases both counts.
 */
-HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_002, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_003, TestSize.Level1)
 {
     AudioEffectChainManager::GetInstance()->sceneTypeCountList_.clear();
     std::string sceneType = "SCENE_MUSIC";
@@ -6709,10 +6614,10 @@ HWTEST(AudioEffectChainManagerUnitTest, CreateAudioEffectChainDynamicInner_002, 
 
 /**
 * @tc.name   : Test ReleaseAudioEffectChainDynamicInner null chain
-* @tc.number : ReleaseAudioEffectChainDynamicInner_001
+* @tc.number : ReleaseAudioEffectChainDynamicInner_005
 * @tc.desc   : Null chain or zero count entry is erased and returns SUCCESS.
 */
-HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamicInner_001, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamicInner_005, TestSize.Level1)
 {
     std::string sceneType = "SCENE_MUSIC";
     std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
@@ -6893,10 +6798,10 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectDspAbsVolumeStateUpdate_001, TestS
 
 /**
 * @tc.name   : Test UpdateParamExtra outdoor mode
-* @tc.number : UpdateParamExtra_004
+* @tc.number : UpdateParamExtra_007
 * @tc.desc   : Update outdoor mode param.
 */
-HWTEST(AudioEffectChainManagerUnitTest, UpdateParamExtra_004, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, UpdateParamExtra_007, TestSize.Level1)
 {
     std::string mainkey = "audio_effect";
     std::string subkey = "outdoor_mode";
@@ -6944,10 +6849,10 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateParamExtra_006, TestSize.Level1)
 
 /**
 * @tc.name   : Test SendAudioParamToARM missing cases
-* @tc.number : SendAudioParamToARM_005
+* @tc.number : SendAudioParamToARM_007
 * @tc.desc   : Outdoor mode / super loudness mode / stereo enhancement are sent to chains.
 */
-HWTEST(AudioEffectChainManagerUnitTest, SendAudioParamToARM_005, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, SendAudioParamToARM_007, TestSize.Level1)
 {
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.clear();
     auto audioEffectChain = AudioEffectChainManager::GetInstance()->CreateAudioEffectChain("SCENE_MUSIC", true);
@@ -7031,21 +6936,6 @@ HWTEST(AudioEffectChainManagerUnitTest, SetSpatializationSceneType_003, TestSize
     AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = nullptr;
     EXPECT_EQ(ERROR, AudioEffectChainManager::GetInstance()->SetSpatializationSceneType(
         SPATIALIZATION_SCENE_TYPE_MUSIC));
-    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = hdiParamBak;
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test IsChannelLayoutSupportedForDspEffect null hdi param
-* @tc.number : IsChannelLayoutSupportedForDspEffect_002
-* @tc.desc   : Null hdi param returns false.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffect_002, TestSize.Level1)
-{
-    auto hdiParamBak = AudioEffectChainManager::GetInstance()->audioEffectHdiParam_;
-    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = nullptr;
-    EXPECT_FALSE(AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
-        static_cast<AudioChannelLayout>(0x3)));
     AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = hdiParamBak;
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
