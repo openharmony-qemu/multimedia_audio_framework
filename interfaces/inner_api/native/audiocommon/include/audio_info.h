@@ -2570,6 +2570,12 @@ enum LatencyFlag : uint32_t {
     LATENCY_FLAG_ALL = 0XFFFFFFFF
 };
 
+enum class RecommendInputDevices {
+    NO_UNAVAILABLE_DEVICE,
+    RECOMMEND_BUILT_IN_MIC,
+    RECOMMEND_EXTERNAL_MIC
+};
+
 struct AudioInterruptResult {
     bool needSetAudioScene;
     AudioScene targetAudioScene;

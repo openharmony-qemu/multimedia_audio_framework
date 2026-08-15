@@ -19,6 +19,7 @@
 #include "audio_routing_manager_unit_test.h"
 #include "audio_stream_manager.h"
 #include "audio_system_manager.h"
+#include "audio_routing_client_manager.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -119,27 +120,27 @@ HWTEST(AudioRoutingManagerUnitTest, Audio_Routing_Manager_getPreferredInputDevic
 HWTEST(AudioRoutingManagerUnitTest, ConvertRecommendInputDevices_001, TestSize.Level1)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    RecommendInputDevices ret = AudioRoutingManager::GetInstance()->ConvertRecommendInputDevices(descs);
+    RecommendInputDevices ret = AudioRoutingClientManager::GetInstance().ConvertRecommendInputDevices(descs);
     EXPECT_EQ(RecommendInputDevices::NO_UNAVAILABLE_DEVICE, ret);
 
     descs.emplace_back(make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE));
-    ret = AudioRoutingManager::GetInstance()->ConvertRecommendInputDevices(descs);
+    ret = AudioRoutingClientManager::GetInstance().ConvertRecommendInputDevices(descs);
     EXPECT_EQ(RecommendInputDevices::RECOMMEND_EXTERNAL_MIC, ret);
 
     descs.clear();
     auto desc = make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
     desc->networkId_ = "";
     descs.emplace_back(desc);
-    ret = AudioRoutingManager::GetInstance()->ConvertRecommendInputDevices(descs);
+    ret = AudioRoutingClientManager::GetInstance().ConvertRecommendInputDevices(descs);
     EXPECT_EQ(RecommendInputDevices::RECOMMEND_EXTERNAL_MIC, ret);
 
     descs.clear();
     descs.emplace_back(make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE));
-    ret = AudioRoutingManager::GetInstance()->ConvertRecommendInputDevices(descs);
+    ret = AudioRoutingClientManager::GetInstance().ConvertRecommendInputDevices(descs);
     EXPECT_EQ(RecommendInputDevices::RECOMMEND_BUILT_IN_MIC, ret);
 
     descs.emplace_back(make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE));
-    ret = AudioRoutingManager::GetInstance()->ConvertRecommendInputDevices(descs);
+    ret = AudioRoutingClientManager::GetInstance().ConvertRecommendInputDevices(descs);
     EXPECT_EQ(RecommendInputDevices::RECOMMEND_BUILT_IN_MIC, ret);
 
     EXPECT_EQ(descs.size(), 1);
