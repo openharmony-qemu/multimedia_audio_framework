@@ -416,5 +416,194 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAppsMuteStateToChainByIdMultiScene
         EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
     }
 }
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAndGetAudioEnhanceProperty, TestSize.Level1)
+{
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_VOIP_UP, TEST_CAPTURER_ID);
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
+
+    AudioEffectPropertyArray propertyArray = {};
+    // voip_up_test is relate with device, key will append device type name
+    propertyArray.property.push_back(AudioEffectProperty{ "voip_up_test", "AIHD_ON", CAPTURE_EFFECT_FLAG });
+    // record_test is not relate with device
+    propertyArray.property.push_back(AudioEffectProperty{ "record_test", "NROFF_ON", CAPTURE_EFFECT_FLAG });
+    EXPECT_EQ(manager_->SetAudioEnhanceProperty(propertyArray, DEVICE_TYPE_MIC), SUCCESS);
+
+    // deviceType is valid, refresh enhance property map from db before get
+    AudioEffectPropertyArray getPropertyArray = {};
+    EXPECT_EQ(manager_->GetAudioEnhanceProperty(getPropertyArray, DEVICE_TYPE_MIC), SUCCESS);
+    bool foundVoipProp = false;
+    bool foundRecordProp = false;
+    for (const auto &property : getPropertyArray.property) {
+        EXPECT_FALSE(property.category.empty());
+        foundVoipProp = foundVoipProp || property.name == "voip_up_test";
+        foundRecordProp = foundRecordProp || property.name == "record_test";
+    }
+    EXPECT_TRUE(foundVoipProp);
+    EXPECT_TRUE(foundRecordProp);
+
+    // deviceType is none, get property map directly
+    AudioEffectPropertyArray noneTypeArray = {};
+    EXPECT_EQ(manager_->GetAudioEnhanceProperty(noneTypeArray, DEVICE_TYPE_NONE), SUCCESS);
+    // invalid device type, UpdateEnhancePropertyMapFromDb return early
+    AudioEffectPropertyArray invalidTypeArray = {};
+    EXPECT_EQ(manager_->GetAudioEnhanceProperty(invalidTypeArray, static_cast<DeviceType>(0x4321)), SUCCESS);
+
+    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+}
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAudioEnhancePropertyWithEmptyCategory, TestSize.Level1)
+{
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+
+    AudioEffectPropertyArray propertyArray = {};
+    propertyArray.property.push_back(AudioEffectProperty{ "record_test", "", CAPTURE_EFFECT_FLAG });
+    EXPECT_EQ(manager_->SetAudioEnhanceProperty(propertyArray, DEVICE_TYPE_NONE), SUCCESS);
+
+    // empty category property will not be return
+    AudioEffectPropertyArray getPropertyArray = {};
+    EXPECT_EQ(manager_->GetAudioEnhanceProperty(getPropertyArray, DEVICE_TYPE_NONE), SUCCESS);
+    bool hasEmptyCategory = false;
+    bool hasRecordTest = false;
+    for (const auto &property : getPropertyArray.property) {
+        hasEmptyCategory = hasEmptyCategory || property.category.empty();
+        hasRecordTest = hasRecordTest || property.name == "record_test";
+    }
+    EXPECT_FALSE(hasEmptyCategory);
+    EXPECT_FALSE(hasRecordTest);
+}
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateAudioEnhanceChainFailWithLibNotExist, TestSize.Level1)
+{
+    std::vector<EffectChain> enhanceChains = { { "EFFECTCHAIN_NO_LIB", { "enhance_no_lib" }, "label" } };
+    EffectChainManagerParam managerParam = {};
+    managerParam.maxExtraNum = MAX_EXTRA_NUM;
+    managerParam.defaultSceneName = "SCENE_RECORD";
+    managerParam.sceneTypeToChainNameMap = { { "SCENE_RECORD_&_ENHANCE_DEFAULT", "EFFECTCHAIN_NO_LIB" } };
+    managerParam.effectDefaultProperty = { { "enhance_no_lib", "ON" } };
+
+    manager_->InitAudioEnhanceChainManager(enhanceChains, managerParam, enhanceLibraryList_);
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    // enhance lib not found, CreateAllEnhanceModule fail
+    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), ERROR);
+
+    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+}
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, InitAudioEnhanceChainManagerWithUnknownChainName, TestSize.Level1)
+{
+    std::vector<EffectChain> enhanceChains = { { "EFFECTCHAIN_RECORD", { "record_test" }, "label" } };
+    EffectChainManagerParam managerParam = {};
+    managerParam.maxExtraNum = MAX_EXTRA_NUM;
+    managerParam.defaultSceneName = "SCENE_RECORD";
+    // chain name not in enhanceChains, enhanceNames will be empty
+    managerParam.sceneTypeToChainNameMap = { { "SCENE_RECORD_&_ENHANCE_DEFAULT", "EFFECTCHAIN_NOT_EXIST" } };
+
+    manager_->InitAudioEnhanceChainManager(enhanceChains, managerParam, enhanceLibraryList_);
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), ERROR);
+
+    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+}
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, CreateRecognitionSceneEnhanceChainSucc, TestSize.Level1)
+{
+    std::vector<EffectChain> enhanceChains = { { "EFFECTCHAIN_RECOGNITION", { "record_test" }, "label" } };
+    EffectChainManagerParam managerParam = {};
+    managerParam.maxExtraNum = MAX_EXTRA_NUM;
+    managerParam.defaultSceneName = "SCENE_RECORD";
+    managerParam.sceneTypeToChainNameMap = { { "SCENE_RECOGNITION_&_ENHANCE_DEFAULT", "EFFECTCHAIN_RECOGNITION" } };
+    managerParam.effectDefaultProperty = { { "record_test", "NROFF" } };
+
+    manager_->InitAudioEnhanceChainManager(enhanceChains, managerParam, enhanceLibraryList_);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    // SCENE_RECOGNITION has no dedicated thread id, use default thread id
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECOGNITION, TEST_CAPTURER_ID);
+    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
+
+    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+}
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, GetChainOutputDataFailWithInvalidBuffer, TestSize.Level1)
+{
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
+
+    const uint32_t waitTime = 10;
+    std::this_thread::sleep_for(std::chrono::milliseconds(waitTime));
+    std::vector<int16_t> output(10);
+    // null buffer
+    EXPECT_EQ(manager_->GetChainOutputDataById(sceneKeyCode, nullptr, output.size() * sizeof(int16_t)), ERROR);
+    // zero buffer size
+    EXPECT_EQ(manager_->GetChainOutputDataById(sceneKeyCode, output.data(), 0), ERROR);
+
+    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+}
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, ApplyEnhanceChainWithEmptyTransBuffer, TestSize.Level1)
+{
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
+
+    // apply without any input data, both ready and not ready chain return success
+    EnhanceTransBuffer transBuf = {};
+    EXPECT_EQ(manager_->ApplyEnhanceChainById(sceneKeyCode, transBuf), SUCCESS);
+
+    const uint32_t waitTime = 10;
+    std::this_thread::sleep_for(std::chrono::milliseconds(waitTime));
+    // full frame size buffer: byteLenPerFrame(20ms * 48 * 2) * micChannels(4)
+    const uint32_t chlNum = 4;
+    std::vector<int16_t> output(20 * 48 * chlNum);
+    EXPECT_EQ(manager_->GetChainOutputDataById(sceneKeyCode, output.data(), output.size() * sizeof(int16_t)),
+        SUCCESS);
+
+    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+}
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, UpdateExtraSceneTypeWithEdgeValue, TestSize.Level1)
+{
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
+
+    std::string mainKey = "device_status";
+    // empty extraSceneType
+    manager_->UpdateExtraSceneType(mainKey, "fold_state", "");
+    // fold state out of range [FOLD_STATE_EXPAND, FOLD_STATE_MIDDLE]
+    manager_->UpdateExtraSceneType(mainKey, "fold_state", "0");
+    manager_->UpdateExtraSceneType(mainKey, "fold_state", "99");
+    // valid fold state
+    manager_->UpdateExtraSceneType(mainKey, "fold_state", "1");
+    // power state out of range [0, 100]
+    manager_->UpdateExtraSceneType(mainKey, "power_state", "101");
+    // valid power state
+    manager_->UpdateExtraSceneType(mainKey, "power_state", "0");
+    manager_->UpdateExtraSceneType(mainKey, "power_state", "100");
+
+    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+}
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetInputDeviceSkipOtherCaptureChain, TestSize.Level1)
+{
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
+
+    // new captureId has no chain, chain of TEST_CAPTURER_ID will be skipped
+    const uint32_t newCaptureId = 0x900;
+    EXPECT_EQ(manager_->SetInputDevice(newCaptureId, DEVICE_TYPE_USB_HEADSET), SUCCESS);
+
+    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
