@@ -58,8 +58,10 @@ public:
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
+    RecommendInputDevices GetRecommendInputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 
 private:
+    RecommendInputDevices ConvertRecommendInputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     AudioRoutingClientManager() = default;
     ~AudioRoutingClientManager() = default;
 };
