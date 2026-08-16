@@ -701,7 +701,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_017, TestSize.Level1
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
 
     bool isInnerCapturer = true;
-    ptrRendererInClientInner->SetInnerCapturerState(isInnerCapturer);
+    ptrRendererInClientInner->SetInnerCapturerState(isInnerCapturer, 0, false);
 }
 
 /**
@@ -1126,26 +1126,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_036, TestSize.Level1
 
     int64_t rendererPeriodNumber = 0;
     ptrRendererInClientInner->HandleRenderPeriodReachedEvent(rendererPeriodNumber);
-}
-
-/**
- * @tc.name  : Test RendererInClientInner API
- * @tc.type  : FUNC
- * @tc.number: RendererInClientInner_037
- * @tc.desc  : Test RendererInClientInner::OnSpatializationStateChange
- */
-HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_037, TestSize.Level1)
-{
-    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
-    int32_t appUid = 1;
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
-
-    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
-
-    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
-
-    AudioSpatializationState spatializationState;
-    ptrRendererInClientInner->OnSpatializationStateChange(spatializationState);
 }
 
 /**
@@ -3528,23 +3508,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_ProcessVolume_002, T
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
     // Test the function without directly manipulating volume ramp state
     ptrRendererInClientInner->ProcessVolume();
-    // Verify function executed without error
-    EXPECT_TRUE(true);
-}
-
-/**
- * @tc.name  : Test RendererInClientInner_OnSpatializationStateChange_001
- * @tc.type  : FUNC
- * @tc.number: RendererInClientInner_OnSpatializationStateChange_001
- * @tc.desc  : Test RendererInClientInner::OnSpatializationStateChange with valid state
- */
-HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_OnSpatializationStateChange_001, TestSize.Level4)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
-    AudioSpatializationState state;
-    state.spatializationEnabled = true;
-    state.headTrackingEnabled = true;
-    ptrRendererInClientInner->OnSpatializationStateChange(state);
     // Verify function executed without error
     EXPECT_TRUE(true);
 }

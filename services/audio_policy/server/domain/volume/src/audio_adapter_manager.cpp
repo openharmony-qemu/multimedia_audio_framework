@@ -195,7 +195,7 @@ void AudioAdapterManager::InitSafeVolumeParams()
     safeVolumeDegree_ = VolumeUtils::VolumeLevelToDegree(safeVolume_, maxVolumeLevel);
 
     char safeVolumeTimeout[6] = {0};
-    ret = GetParameter("persist.multimedia.audio.safevolume.timeout", "1140",
+    ret = GetParameter("persist.multimedia.audio.safevolume.timeout", "1080",
         safeVolumeTimeout, sizeof(safeVolumeTimeout));
     if (ret > 0) {
         safeVolumeTimeout_ = atoi(safeVolumeTimeout);
@@ -1362,19 +1362,18 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
     auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     static const AudioVolumeType voiceCallType = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_VOICE_CALL);
 
-    auto devForCall = audioActiveDevice_.GetDeviceForVolume(voiceCallType);
-    CHECK_AND_RETURN_LOG(devForCall != nullptr, "device is null");
-    if (device->networkId_ != devForCall->networkId_) {
-        AUDIO_INFO_LOG("[streamType:%{public}d] volume only depressed in same device", streamType);
-        return;
-    }
-
     auto &sceneManager = AudioSceneManager::GetInstance();
     AudioScene curScene = sceneManager.GetAudioScene(true);
 
     bool streamInCall = curScene == AUDIO_SCENE_PHONE_CALL || curScene == AUDIO_SCENE_PHONE_CHAT;
     bool updateLimit = volumeType == voiceCallType || volumeLimit_.load() == MAX_STREAM_VOLUME;
     if (streamInCall) {
+        auto devForCall = audioActiveDevice_.GetDeviceForVolume(voiceCallType);
+        CHECK_AND_RETURN_LOG(devForCall != nullptr, "device is null");
+        if (device->networkId_ != devForCall->networkId_) {
+            AUDIO_INFO_LOG("[streamType:%{public}d] volume only depressed in same device", streamType);
+            return;
+        }
         if (updateLimit) {
             int32_t volumeLevelForCall = GetStreamVolumeInternal(device, voiceCallType);
             float newLimit = volumeType == voiceCallType?
@@ -2223,6 +2222,7 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
             static_cast<float>(attr.sampleRate * attr.channel * formatByteSize) *
             ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
         AUDIO_INFO_LOG("GetAudioSinkAttr: ultra_fast period=%{public}u (2.5ms latency)", attr.period);
+        attr.isUltraFast = true;
     }
 
     return attr;
@@ -4275,9 +4275,7 @@ void AudioAdapterManager::RemoveAudioPipeVolume(uint32_t IoHandle)
 {
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
-    for (auto volumeType : defaultVolumeTypeList_) {
-        audioVolume->RemovePipeVolume(IoHandle, volumeType);
-    }
+    audioVolume->RemovePipeVolume(IoHandle);
 }
 
 void AudioAdapterManager::UpdateAudioPipeVolume(std::vector<PipeDeviceVolumeGroup> pipeDeviceVolumeGroups)

@@ -36,7 +36,7 @@ public:
 
     void SetSpanCount(uint64_t spanCountInFrame);
 
-    int64_t GetTimeOfPos(uint64_t posInFrame);
+    int64_t GetTimeOfPos(uint64_t posInFrame, bool isStarted = true);
 
     virtual ~LinearPosTimeModel() = default;
 private:

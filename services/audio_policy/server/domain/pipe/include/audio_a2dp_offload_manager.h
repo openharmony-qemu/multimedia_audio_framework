@@ -56,9 +56,7 @@ public:
 
     void UpdateA2dpOffloadFlagForStartStream(int32_t startSessionId);
     uint32_t UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
-    void UpdateA2dpOffloadFlagForSpatializationChanged(
-        std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnabledMap,
-        DeviceType deviceType = DEVICE_TYPE_NONE);
+    void UpdateA2dpOffloadFlagForSpatializationChanged(DeviceType deviceType = DEVICE_TYPE_NONE);
     void UpdateA2dpOffloadFlagForA2dpDeviceOut();
 
 private:

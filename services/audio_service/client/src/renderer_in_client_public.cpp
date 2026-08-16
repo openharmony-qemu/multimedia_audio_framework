@@ -98,7 +98,6 @@ RendererInClientInner::~RendererInClientInner()
         runnerReleased_ = true;
         callbackHandler_ = nullptr;
     }
-    UnregisterSpatializationStateEventListener(spatializationRegisteredSessionID_);
     
     if (pitchProcessor_ != nullptr) {
         pitchProcessor_->PitchAlgoRelease();
@@ -309,7 +308,6 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
     proxyObj_ = proxyObj;
     RegisterTracker(proxyObj);
-    RegisterSpatializationStateEventListener();
     return SUCCESS;
 }
 
@@ -1260,7 +1258,8 @@ int64_t RendererInClientInner::GetFramesRead()
     return -1;
 }
 
-void RendererInClientInner::SetInnerCapturerState(bool isInnerCapturer)
+void RendererInClientInner::SetInnerCapturerState(bool isInnerCapturer,
+    int32_t playbackCaptureMode, bool isModernInnerCapturer)
 {
     AUDIO_ERR_LOG("SetInnerCapturerState is not supported");
     return;
@@ -2100,13 +2099,6 @@ void RendererInClientInner::HandleRenderPeriodReachedEvent(int64_t rendererPerio
     if (rendererPeriodPositionCallback_) {
         rendererPeriodPositionCallback_->OnPeriodReached(rendererPeriodNumber);
     }
-}
-
-void RendererInClientInner::OnSpatializationStateChange(const AudioSpatializationState &spatializationState)
-{
-    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
-    CHECK_AND_RETURN_LOG(ipcStream_->UpdateSpatializationState(spatializationState.spatializationEnabled,
-        spatializationState.headTrackingEnabled) == SUCCESS, "Update spatialization state failed");
 }
 
 void RendererInClientInner::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)

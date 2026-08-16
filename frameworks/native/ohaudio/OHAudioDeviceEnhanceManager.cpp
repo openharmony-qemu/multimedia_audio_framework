@@ -108,7 +108,7 @@ OH_AudioCommon_Result OH_AudioDeviceEnhanceManager_SelectOutputDeviceForAudioRen
 {
     auto *manager = ConvertEnhanceManager(audioDeviceEnhanceManager);
     auto *audioRender = ConvertRenderer(renderer);
-    CHECK_AND_RETURN_RET_LOG(manager != nullptr && audioRender != nullptr && deviceDescriptor != nullptr,
+    CHECK_AND_RETURN_RET_LOG(manager != nullptr && audioRender != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "invalid params");
     int32_t ret = audioRender->SelectOutputDevice(deviceDescriptor);
     return OHOS::AudioStandard::OHAudioCommon::ConvertResult(ret);
@@ -120,7 +120,7 @@ OH_AudioCommon_Result OH_AudioDeviceEnhanceManager_SelectInputDeviceForAudioCapt
 {
     auto *manager = ConvertEnhanceManager(audioDeviceEnhanceManager);
     auto *audioCapturer = ConvertCapturer(capturer);
-    CHECK_AND_RETURN_RET_LOG(manager != nullptr && audioCapturer != nullptr && deviceDescriptor != nullptr,
+    CHECK_AND_RETURN_RET_LOG(manager != nullptr && audioCapturer != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "invalid params");
     int32_t ret = audioCapturer->SelectInputDevice(deviceDescriptor);
     return OHOS::AudioStandard::OHAudioCommon::ConvertResult(ret);

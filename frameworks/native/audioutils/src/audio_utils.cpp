@@ -287,6 +287,21 @@ bool Util::IsCustomSampleRateValid(uint32_t customSampleRate)
         customSampleRate % SAMPLE_RATE_RESOLUTION_10 == 0) || customSampleRate == SAMPLE_RATE_11025;
 }
 
+bool Util::IsCamcorderMicInSupportedInputDeviceType(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_MIC:
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_NEARLINK_IN:
+            return true;
+        default:
+            return false;
+    }
+}
+
 WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
 {
     startTimeNs_ = ClockTime::GetCurNano();

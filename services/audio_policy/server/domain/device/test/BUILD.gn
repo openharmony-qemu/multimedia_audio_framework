@@ -63,6 +63,7 @@ ohos_unittest("audio_device_status_extended_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_device_status_unit_test/src/audio_device_status_extended_test.cpp" ]
@@ -118,6 +119,7 @@ ohos_unittest("audio_device_capability_unit_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_device_capability_unit_test/src/audio_device_capability_unit_test.cpp" ]
@@ -196,6 +198,7 @@ ohos_unittest("audio_active_device_new_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_active_device_new_unit_test/src/audio_active_device_new_unit_test.cpp" ]
@@ -237,6 +240,7 @@ ohos_unittest("audio_sco_device_behavior_unit_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_sco_device_behavior_unit_test/src/audio_sco_device_behavior_unit_test.cpp" ]
@@ -277,6 +281,7 @@ ohos_unittest("audio_sle_device_behavior_unit_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_sle_device_behavior_unit_test/src/audio_sle_device_behavior_unit_test.cpp" ]
@@ -318,6 +323,7 @@ ohos_unittest("audio_hearing_aid_device_behavior_unit_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_hearing_aid_device_behavior_unit_test/src/audio_hearing_aid_device_behavior_unit_test.cpp" ]
@@ -359,6 +365,7 @@ ohos_unittest("audio_device_factory_unit_test") {
     "power_manager:power_setting",
     "power_manager:powermgr_client",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_device_factory_unit_test/src/audio_device_factory_unit_test.cpp" ]

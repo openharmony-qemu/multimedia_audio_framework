@@ -386,7 +386,7 @@ float AudioVolumeClientManager::GetVolumeInUnitOfDb(AudioVolumeType volumeType, 
 
 int32_t AudioVolumeClientManager::SetVolumeControlPriority(const std::vector<AudioVolumeType> &priorities)
 {
-    int32_t size = priorities.size();
+    int32_t size = static_cast<int32_t>(priorities.size());
     AUDIO_INFO_LOG("priorities.size() [%{public}d]", size);
     return AudioPolicyManager::GetInstance().SetVolumeControlPriority(priorities);
 }

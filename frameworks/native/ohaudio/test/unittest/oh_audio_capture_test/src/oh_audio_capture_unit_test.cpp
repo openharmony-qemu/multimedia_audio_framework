@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,90 @@ public:
 };
 
 FILE* g_file = nullptr;
+
+class ReleaseFailureCapturer : public AudioCapturerPrivate {
+public:
+    ReleaseFailureCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    int32_t ReleaseImpl() override { return ERR_ILLEGAL_STATE; }
+};
+
+class StartPlaybackCaptureFailureCapturer : public AudioCapturerPrivate {
+public:
+    StartPlaybackCaptureFailureCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    int32_t StartPlaybackCapture() override { return ERR_ILLEGAL_STATE; }
+};
+
+class SetInputDeviceNotSupportedCapturer : public AudioCapturerPrivate {
+public:
+    SetInputDeviceNotSupportedCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    int32_t SetInputDevice(DeviceType deviceType) const override { return ERR_NOT_SUPPORTED; }
+};
+
+class SetInputDeviceErrorCapturer : public AudioCapturerPrivate {
+public:
+    SetInputDeviceErrorCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    int32_t SetInputDevice(DeviceType deviceType) const override { return ERR_INVALID_PARAM; }
+};
+
+class MuteHintIllegalStateCapturer : public AudioCapturerPrivate {
+public:
+    MuteHintIllegalStateCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    int32_t SetMuteHint(bool mute) override { return ERROR_ILLEGAL_STATE; }
+};
+
+class MuteHintInvalidParamCapturer : public AudioCapturerPrivate {
+public:
+    MuteHintInvalidParamCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    int32_t SetMuteHint(bool mute) override { return ERROR_INVALID_PARAM; }
+};
+
+class GetFastStatusInvalidCapturer : public AudioCapturerPrivate {
+public:
+    GetFastStatusInvalidCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    FastStatus GetFastStatus() override { return FastStatus::FASTSTATUS_INVALID; }
+};
+
+class GetAudioTimeFailureCapturer : public AudioCapturerPrivate {
+public:
+    GetAudioTimeFailureCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override { return false; }
+};
+
+class StartSuccessCapturer : public AudioCapturerPrivate {
+public:
+    StartSuccessCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    int32_t StartImpl() override { return SUCCESS; }
+};
+
+class StopSuccessCapturer : public AudioCapturerPrivate {
+public:
+    StopSuccessCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    int32_t StopImpl() const override { return SUCCESS; }
+};
+
+class PauseSuccessCapturer : public AudioCapturerPrivate {
+public:
+    PauseSuccessCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    bool Pause() const override { return true; }
+};
+
+class FlushSuccessCapturer : public AudioCapturerPrivate {
+public:
+    FlushSuccessCapturer() : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false) {}
+
+    bool Flush() const override { return true; }
+};
 
 static OH_AudioStream_Result SetNoiseReductionModeWithRegisteredCapturer(
     OHAudioCapturer &ohAudioCapturer, OH_AudioNoiseReductionMode mode)
@@ -1937,6 +2021,192 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetSupportedNoiseReductionModes_
     EXPECT_EQ(modes[0], AUDIO_NOISE_REDUCTION_MODE_FIDELITY);
 }
 
+/**
+* @tc.name  : Test OHAudioCapturer::Release API via release failure.
+* @tc.number: OHAudioCapturer_Release_002
+* @tc.desc  : Test OHAudioCapturer::Release returns false when audioCapturer_->Release() fails.
+*/
+HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_Release_002, TestSize.Level0)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<ReleaseFailureCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    bool result = oHAudioCapturer.Release();
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_RequestPlaybackCaptureStart API via start failure.
+* @tc.number: OH_AudioCapturer_RequestPlaybackCaptureStart_001
+* @tc.desc  : Test OH_AudioCapturer_RequestPlaybackCaptureStart returns error when StartPlaybackCapture fails.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_RequestPlaybackCaptureStart_001, TestSize.Level0)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<StartPlaybackCaptureFailureCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    OH_AudioCapturer* capturer = reinterpret_cast<OH_AudioCapturer*>(&oHAudioCapturer);
+    OH_AudioCapturer_OnPlaybackCaptureStartCallback callback =
+        [](OH_AudioCapturer* capturer, void* userData,
+        OH_AudioStream_PlaybackCaptureStartState state) { return; };
+
+    ObjectRefMap<OHAudioCapturer>::Insert(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_RequestPlaybackCaptureStart(capturer, callback, nullptr);
+    ObjectRefMap<OHAudioCapturer>::Erase(&oHAudioCapturer);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+}
+
+/**
+* @tc.name  : Test OHAudioCapturerOnPlaybackCaptureStartCallback::OnPlaybackCaptureStartResult API via failure state.
+* @tc.number: OHAudioCapturerOnPlaybackCaptureStartCallback_001
+* @tc.desc  : Test OnPlaybackCaptureStartResult when state != START_STATE_SUCCESS.
+*/
+HWTEST(OHAudioCaptureUnitTest, OHAudioCapturerOnPlaybackCaptureStartCallback_001, TestSize.Level0)
+{
+    OH_AudioCapturer_OnPlaybackCaptureStartCallback callback =
+        [](OH_AudioCapturer* capturer, void* userData,
+        OH_AudioStream_PlaybackCaptureStartState state) { return; };
+
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* oH_AudioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
+    void* userData = nullptr;
+
+    auto playbackCaptureStartCallback =
+        std::make_shared<OHAudioCapturerOnPlaybackCaptureStartCallback>(callback, oH_AudioCapturer, userData);
+    EXPECT_NE(playbackCaptureStartCallback, nullptr);
+
+    playbackCaptureStartCallback->OnPlaybackCaptureStartResult(START_STATE_FAILED);
+}
+
+/**
+* @tc.name  : Test OHAudioCapturerModeCallback::OnReadData API via
+*             READ_DATA_CALLBACK_WITH_RESULT with length <= bufLength.
+* @tc.number: OHAudioCapturerModeCallback_005
+* @tc.desc  : Test OnReadData when length is less than or equal to bufDesc.bufLength.
+*/
+HWTEST(OHAudioCaptureUnitTest, OHAudioCapturerModeCallback_005, TestSize.Level0)
+{
+    OH_AudioCapturer_OnReadDataCallback readcallback =
+        [](OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length) { return; };
+
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<StartPlaybackCaptureFailureCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    oHAudioCapturer.readDataCallbackType_ = READ_DATA_CALLBACK_WITH_RESULT;
+    OH_AudioCapturer* oH_AudioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
+    EXPECT_NE((OHAudioCapturer*)oH_AudioCapturer, nullptr);
+    void* userData = nullptr;
+
+    auto oHAudioCapturerModeCallback =
+        std::make_shared<OHAudioCapturerModeCallback>(readcallback, oH_AudioCapturer, userData);
+    EXPECT_NE(oHAudioCapturerModeCallback, nullptr);
+
+    size_t length = 512;
+    oHAudioCapturerModeCallback->OnReadData(length);
+}
+
+/**
+* @tc.name  : Test OHAudioCapturerModeCallback::OnReadData API via
+*             READ_DATA_CALLBACK_WITH_RESULT with length > bufLength.
+* @tc.number: OHAudioCapturerModeCallback_006
+* @tc.desc  : Test OnReadData when length is greater than bufDesc.bufLength.
+*/
+HWTEST(OHAudioCaptureUnitTest, OHAudioCapturerModeCallback_006, TestSize.Level0)
+{
+    OH_AudioCapturer_OnReadDataCallback readcallback =
+        [](OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length) { return; };
+
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<StartPlaybackCaptureFailureCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    oHAudioCapturer.readDataCallbackType_ = READ_DATA_CALLBACK_WITH_RESULT;
+    OH_AudioCapturer* oH_AudioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
+    EXPECT_NE((OHAudioCapturer*)oH_AudioCapturer, nullptr);
+    void* userData = nullptr;
+
+    auto oHAudioCapturerModeCallback =
+        std::make_shared<OHAudioCapturerModeCallback>(readcallback, oH_AudioCapturer, userData);
+    EXPECT_NE(oHAudioCapturerModeCallback, nullptr);
+
+    size_t length = 2048;
+    oHAudioCapturerModeCallback->OnReadData(length);
+}
+
+/**
+* @tc.name  : Test OHAudioCapturerModeCallback::OnReadData API via READ_DATA_CALLBACK_WITHOUT_RESULT.
+* @tc.number: OHAudioCapturerModeCallback_007
+* @tc.desc  : Test OnReadData when callback type is READ_DATA_CALLBACK_WITHOUT_RESULT.
+*/
+HWTEST(OHAudioCaptureUnitTest, OHAudioCapturerModeCallback_007, TestSize.Level0)
+{
+    OH_AudioCapturer_Callbacks callbacks;
+    callbacks.OH_AudioCapturer_OnReadData =
+        [](OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length) ->
+        int32_t { return 0; };
+
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<StartPlaybackCaptureFailureCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    oHAudioCapturer.readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;
+    OH_AudioCapturer* oH_AudioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
+    EXPECT_NE((OHAudioCapturer*)oH_AudioCapturer, nullptr);
+    void* userData = nullptr;
+
+    auto oHAudioCapturerModeCallback =
+        std::make_shared<OHAudioCapturerModeCallback>(callbacks, oH_AudioCapturer, userData);
+    EXPECT_NE(oHAudioCapturerModeCallback, nullptr);
+
+    size_t length = 1024;
+    oHAudioCapturerModeCallback->OnReadData(length);
+}
+
+/**
+* @tc.name  : Test ConvertGetSupportedNoiseReductionReturnCode API via non-SUCCESS return.
+* @tc.number: ConvertGetSupportedNoiseReductionReturnCode_001
+* @tc.desc  : Test ConvertGetSupportedNoiseReductionReturnCode returns SERVICE_DIED for non-SUCCESS.
+*/
+HWTEST(OHAudioCaptureUnitTest, ConvertGetSupportedNoiseReductionReturnCode_001, TestSize.Level0)
+{
+    OHAudioCapturer oHAudioCapturer;
+    oHAudioCapturer.audioCapturer_ = std::make_shared<NoiseReductionReturnCapturer>(
+        SUCCESS, SUCCESS, ERR_ILLEGAL_STATE);
+    OH_AudioCapturer *audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&oHAudioCapturer);
+    OH_AudioNoiseReductionMode modes[4] = {AUDIO_NOISE_REDUCTION_MODE_STANDARD};
+    uint32_t outModeArraySize = 0;
+
+    OH_AudioStream_Result result = OH_AudioCapturer_GetSupportedNoiseReductionModes(
+        audioCapturer, modes, 4, &outModeArraySize);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_SERVICE_DIED);
+}
+
+/**
+* @tc.name  : Test ConvertGetNoiseReductionReturnCode API via non-SUCCESS return.
+* @tc.number: ConvertGetNoiseReductionReturnCode_001
+* @tc.desc  : Test ConvertGetNoiseReductionReturnCode returns INVALID_PARAM for non-SUCCESS.
+*/
+HWTEST(OHAudioCaptureUnitTest, ConvertGetNoiseReductionReturnCode_001, TestSize.Level0)
+{
+    OHAudioCapturer oHAudioCapturer;
+    oHAudioCapturer.audioCapturer_ = std::make_shared<NoiseReductionReturnCapturer>(
+        SUCCESS, ERR_ILLEGAL_STATE, SUCCESS);
+    OH_AudioCapturer *audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&oHAudioCapturer);
+    OH_AudioNoiseReductionMode mode = AUDIO_NOISE_REDUCTION_MODE_FIDELITY;
+
+    OH_AudioStream_Result result = OH_AudioCapturer_GetNoiseReductionMode(audioCapturer, &mode);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
 #ifdef SUPPOR_PERMISSION
 /**
 * @tc.name  : Test OH_AudioCapturer_Start API via normal state.
@@ -2107,6 +2377,31 @@ HWTEST(OHAudioCaptureUnitTest, SetReadDataCallback_001, TestSize.Level4)
     capturerCallbacks.onReadDataCallback = [](OH_AudioCapturer* capturer, void* userData,
         void* buffer, int32_t length) ->void { return; };
     oHAudioCapturer->SetReadDataCallback(capturerCallbacks, userData);
+
+    EXPECT_EQ(oHAudioCapturer->GetCapturerReadDataCallbackType(), READ_DATA_CALLBACK_WITH_RESULT);
+}
+
+/**
+* @tc.name  : Test SetReadDataCallback API with onReadDataCallback.
+* @tc.number: SetReadDataCallback_003
+* @tc.desc  : Test SetReadDataCallback when readDataCallbackType_ == READ_DATA_CALLBACK_WITH_RESULT &&
+              onReadDataCallback != nullptr to cover if branch at line 1010.
+*/
+HWTEST(OHAudioCaptureUnitTest, SetReadDataCallback_003, TestSize.Level0)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
+    EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
+
+    oHAudioCapturer->readDataCallbackType_ = READ_DATA_CALLBACK_WITH_RESULT;
+    CapturerCallback capturerCallbacks;
+    capturerCallbacks.onReadDataCallback = [](OH_AudioCapturer* capturer, void* userData,
+        void* buffer, int32_t length) ->void { return; };
+    void* userData = nullptr;
+    oHAudioCapturer->SetReadDataCallback(capturerCallbacks, userData);
 }
 
 /**
@@ -2163,6 +2458,29 @@ HWTEST(OHAudioCaptureUnitTest, SetStreamEventCallback_001, TestSize.Level4)
     oHAudioCapturer->SetStreamEventCallback(capturerCallbacks, userData);
 
     capturerCallbacks.onDeviceChangeCallback = nullptr;
+    oHAudioCapturer->SetStreamEventCallback(capturerCallbacks, userData);
+}
+
+/**
+* @tc.name  : Test SetStreamEventCallback API with onDeviceChangeCallback.
+* @tc.number: SetStreamEventCallback_002
+* @tc.desc  : Test SetStreamEventCallback when streamEventCallbackType_ == STREAM_EVENT_CALLBACK_SEPERATED &&
+              onDeviceChangeCallback != nullptr to cover if branch at line 1031.
+*/
+HWTEST(OHAudioCaptureUnitTest, SetStreamEventCallback_002, TestSize.Level0)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
+    EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
+
+    oHAudioCapturer->streamEventCallbackType_ = STREAM_EVENT_CALLBACK_SEPERATED;
+    CapturerCallback capturerCallbacks;
+    capturerCallbacks.onDeviceChangeCallback = [](OH_AudioCapturer* capturer, void* userData,
+        OH_AudioDeviceDescriptorArray* deviceArray) ->void { return; };
+    void* userData = nullptr;
     oHAudioCapturer->SetStreamEventCallback(capturerCallbacks, userData);
 }
 
@@ -2255,6 +2573,323 @@ HWTEST(OHAudioCaptureUnitTest, SetErrorCallback_001, TestSize.Level4)
     capturerCallbacks.onErrorCallback = nullptr;
     oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
 }
+
+/**
+* @tc.name  : Test SetErrorCallback API with onErrorCallback.
+* @tc.number: SetErrorCallback_002
+* @tc.desc  : Test SetErrorCallback when errorCallbackType_ == ERROR_CALLBACK_SEPERATED &&
+              onErrorCallback != nullptr to cover if branch at line 1068.
+*/
+HWTEST(OHAudioCaptureUnitTest, SetErrorCallback_002, TestSize.Level4)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
+    EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
+
+    oHAudioCapturer->errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
+    CapturerCallback capturerCallbacks;
+    capturerCallbacks.onErrorCallback = [](OH_AudioCapturer* capturer, void* userData,
+        OH_AudioStream_Result error) ->void { return; };
+    void* userData = nullptr;
+    oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
+}
+
+/**
+* @tc.name  : Test SetInterruptCallback API with combined callback.
+* @tc.number: SetInterruptCallback_003
+* @tc.desc  : Test SetInterruptCallback when interruptCallbackType_ == INTERRUPT_EVENT_CALLBACK_COMBINED &&
+              capturerCallbacks.callbacks.OH_AudioCapturer_OnInterruptEvent != nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, SetInterruptCallback_003, TestSize.Level0)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
+    EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
+
+    oHAudioCapturer->interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
+    CapturerCallback capturerCallbacks;
+    capturerCallbacks.callbacks.OH_AudioCapturer_OnInterruptEvent =
+        [](OH_AudioCapturer* capturer, void* userData,
+        OH_AudioInterrupt_ForceType forceType, OH_AudioInterrupt_Hint hint) -> void { return; };
+    void* userData = nullptr;
+    oHAudioCapturer->SetInterruptCallback(capturerCallbacks, userData);
+}
 #endif
+
+/**
+* @tc.name  : Test OHAudioCapturer Start when audioCapturer_ is nullptr.
+* @tc.number: OHAudioCapturer_Start_Nullptr_001
+* @tc.desc  : Test OHAudioCapturer::Start returns false when audioCapturer_ is nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_Start_Nullptr_001, TestSize.Level1)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    EXPECT_EQ(oHAudioCapturer->audioCapturer_, nullptr);
+    
+    bool result = oHAudioCapturer->Start();
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test OHAudioCapturer Pause when audioCapturer_ is nullptr.
+* @tc.number: OHAudioCapturer_Pause_Nullptr_001
+* @tc.desc  : Test OHAudioCapturer::Pause returns false when audioCapturer_ is nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_Pause_Nullptr_001, TestSize.Level1)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    EXPECT_EQ(oHAudioCapturer->audioCapturer_, nullptr);
+    
+    bool result = oHAudioCapturer->Pause();
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test OHAudioCapturer Stop when audioCapturer_ is nullptr.
+* @tc.number: OHAudioCapturer_Stop_Nullptr_001
+* @tc.desc  : Test OHAudioCapturer::Stop returns false when audioCapturer_ is nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_Stop_Nullptr_001, TestSize.Level1)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    EXPECT_EQ(oHAudioCapturer->audioCapturer_, nullptr);
+    
+    bool result = oHAudioCapturer->Stop();
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test OHAudioCapturer Flush when audioCapturer_ is nullptr.
+* @tc.number: OHAudioCapturer_Flush_Nullptr_001
+* @tc.desc  : Test OHAudioCapturer::Flush returns false when audioCapturer_ is nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_Flush_Nullptr_001, TestSize.Level1)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    EXPECT_EQ(oHAudioCapturer->audioCapturer_, nullptr);
+    
+    bool result = oHAudioCapturer->Flush();
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test OHAudioCapturer Release when audioCapturer_ is nullptr.
+* @tc.number: OHAudioCapturer_Release_Nullptr_001
+* @tc.desc  : Test OHAudioCapturer::Release returns false when audioCapturer_ is nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_Release_Nullptr_001, TestSize.Level1)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    EXPECT_EQ(oHAudioCapturer->audioCapturer_, nullptr);
+    
+    bool result = oHAudioCapturer->Release();
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_SetInputDevice returns ERR_NOT_SUPPORTED.
+* @tc.number: OH_AudioCapturer_SetInputDevice_NotSupported_001
+* @tc.desc  : Test SetInputDevice when device type is not supported.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetInputDevice_NotSupported_001, TestSize.Level1)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<SetInputDeviceNotSupportedCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    OH_AudioCapturer* capturer = reinterpret_cast<OH_AudioCapturer*>(&oHAudioCapturer);
+    ObjectRefMap<OHAudioCapturer>::Insert(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_SetInputDevice(capturer, AUDIO_DEVICE_TYPE_SPEAKER);
+    ObjectRefMap<OHAudioCapturer>::Erase(&oHAudioCapturer);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_SetInputDevice returns error.
+* @tc.number: OH_AudioCapturer_SetInputDevice_Error_001
+* @tc.desc  : Test SetInputDevice when SetInputDevice returns error.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetInputDevice_Error_001, TestSize.Level1)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<SetInputDeviceErrorCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    OH_AudioCapturer* capturer = reinterpret_cast<OH_AudioCapturer*>(&oHAudioCapturer);
+    ObjectRefMap<OHAudioCapturer>::Insert(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_SetInputDevice(capturer, AUDIO_DEVICE_TYPE_SPEAKER);
+    ObjectRefMap<OHAudioCapturer>::Erase(&oHAudioCapturer);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_SYSTEM);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_SetMuteHint returns ERROR_ILLEGAL_STATE.
+* @tc.number: OH_AudioCapturer_SetMuteHint_IllegalState_001
+* @tc.desc  : Test SetMuteHint when capturer is in illegal state.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetMuteHint_IllegalState_001, TestSize.Level1)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<MuteHintIllegalStateCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    OH_AudioCapturer* capturer = reinterpret_cast<OH_AudioCapturer*>(&oHAudioCapturer);
+    ObjectRefMap<OHAudioCapturer>::Insert(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_SetMuteHint(capturer, true);
+    ObjectRefMap<OHAudioCapturer>::Erase(&oHAudioCapturer);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_SetMuteHint returns ERROR_INVALID_PARAM.
+* @tc.number: OH_AudioCapturer_SetMuteHint_InvalidParam_001
+* @tc.desc  : Test SetMuteHint when parameter is invalid.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetMuteHint_InvalidParam_001, TestSize.Level1)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<MuteHintInvalidParamCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    OH_AudioCapturer* capturer = reinterpret_cast<OH_AudioCapturer*>(&oHAudioCapturer);
+    ObjectRefMap<OHAudioCapturer>::Insert(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_SetMuteHint(capturer, true);
+    ObjectRefMap<OHAudioCapturer>::Erase(&oHAudioCapturer);
+
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetFastStatus returns FASTSTATUS_INVALID.
+* @tc.number: OH_AudioCapturer_GetFastStatus_Invalid_001
+* @tc.desc  : Test GetFastStatus when fast status is invalid.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetFastStatus_Invalid_001, TestSize.Level1)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<GetFastStatusInvalidCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    FastStatus status = oHAudioCapturer.GetFastStatus();
+    EXPECT_EQ(status, FastStatus::FASTSTATUS_INVALID);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetTimestamp returns error.
+* @tc.number: OH_AudioCapturer_GetTimestamp_Error_001
+* @tc.desc  : Test GetTimestamp when GetAudioTime returns false.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetTimestamp_Error_001, TestSize.Level1)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<GetAudioTimeFailureCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    Timestamp stamp;
+    Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
+    bool result = oHAudioCapturer.GetAudioTime(stamp, base);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_Start returns SUCCESS when Start succeeds.
+* @tc.number: OH_AudioCapturer_Start_Success_001
+* @tc.desc  : Test OH_AudioCapturer_Start when Start returns true.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_Start_Success_001, TestSize.Level1)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<StartSuccessCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    OH_AudioCapturer* capturer = reinterpret_cast<OH_AudioCapturer*>(&oHAudioCapturer);
+    ObjectRefMap<OHAudioCapturer>::Insert(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_Start(capturer);
+    ObjectRefMap<OHAudioCapturer>::Erase(&oHAudioCapturer);
+
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_Pause returns SUCCESS when Pause succeeds.
+* @tc.number: OH_AudioCapturer_Pause_Success_001
+* @tc.desc  : Test OH_AudioCapturer_Pause when Pause returns true.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_Pause_Success_001, TestSize.Level1)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<PauseSuccessCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    OH_AudioCapturer* capturer = reinterpret_cast<OH_AudioCapturer*>(&oHAudioCapturer);
+    ObjectRefMap<OHAudioCapturer>::Insert(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_Pause(capturer);
+    ObjectRefMap<OHAudioCapturer>::Erase(&oHAudioCapturer);
+
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_Stop returns SUCCESS when Stop succeeds.
+* @tc.number: OH_AudioCapturer_Stop_Success_001
+* @tc.desc  : Test OH_AudioCapturer_Stop when Stop returns true.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_Stop_Success_001, TestSize.Level1)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<StopSuccessCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    OH_AudioCapturer* capturer = reinterpret_cast<OH_AudioCapturer*>(&oHAudioCapturer);
+    ObjectRefMap<OHAudioCapturer>::Insert(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_Stop(capturer);
+    ObjectRefMap<OHAudioCapturer>::Erase(&oHAudioCapturer);
+
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_Flush returns SUCCESS when Flush succeeds.
+* @tc.number: OH_AudioCapturer_Flush_Success_001
+* @tc.desc  : Test OH_AudioCapturer_Flush when Flush returns true.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_Flush_Success_001, TestSize.Level1)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<FlushSuccessCapturer>();
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    OH_AudioCapturer* capturer = reinterpret_cast<OH_AudioCapturer*>(&oHAudioCapturer);
+    ObjectRefMap<OHAudioCapturer>::Insert(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_Flush(capturer);
+    ObjectRefMap<OHAudioCapturer>::Erase(&oHAudioCapturer);
+
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

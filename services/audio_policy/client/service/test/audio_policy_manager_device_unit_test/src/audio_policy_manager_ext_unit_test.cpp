@@ -306,7 +306,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneRegisterClient_NullGsp, TestSize.Level1)
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->RegisterAudioZoneClient(nullptr);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, 5);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneCreate_NullGsp, TestSize.Level1)
@@ -339,7 +339,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneGetZoneForApp_NullGsp, TestSize.Level1)
     mgr->audioPolicyClientStubCB_ = nullptr;
     std::vector<int32_t> uids, retUids;
     int32_t ret = mgr->GetAudioZoneForApp(uids, retUids);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneGetAll_NullGsp, TestSize.Level1)
@@ -372,7 +372,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneBindDevice_NullGsp, TestSize.Level1)
     mgr->audioPolicyClientStubCB_ = nullptr;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devs;
     int32_t ret = mgr->BindDeviceToAudioZone(1, devs);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneUnBindDevice_NullGsp, TestSize.Level1)
@@ -381,7 +381,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneUnBindDevice_NullGsp, TestSize.Level1)
     mgr->audioPolicyClientStubCB_ = nullptr;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devs;
     int32_t ret = mgr->UnBindDeviceToAudioZone(1, devs);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneEnableReport_NullGsp, TestSize.Level1)
@@ -389,7 +389,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneEnableReport_NullGsp, TestSize.Level1)
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->EnableAudioZoneReport(true);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneEnableChangeReport_NullGsp, TestSize.Level1)
@@ -397,7 +397,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneEnableChangeReport_NullGsp, TestSize.Level1
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->EnableAudioZoneChangeReport(1, true);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneAddUid_NullGsp, TestSize.Level1)
@@ -405,7 +405,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneAddUid_NullGsp, TestSize.Level1)
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->AddUidToAudioZone(1, 1000);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneRemoveUid_NullGsp, TestSize.Level1)
@@ -413,7 +413,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneRemoveUid_NullGsp, TestSize.Level1)
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->RemoveUidFromAudioZone(1, 1000);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneAddUidUsages_Invalid, TestSize.Level1)
@@ -433,7 +433,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneAddUidUsages_NullGsp, TestSize.Level1)
     std::set<StreamUsage> usages = {
         STREAM_USAGE_MUSIC};
     int32_t ret = mgr->AddUidUsagesToAudioZone(1, 1000, usages);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneRemoveUidUsages_Invalid, TestSize.Level1)
@@ -453,7 +453,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneRemoveUidUsages_NullGsp, TestSize.Level1)
     std::set<StreamUsage> usages = {
         STREAM_USAGE_MUSIC};
     int32_t ret = mgr->RemoveUidUsagesFromAudioZone(1, 1000, usages);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneAddStream_NullGsp, TestSize.Level1)
@@ -461,7 +461,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneAddStream_NullGsp, TestSize.Level1)
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->AddStreamToAudioZone(1, AudioZoneStream{});
-    EXPECT_EQ(ret, -1);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneAddStreams_NullGsp, TestSize.Level1)
@@ -470,7 +470,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneAddStreams_NullGsp, TestSize.Level1)
     mgr->audioPolicyClientStubCB_ = nullptr;
     std::vector<AudioZoneStream> streams;
     int32_t ret = mgr->AddStreamsToAudioZone(1, streams);
-    EXPECT_EQ(ret, -1);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneAddStreamId_NullGsp, TestSize.Level1)
@@ -478,7 +478,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneAddStreamId_NullGsp, TestSize.Level1)
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->AddStreamIdToAudioZone(1, 0);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneRemoveStreamId_NullGsp, TestSize.Level1)
@@ -486,7 +486,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneRemoveStreamId_NullGsp, TestSize.Level1)
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->RemoveStreamIdFromAudioZone(1, 0);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZonePauseFocus_NullGsp, TestSize.Level1)
@@ -495,7 +495,7 @@ HWTEST(AudioPolicyManagerDevice, ZonePauseFocus_NullGsp, TestSize.Level1)
     mgr->audioPolicyClientStubCB_ = nullptr;
     std::vector<int32_t> ids;
     int32_t ret = mgr->PauseAudioFocusForExtAudioZone(ids);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneResumeFocus_NullGsp, TestSize.Level1)
@@ -504,7 +504,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneResumeFocus_NullGsp, TestSize.Level1)
     mgr->audioPolicyClientStubCB_ = nullptr;
     std::vector<int32_t> ids;
     int32_t ret = mgr->ResumeAudioFocusForExtAudioZone(ids);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneSetVisible_NullGsp, TestSize.Level1)
@@ -520,7 +520,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneRemoveStream_NullGsp, TestSize.Level1)
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->RemoveStreamFromAudioZone(
         1, AudioZoneStream{});
-    EXPECT_EQ(ret, -1);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneRemoveStreams_NullGsp, TestSize.Level1)
@@ -529,7 +529,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneRemoveStreams_NullGsp, TestSize.Level1)
     mgr->audioPolicyClientStubCB_ = nullptr;
     std::vector<AudioZoneStream> streams;
     int32_t ret = mgr->RemoveStreamsFromAudioZone(1, streams);
-    EXPECT_EQ(ret, -1);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneEnableVolProxy_NullGsp, TestSize.Level1)
@@ -538,7 +538,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneEnableVolProxy_NullGsp, TestSize.Level1)
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->EnableSystemVolumeProxy(
         1, DEVICE_TYPE_SPEAKER, true);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneGetInterrupt_NullGsp, TestSize.Level1)
@@ -556,7 +556,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneGetRendererInfos_NullGsp, TestSize.Level1)
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
     int32_t ret = mgr->GetCurrentRendererChangeInfosForZone(
         1, infos);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneGetInterruptByTag_NullGsp, TestSize.Level1)
@@ -573,7 +573,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneEnableInterrupt_NullGsp, TestSize.Level1)
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->EnableAudioZoneInterruptReport(
         1, "tag", true);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneInjectInterrupt_NullGsp, TestSize.Level1)
@@ -582,7 +582,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneInjectInterrupt_NullGsp, TestSize.Level1)
     mgr->audioPolicyClientStubCB_ = nullptr;
     std::list<std::pair<AudioInterrupt, AudioFocuState>> list;
     int32_t ret = mgr->InjectInterruptToAudioZone(1, list);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, ZoneInjectInterruptByTag_NullGsp, TestSize.Level1)
@@ -592,7 +592,7 @@ HWTEST(AudioPolicyManagerDevice, ZoneInjectInterruptByTag_NullGsp, TestSize.Leve
     std::list<std::pair<AudioInterrupt, AudioFocuState>> list;
     int32_t ret = mgr->InjectInterruptToAudioZone(
         1, "tag", list);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 class ConcreteZoneChangeCb : public AudioZoneChangeCallback {
@@ -1169,7 +1169,7 @@ HWTEST(AudioPolicyManagerDevice, GmUnregFocusCb_NullCb, TestSize.Level1)
 {
     auto *gm = AudioGeneralManager::GetInstance();
     int32_t ret = gm->UnregisterFocusInfoChangeCallback(nullptr);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmGetCallingPid, TestSize.Level1)
@@ -1197,7 +1197,7 @@ HWTEST(AudioPolicyManagerDevice, GmGetAudioScene, TestSize.Level1)
 {
     auto *gm = AudioGeneralManager::GetInstance();
     AudioScene scene = gm->GetAudioScene();
-    EXPECT_NE(scene, AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(scene, AUDIO_SCENE_DEFAULT);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmUnsetRefinerCb, TestSize.Level1)
@@ -1229,7 +1229,7 @@ HWTEST(AudioPolicyManagerDevice, GmSetAsrVoiceMuteMode_NullGasp, TestSize.Level1
     auto *gm = AudioGeneralManager::GetInstance();
     int32_t ret = gm->SetAsrVoiceMuteMode(
         AsrVoiceMuteMode::OUTPUT_MUTE, true);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmSetExtraParams_NullGasp, TestSize.Level1)
@@ -1237,14 +1237,14 @@ HWTEST(AudioPolicyManagerDevice, GmSetExtraParams_NullGasp, TestSize.Level1)
     auto *gm = AudioGeneralManager::GetInstance();
     std::vector<std::pair<std::string, std::string>> kv;
     int32_t ret = gm->SetExtraParameters("key", kv);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmNotifySensitive_NullGasp, TestSize.Level1)
 {
     auto *gm = AudioGeneralManager::GetInstance();
     int32_t ret = gm->NotifySensitiveRecordPermit(1, true);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmGetPrefOutDev, TestSize.Level1)
@@ -1272,7 +1272,7 @@ HWTEST(AudioPolicyManagerDevice, GmGetCurRendererInfos, TestSize.Level1)
     auto *gm = AudioGeneralManager::GetInstance();
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
     int32_t ret = gm->GetCurrentRendererChangeInfos(infos);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmGetCurCapturerInfos, TestSize.Level1)
@@ -1280,7 +1280,7 @@ HWTEST(AudioPolicyManagerDevice, GmGetCurCapturerInfos, TestSize.Level1)
     auto *gm = AudioGeneralManager::GetInstance();
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> infos;
     int32_t ret = gm->GetCurrentCapturerChangeInfos(infos);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmGetFocusInfoList, TestSize.Level1)
@@ -1288,7 +1288,7 @@ HWTEST(AudioPolicyManagerDevice, GmGetFocusInfoList, TestSize.Level1)
     auto *gm = AudioGeneralManager::GetInstance();
     std::list<std::pair<AudioInterrupt, AudioFocuState>> list;
     int32_t ret = gm->GetAudioFocusInfoList(list);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 HWTEST(AudioPolicyManagerDevice, GmSetActiveHfpDevice, TestSize.Level1)

@@ -352,6 +352,95 @@ void AudioInterruptDfx::WriteInterruptOrSessionCallbackErrorEvent(int32_t usage,
     WriteAudioInterruptErrorEvent(interruptError);
 }
 
+void AudioInterruptDfx::WriteInterruptResponseErrorEvent(const std::string &appName,
+    InterruptHint hintType, const std::string &rendererInfo, const std::string &errorInfo)
+{
+    AudioFocusErrorEvent interruptError;
+    interruptError.hintType = hintType;
+    interruptError.errorInfo = errorInfo;
+    interruptError.interruptedAppName = appName;
+    interruptError.interruptedRendererInfo = rendererInfo;
+    WriteAudioInterruptErrorEvent(interruptError);
+}
+
+ResponseResult AudioInterruptDfx::EvaluateResponse(const InterruptResponseCheckInfo &info,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
+{
+    bool isCapturer = info.sourceType != SOURCE_TYPE_INVALID;
+    auto typeMatch = [&info, isCapturer](const auto &entry) {
+        return entry.first.pid == info.pid &&
+            (isCapturer ? entry.first.audioFocusType.sourceType == info.sourceType :
+             entry.first.audioFocusType.streamType == info.streamType);
+    };
+
+    switch (info.hintType) {
+        case INTERRUPT_HINT_RESUME:
+        case INTERRUPT_HINT_STOP: {
+            // If the app does not restart the stream after receiving RESUME event,
+            // or restarts after receiving STOP event, it is abnormal
+            bool expectRestart = (info.hintType == INTERRUPT_HINT_RESUME);
+            for (const auto &entry : focusList) {
+                CHECK_AND_CONTINUE(typeMatch(entry));
+                return expectRestart ? ResponseResult::NORMAL : ResponseResult::RESTARTED;
+            }
+            return expectRestart ? ResponseResult::NOT_RESTARTED : ResponseResult::NORMAL;
+        }
+        case INTERRUPT_HINT_DUCK:
+        case INTERRUPT_HINT_MUTE: {
+            // If the app stops the stream after receiving DUCK or MUTE event, it is abnormal
+            for (const auto &entry : focusList) {
+                CHECK_AND_RETURN_RET(entry.first.streamId != info.streamId, ResponseResult::NORMAL);
+            }
+            return ResponseResult::STOPPED;
+        }
+        case INTERRUPT_HINT_PAUSE:
+            // If the app restarts the stream after receiving PAUSE event, it is abnormal
+            for (const auto &entry : focusList) {
+                CHECK_AND_CONTINUE(typeMatch(entry));
+                CHECK_AND_RETURN_RET(entry.second != ACTIVE, ResponseResult::RESTARTED);
+            }
+            return ResponseResult::NORMAL;
+        default:
+            return ResponseResult::NORMAL;
+    }
+}
+
+static std::string GetHintTypeName(InterruptHint hintType)
+{
+    switch (hintType) {
+        case INTERRUPT_HINT_RESUME: return "RESUME";
+        case INTERRUPT_HINT_STOP: return "STOP";
+        case INTERRUPT_HINT_PAUSE: return "PAUSE";
+        case INTERRUPT_HINT_DUCK: return "DUCK";
+        case INTERRUPT_HINT_MUTE: return "MUTE";
+        default: return "";
+    }
+}
+
+static std::string GetResponseResultSuffix(ResponseResult result)
+{
+    switch (result) {
+        case ResponseResult::NOT_RESTARTED: return "_NOT_RESTART";
+        case ResponseResult::RESTARTED: return "_RESTART";
+        case ResponseResult::STOPPED: return "_STOP";
+        default: return "";
+    }
+}
+
+void AudioInterruptDfx::CheckInterruptResponse(const InterruptResponseCheckInfo &info,
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList)
+{
+    auto result = EvaluateResponse(info, focusList);
+    CHECK_AND_RETURN(result != ResponseResult::NORMAL);
+
+    std::string suffix = "_" + GetHintTypeName(info.hintType) + GetResponseResultSuffix(result);
+    std::string errorInfo = "InterruptResponseAbnormal" + suffix;
+    std::string rendererInfo = "streamType: " + std::to_string(info.streamType) +
+        " sourceType: " + std::to_string(info.sourceType) +
+        " streamId: " + std::to_string(info.streamId);
+    WriteInterruptResponseErrorEvent(info.appName, info.hintType, rendererInfo, errorInfo);
+}
+
 void AudioInterruptDfx::AudioSessionTimeoutErrorEvent(const AudioInterrupt &audioInterrupt)
 {
     AudioFocusErrorEvent interruptErrorEvent;

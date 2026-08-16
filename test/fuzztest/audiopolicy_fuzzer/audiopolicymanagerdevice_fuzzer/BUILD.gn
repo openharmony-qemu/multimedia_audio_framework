@@ -84,7 +84,8 @@ ohos_fuzztest("AudioPolicyManagerDeviceFuzzTest") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "bluetooth:btframework"
+    "bluetooth:btframework",
+    "ffrt:libffrt",
   ]
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]

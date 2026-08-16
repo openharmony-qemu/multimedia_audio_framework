@@ -50,6 +50,7 @@ ohos_fuzztest("AudioSocketThreadFuzzTest") {
     "hdf_core:libpub_utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "ffrt:libffrt",
   ]
 
   defines = []

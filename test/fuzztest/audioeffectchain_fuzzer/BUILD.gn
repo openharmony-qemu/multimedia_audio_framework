@@ -82,6 +82,7 @@ ohos_fuzztest("AudioEffectChainFuzzTest") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
   defines = []
   if (!audio_framework_feature_new_engine_flag) {

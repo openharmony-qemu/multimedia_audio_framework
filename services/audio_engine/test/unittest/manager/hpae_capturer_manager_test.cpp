@@ -19,10 +19,12 @@
 #include <chrono>
 #include "test_case_common.h"
 #include "audio_errors.h"
+#include "audio_pipe_types.h"
 #include "hpae_capturer_manager.h"
 #include "hpae_fast_capturer_manager.h"
 #include "i_hpae_capturer_manager.h"
 #include "hpae_node_common.h"
+#include "hpae_capture_move_info.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -3095,6 +3097,151 @@ HWTEST_F(HpaeCapturerManagerTest, MoveAllStream_MoveSingle_001, TestSize.Level1)
 
     std::vector<uint32_t> sessionIds;
     EXPECT_EQ(capturerManager->MoveAllStream(DEFAULT_SOURCE_NAME, sessionIds, MOVE_SINGLE), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test scene cluster survives while effect ref count > 0
+ * tc.type   : FUNC
+ * tc.number : SceneClusterEffectRefCount_001
+ * tc.desc   : DeleteOutputSession must not release/erase the shared scene cluster while the effect
+ *             ref count is > 0, and must erase it once the count drops to 0.
+ */
+HWTEST_F(HpaeCapturerManagerTest, SceneClusterEffectRefCount_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // two recording streams sharing the same scene cluster
+    HpaeStreamInfo streamInfoA;
+    InitReloadStreamInfo(streamInfoA);
+    streamInfoA.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfoA) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfoB;
+    InitReloadStreamInfo(streamInfoB);
+    streamInfoB.sourceType = SOURCE_TYPE_MIC;
+    streamInfoB.sessionId = DEFAULT_SESSION_ID + 1; // 1 for another session id
+    EXPECT_EQ(capturerManager->CreateStream(streamInfoB) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfoA.sourceType);
+    ASSERT_EQ(capturerManager->sceneClusterMap_.count(sceneType), 1);
+    auto sceneCluster = capturerManager->sceneClusterMap_[sceneType];
+    ASSERT_NE(sceneCluster, nullptr);
+
+    // UT env cannot instantiate the real algo chain: effect node is invalid and ref count is 0,
+    // so IncSceneClusterEffectRef is a no-op here. Simulate two alive streams depending on the
+    // effect (what the runtime would produce with a valid effect), then exercise the release path.
+    EXPECT_EQ(sceneCluster->IsEffectNodeValid(), false);
+    EXPECT_EQ(capturerManager->GetSceneClusterEffectRefCount(sceneType), 0);
+    sceneCluster->IncEffectRefCount(); // stream A
+    sceneCluster->IncEffectRefCount(); // stream B
+    EXPECT_EQ(capturerManager->GetSceneClusterEffectRefCount(sceneType), 2);
+
+    // release stream B: ref 2 -> 1, the shared cluster/effect must survive (the bug being fixed)
+    capturerManager->DeleteOutputSession(streamInfoB.sessionId);
+    EXPECT_EQ(capturerManager->sceneClusterMap_.count(sceneType), 1);
+    EXPECT_EQ(capturerManager->GetSceneClusterEffectRefCount(sceneType), 1);
+
+    // release stream A (last dependent): ref 1 -> 0, cluster is released and erased
+    capturerManager->DeleteOutputSession(streamInfoA.sessionId);
+    EXPECT_EQ(capturerManager->sceneClusterMap_.count(sceneType), 0);
+    EXPECT_EQ(capturerManager->GetSceneClusterEffectRefCount(sceneType), 0);
+}
+
+/**
+ * @tc.name  : Test AddNodeToSource for accessory device with 40ms frame len
+ * @tc.type  : FUNC
+ * @tc.number: AddNodeToSource_Accessory_40ms_001
+ * @tc.desc  : Test AddNodeToSource for accessory device with 40ms frame len (halved span size branch)
+ */
+HWTEST_F(HpaeCapturerManagerTest, AddNodeToSource_Accessory_40ms_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.deviceType = DEVICE_TYPE_ACCESSORY;
+    sourceInfo.frameLen = 1920;
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    nodeInfo.sessionId = streamInfo.sessionId;
+
+    auto sourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
+    EXPECT_NE(sourceOutputNode, nullptr);
+
+    HpaeCaptureMoveInfo moveInfo;
+    moveInfo.sessionId = streamInfo.sessionId;
+    moveInfo.sourceOutputNode = sourceOutputNode;
+    moveInfo.sessionInfo.state = HPAE_SESSION_PREPARED;
+
+    EXPECT_EQ(capturerManager->AddNodeToSource(moveInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/**
+ * @tc.name  : Test MoveStream for normal stream
+ * @tc.type  : FUNC
+ * @tc.number: MoveStream_IsLowLatencyStream_001
+ * @tc.desc  : Test MoveStream for normal stream
+ */
+HWTEST_F(HpaeCapturerManagerTest, MoveStream_IsLowLatencyStream_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->MoveStream(streamInfo.sessionId, DEFAULT_SOURCE_NAME), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/**
+ * @tc.name  : Test MoveAllStreamToNewSource for normal stream
+ * @tc.type  : FUNC
+ * @tc.number: MoveAllStreamToNewSource_IsLowLatencyStream_001
+ * @tc.desc  : Test MoveAllStreamToNewSource for normal stream
+ */
+HWTEST_F(HpaeCapturerManagerTest, MoveAllStreamToNewSource_IsLowLatencyStream_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    std::vector<uint32_t> sessionIds = {streamInfo.sessionId};
+    EXPECT_EQ(capturerManager->MoveAllStream(DEFAULT_SOURCE_NAME, sessionIds, MOVE_ALL), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
     EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);

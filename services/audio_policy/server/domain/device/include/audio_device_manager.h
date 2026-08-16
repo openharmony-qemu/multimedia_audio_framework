@@ -62,6 +62,11 @@ public:
     vector<shared_ptr<AudioDeviceDescriptor>> GetCapturePrivacyDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> GetCapturePublicDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> GetRecongnitionCapturePrivacyDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetCommRenderNegativeDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetCommCaptureNegativeDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetMediaRenderNegativeDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetMediaCaptureNegativeDevices();
+    vector<shared_ptr<AudioDeviceDescriptor>> GetCaptureNegativeDevices();
     shared_ptr<AudioDeviceDescriptor> GetSingleMicSppDevice();
     shared_ptr<AudioDeviceDescriptor> GetCommRenderDefaultDevice(StreamUsage streamUsage);
     shared_ptr<AudioDeviceDescriptor> GetRenderDefaultDevice();
@@ -181,6 +186,7 @@ private:
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;
+    list<DevicePrivacyInfo> negativeDeviceList_;
 
     vector<shared_ptr<AudioDeviceDescriptor>> remoteRenderDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> remoteCaptureDevices_;
@@ -194,6 +200,11 @@ private:
     vector<shared_ptr<AudioDeviceDescriptor>> mediaCapturePublicDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> capturePrivacyDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> capturePublicDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> commRenderNegativeDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> commCaptureNegativeDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> mediaRenderNegativeDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> mediaCaptureNegativeDevices_;
+    vector<shared_ptr<AudioDeviceDescriptor>> captureNegativeDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> connectedDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> reconCapturePrivacyDevices_;
     vector<shared_ptr<AudioDeviceDescriptor>> virtualDevices_;

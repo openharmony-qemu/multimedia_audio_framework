@@ -46,7 +46,6 @@ idl_gen_interface("audio_policy_idl_callback") {
     "${audio_policy_idl_location}/IStandardAudioZoneClient.idl",
     "${audio_policy_idl_location}/IStandardClientTracker.idl",
     "${audio_policy_idl_location}/IStandardSleAudioOperationCallback.idl",
-    "${audio_policy_idl_location}/IStandardSpatializationStateChangeListener.idl",
     "${audio_policy_idl_location}/IVADeviceController.idl",
     "${audio_policy_idl_location}/IVAInputStream.idl",
     "${audio_policy_idl_location}/ILoopbackCallback.idl",
@@ -311,6 +310,7 @@ ohos_shared_library("audio_policy_client_idl_interface") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
     "hitrace:hitrace_meter",

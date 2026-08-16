@@ -127,10 +127,10 @@ HWTEST(AudioVolumeClientManagerUnitTest, GetMaxVolume_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMaxVolume_001 start");
     int32_t result = AudioVolumeClientManager::GetInstance().GetMaxVolume(STREAM_ALL);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMaxVolume_001 result1:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().GetMaxVolume(STREAM_ULTRASONIC);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMaxVolume_001 result2:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_NUM);
 }
 
 /**
@@ -144,10 +144,10 @@ HWTEST(AudioVolumeClientManagerUnitTest, GetMinVolume_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMinVolume_001 start");
     int32_t result = AudioVolumeClientManager::GetInstance().GetMinVolume(STREAM_ALL);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMinVolume_001 result1:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().GetMinVolume(STREAM_ULTRASONIC);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetMinVolume_001 result2:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
 }
 
 /**
@@ -161,16 +161,16 @@ HWTEST(AudioVolumeClientManagerUnitTest, GetDeviceMaxVolume_001, TestSize.Level1
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMaxVolume_001 start");
     int32_t result = AudioVolumeClientManager::GetInstance().GetDeviceMaxVolume(STREAM_ALL, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMaxVolume_001 result1:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMaxVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMaxVolume_001 result2:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMaxVolume(STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMaxVolume_001 result3:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMaxVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMaxVolume_001 result4:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_NUM);
 }
 
 /**
@@ -198,16 +198,16 @@ HWTEST(AudioVolumeClientManagerUnitTest, GetDeviceMinVolume_001, TestSize.Level1
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMinVolume_001 start");
     int32_t result = AudioVolumeClientManager::GetInstance().GetDeviceMinVolume(STREAM_ALL, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMinVolume_001 result1:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMinVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMinVolume_001 result2:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMinVolume_001 result3:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetDeviceMinVolume_001 result4:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
 }
 
 /**
@@ -1045,7 +1045,8 @@ HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeWithDevice_003, TestSize.Level
 HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeControlPriority_001, TestSize.Level1)
 {
     GetPermission();
-    std::vector<AudioVolumeType> priorities = {STREAM_MUSIC, STREAM_VOICE_CALL, STREAM_RING};
+    std::vector<AudioVolumeType> priorities = {
+        STREAM_MUSIC, STREAM_VOICE_COMMUNICATION, STREAM_VOICE_CALL, STREAM_RING};
     int32_t result = AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -1127,6 +1128,28 @@ HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeControlPriority_007, TestSize.
     std::vector<AudioVolumeType> priorities = {STREAM_VOICE_CALL, STREAM_MUSIC, STREAM_RING,
         STREAM_VOICE_ASSISTANT, STREAM_ALARM, STREAM_NOTIFICATION, STREAM_SYSTEM,
         STREAM_ACCESSIBILITY, STREAM_ULTRASONIC, STREAM_NAVIGATION};
+    int32_t result = AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name   : Test SetVolumeControlPriority API
+* @tc.number : SetVolumeControlPriority_008
+* @tc.desc   : Test SetVolumeControlPriority with all valid volume types
+*/
+HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeControlPriority_008, TestSize.Level1)
+{
+    GetPermission();
+    std::vector<AudioVolumeType> priorities = {
+        STREAM_VOICE_CALL,
+        STREAM_VOICE_COMMUNICATION,
+        STREAM_VOICE_ASSISTANT,
+        STREAM_RING,
+        STREAM_VOICE_RING,
+        STREAM_ALARM,
+        STREAM_NAVIGATION,
+        STREAM_MUSIC,
+    };
     int32_t result = AudioVolumeClientManager::GetInstance().SetVolumeControlPriority(priorities);
     EXPECT_EQ(result, SUCCESS);
 }

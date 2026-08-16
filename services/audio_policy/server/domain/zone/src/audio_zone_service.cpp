@@ -1340,5 +1340,17 @@ void AudioZoneService::UpdateZonePreferDeviceWhenDeviceConnect()
     CHECK_AND_RETURN_LOG(zonePtr != nullptr, "default zone is nullptr");
     zonePtr->UpdatePreferDevice(AudioZoneChangeReason::NEW_DEVICE_AVAILABLE);
 }
+
+void AudioZoneService::StopAudioFocusBySessionIds(const int32_t zoneId,
+    const std::vector<std::pair<uint32_t, int32_t>> &sessions)
+{
+    std::shared_ptr<AudioInterruptService> tmp = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        tmp = interruptService_;
+    }
+    CHECK_AND_RETURN_LOG(tmp != nullptr, "interruptService_ tmp is nullptr");
+    tmp->StopAudioFocusBySessionIds(zoneId, sessions);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1359,36 +1359,6 @@ HWTEST(AudioPolicyUnitTest, GetStreamMute_006, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetSelectedDeviceInfo
- * @tc.number: GetSelectedDeviceInfo_001
- * @tc.desc  : Test GetSelectedDeviceInfo interface. Returns deviceInfo.
- */
-HWTEST(AudioPolicyUnitTest, GetSelectedDeviceInfo_001, TestSize.Level1)
-{
-    std::string deviceInfo;
-    int32_t uid = -1;
-    int32_t pid = -1;
-    AudioStreamType streamType = AudioVolumeType::STREAM_MUSIC;
-    deviceInfo = AudioPolicyManager::GetInstance().GetSelectedDeviceInfo(uid, pid, streamType);
-    EXPECT_TRUE(deviceInfo == "");
-}
-
-/**
- * @tc.name  : Test GetSelectedDeviceInfo
- * @tc.number: GetSelectedDeviceInfo_002
- * @tc.desc  : Test GetSelectedDeviceInfo interface. Returns deviceInfo.
- */
-HWTEST(AudioPolicyUnitTest, GetSelectedDeviceInfo_002, TestSize.Level1)
-{
-    std::string deviceInfo;
-    int32_t uid = static_cast<int32_t>(getuid());;
-    int32_t pid = getpid();
-    AudioStreamType streamType = AudioVolumeType::STREAM_RING;
-    deviceInfo = AudioPolicyManager::GetInstance().GetSelectedDeviceInfo(uid, pid, streamType);
-    EXPECT_TRUE(deviceInfo == "");
-}
-
-/**
  * @tc.name  : Test GetActiveOutputDevice
  * @tc.number: GetActiveOutputDevice_001
  * @tc.desc  : Test GetActiveOutputDevice interface. Returns deviceType.

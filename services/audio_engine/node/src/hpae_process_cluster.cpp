@@ -152,9 +152,15 @@ void HpaeProcessCluster::ConnectMixerNode()
 
 void HpaeProcessCluster::CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo)
 {
-    if (!SafeGetMap(idGainMap_, sessionId)) {
+    auto gainNode = SafeGetMap(idGainMap_, sessionId);
+    if (!gainNode) {
         HpaeNodeInfo gainNodeInfo = preNodeInfo;
         idGainMap_[sessionId] = std::make_shared<HpaeGainNode>(gainNodeInfo);
+    } else {
+        // Reuse existing node: clear stale fade state (e.g. DONE_FADEOUT left by a previous
+        // Pause) so SignalProcess won't keep silencing data after the reconnect.
+        gainNode->ResetFadeState();
+        AUDIO_INFO_LOG("sessionId %{public}d gainNode already exist, reset fade state", sessionId);
     }
 }
 

@@ -17,6 +17,7 @@ import("../../../../../../sensor.gni")
 
 module_output_path =
     "audio_framework/audio_framework_engine/audio_effect_chain_manager"
+audio_framework_root = "../../../../../.."
 
 ohos_unittest("audio_effect_chain_manager_unit_test") {
   testonly = true
@@ -99,6 +100,15 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
     external_deps += [ "sensor:sensor_interface_native" ]
   }
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   part_name = "audio_framework"
   subsystem_name = "multimedia"
 }

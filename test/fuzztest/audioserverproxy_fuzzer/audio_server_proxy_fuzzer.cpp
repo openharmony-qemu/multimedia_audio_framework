@@ -16,6 +16,7 @@
 #include "securec.h"
 #include "audio_log.h"
 #include "audio_server_proxy.h"
+#include "audio_info.h"
 using namespace std;
 
 namespace OHOS {
@@ -283,9 +284,10 @@ void AudioServerProxyIsAcousticEchoCancelerSupportedFuzzTest()
 void AudioServerProxySetKaraokeParametersFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
-    DeviceType deviceType = DEVICE_TYPE_NONE;
-    std::string parameters = "testParameters";
-    audioServerProxy.SetKaraokeParameters(deviceType, parameters);
+    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    KaraokeParamType paramType = static_cast<KaraokeParamType>(GetData<int32_t>());
+    int32_t value = GetData<int32_t>();
+    audioServerProxy.SetKaraokeParameters(deviceType, paramType, value);
 }
  
 void AudioServerProxyIsAudioLoopbackSupportedFuzzTest()

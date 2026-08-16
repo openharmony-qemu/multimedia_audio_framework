@@ -601,6 +601,25 @@ std::string AudioPipeManager::GetModuleNameBySessionId(uint32_t sessionId)
     return "";
 }
 
+std::string AudioPipeManager::GetClassNameBySessionId(uint32_t sessionId)
+{
+    Trace trace("AudioPipeManager::GetClassNameBySessionId");
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
+                desc->newDeviceDescs_.front() != nullptr, "desc is nullptr");
+            if (desc->sessionId_ != sessionId) {
+                continue;
+            }
+            return pipeInfo->moduleInfo_.className;
+        }
+    }
+    AUDIO_WARNING_LOG("cannot find sessionId: %{public}u", sessionId);
+    return "";
+}
+
 AudioStreamInfo AudioPipeManager::DecideStreamInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo,
     const std::shared_ptr<AudioDeviceDescriptor> deviceDesc)
 {

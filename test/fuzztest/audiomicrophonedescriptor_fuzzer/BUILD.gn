@@ -48,6 +48,7 @@ ohos_fuzztest("AudioMicrophoneDescriptorFuzzTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "ffrt:libffrt",
   ]
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]

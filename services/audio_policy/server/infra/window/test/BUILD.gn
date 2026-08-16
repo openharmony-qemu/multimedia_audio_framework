@@ -42,6 +42,7 @@ ohos_unittest("window_utils_unit_test") {
     "googletest:gmock",
     "hilog:libhilog",
     "init:libbegetutil",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/window_utils_unit_test/src/window_utils_unit_test.cpp" ]

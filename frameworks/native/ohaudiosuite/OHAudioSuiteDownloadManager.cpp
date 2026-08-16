@@ -30,6 +30,11 @@
 
 using OHOS::AudioStandard::OHAudioSuiteDownloadManager;
 
+namespace {
+static constexpr size_t DOWNLOAD_FEATURE_NAME_MAX_LEN = 1024;
+static constexpr size_t DOWNLOAD_SYSTEM_PERMISSION_DENIED = 202;
+}
+
 static int32_t ConvertToSaResult(int32_t internalError)
 {
     using namespace OHOS::AudioStandard;
@@ -40,6 +45,9 @@ static int32_t ConvertToSaResult(int32_t internalError)
     if (internalError == ERR_INVALID_PARAM) {
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
+    if (internalError == ERR_SYSTEM_PERMISSION_DENIED) {
+        return DOWNLOAD_SYSTEM_PERMISSION_DENIED;
+    }
     if (internalError == ERR_ILLEGAL_STATE || internalError == ERR_NOT_STARTED) {
         return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
@@ -48,10 +56,6 @@ static int32_t ConvertToSaResult(int32_t internalError)
     }
 
     return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
-}
-
-namespace {
-static constexpr size_t DOWNLOAD_FEATURE_NAME_MAX_LEN = 1024;
 }
 
 int32_t OH_AudioSuite_GetDownloadManager(OH_AudioSuite_DownloadManager **downloadManager)

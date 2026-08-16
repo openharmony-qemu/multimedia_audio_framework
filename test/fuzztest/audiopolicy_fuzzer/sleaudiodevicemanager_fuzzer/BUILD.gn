@@ -44,6 +44,7 @@ ohos_fuzztest("SleAudioDeviceManagerFuzzTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "ffrt:libffrt",
   ]
 
   defines = []

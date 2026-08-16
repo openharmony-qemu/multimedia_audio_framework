@@ -141,6 +141,7 @@ public:
     // interfaces of SessionTimeOutCallback
     void OnSessionTimeout(const int32_t pid) override;
     void UpdateZonePreferDeviceWhenDeviceConnect();
+    void StopAudioFocusBySessionIds(const int32_t zoneId, const std::vector<std::pair<uint32_t, int32_t>> &sessionIds);
 
 private:
     AudioZoneService()

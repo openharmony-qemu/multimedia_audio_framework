@@ -120,7 +120,6 @@ interface IAudioPolicy {
     void GetDevices([in] int deviceFlag, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
     void IsEnhancedRoutingSupported([out] boolean ret);
     void SelectOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors, [in] int audioDeviceSelectMode);
-    void GetSelectedDeviceInfo([in] int uid, [in] int pid, [in] int streamType, [out] String retStr);
     void SelectInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     void CreateRendererClient([inout] sharedptr<AudioStreamDescriptor> streamDesc, [out] StreamFlagInfo flagInfo, [inout] unsigned int sessionId, [out] String networkId);
     void CreateCapturerClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [inout] unsigned int sessionId);
@@ -175,11 +174,9 @@ interface IAudioPolicy {
     void IsHeadTrackingSupported([out] boolean ret);
     void IsHeadTrackingSupportedForDevice([in] String address, [out] boolean ret);
     void UpdateSpatialDeviceState([in] AudioSpatialDeviceState audioSpatialDeviceState);
-    void RegisterSpatializationStateEventListener([in] unsigned int sessionID, [in] int streamUsage, [in] IRemoteObject object);
     void ConfigDistributedRoutingRole([in] sharedptr<AudioDeviceDescriptor> descriptor, [in] int type);
     void SetDistributedRoutingRoleCallback([in] IRemoteObject object);
     void UnsetDistributedRoutingRoleCallback();
-    void UnregisterSpatializationStateEventListener([in] unsigned int sessionID);
     void RegisterPolicyCallbackClient(
         [in] IRemoteObject object,
         [in] int zoneID /* default value: 0 -- local device */);
@@ -276,7 +273,7 @@ interface IAudioPolicy {
     void SetCallbackStreamUsageInfo([in] Set<int> streamUsages);
     void UpdateDeviceInfo([in] sharedptr<AudioDeviceDescriptor> deviceDesc, [in] int command);
     void SetSleAudioOperationCallback([in] IRemoteObject object);
-    void SetKaraokeParameters([in] int deviceType, [in] String parameters, [out] boolean ret);
+    void SetKaraokeParameters([in] int deviceType, [in] int paramType, [in] int value, [out] boolean ret);
     void SetLoopbackVolume([in] float volume, [out] boolean ret);
     void GetLoopbackVolume([out] float volume, [out] boolean ret);
     void IsAudioLoopbackSupported([in] int mode, [in] int deviceType, [out] boolean isSupported);
@@ -375,4 +372,5 @@ interface IAudioPolicy {
     void SetVolumeControlPriority([in] List<int> priorities, [out] int ret);
     void SetVoipRendererMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
     void SetVoipCapturerMute([in] int appUid, [in] long streamId, [in] boolean muted, [in] IRemoteObject callerObj);
+    void SetStopStreamInfoWhenDisconnect([in] String networkId, [in] List<int> usages, [in] List<int> uids);
 }

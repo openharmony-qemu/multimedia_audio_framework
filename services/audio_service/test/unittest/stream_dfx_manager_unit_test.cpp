@@ -19,6 +19,7 @@
 #include "audio_stream_info.h"
 #include "audio_source_type.h"
 #include "audio_info.h"
+#include "audio_capturer_dfx_collector.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -422,6 +423,48 @@ HWTEST(StreamDfxManagerUnitTest, CheckStreamOccupancy_NoTimeout_001, TestSize.Le
     
     manager.CheckStreamOccupancy(sessionId, config, false);
     manager.CheckStreamOccupancy(sessionId + 1, dummyConfig, false);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerDfxCollector FlushDfxMsg via invalid appUid.
+ * @tc.number: AudioCapturerDfxCollector_FlushDfxMsg_001
+ * @tc.desc  : Test FlushDfxMsg returns early when appUid is DFX_INVALID_APP_UID.
+ */
+HWTEST(StreamDfxManagerUnitTest, AudioCapturerDfxCollector_FlushDfxMsg_001, TestSize.Level1)
+{
+    AudioCapturerDfxCollector dfxCollector;
+    uint32_t index = 0;
+    int32_t invalidAppUid = -1;
+
+    dfxCollector.FlushDfxMsg(index, invalidAppUid);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerDfxCollector FlushDfxMsg via valid appUid.
+ * @tc.number: AudioCapturerDfxCollector_FlushDfxMsg_002
+ * @tc.desc  : Test FlushDfxMsg processes messages when appUid is valid.
+ */
+HWTEST(StreamDfxManagerUnitTest, AudioCapturerDfxCollector_FlushDfxMsg_002, TestSize.Level1)
+{
+    AudioCapturerDfxCollector dfxCollector;
+    uint32_t index = 0;
+    int32_t validAppUid = 1000;
+
+    dfxCollector.FlushDfxMsg(index, validAppUid);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerDfxCollector FlushDfxMsg with DFX_INVALID_APP_UID.
+ * @tc.number: AudioCapturerDfxCollector_FlushDfxMsg_003
+ * @tc.desc  : Test FlushDfxMsg returns early when appUid equals DFX_INVALID_APP_UID (-1).
+ */
+HWTEST(StreamDfxManagerUnitTest, AudioCapturerDfxCollector_FlushDfxMsg_003, TestSize.Level1)
+{
+    AudioCapturerDfxCollector dfxCollector;
+    uint32_t index = 0;
+    int32_t invalidAppUid = DFX_INVALID_APP_UID;
+
+    dfxCollector.FlushDfxMsg(index, invalidAppUid);
 }
 
 } // AudioStandard

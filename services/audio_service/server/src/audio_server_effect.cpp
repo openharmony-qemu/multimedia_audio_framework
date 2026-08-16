@@ -25,6 +25,7 @@
 #include "i_hpae_manager.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
+#include "karaoke_param_helper.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -427,11 +428,15 @@ int32_t AudioServer::IsAcousticEchoCancelerSupported(int32_t sourceType,  bool &
     return SUCCESS;
 }
 
-int32_t AudioServer::SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret)
+int32_t AudioServer::SetKaraokeParameters(int32_t deviceType, int32_t paramType, int32_t value, bool &ret)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "SetKaraokeParameters refused for %{public}d", callingUid);
+    bool valid = false;
+    std::string parameters = BuildKaraokeParamString(paramType, value, valid);
+    CHECK_AND_RETURN_RET_LOG(valid, ERROR,
+        "SetKaraokeParameters invalid paramType=%{public}d value=%{public}d", paramType, value);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");

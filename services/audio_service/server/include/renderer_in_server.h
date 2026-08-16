@@ -59,17 +59,10 @@ private:
 // Async action to notify silent state change
 class NotifySilentStateAction : public AsyncActionHandler::AsyncAction {
 public:
-    // For SetClientVolume: carry actual volume value
-    NotifySilentStateAction(uint32_t sessionId, bool isInSilentState, float volume,
+    NotifySilentStateAction(uint32_t sessionId, bool isInSilentState, float volume, bool isMuteUpdate,
         std::weak_ptr<RendererInServer> renderer)
         : sessionId_(sessionId), isInSilentState_(isInSilentState),
-          volume_(volume), isMuteUpdate_(false), renderer_(renderer) {}
-
-    // For SetSilentModeAndMixWithOthers: mute-only update, no volume value needed
-    NotifySilentStateAction(uint32_t sessionId, bool isInSilentState,
-        std::weak_ptr<RendererInServer> renderer)
-        : sessionId_(sessionId), isInSilentState_(isInSilentState),
-          volume_(0.0f), isMuteUpdate_(true), renderer_(renderer) {}
+          volume_(volume), isMuteUpdate_(isMuteUpdate), renderer_(renderer) {}
 
     void Exec() override;
 private:

@@ -229,7 +229,6 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/pipe/src/audio_concurrency_manager.cpp",
     "server/service/service_main/src/device_init_callback.cpp",
     "server/src/audio_client_tracker_callback_listener.cpp",
-    "server/src/audio_spatialization_state_change_callback.cpp",
     "server/src/audio_policy_manager_listener.cpp",
     "server/domain/effect/src/audio_effect_service.cpp",
     "server/domain/interrupt/src/audio_interrupt_dfx_collector.cpp",
@@ -253,6 +252,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/router/pair_device_router.cpp",
     "server/domain/router/privacy_priority_router.cpp",
     "server/domain/router/public_priority_router.cpp",
+    "server/domain/router/negative_priority_router.cpp",
     "server/domain/router/stream_filter_router.cpp",
     "server/domain/router/user_select_router.cpp",
     "server/domain/router/wireless_conflict_handler.cpp",
@@ -455,9 +455,8 @@ audio_ohos_library("audio_policy_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "init:libbeget_proxy",
+    "ffrt:libffrt",
   ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
 
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
@@ -671,7 +670,6 @@ audio_ohos_library("audio_policy_client") {
     "client/stub/src/va_input_stream_stub_impl.cpp",
     "client/stub/src/sle_audio_operation_callback_stub_impl.cpp",
     "server/src/audio_client_tracker_callback_service.cpp",
-    "server/src/audio_spatialization_state_change_listener.cpp",
   ]
 
   deps = [
@@ -955,6 +953,7 @@ ohos_shared_library("audio_manager_client") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "cJSON:cjson",

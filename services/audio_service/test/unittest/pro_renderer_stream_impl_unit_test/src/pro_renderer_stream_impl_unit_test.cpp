@@ -1663,5 +1663,652 @@ HWTEST(ProRendererStreamImplUnitTest, SetStreamIndex_001, TestSize.Level0)
     rendererStreamImpl->SetStreamIndex(index);
     EXPECT_EQ(rendererStreamImpl->streamIndex_, index);
 }
+
+/**
+ * @tc.name  : Test SetSpeed API is unsupported on ProRendererStreamImpl
+ * @tc.type  : FUNC
+ * @tc.number: SetSpeed_NotSupported_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, SetSpeed_NotSupported_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    // SetSpeed is intentionally unsupported on the pro renderer stream.
+    constexpr float NORMAL_PLAYBACK_SPEED = 1.0f;
+    int32_t ret = rendererStreamImpl->SetSpeed(NORMAL_PLAYBACK_SPEED);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test SetLoudnessGain API is unsupported on ProRendererStreamImpl
+ * @tc.type  : FUNC
+ * @tc.number: SetLoudnessGain_NotSupported_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, SetLoudnessGain_NotSupported_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    // SetLoudnessGain is reserved for the hpae renderer stream and is rejected here.
+    constexpr float TYPICAL_LOUDNESS_GAIN = 0.5f;
+    int32_t ret = rendererStreamImpl->SetLoudnessGain(TYPICAL_LOUDNESS_GAIN);
+    EXPECT_EQ(ret, ERR_PRO_STREAM_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test SetOffloadDataCallbackState API is unsupported on ProRendererStreamImpl
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadDataCallbackState_NotSupported_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, SetOffloadDataCallbackState_NotSupported_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    // The offload data-callback state is not supported on this stream type.
+    constexpr int32_t OFFLOAD_CALLBACK_STATE_INACTIVE = 0;
+    int32_t ret = rendererStreamImpl->SetOffloadDataCallbackState(OFFLOAD_CALLBACK_STATE_INACTIVE);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test GetStreamFramesWritten guards divide-by-zero when frame size is unset
+ * @tc.type  : FUNC
+ * @tc.number: GetStreamFramesWritten_ZeroFrameSize_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, GetStreamFramesWritten_ZeroFrameSize_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    // No InitParams(): byteSizePerFrame_ stays 0 and triggers the div-by-zero guard.
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    EXPECT_EQ(rendererStreamImpl->byteSizePerFrame_, 0u);
+
+    uint64_t framesWritten = 0;
+    int32_t ret = rendererStreamImpl->GetStreamFramesWritten(framesWritten);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : Test GetLatency guards divide-by-zero when frame size is unset
+ * @tc.type  : FUNC
+ * @tc.number: GetLatency_ZeroFrameSize_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, GetLatency_ZeroFrameSize_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    // No InitParams(): byteSizePerFrame_ stays 0 and triggers the div-by-zero guard.
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    EXPECT_EQ(rendererStreamImpl->byteSizePerFrame_, 0u);
+
+    uint64_t latency = 0;
+    int32_t ret = rendererStreamImpl->GetLatency(latency);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : Test Start rejects the default invalid status and leaves status unchanged
+ * @tc.type  : FUNC
+ * @tc.number: Start_InvalidStatus_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, Start_InvalidStatus_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    // Default status is I_STATUS_INVALID; Start() must reject and leave status unchanged.
+    EXPECT_EQ(rendererStreamImpl->status_, I_STATUS_INVALID);
+
+    int32_t ret = rendererStreamImpl->Start();
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    EXPECT_EQ(rendererStreamImpl->status_, I_STATUS_INVALID);
+}
+
+/**
+ * @tc.name  : Test ReturnIndex ignores a negative index and leaves the write queue unchanged
+ * @tc.type  : FUNC
+ * @tc.number: ReturnIndex_NegativeIndex_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, ReturnIndex_NegativeIndex_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    // Seed writeQueue_ with a known set of entries (it is empty until InitParams runs).
+    rendererStreamImpl->writeQueue_.push(0);
+    rendererStreamImpl->writeQueue_.push(1);
+    const size_t expectedSize = rendererStreamImpl->writeQueue_.size();
+    EXPECT_EQ(expectedSize, 2u);
+
+    constexpr int32_t NEGATIVE_INDEX = -1;
+    int32_t ret = rendererStreamImpl->ReturnIndex(NEGATIVE_INDEX);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererStreamImpl->writeQueue_.size(), expectedSize);
+}
+
+/**
+ * @tc.name  : Test RegisterSinkLatencyFetcher rejects a null fetcher
+ * @tc.type  : FUNC
+ * @tc.number: RegisterSinkLatencyFetcher_Null_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, RegisterSinkLatencyFetcher_Null_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    // A null fetcher must be rejected and sinkLatencyFetcher_ must remain unset.
+    EXPECT_FALSE(rendererStreamImpl->sinkLatencyFetcher_);
+
+    int32_t ret = rendererStreamImpl->RegisterSinkLatencyFetcher(nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_FALSE(rendererStreamImpl->sinkLatencyFetcher_);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag with a software-only flag returns success with zero latency
+ * @tc.type  : FUNC
+ * @tc.number: GetLatencyWithFlag_SoftwareOnly_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, GetLatencyWithFlag_SoftwareOnly_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    // LATENCY_FLAG_ENGINE carries no HARDWARE bit, so the hardware fetcher path is skipped.
+    constexpr uint64_t NON_ZERO_SEED = 1;
+    uint64_t latency = NON_ZERO_SEED;
+    int32_t ret = rendererStreamImpl->GetLatencyWithFlag(latency, LATENCY_FLAG_ENGINE);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 0ULL);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag with hardware flag but no fetcher fails
+ * @tc.type  : FUNC
+ * @tc.number: GetLatencyWithFlag_HardwareNoFetcher_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, GetLatencyWithFlag_HardwareNoFetcher_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    // No fetcher registered: requesting HARDWARE latency must fail with ERR_OPERATION_FAILED.
+    EXPECT_FALSE(rendererStreamImpl->sinkLatencyFetcher_);
+
+    uint64_t latency = 0;
+    int32_t ret = rendererStreamImpl->GetLatencyWithFlag(latency, LATENCY_FLAG_HARDWARE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag propagates the fetcher error code
+ * @tc.type  : FUNC
+ * @tc.number: GetLatencyWithFlag_HardwareFetcherError_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, GetLatencyWithFlag_HardwareFetcherError_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    // Register a lambda fetcher (no mock class) that always fails.
+    auto failingFetcher = [](uint32_t &latencyMs) -> int32_t {
+        latencyMs = 0;
+        return ERR_OPERATION_FAILED;
+    };
+    int32_t regRet = rendererStreamImpl->RegisterSinkLatencyFetcher(failingFetcher);
+    EXPECT_EQ(regRet, SUCCESS);
+
+    uint64_t latency = 0;
+    int32_t ret = rendererStreamImpl->GetLatencyWithFlag(latency, LATENCY_FLAG_HARDWARE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag scales fetcher latency (ms) into microseconds
+ * @tc.type  : FUNC
+ * @tc.number: GetLatencyWithFlag_HardwareFetcherSuccess_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, GetLatencyWithFlag_HardwareFetcherSuccess_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    // Fetcher reports 5 ms; implementation scales by AUDIO_US_PER_MS (1000) -> 5000 us.
+    constexpr uint32_t FETCHER_LATENCY_MS = 5;
+    auto okFetcher = [FETCHER_LATENCY_MS](uint32_t &latencyMs) -> int32_t {
+        latencyMs = FETCHER_LATENCY_MS;
+        return SUCCESS;
+    };
+    int32_t regRet = rendererStreamImpl->RegisterSinkLatencyFetcher(okFetcher);
+    EXPECT_EQ(regRet, SUCCESS);
+
+    uint64_t latency = 0;
+    int32_t ret = rendererStreamImpl->GetLatencyWithFlag(latency, LATENCY_FLAG_HARDWARE);
+    EXPECT_EQ(ret, SUCCESS);
+    const uint64_t expectedLatency = static_cast<uint64_t>(FETCHER_LATENCY_MS) * AUDIO_US_PER_MS;
+    EXPECT_EQ(latency, expectedLatency);
+}
+
+/**
+ * @tc.name  : Test WriteToSinkBuffer copies AVS3 metadata after PCM in the 3DA-direct path
+ * @tc.type  : FUNC
+ * @tc.number: WriteToSinkBuffer_3DA_Direct_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, WriteToSinkBuffer_3DA_Direct_001, TestSize.Level3)
+{
+    // Constants mirror the file-static values in pro_renderer_stream_impl.cpp.
+    constexpr uint32_t AVS3_METADATA_SIZE = 19824;             // AVS3METADATA_SIZE
+    constexpr uint32_t AUDIO_VIVID_SAMPLES_PER_FRAME = 1024;   // AUDIO_VIVID_SAMPLES
+    constexpr uint8_t METADATA_SENTINEL = 0x5A;
+
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.channels = CHANNEL_8;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
+    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
+    rendererStreamImpl->status_ = I_STATUS_INVALID;
+    ASSERT_EQ(rendererStreamImpl->InitParams(), SUCCESS);
+    // The 3DA-direct bypass disables both resample and multi-channel down-mix.
+    EXPECT_FALSE(rendererStreamImpl->isNeedResample_);
+    EXPECT_FALSE(rendererStreamImpl->isNeedMcr_);
+
+    const uint32_t bytesPerSample = sizeof(int16_t); // SAMPLE_S16LE -> 2 bytes
+    const uint32_t channelCount = static_cast<uint32_t>(processConfig.streamInfo.channels);
+    const uint32_t pcmLen = AUDIO_VIVID_SAMPLES_PER_FRAME * channelCount * bytesPerSample;
+    const uint32_t metaLen = AVS3_METADATA_SIZE;
+    std::vector<uint8_t> pcmBuffer(pcmLen, 0);
+    std::vector<uint8_t> metaBuffer(metaLen, METADATA_SENTINEL);
+
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = pcmBuffer.data();
+    bufferDesc.bufLength = pcmLen;
+    bufferDesc.metaBuffer = metaBuffer.data();
+    bufferDesc.metaLength = metaLen;
+
+    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(ret, SUCCESS);
+
+    // The first write slot holds PCM followed by metadata at offset bufLength.
+    const auto &sinkSlot = rendererStreamImpl->sinkBuffer_[0];
+    EXPECT_EQ(sinkSlot.size(), pcmLen + metaLen);
+    EXPECT_EQ(static_cast<uint8_t>(sinkSlot[pcmLen]), METADATA_SENTINEL);
+    EXPECT_EQ(static_cast<uint8_t>(sinkSlot[pcmLen + metaLen - 1]), METADATA_SENTINEL);
+}
+
+/**
+ * @tc.name  : Test AbortCallback accumulates every abort signal into abortFlag_
+ * @tc.type  : FUNC
+ * @tc.number: AbortCallback_AccumulatesFlag_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, AbortCallback_AccumulatesFlag_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    rendererStreamImpl->abortFlag_ = 0;
+
+    constexpr int32_t FIRST_ABORT_TIMES = 1;
+    constexpr int32_t SECOND_ABORT_TIMES = 2;
+    rendererStreamImpl->AbortCallback(FIRST_ABORT_TIMES);
+    rendererStreamImpl->AbortCallback(SECOND_ABORT_TIMES);
+    const int32_t expectedAbortFlag = FIRST_ABORT_TIMES + SECOND_ABORT_TIMES;
+    EXPECT_EQ(rendererStreamImpl->abortFlag_, expectedAbortFlag);
+}
+
+/**
+ * @tc.name  : Test GetStreamIndex returns the value set by SetStreamIndex
+ * @tc.type  : FUNC
+ * @tc.number: GetStreamIndex_AfterSet_001
+ */
+HWTEST(ProRendererStreamImplUnitTest, GetStreamIndex_AfterSet_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    constexpr uint32_t EXPECTED_STREAM_INDEX = 7;
+    rendererStreamImpl->SetStreamIndex(EXPECTED_STREAM_INDEX);
+    EXPECT_EQ(rendererStreamImpl->GetStreamIndex(), EXPECTED_STREAM_INDEX);
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2 helpers: hand-rolled fakes for Peek's writeCallback switch
+// (pro_renderer_stream_impl.cpp:603-632). Held alive via shared_ptr in test
+// scope so the weak_ptr registered with the SUT does not expire before Peek.
+// ---------------------------------------------------------------------------
+
+// Named constants for Phase 2 Peek branch tests (no magic numbers).
+constexpr int32_t INVALID_INDEX_BEFORE_PEEK = -1;
+constexpr int32_t SINK_BUFFER_SLOT_ZERO = 0;
+constexpr size_t FAKE_MIN_BUFFER_SIZE = 1024;
+const std::vector<char> SENTINEL_AUDIO_DATA = {'P', 'E', 'E', 'K'};
+
+// Fake IWriteCallback for testing Peek's writeCallback switch. Only
+// OnWriteData(size_t) is exercised by Peek (pro_renderer_stream_impl.cpp:605);
+// the other two pure virtuals return SUCCESS and are not invoked here.
+class FakeWriteCallback : public IWriteCallback {
+public:
+    explicit FakeWriteCallback(int32_t code) : returnCode_(code), writeDataSizeCallCount_(0), lastLength_(0) {}
+    virtual ~FakeWriteCallback() = default;
+
+    int32_t OnWriteData(size_t length) override
+    {
+        writeDataSizeCallCount_++;
+        lastLength_ = length;
+        return returnCode_;
+    }
+    int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override { return SUCCESS; }
+    int32_t GetAvailableSize(size_t &length) override { return SUCCESS; }
+
+    int32_t GetWriteDataSizeCallCount() const { return writeDataSizeCallCount_; }
+    size_t GetLastLength() const { return lastLength_; }
+
+private:
+    int32_t returnCode_;
+    int32_t writeDataSizeCallCount_;
+    size_t lastLength_;
+};
+
+// Fake IStatusCallback that records the last observed operation so Peek's
+// OPERATION_UNDERFLOW branch (pro_renderer_stream_impl.cpp:611-613) can be
+// verified without depending on RendererInServer.
+class FakeStatusCallback : public IStatusCallback {
+public:
+    FakeStatusCallback() : lastOperation_(INVALID_INDEX_BEFORE_PEEK), updateCount_(0) {}
+    virtual ~FakeStatusCallback() = default;
+
+    void OnStatusUpdate(IOperation operation) override
+    {
+        lastOperation_ = static_cast<int32_t>(operation);
+        updateCount_++;
+    }
+
+    int32_t GetLastOperation() const { return lastOperation_; }
+    int32_t GetUpdateCount() const { return updateCount_; }
+
+private:
+    int32_t lastOperation_;
+    int32_t updateCount_;
+};
+
+/**
+ * @tc.name  : Test Peek writeCallback SUCCESS branch
+ * @tc.type  : FUNC
+ * @tc.number: Peek_WriteCallbackSuccess_001
+ * @tc.desc  : OnWriteData returns SUCCESS; Peek enters the SUCCESS case
+ *             (pro_renderer_stream_impl.cpp:616-622), sets
+ *             isFirstNoUnderrunFrame_ and returns SUCCESS.
+ */
+HWTEST(ProRendererStreamImplUnitTest, Peek_WriteCallbackSuccess_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    // Preconditions to reach the writeCallback switch: data enabled (default),
+    // not blocked, empty readQueue (skip short-circuit at line 597-601), and
+    // not first frame (avoid 500ms wait inside PopSinkBuffer at line 676-682).
+    rendererStreamImpl->isBlock_ = false;
+    rendererStreamImpl->isFirstFrame_ = false;
+    rendererStreamImpl->minBufferSize_ = FAKE_MIN_BUFFER_SIZE;
+    ASSERT_EQ(rendererStreamImpl->readQueue_.empty(), true);
+
+    auto fakeWriteCallback = std::make_shared<FakeWriteCallback>(SUCCESS);
+    rendererStreamImpl->RegisterWriteCallback(fakeWriteCallback);
+
+    std::vector<char> audioBuffer;
+    int32_t index = INVALID_INDEX_BEFORE_PEEK;
+    int32_t result = rendererStreamImpl->Peek(&audioBuffer, index);
+
+    // SUCCESS case (line 616-622): result reassigned to SUCCESS at line 620.
+    EXPECT_EQ(result, SUCCESS);
+    // OnWriteData(size_t) invoked exactly once with minBufferSize_ (line 605).
+    EXPECT_EQ(fakeWriteCallback->GetWriteDataSizeCallCount(), 1);
+    EXPECT_EQ(fakeWriteCallback->GetLastLength(), FAKE_MIN_BUFFER_SIZE);
+    // isFirstNoUnderrunFrame_ flipped to true by line 619.
+    EXPECT_EQ(rendererStreamImpl->isFirstNoUnderrunFrame_.load(), true);
+}
+
+/**
+ * @tc.name  : Test Peek writeCallback UNDERRUN with first underrun frame
+ * @tc.type  : FUNC
+ * @tc.number: Peek_WriteCallbackUnderrun_FirstFrame_FiresUnderflow_001
+ * @tc.desc  : OnWriteData returns ERR_RENDERER_IN_SERVER_UNDERRUN and
+ *             isFirstNoUnderrunFrame_ is true; the status callback receives
+ *             OPERATION_UNDERFLOW (pro_renderer_stream_impl.cpp:609-614).
+ *             Note: Peek still returns ERR_RENDERER_IN_SERVER_UNDERRUN at
+ *             line 633 because result is never reassigned in this case.
+ */
+HWTEST(ProRendererStreamImplUnitTest, Peek_WriteCallbackUnderrun_FirstFrame_FiresUnderflow_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    rendererStreamImpl->isBlock_ = false;
+    rendererStreamImpl->isFirstFrame_ = false;
+    ASSERT_EQ(rendererStreamImpl->readQueue_.empty(), true);
+    // isFirstNoUnderrunFrame_ gates the OPERATION_UNDERFLOW callback (line 611).
+    rendererStreamImpl->isFirstNoUnderrunFrame_ = true;
+
+    auto fakeWriteCallback = std::make_shared<FakeWriteCallback>(ERR_RENDERER_IN_SERVER_UNDERRUN);
+    rendererStreamImpl->RegisterWriteCallback(fakeWriteCallback);
+
+    auto fakeStatusCallback = std::make_shared<FakeStatusCallback>();
+    rendererStreamImpl->RegisterStatusCallback(fakeStatusCallback);
+
+    std::vector<char> audioBuffer;
+    int32_t index = INVALID_INDEX_BEFORE_PEEK;
+    int32_t result = rendererStreamImpl->Peek(&audioBuffer, index);
+
+    // UNDERRUN case: result NOT reassigned, returned as-is at line 633.
+    EXPECT_EQ(result, ERR_RENDERER_IN_SERVER_UNDERRUN);
+    // statusCallback non-null + isFirstNoUnderrunFrame_ true -> fired (line 611-612).
+    EXPECT_EQ(fakeStatusCallback->GetUpdateCount(), 1);
+    EXPECT_EQ(fakeStatusCallback->GetLastOperation(), static_cast<int32_t>(OPERATION_UNDERFLOW));
+}
+
+/**
+ * @tc.name  : Test Peek writeCallback UNDERRUN with isFirstNoUnderrunFrame_ false
+ * @tc.type  : FUNC
+ * @tc.number: Peek_WriteCallbackUnderrun_NotFirstFrame_NoCallback_001
+ * @tc.desc  : OnWriteData returns ERR_RENDERER_IN_SERVER_UNDERRUN and
+ *             isFirstNoUnderrunFrame_ is false; the OPERATION_UNDERFLOW
+ *             callback is suppressed (pro_renderer_stream_impl.cpp:611).
+ */
+HWTEST(ProRendererStreamImplUnitTest, Peek_WriteCallbackUnderrun_NotFirstFrame_NoCallback_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    rendererStreamImpl->isBlock_ = false;
+    rendererStreamImpl->isFirstFrame_ = false;
+    ASSERT_EQ(rendererStreamImpl->readQueue_.empty(), true);
+    rendererStreamImpl->isFirstNoUnderrunFrame_ = false; // suppresses callback (line 611)
+
+    auto fakeWriteCallback = std::make_shared<FakeWriteCallback>(ERR_RENDERER_IN_SERVER_UNDERRUN);
+    rendererStreamImpl->RegisterWriteCallback(fakeWriteCallback);
+
+    auto fakeStatusCallback = std::make_shared<FakeStatusCallback>();
+    rendererStreamImpl->RegisterStatusCallback(fakeStatusCallback);
+
+    std::vector<char> audioBuffer;
+    int32_t index = INVALID_INDEX_BEFORE_PEEK;
+    int32_t result = rendererStreamImpl->Peek(&audioBuffer, index);
+
+    // Returned as-is at line 633 (result never reassigned in UNDERRUN case).
+    EXPECT_EQ(result, ERR_RENDERER_IN_SERVER_UNDERRUN);
+    EXPECT_EQ(fakeStatusCallback->GetUpdateCount(), 0); // callback suppressed
+}
+
+/**
+ * @tc.name  : Test Peek writeCallback non-SUCCESS/non-UNDERRUN error
+ * @tc.type  : FUNC
+ * @tc.number: Peek_WriteCallbackError_Propagated_001
+ * @tc.desc  : OnWriteData returns a generic error code; Peek hits the default
+ *             case and returns that code early
+ *             (pro_renderer_stream_impl.cpp:624-627).
+ */
+HWTEST(ProRendererStreamImplUnitTest, Peek_WriteCallbackError_Propagated_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    rendererStreamImpl->isBlock_ = false;
+    rendererStreamImpl->isFirstFrame_ = false;
+    ASSERT_EQ(rendererStreamImpl->readQueue_.empty(), true);
+
+    // Any error code that is neither SUCCESS nor ERR_RENDERER_IN_SERVER_UNDERRUN
+    // falls into the default branch (line 624) and is returned at line 626.
+    auto fakeWriteCallback = std::make_shared<FakeWriteCallback>(ERR_OPERATION_FAILED);
+    rendererStreamImpl->RegisterWriteCallback(fakeWriteCallback);
+
+    std::vector<char> audioBuffer;
+    int32_t index = INVALID_INDEX_BEFORE_PEEK;
+    int32_t result = rendererStreamImpl->Peek(&audioBuffer, index);
+
+    EXPECT_EQ(result, ERR_OPERATION_FAILED); // returned early at line 626
+    EXPECT_EQ(fakeWriteCallback->GetWriteDataSizeCallCount(), 1);
+}
+
+/**
+ * @tc.name  : Test Peek short-circuits when readQueue_ is non-empty
+ * @tc.type  : FUNC
+ * @tc.number: Peek_ReadQueueNonEmpty_ShortCircuits_001
+ * @tc.desc  : A non-empty readQueue_ makes Peek return SUCCESS via
+ *             PopSinkBuffer (pro_renderer_stream_impl.cpp:597-601) without
+ *             invoking the write callback at line 603-605.
+ */
+HWTEST(ProRendererStreamImplUnitTest, Peek_ReadQueueNonEmpty_ShortCircuits_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    rendererStreamImpl->isBlock_ = false;
+    rendererStreamImpl->isFirstFrame_ = false;
+
+    // Provide a sinkBuffer_ slot and enqueue its index so readQueue_ is non-empty
+    // and PopSinkBuffer (line 685-689) can copy the sentinel through.
+    rendererStreamImpl->sinkBuffer_.resize(1);
+    rendererStreamImpl->sinkBuffer_[SINK_BUFFER_SLOT_ZERO] = SENTINEL_AUDIO_DATA;
+    rendererStreamImpl->readQueue_.push(SINK_BUFFER_SLOT_ZERO);
+    ASSERT_EQ(rendererStreamImpl->readQueue_.empty(), false);
+
+    // Register a callback whose OnWriteData counts calls; it must NOT be invoked
+    // because the short-circuit at line 597-601 skips the writeCallback entirely.
+    auto fakeWriteCallback = std::make_shared<FakeWriteCallback>(SUCCESS);
+    rendererStreamImpl->RegisterWriteCallback(fakeWriteCallback);
+
+    std::vector<char> audioBuffer;
+    int32_t index = INVALID_INDEX_BEFORE_PEEK;
+    int32_t result = rendererStreamImpl->Peek(&audioBuffer, index);
+
+    EXPECT_EQ(result, SUCCESS); // result initialized to SUCCESS, returned at line 600
+    EXPECT_EQ(fakeWriteCallback->GetWriteDataSizeCallCount(), 0); // short-circuit, no callback
+    EXPECT_EQ(audioBuffer, SENTINEL_AUDIO_DATA); // PopSinkBuffer copied the slot (line 688)
+    EXPECT_EQ(index, SINK_BUFFER_SLOT_ZERO); // readQueue_.front() per line 686
+}
+
+/**
+ * @tc.name  : Test EnqueueBuffer copies an EAC3 passthrough buffer directly
+ * @tc.type  : FUNC
+ * @tc.number: EnqueueBuffer_EAC3_001
+ * @tc.desc  : With streamInfo.encoding == ENCODING_EAC3, EnqueueBuffer takes the
+ *             direct memcpy passthrough path (pro_renderer_stream_impl.cpp:462-467)
+ *             instead of the mcr/resample/3DA conversion branches.
+ */
+HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_EAC3_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    processConfig.streamInfo.encoding = ENCODING_EAC3;
+    bool isDirect = true;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+
+    ASSERT_EQ(rendererStreamImpl->InitParams(), SUCCESS);
+
+    // A modest passthrough buffer (well within one sinkBuffer_ slot) carrying a sentinel.
+    constexpr uint32_t EAC3_BUFFER_LEN = 256;
+    const uint8_t EAC3_SENTINEL = 0xE3;
+    std::vector<uint8_t> eac3Buffer(EAC3_BUFFER_LEN, EAC3_SENTINEL);
+
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = eac3Buffer.data();
+    bufferDesc.bufLength = EAC3_BUFFER_LEN;
+
+    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(ret, SUCCESS);
+
+    // The EAC3 path copies bufLength bytes verbatim into the first write slot (line 463-464).
+    const auto &sinkSlot = rendererStreamImpl->sinkBuffer_[SINK_BUFFER_SLOT_ZERO];
+    ASSERT_GE(sinkSlot.size(), static_cast<size_t>(EAC3_BUFFER_LEN));
+    EXPECT_EQ(static_cast<uint8_t>(sinkSlot[0]), EAC3_SENTINEL);
+    EXPECT_EQ(static_cast<uint8_t>(sinkSlot[EAC3_BUFFER_LEN - 1]), EAC3_SENTINEL);
+}
+
+/**
+ * @tc.name  : Test Peek returns ERR_OPERATION_FAILED when data sending is disabled
+ * @tc.type  : FUNC
+ * @tc.number: Peek_SendDataDisabled_001
+ * @tc.desc  : SetSendDataEnabled(false) flips sendDataEnabled_ to false; Peek then
+ *             hits the early-return guard at pro_renderer_stream_impl.cpp:593-594
+ *             and returns ERR_OPERATION_FAILED. Re-enabling restores the path.
+ */
+HWTEST(ProRendererStreamImplUnitTest, Peek_SendDataDisabled_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, true);
+
+    // Default sendDataEnabled_ is true; disable it to exercise the guard at line 593-594.
+    rendererStreamImpl->SetSendDataEnabled(false);
+    rendererStreamImpl->isBlock_ = false;
+
+    std::vector<char> audioBuffer;
+    int32_t index = INVALID_INDEX_BEFORE_PEEK;
+    int32_t result = rendererStreamImpl->Peek(&audioBuffer, index);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED); // guard at line 593-594
+
+    // Re-enabling restores the data-enabled path: with no callback registered, Peek
+    // now proceeds past the guard to the writeCallback==nullptr else branch (line 629-631).
+    rendererStreamImpl->SetSendDataEnabled(true);
+    int32_t restored = rendererStreamImpl->Peek(&audioBuffer, index);
+    EXPECT_EQ(restored, ERR_WRITE_BUFFER);
+}
+
+/**
+ * @tc.name  : Test GetCurrentPosition with BOOTTIME clock base
+ * @tc.type  : FUNC
+ * @tc.number: GetCurrentPosition_Boottime_001
+ * @tc.desc  : With base == Timestamp::BOOTTIME, GetCurrentPosition takes the
+ *             GetBootNano() branch (pro_renderer_stream_impl.cpp:325) and returns SUCCESS.
+ */
+HWTEST(ProRendererStreamImplUnitTest, GetCurrentPosition_Boottime_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    ASSERT_EQ(rendererStreamImpl->InitParams(), SUCCESS);
+
+    uint64_t framePosition = 0;
+    uint64_t timestamp = 0;
+    uint64_t latency = 0;
+    int32_t ret = rendererStreamImpl->GetCurrentPosition(framePosition, timestamp, latency,
+        Timestamp::BOOTTIME);
+    EXPECT_EQ(ret, SUCCESS); // BOOTTIME branch at line 325
+}
+
+/**
+ * @tc.name  : Test Drain returns immediately when the read queue is already empty
+ * @tc.type  : FUNC
+ * @tc.number: Drain_EmptyReadQueue_001
+ * @tc.desc  : With an empty readQueue_, Drain skips the drainSync_.wait_for at
+ *             pro_renderer_stream_impl.cpp:257-261 and completes immediately.
+ */
+HWTEST(ProRendererStreamImplUnitTest, Drain_EmptyReadQueue_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    ASSERT_EQ(rendererStreamImpl->readQueue_.empty(), true); // empty -> skip wait at line 257
+
+    int32_t ret = rendererStreamImpl->Drain();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererStreamImpl->status_, I_STATUS_DRAINED); // status set at line 267
+}
 } // namespace AudioStandard
 } // namespace OHOS

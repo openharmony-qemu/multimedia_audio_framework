@@ -2200,30 +2200,54 @@ HWTEST_F(AudioVolumeUnitTest, SetPipeVolumeMute_005, TestSize.Level1)
  * @tc.name  : Test RemovePipeVolume API
  * @tc.type  : FUNC
  * @tc.number: RemovePipeVolume_001
- * @tc.desc  : Test RemovePipeVolume interface - remove existing entry
+ * @tc.desc  : Test RemovePipeVolume interface - remove all entries of an existing pipe, keep other pipes untouched
  */
 HWTEST_F(AudioVolumeUnitTest, RemovePipeVolume_001, TestSize.Level1)
 {
     audioVolumeTest->pipeVolume_.clear();
-    PipeVolume pipeVolume(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, false);
-    AudioVolume::GetInstance()->SetPipeVolume(pipeVolume);
-    AudioVolume::GetInstance()->RemovePipeVolume(TEST_PIPE_ID, STREAM_MUSIC);
-    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
-    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(key), AudioVolume::GetInstance()->pipeVolume_.end());
+    PipeVolume musicVol(TEST_PIPE_ID, STREAM_MUSIC, 0.5f, 5, false);
+    PipeVolume ringVol(TEST_PIPE_ID, STREAM_RING, 0.4f, 4, false);
+    PipeVolume callVol(TEST_PIPE_ID, STREAM_VOICE_CALL, 0.6f, 6, false);
+    AudioVolume::GetInstance()->SetPipeVolume(musicVol);
+    AudioVolume::GetInstance()->SetPipeVolume(ringVol);
+    AudioVolume::GetInstance()->SetPipeVolume(callVol);
+    PipeVolume otherPipeVol(TEST_PIPE_ID_2, STREAM_MUSIC, 0.3f, 3, false);
+    AudioVolume::GetInstance()->SetPipeVolume(otherPipeVol);
+
+    AudioVolume::GetInstance()->RemovePipeVolume(TEST_PIPE_ID);
+
+    std::string musicKey = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
+    std::string ringKey = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_RING);
+    std::string callKey = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_VOICE_CALL);
+    std::string otherKey = std::to_string(TEST_PIPE_ID_2) + "|" + std::to_string(STREAM_MUSIC);
+    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(musicKey),
+        AudioVolume::GetInstance()->pipeVolume_.end());
+    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(ringKey),
+        AudioVolume::GetInstance()->pipeVolume_.end());
+    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(callKey),
+        AudioVolume::GetInstance()->pipeVolume_.end());
+    EXPECT_NE(AudioVolume::GetInstance()->pipeVolume_.find(otherKey),
+        AudioVolume::GetInstance()->pipeVolume_.end());
 }
 
 /**
  * @tc.name  : Test RemovePipeVolume API
  * @tc.type  : FUNC
  * @tc.number: RemovePipeVolume_002
- * @tc.desc  : Test RemovePipeVolume interface - remove non-existent entry
+ * @tc.desc  : Test RemovePipeVolume interface - remove a pipe with no entries, map stays unchanged
  */
 HWTEST_F(AudioVolumeUnitTest, RemovePipeVolume_002, TestSize.Level1)
 {
     audioVolumeTest->pipeVolume_.clear();
-    AudioVolume::GetInstance()->RemovePipeVolume(TEST_PIPE_ID, STREAM_MUSIC);
-    std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
-    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(key), AudioVolume::GetInstance()->pipeVolume_.end());
+    PipeVolume otherPipeVol(TEST_PIPE_ID_2, STREAM_MUSIC, 0.3f, 3, false);
+    AudioVolume::GetInstance()->SetPipeVolume(otherPipeVol);
+
+    AudioVolume::GetInstance()->RemovePipeVolume(TEST_PIPE_ID_INVALID);
+
+    std::string otherKey = std::to_string(TEST_PIPE_ID_2) + "|" + std::to_string(STREAM_MUSIC);
+    EXPECT_NE(AudioVolume::GetInstance()->pipeVolume_.find(otherKey),
+        AudioVolume::GetInstance()->pipeVolume_.end());
+    EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.size(), 1);
 }
 
 /**

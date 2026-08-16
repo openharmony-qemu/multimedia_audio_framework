@@ -289,6 +289,27 @@ static bool IsDegradeInputStream(const std::shared_ptr<AudioStreamDescriptor> &s
     return HasDegradeInputDevice(streamDesc->newDeviceDescs_) || HasDegradeInputDevice(streamDesc->oldDeviceDescs_);
 }
 
+static bool IsCamcorderMicInSupportedInputDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    return deviceDesc != nullptr && deviceDesc->networkId_ == LOCAL_NETWORK_ID &&
+        Util::IsCamcorderMicInSupportedInputDeviceType(deviceDesc->deviceType_);
+}
+
+static bool HasCamcorderDegradeInputDevice(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+{
+    return std::any_of(deviceDescs.begin(), deviceDescs.end(), [](const auto &deviceDesc) {
+        return deviceDesc != nullptr && !IsCamcorderMicInSupportedInputDevice(deviceDesc);
+    });
+}
+
+static bool IsCamcorderDegradeInputStream(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
+    return HasCamcorderDegradeInputDevice(streamDesc->newDeviceDescs_) ||
+        HasCamcorderDegradeInputDevice(streamDesc->oldDeviceDescs_);
+}
+
 static bool IsVoiceRecognitionMicInEcRequested(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
@@ -301,6 +322,7 @@ static bool IsCamcorderMicInRequested(const std::shared_ptr<AudioStreamDescripto
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
     return streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_CAMCORDER &&
+        !IsCamcorderDegradeInputStream(streamDesc) &&
         streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW;
 }
 
@@ -1442,8 +1464,11 @@ int32_t AudioCoreService::StartClientForPlayback(uint32_t sessionId,
     CheckFastToNormalForPlayback(streamDesc, opMsg);
     int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
-    deviceDesc = streamDesc->GetMainNewDeviceDesc();
-    CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr");
+    auto latestStreamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_RET_LOG(latestStreamDesc != nullptr, ERR_NULL_POINTER,
+        "StartClientForPlayback: streamDesc is nullptr after activate");
+    deviceDesc = latestStreamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr");
     CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
     audioPolicyManager_.UpdateVolumeForAllPipes();
     audioVolumeManager_.SetVoiceCallVolumeOnDeviceSwitch(deviceDesc, true, streamDesc);
@@ -1476,6 +1501,11 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     int32_t inputRet = ActivateInputDevice(streamDesc);
     CHECK_AND_RETURN_RET_LOG(inputRet != REFETCH_DEVICE, SUCCESS, "Activate input device failed, refetch device");
     CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
+    auto latestStreamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_RET_LOG(latestStreamDesc != nullptr, ERR_NULL_POINTER,
+        "StartClientForRecord: streamDesc is nullptr after activate");
+    deviceDesc = latestStreamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_POINTER, "Capturer deviceDesc is nullptr after activate");
     CheckAndSetCurrentInputDevice(deviceDesc, GetRealUid(streamDesc));
     audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
         pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
@@ -1748,6 +1778,8 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
             streamDesc->callerPid_, streamDesc->GetSourceType());
     }
 
+    UnmuteDualStreamAfterAlarm(streamDesc);
+
     return SUCCESS;
 }
 
@@ -1785,6 +1817,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     }
     DeleteSessionId(sessionId);
     ClearMuteVoipState(streamDesc, sessionId);
+    UnmuteDualStreamAfterAlarm(streamDesc);
 
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {

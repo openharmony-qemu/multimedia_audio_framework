@@ -53,6 +53,7 @@ constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
 
 class MockNodeFormatInfoCallback : public INodeFormatInfoCallback {
 public:
+    virtual ~MockNodeFormatInfoCallback() = default;
     AudioBasicFormat formatToReturn_;
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override
     {
@@ -3152,5 +3153,514 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, DoProcess_NullInputWithProcess, TestS
 
     converterNode->DoProcess();
     EXPECT_NE(converterNode->outputStream_.PullOutputData(), nullptr);
+}
+
+/*
+ * @tc.name  : MicInZeroPad_Detection_001
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_Detection_001
+ * @tc.desc  : Scenario C (CAMCORDER, HAL micInChannels==0, app appMicInChannelCount>0) sets
+ *             micInZeroPadMode_=true, frontChannelExtractMode_=false,
+ *             effectiveInChannels_ = nodeInfo.channels - appMicInChannelCount.
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_Detection_001, TestSize.Level0)
+{
+    HpaeNodeInfo pre;   // HAL source: main only
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(4);   // HAL main = 4
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(6);   // app total = main(4) + micIn(2)
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;            // HAL reports no micIn (==0)
+    out.appMicInChannelCount = 2;                      // app wants 2 micIn slots
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    EXPECT_TRUE(node->micInZeroPadMode_);
+    EXPECT_FALSE(node->frontChannelExtractMode_);
+    EXPECT_EQ(node->effectiveInChannels_, 4u);     // 6 - 2
+}
+
+/*
+ * @tc.name  : MicInZeroPad_Detection_002
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_Detection_002
+ * @tc.desc  : Scenario B unchanged: front-extract on, zero-pad off.
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_Detection_002, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(6);   // HAL total = main(4)+micIn(2)
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(4);   // app wants main only
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = static_cast<AudioChannel>(2);
+    out.appMicInChannelCount = 0;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    EXPECT_TRUE(node->frontChannelExtractMode_);
+    EXPECT_FALSE(node->micInZeroPadMode_);
+    EXPECT_EQ(node->effectiveInChannels_, 4u);     // 6 - 2
+}
+
+/*
+ * @tc.name  : MicInZeroPad_Detection_003
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_Detection_003
+ * @tc.desc  : Scenario A (app wants micIn AND HAL has micIn) -> neither mode, full-channel path.
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_Detection_003, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(6);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(6);
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = static_cast<AudioChannel>(2);
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    EXPECT_FALSE(node->frontChannelExtractMode_);
+    EXPECT_FALSE(node->micInZeroPadMode_);
+}
+
+/*
+ * @tc.name  : MicInZeroPad_ConverterConfig_001
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_ConverterConfig_001
+ * @tc.desc  : Scenario C: channelConverter out = effectiveInChannels_ (main), in = preNodeInfo.channels;
+ *             resampler channels = min(in,out).
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_ConverterConfig_001, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(4);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(6);
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    EXPECT_EQ(node->channelConverter_.GetOutChannelInfo().numChannels, 4u);
+    EXPECT_EQ(node->channelConverter_.GetInChannelInfo().numChannels, 4u);
+    EXPECT_EQ(node->resampler_->GetChannels(), 4u);
+}
+
+/*
+ * @tc.name  : MicInZeroPad_ConverterConfig_002
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_ConverterConfig_002
+ * @tc.desc  : Scenario C edge: preNodeInfo.channels(2) < effectiveInChannels_(4) -> resampler = 2 (upmix).
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_ConverterConfig_002, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(2);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(6);
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    EXPECT_EQ(node->effectiveInChannels_, 4u);
+    EXPECT_EQ(node->channelConverter_.GetInChannelInfo().numChannels, 2u);
+    EXPECT_EQ(node->channelConverter_.GetOutChannelInfo().numChannels, 4u);
+    EXPECT_EQ(node->resampler_->GetChannels(), 2u);
+}
+
+/*
+ * @tc.name  : MicInZeroPad_ConverterConfig_003
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_ConverterConfig_003
+ * @tc.desc  : Scenario C edge: preNodeInfo.channels(6) > effectiveInChannels_(4) -> resampler = 4 (downmix).
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_ConverterConfig_003, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(6);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(6);
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    EXPECT_EQ(node->effectiveInChannels_, 4u);
+    EXPECT_EQ(node->channelConverter_.GetInChannelInfo().numChannels, 6u);
+    EXPECT_EQ(node->channelConverter_.GetOutChannelInfo().numChannels, 4u);
+    EXPECT_EQ(node->resampler_->GetChannels(), 4u);
+}
+
+/*
+ * @tc.name  : MicInZeroPad_BufferCapacity_001
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_BufferCapacity_001
+ * @tc.desc  : Scenario C: processedBuffer_/unprocessedBuffer_ sized per-frame at main(4)*mult (not total 6).
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_BufferCapacity_001, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(4);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(6);
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    ASSERT_EQ(node->effectiveInChannels_, 4u);
+    EXPECT_EQ(node->unprocessedBuffer_.size() % 4u, 0u);
+    EXPECT_EQ(node->processedBuffer_.size() % 4u, 0u);
+    EXPECT_EQ(node->converterOutput_.GetChannelCount(), 6u);
+}
+
+/*
+ * @tc.name  : MicInZeroPad_LockOutCh_001
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_LockOutCh_001
+ * @tc.desc  : In scenario C, a downstream node requesting total(6) channels must NOT change the
+ *             converter's internal outCh away from effectiveInChannels_(4).
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_LockOutCh_001, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(4);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(6);
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    auto cb = std::make_shared<MockNodeFormatInfoCallback>();
+    cb->formatToReturn_.audioChannelInfo.numChannels = 6;   // downstream "wants" total
+    cb->formatToReturn_.rate = SAMPLE_RATE_48000;
+    node->RegisterCallback(cb.get());
+
+    node->CheckUpdateOutInfo();
+    EXPECT_EQ(node->channelConverter_.GetOutChannelInfo().numChannels, 4u);
+}
+
+/*
+ * @tc.name  : MicInZeroPad_ExtractOutput_001
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_ExtractOutput_001
+ * @tc.desc  : Scenario C extraction: converterOutput_ is [main block(main*outFrame)][zero micIn block].
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_ExtractOutput_001, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(4);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(6);   // total = main4 + micIn2
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    ASSERT_EQ(node->effectiveInChannels_, 4u);
+    uint32_t mainCh = 4;
+    uint32_t totalCh = 6;
+    uint32_t frames = node->outputFrameLen20ms_;
+    ASSERT_GT(frames, 0u);
+
+    size_t mainSamples = static_cast<size_t>(frames) * mainCh;
+    node->processedFrames_ = frames;
+    node->processedReadPos_ = 0;
+    if (node->processedBuffer_.size() < mainSamples) {
+        node->processedBuffer_.resize(mainSamples, 0.0f);
+    }
+    for (size_t i = 0; i < mainSamples; i++) {
+        node->processedBuffer_[i] = 0.5f;          // non-zero "main" payload
+    }
+
+    ASSERT_TRUE(node->ExtractOutputFromProcessedBuffer());
+
+    float *dst = node->converterOutput_.GetPcmDataBuffer();
+    size_t mainRegion = mainSamples;
+    size_t totalRegion = static_cast<size_t>(frames) * totalCh;
+    for (size_t i = 0; i < mainRegion; i++) {
+        EXPECT_FLOAT_EQ(dst[i], 0.5f);
+    }
+    for (size_t i = mainRegion; i < totalRegion; i++) {
+        EXPECT_FLOAT_EQ(dst[i], 0.0f);
+    }
+}
+
+/*
+ * @tc.name  : MicInZeroPad_NodeChStaysTotal_001
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_NodeChStaysTotal_001
+ * @tc.desc  : Scenario C: after a downstream rate change, the node-level channel count stays the
+ *             app total (6), not the internal effective main count (4).
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_NodeChStaysTotal_001, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(4);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(6);
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    auto cb = std::make_shared<MockNodeFormatInfoCallback>();
+    cb->formatToReturn_.audioChannelInfo.numChannels = 6;
+    cb->formatToReturn_.rate = SAMPLE_RATE_44100;   // force a rate change -> update path runs
+    node->RegisterCallback(cb.get());
+
+    node->CheckUpdateOutInfo();
+    EXPECT_EQ(static_cast<uint32_t>(node->GetChannelCount()), 6u);        // total, not effective(4)
+    EXPECT_EQ(node->resampler_->GetOutRate(), 44100u);
+}
+
+/*
+ * @tc.name  : MicInZeroPad_E2E_SameRate_001
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_E2E_SameRate_001
+ * @tc.desc  : Scenario C same-rate: feed main-interleaved input, expect [main block][zero micIn block].
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_E2E_SameRate_001, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;     // 960
+    pre.channels = static_cast<AudioChannel>(4);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(6);
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    uint32_t inCh = 4;
+    uint32_t totalCh = 6;
+    uint32_t frames = DEFAULT_FRAMELEN_SECOND;
+
+    std::vector<float> input(static_cast<size_t>(frames) * inCh, 0.5f);
+    EXPECT_TRUE(node->AppendToUnprocessedBuffer(input.data(), frames, inCh));
+    node->ProcessResampleLoop();
+
+    ASSERT_TRUE(node->ExtractOutputFromProcessedBuffer());
+    float *dst = node->converterOutput_.GetPcmDataBuffer();
+    size_t mainRegion = static_cast<size_t>(frames) * inCh;
+    size_t totalRegion = static_cast<size_t>(frames) * totalCh;
+    for (size_t i = 0; i < mainRegion; i++) {
+        EXPECT_NEAR(dst[i], 0.5f, TEST_VALUE_PRESION);
+    }
+    for (size_t i = mainRegion; i < totalRegion; i++) {
+        EXPECT_FLOAT_EQ(dst[i], 0.0f);
+    }
+}
+
+/*
+ * @tc.name  : MicInZeroPad_E2E_Upmix_001
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_E2E_Upmix_001
+ * @tc.desc  : Scenario C with preNodeInfo.channels(2) < effectiveInChannels_(4): upmix path runs,
+ *             micIn block still fully zero, no OOB/crash.
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_E2E_Upmix_001, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(2);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(6);
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    ASSERT_EQ(node->effectiveInChannels_, 4u);
+    uint32_t totalCh = 6;
+    uint32_t frames = DEFAULT_FRAMELEN_SECOND;
+
+    std::vector<float> input(static_cast<size_t>(frames) * 2, 0.5f);
+    EXPECT_TRUE(node->AppendToUnprocessedBuffer(input.data(), frames, 2));
+    node->ProcessResampleLoop();
+    ASSERT_TRUE(node->ExtractOutputFromProcessedBuffer());
+
+    float *dst = node->converterOutput_.GetPcmDataBuffer();
+    size_t mainRegion = static_cast<size_t>(frames) * node->effectiveInChannels_;
+    size_t totalRegion = static_cast<size_t>(frames) * totalCh;
+    // micIn block must be fully zero regardless of upmix result on main block
+    for (size_t i = mainRegion; i < totalRegion; i++) {
+        EXPECT_FLOAT_EQ(dst[i], 0.0f);
+    }
+}
+
+/*
+ * @tc.name  : MicInZeroPad_Detection_004
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_Detection_004
+ * @tc.desc  : Scenario D (CAMCORDER, both counts 0): neither mode, plain path.
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_Detection_004, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;
+    pre.channels = static_cast<AudioChannel>(4);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_48000;
+    out.frameLen = DEFAULT_FRAMELEN_SECOND;
+    out.channels = static_cast<AudioChannel>(4);
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;
+    out.appMicInChannelCount = 0;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    EXPECT_FALSE(node->frontChannelExtractMode_);
+    EXPECT_FALSE(node->micInZeroPadMode_);
+    EXPECT_EQ(node->effectiveInChannels_, 4u);
+}
+
+/*
+ * @tc.name  : MicInZeroPad_ScenarioA_RateConv_001
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_ScenarioA_RateConv_001
+ * @tc.desc  : Scenario A (app wants micIn AND HAL has micIn): full-interleave path, resampler at
+ *             min(pre,total)=6, rate conversion 48k->44.1k flows 6-ch data end to end.
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_ScenarioA_RateConv_001, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;          // 960
+    pre.channels = static_cast<AudioChannel>(6);     // HAL total = main4 + micIn2
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_44100;
+    out.frameLen = 882;                              // 44100 * 20ms
+    out.channels = static_cast<AudioChannel>(6);
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = static_cast<AudioChannel>(2);
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    ASSERT_FALSE(node->frontChannelExtractMode_);
+    ASSERT_FALSE(node->micInZeroPadMode_);
+    ASSERT_EQ(node->effectiveInChannels_, 6u);
+    ASSERT_EQ(node->resampler_->GetChannels(), 6u);  // min(6,6): full interleave
+    ASSERT_EQ(node->channelConverter_.GetInChannelInfo().numChannels, 6u);
+    ASSERT_EQ(node->channelConverter_.GetOutChannelInfo().numChannels, 6u);
+
+    // Warm-up: ProResampler skips half taps on first use (leading output frames are
+    // zero-filled). Discard the first 20ms chunk so assertions see steady-state output.
+    uint32_t frames = DEFAULT_FRAMELEN_SECOND;
+    std::vector<float> warmup(static_cast<size_t>(frames) * 6, 0.5f);
+    ASSERT_TRUE(node->AppendToUnprocessedBuffer(warmup.data(), frames, 6));
+    node->ProcessResampleLoop();
+    ASSERT_TRUE(node->ExtractOutputFromProcessedBuffer());
+
+    std::vector<float> input(static_cast<size_t>(frames) * 6, 0.5f);
+    EXPECT_TRUE(node->AppendToUnprocessedBuffer(input.data(), frames, 6));
+    node->ProcessResampleLoop();
+    ASSERT_TRUE(node->ExtractOutputFromProcessedBuffer());
+
+    // 960 frames @48k -> 882 frames @44.1k, all 6 channels carried through
+    ASSERT_EQ(node->outputFrameLen20ms_, 882u);
+    float *dst = node->converterOutput_.GetPcmDataBuffer();
+    size_t totalRegion = static_cast<size_t>(882) * 6;
+    for (size_t i = 0; i < totalRegion; i++) {
+        EXPECT_NEAR(dst[i], 0.5f, 0.1f);   // DC preserved through resampler (loose tol)
+    }
+}
+
+/*
+ * @tc.name  : MicInZeroPad_E2E_RateConv_001
+ * @tc.type  : FUNC
+ * @tc.number: MicInZeroPad_E2E_RateConv_001
+ * @tc.desc  : Scenario C with rate conversion 48k->44.1k: main(4) resampled, micIn(2) zero-filled;
+ *             output partitioned [main 4x882][zero 2x882].
+ */
+HWTEST_F(HpaeAudioFormatConverterNodeTest, MicInZeroPad_E2E_RateConv_001, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    pre.samplingRate = SAMPLE_RATE_48000;
+    pre.frameLen = DEFAULT_FRAMELEN_SECOND;          // 960
+    pre.channels = static_cast<AudioChannel>(4);
+    HpaeNodeInfo out;
+    out.samplingRate = SAMPLE_RATE_44100;
+    out.frameLen = 882;
+    out.channels = static_cast<AudioChannel>(6);     // total = main4 + micIn2
+    out.sourceType = SOURCE_TYPE_CAMCORDER;
+    out.micInChannels = CHANNEL_UNKNOW;
+    out.appMicInChannelCount = 2;
+
+    auto node = std::make_shared<HpaeAudioFormatConverterNode>(pre, out);
+    ASSERT_TRUE(node->micInZeroPadMode_);
+    ASSERT_EQ(node->effectiveInChannels_, 4u);
+    ASSERT_EQ(node->resampler_->GetChannels(), 4u);  // min(4,4)
+
+    // Warm-up: ProResampler skips half taps on first use (leading output frames are
+    // zero-filled). Discard the first 20ms chunk so assertions see steady-state output.
+    uint32_t frames = DEFAULT_FRAMELEN_SECOND;
+    std::vector<float> warmup(static_cast<size_t>(frames) * 4, 0.5f);
+    ASSERT_TRUE(node->AppendToUnprocessedBuffer(warmup.data(), frames, 4));
+    node->ProcessResampleLoop();
+    ASSERT_TRUE(node->ExtractOutputFromProcessedBuffer());
+
+    std::vector<float> input(static_cast<size_t>(frames) * 4, 0.5f);
+    EXPECT_TRUE(node->AppendToUnprocessedBuffer(input.data(), frames, 4));
+    node->ProcessResampleLoop();
+    ASSERT_TRUE(node->ExtractOutputFromProcessedBuffer());
+
+    ASSERT_EQ(node->outputFrameLen20ms_, 882u);
+    float *dst = node->converterOutput_.GetPcmDataBuffer();
+    size_t mainRegion = static_cast<size_t>(882) * 4;
+    size_t totalRegion = static_cast<size_t>(882) * 6;
+    for (size_t i = 0; i < mainRegion; i++) {
+        EXPECT_NEAR(dst[i], 0.5f, 0.1f);
+    }
+    for (size_t i = mainRegion; i < totalRegion; i++) {
+        EXPECT_FLOAT_EQ(dst[i], 0.0f);
+    }
 }
 }

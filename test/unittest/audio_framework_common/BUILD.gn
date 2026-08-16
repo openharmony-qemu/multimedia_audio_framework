@@ -21,6 +21,7 @@ group("audio_framework_common_aiut") {
   deps = [
     "../../frameworks/native/audioutils:audio_utils_aiut",
     "../../frameworks/native/audio_debug_manager:audio_debug_manager_test",
+    "../../frameworks/native/opensles/test/unittest/opensles_obj_aiut:opensles_obj_aiut_group",
   ]
 
   if (speex_enable == true) {

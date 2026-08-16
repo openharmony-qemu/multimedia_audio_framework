@@ -126,9 +126,13 @@ void AudioInterruptStrategy::UpdateMicFocusByUid(const AudioInterrupt &currentIn
     }
 }
 
-void AudioInterruptStrategy::UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
-    const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType, AudioFocusEntry &focusEntry)
+void AudioInterruptStrategy::UpdateWindowFocusStrategy(const AudioInterrupt &currentInterrupt,
+    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
+    int32_t currentPid = currentInterrupt.pid;
+    int32_t incomingPid = incomingInterrupt.pid;
+    AudioStreamType existStreamType = currentInterrupt.audioFocusType.streamType;
+    AudioStreamType incomingStreamType = incomingInterrupt.audioFocusType.streamType;
 #ifdef HAS_WINDOW_MANAGER
     if (currentPid == incomingPid) {
         return;
@@ -140,8 +144,8 @@ void AudioInterruptStrategy::UpdateWindowFocusStrategy(const int32_t &currentPid
         return;
     }
 
-    bool isCurTargetWindowState = WindowUtils::CheckWindowState(currentPid);
-    bool isIncomingTargetWindowState = WindowUtils::CheckWindowState(incomingPid);
+    bool isCurTargetWindowState = AudioInterruptUtils::GetWindowState(currentInterrupt);
+    bool isIncomingTargetWindowState = AudioInterruptUtils::GetWindowState(incomingInterrupt);
     if (isCurTargetWindowState && isIncomingTargetWindowState) {
         AUDIO_INFO_LOG("The media windowStates concurrent");
         focusEntry.hintType = INTERRUPT_HINT_NONE;
@@ -245,7 +249,7 @@ void AudioInterruptStrategy::UpdateAudioFocusStrategy(const AudioInterrupt &curr
     UpdateMediaWithMixStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateMediaWithDuckStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateMicFocusByUid(currentInterrupt, incomingInterrupt, focusEntry);
-    UpdateWindowFocusStrategy(currentPid, incomingPid, existStreamType, incomingStreamType, focusEntry);
+    UpdateWindowFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateAIBaseFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);

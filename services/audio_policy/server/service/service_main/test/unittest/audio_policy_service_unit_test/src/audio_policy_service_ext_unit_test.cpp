@@ -168,26 +168,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_005, TestSize.Lev
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: AudioPolicyServiceTest_006
-* @tc.desc  : Test GetSelectedDeviceInfo interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_006, TestSize.Level1)
-{
-    int32_t uid = 123, pid = 123;
-    auto ret = AudioPolicyService::GetAudioPolicyService().GetSelectedDeviceInfo(uid, pid, STREAM_MUSIC);
-    EXPECT_EQ("", ret);
-
-    AudioRouteMap::GetInstance().AddRouteMapInfo(uid, "LocalDevice", pid);
-    ret = AudioPolicyService::GetAudioPolicyService().GetSelectedDeviceInfo(uid, pid, STREAM_MUSIC);
-    EXPECT_EQ("", ret);
-
-    AudioRouteMap::GetInstance().AddRouteMapInfo(uid, "test", pid);
-    ret = AudioPolicyService::GetAudioPolicyService().GetSelectedDeviceInfo(uid, pid, STREAM_MUSIC);
-    EXPECT_EQ("", ret);
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
 * @tc.number: AudioPolicyServiceTest_07
 * @tc.desc  : Test LoadModernOffloadCapSource interfaces.
 */
@@ -243,15 +223,11 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_009, TestSize.Lev
 HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_010, TestSize.Level1)
 {
     std::string macAddress = "00-15-5D-E6-DE-FC";
-    std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnableMap;
-    sessionIDToSpatializationEnableMap.insert({123, false});
-    AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(macAddress,
-        sessionIDToSpatializationEnableMap);
+    AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(macAddress);
     EXPECT_EQ(nullptr, AudioPolicyService::GetAudioPolicyService().audioA2dpOffloadManager_);
     AudioPolicyService::GetAudioPolicyService().audioA2dpOffloadManager_ =
         std::make_shared<AudioA2dpOffloadManager>();
-    AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(macAddress,
-        sessionIDToSpatializationEnableMap);
+    AudioPolicyService::GetAudioPolicyService().UpdateA2dpOffloadFlagBySpatialService(macAddress);
     EXPECT_NE(nullptr, AudioPolicyService::GetAudioPolicyService().audioA2dpOffloadManager_);
 }
 

@@ -223,14 +223,22 @@ bool AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     int32_t uid = SYSTEM_UID;
+    std::vector<int32_t> activatedList;
     for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
         // if streamDesc select bluetooth or headset, active it.
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
             continue;
         }
 
-        int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
-        CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
+        if (streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+            streamDesc->newDeviceDescs_[0] != nullptr &&
+            (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_NEARLINK ||
+            std::count(activatedList.begin(),
+            activatedList.end(), streamDesc->newDeviceDescs_[0]->deviceId_) <= 0)) {
+                int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
+                CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
+                activatedList.push_back(streamDesc->newDeviceDescs_[0]->deviceId_);
+        }
 
         // update current output device
         if ((Util::IsEnhancedRoutingSupported() || needUpdateActiveDevice) &&
@@ -1328,6 +1336,16 @@ void AudioCoreService::ClearMuteVoipState(
     AUDIO_INFO_LOG("streamUsage %{public}d, sourceType %{public}d, sessionId %{public}u",
         streamUsage, sourceType, sessionId);
     audioVolumeManager_.ClearVoipMuteByStreamId(sessionId);
+}
+
+void AudioCoreService::UnmuteDualStreamAfterAlarm(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN(streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_ALARM);
+    for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+        audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
+    }
+    streamsWhenRingDualOnPrimarySpeaker_.clear();
 }
 
 bool AudioCoreService::IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId)
@@ -2858,10 +2876,6 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
     bool isEnhancedRouting = Util::IsEnhancedRoutingSupported();
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
-    if (isEnhancedRouting) {
-        pipeList = pipeManager_->GetPipeList();
-    }
     for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
         if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
@@ -2872,7 +2886,7 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
                 AudioStreamDeviceChangeReasonExt::ExtEnum::CALL_OR_RING_TO_DEFAULT : reason;
             std::string oldClassName;
             std::string oldModuleName;
-            CaptureOldPipeInfo(isEnhancedRouting, pipeList, streamDesc->sessionId_, oldClassName, oldModuleName);
+            CaptureOldPipeInfo(isEnhancedRouting, streamDesc->sessionId_, oldClassName, oldModuleName);
             std::string overrideCls = (oldClassName == PRIMARY_EXTRA_CLASS) ? oldClassName : "";
             std::string overrideInfo = (oldClassName == PRIMARY_EXTRA_CLASS) ? oldModuleName : "";
             MuteSinkPortForSwitchDevice(streamDesc, muteReason, overrideCls, overrideInfo);
@@ -2883,15 +2897,13 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
     return true;
 }
 
-void AudioCoreService::CaptureOldPipeInfo(bool isEnhancedRouting,
-    const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList, uint32_t sessionId,
+void AudioCoreService::CaptureOldPipeInfo(bool isEnhancedRouting, uint32_t sessionId,
     std::string &oldClassName, std::string &oldModuleName)
 {
     CHECK_AND_RETURN(isEnhancedRouting);
-    auto pipeInfo = pipeManager_->FindPipeBySessionId(pipeList, sessionId);
-    CHECK_AND_RETURN(pipeInfo != nullptr);
-    oldClassName = pipeInfo->moduleInfo_.className;
-    oldModuleName = pipeInfo->moduleInfo_.name;
+    CHECK_AND_RETURN(pipeManager_ != nullptr);
+    oldClassName = pipeManager_->GetClassNameBySessionId(sessionId);
+    oldModuleName = pipeManager_->GetModuleNameBySessionId(sessionId);
 }
 
 void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -3308,8 +3320,8 @@ void AudioCoreService::BatchFetchAndStartOutputStreams(
     std::vector<FetchDeviceInfo> outInfos;
     for (auto &streamDesc : outputStreamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
-        CHECK_AND_CONTINUE(VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_.load());
-        CHECK_AND_CONTINUE(streamDesc->rendererTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE);
+        CHECK_AND_CONTINUE(!(VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_.load()));
+        CHECK_AND_CONTINUE(streamDesc->rendererTarget_ != INJECT_TO_VOICE_COMMUNICATION_CAPTURE);
         StreamUsage streamUsage = audioSessionService_.GetAudioSessionStreamUsageForDevice(GetRealPid(streamDesc));
         streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
             streamDesc->rendererInfo_.streamUsage;
@@ -3350,7 +3362,8 @@ void AudioCoreService::UpdateStreamDevicesForStart(
 
     CHECK_AND_RETURN_LOG(!devices.empty(), "devices is empty");
     pipeManager_->UpdateNewDeviceDescWithCheck(streamDesc, devices);
-    if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+    if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+        streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         !streamDesc->oldDeviceDescs_.empty() && streamDesc->oldDeviceDescs_.front() &&
         streamDesc->oldDeviceDescs_.front()->deviceType_ != devices[0]->deviceType_) {
         WriteScoStateFaultEvent(devices[0]);

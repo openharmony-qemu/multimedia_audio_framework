@@ -183,10 +183,10 @@ BluetoothOffloadState AudioA2dpOffloadManager::GetA2dpOffloadFlag()
     return audioA2dpOffloadFlag_.GetA2dpOffloadFlag();
 }
 
-void AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForSpatializationChanged(
-    std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnabledMap, DeviceType deviceType)
+void AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForSpatializationChanged(DeviceType deviceType)
 {
-    UpdateA2dpOffloadFlagCommon(SESSION_ID_INVALID, deviceType, false, sessionIDToSpatializationEnabledMap);
+    std::unordered_map<uint32_t, bool> emptySpatializationMap;
+    UpdateA2dpOffloadFlagCommon(SESSION_ID_INVALID, deviceType, true, emptySpatializationMap);
 }
 
 void AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForStartStream(int32_t startSessionId)

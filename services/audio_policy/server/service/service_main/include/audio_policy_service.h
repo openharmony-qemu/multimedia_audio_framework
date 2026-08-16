@@ -100,8 +100,6 @@ public:
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
-    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
@@ -213,8 +211,7 @@ public:
 
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
 
-    void UpdateA2dpOffloadFlagBySpatialService(
-        const std::string& macAddress, std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap);
+    void UpdateA2dpOffloadFlagBySpatialService(const std::string& macAddress);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByUsageInner(AudioDeviceUsage usage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs);

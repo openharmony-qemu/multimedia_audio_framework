@@ -23,7 +23,9 @@ config("audio_device_enhance_manager_config") {
     "${audio_framework_root}/frameworks/native/ohaudio",
     "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
     "${audio_framework_root}/interfaces/kits/c/audio_renderer",
+    "${audio_framework_root}/interfaces/kits/c/audio_capturer",
     "${audio_framework_root}/interfaces/inner_api/native/audiorenderer/include",
+    "${audio_framework_root}/interfaces/inner_api/native/audiocapturer/include",
     "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include",
   ]
 

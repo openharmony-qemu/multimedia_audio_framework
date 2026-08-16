@@ -26,13 +26,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
-enum class RecommendInputDevices {
-    NO_UNAVAILABLE_DEVICE,
-    RECOMMEND_BUILT_IN_MIC,
-    RECOMMEND_EXTERNAL_MIC
-};
-
 class AudioRoutingManager {
 public:
     AudioRoutingManager() = default;
@@ -69,8 +62,6 @@ public:
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
-private:
-    RecommendInputDevices ConvertRecommendInputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 };
 
 } // namespace AudioStandard

@@ -341,17 +341,6 @@ void AudioPolicyServiceSetSourceOutputStreamMuteFuzztest(const uint8_t *rawData,
     GetServerPtr()->audioPolicyService_.SetSourceOutputStreamMute(uid, setMute);
 }
 
-void AudioPolicyServiceGetSelectedDeviceInfoFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    int32_t uid = GetData<int32_t>() % NUM_2;
-    int32_t pid = GetData<int32_t>() % NUM_2;
-    AudioStreamType fuzzAudioStreamType = *reinterpret_cast<const AudioStreamType *>(rawData);
-    GetServerPtr()->audioPolicyService_.GetSelectedDeviceInfo(uid, pid, fuzzAudioStreamType);
-}
 
 void AudioPolicyServiceGetDistributedRoutingRoleInfoFuzztest(const uint8_t *rawData, size_t size)
 {
@@ -457,9 +446,7 @@ void AudioPolicyServiceUpdateA2dpOffloadFlagBySpatialServiceFuzztest(const uint8
         return;
     }
     std::string macAddress = "11-22-33-44-55-66";
-    std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnableMap;
-    GetServerPtr()->audioPolicyService_.UpdateA2dpOffloadFlagBySpatialService(macAddress,
-        sessionIDToSpatializationEnableMap);
+    GetServerPtr()->audioPolicyService_.UpdateA2dpOffloadFlagBySpatialService(macAddress);
 }
 
 void AudioPolicyServiceRegisterRemoteDevStatusCallbackFuzztest(const uint8_t *rawData, size_t size)
@@ -929,7 +916,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceSubscribeSafeVolumeEventFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceSetAppVolumeLevelFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceSetSourceOutputStreamMuteFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetSelectedDeviceInfoFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetDistributedRoutingRoleInfoFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceNotifyCapturerAddedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceNotifyWakeUpCapturerRemovedFuzztest,

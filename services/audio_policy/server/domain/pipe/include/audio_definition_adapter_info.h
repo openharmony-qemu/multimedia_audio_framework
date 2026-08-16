@@ -224,6 +224,7 @@ class AudioPolicyConfigData {
 public:
     static AudioPolicyConfigData&  GetInstance();
     void Reorganize();
+    void ReorganizeInternal();
     void SelfCheck();
 
     void SetVersion(const std::string &version);

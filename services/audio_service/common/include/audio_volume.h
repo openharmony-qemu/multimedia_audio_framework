@@ -76,7 +76,7 @@ public:
     //pipe volume
     void SetPipeVolume(PipeVolume &pipeVolume);
     void SetPipeVolumeMute(uint32_t pipeId, AudioVolumeType volumeType, bool muted);
-    void RemovePipeVolume(uint32_t pipeId, AudioVolumeType volumeType);
+    void RemovePipeVolume(uint32_t pipeId);
 
     // stream type convert
     int32_t ConvertStreamTypeStrToInt(const std::string &streamType);
