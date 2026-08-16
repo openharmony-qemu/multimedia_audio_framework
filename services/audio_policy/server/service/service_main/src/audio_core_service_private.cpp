@@ -97,6 +97,33 @@ static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_SEC = 10;
 static const int32_t WAIT_MULTICHANNL_CLOSE_TIME_SEC = 5;
 static const int32_t WAIT_PRIMARY_EXTRA_CLOSE_TIME_SEC = 5;
+static const int32_t VOIP_FAST_PIPE_CLOSE_DELAY_TIME_MS = 200;
+static const int32_t VOIP_REC_FAST_PIPE_CLOSE_DELAY_TIME_MS = 60;
+static const int32_t DEFAULT_FAST_PIPE_CLOSE_DELAY_TIME_MS = 3000;
+static const int32_t A2DP_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 200;
+static const int32_t ARMUSB_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 0;
+static const int32_t MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 0;
+static const std::unordered_map<std::string, int32_t> FAST_PIPE_DELAY_RELEASE_TIME_MS = {
+    {"voip_fast_output", VOIP_FAST_PIPE_CLOSE_DELAY_TIME_MS},
+    {"voip_fast_input", VOIP_REC_FAST_PIPE_CLOSE_DELAY_TIME_MS},
+};
+static const std::unordered_map<std::string, int32_t> MOVE_STREAM_FAST_PIPE_DELAY_RELEASE_TIME_MS = {
+    {"fast_a2dp_output", A2DP_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS},
+    {"fast_usb_arm_output", ARMUSB_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS},
+    {"fast_usb_arm_input", ARMUSB_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS},
+};
+static int32_t GetFastPipeDelayReleaseTimeMs(const std::string &pipeName, const bool hasMoveStream,
+    const bool isUltraFast)
+{
+    if (hasMoveStream && isUltraFast) {
+        return MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS;
+    }
+    const auto &delayReleaseMap = hasMoveStream ?
+        MOVE_STREAM_FAST_PIPE_DELAY_RELEASE_TIME_MS : FAST_PIPE_DELAY_RELEASE_TIME_MS;
+    auto it = delayReleaseMap.find(pipeName);
+    return it != delayReleaseMap.end() ? it->second : DEFAULT_FAST_PIPE_CLOSE_DELAY_TIME_MS;
+}
+
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 inline static const std::string EMPTY_ADDRESS{"00:00:00:00:00:00"};
 inline static const std::string NULL_ADDRESS{""};
@@ -389,6 +416,7 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
         UpdateOffloadState(pipeInfo);
         UpdateMultiChannelState(pipeInfo);
         UpdatePrimaryExtraState(pipeInfo);
+        UpdateFastState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, flagInfo, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
@@ -423,6 +451,7 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         HILOG_COMM_INFO("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
+        UpdateFastState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessInputPipeUpdate(pipeInfo, audioFlag);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
@@ -924,6 +953,7 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
         UpdateOffloadState(pipeInfo);
         UpdateMultiChannelState(pipeInfo);
         UpdatePrimaryExtraState(pipeInfo);
+        UpdateFastState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, flagInfo, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
@@ -947,11 +977,12 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
     pipeInfo->id_ = id;
     CHECK_AND_RETURN_LOG(paIndex != OPEN_PORT_FAILURE, "Invalid paIndex: %{public}u", paIndex);
     pipeInfo->paIndex_ = paIndex;
-
+    bool hasMoveStream = false;
     for (auto &desc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
+        hasMoveStream = hasMoveStream != true && desc->streamAction_ != AUDIO_STREAM_ACTION_MOVE ? false : true;
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc, pipeInfo->id_);
@@ -975,6 +1006,7 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
         }
         audioPipeSelector_->UpdateRendererPipeInfo(desc);
     }
+    pipeInfo->SetHasMoveStream(hasMoveStream);
     pipeManager_->AddAudioPipeInfo(pipeInfo);
 }
 
@@ -982,10 +1014,12 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioCoreService::ProcessOutputPipeUpdate");
+    bool hasMoveStream = false;
     for (auto &desc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
+        hasMoveStream = hasMoveStream != true && desc->streamAction_ != AUDIO_STREAM_ACTION_MOVE ? false : true;
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc, pipeInfo->id_);
@@ -1010,6 +1044,7 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
         }
         audioPipeSelector_->UpdateRendererPipeInfo(desc);
     }
+    pipeInfo->SetHasMoveStream(hasMoveStream);
     pipeManager_->UpdateAudioPipeInfo(pipeInfo);
 }
 
@@ -1030,6 +1065,7 @@ int32_t AudioCoreService::FetchCapturerPipeAndExecute(std::shared_ptr<AudioStrea
     for (auto &pipeInfo : pipeInfos) {
         HILOG_COMM_INFO("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
+        UpdateFastState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessInputPipeUpdate(pipeInfo, audioFlag);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
@@ -1051,10 +1087,11 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
     pipeInfo->id_ = sourceId;
     pipeInfo->paIndex_ = paIndex;
     std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();
-
+    bool hasMoveStream = false;
     for (auto &desc : pipeInfo->streamDescriptors_) {
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
+        hasMoveStream = hasMoveStream != true && desc->streamAction_ != AUDIO_STREAM_ACTION_MOVE ? false : true;
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
                 flag = desc->routeFlag_;
@@ -1074,6 +1111,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
                 break;
         }
     }
+    pipeInfo->SetHasMoveStream(hasMoveStream);
     pipeManager_->AddAudioPipeInfo(pipeInfo);
 }
 
@@ -1090,9 +1128,11 @@ bool AudioCoreService::IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDesc
 void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag)
 {
     std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();
+    bool hasMoveStream = false;
     for (auto desc : pipeInfo->streamDescriptors_) {
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
+        hasMoveStream = hasMoveStream != true && desc->streamAction_ != AUDIO_STREAM_ACTION_MOVE ? false : true;
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
                 flag = desc->routeFlag_;
@@ -1112,6 +1152,7 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
                 break;
         }
     }
+    pipeInfo->SetHasMoveStream(hasMoveStream);
     pipeManager_->UpdateAudioPipeInfo(pipeInfo);
 }
 
@@ -1146,6 +1187,9 @@ void AudioCoreService::RemoveUnusedPipe()
                 DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_, type);
                 continue;
             }
+        } else if (pipeInfo->IsRouteFast()) {
+            DelayReleaseFastPipe(pipeInfo);
+            continue;
         } else if (pipeInfo->moduleInfo_.name == MCH_PRIMARY_SPEAKER && pipeInfo->isCollaborationEnable_) {
             if (!isRingDualToneOnPrimarySpeaker_) {
                 DelayReleaseMultiChannelPipe(pipeInfo->id_, pipeInfo->paIndex_);
@@ -1173,6 +1217,10 @@ void AudioCoreService::RemoveUnusedRecordPipe()
     for (auto pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         HILOG_COMM_INFO("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
+        if (pipeInfo->IsRouteFast()) {
+            DelayReleaseFastPipe(pipeInfo);
+            continue;
+        }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
         audioIOHandleMap_.DelIOHandleInfo(pipeInfo->moduleInfo_.name);
@@ -2852,6 +2900,59 @@ int32_t AudioCoreService::ReleasePrimaryExtraPipe(AudioIOHandle id, uint32_t paI
     }
     CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
     return GetEventEntry()->ReleasePrimaryExtraPipe(id, paIndex, pipeName, moduleName);
+}
+
+void AudioCoreService::DelayReleaseFastPipe(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    const AudioIOHandle id = pipeInfo->id_;
+    const uint32_t paIndex = pipeInfo->paIndex_;
+    const std::string &pipeName = pipeInfo->name_;
+    const std::string &moduleName = pipeInfo->moduleInfo_.name;
+    const uint32_t routeFlag = pipeInfo->routeFlag_;
+    const bool hasMoveStream = pipeInfo->GetHasMoveStream();
+    const bool ultraFastFlag = pipeInfo->GetUltraFastFlag();
+    int32_t delayMs = GetFastPipeDelayReleaseTimeMs(pipeName, hasMoveStream, ultraFastFlag);
+    AUDIO_INFO_LOG("DelayReleaseFastPipe id:%{public}u, paIndex:%{public}u, pipeName:%{public}s, delay:%{public}dms " \
+        "hasMoveStream:%{public}s, ultraFastFlag:%{public}s",
+        id, paIndex, pipeName.c_str(), delayMs, hasMoveStream ? "true" : "false", ultraFastFlag ? "true" : "false");
+    std::lock_guard<std::mutex> lock(fastCloseMutex_);
+    CHECK_AND_RETURN_LOG(!isFastInReleaseMap_[pipeName], "%{public}s is already in release",
+        pipeName.c_str());
+    isFastInReleaseMap_[pipeName] = true;
+    isFastOpenedMap_[pipeName] = false;
+    auto unloadFastThreadFuc = [this, id, paIndex, pipeName, moduleName, delayMs] {
+        this->ReleaseFastPipe(id, paIndex, pipeName, moduleName, delayMs);
+    };
+    std::thread unloadFastThread(unloadFastThreadFuc);
+    unloadFastThread.detach();
+}
+
+int32_t AudioCoreService::ReleaseFastPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
+    const std::string &moduleName, int32_t delayMs)
+{
+    AUDIO_INFO_LOG("[ReleaseFastPipe]unload FAST module, delay:%{public}dms, pipeName:%{public}s",
+        delayMs, pipeName.c_str());
+    {
+        std::unique_lock<std::mutex> lock(fastCloseMutex_);
+        // Shared condition variable: each wait checks only its own pipeName key.
+        fastCloseCondition_.wait_for(lock, std::chrono::milliseconds(delayMs), [this, &pipeName] () {
+            return isFastOpenedMap_[pipeName];
+        });
+    }
+
+    CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
+    return GetEventEntry()->ReleaseFastPipe(id, paIndex, pipeName, moduleName);
+}
+
+void AudioCoreService::UpdateFastState(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    CHECK_AND_RETURN(pipeInfo != nullptr && pipeInfo->GetStreamSize() > 0);
+    CHECK_AND_RETURN(pipeInfo->IsRouteFast());
+    {
+        std::lock_guard<std::mutex> lock(fastCloseMutex_);
+        isFastOpenedMap_[pipeInfo->name_] = true;
+    }
+    fastCloseCondition_.notify_all();
 }
 
 void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
