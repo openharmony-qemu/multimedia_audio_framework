@@ -21,6 +21,8 @@
 #include "audio_active_device.h"
 #include "audio_core_service.h"
 #include "audio_device_manager.h"
+#include "audio_iohandle_map.h"
+#include "audio_module_info.h"
 #include "audio_policy_utils.h"
 #include "sle_audio_device_manager.h"
 
@@ -31,6 +33,7 @@ namespace {
 static const int32_t REFETCH_DEVICE = 4;
 constexpr int32_t REMOTE_USER_TERMINATED = 200;
 constexpr int32_t DUAL_CONNECTION_FAILURE = 201;
+constexpr int32_t KARAOKE_START_MUTE_DURATION_US = 850000;
 } // namespace
 int32_t AudioSleDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
@@ -66,6 +69,11 @@ int32_t AudioSleDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
         int32_t ret = SleAudioDeviceManager::GetInstance().SetActiveDevice(*deviceDesc, config, realUid, isLoopback);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Activating Nearlink device fails");
         CHECK_AND_RETURN_RET_LOG(isRunning, ret, "Stream is not running, no needs start playing");
+        if (isLoopback) {
+            auto &ioHandleMap = AudioIOHandleMap::GetInstance();
+            ioHandleMap.MuteSinkPort(PRIMARY_SPEAKER, KARAOKE_START_MUTE_DURATION_US, true, false);
+            ioHandleMap.MuteSinkPort(OFFLOAD_PRIMARY_SPEAKER, KARAOKE_START_MUTE_DURATION_US, true, false);
+        }
         return SleAudioDeviceManager::GetInstance().StartPlaying(*deviceDesc, config, realUid, isLoopback);
     };
 
