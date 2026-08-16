@@ -79,6 +79,7 @@
 #include "audio_sink_latency_fetcher.h"
 #include "audio_system_load_listener.h"
 #include "cJSON.h"
+#include "concurrent_task_client.h"
 #ifdef FEATURE_CALL_MANAGER
 #include "call_manager_client.h"
 #include "securec.h"
@@ -990,6 +991,7 @@ void AudioServer::OnStart()
     AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
     AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
     AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
+    AddSystemAbilityListener(CONCURRENT_TASK_SERVICE_ID);
     InitAudioEngine();
     OnStartExpansion();
     DlopenUtils::DeInit();
@@ -1060,6 +1062,11 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
             AUDIO_INFO_LOG("memory manager service start");
             NotifyProcessStatus();
             break;
+        case CONCURRENT_TASK_SERVICE_ID: {
+            AUDIO_INFO_LOG("concurrent task service start");
+            AuthQosForAudio();
+            break;
+        }
         default:
             AUDIO_ERR_LOG("unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
