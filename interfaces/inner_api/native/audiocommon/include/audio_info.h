@@ -1982,6 +1982,7 @@ enum AudioParamKey {
     PARAM_KEY_LOWPOWER = 1000,
     AUDIO_EXT_PARAM_KEY_CUSTOM = 1001,
     SOUND_CARD_INFO = 1002,
+    GET_AUDIO_HOST_PID_FOR_QOS = 1003,
 };
 
 struct DStatusInfo {

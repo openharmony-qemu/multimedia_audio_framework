@@ -384,6 +384,7 @@ IAudioSinkAttr HpaeFastRendererManager::CreateSinkAttr()
             static_cast<float>(MILLISECOND_PER_SECOND));
         AUDIO_INFO_LOG("UltraFast period set: %{public}u frames for rate %{public}u",
             attr.period, sinkInfo_.samplingRate);
+        attr.isUltraFast = true;
     }
     return attr;
 }

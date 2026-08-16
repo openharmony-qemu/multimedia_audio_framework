@@ -37,7 +37,10 @@ extern "C" {
 
 #ifdef QOSMANAGER_ENABLE
 
+namespace {
 constexpr int32_t AUDIO_PROC_QOS_TABLE = 7;
+constexpr int32_t PAYLOAD_CUSTPID = 1;
+}
 
 void SetThreadQosLevel(void)
 {
@@ -84,10 +87,21 @@ void ResetThreadQosLevel(void)
 {
     OHOS::QOS::ResetThreadQos();
 }
+
+void RequestQosAuth(int32_t pid)
+{
+    std::unordered_map<std::string, std::string> payload;
+    payload["groupId"] = std::to_string(AUDIO_PROC_QOS_TABLE);
+    payload["pid"] = std::to_string(pid);
+    payload["custPid"] = std::to_string(PAYLOAD_CUSTPID);
+    OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
+}
+
 #else
 void SetThreadQosLevel(void) {};
 void SetThreadQosLevelAsync(int32_t setPriority) {};
 void ResetThreadQosLevel(void) {};
+void RequestQosAuth(int32_t pid) {};
 #endif
 
 
