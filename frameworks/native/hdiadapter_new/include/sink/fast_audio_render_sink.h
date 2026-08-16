@@ -85,6 +85,7 @@ private:
     void PreparePosition(void);
     void EnableSyncInfo(const int32_t syncInfoSize);
     bool SetPlayingAppNameParam(const std::string &param);
+    void RequestQosAuthForAudioHost();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;

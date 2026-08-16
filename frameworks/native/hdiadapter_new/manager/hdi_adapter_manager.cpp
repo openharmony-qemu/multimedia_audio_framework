@@ -247,6 +247,9 @@ std::optional<std::string> HdiAdapterManager::GetAudioParameterByKey(HdiDeviceMa
     if (key == "record_denoise_mode" || key == "record_denoise_mode_support") {
         return deviceManager->GetAudioParameter(PRIMARY_ADAPTER_NAME, AudioParamKey::NONE, key);
     }
+    if (key.starts_with("get_audio_host_pid_for_qos#C")) {
+        return deviceManager->GetAudioParameter(USB_ADAPTER_NAME, AudioParamKey::GET_AUDIO_HOST_PID_FOR_QOS, key);
+    }
     return std::nullopt;
 }
 

@@ -25,6 +25,7 @@ extern "C" {
 void SetThreadQosLevel(void);
 void SetThreadQosLevelAsync(int32_t setPriority);
 void ResetThreadQosLevel(void);
+void RequestQosAuth(int32_t pid);
 
 #ifdef __cplusplus
 }

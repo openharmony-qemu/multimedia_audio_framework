@@ -27,6 +27,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "audio_stream_enum.h"
 #include "securec.h"
+#include "audio_qosmanager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -67,6 +68,7 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
         std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)};
         DoSetOutputRoute(devices);
     }
+    RequestQosAuthForAudioHost();
     sinkInited_ = true;
     InitPipeInfo(hdiRenderId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_FAST);
 
@@ -113,6 +115,20 @@ void FastAudioRenderSink::DeInit(void)
 bool FastAudioRenderSink::IsInited(void)
 {
     return sinkInited_;
+}
+
+void FastAudioRenderSink::RequestQosAuthForAudioHost()
+{
+    CHECK_AND_RETURN(attr_.deviceType == DEVICE_TYPE_USB_ARM_HEADSET && attr_.isUltraFast);
+    std::string key = "get_audio_host_pid_for_qos#C" + GetField(attr_.address, "card", ';') + "D0";
+    AUDIO_INFO_LOG("GetAudioParameterByKey, key: %{public}s", key.c_str());
+    std::optional<std::string> value =
+        HdiAdapterManager::GetInstance().GetAudioParameterByKey(HDI_DEVICE_MANAGER_TYPE_LOCAL, key);
+    CHECK_AND_RETURN_LOG(value.has_value() && !value.value().empty(), "GetAudioParameterByKey return empty value");
+    int32_t pid = 0;
+    StringConverter(value.value(), pid);
+    AUDIO_INFO_LOG("get audio host pid: %{public}d", pid);
+    RequestQosAuth(pid);
 }
 
 int32_t FastAudioRenderSink::Start(void)
