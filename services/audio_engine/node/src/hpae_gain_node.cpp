@@ -309,7 +309,7 @@ void HpaeGainNode::ProcessDefaultFadeIn(HpaePcmBuffer *input, uint8_t *data,
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
         processedBytes += avail;
     }
-    if (processedBytes >= totalFadeBytes) {
+    if (processedBytes >= totalFadeBytes || isFast_) {
         fadeInState = false;
         processedBytes = 0;
     }

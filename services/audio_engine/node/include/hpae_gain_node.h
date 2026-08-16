@@ -79,7 +79,7 @@ private:
     FadeOutState collFadeOutState_ = FadeOutState::NO_FADEOUT;
     std::shared_ptr<StreamVolume> streamVolume_;
     std::shared_ptr<PipeVolume> pipeVolume_;
-    bool isFast_;
+    bool isFast_ = false;
 };
 
 }  // namespace HPAE
