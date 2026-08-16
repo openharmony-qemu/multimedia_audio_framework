@@ -1065,10 +1065,7 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
             break;
         case CONCURRENT_TASK_SERVICE_ID: {
             AUDIO_INFO_LOG("concurrent task service start");
-            std::unordered_map<std::string, std::string> payload;
-            payload["groupId"] = std::to_string(AUDIO_PROC_QOS_TABLE);
-            payload["pid"] = std::to_string(getpid());
-            OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
+            AuthQosForAudio();
             break;
         }
         default:

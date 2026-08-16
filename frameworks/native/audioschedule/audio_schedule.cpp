@@ -24,6 +24,7 @@
 #include <cstring>
 #include <unordered_map>
 #include <set>
+#include <atomic>
 
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -49,6 +50,7 @@ static std::set<uint32_t> g_tidToReport = {};
 constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
 constexpr int64_t g_value = 0;
 constexpr int32_t SCHED_PRIORITY_NUM_4 = 4;
+std::atomic<bool> g_audioServerAuthQosFinish = false;
 
 void ConfigPayload(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLevel,
     std::unordered_map<std::string, std::string> &mapPayload)
@@ -155,6 +157,16 @@ void OnAddResSchedService(uint32_t audioServerPid)
     }
 }
 
+void AuthQosForAudio()
+{
+    CHECK_AND_RETURN(g_audioServerAuthQosFinish.load() == false);
+    std::unordered_map<std::string, std::string> payload;
+    payload["groupId"] = std::to_string(AUDIO_PROC_QOS_TABLE);
+    payload["pid"] = std::to_string(getpid());
+    OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
+}
+
+
 bool SetEndpointThreadPriority()
 {
     Trace trace("SetEndpointThreadPriority");
@@ -189,6 +201,7 @@ void ResetProcessDataThreadPriority(void) {};
 void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
 bool SetEndpointThreadPriority() { return false; };
 bool ResetEndpointThreadPriority() { return false; };
+void AuthQosForAudio() {};
 #endif
 
 #ifdef __cplusplus

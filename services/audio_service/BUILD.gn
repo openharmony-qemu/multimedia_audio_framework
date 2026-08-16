@@ -845,9 +845,9 @@ audio_ohos_library("audio_service") {
     "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
   ]
   defines = []
   if (!audio_framework_feature_new_engine_flag) {
