@@ -164,12 +164,13 @@ void AuthQosForAudio()
     payload["groupId"] = std::to_string(AUDIO_PROC_QOS_TABLE);
     payload["pid"] = std::to_string(getpid());
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
+    g_audioServerAuthQosForAuth.store(true);
 }
-
 
 bool SetEndpointThreadPriority()
 {
     Trace trace("SetEndpointThreadPriority");
+    AuthQosForAudio();
     bool res = false;
     int32_t ret = OHOS::QOS::SetThreadQos(OHOS::QOS::QosLevel::QOS_KEY_BACKGROUND);
     if (ret == 0) {
@@ -201,7 +202,7 @@ void ResetProcessDataThreadPriority(void) {};
 void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
 bool SetEndpointThreadPriority() { return false; };
 bool ResetEndpointThreadPriority() { return false; };
-void AuthQosForAudio() {};
+void AuthQosForAudio() {}
 #endif
 
 #ifdef __cplusplus
