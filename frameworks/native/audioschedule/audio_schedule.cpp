@@ -31,6 +31,7 @@
 #include "res_sched_client.h"
 #endif
 #include "qos.h"
+#include "concurrent_task_client.h"
 
 #include "audio_utils.h"
 #include "audio_common_log.h"
@@ -49,6 +50,7 @@ static std::mutex g_rssMutex;
 static std::set<uint32_t> g_tidToReport = {};
 constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
 constexpr int64_t g_value = 0;
+constexpr int32_t AUDIO_PROC_QOS_TABLE = 7;
 constexpr int32_t SCHED_PRIORITY_NUM_4 = 4;
 std::atomic<bool> g_audioServerAuthQosFinish = false;
 
@@ -164,7 +166,7 @@ void AuthQosForAudio()
     payload["groupId"] = std::to_string(AUDIO_PROC_QOS_TABLE);
     payload["pid"] = std::to_string(getpid());
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
-    g_audioServerAuthQosForAuth.store(true);
+    g_audioServerAuthQosFinish.store(true);
 }
 
 bool SetEndpointThreadPriority()
