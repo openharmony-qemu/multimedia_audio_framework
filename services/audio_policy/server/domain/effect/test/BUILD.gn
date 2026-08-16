@@ -71,6 +71,7 @@ ohos_unittest("audio_spatialization_service_extended_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_spatialization_service_extended_test.cpp" ]

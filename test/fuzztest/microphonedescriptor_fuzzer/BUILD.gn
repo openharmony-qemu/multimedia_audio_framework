@@ -60,6 +60,7 @@ ohos_fuzztest("MicrophoneDescriptorFuzzTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "ffrt:libffrt",
   ]
   if (sonic_enable == true) {
     external_deps += [ "sonic:sonic" ]

@@ -13,17 +13,17 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_SPATIALIZATION_STATE_CHANGE_LISTENER_UNIT_TEST_H
-#define AUDIO_SPATIALIZATION_STATE_CHANGE_LISTENER_UNIT_TEST_H
+#ifndef NEGATIVE_PRIORITY_ROUTER_UNIT_TEST_H
+#define NEGATIVE_PRIORITY_ROUTER_UNIT_TEST_H
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-#include "audio_spatialization_state_change_listener.h"
+#include "gtest/gtest.h"
+#include "negative_priority_router.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioSpatializationStateChangeListenerUnitTest : public testing::Test {
+class NegativePriorityRouterUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -36,4 +36,4 @@ public:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_SPATIALIZATION_STATE_CHANGE_LISTENER_UNIT_TEST_H
+#endif // NEGATIVE_PRIORITY_ROUTER_UNIT_TEST_H

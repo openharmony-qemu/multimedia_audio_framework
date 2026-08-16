@@ -114,9 +114,16 @@ int32_t HpaeVirtualProcessCluster::SetupAudioLimiter()
 
 void HpaeVirtualProcessCluster::CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo)
 {
-    CHECK_AND_RETURN(!SafeGetMap(idGainMap_, sessionId));
-    HpaeNodeInfo gainNodeInfo = preNodeInfo;
-    idGainMap_[sessionId] = std::make_shared<HpaeGainNode>(gainNodeInfo);
+    auto gainNode = SafeGetMap(idGainMap_, sessionId);
+    if (!gainNode) {
+        HpaeNodeInfo gainNodeInfo = preNodeInfo;
+        idGainMap_[sessionId] = std::make_shared<HpaeGainNode>(gainNodeInfo);
+    } else {
+        // Reuse existing node: clear stale fade state, mirroring HpaeProcessCluster::CreateGainNode.
+        // (DisConnect erases the node, so reuse is unlikely, but reset for parity/defense.)
+        gainNode->ResetFadeState();
+        AUDIO_INFO_LOG("sessionId %{public}d gainNode already exist, reset fade state", sessionId);
+    }
 }
 
 void HpaeVirtualProcessCluster::CreateConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo)

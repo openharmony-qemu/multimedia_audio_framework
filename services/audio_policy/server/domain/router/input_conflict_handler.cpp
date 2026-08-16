@@ -39,11 +39,12 @@ void InputConflictHandler::FindHighestPriorityDevice()
 
 bool InputConflictHandler::Detect(const std::shared_ptr<AudioDeviceDescriptor> &device, RouterType routerType)
 {
-    if (device == nullptr || highestPriorityDevice_ == nullptr) {
+    if (device == nullptr || highestPriorityDevice_ == nullptr ||
+        highestPriorityDevice_->deviceType_ == DEVICE_TYPE_NONE) {
         return false;
     }
 
-    if (device->deviceRole_ == OUTPUT_DEVICE) {
+    if (device->deviceRole_ != INPUT_DEVICE) {
         return false;
     }
 

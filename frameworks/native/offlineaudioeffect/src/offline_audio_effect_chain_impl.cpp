@@ -26,7 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static constexpr size_t MAX_PARAM_SIZE = 4096;
+static constexpr size_t MAX_PARAM_SIZE = 8192;
 OfflineAudioEffectChainImpl::OfflineAudioEffectChainImpl(const std::string &effectChainName)
 {
     chainName_ = effectChainName;

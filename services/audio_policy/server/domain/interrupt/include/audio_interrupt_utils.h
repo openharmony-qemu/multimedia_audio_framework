@@ -19,6 +19,10 @@
 #include "audio_interrupt_info.h"
 #include "audio_policy_log.h"
 
+#ifdef HAS_WINDOW_MANAGER
+#include "window_utils.h"
+#endif
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -28,6 +32,7 @@ public:
     static uint8_t GetAppState(int32_t appPid);
     static bool IsMediaStream(AudioStreamType audioStreamType);
     static bool IsInterPhoneInterrupt(const AudioInterrupt &audioInterrupt);
+    static bool GetWindowState(const AudioInterrupt &audioInterrupt);
 };
 
 } // namespace AudioStandard

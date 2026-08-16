@@ -24,10 +24,6 @@
 #include "istandard_audio_policy_manager_listener.h"
 #include "audio_session_service.h"
 
-#ifdef HAS_WINDOW_MANAGER
-#include "window_utils.h"
-#endif
-
 namespace OHOS {
 namespace AudioStandard {
 
@@ -44,9 +40,8 @@ private:
 
     void UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
-    void UpdateWindowFocusStrategy(const int32_t &currentPid,
-        const int32_t &incomingPid, const AudioStreamType &existStreamType,
-        const AudioStreamType &incomingStreamType, AudioFocusEntry &focusEntry);
+    void UpdateWindowFocusStrategy(const AudioInterrupt &currentInterrupt,
+        const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdatePauseAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdateMicFocusByUid(const AudioInterrupt &currentInterrupt,

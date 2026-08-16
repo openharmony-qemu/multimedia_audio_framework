@@ -50,13 +50,8 @@ DownloadManager::~DownloadManager()
         statusCallbacks_.clear();
     }
 
-    CHECK_AND_RETURN_LOG(downloadCallback_ != nullptr, "downloadCallback_ is null.");
-    int32_t funcResult = 0;
-    int32_t ret = downloadCallback_->UnregisterDownloadStatusCallback(funcResult);
     downloadCallback_ = nullptr;
     isDownloadCallbackRegistered_ = false;
-    CHECK_AND_RETURN_LOG(ret == SUCCESS && funcResult == SUCCESS, "UnregisterDownloadStatusCallback failed, "
-        "ret:%{public}d, funcResult:%{public}d", ret, funcResult);
 }
 
 int32_t DownloadManager::StartDownload(const std::string& featureName)
@@ -218,7 +213,6 @@ int32_t DownloadManager::GetDownloadStatus(const std::string& featureName, Audio
                       "%{public}d, newVersionInfo.featureName = %{public}s.", featureName.c_str(), ret, funcResult,
                       newVersionInfo.errorCode, newVersionInfo.featureName.c_str());
     }
-    
     AUDIO_INFO_LOG("GetDownloadStatus success, state=%{public}d, progress=%{public}u", status.state, status.progress);
     return SUCCESS;
 }

@@ -47,6 +47,22 @@ struct AudioInterruptCheckInfo {
     std::list<AudioFocusErrorEvent> errorEvents;
 };
 
+struct InterruptResponseCheckInfo {
+    InterruptHint hintType;
+    uint32_t streamId;
+    int32_t pid;
+    AudioStreamType streamType;
+    SourceType sourceType;
+    std::string appName;
+};
+
+enum class ResponseResult {
+    NORMAL,
+    NOT_RESTARTED,
+    RESTARTED,
+    STOPPED,
+};
+
 enum InterruptErrorCode {
     TYPE_MEDIA_PLAYBACK_NOT_LISTENING_INTERRUPT_CHANGE,
     TYPE_MEDIA_PLAYBACK_ACTIVATED_LISTENING_INTERRUPT_CHANGE,
@@ -71,6 +87,8 @@ public:
     void DelayCheckMuteStreamInterrupt(uint32_t streamId);
     void HandleInterruptCallbackEvent(const AudioInterrupt &audioInterrupt);
     void HandleStateChangeCallbackEvent(const int32_t usage, const int32_t uid, const int32_t type);
+    void CheckInterruptResponse(const InterruptResponseCheckInfo &info,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
     void AudioSessionTimeoutErrorEvent(const AudioInterrupt &audioInterrupt);
 
 private:
@@ -82,6 +100,10 @@ private:
         const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt);
     void CheckMuteInterruptEvent(uint32_t streamId);
     void CheckShortInterruptEvent(uint32_t streamId);
+    ResponseResult EvaluateResponse(const InterruptResponseCheckInfo &info,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
+    void WriteInterruptResponseErrorEvent(const std::string &appName, InterruptHint hintType,
+        const std::string &rendererInfo, const std::string &errorInfo);
     bool IsCheckDfxStream(AudioStreamType audioStreamType);
     void WriteInterruptOrSessionCallbackErrorEvent(const int32_t usage, const int32_t uid, const int32_t type);
 

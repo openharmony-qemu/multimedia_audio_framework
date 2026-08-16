@@ -21,6 +21,31 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+const int32_t STREAM_DEFAULT_PRIORITY = 100;
+const unordered_map<AudioStreamType, int32_t> DEFAULT_STREAM_PRIORITY = {
+    {STREAM_VOICE_CALL, 0},
+    {STREAM_VOICE_CALL_ASSISTANT, 0},
+    {STREAM_VOICE_COMMUNICATION, 0},
+    {STREAM_VOICE_MESSAGE, 1},
+    {STREAM_VOICE_ASSISTANT_SYSTEM, 2},
+    {STREAM_VOICE_ASSISTANT, 3},
+    {STREAM_RING, 4},
+    {STREAM_VOICE_RING, 4},
+    {STREAM_ALARM, 5},
+    {STREAM_ANNOUNCEMENT, 5},
+    {STREAM_EMERGENCY, 5},
+    {STREAM_NAVIGATION, 6},
+    {STREAM_MUSIC, 7},
+    {STREAM_MOVIE, 7},
+    {STREAM_SPEECH, 7},
+    {STREAM_GAME, 7},
+    // Notification volume is not expected to be adjusted by volume keys.
+    {STREAM_DTMF, STREAM_DEFAULT_PRIORITY},
+    {STREAM_SYSTEM, STREAM_DEFAULT_PRIORITY},
+    {STREAM_SYSTEM_ENFORCED, STREAM_DEFAULT_PRIORITY},
+    {STREAM_NOTIFICATION, STREAM_DEFAULT_PRIORITY},
+};
+
 void AudioInterruptServiceUnitTest::SetUpTestCase(void) {}
 void AudioInterruptServiceUnitTest::TearDownTestCase(void) {}
 
@@ -115,6 +140,7 @@ HWTEST(AudioInterruptServiceProUnitTest, AudioInterruptService_005, TestSize.Lev
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
+    audioInterruptService->volumeTypePriorities_ = DEFAULT_STREAM_PRIORITY;
 
     auto ret = audioInterruptService->GetStreamTypePriority(AudioStreamType::STREAM_VOICE_CALL);
     EXPECT_EQ(ret, 0);
@@ -133,6 +159,7 @@ HWTEST(AudioInterruptServiceProUnitTest, GetHighestPriorityVolumeTypeFromStreams
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
+    audioInterruptService->volumeTypePriorities_ = DEFAULT_STREAM_PRIORITY;
 
     std::vector<AudioRendererInfo> rendererInfos;
     AudioRendererInfo voiceInfo;
@@ -154,6 +181,7 @@ HWTEST(AudioInterruptServiceProUnitTest, GetHighestPriorityVolumeTypeFromStreams
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
+    audioInterruptService->volumeTypePriorities_ = DEFAULT_STREAM_PRIORITY;
 
     std::vector<AudioRendererInfo> rendererInfos;
     AudioRendererInfo notificationInfo;
@@ -174,6 +202,7 @@ HWTEST(AudioInterruptServiceProUnitTest, GetHighestPriorityVolumeTypeFromStreams
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
+    audioInterruptService->volumeTypePriorities_ = DEFAULT_STREAM_PRIORITY;
 
     std::vector<AudioRendererInfo> rendererInfos;
 
@@ -190,6 +219,7 @@ HWTEST(AudioInterruptServiceProUnitTest, GetHighestPriorityVolumeTypeFromStreams
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
+    audioInterruptService->volumeTypePriorities_ = DEFAULT_STREAM_PRIORITY;
 
     std::vector<AudioRendererInfo> rendererInfos;
     AudioRendererInfo musicInfo;
@@ -1162,17 +1192,19 @@ HWTEST_F(AudioInterruptServiceUnitTest, ProcessFocusListIteration_001, TestSize.
  */
 HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_001, TestSize.Level1)
 {
-    ASSERT_NE(audioInterruptService_, nullptr);
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
     std::unordered_map<AudioVolumeType, int32_t> priorities;
     priorities[STREAM_MUSIC] = 0;
     priorities[STREAM_VOICE_CALL] = 1;
     priorities[STREAM_RING] = 2;
-    int32_t ret = audioInterruptService_->SetVolumeControlPriority(priorities);
+    int32_t ret = audioInterruptService->SetVolumeControlPriority(priorities);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 3);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_MUSIC], 0);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_VOICE_CALL], 1);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_RING], 2);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_.size(), 3);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_[STREAM_MUSIC], 0);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_[STREAM_VOICE_CALL], 1);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_[STREAM_RING], 2);
 }
 
 /**
@@ -1182,13 +1214,15 @@ HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_001, TestSize.L
  */
 HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_002, TestSize.Level1)
 {
-    ASSERT_NE(audioInterruptService_, nullptr);
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
     std::unordered_map<AudioVolumeType, int32_t> priorities;
     priorities[STREAM_MUSIC] = 0;
-    int32_t ret = audioInterruptService_->SetVolumeControlPriority(priorities);
+    int32_t ret = audioInterruptService->SetVolumeControlPriority(priorities);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 1);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_MUSIC], 0);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_.size(), 1);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_[STREAM_MUSIC], 0);
 }
 
 /**
@@ -1198,11 +1232,13 @@ HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_002, TestSize.L
  */
 HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_003, TestSize.Level1)
 {
-    ASSERT_NE(audioInterruptService_, nullptr);
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
     std::unordered_map<AudioVolumeType, int32_t> priorities;
-    int32_t ret = audioInterruptService_->SetVolumeControlPriority(priorities);
+    int32_t ret = audioInterruptService->SetVolumeControlPriority(priorities);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 0);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_.size(), 0);
 }
 
 /**
@@ -1212,23 +1248,25 @@ HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_003, TestSize.L
  */
 HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_004, TestSize.Level1)
 {
-    ASSERT_NE(audioInterruptService_, nullptr);
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
     std::unordered_map<AudioVolumeType, int32_t> priorities1;
     priorities1[STREAM_MUSIC] = 0;
     priorities1[STREAM_VOICE_CALL] = 1;
-    int32_t ret = audioInterruptService_->SetVolumeControlPriority(priorities1);
+    int32_t ret = audioInterruptService->SetVolumeControlPriority(priorities1);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 2);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_.size(), 2);
 
     std::unordered_map<AudioVolumeType, int32_t> priorities2;
     priorities2[STREAM_RING] = 0;
     priorities2[STREAM_ALARM] = 1;
-    ret = audioInterruptService_->SetVolumeControlPriority(priorities2);
+    ret = audioInterruptService->SetVolumeControlPriority(priorities2);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 2);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.count(STREAM_MUSIC), 0);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_RING], 0);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_[STREAM_ALARM], 1);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_.size(), 2);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_.count(STREAM_MUSIC), 0);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_[STREAM_RING], 0);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_[STREAM_ALARM], 1);
 }
 
 /**
@@ -1238,7 +1276,9 @@ HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_004, TestSize.L
  */
 HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_005, TestSize.Level1)
 {
-    ASSERT_NE(audioInterruptService_, nullptr);
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
     std::unordered_map<AudioVolumeType, int32_t> priorities;
     priorities[STREAM_VOICE_CALL] = 0;
     priorities[STREAM_MUSIC] = 1;
@@ -1250,9 +1290,9 @@ HWTEST_F(AudioInterruptServiceUnitTest, SetVolumeControlPriority_005, TestSize.L
     priorities[STREAM_ACCESSIBILITY] = 7;
     priorities[STREAM_ULTRASONIC] = 8;
     priorities[STREAM_NAVIGATION] = 9;
-    int32_t ret = audioInterruptService_->SetVolumeControlPriority(priorities);
+    int32_t ret = audioInterruptService->SetVolumeControlPriority(priorities);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(audioInterruptService_->volumeTypePriorities_.size(), 10);
+    EXPECT_EQ(audioInterruptService->volumeTypePriorities_.size(), 10);
 }
 } // namespace AudioStandard
 } // namespace OHOS

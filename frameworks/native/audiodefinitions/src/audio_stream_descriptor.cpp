@@ -128,6 +128,7 @@ void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
 
 bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
 {
+    std::lock_guard<std::mutex> lock(lock_);
     return streamInfo_.Marshalling(parcel) &&
         parcel.WriteUint32(audioMode_) &&
         parcel.WriteUint32(audioFlag_) &&
@@ -192,16 +193,17 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
 }
 
 bool AudioStreamDescriptor::WriteDeviceDescVectorToParcel(
-    Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const
+    Parcel &parcel, const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const
 {
-    size_t size = descs.size();
+    int32_t size = count_if(descs.begin(), descs.end(), [](auto &p) {return p != nullptr;});
     if (size > MAX_STREAM_DESCRIPTORS_SIZE) {
         return parcel.WriteInt32(-1);
     }
-    bool ret = parcel.WriteInt32(static_cast<int32_t>(size));
+    bool ret = parcel.WriteInt32(size);
     CHECK_AND_RETURN_RET_LOG(ret, false, "write vector size failed");
 
-    for (auto desc : descs) {
+    for (auto &desc : descs) {
+        CHECK_AND_CONTINUE(desc);
         ret = desc->Marshalling(parcel);
         CHECK_AND_RETURN_RET_LOG(ret, false, "Marshalling device desc failed");
     }

@@ -112,17 +112,19 @@ void VADeviceManager::OnDevicesConnected(
     const sptr<IVADeviceController> &controller)
 {
     CHECK_AND_RETURN_LOG(vaDevice != nullptr && controller != nullptr, "invalid parameter: null pointer detected");
-    statusMutex_.lock();
     AUDIO_INFO_LOG("va device manager connecting to device: {\"name\":\"%{public}s\", \"type\":\"%{public}d\"}",
         vaDevice->configuration_.name_.c_str(), vaDevice->configuration_.type_);
     std::shared_ptr<AudioDeviceDescriptor> descriptor = ConvertVADeviceToDescriptor(vaDevice);
-    connectedVADeviceMap_[vaDevice->configuration_.address_] = controller;
-
-    if (!config_.GetAdapterInfo(AudioAdapterType::TYPE_VA)) {
-        RegisterVAAdapterToMap();
+    CHECK_AND_RETURN_LOG(descriptor != nullptr, "descriptor is nullptr");
+    {
+        std::lock_guard<std::mutex> lock(statusMutex_);
+        connectedVADeviceMap_[vaDevice->configuration_.address_] = controller;
+ 
+        if (!config_.GetAdapterInfo(AudioAdapterType::TYPE_VA)) {
+            RegisterVAAdapterToMap();
+        }
+        AddVAStreamPropToMap(vaDevice->configuration_.properties_);
     }
-    AddVAStreamPropToMap(vaDevice->configuration_.properties_);
-    statusMutex_.unlock();
     sptr<IRemoteObject> controllerObj = controller->AsObject();
     if (controllerObj != nullptr) {
         std::shared_ptr<VADevice> vaDeviceForCb = vaDevice;

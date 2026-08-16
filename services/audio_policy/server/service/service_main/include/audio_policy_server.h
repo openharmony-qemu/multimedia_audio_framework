@@ -192,8 +192,6 @@ public:
 
     int32_t RestoreOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter) override;
 
-    int32_t GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamType, std::string &info) override;
-
     int32_t SetMediaOutputDevice(int32_t deviceTypeIn) override;
 
     int32_t SelectInputDevice(const sptr<AudioCapturerFilter> &audioCapturerFilter,
@@ -402,7 +400,7 @@ public:
     int32_t GetLoopbackPreferredDevicePair(std::shared_ptr<AudioDeviceDescriptor> &inputDevice,
         std::shared_ptr<AudioDeviceDescriptor> &outputDevice, int32_t &ret) override;
     int32_t IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret) override;
-    int32_t SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret) override;
+    int32_t SetKaraokeParameters(int32_t deviceType, int32_t paramType, int32_t value, bool &ret) override;
     int32_t SetLoopbackVolume(float volume, bool &ret) override;
     int32_t GetLoopbackVolume(float &volume, bool &ret) override;
 
@@ -538,17 +536,12 @@ public:
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState &audioSpatialDeviceState) override;
 
-    int32_t RegisterSpatializationStateEventListener(uint32_t sessionID, int32_t streamUsage,
-        const sptr<IRemoteObject> &object) override;
-
     int32_t ConfigDistributedRoutingRole(
         const std::shared_ptr<AudioDeviceDescriptor> &descriptor, int32_t type) override;
 
     int32_t SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t UnsetDistributedRoutingRoleCallback() override;
-
-    int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID) override;
 
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, int32_t zoneId) override;
 
@@ -655,6 +648,9 @@ public:
 
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, int32_t deviceType,
         const VolumeBehavior &volumeBehavior) override;
+
+    int32_t SetStopStreamInfoWhenDisconnect(const std::string &networkId, const std::vector<int32_t> &usages,
+        const std::vector<int32_t> &uids) override;
 
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
 
@@ -1044,6 +1040,7 @@ private:
     int32_t loudVolumeSupportMode_ = 0;
 #endif
     bool isHighResolutionExist_ = false;
+    std::atomic<bool> sleVoiceFlagFromNearlink_ {false};
     std::atomic<float> loopbackVolume_ = 0.0f;
     std::mutex descLock_;
 

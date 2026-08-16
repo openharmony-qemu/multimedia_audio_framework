@@ -441,17 +441,6 @@ void AudioSpatializationServiceGetSpatializationSceneTypeFuzzTest(FuzzedDataProv
     ptrAudioSpatializationService->GetSpatializationSceneType();
 }
 
-void AudioSpatializationServiceUnregisterSpatializationStateEventListenerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
-    if (ptrAudioSpatializationService == nullptr) {
-        return;
-    }
-
-    uint32_t sessionID = fdp.ConsumeIntegral<uint32_t>();
-    ptrAudioSpatializationService->UnregisterSpatializationStateEventListener(sessionID);
-}
-
 void AudioSpatializationServiceSetSpatializationSceneTypeFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
@@ -586,18 +575,6 @@ void AudioSpatializationServiceUpdateSpatializationSupportedFuzzTest(FuzzedDataP
     }
     std::string encryptedAddress = ConsumeString(fdp, "encrypted_test_address");
     ptrAudioSpatializationService->UpdateSpatializationSupported(encryptedAddress);
-}
-
-void AudioSpatializationServiceRegisterSpatializationStateEventListenerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
-    if (ptrAudioSpatializationService == nullptr) {
-        return;
-    }
-    uint32_t sessionID = fdp.ConsumeIntegral<uint32_t>();
-    StreamUsage streamUsage = PickValue(fdp, g_testStreamUsages);
-    sptr<IRemoteObject> object = nullptr;
-    ptrAudioSpatializationService->RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
 
 void AudioSpatializationServiceHandleDeviceConfigChangedFuzzTest(FuzzedDataProvider& fdp)
@@ -829,7 +806,6 @@ void Test(FuzzedDataProvider& fdp)
     AudioSpatializationServiceIsHeadTrackingSupportedForDeviceFuzzTest,
     AudioSpatializationServiceUpdateSpatialDeviceStateFuzzTest,
     AudioSpatializationServiceGetSpatializationSceneTypeFuzzTest,
-    AudioSpatializationServiceUnregisterSpatializationStateEventListenerFuzzTest,
     AudioSpatializationServiceSetSpatializationSceneTypeFuzzTest,
     AudioSpatializationServiceDeinitFuzzTest,
     AudioSpatializationServiceGetAudioServerProxyFuzzTest,
@@ -841,7 +817,6 @@ void Test(FuzzedDataProvider& fdp)
     AudioSpatializationServiceInitSpatializationStateFuzzTest,
     AudioSpatializationServiceGetCurrentDeviceAddressFuzzTest,
     AudioSpatializationServiceUpdateSpatializationSupportedFuzzTest,
-    AudioSpatializationServiceRegisterSpatializationStateEventListenerFuzzTest,
     AudioSpatializationServiceHandleDeviceConfigChangedFuzzTest,
     AudioSpatializationServiceHandleSpatializationEnabledChangeBoolFuzzTest,
     AudioSpatializationServiceHandleHeadTrackingEnabledChangeBoolFuzzTest,

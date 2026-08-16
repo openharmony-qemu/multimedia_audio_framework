@@ -989,7 +989,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_041, TestSize.Level1)
     std::string macAddress = "macAddress";
     auto &audioRouter = AudioRouterCenter::GetAudioRouterCenter();
     audioRouter.renderConfigMap_[STREAM_USAGE_VOICE_COMMUNICATION] == "CallRenderRouters";
-    AudioDeviceStatus audioDeviceStatus =  AudioDeviceStatus::GetInstance();
+    AudioDeviceStatus &audioDeviceStatus =  AudioDeviceStatus::GetInstance();
     auto devDesc = make_shared<AudioDeviceDescriptor>();
     devDesc->deviceId_ = 114914;
     devDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
@@ -999,6 +999,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_041, TestSize.Level1)
         nullptr, devDesc, nullptr, nullptr));
     audioDeviceStatus.audioDeviceManager_.commRenderPrivacyDevices_.push_back(devDesc);
     audioDeviceStatus.OnPrivacyDeviceSelected(devType, macAddress);
+    audioDeviceStatus.audioDeviceManager_.commRenderPrivacyDevices_.pop_back();
 }
 
 /**
@@ -1460,7 +1461,8 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_001, TestSize.Leve
     VolumeUtils::SetPCVolumeEnable(true);
     audioCoreService->isFirstScreenOn_ = false;
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test",
+        AudioRouterCenter::OutputDeviceMap{});
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }
 
@@ -1478,7 +1480,8 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_002, TestSize.Leve
     audioCoreService->isFirstScreenOn_ = true;
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioStreamDescriptor->rendererTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
-    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test",
+        AudioRouterCenter::OutputDeviceMap{});
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }
 
@@ -1495,7 +1498,8 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_003, TestSize.Leve
     VolumeUtils::SetPCVolumeEnable(false);
     audioCoreService->isFirstScreenOn_ = true;
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test",
+        AudioRouterCenter::OutputDeviceMap{});
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }
 
@@ -1512,7 +1516,8 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_004, TestSize.Leve
     VolumeUtils::SetPCVolumeEnable(false);
     audioCoreService->isFirstScreenOn_ = false;
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test",
+        AudioRouterCenter::OutputDeviceMap{});
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }
 

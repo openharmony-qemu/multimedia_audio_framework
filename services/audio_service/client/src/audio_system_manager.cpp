@@ -449,11 +449,6 @@ int32_t AudioSystemManager::SelectInputDevice(
     return AudioDevicesClientManager::GetInstance().SelectInputDevice(audioDeviceDescriptors);
 }
 
-std::string AudioSystemManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType) const
-{
-    return AudioDevicesClientManager::GetInstance().GetSelectedDeviceInfo(uid, pid, streamType);
-}
-
 int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
     const int32_t audioDeviceSelectMode) const

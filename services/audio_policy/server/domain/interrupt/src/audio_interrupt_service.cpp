@@ -72,7 +72,7 @@ static const map<InterruptHint, InterruptStage> HINT_STAGE_MAP = {
 AudioScene GetAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt)
 {
     if (audioInterrupt.isCallWaitingTone) {
-        return AUDIO_SCENE_DEFAULT;
+        return AUDIO_SCENE_CALL_WAITING_TONE;
     }
     if (audioInterrupt.audioFocusType.streamType == STREAM_RING) {
         return AUDIO_SCENE_RINGING;
@@ -111,10 +111,11 @@ private:
 
 static const std::unordered_map<const AudioScene, const int32_t> SCENE_PRIORITY = {
     // from high to low
-    {AUDIO_SCENE_PHONE_CALL, 5},
-    {AUDIO_SCENE_VOICE_RINGING, 4},
-    {AUDIO_SCENE_PHONE_CHAT, 3},
-    {AUDIO_SCENE_RINGING, 2},
+    {AUDIO_SCENE_PHONE_CALL, 6},
+    {AUDIO_SCENE_VOICE_RINGING, 5},
+    {AUDIO_SCENE_PHONE_CHAT, 4},
+    {AUDIO_SCENE_RINGING, 3},
+    {AUDIO_SCENE_CALL_WAITING_TONE, 2},
     {AUDIO_SCENE_DEFAULT, 1}
 };
 
@@ -1783,7 +1784,7 @@ AudioVolumeType AudioInterruptService::GetHighestPriorityVolumeTypeFromStreams(
 
 int32_t AudioInterruptService::SetVolumeControlPriority(const std::unordered_map<AudioVolumeType, int32_t> &priorities)
 {
-    int32_t size = priorities.size();
+    int32_t size = static_cast<int32_t>(priorities.size());
     AUDIO_INFO_LOG("priorities.size() [%{public}d]", size);
 
     volumeTypePriorities_ = priorities;
@@ -2128,40 +2129,25 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
     }
 }
 
-bool AudioInterruptService::CheckAudioConcurrencyForInterrupt(const AudioInterrupt &activeInterrupt,
-    const AudioInterrupt &incomingInterrupt)
-{
-    SourceType existSourceType = activeInterrupt.audioFocusType.sourceType;
-    SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
-    std::vector<SourceType> existConcurrentSources = activeInterrupt.currencySources.sourcesTypes;
-    std::vector<SourceType> incomingConcurrentSources = incomingInterrupt.currencySources.sourcesTypes;
-
-    return IsAudioSourceConcurrency(existSourceType, incomingSourceType,
-        existConcurrentSources, incomingConcurrentSources);
-}
-
 void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
     &iterActive, AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
     bool &removeFocusInfo, InterruptEventInternal &interruptEvent)
 {
+    SourceType incomingSourceType = incomingInterrupt.audioFocusType.sourceType;
+    std::vector<SourceType> incomingConcurrentSources = incomingInterrupt.currencySources.sourcesTypes;
+    SourceType existSourceType = (iterActive->first).audioFocusType.sourceType;
+    std::vector<SourceType> existConcurrentSources = (iterActive->first).currencySources.sourcesTypes;
+
     // if the callerPid has an active audio session, the hint type need to be updated.
     if (IsCanMixInterrupt(incomingInterrupt, iterActive->first)) {
         UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
     }
-    if (IsAncoAudioMediaInterrupt(focusEntry, iterActive->first, incomingInterrupt)) {
-        AUDIO_INFO_LOG("is anco audio media interrupt");
-        interruptEvent.handleForceStream = false;
-        interruptEvent.forceType = INTERRUPT_SHARE;
-        interruptEvent.hintType = focusEntry.hintType;
-        return;
-    }
-    if (focusEntry.hintType == INTERRUPT_HINT_STOP || focusEntry.hintType == INTERRUPT_HINT_PAUSE) {
-        if (CheckAudioConcurrencyForInterrupt(iterActive->first, incomingInterrupt)) {
-            return;
-        }
-    }
     switch (focusEntry.hintType) {
         case INTERRUPT_HINT_STOP:
+            if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
+                incomingConcurrentSources)) {
+                break;
+            }
             interruptEvent.hintType = focusEntry.hintType;
             if (IsGameAvoidCallbackCase(iterActive->first)) {
                 interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
@@ -2172,6 +2158,10 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
             removeFocusInfo = true;
             break;
         case INTERRUPT_HINT_PAUSE:
+            if (IsAudioSourceConcurrency(existSourceType, incomingSourceType, existConcurrentSources,
+                incomingConcurrentSources)) {
+                break;
+            }
             if (iterActive->second == ACTIVE || iterActive->second == DUCK) {
                 iterActive->second = PAUSE;
                 interruptEvent.hintType = focusEntry.hintType;
@@ -2932,6 +2922,14 @@ void AudioInterruptService::HandleIncomingState(const int32_t &zoneId, const Aud
     }
 }
 
+AudioScene AudioInterruptService::MapToTargetAudioScene(const AudioScene audioScene) const
+{
+    if (audioScene == AUDIO_SCENE_CALL_WAITING_TONE) {
+        return AUDIO_SCENE_RINGING;
+    }
+    return audioScene;
+}
+
 AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zoneId) const
 {
     AudioScene audioScene = AUDIO_SCENE_DEFAULT;
@@ -2966,8 +2964,7 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
             ownerUid_ = interrupt.uid;
         }
     }
-
-    return audioScene;
+    return MapToTargetAudioScene(audioScene);
 }
 
 AudioScene AudioInterruptService::GetHighestPriorityAudioSceneFromAudioSession(
@@ -3349,6 +3346,7 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
             RemoveStreamIdSuggestionRecord(streamId);
         }
         SetStreamInterruptMute(interruptEvent, streamId, audioInterrupt);
+        PostInterruptResponseCheckAction(interruptEvent, audioInterrupt);
     }
 }
 
@@ -3452,7 +3450,8 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
         highestPriorityAudioScene = RefreshAudioSceneFromAudioInterrupt(
             focusInfo.first, highestPriorityAudioScene);
     }
-    UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(MapToTargetAudioScene(highestPriorityAudioScene),
+        DEACTIVATE_AUDIO_INTERRUPT, zoneId);
     
     bool isExistActiveInjectFocus = IsActiveInjectFocusExist(audioFocusInfoList);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList = SimulateFocusEntry(zoneId);
@@ -3563,8 +3562,8 @@ void AudioInterruptService::RefreshAudioSceneAfterDelay(const int32_t zoneId)
         highestPriorityAudioScene = RefreshAudioSceneFromAudioInterrupt(
             focusInfo.first, highestPriorityAudioScene);
     }
-
-    UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
+    UpdateAudioSceneFromInterrupt(MapToTargetAudioScene(highestPriorityAudioScene),
+        DEACTIVATE_AUDIO_INTERRUPT, zoneId);
     AUDIO_INFO_LOG("Refreshed audio scene for zone %{public}d after delay, scene: %{public}d",
         zoneId, highestPriorityAudioScene);
 }
@@ -4112,6 +4111,24 @@ void AudioInterruptService::AddFocusHistory(uint32_t streamId, const AudioFocusB
     if (audioFocusHisMap_[streamId].size() > MAX_HISTORY_SIZE) {
         audioFocusHisMap_[streamId].erase(audioFocusHisMap_[streamId].begin());
     }
+}
+
+void AudioInterruptService::StopAudioFocusBySessionIds(const int32_t zoneId,
+    const std::vector<std::pair<uint32_t, int32_t>> &sessions)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<uint32_t> sessionIdsToStop = {};
+    for (const auto &session : sessions) {
+        uint32_t sessionId = session.first;
+        int32_t callerPid = session.second;
+        bool isActivated = sessionService_.IsAudioSessionFocusMode(callerPid);
+        if (isActivated) {
+            sessionId = sessionService_.GetFakeStreamId(callerPid);
+            CHECK_AND_CONTINUE(sessionId != 0);
+        }
+        sessionIdsToStop.emplace_back(sessionId);
+    }
+    zoneManager_.StopAudioFocusBySessionIds(zoneId, sessionIdsToStop);
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

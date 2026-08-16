@@ -278,7 +278,7 @@ std::shared_ptr<AudioCapturerImpl> AudioCapturerImpl::CreateAudioCapturerNativeO
     CHECK_AND_RETURN_RET_LOG(sCapturerOptions_ != nullptr, nullptr, "sCapturerOptions_ is nullptr");
     audioCapturerImpl->sourceType_ = sCapturerOptions_->capturerInfo.sourceType;
     OHOS::AudioStandard::AudioCapturerOptions capturerOptions = *sCapturerOptions_;
-    audioCapturerImpl->isModernInnerCapturer_ = capturerOptions.playbackCaptureConfig.isModernInnerCapturer;
+    audioCapturerImpl->isModernInnerCapturer_ = capturerOptions.staticPlaybackCaptureConfig.isModernInnerCapturer;
     /* AudioCapturer not support other capturerFlags, only support flag 0 */
     if (capturerOptions.capturerInfo.capturerFlags != 0) {
         capturerOptions.capturerInfo.capturerFlags = 0;

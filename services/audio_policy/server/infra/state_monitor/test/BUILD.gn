@@ -72,6 +72,7 @@ ohos_unittest("audio_policy_state_monitor_unit_test") {
     "data_share:datashare_consumer",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/audio_policy_state_monitor_unit_test/src/audio_policy_state_monitor_unit_test.cpp" ]

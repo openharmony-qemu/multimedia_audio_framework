@@ -46,5 +46,6 @@ ohos_unittest("audio_volume_change_unit_test") {
     "hilog:libhilog",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "c_utils:utils",
   ]
 }

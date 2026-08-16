@@ -1233,10 +1233,11 @@ void AudioPolicyServerSetKaraokeParametersFuzzTest()
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
 
     int32_t deviceType = GetData<int32_t>();
-    std::string parameters = "test_parameters";
+    int32_t paramType = GetData<int32_t>();
+    int32_t value = GetData<int32_t>();
     bool ret = GetData<bool>();
 
-    audioPolicyServer->SetKaraokeParameters(deviceType, parameters, ret);
+    audioPolicyServer->SetKaraokeParameters(deviceType, paramType, value, ret);
 }
 
 void AudioPolicyServerUpdateDeviceInfoFuzzTest()
@@ -1351,19 +1352,6 @@ void RegisterAndUnRegisterSyncHibernateListenerFuzzTest()
     CHECK_AND_RETURN(server != nullptr);
     server->RegisterSyncHibernateListener();
     server->UnRegisterSyncHibernateListener();
-}
-
-void AudioPolicyServerRegisterSpatializationStateEventListenerFuzzTest()
-{
-    uint32_t sessionID = GetData<uint32_t>();
-    int32_t streamUsageIn = GetData<int32_t>();
-    
-    sptr<RemoteObjectFuzzTestStub> object = sptr<RemoteObjectFuzzTestStub>();
-    CHECK_AND_RETURN(object != nullptr);
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    server->RegisterSpatializationStateEventListener(sessionID, streamUsageIn, object);
-    server->UnregisterSpatializationStateEventListener(sessionID);
 }
 
 void AudioPolicyServerRegisterAudioZoneClientFuzzTest()
@@ -2140,7 +2128,6 @@ TestFuncs g_testFuncs[] = {
     RegisterAndUnRegisterPowerStateListenerFuzzTest,
     RegisterAppStateListenerFuzzTest,
     RegisterAndUnRegisterSyncHibernateListenerFuzzTest,
-    AudioPolicyServerRegisterSpatializationStateEventListenerFuzzTest,
     AudioPolicyServerRegisterAudioZoneClientFuzzTest,
     AudioPolicyServerAudioZoneQueryFuzzTest,
     AudioPolicyServerBindUnbindDeviceToAudioZoneFuzzTest,

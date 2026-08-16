@@ -44,6 +44,9 @@ public:
 
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
 
+    int32_t SetStopStreamInfoWhenDisconnect(const std::string &networkId,  const std::vector<StreamUsage> &usages,
+        const std::vector<int32_t> &uids);
+
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
     int32_t SetPreferredDevice(const PreferredType preferredType,

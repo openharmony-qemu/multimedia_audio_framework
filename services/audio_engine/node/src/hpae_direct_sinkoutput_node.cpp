@@ -216,7 +216,7 @@ int32_t HpaeDirectSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     int32_t ret = audioRendererSink_->Init(attr);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "audioRendererSink_ init failed, errCode is %{public}d", ret);
-    ret = audioRendererSink_->SetVolume(volume, volume);
+    audioRendererSink_->SetVolume(volume, volume);
     SetSinkState(STREAM_MANAGER_IDLE);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();

@@ -39,6 +39,7 @@ public:
     float GetClientVolume();
     void SetFadeState(IOperation operation);
     void ResetVolume();
+    void ResetFadeState();
     uint64_t GetLatency(uint32_t sessionId = 0) override;
     void SetCollFadeState(IOperation operation);
     void DoCollFading(HpaePcmBuffer *input);

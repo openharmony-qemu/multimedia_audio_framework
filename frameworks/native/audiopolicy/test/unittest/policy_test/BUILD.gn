@@ -51,6 +51,7 @@ ohos_unittest("audio_policy_unit_test") {
     "os_account:os_account_innerkits",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
   sources = [
     "src/audio_policy_ext_unit_test.cpp",

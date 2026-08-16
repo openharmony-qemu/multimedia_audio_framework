@@ -35,6 +35,26 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class InterruptResponseCheckAction : public AsyncActionHandler::AsyncAction {
+public:
+    explicit InterruptResponseCheckAction(std::shared_ptr<AudioInterruptService> service,
+        const int32_t zoneId, InterruptResponseCheckInfo info)
+        : service_(service), zoneId_(zoneId), info_(std::move(info)) {}
+
+    void Exec() override
+    {
+        if (service_ == nullptr) {
+            return;
+        }
+        service_->CheckInterruptResponseAfterDelay(zoneId_, info_);
+    }
+
+private:
+    std::shared_ptr<AudioInterruptService> service_;
+    const int32_t zoneId_;
+    InterruptResponseCheckInfo info_;
+};
+
 void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
 {
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> audioInterruptZonesMapDump;
@@ -466,9 +486,7 @@ bool AudioInterruptService::NotifyStreamSilentChange(int32_t callerPid, uint32_t
         AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
             activeInterrupt.streamId, streamId);
         SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
-        if (activeInterrupt.uid != AUDIO_ID) {
-            DeactivateAudioInterruptInternal(activeZoneId, activeInterrupt);
-        }
+        DeactivateAudioInterruptInternal(activeZoneId, activeInterrupt);
         ret = true;
     }
     return ret;
@@ -570,14 +588,6 @@ void AudioInterruptService::HandleMuteInterruptEvent(const AudioInterrupt &audio
     }
 }
 
-bool AudioInterruptService::IsAncoAudioMediaInterrupt(const AudioFocusEntry &focusEntry,
-    const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt)
-{
-    return (focusEntry.hintType == INTERRUPT_HINT_STOP && currentInterrupt.uid == AUDIO_ID &&
-        AudioInterruptUtils::IsMediaStream(currentInterrupt.audioFocusType.streamType) &&
-        AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType));
-}
-
 bool AudioInterruptService::IsStreamActive(uint32_t streamId)
 {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -611,6 +621,56 @@ bool AudioInterruptService::IsIndependentStrategyValid(const AudioInterrupt &int
     auto concurrencyMode = interrupt.independentStrategy.concurrencyMode;
     return concurrencyMode != AudioConcurrencyMode::INVALID &&
         concurrencyMode != AudioConcurrencyMode::DEFAULT;
+}
+
+static bool IsResponseCheckSupported(InterruptHint hintType)
+{
+    return hintType == INTERRUPT_HINT_RESUME || hintType == INTERRUPT_HINT_STOP ||
+        hintType == INTERRUPT_HINT_PAUSE || hintType == INTERRUPT_HINT_DUCK ||
+        hintType == INTERRUPT_HINT_MUTE;
+}
+
+void AudioInterruptService::PostInterruptResponseCheckAction(
+    const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt)
+{
+    CHECK_AND_RETURN_LOG(!IsGameAvoidCallbackCase(audioInterrupt), "game app skip interrupt response check");
+    CHECK_AND_RETURN_LOG(IsResponseCheckSupported(interruptEvent.hintType),
+        "hintType %{public}d not in response check range", interruptEvent.hintType);
+
+    InterruptResponseCheckInfo info;
+    info.hintType = interruptEvent.hintType;
+    info.streamId = audioInterrupt.streamId;
+    info.pid = audioInterrupt.pid;
+    info.streamType = audioInterrupt.audioFocusType.streamType;
+    info.sourceType = audioInterrupt.audioFocusType.sourceType;
+    info.appName = AudioInterruptUtils::GetAudioInterruptBundleName(audioInterrupt);
+
+    CHECK_AND_RETURN_LOG(asyncHandler_ != nullptr, "asyncHandler is nullptr");
+    int32_t zoneId = FindAudioZoneByStreamIdInternal(audioInterrupt.streamId);
+    auto action = std::make_shared<InterruptResponseCheckAction>(
+        shared_from_this(), zoneId, std::move(info));
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    desc.delayTimeMs = INTERRUPT_RESPONSE_CHECK_DELAY;
+    desc.priority = AsyncActionHandler::ActionPriority::LOW;
+    asyncHandler_->PostAsyncAction(desc);
+    AUDIO_INFO_LOG("PostInterruptResponseCheckAction for streamId %{public}u zoneId %{public}d",
+        info.streamId, zoneId);
+}
+
+void AudioInterruptService::CheckInterruptResponseAfterDelay(const int32_t zoneId,
+    const InterruptResponseCheckInfo &info)
+{
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> currentFocusList;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto currZone = zonesMap_.find(zoneId);
+        if (currZone != zonesMap_.end() && currZone->second != nullptr) {
+            currentFocusList = currZone->second->audioFocusInfoList;
+        }
+    }
+    CHECK_AND_RETURN(interruptDfx_ != nullptr);
+    interruptDfx_->CheckInterruptResponse(info, currentFocusList);
 }
 }
 } // namespace OHOS

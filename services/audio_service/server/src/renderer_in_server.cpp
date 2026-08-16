@@ -152,6 +152,8 @@ void NotifyStandbyAction::Exec()
 // Execute silent state change notification via CoreServiceHandler
 void NotifySilentStateAction::Exec()
 {
+    bool isVolumeZero = std::abs(volume_ - 0.0f) <= std::numeric_limits<float>::epsilon();
+    bool isEffectiveSilent = isInSilentState_ || isVolumeZero;
     if (isInSilentState_) {
         if (isMuteUpdate_) {
             AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId_, isInSilentState_);
@@ -160,7 +162,7 @@ void NotifySilentStateAction::Exec()
             AudioVolume::GetInstance()->SetStreamVolume(sessionId_, volume_);
         }
     }
-    CoreServiceHandler::GetInstance().NotifySilentStateChange(sessionId_, isInSilentState_);
+    CoreServiceHandler::GetInstance().NotifySilentStateChange(sessionId_, isEffectiveSilent);
     // Set volume/mute only after silent state is updated in CoreService
     if (!isInSilentState_) {
         if (isMuteUpdate_) {
@@ -2729,7 +2731,8 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
 {
     silentModeAndMixWithOthers_.store(on);
     bool isMuted = (isMuted_ || on || muteFlag_);
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
+    float volume = audioServerBuffer_ ? audioServerBuffer_->GetStreamVolume() : 1.0f;
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted, volume, true,
         std::weak_ptr<RendererInServer>(shared_from_this()));
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
@@ -2778,7 +2781,7 @@ int32_t RendererInServer::SetClientVolume()
 
     auto action = std::make_shared<NotifySilentStateAction>(streamIndex_,
         std::abs(clientVolume - 0.0f) <= std::numeric_limits<float>::epsilon() ||
-        isMuted_ || silentModeAndMixWithOthers_.load() || muteFlag_, clientVolume,
+        isMuted_ || silentModeAndMixWithOthers_.load() || muteFlag_, clientVolume, false,
         std::weak_ptr<RendererInServer>(shared_from_this()));
     ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
@@ -2842,7 +2845,8 @@ int32_t RendererInServer::SetMute(bool isMute)
     isMuted_ = isMute;
     AUDIO_INFO_LOG("SetStreamVolumeMute:%{public}d", isMute);
     bool isMuted = (isMute || silentModeAndMixWithOthers_ || muteFlag_);
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
+    float volume = audioServerBuffer_ ? audioServerBuffer_->GetStreamVolume() : 1.0f;
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted, volume, true,
         std::weak_ptr<RendererInServer>(shared_from_this()));
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
@@ -3078,7 +3082,8 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
     AudioVolume::GetInstance()->SetNonInterruptMute(streamIndex_, muteFlag);
 
     bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag);
-    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted,
+    float volume = audioServerBuffer_ ? audioServerBuffer_->GetStreamVolume() : 1.0f;
+    auto action = std::make_shared<NotifySilentStateAction>(streamIndex_, isMuted, volume, true,
         std::weak_ptr<RendererInServer>(shared_from_this()));
     auto ret = PostSilentAction(action);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "Post failed for sessionId %{public}u", streamIndex_);
@@ -3647,7 +3652,6 @@ void RendererInServer::MarkStaticFadeIn(bool isRefresh)
 {
     CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
     CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
-    staticBufferProvider_->NeedProcessFadeIn();
 
     if (isRefresh) {
         staticBufferProvider_->ResetStaticPlayPosition();

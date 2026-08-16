@@ -132,7 +132,6 @@ public:
 
     int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
-    std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
     int32_t SetMediaOutputDevice(DeviceType deviceType);
 
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
@@ -575,16 +574,11 @@ public:
 
     int32_t UpdateSpatialDeviceState(const AudioSpatialDeviceState audioSpatialDeviceState);
 
-    int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
-        const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback);
-
     int32_t ConfigDistributedRoutingRole(std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
 
     int32_t SetDistributedRoutingRoleCallback(const std::shared_ptr<AudioDistributedRoutingRoleCallback> &callback);
 
     int32_t UnsetDistributedRoutingRoleCallback();
-
-    int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
 
     int32_t RegisterAudioZoneClient(const sptr<IRemoteObject>& object);
 
@@ -722,6 +716,9 @@ public:
 
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
 
+    int32_t SetStopStreamInfoWhenDisconnect(const std::string &networkId, const std::vector<StreamUsage> &usages,
+        const std::vector<int32_t> &uids);
+
     int32_t SetQueryDeviceVolumeBehaviorCallback(
         const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
 
@@ -735,7 +732,7 @@ public:
     AudioDevicePair GetLoopbackPreferredDevicePair();
     bool IsSupportInnerCaptureOffload();
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
-    bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
+    bool SetKaraokeParameters(DeviceType deviceType, KaraokeParamType paramType, int32_t value);
     bool SetLoopbackVolume(float volume);
     float GetLoopbackVolume();
     int32_t CreateLoopback(AudioLoopbackMode mode, LoopbackType type,

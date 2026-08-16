@@ -98,6 +98,7 @@ ohos_fuzztest("AudioZoneClientManagerFuzzTest") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 
   configs = [ "../../../../services/audio_policy:audio_policy_public_config" ]

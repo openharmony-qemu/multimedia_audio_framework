@@ -739,7 +739,22 @@ enum AudioLoopbackEqualizerPreset {
     EQUALIZER_PRESET_BRIGHT = 3,
 };
 
-enum UltraFastFlags : uint32_t {
+/**
+ * @brief Type of a Karaoke parameter carried together with an int32_t value.
+ *
+ * Used by SetKaraokeParameters across IPC. The meaning of the paired value:
+ * VOLUME -> 0..100; REVERB_MODE -> AudioLoopbackReverbPreset; EQ_MODE ->
+ * AudioLoopbackEqualizerPreset; ENABLE/CAPTURE_REVERB -> 0 or 1.
+ */
+enum KaraokeParamType {
+    KARAOKE_PARAM_VOLUME = 0,
+    KARAOKE_PARAM_REVERB_MODE = 1,
+    KARAOKE_PARAM_EQ_MODE = 2,
+    KARAOKE_PARAM_ENABLE = 3,
+    KARAOKE_PARAM_CAPTURE_REVERB = 4,
+};
+
+enum UltraFastFlags : uint8_t {
     /**
      * Client has not set the ultra fast flag, and the current stream is not using the server's ultra fast route(pipe).
      */
@@ -1069,6 +1084,11 @@ enum AudioScene : int32_t {
      */
     AUDIO_SCENE_VOICE_RINGING,
     /**
+     * Call waiting tone audio scene
+     * Only available for system inner.
+     */
+    AUDIO_SCENE_CALL_WAITING_TONE,
+    /**
      * Max
      */
     AUDIO_SCENE_MAX,
@@ -1178,6 +1198,23 @@ enum FilterMode : uint32_t {
     MAX_FILTER_MODE
 };
 
+struct StaticAudioPlaybackCaptureConfig {
+    int32_t playbackCaptureMode = 0;
+    bool isModernInnerCapturer = false;
+
+    StaticAudioPlaybackCaptureConfig() = default;
+    StaticAudioPlaybackCaptureConfig(const int32_t mode, const bool modernInnerCapturerFlag)
+        : playbackCaptureMode(mode), isModernInnerCapturer(modernInnerCapturerFlag)
+    {
+    }
+
+    bool operator ==(StaticAudioPlaybackCaptureConfig& filter)
+    {
+        return (filter.playbackCaptureMode == playbackCaptureMode &&
+            filter.isModernInnerCapturer == isModernInnerCapturer);
+    }
+};
+
 // 1.If the size of usages or pids is 0, FilterMode will not work.
 // 2.Filters will only works with FileterMode INCLUDE or EXCLUDE while the vector size is not zero.
 // 3.If usages and pids are both not empty, the result is the intersection of the two Filter.
@@ -1190,7 +1227,6 @@ struct CaptureFilterOptions {
     FilterMode pidFilterMode {FilterMode::INCLUDE};
     bool capturePrivatePrivacyStreams = false;
     int32_t playbackCaptureUid = PLAYBACKCAPTURER_RECORD_ALL;
-    int32_t playbackCaptureMode = 0;
 
     CaptureFilterOptions() = default;
     CaptureFilterOptions(const std::vector<StreamUsage> &usage, FilterMode uFilterMode,
@@ -1211,8 +1247,7 @@ struct CaptureFilterOptions {
         return (filter.usages == usages && filter.usageFilterMode == usageFilterMode
             && filter.pids == pids && filter.pidFilterMode == pidFilterMode
             && filter.capturePrivatePrivacyStreams == capturePrivatePrivacyStreams &&
-            filter.playbackCaptureUid == playbackCaptureUid &&
-            filter.playbackCaptureMode == playbackCaptureMode);
+            filter.playbackCaptureUid == playbackCaptureUid);
     }
 };
 
@@ -1222,7 +1257,6 @@ inline constexpr uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
 struct AudioPlaybackCaptureConfig : public Parcelable {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
-    bool isModernInnerCapturer = false;
 
     AudioPlaybackCaptureConfig() = default;
     AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool silent)
@@ -1260,11 +1294,9 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
         parcel.WriteUint32(filterOptions.pidFilterMode);
         parcel.WriteBool(filterOptions.capturePrivatePrivacyStreams);
         parcel.WriteInt32(filterOptions.playbackCaptureUid);
-        parcel.WriteInt32(filterOptions.playbackCaptureMode);
 
         // silentCapture
         parcel.WriteBool(silentCapture);
-        parcel.WriteBool(isModernInnerCapturer);
         return true;
     }
 
@@ -1273,10 +1305,8 @@ private:
     {
         config->filterOptions.capturePrivatePrivacyStreams = parcel.ReadBool();
         config->filterOptions.playbackCaptureUid = parcel.ReadInt32();
-        config->filterOptions.playbackCaptureMode = parcel.ReadInt32();
         // silentCapture
         config->silentCapture = parcel.ReadBool();
-        config->isModernInnerCapturer = parcel.ReadBool();
         return config;
     }
 
@@ -1351,6 +1381,7 @@ struct AudioRendererOptions {
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
     AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
     AppInfo appInfo;
+    std::string ancoBundleName;
 };
 
 struct BufferQueueState {
@@ -1667,6 +1698,12 @@ struct AudioProcessConfig : public Parcelable {
 
     int32_t innerCapId = 0;
 
+    int32_t playbackCaptureMode = 0;
+
+    bool isModernInnerCapturer = false;
+
+    uint8_t appMicInChannelCount = 0;
+
     StaticBufferInfo staticBufferInfo{};
 
     AudioProcessConfig() {}
@@ -1725,6 +1762,9 @@ struct AudioProcessConfig : public Parcelable {
         // Original session id for re-create stream
         parcel.WriteUint32(originalSessionId);
         parcel.WriteInt32(innerCapId);
+        parcel.WriteInt32(playbackCaptureMode);
+        parcel.WriteBool(isModernInnerCapturer);
+        parcel.WriteUint8(appMicInChannelCount);
 
         // StaticAudioRenderer
         if (rendererInfo.isStatic) {
@@ -1793,6 +1833,9 @@ struct AudioProcessConfig : public Parcelable {
         // Original session id for re-create stream
         config->originalSessionId = parcel.ReadUint32();
         config->innerCapId = parcel.ReadInt32();
+        config->playbackCaptureMode = parcel.ReadInt32();
+        config->isModernInnerCapturer = parcel.ReadBool();
+        config->appMicInChannelCount = parcel.ReadUint8();
 
         // Static Audiorenderer
         if (config->rendererInfo.isStatic) {
@@ -2153,6 +2196,11 @@ enum RouterType {
      * @since 12
      */
     ROUTER_TYPE_USER_SELECT,
+    /**
+     * Negative priority router.
+     * @since 12
+     */
+    ROUTER_TYPE_NEGATIVE_PRIORITY,
 };
 
 enum RenderMode {
@@ -2520,6 +2568,12 @@ enum LatencyFlag : uint32_t {
     LATENCY_FLAG_SOFTWARE = 0X0FFFFFFF,
     LATENCY_FLAG_HARDWARE = 1U << 31,
     LATENCY_FLAG_ALL = 0XFFFFFFFF
+};
+
+enum class RecommendInputDevices {
+    NO_UNAVAILABLE_DEVICE,
+    RECOMMEND_BUILT_IN_MIC,
+    RECOMMEND_EXTERNAL_MIC
 };
 
 struct AudioInterruptResult {

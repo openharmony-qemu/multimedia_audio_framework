@@ -92,6 +92,7 @@ ohos_unittest("public_priority_router_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/public_priority_router_unit_test/src/public_priority_router_unit_test.cpp" ]
@@ -174,6 +175,7 @@ ohos_unittest("pair_device_router_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/pair_device_router_unit_test/src/pair_device_router_unit_test.cpp" ]
@@ -419,6 +421,7 @@ ohos_unittest("cockpit_phone_router_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/cockpit_phone_router_unit_test/src/cockpit_phone_router_unit_test.cpp" ]
@@ -501,6 +504,7 @@ ohos_unittest("default_router_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 
   sources = [ "./unittest/default_router_unit_test/src/default_router_unit_test.cpp" ]

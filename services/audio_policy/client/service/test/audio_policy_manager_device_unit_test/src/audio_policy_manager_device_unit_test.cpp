@@ -63,19 +63,6 @@ HWTEST(AudioPolicyManagerDevice, SelectOutputDevice_002, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyManagerDevice.
-* @tc.number: GetSelectedDeviceInfo_001.
-* @tc.desc  : Test GetSelectedDeviceInfo.
-*/
-HWTEST(AudioPolicyManagerDevice, GetSelectedDeviceInfo_001, TestSize.Level1)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-    EXPECT_NE(audioPolicyManager_, nullptr);
-    auto ret = audioPolicyManager_->GetSelectedDeviceInfo(0, 0, AudioStreamType::STREAM_VOICE_CALL);
-    EXPECT_NE(ret, "test");
-}
-
-/**
-* @tc.name  : Test AudioPolicyManagerDevice.
 * @tc.number: SelectInputDevice_001.
 * @tc.desc  : Test SelectInputDevice.
 */
@@ -593,7 +580,7 @@ HWTEST(AudioPolicyManagerDevice, GetPreferredOutputDeviceDescriptors_001, TestSi
     mgr->audioPolicyClientStubCB_ = nullptr;
     AudioRendererInfo info;
     auto ret = mgr->GetPreferredOutputDeviceDescriptors(info, false);
-    EXPECT_TRUE(ret.empty());
+    EXPECT_FALSE(ret.empty());
 }
 
 HWTEST(AudioPolicyManagerDevice, GetPreferredOutputDeviceDescriptors_002, TestSize.Level1)
@@ -609,7 +596,7 @@ HWTEST(AudioPolicyManagerDevice, GetPreferredInputDeviceDescriptors_001, TestSiz
     mgr->audioPolicyClientStubCB_ = nullptr;
     AudioCapturerInfo info;
     auto ret = mgr->GetPreferredInputDeviceDescriptors(info);
-    EXPECT_TRUE(ret.empty());
+    EXPECT_FALSE(ret.empty());
 }
 
 HWTEST(AudioPolicyManagerDevice, GetPreferredInputDeviceDescriptors_002, TestSize.Level1)
@@ -665,7 +652,7 @@ HWTEST(AudioPolicyManagerDevice, SetDeviceInfoUpdateCallback_002, TestSize.Level
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
     int32_t ret = mgr->SetDeviceInfoUpdateCallback(1, nullptr);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, SetDeviceInfoUpdateCallback_003, TestSize.Level1)
@@ -782,7 +769,7 @@ HWTEST(AudioPolicyManagerDevice, GetAvailableDevices_002, TestSize.Level1)
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
     auto ret = mgr->GetAvailableDevices(MEDIA_OUTPUT_DEVICES);
-    EXPECT_TRUE(ret.empty());
+    EXPECT_FALSE(ret.empty());
 }
 
 HWTEST(AudioPolicyManagerDevice, UnsetAvailableDeviceChangeCallback_DAll, TestSize.Level1)
@@ -811,7 +798,7 @@ HWTEST(AudioPolicyManagerDevice, SetCallDeviceActive_001, TestSize.Level1)
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
     int32_t ret = mgr->SetCallDeviceActive(DEVICE_TYPE_SPEAKER, true, "", 0);
-    EXPECT_EQ(ret, -1);
+    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 HWTEST(AudioPolicyManagerDevice, SetCallDeviceActive_002, TestSize.Level1)

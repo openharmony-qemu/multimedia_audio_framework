@@ -27,7 +27,6 @@
 #include "audio_utils.h"
 #include "audio_policy_proxy.h"
 #include "audio_server_death_recipient.h"
-#include "audio_spatialization_state_change_listener.h"
 #include "boot_animation_state_info.h"
 #include "stream_dfx_manager.h"
 #include <unistd.h>
@@ -2541,34 +2540,6 @@ int32_t AudioPolicyManager::UpdateSpatialDeviceState(const AudioSpatialDeviceSta
     return gsp->UpdateSpatialDeviceState(audioSpatialDeviceState);
 }
 
-int32_t AudioPolicyManager::RegisterSpatializationStateEventListener(const uint32_t sessionID,
-    const StreamUsage streamUsage, const std::shared_ptr<AudioSpatializationStateChangeCallback> &callback)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
-
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Spatialization state callback is nullptr");
-
-    sptr<AudioSpatializationStateChangeListener> spatializationStateChangeListenerStub =
-        new(std::nothrow) AudioSpatializationStateChangeListener();
-    CHECK_AND_RETURN_RET_LOG(spatializationStateChangeListenerStub != nullptr, ERROR, "object null");
-
-    spatializationStateChangeListenerStub->SetCallback(callback);
-
-    sptr<IRemoteObject> object = spatializationStateChangeListenerStub->AsObject();
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "IPC object creation failed");
-
-    return gsp->RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
-}
-
-int32_t AudioPolicyManager::UnregisterSpatializationStateEventListener(const uint32_t sessionID)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET(gsp != nullptr, ERROR);
-
-    return gsp->UnregisterSpatializationStateEventListener(sessionID);
-}
-
 ConverterConfig AudioPolicyManager::GetConverterConfig()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -3525,12 +3496,13 @@ bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return isSupport;
 }
 
-bool AudioPolicyManager::SetKaraokeParameters(const DeviceType deviceType, const std::string &parameters)
+bool AudioPolicyManager::SetKaraokeParameters(const DeviceType deviceType,
+    KaraokeParamType paramType, int32_t value)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, false);
     bool ret = false;
-    gsp->SetKaraokeParameters(deviceType, parameters, ret);
+    gsp->SetKaraokeParameters(deviceType, static_cast<int32_t>(paramType), value, ret);
     return ret;
 }
 
@@ -3604,6 +3576,7 @@ std::vector<AudioDevicePair> AudioPolicyManager::GetLoopbackSupportedDevicePairs
     for (size_t i = 0; i < inputDevices.size(); i++) {
         devicePairs.push_back(std::make_pair(inputDevices[i], outputDevices[i]));
     }
+    AUDIO_INFO_LOG("get [%{public}zu] devices", devicePairs.size());
 
     return devicePairs;
 }
@@ -3620,6 +3593,8 @@ AudioDevicePair AudioPolicyManager::GetLoopbackPreferredDevicePair()
     gsp->GetLoopbackPreferredDevicePair(inputDevice, outputDevice, ret);
 
     CHECK_AND_RETURN_RET(ret == SUCCESS && inputDevice != nullptr && outputDevice != nullptr, {});
+    AUDIO_INFO_LOG("input:%{public}s output:%{public}s ", inputDevice->GetDeviceTypeString().c_str(),
+        outputDevice->GetDeviceTypeString().c_str());
 
     return std::make_pair(inputDevice, outputDevice);
 }

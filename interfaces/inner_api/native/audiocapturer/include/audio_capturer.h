@@ -71,6 +71,8 @@ struct AudioCapturerParams {
     AudioSampleFormat audioMicInSampleFormat = SAMPLE_S16LE;
     /** Audio micIn Channel Layout */
     AudioChannelLayout micInChannelLayout = CH_LAYOUT_UNKNOWN;
+    int32_t playbackCaptureMode = 0;
+    bool isModernInnerCapturer = false;
 };
 
 class AudioCapturerCallback {

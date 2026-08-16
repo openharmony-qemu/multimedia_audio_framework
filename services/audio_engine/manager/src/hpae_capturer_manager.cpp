@@ -93,6 +93,18 @@ int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &proces
     return SUCCESS;
 }
 
+void HpaeCapturerManager::UpdateSpanSize(HpaeNodeInfo &nodeInfo,
+    const std::shared_ptr<HpaeSourceOutputNode> &sourceOutputNode, uint32_t sessionId, uint32_t frameLen)
+{
+    HpaeNodeInfo inNodeInfo;
+    inNodeInfo.frameLen = frameLen;
+    inNodeInfo.samplingRate = sourceInfo_.samplingRate;
+    AdjustFrameLen(nodeInfo, inNodeInfo);
+    sourceOutputNode->SetNodeInfo(nodeInfo);
+    TriggerCallback(UPDATE_SPAN_SIZE, sessionId, static_cast<uint32_t>(nodeInfo.frameLen),
+        HPAE_STREAM_CLASS_TYPE_RECORD);
+}
+
 int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInfo)
 {
     AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %{public}s,channel:%{public}u,rate:%{public}u",
@@ -101,6 +113,9 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     ConfigNodeInfo(nodeInfo, streamInfo);
     HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfo.sourceType);
     nodeInfo.sceneType = sceneType;
+    nodeInfo.sourceType = sourceInfo_.sourceType;
+    nodeInfo.micInChannels = sourceInfo_.micInChannels;
+    nodeInfo.appMicInChannelCount = streamInfo.appMicInChannelCount;
     if (streamInfo.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE) {
         nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
     } else {
@@ -119,6 +134,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     sessionNodeMap_[streamInfo.sessionId].mixWithWakeUp = streamInfo.mixWithWakeUp;
 
     CreateSceneCluster(sceneType, enhanceScene);
+    IncSceneClusterEffectRef(sceneType);
 
     return SUCCESS;
 }
@@ -176,6 +192,22 @@ int32_t HpaeCapturerManager::CaptureEffectRelease(const HpaeProcessorType &scene
     return SUCCESS;
 }
 
+void HpaeCapturerManager::IncSceneClusterEffectRef(const HpaeProcessorType &sceneType)
+{
+    auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
+    CHECK_AND_RETURN(sceneType != HPAE_SCENE_EFFECT_NONE && sceneCluster != nullptr);
+    sceneCluster->IncEffectRefCount();
+    AUDIO_INFO_LOG("sceneType:%{public}u effect cluster count: %{public}u", sceneType,
+        sceneCluster->GetEffectRefCount());
+}
+
+uint32_t HpaeCapturerManager::GetSceneClusterEffectRefCount(const HpaeProcessorType &sceneType)
+{
+    auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
+    CHECK_AND_RETURN_RET(sceneCluster != nullptr, 0);
+    return sceneCluster->GetEffectRefCount();
+}
+
 void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProcessorType &sceneType)
 {
     auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
@@ -228,7 +260,10 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId, bool keepSe
         sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(
             sceneClusterMap_[sceneType], sourceOutputNodeMap_[sessionId]->GetNodeInfo());
         DisConnectSceneClusterFromSourceInputCluster(sceneType);
-        if (sceneClusterMap_[sceneType]->GetOutputPortNum() == 0) {
+        sceneClusterMap_[sceneType]->DecEffectRefCount();
+        AUDIO_INFO_LOG("sceneType:%{public}u effect cluster count: %{public}u", sceneType,
+            sceneClusterMap_[sceneType]->GetEffectRefCount());
+        if (sceneClusterMap_[sceneType]->GetEffectRefCount() == 0) {
             CaptureEffectRelease(sceneType);
             sceneClusterMap_.erase(sceneType);
         }
@@ -1120,21 +1155,26 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
+    nodeInfo.micInChannels = sourceInfo_.micInChannels;
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
-    HpaeNodeInfo inNodeInfo;
-    inNodeInfo.frameLen = sourceInfo_.frameLen;
-    inNodeInfo.samplingRate = sourceInfo_.samplingRate;
-    AdjustFrameLen(nodeInfo, inNodeInfo);
-    moveInfo.sourceOutputNode->SetNodeInfo(nodeInfo);
-    TriggerCallback(UPDATE_SPAN_SIZE, sessionId,
-        static_cast<uint32_t>(nodeInfo.frameLen), HPAE_STREAM_CLASS_TYPE_RECORD);
+    uint32_t frameLenInMs = (sourceInfo_.samplingRate != 0) ?
+        (sourceInfo_.frameLen * MILLISECOND_PER_SECOND / sourceInfo_.samplingRate) : 0;
+    // If the device is an accessory and the underlying interval is 40ms, the process still needs to execute,
+    //  but updates are sent upward at a 20ms interval.
+    if (sourceInfo_.deviceType == DEVICE_TYPE_ACCESSORY && frameLenInMs == ACCESSORY_FRAME_LEN_NEED_HALVE) {
+        uint32_t updatedFrameLen = sourceInfo_.frameLen / FRAME_LEN_HALVE_RATIO;
+        UpdateSpanSize(nodeInfo, moveInfo.sourceOutputNode, sessionId, updatedFrameLen);
+    } else {
+        UpdateSpanSize(nodeInfo, moveInfo.sourceOutputNode, sessionId, sourceInfo_.frameLen);
+    }
 #ifdef ENABLE_HIDUMP_DFX
     OnNotifyDfxNodeAdmin(true, nodeInfo);
 #endif
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     AudioEnhanceScene enhanceScene = TransProcessType2EnhanceScene(sceneType);
     CreateSceneCluster(sceneType, enhanceScene);
+    IncSceneClusterEffectRef(sceneType);
 
     if (moveInfo.sessionInfo.state == HPAE_SESSION_RUNNING) {
         ConnectOutputSession(sessionId);

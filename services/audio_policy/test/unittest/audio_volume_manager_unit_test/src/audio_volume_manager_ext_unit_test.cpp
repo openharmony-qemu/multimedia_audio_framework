@@ -169,7 +169,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, SetSystemVolumeLevel_001, TestSize.Level
 HWTEST_F(AudioVolumeManagerExtUnitTest, CheckBlueToothActiveMusicTime_001, TestSize.Level1)
 {
     auto& volumeManager = AudioVolumeManager::GetInstance();
-    volumeManager.activeSafeTimeBt_ = 68400;
+    volumeManager.activeSafeTimeBt_ = 64800;
     volumeManager.CheckBlueToothActiveMusicTime(0);
     EXPECT_TRUE(volumeManager.restoreNIsShowing_);
 }
@@ -183,7 +183,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckBlueToothActiveMusicTime_002, TestS
 {
     auto& volumeManager = AudioVolumeManager::GetInstance();
     volumeManager.activeSafeTimeBt_ = 0;
-    volumeManager.activeSafeTime_ = 68400;
+    volumeManager.activeSafeTime_ = 64800;
     volumeManager.CheckBlueToothActiveMusicTime(0);
     EXPECT_TRUE(volumeManager.restoreNIsShowing_);
 }
@@ -210,7 +210,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckBlueToothActiveMusicTime_003, TestS
 HWTEST_F(AudioVolumeManagerExtUnitTest, CheckWiredActiveMusicTime_001, TestSize.Level1)
 {
     auto& volumeManager = AudioVolumeManager::GetInstance();
-    volumeManager.activeSafeTime_ = 68400;
+    volumeManager.activeSafeTime_ = 64800;
     volumeManager.CheckWiredActiveMusicTime(0);
     EXPECT_TRUE(volumeManager.restoreNIsShowing_);
 }
@@ -223,7 +223,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckWiredActiveMusicTime_001, TestSize.
 HWTEST_F(AudioVolumeManagerExtUnitTest, CheckWiredActiveMusicTime_002, TestSize.Level1)
 {
     auto& volumeManager = AudioVolumeManager::GetInstance();
-    volumeManager.activeSafeTimeBt_ = 68400;
+    volumeManager.activeSafeTimeBt_ = 64800;
     volumeManager.activeSafeTime_ = 0;
     volumeManager.CheckWiredActiveMusicTime(0);
     EXPECT_TRUE(volumeManager.restoreNIsShowing_);
@@ -953,7 +953,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckNearlinkActiveMusicTime_003, TestSi
 {
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     int32_t volumeLevel = 5;
-    audioVolumeManager.activeSafeTimeSle_ = 65000;
+    audioVolumeManager.activeSafeTimeSle_ = 64000;
 
     audioVolumeManager.CheckNearlinkActiveMusicTime(volumeLevel);
     EXPECT_EQ(audioVolumeManager.startSafeTimeBt_, 0);
@@ -968,7 +968,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckNearlinkActiveMusicTime_004, TestSi
 {
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     int32_t volumeLevel = 5;
-    audioVolumeManager.activeSafeTimeSle_ = 64800;
+    audioVolumeManager.activeSafeTimeSle_ = 64000;
 
     audioVolumeManager.CheckNearlinkActiveMusicTime(volumeLevel);
     EXPECT_EQ(audioVolumeManager.startSafeTimeBt_, 0);

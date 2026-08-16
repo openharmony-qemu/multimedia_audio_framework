@@ -24,20 +24,20 @@
 #include "audio_errors.h"
 #include "hpae_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "util/id_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
 static constexpr float EPSILON = 1e-6f;
-const std::string VOIP_SINK_NAME = "voip";
 
 HpaeVolumeSyncNode::HpaeVolumeSyncNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
     AUDIO_INFO_LOG("HpaeVolumeSyncNode created, SessionId:%{public}u deviceClass:%{public}s",
         GetSessionId(), GetDeviceClass().c_str());
-    renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, VOIP_SINK_NAME, true);
+    renderId_ = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeVolumeSyncNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -60,8 +60,7 @@ HpaeVolumeSyncNode::~HpaeVolumeSyncNode()
 std::shared_ptr<IAudioRenderSink> HpaeVolumeSyncNode::GetRenderSink()
 {
     if (renderId_ == HDI_INVALID_ID) {
-        renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY,
-            VOIP_SINK_NAME, true);
+        renderId_ = IdHandler::GetInstance().GetRenderIdByDeviceClass(GetDeviceClass(), GetDeviceNetId());
     }
     return HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
 }

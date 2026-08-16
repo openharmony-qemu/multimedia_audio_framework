@@ -23,6 +23,7 @@ bool GetFastControlParam();
 bool GetEcEnableParam();
 int32_t GetEngineFlag();
 bool GetHasEarpieceParam();
+bool IsSupportParamsUtils();
 } // namespace AudioStandard
 } // namespace OHOS
 

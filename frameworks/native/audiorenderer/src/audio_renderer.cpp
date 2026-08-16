@@ -466,6 +466,7 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     rendererInfo_.isCallWaitingTone = rendererOptions.rendererInfo.isCallWaitingTone;
     strategy_ = rendererOptions.strategy;
     originalStrategy_ = rendererOptions.strategy;
+    ancoBundleName_ = rendererOptions.ancoBundleName;
 }
 
 std::shared_ptr<AudioRendererPrivate> AudioRenderer::CreateAndInitRendererObject(
@@ -712,6 +713,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
     audioInterrupt_.api = rendererInfo_.playerType;
     audioInterrupt_.isCallWaitingTone = rendererInfo_.isCallWaitingTone;
     audioInterrupt_.bundleName = audioStream_->GetBundleName();
+    audioInterrupt_.ancoBundleName = ancoBundleName_;
     if (audioInterrupt_.bundleName.empty()) {
         audioInterrupt_.bundleName = AppBundleManager::GetSelfBundleName();
     }
@@ -2099,8 +2101,8 @@ InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForced
     audioStream_->GetAudioSessionID(sessionID_);
     switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_PAUSE:
-            if ((currentFocusState == FOCUS_RUNNING || currentFocusState == FOCUS_PREPARED ||
-                currentFocusState == FOCUS_STARTING) && interruptEvent.handleForceStream) {
+            if (currentFocusState == FOCUS_RUNNING || currentFocusState == FOCUS_PREPARED ||
+                currentFocusState == FOCUS_STARTING) {
                 HandleForcePause(currentFocusState);
             } else {
                 AUDIO_WARNING_LOG("sessionId: %{public}u, currentFocusState: %{public}d. No need to pause",
@@ -2117,9 +2119,7 @@ InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForced
             isForcePaused_ = false;
             return FORCE_PAUSED_TO_RESUME_EVENT;
         case INTERRUPT_HINT_STOP:
-            if (interruptEvent.handleForceStream) {
-                HandleForceStop(currentFocusState);
-            }
+            HandleForceStop(currentFocusState);
             break;
         case INTERRUPT_HINT_DUCK:
             if (!HandleForceDucking(interruptEvent)) {
@@ -2196,7 +2196,7 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 
     auto ret = HandleAndNotifyForcedEvent(interruptEvent);
     lock.unlock();
-    if (NoNeedNotifyEvent(interruptEvent) == true && interruptEvent.handleForceStream) {
+    if (NoNeedNotifyEvent(interruptEvent) == true) {
         return;
     }
     if (ret == FORCE_EVENT) {

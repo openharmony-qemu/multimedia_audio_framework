@@ -156,6 +156,108 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_003, TestSize.Level4)
     EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_ALARM);
 }
 
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_ChangeVolumeOnVoiceAssistant_001
+* @tc.desc  : Test ChangeVolumeOnVoiceAssistant: non-VOICE_ASSISTANT stream unchanged (early return).
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_ChangeVolumeOnVoiceAssistant_001, TestSize.Level1)
+{
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_ALARM;
+    audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
+    EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_ALARM);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_ChangeVolumeOnVoiceAssistant_002
+* @tc.desc  : Test ChangeVolumeOnVoiceAssistant: A2DP + absVolume -> STREAM_MUSIC.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_ChangeVolumeOnVoiceAssistant_002, TestSize.Level1)
+{
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(true, 0);
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
+    audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
+    EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_MUSIC);
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(false, 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_ChangeVolumeOnVoiceAssistant_003
+* @tc.desc  : Test ChangeVolumeOnVoiceAssistant: A2DP without absVolume -> unchanged.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_ChangeVolumeOnVoiceAssistant_003, TestSize.Level1)
+{
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(false, 0);
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
+    audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
+    EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_VOICE_ASSISTANT);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_ChangeVolumeOnVoiceAssistant_004
+* @tc.desc  : Test ChangeVolumeOnVoiceAssistant: NEARLINK + sleVoiceFlag false -> STREAM_MUSIC.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_ChangeVolumeOnVoiceAssistant_004, TestSize.Level1)
+{
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_NEARLINK;
+    audioPolicyServer_->sleVoiceFlagFromNearlink_ = false;
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
+    audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
+    EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_MUSIC);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_ChangeVolumeOnVoiceAssistant_005
+* @tc.desc  : Test ChangeVolumeOnVoiceAssistant: NEARLINK + sleVoiceFlag true -> STREAM_VOICE_CALL.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_ChangeVolumeOnVoiceAssistant_005, TestSize.Level1)
+{
+    CurrentActiveDevice().deviceType_ = DEVICE_TYPE_NEARLINK;
+    audioPolicyServer_->sleVoiceFlagFromNearlink_ = true;
+    AudioStreamType streamInFocus = AudioStreamType::STREAM_VOICE_ASSISTANT;
+    audioPolicyServer_->ChangeVolumeOnVoiceAssistant(streamInFocus);
+    EXPECT_EQ(streamInFocus, AudioStreamType::STREAM_VOICE_CALL);
+    audioPolicyServer_->sleVoiceFlagFromNearlink_ = false;
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_SetSleVoiceStatusFlag_001
+* @tc.desc  : Test SetSleVoiceStatusFlag with NEARLINK SA uid saves flag.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_SetSleVoiceStatusFlag_001, TestSize.Level1)
+{
+    int32_t selfUid = getuid();
+    setuid(7030); // UID_NEARLINK_SA
+    int32_t ret = audioPolicyServer_->SetSleVoiceStatusFlag(true);
+    setuid(selfUid);
+    EXPECT_NE(ret, ERR_PERMISSION_DENIED);
+    EXPECT_TRUE(audioPolicyServer_->sleVoiceFlagFromNearlink_);
+    audioPolicyServer_->sleVoiceFlagFromNearlink_ = false;
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_SetSleVoiceStatusFlag_002
+* @tc.desc  : Test SetSleVoiceStatusFlag with non-allowed uid is denied and flag unchanged.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_SetSleVoiceStatusFlag_002, TestSize.Level1)
+{
+    int32_t selfUid = getuid();
+    setuid(9999); // non-allowed uid
+    int32_t ret = audioPolicyServer_->SetSleVoiceStatusFlag(true);
+    setuid(selfUid);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_FALSE(audioPolicyServer_->sleVoiceFlagFromNearlink_);
+}
+
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 /**
 * @tc.name  : Test AudioPolicyServer.
@@ -643,10 +745,9 @@ HWTEST_F(AudioPolicyServerUnitTest, GetAppBackGroundState_PidMatchesCallingUid, 
 {
     int32_t selfUid = getuid();
     setuid(1041);
-    int32_t TEST_INVALID_PID = 0;
     bool isBack = false;
     int32_t callingPid = IPCSkeleton::GetCallingPid();
-    int32_t result = audioPolicyServer_->GetAppBackGroundState(TEST_INVALID_PID, isBack);
+    int32_t result = audioPolicyServer_->GetAppBackGroundState(callingPid, isBack);
     EXPECT_NE(result, ERR_PERMISSION_DENIED);
     setuid(selfUid);
 }
@@ -662,19 +763,6 @@ HWTEST_F(AudioPolicyServerUnitTest, GetAppBackGroundState_PidMatchesCallingPid, 
     int32_t callingPid = getpid();
     int32_t result = audioPolicyServer_->GetAppBackGroundState(callingPid, isBack);
     EXPECT_NE(result, ERR_PERMISSION_DENIED);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: SetAudioSceneInternal_001
-* @tc.desc  : Test SetAudioSceneInternal with isInternal true.
-*/
-HWTEST_F(AudioPolicyServerUnitTest, SetAudioSceneInternal_001, TestSize.Level4)
-{
-    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
-    audioPolicyServer_->coreService_->Init();
-    int32_t ret = audioPolicyServer_->SetAudioSceneInternal(AUDIO_SCENE_PHONE_CALL, 1, 1, true);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

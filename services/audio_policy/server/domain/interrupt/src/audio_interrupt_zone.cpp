@@ -469,5 +469,24 @@ void AudioInterruptZoneManager::MoveAudioInterruptToZone(const AudioInterrupt &i
         interrupt.streamId, interrupt.uid, state, zoneId);
 }
 
+void AudioInterruptZoneManager::StopAudioFocusBySessionIds(const int32_t zoneId,
+    const std::vector<uint32_t> &sessionIds)
+{
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "interrupt service is nullptr");
+    auto &tempMap = service_->zonesMap_;
+    CHECK_AND_RETURN_LOG(tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr,
+        "zone %{public}d not exist", zoneId);
+
+    auto &focusInfoList = tempMap[zoneId]->audioFocusInfoList;
+    for (auto it = focusInfoList.begin(); it != focusInfoList.end();) {
+        if ((it->second == ACTIVE || it->second == DUCK) &&
+            std::find(sessionIds.begin(), sessionIds.end(), it->first.streamId) != sessionIds.end()) {
+            ForceStopAudioFocusInZone(zoneId, it->first);
+            it = focusInfoList.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

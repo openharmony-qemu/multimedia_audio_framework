@@ -261,9 +261,8 @@ void UpdateA2dpOffloadFlagForSpatializationChangedFuzzTest(FuzzedDataProvider& f
 {
     shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnabledMap = {{1, true}, {2, false}};
     DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    manager->UpdateA2dpOffloadFlagForSpatializationChanged(sessionIDToSpatializationEnabledMap, deviceType);
+    manager->UpdateA2dpOffloadFlagForSpatializationChanged(deviceType);
     OnStop();
 }
 
