@@ -1749,6 +1749,66 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_FAST_SpanSize_001, TestSize.Le
 }
 
 /**
+ * @tc.name  : Test HpaeRendererStreamImpl fast stream on ultra_fast pipe span size
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_UltraFastPipe_SpanSize_001
+ * @tc.desc  : Test fast stream (ULTRA_IMPLEMENTED only) on ultra_fast pipe gets 2.5ms span.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_UltraFastPipe_SpanSize_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    processConfig.ultraFastFlag = ULTRA_IMPLEMENTED;
+    processConfig.isInnerCapturer = false;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+
+    std::string deviceName = "temp";
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName);
+    size_t expectedSpanSize = static_cast<size_t>(2500 * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S / 1000);
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, expectedSpanSize);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl ultra_fast stream span size
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_UltraFast_SpanSize_001
+ * @tc.desc  : Test ultra_fast stream (ULTRA_REQUESTED | ULTRA_IMPLEMENTED) gets 2.5ms span.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_UltraFast_SpanSize_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    processConfig.ultraFastFlag = ULTRA_REQUESTED | ULTRA_IMPLEMENTED;
+    processConfig.isInnerCapturer = false;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+
+    std::string deviceName = "temp";
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName);
+    size_t expectedSpanSize = static_cast<size_t>(2500 * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S / 1000);
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, expectedSpanSize);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl ultra requested but not implemented span size
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_UltraRequested_SpanSize_001
+ * @tc.desc  : Test stream with ULTRA_REQUESTED only (not implemented, fast pipe) gets 5ms span.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_UltraRequested_SpanSize_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.rendererInfo.audioFlag = AUDIO_OUTPUT_FLAG_FAST;
+    processConfig.ultraFastFlag = ULTRA_REQUESTED;
+    processConfig.isInnerCapturer = false;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+
+    std::string deviceName = "temp";
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName);
+    size_t expectedSpanSize = 5 * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S;
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, expectedSpanSize);
+}
+
+/**
  * @tc.name  : Test HpaeRendererStreamImpl VOIP_FAST delayedWake
  * @tc.type  : FUNC
  * @tc.number: HpaeRenderer_VOIP_FAST_DelayedWake_001
