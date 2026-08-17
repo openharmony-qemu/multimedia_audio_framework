@@ -295,21 +295,16 @@ void CabinAudioRenderSink::DumpInfo(std::string &dumpString)
 
 AudioFormat CabinAudioRenderSink::ConvertToHdiFormat(AudioSampleFormat format)
 {
-    // AUDIO_FORMAT_TYPE_3DA_16BIT / 3DA_32BIT 待 HDI 侧 audio_types.h 提交合入，
-    // 暂用 HDI 枚举数值占位(3DA_16BIT=1023410177)；3DA_32BIT case 暂屏蔽。
     AudioFormat hdiFormat;
     switch (format) {
         case SAMPLE_S16LE:
-            hdiFormat = static_cast<AudioFormat>(1023410177); // AUDIO_FORMAT_TYPE_3DA_16BIT
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
-        //case SAMPLE_S24LE:
-        //    hdiFormat = AUDIO_FORMAT_TYPE_3DA_24BIT;
-        //    break;
-        //case SAMPLE_F32LE:  // AUDIO_FORMAT_TYPE_3DA_32BIT 暂时屏蔽
-        //    hdiFormat = AUDIO_FORMAT_TYPE_3DA_32BIT;
-        //    break;
+        case SAMPLE_F32LE:
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_32_BIT;
+            break;
         default:
-            hdiFormat = static_cast<AudioFormat>(1023410177); // AUDIO_FORMAT_TYPE_3DA_16BIT
+            hdiFormat = AUDIO_FORMAT_TYPE_PCM_16_BIT;
             break;
     }
     return hdiFormat;
@@ -319,12 +314,10 @@ uint32_t CabinAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)
 {
     AudioFormat hdiFormat = ConvertToHdiFormat(format);
     switch (hdiFormat) {
-        case static_cast<AudioFormat>(1023410177): // AUDIO_FORMAT_TYPE_3DA_16BIT
+        case AUDIO_FORMAT_TYPE_PCM_16_BIT:
             return PCM_16_BIT;
-        //case AUDIO_FORMAT_TYPE_3DA_24BIT:
-        //    return PCM_24_BIT;
-        //case AUDIO_FORMAT_TYPE_3DA_32BIT:  // 暂时屏蔽
-        //    return PCM_32_BIT;
+        case AUDIO_FORMAT_TYPE_PCM_32_BIT:
+            return PCM_32_BIT;
         default:
             return PCM_16_BIT;
     }
