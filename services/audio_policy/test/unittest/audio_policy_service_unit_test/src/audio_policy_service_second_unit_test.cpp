@@ -1190,10 +1190,12 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OnForcedDeviceSelected_01, TestSize.Leve
     devDesc.macAddress_ = "11:22";
     devDesc.deviceRole_ = OUTPUT_DEVICE;
     devDesc.deviceId_ = 1234;
-    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(make_shared<AudioDeviceDescriptor>(devDesc));
+    auto desc = make_shared<AudioDeviceDescriptor>(devDesc);
+    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(desc);
     auto &service = AudioPolicyService::GetAudioPolicyService();
     service.OnForcedDeviceSelected(devDesc.deviceType_, devDesc.macAddress_);
     auto server = GetServerUtil::GetServerPtr();
+    AudioDeviceManager::GetAudioDeviceManager().RemoveNewDevice(desc);
     EXPECT_NE(server, nullptr);
 }
 
@@ -1209,10 +1211,12 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OnPrivacyDeviceSelected_01, TestSize.Lev
     devDesc.macAddress_ = "11:22";
     devDesc.deviceRole_ = OUTPUT_DEVICE;
     devDesc.deviceId_ = 5678;
-    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(make_shared<AudioDeviceDescriptor>(devDesc));
+    auto desc = make_shared<AudioDeviceDescriptor>(devDesc);
+    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(desc);
     auto &service = AudioPolicyService::GetAudioPolicyService();
     service.OnPrivacyDeviceSelected(devDesc.deviceType_, devDesc.macAddress_);
     auto server = GetServerUtil::GetServerPtr();
+    AudioDeviceManager::GetAudioDeviceManager().RemoveNewDevice(desc);
     EXPECT_NE(server, nullptr);
 }
 

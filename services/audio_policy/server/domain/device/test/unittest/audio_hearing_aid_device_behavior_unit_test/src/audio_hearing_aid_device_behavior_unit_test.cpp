@@ -151,5 +151,27 @@ HWTEST_F(AudioHearingAidDeviceBehaviorUnitTest, ActivateDevice_006, TestSize.Lev
     EXPECT_NE(result, ERR_NULL_POINTER);
 }
 
+/**
+ * @tc.name  : LoadHearingAidModule
+ * @tc.desc  : Test LoadHearingAidModule
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioHearingAidDeviceBehaviorUnitTest, LoadHearingAidModule_001, TestSize.Level1)
+{
+    AudioHearingAidDeviceBehavior behavior;
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_HEARING_AID;
+    deviceDesc->macAddress_ = "00:11:22:33:44:55";
+    DeviceStreamInfo emptyStreamInfo;
+    emptyStreamInfo.samplingRate = {};
+    emptyStreamInfo.channelLayout = {};
+    deviceDesc->audioStreamInfo_.push_back(emptyStreamInfo);
+
+    AudioStreamInfo audioStreamInfo;
+    auto result = behavior.LoadHearingAidModule(deviceDesc, audioStreamInfo,
+        "", "", SOURCE_TYPE_MIC);
+    EXPECT_NE(result, ERR_NULL_POINTER);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
