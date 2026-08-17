@@ -28,7 +28,7 @@
 #include "hpae_source_process_cluster.h"
 #include "hpae_no_lock_queue.h"
 #include "i_hpae_capturer_manager.h"
-#include "hpae_audio_format_converter_node.h"
+#include "hpae_audio_format_converter_cluster.h"
 #include "hpae_mixer_node.h"
 
 namespace OHOS {
@@ -139,7 +139,7 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSourceOutputNode>> sourceOutputNodeMap_;
     std::unordered_map<HpaeSourceInputNodeType, std::shared_ptr<HpaeSourceInputCluster>> sourceInputClusterMap_;
     std::unordered_map<std::shared_ptr<OutputNode<HpaePcmBuffer*>>,
-        std::shared_ptr<HpaeAudioFormatConverterNode>> injectorFmtConverterNodeMap_;
+        std::shared_ptr<HpaeAudioFormatConverterCluster>> injectorFmtConverterNodeMap_;
 
     HpaeSourceInputNodeType mainMicType_;
     std::atomic<bool> isInit_ = false;

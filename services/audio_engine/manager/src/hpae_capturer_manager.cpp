@@ -1373,7 +1373,7 @@ int32_t HpaeCapturerManager::AddCaptureInjectorByTargetStream(
         // Dual-upstream: keep original mic/sceneCluster upstream, add injector converter as the
         // second upstream. converterOutput is tagged INJECTOR so GetAndValidateOutput picks it
         // (plain Connect is used, so converter.ConnectWithInfo will NOT overwrite the tag).
-        auto converter = std::make_shared<HpaeAudioFormatConverterNode>(
+        auto converter = std::make_shared<HpaeAudioFormatConverterCluster>(
             sinkOutputNode->GetNodeInfo(), sourceOutputNode->GetNodeInfo());
         converter->SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_INJECTOR);
         sourceOutputNode->Connect(converter);
