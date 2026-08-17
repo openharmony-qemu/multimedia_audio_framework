@@ -684,11 +684,6 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, con
         }
         volDeviceDesc = audioActiveDevice_.GetDeviceForVolume(streamType);
         DeviceType deviceType = volDeviceDesc != nullptr ? volDeviceDesc->deviceType_ : DEVICE_TYPE_SPEAKER;
-        if (IsNearlinkKaraokeVolumeManaged(streamType)) {
-            audioPolicyManager_.SetSystemVolumeLevel(streamType, buffedVolume, volDeviceDesc);
-            SetSharedVolume(streamType, volDeviceDesc->deviceType_, {false, volume.VolumeDegree(), 0});
-            return SUCCESS;
-        }
         ret = SetSystemVolumeExternal(streamType, buffedVolume, deviceType);
         if (ret != SUCCESS) {
             ret = SetSystemVolumeLevelInternal(streamType, buffedVolume, volDeviceDesc, zoneId);
