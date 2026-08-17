@@ -1764,7 +1764,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_UltraFastPipe_SpanSize_001, Te
 
     std::string deviceName = "temp";
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName);
-    size_t expectedSpanSize = static_cast<size_t>(2.5f * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S);
+    size_t expectedSpanSize = static_cast<size_t>(2.5 * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, expectedSpanSize);
 }
 
@@ -1784,7 +1784,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_UltraFast_SpanSize_001, TestSi
 
     std::string deviceName = "temp";
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, deviceName);
-    size_t expectedSpanSize = static_cast<size_t>(2.5f * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S);
+    size_t expectedSpanSize = static_cast<size_t>(2.5 * processConfig.streamInfo.samplingRate / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, expectedSpanSize);
 }
 
