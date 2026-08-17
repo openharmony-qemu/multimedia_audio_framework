@@ -664,6 +664,212 @@ HWTEST_F(HpaeFastCapturerManagerTest, DeInitAndReloadFailure, TestSize.Level1)
     manager->HandleMsg();
     EXPECT_EQ(manager->DeactivateThread(), true);
 }
+
+/**
+ * @tc.name  : ConnectOutputSession_SourceNotFound
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_015
+ * @tc.desc  : Test Connect/DisConnectOutputSession when sessionId absent from sourceOutputNodeMap.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, ConnectOutputSession_SourceNotFound, TestSize.Level1)
+{
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    auto manager = CreateInitializedManager(mockSource);
+    EXPECT_NE(manager->ConnectOutputSession(FAST_SESSION_ID), SUCCESS);
+    EXPECT_NE(manager->DisConnectOutputSession(FAST_SESSION_ID), SUCCESS);
+}
+
+/**
+ * @tc.name  : DeleteOutputSession_RunningStateDirect
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_016
+ * @tc.desc  : Test DeleteOutputSession directly on a RUNNING session covers DisConnect branch and CAPTURER_RELEASED.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, DeleteOutputSession_RunningStateDirect, TestSize.Level1)
+{
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    ON_CALL(*mockSource, IsInited()).WillByDefault(Return(true));
+    ON_CALL(*mockSource, Stop()).WillByDefault(Return(SUCCESS));
+    auto manager = CreatePreparedManager(mockSource);
+    manager->sourceOutputNodeMap_[FAST_SESSION_ID]->SetState(HPAE_SESSION_RUNNING);
+    EXPECT_EQ(manager->DeleteOutputSession(FAST_SESSION_ID), SUCCESS);
+    EXPECT_EQ(manager->sourceOutputNodeMap_.count(FAST_SESSION_ID), 0);
+    EXPECT_EQ(manager->sessionNodeMap_.count(FAST_SESSION_ID), 0);
+    EXPECT_EQ(manager->converterNodeMap_.count(FAST_SESSION_ID), 0);
+}
+
+/**
+ * @tc.name  : Start_ConnectFails
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_017
+ * @tc.desc  : Test Start when ConnectOutputSession fails (converter erased) leaves state unchanged.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, Start_ConnectFails, TestSize.Level1)
+{
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    auto manager = CreatePreparedManager(mockSource);
+    manager->converterNodeMap_.erase(FAST_SESSION_ID);
+    EXPECT_EQ(manager->Start(FAST_SESSION_ID), SUCCESS);
+    manager->HandleMsg();
+    EXPECT_EQ(manager->sessionNodeMap_[FAST_SESSION_ID].state, HPAE_SESSION_PREPARED);
+    EXPECT_EQ(manager->sourceOutputNodeMap_[FAST_SESSION_ID]->GetState(), HPAE_SESSION_PREPARED);
+}
+
+/**
+ * @tc.name  : Start_CapturerSourceStartFails
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_018
+ * @tc.desc  : Test Start sets session RUNNING but source start fails leaves source state unchanged.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, Start_CapturerSourceStartFails, TestSize.Level1)
+{
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    ON_CALL(*mockSource, IsInited()).WillByDefault(Return(true));
+    ON_CALL(*mockSource, Start()).WillByDefault(Return(ERR_INVALID_OPERATION));
+    ON_CALL(*mockSource, Stop()).WillByDefault(Return(SUCCESS));
+    auto manager = CreatePreparedManager(mockSource);
+    EXPECT_EQ(manager->Start(FAST_SESSION_ID), SUCCESS);
+    manager->HandleMsg();
+    EXPECT_EQ(manager->sourceOutputNodeMap_[FAST_SESSION_ID]->GetState(), HPAE_SESSION_RUNNING);
+    EXPECT_EQ(manager->sessionNodeMap_[FAST_SESSION_ID].state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(manager->sourceInputNode_->GetSourceState(), STREAM_MANAGER_NEW);
+    EXPECT_EQ(manager->Stop(FAST_SESSION_ID), SUCCESS);
+    manager->HandleMsg();
+    EXPECT_EQ(manager->Release(FAST_SESSION_ID), SUCCESS);
+    manager->HandleMsg();
+    EXPECT_EQ(manager->sourceOutputNodeMap_.count(FAST_SESSION_ID), 0);
+}
+
+/**
+ * @tc.name  : OnNotifyQueue_WithThread
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_019
+ * @tc.desc  : Test OnNotifyQueue null-thread guard and non-null-thread Notify path.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, OnNotifyQueue_WithThread, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo = CreateFastSourceInfo();
+    auto manager = std::make_shared<HpaeFastCapturerManager>(sourceInfo);
+    manager->OnNotifyQueue();
+    EXPECT_EQ(manager->hpaeSignalProcessThread_, nullptr);
+
+    manager->hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+    manager->OnNotifyQueue();
+    EXPECT_NE(manager->hpaeSignalProcessThread_, nullptr);
+    EXPECT_EQ(manager->DeactivateThread(), true);
+}
+
+/**
+ * @tc.name  : DumpSourceInfo_WhenInit
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_020
+ * @tc.desc  : Test DumpSourceInfo returns SUCCESS and enqueues request when manager is initialized.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, DumpSourceInfo_WhenInit, TestSize.Level1)
+{
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    auto manager = CreateInitializedManager(mockSource);
+    EXPECT_EQ(manager->DumpSourceInfo(), SUCCESS);
+    manager->HandleMsg();
+}
+
+/**
+ * @tc.name  : AddCaptureInjectorByTargetStream_NullSinkOutput
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_021
+ * @tc.desc  : Test AddCaptureInjectorByTargetStream null sinkOutputNode early-returns in lambda.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, AddCaptureInjectorByTargetStream_NullSinkOutput, TestSize.Level1)
+{
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    auto manager = CreateInitializedManager(mockSource);
+    EXPECT_EQ(manager->AddCaptureInjectorByTargetStream(nullptr, FAST_SESSION_ID), SUCCESS);
+    manager->HandleMsg();
+    EXPECT_EQ(manager->injectorFmtConverterNodeMap_.empty(), true);
+}
+
+/**
+ * @tc.name  : RemoveCaptureInjectorByTargetStream_NullSinkOutput
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_022
+ * @tc.desc  : Test RemoveCaptureInjectorByTargetStream null sinkOutputNode early-returns in lambda.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, RemoveCaptureInjectorByTargetStream_NullSinkOutput, TestSize.Level1)
+{
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    auto manager = CreateInitializedManager(mockSource);
+    EXPECT_EQ(manager->RemoveCaptureInjectorByTargetStream(nullptr, FAST_SESSION_ID), SUCCESS);
+    manager->HandleMsg();
+    EXPECT_EQ(manager->injectorFmtConverterNodeMap_.empty(), true);
+}
+
+/**
+ * @tc.name  : SetCaptureMicMuteByTargetStream_TargetNotFound
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_023
+ * @tc.desc  : Test SetCaptureMicMuteByTargetStream when target stream not in sourceOutputNodeMap.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, SetCaptureMicMuteByTargetStream_TargetNotFound, TestSize.Level1)
+{
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    auto manager = CreateInitializedManager(mockSource);
+    EXPECT_EQ(manager->SetCaptureMicMuteByTargetStream(FAST_SESSION_ID, true), SUCCESS);
+    manager->HandleMsg();
+}
+
+/**
+ * @tc.name  : OnNodeStatusUpdate_TriggersCallback
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_024
+ * @tc.desc  : Test OnNodeStatusUpdate triggers UPDATE_STATUS callback synchronously.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, OnNodeStatusUpdate_TriggersCallback, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo = CreateFastSourceInfo();
+    auto manager = std::make_shared<HpaeFastCapturerManager>(sourceInfo);
+    auto callback = std::make_shared<NiceMock<MockSendMsgCallback>>();
+    manager->RegisterSendMsgCallback(callback);
+    EXPECT_CALL(*callback, Invoke(UPDATE_STATUS, _)).Times(1);
+    manager->OnNodeStatusUpdate(FAST_SESSION_ID, OPERATION_PAUSED);
+}
+
+/**
+ * @tc.name  : DeInit_NotMoveDefault
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_025
+ * @tc.desc  : Test DeInit(false) skips MoveAllStream and cleans up source/converter nodes.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, DeInit_NotMoveDefault, TestSize.Level1)
+{
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    ON_CALL(*mockSource, IsInited()).WillByDefault(Return(true));
+    ON_CALL(*mockSource, Stop()).WillByDefault(Return(SUCCESS));
+    auto manager = CreatePreparedManager(mockSource);
+    EXPECT_EQ(manager->DeInit(false), SUCCESS);
+    EXPECT_EQ(manager->IsInit(), false);
+    EXPECT_EQ(manager->sourceInputNode_, nullptr);
+    EXPECT_EQ(manager->converterNodeMap_.empty(), true);
+}
+
+/**
+ * @tc.name  : MoveAllStream_PreferNonMatchingId
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastCapturerManagerTest_026
+ * @tc.desc  : Test MoveAllStream MOVE_PREFER with non-matching id keeps session unmoved and fires Invoke.
+ */
+HWTEST_F(HpaeFastCapturerManagerTest, MoveAllStream_PreferNonMatchingId, TestSize.Level1)
+{
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    ON_CALL(*mockSource, IsInited()).WillByDefault(Return(true));
+    ON_CALL(*mockSource, Stop()).WillByDefault(Return(SUCCESS));
+    auto manager = CreatePreparedManager(mockSource);
+    auto callback = std::make_shared<NiceMock<MockSendMsgCallback>>();
+    manager->RegisterSendMsgCallback(callback);
+    EXPECT_CALL(*callback, Invoke(MOVE_ALL_SOURCE_OUTPUT, _)).Times(1);
+    EXPECT_EQ(manager->MoveAllStream("new_source", {FAST_SESSION_ID_SECOND}, MOVE_PREFER), SUCCESS);
+    manager->HandleMsg();
+    EXPECT_EQ(manager->sourceOutputNodeMap_.count(FAST_SESSION_ID), 1);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
