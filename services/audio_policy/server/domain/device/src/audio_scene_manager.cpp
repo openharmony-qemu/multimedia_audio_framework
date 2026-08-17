@@ -198,6 +198,7 @@ void AudioSceneManager::SetAudioSceneOwnerUid(const int32_t uid)
     if (uid == AUDIO_ID) {
         callOwnerUid_ = ANCO_SERVICE_BROKER_UID;
     }
+    AUDIO_INFO_LOG("callOwnerUid_: %{public}d, uid: %{public}d", callOwnerUid_, uid);
 }
 
 bool AudioSceneManager::IsInAudioCallScene()
