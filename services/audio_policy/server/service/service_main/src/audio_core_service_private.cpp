@@ -469,18 +469,18 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     return SUCCESS;
 }
 
-void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+int32_t AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     if (!pipeManager_->IsModemCommunicationIdExist()) {
         CheckAndUpdateHearingAidCall(DEVICE_TYPE_NONE);
-        return;
+        return SUCCESS;
     }
 
     auto modemMap = pipeManager_->GetModemCommunicationMap();
-    CHECK_AND_RETURN_LOG(!modemMap.empty(), "modem communication map is empty");
+    CHECK_AND_RETURN_RET_LOG(!modemMap.empty(), ERROR, "modem communication map is empty");
     auto streamDesc = modemMap.begin()->second;
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERROR, "streamDesc is nullptr");
     auto uid = GetRealUid(streamDesc);
 
     StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
@@ -493,16 +493,19 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
     }
     FetchDeviceInfo info = { streamUsage, "CheckModemScene" };
     descs = audioRouterCenter_.FetchOutputDevices(info);
-    CHECK_AND_RETURN_LOG(descs.size() != 0, "Fetch output device for voice modem communication failed");
+    CHECK_AND_RETURN_RET_LOG(descs.size() != 0, ERROR, "Fetch output device for voice modem communication failed");
     pipeManager_->UpdateModemStreamDevice(descs);
 
     AudioDeviceDescriptor curDesc = audioRouterSelectStrategy_.Get1stCurrentOutputDevice(uid);
     AUDIO_INFO_LOG("Current output device %{public}d, update route %{public}d, reason %{public}d",
         curDesc.deviceType_, descs.front()->deviceType_, static_cast<int32_t>(reason));
-    ActivateOutputDevice(streamDesc, reason);
+    int32_t activateRet = ActivateOutputDevice(streamDesc, reason);
+    if (activateRet == REFETCH_DEVICE) {
+        AUDIO_INFO_LOG("[CheckModemScene]ActivateOutputDevice returned REFETCH_DEVICE, "
+            "device refetched in reentrant FetchOutputDeviceAndRoute");
+        return REFETCH_DEVICE;
+    }
 
-    // If the modem call is in progress, and the device is currently switching,
-    // and the current output device is different from the target device, then mute to avoid pop issue.
     if (isCallRunning && IsDeviceSwitching(reason) && !curDesc.IsSameDeviceDesc(*descs.front())) {
         SetVoiceCallMuteForSwitchDevice();
         needUnmuteVoiceCall_ = true;
@@ -516,6 +519,7 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
         CheckAndUpdateHearingAidCall(descs.front()->deviceType_);
     }
     CheckAndSleepBeforeVoiceCallDeviceSet(reason);
+    return SUCCESS;
 }
 
 void AudioCoreService::CheckTransferRingtoneScene(
@@ -544,21 +548,21 @@ void AudioCoreService::CheckTransferRingtoneScene(
     }
 }
 
-void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason)
+int32_t AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason)
 {
     AudioScene audioScene = audioSceneManager_.GetAudioScene();
     if (audioScene == AUDIO_SCENE_DEFAULT && !CheckRingAndVoipStreamRunning()) {
-        return;
+        return SUCCESS;
     }
     FetchDeviceInfo info = { STREAM_USAGE_NOTIFICATION_RINGTONE, "CheckRingAndVoipScene_1" };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringDescs =
         audioRouterCenter_.FetchOutputDevices(info);
-    CHECK_AND_RETURN_LOG(ringDescs.size() != 0, "Fetch output device for ring failed");
+    CHECK_AND_RETURN_RET_LOG(ringDescs.size() != 0, ERROR, "Fetch output device for ring failed");
 
     info = { STREAM_USAGE_VOICE_COMMUNICATION, "CheckRingAndVoipScene_2" };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> voipDescs =
         audioRouterCenter_.FetchOutputDevices(info);
-    CHECK_AND_RETURN_LOG(voipDescs.size() != 0, "Fetch output device for voip failed");
+    CHECK_AND_RETURN_RET_LOG(voipDescs.size() != 0, ERROR, "Fetch output device for voip failed");
 
     pipeManager_->UpdateRingAndVoipStreamStatus(audioScene);
     pipeManager_->UpdateRingAndVoipStreamDevice(ringDescs, voipDescs);
@@ -571,12 +575,18 @@ void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReason
     }
 
     auto streamDesc = pipeManager_->GetStreamDescForAudioScene(audioScene);
-    CHECK_AND_RETURN(streamDesc != nullptr);
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, ERROR);
     auto deviceDesc = streamDesc->newDeviceDescs_.front();
-    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERROR, "deviceDesc is nullptr");
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
-        ActivateOutputDevice(streamDesc, reason);
+        int32_t activateRet = ActivateOutputDevice(streamDesc, reason);
+        if (activateRet == REFETCH_DEVICE) {
+            AUDIO_INFO_LOG("[CheckRingAndVoipScene]ActivateOutputDevice returned REFETCH_DEVICE, "
+                "device refetched in reentrant FetchOutputDeviceAndRoute");
+            return REFETCH_DEVICE;
+        }
     }
+    return SUCCESS;
 }
 
 bool AudioCoreService::CheckRingAndVoipStreamRunning()
