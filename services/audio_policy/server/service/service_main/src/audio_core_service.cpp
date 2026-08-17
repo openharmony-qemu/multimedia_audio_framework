@@ -1266,6 +1266,7 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
 
 void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool forceUpdate)
 {
+    CHECK_AND_RETURN(audioDeviceManager_.HasSpecificDevicesConnected());
     if (!forceUpdate) {
         CHECK_AND_RETURN(!audioSceneManager_.IsVoiceCallRelatedScene());
     }
