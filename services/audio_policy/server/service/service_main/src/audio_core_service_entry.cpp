@@ -797,6 +797,12 @@ int32_t AudioCoreService::EventEntry::ReleaseFastPipe(AudioIOHandle id, uint32_t
         AUDIO_INFO_LOG("FAST pipe %{public}s restart", pipeName.c_str());
         return ERROR;
     }
+    return ReleaseFastPipeInner(id, paIndex, pipeName, moduleName);
+}
+
+int32_t AudioCoreService::EventEntry::ReleaseFastPipeInner(AudioIOHandle id, uint32_t paIndex,
+    const std::string &pipeName, const std::string &moduleName)
+{
     AUDIO_INFO_LOG("Close %{public}s pipe hdi port id: %{public}u, index %{public}u", pipeName.c_str(), id, paIndex);
     coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
     CHECK_AND_RETURN_RET_LOG(coreService_->pipeManager_, ERROR, "pipeManager_ is nullptr");

@@ -1414,7 +1414,9 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
     CHECK_AND_RETURN(action == CONCEDE_INCOMING || action == CONCEDE_EXISTING);
     CHECK_AND_RETURN_LOG(existingStream != nullptr && incomingStream != nullptr,
         "existingStream or incomingStream is nullptr");
-    CHECK_AND_RETURN_LOG(existingStream->IsRunning() || incomingStream->IsRunning(),
+    CHECK_AND_RETURN_LOG(existingStream->IsRunning() || incomingStream->IsRunning() ||
+        ((existingStream->GetRoute() == AUDIO_INPUT_FLAG_FAST) &&
+        (incomingStream->GetRoute() == (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP))),
         "both streams are not running");
 
     std::shared_ptr<AudioStreamDescriptor> targetStream =

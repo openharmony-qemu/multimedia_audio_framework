@@ -446,6 +446,14 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     audioInjectorPolicy_.FetchCapDeviceInjectPreProc(pipeInfos, removeFlag, fetchStreamId);
 
     AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
+    for (auto &pipeInfo : pipeInfos) {
+        if ((pipeInfo->name_ == "fast_input" || pipeInfo->name_ == "voip_fast_input") &&
+            pipeInfo->streamDescriptors_.empty()) {
+            CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
+            return GetEventEntry()->ReleaseFastPipeInner(pipeInfo->id_, pipeInfo->paIndex_,
+                pipeInfo->name_, pipeInfo->moduleInfo_.name);
+        }
+    }
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
