@@ -19,6 +19,7 @@
 #include "audio_suite_service.h"
 #include "download_manager.h"
 #include "audio_errors.h"
+#include "iremote_stub.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -31,6 +32,32 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 static constexpr int32_t AUDIO_SUITE_SA_ID = 3015;
+static constexpr int32_t FEATURE_INSTALL_SUCCESS = 36;
+
+class MockDownloadCallbackStub : public IRemoteStub<IAudioSuiteDownloadCallback> {
+public:
+    MOCK_METHOD(ErrCode, GetFeatureNewVersion,
+        (const std::string& featureName, AudioSuiteCloudRomVersionInfo& newVersion, int32_t& funcResult), (override));
+    MOCK_METHOD(ErrCode, GetFeatureStatus,
+        (const std::string& featureName, AudioSuiteDownloadStatusInfo& statusInfos, int32_t& funcResult), (override));
+    MOCK_METHOD(ErrCode, DownloadAndInstall,
+        (bool downloadCondition, const std::string& featureName, int32_t& funcResult), (override));
+    MOCK_METHOD(ErrCode, PauseCloudRom,
+        (const std::string& featureName, int32_t& funcResult), (override));
+    MOCK_METHOD(ErrCode, CancelCloudRom,
+        (const std::string& featureName, int32_t& funcResult), (override));
+    MOCK_METHOD(ErrCode, UninstallCloudRom,
+        (const std::string& featureName, int32_t& funcResult), (override));
+    MOCK_METHOD(ErrCode, RegisterDownloadStatusCallback,
+        (int32_t& funcResult), (override));
+    MOCK_METHOD(ErrCode, UnregisterDownloadStatusCallback,
+        (int32_t& funcResult), (override));
+
+    int OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) override
+    {
+        return 0;
+    }
+};
 
 class TestAudioSuiteService : public AudioSuiteService {
 public:
@@ -162,6 +189,124 @@ HWTEST_F(AudioSuiteServiceTest, UninstallCloudRomTest, TestSize.Level0)
     ret = service->UninstallCloudRom("v1", result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_CALLBACK_NOT_REGISTERED);
+}
+
+/**
+ * @tc.name  GetDownloadStatus_InstallSuccess_001
+ * @tc.desc  Test GetDownloadStatus when state == FEATURE_INSTALL_SUCCESS, should return early without
+ *           calling GetFeatureNewVersion, and status.size stays 0.
+ */
+HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_InstallSuccess_001, TestSize.Level0)
+{
+    auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
+    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub);
+
+    EXPECT_CALL(*mockStub, GetFeatureStatus(_, _, _))
+        .WillOnce(Invoke([](const std::string& name, AudioSuiteDownloadStatusInfo& status, int32_t& funcResult) {
+            status.state = FEATURE_INSTALL_SUCCESS;
+            status.featureName = name;
+            status.errorCode = 0;
+            funcResult = SUCCESS;
+            return SUCCESS;
+        }));
+    EXPECT_CALL(*mockStub, GetFeatureNewVersion(_, _, _)).Times(0);
+
+    AudioSuiteDownloadStatusInfo status;
+    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus("feat1", status), SUCCESS);
+    EXPECT_EQ(status.size, 0);
+
+    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
+}
+
+/**
+ * @tc.name  GetDownloadStatus_NewVersionSuccess_001
+ * @tc.desc  Test GetDownloadStatus when GetFeatureNewVersion returns all-success conditions,
+ *           status.size should be set to newVersionInfo.size.
+ */
+HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_NewVersionSuccess_001, TestSize.Level0)
+{
+    auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
+    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub);
+
+    EXPECT_CALL(*mockStub, GetFeatureStatus(_, _, _))
+        .WillOnce(Invoke([](const std::string& name, AudioSuiteDownloadStatusInfo& status, int32_t& funcResult) {
+            status.state = 0;
+            status.featureName = name;
+            status.errorCode = 0;
+            funcResult = SUCCESS;
+            return SUCCESS;
+        }));
+    EXPECT_CALL(*mockStub, GetFeatureNewVersion(_, _, _))
+        .WillOnce(Invoke([](const std::string& name, AudioSuiteCloudRomVersionInfo& info, int32_t& funcResult) {
+            info.featureName = name;
+            info.errorCode = 0;
+            info.size = 1024;
+            funcResult = SUCCESS;
+            return SUCCESS;
+        }));
+
+    AudioSuiteDownloadStatusInfo status;
+    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus("feat1", status), SUCCESS);
+    EXPECT_EQ(status.size, 1024);
+
+    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
+}
+
+/**
+ * @tc.name  GetDownloadStatus_NewVersionFail_001
+ * @tc.desc  Test GetDownloadStatus when GetFeatureNewVersion conditions fail (ret, funcResult,
+ *           errorCode, featureName mismatch), should enter else branch and status.size stays 0.
+ */
+HWTEST_F(AudioSuiteServiceTest, GetDownloadStatus_NewVersionFail_001, TestSize.Level0)
+{
+    auto mockStub = sptr<MockDownloadCallbackStub>(new MockDownloadCallbackStub());
+    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(mockStub);
+
+    EXPECT_CALL(*mockStub, GetFeatureStatus(_, _, _))
+        .WillRepeatedly(Invoke([](const std::string& name, AudioSuiteDownloadStatusInfo& status, int32_t& funcResult) {
+            status.state = 0;
+            status.featureName = name;
+            status.errorCode = 0;
+            funcResult = SUCCESS;
+            return SUCCESS;
+        }));
+    EXPECT_CALL(*mockStub, GetFeatureNewVersion(_, _, _))
+        .WillOnce(Invoke([](const std::string&, AudioSuiteCloudRomVersionInfo& info, int32_t& funcResult) {
+            info.featureName = "feat1";
+            info.errorCode = 0;
+            funcResult = SUCCESS;
+            return ERROR; // condition: ret != SUCCESS
+        }))
+        .WillOnce(Invoke([](const std::string&, AudioSuiteCloudRomVersionInfo& info, int32_t& funcResult) {
+            info.featureName = "feat1";
+            info.errorCode = 0;
+            funcResult = ERROR; // condition: funcResult != SUCCESS
+            return SUCCESS;
+        }))
+        .WillOnce(Invoke([](const std::string&, AudioSuiteCloudRomVersionInfo& info, int32_t& funcResult) {
+            info.featureName = "feat1";
+            info.errorCode = -1; // condition: errorCode != 0
+            funcResult = SUCCESS;
+            return SUCCESS;
+        }))
+        .WillOnce(Invoke([](const std::string&, AudioSuiteCloudRomVersionInfo& info, int32_t& funcResult) {
+            info.featureName = "otherFeature"; // condition: featureName mismatch
+            info.errorCode = 0;
+            funcResult = SUCCESS;
+            return SUCCESS;
+        }));
+
+    AudioSuiteDownloadStatusInfo status;
+    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus("feat1", status), SUCCESS);
+    EXPECT_EQ(status.size, 0);
+    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus("feat1", status), SUCCESS);
+    EXPECT_EQ(status.size, 0);
+    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus("feat1", status), SUCCESS);
+    EXPECT_EQ(status.size, 0);
+    EXPECT_EQ(Singleton<DownloadManager>::GetInstance().GetDownloadStatus("feat1", status), SUCCESS);
+    EXPECT_EQ(status.size, 0);
+
+    Singleton<DownloadManager>::GetInstance().SetUpdateEngineCallback(nullptr);
 }
 
 } // namespace AudioSuite
