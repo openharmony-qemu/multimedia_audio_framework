@@ -51,6 +51,29 @@ CabinAudioRenderSink::~CabinAudioRenderSink()
 int32_t CabinAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
+    if (sinkInited_ && attr_.channel == attr.channel && attr_.sampleRate == attr.sampleRate
+        && attr_.format == attr.format && attr_.encodingType == attr.encodingType
+        && attr_.channelLayout == attr.channelLayout) {
+        AUDIO_INFO_LOG("CabinAudioRenderSink already inited with same attr, skip");
+        return SUCCESS;
+    }
+    // Re-init case: attr changed (e.g. port opened at boot with xml module args 6ch, while the
+    // 3DA stream needs 16ch), or a previous render of this sink is still alive in HAL even after
+    // DeInit (HAL index out of sync leaves the output stream leaked). hdiRenderId_ != 0 means this
+    // sink object created a render before (not reset by DeInit). Destroy it defensively first —
+    // harmless no-op if already closed — otherwise HAL rejects the new open with "bus already exist".
+    if (hdiRenderId_ != 0) {
+        AUDIO_INFO_LOG("re-init (ch %{public}u -> %{public}u, layout %{public}" PRIu64 " -> %{public}" PRIu64
+            ", inited %{public}d), destroy previous render %{public}u first", attr_.channel, attr.channel,
+            attr_.channelLayout, attr.channelLayout, sinkInited_, hdiRenderId_);
+        HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+        std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+        if (deviceManager != nullptr) {
+            deviceManager->DestroyRender(attr_.adapterName, hdiRenderId_);
+        }
+        audioRender_ = nullptr;
+        sinkInited_ = false;
+    }
     Trace trace("CabinAudioRenderSink::Init");
     attr_ = attr;
     int32_t ret = CreateRender();
@@ -333,8 +356,8 @@ void CabinAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &par
 
 void CabinAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
-    deviceDesc.pins = PIN_OUT_DP;
-    deviceDesc.desc = const_cast<char *>("");
+    deviceDesc.pins = PIN_OUT_SPEAKER;
+    deviceDesc.desc = const_cast<char *>("bus10_3da_out");
 }
 
 int32_t CabinAudioRenderSink::CreateRender(void)

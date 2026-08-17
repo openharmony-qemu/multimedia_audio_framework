@@ -1496,6 +1496,13 @@ void AudioPipeSelector::GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioSt
 #ifdef MULTI_BUS_ENABLE
     std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(desc);
     pipeManager_->GetStreamPropInfo(desc, info, busAddresses);
+    // xml pipe flag (e.g. AUDIO_OUTPUT_FLAG_3DA_DIRECT of bus10_3da_out) must be visible on the
+    // stream as routeFlag_, otherwise the 3DA direct path is never selected for clients that
+    // do not send the flag themselves.
+    std::shared_ptr<AdapterPipeInfo> matchedPipeInfo = info->pipeInfo_.lock();
+    if (matchedPipeInfo != nullptr) {
+        desc->routeFlag_ = static_cast<AudioFlag>(matchedPipeInfo->supportFlags_);
+    }
 #else
     pipeManager_->GetStreamPropInfo(desc, info);
 #endif

@@ -207,7 +207,13 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
 
     if (moduleInfo.role == "sink") {
         pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
-        pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        // bus10_3da_out port may be opened at boot (module name) or at play-time new-pipe
+        // creation (paProp moduleName with mixport_ prefix); busAddress is stable on both.
+        if (moduleInfo.name == "bus10_3da_out" || moduleInfo.busAddress == "bus10_3da_out") {
+            pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_3DA_DIRECT;
+        } else {
+            pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        }
     } else {
         pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
         pipeInfo->routeFlag_ = moduleInfo.sourceType == std::to_string(SourceType::SOURCE_TYPE_WAKEUP) ?

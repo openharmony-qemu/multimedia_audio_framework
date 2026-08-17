@@ -35,7 +35,7 @@
 namespace OHOS {
 namespace AudioStandard {
 static constexpr int32_t AUDIO_VIVID_3DA_STOP_TIMEOUT_IN_SEC = 8; // 8S
-static const std::string AV_SINK_NAME = "3DA";
+static const std::string AV_SINK_NAME = HDI_ID_INFO_3DA;
 static const char *PRIMARY_ADAPTER_TYPE = "primary";
 constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS_48K_1024 = 21333333; // 21.333ms
@@ -232,7 +232,7 @@ void CabinPlayBackEngine::AdjustVolume()
     uint32_t streamIndx = stream_->GetStreamIndex();
     AudioProcessConfig config = stream_->GetAudioProcessConfig();
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0u};
-    const std::string deviceClass = "audio_vivid_3da_direct";
+    const std::string deviceClass = "bus10_3da_out";
     uint32_t renderId = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, AV_SINK_NAME);
     float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, config.streamType, renderId, &volumes);
     float volumeBg = volumes.volumeHistory;

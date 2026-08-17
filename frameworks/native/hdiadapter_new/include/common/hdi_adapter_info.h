@@ -80,6 +80,7 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_PRIMARY_EXTRA_WIRELESS "Wireless_Speaker"
 #define HDI_ID_INFO_PRIMARY_EXTRA_HDMI "Hdmi_Speaker"
 #define HDI_ID_INFO_VOICE_CALL_ASSISTANT "voice_call_assistant"
+#define HDI_ID_INFO_3DA "3DA"
 
 // device manager
 enum HdiDeviceManagerType : uint32_t {
