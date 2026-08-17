@@ -4550,11 +4550,6 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
     interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
 
-    AudioInterrupt audioInterrupt = {};
-    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    auto ret1 = interruptServiceTest->ActivateAudioInterrupt(0, audioInterrupt);
-    EXPECT_EQ(ret1.retCode, SUCCESS);
-
     AudioInterrupt a1, a2, a3;
     a1.streamUsage = StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
     a2.streamUsage = StreamUsage::STREAM_USAGE_VOICE_RINGTONE;
@@ -4566,15 +4561,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
     int32_t ret2 = interruptServiceTest->ActivatePreemptMode();
     EXPECT_EQ(ret2, SUCCESS);
 
-    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.empty(), true);
-
-    ret1 = interruptServiceTest->ActivateAudioInterrupt(0, audioInterrupt);
-    EXPECT_EQ(ret1.retCode, ERR_FOCUS_DENIED);
-
-    ret2 = interruptServiceTest->DeactivatePreemptMode();
-    EXPECT_EQ(ret2, SUCCESS);
-    ret1 = interruptServiceTest->ActivateAudioInterrupt(0, audioInterrupt);
-    EXPECT_EQ(ret1.retCode, SUCCESS);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 2);
 }
 
 /**
@@ -5195,10 +5182,6 @@ HWTEST_F(AudioInterruptUnitTest, AudioSessionFocusMode_007, TestSize.Level1)
 
     ret = audioInterruptService->ProcessFocusEntryForAudioSession(DEFAULT_ZONE_ID, CALLER_PID, updateScene);
     EXPECT_EQ(SUCCESS, ret);
-
-    audioInterruptService->isPreemptMode_ = true;
-    ret = audioInterruptService->ProcessFocusEntryForAudioSession(DEFAULT_ZONE_ID, CALLER_PID, updateScene);
-    EXPECT_EQ(ERR_FOCUS_DENIED, ret);
 }
 
 /**

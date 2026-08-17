@@ -35,21 +35,6 @@ static std::shared_ptr<AudioCoreService::EventEntry> CreateEventEntry(
 }
 
 /**
- * @tc.name  : Test AudioPolicyServer.
- * @tc.number: AudioPolicyServer_169
- * @tc.desc  : Test DeactivatePreemptMode.
- */
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_169, TestSize.Level1)
-{
-    int32_t systemAbilityId = 0;
-    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    ASSERT_NE(audioPolicyServer, nullptr);
-
-    int32_t result = audioPolicyServer->DeactivatePreemptMode();
-    EXPECT_EQ(result, ERROR);
-}
-
-/**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_170
 * @tc.desc  : Test SubscribeBackgroundTask.
@@ -369,23 +354,6 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_215, TestSize.Level1)
     EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
 
     auto ret = audioPolicyServer->ActivatePreemptMode();
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_216
-* @tc.desc  : Test AudioPolicyServer::DeactivatePreemptMode
-*/
-HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_216, TestSize.Level1)
-{
-    int32_t systemAbilityId = 0;
-    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    ASSERT_NE(audioPolicyServer, nullptr);
-
-    EXPECT_NE(static_cast<uid_t>(IPCSkeleton::GetCallingUid()), audioPolicyServer->PREEMPT_UID);
-
-    auto ret = audioPolicyServer->DeactivatePreemptMode();
     EXPECT_EQ(ret, ERROR);
 }
 

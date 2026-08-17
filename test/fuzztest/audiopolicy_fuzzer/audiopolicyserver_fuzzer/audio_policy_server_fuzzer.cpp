@@ -1683,13 +1683,6 @@ void AudioPolicyServerActivatePreemptModeFuzzTest()
     server->ActivatePreemptMode();
 }
 
-void AudioPolicyServerDeactivatePreemptModeFuzzTest()
-{
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    server->DeactivatePreemptMode();
-}
-
 void AudioPolicyServerGetStreamInFocusFuzzTest()
 {
     auto server = GetServerPtr();
@@ -2158,7 +2151,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerActivateAudioInterruptFuzzTest,
     AudioPolicyServerDeactivateAudioInterruptFuzzTest,
     AudioPolicyServerActivatePreemptModeFuzzTest,
-    AudioPolicyServerDeactivatePreemptModeFuzzTest,
     AudioPolicyServerGetStreamInFocusFuzzTest,
     AudioPolicyServerGetSessionInfoInFocusFuzzTest,
     AudioPolicyServerGetAudioFocusInfoListFuzzTest,

@@ -1362,13 +1362,6 @@ int32_t AudioPolicyManager::ActivatePreemptMode()
     return gsp->ActivatePreemptMode();
 }
 
-int32_t AudioPolicyManager::DeactivatePreemptMode()
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET(gsp != nullptr, -1);
-    return gsp->DeactivatePreemptMode();
-}
-
 int32_t AudioPolicyManager::SetAudioManagerInterruptCallback(const int32_t clientId,
     const std::shared_ptr<AudioInterruptCallback> &callback)
 {

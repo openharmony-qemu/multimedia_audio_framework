@@ -708,7 +708,6 @@ void AudioInterruptServiceActivateAudioInterruptFuzzTest(const uint8_t *rawData,
     AudioInterrupt audioInterrupt;
     AudioSessionServiceBuilder(interruptService, zoneId);
     bool isUpdatedAudioStrategy = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
-    interruptService->isPreemptMode_ = !((*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO);
     interruptService->ActivateAudioInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy);
 }
 
@@ -798,7 +797,6 @@ void AudioInterruptServiceActivatePreemptModeFuzzTest(const uint8_t *rawData, si
     interruptService->zonesMap_.insert(std::make_pair(zoneId, zone));
 
     interruptService->ActivatePreemptMode();
-    interruptService->DeactivatePreemptMode();
 }
 
 void AudioInterruptServiceGetAudioFocusInfoListFuzzTest(const uint8_t *rawData, size_t size)
@@ -1191,18 +1189,6 @@ void IsCapturerFocusAvailableFuzzTest(const uint8_t *rawData, size_t size)
     AudioCapturerInfo capturerInfo;
     interruptService->IsCapturerFocusAvailable(zoneId, capturerInfo);
 }
-
-void DeactivatePreemptModeFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    if (interruptService == nullptr) {
-        return;
-    }
-    interruptService->DeactivatePreemptMode();
-}
  
 void ClearAudioFocusBySessionIDFuzzTest(const uint8_t *rawData, size_t size)
 {
@@ -1380,7 +1366,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioInterruptServiceProcessFocusEntryFuzzTest,
     OHOS::AudioStandard::GetHighestPriorityAudioSceneFuzzTest,
     OHOS::AudioStandard::GetStreamTypePriorityFuzzTest,
-    OHOS::AudioStandard::DeactivatePreemptModeFuzzTest,
     OHOS::AudioStandard::IsCapturerFocusAvailableFuzzTest,
     OHOS::AudioStandard::ClearAudioFocusBySessionIDFuzzTest,
     OHOS::AudioStandard::DeactivateAudioSessionInFakeFocusModeFuzzTest,

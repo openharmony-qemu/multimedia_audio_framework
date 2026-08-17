@@ -289,12 +289,6 @@ int32_t AudioSystemClientPolicyManager::ActivatePreemptMode() const
     return AudioPolicyManager::GetInstance().ActivatePreemptMode();
 }
 
-int32_t AudioSystemClientPolicyManager::DeactivatePreemptMode() const
-{
-    AUDIO_DEBUG_LOG("DeactivatePreemptMode");
-    return AudioPolicyManager::GetInstance().DeactivatePreemptMode();
-}
-
 int32_t AudioSystemClientPolicyManager::UpdateStreamState(int32_t clientUid,
     StreamSetState streamSetState, StreamUsage streamUsage)
 {

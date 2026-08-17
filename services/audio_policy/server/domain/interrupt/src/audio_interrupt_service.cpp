@@ -1328,14 +1328,6 @@ int32_t AudioInterruptService::ActivateAudioInterruptCoreProcedure(
     CHECK_AND_RETURN_RET_LOG(VerifyStreamType(audioInterrupt), ERR_INVALID_PARAM, "VerifyStreamType fail");
     bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
     PrintLogsOfFocusStrategyBaseMusic(audioInterrupt); // Print logs for automatic detection tools.
-    if (isPreemptMode_) {
-        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
-        SendInterruptEventToIncomingStream(interruptEvent, audioInterrupt);
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(audioInterrupt.uid,
-            isRecord ? RECORD_INTERRUPT_START_FOCUS_DENIED : INTERRUPT_START_FOCUS_DENIED,
-            "isPreemptMode", false);
-        return ERR_FOCUS_DENIED;
-    }
 
     if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
@@ -1536,8 +1528,7 @@ int32_t AudioInterruptService::ClearAudioFocusInfoList()
             } else {
                 interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
             }
-            if (!isPreemptMode_ &&
-                ((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+            if (((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
                 (*it).first.streamUsage == STREAM_USAGE_VOICE_RINGTONE ||
                 (*it).first.streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION ||
                 (*it).first.streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE)) {
@@ -1621,22 +1612,10 @@ int32_t AudioInterruptService::ActivatePreemptMode()
 {
     AUDIO_INFO_LOG("start activate preempt mode");
     std::lock_guard<std::mutex> lock(mutex_);
-    isPreemptMode_ = true;
     int32_t ret = ClearAudioFocusInfoList();
-    if (ret) {
-        isPreemptMode_ = false;
-    }
-    AUDIO_INFO_LOG("isPreemptMode_ = %{public}d", isPreemptMode_);
     return ret;
 }
 
-int32_t AudioInterruptService::DeactivatePreemptMode()
-{
-    AUDIO_INFO_LOG("start deactivate preempt mode");
-    std::lock_guard<std::mutex> lock(mutex_);
-    isPreemptMode_ = false;
-    return SUCCESS;
-}
 
 int32_t AudioInterruptService::CreateAudioInterruptZone(const int32_t zoneId,
     const AudioZoneContext &context)

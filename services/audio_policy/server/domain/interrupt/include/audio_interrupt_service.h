@@ -122,8 +122,6 @@ public:
 
     // preempt audio focus interfaces
     int32_t ActivatePreemptMode();
-    int32_t DeactivatePreemptMode();
-
     // zone debug interfaces
     int32_t FindZoneByPid(int32_t pid);
     int32_t CreateAudioInterruptZone(const int32_t zoneId, const AudioZoneContext &context);
@@ -480,9 +478,6 @@ private:
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
     int32_t clientOnFocus_ = 0;
-
-    // preempt audio focus mode flag
-    bool isPreemptMode_ = false;
 
     std::mutex mutex_;
     mutable std::atomic<int32_t> formerUid_ = -1;
