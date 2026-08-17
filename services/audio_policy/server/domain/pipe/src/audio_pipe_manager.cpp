@@ -1556,7 +1556,7 @@ StreamUsage AudioPipeManager::GetLastestRunningCallStreamUsage()
             }
         }
     }
-    return STREAM_USAGE_VOICE_COMMUNICATION;
+    return STREAM_USAGE_UNKNOWN;
 }
 
 bool AudioPipeManager::HasUltraFastPipe()

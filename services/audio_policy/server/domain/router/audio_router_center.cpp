@@ -421,7 +421,7 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
         descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType, info.bypassType);
     } else if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
         (audioScene == AUDIO_SCENE_VOICE_RINGING && isVoipStream)) {
-        info.streamUsage = callStreamUsage;
+        info.streamUsage = callStreamUsage == STREAM_USAGE_UNKNOWN ? STREAM_USAGE_VOICE_COMMUNICATION : callStreamUsage;
         AUDIO_INFO_LOG("Ring follow call strategy, replace usage %{public}d to %{public}d",
             info.preStreamUsage, info.streamUsage);
         descs.push_back(FetchCallRenderDevice(info.streamUsage, info.clientUID, routerType));
