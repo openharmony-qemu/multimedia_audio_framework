@@ -270,6 +270,8 @@ private:
         const bool isUpdatedAudioStrategy, bool &updateScene);
     void ProcessAudioScene(const AudioInterrupt &audioInterrupt, const uint32_t &incomingStreamId,
         const int32_t &zoneId, bool &shouldReturnSuccess);
+    void NotifyFocusStateResume(const AudioInterrupt &audioInterrupt,
+        const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo);
     bool IsAudioSourceConcurrency(const SourceType &existSourceType, const SourceType &incomingSourceType,
         const std::vector<SourceType> &existConcurrentSources,
         const std::vector<SourceType> &incomingConcurrentSources);
