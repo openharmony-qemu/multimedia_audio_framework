@@ -1270,9 +1270,8 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
         CHECK_AND_RETURN(!audioSceneManager_.IsVoiceCallRelatedScene());
     }
 
-    auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModem();
-    auto inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
-    // Deep copy: streamDescs elements are replaced with new shared_ptr copies in FetchDevicesForDescs
+    auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModemCopy();
+    auto inputStreamDescs = pipeManager_->GetAllInputStreamDescsCopy();
     FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
 
     bool hasScoRecord = HasRunningScoNormalCapturerStream(inputStreamDescs);

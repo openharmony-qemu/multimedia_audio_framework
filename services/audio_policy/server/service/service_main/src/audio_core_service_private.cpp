@@ -3842,7 +3842,6 @@ void AudioCoreService::FetchDevicesForDescs(std::vector<std::shared_ptr<AudioStr
         CHECK_AND_CONTINUE(desc != nullptr);
         auto it = outResult.find(desc->sessionId_);
         CHECK_AND_CONTINUE(it != outResult.end());
-        desc = std::make_shared<AudioStreamDescriptor>(desc);
         desc->UpdateNewDeviceWithoutCheck(it->second);
     }
     std::vector<FetchDeviceInfo> inInfos;
@@ -3860,7 +3859,6 @@ void AudioCoreService::FetchDevicesForDescs(std::vector<std::shared_ptr<AudioStr
         CHECK_AND_CONTINUE(desc != nullptr);
         auto it = inResult.find(desc->sessionId_);
         CHECK_AND_CONTINUE(it != inResult.end() && it->second != nullptr);
-        desc = std::make_shared<AudioStreamDescriptor>(desc);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = {it->second};
         desc->UpdateNewDeviceWithoutCheck(devices);
     }

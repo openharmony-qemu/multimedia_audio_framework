@@ -694,6 +694,28 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
     return streamDescs;
 }
 
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutputStreamDescsIncludingModemCopy()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto &it : curPipeList_) {
+        if (it == nullptr || it->pipeRole_ != PIPE_ROLE_OUTPUT) {
+            continue;
+        }
+        for (auto &desc : it->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            streamDescs.push_back(std::make_shared<AudioStreamDescriptor>(desc));
+        }
+    }
+    for (auto &it : modemCommunicationIdMap_) {
+        if (it.second == nullptr) {
+            continue;
+        }
+        streamDescs.push_back(std::make_shared<AudioStreamDescriptor>(it.second));
+    }
+    return streamDescs;
+}
+
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutputStreamDescsInfo()
 {
     Trace trace("AudioPipeManager::GetAllOutputStreamDescsInfo");
@@ -730,6 +752,22 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInpu
         CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
         if (it->pipeRole_ == PIPE_ROLE_INPUT) {
             streamDescs.insert(streamDescs.end(), it->streamDescriptors_.begin(), it->streamDescriptors_.end());
+        }
+    }
+    return streamDescs;
+}
+
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInputStreamDescsCopy()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto &it : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
+        if (it->pipeRole_ == PIPE_ROLE_INPUT) {
+            for (auto &desc : it->streamDescriptors_) {
+                CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+                streamDescs.push_back(std::make_shared<AudioStreamDescriptor>(desc));
+            }
         }
     }
     return streamDescs;
