@@ -265,7 +265,6 @@ void AudioPolicyManagerThreeFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt, zoneId, isUpdatedAudioStrategy);
     AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt, zoneId);
     AudioPolicyManager::GetInstance().ActivatePreemptMode();
-    AudioPolicyManager::GetInstance().DeactivatePreemptMode();
     AudioPolicyManager::GetInstance().SetAudioManagerInterruptCallback(clientId, interruptCallback);
     AudioPolicyManager::GetInstance().UnsetAudioManagerInterruptCallback(clientId);
     AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);

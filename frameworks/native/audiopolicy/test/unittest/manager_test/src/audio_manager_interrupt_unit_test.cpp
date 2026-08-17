@@ -121,32 +121,6 @@ HWTEST(AudioManagerInterruptUnitTest, ActivatePreemptMode_002, TestSize.Level1)
 }
 
 /**
- * @tc.name   : Test DeactivatePreemptMode API
- * @tc.number : DeactivatePreemptMode_001
- * @tc.desc   : Test DeactivatePreemptMode interface, SUCCESS return, if uid: 7015
- */
-HWTEST(AudioManagerInterruptUnitTest, DeactivatePreemptMode_001, TestSize.Level1)
-{
-    int32_t setUidRet = setuid(UID_PREEMPT_SA);
-    std::cout << "setUidRet: " << setUidRet << std::endl;
-    auto ret = AudioSystemManager::GetInstance()->DeactivatePreemptMode();
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name   : Test DeactivatePreemptMode API
- * @tc.number : DeactivatePreemptMode_002
- * @tc.desc   : Test DeactivatePreemptMode interface, ERROR return, if not preempt uid: 7015
- */
-HWTEST(AudioManagerInterruptUnitTest, DeactivatePreemptMode_002, TestSize.Level1)
-{
-    int32_t setUidRet = setuid(0);
-    std::cout << "setUidRet: " << setUidRet << std::endl;
-    auto ret = AudioSystemManager::GetInstance()->DeactivatePreemptMode();
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
  * @tc.name   : Test RequestIndependentInterrupt API
  * @tc.number : RequestIndependentInterrupt_001
  * @tc.desc   : Test RequestIndependentInterrupt interface.

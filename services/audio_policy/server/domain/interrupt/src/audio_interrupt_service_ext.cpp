@@ -227,11 +227,6 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
 
 bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const AudioCapturerInfo &capturerInfo)
 {
-    if (isPreemptMode_) {
-        AUDIO_INFO_LOG("Preempt mode, recording is not allowed");
-        return false;
-    }
-
     AUDIO_INFO_LOG("start check capturer focus, zoneId:%{public}d, sourceType:%{public}d",
         zoneId, capturerInfo.sourceType);
     AudioInterrupt incomingInterrupt;

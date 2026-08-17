@@ -258,8 +258,6 @@ public:
 
     int32_t ActivatePreemptMode(void);
 
-    int32_t DeactivatePreemptMode(void);
-
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
 
     int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);

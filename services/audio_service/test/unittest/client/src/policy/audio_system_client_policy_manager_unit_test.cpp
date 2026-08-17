@@ -724,19 +724,6 @@ HWTEST_F(AudioSystemClientPolicyManagerUnitTest, ActivatePreemptMode_001, TestSi
 }
 
 /**
- * @tc.name  : Test DeactivatePreemptMode
- * @tc.type  : FUNC
- * @tc.number: DeactivatePreemptMode_001
- * @tc.desc  : Test DeactivatePreemptMode
- */
-HWTEST_F(AudioSystemClientPolicyManagerUnitTest, DeactivatePreemptMode_001, TestSize.Level1)
-{
-    AudioSystemClientPolicyManager& manager = AudioSystemClientPolicyManager::GetInstance();
-    int32_t ret = manager.DeactivatePreemptMode();
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test UpdateStreamState
  * @tc.type  : FUNC
  * @tc.number: UpdateStreamState_001
