@@ -50,7 +50,7 @@ CabinPlayBackEngine::CabinPlayBackEngine()
       writeCount_(0),
       fwkSyncTime_(0),
       uChannel_(0),
-      uformat_(sizeof(int32_t)),
+      uformat_(INVALID_WIDTH),
       uSampleRate_(0),
       latency_(0),
       firstSetVolume_(true),
@@ -292,14 +292,7 @@ void CabinPlayBackEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> 
 
 int32_t CabinPlayBackEngine::GetFormatByteSize(AudioSampleFormat format)
 {
-    switch (format) {
-        case AudioSampleFormat::SAMPLE_S16LE:
-            return sizeof(int16_t);
-        case AudioSampleFormat::SAMPLE_S24LE:
-            return 3u;
-        default:
-            return sizeof(int32_t);
-    }
+    return AudioStandard::GetFormatByteSize(static_cast<int32_t>(format));
 }
 
 int32_t CabinPlayBackEngine::InitSink(const AudioStreamInfo &clientStreamInfo)
@@ -359,7 +352,7 @@ int32_t CabinPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat format
     ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;
-    uformat_ = GetFormatByteSize(attr.format);
+    uformat_ = attr.format;
 
     dumpFileName_ = "3da_playback_engine_.pcm";
     AUDIO_DEBUG_LOG("dump file name: %{public}s", dumpFileName_.c_str());
