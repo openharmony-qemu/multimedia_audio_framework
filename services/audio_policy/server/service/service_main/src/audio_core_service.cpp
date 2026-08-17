@@ -1490,6 +1490,12 @@ int32_t AudioCoreService::StartClientForRecord(uint32_t sessionId,
     streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
     int32_t outputRet = FetchOutputDeviceAndRoute("StartClient");
     JUDGE_AND_WARNING_LOG(outputRet != SUCCESS, "FetchOutputDeviceAndRoute failed");
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    if ((curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP || curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_SCO) &&
+        deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
+            pipeManager_->QueryPipeIdBySessionId(streamDesc->sessionId_), deviceDesc->networkId_);
+    }
     return SUCCESS;
 }
 
