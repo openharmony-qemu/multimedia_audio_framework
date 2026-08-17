@@ -556,5 +556,26 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_015, TestSize.Level1)
     EXPECT_EQ(type, HDI_ID_TYPE_REMOTE_MULTICHANNEL);
 }
 
+/**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_016
+ * @tc.desc   : Test IdHandler GetRenderIdByDeviceClass with bus10_3da_out (3DA direct)
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_016, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t id = idHandler.GetRenderIdByDeviceClass("bus10_3da_out", HDI_ID_INFO_3DA);
+    EXPECT_NE(id, HDI_INVALID_ID);
+
+    uint32_t base = idHandler.ParseBase(id);
+    EXPECT_EQ(base, HDI_ID_BASE_RENDER);
+
+    uint32_t type = idHandler.ParseType(id);
+    EXPECT_EQ(type, HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT);
+
+    std::string info = idHandler.ParseInfo(id);
+    EXPECT_EQ(info, HDI_ID_INFO_3DA);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

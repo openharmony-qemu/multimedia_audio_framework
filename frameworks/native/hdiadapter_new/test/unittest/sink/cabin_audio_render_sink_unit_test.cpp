@@ -52,11 +52,14 @@ public:
 */
 HWTEST_F(CabinAudioRenderSinkUnitTest, FormatConversion_Test, TestSize.Level1)
 {
-    EXPECT_EQ(sink_->ConvertToHdiFormat(SAMPLE_S16LE), AUDIO_FORMAT_TYPE_3DA_16BIT);
-    EXPECT_EQ(sink_->ConvertToHdiFormat(SAMPLE_F32LE), AUDIO_FORMAT_TYPE_3DA_32BIT);
+    // AUDIO_FORMAT_TYPE_3DA_16BIT/3DA_32BIT 枚举待 HDI 侧 audio_types.h 合入，实现暂用数值占位
+    // (1023410177)；S24LE/F32LE(3DA_32BIT) 分支暂时屏蔽，非 S16LE 走 default 同样返回占位值。
+    const AudioFormat format3da16bit = static_cast<AudioFormat>(1023410177);
+    EXPECT_EQ(sink_->ConvertToHdiFormat(SAMPLE_S16LE), format3da16bit);
+    EXPECT_EQ(sink_->ConvertToHdiFormat(SAMPLE_F32LE), format3da16bit);
 
     EXPECT_EQ(sink_->PcmFormatToBit(SAMPLE_S16LE), PCM_16_BIT);
-    EXPECT_EQ(sink_->PcmFormatToBit(SAMPLE_F32LE), PCM_32_BIT);
+    EXPECT_EQ(sink_->PcmFormatToBit(SAMPLE_F32LE), PCM_16_BIT);
 }
 
 /**
