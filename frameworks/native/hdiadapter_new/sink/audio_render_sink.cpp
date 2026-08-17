@@ -331,6 +331,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t *>(&data), static_cast<uint32_t>(len),
         &writeLen);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
+    Trace traceRenderFrameAfter("AudioRenderSink::RenderFrameAfter");
     CheckJank();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
     if (stamp >= RENDER_FRAME_LIMIT) {
