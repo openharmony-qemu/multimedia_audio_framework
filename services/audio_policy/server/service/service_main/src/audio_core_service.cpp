@@ -1269,21 +1269,21 @@ void AudioCoreService::CheckScoState(std::shared_ptr<AudioStreamDescriptor> &str
     if (!forceUpdate) {
         CHECK_AND_RETURN(!audioSceneManager_.IsVoiceCallRelatedScene());
     }
+    if (audioDeviceManager_.HasSpecificDevicesConnected()) {
+        auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModemCopy();
+        auto inputStreamDescs = pipeManager_->GetAllInputStreamDescsCopy();
+        FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
 
-    auto outputStreamDescs = pipeManager_->GetAllOutputStreamDescsIncludingModem();
-    auto inputStreamDescs = pipeManager_->GetAllInputStreamDescs();
-    // Deep copy: streamDescs elements are replaced with new shared_ptr copies in FetchDevicesForDescs
-    FetchDevicesForDescs(outputStreamDescs, inputStreamDescs);
+        bool hasScoRecord = HasRunningScoNormalCapturerStream(inputStreamDescs);
+        bool hasScoPlay = HasRunningScoOutputStream(outputStreamDescs);
+        bool hasRecognition = HasRunningScoRecognitionCapturerStream(inputStreamDescs);
+        bool isScoSelected = hasScoPlay || hasScoRecord || hasRecognition ||
+            (audioSceneManager_.IsVoiceCallRelatedScene() &&
+                streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
+        auto scene = !isScoSelected ? AUDIO_SCENE_DEFAULT : audioSceneManager_.GetAudioScene(true);
 
-    bool hasScoRecord = HasRunningScoNormalCapturerStream(inputStreamDescs);
-    bool hasScoPlay = HasRunningScoOutputStream(outputStreamDescs);
-    bool hasRecognition = HasRunningScoRecognitionCapturerStream(inputStreamDescs);
-    bool isScoSelected = hasScoPlay || hasScoRecord || hasRecognition ||
-        (audioSceneManager_.IsVoiceCallRelatedScene() &&
-            streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
-    auto scene = !isScoSelected ? AUDIO_SCENE_DEFAULT : audioSceneManager_.GetAudioScene(true);
-
-    Bluetooth::AudioHfpManager::UpdateAudioScene(scene, hasRecognition, isScoSelected);
+        Bluetooth::AudioHfpManager::UpdateAudioScene(scene, hasRecognition, isScoSelected);
+    }
 
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     if (streamDesc->audioMode_ == AUDIO_MODE_RECORD && streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {

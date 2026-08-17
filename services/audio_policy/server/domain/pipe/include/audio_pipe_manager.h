@@ -123,8 +123,10 @@ public:
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsIncludingModem();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsIncludingModemCopy();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsInfo();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescsCopy();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByIoHandle(AudioIOHandle id);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescById(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescByIdInner(uint32_t sessionId);
