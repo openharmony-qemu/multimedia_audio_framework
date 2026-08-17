@@ -5592,5 +5592,66 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateSinkLatencyForOutputDevices_QueryFai
     }
 }
 
+/**
+ * @tc.name  : Test FetchOutputDeviceAndRoute with HasTransferCallOrRingtoneStream.
+ * @tc.number: FetchOutputDeviceAndRoute_HasTransferCallOrRingtoneStream_001
+ * @tc.desc  : When HasTransferCallOrRingtoneStream returns true, early return path is not taken.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, FetchOutputDeviceAndRoute_HasTransferCallOrRingtoneStream_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+    ASSERT_NE(audioCoreService->pipeManager_, nullptr);
+
+    audioCoreService->pipeManager_->curPipeList_.clear();
+    audioCoreService->pipeManager_->modemCommunicationIdMap_.clear();
+    audioCoreService->pipeManager_->ringAndVoipDescMap_.clear();
+    audioCoreService->pipeManager_->transferCallOrRingtoneCount_.store(1);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    audioCoreService->pipeManager_->modemCommunicationIdMap_[100001] = streamDesc;
+
+    std::string caller = "test";
+    AudioStreamDeviceChangeReasonExt reason;
+
+    EXPECT_TRUE(audioCoreService->pipeManager_->HasTransferCallOrRingtoneStream());
+
+    auto ret = audioCoreService->FetchOutputDeviceAndRoute(caller, reason);
+    EXPECT_NE(ret, ERR_UNKNOWN);
+
+    audioCoreService->pipeManager_->modemCommunicationIdMap_.clear();
+    audioCoreService->pipeManager_->transferCallOrRingtoneCount_.store(0);
+}
+
+/**
+ * @tc.name  : Test FetchOutputDeviceAndRoute early return when no streams.
+ * @tc.number: FetchOutputDeviceAndRoute_HasTransferCallOrRingtoneStream_002
+ * @tc.desc  : When HasTransferCallOrRingtoneStream returns false and all other checks are also false, early return.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, FetchOutputDeviceAndRoute_HasTransferCallOrRingtoneStream_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+    ASSERT_NE(audioCoreService->pipeManager_, nullptr);
+
+    audioCoreService->pipeManager_->curPipeList_.clear();
+    audioCoreService->pipeManager_->modemCommunicationIdMap_.clear();
+    audioCoreService->pipeManager_->ringAndVoipDescMap_.clear();
+    audioCoreService->pipeManager_->transferCallOrRingtoneCount_.store(0);
+
+    std::string caller = "test";
+    AudioStreamDeviceChangeReasonExt reason;
+
+    EXPECT_FALSE(audioCoreService->pipeManager_->HasTransferCallOrRingtoneStream());
+    EXPECT_FALSE(audioCoreService->pipeManager_->IsModemCommunicationIdExist());
+
+    auto ret = audioCoreService->FetchOutputDeviceAndRoute(caller, reason);
+    EXPECT_NE(ret, ERR_UNKNOWN);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

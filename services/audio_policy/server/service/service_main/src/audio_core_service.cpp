@@ -2763,7 +2763,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
         AudioRouterInfra::GetInstance().AppendSkippedDeviceTypes(audioDeviceManager_.GetConnDevicesStr()).c_str());
 
     if (outputStreamDescs.empty() && !pipeManager_->IsModemCommunicationIdExist() &&
-        !CheckRingAndVoipStreamRunning()) {
+        !CheckRingAndVoipStreamRunning() && !pipeManager_->HasTransferCallOrRingtoneStream()) {
         audioActiveDevice_.UpdateStreamDeviceMapForOutput("NoStreamInPipe");
         audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
         CheckAndUpdateHearingAidCall(DEVICE_TYPE_NONE);

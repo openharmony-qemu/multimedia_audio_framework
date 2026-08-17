@@ -447,7 +447,12 @@ void AudioPipeManager::RemoveClient(uint32_t sessionId)
     AUDIO_INFO_LOG("Cur pipe list size %{public}zu, sessionId %{public}u", curPipeList_.size(), sessionId);
     for (auto pipeInfo : curPipeList_) {
         pipeInfo->streamDescriptors_.erase(std::remove_if(pipeInfo->streamDescriptors_.begin(),
-            pipeInfo->streamDescriptors_.end(), [sessionId](std::shared_ptr<AudioStreamDescriptor> streamDesc) {
+            pipeInfo->streamDescriptors_.end(), [sessionId, this](std::shared_ptr<AudioStreamDescriptor> streamDesc) {
+                if (streamDesc != nullptr && streamDesc->sessionId_ == sessionId &&
+                    streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE &&
+                    transferCallOrRingtoneCount_.load() > 0) {
+                    transferCallOrRingtoneCount_.fetch_sub(1);
+                }
                 return streamDesc->sessionId_ == sessionId;
             }), pipeInfo->streamDescriptors_.end());
     }
@@ -461,6 +466,9 @@ void AudioPipeManager::AddStreamToPipe(std::shared_ptr<AudioPipeInfo> pipeInfo,
     pipeInfo->streamDescriptors_.push_back(streamDesc);
     pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
     pipeInfo->pipeAction_ = (pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD) ? PIPE_ACTION_RELOAD : action;
+    if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
+        transferCallOrRingtoneCount_.fetch_add(1);
+    }
 }
 
 void AudioPipeManager::ClearPipeStreams(std::shared_ptr<AudioPipeInfo> pipeInfo)
@@ -980,12 +988,22 @@ void AudioPipeManager::AddModemCommunicationId(uint32_t sessionId, std::shared_p
         AUDIO_ERR_LOG("Invalid id %{public}u", sessionId);
     }
     modemCommunicationIdMap_[sessionId] = streamDesc;
+    if (streamDesc != nullptr && streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) {
+        transferCallOrRingtoneCount_.fetch_add(1);
+    }
 }
 
 void AudioPipeManager::RemoveModemCommunicationId(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     if (modemCommunicationIdMap_.find(sessionId) != modemCommunicationIdMap_.end()) {
+        if (modemCommunicationIdMap_[sessionId] != nullptr &&
+            modemCommunicationIdMap_[sessionId]->rendererInfo_.streamUsage ==
+            STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) {
+            if (transferCallOrRingtoneCount_.load() > 0) {
+                transferCallOrRingtoneCount_.fetch_sub(1);
+            }
+        }
         modemCommunicationIdMap_.erase(sessionId);
         AUDIO_INFO_LOG("RemoveModemCommunicationId %{public}u success", sessionId);
     } else {
@@ -1064,6 +1082,31 @@ bool AudioPipeManager::IsTransferCallOrRingtoneScene()
             }
         }
     }
+    return false;
+}
+
+bool AudioPipeManager::HasTransferCallOrRingtoneStream()
+{
+    if (transferCallOrRingtoneCount_.load() <= 0) {
+        return false;
+    }
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &entry : modemCommunicationIdMap_) {
+        if (entry.second != nullptr &&
+            entry.second->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_COMMUNICATION) {
+            return true;
+        }
+    }
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            if (desc != nullptr &&
+                desc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
+                return true;
+            }
+        }
+    }
+    transferCallOrRingtoneCount_.store(0);
     return false;
 }
 

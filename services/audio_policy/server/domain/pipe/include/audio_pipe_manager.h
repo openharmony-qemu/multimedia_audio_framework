@@ -155,6 +155,7 @@ public:
     void UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
     
     bool IsTransferCallOrRingtoneScene();
+    bool HasTransferCallOrRingtoneStream();
     void UpdateRingAndVoipStreamStatus(const AudioScene audioScene);
     void UpdateRingAndVoipStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &ringDeviceDescs,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &voipDeviceDescs);
@@ -246,6 +247,7 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_{};
     std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_{};
     std::shared_mutex pipeListLock_;
+    std::atomic<int32_t> transferCallOrRingtoneCount_{0};
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> switchStreamMap_{};
     mutable std::shared_mutex switchStreamMapLock_;
     std::set<uint32_t> focusStandbySet_;
