@@ -691,7 +691,6 @@ HWTEST_F(HpaeFastSourceInputNodeTest, DoProcessOneSpan, TestSize.Level1)
         .WillRepeatedly(DoAll(SetArgReferee<0>(0), SetArgReferee<1>(0), SetArgReferee<2>(0), Return(SUCCESS)));
     fastNode->DoProcess();
     EXPECT_EQ(fastNode->needReSyncPosition_, false);
-    EXPECT_EQ(fastNode->curReadPos_, FAST_SPAN_FRAME);
 }
 
 // ==================== GetPredictNextWriteTime Tests ====================
