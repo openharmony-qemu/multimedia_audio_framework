@@ -279,10 +279,9 @@ private:
     int32_t GetCurrentNearlinkAbsVolume();
     int32_t GetNearlinkKaraokeVolume();
     NearlinkKaraokeVolumeMode GetNearlinkKaraokeMode();
-    int32_t EnableNearlinkKaraokeVolume(const std::string &macAddr);
-    int32_t DisableNearlinkKaraokeVolume(const std::string &macAddr);
+    int32_t EnableNearlinkKaraokeVolume();
+    int32_t DisableNearlinkKaraokeVolume();
     int32_t RefreshKaraokePipeVolume();
-    int32_t ApplyKaraokeAbsVolume(const std::string &macAddr, int32_t volumeLevel);
     bool GetSpecialDeviceVolumeDegree(AudioStreamType streamType, AudioVolumeType volumeType,
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t &volumeDegree);
 
