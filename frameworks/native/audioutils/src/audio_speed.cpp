@@ -147,8 +147,9 @@ int32_t AudioSpeed::ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
     int32_t res = sonicWriteUnsignedCharToStream(sonicStream_, static_cast<unsigned char*>(buffer), numSamples);
     CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write unsigned char to stream failed.");
 
+    int32_t maxSamples = maxSpeedBufferSize_ / static_cast<int32_t>(formatSize_ * channels_);
     int32_t outSamples = sonicReadUnsignedCharFromStream(sonicStream_,
-        static_cast<unsigned char*>(outBuffer.get()), maxSpeedBufferSize_);
+        static_cast<unsigned char*>(outBuffer.get()), maxSamples);
     CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
 
     outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
@@ -163,8 +164,9 @@ int32_t AudioSpeed::ChangeSpeedFor16Bit(uint8_t *buffer, int32_t bufferSize,
     int32_t res = sonicWriteShortToStream(sonicStream_, reinterpret_cast<short*>(buffer), numSamples);
     CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write short to stream failed.");
 
+    int32_t maxSamples = maxSpeedBufferSize_ / static_cast<int32_t>(formatSize_ * channels_);
     int32_t outSamples = sonicReadShortFromStream(sonicStream_, reinterpret_cast<short*>(outBuffer.get()),
-        maxSpeedBufferSize_);
+        maxSamples);
     CHECK_AND_RETURN_RET_LOG(outSamples != 0, bufferSize, "sonic stream is not full continue to write.");
 
     outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
@@ -238,7 +240,8 @@ int32_t AudioSpeed::ChangeSpeedForFloat(float *buffer, int32_t bufferSize,
     int32_t numSamples = bufferSize / static_cast<int32_t>(formatSize_ * channels_);
     int32_t res = static_cast<int32_t>(sonicWriteFloatToStream(sonicStream_, buffer, numSamples));
     CHECK_AND_RETURN_RET_LOG(res == 1, 0, "sonic write float to stream failed.");
-    int32_t outSamples = sonicReadFloatFromStream(sonicStream_, outBuffer, maxSpeedBufferSize_);
+    int32_t maxSamples = maxSpeedBufferSize_ / static_cast<int32_t>(channels_ * formatSize_);
+    int32_t outSamples = sonicReadFloatFromStream(sonicStream_, outBuffer, maxSamples);
     outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
     return bufferSize;
 }

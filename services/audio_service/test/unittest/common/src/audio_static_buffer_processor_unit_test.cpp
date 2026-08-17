@@ -156,17 +156,30 @@ HWTEST_F(AudioStaticBufferProcessorUnitTest, SaveProcessBuffer_001, testing::ext
 }
 
 /**
- * @tc.name  : Test ProcessBufferSpeed with invalid speed
- * @tc.number: AudioStaticBufferProcessor_ProcessBufferSpeed_003
- * @tc.desc  : Test ProcessBufferSpeed with invalid speed (0).
+ * @tc.name  : Test ProcessBufferSpeed factor calculation
+ * @tc.number: AudioStaticBufferProcessor_ProcessBufferSpeed_Factor
+ * @tc.desc  : Test dynamic speedBufferFactor calculation for various speed values.
  */
-HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferSpeed_003, testing::ext::TestSize.Level1)
+HWTEST_F(AudioStaticBufferProcessorUnitTest, ProcessBufferSpeed_Factor, testing::ext::TestSize.Level1)
 {
     ASSERT_NE(processor_, nullptr);
-    // Test with speed 0 (should still call ChangeSpeedFunc)
-    int32_t ret = processor_->ProcessBufferSpeed(0.0f);
-    // Removed loose assertion - just call the method
-    (void)ret;
+    int32_t inputSize = static_cast<int32_t>(sharedBuffer_->GetDataSize());
+
+    processor_->ProcessBufferSpeed(0.0f);
+    EXPECT_EQ(processor_->audioSpeed_->maxSpeedBufferSize_, inputSize * 1);
+
+    processor_->ProcessBufferSpeed(2.0f);
+    EXPECT_EQ(processor_->audioSpeed_->maxSpeedBufferSize_, inputSize * 1);
+
+    processor_->ProcessBufferSpeed(0.5f);
+    EXPECT_EQ(processor_->audioSpeed_->maxSpeedBufferSize_, inputSize * 3);
+
+    processor_->ProcessBufferSpeed(0.3f);
+    EXPECT_EQ(processor_->audioSpeed_->maxSpeedBufferSize_, inputSize * 5);
+
+    constexpr float SPEED_SLOW_1_8 = 0.125f;
+    processor_->ProcessBufferSpeed(SPEED_SLOW_1_8);
+    EXPECT_EQ(processor_->audioSpeed_->maxSpeedBufferSize_, inputSize * 9);
 }
 
 /**

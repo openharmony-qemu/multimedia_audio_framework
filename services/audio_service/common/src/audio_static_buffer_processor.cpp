@@ -18,6 +18,7 @@
 
 #include "audio_static_buffer_processor.h"
 
+#include <cmath>
 #include "audio_errors.h"
 #include "audio_log_utils.h"
 #include "volume_tools.h"
@@ -72,9 +73,14 @@ int32_t AudioStaticBufferProcessor::ProcessBufferSpeed(float speed, float sonicP
     uint8_t *inputBuffer = sharedBuffer_->GetDataBase();
     int32_t inputSize = static_cast<int32_t>(sharedBuffer_->GetDataSize());
     
-    size_t estimatedSize = static_cast<size_t>(inputSize) * MAX_SPEED_BUFFER_FACTOR;
+    int32_t speedBufferFactor = 1;
+    if (speed > 0.0f && speed <= 1.0f) {
+        speedBufferFactor = static_cast<int32_t>(std::ceil(1.0f / speed)) + 1;
+    }
+    size_t estimatedSize = static_cast<size_t>(inputSize) * static_cast<size_t>(speedBufferFactor);
     auto newTempBuffer = std::make_unique<uint8_t[]>(estimatedSize);
     
+    audioSpeed_->SetMaxSpeedBufferSize(static_cast<int32_t>(estimatedSize));
     audioSpeed_->SetSpeed(speed);
     audioSpeed_->SetPitch(sonicPitch);
     

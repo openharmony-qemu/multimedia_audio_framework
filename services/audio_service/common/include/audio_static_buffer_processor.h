@@ -25,7 +25,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static const int32_t MAX_SPEED_BUFFER_FACTOR = 3;
 static constexpr float PITCH_NORMAL = 1.0f;
 
 class AudioStaticBufferProcessor {
