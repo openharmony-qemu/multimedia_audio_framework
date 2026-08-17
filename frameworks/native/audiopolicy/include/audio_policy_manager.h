@@ -632,7 +632,8 @@ public:
 
     void SetZoneDeviceVisible(bool visible);
 
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+        int32_t zoneId, bool filterRemote = false);
 
     int32_t GetCurrentRendererChangeInfosForZone(int32_t zoneId,
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);

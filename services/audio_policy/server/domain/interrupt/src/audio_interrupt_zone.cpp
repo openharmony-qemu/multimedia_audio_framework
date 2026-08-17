@@ -239,7 +239,7 @@ void AudioInterruptZoneManager::ForceStopAllAudioFocusInZone(std::shared_ptr<Aud
 }
 
 int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zoneId,
-    const AudioFocusList &interrupts)
+    const AudioFocusList &interrupts, const std::vector<uint32_t> &bypassSessionIds)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
     CHECK_AND_RETURN_RET_LOG(CheckAudioInterruptZonePermission(), ERR_INVALID_PARAM,
@@ -254,6 +254,8 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
     auto oldFocusList = tempMap[zoneId]->audioFocusInfoList;
     AudioFocusList newFocusList = interrupts;
     for (auto itOld = oldFocusList.begin(); itOld != oldFocusList.end(); itOld++) {
+        CHECK_AND_CONTINUE(std::find(bypassSessionIds.begin(), bypassSessionIds.end(),
+            itOld->first.streamId) == bypassSessionIds.end());
         auto isPresent = [itOld](const std::pair<AudioInterrupt, AudioFocuState> &item) {
             return item.first.streamId == itOld->first.streamId;
         };

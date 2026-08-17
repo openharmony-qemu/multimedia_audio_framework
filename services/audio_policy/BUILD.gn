@@ -302,6 +302,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/zone/src/audio_zone_client_manager.cpp",
     "server/domain/zone/src/audio_zone_interrupt_reporter.cpp",
     "server/domain/zone/src/audio_zone_service.cpp",
+    "server/domain/zone/src/audio_zone_utils.cpp",
     "server/domain/pipe/src/audio_core_config_manager.cpp",
     "server/service/service_main/src/audio_core_service.cpp",
     "server/service/service_main/src/audio_core_service_entry.cpp",

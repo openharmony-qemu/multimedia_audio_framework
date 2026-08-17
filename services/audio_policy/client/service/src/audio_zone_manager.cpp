@@ -91,7 +91,7 @@ public:
     int32_t UnRegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType) override;
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
-        int32_t zoneId) override;
+        int32_t zoneId, bool filterRemote) override;
 
     int32_t GetCurrentRendererChangeInfosForZone(int32_t zoneId,
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos) override;
@@ -454,12 +454,12 @@ int32_t AudioZoneManagerInner::UnRegisterSystemVolumeProxy(int32_t zoneId, Devic
 }
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetAudioInterruptForZone(
-    int32_t zoneId)
+    int32_t zoneId, bool filterRemote)
 {
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, {}, "zoneId is invalid");
 
-    return AudioPolicyManager::GetInstance().GetAudioInterruptForZone(zoneId);
+    return AudioPolicyManager::GetInstance().GetAudioInterruptForZone(zoneId, filterRemote);
 }
 
 int32_t AudioZoneManagerInner::GetCurrentRendererChangeInfosForZone(int32_t zoneId,

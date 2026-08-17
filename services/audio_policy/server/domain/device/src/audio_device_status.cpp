@@ -1924,7 +1924,8 @@ void AudioDeviceStatus::StopStreamWhenDeviceDisconnect(const std::string &networ
     std::vector<std::shared_ptr<AudioStreamDescriptor>> allStreamDesc =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
     for (const auto &iter : allStreamDesc) {
-        CHECK_AND_CONTINUE(iter != nullptr && (iter->GetFirstNewDeviceDesc()->networkId_ == networkId));
+        CHECK_AND_CONTINUE(iter != nullptr && iter->GetFirstNewDeviceDesc() != nullptr &&
+            (iter->GetFirstNewDeviceDesc()->networkId_ == networkId));
         CHECK_AND_CONTINUE(std::find(usagesToStop.begin(), usagesToStop.end(), iter->GetRenderUsage()) !=
             usagesToStop.end());
         CHECK_AND_CONTINUE(std::find(uidsToStop.begin(), uidsToStop.end(), iter->appInfo_.appUid) != uidsToStop.end());
