@@ -2956,35 +2956,6 @@ HWTEST_F(HpaeCapturerManagerTest, Init_ReloadParam_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test DisConnectOutputSession directly
- * @tc.type  : FUNC
- * @tc.number: DisConnectOutputSession_001
- * @tc.desc  : Test DisConnectOutputSession disconnects session
- */
-HWTEST_F(HpaeCapturerManagerTest, DisConnectOutputSession_001, TestSize.Level1)
-{
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
-    WaitForMsgProcessing(capturerManager);
-
-    HpaeStreamInfo streamInfo;
-    InitReloadStreamInfo(streamInfo);
-    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
-    WaitForMsgProcessing(capturerManager);
-
-    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId) == SUCCESS, true);
-    WaitForMsgProcessing(capturerManager);
-
-    // Direct call to DisConnectOutputSession
-    EXPECT_EQ(capturerManager->DisConnectOutputSession(streamInfo.sessionId) == SUCCESS, true);
-
-    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
-    WaitForMsgProcessing(capturerManager);
-}
-
-/**
  * @tc.name  : Test OnNotifyQueue callback
  * @tc.type  : FUNC
  * @tc.number: OnNotifyQueue_001

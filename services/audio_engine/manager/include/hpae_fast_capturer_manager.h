@@ -21,7 +21,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "hpae_audio_format_converter_cluster.h"
+#include "hpae_audio_format_converter_node.h"
 #include "hpae_fast_source_input_node.h"
 #include "hpae_no_lock_queue.h"
 #include "hpae_signal_process_thread.h"
@@ -116,9 +116,9 @@ private:
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::unordered_map<uint32_t, HpaeCapturerSessionInfo> sessionNodeMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSourceOutputNode>> sourceOutputNodeMap_;
-    std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterCluster>> converterNodeMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> converterNodeMap_;
     std::unordered_map<std::shared_ptr<OutputNode<HpaePcmBuffer*>>,
-        std::shared_ptr<HpaeAudioFormatConverterCluster>> injectorFmtConverterNodeMap_;
+        std::shared_ptr<HpaeAudioFormatConverterNode>> injectorFmtConverterNodeMap_;
     std::shared_ptr<HpaeFastSourceInputNode> sourceInputNode_ = nullptr;
     std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;
 

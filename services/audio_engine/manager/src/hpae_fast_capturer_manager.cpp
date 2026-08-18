@@ -73,7 +73,7 @@ int32_t HpaeFastCapturerManager::CreateSessionNodes(const HpaeStreamInfo &stream
     sourceOutputNodeMap_[streamInfo.sessionId] = sourceOutputNode;
 
     HpaeNodeInfo sourceNodeInfo = sourceInputNode_->GetNodeInfo();
-    auto converter = std::make_shared<HpaeAudioFormatConverterCluster>(sourceNodeInfo, nodeInfo);
+    auto converter = std::make_shared<HpaeAudioFormatConverterNode>(sourceNodeInfo, nodeInfo);
     converter->SetSourceNode(true);
     converterNodeMap_[streamInfo.sessionId] = converter;
     return SUCCESS;
@@ -604,7 +604,7 @@ void HpaeFastCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &m
     if (!SafeGetMap(converterNodeMap_, sessionId) && sourceInputNode_ != nullptr) {
         HpaeNodeInfo sourceNodeInfo = sourceInputNode_->GetNodeInfo();
         HpaeNodeInfo outputNodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
-        auto converter = std::make_shared<HpaeAudioFormatConverterCluster>(sourceNodeInfo, outputNodeInfo);
+        auto converter = std::make_shared<HpaeAudioFormatConverterNode>(sourceNodeInfo, outputNodeInfo);
         converter->SetSourceNode(true);
         converterNodeMap_[sessionId] = converter;
     }
@@ -711,7 +711,7 @@ int32_t HpaeFastCapturerManager::AddCaptureInjector(
         Trace trace("HpaeFastCapturerManager::AddCaptureInjector");
         AUDIO_INFO_LOG("add capture injector");
         CHECK_AND_RETURN_LOG(sinkOutputNode != nullptr, "sinkOutputNode is nullptr");
-        auto converter = std::make_shared<HpaeAudioFormatConverterCluster>(
+        auto converter = std::make_shared<HpaeAudioFormatConverterNode>(
             sinkOutputNode->GetNodeInfo(), mixerNode_->GetNodeInfo());
         injectorFmtConverterNodeMap_[sinkOutputNode] = converter;
         mixerNode_->Connect(converter);
@@ -752,7 +752,7 @@ int32_t HpaeFastCapturerManager::AddCaptureInjectorByTargetStream(
 
         // Dual-upstream: keep original converter/mixer upstream, add injector converter as the
         // second upstream, tagged INJECTOR so GetAndValidateOutput picks it.
-        auto converter = std::make_shared<HpaeAudioFormatConverterCluster>(
+        auto converter = std::make_shared<HpaeAudioFormatConverterNode>(
             sinkOutputNode->GetNodeInfo(), sourceOutputNode->GetNodeInfo());
         converter->SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_INJECTOR);
         sourceOutputNode->Connect(converter);
