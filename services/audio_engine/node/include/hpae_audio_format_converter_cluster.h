@@ -57,6 +57,10 @@ public:
     uint64_t GetLatency(uint32_t sessionId = 0);
 
 private:
+    // --- Refactoring helpers (sub-50-line extraction targets) ---
+    void BuildFrontExtractChain(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &nodeInfo, uint32_t preChannels);
+    void BuildZeroPadChain(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &nodeInfo, uint32_t totalChannels);
+
     std::shared_ptr<HpaeMicInFrontExtractNode> extractNode_ = nullptr;
     std::shared_ptr<HpaeAudioFormatConverterNode> converterNode_ = nullptr;
     std::shared_ptr<HpaeMicInZeroPadNode> zeroPadNode_ = nullptr;

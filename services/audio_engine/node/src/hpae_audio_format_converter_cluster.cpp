@@ -25,9 +25,10 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 // For a camcorder split-layout source (main + micIn), compute the effective main channel count
-// the conversion chain operates on:
-//  - Scenario B: HAL has a split layout (micInChannels>0) but the app only wants main -> main = pre - halMicIn.
-//  - Scenario C: app wants micIn (appMicInChannelCount>0) but the HAL has none (micInChannels==0) -> main = total - appMicIn.
+//  - Scenario B: HAL has a split layout (micInChannels>0) but the app only wants main
+//    -> main = pre - halMicIn.
+//  - Scenario C: app wants micIn (appMicInChannelCount>0) but the HAL has none
+//    (micInChannels==0) -> main = total - appMicIn.
 // Returns preNodeInfo.channels otherwise (passthrough / full-channel path).
 uint32_t CalcEffectiveInChannels(const HpaeNodeInfo &preNodeInfo, const HpaeNodeInfo &nodeInfo)
 {
@@ -45,6 +46,17 @@ uint32_t CalcEffectiveInChannels(const HpaeNodeInfo &preNodeInfo, const HpaeNode
         return totalChannels - appMicIn;
     }
     return preChannels;                                                       // A / D
+}
+
+// sanitized info for the inner chain: main width + micIn fields cleared, so the vanilla
+// converter (and the zero-pad node's preInfo) never re-engage mode detection
+HpaeNodeInfo SanitizedMainInfo(const HpaeNodeInfo &nodeInfo, uint32_t mainCh)
+{
+    HpaeNodeInfo sanitized = nodeInfo;
+    sanitized.channels = static_cast<AudioChannel>(mainCh);
+    sanitized.micInChannels = CHANNEL_UNKNOW;
+    sanitized.appMicInChannelCount = 0;
+    return sanitized;
 }
 } // namespace
 
@@ -67,46 +79,53 @@ HpaeAudioFormatConverterCluster::HpaeAudioFormatConverterCluster(HpaeNodeInfo pr
         (halMicIn == 0) && (appMicIn > 0) && (appMicIn < totalChannels);      // Scenario C
 
     if (frontExtract) {
-        uint32_t mainCh = CalcEffectiveInChannels(preNodeInfo, nodeInfo);
-        HpaeNodeInfo mainInfo = preNodeInfo;   // extract output: pre fields at main width
-        mainInfo.channels = static_cast<AudioChannel>(mainCh);
-        extractNode_ = std::make_shared<HpaeMicInFrontExtractNode>(preNodeInfo, mainInfo);
-        // sanitize for the inner converter: app total == main here, micIn fields cleared
-        HpaeNodeInfo sanitized = nodeInfo;
-        sanitized.channels = static_cast<AudioChannel>(mainCh);
-        sanitized.micInChannels = CHANNEL_UNKNOW;
-        sanitized.appMicInChannelCount = 0;
-        converterNode_ = std::make_shared<HpaeAudioFormatConverterNode>(mainInfo, sanitized);
-        // ConnectWithInfo (not plain Connect) so the DFX edge is reported pre->self (extract as
-        // parent); its side effect tags converterOutput_ with sanitized.sourceBufferType, which
-        // is the app mic/ec tag -- never INJECTOR, the only value consumers distinguish.
-        converterNode_->ConnectWithInfo(extractNode_, sanitized); // extract is the converter's upstream
-        head_ = extractNode_;
-        tail_ = converterNode_;
-        AUDIO_INFO_LOG("scenario B chain: extract(%{public}u->%{public}u ch) -> converter",
-            preChannels, mainCh);
+        BuildFrontExtractChain(preNodeInfo, nodeInfo, preChannels);
     } else if (zeroPad) {
-        uint32_t mainCh = CalcEffectiveInChannels(preNodeInfo, nodeInfo);
-        // mainInfo lives at the APP output rate/frameLen (the converter already resampled
-        // when the zero-pad node sees the data)
-        HpaeNodeInfo mainInfo = nodeInfo;
-        mainInfo.channels = static_cast<AudioChannel>(mainCh);
-        mainInfo.micInChannels = CHANNEL_UNKNOW;
-        mainInfo.appMicInChannelCount = 0;
-        converterNode_ = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, mainInfo);
-        zeroPadNode_ = std::make_shared<HpaeMicInZeroPadNode>(mainInfo, nodeInfo);
-        // ConnectWithInfo (not plain Connect) so the DFX edge is reported pre->self (converter
-        // as parent); it also tags zeroPadOutput_ with nodeInfo.sourceBufferType (app mic/ec).
-        zeroPadNode_->ConnectWithInfo(converterNode_, nodeInfo); // converter is the zero-pad node's upstream
-        head_ = converterNode_;
-        tail_ = zeroPadNode_;
-        AUDIO_INFO_LOG("scenario C chain: converter -> zero-pad(%{public}u->%{public}u ch)",
-            mainCh, totalChannels);
+        BuildZeroPadChain(preNodeInfo, nodeInfo, totalChannels);
     } else {
         converterNode_ = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, nodeInfo);
         head_ = converterNode_;
         tail_ = converterNode_;
     }
+}
+
+// Scenario B (HAL split layout, app wants main only): [MicInFrontExtract] -> [Converter]
+void HpaeAudioFormatConverterCluster::BuildFrontExtractChain(HpaeNodeInfo &preNodeInfo,
+    HpaeNodeInfo &nodeInfo, uint32_t preChannels)
+{
+    uint32_t mainCh = CalcEffectiveInChannels(preNodeInfo, nodeInfo);
+    HpaeNodeInfo mainInfo = preNodeInfo;   // extract output: pre fields at main width
+    mainInfo.channels = static_cast<AudioChannel>(mainCh);
+    extractNode_ = std::make_shared<HpaeMicInFrontExtractNode>(preNodeInfo, mainInfo);
+    HpaeNodeInfo sanitized = SanitizedMainInfo(nodeInfo, mainCh);
+    converterNode_ = std::make_shared<HpaeAudioFormatConverterNode>(mainInfo, sanitized);
+    // ConnectWithInfo (not plain Connect) so the DFX edge is reported pre->self (extract as
+    // parent); its side effect tags converterOutput_ with sanitized.sourceBufferType, which
+    // is the app mic/ec tag -- never INJECTOR, the only value consumers distinguish.
+    converterNode_->ConnectWithInfo(extractNode_, sanitized); // extract is the converter's upstream
+    head_ = extractNode_;
+    tail_ = converterNode_;
+    AUDIO_INFO_LOG("scenario B chain: extract(%{public}u->%{public}u ch) -> converter",
+        preChannels, mainCh);
+}
+
+// Scenario C (app wants micIn, HAL has none): [Converter] -> [MicInZeroPad]
+void HpaeAudioFormatConverterCluster::BuildZeroPadChain(HpaeNodeInfo &preNodeInfo,
+    HpaeNodeInfo &nodeInfo, uint32_t totalChannels)
+{
+    uint32_t mainCh = CalcEffectiveInChannels(preNodeInfo, nodeInfo);
+    // mainInfo lives at the APP output rate/frameLen (the converter already resampled
+    // when the zero-pad node sees the data)
+    HpaeNodeInfo mainInfo = SanitizedMainInfo(nodeInfo, mainCh);
+    converterNode_ = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, mainInfo);
+    zeroPadNode_ = std::make_shared<HpaeMicInZeroPadNode>(mainInfo, nodeInfo);
+    // ConnectWithInfo (not plain Connect) so the DFX edge is reported pre->self (converter
+    // as parent); it also tags zeroPadOutput_ with nodeInfo.sourceBufferType (app mic/ec).
+    zeroPadNode_->ConnectWithInfo(converterNode_, nodeInfo); // converter is the zero-pad node's upstream
+    head_ = converterNode_;
+    tail_ = zeroPadNode_;
+    AUDIO_INFO_LOG("scenario C chain: converter -> zero-pad(%{public}u->%{public}u ch)",
+        mainCh, totalChannels);
 }
 
 HpaeAudioFormatConverterCluster::~HpaeAudioFormatConverterCluster()

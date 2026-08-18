@@ -63,6 +63,27 @@ HpaePcmBuffer *HpaeMicInZeroPadNode::SignalProcess(const std::vector<HpaePcmBuff
         return PrepareSilenceBuffer(silenceData_);
     }
     HpaePcmBuffer *input = inputs[0];
+    uint32_t mainCh = input->GetChannelCount();
+    uint32_t totalCh = zeroPadOutput_.GetChannelCount();
+    if (!CheckUpstreamFormat(input) || !WritePartitionedOutput(input, mainCh, totalCh)) {
+        return PrepareSilenceBuffer(silenceData_);
+    }
+    zeroPadOutput_.SetBufferState(input->GetBufferState());
+    return &zeroPadOutput_;
+}
+
+// report a hard format error via the shared capture-path DFX idiom (no rate limiting)
+void HpaeMicInZeroPadNode::ReportInvalidParamEvent(const std::string &reason)
+{
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::QUERY, ERR_INVALID_PARAM), reason, false);
+}
+
+// guard the frozen-width invariants: warn on mid-stream upstream reconfig, hard-fail on
+// width overrun or frameLen mismatch (the cluster builds them equal at construction)
+bool HpaeMicInZeroPadNode::CheckUpstreamFormat(HpaePcmBuffer *input)
+{
     if (lastUpstreamChannels_ != 0 && input->GetChannelCount() != lastUpstreamChannels_) {
         AUDIO_WARNING_LOG("NodeId %{public}d: upstream channels changed %{public}u -> %{public}u, "
             "frozen total width %{public}u may be stale, node rebuild required",
@@ -76,29 +97,29 @@ HpaePcmBuffer *HpaeMicInZeroPadNode::SignalProcess(const std::vector<HpaePcmBuff
     if (mainCh > totalCh) {
         AUDIO_ERR_LOG("NodeId %{public}d: upstream %{public}u ch > total %{public}u ch, output silence",
             GetNodeId(), mainCh, totalCh);
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::QUERY, ERR_INVALID_PARAM), "upstream channels > total channels", false);
-        return PrepareSilenceBuffer(silenceData_);
+        ReportInvalidParamEvent("upstream channels > total channels");
+        return false;
     }
     if (input->GetFrameLen() != zeroPadOutput_.GetFrameLen()) {
         AUDIO_ERR_LOG("NodeId %{public}d: input frameLen %{public}u != node frameLen %{public}u, output silence",
             GetNodeId(), input->GetFrameLen(), zeroPadOutput_.GetFrameLen());
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::QUERY, ERR_INVALID_PARAM), "frameLen mismatch", false);
-        return PrepareSilenceBuffer(silenceData_);
+        ReportInvalidParamEvent("frameLen mismatch");
+        return false;
     }
+    return true;
+}
+
+// write the partitioned non-interleaved output: [main block copy][contiguous micIn zero fill]
+bool HpaeMicInZeroPadNode::WritePartitionedOutput(HpaePcmBuffer *input, uint32_t mainCh, uint32_t totalCh)
+{
     uint32_t frames = input->GetFrameLen();
     size_t mainSamples = static_cast<size_t>(frames) * mainCh;
     errno_t ret = memcpy_s(zeroPadOutput_.GetPcmDataBuffer(), zeroPadOutput_.Size(),
         input->GetPcmDataBuffer(), mainSamples * sizeof(float));
     if (ret != EOK) {
         AUDIO_ERR_LOG("NodeId %{public}d: main block memcpy_s failed", GetNodeId());
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::QUERY, ERR_INVALID_PARAM), "main block memcpy_s failed", false);
-        return PrepareSilenceBuffer(silenceData_);
+        ReportInvalidParamEvent("main block memcpy_s failed");
+        return false;
     }
     // trailing micIn block memset 0 (single contiguous fill, not per-frame interleaving)
     size_t totalSamples = static_cast<size_t>(frames) * totalCh;
@@ -107,13 +128,10 @@ HpaePcmBuffer *HpaeMicInZeroPadNode::SignalProcess(const std::vector<HpaePcmBuff
         (totalSamples - mainSamples) * sizeof(float));
     if (zret != EOK) {
         AUDIO_ERR_LOG("NodeId %{public}d: micIn block memset_s failed", GetNodeId());
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::QUERY, ERR_INVALID_PARAM), "micIn block memset_s failed", false);
-        return PrepareSilenceBuffer(silenceData_);
+        ReportInvalidParamEvent("micIn block memset_s failed");
+        return false;
     }
-    zeroPadOutput_.SetBufferState(input->GetBufferState());
-    return &zeroPadOutput_;
+    return true;
 }
 
 void HpaeMicInZeroPadNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode,
