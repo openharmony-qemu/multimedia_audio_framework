@@ -96,7 +96,7 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     outNodeInfo.frameLen = sinkInfo_.frameLen;
     outNodeInfo.samplingRate = sinkInfo_.samplingRate;
     bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
-    HILOG_COMM_INFO("[FinishMove] session:%{public}u inputFrameLenAdjusted:%{public}d newFrameLen:%{public}u",
+    AUDIO_INFO_LOG("[FinishMove] session:%{public}u inputFrameLenAdjusted:%{public}d newFrameLen:%{public}u",
         sessionId, frameLenAdjusted, nodeInfo.frameLen);
     sinkInputNodeMap_[sessionId]->SetNodeInfo(nodeInfo);
     sinkInputNodeMap_[sessionId]->SetIsLowLatency(false);
