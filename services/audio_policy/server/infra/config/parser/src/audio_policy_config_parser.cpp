@@ -336,8 +336,9 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
     } else if (attributeInfo.name_ == "need_uid_check") {
         pipeInfo->needUidCheck_ = (attributeInfo.value_ == "true");
     } else if (attributeInfo.name_ == "support_ultra_fast") {
-        AUDIO_INFO_LOG("Support ultra fast");
+        AUDIO_INFO_LOG("Support ultra fast and arm usb ultra fast");
         supportUltraFast_ = (attributeInfo.value_ == "true");
+        supportArmUsbUltraFast_ = (attributeInfo.value_ == "true");
     } else if (attributeInfo.name_ == "support_arm_usb_ultra_fast") {
         AUDIO_INFO_LOG("Support arm usb ultra fast");
         supportArmUsbUltraFast_ = (attributeInfo.value_ == "true");
