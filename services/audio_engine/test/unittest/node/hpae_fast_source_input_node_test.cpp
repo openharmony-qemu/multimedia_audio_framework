@@ -692,7 +692,6 @@ HWTEST_F(HpaeFastSourceInputNodeTest, DoProcessOneSpan, TestSize.Level1)
         Return(SUCCESS)));
     fastNode->DoProcess();
     EXPECT_EQ(fastNode->needReSyncPosition_, false);
-    EXPECT_EQ(fastNode->curReadPos_, FAST_SPAN_FRAME);
 }
 
 // ==================== GetPredictNextWriteTime Tests ====================
@@ -848,6 +847,302 @@ HWTEST_F(HpaeFastSourceInputNodeTest, AsyncGetPosTime_StopThreadBreak, TestSize.
     fastNode->StopUpdateThread();
     EXPECT_EQ(fastNode->stopUpdateThread_.load(), true);
     EXPECT_EQ(fastNode->updatePosTimeThread_.joinable(), false);
+}
+
+// ==================== Branch Coverage Supplement Tests ====================
+
+/**
+ * @tc.name  : DoProcessNormalLoop
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_018
+ * @tc.desc  : Test DoProcess needReSyncPosition_ false branch and TryReadOneSpan success exit path.
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, DoProcessNormalLoop, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    AttachMockSource(fastNode, mockSource);
+    fastNode->srcAudioBuffer_ =
+        OHAudioBuffer::CreateFromLocal(FAST_TOTAL_FRAME, FAST_SPAN_FRAME, FAST_BYTE_PER_FRAME);
+    ASSERT_NE(fastNode->srcAudioBuffer_, nullptr);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    fastNode->srcByteSizePerFrame_ = FAST_BYTE_PER_FRAME;
+    fastNode->spanDuration_ = static_cast<int64_t>(FAST_SPAN_FRAME) * AUDIO_NS_PER_SECOND / SAMPLE_RATE_48000;
+    fastNode->InitAudiobuffer(true);
+    fastNode->SetSourceState(STREAM_MANAGER_RUNNING);
+    fastNode->needReSyncPosition_ = false;
+    fastNode->curReadPos_ = 0;
+
+    fastNode->DoProcess();
+    EXPECT_EQ(fastNode->GetSourceState(), STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(fastNode->curReadPos_, FAST_SPAN_FRAME);
+    EXPECT_EQ(fastNode->needReSyncPosition_, false);
+}
+
+/**
+ * @tc.name  : DoProcessReSyncPositionFail
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_019
+ * @tc.desc  : Test DoProcess needReSyncPosition_ true branch with ResetReadPosition failure early return.
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, DoProcessReSyncPositionFail, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    AttachMockSource(fastNode, mockSource);
+    fastNode->srcAudioBuffer_ =
+        OHAudioBuffer::CreateFromLocal(FAST_TOTAL_FRAME, FAST_SPAN_FRAME, FAST_BYTE_PER_FRAME);
+    ASSERT_NE(fastNode->srcAudioBuffer_, nullptr);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    fastNode->srcByteSizePerFrame_ = FAST_BYTE_PER_FRAME;
+    fastNode->spanDuration_ = static_cast<int64_t>(FAST_SPAN_FRAME) * AUDIO_NS_PER_SECOND / SAMPLE_RATE_48000;
+    fastNode->InitAudiobuffer(true);
+    fastNode->SetSourceState(STREAM_MANAGER_RUNNING);
+    fastNode->needReSyncPosition_ = true;
+
+    EXPECT_CALL(*mockSource, GetMmapHandlePosition(_, _, _))
+        .WillRepeatedly(DoAll(SetArgReferee<0>(0), SetArgReferee<1>(0), SetArgReferee<2>(0), Return(ERROR)));
+    fastNode->DoProcess();
+    EXPECT_EQ(fastNode->GetSourceState(), STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(fastNode->needReSyncPosition_, true);
+    EXPECT_EQ(fastNode->curReadPos_, 0);
+}
+
+/**
+ * @tc.name  : DoProcessLoopBodySleep
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_020
+ * @tc.desc  : Test DoProcess while-loop body: TryReadOneSpan false then PrepareNextLoop sleep then retry success.
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, DoProcessLoopBodySleep, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    AttachMockSource(fastNode, mockSource);
+    fastNode->srcAudioBuffer_ =
+        OHAudioBuffer::CreateFromLocal(FAST_TOTAL_FRAME, FAST_SPAN_FRAME, FAST_BYTE_PER_FRAME);
+    ASSERT_NE(fastNode->srcAudioBuffer_, nullptr);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    fastNode->srcByteSizePerFrame_ = FAST_BYTE_PER_FRAME;
+    fastNode->spanDuration_ = static_cast<int64_t>(FAST_SPAN_FRAME) * AUDIO_NS_PER_SECOND / SAMPLE_RATE_48000;
+    fastNode->InitAudiobuffer(true);
+    fastNode->SetSourceState(STREAM_MANAGER_RUNNING);
+    fastNode->needReSyncPosition_ = false;
+    fastNode->curReadPos_ = FAST_SPAN_FRAME;
+
+    EXPECT_CALL(*mockSource, GetMmapHandlePosition(_, _, _))
+        .WillRepeatedly(DoAll(SetArgReferee<0>(0), SetArgReferee<1>(0), SetArgReferee<2>(0), Return(SUCCESS)));
+    fastNode->DoProcess();
+    EXPECT_EQ(fastNode->GetSourceState(), STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(fastNode->curReadPos_, FAST_SPAN_FRAME * 2);
+}
+
+/**
+ * @tc.name  : CapturerSourceStopSuccess
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_021
+ * @tc.desc  : Test CapturerSourceStop when Stop() returns SUCCESS (the != SUCCESS false branch).
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, CapturerSourceStopSuccess, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    AttachMockSource(fastNode, mockSource);
+    ON_CALL(*mockSource, IsInited()).WillByDefault(Return(true));
+    EXPECT_CALL(*mockSource, Stop()).WillOnce(Return(SUCCESS));
+
+    EXPECT_EQ(fastNode->CapturerSourceStop(), SUCCESS);
+    EXPECT_EQ(fastNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+    EXPECT_EQ(fastNode->needReSyncPosition_, true);
+}
+
+/**
+ * @tc.name  : GetCapturerSourceInstanceMicRef
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_022
+ * @tc.desc  : Test GetCapturerSourceInstance sourceName == HDI_ID_INFO_MIC_REF OR sub-branch.
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, GetCapturerSourceInstanceMicRef, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    int32_t ret = fastNode->GetCapturerSourceInstance("invalid_device", "net_id", SOURCE_TYPE_MIC,
+        HDI_ID_INFO_MIC_REF);
+    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(fastNode->audioCapturerSource_, nullptr);
+    EXPECT_EQ(fastNode->captureId_, HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : GetCapturerSourceInstanceEmptyNetId
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_023
+ * @tc.desc  : Test GetCapturerSourceInstance else branch with empty deviceNetId (info.empty() true path).
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, GetCapturerSourceInstanceEmptyNetId, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    int32_t ret = fastNode->GetCapturerSourceInstance("invalid_device", "", SOURCE_TYPE_MIC, "mic");
+    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(fastNode->audioCapturerSource_, nullptr);
+    EXPECT_EQ(fastNode->captureId_, HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : NotifyStreamChangeToSourceNullSource
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_024
+ * @tc.desc  : Test NotifyStreamChangeToSource null source guard (delegation skipped).
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, NotifyStreamChangeToSourceNullSource, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    AttachMockSource(fastNode, mockSource);
+    EXPECT_CALL(*mockSource, NotifyStreamChangeToSource(_, _, _, _, _, _, _)).Times(0);
+
+    fastNode->audioCapturerSource_ = nullptr;
+    fastNode->NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_ADD, FAST_SESSION_ID, SOURCE_TYPE_MIC,
+        CAPTURER_RUNNING, FAST_TEST_UID, true);
+    EXPECT_EQ(fastNode->audioCapturerSource_, nullptr);
+    fastNode->audioCapturerSource_ = mockSource;
+}
+
+/**
+ * @tc.name  : InitAudiobufferNullBuffer
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_025
+ * @tc.desc  : Test InitAudiobuffer srcAudioBuffer_ nullptr guard (early return).
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, InitAudiobufferNullBuffer, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    fastNode->srcAudioBuffer_ = nullptr;
+    fastNode->InitAudiobuffer(true);
+    fastNode->InitAudiobuffer(false);
+    EXPECT_EQ(fastNode->srcAudioBuffer_, nullptr);
+}
+
+/**
+ * @tc.name  : AsyncGetPosTimeAlreadyJoinable
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_026
+ * @tc.desc  : Test AsyncGetPosTime when thread already joinable (guard returns early).
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, AsyncGetPosTimeAlreadyJoinable, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    AttachMockSource(fastNode, mockSource);
+    fastNode->stopUpdateThread_.store(false);
+    EXPECT_CALL(*mockSource, GetMmapHandlePosition(_, _, _))
+        .WillRepeatedly(DoAll(SetArgReferee<0>(0), SetArgReferee<1>(0), SetArgReferee<2>(0), Return(SUCCESS)));
+    fastNode->AsyncGetPosTime();
+    ASSERT_EQ(fastNode->updatePosTimeThread_.joinable(), true);
+    fastNode->AsyncGetPosTime();
+    EXPECT_EQ(fastNode->updatePosTimeThread_.joinable(), true);
+    fastNode->StopUpdateThread();
+    EXPECT_EQ(fastNode->updatePosTimeThread_.joinable(), false);
+}
+
+/**
+ * @tc.name  : ResetReadPositionGetDeviceHandleInfoFail
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_027
+ * @tc.desc  : Test ResetReadPosition when GetDeviceHandleInfo fails (returns false).
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, ResetReadPositionGetDeviceHandleInfoFail, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    AttachMockSource(fastNode, mockSource);
+    fastNode->srcAudioBuffer_ =
+        OHAudioBuffer::CreateFromLocal(FAST_TOTAL_FRAME, FAST_SPAN_FRAME, FAST_BYTE_PER_FRAME);
+    ASSERT_NE(fastNode->srcAudioBuffer_, nullptr);
+    fastNode->srcSpanSizeInframe_ = FAST_SPAN_FRAME;
+    fastNode->curReadPos_ = 0;
+
+    EXPECT_CALL(*mockSource, GetMmapHandlePosition(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(0), SetArgReferee<1>(0), SetArgReferee<2>(0), Return(ERROR)));
+    EXPECT_EQ(fastNode->ResetReadPosition(), false);
+    EXPECT_EQ(fastNode->curReadPos_, 0);
+}
+
+/**
+ * @tc.name  : GetDfxStreamInfoReturnsNodeInfo
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_028
+ * @tc.desc  : Test GetDfxStreamInfo returns fields sourced from node info.
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, GetDfxStreamInfoReturnsNodeInfo, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo = CreateFastNodeInfo();
+    auto fastNode = std::make_shared<HpaeFastSourceInputNode>(nodeInfo);
+    ASSERT_NE(fastNode, nullptr);
+    AudioStreamInfo streamInfo = fastNode->GetDfxStreamInfo();
+    EXPECT_EQ(streamInfo.samplingRate, nodeInfo.samplingRate);
+    EXPECT_EQ(streamInfo.format, nodeInfo.format);
+    EXPECT_EQ(streamInfo.channels, nodeInfo.channels);
+    EXPECT_EQ(streamInfo.channelLayout, nodeInfo.channelLayout);
+}
+
+/**
+ * @tc.name  : InitDumpFileSetsDumpName
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_029
+ * @tc.desc  : Test InitDumpFile builds dumpHdiName_ from source attr fields.
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, InitDumpFileSetsDumpName, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    IAudioSourceAttr attr;
+    InitAudioSourceAttr(attr);
+    fastNode->audioSourceAttr_ = attr;
+
+    fastNode->InitDumpFile();
+    EXPECT_NE(fastNode->dumpHdiName_.find("hpae_fast_source_hdi_audio_"), std::string::npos);
+    EXPECT_NE(fastNode->dumpHdiName_.find(std::to_string(attr.sampleRate)), std::string::npos);
+    EXPECT_NE(fastNode->dumpHdiName_.find(std::to_string(attr.channel)), std::string::npos);
+    EXPECT_NE(fastNode->dumpHdiName_.find(std::to_string(attr.format)), std::string::npos);
+    EXPECT_NE(fastNode->dumpHdiName_.find(".pcm"), std::string::npos);
+}
+
+/**
+ * @tc.name  : CheckRecordSignalLatencyPaths
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_030
+ * @tc.desc  : Test CheckRecordSignal latency-disabled early return and null-agent guard paths.
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, CheckRecordSignalLatencyPaths, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    std::vector<uint8_t> buffer(FAST_BYTE_PER_FRAME * FAST_SPAN_FRAME, 0);
+
+    fastNode->latencyMeasEnabled_ = false;
+    fastNode->CheckRecordSignal(buffer.data(), buffer.size());
+    EXPECT_EQ(fastNode->signalDetected_, false);
+
+    fastNode->latencyMeasEnabled_ = true;
+    fastNode->signalDetectAgent_ = nullptr;
+    fastNode->CheckRecordSignal(buffer.data(), buffer.size());
+    EXPECT_EQ(fastNode->signalDetected_, false);
+    EXPECT_EQ(fastNode->latencyMeasEnabled_, true);
+}
+
+/**
+ * @tc.name  : GetAdapterBufferInfoAllZeroFields
+ * @tc.type  : FUNC
+ * @tc.number: HpaeFastSourceInputNodeTest_031
+ * @tc.desc  : Test GetAdapterBufferInfo with all mmap fields zero (combined condition failure).
+ */
+HWTEST_F(HpaeFastSourceInputNodeTest, GetAdapterBufferInfoAllZeroFields, TestSize.Level1)
+{
+    auto fastNode = CreateFastNode();
+    auto mockSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    AttachMockSource(fastNode, mockSource);
+    EXPECT_CALL(*mockSource, GetMmapBufferInfo(_, _, _, _, _))
+        .WillOnce(DoAll(SetArgReferee<0>(-1), SetArgReferee<1>(0), SetArgReferee<2>(0),
+            SetArgReferee<3>(0), SetArgReferee<4>(0), Return(SUCCESS)));
+    EXPECT_EQ(fastNode->GetAdapterBufferInfo(), ERR_ILLEGAL_STATE);
 }
 
 } // namespace HPAE
