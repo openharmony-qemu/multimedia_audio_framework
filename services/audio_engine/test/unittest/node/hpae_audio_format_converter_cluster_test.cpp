@@ -42,10 +42,6 @@ void HpaeAudioFormatConverterClusterTest::TearDown()
 
 namespace {
 const size_t DEFAULT_FRAMELEN_SECOND = 960;
-constexpr uint32_t SAMPLE_RATE_48000 = 48000;
-constexpr uint32_t SAMPLE_RATE_44100 = 44100;
-constexpr uint32_t FRAME_LEN_20MS = 20;
-constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
 
 // scenario B fixture: HAL partitioned 6ch = main(4) + micIn(2), app wants main only (4ch)
 // (consumed by the MicInCluster Compose/Latency tests; Task 4 chain e2e tests consume it further)
