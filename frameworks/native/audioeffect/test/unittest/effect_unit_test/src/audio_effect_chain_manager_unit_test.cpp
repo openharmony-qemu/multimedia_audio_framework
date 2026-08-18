@@ -560,7 +560,10 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_001, TestSize.Leve
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
-    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr,
+        outChannels, outChannelLayout);
     EXPECT_EQ(ERROR, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -590,7 +593,10 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_002, TestSize.Leve
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
-    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr,
+        outChannels, outChannelLayout);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -620,7 +626,10 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_003, TestSize.Leve
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
-    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr,
+        outChannels, outChannelLayout);
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -649,7 +658,10 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_004, TestSize.Leve
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr);
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr,
+        outChannels, outChannelLayout);
     EXPECT_EQ(ERROR, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -4809,9 +4821,11 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_RenderId_001, Test
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
 
     int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(
-        sceneType, DEVICE_TYPE_SPEAKER, 100, eBufferAttr);
+        sceneType, DEVICE_TYPE_SPEAKER, 100, eBufferAttr, outChannels, outChannelLayout);
     EXPECT_EQ(ERROR, result);
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
@@ -4843,10 +4857,225 @@ HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_RenderId_002, Test
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
         sceneType, DEVICE_TYPE_SPEAKER, 100);
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
 
     int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(
-        sceneType, DEVICE_TYPE_SPEAKER, 100, eBufferAttr);
+        sceneType, DEVICE_TYPE_SPEAKER, 100, eBufferAttr, outChannels, outChannelLayout);
     EXPECT_EQ(SUCCESS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ApplyAudioEffectChain API with offload enabled
+* @tc.number : ApplyAudioEffectChain_OffloadBypass_001
+* @tc.desc   : Test ApplyAudioEffectChain returns EFFECT_OFFLOAD_BYPASS when spkOffloadEnabled_ is true.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_OffloadBypass_001, TestSize.Level1)
+{
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
+    int numChans = 2;
+    int frameLen = 960;
+    uint32_t outChannels = INFOCHANNELS;
+    uint64_t outChannelLayout = INFOCHANNELLAYOUT;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
+    string sceneType = "SCENE_MOVIE";
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr,
+        outChannels, outChannelLayout);
+    EXPECT_EQ(EFFECT_OFFLOAD_BYPASS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ApplyAudioEffectChain with renderId and offload enabled
+* @tc.number : ApplyAudioEffectChain_OffloadBypass_RenderId_001
+* @tc.desc   : Test ApplyAudioEffectChain with renderId returns EFFECT_OFFLOAD_BYPASS when spkOffloadEnabled_ is true.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_OffloadBypass_RenderId_001, TestSize.Level1)
+{
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
+    int numChans = 2;
+    int frameLen = 960;
+    uint32_t outChannels = INFOCHANNELS;
+    uint64_t outChannelLayout = INFOCHANNELLAYOUT;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
+    string sceneType = "SCENE_MOVIE";
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(
+        sceneType, DEVICE_TYPE_SPEAKER, 100, eBufferAttr, outChannels, outChannelLayout);
+    EXPECT_EQ(EFFECT_OFFLOAD_BYPASS, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ApplyAudioEffectChain API with channel change
+* @tc.number : ApplyAudioEffectChain_NeedReconfig_001
+* @tc.desc   : Test ApplyAudioEffectChain returns EFFECT_NEED_RECONFIG when output channel differs from chain config.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_NeedReconfig_001, TestSize.Level1)
+{
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
+    int numChans = 2;
+    int frameLen = 960;
+    uint32_t outChannels = 1;
+    uint64_t outChannelLayout = 0x4;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
+    string sceneType = "SCENE_MOVIE";
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr,
+        outChannels, outChannelLayout);
+    EXPECT_EQ(EFFECT_NEED_RECONFIG, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ApplyAudioEffectChain with renderId and channel change
+* @tc.number : ApplyAudioEffectChain_NeedReconfig_RenderId_001
+* @tc.desc   : Test ApplyAudioEffectChain with renderId returns EFFECT_NEED_RECONFIG when output channel differs.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_NeedReconfig_RenderId_001, TestSize.Level1)
+{
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
+    int numChans = 2;
+    int frameLen = 960;
+    uint32_t outChannels = 1;
+    uint64_t outChannelLayout = 0x4;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
+    string sceneType = "SCENE_MOVIE";
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(
+        sceneType, DEVICE_TYPE_SPEAKER, 100, eBufferAttr, outChannels, outChannelLayout);
+    EXPECT_EQ(EFFECT_NEED_RECONFIG, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ApplyAudioEffectChain API with channelLayout-only change
+* @tc.number : ApplyAudioEffectChain_NeedReconfig__LayoutOnly_001
+* @tc.desc   : Test ApplyAudioEffectChain returns EFFECT_NEED_RECONFIG when only channelLayout differs.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_NeedReconfig__LayoutOnly_001, TestSize.Level1)
+{
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
+    int numChans = 2;
+    int frameLen = 960;
+    uint32_t outChannels = INFOCHANNELS;
+    uint64_t outChannelLayout = 0x1;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
+    string sceneType = "SCENE_MOVIE";
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(sceneType);
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType, eBufferAttr,
+        outChannels, outChannelLayout);
+    EXPECT_EQ(EFFECT_NEED_RECONFIG, result);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ApplyAudioEffectChain with renderId and channelLayout-only change
+* @tc.number : ApplyAudioEffectChain_NeedReconfig_LayoutOnly_RenderId_001
+* @tc.desc   : Test ApplyAudioEffectChain with renderId returns EFFECT_NEED_RECONFIG when only channelLayout differs.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ApplyAudioEffectChain_NeedReconfig_LayoutOnly_RenderId_001, TestSize.Level1)
+{
+    float* bufIn;
+    float* bufOut;
+    vector<float> bufInVector;
+    vector<float> bufOutVector;
+    bufInVector.resize(10000, 0);
+    bufOutVector.resize(10000, 0);
+    bufIn = bufInVector.data();
+    bufOut = bufOutVector.data();
+    int numChans = 2;
+    int frameLen = 960;
+    uint32_t outChannels = INFOCHANNELS;
+    uint64_t outChannelLayout = 0x1;
+    auto eBufferAttr = make_unique<EffectBufferAttr>(bufIn, bufOut, numChans, frameLen, outChannels, outChannelLayout);
+    string sceneType = "SCENE_MOVIE";
+
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->CreateAudioEffectChainDynamic(
+        sceneType, DEVICE_TYPE_SPEAKER, 100);
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+
+    int32_t result = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(
+        sceneType, DEVICE_TYPE_SPEAKER, 100, eBufferAttr, outChannels, outChannelLayout);
+    EXPECT_EQ(EFFECT_NEED_RECONFIG, result);
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }

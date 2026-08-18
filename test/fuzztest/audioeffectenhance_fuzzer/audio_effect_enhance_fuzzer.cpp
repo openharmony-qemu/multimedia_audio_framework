@@ -22,7 +22,6 @@
 #include "audio_effect_log.h"
 #include "audio_effect_chain.h"
 #ifdef SUPPORT_OLD_ENGINE
-#include "audio_effect_chain_adapter.h"
 #include "audio_enhance_chain_adapter.h"
 #endif
 #include "audio_effect_chain_manager.h"
@@ -214,93 +213,6 @@ void AudioEffectChainManagerEnhanceFuzzTest()
     AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionID] = sessionEffectInfo;
     const std::string scenePairType = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
     AudioEffectChainManager::GetInstance()->FindMaxSessionID(maxSessionID, sceneTypeMax, scenePairType, sessions);
-}
-
-void AudioEffectChainAdapterFuzzTest()
-{
-#ifdef SUPPORT_OLD_ENGINE
-    struct BufferAttr bufferAttr;
-    char sceneType[] = "SCENE_MUSIC";
-    EffectChainManagerProcess(sceneType, &bufferAttr);
-
-    const char *sceneTypeExist = "SCENE_MUSIC";
-    EffectChainManagerGetSceneCount(sceneTypeExist);
-
-    const char *effectMode = "EFFECT_DEFAULT";
-    EffectChainManagerExist(sceneTypeExist, effectMode);
-
-    const uint64_t channelLayout = CH_LAYOUT_MONO;
-    pa_channel_map processCm;
-    ConvertChLayoutToPaChMap(channelLayout, &processCm);
-
-    const uint64_t channelLayout2 = CH_LAYOUT_STEREO;
-    pa_channel_map processCm2;
-    ConvertChLayoutToPaChMap(channelLayout2, &processCm2);
-    EffectChainManagerEffectUpdate();
-    EffectChainManagerStreamUsageUpdate();
-#endif
-}
-
-void ConvertChLayoutToPaChMapFuzzTest()
-{
-#ifdef SUPPORT_OLD_ENGINE
-    const char *sceneType = "SCENE_MUSIC";
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    EffectChainManagerInitCb(sceneType);
-
-    const uint64_t channelLayout = CH_LAYOUT_MONO;
-    pa_channel_map processCm;
-    ConvertChLayoutToPaChMap(channelLayout, &processCm);
-
-    const uint64_t channelLayout2 = CH_LAYOUT_STEREO;
-    pa_channel_map processCm2;
-    ConvertChLayoutToPaChMap(channelLayout2, &processCm2);
-
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-#endif
-}
-
-void EffectChainManagerDeleteSessionInfoFuzzTest()
-{
-#ifdef SUPPORT_OLD_ENGINE
-    const char *sceneType = "SCENE_MUSIC";
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    EffectChainManagerInitCb(sceneType);
-
-    const char *sessionid = "123456";
-    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
-    EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
-
-    sceneType = nullptr;
-    // Intentionally test with nullptr for fuzzing
-    EffectChainManagerDeleteSessionInfo(sceneType, sessionid);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-#endif
-}
-
-void EffectChainManagerReturnEffectChannelInfoFuzzTest()
-{
-#ifdef SUPPORT_OLD_ENGINE
-    const char *sceneType = "test_scene";
-    uint32_t channels = 0;
-    EffectChainManagerReturnEffectChannelInfo(sceneType, &channels, nullptr);
-#endif
-}
-
-void EffectChainManagerSceneCheckFuzzTest()
-{
-#ifdef SUPPORT_OLD_ENGINE
-    EffectChainManagerSceneCheck(nullptr, nullptr);
-#endif
-}
-
-void EffectChainManagerGetSceneCountFuzzTest()
-{
-#ifdef SUPPORT_OLD_ENGINE
-    EffectChainManagerGetSceneCount(nullptr);
-#endif
 }
 
 void AudioEnhanceChainMoreFuzzTest()
@@ -688,12 +600,6 @@ using FuzzFunc = decltype(AudioEffectChainEnhanceFuzzTest);
 FuzzFunc *g_fuzzFuncs[] = {
     AudioEffectChainEnhanceFuzzTest,
     AudioEffectChainManagerEnhanceFuzzTest,
-    AudioEffectChainAdapterFuzzTest,
-    ConvertChLayoutToPaChMapFuzzTest,
-    EffectChainManagerDeleteSessionInfoFuzzTest,
-    EffectChainManagerReturnEffectChannelInfoFuzzTest,
-    EffectChainManagerSceneCheckFuzzTest,
-    EffectChainManagerGetSceneCountFuzzTest,
     AudioEnhanceChainMoreFuzzTest,
     AudioEnhanceChainManagerMoreFuzzTest,
     AudioEnhanceChainAdapterMoreFuzzTest,

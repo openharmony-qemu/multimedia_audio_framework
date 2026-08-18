@@ -264,7 +264,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, testSignalProcess_002, TestSize.Level0)
     hpaePcmBuffer.SetBufferSilence(true);
     inputs.emplace_back(&hpaePcmBuffer);
     EXPECT_NE(hpaeRenderEffectNode->SignalProcess(inputs), nullptr);
-    hpaeRenderEffectNode->ReconfigOutputBuffer();
+    hpaeRenderEffectNode->ReconfigOutputBuffer(STEREO, CH_LAYOUT_STEREO);
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest, testSignalProcess_003, TestSize.Level0)
@@ -288,7 +288,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, testSignalProcess_003, TestSize.Level0)
     hpaePcmBuffer.SetBufferSilence(true);
     inputs.emplace_back(&hpaePcmBuffer);
     EXPECT_NE(hpaeRenderEffectNode->SignalProcess(inputs), nullptr);
-    hpaeRenderEffectNode->ReconfigOutputBuffer();
+    hpaeRenderEffectNode->ReconfigOutputBuffer(STEREO, CH_LAYOUT_STEREO);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -718,8 +718,8 @@ HWTEST_F(HpaeRenderEffectNodeTest, testReconfigOutputBufferWithRenderId_001, Tes
     hpaeRenderEffectNode->renderId_ = 100;
     hpaeRenderEffectNode->deviceType_ = DEVICE_TYPE_SPEAKER;
     EXPECT_NE(hpaeRenderEffectNode, nullptr);
-    // ReconfigOutputBuffer calls GetOutputChannelInfo with renderId
-    hpaeRenderEffectNode->ReconfigOutputBuffer();
+    // ReconfigOutputBuffer reconfigures node buffer with the given channel info
+    hpaeRenderEffectNode->ReconfigOutputBuffer(STEREO, CH_LAYOUT_STEREO);
     // Verify node info is still valid after reconfig
     HpaeNodeInfo afterInfo = hpaeRenderEffectNode->GetNodeInfo();
     EXPECT_NE(afterInfo.nodeId, TEST_ID);
@@ -2161,7 +2161,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_keepsNodeInfoWhenManager
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     node->sceneType_ = "SCENE_MOVIE";
 
-    node->ReconfigOutputBuffer();
+    node->ReconfigOutputBuffer(STEREO, CH_LAYOUT_STEREO);
 
     EXPECT_EQ(node->GetNodeInfo().channels, STEREO);
     EXPECT_EQ(node->GetNodeInfo().channelLayout, CH_LAYOUT_STEREO);
@@ -2589,7 +2589,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, ReconfigOutputBuffer_InvalidChannelInfo_026, 
     node->sceneType_ = "SCENE_MUSIC";
 
     // Invalid channel info should not crash
-    node->ReconfigOutputBuffer();
+    node->ReconfigOutputBuffer(STEREO, CH_LAYOUT_STEREO);
     SUCCEED();
 
     AudioEffectChainManager::GetInstance()->ResetInfo();

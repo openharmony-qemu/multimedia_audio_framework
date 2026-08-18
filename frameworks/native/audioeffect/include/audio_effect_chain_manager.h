@@ -61,6 +61,8 @@ const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t MAX_UINT_VOLUME_NUM = 10000;
 const uint32_t MAX_UINT_DSP_VOLUME = 65535;
 constexpr int64_t MAX_HRTF_LENGTH = 10 * 1024 * 1024;
+const int32_t EFFECT_OFFLOAD_BYPASS = 1;
+const int32_t EFFECT_NEED_RECONFIG = 2;
 
 struct SessionEffectInfo {
     std::string sceneMode;
@@ -125,9 +127,10 @@ public:
     bool ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode);
     bool ExistAudioEffectChain(const std::string &sceneType, const std::string &effectMode,
         DeviceType deviceType, uint32_t renderId);
-    int32_t ApplyAudioEffectChain(const std::string &sceneType, std::unique_ptr<EffectBufferAttr> &bufferAttr);
     int32_t ApplyAudioEffectChain(const std::string &sceneType,
-        DeviceType deviceType, uint32_t renderId, std::unique_ptr<EffectBufferAttr> &bufferAttr);
+        std::unique_ptr<EffectBufferAttr> &bufferAttr, uint32_t &outChannels, uint64_t &outChannelLayout);
+    int32_t ApplyAudioEffectChain(const std::string &sceneType, DeviceType deviceType, uint32_t renderId,
+        std::unique_ptr<EffectBufferAttr> &bufferAttr, uint32_t &outChannels, uint64_t &outChannelLayout);
     void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
     bool GetOffloadEnabled();
     int32_t UpdateMultichannelConfig(const std::string &sceneType);

@@ -174,30 +174,37 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
         return inputs[0];
     }
 
-    ReconfigOutputBuffer();
+    HpaeNodeInfo &effectNodeInfo = GetNodeInfo();
+    uint32_t outchannels = static_cast<uint32_t>(effectNodeInfo.channels);
+    uint64_t outChannelLayout = effectNodeInfo.channelLayout;
 
     auto eBufferAttr = std::make_unique<EffectBufferAttr>(
-        inputs[0]->GetPcmDataBuffer(),
-        effectOutput_.GetPcmDataBuffer(),
-        static_cast<int32_t>(inputs[0]->GetChannelCount()),
-        static_cast<int32_t>(inputs[0]->GetFrameLen()),
-        0,
-        0
-    );
+        inputs[0]->GetPcmDataBuffer(), effectOutput_.GetPcmDataBuffer(),
+        static_cast<int32_t>(inputs[0]->GetChannelCount()), static_cast<int32_t>(inputs[0]->GetFrameLen()), 0, 0);
 
     int32_t ret;
     if (Util::IsEnhancedRoutingSupported()) {
         ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, deviceType_, renderId_,
-            eBufferAttr);
+            eBufferAttr, outchannels, outChannelLayout);
     } else {
-        ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, eBufferAttr);
+        ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, eBufferAttr,
+            outchannels, outChannelLayout);
     }
-    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == SUCCESS, inputs[0],
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
-                BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED),
-            "apply audio effect chain fail", false),
-        "apply audio effect chain fail, ret: %{public}d", ret);
+    switch (ret) {
+        case EFFECT_OFFLOAD_BYPASS:
+            return inputs[0];
+        case EFFECT_NEED_RECONFIG:
+            ReconfigOutputBuffer(outchannels, outChannelLayout);
+            return inputs[0];
+        case ERROR:
+            AUDIO_ERR_LOG("apply audio effect chain fail, ret: %{public}d", ret);
+            StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+                BuildErrorCode(ProblemCategory::FAULT_NO_SOUND, OperationType::PLAY,
+                BusinessScenario::SEND_DATA, ERR_OPERATION_FAILED), "apply audio effect chain fail", false);
+            return inputs[0];
+        default:
+            break;
+    }
 
     effectOutput_.SetBufferState(inputs[0]->GetBufferState());
     effectOutput_.SetBufferValid(true);
@@ -470,22 +477,15 @@ void HpaeRenderEffectNode::UpdateAudioEffectChainInfo(HpaeNodeInfo &nodeInfo)
     audioEffectChainManager->UpdateStreamUsage();
 }
 
-void HpaeRenderEffectNode::ReconfigOutputBuffer()
+void HpaeRenderEffectNode::ReconfigOutputBuffer(uint32_t channels, uint64_t channelLayout)
 {
-    HpaeNodeInfo &effectNodeInfo = GetNodeInfo();
-    uint32_t channels = static_cast<uint32_t>(effectNodeInfo.channels);
-    uint64_t channelLayout = effectNodeInfo.channelLayout;
-    int32_t ret;
-    if (Util::IsEnhancedRoutingSupported()) {
-        ret = AudioEffectChainManager::GetInstance()->GetOutputChannelInfo(
-            sceneType_, deviceType_, renderId_, channels, channelLayout);
-    } else {
-        ret = AudioEffectChainManager::GetInstance()->GetOutputChannelInfo(sceneType_, channels, channelLayout);
-    }
-    if (ret != SUCCESS || channels == 0 || channelLayout == 0) {
+    if (channels == 0 || channelLayout == 0) {
         AUDIO_WARNING_LOG("output channel info incorrect, scene type: %{public}s, "
             "channels: %{public}u, channelLayout: %{public}" PRIu64, sceneType_.c_str(), channels, channelLayout);
-    } else if (static_cast<uint32_t>(effectNodeInfo.channels) != channels ||
+        return;
+    }
+    HpaeNodeInfo &effectNodeInfo = GetNodeInfo();
+    if (static_cast<uint32_t>(effectNodeInfo.channels) != channels ||
         static_cast<uint64_t>(effectNodeInfo.channelLayout) != channelLayout) {
         AUDIO_INFO_LOG("output channel info changed, scene type: %{public}s, "
             "channels change from %{public}u to %{public}u, "

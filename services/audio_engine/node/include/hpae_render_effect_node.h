@@ -86,7 +86,7 @@ public:
 protected:
     HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:
-    void ReconfigOutputBuffer();
+    void ReconfigOutputBuffer(uint32_t outChannels, uint64_t outChannelLayout);
     int32_t CreateAudioEffectChain(HpaeNodeInfo &nodeInfo);
     int32_t ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo);
     void ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo, ModifyAudioEffectChainInfoReason reason);
