@@ -62,9 +62,14 @@ HpaeNodeInfo HpaeInnerCapturerManager::BuildClusterNodeInfo(const HpaeNodeInfo &
     HpaeNodeInfo clusterNodeInfo = streamNodeInfo;
     if (sinkInfo_.channels != 0) {
         clusterNodeInfo.channels = sinkInfo_.channels;
-        clusterNodeInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
+        // Keep the stream's own layout when the sink never negotiated one (sinkInfo_.channelLayout
+        // defaults to 0/UNKNOWN); blindly copying it downgrades a valid stream layout at ctor time
+        // until the mixer's first CheckUpdateInfo re-absorbs it from the input data.
+        if (sinkInfo_.channelLayout != 0) {
+            clusterNodeInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
+        }
     }
-    HILOG_COMM_INFO("[ClusterGeometry] firstStream:%{public}u streamCh:%{public}u streamRate:%{public}u -> "
+    AUDIO_INFO_LOG("[ClusterGeometry] firstStream:%{public}u streamCh:%{public}u streamRate:%{public}u -> "
         "clusterCh:%{public}u (sinkCh:%{public}u, sinkRate:%{public}u)",
         streamNodeInfo.sessionId, streamNodeInfo.channels, streamNodeInfo.samplingRate,
         clusterNodeInfo.channels, sinkInfo_.channels, sinkInfo_.samplingRate);
@@ -835,7 +840,7 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
         // Behavior note: eager erase discards the buffered tail (at most a few frames) of the last
         // released stream while the capturer may still be pulling; acceptable on the Release path.
         // If tail fidelity is ever required, defer the erase while the sink is still running.
-        HILOG_COMM_INFO("[DeleteRendererInputNodeSession]erase rendererSceneCluster, last stream: %{public}u",
+        AUDIO_INFO_LOG("[DeleteRendererInputNodeSession]erase rendererSceneCluster, last stream: %{public}u",
             sessionId);
         rendererSceneClusterMap_[sceneType]->DisConnectMixerNode();
         if (hpaeInnerCapSinkNode_ != nullptr) {
