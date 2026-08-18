@@ -58,6 +58,7 @@ static const std::string USB_SINK_NAME = "Usb_arm_speaker";
 static const std::string DEFAULT_SPEAKER_SINK_NAME = "Speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
 static const std::string MCH_SINK_NAME = "MCH_Speaker";
+static const std::string NEARLINK_SINK_NAME = "Wireless_Speaker";
 
 HpaeManagerThread::~HpaeManagerThread()
 {
@@ -359,10 +360,13 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
         sinkVirtualOutputNodeMap_[sinkInfo.sinkId]->ReloadNode(nodeInfo);
     }
 
-    if (sinkInfo.deviceName == MCH_SINK_NAME && isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
-        AUDIO_INFO_LOG("ReloadRenderManager MCH_Speaker, need set isCollaborationEnabled: %{public}d",
-            isCollaborationEnabled_);
+    if ((sinkInfo.deviceName == MCH_SINK_NAME && collaborationRouteMode_ == COLLABORATION_MCH_ROUTE_MODE) ||
+        (sinkInfo.deviceName == NEARLINK_SINK_NAME && collaborationRouteMode_ == COLLABORATION_DEFAULT_ROUTE_MODE) ||
+        (sinkInfo.deviceName == BT_SINK_NAME && collaborationRouteMode_ == COLLABORATION_DEFAULT_ROUTE_MODE)) {
+        AUDIO_INFO_LOG("collab open, set isCollaborationEnabled: %{public}d, collaborationRouteMode: %{public}d",
+            isCollaborationEnabled_, collaborationRouteMode_);
         sinkInfo.isCollaborationEnabled = isCollaborationEnabled_;
+        sinkInfo.collaborationRouteMode = collaborationRouteMode_;
     }
     rendererManagerMap_[audioModuleInfo.name]->ReloadRenderManager(sinkInfo, isReload);
     // Both primary and offload self-heal SE via attach-state on SinkInputNode.

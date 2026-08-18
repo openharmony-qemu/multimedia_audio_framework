@@ -148,6 +148,7 @@ struct HpaeSinkInfo {
     bool isLoopback = false;
     bool isUltraFast = false;
     CollaborationState isCollaborationEnabled = COLLABORATION_CLOSE;
+    CollaborationRouteMode collaborationRouteMode = COLLABORATION_INVALID_ROUTE_MODE;
 };
 
 enum HpaeEcType {
