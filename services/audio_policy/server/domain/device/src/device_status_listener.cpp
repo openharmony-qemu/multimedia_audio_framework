@@ -173,7 +173,7 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
         if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;NID=%[^;];PIN=%d;VID=%d;IID=%d", &pnpEventType,
             statusInfo.networkId, sizeof(statusInfo.networkId), &(statusInfo.hdiPin), &(statusInfo.mappingVolumeId),
             &(statusInfo.mappingInterruptId)) < D_EVENT_PARAMS) {
-            AUDIO_ERR_LOG("[DeviceStatusListener]: Failed to scan info string");
+            AUDIO_ERR_LOG("[DeviceStatusListener]: Failed to scan info string, errInfo:[%{public}s]", info.c_str());
             return;
         }
 
