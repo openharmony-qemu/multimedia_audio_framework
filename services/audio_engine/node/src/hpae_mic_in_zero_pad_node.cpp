@@ -36,9 +36,9 @@ HpaeMicInZeroPadNode::HpaeMicInZeroPadNode(HpaeNodeInfo &preNodeInfo, HpaeNodeIn
     zeroPadOutput_.SetAudioStreamUsage(preNodeInfo.effectInfo.streamUsage);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeMicInZeroPadNode");
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
-    }
+    auto callback = GetNodeStatusCallback().lock();
+    CHECK_AND_RETURN(callback);
+    callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
 #endif
     AUDIO_INFO_LOG("NodeId %{public}d: micIn-zero-pad node, main %{public}u ch, total %{public}u ch",
         GetNodeId(), static_cast<uint32_t>(preNodeInfo.channels),
@@ -50,9 +50,9 @@ HpaeMicInZeroPadNode::~HpaeMicInZeroPadNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
-    }
+    auto callback = GetNodeStatusCallback().lock();
+    CHECK_AND_RETURN(callback);
+    callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
 #endif
 }
 
@@ -63,6 +63,9 @@ HpaePcmBuffer *HpaeMicInZeroPadNode::SignalProcess(const std::vector<HpaePcmBuff
         return PrepareSilenceBuffer(silenceData_);
     }
     HpaePcmBuffer *input = inputs[0];
+    // mainCh deliberately follows the LIVE input width (unlike the front-extract node's frozen
+    // width): a narrower upstream warns but still maps onto the total partition, while an
+    // overrun degrades to silence in CheckUpstreamFormat.
     uint32_t mainCh = input->GetChannelCount();
     uint32_t totalCh = zeroPadOutput_.GetChannelCount();
     if (!CheckUpstreamFormat(input) || !WritePartitionedOutput(input, mainCh, totalCh)) {
@@ -113,19 +116,28 @@ bool HpaeMicInZeroPadNode::CheckUpstreamFormat(HpaePcmBuffer *input)
 bool HpaeMicInZeroPadNode::WritePartitionedOutput(HpaePcmBuffer *input, uint32_t mainCh, uint32_t totalCh)
 {
     uint32_t frames = input->GetFrameLen();
-    size_t mainSamples = static_cast<size_t>(frames) * mainCh;
+    size_t mainSamples = static_cast<size_t>(frames) * static_cast<size_t>(mainCh);
+    size_t totalSamples = static_cast<size_t>(frames) * static_cast<size_t>(totalCh);
+    size_t mainBytes = mainSamples * sizeof(float);
+    size_t totalBytes = totalSamples * sizeof(float);
+    // explicit bound before any copy: guards the full partition against the output buffer
+    // (Size() also carries 64-byte alignment slack, so this stays conservative)
+    if (totalBytes > zeroPadOutput_.Size() || mainBytes > totalBytes) {
+        AUDIO_ERR_LOG("NodeId %{public}d: partitioned output %{public}zu bytes exceeds buffer %{public}zu",
+            GetNodeId(), totalBytes, zeroPadOutput_.Size());
+        ReportInvalidParamEvent("partitioned output exceeds buffer size");
+        return false;
+    }
     errno_t ret = memcpy_s(zeroPadOutput_.GetPcmDataBuffer(), zeroPadOutput_.Size(),
-        input->GetPcmDataBuffer(), mainSamples * sizeof(float));
+        input->GetPcmDataBuffer(), mainBytes);
     if (ret != EOK) {
         AUDIO_ERR_LOG("NodeId %{public}d: main block memcpy_s failed", GetNodeId());
         ReportInvalidParamEvent("main block memcpy_s failed");
         return false;
     }
     // trailing micIn block memset 0 (single contiguous fill, not per-frame interleaving)
-    size_t totalSamples = static_cast<size_t>(frames) * totalCh;
     errno_t zret = memset_s(zeroPadOutput_.GetPcmDataBuffer() + mainSamples,
-        zeroPadOutput_.Size() - mainSamples * sizeof(float), 0,
-        (totalSamples - mainSamples) * sizeof(float));
+        zeroPadOutput_.Size() - mainBytes, 0, totalBytes - mainBytes);
     if (zret != EOK) {
         AUDIO_ERR_LOG("NodeId %{public}d: micIn block memset_s failed", GetNodeId());
         ReportInvalidParamEvent("micIn block memset_s failed");
@@ -140,9 +152,9 @@ void HpaeMicInZeroPadNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpae
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort(nodeInfo));
     zeroPadOutput_.SetSourceBufferType(nodeInfo.sourceBufferType);
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
-    }
+    auto callback = GetNodeStatusCallback().lock();
+    CHECK_AND_RETURN(callback);
+    callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
 #endif
 }
 
@@ -151,9 +163,9 @@ void HpaeMicInZeroPadNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<H
 {
     inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(false, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
-    }
+    auto callback = GetNodeStatusCallback().lock();
+    CHECK_AND_RETURN(callback);
+    callback->OnNotifyDfxNodeInfo(false, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
 #endif
 }
 

@@ -24,28 +24,41 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 namespace {
-// For a camcorder split-layout source (main + micIn), compute the effective main channel count
+enum MicInScenario {
+    MICIN_SCENARIO_A,   // app wants micIn AND HAL has it: full-channel path
+    MICIN_SCENARIO_B,   // HAL split layout, app wants main only: [extract] -> [converter]
+    MICIN_SCENARIO_C,   // app wants micIn, HAL has none: [converter] -> [zeropad]
+    MICIN_SCENARIO_D,   // plain stream (no camcorder micIn info): bare converter
+};
+
+// Single classification source for a camcorder split-layout source (main + micIn):
+// it decides BOTH which chain to build AND the main width (mainCh) that chain uses, so the
+// branch choice and the width can never drift apart.
 //  - Scenario B: HAL has a split layout (micInChannels>0) but the app only wants main
 //    -> main = pre - halMicIn.
 //  - Scenario C: app wants micIn (appMicInChannelCount>0) but the HAL has none
 //    (micInChannels==0) -> main = total - appMicIn.
-// Returns preNodeInfo.channels otherwise (passthrough / full-channel path).
-uint32_t CalcEffectiveInChannels(const HpaeNodeInfo &preNodeInfo, const HpaeNodeInfo &nodeInfo)
+// A/D (and malformed combos) fall back to the full-channel path with main = preChannels.
+MicInScenario ClassifyMicInScenario(const HpaeNodeInfo &preNodeInfo, const HpaeNodeInfo &nodeInfo,
+    uint32_t &mainCh)
 {
     uint32_t preChannels = static_cast<uint32_t>(preNodeInfo.channels);
+    mainCh = preChannels;
     if (nodeInfo.sourceType != SOURCE_TYPE_CAMCORDER) {
-        return preChannels;
+        return MICIN_SCENARIO_D;
     }
     uint32_t halMicIn = static_cast<uint32_t>(nodeInfo.micInChannels);
     uint32_t appMicIn = static_cast<uint32_t>(nodeInfo.appMicInChannelCount);
     if (halMicIn > 0 && halMicIn < preChannels && appMicIn == 0) {           // Scenario B
-        return preChannels - halMicIn;
+        mainCh = preChannels - halMicIn;
+        return MICIN_SCENARIO_B;
     }
     uint32_t totalChannels = static_cast<uint32_t>(nodeInfo.channels);
     if (halMicIn == 0 && appMicIn > 0 && appMicIn < totalChannels) {          // Scenario C
-        return totalChannels - appMicIn;
+        mainCh = totalChannels - appMicIn;
+        return MICIN_SCENARIO_C;
     }
-    return preChannels;                                                       // A / D
+    return MICIN_SCENARIO_A;
 }
 
 // sanitized info for the inner chain: main width + micIn fields cleared, so the vanilla
@@ -68,20 +81,13 @@ HpaeAudioFormatConverterCluster::HpaeAudioFormatConverterCluster(HpaeNodeInfo pr
 #endif
     uint32_t preChannels = static_cast<uint32_t>(preNodeInfo.channels);
     uint32_t totalChannels = static_cast<uint32_t>(nodeInfo.channels);
-    uint32_t halMicIn = static_cast<uint32_t>(nodeInfo.micInChannels);
-    uint32_t appMicIn = static_cast<uint32_t>(nodeInfo.appMicInChannelCount);
-    // frontExtract/zeroPad intentionally restate CalcEffectiveInChannels' branch conditions so
-    // the branch choice and mainCh share one data flow in this file (which stays the single
-    // owner of the scenario classification once Task 5 strips the converter's copies).
-    bool frontExtract = (nodeInfo.sourceType == SOURCE_TYPE_CAMCORDER) &&
-        (halMicIn > 0) && (halMicIn < preChannels) && (appMicIn == 0);        // Scenario B
-    bool zeroPad = (nodeInfo.sourceType == SOURCE_TYPE_CAMCORDER) &&
-        (halMicIn == 0) && (appMicIn > 0) && (appMicIn < totalChannels);      // Scenario C
+    uint32_t mainCh = 0;
+    MicInScenario scenario = ClassifyMicInScenario(preNodeInfo, nodeInfo, mainCh);
 
-    if (frontExtract) {
-        BuildFrontExtractChain(preNodeInfo, nodeInfo, preChannels);
-    } else if (zeroPad) {
-        BuildZeroPadChain(preNodeInfo, nodeInfo, totalChannels);
+    if (scenario == MICIN_SCENARIO_B) {
+        BuildFrontExtractChain(preNodeInfo, nodeInfo, mainCh, preChannels);
+    } else if (scenario == MICIN_SCENARIO_C) {
+        BuildZeroPadChain(preNodeInfo, nodeInfo, mainCh, totalChannels);
     } else {
         converterNode_ = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, nodeInfo);
         head_ = converterNode_;
@@ -91,9 +97,8 @@ HpaeAudioFormatConverterCluster::HpaeAudioFormatConverterCluster(HpaeNodeInfo pr
 
 // Scenario B (HAL split layout, app wants main only): [MicInFrontExtract] -> [Converter]
 void HpaeAudioFormatConverterCluster::BuildFrontExtractChain(HpaeNodeInfo &preNodeInfo,
-    HpaeNodeInfo &nodeInfo, uint32_t preChannels)
+    HpaeNodeInfo &nodeInfo, uint32_t mainCh, uint32_t preChannels)
 {
-    uint32_t mainCh = CalcEffectiveInChannels(preNodeInfo, nodeInfo);
     HpaeNodeInfo mainInfo = preNodeInfo;   // extract output: pre fields at main width
     mainInfo.channels = static_cast<AudioChannel>(mainCh);
     extractNode_ = std::make_shared<HpaeMicInFrontExtractNode>(preNodeInfo, mainInfo);
@@ -111,9 +116,8 @@ void HpaeAudioFormatConverterCluster::BuildFrontExtractChain(HpaeNodeInfo &preNo
 
 // Scenario C (app wants micIn, HAL has none): [Converter] -> [MicInZeroPad]
 void HpaeAudioFormatConverterCluster::BuildZeroPadChain(HpaeNodeInfo &preNodeInfo,
-    HpaeNodeInfo &nodeInfo, uint32_t totalChannels)
+    HpaeNodeInfo &nodeInfo, uint32_t mainCh, uint32_t totalChannels)
 {
-    uint32_t mainCh = CalcEffectiveInChannels(preNodeInfo, nodeInfo);
     // mainInfo lives at the APP output rate/frameLen (the converter already resampled
     // when the zero-pad node sees the data)
     HpaeNodeInfo mainInfo = SanitizedMainInfo(nodeInfo, mainCh);

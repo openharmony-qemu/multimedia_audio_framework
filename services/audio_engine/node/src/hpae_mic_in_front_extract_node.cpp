@@ -36,9 +36,9 @@ HpaeMicInFrontExtractNode::HpaeMicInFrontExtractNode(HpaeNodeInfo &preNodeInfo, 
     extractOutput_.SetAudioStreamUsage(preNodeInfo.effectInfo.streamUsage);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeMicInFrontExtractNode");
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
-    }
+    auto callback = GetNodeStatusCallback().lock();
+    CHECK_AND_RETURN(callback);
+    callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
 #endif
     AUDIO_INFO_LOG("NodeId %{public}d: front-extract node, raw in %{public}u ch -> main %{public}u ch",
         GetNodeId(), static_cast<uint32_t>(preNodeInfo.channels),
@@ -50,9 +50,9 @@ HpaeMicInFrontExtractNode::~HpaeMicInFrontExtractNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
-    }
+    auto callback = GetNodeStatusCallback().lock();
+    CHECK_AND_RETURN(callback);
+    callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
 #endif
 }
 
@@ -89,9 +89,20 @@ HpaePcmBuffer *HpaeMicInFrontExtractNode::SignalProcess(const std::vector<HpaePc
     }
     // Non-interleaved partition [main block][micIn block]: the leading main block is contiguous.
     uint32_t frames = input->GetFrameLen();
-    size_t mainSamples = static_cast<size_t>(frames) * mainCh;
+    size_t mainSamples = static_cast<size_t>(frames) * static_cast<size_t>(mainCh);
+    size_t mainBytes = mainSamples * sizeof(float);
+    // explicit bound before the copy: guards the main block against the output buffer
+    // (Size() also carries 64-byte alignment slack, so this stays conservative)
+    if (mainBytes > extractOutput_.Size()) {
+        AUDIO_ERR_LOG("NodeId %{public}d: main block %{public}zu bytes exceeds buffer %{public}zu",
+            GetNodeId(), mainBytes, extractOutput_.Size());
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::QUERY, ERR_INVALID_PARAM), "main block exceeds buffer size", false);
+        return PrepareSilenceBuffer(silenceData_);
+    }
     errno_t ret = memcpy_s(extractOutput_.GetPcmDataBuffer(), extractOutput_.Size(),
-        input->GetPcmDataBuffer(), mainSamples * sizeof(float));
+        input->GetPcmDataBuffer(), mainBytes);
     if (ret != EOK) {
         AUDIO_ERR_LOG("NodeId %{public}d: main block memcpy_s failed", GetNodeId());
         StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
@@ -109,9 +120,9 @@ void HpaeMicInFrontExtractNode::ConnectWithInfo(const std::shared_ptr<OutputNode
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort(nodeInfo));
     extractOutput_.SetSourceBufferType(nodeInfo.sourceBufferType);
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
-    }
+    auto callback = GetNodeStatusCallback().lock();
+    CHECK_AND_RETURN(callback);
+    callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
 #endif
 }
 
@@ -120,9 +131,9 @@ void HpaeMicInFrontExtractNode::DisConnectWithInfo(const std::shared_ptr<OutputN
 {
     inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(false, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
-    }
+    auto callback = GetNodeStatusCallback().lock();
+    CHECK_AND_RETURN(callback);
+    callback->OnNotifyDfxNodeInfo(false, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
 #endif
 }
 

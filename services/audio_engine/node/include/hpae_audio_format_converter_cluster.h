@@ -31,6 +31,10 @@ namespace HPAE {
 // micIn fields cleared) so the vanilla node never re-engages mode detection.
 // NOTE: any NEW creation site that can see a CAMCORDER nodeInfo must use this cluster,
 // not the bare converter node.
+// NOTE: the inner nodes must NOT receive a format callback (RegisterCallback): scenario C
+// freezes the inner converter to the main width, and a downstream-format callback would
+// re-target it to the total width and break the partitioned output. The cluster therefore
+// does not expose/forward RegisterCallback.
 class HpaeAudioFormatConverterCluster : public OutputNode<HpaePcmBuffer *>,
     public InputNode<HpaePcmBuffer *> {
 public:
@@ -58,8 +62,10 @@ public:
 
 private:
     // --- Refactoring helpers (sub-50-line extraction targets) ---
-    void BuildFrontExtractChain(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &nodeInfo, uint32_t preChannels);
-    void BuildZeroPadChain(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &nodeInfo, uint32_t totalChannels);
+    void BuildFrontExtractChain(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &nodeInfo,
+        uint32_t mainCh, uint32_t preChannels);
+    void BuildZeroPadChain(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &nodeInfo,
+        uint32_t mainCh, uint32_t totalChannels);
 
     std::shared_ptr<HpaeMicInFrontExtractNode> extractNode_ = nullptr;
     std::shared_ptr<HpaeAudioFormatConverterNode> converterNode_ = nullptr;

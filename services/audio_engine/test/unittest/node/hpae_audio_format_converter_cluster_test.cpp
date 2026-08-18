@@ -691,3 +691,37 @@ HWTEST_F(HpaeAudioFormatConverterClusterTest, MicInCluster_E2E_ScenarioA_001, Te
         EXPECT_FLOAT_EQ(result->GetPcmDataBuffer()[i], 0.5f);
     }
 }
+
+/*
+ * @tc.name  : MicInCluster_E2E_InjectorTag_001
+ * @tc.type  : FUNC
+ * @tc.number: MicInCluster_E2E_InjectorTag_001
+ * @tc.desc  : Chain e2e scenario C with INJECTOR tag: cluster->SetSourceBufferType rides the
+ *             final output buffer pulled from the tail.
+ */
+HWTEST_F(HpaeAudioFormatConverterClusterTest, MicInCluster_E2E_InjectorTag_001, TestSize.Level0)
+{
+    HpaeNodeInfo pre;
+    HpaeNodeInfo out;
+    ConfigScenarioC(pre, out);
+
+    auto cluster = std::make_shared<HpaeAudioFormatConverterCluster>(pre, out);
+    cluster->SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_INJECTOR);
+    HpaeNodeInfo upstreamInfo = pre;
+    auto upstream = std::make_shared<FakeUpstreamNode>(upstreamInfo);
+    cluster->Connect(upstream);
+
+    PcmBufferInfo pcmInfo(4, DEFAULT_FRAMELEN_SECOND, SAMPLE_RATE_48000);
+    HpaePcmBuffer input(pcmInfo);
+    input.SetBufferValid(true);
+    for (size_t i = 0; i < DEFAULT_FRAMELEN_SECOND * 4; i++) {
+        input.GetPcmDataBuffer()[i] = 0.5f;
+    }
+    upstream->outputStream_.WriteDataToOutput(&input);
+
+    HpaePcmBuffer *result = cluster->GetOutputPort()->PullOutputData();
+    ASSERT_NE(result, nullptr);
+    ASSERT_EQ(result->GetChannelCount(), 6u);
+    // the injector tag must ride the tail (zero-pad) output buffer, not be lost on the shell
+    EXPECT_EQ(result->GetSourceBufferType(), HPAE_SOURCE_BUFFER_TYPE_INJECTOR);
+}
