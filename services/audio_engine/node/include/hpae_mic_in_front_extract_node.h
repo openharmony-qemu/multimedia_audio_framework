@@ -43,6 +43,9 @@ public:
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:
+    // --- Refactoring helpers (sub-50-line extraction targets) ---
+    void ReportInvalidParamEvent(const std::string &reason);
+
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer extractOutput_;
     // upstream channel count seen last cycle (seeded from preNodeInfo.channels at construction);

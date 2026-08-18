@@ -97,18 +97,14 @@ bool HpaeMicInZeroPadNode::CheckUpstreamFormat(HpaePcmBuffer *input)
 
     uint32_t mainCh = input->GetChannelCount();
     uint32_t totalCh = zeroPadOutput_.GetChannelCount();
-    if (mainCh > totalCh) {
-        AUDIO_ERR_LOG("NodeId %{public}d: upstream %{public}u ch > total %{public}u ch, output silence",
-            GetNodeId(), mainCh, totalCh);
-        ReportInvalidParamEvent("upstream channels > total channels");
-        return false;
-    }
-    if (input->GetFrameLen() != zeroPadOutput_.GetFrameLen()) {
-        AUDIO_ERR_LOG("NodeId %{public}d: input frameLen %{public}u != node frameLen %{public}u, output silence",
-            GetNodeId(), input->GetFrameLen(), zeroPadOutput_.GetFrameLen());
-        ReportInvalidParamEvent("frameLen mismatch");
-        return false;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(mainCh <= totalCh, false,
+        ReportInvalidParamEvent("upstream channels > total channels"),
+        "NodeId %{public}d: upstream %{public}u ch > total %{public}u ch, output silence",
+        GetNodeId(), mainCh, totalCh);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(input->GetFrameLen() == zeroPadOutput_.GetFrameLen(), false,
+        ReportInvalidParamEvent("frameLen mismatch"),
+        "NodeId %{public}d: input frameLen %{public}u != node frameLen %{public}u, output silence",
+        GetNodeId(), input->GetFrameLen(), zeroPadOutput_.GetFrameLen());
     return true;
 }
 
@@ -122,27 +118,21 @@ bool HpaeMicInZeroPadNode::WritePartitionedOutput(HpaePcmBuffer *input, uint32_t
     size_t totalBytes = totalSamples * sizeof(float);
     // explicit bound before any copy: guards the full partition against the output buffer
     // (Size() also carries 64-byte alignment slack, so this stays conservative)
-    if (totalBytes > zeroPadOutput_.Size() || mainBytes > totalBytes) {
-        AUDIO_ERR_LOG("NodeId %{public}d: partitioned output %{public}zu bytes exceeds buffer %{public}zu",
-            GetNodeId(), totalBytes, zeroPadOutput_.Size());
-        ReportInvalidParamEvent("partitioned output exceeds buffer size");
-        return false;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(totalBytes <= zeroPadOutput_.Size() && mainBytes <= totalBytes, false,
+        ReportInvalidParamEvent("partitioned output exceeds buffer size"),
+        "NodeId %{public}d: partitioned output %{public}zu bytes exceeds buffer %{public}zu",
+        GetNodeId(), totalBytes, zeroPadOutput_.Size());
     errno_t ret = memcpy_s(zeroPadOutput_.GetPcmDataBuffer(), zeroPadOutput_.Size(),
         input->GetPcmDataBuffer(), mainBytes);
-    if (ret != EOK) {
-        AUDIO_ERR_LOG("NodeId %{public}d: main block memcpy_s failed", GetNodeId());
-        ReportInvalidParamEvent("main block memcpy_s failed");
-        return false;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == EOK, false,
+        ReportInvalidParamEvent("main block memcpy_s failed"),
+        "NodeId %{public}d: main block memcpy_s failed", GetNodeId());
     // trailing micIn block memset 0 (single contiguous fill, not per-frame interleaving)
     errno_t zret = memset_s(zeroPadOutput_.GetPcmDataBuffer() + mainSamples,
         zeroPadOutput_.Size() - mainBytes, 0, totalBytes - mainBytes);
-    if (zret != EOK) {
-        AUDIO_ERR_LOG("NodeId %{public}d: micIn block memset_s failed", GetNodeId());
-        ReportInvalidParamEvent("micIn block memset_s failed");
-        return false;
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(zret == EOK, false,
+        ReportInvalidParamEvent("micIn block memset_s failed"),
+        "NodeId %{public}d: micIn block memset_s failed", GetNodeId());
     return true;
 }
 

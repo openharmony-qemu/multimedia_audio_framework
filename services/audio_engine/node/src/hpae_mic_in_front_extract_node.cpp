@@ -56,6 +56,14 @@ HpaeMicInFrontExtractNode::~HpaeMicInFrontExtractNode()
 #endif
 }
 
+// report a hard format error via the shared capture-path DFX idiom (no rate limiting)
+void HpaeMicInFrontExtractNode::ReportInvalidParamEvent(const std::string &reason)
+{
+    StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+            BusinessScenario::QUERY, ERR_INVALID_PARAM), reason, false);
+}
+
 HpaePcmBuffer *HpaeMicInFrontExtractNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
     extractOutput_.Reset();
@@ -71,45 +79,30 @@ HpaePcmBuffer *HpaeMicInFrontExtractNode::SignalProcess(const std::vector<HpaePc
     lastUpstreamChannels_ = input->GetChannelCount();
 
     uint32_t mainCh = extractOutput_.GetChannelCount();
-    if (input->GetChannelCount() < mainCh) {
-        AUDIO_ERR_LOG("NodeId %{public}d: upstream %{public}u ch < main %{public}u ch, output silence",
-            GetNodeId(), input->GetChannelCount(), mainCh);
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::QUERY, ERR_INVALID_PARAM), "upstream channels < main channels", false);
-        return PrepareSilenceBuffer(silenceData_);
-    }
-    if (input->GetFrameLen() != extractOutput_.GetFrameLen()) {
-        AUDIO_ERR_LOG("NodeId %{public}d: input frameLen %{public}u != node frameLen %{public}u, output silence",
-            GetNodeId(), input->GetFrameLen(), extractOutput_.GetFrameLen());
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::QUERY, ERR_INVALID_PARAM), "frameLen mismatch", false);
-        return PrepareSilenceBuffer(silenceData_);
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(input->GetChannelCount() >= mainCh, PrepareSilenceBuffer(silenceData_),
+        ReportInvalidParamEvent("upstream channels < main channels"),
+        "NodeId %{public}d: upstream %{public}u ch < main %{public}u ch, output silence",
+        GetNodeId(), input->GetChannelCount(), mainCh);
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(input->GetFrameLen() == extractOutput_.GetFrameLen(),
+        PrepareSilenceBuffer(silenceData_),
+        ReportInvalidParamEvent("frameLen mismatch"),
+        "NodeId %{public}d: input frameLen %{public}u != node frameLen %{public}u, output silence",
+        GetNodeId(), input->GetFrameLen(), extractOutput_.GetFrameLen());
     // Non-interleaved partition [main block][micIn block]: the leading main block is contiguous.
     uint32_t frames = input->GetFrameLen();
     size_t mainSamples = static_cast<size_t>(frames) * static_cast<size_t>(mainCh);
     size_t mainBytes = mainSamples * sizeof(float);
     // explicit bound before the copy: guards the main block against the output buffer
     // (Size() also carries 64-byte alignment slack, so this stays conservative)
-    if (mainBytes > extractOutput_.Size()) {
-        AUDIO_ERR_LOG("NodeId %{public}d: main block %{public}zu bytes exceeds buffer %{public}zu",
-            GetNodeId(), mainBytes, extractOutput_.Size());
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::QUERY, ERR_INVALID_PARAM), "main block exceeds buffer size", false);
-        return PrepareSilenceBuffer(silenceData_);
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(mainBytes <= extractOutput_.Size(), PrepareSilenceBuffer(silenceData_),
+        ReportInvalidParamEvent("main block exceeds buffer size"),
+        "NodeId %{public}d: main block %{public}zu bytes exceeds buffer %{public}zu",
+        GetNodeId(), mainBytes, extractOutput_.Size());
     errno_t ret = memcpy_s(extractOutput_.GetPcmDataBuffer(), extractOutput_.Size(),
         input->GetPcmDataBuffer(), mainBytes);
-    if (ret != EOK) {
-        AUDIO_ERR_LOG("NodeId %{public}d: main block memcpy_s failed", GetNodeId());
-        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
-            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
-                BusinessScenario::QUERY, ERR_INVALID_PARAM), "main block memcpy_s failed", false);
-        return PrepareSilenceBuffer(silenceData_);
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(ret == EOK, PrepareSilenceBuffer(silenceData_),
+        ReportInvalidParamEvent("main block memcpy_s failed"),
+        "NodeId %{public}d: main block memcpy_s failed", GetNodeId());
     extractOutput_.SetBufferState(input->GetBufferState());
     return &extractOutput_;
 }

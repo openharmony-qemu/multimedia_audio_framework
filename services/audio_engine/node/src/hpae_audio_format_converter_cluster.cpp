@@ -183,39 +183,34 @@ OutputPort<HpaePcmBuffer *> *HpaeAudioFormatConverterCluster::GetOutputPort(Hpae
 
 void HpaeAudioFormatConverterCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
-    if (head_ != nullptr) {
-        head_->Connect(preNode);
-    }
+    CHECK_AND_RETURN(head_ != nullptr);
+    head_->Connect(preNode);
 }
 
 void HpaeAudioFormatConverterCluster::ConnectWithInfo(
     const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode, HpaeNodeInfo &nodeInfo)
 {
-    if (head_ != nullptr) {
-        head_->ConnectWithInfo(preNode, nodeInfo);
-    }
+    CHECK_AND_RETURN(head_ != nullptr);
+    head_->ConnectWithInfo(preNode, nodeInfo);
 }
 
 void HpaeAudioFormatConverterCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
-    if (head_ != nullptr) {
-        head_->DisConnect(preNode);
-    }
+    CHECK_AND_RETURN(head_ != nullptr);
+    head_->DisConnect(preNode);
 }
 
 void HpaeAudioFormatConverterCluster::DisConnectWithInfo(
     const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode, HpaeNodeInfo &nodeInfo)
 {
-    if (head_ != nullptr) {
-        head_->DisConnectWithInfo(preNode, nodeInfo);
-    }
+    CHECK_AND_RETURN(head_ != nullptr);
+    head_->DisConnectWithInfo(preNode, nodeInfo);
 }
 
 void HpaeAudioFormatConverterCluster::SetSourceNode(bool isSourceNode)
 {
-    if (head_ != nullptr) {
-        head_->SetSourceNode(isSourceNode);
-    }
+    CHECK_AND_RETURN(head_ != nullptr);
+    head_->SetSourceNode(isSourceNode);
 }
 
 void HpaeAudioFormatConverterCluster::SetSourceBufferType(HpaeSourceBufferType type)
