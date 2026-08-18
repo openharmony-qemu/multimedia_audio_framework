@@ -382,6 +382,7 @@ private:
     int32_t boundUid_ = -1;
     uint32_t boundSessionId_ = UNBOUND_SESSION_ID;
     CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
+    CollaborationRouteMode collaborationRouteMode_ = COLLABORATION_INVALID_ROUTE_MODE;
 };
 
 }  // namespace HPAE

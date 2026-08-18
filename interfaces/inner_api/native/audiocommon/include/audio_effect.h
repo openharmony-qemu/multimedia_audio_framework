@@ -787,6 +787,15 @@ enum CollaborationState {
     COLLABORATION_BLUETOOTH_OPEN = 1,
     COLLABORATION_NEARLINK_OPEN = 2,
 };
+
+/**
+ * Collaboration Route Mode.
+ */
+enum CollaborationRouteMode {
+    COLLABORATION_INVALID_ROUTE_MODE = -1,
+    COLLABORATION_DEFAULT_ROUTE_MODE = 0,
+    COLLABORATION_MCH_ROUTE_MODE = 1,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 
