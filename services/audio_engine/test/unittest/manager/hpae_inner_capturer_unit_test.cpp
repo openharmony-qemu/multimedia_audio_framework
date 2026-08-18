@@ -1763,6 +1763,53 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, ClusterLifecycle_LastStreamDestroyed_
     EXPECT_EQ(hpaeInnerCapturerManager_->rendererSceneClusterMap_.find(HPAE_SCENE_EFFECT_NONE),
         hpaeInnerCapturerManager_->rendererSceneClusterMap_.end());
 }
+
+/**
+ * @tc.name  : Test AddSingleNodeToSinkInner move-in cadence normalization
+ * @tc.type  : FUNC
+ * @tc.number: MoveInCadence_001
+ * @tc.desc  : Test moved-in node frameLen is re-aligned to the 20ms sink cadence.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveInCadence_001, TestSize.Level1)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    // FAST stream moved in: 5ms/240 node cadence at 48k, sink cadence is 20ms/960.
+    HpaeNodeInfo fastNodeInfo;
+    fastNodeInfo.sessionId = 60021;
+    fastNodeInfo.channels = STEREO;
+    fastNodeInfo.format = SAMPLE_S16LE;
+    fastNodeInfo.frameLen = 240; // 5ms @ 48000
+    fastNodeInfo.samplingRate = SAMPLE_RATE_48000;
+    fastNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    fastNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    fastNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    std::shared_ptr<HpaeSinkInputNode> fastNode = std::make_shared<HpaeSinkInputNode>(fastNodeInfo);
+    hpaeInnerCapturerManager_->AddSingleNodeToSinkInner(fastNode, false);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(fastNode->GetNodeInfo().frameLen, 960); // 20ms @ 48000
+
+    // 44.1k stream moved in: 20ms cadence scaled by stream rate, 960 * 44100 / 48000 = 882.
+    HpaeNodeInfo rate441NodeInfo;
+    rate441NodeInfo.sessionId = 60022;
+    rate441NodeInfo.channels = STEREO;
+    rate441NodeInfo.format = SAMPLE_S16LE;
+    rate441NodeInfo.frameLen = 882;
+    rate441NodeInfo.samplingRate = SAMPLE_RATE_44100;
+    rate441NodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    rate441NodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    rate441NodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    std::shared_ptr<HpaeSinkInputNode> rate441Node = std::make_shared<HpaeSinkInputNode>(rate441NodeInfo);
+    hpaeInnerCapturerManager_->AddSingleNodeToSinkInner(rate441Node, false);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(rate441Node->GetNodeInfo().frameLen, 882);
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(60021) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(60022) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+}
 }  // namespace HPAE
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

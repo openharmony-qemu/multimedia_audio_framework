@@ -88,8 +88,22 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     nodeInfo.statusCallback = weak_from_this();
+    // Moved-in streams keep their previous sink's cadence (e.g. FAST 5ms/240), while this
+    // cluster runs at the 20ms sink tick. Re-align the node frameLen to the sink cadence,
+    // mirroring HpaeRendererManager::AddSingleNodeToSink; otherwise the per-stream converter
+    // is forced into 240->960 frame accumulation and the client keeps the stale FAST cadence.
+    HpaeNodeInfo outNodeInfo;
+    outNodeInfo.frameLen = sinkInfo_.frameLen;
+    outNodeInfo.samplingRate = sinkInfo_.samplingRate;
+    bool frameLenAdjusted = AdjustFrameLen(nodeInfo, outNodeInfo);
+    HILOG_COMM_INFO("[FinishMove] session:%{public}u inputFrameLenAdjusted:%{public}d newFrameLen:%{public}u",
+        sessionId, frameLenAdjusted, nodeInfo.frameLen);
     sinkInputNodeMap_[sessionId]->SetNodeInfo(nodeInfo);
     sinkInputNodeMap_[sessionId]->SetIsLowLatency(false);
+    // Notify the span change so the server ring buffer and the client cadence re-sync to the
+    // new sink tick; this is the standard move-in pairing on all other renderer managers.
+    TriggerCallback(UPDATE_SPAN_SIZE, sessionId, static_cast<uint32_t>(nodeInfo.frameLen),
+        HPAE_STREAM_CLASS_TYPE_PLAY);
     SetSessionStateForRenderer(sessionId, node->GetState());
     rendererSessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
     sceneTypeToProcessClusterCount_++;
