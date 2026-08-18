@@ -438,36 +438,36 @@ void AudioCoreService::CheckNeedPreRemoveUnusedPipe(std::vector<std::shared_ptr<
 {
     bool hasFastInputNoStream = false;
     bool hasVoipFastInputNoStream = false;
-    bool hasFastInputExistStream = false;
-    bool hasVoipFastInputExistStream = false;
+    bool isFastInputNew = false;
+    bool isVoipFastInputNew = false;
     std::shared_ptr<AudioPipeInfo> pipeInfoFastInput = nullptr;
     std::shared_ptr<AudioPipeInfo> pipeInfoVoipFastInput = nullptr;
     for (auto &pipeInfo : pipeInfos) {
         if (pipeInfo->name_ == "fast_input" && pipeInfo->streamDescriptors_.empty()) {
             hasFastInputNoStream = true;
-            hasFastInputExistStream = false;
+            isFastInputNew = false;
             pipeInfoFastInput = pipeInfo;
-        } else if (pipeInfo->name_ == "fast_input" && !pipeInfo->streamDescriptors_.empty()) {
+        } else if (pipeInfo->name_ == "fast_input" && pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
             hasFastInputNoStream = false;
-            hasFastInputExistStream = true;
+            isFastInputNew = true;
             pipeInfoFastInput = pipeInfo;
         }
 
         if (pipeInfo->name_ == "voip_fast_input" && pipeInfo->streamDescriptors_.empty()) {
             hasVoipFastInputNoStream = true;
-            hasVoipFastInputExistStream = false;
+            isVoipFastInputNew = false;
             pipeInfoVoipFastInput = pipeInfo;
-        } else if (pipeInfo->name_ == "voip_fast_input" && !pipeInfo->streamDescriptors_.empty()) {
+        } else if (pipeInfo->name_ == "voip_fast_input" && pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
             hasVoipFastInputNoStream = false;
-            hasVoipFastInputExistStream = true;
+            isVoipFastInputNew = true;
             pipeInfoVoipFastInput = pipeInfo;
         }
     }
-    if (hasFastInputNoStream && hasVoipFastInputExistStream && pipeInfoFastInput != nullptr) {
+    if (hasFastInputNoStream && isVoipFastInputNew && pipeInfoFastInput != nullptr) {
         ReleaseFastPipeInner(pipeInfoFastInput->id_, pipeInfoFastInput->paIndex_,
             pipeInfoFastInput->name_, pipeInfoFastInput->moduleInfo_.name);
     }
-    if (hasVoipFastInputNoStream && hasFastInputExistStream && pipeInfoVoipFastInput != nullptr) {
+    if (hasVoipFastInputNoStream && isFastInputNew && pipeInfoVoipFastInput != nullptr) {
         ReleaseFastPipeInner(pipeInfoVoipFastInput->id_, pipeInfoVoipFastInput->paIndex_,
             pipeInfoVoipFastInput->name_, pipeInfoVoipFastInput->moduleInfo_.name);
     }
