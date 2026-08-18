@@ -27,7 +27,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-static constexpr int32_t IPC_TIMEOUT_MS = 3000;
+static constexpr int32_t IPC_TIMEOUT_MS = 2500;
 
 template<typename F>
 static int32_t CallWithTimeout(F&& func, const char* methodName)
