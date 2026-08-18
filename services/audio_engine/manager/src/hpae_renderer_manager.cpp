@@ -1699,15 +1699,9 @@ bool HpaeRendererManager::IsRunning(void)
 
 void HpaeRendererManager::SendRequest(Request &&request, const std::string &funcName, bool isInit)
 {
-    if (!isInit && !IsInit()) {
-        AUDIO_ERR_LOG("HpaeRendererManager not init, %{public}s excute failed", funcName.c_str());
-        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_RENDERER_MANAGER_TYPE, funcName,
-            "HpaeRendererManager not init");
-        return;
-    }
-    hpaeNoLockQueue_.PushRequest(std::move(request));
     if (hpaeSignalProcessThread_ == nullptr) {
         if (sinkInfo_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
+            hpaeNoLockQueue_.PushRequest(std::move(request));
             hpaeNoLockQueue_.HandleRequests();
         } else {
             AUDIO_ERR_LOG("hpaeSignalProcessThread_ is nullptr, %{public}s excute failed", funcName.c_str());
@@ -1716,6 +1710,7 @@ void HpaeRendererManager::SendRequest(Request &&request, const std::string &func
         }
         return;
     }
+    hpaeNoLockQueue_.PushRequest(std::move(request));
     hpaeSignalProcessThread_->Notify();
 }
 

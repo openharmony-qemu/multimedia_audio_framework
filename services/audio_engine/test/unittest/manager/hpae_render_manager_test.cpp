@@ -5958,4 +5958,191 @@ HWTEST_F(HpaeRendererManagerTest, ConnectOutputCluster_NullOutputCluster_001, Te
     SUCCEED(); // Reaching here without crashing means the null guard works.
 }
 
+/*
+ * @tc.type  : FUNC
+ * @tc.number: SendRequest_NotInit_ThreadExists_QueuedNotDropped_001
+ * @tc.desc  : In the not-init window (process thread created, init request still
+ *             pending), SendRequest must queue the request instead of dropping it;
+ *             the request then executes when the queue is drained (HandleMsg),
+ *             i.e. on the process thread after init.
+ */
+HWTEST_F(HpaeRendererManagerTest, SendRequest_NotInit_ThreadExists_QueuedNotDropped_001, TestSize.Level1)
+{
+    // Fixture state: isInit_ == false, hpaeSignalProcessThread_ exists (created but not
+    // activated, so Notify() wakes nobody and the request stays queued until HandleMsg()).
+    EXPECT_FALSE(hpaeRendererManager_->IsInit());
+    ASSERT_NE(hpaeRendererManager_->hpaeSignalProcessThread_, nullptr);
+    hpaeRendererManager_->hpaeSignalProcessThread_->ActivateThread(hpaeRendererManager_);
+
+    bool executed = false;
+    hpaeRendererManager_->SendRequest([&executed]() { executed = true; }, __func__);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
+    
+    EXPECT_TRUE(executed);
+}
+
+/*
+ * @tc.type  : FUNC
+ * @tc.number: SendRequest_NotInit_ExecutesAfterInitRequest_002
+ * @tc.desc  : FIFO ordering: a request sent during the not-init window must run
+ *             AFTER the already-queued init request (which flips isInit_), never before it.
+ */
+HWTEST_F(HpaeRendererManagerTest, SendRequest_NotInit_ExecutesAfterInitRequest_002, TestSize.Level1)
+{
+    EXPECT_FALSE(hpaeRendererManager_->IsInit());
+    auto mgr = hpaeRendererManager_;
+    std::vector<int32_t> order;
+
+    // The init request queued by Init() before any command can arrive.
+    mgr->hpaeNoLockQueue_.PushRequest([&order, mgr]() {
+        order.push_back(1); // init runs first
+        mgr->isInit_.store(true);
+    });
+    // Command arriving in the not-init window (init in flight).
+    mgr->SendRequest([&order]() { order.push_back(2); }, __func__);
+
+    mgr->HandleMsg(); // process thread drains in FIFO order
+    EXPECT_TRUE(mgr->IsInit());
+    ASSERT_EQ(order.size(), 2u);
+    EXPECT_EQ(order[0], 1); // init first
+    EXPECT_EQ(order[1], 2); // command after init
+}
+
+/*
+ * @tc.type  : FUNC
+ * @tc.number: SendRequest_NotInit_NoThread_NotExecuted_003
+ * @tc.desc  : No process thread and non-interphone route (init never started):
+ *             the request must not be executed, and must not be left in the queue
+ *             as an orphan that could later run before the init request.
+ */
+HWTEST_F(HpaeRendererManagerTest, SendRequest_NotInit_NoThread_NotExecuted_003, TestSize.Level1)
+{
+    hpaeRendererManager_->hpaeSignalProcessThread_.reset();
+    hpaeRendererManager_->sinkInfo_.routeFlag = AUDIO_FLAG_NONE;
+    EXPECT_FALSE(hpaeRendererManager_->IsInit());
+
+    bool executed = false;
+    hpaeRendererManager_->SendRequest([&executed]() { executed = true; }, __func__);
+
+    EXPECT_FALSE(executed);
+    // No orphan: draining later must still not execute it.
+    hpaeRendererManager_->HandleMsg();
+    EXPECT_FALSE(executed);
+}
+
+/*
+ * @tc.type  : FUNC
+ * @tc.number: SendRequest_NotInit_InterphoneNoThread_ExecutedInline_004
+ * @tc.desc  : Interphone route never creates a process thread; SendRequest must
+ *             push and drain inline (synchronous execution on the caller thread).
+ */
+HWTEST_F(HpaeRendererManagerTest, SendRequest_NotInit_InterphoneNoThread_ExecutedInline_004, TestSize.Level1)
+{
+    hpaeRendererManager_->hpaeSignalProcessThread_.reset();
+    hpaeRendererManager_->sinkInfo_.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+    EXPECT_FALSE(hpaeRendererManager_->IsInit());
+
+    bool executed = false;
+    hpaeRendererManager_->SendRequest([&executed]() { executed = true; }, __func__);
+
+    EXPECT_TRUE(executed); // drained inline by HandleRequests
+}
+
+/*
+ * @tc.type  : FUNC
+ * @tc.number: SendRequest_Init_StillQueued_005
+ * @tc.desc  : Regression: with isInit_ true and a thread present, requests are
+ *             still queued (executed only when the queue is drained).
+ */
+HWTEST_F(HpaeRendererManagerTest, SendRequest_Init_StillQueued_005, TestSize.Level1)
+{
+    hpaeRendererManager_->isInit_.store(true);
+
+    bool executed = false;
+    hpaeRendererManager_->SendRequest([&executed]() { executed = true; }, __func__);
+
+    EXPECT_FALSE(executed);
+    hpaeRendererManager_->HandleMsg();
+    EXPECT_TRUE(executed);
+}
+
+/*
+ * @tc.type  : FUNC
+ * @tc.number: SendRequest_ActiveThread_InitThenCommand_Executed_006
+ * @tc.desc  : Production sequence with a REAL activated process thread: upper layer
+ *             sends a command right after Init() returns, i.e. while the init request
+ *             may still be in flight (isInit_ not yet flipped). The command must be
+ *             queued and executed once the queue drains — never dropped.
+ */
+HWTEST_F(HpaeRendererManagerTest, SendRequest_ActiveThread_InitThenCommand_Executed_006, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto mgr = std::make_shared<HpaeRendererManager>(sinkInfo);
+    SetSinkVirtualOutputNode(sinkInfo, mgr);
+    ASSERT_EQ(mgr->Init(), SUCCESS); // creates + activates hpaeSignalProcessThread_, queues init request
+
+    // Command arriving immediately after Init() returns (the not-init race window).
+    std::atomic<bool> executed {false};
+    mgr->SendRequest([&executed]() { executed.store(true); }, __func__);
+
+    WaitForMsgProcessing(mgr); // let the process thread drain init request + command
+    EXPECT_TRUE(mgr->IsInit());
+    EXPECT_TRUE(executed.load());
+
+    EXPECT_EQ(mgr->DeInit(), SUCCESS);
+    WaitForMsgProcessing(mgr);
+}
+
+/*
+ * @tc.type  : FUNC
+ * @tc.number: SendRequest_ActiveThread_InitInFlight_ExecutesAfterInit_007
+ * @tc.desc  : Deterministic not-init window with a REAL process thread: an init
+ *             request blocks on a gate, so isInit_ is guaranteed false while
+ *             SendRequest is called from another thread. The command must be queued
+ *             (not dropped), and by FIFO it must execute strictly AFTER init.
+ */
+HWTEST_F(HpaeRendererManagerTest, SendRequest_ActiveThread_InitInFlight_ExecutesAfterInit_007, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto mgr = std::make_shared<HpaeRendererManager>(sinkInfo);
+
+    std::atomic<bool> releaseGate {false};
+    std::atomic<bool> initDone {false};
+    std::atomic<bool> cmdDone {false};
+    std::atomic<bool> cmdAfterInit {false};
+
+    // "init" request: holds the not-init window open until released, then flips isInit_.
+    mgr->hpaeNoLockQueue_.PushRequest([&releaseGate, &initDone, mgr]() {
+        const int spinLimit = 250; // bounded: 250 * 20ms = 5s, keeps the test from hanging
+        for (int i = 0; i < spinLimit && !releaseGate.load(); i++) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
+        }
+        mgr->isInit_.store(true);
+        initDone.store(true);
+    });
+    mgr->hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+    mgr->hpaeSignalProcessThread_->ActivateThread(mgr); // thread enters and blocks inside the init request
+
+    // isInit_ is deterministically false here: the init request only flips it after the gate.
+    EXPECT_FALSE(mgr->IsInit());
+    mgr->SendRequest([&initDone, &cmdDone, &cmdAfterInit]() {
+        cmdAfterInit.store(initDone.load()); // true iff init finished before this ran
+        cmdDone.store(true);
+    }, __func__);
+
+    releaseGate.store(true); // release init; the thread then drains the command (FIFO)
+
+    const int waitLimit = 250; // 250 * 20ms = 5s bound
+    for (int i = 0; i < waitLimit && !cmdDone.load(); i++) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
+    }
+    EXPECT_TRUE(initDone.load());
+    EXPECT_TRUE(cmdDone.load());
+    EXPECT_TRUE(cmdAfterInit.load()); // strictly after init
+    EXPECT_TRUE(mgr->IsInit());
+
+    EXPECT_TRUE(mgr->DeactivateThread()); // stop the real thread before teardown
+}
+
 }  // namespace
