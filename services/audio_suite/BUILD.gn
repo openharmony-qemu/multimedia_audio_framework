@@ -106,6 +106,7 @@ audio_ohos_library("audio_suite") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
+    "ffrt:libffrt",
   ]
 
   cflags_cc = [
