@@ -114,6 +114,7 @@ private:
     void SetSessionStateForCapturer(uint32_t sessionId, HpaeSessionState capturerState);
     void SendRequestInner(Request &&request, const std::string &funcName, bool isInit = false);
     uint32_t GetSinkInputNodeIdInner();
+    HpaeNodeInfo BuildClusterNodeInfo(const HpaeNodeInfo &streamNodeInfo) const;
     void AddSingleNodeToSinkInner(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSinkInner(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);

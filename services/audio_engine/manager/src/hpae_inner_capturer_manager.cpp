@@ -52,6 +52,21 @@ int32_t HpaeInnerCapturerManager::AddNodeToSink(const std::shared_ptr<HpaeSinkIn
     return SUCCESS;
 }
 
+HpaeNodeInfo HpaeInnerCapturerManager::BuildClusterNodeInfo(const HpaeNodeInfo &streamNodeInfo) const
+{
+    // Inner-capturer clusters run at HPAE_SCENE_EFFECT_NONE, so each stream's converter output
+    // geometry is always the sink fallback (no effect expectation). Cluster-level shared nodes
+    // (mixer/effect/limiter) must live in the same domain instead of the first stream's geometry,
+    // otherwise stereo inputs get truncated by a mono-sized mix buffer (operator+= adds the left
+    // chunk only) and stereo consumers read past the mono buffer.
+    HpaeNodeInfo clusterNodeInfo = streamNodeInfo;
+    if (sinkInfo_.channels != 0) {
+        clusterNodeInfo.channels = sinkInfo_.channels;
+        clusterNodeInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
+    }
+    return clusterNodeInfo;
+}
+
 void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect)
 {
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
@@ -73,7 +88,8 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     OnNotifyDfxNodeAdmin(true, nodeInfo);
 #endif
     if (!SafeGetMap(rendererSceneClusterMap_, nodeInfo.sceneType)) {
-        rendererSceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
+        rendererSceneClusterMap_[nodeInfo.sceneType] =
+            std::make_shared<HpaeProcessCluster>(BuildClusterNodeInfo(nodeInfo), sinkInfo_);
     }
 
     rendererSceneClusterMap_[nodeInfo.sceneType]->CreateNodes(sinkInputNodeMap_[sessionId]);
@@ -272,7 +288,8 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
             HpaeProcessorType processorType =  it.second->GetSceneType();
             HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
             if (!SafeGetMap(rendererSceneClusterMap_, processorType)) {
-                rendererSceneClusterMap_[processorType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
+                rendererSceneClusterMap_[processorType] =
+                    std::make_shared<HpaeProcessCluster>(BuildClusterNodeInfo(nodeInfo), sinkInfo_);
                 rendererSceneClusterMap_[processorType]->CreateNodes(it.second);
             }
             if (it.second->GetState() == HPAE_SESSION_RUNNING) {
@@ -745,7 +762,8 @@ int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStre
     sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
 
     if (!SafeGetMap(rendererSceneClusterMap_, nodeInfo.sceneType)) {
-        rendererSceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
+        rendererSceneClusterMap_[nodeInfo.sceneType] =
+            std::make_shared<HpaeProcessCluster>(BuildClusterNodeInfo(nodeInfo), sinkInfo_);
         if (rendererSceneClusterMap_[nodeInfo.sceneType]->SetupAudioLimiter() != SUCCESS) {
             AUDIO_ERR_LOG("SetupAudioLimiter failed, sessionId %{public}u", nodeInfo.sessionId);
         }
@@ -789,12 +807,25 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
                 sessionId);
         }
         sceneTypeToProcessClusterCount_--;
-        if (sceneTypeToProcessClusterCount_ == 0) {
-            HILOG_COMM_INFO("[DeleteRendererInputNodeSession]need to erase rendererSceneCluster, "
-                "last stream: %{public}u", sessionId);
-        } else {
+        if (sceneTypeToProcessClusterCount_ != 0) {
             AUDIO_INFO_LOG("%{public}u is not last stream, no need erase rendererSceneCluster", sessionId);
+            return;
         }
+        if (rendererSceneClusterMap_[sceneType]->GetPreOutNum() != 0) {
+            AUDIO_WARNING_LOG("last stream %{public}u destroyed but mixer inputs remain, defer cluster erase",
+                sessionId);
+            return;
+        }
+        // Erase here instead of waiting for the mixer's DrainProcess callback: the callback is gated
+        // on this same count and may never fire once the sink stops pulling, leaving a stale cluster
+        // whose first-stream geometry poisons later streams joining the same sink.
+        HILOG_COMM_INFO("[DeleteRendererInputNodeSession]erase rendererSceneCluster, last stream: %{public}u",
+            sessionId);
+        rendererSceneClusterMap_[sceneType]->DisConnectMixerNode();
+        if (hpaeInnerCapSinkNode_ != nullptr) {
+            hpaeInnerCapSinkNode_->DisConnect(rendererSceneClusterMap_[sceneType]);
+        }
+        rendererSceneClusterMap_.erase(sceneType);
     }
 }
 

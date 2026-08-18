@@ -1708,6 +1708,57 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, Flush_RendererSessionRunning_001, Tes
     EXPECT_EQ(hpaeInnerCapturerManager_->Flush(playStreamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
 }
+
+/**
+ * @tc.name  : Test cluster mixer geometry follows sink when first stream is mono
+ * @tc.type  : FUNC
+ * @tc.number: ClusterGeometry_MonoFirstStream_001
+ * @tc.desc  : Cluster-level mixer must live in the sink channel domain, not the first stream's
+ *             geometry. A mono first stream used to poison the mixer so later stereo inputs got
+ *             truncated by the mono-sized mix buffer (operator+= adds the left chunk only).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, ClusterGeometry_MonoFirstStream_001, TestSize.Level1)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo monoPlayStreamInfo = GetInCapPlayStreamInfo();
+    monoPlayStreamInfo.channels = MONO;
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(monoPlayStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    auto clusterIt = hpaeInnerCapturerManager_->rendererSceneClusterMap_.find(HPAE_SCENE_EFFECT_NONE);
+    ASSERT_NE(clusterIt, hpaeInnerCapturerManager_->rendererSceneClusterMap_.end());
+    ASSERT_NE(clusterIt->second, nullptr);
+    ASSERT_NE(clusterIt->second->mixerNode_, nullptr);
+    // Sink is STEREO (GetInCapSinkInfo): mixer must follow the sink domain, not the mono stream.
+    EXPECT_EQ(clusterIt->second->mixerNode_->GetChannelCount(), STEREO);
+}
+
+/**
+ * @tc.name  : Test cluster is erased after the last renderer stream is destroyed
+ * @tc.type  : FUNC
+ * @tc.number: ClusterLifecycle_LastStreamDestroyed_001
+ * @tc.desc  : Destroying the last stream must tear the cluster down. Previously the erase only
+ *             logged "need to erase" and waited for a mixer callback that never fired, leaving a
+ *             stale cluster whose first-stream geometry poisoned later streams.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, ClusterLifecycle_LastStreamDestroyed_001, TestSize.Level1)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_NE(hpaeInnerCapturerManager_->rendererSceneClusterMap_.find(HPAE_SCENE_EFFECT_NONE),
+        hpaeInnerCapturerManager_->rendererSceneClusterMap_.end());
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->rendererSceneClusterMap_.find(HPAE_SCENE_EFFECT_NONE),
+        hpaeInnerCapturerManager_->rendererSceneClusterMap_.end());
+}
 }  // namespace HPAE
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
