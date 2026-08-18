@@ -71,12 +71,18 @@ int32_t VADeviceBrokerStubImpl::OnDevicesDisconnected(const VADevice &device)
 
 int32_t VADeviceBrokerStubImpl::SetAssociatedMacAddresses(const std::string &macAddress, bool isEnable)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission() ||
+        PermissionUtil::VerifyPermission(MANAGE_AUDIO_ACCESSORY, IPCSkeleton::GetCallingTokenID()),
+        SUCCESS, "SetAssociatedMacAddresses denied: no MANAGE_AUDIO_ACCESSORY permission");
     VADeviceManager::GetInstance().SetAssociatedMacAddresses(macAddress, isEnable);
     return SUCCESS;
 }
 
 int32_t VADeviceBrokerStubImpl::SetNoiseReductionMode(const VADevice& device, int32_t noiseReductionMode)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission() ||
+        PermissionUtil::VerifyPermission(MANAGE_AUDIO_ACCESSORY, IPCSkeleton::GetCallingTokenID()),
+        SUCCESS, "SetNoiseReductionMode denied: no MANAGE_AUDIO_ACCESSORY permission");
     auto sharedDevice = std::make_shared<VADevice>(device);
     VADeviceManager::GetInstance().SetNoiseReductionMode(sharedDevice, noiseReductionMode);
     return SUCCESS;
