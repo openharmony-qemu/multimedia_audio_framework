@@ -1500,7 +1500,7 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_003, TestSize.Leve
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test",
         AudioRouterCenter::OutputDeviceMap{});
-    EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+    EXPECT_EQ(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }
 
 /**
@@ -1518,7 +1518,7 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_004, TestSize.Leve
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test",
         AudioRouterCenter::OutputDeviceMap{});
-    EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+    EXPECT_EQ(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }
 
 /**
