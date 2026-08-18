@@ -64,6 +64,10 @@ HpaeNodeInfo HpaeInnerCapturerManager::BuildClusterNodeInfo(const HpaeNodeInfo &
         clusterNodeInfo.channels = sinkInfo_.channels;
         clusterNodeInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
     }
+    HILOG_COMM_INFO("[ClusterGeometry] firstStream:%{public}u streamCh:%{public}u streamRate:%{public}u -> "
+        "clusterCh:%{public}u (sinkCh:%{public}u, sinkRate:%{public}u)",
+        streamNodeInfo.sessionId, streamNodeInfo.channels, streamNodeInfo.samplingRate,
+        clusterNodeInfo.channels, sinkInfo_.channels, sinkInfo_.samplingRate);
     return clusterNodeInfo;
 }
 
@@ -300,6 +304,7 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
         // rebuild loop does not restore it. Recount here so the next last-stream destroy reaches 0
         // and triggers the cluster erase in DeleteRendererInputNodeSession.
         sceneTypeToProcessClusterCount_ = static_cast<int32_t>(sinkInputNodeMap_.size());
+        AUDIO_INFO_LOG("[ReloadRecount] renderer streams:%{public}d", sceneTypeToProcessClusterCount_);
     };
     SendRequestInner(request, __func__, true);
     if (!IsInit()) {
