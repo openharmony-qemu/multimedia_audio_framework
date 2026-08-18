@@ -103,9 +103,11 @@ static const int32_t DEFAULT_FAST_PIPE_CLOSE_DELAY_TIME_MS = 3000;
 static const int32_t A2DP_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 200;
 static const int32_t ARMUSB_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 0;
 static const int32_t MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 0;
+static const int32_t FAST_INPUT_PIPE_CLOSE_DELAY_TIME_MS = 0;
 static const std::unordered_map<std::string, int32_t> FAST_PIPE_DELAY_RELEASE_TIME_MS = {
     {"voip_fast_output", VOIP_FAST_PIPE_CLOSE_DELAY_TIME_MS},
-    {"voip_fast_input", VOIP_REC_FAST_PIPE_CLOSE_DELAY_TIME_MS},
+    {"voip_fast_input", FAST_INPUT_PIPE_CLOSE_DELAY_TIME_MS},
+    {"fast_input", FAST_INPUT_PIPE_CLOSE_DELAY_TIME_MS},
 };
 static const std::unordered_map<std::string, int32_t> MOVE_STREAM_FAST_PIPE_DELAY_RELEASE_TIME_MS = {
     {"fast_a2dp_output", A2DP_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS},
