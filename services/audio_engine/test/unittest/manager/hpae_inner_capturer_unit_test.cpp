@@ -1724,6 +1724,10 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, ClusterGeometry_MonoFirstStream_001, 
 
     HpaeStreamInfo monoPlayStreamInfo = GetInCapPlayStreamInfo();
     monoPlayStreamInfo.channels = MONO;
+    // GetInCapPlayStreamInfo carries SOURCE_TYPE_PLAYBACK_CAPTURE, which already hits the cluster
+    // ctor's sink-channel special case and passes without the fix. Use INVALID to take the else
+    // branch, the path real cast streams (moved in without a capture sourceType) exercise.
+    monoPlayStreamInfo.sourceType = SOURCE_TYPE_INVALID;
     EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(monoPlayStreamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
 

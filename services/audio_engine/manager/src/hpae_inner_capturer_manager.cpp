@@ -296,6 +296,10 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
                 ConnectRendererInputSessionInner(it.first);
             }
         }
+        // The delete loop above decremented sceneTypeToProcessClusterCount_ per stream while the
+        // rebuild loop does not restore it. Recount here so the next last-stream destroy reaches 0
+        // and triggers the cluster erase in DeleteRendererInputNodeSession.
+        sceneTypeToProcessClusterCount_ = static_cast<int32_t>(sinkInputNodeMap_.size());
     };
     SendRequestInner(request, __func__, true);
     if (!IsInit()) {
@@ -812,6 +816,10 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
             return;
         }
         if (rendererSceneClusterMap_[sceneType]->GetPreOutNum() != 0) {
+            // Mixer inputs normally drop to 0 with the last stream, so this is a defensive guard.
+            // A deferred cluster is bounded: OnDisConnectProcessCluster still erases it once the
+            // mixer drains, and a later stream can reuse it safely now that its geometry is the
+            // sink domain.
             AUDIO_WARNING_LOG("last stream %{public}u destroyed but mixer inputs remain, defer cluster erase",
                 sessionId);
             return;
@@ -819,6 +827,9 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
         // Erase here instead of waiting for the mixer's DrainProcess callback: the callback is gated
         // on this same count and may never fire once the sink stops pulling, leaving a stale cluster
         // whose first-stream geometry poisons later streams joining the same sink.
+        // Behavior note: eager erase discards the buffered tail (at most a few frames) of the last
+        // released stream while the capturer may still be pulling; acceptable on the Release path.
+        // If tail fidelity is ever required, defer the erase while the sink is still running.
         HILOG_COMM_INFO("[DeleteRendererInputNodeSession]erase rendererSceneCluster, last stream: %{public}u",
             sessionId);
         rendererSceneClusterMap_[sceneType]->DisConnectMixerNode();
