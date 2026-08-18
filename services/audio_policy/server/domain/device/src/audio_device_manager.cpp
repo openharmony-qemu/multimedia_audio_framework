@@ -1210,9 +1210,8 @@ void AudioDeviceManager::UpdateBtDeviceListForCategory(const std::shared_ptr<Aud
 {
     for (auto &desc : connectedDevices_) {
         CHECK_AND_CONTINUE(AudioPolicyUtils::GetInstance().IsDeviceMatch(desc, devDesc));
-        if (devDesc->deviceCategory_ == BT_UNWEAR_HEADPHONE) {
-            RemoveBtFromOtherList(*devDesc);
-        } else {
+        RemoveBtFromOtherList(*desc);
+        if (devDesc->deviceCategory_ != BT_UNWEAR_HEADPHONE) {
             AddBtToOtherList(desc);
         }
     }
