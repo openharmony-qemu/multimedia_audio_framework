@@ -4023,10 +4023,8 @@ void AudioCoreService::GetFlagForUltraFastStream(
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
         streamDesc->newDeviceDescs_.front() != nullptr, "Invalid stream desc");
-    DeviceType deviceType = streamDesc->newDeviceDescs_.front()->getType();
-    bool isUltraFastSupported = (deviceType == DEVICE_TYPE_USB_ARM_HEADSET)
-        ? isSupportArmUsbUltraFast_
-        : isSupportUltraFast_;
+    DeviceType deviceType = streamDesc->GetMainNewDeviceType();
+    bool isUltraFastSupported = IsUltraFastSupportedForDevice(deviceType);
     CHECK_AND_RETURN_LOG(isUltraFastSupported, "Ultra fast is not supported for device type %{public}d", deviceType);
     CHECK_AND_RETURN_LOG(
         supportUltraFastBundleSet_.find(streamDesc->GetBundleName()) != supportUltraFastBundleSet_.end(),
@@ -4068,6 +4066,11 @@ void AudioCoreService::UpdateNearLinkCollaborativeState(bool nearLinkCollaborati
     AudioServerProxy::GetInstance().SetAudioParameterProxy("nearLink_collaborative_state",
         std::to_string(static_cast<int32_t>(nearLinkCollaborativeState)));
     AUDIO_INFO_LOG("UpdateNearLinkCollaborativeState, value:%{public}d", nearLinkCollaborativeState);
+}
+
+bool AudioCoreService::IsUltraFastSupportedForDevice(DeviceType deviceType)
+{
+    return (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) ? isSupportArmUsbUltraFast_ : isSupportUltraFast_;
 }
 } // namespace AudioStandard
 } // namespace OHOS
