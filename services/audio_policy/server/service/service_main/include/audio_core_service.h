@@ -239,8 +239,6 @@ public:
             const std::string &moduleName);
         int32_t ReleaseFastPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
             const std::string &moduleName);
-        int32_t ReleaseFastPipeInner(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
-            const std::string &moduleName);
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId,
             int32_t targetUid, uint32_t targetStreamId) override;
@@ -743,6 +741,8 @@ private:
     void DelayReleaseFastPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
     int32_t ReleaseFastPipe(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
         const std::string &moduleName, int32_t delayMs);
+    int32_t ReleaseFastPipeInner(AudioIOHandle id, uint32_t paIndex, const std::string &pipeName,
+            const std::string &moduleName);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     bool HandleMuteBeforeDeviceSwitch(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -897,6 +897,7 @@ private:
         SessionOperationMsg opMsg);
     void CheckFastToNormalForRecord(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         SessionOperationMsg opMsg);
+    void CheckNeedPreRemoveUnusedPipe(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;

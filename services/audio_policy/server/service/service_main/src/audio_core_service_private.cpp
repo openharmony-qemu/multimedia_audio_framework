@@ -103,11 +103,9 @@ static const int32_t DEFAULT_FAST_PIPE_CLOSE_DELAY_TIME_MS = 3000;
 static const int32_t A2DP_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 200;
 static const int32_t ARMUSB_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 0;
 static const int32_t MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS = 0;
-static const int32_t FAST_INPUT_PIPE_CLOSE_DELAY_TIME_MS = 0;
 static const std::unordered_map<std::string, int32_t> FAST_PIPE_DELAY_RELEASE_TIME_MS = {
     {"voip_fast_output", VOIP_FAST_PIPE_CLOSE_DELAY_TIME_MS},
-    {"voip_fast_input", FAST_INPUT_PIPE_CLOSE_DELAY_TIME_MS},
-    {"fast_input", FAST_INPUT_PIPE_CLOSE_DELAY_TIME_MS},
+    {"voip_fast_input", VOIP_REC_FAST_PIPE_CLOSE_DELAY_TIME_MS},
 };
 static const std::unordered_map<std::string, int32_t> MOVE_STREAM_FAST_PIPE_DELAY_RELEASE_TIME_MS = {
     {"fast_a2dp_output", A2DP_MOVE_STREAM_FAST_PIPE_CLOSE_DELAY_TIME_MS},
@@ -436,6 +434,45 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     return SUCCESS;
 }
 
+void AudioCoreService::CheckNeedPreRemoveUnusedPipe(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos)
+{
+    bool hasFastInputNoStream = false;
+    bool hasVoipFastInputNoStream = false;
+    bool hasFastInputExistStream = false;
+    bool hasVoipFastInputExistStream = false;
+    std::shared_ptr<AudioPipeInfo> pipeInfoFastInput = nullptr;
+    std::shared_ptr<AudioPipeInfo> pipeInfoVoipFastInput = nullptr;
+    for (auto &pipeInfo : pipeInfos) {
+        if (pipeInfo->name_ == "fast_input" && pipeInfo->streamDescriptors_.empty()) {
+            hasFastInputNoStream = true;
+            hasFastInputExistStream = false;
+            pipeInfoFastInput = pipeInfo;
+        } else if (pipeInfo->name_ == "fast_input" && !pipeInfo->streamDescriptors_.empty()) {
+            hasFastInputNoStream = false;
+            hasFastInputExistStream = true;
+            pipeInfoFastInput = pipeInfo;
+        }
+
+        if (pipeInfo->name_ == "voip_fast_input" && pipeInfo->streamDescriptors_.empty()) {
+            hasVoipFastInputNoStream = true;
+            hasVoipFastInputExistStream = false;
+            pipeInfoVoipFastInput = pipeInfo;
+        } else if (pipeInfo->name_ == "voip_fast_input" && !pipeInfo->streamDescriptors_.empty()) {
+            hasVoipFastInputNoStream = false;
+            hasVoipFastInputExistStream = true;
+            pipeInfoVoipFastInput = pipeInfo;
+        }
+    }
+    if (hasFastInputNoStream && hasVoipFastInputExistStream && pipeInfoFastInput != nullptr) {
+        ReleaseFastPipeInner(pipeInfoFastInput->id_, pipeInfoFastInput->paIndex_,
+            pipeInfoFastInput->name_, pipeInfoFastInput->moduleInfo_.name);
+    }
+    if (hasVoipFastInputNoStream && hasFastInputExistStream && pipeInfoVoipFastInput != nullptr) {
+        ReleaseFastPipeInner(pipeInfoVoipFastInput->id_, pipeInfoVoipFastInput->paIndex_,
+            pipeInfoVoipFastInput->name_, pipeInfoVoipFastInput->moduleInfo_.name);
+    }
+}
+
 int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
@@ -448,14 +485,7 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     audioInjectorPolicy_.FetchCapDeviceInjectPreProc(pipeInfos, removeFlag, fetchStreamId);
 
     AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
-    for (auto &pipeInfo : pipeInfos) {
-        if ((pipeInfo->name_ == "fast_input" || pipeInfo->name_ == "voip_fast_input") &&
-            pipeInfo->streamDescriptors_.empty()) {
-            CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
-            return GetEventEntry()->ReleaseFastPipeInner(pipeInfo->id_, pipeInfo->paIndex_,
-                pipeInfo->name_, pipeInfo->moduleInfo_.name);
-        }
-    }
+    CheckNeedPreRemoveUnusedPipe(pipeInfos);
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
