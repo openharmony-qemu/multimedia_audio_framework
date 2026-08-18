@@ -761,9 +761,7 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
     ret = FetchRendererPipeAndExecute(streamDesc, sessionId, flagInfo);
     flagInfo.staticCheckFlag = static_cast<uint32_t>(streamDesc->audioFlag_);
-    flagInfo.isSupportUltraFast = (streamDesc->newDeviceDescs_.front()->getType() == DEVICE_TYPE_USB_ARM_HEADSET)
-        ? isSupportArmUsbUltraFast_
-        : isSupportUltraFast_;
+    flagInfo.isSupportUltraFast = (isSupportUltraFast_ || isSupportArmUsbUltraFast_);
     networkId = streamDesc->newDeviceDescs_.front()->networkId_;
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
