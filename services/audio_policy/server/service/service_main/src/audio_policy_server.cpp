@@ -4986,11 +4986,11 @@ int32_t AudioPolicyServer::EnableSystemVolumeProxy(int32_t zoneId, int32_t devic
 }
 
 int32_t AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId,
-    std::vector<std::map<AudioInterrupt, int32_t>> &retList)
+    std::vector<std::map<AudioInterrupt, int32_t>> &retList, bool filterRemote)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
-    retList = ToIpcInterrupts(AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId));
+    retList = ToIpcInterrupts(AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId, filterRemote));
     return SUCCESS;
 }
 

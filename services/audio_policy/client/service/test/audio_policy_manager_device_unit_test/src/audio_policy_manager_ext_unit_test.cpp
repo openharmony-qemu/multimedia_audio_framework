@@ -563,7 +563,8 @@ HWTEST(AudioPolicyManagerDevice, ZoneGetInterruptByTag_NullGsp, TestSize.Level1)
 {
     auto mgr = std::make_shared<AudioPolicyManager>();
     mgr->audioPolicyClientStubCB_ = nullptr;
-    auto list = mgr->GetAudioInterruptForZone(1, "tag");
+    std::string tag = "tag";
+    auto list = mgr->GetAudioInterruptForZone(1, tag);
     EXPECT_EQ(list.size(), 0);
 }
 
@@ -877,7 +878,8 @@ HWTEST(AudioPolicyManagerDevice, ZmGetRendererInfos_InvalidZone, TestSize.Level1
 HWTEST(AudioPolicyManagerDevice, ZmGetInterruptByTag_InvalidZone, TestSize.Level1)
 {
     auto *zm = AudioZoneManager::GetInstance();
-    auto list = zm->GetAudioInterruptForZone(-1, "tag");
+    std::string tag = "tag";
+    auto list = zm->GetAudioInterruptForZone(-1, tag);
     EXPECT_EQ(list.size(), 0);
 }
 

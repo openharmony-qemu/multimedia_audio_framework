@@ -1658,10 +1658,10 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
 }
 
 int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
-    const AudioFocusList &interrupts)
+    const AudioFocusList &interrupts, const std::vector<uint32_t> &bypassSessionIds)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    int32_t ret = zoneManager_.InjectInterruptToAudioZone(zoneId, interrupts);
+    int32_t ret = zoneManager_.InjectInterruptToAudioZone(zoneId, interrupts, bypassSessionIds);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InjectInterruptToAudioZone failed");
     CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
 
@@ -4106,6 +4106,19 @@ void AudioInterruptService::StopAudioFocusBySessionIds(const int32_t zoneId,
         sessionIdsToStop.emplace_back(sessionId);
     }
     zoneManager_.StopAudioFocusBySessionIds(zoneId, sessionIdsToStop);
+}
+
+uint32_t AudioInterruptService::GetRealSessionIdByAudioInterrupt(const AudioInterrupt &audioInterrupt)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    int32_t callerPid = audioInterrupt.pid;
+    uint32_t realSessionId = audioInterrupt.streamId;
+    bool isActivated = sessionService_.IsAudioSessionFocusMode(callerPid);
+    CHECK_AND_RETURN_RET(isActivated, realSessionId);
+    const auto &streamsInSessionPair = sessionService_.GetStreams(callerPid);
+    CHECK_AND_RETURN_RET(streamsInSessionPair.size() > 0, realSessionId);
+    realSessionId = streamsInSessionPair.front().first.streamId;
+    return realSessionId;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

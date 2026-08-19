@@ -95,7 +95,8 @@ public:
     int32_t GetSystemVolumeLevel(int32_t zoneId, DeviceType deviceType, AudioVolumeType volumeType);
     int32_t GetSystemVolumeDegree(int32_t zoneId, DeviceType deviceType, AudioVolumeType volumeType);
 
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
+        int32_t zoneId, bool filterRemote = false);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId,
         const std::string &deviceTag);
     int32_t EnableAudioZoneInterruptReport(pid_t clientPid, int32_t zoneId,
@@ -178,6 +179,8 @@ private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FilterDevicesByUsage(AudioDeviceUsage usage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 #endif
+    std::vector<uint32_t> GetLocalSessionIds(const std::shared_ptr<AudioInterruptService> &interruptService,
+        const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusList);
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -251,13 +251,14 @@ int32_t AudioPolicyManager::EnableSystemVolumeProxy(int32_t zoneId, DeviceType d
     return gsp->EnableSystemVolumeProxy(zoneId, deviceType, enable);
 }
 
-std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyManager::GetAudioInterruptForZone(int32_t zoneId)
+std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyManager::GetAudioInterruptForZone(
+    int32_t zoneId, bool filterRemote)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET(gsp != nullptr, {});
 
     std::vector<std::map<AudioInterrupt, int32_t>> retList;
-    gsp->GetAudioInterruptForZone(zoneId, retList);
+    gsp->GetAudioInterruptForZone(zoneId, retList, filterRemote);
     auto focusInfoList = FromIpcInterrupts(retList);
     return focusInfoList;
 }

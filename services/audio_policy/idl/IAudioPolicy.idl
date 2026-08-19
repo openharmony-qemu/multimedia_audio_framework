@@ -195,7 +195,7 @@ interface IAudioPolicy {
     void RemoveStreamFromAudioZone([in] int zoneId, [in] AudioZoneStream stream);
     void SetZoneDeviceVisible([in] boolean visible);
     void EnableSystemVolumeProxy([in] int zoneId, [in] int deviceType, [in] boolean enable);
-    void GetAudioInterruptForZone([in] int zoneId, [out] List<OrderedMap<AudioInterrupt, int>> interrupts);
+    void GetAudioInterruptForZone([in] int zoneId, [out] List<OrderedMap<AudioInterrupt, int>> interrupts, [in] boolean filterRemote);
     void GetAudioInterruptForZone([in] int zoneId, [in] String deviceTag, [out] List<OrderedMap<AudioInterrupt, int>> interrupts);
     void EnableAudioZoneInterruptReport([in] int zoneId, [in] String deviceTag, [in] boolean enable);
     void InjectInterruptToAudioZone([in] int zoneId, [in] List<OrderedMap<AudioInterrupt, int>> interrupts);

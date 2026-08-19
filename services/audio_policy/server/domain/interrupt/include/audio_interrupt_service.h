@@ -127,7 +127,8 @@ public:
     int32_t CreateAudioInterruptZone(const int32_t zoneId, const AudioZoneContext &context);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal = false);
     int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
-    int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
+    int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts,
+        const std::vector<uint32_t> &bypassSessionIds = {});
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const std::string &deviceTag,
         const AudioFocusList &interrupts);
     int32_t PauseAudioFocusForExtAudioZone(const std::vector<int32_t> &zoneIds);
@@ -151,6 +152,7 @@ public:
     bool IsStreamActive(uint32_t streamId);
     void SetStreamInterruptMute(const InterruptEventInternal &interruptEvent,
         const uint32_t &streamId, const AudioInterrupt &audioInterrupt);
+    uint32_t GetRealSessionIdByAudioInterrupt(const AudioInterrupt &audioInterrupt);
 
 private:
     int32_t FindAndUpdateFocusState(uint32_t streamId, AudioFocuState focuState);

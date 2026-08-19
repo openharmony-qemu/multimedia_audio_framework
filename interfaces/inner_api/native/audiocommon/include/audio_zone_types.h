@@ -131,7 +131,7 @@ public:
     virtual int32_t UnRegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType) = 0;
 
     virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
-        int32_t zoneId) = 0;
+        int32_t zoneId, bool filterRemote = false) = 0;
 
     virtual int32_t GetCurrentRendererChangeInfosForZone(int32_t zoneId,
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos) = 0;

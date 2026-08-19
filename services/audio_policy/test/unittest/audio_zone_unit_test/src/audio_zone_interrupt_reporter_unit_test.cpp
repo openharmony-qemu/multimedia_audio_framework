@@ -16,6 +16,7 @@
 #include "audio_zone_interrupt_reporter_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_pipe_manager.h"
 
 #include <thread>
 #include <memory>
@@ -50,6 +51,84 @@ HWTEST_F(AudioZoneInterruptReporterUnitTest, AudioZoneInterruptReporter_002, Tes
 {
     EXPECT_EQ(reporter_.RegisterInterruptReport(0, 0, ""), SUCCESS);
     EXPECT_EQ(reporter_.RegisterInterruptReport(0, 0, ""), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioZoneInterruptReporterUnitTest.
+ * @tc.number: GetFocusList_001
+ * @tc.desc  : Test GetFocusList interface.
+ */
+HWTEST_F(AudioZoneInterruptReporterUnitTest, GetFocusList_001, TestSize.Level1)
+{
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 100;
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+
+    reporter_.interruptService_ = std::make_shared<AudioInterruptService>();
+    reporter_.interruptService_->zonesMap_.clear();
+    reporter_.interruptService_->zonesMap_[0] = interruptZone;
+
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusList = {};
+    focusList = reporter_.GetFocusList();
+    EXPECT_EQ(focusList.size(), 0);
+
+    auto &pipeList = AudioPipeManager::GetPipeManager()->curPipeList_;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {};
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    deviceDesc->networkId_ = "LocalDevice";
+    newDeviceDescs.emplace_back(deviceDesc);
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    streamDescs.emplace_back(streamDesc);
+    pipeInfo->streamDescriptors_ = streamDescs;
+    pipeList.emplace_back(pipeInfo);
+
+    focusList = reporter_.GetFocusList();
+    pipeList.pop_back();
+    EXPECT_EQ(focusList.size(), 0);
+}
+
+/**
+ * @tc.name  : Test AudioZoneInterruptReporterUnitTest.
+ * @tc.number: GetFocusList_002
+ * @tc.desc  : Test GetFocusList interface.
+ */
+HWTEST_F(AudioZoneInterruptReporterUnitTest, GetFocusList_002, TestSize.Level1)
+{
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 100;
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+
+    reporter_.interruptService_ = std::make_shared<AudioInterruptService>();
+    reporter_.interruptService_->zonesMap_.clear();
+    reporter_.interruptService_->zonesMap_[0] = interruptZone;
+
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusList = {};
+    focusList = reporter_.GetFocusList();
+    EXPECT_EQ(focusList.size(), 0);
+
+    auto &pipeList = AudioPipeManager::GetPipeManager()->curPipeList_;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {};
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    deviceDesc->networkId_ = "RemoteDevice";
+    newDeviceDescs.emplace_back(deviceDesc);
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    streamDescs.emplace_back(streamDesc);
+    pipeInfo->streamDescriptors_ = streamDescs;
+    pipeList.emplace_back(pipeInfo);
+
+    focusList = reporter_.GetFocusList();
+    pipeList.pop_back();
+    EXPECT_EQ(focusList.size(), 1);
 }
 } // namespace AudioStandard
 } // namespace OHOS
