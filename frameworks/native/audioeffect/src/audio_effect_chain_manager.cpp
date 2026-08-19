@@ -974,8 +974,12 @@ bool AudioEffectChainManager::ConsultChannelOverrideByKey(const std::string &key
 int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(const std::string &sceneType)
 {
     Trace trace("AudioEffectChainManager::InitAudioEffectChainDynamic: " + sceneType);
-    CHECK_AND_RETURN_RET_LOG(isNeedInitEffectBuffer_, SUCCESS, "no need InitEffectBuffer");
     std::lock_guard<std::mutex> lock(dynamicMutex_);
+    if (!isNeedInitEffectBuffer_) {
+        AUDIO_INFO_LOG("no need InitEffectBuffer");
+        isNeedInitEffectBuffer_ = true;
+        return SUCCESS;
+    }
     return InitAudioEffectChainDynamicInner(sceneType);
 }
 
@@ -984,8 +988,12 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(const std::string &
 {
     Trace trace("AudioEffectChainManager::InitAudioEffectChainDynamic: " + sceneType +
         "_r_" + std::to_string(renderId));
-    CHECK_AND_RETURN_RET_LOG(isNeedInitEffectBuffer_, SUCCESS, "no need InitEffectBuffer");
     std::lock_guard<std::mutex> lock(dynamicMutex_);
+    if (!isNeedInitEffectBuffer_) {
+        AUDIO_INFO_LOG("no need InitEffectBuffer");
+        isNeedInitEffectBuffer_ = true;
+        return SUCCESS;
+    }
     return InitAudioEffectChainDynamicInner(sceneType, deviceType, renderId);
 }
 
@@ -1802,12 +1810,15 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
 {
     Trace trace("AudioEffectChainManager::CheckAndReleaseCommonEffectChain: " + sceneType);
     HILOG_COMM_INFO("[CheckAndReleaseCommonEffectChain]release effect chain for scene "
-        "type: %{public}s", sceneType.c_str());
+        "type: %{public}s, isNeedInitEffectBuffer is %{public}d", sceneType.c_str(), isNeedInitEffectBuffer);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
-    if (sceneTypeToSpecialEffectSet_.erase(sceneType) > 0 && isNeedInitEffectBuffer_) {
-        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->InitEffectChain();
+    if (sceneTypeToSpecialEffectSet_.erase(sceneType) > 0) {
+        if (isNeedInitEffectBuffer_) {
+            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->InitEffectChain();
+        }
+        isNeedInitEffectBuffer_ = true;
     }
     if (!isDefaultEffectChainExisted_) {
         return ERROR;
@@ -1820,8 +1831,10 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
             sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = 0;
             isDefaultEffectChainExisted_ = false;
             HILOG_COMM_INFO("[CheckAndReleaseCommonEffectChain]default effect chain will be released");
-            CHECK_AND_RETURN_RET(isNeedInitEffectBuffer_, SUCCESS);
-            sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]->InitEffectChain();
+            if (isNeedInitEffectBuffer_) {
+                sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]->InitEffectChain();
+            }
+            isNeedInitEffectBuffer_ = true;
             return SUCCESS;
         } else {
             sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey]--;
