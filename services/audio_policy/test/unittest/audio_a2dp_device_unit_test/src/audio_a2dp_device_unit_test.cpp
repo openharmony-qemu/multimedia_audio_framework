@@ -795,5 +795,48 @@ HWTEST_F(AudioA2dpDeviceUnitTest, DeactivateDevice_004, TestSize.Level1)
     EXPECT_EQ(result, SUCCESS);
 }
 
+/**
+ * @tc.name: LoadA2dpModule_001
+ * @tc.desc: Test AudioA2dpDeviceBehavior LoadA2dpModule
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, LoadA2dpModule_001, TestSize.Level1)
+{
+    AudioStreamInfo audioStreamInfo;
+    int32_t result = a2dpDeviceBehavior_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP,
+        audioStreamInfo, "local", "a2dp_sink", SOURCE_TYPE_MIC);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name: ReloadA2dpAudioPort_001
+ * @tc.desc: Test AudioA2dpDeviceBehavior ReloadA2dpAudioPort
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, ReloadA2dpAudioPort_001, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "a2dp_sink";
+    moduleInfo.role = "sink";
+    AudioStreamInfo audioStreamInfo;
+    A2dpReloadContext context = {DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, "local", "a2dp_sink", SOURCE_TYPE_MIC};
+    int32_t result = a2dpDeviceBehavior_.ReloadA2dpAudioPort(moduleInfo, context);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name: ReloadOrOpenAudioPort_001
+ * @tc.desc: Test AudioA2dpDeviceBehavior ReloadOrOpenAudioPort
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, ReloadOrOpenAudioPort_001, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "a2dp_sink";
+    uint32_t paIndex = 0;
+    AudioIOHandle result = a2dpDeviceBehavior_.ReloadOrOpenAudioPort(0, moduleInfo, paIndex);
+    EXPECT_NE(result, 0);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -402,5 +402,29 @@ HWTEST_F(VADeviceManagerUnitTest, UpdateNoiseReductionCapability_003, TestSize.L
     EXPECT_TRUE(desc);
 }
 
+/**
+ * @tc.name  : SetAssociatedMacAddresses_001
+ * @tc.desc  : Test SetAssociatedMacAddresses with enable=true
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, SetAssociatedMacAddresses_001, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    vaDeviceManager.SetAssociatedMacAddresses("00:11:22:33:44:55", true);
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name  : SetAssociatedMacAddresses_002
+ * @tc.desc  : Test SetAssociatedMacAddresses with enable=false
+ * @tc.type  : FUNC
+ */
+HWTEST_F(VADeviceManagerUnitTest, SetAssociatedMacAddresses_002, TestSize.Level1)
+{
+    auto &vaDeviceManager = VADeviceManager::GetInstance();
+    vaDeviceManager.SetAssociatedMacAddresses("AA:BB:CC:DD:EE:FF", false);
+    EXPECT_TRUE(true);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

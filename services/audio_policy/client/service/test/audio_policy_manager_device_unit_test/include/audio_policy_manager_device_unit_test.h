@@ -23,6 +23,7 @@
 #include "audio_policy_log.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "virtual_audio_interface.h"
 
 namespace OHOS {
 namespace AudioStandard {

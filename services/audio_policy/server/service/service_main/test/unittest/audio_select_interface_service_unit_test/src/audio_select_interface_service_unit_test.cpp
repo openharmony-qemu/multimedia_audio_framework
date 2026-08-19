@@ -1665,5 +1665,66 @@ HWTEST_F(AudioSelectInterfaceServiceUnitTest,
         DEVICE_TYPE_SPEAKER, "");
     EXPECT_TRUE(true);
 }
+
+/**
+ * @tc.name  : ConnectVirtualDeviceIfNeeded_001
+ * @tc.desc  : Test ConnectVirtualDeviceIfNeeded with non-virtual device
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSelectInterfaceServiceUnitTest,
+    ConnectVirtualDeviceIfNeeded_001, TestSize.Level4)
+{
+    auto &svc = AudioSelectInterfaceService::GetInstance();
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    int32_t ret = svc.ConnectVirtualDeviceIfNeeded(desc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : ConnectVirtualDeviceIfNeeded_002
+ * @tc.desc  : Test ConnectVirtualDeviceIfNeeded with null desc
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSelectInterfaceServiceUnitTest,
+    ConnectVirtualDeviceIfNeeded_002, TestSize.Level4)
+{
+    auto &svc = AudioSelectInterfaceService::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> nullDesc;
+    int32_t ret = svc.ConnectVirtualDeviceIfNeeded(nullDesc);
+    EXPECT_TRUE(ret == SUCCESS || ret == ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : SelectFastOutputDevice_001
+ * @tc.desc  : Test SelectFastOutputDevice with null filter
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSelectInterfaceServiceUnitTest,
+    SelectFastOutputDevice_001, TestSize.Level4)
+{
+    auto &svc = AudioSelectInterfaceService::GetInstance();
+    sptr<AudioRendererFilter> filter = nullptr;
+    std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+    int32_t ret = svc.SelectFastOutputDevice(filter, desc);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : SelectFastOutputDevice_002
+ * @tc.desc  : Test SelectFastOutputDevice with empty descriptors
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSelectInterfaceServiceUnitTest,
+    SelectFastOutputDevice_002, TestSize.Level4)
+{
+    auto &svc = AudioSelectInterfaceService::GetInstance();
+    sptr<AudioRendererFilter> filter = new AudioRendererFilter();
+    filter->uid = 1000;
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    int32_t ret = svc.SelectFastOutputDevice(filter, desc);
+    EXPECT_NE(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
