@@ -1155,6 +1155,7 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.deviceNetId = sourceInfo_.deviceNetId;
+    nodeInfo.sourceType = sourceInfo_.sourceType;
     nodeInfo.micInChannels = sourceInfo_.micInChannels;
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
