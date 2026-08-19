@@ -118,6 +118,18 @@ int32_t AudioServerProxy::GetVolumeDataCount(const std::string &sinkName, int64_
     return ret;
 }
 
+int32_t AudioServerProxy::GetSinkLatencyProxy(uint32_t renderId, uint32_t &sinkLatency)
+{
+    sinkLatency = 0;
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET(gsp != nullptr, ERR_OPERATION_FAILED);
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->GetSinkLatency(renderId, sinkLatency);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return ret;
+}
+
 void AudioServerProxy::UpdateEffectBtOffloadSupportedProxy(const bool &isSupported)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();

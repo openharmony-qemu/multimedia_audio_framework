@@ -482,6 +482,20 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateSessionConnectionState_001, Tes
 }
 
 /**
+* @tc.name  : Test GetSinkLatencyProxy when the audio service is unavailable.
+* @tc.number: GetSinkLatencyProxy_001
+* @tc.desc  : Test the proxy resets the output and returns the service lookup error.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetSinkLatencyProxy_001, TestSize.Level1)
+{
+    uint32_t sinkLatency = 123;
+    const int32_t ret = AudioServerProxy::GetInstance().GetSinkLatencyProxy(1, sinkLatency);
+
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(sinkLatency, 0U);
+}
+
+/**
 * @tc.name  : Test IsRingerOrAlarmerDualDevicesRange.
 * @tc.number: IsRingerOrAlarmerDualDevicesRange_001
 * @tc.desc  : Test AudioPolicyServic interfaces.

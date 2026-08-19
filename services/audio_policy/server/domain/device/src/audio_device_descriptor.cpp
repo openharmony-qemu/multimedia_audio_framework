@@ -226,6 +226,8 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     deviceTokenId_ = 0;
     isSupportMultiZone_ = false;
     visibleMode_ = GLOBAL_VISIBLE;
+    sinkLatencyMs_ = 0;
+    sinkLatencyValid_ = false;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -270,6 +272,8 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     deviceTokenId_ = 0;
     isSupportMultiZone_ = false;
     visibleMode_ = GLOBAL_VISIBLE;
+    sinkLatencyMs_ = 0;
+    sinkLatencyValid_ = false;
 }
 
 void AudioDeviceDescriptor::CopyBaseFields(const AudioDeviceDescriptor &deviceDescriptor)
@@ -324,6 +328,8 @@ void AudioDeviceDescriptor::CopyExtendedFields(const AudioDeviceDescriptor &devi
     isSilent_ = deviceDescriptor.isSilent_;
     isSupportMultiZone_ = deviceDescriptor.isSupportMultiZone_;
     visibleMode_ = deviceDescriptor.visibleMode_;
+    sinkLatencyMs_ = deviceDescriptor.sinkLatencyMs_;
+    sinkLatencyValid_ = deviceDescriptor.sinkLatencyValid_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -530,7 +536,8 @@ bool AudioDeviceDescriptor::MarshallingInnerdata(Parcel &parcel, int32_t devType
         parcel.WriteBool(isSupportRemoteMultichannel_) && parcel.WriteUint32(deviceTokenId_) &&
         parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType())) &&
         parcel.WriteBool(isSilent_) && parcel.WriteBool(isSupportMultiZone_) &&
-        parcel.WriteInt32(static_cast<int32_t>(visibleMode_));
+        parcel.WriteInt32(static_cast<int32_t>(visibleMode_)) &&
+        parcel.WriteUint32(sinkLatencyMs_) && parcel.WriteBool(sinkLatencyValid_);
 }
 
 void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
@@ -604,7 +611,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteInt32(hdPlaybackMode_) &&
         parcel.WriteBool(isSupportRemoteMultichannel_) && parcel.WriteUint32(deviceTokenId_) &&
         parcel.WriteInt32(static_cast<int32_t>(GetDevicePrivacyType())) && parcel.WriteBool(isSilent_) &&
-        parcel.WriteBool(isSupportMultiZone_) && parcel.WriteInt32(static_cast<int32_t>(visibleMode_));
+        parcel.WriteBool(isSupportMultiZone_) && parcel.WriteInt32(static_cast<int32_t>(visibleMode_)) &&
+        parcel.WriteUint32(sinkLatencyMs_) && parcel.WriteBool(sinkLatencyValid_);
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -653,6 +661,8 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     isSilent_ = parcel.ReadBool();
     isSupportMultiZone_ = parcel.ReadBool();
     visibleMode_ = static_cast<VisibleMode>(parcel.ReadInt32());
+    sinkLatencyMs_ = parcel.ReadUint32();
+    sinkLatencyValid_ = parcel.ReadBool();
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
