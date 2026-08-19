@@ -146,6 +146,16 @@ public:
         NOISE_REDUCTION_MODE_STANDARD = 2
     };
 
+    enum AudioSuiteNetworkType {
+        NETWORK_TYPE_CELLUAR = 1,
+        NETWORK_TYPE_WIFI = 6,
+        NETWORK_TYPE_CELLULAR_AND_WIFI = 7
+    };
+
+    enum AudioSuiteDownloadStatus {
+        DOWNLOAD_STATUS_DOWNLOADING = 20
+    };
+
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
@@ -343,6 +353,8 @@ private:
     static const std::map<std::string, int32_t> BluetoothAndNearlinkPreferredRecordCategoryMap;
     static const std::map<std::string, int32_t> audioSessionBehaviorFlagsMap;
     static const std::map<std::string, int32_t> audioSeparationVolumeTypeMap;
+    static const std::map<std::string, int32_t> networkTypeMap;
+    static const std::map<std::string, int32_t> downloadStatusMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;

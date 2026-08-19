@@ -74,6 +74,13 @@ int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& featureN
         [featureName]() { return AudioSuiteClientPolicy::GetInstance().StartDownload(featureName); }, "StartDownload");
 }
 
+int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& featureName, int32_t networkType)
+{
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartDownload, featureName=%{public}s, networkType=%{public}d",
+        featureName.c_str(), networkType);
+    return AudioSuiteClientPolicy::GetInstance().StartDownload(featureName);
+}
+
 int32_t AudioSuiteDownloadManagerImpl::PauseDownload(const std::string& featureName)
 {
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::PauseDownload, featureName=%{public}s", featureName.c_str());

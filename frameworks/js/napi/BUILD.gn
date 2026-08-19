@@ -42,6 +42,7 @@ ohos_shared_library("audio") {
     "recordcontroller",
     "recordcontroller/callback",
     "../../../interfaces/inner_api/native/audio_debug_manager/include",
+    "../../../interfaces/inner_api/native/audiosuite/include",
   ]
 
   if (audio_framework_feature_new_napi) {
@@ -82,6 +83,8 @@ ohos_shared_library("audio") {
       "audiomanager/napi_audio_collaborative_manager.cpp",
       "audiomanager/napi_audio_device_enhance_manager.cpp",
       "audiomanager/napi_audio_debugging_manager.cpp",
+      "audiomanager/napi_audio_suite_download_manager.cpp",
+      "audiomanager/callback/napi_audio_suite_download_callback.cpp",
       "audiomanager/napi_audio_effect_manager.cpp",
       "audiomanager/napi_audio_interrupt_manager.cpp",
       "audiomanager/napi_audio_manager.cpp",
@@ -124,6 +127,7 @@ ohos_shared_library("audio") {
     "../../native/audio_debug_manager:audio_debug_manager",
     "../../native/audioloopback:audio_loopback",
     "../../native/audioutils:audio_utils",
+    "../../../services/audio_suite:audio_suite",
   ]
 
   defines = []
