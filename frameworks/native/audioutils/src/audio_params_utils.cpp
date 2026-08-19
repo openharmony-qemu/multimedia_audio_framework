@@ -32,8 +32,6 @@ namespace AudioStandard {
 namespace {
 const char *PARAM_FAST_CONTROL = "persist.multimedia.audioflag.fastcontrolled";
 const char *PARAM_FWK_EC_ENABLE = "const.multimedia.audio.fwk_ec.enable";
-const char *PARAM_SUPPORT_PARAMS_UTILS = "const.multimedia.audio.support_params_utils";
-const int32_t PARAMS_UTILS_NOT_SUPPORTED = 0;
 #ifdef SUPPORT_OLD_ENGINE
 const char *PARAM_ENGINE_FLAG = "const.multimedia.audio.proaudioEnable";
 #endif
@@ -89,8 +87,6 @@ int32_t GetEngineFlag()
 
 bool GetHasEarpieceParam()
 {
-    CHECK_AND_RETURN_RET_LOG(IsSupportParamsUtils(), true,
-        "params utils not supported, earpiece param not available, return default");
 #ifndef IS_EMULATOR
     bool ret = system::GetBoolParameter(PARAM_HAS_EARPIECE, false);
     AUDIO_INFO_LOG("get params[%{public}s]: %{public}s", PARAM_HAS_EARPIECE, ret ? "true" : "false");
@@ -99,15 +95,6 @@ bool GetHasEarpieceParam()
     AUDIO_INFO_LOG("Emulator not support Earpiece_Out");
     return false;
 #endif
-}
-
-bool IsSupportParamsUtils()
-{
-    int32_t value = -1;
-    GetInt32ParameterValue(PARAM_SUPPORT_PARAMS_UTILS, value);
-    AUDIO_INFO_LOG("get params[%{public}s]: %{public}d", PARAM_SUPPORT_PARAMS_UTILS, value);
-    const bool isSupported = (value != PARAMS_UTILS_NOT_SUPPORTED);
-    return isSupported;
 }
 } // namespace AudioStandard
 } // namespace OHOS
