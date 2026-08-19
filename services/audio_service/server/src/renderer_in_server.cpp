@@ -84,7 +84,6 @@ namespace {
     // a2dp offload data connection max cost
     const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 800; // ms
     static const size_t MAX_INNERCAP_BUFFER_SIZE = 16 * 1024 * 1024;
-    static constexpr int32_t AVS3METADATA_SIZE = 19824;
     constexpr int32_t MAX_CACHED_BUFFER_COUNT = 5;
     constexpr int32_t MAX_CAHCED_COUNT = 6;
     constexpr int32_t FAST_ROUTE_CACHE_COUNT = 1;
