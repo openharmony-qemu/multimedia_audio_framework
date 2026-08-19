@@ -355,6 +355,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_014, TestSize.Level1)
     StreamDeviceInfo inputInfo;
     inputInfo.routerType = ROUTER_TYPE_USER_SELECT;
     inputInfo.sourceType = SOURCE_TYPE_MIC;
+    inputInfo.isRunning = true;
     auto inputDevice = std::make_shared<AudioDeviceDescriptor>();
     inputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     inputDevice->macAddress_ = "00:11:22:33:44:55";
@@ -383,6 +384,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_015, TestSize.Level1)
     StreamDeviceInfo inputInfo;
     inputInfo.routerType = ROUTER_TYPE_USER_SELECT;
     inputInfo.sourceType = SOURCE_TYPE_MIC;
+    inputInfo.isRunning = true;
     auto inputDevice = std::make_shared<AudioDeviceDescriptor>();
     inputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     inputDevice->macAddress_ = "00:11:22:33:44:55";
@@ -411,6 +413,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_016, TestSize.Level1)
     StreamDeviceInfo outputInfo;
     outputInfo.routerType = ROUTER_TYPE_USER_SELECT;
     outputInfo.streamUsage = STREAM_USAGE_MUSIC;
+    outputInfo.isRunning = true;
     auto outputDevice = std::make_shared<AudioDeviceDescriptor>();
     outputDevice->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     outputDevice->macAddress_ = "00:11:22:33:44:55";
@@ -439,6 +442,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_018, TestSize.Level1)
     StreamDeviceInfo inputInfo;
     inputInfo.routerType = ROUTER_TYPE_USER_SELECT;
     inputInfo.sourceType = SOURCE_TYPE_MIC;
+    inputInfo.isRunning = true;
     auto inputDevice = std::make_shared<AudioDeviceDescriptor>();
     inputDevice->deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     inputDevice->macAddress_ = "00:11:22:33:44:55";
@@ -524,6 +528,7 @@ HWTEST(AudioRouterCenterUnitTest, WirelessConflictHandler_022, TestSize.Level1)
 
     std::vector<StreamDeviceInfo> inputDevices;
     StreamDeviceInfo inputInfo;
+    inputInfo.isRunning = true;
     inputInfo.routerType = ROUTER_TYPE_USER_SELECT;
     inputInfo.sourceType = SOURCE_TYPE_MIC;
     auto inputDevice = std::make_shared<AudioDeviceDescriptor>();
