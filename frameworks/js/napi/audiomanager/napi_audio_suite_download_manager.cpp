@@ -33,7 +33,7 @@ using namespace std;
 static __thread napi_ref g_suiteDownloadMgrConstructor = nullptr;
 
 NapiAudioSuiteDownloadManager::NapiAudioSuiteDownloadManager()
-    : env_(nullptr), audioSuiteDownloadMgr_(nullptr) {}
+    : audioSuiteDownloadMgr_(nullptr), env_(nullptr) {}
 
 NapiAudioSuiteDownloadManager::~NapiAudioSuiteDownloadManager()
 {
