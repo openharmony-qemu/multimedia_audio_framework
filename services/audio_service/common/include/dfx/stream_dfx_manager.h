@@ -30,6 +30,20 @@ struct StreamRecord {
     int64_t lastUploadTime = 0;
 };
 
+constexpr int32_t DFX_INVALID_STREAM_INFO = 0;
+constexpr int32_t DFX_INVALID_APP_INFO = 0;
+constexpr int32_t DFX_INVALID_EXCEPTION_INFO = 0;
+constexpr int32_t DFX_INVALID_DEVICE_INFO = 0;
+constexpr int32_t DFX_INVALID_SYSTEM_INFO = 0;
+
+enum PlayOtherErrorCode {
+    TYPE_BACKGROUND_PLAYBACK,
+    TYPE_OFFLOAD_NOT_ENOUGH_DATA,
+    TYPE_GET_TIMESTAMP_TOO_FREQUENTLY,
+    TYPE_FAST_ABUSE,
+    TYPE_FAST_PREFERRED_FRAME_SIZE_OUT_OF_RANGE,
+};
+
 class StreamDfxManager {
 public:
     static StreamDfxManager& GetInstance();
