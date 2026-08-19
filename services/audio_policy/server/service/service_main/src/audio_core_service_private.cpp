@@ -434,6 +434,45 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     return SUCCESS;
 }
 
+void AudioCoreService::CheckNeedPreRemoveUnusedPipe(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos)
+{
+    bool hasFastInputNoStream = false;
+    bool hasVoipFastInputNoStream = false;
+    bool isFastInputNew = false;
+    bool isVoipFastInputNew = false;
+    std::shared_ptr<AudioPipeInfo> pipeInfoFastInput = nullptr;
+    std::shared_ptr<AudioPipeInfo> pipeInfoVoipFastInput = nullptr;
+    for (auto &pipeInfo : pipeInfos) {
+        if (pipeInfo->name_ == "fast_input") {
+            pipeInfoFastInput = pipeInfo;
+            if (pipeInfo->streamDescriptors_.empty()) {
+                hasFastInputNoStream = true;
+            }
+            if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
+                isFastInputNew = true;
+            }
+        }
+
+        if (pipeInfo->name_ == "voip_fast_input") {
+            pipeInfoVoipFastInput = pipeInfo;
+            if (pipeInfo->streamDescriptors_.empty()) {
+                hasVoipFastInputNoStream = true;
+            }
+            if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
+                isVoipFastInputNew = true;
+            }
+        }
+    }
+    if (hasFastInputNoStream && isVoipFastInputNew && pipeInfoFastInput != nullptr) {
+        ReleaseFastPipeInner(pipeInfoFastInput->id_, pipeInfoFastInput->paIndex_,
+            pipeInfoFastInput->name_, pipeInfoFastInput->moduleInfo_.name);
+    }
+    if (hasVoipFastInputNoStream && isFastInputNew && pipeInfoVoipFastInput != nullptr) {
+        ReleaseFastPipeInner(pipeInfoVoipFastInput->id_, pipeInfoVoipFastInput->paIndex_,
+            pipeInfoVoipFastInput->name_, pipeInfoVoipFastInput->moduleInfo_.name);
+    }
+}
+
 int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
@@ -446,6 +485,7 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     audioInjectorPolicy_.FetchCapDeviceInjectPreProc(pipeInfos, removeFlag, fetchStreamId);
 
     AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
+    CheckNeedPreRemoveUnusedPipe(pipeInfos);
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");

@@ -4924,5 +4924,17 @@ int32_t AudioCoreService::GetActiveStreamRendererInfosForDevice(
     return SUCCESS;
 }
 
+int32_t AudioCoreService::ReleaseFastPipeInner(AudioIOHandle id, uint32_t paIndex,
+    const std::string &pipeName, const std::string &moduleName)
+{
+    AUDIO_INFO_LOG("Close %{public}s pipe hdi port id: %{public}u, index %{public}u", pipeName.c_str(), id, paIndex);
+    audioPolicyManager_.CloseAudioPort(id, paIndex);
+    CHECK_AND_RETURN_RET_LOG(pipeManager_, ERROR, "pipeManager_ is nullptr");
+    pipeManager_->RemoveAudioPipeInfo(id);
+    audioIOHandleMap_.DelIOHandleInfo(moduleName);
+    isFastInReleaseMap_[pipeName] = false;
+    audioPolicyManager_.RemoveAudioPipeVolume(id);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

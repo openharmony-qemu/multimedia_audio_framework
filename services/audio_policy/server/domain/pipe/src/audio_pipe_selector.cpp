@@ -1414,7 +1414,14 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
     CHECK_AND_RETURN(action == CONCEDE_INCOMING || action == CONCEDE_EXISTING);
     CHECK_AND_RETURN_LOG(existingStream != nullptr && incomingStream != nullptr,
         "existingStream or incomingStream is nullptr");
-    CHECK_AND_RETURN_LOG(existingStream->IsRunning() || incomingStream->IsRunning(),
+    /* The existingStream is a low-latency recording that is not in the running state,
+     * and the incomingStream is a low-latency VoIP recording that is not in the running state.
+     * The low-latency VoIP recording needs to be CONCEDE to avoid the failure of moving the
+     * existingStream because the built-in microphone channel does not exist when the existingStream is CONCEDE.
+    */
+    CHECK_AND_RETURN_LOG(existingStream->IsRunning() || incomingStream->IsRunning() ||
+        ((existingStream->GetRoute() == AUDIO_INPUT_FLAG_FAST) &&
+        (incomingStream->GetRoute() == (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP))),
         "both streams are not running");
 
     std::shared_ptr<AudioStreamDescriptor> targetStream =

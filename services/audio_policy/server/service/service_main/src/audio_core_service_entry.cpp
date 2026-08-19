@@ -797,14 +797,7 @@ int32_t AudioCoreService::EventEntry::ReleaseFastPipe(AudioIOHandle id, uint32_t
         AUDIO_INFO_LOG("FAST pipe %{public}s restart", pipeName.c_str());
         return ERROR;
     }
-    AUDIO_INFO_LOG("Close %{public}s pipe hdi port id: %{public}u, index %{public}u", pipeName.c_str(), id, paIndex);
-    coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
-    CHECK_AND_RETURN_RET_LOG(coreService_->pipeManager_, ERROR, "pipeManager_ is nullptr");
-    coreService_->pipeManager_->RemoveAudioPipeInfo(id);
-    coreService_->audioIOHandleMap_.DelIOHandleInfo(moduleName);
-    coreService_->isFastInReleaseMap_[pipeName] = false;
-    coreService_->audioPolicyManager_.RemoveAudioPipeVolume(id);
-    return SUCCESS;
+    return coreService_->ReleaseFastPipeInner(id, paIndex, pipeName, moduleName);
 }
 
 int32_t AudioCoreService::EventEntry::SetRendererTarget(RenderTarget target, RenderTarget lastTarget,
