@@ -6769,6 +6769,50 @@ HWTEST_F(AudioInterruptUnitTest, RemoveAudioZoneInterrupts_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test NotifyFocusStateResume_001
+ * @tc.number: NotifyFocusStateResume_001
+ * @tc.desc  : Test NotifyFocusStateResume
+ */
+HWTEST_F(AudioInterruptUnitTest, NotifyFocusStateResume_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = 1001;
+    audioInterrupt.pid = 1234;
+
+    std::pair<AudioInterrupt, AudioFocuState> audioFocusInfo = {audioInterrupt, DUCK};
+
+    EXPECT_NO_THROW(interruptServiceTest->NotifyFocusStateResume(audioInterrupt, audioFocusInfo));
+
+    audioInterrupt.streamId = 1002;
+    EXPECT_NO_THROW(interruptServiceTest->NotifyFocusStateResume(audioInterrupt, audioFocusInfo));
+}
+
+/**
+ * @tc.name  : Test NotifyFocusStateResume_002
+ * @tc.number: NotifyFocusStateResume_002
+ * @tc.desc  : Test NotifyFocusStateResume
+ */
+HWTEST_F(AudioInterruptUnitTest, NotifyFocusStateResume_002, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->Init(GetPolicyServerTest());
+    
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = 1001;
+    audioInterrupt.pid = 1234;
+
+    std::pair<AudioInterrupt, AudioFocuState> audioFocusInfo = {audioInterrupt, MUTED};
+
+    EXPECT_NO_THROW(interruptServiceTest->NotifyFocusStateResume(audioInterrupt, audioFocusInfo));
+
+    audioInterrupt.streamId = 1002;
+    EXPECT_NO_THROW(interruptServiceTest->NotifyFocusStateResume(audioInterrupt, audioFocusInfo));
+}
+
+/**
  * @tc.name  : Test StopAudioFocusBySessionIds_001
  * @tc.number: StopAudioFocusBySessionIds_001
  * @tc.desc  : Test StopAudioFocusBySessionIds when IsActivated is false

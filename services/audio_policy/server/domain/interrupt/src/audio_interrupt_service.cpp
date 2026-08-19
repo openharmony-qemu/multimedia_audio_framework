@@ -2439,12 +2439,29 @@ void AudioInterruptService::SendActiveInterruptEvent(const uint32_t activeStream
     }
 }
 
+void AudioInterruptService::NotifyFocusStateResume(const AudioInterrupt &audioInterrupt,
+    const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo)
+{
+    if (audioFocusInfo.first.streamId != audioInterrupt.streamId) {
+        return;
+    }
+
+    if (audioFocusInfo.second == DUCK) {
+        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNDUCK, 1.0f};
+        AUDIO_INFO_LOG("NotifyFocusStateResume: send unduck event for streamID %{public}d", audioInterrupt.streamId);
+        SendInterruptEventCallback(interruptEvent, audioInterrupt.streamId, audioInterrupt);
+    } else if (audioFocusInfo.second == MUTED) {
+        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE, 1.0f};
+        AUDIO_INFO_LOG("NotifyFocusStateResume: send unmute event for streamID %{public}d", audioInterrupt.streamId);
+        SendInterruptEventCallback(interruptEvent, audioInterrupt.streamId, audioInterrupt);
+    }
+}
+
 void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterrupt, const uint32_t &incomingStreamId,
     const int32_t &zoneId, bool &shouldReturnSuccess)
 {
     auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_CALL_FUNC_RETURN(itZone != zonesMap_.end(),
-        HILOG_COMM_ERROR("can not find zoneId"));
+    CHECK_AND_CALL_FUNC_RETURN(itZone != zonesMap_.end(), HILOG_COMM_ERROR("can not find zoneId"));
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if ((itZone != zonesMap_.end()) && (itZone->second != nullptr)) {
@@ -2459,6 +2476,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         AUDIO_DEBUG_LOG("audioFocusInfoList is not empty");
         for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end();) {
             if (AudioFocusInfoListRemovalCondition(audioInterrupt, *iter)) {
+                NotifyFocusStateResume(audioInterrupt, *iter);
                 AudioInterrupt interruptToRemove = iter->first;
                 AUDIO_INFO_LOG("remove interrupt %{public}d when process audio scene", iter->first.streamId);
                 iter = audioFocusInfoList.erase(iter);
