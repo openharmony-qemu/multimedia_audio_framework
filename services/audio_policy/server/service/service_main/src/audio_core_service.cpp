@@ -1020,15 +1020,20 @@ bool AudioCoreService::IsHWDecoding(std::shared_ptr<AudioStreamDescriptor> strea
 AudioFlag AudioCoreService::SelectRemoteAudioFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     int32_t usage = streamDesc->rendererInfo_.streamUsage;
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = streamDesc->GetMainNewDeviceDesc();
+    CHECK_AND_RETURN_RET_LOG(newDeviceDesc != nullptr, AUDIO_OUTPUT_FLAG_NORMAL,
+        "newDeviceDesc is nullptr, use normal");
+    const std::string &networkId = newDeviceDesc->networkId_;
     if (usage == STREAM_USAGE_MUSIC) {
-        auto remoteOffloadStreamPropSize = pipeManager_->GetStreamPropInfoSize("remote", "offload_distributed_output");
+        uint32_t remoteOffloadStreamPropSize = pipeManager_->GetStreamPropInfoSize(
+            "remote", "offload_distributed_output", networkId);
         CHECK_AND_RETURN_RET_LOG(remoteOffloadStreamPropSize != 0 && GetRealUid(streamDesc) != AUDIO_EXT_UID,
             AUDIO_OUTPUT_FLAG_NORMAL, "music use normal for remote device or remotecast");
         AUDIO_INFO_LOG("remote offload active, music use offload");
         return AUDIO_OUTPUT_FLAG_LOWPOWER;
     } else if (usage == STREAM_USAGE_MOVIE) {
-        auto remoteMultichannelStreamPropSize = pipeManager_->GetStreamPropInfoSize("remote",
-            "multichannel_distributed_output");
+        uint32_t remoteMultichannelStreamPropSize = pipeManager_->GetStreamPropInfoSize(
+            "remote", "multichannel_distributed_output", networkId);
         CHECK_AND_RETURN_RET_LOG(remoteMultichannelStreamPropSize != 0 && GetRealUid(streamDesc) != AUDIO_EXT_UID &&
             NeedRemoteMultichannel(streamDesc), AUDIO_OUTPUT_FLAG_NORMAL,
             "movie use normal for remote device or remotecast");
@@ -3009,19 +3014,22 @@ void AudioCoreService::FusionConnectivityCrashedCallback(pid_t pid, uid_t uid)
 }
 
 void AudioCoreService::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
-    const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices)
+    const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices,
+    const std::string &networkId)
 {
-    pipeManager_->UpdateStreamPropInfo(adapterName, pipeName, deviceStreamInfo, supportDevices);
+    pipeManager_->UpdateStreamPropInfo(adapterName, pipeName, deviceStreamInfo, supportDevices, networkId);
 }
 
-void AudioCoreService::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName)
+void AudioCoreService::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+    const std::string &networkId)
 {
-    pipeManager_->ClearStreamPropInfo(adapterName, pipeName);
+    pipeManager_->ClearStreamPropInfo(adapterName, pipeName, networkId);
 }
 
-uint32_t AudioCoreService::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName)
+uint32_t AudioCoreService::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName,
+    const std::string &networkId)
 {
-    return pipeManager_->GetStreamPropInfoSize(adapterName, pipeName);
+    return pipeManager_->GetStreamPropInfoSize(adapterName, pipeName, networkId);
 }
 
 int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)

@@ -138,8 +138,11 @@ class AdapterPipeInfo {
 public:
     void SelfCheck();
 
-    void UpdateDynamicStreamProps(const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps);
-    void ClearDynamicStreamProps();
+    void UpdateDynamicStreamProps(const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps,
+        const std::string &networkId);
+    void ClearDynamicStreamProps(const std::string &networkId);
+    std::list<std::shared_ptr<PipeStreamPropInfo>> GetDynamicStreamPropInfos(const std::string &networkId);
+    size_t GetDynamicStreamPropInfosSize(const std::string &networkId);
 
     std::string name_ = STR_INITED;
     AudioPipeRole role_ = PIPE_ROLE_NONE;
@@ -162,7 +165,7 @@ public:
 
     // for dynamic
     std::mutex dynamicMtx_;
-    std::list<std::shared_ptr<PipeStreamPropInfo>> dynamicStreamPropInfos_ {};
+    std::unordered_map<std::string, std::list<std::shared_ptr<PipeStreamPropInfo>>> dynamicStreamPropInfosMap_ {};
     std::list<std::string> supportDevices_ {};
 };
 
@@ -234,10 +237,12 @@ public:
         const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag = 0, std::string macAddress = "");
 
     void UpdateDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
-        const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps);
-    void ClearDynamicStreamProps(const std::string adapterName, const std::string &pipeName);
+        const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps, const std::string &networkId);
+    void ClearDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
+        const std::string &networkId);
     uint32_t GetConfigStreamPropsSize(const std::string adapterName, const std::string &pipeName);
-    uint32_t GetDynamicStreamPropsSize(const std::string adapterName, const std::string &pipeName);
+    uint32_t GetDynamicStreamPropsSize(const std::string adapterName, const std::string &pipeName,
+        const std::string &networkId);
 
     std::shared_ptr<PolicyAdapterInfo> GetAdapterInfo(AudioAdapterType adapterType);
     void GetAudioAdapterInfos(std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> &adapterInfoMap);

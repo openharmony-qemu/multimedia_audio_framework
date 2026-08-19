@@ -68,7 +68,7 @@ static void MakeDeviceInfoMap(AudioPolicyConfigData &configData, std::shared_ptr
     propInfo_2->pipeInfo_ = adapterPipeInfo;
 
     std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
-    info->dynamicStreamPropInfos_ = {propInfo, propInfo_2};
+    info->dynamicStreamPropInfosMap_["test_networkId"] = {propInfo, propInfo_2};
     info->role_ = PIPE_ROLE_OUTPUT;
 
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();

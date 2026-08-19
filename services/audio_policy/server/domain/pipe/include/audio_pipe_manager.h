@@ -52,7 +52,8 @@ public:
     bool Init();
     bool GetUltraFastFlag();
     bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);
-    uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName);
+    uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName,
+        const std::string &networkId);
     bool GetUpdateRouteSupport();
     bool GetHasEarpiece();
     bool GetAdapterInfoFlag();
@@ -62,8 +63,10 @@ public:
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamInfo &streamInfo);
     void UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
-        const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
-    void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
+        const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices,
+        const std::string &networkId);
+    void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+        const std::string &networkId);
     uint32_t GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info);
 #ifdef MULTI_BUS_ENABLE

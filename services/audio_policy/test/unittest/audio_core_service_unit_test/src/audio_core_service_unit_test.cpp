@@ -3814,7 +3814,7 @@ HWTEST_F(AudioCoreServiceUnitTest, ClearStreamPropInfo_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
-    EXPECT_NO_THROW(audioCoreService->ClearStreamPropInfo("primary", "primary_output"));
+    EXPECT_NO_THROW(audioCoreService->ClearStreamPropInfo("primary", "primary_output", "test_network_id"));
 }
 
 /**

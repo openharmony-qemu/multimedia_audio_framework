@@ -89,14 +89,15 @@ void UpdateAndClearStreamPropInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string adapterName = ConsumeString(fdp, "adapterName");
     std::string pipeName = ConsumeString(fdp, "pipeName");
+    std::string networkId = ConsumeString(fdp, "fuzz_network_id");
     std::list<DeviceStreamInfo> deviceStreamInfo;
     DeviceStreamInfo streamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
     deviceStreamInfo.push_back(streamInfo);
     std::list<std::string> supportDevices;
     supportDevices.push_back(ConsumeString(fdp, "supportDevices"));
     AudioCoreConfigManager::GetInstance().UpdateStreamPropInfo(adapterName, pipeName,
-        deviceStreamInfo, supportDevices);
-    AudioCoreConfigManager::GetInstance().ClearStreamPropInfo(adapterName, pipeName);
+        deviceStreamInfo, supportDevices, networkId);
+    AudioCoreConfigManager::GetInstance().ClearStreamPropInfo(adapterName, pipeName, networkId);
 }
 
 void UpdateDynamicCapturerConfigFuzzTest(FuzzedDataProvider& fdp)
@@ -160,7 +161,8 @@ void GetStreamPropInfoSizeFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string adapterName = ConsumeString(fdp, "primary");
     std::string pipeName = ConsumeString(fdp, "");
-    AudioCoreConfigManager::GetInstance().GetStreamPropInfoSize(adapterName, pipeName);
+    std::string networkId = ConsumeString(fdp, LOCAL_NETWORK_ID);
+    AudioCoreConfigManager::GetInstance().GetStreamPropInfoSize(adapterName, pipeName, networkId);
 }
 
 void GetTargetSourceTypeAndMatchingFlagFuzzTest(FuzzedDataProvider& fdp)
@@ -200,7 +202,7 @@ void GetStreamPropInfoForRecordFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
     CHECK_AND_RETURN(adapterPipeInfo != nullptr);
     std::shared_ptr<PipeStreamPropInfo> info = nullptr;
-    adapterPipeInfo->dynamicStreamPropInfos_.push_back(info);
+    adapterPipeInfo->dynamicStreamPropInfosMap_[ConsumeString(fdp, "fuzz_network_id")].push_back(info);
     adapterPipeInfo->streamPropInfos_.push_back(info);
     AudioStreamInfo tempStreamInfo = {};
     tempStreamInfo.samplingRate = ConsumeEnum<AudioSamplingRate>(fdp);
@@ -251,7 +253,8 @@ void GetDynamicStreamPropInfoFromPipeFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(pipeStreamPropInfo != nullptr);
     pipeStreamPropInfo->sampleRate_ = fdp.ConsumeIntegral<uint32_t>();
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps = {pipeStreamPropInfo};
-    info->UpdateDynamicStreamProps(streamProps);
+    std::string networkId = ConsumeString(fdp, "fuzz_network_id");
+    info->UpdateDynamicStreamProps(streamProps, networkId);
     AudioSampleFormat format = ConsumeEnum<AudioSampleFormat>(fdp);
     uint32_t sampleRate = fdp.ConsumeIntegral<uint32_t>();
     AudioChannel channels = ConsumeEnum<AudioChannel>(fdp);
@@ -259,7 +262,7 @@ void GetDynamicStreamPropInfoFromPipeFuzzTest(FuzzedDataProvider& fdp)
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(sampleRate), AudioEncodingType::ENCODING_PCM, format,
         channels);
     std::shared_ptr<PipeStreamPropInfo> ret =
-        AudioCoreConfigManager::GetInstance().GetDynamicStreamPropInfoFromPipe(info, streamInfo);
+        AudioCoreConfigManager::GetInstance().GetDynamicStreamPropInfoFromPipe(info, streamInfo, networkId);
 }
 
 void IsStreamPropMatchFuzzTest(FuzzedDataProvider& fdp)
@@ -324,6 +327,7 @@ void MatchStreamPropInfoFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<PipeStreamPropInfo> info = nullptr;
     std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
     CHECK_AND_RETURN(adapterPipeInfo != nullptr);
+    std::string networkId = ConsumeString(fdp, "fuzz_network_id");
     if (fdp.ConsumeBool()) {
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
         adapterPipeInfo->streamPropInfos_.push_back(streamPropInfo);
@@ -331,12 +335,12 @@ void MatchStreamPropInfoFuzzTest(FuzzedDataProvider& fdp)
     if (fdp.ConsumeBool()) {
         std::shared_ptr<PipeStreamPropInfo> dynamicStreamPropInfo = std::make_shared<PipeStreamPropInfo>();
         std::list<std::shared_ptr<PipeStreamPropInfo>> dynamicProps = {dynamicStreamPropInfo};
-        adapterPipeInfo->UpdateDynamicStreamProps(dynamicProps);
+        adapterPipeInfo->UpdateDynamicStreamProps(dynamicProps, networkId);
     }
     AudioStreamInfo streamInfo(ConsumeEnum<AudioSamplingRate>(fdp), ConsumeEnum<AudioEncodingType>(fdp),
         ConsumeEnum<AudioSampleFormat>(fdp), ConsumeEnum<AudioChannel>(fdp),
         ConsumeEnum<AudioChannelLayout>(fdp));
-    AudioCoreConfigManager::GetInstance().MatchStreamPropInfo(info, adapterPipeInfo, streamInfo);
+    AudioCoreConfigManager::GetInstance().MatchStreamPropInfo(info, adapterPipeInfo, streamInfo, networkId);
 }
 
 void GetStreamPropInfoForMultiChannelFuzzTest(FuzzedDataProvider& fdp)
@@ -366,14 +370,15 @@ void GetDynamicStreamPropInfoFromPipeForViVidFuzzTest(FuzzedDataProvider& fdp)
     CHECK_AND_RETURN(pipeStreamPropInfo != nullptr);
     pipeStreamPropInfo->channelLayout_ = ConsumeEnum<AudioChannelLayout>(fdp);
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps = {pipeStreamPropInfo};
-    info->UpdateDynamicStreamProps(streamProps);
+    std::string networkId = ConsumeString(fdp, "fuzz_network_id");
+    info->UpdateDynamicStreamProps(streamProps, networkId);
     AudioSampleFormat format = ConsumeEnum<AudioSampleFormat>(fdp);
     uint32_t sampleRate = fdp.ConsumeIntegral<uint32_t>();
     AudioChannel channels = ConsumeEnum<AudioChannel>(fdp);
     AudioChannelLayout channelLayout = ConsumeEnum<AudioChannelLayout>(fdp);
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(sampleRate), AudioEncodingType::ENCODING_AUDIOVIVID,
         format, channels, channelLayout);
-    AudioCoreConfigManager::GetInstance().GetDynamicStreamPropInfoFromPipeForViVid(info, streamInfo);
+    AudioCoreConfigManager::GetInstance().GetDynamicStreamPropInfoFromPipeForViVid(info, streamInfo, networkId);
 }
 
 void NeedUidCheckForOffloadPipeFuzzTest(FuzzedDataProvider& fdp)

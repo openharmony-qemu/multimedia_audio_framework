@@ -67,8 +67,10 @@ public:
     // update
     void SetNormalVoipFlag(const bool &normalVoipFlag);
     void UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
-        const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
-    void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
+        const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices,
+        const std::string &networkId);
+    void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+        const std::string &networkId);
     void UpdateDynamicCapturerConfig(ClassType type, const AudioModuleInfo moduleInfo);
 
     // query
@@ -101,7 +103,8 @@ public:
     bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool GetFastStreamSupport(AudioStreamInfo &streamInfo, std::shared_ptr<AdapterDeviceInfo> &deviceInfo);
-    uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName);
+    uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName,
+        const std::string &networkId);
 
     uint32_t GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info);
@@ -110,9 +113,10 @@ public:
                            const std::vector<std::string> &busAddresses);
 #endif
     std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoFromPipe(std::shared_ptr<AdapterPipeInfo> &info,
-        const AudioStreamInfo &streamInfo);
+        const AudioStreamInfo &streamInfo, const std::string &networkId = LOCAL_NETWORK_ID);
     bool MatchStreamPropInfo(std::shared_ptr<PipeStreamPropInfo> &info,
-        std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo, const AudioStreamInfo &streamInfo);
+        std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo, const AudioStreamInfo &streamInfo,
+        const std::string &networkId = LOCAL_NETWORK_ID);
     bool SupportImplicitConversion(uint32_t routeFlag);
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, bool &useMatchingPropInfo);
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
@@ -163,12 +167,12 @@ private:
     std::shared_ptr<PipeStreamPropInfo> GetSuitableStreamPropInfo(const AudioSampleFormat &format,
         uint32_t sampleRate, std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos);
     std::shared_ptr<PipeStreamPropInfo> GetDynamicStreamPropInfoFromPipe(std::shared_ptr<AdapterPipeInfo> &info,
-        AudioStreamInfo matchStreamInfo);
+        AudioStreamInfo matchStreamInfo, const std::string &networkId);
     AudioSampleFormat ParseFormat(const std::string format);
     void CheckDynamicCapturerConfig(std::shared_ptr<AudioStreamDescriptor> desc,
         std::shared_ptr<PipeStreamPropInfo> &info);
     std::shared_ptr<PipeStreamPropInfo> GetDynamicStreamPropInfoFromPipeForViVid(
-        std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo streamInfo);
+        std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo streamInfo, const std::string &networkId);
 
     bool xmlHasLoaded_ = false;
     bool ecEnableState_ = false;

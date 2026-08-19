@@ -90,7 +90,7 @@ static void MakeDeviceInfoMap(AudioPolicyConfigData &configData, std::shared_ptr
     propInfo_2->pipeInfo_ = adapterPipeInfo;
 
     std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
-    info->dynamicStreamPropInfos_ = {propInfo, propInfo_2};
+    info->dynamicStreamPropInfosMap_["test_networkId"] = {propInfo, propInfo_2};
     info->role_ = PIPE_ROLE_OUTPUT;
 
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
@@ -100,7 +100,8 @@ static void MakeDeviceInfoMap(AudioPolicyConfigData &configData, std::shared_ptr
     configData.deviceInfoMap[deviceKey] = deviceInfoSet;
 
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps = {propInfo, propInfo_2};
-    AudioPolicyConfigData::GetInstance().UpdateDynamicStreamProps("remote", "offload_distributed_output", streamProps);
+    AudioPolicyConfigData::GetInstance().UpdateDynamicStreamProps("remote", "offload_distributed_output",
+        streamProps, "test_networkId");
 }
 
 static void MakeUidCheckDeviceInfoMap(AudioPolicyConfigData &configData, AudioFlag routerFlag, bool needUidCheck)
@@ -3935,7 +3936,8 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_001, TestSize.
 
     auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     configData.deviceInfoMap.erase(deviceKey);
-    AudioPolicyConfigData::GetInstance().ClearDynamicStreamProps("remote", "offload_distributed_output");
+    AudioPolicyConfigData::GetInstance().ClearDynamicStreamProps("remote", "offload_distributed_output",
+        "test_networkId");
 }
 
 /**
@@ -3980,7 +3982,8 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_002, TestSize.
 
     auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     configData.deviceInfoMap.erase(deviceKey);
-    AudioPolicyConfigData::GetInstance().ClearDynamicStreamProps("remote", "offload_distributed_output");
+    AudioPolicyConfigData::GetInstance().ClearDynamicStreamProps("remote", "offload_distributed_output",
+        "test_networkId");
 }
 
 /**

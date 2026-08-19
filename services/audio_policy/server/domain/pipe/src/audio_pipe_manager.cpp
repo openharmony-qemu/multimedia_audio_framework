@@ -69,9 +69,10 @@ bool AudioPipeManager::PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescrip
     return audioConfigManager_.PreferMultiChannelPipe(desc);
 }
 
-uint32_t AudioPipeManager::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName)
+uint32_t AudioPipeManager::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName,
+    const std::string &networkId)
 {
-    return audioConfigManager_.GetStreamPropInfoSize(adapterName, pipeName);
+    return audioConfigManager_.GetStreamPropInfoSize(adapterName, pipeName, networkId);
 }
 
 bool AudioPipeManager::GetUpdateRouteSupport()
@@ -116,14 +117,16 @@ bool AudioPipeManager::NeedUidCheckForOffloadPipe(const std::shared_ptr<AudioStr
 }
 
 void AudioPipeManager::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
-    const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices)
+    const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices,
+    const std::string &networkId)
 {
-    audioConfigManager_.UpdateStreamPropInfo(adapterName, pipeName, deviceStreamInfo, supportDevices);
+    audioConfigManager_.UpdateStreamPropInfo(adapterName, pipeName, deviceStreamInfo, supportDevices, networkId);
 }
 
-void AudioPipeManager::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName)
+void AudioPipeManager::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+    const std::string &networkId)
 {
-    audioConfigManager_.ClearStreamPropInfo(adapterName, pipeName);
+    audioConfigManager_.ClearStreamPropInfo(adapterName, pipeName, networkId);
 }
 
 uint32_t AudioPipeManager::GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc)

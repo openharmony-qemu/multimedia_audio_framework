@@ -177,10 +177,11 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(D
 }
 
 void AudioPolicyConfigData::UpdateDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
-    const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps)
+    const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps, const std::string &networkId)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
     CHECK_AND_RETURN_LOG(!streamProps.empty(), "streamProps is empty");
+    CHECK_AND_RETURN_LOG(!networkId.empty(), "networkId is empty");
     AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(adapterName);
     CHECK_AND_RETURN_LOG(adapterInfoMap.count(adapterType) != 0, "adapter not exist");
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = adapterInfoMap[adapterType];
@@ -202,19 +203,21 @@ void AudioPolicyConfigData::UpdateDynamicStreamProps(const std::string adapterNa
             streamProp->supportDeviceMap_.insert({uniqueDeviceIt->second->type_, uniqueDeviceIt->second});
         }
     }
-    pipeInfo->UpdateDynamicStreamProps(streamProps);
+    pipeInfo->UpdateDynamicStreamProps(streamProps, networkId);
 }
 
-void AudioPolicyConfigData::ClearDynamicStreamProps(const std::string adapterName, const std::string &pipeName)
+void AudioPolicyConfigData::ClearDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
+    const std::string &networkId)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
+    CHECK_AND_RETURN_LOG(!networkId.empty(), "networkId is empty");
     AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(adapterName);
     CHECK_AND_RETURN_LOG(adapterInfoMap.count(adapterType) != 0, "adapter not exist");
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = adapterInfoMap[adapterType];
     CHECK_AND_RETURN_LOG(adapterInfo != nullptr, "adapterInfo is nullptr");
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(pipeName);
     CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
-    pipeInfo->ClearDynamicStreamProps();
+    pipeInfo->ClearDynamicStreamProps(networkId);
 }
 
 uint32_t AudioPolicyConfigData::GetConfigStreamPropsSize(const std::string adapterName,
@@ -232,7 +235,7 @@ uint32_t AudioPolicyConfigData::GetConfigStreamPropsSize(const std::string adapt
 }
 
 uint32_t AudioPolicyConfigData::GetDynamicStreamPropsSize(const std::string adapterName,
-    const std::string &pipeName)
+    const std::string &pipeName, const std::string &networkId)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
     AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(adapterName);
@@ -242,7 +245,7 @@ uint32_t AudioPolicyConfigData::GetDynamicStreamPropsSize(const std::string adap
     CHECK_AND_RETURN_RET_LOG(adapterInfo != nullptr, 0, "adapterInfo is nullptr");
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(pipeName);
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, 0, "pipeInfo is nullptr");
-    return pipeInfo->dynamicStreamPropInfos_.size();
+    return static_cast<uint32_t>(pipeInfo->GetDynamicStreamPropInfosSize(networkId));
 }
 
 std::shared_ptr<PolicyAdapterInfo> AudioPolicyConfigData::GetAdapterInfo(AudioAdapterType adapterType)
@@ -439,17 +442,36 @@ void AdapterPipeInfo::SelfCheck()
     }
 }
 
-void AdapterPipeInfo::UpdateDynamicStreamProps(const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps)
+void AdapterPipeInfo::UpdateDynamicStreamProps(const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps,
+    const std::string &networkId)
 {
     CHECK_AND_RETURN_LOG(streamProps.size() != 0, "streamProps is empty");
+    CHECK_AND_RETURN_LOG(!networkId.empty(), "networkId is empty");
     std::lock_guard<std::mutex> lock(dynamicMtx_);
-    dynamicStreamPropInfos_ = streamProps;
+    dynamicStreamPropInfosMap_[networkId] = streamProps;
 }
 
-void AdapterPipeInfo::ClearDynamicStreamProps()
+void AdapterPipeInfo::ClearDynamicStreamProps(const std::string &networkId)
+{
+    CHECK_AND_RETURN_LOG(!networkId.empty(), "networkId is empty");
+    std::lock_guard<std::mutex> lock(dynamicMtx_);
+    dynamicStreamPropInfosMap_.erase(networkId);
+}
+
+std::list<std::shared_ptr<PipeStreamPropInfo>> AdapterPipeInfo::GetDynamicStreamPropInfos(
+    const std::string &networkId)
 {
     std::lock_guard<std::mutex> lock(dynamicMtx_);
-    dynamicStreamPropInfos_.clear();
+    auto it = dynamicStreamPropInfosMap_.find(networkId);
+    CHECK_AND_RETURN_RET(it != dynamicStreamPropInfosMap_.end(), {});
+    return it->second;
+}
+
+size_t AdapterPipeInfo::GetDynamicStreamPropInfosSize(const std::string &networkId)
+{
+    std::lock_guard<std::mutex> lock(dynamicMtx_);
+    auto it = dynamicStreamPropInfosMap_.find(networkId);
+    return it != dynamicStreamPropInfosMap_.end() ? it->second.size() : 0;
 }
 
 void PipeStreamPropInfo::SelfCheck()

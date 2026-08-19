@@ -500,9 +500,12 @@ public:
     bool GetDisableFastStreamParam();
     bool IsFastAllowed(std::string &bundleName);
     void UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
-        const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
-    void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
-    uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName);
+        const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices,
+        const std::string &networkId);
+    void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+        const std::string &networkId);
+    uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName,
+        const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t CaptureConcurrentCheck(uint32_t sessionId);
     int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute);
     void ReEvaluateVoipBypassByAppMuteHint();

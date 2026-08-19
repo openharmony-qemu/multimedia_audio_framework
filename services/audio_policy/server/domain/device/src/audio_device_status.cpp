@@ -1015,8 +1015,8 @@ void AudioDeviceStatus::HandleDistributedDeviceDisConnected(DStatusInfo &statusI
 {
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     const std::string networkId = statusInfo.networkId;
-    AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output");
-    AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "multichannel_distributed_output");
+    AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output", networkId);
+    AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "multichannel_distributed_output", networkId);
     std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
     StopStreamWhenDeviceDisconnect(networkId);
     AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
@@ -1748,6 +1748,9 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
     for (auto deviceDesc : connectedDevices) {
         if (deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID) {
             const std::string networkId = deviceDesc->networkId_;
+            AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output", networkId);
+            AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "multichannel_distributed_output",
+                networkId);
             audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(deviceDesc, deviceChangeDescriptor);
             std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
                 AudioPolicyUtils::GetInstance().GetDeviceRole(deviceDesc->deviceType_));
@@ -1846,9 +1849,9 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         std::list<std::string> supportDevices = { "Distributed_Output" };
         device.SetDeviceCapability(capability.streamInfoList_, 0);
         AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "offload_distributed_output",
-            capability.streamInfoList_, supportDevices);
+            capability.streamInfoList_, supportDevices, device.networkId_);
         AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "multichannel_distributed_output",
-            capability.streamInfoList_, supportDevices);
+            capability.streamInfoList_, supportDevices, device.networkId_);
         device.BuildCapabilitiesFromDeviceStreamInfo();
         AUDIO_INFO_LOG("Update audioStreamInfo success");
     }
