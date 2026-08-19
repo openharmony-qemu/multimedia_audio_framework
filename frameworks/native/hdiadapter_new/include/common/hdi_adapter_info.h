@@ -81,6 +81,9 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_PRIMARY_EXTRA_HDMI "Hdmi_Speaker"
 #define HDI_ID_INFO_VOICE_CALL_ASSISTANT "voice_call_assistant"
 #define HDI_ID_INFO_3DA "3DA"
+// Keyword in module name / busAddress identifying a 3DA direct bus port, so that any bus
+// number is covered (bus10_3da_out, mixport_bus10_3da_out, bus11_3da_out, ...).
+#define HDI_BUS_KEYWORD_3DA "3da"
 
 // device manager
 enum HdiDeviceManagerType : uint32_t {

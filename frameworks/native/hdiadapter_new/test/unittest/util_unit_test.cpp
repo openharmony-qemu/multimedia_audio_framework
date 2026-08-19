@@ -559,7 +559,7 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_015, TestSize.Level1)
 /**
  * @tc.name   : Test IdHandler API
  * @tc.number : IdHandlerUnitTest_016
- * @tc.desc   : Test IdHandler GetRenderIdByDeviceClass with bus10_3da_out (3DA direct)
+ * @tc.desc   : Test IdHandler GetRenderIdByDeviceClass with 3da bus keyword (3DA direct)
  */
 HWTEST_F(UtilUnitTest, IdHandlerUnitTest_016, TestSize.Level1)
 {
@@ -575,6 +575,10 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_016, TestSize.Level1)
 
     std::string info = idHandler.ParseInfo(id);
     EXPECT_EQ(info, HDI_ID_INFO_3DA);
+
+    // keyword match: any bus number / mixport_ prefix converges to the same 3DA direct id
+    uint32_t futureBusId = idHandler.GetRenderIdByDeviceClass("mixport_bus11_3da_out", HDI_ID_INFO_3DA);
+    EXPECT_EQ(futureBusId, id);
 }
 
 } // namespace AudioStandard

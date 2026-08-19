@@ -232,7 +232,7 @@ void CabinPlayBackEngine::AdjustVolume()
     uint32_t streamIndx = stream_->GetStreamIndex();
     AudioProcessConfig config = stream_->GetAudioProcessConfig();
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0u};
-    const std::string deviceClass = "bus10_3da_out";
+    const std::string deviceClass = HDI_BUS_KEYWORD_3DA;
     uint32_t renderId = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, AV_SINK_NAME);
     float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, config.streamType, renderId, &volumes);
     float volumeBg = volumes.volumeHistory;
