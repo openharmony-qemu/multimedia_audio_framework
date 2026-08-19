@@ -21,8 +21,11 @@
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_schedule.h"
+#include "audio_bundle_manager.h"
 
 #include "va_device_manager.h"
+#include "va_device_controller_registry.h"
 #include "audio_policy_server.h"
 
 #include "audio_log.h"
@@ -52,8 +55,12 @@ int32_t VADeviceBrokerStubImpl::OnDevicesConnected(const VADevice &device, const
         ERR_PERMISSION_DENIED, "connect virtual audio denied: no MANAGE_AUDIO_ACCESSORY permission");
     sptr<IVADeviceController> vaDeviceController = iface_cast<IVADeviceController>(controller);
     CHECK_AND_RETURN_RET_LOG(vaDeviceController != nullptr, ERR_INVALID_PARAM, "controller is null");
-    auto sharedDevice = std::make_shared<VADevice>(device);
 
+    VADeviceControllerRegistry::GetInstance().SetProcessInfo(
+        IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(),
+        AudioBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid()));
+
+    auto sharedDevice = std::make_shared<VADevice>(device);
     VADeviceManager::GetInstance().OnDevicesConnected(sharedDevice, vaDeviceController);
 
     return SUCCESS;
@@ -66,6 +73,9 @@ int32_t VADeviceBrokerStubImpl::OnDevicesDisconnected(const VADevice &device)
         ERR_PERMISSION_DENIED, "connect virtual audio denied: no MANAGE_AUDIO_ACCESSORY permission");
     auto sharedDevice = std::make_shared<VADevice>(device);
     VADeviceManager::GetInstance().OnDevicesDisconnected(sharedDevice);
+    UnscheduleReportProcessQosLevel(IPCSkeleton::GetCallingPid(), IPCSkeleton::GetCallingUid(),
+        AudioBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid()).c_str());
+    VADeviceControllerRegistry::GetInstance().RemoveProcessInfo();
     return SUCCESS;
 }
 

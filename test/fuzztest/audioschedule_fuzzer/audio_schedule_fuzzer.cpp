@@ -129,12 +129,32 @@ void ResetEndpointThreadPriorityFuzzTest()
 #endif
 }
 
+void ScheduleReportProcessQosLevelFuzzTest()
+{
+#ifdef RESSCHE_ENABLE
+    int32_t pid = GetData<int32_t>();
+    uint32_t uid = GetData<uint32_t>();
+    ScheduleReportProcessQosLevel(pid, uid, "audio_server");
+#endif
+}
+
+void UnscheduleReportProcessQosLevelFuzzTest()
+{
+#ifdef RESSCHE_ENABLE
+    int32_t pid = GetData<int32_t>();
+    uint32_t uid = GetData<uint32_t>();
+    UnscheduleReportProcessQosLevel(pid, uid, "audio_server");
+#endif
+}
+
 vector<TestFuncs> g_testFuncs = {
     ResetProcessDataThreadPriorityFuzzTest,
     SetProcessDataThreadPriorityFuzzTest,
     OnAddResSchedServiceFuzzTest,
     SetEndpointThreadPriorityFuzzTest,
     ResetEndpointThreadPriorityFuzzTest,
+    ScheduleReportProcessQosLevelFuzzTest,
+    UnscheduleReportProcessQosLevelFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

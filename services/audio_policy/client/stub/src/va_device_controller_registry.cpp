@@ -62,6 +62,7 @@ void VADeviceControllerRegistry::UnregisterController(const std::string &address
     }
     std::lock_guard<std::mutex> lock(mutex_);
     controllerMap_.erase(address);
+    hasProcessInfo_ = false;
 }
 
 sptr<IVADeviceController> VADeviceControllerRegistry::GetController(const std::string &address)
@@ -78,6 +79,34 @@ sptr<IVADeviceController> VADeviceControllerRegistry::GetController(const std::s
         return nullptr;
     }
     return iter->second;
+}
+
+void VADeviceControllerRegistry::SetProcessInfo(pid_t pid, uid_t uid, const std::string &bundleName)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    processPid_ = pid;
+    processUid_ = uid;
+    processBundleName_ = bundleName;
+    hasProcessInfo_ = true;
+}
+
+bool VADeviceControllerRegistry::GetProcessInfo(pid_t &pid, uid_t &uid, std::string &bundleName)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!hasProcessInfo_) {
+        AUDIO_INFO_LOG("get process info miss, no process info stored");
+        return false;
+    }
+    pid = processPid_;
+    uid = processUid_;
+    bundleName = processBundleName_;
+    return true;
+}
+
+void VADeviceControllerRegistry::RemoveProcessInfo()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    hasProcessInfo_ = false;
 }
 
 } // namespace AudioStandard

@@ -20,6 +20,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <sys/types.h>
 
 #include "iremote_object.h"
 #include "iv_a_device_controller.h"
@@ -49,6 +50,9 @@ public:
         const sptr<IVADeviceController> &controller);
     void UnregisterController(const std::string &address);
     sptr<IVADeviceController> GetController(const std::string &address);
+    void SetProcessInfo(pid_t pid, uid_t uid, const std::string &bundleName);
+    bool GetProcessInfo(pid_t &pid, uid_t &uid, std::string &bundleName);
+    void RemoveProcessInfo();
 
 private:
     VADeviceControllerRegistry() = default;
@@ -56,6 +60,10 @@ private:
 
     std::mutex mutex_;
     std::unordered_map<std::string, sptr<IVADeviceController>> controllerMap_;
+    pid_t processPid_ = 0;
+    uid_t processUid_ = 0;
+    std::string processBundleName_;
+    bool hasProcessInfo_ = false;
 };
 
 } // namespace AudioStandard
