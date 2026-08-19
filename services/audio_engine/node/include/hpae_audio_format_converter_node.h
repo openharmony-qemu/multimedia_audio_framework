@@ -45,7 +45,6 @@ private:
     bool CheckUpdateOutInfo();
     void CheckAndUpdateInfo(HpaePcmBuffer *input);
     void UpdateTmpOutPcmBufferInfo(const PcmBufferInfo &outPcmBufferInfo);
-    void InitFrontExtractMode(const HpaeNodeInfo &preNodeInfo, const HpaeNodeInfo &nodeInfo);
 
     // --- Dual-buffer mechanism for non-standard sample rate handling ---
     bool AppendToUnprocessedBuffer(const float *data, uint32_t frameLen, uint32_t channels);
@@ -69,7 +68,6 @@ private:
     HpaePcmBuffer* ProcessAndExtractOutput(HpaePcmBuffer *input);
     void ReconfigTmpOutForChannelConversion(uint32_t inCh, uint32_t outCh, uint32_t maxOutFrames);
     bool UpdateOutChannelInfo(uint32_t numChannels, AudioChannelLayout channelLayout);
-    bool ExtractZeroPadOutput(uint32_t frames, float *dstData);
     void ConsumeProcessedFrames(uint32_t frames, uint32_t stride);
     bool DrainProcessedBufferToOutput(const std::vector<HpaePcmBuffer *> &preOutputs, bool hasPreOutput);
     void ResolveDownstreamOutFormat(uint32_t &numChannels, AudioChannelLayout &channelLayout,
@@ -81,16 +79,6 @@ private:
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer converterOutput_;
     HpaeNodeInfo preNodeInfo_;
-    // front-extract mode: for a camcorder split-layout (main + micIn) source, only the leading
-    // main-channel block is consumed and the micIn tail is dropped.
-    bool frontChannelExtractMode_ = false;
-    uint32_t effectiveInChannels_ = 0; // = main channels actually consumed
-    // scenario C (camcorder, app wants micIn but HAL micInChannels==0): resample main,
-    // then zero-fill the trailing micIn block of the partitioned output.
-    bool micInZeroPadMode_ = false;
-    // upstream channel count seen last cycle; used to detect mid-stream source reconfig
-    // while the micIn modes keep the effective width frozen (warning only).
-    uint32_t lastUpstreamChannels_ = 0;
     std::unique_ptr<Resampler> resampler_ = nullptr;
     ChannelConverter channelConverter_;
     HpaePcmBuffer tmpOutBuf_; // cache between resample and converter

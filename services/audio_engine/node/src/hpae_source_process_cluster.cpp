@@ -96,7 +96,7 @@ std::shared_ptr<HpaeNode> HpaeSourceProcessCluster::GetSharedInstance(HpaeNodeIn
     }
     if (!SafeGetMap(fmtConverterNodeMap_, sourceOutputNodeKey)) {
         fmtConverterNodeMap_[sourceOutputNodeKey] =
-            std::make_shared<HpaeAudioFormatConverterNode>(effectNodeInfo, nodeInfo);
+            std::make_shared<HpaeAudioFormatConverterCluster>(effectNodeInfo, nodeInfo);
         fmtConverterNodeMap_[sourceOutputNodeKey]->SetSourceNode(true);
     }
     fmtConverterNodeMap_[sourceOutputNodeKey]->Connect(mixerNode_);
@@ -183,7 +183,7 @@ void HpaeSourceProcessCluster::ConnectInjector(const std::shared_ptr<OutputNode<
         mixerNode_->Connect(preNode);
     } else {
         injectorFmtConverterNodeMap_[preNode] =
-            std::make_shared<HpaeAudioFormatConverterNode>(sinkNodeInfo, mixerNodeInfo);
+            std::make_shared<HpaeAudioFormatConverterCluster>(sinkNodeInfo, mixerNodeInfo);
         mixerNode_->Connect(injectorFmtConverterNodeMap_[preNode]);
         injectorFmtConverterNodeMap_[preNode]->Connect(preNode);
     }

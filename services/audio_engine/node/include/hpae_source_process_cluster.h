@@ -16,7 +16,7 @@
 #ifndef HPAE_SOURCE_PROCESS_CLUSTER_H
 #define HPAE_SOURCE_PROCESS_CLUSTER_H
 #include "hpae_capture_effect_node.h"
-#include "hpae_audio_format_converter_node.h"
+#include "hpae_audio_format_converter_cluster.h"
 #include "hpae_mixer_node.h"
 
 namespace OHOS {
@@ -64,9 +64,9 @@ private:
     std::shared_ptr<HpaeCaptureEffectNode> captureEffectNode_;
     std::shared_ptr<HpaeMixerNode> mixerNode_;
     uint32_t effectRefCount_ = 0;
-    std::unordered_map<std::string, std::shared_ptr<HpaeAudioFormatConverterNode>> fmtConverterNodeMap_;
+    std::unordered_map<std::string, std::shared_ptr<HpaeAudioFormatConverterCluster>> fmtConverterNodeMap_;
     std::unordered_map<std::shared_ptr<OutputNode<HpaePcmBuffer*>>,
-        std::shared_ptr<HpaeAudioFormatConverterNode>> injectorFmtConverterNodeMap_;
+        std::shared_ptr<HpaeAudioFormatConverterCluster>> injectorFmtConverterNodeMap_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
