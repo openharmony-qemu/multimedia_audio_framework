@@ -460,7 +460,11 @@ audio_ohos_library("audio_policy_service") {
 
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
-    external_deps += [ "usb_manager:usbsrv_client" ]
+    external_deps += [
+      "usb_manager:usbsrv_client",
+      "drivers_interface_usb:usb_idl_headers_1.1",
+      "drivers_interface_usb:usb_idl_headers_1.2",
+    ]
     sources += [ "server/domain/device/src/pnp/audio_usb_manager.cpp" ]
   }
 
