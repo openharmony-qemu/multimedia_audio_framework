@@ -1253,6 +1253,24 @@ void AudioInterruptService::HandleAppStreamType(const int32_t zoneId, AudioInter
     }
 }
 
+bool AudioInterruptService::verifySystemStreamPermission(const AudioInterrupt &audioInterrupt,
+    AudioInterruptResult &result)
+{
+    static const std::vector<AudioStreamType> SYSTEM_STREAMTYPE = {
+        STREAM_VOICE_CALL,
+        STREAM_INTERNAL_FORCE_STOP
+    };
+    auto pos = std::find(SYSTEM_STREAMTYPE.begin(), SYSTEM_STREAMTYPE.end(), audioInterrupt.audioFocusType.streamType);
+    if (pos == SYSTEM_STREAMTYPE.end()) {
+        return true;
+    }
+    if (!PermissionUtil::VerifySystemPermission()) {
+        result.retCode = ERR_INVALID_PARAM;
+        return false;
+    }
+    return true;
+}
+
 AudioInterruptResult AudioInterruptService::ActivateAudioInterrupt(
     const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy)
 {
@@ -1262,6 +1280,8 @@ AudioInterruptResult AudioInterruptService::ActivateAudioInterrupt(
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::lock_guard<std::mutex> lock(mutex_);
     AudioInterruptResult result;
+    CHECK_AND_RETURN_RET_LOG(verifySystemStreamPermission(audioInterrupt, result), result,
+        "verifySystemStreamPermission fail");
     AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
     if (audioInterrupt.deviceTag == "" && audioInjectorPolicy.IsActivateInterruptStreamId(audioInterrupt.streamId)) {
         return result;

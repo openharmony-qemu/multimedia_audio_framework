@@ -457,6 +457,7 @@ private:
     bool UpdateFocusStateByHintType(const AudioFocusEntry &focusEntry, AudioFocuState &activeState,
         AudioFocuState &incomingState);
     bool VerifyStreamType(const AudioInterrupt &audioInterrupt);
+    bool verifySystemStreamPermission(const AudioInterrupt &audioInterrupt, AudioInterruptResult &result);
     int32_t FindAudioZoneByStreamIdInternal(const uint32_t streamId);
 
     // interrupt members
