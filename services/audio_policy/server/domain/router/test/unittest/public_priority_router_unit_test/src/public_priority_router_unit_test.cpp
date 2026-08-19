@@ -16,6 +16,7 @@
 #include "public_priority_router_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_device_info.h"
 
 #include <memory>
 #include <thread>
@@ -194,6 +195,69 @@ HWTEST(PublicPriorityRouterUnitTest, PublicPriorityRouter_009, TestSize.Level4)
     AudioDeviceManager::GetAudioDeviceManager().mediaRenderPublicDevices_ = { desc };
     auto descriptors = router.GetRingRenderDevices(streamUsage, clientUID);
     EXPECT_TRUE(!descriptors.empty() && descriptors[0]->deviceType_ != DEVICE_TYPE_DP);
+}
+
+/**
+ * @tc.name  : Test PublicPriorityRouter.
+ * @tc.number: PublicPriorityRouter_010
+ * @tc.desc  : Test IsPcConnectedDevice returns true when SIMULATED_CONNECTED SPEAKER device exists.
+ */
+HWTEST(PublicPriorityRouterUnitTest, PublicPriorityRouter_010, TestSize.Level4)
+{
+    PublicPriorityRouter router;
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    desc->connectState_ = ConnectState::SIMULATED_CONNECTED;
+    dm.connectedDevices_ = { desc };
+
+    bool result = router.IsPcConnectedDevice();
+    EXPECT_TRUE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : Test PublicPriorityRouter.
+ * @tc.number: PublicPriorityRouter_011
+ * @tc.desc  : Test IsPcConnectedDevice returns false when no SIMULATED_CONNECTED SPEAKER device exists.
+ */
+HWTEST(PublicPriorityRouterUnitTest, PublicPriorityRouter_011, TestSize.Level4)
+{
+    PublicPriorityRouter router;
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    desc->connectState_ = ConnectState::CONNECTED;
+    dm.connectedDevices_ = { desc };
+
+    bool result = router.IsPcConnectedDevice();
+    EXPECT_FALSE(result);
+
+    dm.connectedDevices_ = backup;
+}
+
+/**
+ * @tc.name  : Test PublicPriorityRouter.
+ * @tc.number: PublicPriorityRouter_012
+ * @tc.desc  : Test IsPcConnectedDevice returns false when SIMULATED_CONNECTED device is not SPEAKER.
+ */
+HWTEST(PublicPriorityRouterUnitTest, PublicPriorityRouter_012, TestSize.Level4)
+{
+    PublicPriorityRouter router;
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = dm.connectedDevices_;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
+    desc->connectState_ = ConnectState::SIMULATED_CONNECTED;
+    dm.connectedDevices_ = { desc };
+
+    bool result = router.IsPcConnectedDevice();
+    EXPECT_FALSE(result);
+
+    dm.connectedDevices_ = backup;
 }
 
 } // namespace AudioStandard

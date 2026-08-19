@@ -49,6 +49,7 @@ public:
 private:
     vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevicesByLastConnDesc(
         shared_ptr<AudioDeviceDescriptor> latestConnDesc, StreamUsage streamUsage);
+    bool IsPcConnectedDevice();
 };
 } // namespace AudioStandard
 } // namespace OHOS
