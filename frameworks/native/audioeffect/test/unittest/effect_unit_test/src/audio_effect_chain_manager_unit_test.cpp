@@ -2816,7 +2816,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_007, Te
     std::string deviceTypeName = AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
     std::string effectChain1 = sceneType + "_&_" + deviceTypeName;
     auto headTracker = std::make_shared<HeadTracker>();
-    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain1, audioEffectChain});
     AudioEffectChainManager::GetInstance()->sceneTypeToSpecialEffectSet_.insert(sceneType);
     AudioEffectChainManager::GetInstance()->isNeedInitEffectBuffer_ = false;
@@ -2863,7 +2863,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_009, Te
     std::string deviceTypeName = AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
     std::string effectChain1 = sceneType + "_&_" + deviceTypeName;
     auto headTracker = std::make_shared<HeadTracker>();
-    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain1, audioEffectChain});
     AudioEffectChainManager::GetInstance()->sceneTypeToSpecialEffectSet_.insert(sceneType);
     auto ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);

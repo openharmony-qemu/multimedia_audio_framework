@@ -1810,7 +1810,7 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
 {
     Trace trace("AudioEffectChainManager::CheckAndReleaseCommonEffectChain: " + sceneType);
     HILOG_COMM_INFO("[CheckAndReleaseCommonEffectChain]release effect chain for scene "
-        "type: %{public}s, isNeedInitEffectBuffer is %{public}d", sceneType.c_str(), isNeedInitEffectBuffer);
+        "type: %{public}s", sceneType.c_str());
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
