@@ -443,24 +443,24 @@ void AudioCoreService::CheckNeedPreRemoveUnusedPipe(std::vector<std::shared_ptr<
     std::shared_ptr<AudioPipeInfo> pipeInfoFastInput = nullptr;
     std::shared_ptr<AudioPipeInfo> pipeInfoVoipFastInput = nullptr;
     for (auto &pipeInfo : pipeInfos) {
-        if (pipeInfo->name_ == "fast_input" && pipeInfo->streamDescriptors_.empty()) {
-            hasFastInputNoStream = true;
-            isFastInputNew = false;
+        if (pipeInfo->name_ == "fast_input") {
             pipeInfoFastInput = pipeInfo;
-        } else if (pipeInfo->name_ == "fast_input" && pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
-            hasFastInputNoStream = false;
-            isFastInputNew = true;
-            pipeInfoFastInput = pipeInfo;
+            if (pipeInfo->streamDescriptors_.empty()) {
+                hasFastInputNoStream = true;
+            }
+            if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
+                isFastInputNew = true;
+            }
         }
 
-        if (pipeInfo->name_ == "voip_fast_input" && pipeInfo->streamDescriptors_.empty()) {
-            hasVoipFastInputNoStream = true;
-            isVoipFastInputNew = false;
+        if (pipeInfo->name_ == "voip_fast_input") {
             pipeInfoVoipFastInput = pipeInfo;
-        } else if (pipeInfo->name_ == "voip_fast_input" && pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
-            hasVoipFastInputNoStream = false;
-            isVoipFastInputNew = true;
-            pipeInfoVoipFastInput = pipeInfo;
+            if (pipeInfo->streamDescriptors_.empty()) {
+                hasVoipFastInputNoStream = true;
+            }
+            if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
+                isVoipFastInputNew = true;
+            }
         }
     }
     if (hasFastInputNoStream && isVoipFastInputNew && pipeInfoFastInput != nullptr) {
