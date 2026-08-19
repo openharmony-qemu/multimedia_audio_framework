@@ -22,6 +22,18 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
+bool PublicPriorityRouter::IsPcConnectedDevice()
+{
+    auto connectedDevices = AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
+    for (const auto &device : connectedDevices) {
+        if (device->connectState_ == ConnectState::SIMULATED_CONNECTED &&
+            device->deviceType_ ==  DEVICE_TYPE_SPEAKER) {
+            return true;
+        }
+    }
+    return false;
+}
+
 shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetMediaRenderDevice(StreamUsage streamUsage,
     int32_t clientUID, const uint32_t sessionID)
 {
@@ -78,7 +90,13 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
     AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
     if (streamUsage == STREAM_USAGE_VOICE_RINGTONE || streamUsage == STREAM_USAGE_RINGTONE ||
         streamUsage == STREAM_USAGE_VOICE_TRANSFER_RINGTONE) {
-        curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderBTCarDevices();
+        // For PC product: if SIMULATED_CONNECTED device exists, all public devices can ring.
+        // Otherwise, only Bluetooth Car can ring for public device.
+        if (IsPcConnectedDevice()) {
+            curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();
+        } else {
+            curDescs = AudioDeviceManager::GetAudioDeviceManager().GetCommRenderBTCarDevices();
+        }
     } else {
         curDescs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
         audioDevUsage = MEDIA_OUTPUT_DEVICES;
