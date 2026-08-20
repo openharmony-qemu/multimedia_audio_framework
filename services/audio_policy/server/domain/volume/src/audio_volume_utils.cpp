@@ -338,6 +338,22 @@ bool AudioVolumeUtils::IsVolumeTypeValid(AudioStreamType streamType)
     return result;
 }
 
+bool AudioVolumeUtils::IsPublicVolumeType(AudioVolumeType volumeType)
+{
+    switch (volumeType) {
+        case STREAM_VOICE_CALL:
+        case STREAM_RING:
+        case STREAM_MUSIC:
+        case STREAM_ALARM:
+        case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_ASSISTANT:
+            return true;
+        default:
+            AUDIO_ERR_LOG("IsPublicVolumeType: volumeType[%{public}d] is not public", volumeType);
+            return false;
+    }
+}
+
 bool AudioVolumeUtils::IsDeviceWithSafeVolume(std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "desc is null");

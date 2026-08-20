@@ -130,6 +130,7 @@ public:
         int32_t &volumeLevel, int32_t zoneId = 0);
 
     bool IsVolumeTypeValid(AudioStreamType streamType);
+    bool IsPublicVolumeType(AudioVolumeType volumeType);
 
     bool IsDistributedDevice(std::shared_ptr<AudioDeviceDescriptor> desc);
     bool IsDeviceWithSafeVolume(std::shared_ptr<AudioDeviceDescriptor> desc);
