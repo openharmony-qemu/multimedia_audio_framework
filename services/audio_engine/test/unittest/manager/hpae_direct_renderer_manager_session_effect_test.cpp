@@ -2438,3 +2438,149 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_Materialize_Direct_Ready
     manager_->DestroyStream(TEST_SESSION_ID);
     WaitForMsgProcessing(manager_);
 }
+
+/**
+ * @tc.name    : DestroyFinalizeThenCreateSameBatch
+ * @tc.type    : FUNC
+ * @tc.number  : SE_SwitchFinalizeNow_001
+ * @tc.desc    : finalizeNow destroy followed immediately by create (switch path): create is
+ *               processed after the finalizeNow destroy in queue order — no ERR_SESSION_ALREADY_BOUND
+ *               from a STOPPING leftover
+ */
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_001, TestSize.Level0)
+{
+    // Prepare: Create, start stream and SE
+    HpaeStreamInfo streamInfo = GetDefaultStreamInfo();
+    ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(manager_);
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto instance1 = MakeTestEffectInstance(defaultConfig_);
+    manager_->PostCreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance", instance1, defaultConfig_);
+    WaitForMsgProcessing(manager_);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+
+    // Test: finalizeNow destroy + create pushed back-to-back (no wait between). Old behavior:
+    // create ran while the STOPPING node still held sessionEffectNode_ -> ALREADY_BOUND failure.
+    manager_->PostDestroySessionEffect(TEST_SESSION_ID, true);
+    auto instance2 = MakeTestEffectInstance(defaultConfig_);
+    manager_->PostCreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance", instance2, defaultConfig_);
+    WaitForMsgProcessing(manager_);
+
+    // Verify: new SE materialized for the new instance; exactly one DISABLED (direct finalize)
+    // and two ENABLED (instance1 create + instance2 create; recorder registered before both, so
+    // both are recorded). Asserted at this drain point: the later DestroyStream/DeleteInputSession
+    // teardown (Stop itself does not reset the node) would add another DISABLED.
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, TEST_SESSION_ID);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetEffectInstance(), instance2);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
+
+    // Cleanup
+    manager_->Stop(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}
+
+/**
+ * @tc.name    : DestroyFinalizeOnStoppingNode
+ * @tc.type    : FUNC
+ * @tc.number  : SE_SwitchFinalizeNow_002
+ * @tc.desc    : finalizeNow destroy on an already-STOPPING node (pending finalize queued):
+ *               STOPPING branch finalizes directly, following create still succeeds
+ */
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_002, TestSize.Level1)
+{
+    // Prepare: Create, start stream and SE
+    HpaeStreamInfo streamInfo = GetDefaultStreamInfo();
+    ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager_);
+    ASSERT_EQ(manager_->Start(TEST_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(manager_);
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto instance1 = MakeTestEffectInstance(defaultConfig_);
+    manager_->PostCreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance", instance1, defaultConfig_);
+    WaitForMsgProcessing(manager_);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+
+    // Test: plain destroy (BeginClose + queued finalize), then finalizeNow destroy (STOPPING
+    // branch -> direct finalize), then create — all back-to-back.
+    manager_->PostDestroySessionEffect(TEST_SESSION_ID);
+    manager_->PostDestroySessionEffect(TEST_SESSION_ID, true);
+    auto instance2 = MakeTestEffectInstance(defaultConfig_);
+    manager_->PostCreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance", instance2, defaultConfig_);
+    WaitForMsgProcessing(manager_);
+
+    // Verify: create succeeded (old behavior: STOPPING skip left the node in place -> failure).
+    // Exactly one DISABLED (direct finalize; queued copy no-ops) and two ENABLED (both creates;
+    // recorder registered before both, so both are recorded). Asserted at this drain point:
+    // the later DestroyStream/DeleteInputSession teardown (Stop itself does not reset the
+    // node) would add another DISABLED.
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetEffectInstance(), instance2);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
+
+    // Cleanup
+    manager_->Stop(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}
+
+/**
+ * @tc.name    : DestroyFinalizeOnStoppingNodeSync
+ * @tc.type    : FUNC
+ * @tc.number  : SE_SwitchFinalizeNow_003
+ * @tc.desc    : finalizeNow destroy on an already-STOPPING node executes the STOPPING-branch
+ *               direct finalize synchronously; the earlier-queued FinalizeClose no-ops on the
+ *               identity check (exactly one DISABLED)
+ */
+HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_003, TestSize.Level1)
+{
+    // Prepare: Create stream and SE in PREPARED state (no Start — sync-API convention, cf.
+    // SE_Destroy_StopShortCircuit: the SignalProcessThread parks and only drains on push).
+    HpaeStreamInfo streamInfo = GetDefaultStreamInfo();
+    ASSERT_EQ(manager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager_);
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    manager_->RegisterSendMsgCallback(callback);
+
+    auto instance1 = MakeTestEffectInstance(defaultConfig_);
+    manager_->PostCreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance", instance1, defaultConfig_);
+    WaitForMsgProcessing(manager_);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+
+    // BeginClose synchronously (plain): node enters STOPPING with exactly one Finalize queued,
+    // queue NOT drained yet — the state the switch-path destroy must handle inline.
+    ASSERT_EQ(manager_->RemoveSessionEffectNode(), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    ASSERT_EQ(manager_->sessionEffectNode_->GetStatus(), HpaeSessionEffectNode::STATUS::STOPPING);
+
+    // finalizeNow destroy hits the STOPPING branch and finalizes directly (synchronously).
+    int32_t ret = manager_->DestroySessionEffect(TEST_SESSION_ID, true);
+    EXPECT_EQ(ret, static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    // Drain: the stale queued FinalizeClose no-ops on the identity check (no second DISABLED).
+    WaitForMsgProcessing(manager_);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    // Cleanup
+    manager_->DestroyStream(TEST_SESSION_ID);
+    WaitForMsgProcessing(manager_);
+}

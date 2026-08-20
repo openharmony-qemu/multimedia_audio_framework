@@ -3201,7 +3201,7 @@ int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId, bool aissSwitchEnable
 }
 
 // Clear the session effect binding and reset boundSessionId_ when it points to the cleared session.
-void HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding)
+void HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding, bool finalizeNow)
 {
     if (sessionId == UNBOUND_SESSION_ID || sessionEffectManager_ == nullptr) {
         return;
@@ -3210,7 +3210,7 @@ void HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding)
 
     auto rendererManager = GetRendererManagerById(sessionId);
     if (rendererManager != nullptr) {
-        rendererManager->PostDestroySessionEffect(sessionId);
+        rendererManager->PostDestroySessionEffect(sessionId, finalizeNow);
     }
 
     sessionEffectManager_->UnbindSessionEffect(sessionId);
@@ -3326,7 +3326,10 @@ int32_t HpaeManager::SetAissEnabledSync(uint32_t sessionId, bool enabled)
         if (enabled) {
             uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
             if (oldSessionId != UNBOUND_SESSION_ID && oldSessionId != sessionId) {
-                ClearAissSession(oldSessionId, true);
+                // Opening a new AISS session: finalize the old session's SE inside its destroy
+                // request (finalizeNow) so a Create queued right behind cannot hit a STOPPING
+                // node or a stale channel override.
+                ClearAissSession(oldSessionId, true, true);
             }
 
             int32_t ret = BindAndCreateAiss(sessionId, true);

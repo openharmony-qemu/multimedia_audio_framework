@@ -1279,7 +1279,7 @@ int32_t HpaeDirectRendererManager::InsertSessionEffectNode(const std::string &ef
     return 0;
 }
 
-int32_t HpaeDirectRendererManager::RemoveSessionEffectNode()
+int32_t HpaeDirectRendererManager::RemoveSessionEffectNode(bool finalizeNow)
 {
     CHECK_AND_RETURN_RET_LOG(sessionEffectNode_ != nullptr,
         static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND),
@@ -1303,18 +1303,26 @@ int32_t HpaeDirectRendererManager::RemoveSessionEffectNode()
 
     // Enter STOPPING: the next Process() (between this and the next HandleMsg) gets one aligned
     // wet->dry crossfade opportunity if the chain is pulled. FinalizeClose, queued for the next
-    // HandleMsg batch, owns the actual node deletion (never inside DoProcess).
+    // HandleMsg batch (or directly below when finalizeNow), owns the actual node deletion
+    // (never inside DoProcess).
     closingNode->StartCloseCrossfade();
     std::weak_ptr<HpaeSessionEffectNode> weakClosingNode = closingNode;
-    Request finalize = [this, sessionId, weakClosingNode]() {
+    if (finalizeNow) {
+        // Switch path ("open new"): finalize inside this same request (BeginClose above) so a
+        // Create queued right behind us sees no leftover node. Skips the crossfade-drain batch.
         FinalizeSessionEffectClose(sessionId, weakClosingNode);
-    };
-    hpaeNoLockQueue_.PushRequest(std::move(finalize));
-    if (hpaeSignalProcessThread_ != nullptr) {
-        hpaeSignalProcessThread_->Notify();
+    } else {
+        Request finalize = [this, sessionId, weakClosingNode]() {
+            FinalizeSessionEffectClose(sessionId, weakClosingNode);
+        };
+        hpaeNoLockQueue_.PushRequest(std::move(finalize));
+        if (hpaeSignalProcessThread_ != nullptr) {
+            hpaeSignalProcessThread_->Notify();
+        }
     }
-    AUDIO_INFO_LOG("RemoveSessionEffectNode: session %{public}u BeginClose, latency=%{public}llu",
-        sessionId, (unsigned long long)latency);
+    AUDIO_INFO_LOG("RemoveSessionEffectNode: session %{public}u BeginClose (finalizeNow=%{public}d), "
+        "latency=%{public}llu",
+        sessionId, static_cast<int>(finalizeNow), (unsigned long long)latency);
     return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
 }
 
@@ -1537,7 +1545,7 @@ int32_t HpaeDirectRendererManager::CreateSessionEffect(uint32_t sessionId,
     return 0;
 }
 
-int32_t HpaeDirectRendererManager::DestroySessionEffect(uint32_t sessionId)
+int32_t HpaeDirectRendererManager::DestroySessionEffect(uint32_t sessionId, bool finalizeNow)
 {
     // Clear attach state on SinkInputNode (logical unbinding)
     auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
@@ -1551,13 +1559,17 @@ int32_t HpaeDirectRendererManager::DestroySessionEffect(uint32_t sessionId)
         if (sessionEffectNode_->GetStatus() == HpaeSessionEffectNode::STATUS::STOPPING) {
             // Close already begun (BeginClose already queued FinalizeClose). Re-BeginClose would
             // double-rewind and queue a duplicate Finalize; just cancel any deferred recreate.
-            // The already-queued FinalizeClose performs the deletion and emits the single DISABLED.
             CancelPendingSessionEffectCreate(sessionId);
+            if (finalizeNow) {
+                // Earlier BeginClose queued a Finalize; run it now so the teardown completes
+                // before the new session's Create (queued copy no-ops on the identity check).
+                FinalizeSessionEffectClose(sessionId, sessionEffectNode_);
+            }
             AUDIO_INFO_LOG("DestroySessionEffect: session %{public}u already STOPPING, skip re-Begin",
                 sessionId);
             return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
         }
-        return RemoveSessionEffectNode();
+        return RemoveSessionEffectNode(finalizeNow);
     }
 
     // If there was attach state but no physical node, emit DISABLED for the logical unbind
@@ -1593,10 +1605,10 @@ void HpaeDirectRendererManager::PostCreateSessionEffect(uint32_t sessionId,
     SendRequest(std::move(request), __func__);
 }
 
-void HpaeDirectRendererManager::PostDestroySessionEffect(uint32_t sessionId)
+void HpaeDirectRendererManager::PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow)
 {
-    auto request = [this, sessionId]() {
-        DestroySessionEffect(sessionId);
+    auto request = [this, sessionId, finalizeNow]() {
+        DestroySessionEffect(sessionId, finalizeNow);
     };
     SendRequest(std::move(request), __func__);
 }

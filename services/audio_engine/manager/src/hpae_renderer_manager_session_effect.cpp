@@ -106,7 +106,7 @@ void HpaeRendererManager::OnSessionEffectPreheatStateChanged(uint32_t sessionId,
     sinkInputNode->SetSessionEffectPreheatActive(active);
 }
 
-int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
+int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId, bool finalizeNow)
 {
     // Route via GetProcessorType to match the key used at override-set time
     // (OnSessionEffectMaterialized); cluster lookup below uses GetConnectedProcessorType
@@ -128,6 +128,16 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
     // re-arm crossfade / queue a duplicate Finalize) — cancel pending recreate, mirror derived managers.
     if (processCluster->IsSessionEffectNodeStopping(sessionId)) {
         CancelPendingSessionEffectCreate(sessionId);
+        if (finalizeNow) {
+            // Switch path: the earlier BeginClose queued a Finalize for the next batch; run it
+            // now so the old session is fully closed before the new one is created. The queued
+            // copy later no-ops on the identity check in FinalizeDestroySessionEffectNode.
+            auto stoppingNode = processCluster->GetSessionEffectNode(sessionId);
+            if (stoppingNode != nullptr) {
+                auto stoppingRoute = BuildChannelOverrideRoute(sessionId);
+                FinalizeSessionEffectClose(sessionId, stoppingRoute, it->second.state, stoppingNode);
+            }
+        }
         AUDIO_INFO_LOG("DestroySessionEffect: session %{public}u already STOPPING, skip re-Begin",
             sessionId);
         return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
@@ -154,16 +164,23 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
         sinkInputNode->ClearSessionEffectAttachState();
         AUDIO_INFO_LOG("[SE::RendererManager] AttachState cleared sessionId=%{public}u", sessionId);
     }
-    // FinalizeClose on the next queue batch (DoProcess stack already unwound): identity-checked
-    // disconnect+drop+erase, then clear channel override + DISABLED. Override stays during the
-    // STOPPING window so the chain remains 2ch while the SE node is still in line.
     HpaeSessionState state = it->second.state;
-    Request finalize = [this, sessionId, route, state, weakNode]() {
+    if (finalizeNow) {
+        // Switch path ("open new"): close the old session inside this same request — skips the
+        // crossfade-drain batch (mirrors cluster refresh). A Create queued right behind us then
+        // sees no STOPPING node and no stale channel override.
         FinalizeSessionEffectClose(sessionId, route, state, weakNode);
-    };
-    hpaeNoLockQueue_.PushRequest(std::move(finalize));
-    if (hpaeSignalProcessThread_ != nullptr) {
-        hpaeSignalProcessThread_->Notify();
+    } else {
+        // FinalizeClose on the next queue batch (DoProcess stack already unwound): identity-checked
+        // disconnect+drop+erase, then clear channel override + DISABLED. Override stays during the
+        // STOPPING window so the chain remains 2ch while the SE node is still in line.
+        Request finalize = [this, sessionId, route, state, weakNode]() {
+            FinalizeSessionEffectClose(sessionId, route, state, weakNode);
+        };
+        hpaeNoLockQueue_.PushRequest(std::move(finalize));
+        if (hpaeSignalProcessThread_ != nullptr) {
+            hpaeSignalProcessThread_->Notify();
+        }
     }
     AUDIO_INFO_LOG("[SE::RendererManager] DestroySessionEffect BeginClose sessionId=%{public}u", sessionId);
     return ret;
@@ -292,10 +309,10 @@ void HpaeRendererManager::PostCreateSessionEffect(uint32_t sessionId, const std:
     SendRequest(std::move(request), __func__);
 }
 
-void HpaeRendererManager::PostDestroySessionEffect(uint32_t sessionId)
+void HpaeRendererManager::PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow)
 {
-    auto request = [this, sessionId]() {
-        DestroySessionEffect(sessionId);
+    auto request = [this, sessionId, finalizeNow]() {
+        DestroySessionEffect(sessionId, finalizeNow);
     };
     SendRequest(std::move(request), __func__);
 }
