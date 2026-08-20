@@ -1361,5 +1361,113 @@ HWTEST_F(AudioRenderSinkUnitTest, DeInitClearsDeviceCallback_001, TestSize.Level
     }
     DeInitPrimarySink();
 }
+
+/**
+ * @tc.name   : Test Start force-routes currentActiveDevice_ bypassing dedup
+ * @tc.number : StartForceRouteBypassesDedup_001
+ * @tc.desc   : Test Start force-routes currentActiveDevice_ to HAL, bypassing dedup
+ *              (regression for direct-sink HAL-pollution fix)
+ */
+HWTEST_F(AudioRenderSinkUnitTest, StartForceRouteBypassesDedup_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
+    EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);
+    bool callbackInvoked = false;
+    primarySink_->RegisterCurrentDeviceCallback(
+        [&callbackInvoked](bool state) { callbackInvoked = true; });
+    int32_t ret = primarySink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(callbackInvoked);
+    EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);
+    ret = primarySink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test Stop does not invoke device callback
+ * @tc.number : StopDoesNotInvokeDeviceCallback_001
+ * @tc.desc   : Test Stop uses DoSetOutputRoute and does not invoke the device callback
+ *              (regression for direct-sink HAL-pollution fix)
+ */
+HWTEST_F(AudioRenderSinkUnitTest, StopDoesNotInvokeDeviceCallback_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
+    bool callbackInvoked = false;
+    primarySink_->RegisterCurrentDeviceCallback(
+        [&callbackInvoked](bool state) { callbackInvoked = true; });
+    int32_t ret = primarySink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    ASSERT_TRUE(callbackInvoked);
+    callbackInvoked = false;
+    ret = primarySink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(callbackInvoked);
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test Stop preserves currentActiveDevice_
+ * @tc.number : StopPreservesActiveDevice_001
+ * @tc.desc   : Test Stop preserves currentActiveDevice_ instead of resetting to NONE
+ *              (regression for direct-sink HAL-pollution fix)
+ */
+HWTEST_F(AudioRenderSinkUnitTest, StopPreservesActiveDevice_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
+    EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);
+    int32_t ret = primarySink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test Stop->Start cycle preserves currentActiveDevice_
+ * @tc.number : StopStartCyclePreservesDevice_001
+ * @tc.desc   : Test Stop->Start cycle preserves currentActiveDevice_
+ *              (integration regression for direct-sink HAL-pollution fix)
+ */
+HWTEST_F(AudioRenderSinkUnitTest, StopStartCyclePreservesDevice_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
+    EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);
+    int32_t ret = primarySink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);
+    ret = primarySink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);
+    ret = primarySink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test direct sink Stop preserves currentActiveDevice_
+ * @tc.number : DirectSinkStopPreservesActiveDevice_001
+ * @tc.desc   : Test direct sink Stop preserves currentActiveDevice_ (the sink type central to the HAL-pollution bug)
+ */
+HWTEST_F(AudioRenderSinkUnitTest, DirectSinkStopPreservesActiveDevice_001, TestSize.Level1)
+{
+    InitDirectSink();
+    ASSERT_TRUE(directSink_ && directSink_->IsInited());
+    EXPECT_EQ(directSink_->GetCurrentOutputDevice(), DEVICE_TYPE_WIRED_HEADSET);
+    int32_t ret = directSink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = directSink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(directSink_->GetCurrentOutputDevice(), DEVICE_TYPE_WIRED_HEADSET);
+    DeInitDirectSink();
+}
 } // namespace AudioStandard
 } // namespace OHOS
