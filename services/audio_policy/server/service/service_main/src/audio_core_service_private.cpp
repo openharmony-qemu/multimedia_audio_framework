@@ -3005,6 +3005,40 @@ void AudioCoreService::UpdateFastState(std::shared_ptr<AudioPipeInfo> pipeInfo)
     fastCloseCondition_.notify_all();
 }
 
+void AudioCoreService::ForceClosePipeForDevice(const std::string &pipeName)
+{
+    // This method runs in eventMutex_-held context (brought in by device-offline dispatch chain).
+    // MUST NOT call any EventEntry method, otherwise self-deadlock on eventMutex_ (non-recursive).
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+
+    // 1) Lookup close info under pipeListLock_ (value-copy out, no shared_ptr leaked)
+    AudioIOHandle id = 0;
+    uint32_t paIndex = 0;
+    std::string moduleName;
+    if (!pipeManager_->GetPipeCloseInfoByName(pipeName, id, paIndex, moduleName)) {
+        AUDIO_DEBUG_LOG("%{public}s pipe not found, skip force close", pipeName.c_str());
+        return;
+    }
+
+    // 2) Coordinate with delayed-close thread: set isOpened=false, isInRelease=false, notify
+    {
+        std::lock_guard<std::mutex> lock(primaryExtraCloseMutex_);
+        isPrimaryExtraOpenedMap_[pipeName] = false;
+        isPrimaryExtraInReleaseMap_[pipeName] = false;
+        primaryExtraCloseCondition_.notify_all();
+    }
+    // 3) Inline HDI close (mirrors EventEntry::ReleasePrimaryExtraPipe cleanup exactly)
+    int32_t ret = audioPolicyManager_.CloseAudioPort(id, paIndex);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("CloseAudioPort failed in ForceClosePipeForDevice, id:%{public}u, ret:%{public}d",
+            id, ret);
+    }
+    pipeManager_->RemoveAudioPipeInfo(id);
+    audioIOHandleMap_.DelIOHandleInfo(moduleName);
+    audioPolicyManager_.RemoveAudioPipeVolume(id);
+    AUDIO_INFO_LOG("ForceClose %{public}s done, id:%{public}u", pipeName.c_str(), id);
+}
+
 void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
     bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason)
 {

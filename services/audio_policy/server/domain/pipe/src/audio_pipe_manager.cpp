@@ -561,6 +561,24 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeinfoById(AudioIOHandle i
     return nullptr;
 }
 
+bool AudioPipeManager::GetPipeCloseInfoByName(const std::string &pipeName, AudioIOHandle &id,
+    uint32_t &paIndex, std::string &moduleName)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (const auto &pipe : curPipeList_) {
+        if (pipe == nullptr) {
+            continue;
+        }
+        if (pipe->name_ == pipeName) {
+            id = pipe->id_;
+            paIndex = pipe->paIndex_;
+            moduleName = pipe->moduleInfo_.name;
+            return true;
+        }
+    }
+    return false;
+}
+
 std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
 {
     Trace trace("AudioPipeManager::GetAdapterNameBySessionId");

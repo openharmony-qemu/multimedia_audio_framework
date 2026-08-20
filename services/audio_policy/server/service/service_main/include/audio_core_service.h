@@ -312,6 +312,11 @@ public:
 
     void PresetArmIdleInput(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     void CloseUsbArmDevice(const AudioDeviceDescriptor &device);
+    // Force close the specified primary_extra pipe inline when a device goes offline.
+    // pipeName: name of the primary_extra pipe to force-close (e.g. "primary_typec_output").
+    // Runs in eventMutex_-held context (brought in by device-offline dispatch chain).
+    // MUST NOT call any EventEntry method to avoid self-deadlock on eventMutex_.
+    void ForceClosePipeForDevice(const std::string &pipeName);
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
 
     int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, PipeStreamPropInfo &targetInfo,

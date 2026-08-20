@@ -54,6 +54,7 @@ const std::string DEFAULT_BUFFER_SIZE_8000 = "320";
 
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 const int32_t DEFAULT_UID = -1;
+const std::string PRIMARY_TYPEC_OUTPUT_PIPE = "primary_typec_output";
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -537,6 +538,11 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
         AudioServerProxy::GetInstance().UnloadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "dp", false);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
         updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        // Only in multi-stream/multi-device mode, force close the pipe when HiFi (USB_HEADSET) goes offline
+        if (Util::IsEnhancedRoutingSupported() &&
+            updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET) {
+            AudioCoreService::GetCoreService()->ForceClosePipeForDevice(PRIMARY_TYPEC_OUTPUT_PIPE);
+        }
         AudioServerProxy::GetInstance().UnloadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb", false);
     }
     return SUCCESS;
