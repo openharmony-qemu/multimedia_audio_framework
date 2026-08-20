@@ -3133,7 +3133,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_152, TestSize.Le
     auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
     auto routeSelectInfo = std::make_shared<AudioRouteSelectInfo>();
     int32_t selectResult = 0;
-    EXPECT_EQ(audioPolicyClient->OnAudioRouteSelectRefined(routeSelectInfo, selectResult), ERR_CALLBACK_NOT_REGISTERED);
+    EXPECT_EQ(audioPolicyClient->OnAudioRouteSelectRefined(routeSelectInfo, selectResult), ERROR);
 }
 
 /**

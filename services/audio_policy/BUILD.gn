@@ -742,6 +742,7 @@ group("audio_policy_test_packages") {
     "server/domain/volume/test:audio_volume_unittest_packages",
     "server/service/service_main/test:audio_loopback_manager_unit_test",
     "server/service/service_main/test:audio_policy_dump_unit_test",
+    "server/service/service_main/test:audio_select_interface_service_unit_test",
     "server/service/service_main/test:audio_policy_server_extended_test",
     "server/service/service_main/test:audio_policy_service_ext_unit_test",
     "server/service/service_main/test:device_init_callback_unit_test",

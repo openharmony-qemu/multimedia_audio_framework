@@ -410,6 +410,7 @@ HWTEST_F(VADeviceManagerUnitTest, UpdateNoiseReductionCapability_003, TestSize.L
 HWTEST_F(VADeviceManagerUnitTest, SetAssociatedMacAddresses_001, TestSize.Level1)
 {
     auto &vaDeviceManager = VADeviceManager::GetInstance();
+    AudioCoreService::GetCoreService()->Init();
     vaDeviceManager.SetAssociatedMacAddresses("00:11:22:33:44:55", true);
     EXPECT_TRUE(true);
 }
