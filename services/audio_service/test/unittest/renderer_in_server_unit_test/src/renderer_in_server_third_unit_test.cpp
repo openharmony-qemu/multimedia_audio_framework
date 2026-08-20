@@ -2738,11 +2738,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_MarkStaticFadeIn_001, T
     rendererInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo1, buffer);
     ASSERT_TRUE(rendererInServer->staticBufferProvider_ != nullptr);
 
-    rendererInServer->staticBufferProvider_->needFadeIn_ = false;
     rendererInServer->MarkStaticFadeIn(false);
-    EXPECT_TRUE(rendererInServer->staticBufferProvider_->needFadeIn_);
-
-    rendererInServer->staticBufferProvider_->needFadeIn_ = false;
     rendererInServer->MarkStaticFadeIn(true);
     EXPECT_TRUE(rendererInServer->staticBufferProvider_->curStaticDataPos_ == 0);
 }

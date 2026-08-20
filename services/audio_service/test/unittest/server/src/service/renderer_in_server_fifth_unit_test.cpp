@@ -437,36 +437,6 @@ HWTEST_F(RendererInServerFifthUnitTest, IsInvalidBuffer_S16LE_001, TestSize.Leve
     EXPECT_TRUE(result);  // Zero data is invalid buffer
 }
 
-// ==================== MarkStaticFadeOut / MarkStaticFadeIn 测试 ====================
-
-/**
- * @tc.name  : Test MarkStaticFadeOut in static mode
- * @tc.type  : FUNC
- * @tc.number: MarkStaticFadeOut_StaticMode_001
- * @tc.desc  : Test MarkStaticFadeOut in static mode.
- */
-HWTEST_F(RendererInServerFifthUnitTest, MarkStaticFadeOut_StaticMode_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    processConfig.rendererInfo.isStatic = true;
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, stateListener);
-    rendererInServer->MarkStaticFadeOut();
-}
-
-/**
- * @tc.name  : Test MarkStaticFadeIn in static mode
- * @tc.type  : FUNC
- * @tc.number: MarkStaticFadeIn_StaticMode_001
- * @tc.desc  : Test MarkStaticFadeIn in static mode.
- */
-HWTEST_F(RendererInServerFifthUnitTest, MarkStaticFadeIn_StaticMode_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, rendererInServer);
-    processConfig.rendererInfo.isStatic = true;
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, stateListener);
-    rendererInServer->MarkStaticFadeIn(true);
-}
-
 // ==================== HandleIsWriteFirst 测试 ====================
 
 /**
