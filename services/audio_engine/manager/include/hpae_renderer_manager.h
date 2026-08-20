@@ -204,6 +204,15 @@ private:
     void MaterializeSessionEffectFromAttachState(uint32_t sessionId, HpaeProcessorType sceneType);
     void HandleSessionEffectMaterializeFailure(uint32_t sessionId, int32_t ret,
         const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
+    // STOPPING + finalizeNow: run the Finalize a prior BeginClose queued for the next batch
+    // right now, so the old session is fully closed before the new one is created.
+    void FinalizeStoppingSessionEffect(uint32_t sessionId, HpaeSessionState state,
+        const std::shared_ptr<HpaeProcessCluster> &processCluster);
+    // Rewind upstream history by the combined latency; clear the logical binding.
+    void RewindAndClearSessionEffectAttach(uint32_t sessionId, uint64_t latency);
+    // Schedule the deferred Finalize close on the next queue batch.
+    void QueueSessionEffectFinalize(uint32_t sessionId, std::optional<ChannelOverrideRoute> route,
+        HpaeSessionState state, const std::weak_ptr<HpaeSessionEffectNode> &weakNode);
     // Finalize close: deferred to the next HandleMsg batch (default) or run directly inside the
     // destroy request (finalizeNow). Identity-checked: clears channel override + emits DISABLED
     // only if the cluster actually finalized.
