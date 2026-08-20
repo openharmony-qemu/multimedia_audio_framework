@@ -196,6 +196,7 @@ public:
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
 
     void UpdateDescWhenNoBTPermission(vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+    void UpdateDescWhenNoBTPermission(AudioDeviceDescriptor &desc);
 
     void SyncInputDeviceScoId(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 

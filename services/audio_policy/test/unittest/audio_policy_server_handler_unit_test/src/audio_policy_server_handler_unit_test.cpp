@@ -736,6 +736,76 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleRendererDeviceChangeEvent_001, Te
 }
 
 /**
+ * @tc.name  : HandleRendererInfoEvent_NoBTPermission
+ * @tc.number: HandleRendererInfoEvent_002
+ * @tc.desc  : Test HandleRendererInfoEvent does not modify original data when hasBTPermission_ is false
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleRendererInfoEvent_NoBTPermission, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    int32_t clientPid = 1;
+    auto mockClientHolder = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    ASSERT_NE(mockClientHolder, nullptr);
+    mockClientHolder->hasBTPermission_ = false;
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, mockClientHolder);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_RENDERER_STATE_CHANGE, true);
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    ASSERT_NE(eventContextObj, nullptr);
+    auto rendererInfo = std::make_shared<AudioRendererChangeInfo>();
+    rendererInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    rendererInfo->outputDeviceInfo.deviceName_ = "BT_Device";
+    rendererInfo->outputDeviceInfo.macAddress_ = "AA:BB:CC:DD:EE:FF";
+    eventContextObj->audioRendererChangeInfos.push_back(rendererInfo);
+
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::RENDERER_INFO_EVENT, eventContextObj);
+    EXPECT_NO_THROW(audioPolicyServerHandler_->HandleRendererInfoEvent(event));
+    EXPECT_EQ(rendererInfo->outputDeviceInfo.deviceName_, "BT_Device");
+    EXPECT_EQ(rendererInfo->outputDeviceInfo.macAddress_, "AA:BB:CC:DD:EE:FF");
+
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+}
+
+/**
+ * @tc.name  : HandleCapturerInfoEvent_NoBTPermission
+ * @tc.number: HandleCapturerInfoEvent_002
+ * @tc.desc  : Test HandleCapturerInfoEvent does not modify original data when hasBTPermission_ is false
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleCapturerInfoEvent_NoBTPermission, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    int32_t clientPid = 1;
+    auto mockClientHolder = std::make_shared<AudioPolicyClientHolder>(nullptr);
+    ASSERT_NE(mockClientHolder, nullptr);
+    mockClientHolder->hasBTPermission_ = false;
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, mockClientHolder);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(
+        CallbackChange::CALLBACK_CAPTURER_STATE_CHANGE, true);
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    ASSERT_NE(eventContextObj, nullptr);
+    auto capturerInfo = std::make_shared<AudioCapturerChangeInfo>();
+    capturerInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    capturerInfo->inputDeviceInfo.deviceName_ = "BT_SCO";
+    capturerInfo->inputDeviceInfo.macAddress_ = "11:22:33:44:55:66";
+    eventContextObj->audioCapturerChangeInfos.push_back(capturerInfo);
+
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::CAPTURER_INFO_EVENT, eventContextObj);
+    EXPECT_NO_THROW(audioPolicyServerHandler_->HandleCapturerInfoEvent(event));
+    EXPECT_EQ(capturerInfo->inputDeviceInfo.deviceName_, "BT_SCO");
+    EXPECT_EQ(capturerInfo->inputDeviceInfo.macAddress_, "11:22:33:44:55:66");
+
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+}
+
+/**
  * @tc.name  : HandleSendRecreateRendererStreamEvent_001
  * @tc.number: HandleSendRecreateRendererStreamEvent_001
  * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
