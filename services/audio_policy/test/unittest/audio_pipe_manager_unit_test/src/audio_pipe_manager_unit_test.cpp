@@ -61,10 +61,27 @@ HWTEST_F(AudioPipeManagerUnitTest, Init_001, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, GetHasEarpiece_001, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
     audioPipeManager->audioConfigManager_.hasEarpiece_ = true;
     EXPECT_TRUE(audioPipeManager->GetHasEarpiece());
 
     audioPipeManager->audioConfigManager_.hasEarpiece_ = false;
+    EXPECT_FALSE(audioPipeManager->GetHasEarpiece());
+}
+
+/**
+ * @tc.name: OnHasEarpieceParsed_001
+ * @tc.desc: Test OnHasEarpieceParsed sets hasEarpiece_ and syncs to device manager.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, OnHasEarpieceParsed_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
+    audioPipeManager->audioConfigManager_.OnHasEarpieceParsed(true);
+    EXPECT_TRUE(audioPipeManager->GetHasEarpiece());
+
+    audioPipeManager->audioConfigManager_.OnHasEarpieceParsed(false);
     EXPECT_FALSE(audioPipeManager->GetHasEarpiece());
 }
 

@@ -21,5 +21,6 @@ group("audio_route_common_aiut") {
   deps = [
     "../../../frameworks/native/audioclock/test/unittest:audio_clock_aiut",
     "../../../frameworks/native/audioutils/test/unittest:audio_utils_aiut",
+    "../../../services/audio_policy/server/domain/pipe/test/unittest/aiut:audio_core_config_manager_aiut_group",
   ]
 }

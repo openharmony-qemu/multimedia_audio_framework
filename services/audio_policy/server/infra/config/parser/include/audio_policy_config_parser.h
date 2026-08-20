@@ -34,7 +34,7 @@ namespace AudioStandard {
 class AudioPolicyConfigParser : public Parser {
 public:
     static constexpr char CHIP_PROD_CONFIG_FILE[] = "/chip_prod/etc/audio/audio_policy_config.xml";
-    static constexpr char CONFIG_FILE[] = "/vendor/etc/audio/audio_policy_config.xml";
+    static constexpr char VENDOR_CONFIG_FILE[] = "/vendor/etc/audio/audio_policy_config.xml";
 
     bool LoadConfiguration() final;
     void Destroy() final;
@@ -97,8 +97,9 @@ private:
     PolicyGlobalConfigs globalConfigs_;
     bool shouldOpenMicSpeaker_ = false;
     bool supportUltraFast_ = false;
-    bool hasEarpiece_ = true;
-    bool isChipGeneralConfig_ = false;
+    bool parseEarpiece_ = true;
+    bool hasEarpiece_ = false;
+    bool isVendorConfig_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
