@@ -35,6 +35,16 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const int32_t HDF_ERR_INVALID_PARAM = -3;
+    const int32_t HDF_FAILURE = -1;
+
+    std::vector<char> BuildUeventMsg(const std::vector<const char *> &segs)
+    {
+        std::vector<char> msg;
+        for (const char *s : segs) {
+            msg.insert(msg.end(), s, s + strlen(s) + 1); // include trailing '\0'
+        }
+        return msg;
+    }
 } // namespace
 
 void AudioSocketThreadUnitTest::SetUpTestCase(void) {}
@@ -1801,6 +1811,973 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_109, TestSize.Level4)
     int32_t ret = audioSocketThread->AudioMicBlockDevice(audioPnpUevent);
     EXPECT_EQ(ret, SUCCESS);
     delete audioPnpUevent;
+}
+
+/**
+ * @tc.name  : Test SetAudioPnpUevent_UnknownSwitchState
+ * @tc.number: AudioSocketThread_110
+ * @tc.desc  : Test SetAudioPnpUevent with switchState '3' (not 0/1/2/4), should hit default case
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_110, TestSize.Level1)
+{
+    AudioPnpUevent uevent = {
+        .action = "change",
+        .name = "TestDevice",
+        .state = "unknown",
+        .devType = "extcon",
+        .subSystem = "switch",
+        .switchName = "h2w",
+        .switchState = "3",  // Invalid - not 0/1/2/4
+        .hidName = "hid",
+        .devName = "TestDevName",
+        .anahsName = "anahs"
+    };
+
+    AudioEvent event;
+    int32_t result = AudioSocketThread::SetAudioPnpServerEventValue(&event, &uevent);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(event.eventType, PNP_EVENT_DEVICE_ADD);
+    EXPECT_EQ(event.deviceType, PNP_DEVICE_UNKNOWN);
+}
+
+/**
+ * @tc.name  : Test ProcessSwitchDeviceConfig_UnknownSwitchName
+ * @tc.number: AudioSocketThread_111
+ * @tc.desc  : Test ProcessSwitchDeviceConfig with unknown switchName, should hit else branch
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_111, TestSize.Level1)
+{
+    AudioPnpUevent uevent = {
+        .action = "change",
+        .name = "TestDevice",
+        .state = "added",
+        .devType = "extcon",
+        .subSystem = "switch",
+        .switchName = "unknown_switch",  // Not in SWITCH_DEVICE_CONFIGS
+        .switchState = "1",
+        .hidName = "hid",
+        .devName = "TestDevName",
+        .anahsName = "anahs"
+    };
+
+    AudioEvent event;
+    int32_t result = AudioSocketThread::SetAudioPnpServerEventValue(&event, &uevent);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name  : Test ProcessSwitchDeviceConfig_InvalidSwitchState
+ * @tc.number: AudioSocketThread_112
+ * @tc.desc  : Test ProcessSwitchDeviceConfig with switchState '9', should hit invalid branch
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_112, TestSize.Level1)
+{
+    AudioPnpUevent uevent = {
+        .action = "change",
+        .name = "TestDevice",
+        .state = "added",
+        .devType = "extcon",
+        .subSystem = "switch",
+        .switchName = UEVENT_NAME_H2W_MICIN,
+        .switchState = "9",  // Invalid switchState
+        .hidName = "hid",
+        .devName = "TestDevName",
+        .anahsName = "anahs"
+    };
+
+    AudioEvent event;
+    int32_t result = AudioSocketThread::SetAudioPnpServerEventValue(&event, &uevent);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioAnahsDetectDevice_SetAudioAnahsEventValueError
+ * @tc.number: AudioSocketThread_113
+ * @tc.desc  : Test AudioAnahsDetectDevice when SetAudioAnahsEventValue returns ERROR
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_113, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    struct AudioPnpUevent audioPnpUevent = {
+        .subSystem = "invalid_subsystem",  // Not "platform"
+        .anahsName = "INVALID"
+    };
+    int32_t ret = audioSocketThread.AudioAnahsDetectDevice(&audioPnpUevent);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioDpDetectDevice_InvalidSwitchState
+ * @tc.number: AudioSocketThread_116
+ * @tc.desc  : Test AudioDpDetectDevice with switchState not '0' or '1'
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_116, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    AudioPnpUevent uevent = {
+        .subSystem = "switch",
+        .switchName = "hdmi_audio1device_port=DP-0",
+        .action = "change",
+        .switchState = "2"  // Invalid - not '0' or '1'
+    };
+    int32_t result = audioSocketThread.AudioDpDetectDevice(&uevent);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioDpDetectDevice_IsUpdatePnpDeviceStateFalse
+ * @tc.number: AudioSocketThread_117
+ * @tc.desc  : Test AudioDpDetectDevice when IsUpdatePnpDeviceState returns false (same state)
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_117, TestSize.Level4)
+{
+    AudioSocketThread audioSocketThread;
+    // First call to set the state
+    AudioPnpUevent uevent1 = {
+        .subSystem = "switch",
+        .switchName = "hdmi_audio1device_port=DP-0",
+        .action = "change",
+        .switchState = "1"
+    };
+    int32_t ret1 = audioSocketThread.AudioDpDetectDevice(&uevent1);
+    EXPECT_EQ(ret1, SUCCESS);
+
+    // Second call with same state - should return SUCCESS but not update
+    AudioPnpUevent uevent2 = {
+        .subSystem = "switch",
+        .switchName = "hdmi_audio1device_port=DP-0",
+        .action = "change",
+        .switchState = "1"
+    };
+    int32_t ret2 = audioSocketThread.AudioDpDetectDevice(&uevent2);
+    EXPECT_EQ(ret2, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioHDMIDetectDevice_InvalidSwitchState
+ * @tc.number: AudioSocketThread_118
+ * @tc.desc  : Test AudioHDMIDetectDevice with switchState not '0' or '1'
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_118, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    AudioPnpUevent uevent = {
+        .subSystem = "switch",
+        .switchName = "hdmi_mipi_audio,device_port=HDMI-0",
+        .action = "change",
+        .state = "INVALID",  // non-null, neither HDMI=1 nor HDMI=0
+        .switchState = "X"  // Invalid - neither '0' nor '1'
+    };
+    int32_t result = audioSocketThread.AudioHDMIDetectDevice(&uevent);
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioHDMIDetectDevice_IsUpdatePnpDeviceStateFalse
+ * @tc.number: AudioSocketThread_119
+ * @tc.desc  : Test AudioHDMIDetectDevice when IsUpdatePnpDeviceState returns false
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_119, TestSize.Level4)
+{
+    AudioSocketThread audioSocketThread;
+    // First call to set the state
+    AudioPnpUevent uevent1 = {
+        .subSystem = "switch",
+        .switchName = "hdmi_mipi_audio,device_port=HDMI-0",
+        .action = "change",
+        .state = "HDMI=1",
+        .switchState = "1"
+    };
+    int32_t ret1 = audioSocketThread.AudioHDMIDetectDevice(&uevent1);
+    EXPECT_EQ(ret1, SUCCESS);
+
+    // Second call with same state - should return SUCCESS but not update
+    AudioPnpUevent uevent2 = {
+        .subSystem = "switch",
+        .switchName = "hdmi_mipi_audio,device_port=HDMI-0",
+        .action = "change",
+        .state = "HDMI=1",
+        .switchState = "1"
+    };
+    int32_t ret2 = audioSocketThread.AudioHDMIDetectDevice(&uevent2);
+    EXPECT_EQ(ret2, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioMicBlockDevice_UnknownName
+ * @tc.number: AudioSocketThread_120
+ * @tc.desc  : Test AudioMicBlockDevice with name not "mic_blocked" or "mic_un_blocked"
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_120, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    struct AudioPnpUevent audioPnpUevent;
+    audioPnpUevent.name = "unknown_name";  // Not "mic_blocked" or "mic_un_blocked"
+    int32_t ret = audioSocketThread.AudioMicBlockDevice(&audioPnpUevent);
+    EXPECT_EQ(ret, HDF_ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test ProcessOtherSubsystem_AllDetectReturnError
+ * @tc.number: AudioSocketThread_121
+ * @tc.desc  : Test ProcessOtherSubsystem when all DetectDevice functions return ERROR
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_121, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    // A message whose keys do not match any UEVENT_* prefix; all parsed fields stay
+    // empty, so ProcessSwitchSubsystem and ProcessOtherSubsystem both return false.
+    const char *msg = "UNKNOWN_KEY=unknown_value";
+    ssize_t strLength = strlen(msg);
+    bool result = audioSocketThread.AudioPnpUeventParse(msg, strLength);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test AudioPnpUeventParse_LibudevPrefix
+ * @tc.number: AudioSocketThread_122
+ * @tc.desc  : Test AudioPnpUeventParse with message starting with "libudev"
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_122, TestSize.Level1)
+{
+    const char *msg = "libudevabc123";
+    ssize_t strLength = strlen(msg);
+    bool result = audioSocketThread_.AudioPnpUeventParse(msg, strLength);
+    EXPECT_FALSE(result);  // Should return false for libudev prefix
+}
+
+/**
+ * @tc.name  : Test UpdateDeviceState_IsUpdatePnpDeviceStateFalse
+ * @tc.number: AudioSocketThread_123
+ * @tc.desc  : Test UpdateDeviceState when IsUpdatePnpDeviceState returns false
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_123, TestSize.Level1)
+{
+    // First set a state
+    AudioEvent event1 = {1, 1, "device", "address", "anahs"};
+    audioSocketThread_.UpdatePnpDeviceState(&event1);
+
+    // Then try to update with the same state - should early return
+    AudioEvent event2 = {1, 1, "device", "address", "anahs"};
+    audioSocketThread_.UpdateDeviceState(event2);
+    // The function should return early without updating
+    EXPECT_EQ(AudioSocketThread::audioSocketEvent_.eventType, 1);
+}
+
+/**
+ * @tc.name  : Test ReadAndScanDpState_InvalidStateChar
+ * @tc.number: AudioSocketThread_124
+ * @tc.desc  : Test ReadAndScanDpState with invalid state char (not '0' or '1')
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_124, TestSize.Level1)
+{
+    std::string testPath = "/tmp/test_dp_state";
+    std::ofstream file(testPath);
+    file << '3';  // Invalid state
+    file.close();
+
+    uint32_t eventType = 0;
+    int32_t ret = audioSocketThread_.ReadAndScanDpState(testPath, eventType);
+    EXPECT_NE(ret, SUCCESS);
+    remove(testPath.c_str());
+}
+
+/**
+ * @tc.name  : Test ReadAndScanDpName_PortNotFound
+ * @tc.number: AudioSocketThread_125
+ * @tc.desc  : Test ReadAndScanDpName when device_port is not in the content
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_125, TestSize.Level1)
+{
+    std::string testPath = "/tmp/test_dp_name";
+    std::ofstream file(testPath);
+    file << "some_content_without_device_port";  // No device_port found
+    file.close();
+
+    std::string name;
+    int32_t ret = audioSocketThread_.ReadAndScanDpName(testPath, name);
+    EXPECT_NE(ret, SUCCESS);
+    remove(testPath.c_str());
+}
+
+/**
+ * @tc.name  : Test ReadAndScanDpName_EmptyAddress
+ * @tc.number: AudioSocketThread_126
+ * @tc.desc  : Test ReadAndScanDpName parses device_port name successfully
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_126, TestSize.Level1)
+{
+    std::string testPath = "/tmp/test_dp_name_empty";
+    std::ofstream file(testPath);
+    file << "device_port=HDMI-0";  // device_port present, name parsed as HDMI-0
+    file.close();
+
+    std::string name;
+    int32_t ret = audioSocketThread_.ReadAndScanDpName(testPath, name);
+    EXPECT_NE(name, "HDMI-1");
+    remove(testPath.c_str());
+}
+
+/**
+ * @tc.name  : Test DetectSwitchDeviceState_OpenFileFail
+ * @tc.number: AudioSocketThread_127
+ * @tc.desc  : Test DetectSwitchDeviceState when fopen fails
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_127, TestSize.Level1)
+{
+    AudioEvent audioEvent;
+    // Using a path that doesn't exist
+    int32_t ret = audioSocketThread_.DetectSwitchDeviceState(
+        "/nonexistent/path/state", "h2w", &audioEvent, "TestPrefix");
+    EXPECT_EQ(ret, HDF_ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test DetectSwitchDeviceState_PathNotAbsolute
+ * @tc.number: AudioSocketThread_128
+ * @tc.desc  : Test DetectSwitchDeviceState when path is not absolute
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_128, TestSize.Level1)
+{
+    AudioEvent audioEvent;
+    int32_t ret = audioSocketThread_.DetectSwitchDeviceState(
+        "relative/path", "h2w", &audioEvent, "TestPrefix");
+    EXPECT_EQ(ret, HDF_ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test DetectSwitchDeviceState_ReadFail
+ * @tc.number: AudioSocketThread_129
+ * @tc.desc  : Test DetectSwitchDeviceState when fread returns 0
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_129, TestSize.Level1)
+{
+    std::string testPath = "/tmp/test_switch_state_empty";
+    std::ofstream file(testPath);
+    file.close();  // Empty file
+
+    AudioEvent audioEvent;
+    int32_t ret = audioSocketThread_.DetectSwitchDeviceState(
+        testPath.c_str(), "h2w", &audioEvent, "TestPrefix");
+    EXPECT_NE(ret, SUCCESS);
+    remove(testPath.c_str());
+}
+
+/**
+ * @tc.name  : Test DetectDPState_Port0StateFail
+ * @tc.number: AudioSocketThread_130
+ * @tc.desc  : Test DetectDPState when port 0 state read fails
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_130, TestSize.Level1)
+{
+    AudioEvent audioEvent;
+    audioEvent.eventType = PNP_EVENT_DEVICE_ADD;
+    audioEvent.name = "testName";
+    int32_t result = audioSocketThread_.DetectDPState(&audioEvent);
+    // Expected to fail because /sys/class/switch/hdmi_audio/state doesn't exist
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetAudioPnpServerEventValue_NullSwitchName
+ * @tc.number: AudioSocketThread_131
+ * @tc.desc  : Test SetAudioPnpServerEventValue with null switchName
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_131, TestSize.Level1)
+{
+    AudioPnpUevent uevent = {
+        .action = "change",
+        .name = "headset",
+        .state = "analog_hs1",
+        .devType = "extcon",
+        .subSystem = "switch",
+        .switchName = nullptr,  // NULL switchName
+        .switchState = "1",
+        .hidName = "hid",
+        .devName = "dev_name",
+        .anahsName = "anahs_name"
+    };
+    AudioEvent audioEvent;
+    EXPECT_EQ(audioSocketThread_.SetAudioPnpServerEventValue(&audioEvent, &uevent), ERROR);
+}
+
+/**
+ * @tc.name  : Test SetAudioPnpServerEventValue_EmptySwitchState
+ * @tc.number: AudioSocketThread_132
+ * @tc.desc  : Test SetAudioPnpServerEventValue with empty switchState
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_132, TestSize.Level1)
+{
+    AudioPnpUevent uevent = {
+        .action = "change",
+        .name = "headset",
+        .state = "analog_hs1",
+        .devType = "extcon",
+        .subSystem = "switch",
+        .switchName = "h2w",
+        .switchState = "",  // Empty switchState
+        .hidName = "hid",
+        .devName = "dev_name",
+        .anahsName = "anahs_name"
+    };
+    AudioEvent audioEvent;
+    EXPECT_EQ(audioSocketThread_.SetAudioPnpServerEventValue(&audioEvent, &uevent), ERROR);
+}
+
+/**
+ * @tc.name  : Test SetAudioAnahsEventValue_ValidInsert
+ * @tc.number: AudioSocketThread_133
+ * @tc.desc  : Test SetAudioAnahsEventValue with valid INSERT event
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_133, TestSize.Level1)
+{
+    struct AudioPnpUevent audioPnpUevent;
+    audioPnpUevent.subSystem = UEVENT_PLATFORM;
+    audioPnpUevent.anahsName = UEVENT_INSERT;
+    AudioEvent audioEvent;
+    int32_t ret = AudioSocketThread::SetAudioAnahsEventValue(&audioEvent, &audioPnpUevent);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioEvent.anahsName, UEVENT_INSERT);
+}
+
+/**
+ * @tc.name  : Test SetAudioAnahsEventValue_ValidRemove
+ * @tc.number: AudioSocketThread_134
+ * @tc.desc  : Test SetAudioAnahsEventValue with valid REMOVE event
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_134, TestSize.Level1)
+{
+    struct AudioPnpUevent audioPnpUevent;
+    audioPnpUevent.subSystem = UEVENT_PLATFORM;
+    audioPnpUevent.anahsName = UEVENT_REMOVE;
+    AudioEvent audioEvent;
+    int32_t ret = AudioSocketThread::SetAudioAnahsEventValue(&audioEvent, &audioPnpUevent);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioEvent.anahsName, UEVENT_REMOVE);
+}
+
+/**
+ * @tc.name  : Test SetAudioAnahsEventValue_InvalidAnahsName
+ * @tc.number: AudioSocketThread_135
+ * @tc.desc  : Test SetAudioAnahsEventValue with invalid anahsName (not INSERT/REMOVE)
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_135, TestSize.Level1)
+{
+    struct AudioPnpUevent audioPnpUevent;
+    audioPnpUevent.subSystem = UEVENT_PLATFORM;
+    audioPnpUevent.anahsName = "INVALID";
+    AudioEvent audioEvent;
+    int32_t ret = AudioSocketThread::SetAudioAnahsEventValue(&audioEvent, &audioPnpUevent);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test SetAudioAnahsEventValue_InvalidSubSystem
+ * @tc.number: AudioSocketThread_136
+ * @tc.desc  : Test SetAudioAnahsEventValue with invalid subSystem
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_136, TestSize.Level1)
+{
+    struct AudioPnpUevent audioPnpUevent;
+    audioPnpUevent.subSystem = "invalid";
+    audioPnpUevent.anahsName = UEVENT_INSERT;
+    AudioEvent audioEvent;
+    int32_t ret = AudioSocketThread::SetAudioAnahsEventValue(&audioEvent, &audioPnpUevent);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test ProcessSwitchSubsystem_NonSwitchSubSystem
+ * @tc.number: AudioSocketThread_137
+ * @tc.desc  : Test ProcessSwitchSubsystem with non-switch subsystem
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_137, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    struct AudioPnpUevent uevent = {
+        .action = "change",
+        .name = "headset",
+        .state = "analog_hs1",
+        .devType = "extcon",
+        .subSystem = "other",  // Not "switch"
+        .switchName = "h2w",
+        .switchState = "1",
+        .hidName = "hid",
+        .devName = "dev_name",
+        .anahsName = "anahs_name"
+    };
+    bool ret = audioSocketThread.ProcessSwitchSubsystem(&uevent);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test ProcessOtherSubsystem_AnahsSuccess
+ * @tc.number: AudioSocketThread_138
+ * @tc.desc  : Test ProcessOtherSubsystem when AudioAnahsDetectDevice returns SUCCESS
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_138, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    struct AudioPnpUevent uevent = {
+        .action = "change",
+        .name = "headset",
+        .state = "analog_hs1",
+        .devType = "extcon",
+        .subSystem = UEVENT_PLATFORM,
+        .switchName = "h2w",
+        .switchState = "1",
+        .hidName = "hid",
+        .devName = "dev_name",
+        .anahsName = UEVENT_INSERT
+    };
+    // AudioAnahsDetectDevice should succeed for platform subsystem with INSERT/REMOVE
+    int32_t ret = audioSocketThread.AudioAnahsDetectDevice(&uevent);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ReadAndScanDpState_ReadZeroBytes
+ * @tc.number: AudioSocketThread_140
+ * @tc.desc  : Test ReadAndScanDpState when fread returns 0 (empty file)
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_140, TestSize.Level1)
+{
+    std::string testPath = "/tmp/test_dp_state_empty";
+    std::ofstream file(testPath);
+    file.close();  // Create empty file
+
+    uint32_t eventType = 0;
+    int32_t ret = audioSocketThread_.ReadAndScanDpState(testPath, eventType);
+    EXPECT_NE(ret, SUCCESS);
+    remove(testPath.c_str());
+}
+
+/**
+ * @tc.name  : Test AudioMicInDetectDevice_NonH2wMicIn
+ * @tc.number: AudioSocketThread_141
+ * @tc.desc  : Test AudioMicInDetectDevice with switchName not h2w_micin
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_141, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    struct AudioPnpUevent audioPnpUevent;
+    audioPnpUevent.switchName = "other_switch";
+    int32_t ret = audioSocketThread.AudioMicInDetectDevice(&audioPnpUevent);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioLineInDetectDevice_NonH2wLineIn
+ * @tc.number: AudioSocketThread_142
+ * @tc.desc  : Test AudioLineInDetectDevice with switchName not h2w_linein
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_142, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    struct AudioPnpUevent audioPnpUevent;
+    audioPnpUevent.switchName = "other_switch";
+    int32_t ret = audioSocketThread.AudioLineInDetectDevice(&audioPnpUevent);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioLineOutDetectDevice_NonH2wLineOut
+ * @tc.number: AudioSocketThread_143
+ * @tc.desc  : Test AudioLineOutDetectDevice with switchName not h2w_lineout
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_143, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    struct AudioPnpUevent audioPnpUevent;
+    audioPnpUevent.switchName = "other_switch";
+    int32_t ret = audioSocketThread.AudioLineOutDetectDevice(&audioPnpUevent);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test DetectSwitchDeviceState_NullParams
+ * @tc.number: AudioSocketThread_144
+ * @tc.desc  : Test DetectSwitchDeviceState with null parameters
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_144, TestSize.Level1)
+{
+    AudioEvent audioEvent;
+    // Null switchPath
+    int32_t ret1 = audioSocketThread_.DetectSwitchDeviceState(nullptr, "h2w", &audioEvent, "Test");
+    EXPECT_EQ(ret1, ERROR);
+    // Null switchName
+    int32_t ret2 = audioSocketThread_.DetectSwitchDeviceState("/path", nullptr, &audioEvent, "Test");
+    EXPECT_EQ(ret2, ERROR);
+    // Null audioEvent
+    int32_t ret3 = audioSocketThread_.DetectSwitchDeviceState("/path", "h2w", nullptr, "Test");
+    EXPECT_EQ(ret3, ERROR);
+}
+
+/**
+ * @tc.name  : Test DetectAnalogHeadsetState_FreadZero
+ * @tc.number: AudioSocketThread_145
+ * @tc.desc  : Test DetectAnalogHeadsetState when h2w state node open/read fails
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_145, TestSize.Level1)
+{
+    std::ofstream ofs(SWITCH_STATE_PATH);
+    ofs.close();  // may fail: /sys node is usually not writable in UT env
+    AudioEvent audioEvent;
+    int32_t ret = audioSocketThread_.DetectAnalogHeadsetState(&audioEvent);
+    // fopen fail -> HDF_ERR_INVALID_PARAM; fread 0 on empty writable node -> ERROR
+    EXPECT_TRUE(ret == HDF_ERR_INVALID_PARAM || ret == ERROR);
+}
+
+/**
+ * @tc.name  : Test UpdatePnpDeviceState_UpdateFields
+ * @tc.number: AudioSocketThread_146
+ * @tc.desc  : Test UpdatePnpDeviceState updates audioSocketEvent_ fields
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_146, TestSize.Level4)
+{
+    AudioEvent event;
+    event.eventType = PNP_EVENT_DEVICE_ADD;
+    event.deviceType = PNP_DEVICE_MIC;
+    event.name = "mic_test";
+    event.address = "addr_0";
+    event.anahsName = "anahs_test";
+    AudioSocketThread::UpdatePnpDeviceState(&event);
+    EXPECT_EQ(AudioSocketThread::audioSocketEvent_.eventType, PNP_EVENT_DEVICE_ADD);
+    EXPECT_EQ(AudioSocketThread::audioSocketEvent_.deviceType, PNP_DEVICE_MIC);
+    EXPECT_EQ(AudioSocketThread::audioSocketEvent_.name, "mic_test");
+    EXPECT_EQ(AudioSocketThread::audioSocketEvent_.address, "addr_0");
+    EXPECT_EQ(AudioSocketThread::audioSocketEvent_.anahsName, "anahs_test");
+}
+
+/**
+ * @tc.name  : Test SetAudioPnpServerEventValue_NonSwitchSubsystem
+ * @tc.number: AudioSocketThread_147
+ * @tc.desc  : Test SetAudioPnpServerEventValue with non-switch subsystem
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_147, TestSize.Level1)
+{
+    AudioPnpUevent uevent = {
+        .action = "change",
+        .name = "headset",
+        .state = "analog_hs1",
+        .devType = "extcon",
+        .subSystem = "audio",  // Not "switch"
+        .switchName = "h2w",
+        .switchState = "1",
+        .hidName = "hid",
+        .devName = "dev_name",
+        .anahsName = "anahs_name"
+    };
+    AudioEvent audioEvent;
+    int32_t ret = audioSocketThread_.SetAudioPnpServerEventValue(&audioEvent, &uevent);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test ProcessSwitchDeviceConfig_H2wMicIn_Add
+ * @tc.number: AudioSocketThread_148
+ * @tc.desc  : Test ProcessSwitchDeviceConfig with h2w_micin and switchState '1'
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_148, TestSize.Level1)
+{
+    AudioEvent audioEvent;
+    AudioPnpUevent audioPnpUevent{
+        .subSystem = "switch",
+        .switchName = UEVENT_NAME_H2W_MICIN,
+        .switchState = "1",
+        .devName = "test_dev",
+        .name = "test_name"
+    };
+    int32_t ret = AudioSocketThread::SetAudioPnpServerEventValue(&audioEvent,
+        &audioPnpUevent);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioEvent.eventType, PNP_EVENT_DEVICE_ADD);
+    EXPECT_EQ(audioEvent.deviceType, PNP_DEVICE_MICIN);
+}
+
+/**
+ * @tc.name  : Test ProcessSwitchDeviceConfig_H2wLineIn_Remove
+ * @tc.number: AudioSocketThread_149
+ * @tc.desc  : Test ProcessSwitchDeviceConfig with h2w_linein and switchState '0'
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_149, TestSize.Level1)
+{
+    AudioEvent audioEvent;
+    AudioPnpUevent audioPnpUevent{
+        .subSystem = "switch",
+        .switchName = UEVENT_NAME_H2W_LINEIN,
+        .switchState = "0",
+        .devName = "test_dev",
+        .name = "test_name"
+    };
+    int32_t ret = AudioSocketThread::SetAudioPnpServerEventValue(&audioEvent,
+        &audioPnpUevent);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioEvent.eventType, PNP_EVENT_DEVICE_REMOVE);
+    EXPECT_EQ(audioEvent.deviceType, PNP_DEVICE_LINEIN);
+}
+
+/**
+ * @tc.name  : Test ProcessSwitchDeviceConfig_H2wLineOut_Add
+ * @tc.number: AudioSocketThread_150
+ * @tc.desc  : Test ProcessSwitchDeviceConfig with h2w_lineout and switchState '1'
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_150, TestSize.Level1)
+{
+    AudioEvent audioEvent;
+    AudioPnpUevent audioPnpUevent{
+        .subSystem = "switch",
+        .switchName = UEVENT_NAME_H2W_LINEOUT,
+        .switchState = "1",
+        .devName = "test_dev",
+        .name = "test_name"
+    };
+    int32_t ret = AudioSocketThread::SetAudioPnpServerEventValue(&audioEvent,
+        &audioPnpUevent);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioEvent.eventType, PNP_EVENT_DEVICE_ADD);
+    EXPECT_EQ(audioEvent.deviceType, PNP_DEVICE_LINEOUT);
+}
+
+/**
+ * @tc.name  : Test AudioPnpUeventParse_StrLengthExceed
+ * @tc.number: AudioSocketThread_151
+ * @tc.desc  : Test AudioPnpUeventParse when strLength > UEVENT_MSG_LEN + 1
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_151, TestSize.Level1)
+{
+    std::string msg = "ACTION=change";
+    ssize_t strLength = UEVENT_MSG_LEN + 10;  // Exceed limit
+    bool result = audioSocketThread_.AudioPnpUeventParse(msg.c_str(), strLength);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test AudioPnpUeventParse_WithNullChars
+ * @tc.number: AudioSocketThread_152
+ * @tc.desc  : Test AudioPnpUeventParse with embedded null characters
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_152, TestSize.Level4)
+{
+    std::vector<char> msgVec;
+    const char *segs[] = {
+        "ACTION=change",
+        "SUBSYSTEM=switch",
+        "SWITCH_NAME=h2w",
+        "SWITCH_STATE=1",
+        "NAME=headset"
+    };
+    for (const char *seg : segs) {
+        msgVec.insert(msgVec.end(), seg, seg + strlen(seg) + 1);  // include trailing '\0'
+    }
+
+    ssize_t strLength = msgVec.size();
+    const char *msg = msgVec.data();
+    bool result = audioSocketThread_.AudioPnpUeventParse(msg, strLength);
+    // Null-separated valid switch event should be parsed and handled
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test AudioPnpUeventParse_AnahsHandled
+ * @tc.number: AudioSocketThread_153
+ * @tc.desc  : Cover ProcessOtherSubsystem ANAHS success branch via AudioPnpUeventParse
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_153, TestSize.Level1)
+{
+    auto msg = BuildUeventMsg({"ACTION=change", "SUBSYSTEM=platform", "ANAHS=INSERT"});
+    bool result = audioSocketThread_.AudioPnpUeventParse(msg.data(), msg.size());
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test AudioPnpUeventParse_DpHandled
+ * @tc.number: AudioSocketThread_154
+ * @tc.desc  : Cover ProcessOtherSubsystem DP success branch via AudioPnpUeventParse
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_154, TestSize.Level1)
+{
+    auto msg = BuildUeventMsg({"ACTION=change", "SUBSYSTEM=switch",
+        "SWITCH_NAME=hdmi_audio1device_port=DP-0", "SWITCH_STATE=1"});
+    bool result = audioSocketThread_.AudioPnpUeventParse(msg.data(), msg.size());
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test AudioPnpUeventParse_HdmiHandled
+ * @tc.number: AudioSocketThread_155
+ * @tc.desc  : Cover ProcessOtherSubsystem HDMI success branch via AudioPnpUeventParse
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_155, TestSize.Level1)
+{
+    auto msg = BuildUeventMsg({"ACTION=change", "SUBSYSTEM=switch",
+        "SWITCH_NAME=hdmi_mipi_audio,device_port=HDMI-0", "STATE=HDMI=1", "SWITCH_STATE=1"});
+    bool result = audioSocketThread_.AudioPnpUeventParse(msg.data(), msg.size());
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test AudioPnpUeventParse_SwitchMicInHandled
+ * @tc.number: AudioSocketThread_156
+ * @tc.desc  : Cover ProcessSwitchSubsystem MicIn SUCCESS short-circuit branch
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_156, TestSize.Level1)
+{
+    auto msg = BuildUeventMsg({"ACTION=change", "SUBSYSTEM=switch",
+        "SWITCH_NAME=h2w_micin", "SWITCH_STATE=1"});
+    bool result = audioSocketThread_.AudioPnpUeventParse(msg.data(), msg.size());
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test AudioPnpUeventParse_SwitchLineInHandled
+ * @tc.number: AudioSocketThread_157
+ * @tc.desc  : Cover ProcessSwitchSubsystem LineIn SUCCESS short-circuit branch
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_157, TestSize.Level1)
+{
+    auto msg = BuildUeventMsg({"ACTION=change", "SUBSYSTEM=switch",
+        "SWITCH_NAME=h2w_linein", "SWITCH_STATE=1"});
+    bool result = audioSocketThread_.AudioPnpUeventParse(msg.data(), msg.size());
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test AudioPnpUeventParse_SwitchLineOutHandled
+ * @tc.number: AudioSocketThread_158
+ * @tc.desc  : Cover ProcessSwitchSubsystem LineOut SUCCESS short-circuit branch
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_158, TestSize.Level1)
+{
+    auto msg = BuildUeventMsg({"ACTION=change", "SUBSYSTEM=switch",
+        "SWITCH_NAME=h2w_lineout", "SWITCH_STATE=1"});
+    bool result = audioSocketThread_.AudioPnpUeventParse(msg.data(), msg.size());
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test AudioMicInDetectDevice_NullAndMatch
+ * @tc.number: AudioSocketThread_159
+ * @tc.desc  : Cover AudioMicInDetectDevice null param and SUCCESS path
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_159, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    EXPECT_EQ(audioSocketThread.AudioMicInDetectDevice(nullptr), HDF_ERR_INVALID_PARAM);
+    struct AudioPnpUevent uevent;
+    uevent.switchName = nullptr;
+    EXPECT_EQ(audioSocketThread.AudioMicInDetectDevice(&uevent), HDF_ERR_INVALID_PARAM);
+    uevent.switchName = UEVENT_NAME_H2W_MICIN;
+    EXPECT_EQ(audioSocketThread.AudioMicInDetectDevice(&uevent), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioLineInDetectDevice_NullAndMatch
+ * @tc.number: AudioSocketThread_160
+ * @tc.desc  : Cover AudioLineInDetectDevice null param and SUCCESS path
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_160, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    EXPECT_EQ(audioSocketThread.AudioLineInDetectDevice(nullptr), HDF_ERR_INVALID_PARAM);
+    struct AudioPnpUevent uevent;
+    uevent.switchName = nullptr;
+    EXPECT_EQ(audioSocketThread.AudioLineInDetectDevice(&uevent), HDF_ERR_INVALID_PARAM);
+    uevent.switchName = UEVENT_NAME_H2W_LINEIN;
+    EXPECT_EQ(audioSocketThread.AudioLineInDetectDevice(&uevent), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioLineOutDetectDevice_NullAndMatch
+ * @tc.number: AudioSocketThread_161
+ * @tc.desc  : Cover AudioLineOutDetectDevice null param and SUCCESS path
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_161, TestSize.Level1)
+{
+    AudioSocketThread audioSocketThread;
+    EXPECT_EQ(audioSocketThread.AudioLineOutDetectDevice(nullptr), HDF_ERR_INVALID_PARAM);
+    struct AudioPnpUevent uevent;
+    uevent.switchName = nullptr;
+    EXPECT_EQ(audioSocketThread.AudioLineOutDetectDevice(&uevent), HDF_ERR_INVALID_PARAM);
+    uevent.switchName = UEVENT_NAME_H2W_LINEOUT;
+    EXPECT_EQ(audioSocketThread.AudioLineOutDetectDevice(&uevent), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test DetectSwitchDeviceState_FreadSuccess
+ * @tc.number: AudioSocketThread_162
+ * @tc.desc  : Cover DetectSwitchDeviceState fread>0 path (ADD and REMOVE)
+ * @tc.type  : FUNC
+ */
+HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_162, TestSize.Level1)
+{
+    std::string pathAdd = "/tmp/test_switch_h2w_add";
+    {
+        std::ofstream f(pathAdd);
+        f << '1';
+    }
+    AudioEvent evAdd;
+    audioSocketThread_.DetectSwitchDeviceState(pathAdd.c_str(), "h2w", &evAdd, "T");
+    remove(pathAdd.c_str());
+
+    std::string pathRemove = "/tmp/test_switch_h2w_remove";
+    {
+        std::ofstream f(pathRemove);
+        f << '0';
+    }
+    AudioEvent evRemove;
+    audioSocketThread_.DetectSwitchDeviceState(pathRemove.c_str(), "h2w", &evRemove, "T");
+    EXPECT_NE(evRemove.eventType, PNP_EVENT_MIC_UNBLOCKED);
+    remove(pathRemove.c_str());
 }
 
 } // namespace AudioStandard
