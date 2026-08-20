@@ -517,7 +517,9 @@ void AudioPolicyService::SyncInputDeviceScoId(std::vector<std::shared_ptr<AudioD
 {
     for (size_t i = 0; i < descs.size(); i++) {
         CHECK_AND_CONTINUE(descs[i] != nullptr);
-        CHECK_AND_CONTINUE(descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+        bool isA2dpIn = (descs[i]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+        bool isSppUnidirectional = (descs[i]->deviceType_ == DEVICE_TYPE_BT_SPP && descs[i]->isUnidirectional_);
+        CHECK_AND_CONTINUE(isA2dpIn || isSppUnidirectional);
         CHECK_AND_CONTINUE(descs[i]->macAddress_ != "");
         if (IsScoExistedInDescs(descs, i)) {
             continue;
