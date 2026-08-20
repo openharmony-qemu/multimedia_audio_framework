@@ -749,10 +749,6 @@ std::string VolumeDataMaintainer::GetVolumeKeyForDataShare(DeviceType deviceType
         return "";
     }
 
-    if (VolumeUtils::IsPCVolumeEnable() && streamType == AudioStreamType::STREAM_MUSIC &&
-        deviceType == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO) {
-        volumeValueKey = AUDIO_VOLUME_TYPE_KEY_MAP.at(STREAM_VOICE_CALL) + VOLUME_LEVEL_KEY;
-    }
     if (streamType == AudioStreamType::STREAM_VOICE_ASSISTANT &&
         deviceType == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO) {
         deviceKey += "_sco"; // special
