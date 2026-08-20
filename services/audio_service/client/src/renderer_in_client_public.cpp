@@ -247,6 +247,18 @@ void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
     return;
 }
 
+// 3DA直通不走converter几何转换, layout与声道数一致性校验不能沿用AudioVivid豁免;
+// 算法同IAudioStream::IsChannelLayoutMatchedWithChannel: 普通布局按popcount, HOA布局按(order+1)^2
+static bool Is3DAChannelLayoutMatched(uint8_t channels, uint64_t channelLayout)
+{
+    CHECK_AND_RETURN_RET(channelLayout != CH_LAYOUT_UNKNOWN, false);
+    if (((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) == 0) {
+        return __builtin_popcountll(channelLayout) == static_cast<int32_t>(channels);
+    }
+    uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+    return ((order + 1) * (order + 1)) == static_cast<uint64_t>(channels);
+}
+
 int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &config)
@@ -254,9 +266,10 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
     AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}u, channels: %{public}d, "
         "format: %{public}d, stream type: %{public}d, encoding type: %{public}d, "
-        "remoteLayout: %{public}llx, isRemoteSpatialChannel: %{public}d",
+        "channelLayout: %{public}llx, remoteLayout: %{public}llx, isRemoteSpatialChannel: %{public}d",
         info.customSampleRate == 0 ? info.samplingRate : info.customSampleRate,
         info.channels, info.format, eStreamType_, info.encoding,
+        static_cast<unsigned long long>(info.channelLayout),
         static_cast<unsigned long long>(info.remoteChannelLayout), info.isRemoteSpatialChannel);
 
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
@@ -279,9 +292,28 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
         AUDIO_INFO_LOG("rendererInfo rendererFlags: %{public}u", rendererInfo_.rendererFlags);
         if (rendererInfo_.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
-            curStreamParams_.channelLayout = (std::find(cfg.supportOutChannelLayout.begin(),
-            cfg.supportOutChannelLayout.end(), cfg.outChannelLayout) != cfg.supportOutChannelLayout.end()) ?\
-            cfg.outChannelLayout : CH_LAYOUT_5POINT1POINT2;
+            // 3DA直通不经过converter几何转换(MCR), layout须如实描述声道数据:
+            // 按"第一个与channels一致的字段"采纳(channelLayout优先, 不一致再取remoteChannelLayout),
+            // 均无一致值时复用框架默认表(AUDIO_DEFAULT_CHANNEL_LAYOUT_MAP)按声道数取默认;
+            // 仍无一致布局才拒绝创建, 避免矛盾几何直达HDI
+            uint8_t channels3DA = curStreamParams_.channels;
+            uint64_t layout3DA = curStreamParams_.channelLayout;
+            const char *layoutSource = "adopted";
+            if (!Is3DAChannelLayoutMatched(channels3DA, layout3DA)) {
+                layout3DA = info.remoteChannelLayout;
+                if (!Is3DAChannelLayoutMatched(channels3DA, layout3DA)) {
+                    layout3DA = IAudioStream::ConvertChannelsToDefaultChannelLayout(
+                        static_cast<AudioChannel>(channels3DA), CH_LAYOUT_UNKNOWN);
+                    layoutSource = "defaulted";
+                }
+            }
+            CHECK_AND_RETURN_RET_LOG(Is3DAChannelLayoutMatched(channels3DA, layout3DA),
+                ERR_NOT_SUPPORTED, "3DA direct layout mismatch, channels:%{public}u layout:%{public}llx",
+                channels3DA, static_cast<unsigned long long>(layout3DA));
+            curStreamParams_.channelLayout = layout3DA;
+            streamParams_.channelLayout = layout3DA; // GetAudioStreamInfo读回与实际生效一致
+            AUDIO_INFO_LOG("3DA direct layout %{public}s, channels:%{public}u layout:%{public}llx",
+                layoutSource, channels3DA, static_cast<unsigned long long>(layout3DA));
         } else {
             converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
         }
