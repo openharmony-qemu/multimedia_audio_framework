@@ -194,7 +194,6 @@ int32_t AudioRenderSink::Start(void)
 void AudioRenderSink::CheckActiveDeviceValidForStart()
 {
     if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("force set route on start, device: %{public}d", currentActiveDevice_);
         forceSetRouteFlag_ = true;
         std::vector<DeviceType> devices = { currentActiveDevice_ };
         UpdateActiveDevice(devices);
