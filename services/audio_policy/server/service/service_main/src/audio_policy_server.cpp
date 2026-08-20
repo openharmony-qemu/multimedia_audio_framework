@@ -6244,11 +6244,15 @@ int32_t AudioPolicyServer::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVo
 int32_t AudioPolicyServer::SetAudioZoneVolumeConfig(const std::string &zoneName,
     const std::vector<AudioZoneVolumeConfig> &configs)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     return audioVolumeManager_.SetAudioZoneVolumeConfig(zoneName, configs);
 }
 
 int32_t AudioPolicyServer::TriggerAudioZoneVolumeSync()
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     audioVolumeManager_.TriggerAudioZoneVolumeSync(DEFAULT_ZONEID);
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> audioZones
         = AudioZoneService::GetInstance().GetAllAudioZone();
