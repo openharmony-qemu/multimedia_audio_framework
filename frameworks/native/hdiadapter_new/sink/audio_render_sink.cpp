@@ -193,11 +193,10 @@ int32_t AudioRenderSink::Start(void)
 
 void AudioRenderSink::CheckActiveDeviceValidForStart()
 {
-    if (currentActiveDevice_ == DEVICE_TYPE_NONE && lastValidActiveDevice_ != DEVICE_TYPE_NONE) {
-        AUDIO_INFO_LOG("currentActiveDevice is NONE before start, restore to %{public}d from lastValidActiveDevice_",
-            lastValidActiveDevice_);
-        std::vector<DeviceType> restoreDevices = { lastValidActiveDevice_ };
-        UpdateActiveDevice(restoreDevices);
+    if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
+        forceSetRouteFlag_ = true;
+        std::vector<DeviceType> devices = { currentActiveDevice_ };
+        UpdateActiveDevice(devices);
     }
 }
 
@@ -230,7 +229,7 @@ int32_t AudioRenderSink::Stop(void)
     ChangePipeStatus(PIPE_STATUS_STANDBY);
     if (Util::IsEnhancedRoutingSupported()) {
         std::vector<DeviceType> noneDevices = {DEVICE_TYPE_NONE};
-        UpdateActiveDevice(noneDevices);
+        DoSetOutputRoute(noneDevices);
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "stop fail");
 #ifdef MULTI_BUS_ENABLE
