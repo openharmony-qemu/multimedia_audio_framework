@@ -43,7 +43,7 @@ HWTEST_F(LoopbackCallbackUnitTest, OnCommandResult_CallbackValid_001, TestSize.L
             successReceived = success;
             errorCodeReceived = errorCode;
         }
-        void OnStatusChange(int status, int reason) override {}
+        void OnStatusNotify(int status, int reason) override {}
     };
 
     auto cb = std::make_shared<TestILoopbackCB>();
@@ -61,7 +61,7 @@ HWTEST_F(LoopbackCallbackUnitTest, OnCommandResult_CallbackExpired_001, TestSize
     public:
         int callCount = 0;
         void OnCommandResult(int command, bool success, int errorCode) override { callCount++; }
-        void OnStatusChange(int status, int reason) override {}
+        void OnStatusNotify(int status, int reason) override {}
     };
 
     auto cb = std::make_shared<TestILoopbackCB>();
@@ -72,14 +72,14 @@ HWTEST_F(LoopbackCallbackUnitTest, OnCommandResult_CallbackExpired_001, TestSize
     EXPECT_EQ(result, SUCCESS);
 }
 
-HWTEST_F(LoopbackCallbackUnitTest, OnStatusChange_CallbackValid_001, TestSize.Level1)
+HWTEST_F(LoopbackCallbackUnitTest, OnStatusNotify_CallbackValid_001, TestSize.Level1)
 {
     class TestILoopbackCB : public ILoopbackCB {
     public:
         int statusReceived = 0;
         int reasonReceived = 0;
         void OnCommandResult(int command, bool success, int errorCode) override {}
-        void OnStatusChange(int status, int reason) override {
+        void OnStatusNotify(int status, int reason) override {
             statusReceived = status;
             reasonReceived = reason;
         }
@@ -88,25 +88,25 @@ HWTEST_F(LoopbackCallbackUnitTest, OnStatusChange_CallbackValid_001, TestSize.Le
     auto cb = std::make_shared<TestILoopbackCB>();
     auto callback = new LoopbackCallback(cb);
 
-    callback->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
+    callback->OnStatusNotify(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
     EXPECT_EQ(cb->statusReceived, LOOPBACK_AVAILABLE_RUNNING);
     EXPECT_EQ(cb->reasonReceived, CMD_FROM_SYSTEM);
 }
 
-HWTEST_F(LoopbackCallbackUnitTest, OnStatusChange_CallbackExpired_001, TestSize.Level1)
+HWTEST_F(LoopbackCallbackUnitTest, OnStatusNotify_CallbackExpired_001, TestSize.Level1)
 {
     class TestILoopbackCB : public ILoopbackCB {
     public:
         int callCount = 0;
         void OnCommandResult(int command, bool success, int errorCode) override {}
-        void OnStatusChange(int status, int reason) override { callCount++; }
+        void OnStatusNotify(int status, int reason) override { callCount++; }
     };
 
     auto cb = std::make_shared<TestILoopbackCB>();
     auto callback = new LoopbackCallback(cb);
     cb = nullptr;
 
-    int32_t result = callback->OnStatusChange(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
+    int32_t result = callback->OnStatusNotify(LOOPBACK_AVAILABLE_RUNNING, CMD_FROM_SYSTEM);
     EXPECT_EQ(result, SUCCESS);
 }
 
