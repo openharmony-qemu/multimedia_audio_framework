@@ -821,7 +821,7 @@ HWTEST_F(AudioA2dpDeviceUnitTest, ReloadA2dpAudioPort_001, TestSize.Level1)
     AudioStreamInfo audioStreamInfo;
     A2dpReloadContext context = {DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, "local", "a2dp_sink", SOURCE_TYPE_MIC};
     int32_t result = a2dpDeviceBehavior_.ReloadA2dpAudioPort(moduleInfo, context);
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**

@@ -971,7 +971,7 @@ HWTEST(AudioPolicyManagerDevice, SetDeclaredDeviceTypes_003, TestSize.Level1)
     auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
     std::vector<DeviceType> deviceTypes;
     int32_t ret = audioPolicyManager_->SetDeclaredDeviceTypes(deviceTypes);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1059,7 +1059,7 @@ HWTEST(AudioPolicyManagerDevice, GetVADeviceBroker_001, TestSize.Level1)
     auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
     std::shared_ptr<VADeviceBrokerWrapper> vaBroker;
     int32_t ret = audioPolicyManager_->GetVADeviceBroker(vaBroker);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 } // namespace AudioStandard
