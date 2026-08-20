@@ -47,7 +47,7 @@ bool StrToInt(const std::string &str, int32_t &value)
 AudioPolicyConfigParser::AudioPolicyConfigParser(AudioCoreConfigManager &manager) : configManager_(manager)
 {
     curNode_ = AudioXmlNode::Create();
-    hasEarpiece_ = GetHasEarpieceParam();
+    parseEarpiece_ = GetEarpieceParam();
 }
 
 bool AudioPolicyConfigParser::GetHasEarpiece() const
@@ -61,11 +61,10 @@ bool AudioPolicyConfigParser::LoadConfiguration()
 {
     AUDIO_INFO_LOG("Enter");
     if (curNode_->Config(CHIP_PROD_CONFIG_FILE, nullptr, 0) != SUCCESS) {
-        AUDIO_WARNING_LOG("Load chip prod config xml fail, use chip general config");
-        isChipGeneralConfig_ = true;
-        configManager_.OnIsChipGenneralConfig(isChipGeneralConfig_);
-        if (curNode_->Config(CONFIG_FILE, nullptr, 0) != SUCCESS) {
-            AUDIO_ERR_LOG("Load chip prod config and chip general config xml all failed");
+        AUDIO_WARNING_LOG("Load chip prod config xml fail, use vendor config");
+        isVendorConfig_ = true;
+        if (curNode_->Config(VENDOR_CONFIG_FILE, nullptr, 0) != SUCCESS) {
+            AUDIO_ERR_LOG("Load chip prod config and vendor config xml all failed");
             return false;
         }
     }
@@ -81,6 +80,7 @@ bool AudioPolicyConfigParser::LoadConfiguration()
         AUDIO_ERR_LOG("Audio policy config xml parse failed");
         return false;
     }
+    configManager_.OnHasEarpieceParsed(hasEarpiece_);
 
     std::unordered_map<std::string, std::string> volumeGroupMap {};
     std::unordered_map<std::string, std::string> interruptGroupMap {};
@@ -379,11 +379,14 @@ void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode
             AdapterDeviceInfo deviceInfo {};
             deviceInfo.adapterInfo_ = adapterInfo;
             curNode->GetProp("name", deviceInfo.name_);
-            if (deviceInfo.name_ == "Earpiece_Out" && !hasEarpiece_ && isChipGeneralConfig_) {
-                AUDIO_INFO_LOG("skip earpiece parse due to hasEarpiece_=%{public}d, isChipGeneralConfig_=%{public}d",
-                    hasEarpiece_, isChipGeneralConfig_);
+            if (deviceInfo.name_ == "Earpiece_Out" && isVendorConfig_ && !parseEarpiece_) {
+                AUDIO_INFO_LOG("skip earpiece parse due to parseEarpiece_=%{public}d, isVendorConfig_=%{public}d",
+                    parseEarpiece_, isVendorConfig_);
                 curNode->MoveToNext();
                 continue;
+            }
+            if (deviceInfo.name_ == "Earpiece_Out") {
+                hasEarpiece_ = true;
             }
             std::string preload;
 

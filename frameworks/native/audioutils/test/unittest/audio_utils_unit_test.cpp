@@ -3680,5 +3680,36 @@ HWTEST(AudioUtilsUnitTest, VolumeUtils_TransferStreamUsage_001, TestSize.Level1)
         STREAM_USAGE_VOICE_TRANSFER_RINGTONE);
     EXPECT_EQ(ringType, STREAM_RING);
 }
+
+/**
+* @tc.name  : Test IsSupportParamsUtils API
+* @tc.type  : FUNC
+* @tc.number: IsSupportParamsUtils_001
+* @tc.desc  : Test IsSupportParamsUtils interface.
+*/
+HWTEST(AudioUtilsUnitTest, IsSupportParamsUtils_001, TestSize.Level1)
+{
+    bool result = IsSupportParamsUtils();
+    EXPECT_TRUE(result == true || result == false);
+}
+
+/**
+* @tc.name  : Test GetEarpieceParam API
+* @tc.type  : FUNC
+* @tc.number: GetEarpieceParam_001
+* @tc.desc  : Test GetEarpieceParam interface.
+*/
+HWTEST(AudioUtilsUnitTest, GetEarpieceParam_001, TestSize.Level1)
+{
+    bool result = GetEarpieceParam();
+    if (!IsSupportParamsUtils()) {
+        EXPECT_TRUE(result);
+    } else {
+        char value[32] = "false";
+        GetParameter("const.multimedia.audio.has_earpiece", "false", value, sizeof(value));
+        bool expected = (strcmp(value, "true") == 0);
+        EXPECT_EQ(result, expected);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

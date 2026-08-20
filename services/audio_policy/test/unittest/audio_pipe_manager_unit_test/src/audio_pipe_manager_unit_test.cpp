@@ -61,6 +61,7 @@ HWTEST_F(AudioPipeManagerUnitTest, Init_001, TestSize.Level1)
 HWTEST_F(AudioPipeManagerUnitTest, GetHasEarpiece_001, TestSize.Level1)
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(audioPipeManager, nullptr);
     audioPipeManager->audioConfigManager_.hasEarpiece_ = true;
     EXPECT_TRUE(audioPipeManager->GetHasEarpiece());
 
