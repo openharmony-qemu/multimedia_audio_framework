@@ -87,7 +87,7 @@ int32_t GetEngineFlag()
 #endif
 }
 
-bool GetHasEarpieceParam()
+bool GetEarpieceParam()
 {
     CHECK_AND_RETURN_RET_LOG(IsSupportParamsUtils(), true,
         "params utils not supported, earpiece param not available, return default");

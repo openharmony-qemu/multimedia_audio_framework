@@ -1,0 +1,62 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../../../../../accessibility.gni")
+import("../../../../../../appgallery.gni")
+import("../../../../../../bluetooth_part.gni")
+import("../../../../../../config.gni")
+
+audio_framework_root = "../../../../../.."
+module_output_path = "audio_framework/audio_route_common/audio_core_config"
+
+group("audio_core_config_manager_aiut_group") {
+  testonly = true
+  deps = [
+    ":audio_core_config_manager_aiut",
+  ]
+}
+
+ohos_unittest("audio_core_config_manager_aiut") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./include",
+    "../../../../../test/unittest/common/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = cflags
+
+  sources = [ "./src/audio_core_config_manager_aiut.cpp" ]
+
+  deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../:audio_policy_service_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "ffrt:libffrt",
+  ]
+}

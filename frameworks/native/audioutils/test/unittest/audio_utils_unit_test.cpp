@@ -25,6 +25,7 @@
 #include "audio_errors.h"
 #include "audio_scope_exit.h"
 #include "audio_safe_block_queue.h"
+#include "parameters.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -3694,18 +3695,21 @@ HWTEST(AudioUtilsUnitTest, IsSupportParamsUtils_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetHasEarpieceParam API
+* @tc.name  : Test GetEarpieceParam API
 * @tc.type  : FUNC
-* @tc.number: GetHasEarpieceParam_001
-* @tc.desc  : Test GetHasEarpieceParam interface.
+* @tc.number: GetEarpieceParam_001
+* @tc.desc  : Test GetEarpieceParam interface.
 */
-HWTEST(AudioUtilsUnitTest, GetHasEarpieceParam_001, TestSize.Level1)
+HWTEST(AudioUtilsUnitTest, GetEarpieceParam_001, TestSize.Level1)
 {
-    bool result = GetHasEarpieceParam();
+    bool result = GetEarpieceParam();
     if (!IsSupportParamsUtils()) {
         EXPECT_TRUE(result);
     } else {
-        EXPECT_TRUE(result == true || result == false);
+        char value[32] = "false";
+        GetParameter("const.multimedia.audio.has_earpiece", "false", value, sizeof(value));
+        bool expected = (strcmp(value, "true") == 0);
+        EXPECT_EQ(result, expected);
     }
 }
 } // namespace AudioStandard

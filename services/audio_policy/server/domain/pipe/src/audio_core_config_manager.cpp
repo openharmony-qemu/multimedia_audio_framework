@@ -80,7 +80,6 @@ bool AudioCoreConfigManager::Init(bool isRefresh)
     }
     std::unique_ptr<AudioPolicyConfigParser> audioPolicyConfigParser = make_unique<AudioPolicyConfigParser>(*this);
     CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser != nullptr, false, "AudioPolicyConfigParser create failed");
-    hasEarpiece_ = audioPolicyConfigParser->GetHasEarpiece();
     bool ret = audioPolicyConfigParser->LoadConfiguration();
     if (!ret) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Policy Config Load Configuration failed");
@@ -114,8 +113,6 @@ void AudioCoreConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
     audioPolicyConfig_.Reorganize();
 
     isAdapterInfoMap_.store(true);
-
-    OnHasEarpiece();
 }
 
 void AudioCoreConfigManager::OnXmlParsingCompleted(
@@ -195,31 +192,11 @@ void AudioCoreConfigManager::OnUpdateEac3Support(bool isSupported)
     isSupportEac3_ = isSupported;
 }
 
-void AudioCoreConfigManager::OnHasEarpiece()
+void AudioCoreConfigManager::OnHasEarpieceParsed(bool hasEarpiece)
 {
-    UpdateHasEarpieceForChipProp();
+    hasEarpiece_ = hasEarpiece;
     audioDeviceManager_.UpdateEarpieceStatus(hasEarpiece_);
-}
-void AudioCoreConfigManager::UpdateHasEarpieceForChipProp()
-{
-    CHECK_AND_RETURN_LOG(!isChipGeneralConfig_, "use chip general config");
-    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap;
-    audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap);
-    for (const auto &adapterInfo : adapterInfoMap) {
-        hasEarpiece_ = std::any_of(adapterInfo.second->deviceInfos.begin(), adapterInfo.second->deviceInfos.end(),
-            [](const auto& deviceInfo) {
-            return deviceInfo->type_ == DEVICE_TYPE_EARPIECE;
-        });
-        if (hasEarpiece_) {
-            break;
-        }
-    }
-    AUDIO_INFO_LOG("get hasEarpiece_:%{public}s from chip prop config", hasEarpiece_ ? "true" : "false");
-}
-
-void AudioCoreConfigManager::OnIsChipGenneralConfig(bool isChipGeneral)
-{
-    isChipGeneralConfig_ = isChipGeneral;
+    AUDIO_INFO_LOG("hasEarpiece_:%{public}s", hasEarpiece_ ? "true" : "false");
 }
 
 void AudioCoreConfigManager::OnSupportUltraFast(bool supportUltraFast)

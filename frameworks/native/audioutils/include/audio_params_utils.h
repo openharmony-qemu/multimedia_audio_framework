@@ -22,7 +22,7 @@ namespace AudioStandard {
 bool GetFastControlParam();
 bool GetEcEnableParam();
 int32_t GetEngineFlag();
-bool GetHasEarpieceParam();
+bool GetEarpieceParam();
 bool IsSupportParamsUtils();
 } // namespace AudioStandard
 } // namespace OHOS
