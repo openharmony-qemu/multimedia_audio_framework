@@ -825,6 +825,42 @@ HWTEST_F(AudioZoneServiceUnitTest, RemoveStreamIdFromAudioZone_003, TestSize.Lev
     EXPECT_EQ(ret, ERROR);
 }
 
+/**
+ * @tc.name  : ReleaseAudioZone
+ * @tc.number: ReleaseAudioZone_001
+ * @tc.desc  : Test ReleaseAudioZone with null interruptService
+ */
+HWTEST_F(AudioZoneServiceUnitTest, ReleaseAudioZone_001, TestSize.Level1)
+{
+    ClearZone();
+    AudioZoneService &svc = AudioZoneService::GetInstance();
+    AudioZoneContext context;
+    int32_t zoneId = svc.CreateAudioZone("ProxyZone1", context, 0);
+    svc.interruptService_ = nullptr;
+    svc.ReleaseAudioZone(zoneId);
+    ASSERT_NE(zoneId, ERROR);
+}
+
+/**
+ * @tc.name  : GetAllOutputDevices
+ * @tc.number: GetAllOutputDevices_001
+ * @tc.desc  : Test GetAllOutputDevices with no device added
+ */
+HWTEST_F(AudioZoneServiceUnitTest, GetAllOutputDevices_001, TestSize.Level1)
+{
+    ClearZone();
+    AudioZoneService &svc = AudioZoneService::GetInstance();
+    AudioZoneContext context;
+    int32_t zoneId = svc.CreateAudioZone("ProxyZone1", context, 0);
+    svc.interruptService_ = nullptr;
+    auto res = svc.GetAllOutputDevices(0);
+    EXPECT_EQ(res.size(), 1);
+
+    res = svc.GetAllOutputDevices(1);
+    EXPECT_EQ(res.size(), 0);
+}
+
+
 #ifdef FEATURE_AUDIO_ZONE_VOLUME
 /**
  * @tc.name  : Test AudioZoneServiceUnitTest.

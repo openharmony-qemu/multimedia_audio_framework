@@ -936,11 +936,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZoneService::FetchOutpu
     auto zone = FindZone(zoneId);
     CHECK_AND_RETURN_RET_LOG(zone != nullptr, devices, "zone id %{public}d is not found", zoneId);
     auto res = zone->FetchOutputDevices(streamUsage, clientUid, bypassType);
-    if (!res.empty() && res.front() != nullptr) {
-        AUDIO_INFO_LOG("fetchoutputdevice from zone %{public}d, usage:%{public}d, client:%{public}d," \
-            "router:%{public}d desc:%{public}s",
-            zoneId, streamUsage, clientUid, bypassType, res.front()->GetName().c_str());
-    }
+    JUDGE_AND_INFO_LOG(!res.empty() && res.front() != nullptr, "fetch from zone %{public}d," \
+        "usage:%{public}d, client:%{public}d router:%{public}d desc:%{public}s",
+        zoneId, streamUsage, clientUid, bypassType, res.front()->GetName().c_str());
     return res;
 }
 
