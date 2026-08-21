@@ -22,6 +22,7 @@
 #include "audio_suite_log.h"
 #include "audio_errors.h"
 #include "ffrt_inner.h"
+#include <memory>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -55,7 +56,7 @@ int32_t AudioSuiteDownloadManagerImpl::RegisterDownloadStatusCallback(
 {
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::RegisterDownloadStatusCallback");
     return CallWithTimeout(
-        [&callback]() { return AudioSuiteClientPolicy::GetInstance().RegisterDownloadStatusCallback(callback); },
+        [callback]() { return AudioSuiteClientPolicy::GetInstance().RegisterDownloadStatusCallback(callback); },
         "RegisterDownloadStatusCallback");
 }
 
@@ -70,21 +71,21 @@ int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& featureN
 {
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartDownload, featureName=%{public}s", featureName.c_str());
     return CallWithTimeout(
-        [&featureName]() { return AudioSuiteClientPolicy::GetInstance().StartDownload(featureName); }, "StartDownload");
+        [featureName]() { return AudioSuiteClientPolicy::GetInstance().StartDownload(featureName); }, "StartDownload");
 }
 
 int32_t AudioSuiteDownloadManagerImpl::PauseDownload(const std::string& featureName)
 {
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::PauseDownload, featureName=%{public}s", featureName.c_str());
     return CallWithTimeout(
-        [&featureName]() { return AudioSuiteClientPolicy::GetInstance().PauseDownload(featureName); }, "PauseDownload");
+        [featureName]() { return AudioSuiteClientPolicy::GetInstance().PauseDownload(featureName); }, "PauseDownload");
 }
 
 int32_t AudioSuiteDownloadManagerImpl::CancelDownload(const std::string& featureName)
 {
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::CancelDownload, featureName=%{public}s", featureName.c_str());
     return CallWithTimeout(
-        [&featureName]() { return AudioSuiteClientPolicy::GetInstance().CancelDownload(featureName); },
+        [featureName]() { return AudioSuiteClientPolicy::GetInstance().CancelDownload(featureName); },
         "CancelDownload");
 }
 
@@ -93,7 +94,7 @@ int32_t AudioSuiteDownloadManagerImpl::StartBackgroundDownload(const std::string
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartBackgroundDownload, featureName=%{public}s",
         featureName.c_str());
     return CallWithTimeout(
-        [&featureName]() { return AudioSuiteClientPolicy::GetInstance().StartBackgroundDownload(featureName); },
+        [featureName]() { return AudioSuiteClientPolicy::GetInstance().StartBackgroundDownload(featureName); },
         "StartBackgroundDownload");
 }
 
@@ -101,18 +102,23 @@ int32_t AudioSuiteDownloadManagerImpl::GetDownloadStatus(
     const std::string& featureName, AudioSuiteDownloadStatusInfo& status)
 {
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::GetDownloadStatus");
-    return CallWithTimeout(
-        [&featureName, &status]() {
-            return AudioSuiteClientPolicy::GetInstance().GetDownloadStatus(featureName, status);
+    auto statusPtr = std::make_shared<AudioSuiteDownloadStatusInfo>();
+    int32_t ret = CallWithTimeout(
+        [featureName, statusPtr]() {
+            return AudioSuiteClientPolicy::GetInstance().GetDownloadStatus(featureName, *statusPtr);
         },
         "GetDownloadStatus");
+    if (ret == SUCCESS) {
+        status = *statusPtr;
+    }
+    return ret;
 }
 
 int32_t AudioSuiteDownloadManagerImpl::UninstallCloudRom(const std::string& featureName)
 {
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::UninstallCloudRom, featureName=%{public}s", featureName.c_str());
     return CallWithTimeout(
-        [&featureName]() { return AudioSuiteClientPolicy::GetInstance().UninstallCloudRom(featureName); },
+        [featureName]() { return AudioSuiteClientPolicy::GetInstance().UninstallCloudRom(featureName); },
         "UninstallCloudRom");
 }
 
@@ -121,7 +127,7 @@ int32_t AudioSuiteDownloadManagerImpl::RegisterDownloadInterfaceCallback(
 {
     AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::RegisterDownloadInterfaceCallback");
     return CallWithTimeout(
-        [&callback]() { return AudioSuiteClientPolicy::GetInstance().RegisterDownloadInterfaceCallback(callback); },
+        [callback]() { return AudioSuiteClientPolicy::GetInstance().RegisterDownloadInterfaceCallback(callback); },
         "RegisterDownloadInterfaceCallback");
 }
 
