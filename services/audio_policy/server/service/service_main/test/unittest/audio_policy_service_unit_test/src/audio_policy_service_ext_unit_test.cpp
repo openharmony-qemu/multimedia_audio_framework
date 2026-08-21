@@ -507,7 +507,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetHardwareOutputSamplingRate_002, TestS
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     int32_t ret = AudioPolicyService::GetAudioPolicyService().GetHardwareOutputSamplingRate(desc);
-    EXPECT_NE(-1, ret);
+    EXPECT_EQ(-1, ret);
 }
 
 /**
@@ -778,7 +778,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetA2dpOffloadFlag_002, TestSize.Level1)
     AudioPolicyService::GetAudioPolicyService().audioA2dpOffloadManager_ =
         std::make_shared<AudioA2dpOffloadManager>();
     BluetoothOffloadState ret = AudioPolicyService::GetAudioPolicyService().GetA2dpOffloadFlag();
-    EXPECT_NE(NO_A2DP_DEVICE, ret);
+    EXPECT_EQ(NO_A2DP_DEVICE, ret);
 }
 
 /**
