@@ -861,6 +861,7 @@ void AudioSpatializationService::InitSpatializationState()
             WriteSpatializationStateToDb(WRITE_SPATIALIZATION_STATE);
         } else {
             UnpackSpatializationState(pack, spatializationStateFlag_);
+            UpdateSpatializationStateReal(false);
         }
         CHECK_AND_RETURN(InitSpatializationScene() == SUCCESS);
 
