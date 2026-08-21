@@ -1308,8 +1308,8 @@ int32_t HpaeOffloadRendererManager::RemoveSessionEffectNode(bool finalizeNow)
         }
     }
     AUDIO_INFO_LOG("RemoveSessionEffectNode: session %{public}u BeginClose (finalizeNow=%{public}d), "
-        "latency=%{public}llu",
-        sessionId, static_cast<int>(finalizeNow), (unsigned long long)latency);
+        "latency=%" PRIu64,
+        sessionId, static_cast<int32_t>(finalizeNow), latency);
     return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
 }
 
@@ -1362,7 +1362,7 @@ void HpaeOffloadRendererManager::FinalizeSessionEffectClose(uint32_t sessionId,
     TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state,
         OPERATION_SESSION_EFFECT_DISABLED);
     AUDIO_INFO_LOG("FinalizeSessionEffectClose: session %{public}u finalized (sameInstance=%{public}d)",
-        sessionId, static_cast<int>(sameInstanceReuse));
+        sessionId, static_cast<int32_t>(sameInstanceReuse));
 }
 
 uint64_t HpaeOffloadRendererManager::SetPendingSessionEffectCreate(uint32_t sessionId,

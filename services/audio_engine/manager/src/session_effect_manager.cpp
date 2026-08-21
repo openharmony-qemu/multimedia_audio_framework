@@ -76,7 +76,7 @@ int32_t SessionEffectManager::TryReuseExistingInstance(const std::string &effect
     // IDLE/ERROR: release old instance so caller can create a new one
     if (state == EffectInstance::EffectState::IDLE || state == EffectInstance::EffectState::ERROR) {
         AUDIO_INFO_LOG("[SE::SessionEffectManager] effect released reason=staleState "
-            "effect=%{public}s state=%{public}d", effectName.c_str(), static_cast<int>(state));
+            "effect=%{public}s state=%{public}d", effectName.c_str(), static_cast<int32_t>(state));
         instance->Release();
         effectInstanceMap_.erase(effectName);
     }

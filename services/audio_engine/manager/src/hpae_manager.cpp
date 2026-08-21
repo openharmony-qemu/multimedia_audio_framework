@@ -3261,7 +3261,7 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
             }
         }
         if (oldSessionId != UNBOUND_SESSION_ID) {
-            ClearAissSession(oldSessionId, true);
+            ClearAissSession(oldSessionId, true, true);
         }
         boundUid_ = -1;
         boundSessionId_ = UNBOUND_SESSION_ID;

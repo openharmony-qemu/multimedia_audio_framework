@@ -609,8 +609,8 @@ int32_t HpaeProcessCluster::BeginDestroySessionEffectNode(uint32_t sessionId, ui
     // Enter STOPPING; node stays in idSessionEffectMap_ until Finalize (next queue cycle) erases it.
     node->StartCloseCrossfade();
     outWeakNode = node;
-    AUDIO_INFO_LOG("BeginDestroySessionEffectNode: session %{public}u BeginClose, latency=%{public}llu",
-        sessionId, (unsigned long long)outLatency);
+    AUDIO_INFO_LOG("BeginDestroySessionEffectNode: session %{public}u BeginClose, latency=%" PRIu64,
+        sessionId, outLatency);
     return 0;
 }
 
@@ -645,7 +645,7 @@ bool HpaeProcessCluster::FinalizeDestroySessionEffectNode(uint32_t sessionId,
     }
     idSessionEffectMap_.erase(sessionId);
     AUDIO_INFO_LOG("FinalizeDestroySessionEffectNode: session %{public}u finalized (sameInstance=%{public}d)",
-        sessionId, static_cast<int>(sameInstanceReuse));
+        sessionId, static_cast<int32_t>(sameInstanceReuse));
     return true;
 }
 

@@ -547,7 +547,7 @@ int32_t HpaeSessionEffectNode::StartEffect()
                 prebufTargetBytes_);
         } else {
             // INTERCEPTING / ACTIVE: just clear isPaused_, DoProcess resumes naturally
-            AUDIO_INFO_LOG("StartEffect resume: status=%{public}d", static_cast<int>(status_));
+            AUDIO_INFO_LOG("StartEffect resume: status=%{public}d", static_cast<int32_t>(status_));
         }
         return 0;
     }
@@ -586,7 +586,7 @@ int32_t HpaeSessionEffectNode::PauseEffect()
 
     // Key: do NOT call effectInstance_->StopEffect() (no DISABLE)
     // This preserves algorithm state and caches for resume
-    AUDIO_INFO_LOG("PauseEffect: paused, status=%{public}d", static_cast<int>(status_));
+    AUDIO_INFO_LOG("PauseEffect: paused, status=%{public}d", static_cast<int32_t>(status_));
     return 0;
 }
 
