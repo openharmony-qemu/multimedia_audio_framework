@@ -118,6 +118,11 @@ int32_t MultichannelAudioRenderSink::Start(void)
     if (started_) {
         return SUCCESS;
     }
+    if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
+        forceSetRouteFlag_ = true;
+        std::vector<DeviceType> devices = { currentActiveDevice_ };
+        UpdateActiveDevice(devices);
+    }
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Start(audioRender_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
@@ -409,12 +414,17 @@ int32_t MultichannelAudioRenderSink::GetAudioScene(void)
 int32_t MultichannelAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() == 1, ERR_INVALID_PARAM, "invalid device");
-    if (currentActiveDevice_ == outputDevices[0]) {
+    bool forceSet = forceSetRouteFlag_;
+    if (currentActiveDevice_ == outputDevices[0] && !forceSet) {
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
         return SUCCESS;
     }
+    forceSetRouteFlag_ = false;
     currentActiveDevice_ = outputDevices[0];
-    return SUCCESS;
+    if (!Util::IsEnhancedRoutingSupported() && !forceSet) {
+        return SUCCESS;
+    }
+    return DoSetOutputRoute(outputDevices);
 }
 
 DeviceType MultichannelAudioRenderSink::GetCurrentOutputDevice()

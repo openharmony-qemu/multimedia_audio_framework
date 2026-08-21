@@ -143,6 +143,11 @@ int32_t FastAudioRenderSink::Start(void)
     if (started_) {
         return SUCCESS;
     }
+    if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
+        forceSetRouteFlag_ = true;
+        std::vector<DeviceType> devices = { currentActiveDevice_ };
+        UpdateActiveDevice(devices);
+    }
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Start(audioRender_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
@@ -759,5 +764,32 @@ void FastAudioRenderSink::PreparePosition(void)
         curWritePos_);
 #endif
 }
+
+int32_t FastAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
+{
+    CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() == 1, ERR_INVALID_PARAM, "invalid device");
+    bool forceSet = forceSetRouteFlag_;
+    if (currentActiveDevice_ == outputDevices[0] && !forceSet) {
+        return SUCCESS;
+    }
+    forceSetRouteFlag_ = false;
+    if (currentActiveDevice_ != outputDevices[0]) {
+        AUDIO_INFO_LOG("set output route from %{public}d to %{public}d", currentActiveDevice_, outputDevices[0]);
+    }
+    currentActiveDevice_ = outputDevices[0];
+    if (!Util::IsEnhancedRoutingSupported() && !forceSet) {
+        return SUCCESS;
+    }
+    ChangePipeDevice(outputDevices);
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
+    int32_t ret = deviceManager->SetOutputRoute(attr_.adapterName, outputDevices,
+        attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ?
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP_FAST) :
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_FAST));
+    return ret;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
