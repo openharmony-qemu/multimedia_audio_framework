@@ -4875,7 +4875,11 @@ int32_t AudioPolicyServer::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
 {
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
-    return AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, uid);
+    int32_t ret = AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, uid);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RemoveUidFromAudioZone failed");
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
+    audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
+    return ret;
 }
 
 int32_t AudioPolicyServer::AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages)
