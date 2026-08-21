@@ -1553,14 +1553,17 @@ int32_t HpaeOffloadRendererManager::DestroySessionEffect(uint32_t sessionId, boo
     return static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND);
 }
 
-void HpaeOffloadRendererManager::PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow)
+int32_t HpaeOffloadRendererManager::PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow)
 {
     auto request = [this, sessionId, finalizeNow]() -> int32_t {
         return DestroySessionEffect(sessionId, finalizeNow);
     };
     int32_t ret = SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
-    CHECK_AND_RETURN_LOG(ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS),
-        "PostDestroySessionEffect: session %{public}u destroy ret=%{public}d", sessionId, ret);
+    if (ret != static_cast<int32_t>(SessionEffectErrCode::SUCCESS)) {
+        AUDIO_WARNING_LOG("PostDestroySessionEffect: session %{public}u destroy ret=%{public}d",
+            sessionId, ret);
+    }
+    return ret;
 }
 
 bool HpaeOffloadRendererManager::IsValidSession(uint32_t sessionId) const

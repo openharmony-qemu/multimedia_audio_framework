@@ -3201,16 +3201,26 @@ int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId, bool aissSwitchEnable
 }
 
 // Clear the session effect binding and reset boundSessionId_ when it points to the cleared session.
-void HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding, bool finalizeNow)
+int32_t HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding, bool finalizeNow)
 {
     if (sessionId == UNBOUND_SESSION_ID || sessionEffectManager_ == nullptr) {
-        return;
+        return SUCCESS;
     }
     bool isBoundUidSession = boundSessionId_ == sessionId;
 
     auto rendererManager = GetRendererManagerById(sessionId);
     if (rendererManager != nullptr) {
-        rendererManager->PostDestroySessionEffect(sessionId, finalizeNow);
+        int32_t destroyRet = rendererManager->PostDestroySessionEffect(sessionId, finalizeNow);
+        if (destroyRet == ERR_OPERATION_FAILED) {
+            // SendRequestSync timeout: the destroy request is still queued on the RM thread and
+            // could run after a Create issued now. Abort the clear BEFORE unbinding/resetting so
+            // switch callers stop before opening the new session; binding state stays intact
+            // and the switch can be retried. The late destroy is identity-gated, so retrying
+            // stays safe.
+            AUDIO_ERR_LOG("ClearAissSession: destroy timed out for session %{public}u, keep binding",
+                sessionId);
+            return destroyRet;
+        }
     }
 
     sessionEffectManager_->UnbindSessionEffect(sessionId);
@@ -3221,6 +3231,7 @@ void HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding, boo
         boundUid_ = -1;
     }
     AUDIO_INFO_LOG("ClearAissSession: cleared AISS session %{public}u", sessionId);
+    return SUCCESS;
 }
 
 uint32_t HpaeManager::FindRunningMusicSession(int32_t uid)
@@ -3261,7 +3272,10 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
             }
         }
         if (oldSessionId != UNBOUND_SESSION_ID) {
-            ClearAissSession(oldSessionId, true, true);
+            int32_t clearRet = ClearAissSession(oldSessionId, true, true);
+            CHECK_AND_RETURN_RET_LOG(clearRet == SUCCESS, clearRet,
+                "EnableAissByUid: clear old session %{public}u failed ret=%{public}d, abort switch",
+                oldSessionId, clearRet);
         }
         boundUid_ = -1;
         boundSessionId_ = UNBOUND_SESSION_ID;
@@ -3328,8 +3342,13 @@ int32_t HpaeManager::SetAissEnabledSync(uint32_t sessionId, bool enabled)
             if (oldSessionId != UNBOUND_SESSION_ID && oldSessionId != sessionId) {
                 // Opening a new AISS session: finalize the old session's SE inside its destroy
                 // request (finalizeNow) so a Create queued right behind cannot hit a STOPPING
-                // node or a stale channel override.
-                ClearAissSession(oldSessionId, true, true);
+                // node or a stale channel override. Abort before creating if the clear failed
+                // (e.g. destroy timeout): the strict old-teardown-before-new-create order must
+                // not be silently violated.
+                int32_t clearRet = ClearAissSession(oldSessionId, true, true);
+                CHECK_AND_RETURN_RET_LOG(clearRet == SUCCESS, clearRet,
+                    "SetAissEnabledSync: clear old session %{public}u failed ret=%{public}d",
+                    oldSessionId, clearRet);
             }
 
             int32_t ret = BindAndCreateAiss(sessionId, true);

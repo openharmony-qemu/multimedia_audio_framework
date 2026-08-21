@@ -135,7 +135,7 @@ public:
     virtual void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = false) {}
-    virtual void PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow = false) {}
+    virtual int32_t PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow = false) { return 0; }
     virtual void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) {}
 
 protected:

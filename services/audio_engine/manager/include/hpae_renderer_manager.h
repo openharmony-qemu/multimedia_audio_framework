@@ -118,7 +118,7 @@ public:
     void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = false) override;
-    void PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow = false) override;
+    int32_t PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow = false) override;
     bool HasSessionEffect(uint32_t sessionId) const override;
     bool IsValidSession(uint32_t sessionId) const override;
     // Session Effect parameter routing
@@ -206,8 +206,8 @@ private:
         const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
     // STOPPING + finalizeNow: run the Finalize a prior BeginClose queued for the next batch
     // right now, so the old session is fully closed before the new one is created.
-    void FinalizeStoppingSessionEffect(uint32_t sessionId, HpaeSessionState state,
-        const std::shared_ptr<HpaeProcessCluster> &processCluster);
+    void FinalizeStoppingSessionEffect(uint32_t sessionId, std::optional<ChannelOverrideRoute> route,
+        HpaeSessionState state, const std::shared_ptr<HpaeProcessCluster> &processCluster);
     // Rewind upstream history by the combined latency; clear the logical binding.
     void RewindAndClearSessionEffectAttach(uint32_t sessionId, uint64_t latency);
     // Schedule the deferred Finalize close on the next queue batch.
