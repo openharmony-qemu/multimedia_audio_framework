@@ -196,7 +196,11 @@ void AudioRenderSink::CheckActiveDeviceValidForStart()
     if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
         forceSetRouteFlag_ = true;
         std::vector<DeviceType> devices = { currentActiveDevice_ };
-        UpdateActiveDevice(devices);
+        int32_t ret = UpdateActiveDevice(devices);
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("force set route on start failed, device: %{public}d, ret: %{public}d",
+                currentActiveDevice_, ret);
+        }
     }
 }
 
@@ -679,9 +683,6 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
     }
     forceSetRouteFlag_ = false;
     currentActiveDevice_ = outputDevices[0];
-    if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
-        lastValidActiveDevice_ = currentActiveDevice_;
-    }
     currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
     SetAudioRouteInfoForEnhanceChain();
     bool isA2dp = false;

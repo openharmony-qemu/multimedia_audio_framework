@@ -187,9 +187,6 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
-    // Sticky last non-NONE device; never overwritten with NONE so Start can restore it
-    // when upper layer hasn't re-pushed a device yet.
-    DeviceType lastValidActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     bool currentScoExcludeFlag_ = false;
     int32_t currentDevicesSize_ = 0;

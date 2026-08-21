@@ -1389,10 +1389,14 @@ HWTEST_F(AudioRenderSinkUnitTest, StartForceRouteBypassesDedup_001, TestSize.Lev
  * @tc.name   : Test Stop does not invoke device callback
  * @tc.number : StopDoesNotInvokeDeviceCallback_001
  * @tc.desc   : Test Stop uses DoSetOutputRoute and does not invoke the device callback
- *              (regression for direct-sink HAL-pollution fix)
+ *              (regression for direct-sink HAL-pollution fix);
+ *              skipped when enhanced routing is off (Change 2 is flag-gated)
  */
 HWTEST_F(AudioRenderSinkUnitTest, StopDoesNotInvokeDeviceCallback_001, TestSize.Level1)
 {
+    if (!Util::IsEnhancedRoutingSupported()) {
+        GTEST_SKIP() << "enhanced routing disabled; Stop-branch (Change 2) not exercised in this env";
+    }
     InitPrimarySink();
     ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
     bool callbackInvoked = false;
@@ -1412,10 +1416,14 @@ HWTEST_F(AudioRenderSinkUnitTest, StopDoesNotInvokeDeviceCallback_001, TestSize.
  * @tc.name   : Test Stop preserves currentActiveDevice_
  * @tc.number : StopPreservesActiveDevice_001
  * @tc.desc   : Test Stop preserves currentActiveDevice_ instead of resetting to NONE
- *              (regression for direct-sink HAL-pollution fix)
+ *              (regression for direct-sink HAL-pollution fix);
+ *              skipped when enhanced routing is off (Change 2 is flag-gated)
  */
 HWTEST_F(AudioRenderSinkUnitTest, StopPreservesActiveDevice_001, TestSize.Level1)
 {
+    if (!Util::IsEnhancedRoutingSupported()) {
+        GTEST_SKIP() << "enhanced routing disabled; Stop-branch (Change 2) not exercised in this env";
+    }
     InitPrimarySink();
     ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
     EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);
@@ -1431,10 +1439,14 @@ HWTEST_F(AudioRenderSinkUnitTest, StopPreservesActiveDevice_001, TestSize.Level1
  * @tc.name   : Test Stop->Start cycle preserves currentActiveDevice_
  * @tc.number : StopStartCyclePreservesDevice_001
  * @tc.desc   : Test Stop->Start cycle preserves currentActiveDevice_
- *              (integration regression for direct-sink HAL-pollution fix)
+ *              (integration regression for direct-sink HAL-pollution fix);
+ *              skipped when enhanced routing is off (Change 2 is flag-gated)
  */
 HWTEST_F(AudioRenderSinkUnitTest, StopStartCyclePreservesDevice_001, TestSize.Level1)
 {
+    if (!Util::IsEnhancedRoutingSupported()) {
+        GTEST_SKIP() << "enhanced routing disabled; Stop-branch (Change 2) not exercised in this env";
+    }
     InitPrimarySink();
     ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
     EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);
@@ -1455,10 +1467,14 @@ HWTEST_F(AudioRenderSinkUnitTest, StopStartCyclePreservesDevice_001, TestSize.Le
 /**
  * @tc.name   : Test direct sink Stop preserves currentActiveDevice_
  * @tc.number : DirectSinkStopPreservesActiveDevice_001
- * @tc.desc   : Test direct sink Stop preserves currentActiveDevice_ (the sink type central to the HAL-pollution bug)
+ * @tc.desc   : Test direct sink Stop preserves currentActiveDevice_ (the sink type central to the HAL-pollution bug);
+ *              skipped when enhanced routing is off (Change 2 is flag-gated)
  */
 HWTEST_F(AudioRenderSinkUnitTest, DirectSinkStopPreservesActiveDevice_001, TestSize.Level1)
 {
+    if (!Util::IsEnhancedRoutingSupported()) {
+        GTEST_SKIP() << "enhanced routing disabled; Stop-branch (Change 2) not exercised in this env";
+    }
     InitDirectSink();
     ASSERT_TRUE(directSink_ && directSink_->IsInited());
     EXPECT_EQ(directSink_->GetCurrentOutputDevice(), DEVICE_TYPE_WIRED_HEADSET);
@@ -1468,6 +1484,33 @@ HWTEST_F(AudioRenderSinkUnitTest, DirectSinkStopPreservesActiveDevice_001, TestS
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(directSink_->GetCurrentOutputDevice(), DEVICE_TYPE_WIRED_HEADSET);
     DeInitDirectSink();
+}
+
+/**
+ * @tc.name   : Test Start with currentActiveDevice_ == NONE is a no-op
+ * @tc.number : StartWithNoneDeviceIsNoOp_001
+ * @tc.desc   : Test Start does not force-route when currentActiveDevice_ is NONE
+ *              (the new CheckActiveDeviceValidForStart no-op branch); documents the
+ *              intended behavior after ResetActiveDeviceForDisconnect without a
+ *              subsequent UpdateActiveDevice push (regression for direct-sink fix)
+ */
+HWTEST_F(AudioRenderSinkUnitTest, StartWithNoneDeviceIsNoOp_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    ASSERT_TRUE(primarySink_ && primarySink_->IsInited());
+    EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_SPEAKER);
+    primarySink_->ResetActiveDeviceForDisconnect(DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_NONE);
+    bool callbackInvoked = false;
+    primarySink_->RegisterCurrentDeviceCallback(
+        [&callbackInvoked](bool state) { callbackInvoked = true; });
+    int32_t ret = primarySink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(callbackInvoked);
+    EXPECT_EQ(primarySink_->GetCurrentOutputDevice(), DEVICE_TYPE_NONE);
+    ret = primarySink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySink();
 }
 } // namespace AudioStandard
 } // namespace OHOS
