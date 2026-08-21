@@ -95,6 +95,11 @@ int32_t OffloadAudioRenderSink::Start(void)
         }
         return SUCCESS;
     }
+    if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
+        forceSetRouteFlag_ = true;
+        std::vector<DeviceType> devices = { currentActiveDevice_ };
+        UpdateActiveDevice(devices);
+    }
     AudioXCollie audioXCollie("OffloadAudioRenderSink::Start", TIMEOUT_SECONDS_10,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
@@ -836,12 +841,16 @@ void OffloadAudioRenderSink::SetSpeed(float speed)
 int32_t OffloadAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevices)
 {
     CHECK_AND_RETURN_RET_LOG(!outputDevices.empty() && outputDevices.size() == 1, ERR_INVALID_PARAM, "invalid device");
-    if (currentActiveDevice_ == outputDevices[0]) {
+    bool forceSet = forceSetRouteFlag_;
+    if (currentActiveDevice_ == outputDevices[0] && !forceSet) {
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("set output device from %{public}d to %{public}d", currentActiveDevice_, outputDevices[0]);
+    forceSetRouteFlag_ = false;
+    if (currentActiveDevice_ != outputDevices[0]) {
+        AUDIO_INFO_LOG("set output device from %{public}d to %{public}d", currentActiveDevice_, outputDevices[0]);
+    }
     currentActiveDevice_ = outputDevices[0];
-    if (!Util::IsEnhancedRoutingSupported()) {
+    if (!Util::IsEnhancedRoutingSupported() && !forceSet) {
         return SUCCESS;
     }
     ChangePipeDevice(outputDevices);

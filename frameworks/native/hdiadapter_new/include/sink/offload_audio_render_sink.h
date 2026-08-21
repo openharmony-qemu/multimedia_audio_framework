@@ -154,6 +154,7 @@ private:
     std::atomic<uint64_t> renderPos_ = 0;
 
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+    bool forceSetRouteFlag_ = false;
     std::shared_ptr<std::thread> flushThread_;
 };
 

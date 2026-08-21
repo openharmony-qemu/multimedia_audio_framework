@@ -139,6 +139,7 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+    bool forceSetRouteFlag_ = false;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
 
     // for device switch

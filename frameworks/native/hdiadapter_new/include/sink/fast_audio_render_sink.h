@@ -64,6 +64,7 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     void DumpInfo(std::string &dumpString) override;
+    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
 
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -110,6 +111,9 @@ private:
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = HDI_INVALID_ID;
     struct IAudioRender *audioRender_ = nullptr;
+    DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+    bool forceSetRouteFlag_ = false;
+
     // for device switch
     std::mutex switchDeviceMutex_;
     int32_t muteCount_ = 0;
