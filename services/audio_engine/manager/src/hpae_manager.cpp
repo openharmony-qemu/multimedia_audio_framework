@@ -3210,17 +3210,14 @@ int32_t HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding, 
 
     auto rendererManager = GetRendererManagerById(sessionId);
     if (rendererManager != nullptr) {
-        int32_t destroyRet = rendererManager->PostDestroySessionEffect(sessionId, finalizeNow);
-        if (destroyRet == ERR_OPERATION_FAILED) {
-            // SendRequestSync timeout: the destroy request is still queued on the RM thread and
-            // could run after a Create issued now. Abort the clear BEFORE unbinding/resetting so
-            // switch callers stop before opening the new session; binding state stays intact
-            // and the switch can be retried. The late destroy is identity-gated, so retrying
-            // stays safe.
-            AUDIO_ERR_LOG("ClearAissSession: destroy timed out for session %{public}u, keep binding",
-                sessionId);
-            return destroyRet;
-        }
+        int32_t destroyRet = rendererManager->PostDestroySessionEffect(sessionId, finalizeNow)
+        // SendRequestSync timeout: the destroy request is still queued on the RM thread and
+        // could run after a Create issued now. Abort the clear BEFORE unbinding/resetting so
+        // switch callers stop before opening the new session; binding state stays intact
+        // and the switch can be retried. The late destroy is identity-gated, so retrying
+        // stays safe.
+        CHECK_AND_RETURN_RET_LOG(destroyRet != ERR_OPERATION_FAILED, destroyRet,
+            "ClearAissSession: destroy timed out for session %{public}u, keep binding", sessionId);
     }
 
     sessionEffectManager_->UnbindSessionEffect(sessionId);
