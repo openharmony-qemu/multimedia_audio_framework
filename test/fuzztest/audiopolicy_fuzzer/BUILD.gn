@@ -51,6 +51,7 @@ group("fuzztest") {
     "audiopipeselector_fuzzer:fuzztest",
     "audiopnpserver_fuzzer:fuzztest",
     "audiopolicyclient_fuzzer:fuzztest",
+    "audiopolicydump_fuzzer:fuzztest",
     "audiopolicymanager_fuzzer:fuzztest",
     "audiopolicymanagerdevice_fuzzer:fuzztest",
     "audiopolicymanagerlistenerstubimpl_fuzzer:fuzztest",
