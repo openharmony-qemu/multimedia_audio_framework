@@ -127,7 +127,7 @@ public:
     void SetCollabDoFade(HpaeProcessorType sceneType);
 
 private:
-    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
+    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false) override;
     int32_t StartRenderSink();
     bool IsMchDevice();
     bool IsRemoteDevice();

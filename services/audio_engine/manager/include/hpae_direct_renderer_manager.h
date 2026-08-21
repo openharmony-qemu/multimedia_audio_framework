@@ -118,7 +118,7 @@ public:
     void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
 
 private:
-    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
+    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false) override;
     int32_t StartRenderSink();
     std::shared_ptr<HpaeSinkInputNode> CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t CreateDirectNodes();

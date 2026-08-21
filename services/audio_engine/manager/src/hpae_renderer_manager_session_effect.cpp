@@ -322,10 +322,12 @@ void HpaeRendererManager::PostCreateSessionEffect(uint32_t sessionId, const std:
 
 void HpaeRendererManager::PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow)
 {
-    auto request = [this, sessionId, finalizeNow]() {
-        DestroySessionEffect(sessionId, finalizeNow);
+    auto request = [this, sessionId, finalizeNow]() -> int32_t {
+        return DestroySessionEffect(sessionId, finalizeNow);
     };
-    SendRequest(std::move(request), __func__);
+    int32_t ret = SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
+    CHECK_AND_RETURN_LOG(ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS),
+        "PostDestroySessionEffect: session %{public}u destroy ret=%{public}d", sessionId, ret);
 }
 
 int32_t HpaeRendererManager::SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value)
