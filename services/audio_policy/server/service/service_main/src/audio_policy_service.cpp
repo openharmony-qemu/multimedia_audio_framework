@@ -492,6 +492,14 @@ void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<std::shared_ptr<Aud
     }
 }
 
+void AudioPolicyService::UpdateDescWhenNoBTPermission(AudioDeviceDescriptor &desc)
+{
+    if (AudioPolicyUtils::GetInstance().IsWirelessDevice(desc.deviceType_)) {
+        desc.deviceName_ = "";
+        desc.macAddress_ = "";
+    }
+}
+
 bool AudioPolicyService::IsScoExistedInDescs(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     size_t targetIdx)
 {

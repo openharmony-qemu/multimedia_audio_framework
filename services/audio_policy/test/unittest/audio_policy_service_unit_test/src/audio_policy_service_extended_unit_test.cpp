@@ -403,6 +403,23 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, UpdateDescWhenNoBTPermission, TestS
 }
 
 /**
+* @tc.name  : UpdateDescWhenNoBTPermission_WirelessDevice
+* @tc.number: UpdateDescWhenNoBTPermission_001
+* @tc.desc  : Test UpdateDescWhenNoBTPermission clears deviceName and macAddress for wireless device
+*/
+HWTEST_F(AudioPolicyServiceExtendedUnitTest, UpdateDescWhenNoBTPermission_WirelessDevice, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc.deviceName_ = "BT_Device";
+    desc.macAddress_ = "AA:BB:CC:DD:EE:FF";
+
+    AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(desc);
+    EXPECT_EQ(desc.deviceName_, "");
+    EXPECT_EQ(desc.macAddress_, "");
+}
+
+/**
 * @tc.name  : Test AudioPolicyService.
 * @tc.number: RegisterDataObserver
 * @tc.desc  : Test RegisterDataObserver.

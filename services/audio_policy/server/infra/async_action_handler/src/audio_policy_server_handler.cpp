@@ -1804,18 +1804,28 @@ void AudioPolicyServerHandler::HandleRendererInfoEvent(const AppExecFwk::InnerEv
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     Trace trace("AudioPolicyServerHandler::HandleRendererInfoEvent");
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> filteredRendererChangeInfos;
+    for (auto &changeInfo : eventContextObj->audioRendererChangeInfos) {
+        CHECK_AND_CONTINUE_LOG(changeInfo != nullptr, "changeInfo is nullptr, continue");
+        auto copyInfo = std::make_shared<AudioRendererChangeInfo>(*changeInfo);
+        AudioPolicyService::GetAudioPolicyService().
+            UpdateDescWhenNoBTPermission(copyInfo->outputDeviceInfo);
+        filteredRendererChangeInfos.push_back(copyInfo);
+    }
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         Trace traceFor("for pid:" + std::to_string(it->first));
         std::shared_ptr<AudioPolicyClientHolder> rendererStateChangeCb = it->second;
-        if (rendererStateChangeCb == nullptr) {
-            AUDIO_ERR_LOG("rendererStateChangeCb : nullptr for client : %{public}d", it->first);
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(rendererStateChangeCb != nullptr,
+            "rendererStateChangeCb : nullptr for client : %{public}d", it->first);
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_RENDERER_STATE_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_RENDERER_STATE_CHANGE]) {
-                Trace traceCallback("rendererStateChangeCb->OnRendererStateChange");
-            rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
+            Trace traceCallback("rendererStateChangeCb->OnRendererStateChange");
+            if (rendererStateChangeCb->hasBTPermission_) {
+                rendererStateChangeCb->OnRendererStateChange(eventContextObj->audioRendererChangeInfos);
+            } else {
+                rendererStateChangeCb->OnRendererStateChange(filteredRendererChangeInfos);
+            }
         }
     }
     HILOG_COMM_INFO("[HandleRendererInfoEvent]pids: %{public}s size: %{public}zu", pidsStrForPrinting_.c_str(),
@@ -1827,16 +1837,26 @@ void AudioPolicyServerHandler::HandleCapturerInfoEvent(const AppExecFwk::InnerEv
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> filteredCapturerChangeInfos;
+    for (auto &changeInfo : eventContextObj->audioCapturerChangeInfos) {
+        CHECK_AND_CONTINUE_LOG(changeInfo != nullptr, "changeInfo is nullptr, continue");
+        auto copyInfo = std::make_shared<AudioCapturerChangeInfo>(*changeInfo);
+        AudioPolicyService::GetAudioPolicyService().
+            UpdateDescWhenNoBTPermission(copyInfo->inputDeviceInfo);
+        filteredCapturerChangeInfos.push_back(copyInfo);
+    }
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         std::shared_ptr<AudioPolicyClientHolder> capturerStateChangeCb = it->second;
-        if (capturerStateChangeCb == nullptr) {
-            AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}d", it->first);
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(capturerStateChangeCb != nullptr,
+            "capturerStateChangeCb : nullptr for client : %{public}d", it->first);
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_CAPTURER_STATE_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_CAPTURER_STATE_CHANGE]) {
-            capturerStateChangeCb->OnCapturerStateChange(eventContextObj->audioCapturerChangeInfos);
+            if (capturerStateChangeCb->hasBTPermission_) {
+                capturerStateChangeCb->OnCapturerStateChange(eventContextObj->audioCapturerChangeInfos);
+            } else {
+                capturerStateChangeCb->OnCapturerStateChange(filteredCapturerChangeInfos);
+            }
         }
     }
 }
@@ -1853,19 +1873,25 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
     if (audioPolicyClientProxyAPSCbsMap_.count(pid) == 0) {
         return;
     }
-    std::shared_ptr<AudioPolicyClientHolder> capturerStateChangeCb = audioPolicyClientProxyAPSCbsMap_.at(pid);
-    if (capturerStateChangeCb == nullptr) {
-        AUDIO_ERR_LOG("capturerStateChangeCb : nullptr for client : %{public}" PRId32 "", pid);
-        return;
+    std::shared_ptr<AudioPolicyClientHolder> rendererDeviceChangeCb = audioPolicyClientProxyAPSCbsMap_.at(pid);
+    CHECK_AND_RETURN_LOG(rendererDeviceChangeCb != nullptr,
+        "rendererDeviceChangeCb : nullptr for client : %{public}" PRId32 "", pid);
+    AudioDeviceDescriptor filteredOutputDeviceInfo = outputDeviceInfo;
+    AudioDeviceDescriptor filteredPreOutputDeviceInfo = preOutputDeviceInfo;
+    if (!rendererDeviceChangeCb->hasBTPermission_) {
+        AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(filteredOutputDeviceInfo);
+        AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(filteredPreOutputDeviceInfo);
     }
-    Trace traceCallback("capturerStateChangeCb->OnRendererDeviceChange sessionId:" + std::to_string(sessionId));
+    Trace traceCallback("rendererDeviceChangeCb->OnRendererDeviceChange sessionId:" + std::to_string(sessionId));
     if (clientCallbacksMap_.count(pid) > 0 &&
         clientCallbacksMap_[pid].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
         clientCallbacksMap_[pid][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
         cbFlag = true;
-        capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason, preOutputDeviceInfo);
+        rendererDeviceChangeCb->OnRendererDeviceChange(sessionId, filteredOutputDeviceInfo,
+            reason, filteredPreOutputDeviceInfo);
     }
-    AUDIO_INFO_LOG("deviceType:%{public}d pid:%{public}d cbFlag:%{public}d", outputDeviceInfo.deviceType_, pid, cbFlag);
+    AUDIO_INFO_LOG("deviceType:%{public}d pid:%{public}d cbFlag:%{public}d",
+        filteredOutputDeviceInfo.deviceType_, pid, cbFlag);
 }
 
 void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event)
