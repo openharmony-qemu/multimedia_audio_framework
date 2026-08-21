@@ -857,6 +857,7 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
             " Skip the interrupt operation");
         return true;
     }
+    if (IsIncomingSessionSilent(incomingInterrupt)) return true;
     if (sessionService_.IsAudioSessionActivated(incomingInterrupt.pid)) {
         // The strategy of activated AudioSession is the one with the highest priority.
         AudioConcurrencyMode concurrencyMode = sessionService_.GetSessionStrategy(incomingInterrupt.pid);
@@ -878,17 +879,23 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
         return true;
     } else {
         // There is no activated AudioSession for incoming stream. Check the strategy of AudioInterrupt.
-        AudioConcurrencyMode concurrencyMode = incomingInterrupt.sessionStrategy.concurrencyMode;
-        AUDIO_INFO_LOG("The concurrency mode of incoming interrupt: %{public}d", static_cast<int32_t>(concurrencyMode));
-        if (concurrencyMode == AudioConcurrencyMode::SILENT ||
-            concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
-            AUDIO_INFO_LOG("incoming stream is explicitly SILENT or MIX_WITH_OTHERS.");
+        if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
+            AUDIO_INFO_LOG("incoming stream is explicitly MIX_WITH_OTHERS");
             if (incomingInterrupt.uid == AUDIO_ID &&
             !(AudioSessionService::IsSameTypeForAudioSession(
                 incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType)))
                 return false;
             return true;
         }
+    }
+    return false;
+}
+
+bool AudioInterruptService::IsIncomingSessionSilent(const AudioInterrupt &incomingInterrupt)
+{
+    if (incomingInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::SILENT) {
+        AUDIO_INFO_LOG("The concurrency mode is SILENT");
+        return true;
     }
     return false;
 }
@@ -914,6 +921,7 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
             " Skip the interrupt operation");
         return true;
     }
+    if (IsIncomingSessionSilent(activeInterrupt)) return true;
     if (sessionService_.IsAudioSessionActivated(activeInterrupt.pid)) {
         // The strategy of activated AudioSession is the one with the highest priority.
         AudioConcurrencyMode concurrencyMode = sessionService_.GetSessionStrategy(activeInterrupt.pid);
@@ -934,11 +942,8 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
         return true;
     } else {
         // There is no active AudioSession for active stream. Check the strategy of AudioInterrupt.
-        AudioConcurrencyMode concurrencyMode = activeInterrupt.sessionStrategy.concurrencyMode;
-        AUDIO_INFO_LOG("The concurrency mode of active interrupt: %{public}d", static_cast<int32_t>(concurrencyMode));
-        if (concurrencyMode == AudioConcurrencyMode::SILENT ||
-            concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
-            AUDIO_INFO_LOG("active stream is explicitly SILENT or MIX_WITH_OTHERS.");
+        if (activeInterrupt.sessionStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
+            AUDIO_INFO_LOG("active stream is explicitly MIX_WITH_OTHERS.");
             if (activeInterrupt.uid == AUDIO_ID &&
             !(AudioSessionService::IsSameTypeForAudioSession(
                 incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType)))

@@ -347,6 +347,7 @@ private:
     bool IsIndependentStrategyValid(const AudioInterrupt &interrupt);
     bool CanMixForActiveSession(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         const AudioFocusEntry &focusEntry);
+    bool IsIncomingSessionSilent(const AudioInterrupt &incomingInterrupt);
     bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
