@@ -3210,7 +3210,7 @@ int32_t HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding, 
 
     auto rendererManager = GetRendererManagerById(sessionId);
     if (rendererManager != nullptr) {
-        int32_t destroyRet = rendererManager->PostDestroySessionEffect(sessionId, finalizeNow)
+        int32_t destroyRet = rendererManager->PostDestroySessionEffect(sessionId, finalizeNow);
         // SendRequestSync timeout: the destroy request is still queued on the RM thread and
         // could run after a Create issued now. Abort the clear BEFORE unbinding/resetting so
         // switch callers stop before opening the new session; binding state stays intact
