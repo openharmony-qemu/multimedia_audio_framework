@@ -42,6 +42,8 @@ private:
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdateWindowFocusStrategy(const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
+    void UpdatePCModeFocusStrategy(const AudioInterrupt &currentInterrupt,
+        const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdatePauseAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void UpdateMicFocusByUid(const AudioInterrupt &currentInterrupt,

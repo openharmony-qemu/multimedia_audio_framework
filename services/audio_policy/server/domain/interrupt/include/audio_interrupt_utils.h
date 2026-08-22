@@ -33,6 +33,7 @@ public:
     static bool IsMediaStream(AudioStreamType audioStreamType);
     static bool IsInterPhoneInterrupt(const AudioInterrupt &audioInterrupt);
     static bool GetWindowState(const AudioInterrupt &audioInterrupt);
+    static bool GetPCModeState();
 };
 
 } // namespace AudioStandard

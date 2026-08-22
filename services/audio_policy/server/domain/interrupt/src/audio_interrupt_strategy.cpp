@@ -154,6 +154,20 @@ void AudioInterruptStrategy::UpdateWindowFocusStrategy(const AudioInterrupt &cur
 #endif
 }
 
+void AudioInterruptStrategy::UpdatePCModeFocusStrategy(const AudioInterrupt &currentInterrupt,
+    const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
+{
+    if (!AudioInterruptUtils::IsMediaStream(currentInterrupt.audioFocusType.streamType) ||
+        !AudioInterruptUtils::IsMediaStream(incomingInterrupt.audioFocusType.streamType) ||
+        !AudioInterruptUtils::GetPCModeState()) {
+        return;
+    }
+    AUDIO_INFO_LOG("The current mode is pc");
+    focusEntry.actionOn = INCOMING;
+    focusEntry.hintType = INTERRUPT_HINT_NONE;
+    focusEntry.isReject = false;
+}
+
 void AudioInterruptStrategy::UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
     const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
@@ -250,6 +264,7 @@ void AudioInterruptStrategy::UpdateAudioFocusStrategy(const AudioInterrupt &curr
     UpdateMediaWithDuckStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateMicFocusByUid(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateWindowFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    UpdatePCModeFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdatePauseAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateAIBaseFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
