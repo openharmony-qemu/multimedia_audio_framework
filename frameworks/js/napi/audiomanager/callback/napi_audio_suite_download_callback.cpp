@@ -178,8 +178,8 @@ void NapiAudioSuiteDownloadCallback::SafeJsCallbackDownloadStatusWork(
         napi_value statusObj = nullptr;
         nstatus = NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(env, event->statusInfo[i], statusObj);
         if (nstatus != napi_ok || statusObj == nullptr) {
-            AUDIO_ERR_LOG("SafeJsCallbackDownloadStatusWork: SetValueAudioSuiteDownloadStatusInfo failed at index=%{public}zu",
-                i);
+            AUDIO_ERR_LOG("SafeJsCallbackDownloadStatusWork: "
+                "SetValueAudioSuiteDownloadStatusInfo failed at index=%{public}zu", i);
             continue;
         }
         napi_set_element(env, statusArray, static_cast<uint32_t>(i), statusObj);

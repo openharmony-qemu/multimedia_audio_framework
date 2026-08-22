@@ -196,7 +196,7 @@ napi_value NapiAudioSuiteDownloadManager::StartDownload(napi_env env, napi_callb
     context->GetCbInfo(env, info, inputParser);
 
     if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowErrorDoNotUse(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -240,7 +240,7 @@ napi_value NapiAudioSuiteDownloadManager::PauseDownload(napi_env env, napi_callb
     context->GetCbInfo(env, info, inputParser);
 
     if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowErrorDoNotUse(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -284,7 +284,7 @@ napi_value NapiAudioSuiteDownloadManager::CancelDownload(napi_env env, napi_call
     context->GetCbInfo(env, info, inputParser);
 
     if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowErrorDoNotUse(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -328,7 +328,7 @@ napi_value NapiAudioSuiteDownloadManager::StartBackgroundDownload(napi_env env, 
     context->GetCbInfo(env, info, inputParser);
 
     if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowErrorDoNotUse(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -372,7 +372,7 @@ napi_value NapiAudioSuiteDownloadManager::GetDownloadStatus(napi_env env, napi_c
     context->GetCbInfo(env, info, inputParser);
 
     if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowErrorDoNotUse(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -426,7 +426,7 @@ napi_value NapiAudioSuiteDownloadManager::UninstallCloudRom(napi_env env, napi_c
     context->GetCbInfo(env, info, inputParser);
 
     if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
-        NapiAudioError::ThrowErrorDoNotUse(env, context->errCode, context->errMessage);
+        NapiAudioError::ThrowError(env, context->errMessage.c_str(), context->errCode);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -457,7 +457,7 @@ void NapiAudioSuiteDownloadManager::RegisterDownloadStatusCallback(napi_env env,
     std::lock_guard<std::mutex> lock(napi->downloadCbMutex_);
     if (args[PARAM1] == nullptr) {
         AUDIO_ERR_LOG("RegisterDownloadStatusCallback: callback is nullptr");
-        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INVALID_PARAM, "callback function is nullptr");
+        NapiAudioError::ThrowError(env, "callback function is nullptr", NAPI_ERR_INVALID_PARAM);
         return;
     }
 
@@ -465,13 +465,13 @@ void NapiAudioSuiteDownloadManager::RegisterDownloadStatusCallback(napi_env env,
         napi->downloadCallback_ = std::make_shared<NapiAudioSuiteDownloadCallback>(env);
         if (napi->downloadCallback_ == nullptr) {
             AUDIO_ERR_LOG("RegisterDownloadStatusCallback: Memory Allocation Failed");
-            NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_NO_MEMORY, "Memory Allocation Failed");
+            NapiAudioError::ThrowError(env, "Memory Allocation Failed", NAPI_ERR_NO_MEMORY);
             return;
         }
         int32_t ret = napi->audioSuiteDownloadMgr_->RegisterDownloadStatusCallback(napi->downloadCallback_);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("RegisterDownloadStatusCallback failed, ret=%{public}d", ret);
-            NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_SYSTEM, "RegisterDownloadStatusCallback failed");
+            NapiAudioError::ThrowError(env, "RegisterDownloadStatusCallback failed", NAPI_ERR_SYSTEM);
             napi->downloadCallback_ = nullptr;
             return;
         }
@@ -533,8 +533,8 @@ napi_value NapiAudioSuiteDownloadManager::On(napi_env env, napi_callback_info in
     std::string type = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
     if (type != DOWNLOAD_STATUS_CHANGE_CALLBACK_NAME_NAPI) {
         AUDIO_ERR_LOG("On: type %{public}s is not supported", type.c_str());
-        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of type is not supported");
+        NapiAudioError::ThrowError(env,
+            "parameter verification failed: The param of type is not supported", NAPI_ERR_INVALID_PARAM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -561,8 +561,8 @@ napi_value NapiAudioSuiteDownloadManager::Off(napi_env env, napi_callback_info i
     std::string type = NapiParamUtils::GetStringArgument(env, argv[PARAM0]);
     if (type != DOWNLOAD_STATUS_CHANGE_CALLBACK_NAME_NAPI) {
         AUDIO_ERR_LOG("Off: type %{public}s is not supported", type.c_str());
-        NapiAudioError::ThrowErrorDoNotUse(env, NAPI_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of type is not supported");
+        NapiAudioError::ThrowError(env,
+            "parameter verification failed: The param of type is not supported", NAPI_ERR_INVALID_PARAM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
