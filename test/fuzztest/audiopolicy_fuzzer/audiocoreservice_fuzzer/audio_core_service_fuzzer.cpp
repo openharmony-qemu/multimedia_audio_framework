@@ -550,12 +550,13 @@ void AudioCoreServiceUpdateStreamPropInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string adapterName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
     std::string pipeName = fdp.ConsumeRandomLengthString(MAX_STRING_LEN);
+    std::string networkId = ConsumeString(fdp, "fuzz_network_id");
     DeviceStreamInfo streamInfo;
     std::list<DeviceStreamInfo> deviceStreamInfo;
     deviceStreamInfo.push_back(streamInfo);
     std::list<std::string> supportDevices;
     supportDevices.push_back(fdp.ConsumeRandomLengthString(MAX_STRING_LEN));
-    audioCoreService->UpdateStreamPropInfo(adapterName, pipeName, deviceStreamInfo, supportDevices);
+    audioCoreService->UpdateStreamPropInfo(adapterName, pipeName, deviceStreamInfo, supportDevices, networkId);
 }
 
 void AudioCoreServiceGetStreamPropInfoSizeFuzzTest(FuzzedDataProvider& fdp)

@@ -226,7 +226,8 @@ static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &devi
 }
 
 void AudioCoreConfigManager::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
-    const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices)
+    const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices,
+    const std::string &networkId)
 {
     CHECK_AND_RETURN_LOG(deviceStreamInfo.size() > 0, "deviceStreamInfo is empty");
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps;
@@ -242,14 +243,17 @@ void AudioCoreConfigManager::UpdateStreamPropInfo(const std::string &adapterName
         }
     }
 
-    AUDIO_INFO_LOG("start to update streamProps for: %{public}s", pipeName.c_str());
-    audioPolicyConfig_.UpdateDynamicStreamProps(adapterName, pipeName, streamProps);
+    AUDIO_INFO_LOG("start to update streamProps for: %{public}s, networkId: %{public}s", pipeName.c_str(),
+        GetEncryptStr(networkId).c_str());
+    audioPolicyConfig_.UpdateDynamicStreamProps(adapterName, pipeName, streamProps, networkId);
 }
 
-void AudioCoreConfigManager::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName)
+void AudioCoreConfigManager::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+    const std::string &networkId)
 {
-    AUDIO_INFO_LOG("start to clear streamProps for: %{public}s", pipeName.c_str());
-    audioPolicyConfig_.ClearDynamicStreamProps(adapterName, pipeName);
+    AUDIO_INFO_LOG("start to clear streamProps for: %{public}s, networkId: %{public}s", pipeName.c_str(),
+        GetEncryptStr(networkId).c_str());
+    audioPolicyConfig_.ClearDynamicStreamProps(adapterName, pipeName, networkId);
 }
 
 void AudioCoreConfigManager::SetNormalVoipFlag(const bool &normalVoipFlag)
@@ -534,12 +538,13 @@ bool AudioCoreConfigManager::GetFastStreamSupport(AudioStreamInfo &streamInfo,
     return false;
 }
 
-uint32_t AudioCoreConfigManager::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName)
+uint32_t AudioCoreConfigManager::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName,
+    const std::string &networkId)
 {
     uint32_t size = audioPolicyConfig_.GetConfigStreamPropsSize(adapterName, pipeName);
     CHECK_AND_RETURN_RET(size == 0, size);
     AUDIO_INFO_LOG("no stream prop config, get dynamic size");
-    return audioPolicyConfig_.GetDynamicStreamPropsSize(adapterName, pipeName);
+    return audioPolicyConfig_.GetDynamicStreamPropsSize(adapterName, pipeName, networkId);
 }
 
 uint32_t AudioCoreConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc)
@@ -855,7 +860,7 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
         }
     }
 
-    bool matchState = MatchStreamPropInfo(info, pipeIt->second, temp);
+    bool matchState = MatchStreamPropInfo(info, pipeIt->second, temp, newDeviceDesc->networkId_);
     CHECK_AND_RETURN(!matchState);
 
     if (SupportImplicitConversion(desc->routeFlag_)) {
@@ -867,7 +872,7 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
     pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
     AudioStreamInfo streamInfo(desc->streamInfo_.samplingRate, ENCODING_PCM, desc->streamInfo_.format,
         desc->streamInfo_.channels);
-    auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, streamInfo);
+    auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, streamInfo, newDeviceDesc->networkId_);
     if (streamProp != nullptr) {
         AUDIO_INFO_LOG("Select primary attribute");
         info = streamProp;
@@ -980,16 +985,18 @@ void AudioCoreConfigManager::SortStreamPropInfosBySampleRate(
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetDynamicStreamPropInfoFromPipe(
-    std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo matchStreamInfo)
+    std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo matchStreamInfo, const std::string &networkId)
 {
-    std::unique_lock<std::mutex> lock(info->dynamicMtx_);
-    CHECK_AND_RETURN_RET(info && !info->dynamicStreamPropInfos_.empty(), nullptr);
+    CHECK_AND_RETURN_RET(info != nullptr, nullptr);
+    std::list<std::shared_ptr<PipeStreamPropInfo>> dynamicStreamPropInfos = info->GetDynamicStreamPropInfos(networkId);
+    CHECK_AND_RETURN_RET(!dynamicStreamPropInfos.empty(), nullptr);
 
-    AUDIO_INFO_LOG("use dynamic streamProp, matchStreamInfo: channelLayout[%{public}" PRIu64 "], channels[%{public}d], "
-        "samplingRate[%{public}d], format[%{public}d]", matchStreamInfo.channelLayout, matchStreamInfo.channels,
-        matchStreamInfo.samplingRate, matchStreamInfo.format);
+    AUDIO_INFO_LOG("use dynamic streamProp, networkId: %{public}s, matchStreamInfo: channelLayout[%{public}" PRIu64
+        "], channels[%{public}d], samplingRate[%{public}d], format[%{public}d]", GetEncryptStr(networkId).c_str(),
+        matchStreamInfo.channelLayout, matchStreamInfo.channels, matchStreamInfo.samplingRate,
+        matchStreamInfo.format);
 
-    SortStreamPropInfosBySampleRate(info->dynamicStreamPropInfos_);
+    SortStreamPropInfosBySampleRate(dynamicStreamPropInfos);
 
     std::list<std::shared_ptr<PipeStreamPropInfo>> matchInfos;
     std::function<bool(std::shared_ptr<PipeStreamPropInfo>)> limitFunc;
@@ -998,12 +1005,12 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetDynamicStreamProp
         CHECK_AND_RETURN_RET(streamPropInfo != nullptr, false);
         return streamPropInfo->channelLayout_ == matchStreamInfo.channelLayout;
     };
-    matchInfos = SelectStreamPropInfo(info->dynamicStreamPropInfos_, limitFunc);
+    matchInfos = SelectStreamPropInfo(dynamicStreamPropInfos, limitFunc);
     // second match channels, when channelLayout mismatching, use streamProp with largest channels
     if (matchInfos.empty()) {
         AUDIO_INFO_LOG("not match channelLayout, match channels");
         matchStreamInfo.channels = AudioChannel::STEREO;
-        for (auto streamProp : info->dynamicStreamPropInfos_) {
+        for (auto streamProp : dynamicStreamPropInfos) {
             CHECK_AND_CONTINUE(streamProp != nullptr);
             matchStreamInfo.channels = streamProp->channels_ > matchStreamInfo.channels ?
                 streamProp->channels_ : matchStreamInfo.channels;
@@ -1012,13 +1019,13 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetDynamicStreamProp
             CHECK_AND_RETURN_RET(streamPropInfo != nullptr, false);
             return streamPropInfo->channels_ == matchStreamInfo.channels;
         };
-        matchInfos = SelectStreamPropInfo(info->dynamicStreamPropInfos_, limitFunc);
+        matchInfos = SelectStreamPropInfo(dynamicStreamPropInfos, limitFunc);
     }
 
     // third match sampleRate
     if (matchInfos.empty()) {
         AUDIO_INFO_LOG("not match channels, just match sampleRate");
-        matchInfos = info->dynamicStreamPropInfos_;
+        matchInfos = dynamicStreamPropInfos;
     }
     matchStreamInfo.samplingRate = SelectMatchingSampleRate(matchInfos, matchStreamInfo.samplingRate);
     limitFunc = [&matchStreamInfo](std::shared_ptr<PipeStreamPropInfo> streamPropInfo) {
@@ -1029,13 +1036,15 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetDynamicStreamProp
 
     return !matchInfos.empty() ?
         GetSuitableStreamPropInfo(matchStreamInfo.format, matchStreamInfo.samplingRate, matchInfos) :
-        GetSuitableStreamPropInfo(matchStreamInfo.format, matchStreamInfo.samplingRate, info->dynamicStreamPropInfos_);
+        GetSuitableStreamPropInfo(matchStreamInfo.format, matchStreamInfo.samplingRate, dynamicStreamPropInfos);
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetDynamicStreamPropInfoFromPipeForViVid(
-    std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo streamInfo)
+    std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo streamInfo, const std::string &networkId)
 {
-    CHECK_AND_RETURN_RET_LOG(info != nullptr && !info->dynamicStreamPropInfos_.empty(), nullptr, "info is null");
+    CHECK_AND_RETURN_RET_LOG(info != nullptr, nullptr, "info is null");
+    std::list<std::shared_ptr<PipeStreamPropInfo>> dynamicStreamPropInfos = info->GetDynamicStreamPropInfos(networkId);
+    CHECK_AND_RETURN_RET_LOG(!dynamicStreamPropInfos.empty(), nullptr, "dynamicStreamPropInfos is empty");
     std::vector<std::pair<AudioChannel, AudioChannelLayout>> channelLayouts = {
         {CHANNEL_12, CH_LAYOUT_7POINT1POINT4},
         {CHANNEL_8, CH_LAYOUT_5POINT1POINT2}
@@ -1043,25 +1052,26 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetDynamicStreamProp
     AudioStreamInfo matchStreamInfo = streamInfo;
     for (auto layout : channelLayouts) {
         // first match channelLayout
-        for (auto &streamProp : info->dynamicStreamPropInfos_) {
+        for (auto &streamProp : dynamicStreamPropInfos) {
             CHECK_AND_CONTINUE(streamProp != nullptr);
             if (streamProp->channelLayout_ == layout.second) {
                 matchStreamInfo.channels = layout.first;
                 matchStreamInfo.channelLayout = layout.second;
                 AUDIO_INFO_LOG("match layout as %{public}llx", static_cast<unsigned long long>(layout.second));
-                return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo);
+                return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo, networkId);
             }
         }
     }
-    return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo);
+    return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo, networkId);
 }
 
 bool AudioCoreConfigManager::MatchStreamPropInfo(std::shared_ptr<PipeStreamPropInfo> &info,
-    std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo, const AudioStreamInfo &streamInfo)
+    std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo, const AudioStreamInfo &streamInfo,
+    const std::string &networkId)
 {
     AudioStreamInfo temp(streamInfo.samplingRate, streamInfo.encoding, streamInfo.format, streamInfo.channels,
         streamInfo.channelLayout);
-    std::shared_ptr<PipeStreamPropInfo> streamProp = GetStreamPropInfoFromPipe(adapterPipeInfo, temp);
+    std::shared_ptr<PipeStreamPropInfo> streamProp = GetStreamPropInfoFromPipe(adapterPipeInfo, temp, networkId);
     if (streamProp != nullptr) {
         info = streamProp;
         return true;
@@ -1070,16 +1080,16 @@ bool AudioCoreConfigManager::MatchStreamPropInfo(std::shared_ptr<PipeStreamPropI
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoFromPipe(
-    std::shared_ptr<AdapterPipeInfo> &info, const AudioStreamInfo &streamInfo)
+    std::shared_ptr<AdapterPipeInfo> &info, const AudioStreamInfo &streamInfo, const std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(info != nullptr, nullptr, "info is nullptr");
     // use dynamic streamprop
-    if (!info->dynamicStreamPropInfos_.empty()) {
+    if (info->GetDynamicStreamPropInfosSize(networkId) != 0) {
         if (streamInfo.encoding == AudioEncodingType::ENCODING_AUDIOVIVID) {
-            return GetDynamicStreamPropInfoFromPipeForViVid(info, streamInfo);
+            return GetDynamicStreamPropInfoFromPipeForViVid(info, streamInfo, networkId);
         } else {
             AudioStreamInfo matchStreamInfo = streamInfo;
-            return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo);
+            return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo, networkId);
         }
     }
 
