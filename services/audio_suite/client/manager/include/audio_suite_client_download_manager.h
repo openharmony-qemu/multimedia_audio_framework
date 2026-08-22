@@ -31,7 +31,7 @@ public:
 
     int32_t RegisterDownloadStatusCallback(std::shared_ptr<DownloadStatusCallback> callback) override;
     int32_t UnregisterDownloadStatusCallback() override;
-    int32_t StartDownload(const std::string& featureName, int32_t networkType) override;
+    int32_t StartDownload(const std::string& featureName, int32_t networkType = 0) override;
     int32_t PauseDownload(const std::string& featureName) override;
     int32_t CancelDownload(const std::string& featureName) override;
     int32_t StartBackgroundDownload(const std::string& featureName) override;

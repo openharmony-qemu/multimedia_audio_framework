@@ -60,7 +60,7 @@ public:
     // for ohaudiosuite
     virtual int32_t RegisterDownloadStatusCallback(std::shared_ptr<DownloadStatusCallback> callback) = 0;
     virtual int32_t UnregisterDownloadStatusCallback() = 0;
-    virtual int32_t StartDownload(const std::string& featureName, int32_t networkType) = 0;
+    virtual int32_t StartDownload(const std::string& featureName, int32_t networkType = 0) = 0;
     virtual int32_t PauseDownload(const std::string& featureName) = 0;
     virtual int32_t CancelDownload(const std::string& featureName) = 0;
     virtual int32_t StartBackgroundDownload(const std::string& featureName) = 0;
