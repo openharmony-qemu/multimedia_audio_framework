@@ -151,10 +151,6 @@ public:
         NETWORK_TYPE_CELLULAR_AND_WIFI = 7
     };
 
-    enum AudioSuiteDownloadStatus {
-        DOWNLOAD_STATUS_DOWNLOADING = 20
-    };
-
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
