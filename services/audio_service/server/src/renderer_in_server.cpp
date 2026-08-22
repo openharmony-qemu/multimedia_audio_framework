@@ -1460,9 +1460,12 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     AUDIO_INFO_LOG("New spanSize from stream: %{public}zu", newSpanSizeInFrame);
     
+    uint32_t newRouteFlag = stream_->GetRouteFlag();
+    int32_t rendererFlags = GetRendererFlagsByRoute(newRouteFlag);
+
     size_t newEngineSizeInFrame = newSpanSizeInFrame;
-    if (processConfig_.rendererInfo.rendererFlags != AUDIO_FLAG_MMAP &&
-        processConfig_.rendererInfo.rendererFlags != AUDIO_FLAG_VOIP_FAST) {
+    if (rendererFlags != AUDIO_FLAG_MMAP &&
+        rendererFlags != AUDIO_FLAG_VOIP_FAST) {
         newEngineSizeInFrame = newSpanSizeInFrame * DEFAULT_SPAN_SIZE;
     }
     
@@ -1473,15 +1476,12 @@ int32_t RendererInServer::RefreshServerBufferForSpanSizeUpdate(std::shared_ptr<I
     CHECK_AND_RETURN_RET_LOG(sampleRate != 0, ERR_INVALID_PARAM,
         "RefreshServerBufferForSpanSizeUpdate: sampleRate is zero, cannot compute spanTime");
 
-    uint32_t newRouteFlag = stream_->GetRouteFlag();
-    int32_t rendererFlags = GetRendererFlagsByRoute(newRouteFlag);
-
     if (audioServerBuffer_ != nullptr && newSpanSizeInFrame > 0) {
         AUDIO_INFO_LOG("SetPendingSpanSize: sessionId:%{public}u spanSize:%{public}zu engineSize:%{public}zu "
             "routeFlag:%{public}u isLowLatency:%{public}d",
             streamIndex_, newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag,
-            processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_MMAP ||
-            processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_FAST);
+            rendererFlags == AUDIO_FLAG_MMAP ||
+            rendererFlags == AUDIO_FLAG_VOIP_FAST);
         audioServerBuffer_->SetPendingSpanSize(newSpanSizeInFrame, newEngineSizeInFrame, newRouteFlag);
     }
 
