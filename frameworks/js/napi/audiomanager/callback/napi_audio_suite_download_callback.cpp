@@ -171,8 +171,11 @@ void NapiAudioSuiteDownloadCallback::SafeJsCallbackDownloadStatusWork(
 
     napi_value statusArray = nullptr;
     napi_status nstatus = napi_create_array(env, &statusArray);
-    CHECK_AND_RETURN_LOG(nstatus == napi_ok && statusArray != nullptr,
-        "SafeJsCallbackDownloadStatusWork: create array failed");
+    if (nstatus != napi_ok || statusArray == nullptr) {
+        AUDIO_ERR_LOG("SafeJsCallbackDownloadStatusWork: create array failed, status=%{public}d", nstatus);
+        napi_close_handle_scope(env, scope);
+        return;
+    }
 
     for (size_t i = 0; i < event->statusInfo.size(); i++) {
         napi_value statusObj = nullptr;

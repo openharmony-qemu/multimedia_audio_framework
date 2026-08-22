@@ -99,16 +99,6 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioVolumeModeMap = {
     {"APP_INDIVIDUAL", AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL}
 };
 
-const std::map<std::string, int32_t> NapiAudioEnum::networkTypeMap = {
-    {"CELLUAR", 1},
-    {"WIFI", 6},
-    {"CELLULAR_AND_WIFI", 7}
-};
-
-const std::map<std::string, int32_t> NapiAudioEnum::downloadStatusMap = {
-    {"Downloading", 20}
-};
-
 const std::map<std::string, int32_t> NapiAudioEnum::streamUsageMap = {
     {"STREAM_USAGE_UNKNOWN", STREAM_USAGE_UNKNOWN},
     {"STREAM_USAGE_MEDIA", STREAM_USAGE_MEDIA},
@@ -641,6 +631,11 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioSessionBehaviorFlagsMap
     {"VOIP_CAPTURE_MIX_WITH_OTHERS", static_cast<int32_t>(AudioSessionBehaviorFlags::VOIP_CAPTURE_MIX_WITH_OTHERS)},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::audioSuiteNetworkType = {
+    {"WIFI", NETWORK_TYPE_WIFI},
+    {"CELLULAR_AND_WIFI", NETWORK_TYPE_CELLULAR_AND_WIFI}
+};
+
 const std::map<std::string, int32_t> NapiAudioEnum::audioSeparationVolumeTypeMap = {
     {"VOLUME_TYPE_VOCAL", 0},
 };
@@ -825,8 +820,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, BluetoothAndNearlinkPreferredRecordCategoryMap)),
         DECLARE_NAPI_PROPERTY("AudioSessionBehaviorFlags",
             CreateEnumObject(env, audioSessionBehaviorFlagsMap)),
-        DECLARE_NAPI_PROPERTY("NetworkType", CreateEnumObject(env, networkTypeMap)),
-        DECLARE_NAPI_PROPERTY("DownloadStatus", CreateEnumObject(env, downloadStatusMap)),
+        DECLARE_NAPI_PROPERTY("NetworkType", CreateEnumObject(env, audioSuiteNetworkType)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }

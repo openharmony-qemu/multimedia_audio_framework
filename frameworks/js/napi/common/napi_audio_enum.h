@@ -147,7 +147,6 @@ public:
     };
 
     enum AudioSuiteNetworkType {
-        NETWORK_TYPE_CELLUAR = 1,
         NETWORK_TYPE_WIFI = 6,
         NETWORK_TYPE_CELLULAR_AND_WIFI = 7
     };
@@ -352,9 +351,8 @@ private:
     static const std::map<std::string, int32_t> audioLatencyTypeMap;
     static const std::map<std::string, int32_t> BluetoothAndNearlinkPreferredRecordCategoryMap;
     static const std::map<std::string, int32_t> audioSessionBehaviorFlagsMap;
+    static const std::map<std::string, int32_t> audioSuiteNetworkType;
     static const std::map<std::string, int32_t> audioSeparationVolumeTypeMap;
-    static const std::map<std::string, int32_t> networkTypeMap;
-    static const std::map<std::string, int32_t> downloadStatusMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;
