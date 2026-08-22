@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "util/id_handler.h"
 #include "manager/hdi_adapter_factory.h"
+#include "audio_utils.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B8B
@@ -87,7 +88,8 @@ uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::str
     bool tryCreate)
 {
     uint32_t id = IdHandler::GetInstance().GetId(base, type, info);
-    AUDIO_INFO_LOG("base: %{public}u, type: %{public}u, info: %{public}s, id: %{public}u", base, type, info.c_str(),
+    std::string infoLog = IdHandler::GetInstance().IsRemoteType(type) ? GetEncryptStr(info) : info;
+    AUDIO_INFO_LOG("base: %{public}u, type: %{public}u, info: %{public}s, id: %{public}u", base, type, infoLog.c_str(),
         id);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
     ProcessIdUseCount(id, isResident, tryCreate);
@@ -108,9 +110,10 @@ uint32_t HdiAdapterManager::GetCaptureIdByDeviceClass(const std::string &deviceC
     const std::string &info, bool isResident, uint32_t routeFlag, bool tryCreate)
 {
     uint32_t id = IdHandler::GetInstance().GetCaptureIdByDeviceClass(deviceClass, sourceType, info, routeFlag);
+    std::string infoLog = IdHandler::GetInstance().IsRemoteClass(deviceClass) ? GetEncryptStr(info) : info;
     AUDIO_INFO_LOG("Device class: %{public}s, sourceType: %{public}d, info: %{public}s, "
         "id: %{public}u, routeFlag: %{public}u",
-        deviceClass.c_str(), sourceType, info.c_str(), id, routeFlag);
+        deviceClass.c_str(), sourceType, infoLog.c_str(), id, routeFlag);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
     ProcessIdUseCount(id, isResident, tryCreate);
     return id;

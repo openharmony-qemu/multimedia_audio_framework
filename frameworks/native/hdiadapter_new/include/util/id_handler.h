@@ -52,6 +52,8 @@ public:
     uint32_t ParseBase(uint32_t id);
     uint32_t ParseType(uint32_t id);
     std::string ParseInfo(uint32_t id);
+    bool IsRemoteType(HdiIdType type);
+    bool IsRemoteClass(const std::string &deviceClass);
 
 private:
     IdHandler() = default;
