@@ -3063,6 +3063,8 @@ int32_t AudioPolicyServer::SetOffloadAllowedForUid(uint32_t uid, bool allowed)
 int32_t AudioPolicyServer::SetAppSilentOnDisplay(const int32_t displayId)
 {
     if (interruptService_ != nullptr) {
+        bool ret = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppSilentOnDisplay: No system permission");
         return StandaloneModeManager::GetInstance().SetAppSilentOnDisplay(IPCSkeleton::GetCallingPid(), displayId);
     }
     return ERR_UNKNOWN;
