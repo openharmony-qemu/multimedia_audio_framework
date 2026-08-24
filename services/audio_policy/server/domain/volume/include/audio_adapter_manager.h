@@ -486,6 +486,7 @@ private:
     bool IsLowLatencyRoute(uint32_t routeFlag);
     void DepressVolume(float &volume, int32_t volumeLevel,
         AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device);
+    float DepressMediaVolumeForHeadSet(float mediaVolume, float volumeReduction, float volumeLimit);
     float GetVolumeReductionRatio(AudioStreamType streamUsage);
     int32_t CreateHdiPort(std::shared_ptr<AudioPipeInfo> pipeInfo, AudioIOHandle &ioHandle);
     AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
