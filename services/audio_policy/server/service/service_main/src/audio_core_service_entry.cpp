@@ -772,7 +772,7 @@ int32_t AudioCoreService::EventEntry::ReleasePrimaryExtraPipe(AudioIOHandle id, 
     CHECK_AND_RETURN_RET_LOG(coreService_, ERR_INVALID_PARAM, "coreService_ is nullptr");
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     std::lock_guard<std::mutex> primaryLock(coreService_->primaryExtraCloseMutex_);
-    // Guard: if isInRelease was set false, the pipe was already force-closed by ForceClosePipeForDevice
+    // Guard: if isInRelease was set false, the pipe was already sync-closed by RemoveUnusedPipe
     auto releaseIt = coreService_->isPrimaryExtraInReleaseMap_.find(pipeName);
     if (releaseIt == coreService_->isPrimaryExtraInReleaseMap_.end() || !releaseIt->second) {
         AUDIO_DEBUG_LOG("primary_extra %{public}s already force-closed or not in release, skip",

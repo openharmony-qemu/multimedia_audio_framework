@@ -429,7 +429,7 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     }
     audioIOHandleMap_.NotifyUnmutePort();
     pipeManager_->UpdateRendererPipeInfos(pipeInfos);
-    RemoveUnusedPipe();
+    RemoveUnusedPipe(reason);
     NotifyRouteUpdate(streamDescs);
     return SUCCESS;
 }
@@ -1014,7 +1014,7 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
             // Do nothing
         }
     }
-    RemoveUnusedPipe();
+    RemoveUnusedPipe(reason);
     return SUCCESS;
 }
 
@@ -1222,9 +1222,10 @@ void AudioCoreService::ProcessInputPipeReload(std::shared_ptr<AudioPipeInfo> pip
     ProcessInputPipeUpdate(pipeInfo, flag);
 }
 
-void AudioCoreService::RemoveUnusedPipe()
+void AudioCoreService::RemoveUnusedPipe(const AudioStreamDeviceChangeReasonExt reason)
 {
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedPipe();
+    bool isOldDeviceUnavailable = reason.IsOldDeviceUnavaliable() || reason.IsOldDeviceUnavaliableExt();
     for (auto pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         HILOG_COMM_INFO("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
@@ -1249,9 +1250,19 @@ void AudioCoreService::RemoveUnusedPipe()
             UpdateNearLinkCollaborativeState(false);
         } else if ((pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_NORMAL) &&
             pipeInfo->moduleInfo_.className == PRIMARY_EXTRA_CLASS) {
-            DelayReleasePrimaryExtraPipe(pipeInfo->id_, pipeInfo->paIndex_, pipeInfo->name_,
-                pipeInfo->moduleInfo_.name);
-            continue;
+            if (!isOldDeviceUnavailable) {
+                DelayReleasePrimaryExtraPipe(pipeInfo->id_, pipeInfo->paIndex_, pipeInfo->name_,
+                    pipeInfo->moduleInfo_.name);
+                continue;
+            }
+            {
+                std::lock_guard<std::mutex> lock(primaryExtraCloseMutex_);
+                isPrimaryExtraOpenedMap_[pipeInfo->name_] = false;
+                isPrimaryExtraInReleaseMap_[pipeInfo->name_] = false;
+                primaryExtraCloseCondition_.notify_all();
+            }
+            AUDIO_INFO_LOG("primary_extra %{public}s close immediately (old device unavailable)",
+                pipeInfo->name_.c_str());
         }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
@@ -3003,40 +3014,6 @@ void AudioCoreService::UpdateFastState(std::shared_ptr<AudioPipeInfo> pipeInfo)
         isFastOpenedMap_[pipeInfo->name_] = true;
     }
     fastCloseCondition_.notify_all();
-}
-
-void AudioCoreService::ForceClosePipeForDevice(const std::string &pipeName)
-{
-    // This method runs in eventMutex_-held context (brought in by device-offline dispatch chain).
-    // MUST NOT call any EventEntry method, otherwise self-deadlock on eventMutex_ (non-recursive).
-    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
-
-    // 1) Lookup close info under pipeListLock_ (value-copy out, no shared_ptr leaked)
-    AudioIOHandle id = 0;
-    uint32_t paIndex = 0;
-    std::string moduleName;
-    if (!pipeManager_->GetPipeCloseInfoByName(pipeName, id, paIndex, moduleName)) {
-        AUDIO_DEBUG_LOG("%{public}s pipe not found, skip force close", pipeName.c_str());
-        return;
-    }
-
-    // 2) Coordinate with delayed-close thread: set isOpened=false, isInRelease=false, notify
-    {
-        std::lock_guard<std::mutex> lock(primaryExtraCloseMutex_);
-        isPrimaryExtraOpenedMap_[pipeName] = false;
-        isPrimaryExtraInReleaseMap_[pipeName] = false;
-        primaryExtraCloseCondition_.notify_all();
-    }
-    // 3) Inline HDI close (mirrors EventEntry::ReleasePrimaryExtraPipe cleanup exactly)
-    int32_t ret = audioPolicyManager_.CloseAudioPort(id, paIndex);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("CloseAudioPort failed in ForceClosePipeForDevice, id:%{public}u, ret:%{public}d",
-            id, ret);
-    }
-    pipeManager_->RemoveAudioPipeInfo(id);
-    audioIOHandleMap_.DelIOHandleInfo(moduleName);
-    audioPolicyManager_.RemoveAudioPipeVolume(id);
-    AUDIO_INFO_LOG("ForceClose %{public}s done, id:%{public}u", pipeName.c_str(), id);
 }
 
 void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
