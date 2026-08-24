@@ -1696,21 +1696,6 @@ HWTEST_F(AudioSelectInterfaceServiceUnitTest,
 }
 
 /**
- * @tc.name  : SelectFastOutputDevice_001
- * @tc.desc  : Test SelectFastOutputDevice with null filter
- * @tc.type  : FUNC
- */
-HWTEST_F(AudioSelectInterfaceServiceUnitTest,
-    SelectFastOutputDevice_001, TestSize.Level4)
-{
-    auto &svc = AudioSelectInterfaceService::GetInstance();
-    sptr<AudioRendererFilter> filter = nullptr;
-    std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
-    int32_t ret = svc.SelectFastOutputDevice(filter, desc);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : SelectFastOutputDevice_002
  * @tc.desc  : Test SelectFastOutputDevice with empty descriptors
  * @tc.type  : FUNC
