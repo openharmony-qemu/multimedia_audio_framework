@@ -707,7 +707,7 @@ int32_t AudioCoreService::EventEntry::SetSessionDefaultOutputDevice(
     const int32_t callerPid, const DeviceType &deviceType, int32_t callerUid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->SetSessionDefaultOutputDevice(callerPid, deviceType, callerUid);
+    return coreService_->SetSessionDefaultOutputDevice(callerPid, deviceType, false, callerUid);
 }
 
 int32_t AudioCoreService::EventEntry::GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType)
