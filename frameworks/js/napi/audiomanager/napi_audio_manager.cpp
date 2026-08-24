@@ -31,10 +31,10 @@
 #include "audio_errors.h"
 #include "audio_manager_log.h"
 #include "napi_audio_debugging_manager.h"
-#include "napi_audio_suite_download_manager.h"
 #include "napi_dfx_utils.h"
 #ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+#include "napi_audio_suite_download_manager.h"
 #include "xpower_event_js.h"
 #endif
 #endif
@@ -1728,6 +1728,7 @@ napi_value NapiAudioManager::GetDebuggingManager(napi_env env, napi_callback_inf
 
 napi_value NapiAudioManager::GetSuiteDownloadManager(napi_env env, napi_callback_info info)
 {
+#ifndef CROSS_PLATFORM
     size_t argCount = PARAM0;
     napi_status status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
     if (status != napi_ok || argCount != 0) {
@@ -1742,6 +1743,9 @@ napi_value NapiAudioManager::GetSuiteDownloadManager(napi_env env, napi_callback
     }
 
     return suiteDownloadMgrObj;
+#else
+    return nullptr;
+#endif
 }
 
 }  // namespace AudioStandard
