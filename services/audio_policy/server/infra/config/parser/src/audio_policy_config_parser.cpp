@@ -96,6 +96,8 @@ bool AudioPolicyConfigParser::LoadConfiguration()
     configManager_.OnVolumeGroupParsed(volumeGroupMap_);
     configManager_.OnInterruptGroupParsed(interruptGroupMap_);
     configManager_.OnGlobalConfigsParsed(globalConfigs_);
+    configManager_.OnSupportUltraFast(supportUltraFast_);
+    configManager_.OnSupportArmUsbUltraFast(supportArmUsbUltraFast_);
 
     AUDIO_INFO_LOG("Done");
     return true;
@@ -319,17 +321,7 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
     std::shared_ptr<AdapterPipeInfo> &pipeInfo)
 {
     if (attributeInfo.name_ == "flag") {
-        std::list<std::string> supportFlags = {};
-        std::string tmpValue = attributeInfo.value_;
-        SplitStringToList(tmpValue, supportFlags, "|");
-        for (auto flag : supportFlags) {
-            pipeInfo->supportFlags_ |= AudioDefinitionPolicyUtils::flagStrToEnum[flag];
-        }
-
-        if (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_VOIP) {
-            AUDIO_INFO_LOG("Use fast voip");
-            configManager_.OnVoipConfigParsed(true);
-        }
+        ParseFlagAttribute(attributeInfo, pipeInfo);
     } else if (attributeInfo.name_ == "preload") {
         pipeInfo->preloadAttr_ = AudioDefinitionPolicyUtils::preloadStrToEnum[attributeInfo.value_];
     } else if (attributeInfo.name_ == "suspend_idle_timeout") {
@@ -344,8 +336,12 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
     } else if (attributeInfo.name_ == "need_uid_check") {
         pipeInfo->needUidCheck_ = (attributeInfo.value_ == "true");
     } else if (attributeInfo.name_ == "support_ultra_fast") {
-        AUDIO_INFO_LOG("Support ultra fast");
+        AUDIO_INFO_LOG("Support ultra fast and arm usb ultra fast");
         supportUltraFast_ = (attributeInfo.value_ == "true");
+        supportArmUsbUltraFast_ = (attributeInfo.value_ == "true");
+    } else if (attributeInfo.name_ == "support_arm_usb_ultra_fast") {
+        AUDIO_INFO_LOG("Support arm usb ultra fast");
+        supportArmUsbUltraFast_ = (attributeInfo.value_ == "true");
     } else if (attributeInfo.name_ == "notuse_vendorid_productid") {
         if (attributeInfo.value_ == "All") {
             pipeInfo->allUsbDeviceDisable_ = true;
@@ -365,6 +361,22 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
                 AUDIO_INFO_LOG("disable usb device vendorId: %{public}d, productId: %{public}d", vendorId, productId);
             }
         }
+    }
+}
+
+void AudioPolicyConfigParser::ParseFlagAttribute(AttributeInfo &attributeInfo,
+    std::shared_ptr<AdapterPipeInfo> &pipeInfo)
+{
+    std::list<std::string> supportFlags = {};
+    std::string tmpValue = attributeInfo.value_;
+    SplitStringToList(tmpValue, supportFlags, "|");
+    for (auto flag : supportFlags) {
+        pipeInfo->supportFlags_ |= AudioDefinitionPolicyUtils::flagStrToEnum[flag];
+    }
+
+    if (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_VOIP) {
+        AUDIO_INFO_LOG("Use fast voip");
+        configManager_.OnVoipConfigParsed(true);
     }
 }
 

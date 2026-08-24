@@ -60,6 +60,7 @@ public:
     void OnHasEarpieceParsed(bool hasEarpiece);
     void OnMultSupMode(bool supportMultSupMode);
     void OnSupportUltraFast(bool supportUltraFast);
+    void OnSupportArmUsbUltraFast(bool supportArmUsbUltraFast);
     void OnIsSupportIndependentPipe(bool isSupportIndependentPipe);
 
     void SetEcEnableState(bool ecEnableState);
@@ -98,7 +99,7 @@ public:
     bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
     bool GetHasEarpiece();
     bool GetUltraFastFlag();
-
+    bool GetArmUsbUltraFastFlag();
     bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool GetFastStreamSupport(AudioStreamInfo &streamInfo, std::shared_ptr<AdapterDeviceInfo> &deviceInfo);
@@ -191,6 +192,7 @@ private:
     bool normalVoipFlag_ = false;
     bool supportMultSupMode_ = false;
     bool supportUltraFast_ = false;
+    bool supportArmUsbUltraFast_ = false;
     bool isSupportIndependentPipe_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;

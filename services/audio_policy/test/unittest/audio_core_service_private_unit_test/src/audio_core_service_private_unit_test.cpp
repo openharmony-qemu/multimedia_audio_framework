@@ -4530,6 +4530,52 @@ HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_004, TestSize.Le
 
 /**
  * @tc.name   : Test AudioCoreService.
+ * @tc.number : GetFlagForUltraFastStream_005
+ * @tc.desc   : Test ArmUsb device rejected at arm-usb switch (off) though generic switch on
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_005, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->isSupportArmUsbUltraFast_ = false;
+    audioCoreService->isSupportUltraFast_ = true;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    bool isCreateProcess = true;
+
+    audioCoreService->GetFlagForUltraFastStream(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService.
+ * @tc.number : GetFlagForUltraFastStream_006
+ * @tc.desc   : Test ArmUsb device uses arm-usb switch (on) and reaches bundle gate
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_006, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->isSupportArmUsbUltraFast_ = true;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->bundleName_ = "test.arm.usb.bundle";
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    bool isCreateProcess = true;
+
+    audioCoreService->GetFlagForUltraFastStream(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService.
  * @tc.number : DecidedAudioFlagForStreams_001
  * @tc.desc   : Test AudioCoreService::DecidedAudioFlagForStreams with empty streamDescs
  */

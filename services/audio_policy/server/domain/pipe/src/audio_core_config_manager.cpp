@@ -204,6 +204,11 @@ void AudioCoreConfigManager::OnSupportUltraFast(bool supportUltraFast)
     supportUltraFast_ = supportUltraFast;
 }
 
+void AudioCoreConfigManager::OnSupportArmUsbUltraFast(bool supportArmUsbUltraFast)
+{
+    supportArmUsbUltraFast_ = supportArmUsbUltraFast;
+}
+
 static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &deviceStreamInfo,
     std::list<std::shared_ptr<PipeStreamPropInfo>> &streamPropInfos)
 {
@@ -465,6 +470,11 @@ bool AudioCoreConfigManager::GetHasEarpiece()
 bool AudioCoreConfigManager::GetUltraFastFlag()
 {
     return supportUltraFast_;
+}
+
+bool AudioCoreConfigManager::GetArmUsbUltraFastFlag()
+{
+    return supportArmUsbUltraFast_;
 }
 
 bool AudioCoreConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,

@@ -906,6 +906,7 @@ private:
     void CheckFastToNormalForRecord(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         SessionOperationMsg opMsg);
     void CheckNeedPreRemoveUnusedPipe(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos);
+    bool IsUltraFastSupportedForDevice(DeviceType deviceType);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -1046,7 +1047,8 @@ private:
     AudioPolicyDump &audioPolicyDump_;
 
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
-    int32_t isSupportUltraFast_ = 0;
+    bool isSupportUltraFast_ = 0;
+    bool isSupportArmUsbUltraFast_ = 0;
 
     MultiConditionNotifier readyConditionNotifier_;
 };
