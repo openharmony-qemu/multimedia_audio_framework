@@ -19,6 +19,8 @@
 #include "audio_schedule.h"
 #include "audio_schedule_guard.h"
 
+#include <fcntl.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <cstring>
@@ -260,12 +262,35 @@ std::map<std::pair<pid_t, pid_t>,
     std::weak_ptr<SharedAudioScheduleGuard>> SharedAudioScheduleGuard::guardMap_;
 std::mutex SharedAudioScheduleGuard::mutex_;
 std::condition_variable SharedAudioScheduleGuard::cv_;
+struct TaskConfig {
+    pid_t pid;
+    unsigned int value;
+};
+#define SET_VIP_PRIO 25
+#define PERF_CTRL_MAGIC 'x'
+#define PERF_CTRL_SET_VIP_PERIO \
+    _IOW(PERF_CTRL_MAGIC, SET_VIP_PRIO, struct TaskConfig)
 
 AudioScheduleGuard::AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPriority,
     const std::string &bundleName)
     : pid_(pid), tid_(tid), bundleName_(bundleName)
 {
-    if (USE_PRIORITY_4_BUNDLE_SET.find(bundleName) != USE_PRIORITY_4_BUNDLE_SET.end() &&
+    if (threadPriority == THREAD_PRIORITY_VIP_10) {
+        AUDIO_INFO_LOG("Set thread VIP_10 priority, tid=%{public}d, bundleName=%{public}s", tid, bundleName.c_str());
+        int32_t fd = open("/dev/perf_ctrl", O_RDWR);
+        if (fd < 0) {
+            AUDIO_ERR_LOG("Open /dev/perf_ctrl failed, fd=%{public}d", fd);
+            return;
+        }
+        struct TaskConfig config = {0};
+        config.pid = pid;
+        config.value = 10; // 10 is the value for VIP_10 priority, set 0 to clear vip prio.
+        int32_t ret = ioctl(fd, PERF_CTRL_SET_VIP_PERIO, &config);
+        if (ret < 0) {
+            AUDIO_ERR_LOG("Set VIP priority failed, ret=%{public}d", ret);
+        }
+        close(fd);
+    } else if (USE_PRIORITY_4_BUNDLE_SET.find(bundleName) != USE_PRIORITY_4_BUNDLE_SET.end() &&
         threadPriority == THREAD_PRIORITY_4) {
         struct sched_param param = {0};
         param.sched_priority = SCHED_PRIORITY_NUM_4;
