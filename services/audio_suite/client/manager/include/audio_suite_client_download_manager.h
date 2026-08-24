@@ -31,12 +31,19 @@ public:
 
     int32_t RegisterDownloadStatusCallback(std::shared_ptr<DownloadStatusCallback> callback) override;
     int32_t UnregisterDownloadStatusCallback() override;
-    int32_t StartDownload(const std::string& featureName, int32_t networkType = 0) override;
+    int32_t StartDownload(const std::string& featureName, bool allowedCellularNet = true) override;
     int32_t PauseDownload(const std::string& featureName) override;
     int32_t CancelDownload(const std::string& featureName) override;
     int32_t StartBackgroundDownload(const std::string& featureName) override;
     int32_t GetDownloadStatus(const std::string& featureName, AudioSuiteDownloadStatusInfo& status) override;
     int32_t UninstallCloudRom(const std::string& featureName) override;
+
+    int32_t StartDownloadDirect(const std::string& featureName, bool allowedCellularNet = true) override;
+    int32_t PauseDownloadDirect(const std::string& featureName) override;
+    int32_t CancelDownloadDirect(const std::string& featureName) override;
+    int32_t StartBackgroundDownloadDirect(const std::string& featureName) override;
+    int32_t GetDownloadStatusDirect(const std::string& featureName, AudioSuiteDownloadStatusInfo& status) override;
+    int32_t UninstallCloudRomDirect(const std::string& featureName) override;
 
     int32_t RegisterDownloadInterfaceCallback(const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback) override;
     int32_t UnregisterDownloadInterfaceCallback() override;

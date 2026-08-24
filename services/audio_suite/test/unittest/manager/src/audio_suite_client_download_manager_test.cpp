@@ -65,7 +65,7 @@ public:
     MOCK_METHOD(ErrCode, UnregisterDownloadStatusCallback,
         (int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, StartDownload,
-        (const std::string& version, int32_t& funcResult), (override));
+        (const std::string& version, bool allowedCellularNet, int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, PauseDownload,
         (const std::string& version, int32_t& funcResult), (override));
     MOCK_METHOD(ErrCode, CancelDownload,
@@ -127,8 +127,8 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, RegisterDownloadStatusCallback_002, 
 HWTEST_F(AudioSuiteDownloadManagerUnitTest, StartDownload_001, TestSize.Level0)
 {
     int32_t result = SUCCESS;
-    EXPECT_CALL(*mockService_, StartDownload(_, _))
-        .WillOnce(DoAll(SetArgReferee<1>(result), Return(SUCCESS)));
+    EXPECT_CALL(*mockService_, StartDownload(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<2>(result), Return(SUCCESS)));
 
     int32_t ret = AudioSuiteDownloadManager::GetInstance().StartDownload("v1");
     EXPECT_EQ(ret, SUCCESS);
@@ -137,8 +137,8 @@ HWTEST_F(AudioSuiteDownloadManagerUnitTest, StartDownload_001, TestSize.Level0)
 HWTEST_F(AudioSuiteDownloadManagerUnitTest, StartDownload_002, TestSize.Level0)
 {
     int32_t result = ERR_INVALID_PARAM;
-    EXPECT_CALL(*mockService_, StartDownload(_, _))
-        .WillOnce(DoAll(SetArgReferee<1>(result), Return(SUCCESS)));
+    EXPECT_CALL(*mockService_, StartDownload(_, _, _))
+        .WillOnce(DoAll(SetArgReferee<2>(result), Return(SUCCESS)));
 
     int32_t ret = AudioSuiteDownloadManager::GetInstance().StartDownload("v1");
     EXPECT_EQ(ret, ERR_INVALID_PARAM);

@@ -22,7 +22,7 @@ sequenceable OHOS.IRemoteObject;
 interface IAudioSuiteService {
     [ipccode 1] int RegisterDownloadStatusCallback([in] IRemoteObject object);
     int UnregisterDownloadStatusCallback();
-    int StartDownload([in] String version);
+    int StartDownload([in] String version, [in] boolean allowedCellularNet);
     int PauseDownload([in] String version);
     int CancelDownload([in] String version);
     int StartBackgroundDownload([in] String version);

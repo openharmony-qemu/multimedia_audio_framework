@@ -43,7 +43,7 @@ class DownloadManager {
 public:
     int32_t RegisterDownloadStatusCallback(const int32_t callerPid, const sptr<IRemoteObject>& object);
     int32_t UnregisterDownloadStatusCallback(const int32_t callerPid);
-    int32_t StartDownload(const std::string& featureName);
+    int32_t StartDownload(const std::string& featureName, bool allowedCellularNet = true);
     int32_t PauseDownload(const std::string& featureName);
     int32_t CancelDownload(const std::string& featureName);
     int32_t StartBackgroundDownload(const std::string& featureName);

@@ -56,7 +56,7 @@ public:
 
     ErrCode RegisterDownloadStatusCallback(const sptr<IRemoteObject> &object, ErrCode &result) override;
     ErrCode UnregisterDownloadStatusCallback(ErrCode& result) override;
-    ErrCode StartDownload(const std::string &version, ErrCode &result) override;
+    ErrCode StartDownload(const std::string &version, bool allowedCellularNet, ErrCode &result) override;
     ErrCode PauseDownload(const std::string& featureName, ErrCode& result) override;
     ErrCode CancelDownload(const std::string &version, ErrCode &result) override;
     ErrCode StartBackgroundDownload(const std::string &version, ErrCode &result) override;

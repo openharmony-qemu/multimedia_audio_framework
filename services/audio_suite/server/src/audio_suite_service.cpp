@@ -155,9 +155,10 @@ ErrCode AudioSuiteService::UnregisterDownloadInterfaceCallback(ErrCode& result)
     return SUCCESS;
 }
 
-ErrCode AudioSuiteService::StartDownload(const std::string& featureName, ErrCode& result)
+ErrCode AudioSuiteService::StartDownload(const std::string& featureName, bool allowedCellularNet, ErrCode& result)
 {
-    AUDIO_INFO_LOG("AudioSuiteService::StartDownload, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteService::StartDownload, featureName=%{public}s, allowedCellularNet=%{public}d",
+        featureName.c_str(), allowedCellularNet);
 #ifndef AUDIOSUITE_SA_UT
     AudioXCollie audioXCollie("AudioSuiteService::StartDownload", AUDIO_SUITE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
@@ -167,7 +168,7 @@ ErrCode AudioSuiteService::StartDownload(const std::string& featureName, ErrCode
     PostDelayUnloadTask();
     CHECK_AND_RETURN_RET_LOG(VerifyIsSystemApp(result), SUCCESS, "StartDownload: not permission");
 
-    result = downloadManager_.StartDownload(featureName);
+    result = downloadManager_.StartDownload(featureName, allowedCellularNet);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, SUCCESS, "StartDownload failed, result:%{public}d", result);
     return SUCCESS;
 }

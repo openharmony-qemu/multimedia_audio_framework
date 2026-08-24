@@ -67,12 +67,14 @@ int32_t AudioSuiteDownloadManagerImpl::UnregisterDownloadStatusCallback()
                            "UnregisterDownloadStatusCallback");
 }
 
-int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& featureName, int32_t networkType)
+int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& featureName, bool allowedCellularNet)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartDownload, featureName=%{public}s, networkType=%{public}d",
-        featureName.c_str(), networkType);
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartDownload, featureName=%{public}s, "
+        "allowedCellularNet=%{public}d", featureName.c_str(), allowedCellularNet);
     return CallWithTimeout(
-        [featureName]() { return AudioSuiteClientPolicy::GetInstance().StartDownload(featureName); }, "StartDownload");
+        [featureName, allowedCellularNet]() {
+            return AudioSuiteClientPolicy::GetInstance().StartDownload(featureName, allowedCellularNet);
+        }, "StartDownload");
 }
 
 int32_t AudioSuiteDownloadManagerImpl::PauseDownload(const std::string& featureName)
@@ -123,13 +125,41 @@ int32_t AudioSuiteDownloadManagerImpl::UninstallCloudRom(const std::string& feat
         "UninstallCloudRom");
 }
 
+int32_t AudioSuiteDownloadManagerImpl::StartDownloadDirect(const std::string& featureName, bool allowedCellularNet)
+{
+    return AudioSuiteClientPolicy::GetInstance().StartDownload(featureName, allowedCellularNet);
+}
+
+int32_t AudioSuiteDownloadManagerImpl::PauseDownloadDirect(const std::string& featureName)
+{
+    return AudioSuiteClientPolicy::GetInstance().PauseDownload(featureName);
+}
+
+int32_t AudioSuiteDownloadManagerImpl::CancelDownloadDirect(const std::string& featureName)
+{
+    return AudioSuiteClientPolicy::GetInstance().CancelDownload(featureName);
+}
+
+int32_t AudioSuiteDownloadManagerImpl::StartBackgroundDownloadDirect(const std::string& featureName)
+{
+    return AudioSuiteClientPolicy::GetInstance().StartBackgroundDownload(featureName);
+}
+
+int32_t AudioSuiteDownloadManagerImpl::GetDownloadStatusDirect(
+    const std::string& featureName, AudioSuiteDownloadStatusInfo& status)
+{
+    return AudioSuiteClientPolicy::GetInstance().GetDownloadStatus(featureName, status);
+}
+
+int32_t AudioSuiteDownloadManagerImpl::UninstallCloudRomDirect(const std::string& featureName)
+{
+    return AudioSuiteClientPolicy::GetInstance().UninstallCloudRom(featureName);
+}
+
 int32_t AudioSuiteDownloadManagerImpl::RegisterDownloadInterfaceCallback(
     const std::shared_ptr<AudioSuiteRomDownloadCallback> &callback)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::RegisterDownloadInterfaceCallback");
-    return CallWithTimeout(
-        [callback]() { return AudioSuiteClientPolicy::GetInstance().RegisterDownloadInterfaceCallback(callback); },
-        "RegisterDownloadInterfaceCallback");
+    return AudioSuiteClientPolicy::GetInstance().RegisterDownloadInterfaceCallback(callback);
 }
 
 int32_t AudioSuiteDownloadManagerImpl::UnregisterDownloadInterfaceCallback()

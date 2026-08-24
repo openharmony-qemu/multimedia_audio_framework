@@ -54,7 +54,7 @@ DownloadManager::~DownloadManager()
     isDownloadCallbackRegistered_ = false;
 }
 
-int32_t DownloadManager::StartDownload(const std::string& featureName)
+int32_t DownloadManager::StartDownload(const std::string& featureName, bool allowedCellularNet)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("StartDownload: featureName=%{public}s", featureName.c_str());
@@ -77,7 +77,7 @@ int32_t DownloadManager::StartDownload(const std::string& featureName)
         "GetFeatureNewVersion: failed, newVersionInfo.featureName:%{public}s", newVersionInfo.featureName.c_str());
 
     AUDIO_INFO_LOG("DownloadAndInstall: featureName=%{public}s", featureName.c_str());
-    ret = downloadCallback_->DownloadAndInstall(false, featureName, funcResult);
+    ret = downloadCallback_->DownloadAndInstall(!allowedCellularNet, featureName, funcResult);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DownloadAndInstall failed, ret=%{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(funcResult == SUCCESS, funcResult,
         "DownloadAndInstall failed, funcResult=%{public}d", funcResult);
@@ -135,10 +135,10 @@ int32_t DownloadManager::StartBackgroundDownload(const std::string& featureName)
     CHECK_AND_RETURN_RET_LOG(!featureName.empty(), ERR_INVALID_PARAM, "Download featureName is empty");
     CHECK_AND_RETURN_RET_LOG(WaitForCallbackRegistration(), ERR_CALLBACK_NOT_REGISTERED, "donwload callback not reg");
 
-    if (!BackgroundDownload::AreConditionsMet()) {
+    if (!BackgroundDownload::AreConditionsMet(featureName)) {
         if (backgroundDownload_ == nullptr) {
             AUDIO_INFO_LOG("BackgroundDownload start init backgroundDownload.");
-            auto boundFunc = std::bind(&DownloadManager::StartDownload, this, std::placeholders::_1);
+            auto boundFunc = std::bind(&DownloadManager::StartDownload, this, std::placeholders::_1, false);
             backgroundDownload_ = std::make_shared<BackgroundDownload>(boundFunc);
             if (backgroundDownload_->Init() != 0) {
                 backgroundDownload_ = nullptr;
