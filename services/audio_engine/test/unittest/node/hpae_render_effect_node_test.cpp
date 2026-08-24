@@ -1398,7 +1398,6 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_DefaultScene_008, T
     nodeInfo.sceneType = HPAE_SCENE_DEFAULT;
     auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_MCH_ROUTE_MODE);
     EXPECT_NE(node, nullptr);
-
 }
 // --- Phase 3D-2: AudioRenderer/OffloadRenderer lifecycle coverage ---
 // These methods were previously never called by tests, leaving entire function
