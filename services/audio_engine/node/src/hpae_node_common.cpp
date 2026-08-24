@@ -17,11 +17,14 @@
 #endif
 
 #include <cinttypes>
+#include <iomanip>
+#include <sstream>
 #include "hpae_node_common.h"
 #include "audio_errors.h"
 #include "audio_engine_log.h"
 #include "stream_dfx_manager.h"
 #include "audio_collaboration_manager.h"
+#include "audio_address_secure_hash.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,7 +32,6 @@ namespace HPAE {
 static constexpr uint64_t TIME_US_PER_S = 1000000;
 static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
 static constexpr uint32_t MS_PER_SECOND = 1000;
-static constexpr uint32_t BASE_TEN = 10;
 static constexpr uint32_t FRAME_LENGTH_LIMIT = 38400;
 
 static std::map<AudioStreamType, HpaeProcessorType> g_streamTypeToSceneTypeMap = {
@@ -154,15 +156,6 @@ static std::map<HpaeSessionState, CapturerState> g_hapeToCapturerStateMap = {
     {HPAE_SESSION_STOPPED, CAPTURER_STOPPED},
     {HPAE_SESSION_RELEASED, CAPTURER_RELEASED},
 };
-
-static long StringToNum(const std::string &str)
-{
-    char *endptr;
-    long num = strtol(str.c_str(), &endptr, BASE_TEN);
-    CHECK_AND_RETURN_RET_LOG(endptr != nullptr && *endptr == '\0', 0,
-        "trans str \"%{public}s\" to num failed", str.c_str());
-    return num;
-}
 
 AudioPipeType ConvertDeviceClassToPipe(const std::string &deviceClass)
 {
@@ -471,6 +464,19 @@ bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo
             sourceInfo.routeFlag);
     };
     return getKey(info) != getKey(oldInfo);
+}
+
+std::string EncryptMacAddress(const std::string &address)
+{
+    const int32_t hexWidth = 2;
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    AudioAddressSecureHash::AudioSecureHashAlgo(reinterpret_cast<const unsigned char *>(address.c_str()),
+        address.size(), hash);
+    std::stringstream ss;
+    for (int32_t i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+        ss << std::hex << std::setw(hexWidth) << std::setfill('0') << static_cast<int32_t>(hash[i]);
+    }
+    return ss.str();
 }
 
 void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo)

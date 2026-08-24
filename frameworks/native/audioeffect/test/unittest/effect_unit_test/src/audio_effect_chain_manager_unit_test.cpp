@@ -4125,24 +4125,6 @@ HWTEST(AudioEffectChainManagerUnitTest, DeleteAllChains_001, TestSize.Level1)
 }
 
 /**
-* @tc.name   : Test IsDeviceTypeSupportingSpatialization API
-* @tc.number : IsDeviceTypeSupportingSpatialization_001
-* @tc.desc   : Test IsDeviceTypeSupportingSpatialization interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, IsDeviceTypeSupportingSpatialization_001, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->IsDeviceTypeSupportingSpatialization(), true);
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->IsDeviceTypeSupportingSpatialization(), true);
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_NEARLINK;
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->IsDeviceTypeSupportingSpatialization(), true);
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_MIC;
-    EXPECT_EQ(AudioEffectChainManager::GetInstance()->IsDeviceTypeSupportingSpatialization(), false);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
 * @tc.name   : Test UpdateParamExtra_frontendAppType API
 * @tc.number : UpdateParamExtra_frontendAppType_001
 * @tc.desc   : Test UpdateParamExtra_frontendAppType interface.
@@ -7399,6 +7381,291 @@ HWTEST(AudioEffectChainManagerUnitTest, RecoverAllChains_001, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->RecoverAllChains();
     EXPECT_NE(nullptr, AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[
         "SCENE_MOVIE_&_DEVICE_TYPE_SPEAKER"]);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetEffectSystemVolumeWithDeviceType API
+* @tc.number : SetEffectSystemVolumeWithDeviceType_001
+* @tc.desc   : Test SetEffectSystemVolumeWithDeviceType interface for SPEAKER device.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetEffectSystemVolumeWithDeviceType_001, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    const int32_t systemVolumeType = STREAM_MUSIC;
+    const float systemVolume = 0.6f;
+    const DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+
+    int32_t result = mgr->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType);
+    EXPECT_EQ(SUCCESS, result);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetEffectSystemVolumeWithDeviceType API
+* @tc.number : SetEffectSystemVolumeWithDeviceType_002
+* @tc.desc   : Test SetEffectSystemVolumeWithDeviceType interface for BLUETOOTH_A2DP device.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetEffectSystemVolumeWithDeviceType_002, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    const int32_t systemVolumeType = STREAM_MUSIC;
+    const float systemVolume = 0.7f;
+    const DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    int32_t result = mgr->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType);
+    EXPECT_EQ(SUCCESS, result);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetEffectSystemVolumeWithDeviceType API
+* @tc.number : SetEffectSystemVolumeWithDeviceType_003
+* @tc.desc   : Test SetEffectSystemVolumeWithDeviceType interface for WIRED_HEADSET device.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetEffectSystemVolumeWithDeviceType_003, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    const int32_t systemVolumeType = STREAM_RING;
+    const float systemVolume = 0.8f;
+    const DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET;
+
+    int32_t result = mgr->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType);
+    EXPECT_EQ(SUCCESS, result);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetEffectSystemVolumeWithDeviceType with max volume
+* @tc.number : SetEffectSystemVolumeWithDeviceType_MaxVolume_001
+* @tc.desc   : Test SetEffectSystemVolumeWithDeviceType with maximum volume (1.0f).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetEffectSystemVolumeWithDeviceType_MaxVolume_001, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    const int32_t systemVolumeType = STREAM_MUSIC;
+    const float systemVolume = 1.0f;
+    const DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+
+    int32_t result = mgr->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType);
+    EXPECT_EQ(SUCCESS, result);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetEffectSystemVolumeWithDeviceType with min volume
+* @tc.number : SetEffectSystemVolumeWithDeviceType_MinVolume_001
+* @tc.desc   : Test SetEffectSystemVolumeWithDeviceType with minimum volume (0.0f).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetEffectSystemVolumeWithDeviceType_MinVolume_001, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    const int32_t systemVolumeType = STREAM_MUSIC;
+    const float systemVolume = 0.0f;
+    const DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    int32_t result = mgr->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType);
+    EXPECT_EQ(SUCCESS, result);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetEffectSystemVolumeWithDeviceType for multiple devices
+* @tc.number : SetEffectSystemVolumeWithDeviceType_Multiple_001
+* @tc.desc   : Test SetEffectSystemVolumeWithDeviceType for multiple device types sequentially.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetEffectSystemVolumeWithDeviceType_Multiple_001, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    const int32_t systemVolumeType = STREAM_MUSIC;
+
+    // Set different volumes for different devices
+    int32_t result1 = mgr->SetEffectSystemVolumeWithDeviceType(systemVolumeType, 0.5f, DEVICE_TYPE_SPEAKER);
+    int32_t result2 = mgr->SetEffectSystemVolumeWithDeviceType(systemVolumeType, 0.6f, DEVICE_TYPE_BLUETOOTH_A2DP);
+    int32_t result3 = mgr->SetEffectSystemVolumeWithDeviceType(systemVolumeType, 0.7f, DEVICE_TYPE_WIRED_HEADSET);
+
+    EXPECT_EQ(SUCCESS, result1);
+    EXPECT_EQ(SUCCESS, result2);
+    EXPECT_EQ(SUCCESS, result3);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test SetEffectSystemVolumeWithDeviceType for different stream types
+* @tc.number : SetEffectSystemVolumeWithDeviceType_DifferentStreams_001
+* @tc.desc   : Test SetEffectSystemVolumeWithDeviceType for different stream types.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetEffectSystemVolumeWithDeviceType_DifferentStreams_001, TestSize.Level1)
+{
+    auto* mgr = AudioEffectChainManager::GetInstance();
+    mgr->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    const DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+
+    // Set different volumes for different stream types
+    int32_t result1 = mgr->SetEffectSystemVolumeWithDeviceType(STREAM_MUSIC, 0.5f, deviceType);
+    int32_t result2 = mgr->SetEffectSystemVolumeWithDeviceType(STREAM_RING, 0.6f, deviceType);
+    int32_t result3 = mgr->SetEffectSystemVolumeWithDeviceType(STREAM_NOTIFICATION, 0.7f, deviceType);
+
+    EXPECT_EQ(SUCCESS, result1);
+    EXPECT_EQ(SUCCESS, result2);
+    EXPECT_EQ(SUCCESS, result3);
+
+    mgr->ResetInfo();
+}
+
+/**
+* @tc.name   : Test IsChannelLayoutSupportedForDspEffect with DeviceType API
+* @tc.number : IsChannelLayoutSupportedForDspEffectWithDeviceType_001
+* @tc.desc   : Test IsChannelLayoutSupportedForDspEffect with DeviceType for SPEAKER device.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam = std::make_shared<AudioEffectHdiParam>();
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = audioEffectHdiParam;
+    AudioEffectChainManager::GetInstance()->InitHdiState();
+    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_6POINT0_FRONT, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(ret, false);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test IsChannelLayoutSupportedForDspEffect with DeviceType API
+* @tc.number : IsChannelLayoutSupportedForDspEffectWithDeviceType_002
+* @tc.desc   : Test IsChannelLayoutSupportedForDspEffect with DeviceType for BLUETOOTH_A2DP device.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam = std::make_shared<AudioEffectHdiParam>();
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = audioEffectHdiParam;
+    AudioEffectChainManager::GetInstance()->InitHdiState();
+    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_STEREO, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(ret, true);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test IsChannelLayoutSupportedForDspEffect with DeviceType API
+* @tc.number : IsChannelLayoutSupportedForDspEffectWithDeviceType_003
+* @tc.desc   : Test IsChannelLayoutSupportedForDspEffect with DeviceType for NEARLINK device
+*              (should be converted to BLUETOOTH_A2DP).
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam = std::make_shared<AudioEffectHdiParam>();
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = audioEffectHdiParam;
+    AudioEffectChainManager::GetInstance()->InitHdiState();
+    // DEVICE_TYPE_NEARLINK should be converted to DEVICE_TYPE_BLUETOOTH_A2DP internally
+    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_2POINT1, DEVICE_TYPE_NEARLINK);
+    EXPECT_EQ(ret, false);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test IsChannelLayoutSupportedForDspEffect with DeviceType API
+* @tc.number : IsChannelLayoutSupportedForDspEffectWithDeviceType_004
+* @tc.desc   : Test IsChannelLayoutSupportedForDspEffect with DeviceType for WIRED_HEADSET device.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam = std::make_shared<AudioEffectHdiParam>();
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = audioEffectHdiParam;
+    AudioEffectChainManager::GetInstance()->InitHdiState();
+    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_MONO, DEVICE_TYPE_WIRED_HEADSET);
+    EXPECT_EQ(ret, false);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test IsChannelLayoutSupportedForDspEffect with DeviceType API - nullptr case
+* @tc.number : IsChannelLayoutSupportedForDspEffectWithDeviceType_005
+* @tc.desc   : Test IsChannelLayoutSupportedForDspEffect with DeviceType when audioEffectHdiParam is nullptr.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_005, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = nullptr;
+    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_5POINT1, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(ret, false);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test IsChannelLayoutSupportedForDspEffect with DeviceType API
+* @tc.number : IsChannelLayoutSupportedForDspEffectWithDeviceType_006
+* @tc.desc   : Test IsChannelLayoutSupportedForDspEffect with DeviceType for USB_HEADSET device.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_006, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam = std::make_shared<AudioEffectHdiParam>();
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = audioEffectHdiParam;
+    AudioEffectChainManager::GetInstance()->InitHdiState();
+    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_7POINT1, DEVICE_TYPE_USB_HEADSET);
+    EXPECT_EQ(ret, false);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test IsChannelLayoutSupportedForDspEffect with DeviceType API
+* @tc.number : IsChannelLayoutSupportedForDspEffectWithDeviceType_007
+* @tc.desc   : Test IsChannelLayoutSupportedForDspEffect with DeviceType for different channel layouts.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_007, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam = std::make_shared<AudioEffectHdiParam>();
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = audioEffectHdiParam;
+    AudioEffectChainManager::GetInstance()->InitHdiState();
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+
+    // Test different channel layouts
+    bool ret1 = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_MONO, deviceType);
+    bool ret2 = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_STEREO, deviceType);
+    bool ret3 = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_2POINT1, deviceType);
+    bool ret4 = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_5POINT1, deviceType);
+    bool ret5 = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_7POINT1, deviceType);
+
+    // All should return false without proper HDI initialization
+    EXPECT_EQ(ret1, false);
+    EXPECT_EQ(ret2, true);
+    EXPECT_EQ(ret3, false);
+    EXPECT_EQ(ret4, true);
+    EXPECT_EQ(ret5, true);
+
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 } // namespace AudioStandard

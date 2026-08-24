@@ -490,7 +490,7 @@ void UpdateCollaborativeStateFuzzTest()
     hpaeRendererManager->Init();
     WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->IsInit();
-    hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN, COLLABORATION_DEFAULT_ROUTE_MODE);
 
     HpaeStreamInfo streamInfo;
     InitRenderStreamInfo(streamInfo);
@@ -513,7 +513,7 @@ void UpdateCollaborativeStateFuzzTest()
     hpaeRendererManager->DestroyStream(sessionId);
     WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->GetSinkInputInfo(sessionId, sinkInputInfo);
-    hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE, COLLABORATION_DEFAULT_ROUTE_MODE);
     WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->DeInit();
 }
@@ -734,9 +734,9 @@ void EnableCollaborationWithMovieSceneFuzzTest()
     WaitForMsgProcessing(rendererManager);
     rendererManager->Start(streamInfo.sessionId);
     WaitForMsgProcessing(rendererManager);
-    rendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    rendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN, COLLABORATION_DEFAULT_ROUTE_MODE);
     WaitForMsgProcessing(rendererManager);
-    rendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    rendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE, COLLABORATION_DEFAULT_ROUTE_MODE);
     WaitForMsgProcessing(rendererManager);
     rendererManager->DeInit();
 }
@@ -1081,10 +1081,10 @@ void SetCollDelayCountFuzzTest()
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     rendererManager->Init();
     WaitForMsgProcessing(rendererManager);
-    rendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN);
+    rendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN, COLLABORATION_DEFAULT_ROUTE_MODE);
     WaitForMsgProcessing(rendererManager);
     rendererManager->SetCollDelayCount();
-    rendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE);
+    rendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE, COLLABORATION_DEFAULT_ROUTE_MODE);
     WaitForMsgProcessing(rendererManager);
     rendererManager->DeInit();
 }

@@ -350,6 +350,12 @@ void HpaeDirectSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
     CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
     audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
 }
+
+bool HpaeDirectSinkOutputNode::IsRenderInit() const
+{
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, false, "audioRendererSink_ is nullptr");
+    return audioRendererSink_->IsInited();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

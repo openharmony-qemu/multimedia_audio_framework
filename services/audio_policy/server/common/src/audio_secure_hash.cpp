@@ -21,17 +21,75 @@
 #include "audio_log.h"
 #include "securec.h"
 
-// bit operations
-#define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n)))) // rotate right
-#define SHR(x, n) ((x) >> (n)) // shfit right
+// bit operations - using constexpr inline functions instead of macros for better type safety
+namespace {
+// SHA-256 bit rotation and shift constants
+static constexpr uint32_t WORD_BITS = 32;
 
-#define Ch(x, y, z) (((x) & (y)) ^ (~(x) & (z))) // choose bits from y or z based on x
-#define Maj(x, y, z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z))) // majority of bits among x, y, z
+static constexpr uint32_t ROTR_SIGMA0_R1 = 2;
+static constexpr uint32_t ROTR_SIGMA0_R2 = 13;
+static constexpr uint32_t ROTR_SIGMA0_R3 = 22;
 
-#define Sigma0(x) (ROTR((x), 2) ^ ROTR((x), 13) ^ ROTR((x), 22)) // uppercase sigma0, rotates 2,13,22
-#define Sigma1(x) (ROTR((x), 6) ^ ROTR((x), 11) ^ ROTR((x), 25)) // uppercase sigma1, rotates 6,11,25
-#define sigma0(x) (ROTR((x), 7) ^ ROTR((x), 18) ^ SHR((x), 3)) // lowercase sigma0, rotates 7,18, shfit 3
-#define sigma1(x) (ROTR((x), 17) ^ ROTR((x), 19) ^ SHR((x), 10)) // lowercase sigma0, rotates 17,19, shfit 10
+static constexpr uint32_t ROTR_SIGMA1_R1 = 6;
+static constexpr uint32_t ROTR_SIGMA1_R2 = 11;
+static constexpr uint32_t ROTR_SIGMA1_R3 = 25;
+
+static constexpr uint32_t ROTR_SIGMA_LOW_R1 = 7;
+static constexpr uint32_t ROTR_SIGMA_LOW_R2 = 18;
+static constexpr uint32_t SHR_SIGMA_LOW = 3;
+
+static constexpr uint32_t ROTR_SIGMA1_LOW_R1 = 17;
+static constexpr uint32_t ROTR_SIGMA1_LOW_R2 = 19;
+static constexpr uint32_t SHR_SIGMA1_LOW = 10;
+
+// Rotate right: circular shift of n bits
+constexpr inline uint32_t ROTR(uint32_t x, uint32_t n)
+{
+    return ((x) >> (n)) | ((x) << (WORD_BITS - (n)));
+}
+
+// Shift right
+constexpr inline uint32_t SHR(uint32_t x, uint32_t n)
+{
+    return (x) >> (n);
+}
+
+// Choose bits from y or z based on x
+constexpr inline uint32_t Ch(uint32_t x, uint32_t y, uint32_t z)
+{
+    return ((x) & (y)) ^ (~(x) & (z));
+}
+
+// Majority of bits among x, y, z
+constexpr inline uint32_t Maj(uint32_t x, uint32_t y, uint32_t z)
+{
+    return ((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z));
+}
+
+// Uppercase sigma0, rotates 2,13,22
+constexpr inline uint32_t Sigma0(uint32_t x)
+{
+    return ROTR((x), ROTR_SIGMA0_R1) ^ ROTR((x), ROTR_SIGMA0_R2) ^ ROTR((x), ROTR_SIGMA0_R3);
+}
+
+// Uppercase sigma1, rotates 6,11,25
+constexpr inline uint32_t Sigma1(uint32_t x)
+{
+    return ROTR((x), ROTR_SIGMA1_R1) ^ ROTR((x), ROTR_SIGMA1_R2) ^ ROTR((x), ROTR_SIGMA1_R3);
+}
+
+// Lowercase sigma0, rotates 7,18, shift 3
+constexpr inline uint32_t SmallSigma0(uint32_t x)
+{
+    return ROTR((x), ROTR_SIGMA_LOW_R1) ^ ROTR((x), ROTR_SIGMA_LOW_R2) ^ SHR((x), SHR_SIGMA_LOW);
+}
+
+// Lowercase sigma1, rotates 17,19, shift 10
+constexpr inline uint32_t SmallSigma1(uint32_t x)
+{
+    return ROTR((x), ROTR_SIGMA1_LOW_R1) ^ ROTR((x), ROTR_SIGMA1_LOW_R2) ^ SHR((x), SHR_SIGMA1_LOW);
+}
+} // anonymous namespace
 
 namespace OHOS {
 namespace AudioStandard {
@@ -137,9 +195,9 @@ static void AlgoTransform(AlgoCTX* ctx, const unsigned char *block)
     }
     for (size_t t = 16; t < BLOCK_SIZE; ++t) { // extend W[16~63]
         w[t] = static_cast<uint32_t>(
-            static_cast<uint64_t>(sigma1(w[t - 2])) + // t-2: second previous word, used in sigma1
+            static_cast<uint64_t>(SmallSigma1(w[t - 2])) + // t-2: second previous word, used in SmallSigma1
                                   w[t - 7] +          // t-7: seventh previous word, add directly
-                                  sigma0(w[t - 15]) + // t-15: fifteenth previous word, used in sigma0
+                                  SmallSigma0(w[t - 15]) + // t-15: fifteenth previous word, used in SmallSigma0
                                   w[t - 16]           // t-16: sixteenth previous word, earliest word in schedule
         );
     }

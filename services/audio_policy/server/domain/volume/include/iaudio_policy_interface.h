@@ -282,6 +282,10 @@ public:
 
     virtual int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) = 0;
     virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;
+    virtual int32_t UpdateDeviceSpatialEnabled(const std::string &address,
+        const AudioSpatializationState &state) = 0;
+    virtual int32_t RemoveDeviceSpatialEnabled(const std::string &address) = 0;
+    virtual int32_t ClearDeviceSpatialEnabled() = 0;
     virtual void RegisterDoNotDisturbStatus() = 0;
     virtual void RegisterDoNotDisturbStatusWhiteList() = 0;
     virtual void RegisterAppIndividualVolumeEnableObserver() = 0;
@@ -296,6 +300,9 @@ public:
     virtual int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType) = 0;
 
     virtual int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) = 0;
+
+    virtual int32_t SetSystemVolumeToEffectWithDeviceType(AudioStreamType streamType, float volume,
+        DeviceType deviceType) = 0;
 
     virtual float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
         int32_t volumeLevel) = 0;
@@ -323,6 +330,7 @@ public:
     virtual void UpdateVolumeWhenDeviceDisconnect(std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
     virtual void QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
+    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout, DeviceType deviceType) = 0;
     virtual void UpdateOtherStreamVolume(AudioStreamType streamType) = 0;
     virtual void SetVolumeLimit(float volume) = 0;
     virtual void SetMaxVolumeForDpBoardcast() = 0;

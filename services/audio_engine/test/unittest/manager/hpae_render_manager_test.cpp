@@ -1456,7 +1456,8 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN,
+        COLLABORATION_DEFAULT_ROUTE_MODE), SUCCESS);
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = 1;
     streamInfo.effectInfo.effectScene = SCENE_MUSIC;
@@ -1487,7 +1488,8 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), ERR_INVALID_OPERATION);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE, COLLABORATION_DEFAULT_ROUTE_MODE),
+        SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
 
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
@@ -1522,13 +1524,15 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), SUCCESS);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_BLUETOOTH_OPEN,
+        COLLABORATION_DEFAULT_ROUTE_MODE), SUCCESS);
     EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), SUCCESS);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
     EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId), SUCCESS);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE,
+        COLLABORATION_DEFAULT_ROUTE_MODE), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), SUCCESS);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
@@ -1717,8 +1721,10 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusterByDevice_004, TestSize.Le
     hpaeRendererManager->sinkInputNodeMap_[nodeInfo2.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo2);
     hpaeRendererManager->sinkInputNodeMap_[nodeInfo2.sessionId]->connectedProcessorType_ = HPAE_SCENE_EFFECT_NONE;
     hpaeRendererManager->sessionNodeMap_[nodeInfo2.sessionId].bypass = false;
-    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo2, sinkInfo);
-    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC];
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] =
+        std::make_shared<HpaeProcessCluster>(nodeInfo2, sinkInfo);
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_DEFAULT] =
+        hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC];
 
     int32_t ret = hpaeRendererManager->RefreshProcessClusterByDevice();
     EXPECT_EQ(ret == SUCCESS, true);
@@ -2875,8 +2881,10 @@ HWTEST_F(HpaeRendererManagerTest, DeleteProcessClusterInner_002, TestSize.Level0
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
 
     hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_MUSIC] = 0;
-    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
-    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC];
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_DEFAULT] =
+        hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC];
     hpaeRendererManager->sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] = 0;
     hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_DEFAULT]->SetConnectedFlag(true);
     int32_t ret = hpaeRendererManager->DeleteProcessClusterInner(sessionId, HPAE_SCENE_MUSIC);
@@ -4735,9 +4743,11 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_NearLink_003, TestSiz
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     // NEARLINK_OPEN on BT speaker device - should return SUCCESS (MCH check)
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_NEARLINK_OPEN, COLLABORATION_MCH_ROUTE_MODE),
+        SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE, COLLABORATION_MCH_ROUTE_MODE),
+        SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
 }
@@ -4756,7 +4766,8 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_NoChange_004, TestSiz
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     // State is COLLABORATION_CLOSE by default, set same state
-    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(COLLABORATION_CLOSE, COLLABORATION_DEFAULT_ROUTE_MODE),
+        SUCCESS);
     EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
 }
 

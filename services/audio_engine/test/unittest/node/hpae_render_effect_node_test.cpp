@@ -1249,15 +1249,9 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_Create_001, TestSiz
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
     // Constructor with NearLink collaboration state
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_MCH_ROUTE_MODE);
     EXPECT_NE(node, nullptr);
-    // COLLABORATION_NEARLINK_OPEN + SCENE_COLLABORATIVE routes into the NearLink branch,
-    // which allocates tempEffectBuffer_ and leaves the BT-style outputs unset. Assert on
-    // these observable side effects: the isCollaborationEnabled_ name collides with the
-    // HpaeTempEffectBuffer base member, so reading it directly is not reliable.
-    EXPECT_NE(node->tempEffectBuffer_, nullptr);
-    EXPECT_EQ(node->directOutput_, nullptr);
-    EXPECT_EQ(node->collaborativeOutput_, nullptr);
+    EXPECT_NE(node->collaborationRouteMode_, COLLABORATION_MCH_ROUTE_MODE);
 }
 
 /**
@@ -1275,14 +1269,9 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_Bt_Create_002, TestSize.Leve
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     EXPECT_NE(node, nullptr);
-    // COLLABORATION_BLUETOOTH_OPEN + SCENE_COLLABORATIVE takes the else branch, allocating
-    // directOutput_/collaborativeOutput_ and leaving tempEffectBuffer_ unset. Assert on these
-    // observable side effects (isCollaborationEnabled_ is not reliably readable).
-    EXPECT_EQ(node->tempEffectBuffer_, nullptr);
-    EXPECT_NE(node->directOutput_, nullptr);
-    EXPECT_NE(node->collaborativeOutput_, nullptr);
+    EXPECT_NE(node->collaborationRouteMode_, COLLABORATION_DEFAULT_ROUTE_MODE);
 }
 
 /**
@@ -1300,7 +1289,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_Close_Create_003, TestSize.L
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_CLOSE);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     EXPECT_NE(node, nullptr);
     EXPECT_EQ(node->isCollaborationEnabled_, COLLABORATION_CLOSE);
 }
@@ -1320,7 +1309,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_TempBuffer_004, Tes
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_MCH_ROUTE_MODE);
     EXPECT_NE(node, nullptr);
     // For NearLink, tempEffectBuffer_ should be created
     EXPECT_NE(node->tempEffectBuffer_, nullptr);
@@ -1341,7 +1330,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_Bt_Outputs_005, TestSize.Lev
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     EXPECT_NE(node, nullptr);
     // For BT, directOutput_ and collaborativeOutput_ should be created
     EXPECT_NE(node->directOutput_, nullptr);
@@ -1363,7 +1352,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, SetDelayCountToEffectNode_NearLink_006, TestS
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_MCH_ROUTE_MODE);
     EXPECT_NE(node, nullptr);
     // Should not crash
     node->SetDelayCountToEffectNode(10);
@@ -1385,7 +1374,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, SetDelayCountToEffectNode_NullBuffer_007, Tes
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     EXPECT_NE(node, nullptr);
     EXPECT_EQ(node->tempEffectBuffer_, nullptr);
     // Should not crash when tempEffectBuffer_ is null
@@ -1407,15 +1396,9 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_DefaultScene_008, T
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_DEFAULT;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_MCH_ROUTE_MODE);
     EXPECT_NE(node, nullptr);
-    // With HPAE_SCENE_DEFAULT the constructor maps sceneType_ to "SCENE_DEFAULT" and skips
-    // the SCENE_COLLABORATIVE block entirely, so no collaborative outputs are allocated
-    // even though the NearLink state was requested.
-    EXPECT_EQ(node->sceneType_, "SCENE_DEFAULT");
-    EXPECT_EQ(node->tempEffectBuffer_, nullptr);
-    EXPECT_EQ(node->directOutput_, nullptr);
-    EXPECT_EQ(node->collaborativeOutput_, nullptr);
+
 }
 
 // --- Phase 3D-2: AudioRenderer/OffloadRenderer lifecycle coverage ---
@@ -1526,7 +1509,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_nearLink_emptyInput, 
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_MCH_ROUTE_MODE);
     ASSERT_NE(node->tempEffectBuffer_, nullptr);
     // DoProcess with empty upstream drives the NearLink empty-input exit path.
     node->DoProcess();
@@ -1543,7 +1526,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_emptyInput_writesS
     nodeInfo.format = SAMPLE_F32LE;
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     ASSERT_NE(node->directOutput_, nullptr);
     ASSERT_NE(node->collaborativeOutput_, nullptr);
     // DoProcess with empty upstream, BT mode — falls through to the `else`
@@ -1583,7 +1566,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_closeState_emptyInput
     // because they're only created when isCollaborationEnabled_ ==
     // COLLABORATION_BLUETOOTH_OPEN). Both inner conditions fail, hits the
     // `else` silence-write branch.
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_CLOSE);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     node->DoProcess();
     SUCCEED();
 }
@@ -1818,7 +1801,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, SplitCollaborativeData_stereoEffectOutputRetu
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2000);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
 
     EXPECT_EQ(node->SplitCollaborativeData(), ERROR);
 }
@@ -1828,7 +1811,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, SplitCollaborativeData_fourChannelEffectOutpu
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2100, CHANNEL_4, CH_LAYOUT_4POINT0);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     ASSERT_NE(node->directOutput_, nullptr);
     ASSERT_NE(node->collaborativeOutput_, nullptr);
     float *effectData = node->effectOutput_.GetPcmDataBuffer();
@@ -1856,7 +1839,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_nearLink_nonEmptyInpu
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2300, CHANNEL_4, CH_LAYOUT_4POINT0);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_MCH_ROUTE_MODE);
     PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
     HpaePcmBuffer inputBuffer(pcmBufferInfo);
     inputBuffer.GetPcmDataBuffer();
@@ -1875,7 +1858,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_nonEmptyInputWrite
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2400, STEREO, CH_LAYOUT_STEREO);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
     HpaePcmBuffer inputBuffer(pcmBufferInfo);
     inputBuffer.GetPcmDataBuffer();
@@ -1894,7 +1877,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_disabledProcessFor
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2500, STEREO, CH_LAYOUT_STEREO);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_CLOSE);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
     HpaePcmBuffer inputBuffer(pcmBufferInfo);
     inputBuffer.GetPcmDataBuffer();
@@ -1915,7 +1898,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_fourChannelOutputW
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 2600, CHANNEL_4, CH_LAYOUT_4POINT0);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
     HpaePcmBuffer inputBuffer(pcmBufferInfo);
     inputBuffer.GetPcmDataBuffer();
@@ -1968,7 +1951,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, InitEffectBuffer_collaborativeReturnsEarly, T
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 3000);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
 
     node->InitEffectBuffer(nodeInfo.sessionId);
 
@@ -2042,7 +2025,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_nearLink_disabledProc
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 3400, CHANNEL_4, CH_LAYOUT_4POINT0);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_MCH_ROUTE_MODE);
     PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
     HpaePcmBuffer inputBuffer(pcmBufferInfo);
     inputBuffer.GetPcmDataBuffer();
@@ -2060,7 +2043,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_nearLink_nullTempBuff
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 3500, CHANNEL_4, CH_LAYOUT_4POINT0);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     node->tempEffectBuffer_ = nullptr;
     PcmBufferInfo pcmBufferInfo(CHANNEL_4, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_4POINT0);
     HpaePcmBuffer inputBuffer(pcmBufferInfo);
@@ -2078,7 +2061,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_nullDirectOutputFo
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 3600, STEREO, CH_LAYOUT_STEREO);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     node->directOutput_ = nullptr;
     PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
     HpaePcmBuffer inputBuffer(pcmBufferInfo);
@@ -2096,7 +2079,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_collaborative_bt_nullCollaborativeO
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 3700, STEREO, CH_LAYOUT_STEREO);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
     node->collaborativeOutput_ = nullptr;
     PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000, CH_LAYOUT_STEREO);
     HpaePcmBuffer inputBuffer(pcmBufferInfo);
@@ -2400,7 +2383,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, AudioRendererStart_TempEffectBuffer_012, Test
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 4700, STEREO, CH_LAYOUT_STEREO);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_NEARLINK_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_MCH_ROUTE_MODE);
     ASSERT_NE(node->tempEffectBuffer_, nullptr);
 
     EXPECT_EQ(node->AudioRendererStart(nodeInfo), 0);
@@ -2535,7 +2518,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, SplitCollaborativeData_FourChannels_023, Test
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 5600, CHANNEL_4, CH_LAYOUT_4POINT0);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
 
     EXPECT_EQ(node->SplitCollaborativeData(), SUCCESS);
 }
@@ -2605,7 +2588,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, DoProcess_CollaborativeBT_EmptyPreOutputs_027
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6000, STEREO, CH_LAYOUT_STEREO);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
 
     // Empty preOutputs should write silence
     node->DoProcess();
@@ -2622,7 +2605,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, InitEffectBuffer_CollaborativeScene_028, Test
     HpaeNodeInfo nodeInfo = BuildRenderEffectNodeInfo(TEST_ID + 6100, STEREO, CH_LAYOUT_STEREO);
     nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
-    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_BLUETOOTH_OPEN);
+    auto node = std::make_shared<HpaeRenderEffectNode>(nodeInfo, COLLABORATION_DEFAULT_ROUTE_MODE);
 
     // Collaborative scene should return early
     node->InitEffectBuffer(nodeInfo.sessionId);

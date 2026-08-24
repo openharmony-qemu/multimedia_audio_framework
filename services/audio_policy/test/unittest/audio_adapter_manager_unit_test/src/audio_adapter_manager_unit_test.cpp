@@ -1778,5 +1778,147 @@ HWTEST_F(AudioAdapterManagerUnitTest, AdjustVolumeForSpecialDevice_012, TestSize
     audioAdapterManager->isVgsVolumeSupported_ = false;
 }
 
+/**
+ * @tc.name: SaveSystemVolumeForEffect_MultipleDevices_001
+ * @tc.type: FUNC
+ * @tc.desc: Test SaveSystemVolumeForEffect for multiple device types
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SaveSystemVolumeForEffect_MultipleDevices_001, TestSize.Level1)
+{
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    // Save different volumes for different devices
+    AudioAdapterManager::GetInstance().SaveSystemVolumeForEffect(DEVICE_TYPE_SPEAKER, streamType, 10);
+    AudioAdapterManager::GetInstance().SaveSystemVolumeForEffect(DEVICE_TYPE_BLUETOOTH_A2DP, streamType, 8);
+    AudioAdapterManager::GetInstance().SaveSystemVolumeForEffect(DEVICE_TYPE_WIRED_HEADSET, streamType, 12);
+
+    // Retrieve and verify volumes
+    int32_t speakerVolume = AudioAdapterManager::GetInstance().GetSystemVolumeForEffect(
+        DEVICE_TYPE_SPEAKER, streamType);
+    int32_t bluetoothVolume = AudioAdapterManager::GetInstance().GetSystemVolumeForEffect(
+        DEVICE_TYPE_BLUETOOTH_A2DP, streamType);
+    int32_t wiredVolume = AudioAdapterManager::GetInstance().GetSystemVolumeForEffect(
+        DEVICE_TYPE_WIRED_HEADSET, streamType);
+
+    EXPECT_EQ(speakerVolume, 10);
+    EXPECT_EQ(bluetoothVolume, 8);
+    EXPECT_EQ(wiredVolume, 12);
+}
+
+/**
+ * @tc.name: GetSystemVolumeForEffect_NotSet_001
+ * @tc.type: FUNC
+ * @tc.desc: Test GetSystemVolumeForEffect when volume not set (should return default)
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetSystemVolumeForEffect_NotSet_001, TestSize.Level1)
+{
+    AudioStreamType streamType = STREAM_ALARM;
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+
+    // Get volume without saving first - should return default
+    int32_t volume = AudioAdapterManager::GetInstance().GetSystemVolumeForEffect(deviceType, streamType);
+    // Default volume is expected when not set
+    EXPECT_GE(volume, 0);
+}
+
+/**
+ * @tc.name: IsChannelLayoutSupportedForDspEffectWithDeviceType_001
+ * @tc.type: FUNC
+ * @tc.desc: Test IsChannelLayoutSupportedForDspEffect with DeviceType for SPEAKER device
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_001, TestSize.Level1)
+{
+    bool ret = AudioAdapterManager::GetInstance().IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_6POINT0_FRONT, DEVICE_TYPE_SPEAKER);
+    // Without proper adapter setup, should return false
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name: IsChannelLayoutSupportedForDspEffectWithDeviceType_002
+ * @tc.type: FUNC
+ * @tc.desc: Test IsChannelLayoutSupportedForDspEffect with DeviceType for BLUETOOTH_A2DP device
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_002, TestSize.Level1)
+{
+    bool ret = AudioAdapterManager::GetInstance().IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_STEREO, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name: IsChannelLayoutSupportedForDspEffectWithDeviceType_003
+ * @tc.type: FUNC
+ * @tc.desc: Test IsChannelLayoutSupportedForDspEffect with DeviceType for WIRED_HEADSET device
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_003, TestSize.Level1)
+{
+    bool ret = AudioAdapterManager::GetInstance().IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_MONO, DEVICE_TYPE_WIRED_HEADSET);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name: IsChannelLayoutSupportedForDspEffectWithDeviceType_004
+ * @tc.type: FUNC
+ * @tc.desc: Test IsChannelLayoutSupportedForDspEffect with DeviceType for NEARLINK device
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_004, TestSize.Level1)
+{
+    bool ret = AudioAdapterManager::GetInstance().IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_2POINT1, DEVICE_TYPE_NEARLINK);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name: IsChannelLayoutSupportedForDspEffectWithDeviceType_005
+ * @tc.type: FUNC
+ * @tc.desc: Test IsChannelLayoutSupportedForDspEffect with DeviceType for USB_HEADSET device
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_005, TestSize.Level1)
+{
+    bool ret = AudioAdapterManager::GetInstance().IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_5POINT1, DEVICE_TYPE_USB_HEADSET);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name: IsChannelLayoutSupportedForDspEffectWithDeviceType_Multiple_001
+ * @tc.type: FUNC
+ * @tc.desc: Test IsChannelLayoutSupportedForDspEffect with DeviceType for multiple channel layouts
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_Multiple_001, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    bool ret1 = AudioAdapterManager::GetInstance().IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_MONO, deviceType);
+    bool ret2 = AudioAdapterManager::GetInstance().IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_STEREO, deviceType);
+    bool ret3 = AudioAdapterManager::GetInstance().IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_5POINT1, deviceType);
+    bool ret4 = AudioAdapterManager::GetInstance().IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_7POINT1, deviceType);
+
+    EXPECT_EQ(ret1, false);
+    EXPECT_EQ(ret2, false);
+    EXPECT_EQ(ret3, false);
+    EXPECT_EQ(ret4, false);
+}
+
+/**
+ * @tc.name: IsChannelLayoutSupportedForDspEffectWithDeviceType_NullAdapter_001
+ * @tc.type: FUNC
+ * @tc.desc: Test IsChannelLayoutSupportedForDspEffect with DeviceType when adapter is null
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_NullAdapter_001,
+    TestSize.Level1)
+{
+    // This test verifies the behavior when audioServiceAdapter_ is null
+    // It should return false when adapter is not available
+    bool ret = AudioAdapterManager::GetInstance().IsChannelLayoutSupportedForDspEffect(
+        CH_LAYOUT_7POINT1, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(ret, false);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

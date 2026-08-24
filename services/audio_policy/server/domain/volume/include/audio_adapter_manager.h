@@ -311,6 +311,9 @@ public:
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
     int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled);
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
+    int32_t UpdateDeviceSpatialEnabled(const std::string &address, const AudioSpatializationState &state);
+    int32_t RemoveDeviceSpatialEnabled(const std::string &address);
+    int32_t ClearDeviceSpatialEnabled();
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
     void RegisterMdmMuteSwitchCallback();
@@ -324,6 +327,7 @@ public:
     void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);
+    int32_t SetSystemVolumeToEffectWithDeviceType(AudioStreamType streamType, float volume, DeviceType deviceType);
     void SaveSystemVolumeForSwitchDevice(std::shared_ptr<AudioDeviceDescriptor> &device,
         AudioStreamType streamType, int32_t volumeLevel);
     void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
@@ -343,6 +347,7 @@ public:
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType, int32_t zoneId = 0);
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType, int32_t zoneId = 0);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout, DeviceType deviceType);
     void UpdateOtherStreamVolume(AudioStreamType streamType);
     void SetVolumeLimit(float volume);
     void SetMaxVolumeForDpBoardcast();

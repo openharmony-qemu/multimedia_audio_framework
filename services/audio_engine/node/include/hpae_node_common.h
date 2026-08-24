@@ -24,6 +24,8 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+static constexpr uint32_t BASE_TEN = 10;
+
 bool CheckHpaeNodeInfoIsSame(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &curNodeInfo);
 HpaeProcessorType TransStreamTypeToSceneType(AudioStreamType streamType);
 HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene);
@@ -53,6 +55,7 @@ void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo);
 RendererState ConvertHpaeToRendererState(HpaeSessionState state);
 CapturerState ConvertHpaeToCapturerState(HpaeSessionState state);
 DeviceType GetDeviceType(CollaborationState isCollaborationEnabled);
+std::string EncryptMacAddress(const std::string &address);
 
 // for hidumper device / stream info trans, param should be HpaeSinkInfo / HpaeSourceInfo / HpaeStreamInfo
 template <typename T>
@@ -81,6 +84,15 @@ inline HpaePcmBuffer* PrepareSilenceBuffer(HpaePcmBuffer& silence)
     silence.SetBufferValid(false);
     silence.SetBufferSilence(true);
     return &silence;
+}
+
+inline long StringToNum(const std::string &str)
+{
+    char *endptr;
+    long num = strtol(str.c_str(), &endptr, BASE_TEN);
+    CHECK_AND_RETURN_RET_LOG(endptr != nullptr && *endptr == '\0', 0,
+        "trans str \"%{public}s\" to num failed", str.c_str());
+    return num;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

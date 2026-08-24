@@ -657,6 +657,40 @@ int32_t HpaeManagerImpl::UpdateSpatializationState(AudioSpatializationState spat
     return manager_->UpdateSpatializationState(spatializationState);
 }
 
+int32_t HpaeManagerImpl::UpdateDeviceSpatialEnabled(const std::string &address,
+    const AudioSpatializationState &state)
+{
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
+    return manager_->UpdateDeviceSpatialEnabled(address, state);
+}
+
+int32_t HpaeManagerImpl::RemoveDeviceSpatialEnabled(const std::string &address)
+{
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
+    return manager_->RemoveDeviceSpatialEnabled(address);
+}
+
+int32_t HpaeManagerImpl::ClearDeviceSpatialEnabled()
+{
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
+    return manager_->ClearDeviceSpatialEnabled();
+}
+
 int32_t HpaeManagerImpl::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
@@ -699,6 +733,18 @@ int32_t HpaeManagerImpl::SetEffectSystemVolume(const int32_t systemVolumeType, c
             "manager is nullptr", false),
         "manager is nullptr");
     return manager_->SetEffectSystemVolume(systemVolumeType, systemVolume);
+}
+
+int32_t HpaeManagerImpl::SetEffectSystemVolumeWithDeviceType(const int32_t systemVolumeType,
+    const float systemVolume, DeviceType deviceType)
+{
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERR_ILLEGAL_STATE,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+                BusinessScenario::CONFIG, ERR_SERVICE_UNAVAILABLE),
+            "manager is nullptr", false),
+        "manager is nullptr");
+    return manager_->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType);
 }
 
 int32_t HpaeManagerImpl::SetAbsVolumeStateToEffect(const bool absVolumeState)
@@ -935,6 +981,17 @@ bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout ch
             "manager is nullptr", false),
         "manager is nullptr");
     return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout, DeviceType deviceType)
+{
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+            BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::RECORD,
+                BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "manager is nullptr", false),
+        "manager is nullptr");
+    return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout, deviceType);
 }
 
 // interfaces for injector

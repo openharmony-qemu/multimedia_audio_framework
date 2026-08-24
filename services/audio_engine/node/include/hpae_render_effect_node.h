@@ -65,7 +65,8 @@ private:
 
 class HpaeRenderEffectNode : public HpaePluginNode, public HpaeTempEffectBuffer {
 public:
-    HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled = COLLABORATION_CLOSE);
+    HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, CollaborationRouteMode collaborationRouteMode_ =
+        COLLABORATION_INVALID_ROUTE_MODE);
     virtual ~HpaeRenderEffectNode();
     void DoProcess() override;
     int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo);
@@ -108,8 +109,8 @@ private:
     std::unique_ptr<HpaePcmDumper> directPcmDumper_;
     std::unique_ptr<HpaePcmDumper> collaborativePcmDumper_;
 #endif
-    CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
     std::shared_ptr<HpaeTempEffectBuffer> tempEffectBuffer_ = nullptr;
+    CollaborationRouteMode collaborationRouteMode_ = COLLABORATION_INVALID_ROUTE_MODE;
 };
 
 } // namespace HPAE

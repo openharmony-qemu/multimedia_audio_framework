@@ -751,6 +751,7 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
         moduleInfo.renderInIdleState = "1";
         moduleInfo.sinkLatency = "0";
         moduleInfo.deviceType = std::to_string(static_cast<int32_t>(deviceType));
+        moduleInfo.macAddress = macAddress;
 
         // First unload the existing bt sink
         AUDIO_DEBUG_LOG("UnLoad existing a2dp module");

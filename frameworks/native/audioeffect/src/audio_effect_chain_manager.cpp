@@ -127,6 +127,10 @@ AudioEffectChainManager *AudioEffectChainManager::GetInstance()
 int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::string &sinkName)
 {
     Trace trace("AudioEffectChainManager::UpdateDeviceInfo");
+    if (Util::IsEnhancedRoutingSupported()) {
+        AUDIO_INFO_LOG("Enhanced routing is supported, no need update device info");
+        return SUCCESS;
+    }
     if (!isInitialized_) {
         deviceType_ = (DeviceType)device;
         deviceSink_ = sinkName;
@@ -228,6 +232,9 @@ std::string AudioEffectChainManager::GenerateEffectChainKey(
 
 bool AudioEffectChainManager::GetOffloadEnabled()
 {
+    if (Util::IsEnhancedRoutingSupported()) {
+        return false;
+    }
     if (deviceType_ == DEVICE_TYPE_SPEAKER) {
         return spkOffloadEnabled_;
     } else {
@@ -653,8 +660,15 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
                 "sessionID:%{public}s sceneType:%{public}s, sceneMode is EFFECT_NONE, no send volume",
                 (*s).c_str(), it->first.c_str());
             float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*s);
-            float systemVolumeTemp = audioEffectVolume->GetSystemVolume(
-                sessionIDToEffectInfoMap_[*s].systemVolumeType);
+            float systemVolumeTemp = 0.0f;
+            if (Util::IsEnhancedRoutingSupported()) {
+                DeviceType sessionDeviceType = sessionIDToEffectInfoMap_[*s].deviceType;
+                systemVolumeTemp = audioEffectVolume->GetSystemVolumeWithDeviceType(
+                    sessionIDToEffectInfoMap_[*s].systemVolumeType, sessionDeviceType);
+            } else {
+                systemVolumeTemp = audioEffectVolume->GetSystemVolume(
+                    sessionIDToEffectInfoMap_[*s].systemVolumeType);
+            }
             volumeMax = fmax((streamVolumeTemp * systemVolumeTemp), volumeMax);
             needSendDspVolumeFlag = true;
         }
@@ -701,8 +715,15 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
             "null audioEffectChain, sceneType: %{public}s", sceneTypeTemp.c_str());
         auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
         float streamVolumeTemp = audioEffectVolume->GetStreamVolume(*sessionId);
-        float systemVolumeTemp = audioEffectVolume->GetSystemVolume(
-            sessionIDToEffectInfoMap_[*sessionId].systemVolumeType);
+        float systemVolumeTemp = 0.0f;
+        if (Util::IsEnhancedRoutingSupported()) {
+            DeviceType sessionDeviceType = sessionIDToEffectInfoMap_[*sessionId].deviceType;
+            systemVolumeTemp = audioEffectVolume->GetSystemVolumeWithDeviceType(
+                sessionIDToEffectInfoMap_[*sessionId].systemVolumeType, sessionDeviceType);
+        } else {
+            systemVolumeTemp = audioEffectVolume->GetSystemVolume(
+                sessionIDToEffectInfoMap_[*sessionId].systemVolumeType);
+        }
         float currVolumeTemp = audioEffectChain->GetCurrVolume();
         float volumeMax = fmax((streamVolumeTemp * systemVolumeTemp), currVolumeTemp);
         if (volumeMax > currVolumeTemp) {
@@ -800,6 +821,20 @@ int32_t AudioEffectChainManager::SetEffectSystemVolume(const int32_t systemVolum
     return EffectVolumeUpdateInner(audioEffectVolume);
 }
 
+int32_t AudioEffectChainManager::SetEffectSystemVolumeWithDeviceType(const int32_t systemVolumeType,
+    const float systemVolume, DeviceType deviceType)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    // set systemVolume by systemVolumeType for specified deviceType
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
+    audioEffectVolume->SetSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType);
+    AUDIO_INFO_LOG("deviceType: %{public}d, systemVolumeType: %{public}d, systemVolume: %{public}f",
+        deviceType, systemVolumeType, audioEffectVolume->GetSystemVolumeWithDeviceType(systemVolumeType, deviceType));
+
+    return EffectVolumeUpdateInner(audioEffectVolume);
+}
+
 #ifdef WINDOW_MANAGER_ENABLE
 int32_t AudioEffectChainManager::EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
     const uint32_t rotationState)
@@ -830,12 +865,8 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate(std::shared_ptr<AudioEff
     CHECK_AND_RETURN_RET_LOG(audioEffectRotation != nullptr, ERROR, "null audioEffectRotation");
     AUDIO_DEBUG_LOG("rotationState change, new state: %{public}d, previous state: %{public}d",
         rotationState, audioEffectRotation->GetRotation());
-    for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
-        std::string sceneTypeAndDeviceKey = it->first + "_&_" + GetDeviceTypeName();
-        if (!sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey)) {
-            return ERROR;
-        }
-        auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+    for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); it++) {
+        auto audioEffectChain = it->second;
         if (audioEffectChain == nullptr) {
             return ERROR;
         }
@@ -843,7 +874,7 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate(std::shared_ptr<AudioEff
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "set ap rotation failed");
         AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, rotation changed to %{public}u",
             it->first.c_str(), audioEffectChain->GetLatency(), rotationState);
-        }
+    }
 
     return SUCCESS;
 }
@@ -1241,14 +1272,19 @@ uint32_t AudioEffectChainManager::GetLatency(const std::string &sessionId)
 {
     Trace trace("AudioEffectChainManager::GetLatency: " + sessionId);
     std::lock_guard<std::mutex> lock(dynamicMutex_);
-    if (((deviceType_ == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) ||
-        ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_)) ||
-        ((deviceType_ == DEVICE_TYPE_NEARLINK) && (btOffloadEnabled_))) {
+
+    CHECK_AND_RETURN_RET(sessionIDToEffectInfoMap_.count(sessionId), 0);
+    DeviceType deviceTypeTemp = deviceType_;
+    if (Util::IsEnhancedRoutingSupported()) {
+        deviceTypeTemp = sessionIDToEffectInfoMap_[sessionId].deviceType;
+    }
+    if (((deviceTypeTemp == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) ||
+        ((deviceTypeTemp == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_)) ||
+        ((deviceTypeTemp == DEVICE_TYPE_NEARLINK) && (btOffloadEnabled_))) {
         AUDIO_DEBUG_LOG("offload enabled, return 0");
         return 0;
     }
 
-    CHECK_AND_RETURN_RET(sessionIDToEffectInfoMap_.count(sessionId), 0);
     if (sessionIDToEffectInfoMap_[sessionId].sceneMode == "" ||
         sessionIDToEffectInfoMap_[sessionId].sceneMode == "None") {
         AUDIO_DEBUG_LOG("seceneMode is None, return 0");
@@ -1735,7 +1771,7 @@ void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType
         uint32_t tmpChannelCount;
         uint64_t tmpChannelLayout;
         std::string deviceType = GetDeviceTypeName();
-        if (ExistAudioEffectChainInner(sceneType, info.sceneMode)) {
+        if (CheckExistAudioEffectChainInner(sceneType, info.sceneMode, info.deviceType, info.renderId)) {
             tmpChannelLayout = info.channelLayout;
             tmpChannelCount = info.channels;
         } else {
@@ -1872,12 +1908,17 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
 void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationState spatializationState)
 {
     spatializationEnabled_ = spatializationState.spatializationEnabled;
+    DeviceType deviceTypeTemp = deviceType_;
+    if (Util::IsEnhancedRoutingSupported()) {
+        deviceTypeTemp = static_cast<DeviceType>(spatializationState.deviceType);
+        spatializationDeviceType_ = deviceTypeTemp;
+    }
     AUDIO_INFO_LOG("updateSpatializationEnabled %{public}d", spatializationState.spatializationEnabled);
     bool effectEnabled = IsSpatializationEnabledForChains();
 
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     if (effectEnabled) {
-        if (((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) || (deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) &&
+        if (((deviceTypeTemp == DEVICE_TYPE_BLUETOOTH_A2DP) || (deviceTypeTemp == DEVICE_TYPE_BLUETOOTH_SCO)) &&
             (!btOffloadSupported_)) {
             AUDIO_INFO_LOG("A2dp-hal, enter ARM processing");
             btOffloadEnabled_ = false;
@@ -2388,6 +2429,18 @@ int32_t AudioEffectChainManager::ReleaseAudioEffectChainDynamicInner(
     return SUCCESS;
 }
 
+bool AudioEffectChainManager::CheckExistAudioEffectChainInner(const std::string &sceneType,
+    const std::string &effectMode, DeviceType deviceType, uint32_t renderId)
+{
+    if (Util::IsEnhancedRoutingSupported()) {
+        return ExistAudioEffectChainWithDeviceTypeInner(sceneType, effectMode, deviceType, renderId);
+    } else {
+        return ExistAudioEffectChainInner(sceneType, effectMode);
+    }
+
+    return false;
+}
+
 bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &sceneType, const std::string &effectMode)
 {
     if (!isInitialized_) {
@@ -2418,6 +2471,50 @@ bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &scen
         return false;
     }
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
+    // if the effectChain exist, see if it is empty
+    if (!sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) ||
+        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
+        return false;
+    }
+    if (sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
+        sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] == 0) {
+        return false;
+    }
+    auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
+    return !audioEffectChain->IsEmptyEffectHandles();
+}
+
+bool AudioEffectChainManager::ExistAudioEffectChainWithDeviceTypeInner(const std::string &sceneType,
+    const std::string &effectMode, DeviceType deviceType, uint32_t renderId)
+{
+    if (!isInitialized_) {
+        if (initializedLogFlag_) {
+            AUDIO_ERR_LOG("audioEffectChainManager has not been initialized");
+            initializedLogFlag_ = false;
+        }
+        return false;
+    }
+    initializedLogFlag_ = true;
+    CHECK_AND_RETURN_RET(sceneType != "", false);
+    CHECK_AND_RETURN_RET(GetDeviceTypeName(deviceType) != "", false);
+
+    if ((deviceType == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) {
+        return false;
+    }
+
+    if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_)) {
+        return false;
+    }
+
+    if ((deviceType == DEVICE_TYPE_NEARLINK) && (btOffloadEnabled_)) {
+        return false;
+    }
+
+    std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
+    if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
+        return false;
+    }
+    std::string sceneTypeAndDeviceKey = GenerateEffectChainKey(sceneType, deviceType, renderId);
     // if the effectChain exist, see if it is empty
     if (!sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) ||
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
@@ -2541,8 +2638,12 @@ void AudioEffectChainManager::SetBypassSpatializationForStereo(bool bypass)
         "no need to update bypassSpatializationForStereo_ %{public}d", bypassSpatializationForStereo_);
     AUDIO_INFO_LOG("AudioEffectChainManager::SetBypassSpatializationForStereo %{public}d", bypass);
     bypassSpatializationForStereo_ = bypass;
-    CHECK_AND_RETURN(spatializationEnabled_ && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || deviceType_ == DEVICE_TYPE_NEARLINK));
+    DeviceType deviceTypeTemp = deviceType_;
+    if (Util::IsEnhancedRoutingSupported()) {
+        deviceTypeTemp = spatializationDeviceType_;
+    }
+    CHECK_AND_RETURN(spatializationEnabled_ && (deviceTypeTemp == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        deviceTypeTemp == DEVICE_TYPE_BLUETOOTH_SCO || deviceTypeTemp == DEVICE_TYPE_NEARLINK));
     AudioSpatializationState spatializationState = {spatializationEnabled_, headTrackingEnabled_};
     bool previousOffloadState = btOffloadEnabled_;
     UpdateSpatializationEnabled(spatializationState);
@@ -2613,15 +2714,9 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string 
 
 int32_t AudioEffectChainManager::EffectVolumeUpdateInner(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
-    int32_t ret;
-    if (((deviceType_ == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) ||
-        ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (btOffloadEnabled_)) ||
-        ((deviceType_ == DEVICE_TYPE_NEARLINK) && (btOffloadEnabled_))) {
-        ret = EffectDspVolumeUpdate(audioEffectVolume);
-    } else {
-        ret = EffectApVolumeUpdate(audioEffectVolume);
-    }
-    return ret;
+    EffectDspVolumeUpdate(audioEffectVolume);
+    EffectApVolumeUpdate(audioEffectVolume);
+    return SUCCESS;
 }
 
 int32_t AudioEffectChainManager::InitEffectBuffer(const std::string &sessionID)
@@ -2858,8 +2953,12 @@ int32_t AudioEffectChainManager::EffectApAbsVolumeStateUpdate(const bool absVolu
 
 bool AudioEffectChainManager::IsDeviceTypeSupportingSpatialization()
 {
-    return (deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) || (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) ||
-        (deviceType_ == DEVICE_TYPE_NEARLINK);
+    DeviceType deviceTypeTemp = deviceType_;
+    if (Util::IsEnhancedRoutingSupported()) {
+        deviceTypeTemp = spatializationDeviceType_;
+    }
+    return (deviceTypeTemp == DEVICE_TYPE_BLUETOOTH_SCO) || (deviceTypeTemp == DEVICE_TYPE_BLUETOOTH_A2DP) ||
+        (deviceTypeTemp == DEVICE_TYPE_NEARLINK);
 }
 
 bool AudioEffectChainManager::ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode)
@@ -2908,6 +3007,20 @@ bool AudioEffectChainManager::IsChannelLayoutSupportedForDspEffect(AudioChannelL
     *tempChannelLayout = channelLayout;
     CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, false, "audioEffectHdiParam_ is nullptr");
     DeviceType deviceTypeTemp = deviceType_ == DEVICE_TYPE_NEARLINK ? DEVICE_TYPE_BLUETOOTH_A2DP : deviceType_;
+    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, deviceTypeTemp) == SUCCESS, false,
+        "query channel layout support failed :%{public}" PRIu64, channelLayout);
+    return true;
+}
+
+bool AudioEffectChainManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout,
+    DeviceType deviceType)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    effectHdiInput_[0] = HDI_QUERY_CHANNELLAYOUT;
+    uint64_t* tempChannelLayout = reinterpret_cast<uint64_t *>(effectHdiInput_ + 1);
+    *tempChannelLayout = channelLayout;
+    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, false, "audioEffectHdiParam_ is nullptr");
+    DeviceType deviceTypeTemp = deviceType == DEVICE_TYPE_NEARLINK ? DEVICE_TYPE_BLUETOOTH_A2DP : deviceType;
     CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, deviceTypeTemp) == SUCCESS, false,
         "query channel layout support failed :%{public}" PRIu64, channelLayout);
     return true;

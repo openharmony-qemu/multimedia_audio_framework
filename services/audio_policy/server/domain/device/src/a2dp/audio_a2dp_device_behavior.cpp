@@ -119,7 +119,9 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
     std::string sinkName   = AudioPolicyUtils::GetInstance().GetSinkPortName(
         AudioActiveDevice::GetInstance().GetCurrentOutputDeviceType());
 
-    result = LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, networkId, sinkName, SOURCE_TYPE_INVALID);
+    A2dpReloadContext context = {DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, networkId, sinkName,
+        SOURCE_TYPE_INVALID, deviceDesc->macAddress_};
+    result = LoadA2dpModule(context);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
@@ -128,8 +130,7 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
     return result;
 }
 
-int32_t AudioA2dpDeviceBehavior::LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
-    std::string networkId, std::string sinkName, SourceType sourceType)
+int32_t AudioA2dpDeviceBehavior::LoadA2dpModule(const A2dpReloadContext &context)
 {
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = AudioCoreConfigManager::GetInstance().GetModuleListByType(ClassType::TYPE_A2DP, moduleInfoList);
@@ -140,15 +141,16 @@ int32_t AudioA2dpDeviceBehavior::LoadA2dpModule(DeviceType deviceType, const Aud
 
     for (auto &moduleInfo : moduleInfoList) {
         DeviceRole configRole = (moduleInfo.role == "source") ? INPUT_DEVICE : OUTPUT_DEVICE;
-        DeviceRole deviceRole = (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) ? OUTPUT_DEVICE : INPUT_DEVICE;
+        DeviceRole deviceRole = (context.deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) ? OUTPUT_DEVICE : INPUT_DEVICE;
         AUDIO_INFO_LOG("Load a2dp module [%{public}s], role[%{public}d], config role[%{public}d]",
             moduleInfo.name.c_str(), deviceRole, configRole);
         if (configRole != deviceRole) { continue; }
         if (!AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
-            AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo);
+            AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, context.audioStreamInfo);
 
             uint32_t paIndex = 0;
-            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(deviceType));
+            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(context.deviceType));
+            moduleInfo.macAddress = context.macAddress;
             AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo,
                 paIndex);
             CHECK_AND_CALL_FUNC_RETURN_RET(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
@@ -181,7 +183,6 @@ int32_t AudioA2dpDeviceBehavior::LoadA2dpModule(DeviceType deviceType, const Aud
         } else {
             // At least one a2dp device is already connected. A new a2dp device is connecting.
             // Need to reload a2dp module when switching to a2dp device.
-            A2dpReloadContext context = {deviceType, audioStreamInfo, networkId, sinkName, sourceType};
             int32_t result = ReloadA2dpAudioPort(moduleInfo, context);
             CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "ReloadA2dpAudioPort failed %{public}d", result);
         }
@@ -204,8 +205,7 @@ int32_t AudioA2dpDeviceBehavior::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo
     uint32_t curPaIndex = pipeManager->GetPaIndexByIoHandle(activateDeviceIOHandle);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs =
         pipeManager->GetStreamDescsByIoHandle(activateDeviceIOHandle);
-    AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u, stream num: %{public}zu",
-        activateDeviceIOHandle, curPaIndex, streamDescs.size());
+    AUDIO_INFO_LOG("INFO: %{public}u,%{public}u,%{public}zu", activateDeviceIOHandle, curPaIndex, streamDescs.size());
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag != 1) {
@@ -219,6 +219,7 @@ int32_t AudioA2dpDeviceBehavior::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo
     AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, context.audioStreamInfo);
     uint32_t paIndex = 0;
     moduleInfo.deviceType = std::to_string(static_cast<int32_t>(context.deviceType));
+    moduleInfo.macAddress = context.macAddress;
     AudioIOHandle ioHandle = ReloadOrOpenAudioPort(engineFlag, moduleInfo, paIndex);
     AudioIOHandleMap::GetInstance().AddIOHandleInfo(moduleInfo.name, ioHandle);
 

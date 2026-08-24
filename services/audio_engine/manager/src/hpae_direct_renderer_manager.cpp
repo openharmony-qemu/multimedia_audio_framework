@@ -288,7 +288,7 @@ int32_t HpaeDirectRendererManager::RecreateSinkOutputNodeIfNeeded()
     AudioChannel newChannels = AudioChannel::STEREO;
     HpaeNodeInfo outputNodeInfo = sinkOutputNode_->GetNodeInfo();
     if (outputNodeInfo.samplingRate == newSampleRate && outputNodeInfo.format == newFormat &&
-        outputNodeInfo.channels == newChannels) {
+        outputNodeInfo.channels == newChannels && sinkOutputNode_->IsRenderInit()) {
         return SUCCESS;
     }
     AUDIO_INFO_LOG("SessionId %{public}u, config changed: rate[%{public}u->%{public}u], "

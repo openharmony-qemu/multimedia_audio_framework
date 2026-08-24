@@ -58,8 +58,14 @@ public:
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
     int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
+    int32_t UpdateDeviceSpatialEnabled(const std::string &address,
+        const AudioSpatializationState &state) override;
+    int32_t RemoveDeviceSpatialEnabled(const std::string &address) override;
+    int32_t ClearDeviceSpatialEnabled() override;
     int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) override;
+    int32_t SetSystemVolumeToEffectWithDeviceType(AudioStreamType streamType, float volume,
+        DeviceType deviceType) override;
     void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) override;
     void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
@@ -88,6 +94,8 @@ public:
     virtual void OnGetAudioEnhancePropertyCb(int32_t result) override;
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
+    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout,
+        DeviceType deviceType) override;
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
     int32_t UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled) override;
     bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage) override;

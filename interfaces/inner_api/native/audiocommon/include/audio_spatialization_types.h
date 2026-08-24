@@ -85,6 +85,8 @@ struct AudioSpatializationState : public Parcelable {
     bool headTrackingEnabled = false;
     bool adaptiveSpatialRenderingEnabled = false;
     bool personalizedSpatializationEnabled = false;
+    int32_t deviceType = 0;
+    std::string macAddress;
 
     AudioSpatializationState() = default;
     AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
@@ -109,12 +111,26 @@ struct AudioSpatializationState : public Parcelable {
         this->personalizedSpatializationEnabled = personalizedSpatializationEnabled;
     }
 
+    AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled,
+        bool adaptiveSpatialRenderingEnabled, bool personalizedSpatializationEnabled,
+        int32_t deviceType, const std::string &macAddress)
+    {
+            this->spatializationEnabled = spatializationEnabled;
+            this->headTrackingEnabled = headTrackingEnabled;
+            this->adaptiveSpatialRenderingEnabled = adaptiveSpatialRenderingEnabled;
+            this->personalizedSpatializationEnabled = personalizedSpatializationEnabled;
+            this->deviceType = deviceType;
+            this->macAddress = macAddress;
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteBool(spatializationEnabled)
             && parcel.WriteBool(headTrackingEnabled)
             && parcel.WriteBool(adaptiveSpatialRenderingEnabled)
-            && parcel.WriteBool(personalizedSpatializationEnabled);
+            && parcel.WriteBool(personalizedSpatializationEnabled)
+            && parcel.WriteInt32(deviceType)
+            && parcel.WriteString(macAddress);
     }
 
     static AudioSpatializationState *Unmarshalling(Parcel &parcel)
@@ -127,6 +143,8 @@ struct AudioSpatializationState : public Parcelable {
         info->headTrackingEnabled = parcel.ReadBool();
         info->adaptiveSpatialRenderingEnabled = parcel.ReadBool();
         info->personalizedSpatializationEnabled = parcel.ReadBool();
+        info->deviceType = parcel.ReadInt32();
+        info->macAddress = parcel.ReadString();
         return info;
     }
 };
