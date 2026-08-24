@@ -22,13 +22,13 @@ namespace OHOS {
 namespace AudioStandard {
 
 // Get and save HDI version, add for flex version. Use for new HDI define compatible.
+// GetInstance() is defined in util/audio_hdi_version_manager.cpp so that the singleton
+// exists only in libhdiadapter_new.z.so; an inline definition would emit a weak copy
+// into every DSO including this header and the copies are not merged under
+// -Bsymbolic/CFI cross-DSO, leaving each DSO with its own version state.
 class AudioHdiVersionManager {
 public:
-    static AudioHdiVersionManager& GetInstance()
-    {
-        static AudioHdiVersionManager instance;
-        return instance;
-    }
+    static AudioHdiVersionManager& GetInstance();
 
     void SetVersion(uint32_t major, uint32_t minor)
     {
@@ -36,8 +36,6 @@ public:
         minorVersion_ = minor;
     }
 
-    uint32_t GetMajorVersion() const { return majorVersion_; }
-    uint32_t GetMinorVersion() const { return minorVersion_; }
     bool IsV61OrAbove() const { return (majorVersion_ == 6 && minorVersion_ >= 1) || majorVersion_ > 6; }
 
 private:

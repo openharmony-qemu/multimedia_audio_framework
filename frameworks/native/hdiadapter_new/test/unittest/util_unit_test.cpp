@@ -25,6 +25,7 @@
 #include "util/ring_buffer_handler.h"
 #include "util/callback_wrapper.h"
 #include "util/kv_pair.h"
+#include "util/audio_hdi_version_manager.h"
 #include "audio_stream_num.h"
 
 using namespace testing::ext;
@@ -554,6 +555,75 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_015, TestSize.Level1)
     
     uint32_t type = idHandler.ParseType(id);
     EXPECT_EQ(type, HDI_ID_TYPE_REMOTE_MULTICHANNEL);
+}
+
+/**
+ * @tc.name   : Test AudioHdiVersion API
+ * @tc.number : AudioHdiVersionManagerUnitTest_001
+ * @tc.desc   : IsV61OrAbove with version below v6.0
+ */
+HWTEST_F(UtilUnitTest, AudioHdiVersionManagerUnitTest_001, TestSize.Level1)
+{
+    AudioHdiVersionManager::GetInstance().SetVersion(0, 0);
+    EXPECT_FALSE(AudioHdiVersionManager::GetInstance().IsV61OrAbove());
+}
+
+/**
+ * @tc.name   : Test AudioHdiVersion API
+ * @tc.number : AudioHdiVersionManagerUnitTest_002
+ * @tc.desc   : IsV61OrAbove with version v6.0 (minor below 1)
+ */
+HWTEST_F(UtilUnitTest, AudioHdiVersionManagerUnitTest_002, TestSize.Level1)
+{
+    AudioHdiVersionManager::GetInstance().SetVersion(6, 0);
+    EXPECT_FALSE(AudioHdiVersionManager::GetInstance().IsV61OrAbove());
+}
+
+/**
+ * @tc.name   : Test AudioHdiVersion API
+ * @tc.number : AudioHdiVersionManagerUnitTest_003
+ * @tc.desc   : IsV61OrAbove with version exactly v6.1
+ */
+HWTEST_F(UtilUnitTest, AudioHdiVersionManagerUnitTest_003, TestSize.Level1)
+{
+    AudioHdiVersionManager::GetInstance().SetVersion(6, 1);
+    EXPECT_TRUE(AudioHdiVersionManager::GetInstance().IsV61OrAbove());
+}
+
+/**
+ * @tc.name   : Test AudioHdiVersion API
+ * @tc.number : AudioHdiVersionManagerUnitTest_004
+ * @tc.desc   : IsV61OrAbove with version v6.2
+ */
+HWTEST_F(UtilUnitTest, AudioHdiVersionManagerUnitTest_004, TestSize.Level1)
+{
+    AudioHdiVersionManager::GetInstance().SetVersion(6, 2);
+    EXPECT_TRUE(AudioHdiVersionManager::GetInstance().IsV61OrAbove());
+}
+
+/**
+ * @tc.name   : Test AudioHdiVersion API
+ * @tc.number : AudioHdiVersionManagerUnitTest_005
+ * @tc.desc   : IsV61OrAbove with major version above 6
+ */
+HWTEST_F(UtilUnitTest, AudioHdiVersionManagerUnitTest_005, TestSize.Level1)
+{
+    AudioHdiVersionManager::GetInstance().SetVersion(7, 0);
+    EXPECT_TRUE(AudioHdiVersionManager::GetInstance().IsV61OrAbove());
+}
+
+/**
+ * @tc.name   : Test AudioHdiVersion API
+ * @tc.number : AudioHdiVersionManagerUnitTest_006
+ * @tc.desc   : IsV61OrAbove with major version 5 then restore default state
+ */
+HWTEST_F(UtilUnitTest, AudioHdiVersionManagerUnitTest_006, TestSize.Level1)
+{
+    AudioHdiVersionManager::GetInstance().SetVersion(5, 9);
+    EXPECT_FALSE(AudioHdiVersionManager::GetInstance().IsV61OrAbove());
+
+    AudioHdiVersionManager::GetInstance().SetVersion(0, 0);
+    EXPECT_FALSE(AudioHdiVersionManager::GetInstance().IsV61OrAbove());
 }
 
 } // namespace AudioStandard
