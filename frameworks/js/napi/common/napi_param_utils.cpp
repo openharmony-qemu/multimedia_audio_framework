@@ -1852,5 +1852,39 @@ napi_status NapiParamUtils::ConvertSoundCardInfoToJs(const napi_env &env,
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set driver failed");
     return napi_ok;
 }
+
+napi_status NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(const napi_env &env,
+    const AudioSuite::AudioSuiteDownloadStatusInfo &info, napi_value &result)
+{
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteDownloadStatusInfo: create object failed");
+
+    status = SetValueString(env, "featureName", info.featureName, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteDownloadStatusInfo: set featureName failed");
+
+    status = SetValueInt32(env, "downloadStatus", static_cast<int32_t>(info.state), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteDownloadStatusInfo: set downloadStatus failed");
+
+    status = SetValueInt64(env, "size", static_cast<int64_t>(info.size), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteDownloadStatusInfo: set size failed");
+
+    status = SetValueString(env, "installPath", info.romPath, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteDownloadStatusInfo: set installPath failed");
+
+    status = SetValueInt32(env, "progress", info.progress, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteDownloadStatusInfo: set progress failed");
+
+    status = SetValueInt32(env, "errorCode", info.errorCode, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status,
+        "SetValueAudioSuiteDownloadStatusInfo: set errorCode failed");
+
+    return napi_ok;
+}
 } // namespace AudioStandard
 } // namespace OHOS

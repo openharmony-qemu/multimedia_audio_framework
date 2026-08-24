@@ -31,6 +31,7 @@
 #include "audio_errors.h"
 #include "audio_manager_log.h"
 #include "napi_audio_debugging_manager.h"
+#include "napi_audio_suite_download_manager.h"
 #include "napi_dfx_utils.h"
 #ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
@@ -146,6 +147,7 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserChoice", ReportPlaybackCaptureUserChoice),
         DECLARE_NAPI_FUNCTION("getDeviceEnhanceManager", GetDeviceEnhanceManager),
         DECLARE_NAPI_FUNCTION("getDebuggingManager", GetDebuggingManager),
+        DECLARE_NAPI_FUNCTION("getSuiteDownloadManager", GetSuiteDownloadManager),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_MNGR_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH,
@@ -1722,6 +1724,24 @@ napi_value NapiAudioManager::GetDebuggingManager(napi_env env, napi_callback_inf
 #else
     return nullptr;
 #endif
+}
+
+napi_value NapiAudioManager::GetSuiteDownloadManager(napi_env env, napi_callback_info info)
+{
+    size_t argCount = PARAM0;
+    napi_status status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
+    if (status != napi_ok || argCount != 0) {
+        NapiAudioError::ThrowError(env, "GetSuiteDownloadManager invalid arguments", NAPI_ERR_INVALID_PARAM);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    napi_value suiteDownloadMgrObj = NapiAudioSuiteDownloadManager::CreateSuiteDownloadManagerWrapper(env);
+    if (suiteDownloadMgrObj == nullptr) {
+        NapiAudioError::ThrowError(env, "CreateSuiteDownloadManager failed", NAPI_ERR_SYSTEM);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    return suiteDownloadMgrObj;
 }
 
 }  // namespace AudioStandard

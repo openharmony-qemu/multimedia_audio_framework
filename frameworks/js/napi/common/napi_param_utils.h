@@ -33,6 +33,7 @@
 #include "audio_stream_manager.h"
 #include "audio_device_descriptor.h"
 #include "audio_device_enhance_manager.h"
+#include "audio_suite_download_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -106,6 +107,8 @@ public:
     static napi_status GetValueInt64(const napi_env &env, const std::string &fieldStr, int64_t &value, napi_value in);
     static napi_status SetValueInt64(const napi_env &env, const std::string &fieldStr,
         const int64_t value, napi_value &result);
+    static napi_status SetValueAudioSuiteDownloadStatusInfo(const napi_env &env,
+        const AudioSuite::AudioSuiteDownloadStatusInfo &info, napi_value &result);
     static napi_status GetArrayBuffer(const napi_env &env, void* &data, size_t &length, napi_value in);
     static napi_status CreateArrayBuffer(const napi_env &env, const std::string &fieldStr, size_t bufferLen,
         uint8_t *bufferData, napi_value &result);

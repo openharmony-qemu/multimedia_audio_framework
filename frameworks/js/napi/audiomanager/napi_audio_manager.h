@@ -104,6 +104,7 @@ struct AudioManagerAsyncContext : public ContextBase {
     static napi_value GetCollaborativeManager(napi_env env, napi_callback_info info);
     static napi_value GetDeviceEnhanceManager(napi_env env, napi_callback_info info);
     static napi_value GetDebuggingManager(napi_env env, napi_callback_info info);
+    static napi_value GetSuiteDownloadManager(napi_env env, napi_callback_info info);
     static napi_value DisableSafeMediaVolume(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);

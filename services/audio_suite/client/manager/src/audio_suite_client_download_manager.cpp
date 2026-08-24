@@ -67,9 +67,10 @@ int32_t AudioSuiteDownloadManagerImpl::UnregisterDownloadStatusCallback()
                            "UnregisterDownloadStatusCallback");
 }
 
-int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& featureName)
+int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& featureName, int32_t networkType)
 {
-    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartDownload, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteDownloadManagerImpl::StartDownload, featureName=%{public}s, networkType=%{public}d",
+        featureName.c_str(), networkType);
     return CallWithTimeout(
         [featureName]() { return AudioSuiteClientPolicy::GetInstance().StartDownload(featureName); }, "StartDownload");
 }
