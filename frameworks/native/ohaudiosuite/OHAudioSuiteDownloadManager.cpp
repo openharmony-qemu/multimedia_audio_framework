@@ -319,7 +319,7 @@ int32_t OHAudioSuiteDownloadManager::UnregisterDownloadStatusCallback(const OH_A
 
 int32_t OHAudioSuiteDownloadManager::StartDownload(const char *featureName)
 {
-    return AudioSuite::AudioSuiteDownloadManager::GetInstance().StartDownload(std::string(featureName), 0);
+    return AudioSuite::AudioSuiteDownloadManager::GetInstance().StartDownload(std::string(featureName));
 }
 
 int32_t OHAudioSuiteDownloadManager::PauseDownload(const char *featureName)

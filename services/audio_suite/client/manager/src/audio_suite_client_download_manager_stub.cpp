@@ -48,10 +48,10 @@ int32_t AudioSuiteDownloadManagerImpl::UnregisterDownloadStatusCallback()
     return ERROR;
 }
 
-int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& featureName, int32_t networkType)
+int32_t AudioSuiteDownloadManagerImpl::StartDownload(const std::string& featureName, bool allowedCellularNet)
 {
-    AUDIO_INFO_LOG("StartDownload, device not support, featureName:%{public}s, networkType:%{public}d",
-        featureName.c_str(), networkType);
+    AUDIO_INFO_LOG("StartDownload, device not support, featureName:%{public}s, allowedCellularNet:%{public}d",
+        featureName.c_str(), allowedCellularNet);
     return ERROR;
 }
 
@@ -83,6 +83,44 @@ int32_t AudioSuiteDownloadManagerImpl::GetDownloadStatus(
 int32_t AudioSuiteDownloadManagerImpl::UninstallCloudRom(const std::string& featureName)
 {
     AUDIO_INFO_LOG("UninstallCloudRom, device not support, featureName:%{public}s", featureName.c_str());
+    return ERROR;
+}
+
+int32_t AudioSuiteDownloadManagerImpl::StartDownloadDirect(const std::string& featureName, bool allowedCellularNet)
+{
+    AUDIO_INFO_LOG("StartDownloadDirect, device not support, featureName:%{public}s, allowedCellularNet:%{public}d",
+        featureName.c_str(), allowedCellularNet);
+    return ERROR;
+}
+
+int32_t AudioSuiteDownloadManagerImpl::PauseDownloadDirect(const std::string& featureName)
+{
+    AUDIO_INFO_LOG("PauseDownloadDirect, device not support, featureName:%{public}s", featureName.c_str());
+    return ERROR;
+}
+
+int32_t AudioSuiteDownloadManagerImpl::CancelDownloadDirect(const std::string& featureName)
+{
+    AUDIO_INFO_LOG("CancelDownloadDirect, device not support, featureName:%{public}s", featureName.c_str());
+    return ERROR;
+}
+
+int32_t AudioSuiteDownloadManagerImpl::StartBackgroundDownloadDirect(const std::string& featureName)
+{
+    AUDIO_INFO_LOG("StartBackgroundDownloadDirect, device not support, featureName:%{public}s", featureName.c_str());
+    return ERROR;
+}
+
+int32_t AudioSuiteDownloadManagerImpl::GetDownloadStatusDirect(
+    const std::string& featureName, AudioSuiteDownloadStatusInfo& status)
+{
+    AUDIO_INFO_LOG("GetDownloadStatusDirect, device not support, featureName:%{public}s", featureName.c_str());
+    return ERROR;
+}
+
+int32_t AudioSuiteDownloadManagerImpl::UninstallCloudRomDirect(const std::string& featureName)
+{
+    AUDIO_INFO_LOG("UninstallCloudRomDirect, device not support, featureName:%{public}s", featureName.c_str());
     return ERROR;
 }
 

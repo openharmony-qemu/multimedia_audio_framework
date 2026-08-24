@@ -168,15 +168,16 @@ int32_t AudioSuiteClientPolicy::UnregisterDownloadStatusCallback()
     return SUCCESS;
 }
 
-int32_t AudioSuiteClientPolicy::StartDownload(const std::string& featureName)
+int32_t AudioSuiteClientPolicy::StartDownload(const std::string& featureName, bool allowedCellularNet)
 {
-    AUDIO_INFO_LOG("AudioSuiteClientPolicy::StartDownload, featureName=%{public}s", featureName.c_str());
+    AUDIO_INFO_LOG("AudioSuiteClientPolicy::StartDownload, featureName=%{public}s, allowedCellularNet=%{public}d",
+        featureName.c_str(), allowedCellularNet);
 
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_RET_LOG(ConnectService(), ERR_NOT_STARTED, "audio suite service not connected");
 
     int32_t result = SUCCESS;
-    ErrCode ret = proxy_->StartDownload(featureName, result);
+    ErrCode ret = proxy_->StartDownload(featureName, allowedCellularNet, result);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartDownload IPC ret: %{public}d", ret);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "StartDownload result: %{public}d", result);
     return SUCCESS;

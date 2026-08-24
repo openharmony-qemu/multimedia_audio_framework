@@ -30,6 +30,9 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+static constexpr int32_t NETWORK_TYPE_CELLULAR = 1;
+static constexpr int32_t NETWORK_TYPE_CELLULAR_AND_WIFI = 7;
+
 static __thread napi_ref g_suiteDownloadMgrConstructor = nullptr;
 
 NapiAudioSuiteDownloadManager::NapiAudioSuiteDownloadManager()
@@ -208,7 +211,10 @@ napi_value NapiAudioSuiteDownloadManager::StartDownload(napi_env env, napi_callb
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->StartDownload(context->featureName, context->networkType);
+        int32_t ret = napi->audioSuiteDownloadMgr_->StartDownloadDirect(
+            context->featureName,
+            context->networkType == NETWORK_TYPE_CELLULAR ||
+            context->networkType == NETWORK_TYPE_CELLULAR_AND_WIFI);
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "StartDownload failed");
@@ -252,7 +258,7 @@ napi_value NapiAudioSuiteDownloadManager::PauseDownload(napi_env env, napi_callb
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->PauseDownload(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->PauseDownloadDirect(context->featureName);
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "PauseDownload failed");
@@ -296,7 +302,7 @@ napi_value NapiAudioSuiteDownloadManager::CancelDownload(napi_env env, napi_call
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->CancelDownload(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->CancelDownloadDirect(context->featureName);
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "CancelDownload failed");
@@ -340,7 +346,7 @@ napi_value NapiAudioSuiteDownloadManager::StartBackgroundDownload(napi_env env, 
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->StartBackgroundDownload(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->StartBackgroundDownloadDirect(context->featureName);
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "StartBackgroundDownload failed");
@@ -384,7 +390,7 @@ napi_value NapiAudioSuiteDownloadManager::GetDownloadStatus(napi_env env, napi_c
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->GetDownloadStatus(
+        int32_t ret = napi->audioSuiteDownloadMgr_->GetDownloadStatusDirect(
             context->featureName, context->statusInfo);
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
@@ -438,7 +444,7 @@ napi_value NapiAudioSuiteDownloadManager::UninstallCloudRom(napi_env env, napi_c
         if (!CheckSuiteDownloadManagerStatus(napi, context)) {
             return;
         }
-        int32_t ret = napi->audioSuiteDownloadMgr_->UninstallCloudRom(context->featureName);
+        int32_t ret = napi->audioSuiteDownloadMgr_->UninstallCloudRomDirect(context->featureName);
         if (ret != SUCCESS) {
             int32_t errCode = ConvertNativeErrorToNapi(ret);
             context->SignError(errCode, "UninstallCloudRom failed");

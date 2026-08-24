@@ -47,7 +47,7 @@ public:
 
     int32_t RegisterDownloadStatusCallback(std::shared_ptr<DownloadStatusCallback> callback);
     int32_t UnregisterDownloadStatusCallback();
-    int32_t StartDownload(const std::string& featureName);
+    int32_t StartDownload(const std::string& featureName, bool allowedCellularNet = true);
     int32_t PauseDownload(const std::string& featureName);
     int32_t CancelDownload(const std::string& featureName);
     int32_t StartBackgroundDownload(const std::string& featureName);

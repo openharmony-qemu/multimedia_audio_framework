@@ -133,11 +133,11 @@ HWTEST_F(AudioSuiteServiceTest, UnregisterownloadInterfaceCallbackTest, TestSize
 HWTEST_F(AudioSuiteServiceTest, StartDownloadTest, TestSize.Level0)
 {
     ErrCode result = SUCCESS;
-    ErrCode ret = service->StartDownload("", result);
+    ErrCode ret = service->StartDownload("", true, result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 
-    ret = service->StartDownload("v1", result);
+    ret = service->StartDownload("v1", true, result);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(result, ERR_CALLBACK_NOT_REGISTERED);
 }

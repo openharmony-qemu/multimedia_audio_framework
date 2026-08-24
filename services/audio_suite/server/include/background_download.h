@@ -21,7 +21,9 @@
 #include <mutex>
 #include <atomic>
 #include <functional>
+#include <cstdint>
 #include <queue>
+#include <unordered_map>
 #include "common_event_manager.h"
 #include "common_event_subscriber.h"
 
@@ -29,13 +31,20 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
+struct DownloadConditionConfig {
+    bool requireWifi = true;
+    bool requireCharging = true;
+    bool requireBatteryLevel = true;
+    bool requireScreenLocked = true;
+};
+
 class BackgroundDownload {
 public:
     BackgroundDownload(std::function<int32_t(const std::string&)> downloadFunction);
     ~BackgroundDownload();
 
     int32_t Init();
-    static bool AreConditionsMet();
+    static bool AreConditionsMet(const std::string& featureName);
     bool HasBackgroundDownloadTask();
     int32_t AddFeature(const std::string& featureName);
     void RemoveFeature(const std::string& featureName);
@@ -50,9 +59,11 @@ private:
         BackgroundDownload& monitor_;
     };
 
+    static const DownloadConditionConfig& GetFeatureConfig(const std::string& featureName);
     static bool IsWifiConnected();
+    static bool IsCharging();
+    static bool IsBatteryLevelMet();
     static bool IsScreenLocked();
-    static bool IsBatteryConditionMet();
     void HandleEvent(const EventFwk::CommonEventData& data);
     void Release();
 

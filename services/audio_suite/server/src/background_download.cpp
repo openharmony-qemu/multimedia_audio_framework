@@ -91,11 +91,27 @@ void BackgroundDownload::HandleEvent(const EventFwk::CommonEventData& data)
     std::queue<std::string> processQueue;
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        if (pendingDownloadQueue_.empty() || downloadCallback_ == nullptr || !AreConditionsMet()) {
-            AUDIO_INFO_LOG("backgroundDownload conditions not met.");
+        if (pendingDownloadQueue_.empty() || downloadCallback_ == nullptr) {
+            AUDIO_INFO_LOG("backgroundDownload queue empty or callback null.");
             return;
         }
-        processQueue = std::move(pendingDownloadQueue_);
+
+        std::queue<std::string> remainQueue;
+        while (!pendingDownloadQueue_.empty()) {
+            std::string featureName = pendingDownloadQueue_.front();
+            pendingDownloadQueue_.pop();
+            if (AreConditionsMet(featureName)) {
+                processQueue.push(featureName);
+            } else {
+                remainQueue.push(featureName);
+            }
+        }
+        pendingDownloadQueue_ = std::move(remainQueue);
+
+        if (processQueue.empty()) {
+            AUDIO_INFO_LOG("backgroundDownload conditions not met for any feature.");
+            return;
+        }
     }
 
     AUDIO_INFO_LOG("start process BackgroundDownload.");
@@ -129,9 +145,36 @@ void BackgroundDownload::Release()
     }
 }
 
-bool BackgroundDownload::AreConditionsMet()
+bool BackgroundDownload::AreConditionsMet(const std::string& featureName)
 {
-    return IsWifiConnected() && IsBatteryConditionMet() && IsScreenLocked();
+    const auto& config = GetFeatureConfig(featureName);
+    bool met = true;
+    if (config.requireWifi) {
+        met = met && IsWifiConnected();
+    }
+    if (config.requireCharging) {
+        met = met && IsCharging();
+    }
+    if (config.requireBatteryLevel) {
+        met = met && IsBatteryLevelMet();
+    }
+    if (config.requireScreenLocked) {
+        met = met && IsScreenLocked();
+    }
+    return met;
+}
+
+const DownloadConditionConfig& BackgroundDownload::GetFeatureConfig(const std::string& featureName)
+{
+    static const DownloadConditionConfig defaultConfig;
+    static const std::unordered_map<std::string, DownloadConditionConfig> featureConfigs = {
+        {"AudioSourceSeparationAlgoRes", DownloadConditionConfig {true, false, false, false}},
+    };
+    auto it = featureConfigs.find(featureName);
+    if (it != featureConfigs.end()) {
+        return it->second;
+    }
+    return defaultConfig;
 }
 
 bool BackgroundDownload::IsWifiConnected()
@@ -151,16 +194,24 @@ bool BackgroundDownload::IsWifiConnected()
 #endif
 }
 
-bool BackgroundDownload::IsBatteryConditionMet()
+bool BackgroundDownload::IsCharging()
+{
+#if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_BATTERY_MANAGER)
+    auto &batteryService = OHOS::PowerMgr::BatterySrvClient::GetInstance();
+    PowerMgr::BatteryChargeState chargeState = batteryService.GetChargingStatus();
+    return chargeState == PowerMgr::BatteryChargeState::CHARGE_STATE_ENABLE ||
+           chargeState == PowerMgr::BatteryChargeState::CHARGE_STATE_FULL;
+#else
+    return true;
+#endif
+}
+
+bool BackgroundDownload::IsBatteryLevelMet()
 {
 #if !defined(AUDIOSUITE_SA_UT) && defined(AUDIO_SUITE_ROM_DOWNLOAD_BATTERY_MANAGER)
     auto &batteryService = OHOS::PowerMgr::BatterySrvClient::GetInstance();
     uint32_t capacity = static_cast<uint32_t>(batteryService.GetCapacity());
-    PowerMgr::BatteryChargeState chargeState = batteryService.GetChargingStatus();
-
-    bool isCharging = (chargeState == PowerMgr::BatteryChargeState::CHARGE_STATE_ENABLE ||
-                       chargeState == PowerMgr::BatteryChargeState::CHARGE_STATE_FULL);
-    return capacity > BACKGROUND_DOWNLOAD_BATTERY_LEVEL && isCharging;
+    return capacity > BACKGROUND_DOWNLOAD_BATTERY_LEVEL;
 #else
     return true;
 #endif
