@@ -1853,6 +1853,7 @@ napi_status NapiParamUtils::ConvertSoundCardInfoToJs(const napi_env &env,
     return napi_ok;
 }
 
+#ifndef CROSS_PLATFORM
 napi_status NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(const napi_env &env,
     const AudioSuite::AudioSuiteDownloadStatusInfo &info, napi_value &result)
 {
@@ -1886,5 +1887,6 @@ napi_status NapiParamUtils::SetValueAudioSuiteDownloadStatusInfo(const napi_env 
 
     return napi_ok;
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS
