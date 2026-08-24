@@ -1278,7 +1278,8 @@ AudioInterruptResult AudioInterruptService::ActivateAudioInterrupt(
         [](void *) {
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
+    mediaInterruptedByRec_ = false;
     AudioInterruptResult result;
     CHECK_AND_RETURN_RET_LOG(verifySystemStreamPermission(audioInterrupt, result), result,
         "verifySystemStreamPermission fail");
@@ -1287,10 +1288,10 @@ AudioInterruptResult AudioInterruptService::ActivateAudioInterrupt(
         return result;
     }
     bool updateScene = false;
+    bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
     int32_t ret = ActivateAudioInterruptCoreProcedure(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
     if (ret != SUCCESS || !updateScene) {
         result.retCode = ret;
-        bool isRecord = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
         CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, result,
             StreamDfxManager::GetInstance().SendAudioErrorEvent(audioInterrupt.uid,
                 isRecord ? RECORD_INTERRUPT_START_OPERATION_FAILED : INTERRUPT_START_OPERATION_FAILED,
@@ -1303,6 +1304,13 @@ AudioInterruptResult AudioInterruptService::ActivateAudioInterrupt(
     result.ownerPid = ownerPid_;
     result.needSetAudioScene =
         UpdateAudioSceneFromInterrupt(result.targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, ZONEID_DEFAULT, false);
+    bool needDelay = isRecord && mediaInterruptedByRec_;
+    lock.unlock();
+    if (needDelay) {
+        AUDIO_INFO_LOG("Recording focus activated while media was interrupted, "
+            "delay %{public}d ms to allow media callback delivery", RECORDING_ACTIVATION_DELAY_MS);
+        std::this_thread::sleep_for(std::chrono::milliseconds(RECORDING_ACTIVATION_DELAY_MS));
+    }
     return result;
 }
 
@@ -2447,6 +2455,12 @@ void AudioInterruptService::SendActiveInterruptEvent(const uint32_t activeStream
     const AudioInterrupt &activeInterrupt)
 {
     if (interruptEvent.hintType != INTERRUPT_HINT_NONE) {
+        if (AudioInterruptUtils::IsMediaStream(activeInterrupt.audioFocusType.streamType) &&
+            incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
+            (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP ||
+            interruptEvent.hintType == INTERRUPT_HINT_MUTE)) {
+            mediaInterruptedByRec_ = true;
+        }
         if (interruptDfx_ != nullptr) {
             interruptDfx_->RecordInterruptEvent(interruptEvent, activeInterrupt, incomingInterrupt);
         }

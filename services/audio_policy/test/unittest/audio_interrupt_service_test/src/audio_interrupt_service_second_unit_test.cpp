@@ -1944,5 +1944,62 @@ HWTEST(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptInternal01, Te
     EXPECT_EQ(ret1.retCode, SUCCESS);
 }
 
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: SendActiveInterruptEvent_001
+* @tc.desc  : Test mediaInterruptedByRec_ flag in SendActiveInterruptEvent
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, SendActiveInterruptEvent_001, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+    audioInterruptService->dfxCollector_ = std::make_unique<AudioInterruptDfxCollector>();
+    ASSERT_NE(audioInterruptService->dfxCollector_, nullptr);
+    audioInterruptService->policyServer_ = new AudioPolicyServer(0);
+    ASSERT_NE(audioInterruptService->policyServer_, nullptr);
+    uint32_t streamId = 10001;
+
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_NONE, 1.0f};
+    AudioInterrupt activeInterrupt;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+
+    audioInterruptService->mediaInterruptedByRec_ = false;
+    activeInterrupt.audioFocusType.streamType = STREAM_RING;
+    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
+    EXPECT_FALSE(audioInterruptService->mediaInterruptedByRec_);
+
+    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
+    EXPECT_TRUE(audioInterruptService->mediaInterruptedByRec_);
+
+    audioInterruptService->mediaInterruptedByRec_ = false;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
+    EXPECT_FALSE(audioInterruptService->mediaInterruptedByRec_);
+
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    incomingInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
+    interruptEvent.hintType = INTERRUPT_HINT_STOP;
+    audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
+    EXPECT_TRUE(audioInterruptService->mediaInterruptedByRec_);
+
+    audioInterruptService->mediaInterruptedByRec_ = false;
+    interruptEvent.hintType = INTERRUPT_HINT_NONE;
+    audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
+    EXPECT_FALSE(audioInterruptService->mediaInterruptedByRec_);
+
+    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
+    EXPECT_TRUE(audioInterruptService->mediaInterruptedByRec_);
+
+    audioInterruptService->mediaInterruptedByRec_ = false;
+    interruptEvent.hintType = INTERRUPT_HINT_MUTE;
+    audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
+    EXPECT_TRUE(audioInterruptService->mediaInterruptedByRec_);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
