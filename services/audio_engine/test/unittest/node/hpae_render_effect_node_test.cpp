@@ -1400,7 +1400,6 @@ HWTEST_F(HpaeRenderEffectNodeTest, RenderEffectNode_NearLink_DefaultScene_008, T
     EXPECT_NE(node, nullptr);
 
 }
-
 // --- Phase 3D-2: AudioRenderer/OffloadRenderer lifecycle coverage ---
 // These methods were previously never called by tests, leaving entire function
 // bodies at 0% branch coverage. Calling them directly drives the bodies.
