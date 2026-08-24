@@ -738,6 +738,11 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     audioActiveDevice_.UpdateUidVolumeDeviceMapForEnhancedRouting();
     ret = FetchRendererPipeAndExecute(streamDesc, sessionId, flagInfo);
     flagInfo.staticCheckFlag = static_cast<uint32_t>(streamDesc->audioFlag_);
+    flagInfo.isSupportUltraFast = static_cast<bool>(isSupportUltraFast_);
+    networkId = streamDesc->newDeviceDescs_.front()->networkId_;
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
+    AddSessionId(sessionId);
+
     // xml bus flag (AUDIO_OUTPUT_FLAG_3DA_DIRECT) obtained by pipe routing must be passed
     // down to the client as audioFlag, otherwise DecideStreamClass sees 0 -> normal path.
     // audioFlag_ only carries 0x800 when the app sent it up; the xml-derived flag lands in
@@ -754,10 +759,6 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
         streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
         streamDesc->rendererInfo_.pipeType = PIPE_TYPE_OUT_3DA_DIRECT;
     }
-    flagInfo.isSupportUltraFast = static_cast<bool>(isSupportUltraFast_);
-    networkId = streamDesc->newDeviceDescs_.front()->networkId_;
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
-    AddSessionId(sessionId);
 
     pipeManager_->RemoveSwitchStream(sessionId);
     streamDesc->SetFutureRoute(AUDIO_FLAG_NONE);
