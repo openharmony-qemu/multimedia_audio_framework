@@ -1039,8 +1039,7 @@ AudioFlag AudioCoreService::SelectRemoteAudioFlag(std::shared_ptr<AudioStreamDes
             NeedRemoteMultichannel(streamDesc), AUDIO_OUTPUT_FLAG_NORMAL,
             "movie use normal for remote device or remotecast");
         AUDIO_INFO_LOG("remote multichannel active, movie use multichannel");
-        // depend on vehicle service modification, AUDIO_OUTPUT_FLAG_MULTICHANNEL is disabled temporarily.
-        return AUDIO_OUTPUT_FLAG_NORMAL;
+        return AUDIO_OUTPUT_FLAG_MULTICHANNEL;
     }
 
     AUDIO_INFO_LOG("Use normal for remote device or remotecast");

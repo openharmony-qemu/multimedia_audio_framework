@@ -20,6 +20,20 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+void RemoteDeviceCapability::SetSupportDynamicPipes(const std::vector<AudioFlag> &flags)
+{
+    supportDynamicPipes_ = AUDIO_FLAG_NONE;
+    for (const auto &flag : flags) {
+        supportDynamicPipes_ |= static_cast<uint32_t>(flag);
+    }
+}
+
+bool RemoteDeviceCapability::IsSupportDynamicPipe(AudioFlag flag) const
+{
+    return (supportDynamicPipes_ & static_cast<uint32_t>(flag)) != AUDIO_FLAG_NONE;
+}
+
 std::string RemoteDeviceCapability::GetJsonString() const
 {
     cJSON *interface = cJSON_CreateObject();
@@ -33,12 +47,25 @@ std::string RemoteDeviceCapability::GetJsonString() const
     cJSON_AddNumberToObject(interface, "protocol", protocol_);
     cJSON_AddNumberToObject(interface, "hd_play_mode", hdPlaybackMode_);
     cJSON_AddNumberToObject(interface, "tokenId", deviceTokenId_);
+    cJSON_AddNumberToObject(interface, "support_dynamic_pipes", supportDynamicPipes_);
     char *pChar = cJSON_PrintUnformatted(interface);
     CHECK_AND_RETURN_RET_LOG(pChar != nullptr, "", "pChar is null");
     cJSON_Delete(interface);
     std::string str = pChar;
     cJSON_free(pChar);
     return str;
+}
+
+void RemoteDeviceCapability::FromJsonStringExt(const std::string &jsonString)
+{
+    cJSON *root = cJSON_Parse(jsonString.c_str());
+    CHECK_AND_RETURN_LOG(root != nullptr, "root is null");
+
+    cJSON *supportDynamicPipesObj = cJSON_GetObjectItem(root, "support_dynamic_pipes");
+    if (supportDynamicPipesObj && cJSON_IsNumber(supportDynamicPipesObj)) {
+        supportDynamicPipes_ = static_cast<uint32_t>(supportDynamicPipesObj->valueint);
+    }
+    cJSON_Delete(root);
 }
 
 void RemoteDeviceCapability::FromJsonString(const std::string &jsonString)
@@ -89,6 +116,8 @@ void RemoteDeviceCapability::FromJsonString(const std::string &jsonString)
     if (tokenIdObj && cJSON_IsNumber(tokenIdObj)) {
         deviceTokenId_ = static_cast<uint32_t>(tokenIdObj->valueint);
     }
+
+    FromJsonStringExt(jsonString);
 
     cJSON_Delete(root);
 }
