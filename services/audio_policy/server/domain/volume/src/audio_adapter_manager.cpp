@@ -1389,6 +1389,16 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
     if (volumeType != voiceCallType &&
         volumeReduction > std::numeric_limits<float>::epsilon() &&
         volumeReduction < MAX_STREAM_VOLUME + std::numeric_limits<float>::epsilon()) {
+        if (volumeType == STREAM_MUSIC &&
+            ((deviceType == DEVICE_TYPE_BLUETOOTH_SCO && isVgsVolumeSupported_) ||
+            deviceType == DEVICE_TYPE_NEARLINK)) {
+            // For nearlink and sco device, the media stream will be additionally affected by the voice call volume.
+            // Therefore, special processing is required to prevent the media volume from being too low.
+            volume = DepressMediaVolumeForHeadSet(volume, volumeReduction, volumeLimit_.load());
+            AUDIO_INFO_LOG("volume:%{public}f, volumeReduction:%{public}f, volumeLimit:%{public}f",
+                volume, volumeReduction, volumeLimit_.load());
+            return;
+        }
         expect *= volumeReduction;
         AUDIO_INFO_LOG("expect:%{public}f volume:%{public}f, volumeReduction:%{public}f",
             expect, volume, volumeReduction);
@@ -1396,6 +1406,23 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
     }
 
     volume = std::min(volume, expect);
+}
+
+float AudioAdapterManager::DepressMediaVolumeForHeadSet(float mediaVolume, float volumeReduction, float volumeLimit)
+{
+    AUDIO_INFO_LOG("mediaVolume:%{public}f, volumeReduction:%{public}f, volumeLimit:%{public}f",
+        mediaVolume, volumeReduction, volumeLimit);
+    if (mediaVolume > volumeLimit * volumeReduction) {
+        // The volumeLimit will be used as the voice call volume on the nearlink or sco device.
+        return volumeReduction;
+    }
+    if (volumeLimit < mediaVolume ||
+        std::abs(volumeLimit) < std::numeric_limits<float>::epsilon()) {
+        // Ensure that volumeTemp can be calculated and the result is a valid value.
+        return volumeReduction;
+    }
+    float volumeTemp = mediaVolume / volumeLimit;
+    return std::min(volumeTemp, volumeReduction);
 }
 
 float AudioAdapterManager::GetVolumeReductionRatio(AudioStreamType streamType)
