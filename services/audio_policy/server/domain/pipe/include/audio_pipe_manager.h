@@ -102,9 +102,6 @@ public:
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedRecordPipe();
     std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string adapterName, const uint32_t routeFlag);
     std::shared_ptr<AudioPipeInfo> GetPipeinfoById(AudioIOHandle id);
-    // Lookup pipe close info by pipe name under shared_lock; value-copy out params (no shared_ptr leaked).
-    bool GetPipeCloseInfoByName(const std::string &pipeName, AudioIOHandle &id,
-        uint32_t &paIndex, std::string &moduleName);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     std::string GetModuleNameBySessionId(uint32_t sessionId);
     std::string GetClassNameBySessionId(uint32_t sessionId);
