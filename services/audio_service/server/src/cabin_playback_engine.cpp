@@ -335,6 +335,7 @@ int32_t CabinPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat format
     attr.format = format;
     attr.channelLayout = layout;
     attr.deviceType = device_.deviceType_;
+    attr.address = device_.deviceName_; // routed bus port name, passed down to HDI port selection
     attr.volume = 1.0f;
     attr.openMicSpeaker = 1;
     attr.encodingType = ENCODING_AUDIOVIVID_3DA_DIRECT;

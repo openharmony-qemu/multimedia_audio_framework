@@ -350,7 +350,7 @@ void CabinAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &par
 void CabinAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
 {
     deviceDesc.pins = PIN_OUT_SPEAKER;
-    deviceDesc.desc = const_cast<char *>("bus10_3da_out");
+    deviceDesc.desc = const_cast<char *>(attr_.address.c_str());
 }
 
 int32_t CabinAudioRenderSink::CreateRender(void)
