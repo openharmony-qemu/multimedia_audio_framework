@@ -2414,7 +2414,7 @@ HWTEST_F(SessionEffectNodeStateTest, CloseSessionEffectCore_resetsStateAndInstan
     ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
     ASSERT_NE(node_->GetEffectInstance(), nullptr);
 
-    ret = node_->CloseSessionEffectCore();
+    node_->CloseSessionEffectCore();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
     EXPECT_EQ(node_->GetEffectInstance(), nullptr);
     EXPECT_FALSE(node_->IsCloseCrossfadePending());

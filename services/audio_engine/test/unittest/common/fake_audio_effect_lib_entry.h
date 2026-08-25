@@ -203,7 +203,7 @@ public:
         triggerProcessCount_ = 0;
         accumulatedInput_.clear();
         {
-            std::lock_guard<std::mutex> outlock(processMutex_);
+            std::lock_guard<std::mutex> outLock(outputMutex_)
             processedOutput_.clear();
         }
     }
@@ -374,10 +374,10 @@ private:
         accumulatedInput_.erase(accumulatedInput_.begin(),
                                 accumulatedInput_.begin() + processLen);
 
-        uint32_t dekayMs = processDelayMs_;
+        uint32_t delayMs = processDelayMs_;
         uint32_t ch = channels_ > 0 ? channels_ : 2;
-        processThread_ = std::thread([this, data = std::move(inputChunk), dekayMs, ch]() {
-            std::this_thread::sleep_for(std::chrono::milliseconds(dekayMs));
+        processThread_ = std::thread([this, data = std::move(inputChunk), delayMs, ch]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
             // Swap left/right channels (interleaved stereo)
             std::vector<float> result = data;
             for (size_t i = 0; i + ch - 1 < result.size(); i += ch) {
