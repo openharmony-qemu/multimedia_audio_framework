@@ -2423,6 +2423,12 @@ int32_t AudioPolicyServer::IsOffloadPlaybackSupported(const AudioStreamInfo &str
 
 int32_t AudioPolicyServer::SetDeviceActive(int32_t deviceType, bool active, int32_t uid)
 {
+    if (uid != INVALID_UID) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+            ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    } else {
+        uid = static_cast<int32_t>(IPCSkeleton::GetCallingUid());
+    }
     return eventEntry_->SetDeviceActive(static_cast<InternalDeviceType>(deviceType), active, uid);
 }
 
