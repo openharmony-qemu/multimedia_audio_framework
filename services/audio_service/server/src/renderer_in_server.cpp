@@ -238,8 +238,7 @@ int32_t RendererInServer::ConfigServerBuffer()
 
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
-        // 3DA: Include metadata in buffer size
-        // 3DA: 共享内存装整帧，bufferTotalSizeInFrame_ = span(整帧)frame 数 × DEFAULT_SPAN_SIZE
+        // 3DA: shared memory holds whole frames; bufferTotalSizeInFrame_ = span (whole frames) * DEFAULT_SPAN_SIZE
         bufferTotalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
     } else {
         // 100 * 2 + 20 = 220ms, buffer total size.

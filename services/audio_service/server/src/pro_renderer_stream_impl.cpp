@@ -41,7 +41,7 @@ const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
 const std::string DEVICE_NAME = "primary";
 static constexpr int32_t AVS3METADATA_SIZE = 19824;
 static constexpr int32_t AUDIO_VIVID_SAMPLES = 1024;
-// 3DA HDI 帧头个数: magic + size1 + size2 (每个占 1 frame)
+// 3DA HDI frame header count: magic + size1 + size2 (1 frame each)
 static constexpr int32_t THREE_DA_HDI_HEADER_FRAMES = 3;
 
 ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, bool isDirect)
@@ -138,7 +138,7 @@ int32_t ProRendererStreamImpl::InitParams()
     uint32_t bufferSize = 0;
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
-        // 3DA HDI 帧格式 magic|size1|metadata|align|size2|pcm，sinkBuffer 需容纳整帧
+        // 3DA HDI frame layout magic|size1|metadata|align|size2|pcm; sinkBuffer must hold the whole frame
         size_t frameSize = byteSizePerFrame_;
         size_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
         bufferSize = static_cast<uint32_t>((AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES) * frameSize
@@ -418,8 +418,8 @@ void ProRendererStreamImpl::WriteToSinkBuffer(const BufferDesc &bufferDesc, uint
 {
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
-        // 3DA 整帧由客户端 Write3DADirectBuffer 组装(magic|size1|metadata|align|size2|pcm)，
-        // 共享内存已是整帧，此处透传到 sinkBuffer_。
+        // The 3DA whole frame (magic|size1|metadata|align|size2|pcm) is assembled by the client
+        // Write3DADirectBuffer; shared memory already holds it, pass it through to sinkBuffer_.
         const size_t cap = sinkBuffer_[writeIndex].size();
         if (bufferDesc.buffer == nullptr || bufferDesc.bufLength == 0 || cap < bufferDesc.bufLength) {
             AUDIO_ERR_LOG("3DA passthrough invalid, bufLength=%{public}zu, cap=%{public}zu",
@@ -749,7 +749,7 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
     byteSizePerFrame_ = Util::GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
-        // 3DA: 共享内存装整帧 magic|size1|metadata|align|size2|pcm，span = 整帧 frame 数
+        // 3DA: shared memory holds whole frames magic|size1|metadata|align|size2|pcm; span = whole-frame count
         size_t frameSize = byteSizePerFrame_;
         size_t metaAligned = (AVS3METADATA_SIZE + frameSize - 1) / frameSize * frameSize;
         spanSizeInFrame_ = AUDIO_VIVID_SAMPLES + THREE_DA_HDI_HEADER_FRAMES + metaAligned / frameSize;

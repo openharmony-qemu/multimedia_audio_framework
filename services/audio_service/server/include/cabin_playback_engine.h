@@ -62,7 +62,7 @@ private:
     uint64_t writeCount_;
     uint64_t fwkSyncTime_;
     uint32_t uChannel_;
-    AudioSampleFormat uformat_; // 采样格式枚举缓存(勿存字节数)
+    AudioSampleFormat uformat_; // cached sample-format enum (never store byte size)
     uint32_t uSampleRate_;
     uint64_t latency_;
     bool firstSetVolume_;

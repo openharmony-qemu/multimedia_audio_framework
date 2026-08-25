@@ -57,10 +57,11 @@ int32_t CabinAudioRenderSink::Init(const IAudioSinkAttr &attr)
         AUDIO_INFO_LOG("CabinAudioRenderSink already inited with same attr, skip");
         return SUCCESS;
     }
-    // 重初始化场景: attr变化(如开机按xml模块参数开6ch口, 而3DA流需16ch), 或上次render
-    // 在HAL侧仍存活(DeInit后HAL索引未同步, 输出流泄漏)。hdiRenderId_ != 0表示本对象此前
-    // 建过render(DeInit不清零), 先防御性销毁(已关闭则无副作用), 否则HAL以
-    // "bus already exist"拒绝重新open。
+    // Re-init case: attr changed (e.g. port opened at boot with xml module args 6ch, while the
+    // 3DA stream needs 16ch), or a previous render of this sink is still alive in HAL even after
+    // DeInit (HAL index out of sync leaves the output stream leaked). hdiRenderId_ != 0 means this
+    // sink object created a render before (not reset by DeInit). Destroy it defensively first —
+    // harmless no-op if already closed — otherwise HAL rejects the new open with "bus already exist".
     if (hdiRenderId_ != 0) {
         AUDIO_INFO_LOG("re-init (ch %{public}u -> %{public}u, layout %{public}" PRIu64 " -> %{public}" PRIu64
             ", inited %{public}d), destroy previous render %{public}u first", attr_.channel, attr.channel,
@@ -179,8 +180,8 @@ int32_t CabinAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &wr
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "audioRender_ is nullptr");
-    // 3DA HDI 帧(magic|size1|metadata|align|size2|pcm)由 ProRendererStreamImpl::WriteToSinkBuffer
-    // 组装，此处整帧透传给 HDI RenderFrame。
+    // The 3DA HDI frame (magic|size1|metadata|align|size2|pcm) is assembled by
+    // ProRendererStreamImpl::WriteToSinkBuffer; pass the whole frame through to HDI RenderFrame.
     Trace trace("CabinAudioRenderSink::RenderFrame");
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), len);
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t *>(&data),
@@ -360,8 +361,8 @@ int32_t CabinAudioRenderSink::CreateRender(void)
     struct AudioDeviceDescriptor deviceDesc;
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
-    // TODO(联调): InitAudioSampleAttr 当前 type=AUDIO_MULTI_CHANNEL、format=PCM，
-    // 需按 HDI 侧 AudioVivid 3DA render 的要求设对 encoding/streamId/通道布局。
+    // TODO(integration): InitAudioSampleAttr currently uses type=AUDIO_MULTI_CHANNEL and PCM format;
+    // encoding/streamId/channel layout must follow the HDI AudioVivid 3DA render requirements.
 
     AUDIO_INFO_LOG("create render, rate: %{public}u, channel: %{public}u, format: %{public}u", param.sampleRate,
         param.channelCount, param.format);

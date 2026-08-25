@@ -84,7 +84,7 @@ constexpr int32_t MAX_RETRY_COUNT = 8;
 static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
 static const int32_t VOIP_DIRECT_BUFFER_DURATION_IN_US = 120000;
 static const int64_t ONWRITEDATA_TIMEOUT_NS = 40000000;
-// 3DA HDI 帧 header: magic + size1 + size2 = 3 frame
+// 3DA HDI frame header: magic + size1 + size2 = 3 frames
 static constexpr int32_t THREE_DA_HDI_HEADER_FRAMES = 3;
 } // namespace
 
@@ -543,7 +543,7 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
         return ERR_WRITE_BUFFER;
     }
 
-    // 3DA: 组装整帧 magic|size1|metadata|align|size2|pcm 写入共享内存
+    // 3DA: assemble the whole frame magic|size1|metadata|align|size2|pcm into shared memory
     const size_t frameSize = sizePerFrameInByte_;
     CHECK_AND_RETURN_RET_LOG(frameSize >= sizeof(uint16_t), ERR_INVALID_PARAM,
         "3DA: invalid frameSize=%{public}zu", frameSize);
@@ -558,21 +558,21 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.basicBufferDescs[0].bufLength >= totalSize,
         ERR_OPERATION_FAILED, "3DA: GetAllWritableBuffer failed:%{public}d, writable=%{public}zu, need=%{public}zu",
         ret, ringBuffer.basicBufferDescs[0].bufLength, totalSize);
-    // 环为整帧整数倍，整帧不应跨环尾
+    // the ring is a whole-frame multiple; a frame must not cross the ring tail
     CHECK_AND_RETURN_RET_LOG(ringBuffer.basicBufferDescs[1].bufLength == 0, ERR_OPERATION_FAILED,
         "3DA: frame crosses ring tail, [1].bufLength=%{public}zu", ringBuffer.basicBufferDescs[1].bufLength);
 
     uint8_t *dst = ringBuffer.basicBufferDescs[0].buffer;
     const size_t cap = ringBuffer.basicBufferDescs[0].bufLength;
     size_t offset = 0;
-    // magic: 前2字节 0x3d 0xaf，其余 0xff
+    // magic: first 2 bytes 0x3d 0xaf, rest 0xff
     if (memset_s(dst + offset, cap - offset, 0xff, frameSize) != EOK) {
         return ERR_OPERATION_FAILED;
     }
     dst[offset] = static_cast<uint8_t>(0x3d);
     dst[offset + 1] = static_cast<uint8_t>(0xaf);
     offset += frameSize;
-    // size1: 前2字节(CPU序)=metadata+align 字节数，其余 0xff
+    // size1: first 2 bytes (CPU order) = metadata+align size, rest 0xff
     if (memset_s(dst + offset, cap - offset, 0xff, frameSize) != EOK) {
         return ERR_OPERATION_FAILED;
     }
@@ -586,13 +586,13 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
         return ERR_OPERATION_FAILED;
     }
     offset += metaLen;
-    // align: 0xff 补齐到 frame 整数倍
+    // align: 0xff padding up to a whole frame
     const size_t alignSize = metaAligned - metaLen;
     if (alignSize > 0 && memset_s(dst + offset, cap - offset, 0xff, alignSize) != EOK) {
         return ERR_OPERATION_FAILED;
     }
     offset += alignSize;
-    // size2: 前2字节(CPU序)=PCM 帧数，其余 0xff
+    // size2: first 2 bytes (CPU order) = PCM frame count, rest 0xff
     if (memset_s(dst + offset, cap - offset, 0xff, frameSize) != EOK) {
         return ERR_OPERATION_FAILED;
     }
@@ -608,7 +608,7 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
 
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
 
-    // 步进按 frame（整帧 frame 数 = header + metadata对齐 + pcm）
+    // advance in frames (whole-frame count = header + metadata-aligned + pcm)
     uint64_t blockFrames = static_cast<uint64_t>(THREE_DA_HDI_HEADER_FRAMES) + metaAligned / frameSize
         + pcmLen / frameSize;
     clientBuffer_->SetCurWriteFrame(writePos + blockFrames, false);

@@ -42,8 +42,8 @@ public:
     std::unique_ptr<CabinAudioRenderSink> sink_;
 };
 
-// 注：Init/Start/Stop/RenderFrame/Pause/DeInit 现走真实 HDI(CreateRender/RenderFrame)，
-// 单测环境无 HDI 设备，相关用例已移除，待具备 HDI mock 后补充。
+// Note: Init/Start/Stop/RenderFrame/Pause/DeInit now hit the real HDI (CreateRender/RenderFrame).
+// No HDI device in the UT environment; those cases are removed until an HDI mock is available.
 
 /**
 * @tc.name   : FormatConversion_Test
@@ -52,8 +52,8 @@ public:
 */
 HWTEST_F(CabinAudioRenderSinkUnitTest, FormatConversion_Test, TestSize.Level1)
 {
-    // 3DA 专用格式枚举(AUDIO_FORMAT_TYPE_3DA_*)HDI 侧 audio_types.h 未合入，
-    // 格式映射使用标准 PCM 枚举：S16LE->PCM_16_BIT，F32LE->PCM_32_BIT，其余默认 PCM_16_BIT。
+    // 3DA format enums (AUDIO_FORMAT_TYPE_3DA_*) are not yet in HDI audio_types.h; map to
+    // standard PCM enums: S16LE->PCM_16_BIT, F32LE->PCM_32_BIT, others default PCM_16_BIT.
     EXPECT_EQ(sink_->ConvertToHdiFormat(SAMPLE_S16LE), AUDIO_FORMAT_TYPE_PCM_16_BIT);
     EXPECT_EQ(sink_->ConvertToHdiFormat(SAMPLE_F32LE), AUDIO_FORMAT_TYPE_PCM_32_BIT);
 
