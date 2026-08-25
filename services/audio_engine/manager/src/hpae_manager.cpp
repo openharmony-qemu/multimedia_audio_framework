@@ -3254,9 +3254,7 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
         "EnableAissByUid: sessionEffectManager_ is null");
 
     int32_t oldUid = boundUid_;
-    if (boundUid_ == uid && boundSessionId_ != UNBOUND_SESSION_ID) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(boundUid_ != uid || boundSessionId_ == UNBOUND_SESSION_ID, SUCCESS);
 
     if (boundUid_ != -1 && boundUid_ != uid) {
         uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
@@ -3282,10 +3280,8 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
     boundSessionId_ = UNBOUND_SESSION_ID;
 
     uint32_t targetSessionId = FindRunningMusicSession(uid);
-    if (targetSessionId == UNBOUND_SESSION_ID) {
-        AUDIO_INFO_LOG("EnableAissByUid: no running music stream for uid %{public}d, pending", uid);
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(targetSessionId != UNBOUND_SESSION_ID, SUCCESS,
+        "EnableAissByUid: no running music stream for uid %{public}d, pending", uid);
 
     int32_t ret = BindAndCreateAiss(targetSessionId, true);
     if (ret == static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED)) {
