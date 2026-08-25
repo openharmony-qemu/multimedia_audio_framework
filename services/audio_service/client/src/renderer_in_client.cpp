@@ -555,12 +555,30 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
     uint64_t writePos = clientBuffer_->GetCurWriteFrame();
     RingBufferWrapper ringBuffer;
     int32_t ret = clientBuffer_->GetAllWritableBufferFromPosFrame(writePos, ringBuffer);
+    if (ret != SUCCESS || ringBuffer.basicBufferDescs[0].bufLength < totalSize) {
+        // A full ring is transient: the server frees a whole frame every period. Wait for
+        // free space like the normal write path instead of failing the app write.
+        FutexCode futexRes = clientBuffer_->WaitFor(
+            static_cast<int64_t>(GetBufferWaitTimeoutInMs()) * AUDIO_US_PER_SECOND,
+            [this, totalSize] () {
+                return state_ != RUNNING ||
+                    static_cast<size_t>(clientBuffer_->GetWritableDataFrames()) * sizePerFrameInByte_ >= totalSize;
+            });
+        CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE,
+            "3DA: state changed while waiting for space, state:%{public}d", state_.load());
+        CHECK_AND_RETURN_RET_LOG(futexRes == FUTEX_SUCCESS, ERROR,
+            "3DA: wait for writable space failed, ret:%{public}d", static_cast<int32_t>(futexRes));
+        writePos = clientBuffer_->GetCurWriteFrame();
+        ret = clientBuffer_->GetAllWritableBufferFromPosFrame(writePos, ringBuffer);
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.basicBufferDescs[0].bufLength >= totalSize,
         ERR_OPERATION_FAILED, "3DA: GetAllWritableBuffer failed:%{public}d, writable=%{public}zu, need=%{public}zu",
         ret, ringBuffer.basicBufferDescs[0].bufLength, totalSize);
-    // the ring is a whole-frame multiple; a frame must not cross the ring tail
-    CHECK_AND_RETURN_RET_LOG(ringBuffer.basicBufferDescs[1].bufLength == 0, ERR_OPERATION_FAILED,
-        "3DA: frame crosses ring tail, [1].bufLength=%{public}zu", ringBuffer.basicBufferDescs[1].bufLength);
+    // The free region may wrap at the ring tail and come back as two segments; that does
+    // not mean this frame crosses the tail. The frame always goes into the first segment,
+    // whose capacity is already checked above. With whole-frame stepping a real split can
+    // never occur: writePos advances by whole frames and the ring size is a whole-frame
+    // multiple, so seg0 either holds the full frame or is rejected by the check above.
 
     uint8_t *dst = ringBuffer.basicBufferDescs[0].buffer;
     const size_t cap = ringBuffer.basicBufferDescs[0].bufLength;
