@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_POLICY_SERVER_UNIT_TEST_H
-#define AUDIO_POLICY_SERVER_UNIT_TEST_H
+#ifndef AUDIO_POLICY_SERVER_METHODS_TEST_H
+#define AUDIO_POLICY_SERVER_METHODS_TEST_H
 
 #include "gtest/gtest.h"
 #include "audio_policy_server.h"
@@ -22,15 +22,11 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioPolicyServerUnitTest : public testing::Test {
+class AudioPolicyServerMethodsTest : public testing::Test {
 public:
-    // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
-    // TearDownTestCase: Called after all test case
     static void TearDownTestCase(void);
-    // SetUp: Called before each test cases
     void SetUp(void);
-    // TearDown: Called after each test cases
     void TearDown(void);
 
 private:
@@ -40,4 +36,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_POLICY_SERVER_UNIT_TEST_H
+#endif // AUDIO_POLICY_SERVER_METHODS_TEST_H
