@@ -125,6 +125,8 @@ void AppStateListener::HandleBackgroundAppStateChange(int32_t pid, int32_t uid, 
 
 void AppStateObserver::OnProcessDied(const AppExecFwk::ProcessData &processData)
 {
+    CHECK_AND_RETURN(processData.state == AppExecFwk::AppProcessState::APP_STATE_TERMINATED ||
+        processData.state == AppExecFwk::AppProcessState::APP_STATE_END);
     AudioRouterInfra::GetInstance().OnAppDied(processData.uid);
 }
 }
