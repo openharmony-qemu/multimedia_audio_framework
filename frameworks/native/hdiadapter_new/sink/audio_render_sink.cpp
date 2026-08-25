@@ -196,6 +196,9 @@ void AudioRenderSink::CheckActiveDeviceValidForStart()
     if (currentActiveDevice_ != DEVICE_TYPE_NONE) {
         forceSetRouteFlag_ = true;
         std::vector<DeviceType> devices = { currentActiveDevice_ };
+        if (currentDevicesSize_ > 1 && currentSecondaryActiveDevice_ != DEVICE_TYPE_NONE) {
+            devices.push_back(currentSecondaryActiveDevice_);
+        }
         int32_t ret = UpdateActiveDevice(devices);
         if (ret != SUCCESS) {
             AUDIO_WARNING_LOG("force set route on start failed, device: %{public}d, ret: %{public}d",
@@ -684,6 +687,7 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
     forceSetRouteFlag_ = false;
     currentActiveDevice_ = outputDevices[0];
     currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
+    currentSecondaryActiveDevice_ = (outputDevices.size() > 1) ? outputDevices[1] : DEVICE_TYPE_NONE;
     SetAudioRouteInfoForEnhanceChain();
     bool isA2dp = false;
     if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_SCO || currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -712,6 +716,9 @@ void AudioRenderSink::HandleDeviceCallback(const bool state)
 
 void AudioRenderSink::ResetActiveDeviceForDisconnect(DeviceType device)
 {
+    if (currentSecondaryActiveDevice_ == device) {
+        currentSecondaryActiveDevice_ = DEVICE_TYPE_NONE;
+    }
     if (currentActiveDevice_ == device) {
         currentActiveDevice_ = DEVICE_TYPE_NONE;
     }
