@@ -110,7 +110,7 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
     auto &releaseZone = tempMap[zoneId];
     for (auto it = releaseZone->audioFocusInfoList.begin(); it != releaseZone->audioFocusInfoList.end(); it++) {
         DeviceRole deviceRole = service_->IsRecordingInterruption(it->first) ? INPUT_DEVICE : OUTPUT_DEVICE;
-        if (it->second == PLACEHOLDER) {
+        if (it->second == PLACEHOLDER || it->second == STANDBY) {
             int32_t destZoneId = func(it->first.uid, it->first.deviceTag, it->first.streamId, it->first.streamUsage,
                 deviceRole);
             MoveAudioInterruptToZone(it->first, it->second, destZoneId);
@@ -209,7 +209,7 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
                 service_->ActivateAudioInterruptInternal(toZoneId, itFocus->first, false, updateScene);
                 SendInterruptEventForMigration(*itFocus, toZoneId);
             }
-        } else if (itFocus->second == PLACEHOLDER) {
+        } else if (itFocus->second == PLACEHOLDER || itFocus->second == STANDBY) {
             MoveAudioInterruptToZone(itFocus->first, itFocus->second, toZoneId);
         } else {
             ForceStopAudioFocusInZone(zoneId, itFocus->first);
