@@ -203,7 +203,7 @@ public:
         triggerProcessCount_ = 0;
         accumulatedInput_.clear();
         {
-            std::lock_guard<std::mutex> outLock(outputMutex_)
+            std::lock_guard<std::mutex> outLock(outputMutex_);
             processedOutput_.clear();
         }
     }
