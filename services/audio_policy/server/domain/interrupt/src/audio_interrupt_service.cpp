@@ -1677,7 +1677,7 @@ void AudioInterruptService::UpdateContextForAudioZone(const int32_t zoneId,
     zoneManager_.UpdateContextForAudioZone(zoneId, context);
 }
 
-int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
+int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal)
 {
     std::unique_lock<std::mutex> lock(mutex_);
     int32_t ret = zoneManager_.MigrateAudioInterruptZone(zoneId, func);
@@ -1686,7 +1686,7 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, ZONEID_DEFAULT, true, isInternal);
     return SUCCESS;
 }
 

@@ -126,7 +126,7 @@ public:
     int32_t FindZoneByPid(int32_t pid);
     int32_t CreateAudioInterruptZone(const int32_t zoneId, const AudioZoneContext &context);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal = false);
-    int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
+    int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func, bool isInternal = false);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts,
         const std::vector<uint32_t> &bypassSessionIds = {});
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const std::string &deviceTag,

@@ -66,11 +66,17 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
         return {deviceDesc->macAddress_};
     }
 
-    std::string zoneName = audioZoneService_.FindAudioZoneNameByUid(streamDesc->callerUid_, OUTPUT_DEVICE,
-        streamDesc->sessionId_);
+    int32_t callerUid = streamDesc->GetRealUid();
+    AUDIO_INFO_LOG("streamId: %{public}d, uid: %{public}d", streamDesc->sessionId_, callerUid);
+    std::string zoneName = audioZoneService_.FindAudioZoneNameByUid(callerUid, OUTPUT_DEVICE, streamDesc->sessionId_);
     std::lock_guard<std::mutex> lock(audioMixMutex_);
     auto iter = audioMixMap_.find(zoneName);
-    CHECK_AND_RETURN_RET(iter != audioMixMap_.end(), {});
+    std::string defaultBus = GetDefaultBusByConfig();
+    if (defaultBus.empty()) {
+        defaultBus = std::string(PRIMARY_DEFAULT_BUS);
+    }
+    CHECK_AND_RETURN_RET_LOG(iter != audioMixMap_.end(), {defaultBus}, "Zone name not exist: %{public}s",
+        zoneName.c_str());
 
     std::vector<std::string> busAddresses;
     for (const auto &audioMix : iter->second) {
@@ -82,10 +88,6 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
         }
     }
     if (busAddresses.empty()) {
-        std::string defaultBus = GetDefaultBusByConfig();
-        if (defaultBus.empty()) {
-            defaultBus = std::string(PRIMARY_DEFAULT_BUS);
-        }
         AUDIO_WARNING_LOG("Not match any bus, use default bus: %{public}s, for stream usage: %{public}d",
                           defaultBus.c_str(), streamDesc->rendererInfo_.streamUsage);
         return {defaultBus};
@@ -115,7 +117,7 @@ std::string AudioBusSelector::GetDefaultBusByConfig()
 
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(globalConfigs.pipe_);
     if (pipeInfo == nullptr) {
-        AUDIO_WARNING_LOG("Can not find pipe info for default bus.");
+        AUDIO_DEBUG_LOG("Can not find pipe info for default bus.");
         return "";
     }
     return pipeInfo->paProp_.busAddress_;
