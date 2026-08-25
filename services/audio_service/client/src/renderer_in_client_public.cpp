@@ -247,8 +247,8 @@ void RendererInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInf
     return;
 }
 
-// Layout-channel consistency check for 3DA direct (no AudioVivid exemption):
-// popcount for positional layouts, (order + 1) * (order + 1) for HOA layouts.
+// 3DA直通布局与声道数一致性校验(不豁免AudioVivid):
+// 普通布局按popcount, HOA布局按(order + 1)平方。
 static bool Is3DAChannelLayoutMatched(uint8_t channels, uint64_t channelLayout)
 {
     CHECK_AND_RETURN_RET(channelLayout != CH_LAYOUT_UNKNOWN, false);
@@ -292,9 +292,8 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
 
         AUDIO_INFO_LOG("rendererInfo rendererFlags: %{public}u", rendererInfo_.rendererFlags);
         if (rendererInfo_.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
-            // 3DA direct bypasses MCR conversion, so layout must match stream geometry:
-            // adopt the first layout consistent with channels (channelLayout, then
-            // remoteChannelLayout), else the default layout map; reject if none matches.
+            // 3DA直通不过MCR转换, 布局须与流几何一致: 依序采纳第一个与channels一致的
+            // 布局(channelLayout, 再remoteChannelLayout), 否则查默认布局表, 全不一致才拒绝。
             uint8_t channels3DA = curStreamParams_.channels;
             uint64_t layout3DA = curStreamParams_.channelLayout;
             const char *layoutSource = "adopted";
@@ -310,7 +309,7 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
                 ERR_NOT_SUPPORTED, "3DA direct layout mismatch, channels:%{public}u layout:%{public}llx",
                 channels3DA, static_cast<unsigned long long>(layout3DA));
             curStreamParams_.channelLayout = layout3DA;
-            streamParams_.channelLayout = layout3DA; // keep GetAudioStreamInfo readback consistent
+            streamParams_.channelLayout = layout3DA; // 保持GetAudioStreamInfo回读一致
             AUDIO_INFO_LOG("3DA direct layout %{public}s, channels:%{public}u layout:%{public}llx",
                 layoutSource, channels3DA, static_cast<unsigned long long>(layout3DA));
         } else {

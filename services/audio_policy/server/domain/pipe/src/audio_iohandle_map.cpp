@@ -208,9 +208,8 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
 
     if (moduleInfo.role == "sink") {
         pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
-        // A 3DA bus port may be opened at boot (xml module name) or at play-time new-pipe
-        // creation (paProp moduleName with mixport_ prefix). Match the 3da keyword in
-        // name/busAddress so any bus number (bus10/bus11/...) is covered.
+        // 3DA总线口可能在开机(xml模块名)或播放期新建pipe(paProp moduleName带mixport_前缀)
+        // 时打开。按name/busAddress匹配3da关键字, 覆盖任意bus号(bus10/bus11/...)。
         if (moduleInfo.name.find(HDI_BUS_KEYWORD_3DA) != std::string::npos ||
             moduleInfo.busAddress.find(HDI_BUS_KEYWORD_3DA) != std::string::npos) {
             pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_3DA_DIRECT;

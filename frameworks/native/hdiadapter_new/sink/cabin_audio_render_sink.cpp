@@ -57,11 +57,10 @@ int32_t CabinAudioRenderSink::Init(const IAudioSinkAttr &attr)
         AUDIO_INFO_LOG("CabinAudioRenderSink already inited with same attr, skip");
         return SUCCESS;
     }
-    // Re-init case: attr changed (e.g. port opened at boot with xml module args 6ch, while the
-    // 3DA stream needs 16ch), or a previous render of this sink is still alive in HAL even after
-    // DeInit (HAL index out of sync leaves the output stream leaked). hdiRenderId_ != 0 means this
-    // sink object created a render before (not reset by DeInit). Destroy it defensively first —
-    // harmless no-op if already closed — otherwise HAL rejects the new open with "bus already exist".
+    // 重初始化场景: attr变化(如开机按xml模块参数开6ch口, 而3DA流需16ch), 或上次render
+    // 在HAL侧仍存活(DeInit后HAL索引未同步, 输出流泄漏)。hdiRenderId_ != 0表示本对象此前
+    // 建过render(DeInit不清零), 先防御性销毁(已关闭则无副作用), 否则HAL以
+    // "bus already exist"拒绝重新open。
     if (hdiRenderId_ != 0) {
         AUDIO_INFO_LOG("re-init (ch %{public}u -> %{public}u, layout %{public}" PRIu64 " -> %{public}" PRIu64
             ", inited %{public}d), destroy previous render %{public}u first", attr_.channel, attr.channel,

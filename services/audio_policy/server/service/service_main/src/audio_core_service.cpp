@@ -743,19 +743,16 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
 
-    // xml bus flag (AUDIO_OUTPUT_FLAG_3DA_DIRECT) obtained by pipe routing must be passed
-    // down to the client as audioFlag, otherwise DecideStreamClass sees 0 -> normal path.
-    // audioFlag_ only carries 0x800 when the app sent it up; the xml-derived flag lands in
-    // routeFlag_ (set by the encoding-based bus selection inside FetchRendererPipeAndExecute),
-    // so routeFlag_ must be honored too, otherwise a client that does not send the flag
-    // never reaches the 3DA direct path.
+    // 管道路由拿到的xml总线flag(AUDIO_OUTPUT_FLAG_3DA_DIRECT)必须以audioFlag下发客户端,
+    // 否则DecideStreamClass见0走普通路径。audioFlag_只有app上传时才带0x800, xml来源的
+    // flag落在routeFlag_(FetchRendererPipeAndExecute内按encoding选总线时写入), 须一并
+    // 采纳, 否则未自带flag的客户端永远进不了3DA直通路径。
     if ((streamDesc->audioFlag_ | streamDesc->routeFlag_) & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
         flagInfo.audioFlag = AUDIO_OUTPUT_FLAG_3DA_DIRECT;
         streamDesc->audioFlag_ = static_cast<AudioFlag>(streamDesc->audioFlag_ | AUDIO_OUTPUT_FLAG_3DA_DIRECT);
-        // Keep the server-side streamDesc in sync too: the client sent this desc before
-        // DecideStreamClass updated its local rendererInfo, so rendererFlags/pipeType stored
-        // here are stale (NORMAL). Without this, re-routing at Start overwrites the
-        // collector's pipeType back from PIPE_TYPE_OUT_3DA_DIRECT to NORMAL.
+        // 服务端streamDesc同步更新: 客户端上报desc早于DecideStreamClass刷新本地
+        // rendererInfo, 此处存的rendererFlags/pipeType还是旧值(NORMAL)。不同步的话
+        // Start期重路由会把collector的pipeType从PIPE_TYPE_OUT_3DA_DIRECT改回NORMAL。
         streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
         streamDesc->rendererInfo_.pipeType = PIPE_TYPE_OUT_3DA_DIRECT;
     }

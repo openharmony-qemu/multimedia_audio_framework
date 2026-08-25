@@ -451,7 +451,7 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_016, TestSize.Level1)
     std::string info = idHandler.ParseInfo(id);
     EXPECT_EQ(info, HDI_ID_INFO_3DA);
 
-    // keyword match: any bus number / mixport_ prefix converges to the same 3DA direct id
+    // 关键字匹配: 任意bus号/mixport_前缀收敛到同一3DA直通id
     uint32_t futureBusId = idHandler.GetRenderIdByDeviceClass("mixport_bus11_3da_out", HDI_ID_INFO_3DA);
     EXPECT_EQ(futureBusId, id);
 }
