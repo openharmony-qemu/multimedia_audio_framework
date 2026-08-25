@@ -3422,10 +3422,12 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
                 streamChangeInfo.audioRendererChangeInfo.clientUID);
         } else {
             streamChangeInfo.audioCapturerChangeInfo.clientUID = callerUid;
-            streamChangeInfo.audioCapturerChangeInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
+    }
+    if (callerUid != MEDIA_SERVICE_UID && mode == AUDIO_MODE_RECORD) {
+        streamChangeInfo.audioCapturerChangeInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
     }
     // Mirror UpdateTracker: key per-app volume on the (post-decision) clientUID so the volume
     // identity matches the stream identity under enhanced routing.
@@ -3474,10 +3476,12 @@ int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChange
                 streamChangeInfo.audioRendererChangeInfo.clientUID);
         } else {
             streamChangeInfo.audioCapturerChangeInfo.clientUID = callerUid;
-            streamChangeInfo.audioCapturerChangeInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
             AUDIO_DEBUG_LOG("Non media service caller, use the uid retrieved. ClientUID:%{public}d]",
                 streamChangeInfo.audioCapturerChangeInfo.clientUID);
         }
+    }
+    if (callerUid != MEDIA_SERVICE_UID && mode == AUDIO_MODE_RECORD) {
+        streamChangeInfo.audioCapturerChangeInfo.appTokenId = IPCSkeleton::GetCallingTokenID();
     }
     int appVolume = 0;
     audioPolicyManager_.GetAppVolumeLevel(streamChangeInfo.audioRendererChangeInfo.clientUID, appVolume);
