@@ -466,6 +466,9 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive);
     void UpdateIsCheckMuteStreamByPid(int32_t callerPid);
     bool ProcessSilentChangeInterrupt(const MuteFocusInfo &audioFocusInfo);
+    void RemoveStreamBySessionId(const uint32_t sessionId);
+    void RemoveStreamByPid(const int32_t callerPid);
+    void AddStreamByPid(const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -486,6 +489,8 @@ private:
 
     std::map<uint32_t, std::list<MuteFocusInfo>> muteAudioFocus_;
     std::set<uint32_t> deferredResumeStreamIds_;
+
+    std::vector<AudioInterrupt> streamsInDeactivateAudioSession_;
 
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
