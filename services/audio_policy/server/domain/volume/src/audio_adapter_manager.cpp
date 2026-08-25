@@ -1427,7 +1427,9 @@ float AudioAdapterManager::DepressMediaVolumeForHeadSet(float mediaVolume, float
 
 float AudioAdapterManager::GetVolumeReductionRatio(AudioStreamType streamType)
 {
-    float volumeReduction = 0;
+    // If the configuration parameter is not found, it indicates that the volume should be reduced by 0 db.
+    float volumeReduction = 1.0f;
+
     auto iter = lowerVolumeInfos_.find(streamType);
     CHECK_AND_RETURN_RET_LOG(iter != lowerVolumeInfos_.end(), volumeReduction,
         "streamType:%{public}d is not supported", streamType);
