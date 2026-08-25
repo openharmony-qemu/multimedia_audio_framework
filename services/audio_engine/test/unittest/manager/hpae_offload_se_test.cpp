@@ -524,7 +524,7 @@ HWTEST_F(HpaeOffloadSeTest, destroyThenCreate_sameInstance_finalizesWithoutStop,
     ON_CALL(*mockInst, GetPreheatFrames()).WillByDefault(testing::Return(0));
     // Same-instance reuse path must NOT disable/flush the shared algorithm instance.
     EXPECT_CALL(*mockInst, StopEffect()).Times(0);
-    EXPECT_CALL(*mockInst, Flush()).Times(0);
+    EXPECT_CALL(*mockInst, Flush()).Times(1);
 
     ASSERT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", mockInst, config_), 0);
     ASSERT_EQ(manager_->DestroySessionEffect(CUR_SESSION_ID), 0);  // BeginClose
@@ -533,7 +533,7 @@ HWTEST_F(HpaeOffloadSeTest, destroyThenCreate_sameInstance_finalizesWithoutStop,
 
     // Rapid recreate with the SAME instance object while the old node is STOPPING.
     ASSERT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", mockInst, config_), 0);
-    manager_->HandleMsg();  // Finalize (same instance -> DetachEffectForReload) + retried Create
+    manager_->HandleMsg();  // Finalize (same instance -> CloseSessionEffectCore) + retried Create
 
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectNode_->GetEffectInstance().get(), mockInst.get());

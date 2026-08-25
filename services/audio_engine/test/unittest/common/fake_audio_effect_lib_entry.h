@@ -177,6 +177,12 @@ public:
     // Reset all state
     void Reset()
     {
+        {
+            std::lock_guard<std::mutex> lock(processMutex_);
+            if (processThread_.joinable()) {
+                processThread_.join();
+            }
+        }
         createFail_ = false;
         processFail_ = false;
         processDelayMs_ = fakeProcessDelayMs;
@@ -196,12 +202,9 @@ public:
         getOutputCount_ = 0;
         triggerProcessCount_ = 0;
         accumulatedInput_.clear();
-        processedOutput_.clear();
         {
-            std::lock_guard<std::mutex> lock(processMutex_);
-            if (processThread_.joinable()) {
-                processThread_.join();
-            }
+            std::lock_guard<std::mutex> outlock(processMutex_);
+            processedOutput_.clear();
         }
     }
 
@@ -371,11 +374,12 @@ private:
         accumulatedInput_.erase(accumulatedInput_.begin(),
                                 accumulatedInput_.begin() + processLen);
 
-        processThread_ = std::thread([this, data = std::move(inputChunk)]() {
-            std::this_thread::sleep_for(std::chrono::milliseconds(processDelayMs_));
+        uint32_t dekayMs = processDelayMs_;
+        uint32_t ch = channels_ > 0 ? channels_ : 2;
+        processThread_ = std::thread([this, data = std::move(inputChunk), dekayMs, ch]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(dekayMs));
             // Swap left/right channels (interleaved stereo)
             std::vector<float> result = data;
-            uint32_t ch = channels_ > 0 ? channels_ : 2;
             for (size_t i = 0; i + ch - 1 < result.size(); i += ch) {
                 std::swap(result[i], result[i + 1]); // swap L and R
             }

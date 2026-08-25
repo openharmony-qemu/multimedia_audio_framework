@@ -296,7 +296,7 @@ int32_t HpaeProcessCluster::DestroyNodes(uint32_t sessionId, SessionEffectCleanu
     auto seNode = SafeGetMap(idSessionEffectMap_, sessionId);
     if (seNode) {
         if (mode == SessionEffectCleanupMode::DETACH_FOR_RELOAD) {
-            seNode->DetachEffectForReload();
+            seNode->CloseSessionEffectCore();
         } else {
             seNode->DropEffect();
         }
@@ -639,7 +639,7 @@ bool HpaeProcessCluster::FinalizeDestroySessionEffectNode(uint32_t sessionId,
     bool sameInstanceReuse = pendingInstance != nullptr && closingInst != nullptr &&
         pendingInstance.get() == closingInst.get();
     if (sameInstanceReuse) {
-        node->DetachEffectForReload();
+        node->CloseSessionEffectCore();
     } else {
         node->DropEffect();
     }

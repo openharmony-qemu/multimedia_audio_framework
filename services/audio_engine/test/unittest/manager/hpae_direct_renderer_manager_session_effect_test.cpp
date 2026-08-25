@@ -2559,6 +2559,7 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_003, T
     auto instance1 = MakeTestEffectInstance(defaultConfig_);
     manager_->PostCreateSessionEffect(TEST_SESSION_ID, "audio_aiss_enhance", instance1, defaultConfig_);
     WaitForMsgProcessing(manager_);
+    ASSERT_TRUE(manager_->DeactivateThread());
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
 
     // BeginClose synchronously (plain): node enters STOPPING with exactly one Finalize queued,
@@ -2575,12 +2576,12 @@ HWTEST_F(HpaeDirectRendererManagerSessionEffectTest, SE_SwitchFinalizeNow_003, T
     EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 
     // Drain: the stale queued FinalizeClose no-ops on the identity check (no second DISABLED).
-    WaitForMsgProcessing(manager_);
+    manager_->HandleMsg();
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
     EXPECT_EQ(callback->Count(TEST_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 
     // Cleanup
     manager_->DestroyStream(TEST_SESSION_ID);
-    WaitForMsgProcessing(manager_);
+    manager_->HandleMsg();
 }

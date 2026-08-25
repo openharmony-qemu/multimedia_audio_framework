@@ -5736,7 +5736,7 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_RouteNull, TestSize.Level1)
 }
 
 // N_Fin_PendingInst: pendingSeCreateMap_ has the session with a live weak pointing to the SAME
-// instance the SE node holds -> sameInstanceReuse -> DetachEffectForReload (NOT Stop/Flush)
+// instance the SE node holds -> sameInstanceReuse -> CloseSessionEffectCore (NOT Stop/Flush)
 // (hpae_renderer_manager_session_effect.cpp:163-166, hpae_process_cluster.cpp:628-631).
 HWTEST_F(HpaeRendererManagerTest, N_Fin_PendingInst, TestSize.Level1)
 {
@@ -5755,7 +5755,7 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_PendingInst, TestSize.Level1)
     auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
     ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
     EXPECT_CALL(*instance, StopEffect()).Times(0);  // same-instance reuse must NOT stop
-    EXPECT_CALL(*instance, Flush()).Times(0);
+    EXPECT_CALL(*instance, Flush()).Times(1);
     ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 

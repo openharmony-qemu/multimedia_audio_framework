@@ -1354,7 +1354,7 @@ void HpaeDirectRendererManager::FinalizeSessionEffectClose(uint32_t sessionId,
     bool sameInstanceReuse = pendingInst != nullptr && closingInst != nullptr &&
         pendingSeCreateSessionId_ == sessionId && pendingInst.get() == closingInst.get();
     if (sameInstanceReuse) {
-        node->DetachEffectForReload();
+        node->CloseSessionEffectCore();
     } else {
         node->DropEffect();
     }
@@ -1443,8 +1443,8 @@ void HpaeDirectRendererManager::DetachSessionEffectNodeForReload()
     CancelPendingSessionEffectCreate(sessionEffectSessionId_);
     if (sessionEffectNode_ != nullptr) {
         // Reload runs on SignalProcessThread after DisConnectInputSession has removed this node
-        // from the processing chain, so DetachEffectForReload only resets local runtime state.
-        sessionEffectNode_->DetachEffectForReload();
+        // from the processing chain, so CloseSessionEffectCore only resets local runtime state.
+        sessionEffectNode_->CloseSessionEffectCore();
         sessionEffectNode_.reset();
     }
     sessionEffectSessionId_ = 0;
