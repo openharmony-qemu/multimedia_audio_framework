@@ -1302,9 +1302,7 @@ void HpaeManager::HandleMoveAllSinkInputs(
     // mid-move close.
     if (sessionEffectManager_ != nullptr) {
         for (const auto &sinkInput : sinkInputs) {
-            if (sinkInput == nullptr) {
-                continue;
-            }
+            CHECK_AND_CONTINUE(sinkInput != nullptr);
             uint32_t sid = sinkInput->GetNodeInfo().sessionId;
             if (sinkInput->HasSessionEffectAttachState() &&
                 sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME) != sid) {
@@ -3410,6 +3408,13 @@ void HpaeManager::FinishPendingAissDisable()
     pendingAissDisable_.reset();
     if (boundSessionId_ != UNBOUND_SESSION_ID) {
         ClearAissSession(boundSessionId_, true); // clears boundSessionId_ + boundUid_ when matched
+        // Destroy-timeout: ClearAissSession aborts before unbinding (keep-binding contract for
+        // switch retries). A deferred-disable terminal has no retry event (the stream stops here),
+        // so unlike the switch paths the logical state is dropped unconditionally - mirroring
+        // DisableAissByUid - and the queued late destroy finishes the identity-gated physical
+        // teardown.
+        boundUid_ = -1;
+        boundSessionId_ = UNBOUND_SESSION_ID;
     } else if (boundUid_ != -1) {
         boundUid_ = -1; // armed -> off, no physical binding to tear down
     }

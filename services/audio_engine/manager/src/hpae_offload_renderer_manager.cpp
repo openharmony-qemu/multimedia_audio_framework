@@ -1560,7 +1560,7 @@ int32_t HpaeOffloadRendererManager::PostDestroySessionEffect(uint32_t sessionId,
     };
     int32_t ret = SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
     CHECK_AND_RETURN_RET_LOG(ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS), ret,
-        "PostDestroySessionEffect: session %{public}u destroy ret=%{public}d", sessionId, ret);
+        "PostDestroySessionEffect: session %{public}u destroy failed ret=%{public}d", sessionId, ret);
     return ret;
 }
 

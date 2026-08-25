@@ -940,6 +940,52 @@ HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_sessionLevelControl_invalidatesP
     EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
 }
 
+namespace {
+// Reports the SendRequestSync timeout sentinel from PostDestroySessionEffect without a busy RM
+// thread: makes ClearAissSession take its "destroy timed out, keep binding" early return.
+class TimeoutDestroyRendererManager : public HpaeRendererManager {
+public:
+    explicit TimeoutDestroyRendererManager(HpaeSinkInfo &sinkInfo) : HpaeRendererManager(sinkInfo) {}
+
+    int32_t PostDestroySessionEffect(uint32_t /*sessionId*/, bool /*finalizeNow*/) override
+    {
+        return ERR_OPERATION_FAILED; // sync-timeout sentinel: request still queued, not executed
+    }
+};
+} // namespace
+
+// Scenario (destroy timeout): the terminal flush hits the sync-timeout sentinel inside
+// ClearAissSession. FinishPendingAissDisable must still drop the logical state (DisableAissByUid
+// semantics): pending cleared, uid/session binding reset, generation bumped. The physical effect
+// binding is kept (keep-binding contract) — the queued late destroy finishes the identity-gated
+// teardown.
+HWTEST_F(HpaeManagerSeTest, DisableWhenInactive_destroyTimeout_stillClearsLogicalState, TestSize.Level0)
+{
+    InjectStereoMusicStream(HPAE_SESSION_RUNNING);
+    ASSERT_EQ(hpaeManager_->SetAissEnabledByUidSync(TEST_UID, true), SUCCESS);
+    ASSERT_EQ(hpaeManager_->DisableAissByUidWhenStreamInactiveSync(TEST_UID), SUCCESS);
+    ASSERT_TRUE(hpaeManager_->pendingAissDisable_.has_value());
+    uint64_t genBefore = hpaeManager_->aissControlGeneration_;
+
+    // Swap in a manager whose destroy always reports the sync-timeout sentinel.
+    HpaeSinkInfo sinkInfo = GetTestSinkInfo();
+    hpaeManager_->rendererManagerMap_["file_io"] =
+        std::make_shared<TimeoutDestroyRendererManager>(sinkInfo);
+
+    // IsValidUpdateStatus requires state PAUSING for OPERATION_PAUSED.
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_SESSION_ID].state = HPAE_SESSION_PAUSING;
+    hpaeManager_->HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_SESSION_ID,
+        HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+
+    // Logical state went OFF even though the destroy timed out.
+    EXPECT_FALSE(hpaeManager_->pendingAissDisable_.has_value());
+    EXPECT_EQ(hpaeManager_->boundUid_, -1);
+    EXPECT_EQ(hpaeManager_->boundSessionId_, 0u);
+    EXPECT_GT(hpaeManager_->aissControlGeneration_, genBefore);
+    // Physical binding is kept for the queued late destroy (identity-gated teardown).
+    EXPECT_EQ(hpaeManager_->sessionEffectManager_->GetBoundSessionId(AISS_EFFECT_NAME), TEST_SESSION_ID);
+}
+
 // CH-1: BindAndCreateAiss rejects non-stereo streams
 HWTEST_F(HpaeManagerSeTest, SetAissEnabled_multiChannelRejected, TestSize.Level0)
 {
