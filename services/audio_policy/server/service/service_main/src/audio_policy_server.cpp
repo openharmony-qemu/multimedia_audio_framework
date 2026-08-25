@@ -1491,6 +1491,8 @@ int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
 
 int32_t AudioPolicyServer::GetLowPowerVolume(int32_t streamId, float &outVolume)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
+        "No system permission");
     outVolume = streamCollector_.GetLowPowerVolume(streamId);
     return SUCCESS;
 }
