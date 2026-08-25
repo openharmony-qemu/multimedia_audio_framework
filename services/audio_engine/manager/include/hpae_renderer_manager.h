@@ -114,12 +114,12 @@ public:
     int32_t CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = false) override;
-    int32_t DestroySessionEffect(uint32_t sessionId) override;
+    int32_t DestroySessionEffect(uint32_t sessionId, bool finalizeNow = false) override;
     // Session Effect (async — dispatches to SignalProcessThread, safe to call from any thread)
     void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = false) override;
-    void PostDestroySessionEffect(uint32_t sessionId) override;
+    int32_t PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow = false) override;
     bool HasSessionEffect(uint32_t sessionId) const override;
     bool IsValidSession(uint32_t sessionId) const override;
     // Session Effect parameter routing
@@ -128,7 +128,7 @@ public:
     void SetCollabDoFade(HpaeProcessorType sceneType);
 
 private:
-    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
+    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false) override;
     int32_t StartRenderSink();
     bool IsMchDevice();
     bool IsRemoteDevice();
@@ -205,8 +205,18 @@ private:
     void MaterializeSessionEffectFromAttachState(uint32_t sessionId, HpaeProcessorType sceneType);
     void HandleSessionEffectMaterializeFailure(uint32_t sessionId, int32_t ret,
         const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
-    // Deferred close: runs on the next HandleMsg batch (recursive DoProcess stack already
-    // unwound). Clears channel override + emits DISABLED only if the cluster actually finalized.
+    // STOPPING + finalizeNow: run the Finalize a prior BeginClose queued for the next batch
+    // right now, so the old session is fully closed before the new one is created.
+    void FinalizeStoppingSessionEffect(uint32_t sessionId, std::optional<ChannelOverrideRoute> route,
+        HpaeSessionState state, const std::shared_ptr<HpaeProcessCluster> &processCluster);
+    // Rewind upstream history by the combined latency; clear the logical binding.
+    void RewindAndClearSessionEffectAttach(uint32_t sessionId, uint64_t latency);
+    // Schedule the deferred Finalize close on the next queue batch.
+    void QueueSessionEffectFinalize(uint32_t sessionId, std::optional<ChannelOverrideRoute> route,
+        HpaeSessionState state, const std::weak_ptr<HpaeSessionEffectNode> &weakNode);
+    // Finalize close: deferred to the next HandleMsg batch (default) or run directly inside the
+    // destroy request (finalizeNow). Identity-checked: clears channel override + emits DISABLED
+    // only if the cluster actually finalized.
     void FinalizeSessionEffectClose(uint32_t sessionId, std::optional<ChannelOverrideRoute> route,
         HpaeSessionState state, const std::weak_ptr<HpaeSessionEffectNode> &closingNode);
     uint64_t SetPendingSessionEffectCreate(uint32_t sessionId,

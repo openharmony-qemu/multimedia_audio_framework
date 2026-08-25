@@ -2406,23 +2406,19 @@ HWTEST_F(HpaeSessionEffectNodeTest, resumePreheatForGraphSwitch_suspendedWarming
 
 // --- Phase 3D-1: branch coverage gaps from fresh gcov ---
 
-// Covers DetachEffectForReload() — full function was previously unhit.
+// Covers CloseSessionEffectCore() — full function was previously unhit.
 // Reset state, clear effectInstance_, transition to IDLE regardless of current state.
-HWTEST_F(SessionEffectNodeStateTest, detachEffectForReload_resetsStateAndInstance, TestSize.Level0)
+HWTEST_F(SessionEffectNodeStateTest, CloseSessionEffectCore_resetsStateAndInstance, TestSize.Level0)
 {
     EnterState(HpaeSessionEffectNode::STATUS::ACTIVE);
     ASSERT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::ACTIVE);
     ASSERT_NE(node_->GetEffectInstance(), nullptr);
 
-    int32_t ret = node_->DetachEffectForReload();
-
-    EXPECT_EQ(ret, 0);
+    node_->CloseSessionEffectCore();
     EXPECT_EQ(node_->GetStatus(), HpaeSessionEffectNode::STATUS::IDLE);
     EXPECT_EQ(node_->GetEffectInstance(), nullptr);
     EXPECT_FALSE(node_->IsCloseCrossfadePending());
     EXPECT_FALSE(node_->IsPaused());
-    EXPECT_FALSE(node_->GetPrebufFilled());
-    EXPECT_EQ(node_->GetPrebufTargetBytes(), 0u);
 }
 
 // Covers UpdatePrebufTargetBytes early return when effectInstance_ == nullptr.

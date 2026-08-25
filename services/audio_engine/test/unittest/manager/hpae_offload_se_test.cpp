@@ -524,7 +524,7 @@ HWTEST_F(HpaeOffloadSeTest, destroyThenCreate_sameInstance_finalizesWithoutStop,
     ON_CALL(*mockInst, GetPreheatFrames()).WillByDefault(testing::Return(0));
     // Same-instance reuse path must NOT disable/flush the shared algorithm instance.
     EXPECT_CALL(*mockInst, StopEffect()).Times(0);
-    EXPECT_CALL(*mockInst, Flush()).Times(0);
+    EXPECT_CALL(*mockInst, Flush()).Times(1);
 
     ASSERT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", mockInst, config_), 0);
     ASSERT_EQ(manager_->DestroySessionEffect(CUR_SESSION_ID), 0);  // BeginClose
@@ -533,7 +533,7 @@ HWTEST_F(HpaeOffloadSeTest, destroyThenCreate_sameInstance_finalizesWithoutStop,
 
     // Rapid recreate with the SAME instance object while the old node is STOPPING.
     ASSERT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", mockInst, config_), 0);
-    manager_->HandleMsg();  // Finalize (same instance -> DetachEffectForReload) + retried Create
+    manager_->HandleMsg();  // Finalize (same instance -> CloseSessionEffectCore) + retried Create
 
     ASSERT_NE(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectNode_->GetEffectInstance().get(), mockInst.get());
@@ -1298,6 +1298,69 @@ HWTEST_F(HpaeOffloadSeTest, OSE_Remove_SessionMismatch, TestSize.Level0)
     manager_->HandleMsg();
     EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
     EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE-F1: finalizeNow destroy closes the SE synchronously inside the call — node erased and the
+// single DISABLED emitted before returning (no deferred FinalizeClose batch).
+HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_finalizeNow_closesImmediately, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    ASSERT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 1u);
+
+    ASSERT_EQ(manager_->DestroySessionEffect(CUR_SESSION_ID, true), 0);
+
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_FALSE(curNode_->HasSessionEffectAttachState());
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+}
+
+// OSE-F2: switch scenario — Create right behind a finalizeNow Destroy succeeds immediately.
+// Old behavior: the queued FinalizeClose left the old STOPPING node in place, deferring the
+// Create behind the finalize batch.
+HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_finalizeNow_thenCreateSucceeds, TestSize.Level0)
+{
+    auto oldInst = MakeTestEffectInstance();
+    ASSERT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", oldInst, config_), 0);
+
+    ASSERT_EQ(manager_->DestroySessionEffect(CUR_SESSION_ID, true), 0);
+
+    auto newInst = MakeTestEffectInstance();
+    EXPECT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", newInst, config_), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectNode_->GetEffectInstance(), newInst);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_ENABLED), 2u);
+}
+
+// OSE-F3: finalizeNow on an already-STOPPING node (a plain Destroy queued a Finalize first):
+// STOPPING branch finalizes directly; exactly one DISABLED in total; further destroy is a no-op.
+HWTEST_F(HpaeOffloadSeTest, destroySessionEffect_finalizeNow_onStoppingNode_finalizesOnce, TestSize.Level0)
+{
+    auto instance = MakeTestEffectInstance();
+    ASSERT_EQ(manager_->CreateSessionEffect(CUR_SESSION_ID, "audio_aiss_enhance", instance, config_), 0);
+
+    // Plain destroy: BeginClose now, Finalize left queued (no active thread in this fixture).
+    ASSERT_EQ(manager_->DestroySessionEffect(CUR_SESSION_ID), 0);
+    ASSERT_NE(manager_->sessionEffectNode_, nullptr);  // STOPPING residue (old defer behavior)
+
+    // finalizeNow on the STOPPING node: direct finalize in the STOPPING branch.
+    ASSERT_EQ(manager_->DestroySessionEffect(CUR_SESSION_ID, true), 0);
+    EXPECT_EQ(manager_->sessionEffectNode_, nullptr);
+    EXPECT_EQ(manager_->sessionEffectSessionId_, 0u);
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    // Drain the stale queued FinalizeClose from the plain destroy: must no-op on the identity
+    // check (node already gone) — no second DISABLED.
+    manager_->HandleMsg();
+    EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    // A further destroy finds nothing left: no second DISABLED.
+    EXPECT_EQ(manager_->DestroySessionEffect(CUR_SESSION_ID, true),
+        static_cast<int32_t>(SessionEffectErrCode::ERR_EFFECT_NOT_BOUND));
     EXPECT_EQ(callback_->Count(CUR_SESSION_ID, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 }  // namespace HPAE

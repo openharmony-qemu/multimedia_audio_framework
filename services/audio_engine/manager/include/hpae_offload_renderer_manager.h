@@ -107,19 +107,19 @@ public:
     int32_t CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = false) override;
-    int32_t DestroySessionEffect(uint32_t sessionId) override;
+    int32_t DestroySessionEffect(uint32_t sessionId, bool finalizeNow = false) override;
     // Session Effect (async — dispatches to SignalProcessThread)
     void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = false) override;
-    void PostDestroySessionEffect(uint32_t sessionId) override;
+    int32_t PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow = false) override;
     bool IsValidSession(uint32_t sessionId) const override;
     // Session Effect parameter routing
     int32_t SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
     void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) override;
 
 private:
-    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
+    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false) override;
     int32_t StartRenderSink();
     std::shared_ptr<HpaeSinkInputNode> CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t CreateOffloadNodes();
@@ -168,7 +168,8 @@ private:
     int32_t InsertSessionEffectNode(const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = false);
-    int32_t RemoveSessionEffectNode();  // BeginClose: rewind + enter STOPPING + queue Finalize
+    int32_t RemoveSessionEffectNode(bool finalizeNow = false);
+    // BeginClose: rewind + enter STOPPING; Finalize queued for next batch, or direct when finalizeNow
     void FinalizeSessionEffectClose(uint32_t sessionId,
         const std::weak_ptr<HpaeSessionEffectNode> &closingNode);
     uint64_t SetPendingSessionEffectCreate(uint32_t sessionId,

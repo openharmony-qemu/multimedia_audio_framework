@@ -48,7 +48,8 @@ public:
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = true);
     int32_t DropEffect();  // Release node reference without destroying algorithm instance
-    int32_t DetachEffectForReload();
+    // Close SE core logic (RewindBuffer + clear + bypass)
+    void CloseSessionEffectCore();
 
     // Query
     std::shared_ptr<IEffectInstance> GetEffectInstance() const;
@@ -151,9 +152,6 @@ private:
     void ConsumePendingRawBypassBlocks(size_t skipRequest, uint32_t skipRemaining);
 
     HpaePcmBuffer *ProcessCloseCrossfade(const std::vector<HpaePcmBuffer *> &inputs);
-
-    // Close SE core logic (RewindBuffer + clear + bypass)
-    void CloseSessionEffectCore();
 
     // --- Phase 3C: Crossfade ---
     void ApplyInterceptingFadeIn(float *algoOutput, const float *rawInput, size_t sampleCount);

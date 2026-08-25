@@ -89,7 +89,7 @@ public:
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t SetSinkVirtualOutputNode(const std::shared_ptr<HpaeSinkVirtualOutputNode> &sinkVirtualOutputNode) override;
 private:
-    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
+    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false) override;
     void InitManager(bool isReload = false);
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t ConnectInputSession(const uint32_t &sessionId);

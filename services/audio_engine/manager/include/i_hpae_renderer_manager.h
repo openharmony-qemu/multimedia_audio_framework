@@ -23,6 +23,10 @@
 #include "hpae_dfx_map_tree.h"
 #include "hpae_co_buffer_node.h"
 #include "hpae_sink_virtual_output_node.h"
+#include "hpae_no_lock_queue.h"
+#include <chrono>
+#include <future>
+#include <string>
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -132,17 +136,40 @@ public:
     virtual void PostCreateSessionEffect(uint32_t sessionId, const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = false) {}
-    virtual void PostDestroySessionEffect(uint32_t sessionId) {}
+    virtual int32_t PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow = false) { return 0; }
     virtual void PostSetSessionEffectParameter(uint32_t sessionId, int32_t type, float value) {}
 
 protected:
+    // Queue a request onto the manager's SignalProcessThread (async; the derived manager owns
+    // the queue and thread). Default no-op for managers without a request queue.
+    virtual void SendRequest(Request &&request, const std::string &funcName, bool isInit = false) {}
+    // Queue a request and wait (bounded by timeoutMs) for its execution on the SignalProcessThread;
+    // returns defaultValue on timeout (no logging here — callers log non-success results).
+    // Mirrors HpaeManager::SendRequestSync.
+    template<typename Ret>
+    Ret SendRequestSync(std::function<Ret()> request, const std::string &funcName,
+                        Ret defaultValue, uint32_t timeoutMs = 2000)
+    {
+        auto promise = std::make_shared<std::promise<Ret>>();
+        auto future = promise->get_future();
+        auto wrapper = [req = std::move(request), p = promise]() {
+            p->set_value(req());
+        };
+        SendRequest(std::move(wrapper), funcName);
+        auto status = future.wait_for(std::chrono::milliseconds(timeoutMs));
+        if (status != std::future_status::ready) {
+            return defaultValue;
+        }
+        return future.get();
+    }
+
     static bool AdjustFrameLen(HpaeNodeInfo &inNodeInfo, const HpaeNodeInfo &outNodeInfo);
 
     // Session Effect (synchronous — must be called from SignalProcessThread)
     virtual int32_t CreateSessionEffect(uint32_t sessionId, const std::string &effectName,
         std::shared_ptr<IEffectInstance> instance, const AudioEffectConfig &config,
         bool aissSwitchEnabled = false) { return 0; }
-    virtual int32_t DestroySessionEffect(uint32_t sessionId) { return 0; }
+    virtual int32_t DestroySessionEffect(uint32_t sessionId, bool finalizeNow = false) { return 0; }
     virtual bool HasSessionEffect(uint32_t sessionId) const { return false; }
     virtual bool IsValidSession(uint32_t sessionId) const { return false; }
     // Session Effect parameter routing

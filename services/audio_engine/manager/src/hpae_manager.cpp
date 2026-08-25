@@ -3317,16 +3317,23 @@ int32_t HpaeManager::BindAndCreateAiss(uint32_t sessionId, bool aissSwitchEnable
 }
 
 // Clear the session effect binding and reset boundSessionId_ when it points to the cleared session.
-void HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding)
+int32_t HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding, bool finalizeNow)
 {
     if (sessionId == UNBOUND_SESSION_ID || sessionEffectManager_ == nullptr) {
-        return;
+        return SUCCESS;
     }
     bool isBoundUidSession = boundSessionId_ == sessionId;
 
     auto rendererManager = GetRendererManagerById(sessionId);
     if (rendererManager != nullptr) {
-        rendererManager->PostDestroySessionEffect(sessionId);
+        int32_t destroyRet = rendererManager->PostDestroySessionEffect(sessionId, finalizeNow);
+        // SendRequestSync timeout: the destroy request is still queued on the RM thread and
+        // could run after a Create issued now. Abort the clear BEFORE unbinding/resetting so
+        // switch callers stop before opening the new session; binding state stays intact
+        // and the switch can be retried. The late destroy is identity-gated, so retrying
+        // stays safe.
+        CHECK_AND_RETURN_RET_LOG(destroyRet != ERR_OPERATION_FAILED, destroyRet,
+            "ClearAissSession: destroy timed out for session %{public}u, keep binding", sessionId);
     }
 
     sessionEffectManager_->UnbindSessionEffect(sessionId);
@@ -3337,6 +3344,7 @@ void HpaeManager::ClearAissSession(uint32_t sessionId, bool clearUidBinding)
         boundUid_ = -1;
     }
     AUDIO_INFO_LOG("ClearAissSession: cleared AISS session %{public}u", sessionId);
+    return SUCCESS;
 }
 
 uint32_t HpaeManager::FindRunningMusicSession(int32_t uid)
@@ -3362,9 +3370,7 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
         "EnableAissByUid: sessionEffectManager_ is null");
 
     int32_t oldUid = boundUid_;
-    if (boundUid_ == uid && boundSessionId_ != UNBOUND_SESSION_ID) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(boundUid_ != uid || boundSessionId_ == UNBOUND_SESSION_ID, SUCCESS);
 
     if (boundUid_ != -1 && boundUid_ != uid) {
         uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
@@ -3377,7 +3383,10 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
             }
         }
         if (oldSessionId != UNBOUND_SESSION_ID) {
-            ClearAissSession(oldSessionId, true);
+            int32_t clearRet = ClearAissSession(oldSessionId, true, true);
+            CHECK_AND_RETURN_RET_LOG(clearRet == SUCCESS, clearRet,
+                "EnableAissByUid: clear old session %{public}u failed ret=%{public}d, abort switch",
+                oldSessionId, clearRet);
         }
         boundUid_ = -1;
         boundSessionId_ = UNBOUND_SESSION_ID;
@@ -3387,10 +3396,8 @@ int32_t HpaeManager::EnableAissByUid(int32_t uid)
     boundSessionId_ = UNBOUND_SESSION_ID;
 
     uint32_t targetSessionId = FindRunningMusicSession(uid);
-    if (targetSessionId == UNBOUND_SESSION_ID) {
-        AUDIO_INFO_LOG("EnableAissByUid: no running music stream for uid %{public}d, pending", uid);
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(targetSessionId != UNBOUND_SESSION_ID, SUCCESS,
+        "EnableAissByUid: no running music stream for uid %{public}d, pending", uid);
 
     int32_t ret = BindAndCreateAiss(targetSessionId, true);
     if (ret == static_cast<int32_t>(SessionEffectErrCode::ERR_NOT_SUPPORTED)) {
@@ -3442,7 +3449,15 @@ int32_t HpaeManager::SetAissEnabledSync(uint32_t sessionId, bool enabled)
         if (enabled) {
             uint32_t oldSessionId = sessionEffectManager_->GetBoundSessionId(AUDIO_AISS_ENHANCE_EFFECT_NAME);
             if (oldSessionId != UNBOUND_SESSION_ID && oldSessionId != sessionId) {
-                ClearAissSession(oldSessionId, true);
+                // Opening a new AISS session: finalize the old session's SE inside its destroy
+                // request (finalizeNow) so a Create queued right behind cannot hit a STOPPING
+                // node or a stale channel override. Abort before creating if the clear failed
+                // (e.g. destroy timeout): the strict old-teardown-before-new-create order must
+                // not be silently violated.
+                int32_t clearRet = ClearAissSession(oldSessionId, true, true);
+                CHECK_AND_RETURN_RET_LOG(clearRet == SUCCESS, clearRet,
+                    "SetAissEnabledSync: clear old session %{public}u failed ret=%{public}d",
+                    oldSessionId, clearRet);
             }
 
             int32_t ret = BindAndCreateAiss(sessionId, true);

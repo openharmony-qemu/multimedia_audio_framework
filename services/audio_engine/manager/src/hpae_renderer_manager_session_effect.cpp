@@ -106,11 +106,9 @@ void HpaeRendererManager::OnSessionEffectPreheatStateChanged(uint32_t sessionId,
     sinkInputNode->SetSessionEffectPreheatActive(active);
 }
 
-int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
+int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId, bool finalizeNow)
 {
-    // Route via GetProcessorType to match the key used at override-set time
-    // (OnSessionEffectMaterialized); cluster lookup below uses GetConnectedProcessorType
-    // for a different purpose (find cluster to destroy). Both are intentional.
+    // Route via GetProcessorType (override-set key); cluster lookup below uses GetConnectedProcessorType.
     auto route = BuildChannelOverrideRoute(sessionId);
     auto it = sessionNodeMap_.find(sessionId);
     if (it == sessionNodeMap_.end()) {
@@ -124,16 +122,19 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
         return static_cast<int32_t>(SessionEffectErrCode::ERR_SESSION_NOT_FOUND);
     }
 
-    // STOPPING: a prior BeginClose is still deferred; skip re-Begin (would double-rewind /
-    // re-arm crossfade / queue a duplicate Finalize) — cancel pending recreate, mirror derived managers.
+    // STOPPING: a prior BeginClose is still deferred — skip re-Begin (double-rewind / duplicate
+    // Finalize), cancel pending recreate, mirror derived managers.
     if (processCluster->IsSessionEffectNodeStopping(sessionId)) {
         CancelPendingSessionEffectCreate(sessionId);
+        if (finalizeNow) {
+            FinalizeStoppingSessionEffect(sessionId, route, it->second.state, processCluster);
+        }
         AUDIO_INFO_LOG("DestroySessionEffect: session %{public}u already STOPPING, skip re-Begin",
             sessionId);
         return static_cast<int32_t>(SessionEffectErrCode::SUCCESS);
     }
 
-    // BeginClose: enter STOPPING (node stays in the cluster map), get combined SE+upstream-converter
+    // BeginClose: enter STOPPING (node stays in the cluster map); get combined SE+upstream
     // latency + a weak identity handle for Finalize.
     uint64_t latency = 0;
     std::weak_ptr<HpaeSessionEffectNode> weakNode;
@@ -145,19 +146,49 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
         return ret;
     }
 
-    // Rewind upstream history by the combined latency; clear the logical binding now.
-    auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
-    if (sinkInputNode != nullptr) {
-        if (latency > 0) {
-            sinkInputNode->RewindHistoryBuffer(latency);
-        }
-        sinkInputNode->ClearSessionEffectAttachState();
-        AUDIO_INFO_LOG("[SE::RendererManager] AttachState cleared sessionId=%{public}u", sessionId);
-    }
-    // FinalizeClose on the next queue batch (DoProcess stack already unwound): identity-checked
-    // disconnect+drop+erase, then clear channel override + DISABLED. Override stays during the
-    // STOPPING window so the chain remains 2ch while the SE node is still in line.
+    RewindAndClearSessionEffectAttach(sessionId, latency);
     HpaeSessionState state = it->second.state;
+    if (finalizeNow) {
+        FinalizeSessionEffectClose(sessionId, route, state, weakNode);
+    } else {
+        QueueSessionEffectFinalize(sessionId, route, state, weakNode);
+    }
+    AUDIO_INFO_LOG("[SE::RendererManager] DestroySessionEffect BeginClose sessionId=%{public}u", sessionId);
+    return ret;
+}
+
+// STOPPING + finalizeNow: the earlier BeginClose queued a Finalize for the next batch; run it
+// now so the old session is fully closed before the new one is created. The queued copy later
+// no-ops on the identity check in FinalizeDestroySessionEffectNode. Reuses the route built at
+// destroy entry (single-threaded request, nothing re-routes in between).
+void HpaeRendererManager::FinalizeStoppingSessionEffect(uint32_t sessionId,
+    std::optional<ChannelOverrideRoute> route, HpaeSessionState state,
+    const std::shared_ptr<HpaeProcessCluster> &processCluster)
+{
+    auto stoppingNode = processCluster->GetSessionEffectNode(sessionId);
+    CHECK_AND_RETURN(stoppingNode != nullptr);
+    FinalizeSessionEffectClose(sessionId, route, state, stoppingNode);
+}
+
+// Rewind upstream history by the combined latency; clear the logical binding now.
+void HpaeRendererManager::RewindAndClearSessionEffectAttach(uint32_t sessionId, uint64_t latency)
+{
+    auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN(sinkInputNode != nullptr);
+    if (latency > 0) {
+        sinkInputNode->RewindHistoryBuffer(latency);
+    }
+    sinkInputNode->ClearSessionEffectAttachState();
+    AUDIO_INFO_LOG("[SE::RendererManager] AttachState cleared sessionId=%{public}u", sessionId);
+}
+
+// FinalizeClose on the next queue batch (DoProcess stack already unwound): identity-checked
+// disconnect+drop+erase, then clear channel override + DISABLED. Override stays during the
+// STOPPING window so the chain remains 2ch while the SE node is still in line.
+void HpaeRendererManager::QueueSessionEffectFinalize(uint32_t sessionId,
+    std::optional<ChannelOverrideRoute> route, HpaeSessionState state,
+    const std::weak_ptr<HpaeSessionEffectNode> &weakNode)
+{
     Request finalize = [this, sessionId, route, state, weakNode]() {
         FinalizeSessionEffectClose(sessionId, route, state, weakNode);
     };
@@ -165,8 +196,6 @@ int32_t HpaeRendererManager::DestroySessionEffect(uint32_t sessionId)
     if (hpaeSignalProcessThread_ != nullptr) {
         hpaeSignalProcessThread_->Notify();
     }
-    AUDIO_INFO_LOG("[SE::RendererManager] DestroySessionEffect BeginClose sessionId=%{public}u", sessionId);
-    return ret;
 }
 
 void HpaeRendererManager::FinalizeSessionEffectClose(uint32_t sessionId,
@@ -292,12 +321,15 @@ void HpaeRendererManager::PostCreateSessionEffect(uint32_t sessionId, const std:
     SendRequest(std::move(request), __func__);
 }
 
-void HpaeRendererManager::PostDestroySessionEffect(uint32_t sessionId)
+int32_t HpaeRendererManager::PostDestroySessionEffect(uint32_t sessionId, bool finalizeNow)
 {
-    auto request = [this, sessionId]() {
-        DestroySessionEffect(sessionId);
+    auto request = [this, sessionId, finalizeNow]() -> int32_t {
+        return DestroySessionEffect(sessionId, finalizeNow);
     };
-    SendRequest(std::move(request), __func__);
+    int32_t ret = SendRequestSync<int32_t>(std::move(request), __func__, ERR_OPERATION_FAILED);
+    CHECK_AND_RETURN_RET_LOG(ret == static_cast<int32_t>(SessionEffectErrCode::SUCCESS), ret,
+        "PostDestroySessionEffect: session %{public}u destroy ret=%{public}d", sessionId, ret);
+    return ret;
 }
 
 int32_t HpaeRendererManager::SetSessionEffectParameter(uint32_t sessionId, int32_t type, float value)

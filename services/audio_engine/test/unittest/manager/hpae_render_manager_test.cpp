@@ -5747,7 +5747,7 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_RouteNull, TestSize.Level1)
 }
 
 // N_Fin_PendingInst: pendingSeCreateMap_ has the session with a live weak pointing to the SAME
-// instance the SE node holds -> sameInstanceReuse -> DetachEffectForReload (NOT Stop/Flush)
+// instance the SE node holds -> sameInstanceReuse -> CloseSessionEffectCore (NOT Stop/Flush)
 // (hpae_renderer_manager_session_effect.cpp:163-166, hpae_process_cluster.cpp:628-631).
 HWTEST_F(HpaeRendererManagerTest, N_Fin_PendingInst, TestSize.Level1)
 {
@@ -5766,7 +5766,7 @@ HWTEST_F(HpaeRendererManagerTest, N_Fin_PendingInst, TestSize.Level1)
     auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
     ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
     EXPECT_CALL(*instance, StopEffect()).Times(0);  // same-instance reuse must NOT stop
-    EXPECT_CALL(*instance, Flush()).Times(0);
+    EXPECT_CALL(*instance, Flush()).Times(1);
     ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
         static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
 
@@ -6154,6 +6154,119 @@ HWTEST_F(HpaeRendererManagerTest, SendRequest_ActiveThread_InitInFlight_Executes
     EXPECT_TRUE(mgr->IsInit());
 
     EXPECT_TRUE(mgr->DeactivateThread()); // stop the real thread before teardown
+}
+
+// finalizeNow: DestroySessionEffect closes the SE synchronously inside the call — no deferred
+// FinalizeClose batch needed (switch path "clear old before opening new").
+HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyFinalizeNowClosesImmediately, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 7902;
+    constexpr uint32_t testNodeId = 1102;
+
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+    EXPECT_EQ(hpaeRendererManager_->Init(), SUCCESS);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_TRUE(hpaeRendererManager_->HasSessionEffect(sessionId));
+
+    // finalizeNow: node erased from the cluster map before returning, DISABLED already emitted.
+    EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId, true),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_FALSE(hpaeRendererManager_->HasSessionEffect(sessionId));
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(hpaeRendererManager_->DeInit(), SUCCESS);
+}
+
+// finalizeNow switch scenario: Create right behind a finalizeNow Destroy succeeds immediately —
+// no STOPPING residue, no requeue wait (contrast SessionEffectDestroyThenCreateRequeues).
+HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyFinalizeNowThenCreateSucceeds, TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 7903;
+    constexpr uint32_t testNodeId = 1103;
+
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+    EXPECT_EQ(hpaeRendererManager_->Init(), SUCCESS);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    auto oldInst = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*oldInst, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "old", oldInst, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId, true),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+
+    // The new Create materializes in-place: no STOPPING node left in the cluster map.
+    auto newInst = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*newInst, GetPreheatFrames()).WillByDefault(Return(0));
+    EXPECT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "new", newInst, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_TRUE(hpaeRendererManager_->HasSessionEffect(sessionId));
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+    EXPECT_EQ(hpaeRendererManager_->DeInit(), SUCCESS);
+}
+
+// finalizeNow on an already-STOPPING node: direct finalize in the STOPPING branch; the
+// earlier-queued FinalizeClose later no-ops on the cluster identity check (exactly one DISABLED).
+HWTEST_F(HpaeRendererManagerTest, SessionEffectDestroyFinalizeNowOnStoppingNodeFinalizesDirectly,
+    TestSize.Level0)
+{
+    constexpr uint32_t sessionId = 7904;
+    constexpr uint32_t testNodeId = 1104;
+
+    AddSessionEffectTestSession(hpaeRendererManager_, sessionId, testNodeId);
+    EXPECT_EQ(hpaeRendererManager_->Init(), SUCCESS);
+
+    AudioEffectConfig config;
+    config.inputCfg.samplingRate = SAMPLE_RATE_48000;
+    config.inputCfg.channels = STEREO;
+    config.outputCfg = config.inputCfg;
+
+    auto callback = std::make_shared<StatusCallbackRecorder>();
+    hpaeRendererManager_->RegisterSendMsgCallback(callback);
+
+    auto instance = std::make_shared<NiceMock<MockEffectInstance>>();
+    ON_CALL(*instance, GetPreheatFrames()).WillByDefault(Return(0));
+    ASSERT_EQ(hpaeRendererManager_->CreateSessionEffect(sessionId, "audio_aiss_enhance", instance, config),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    ASSERT_TRUE(hpaeRendererManager_->HasSessionEffect(sessionId));
+
+    // Freeze the queue: process thread gone, sync calls still run inline, pushed lambdas stay
+    // undrained until an explicit drain.
+    EXPECT_TRUE(hpaeRendererManager_->DeactivateThread());
+
+    // Plain destroy: node enters STOPPING, FinalizeClose stays queued (no drain here).
+    EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_TRUE(hpaeRendererManager_->HasSessionEffect(sessionId)); // STOPPING residue
+
+    // finalizeNow on the STOPPING node: direct finalize inside the STOPPING branch.
+    EXPECT_EQ(hpaeRendererManager_->DestroySessionEffect(sessionId, true),
+        static_cast<int32_t>(SessionEffectErrCode::SUCCESS));
+    EXPECT_FALSE(hpaeRendererManager_->HasSessionEffect(sessionId));
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
+
+    // DeInit drains the stale queued FinalizeClose; the identity check must keep it a no-op.
+    EXPECT_EQ(hpaeRendererManager_->DeInit(), SUCCESS);
+    EXPECT_EQ(callback->Count(sessionId, OPERATION_SESSION_EFFECT_DISABLED), 1u);
 }
 
 }  // namespace

@@ -53,6 +53,7 @@ static HpaeSinkInfo GetTestSinkInfo()
     sinkInfo.format = SAMPLE_F32LE;
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    sinkInfo.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
     return sinkInfo;
 }
 
