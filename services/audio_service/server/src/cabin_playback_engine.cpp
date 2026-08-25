@@ -362,6 +362,14 @@ int32_t CabinPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat format
     return ret;
 }
 
+// Without this override the base class always returns false, so TriggerStartIfNecessary
+// would call Start() on every client write: the pacing clock (fwkSyncTime_/writeCount_)
+// gets reset each time and an in-flight write could cancel a just-issued Pause.
+bool CabinPlayBackEngine::IsPlaybackEngineRunning() const noexcept
+{
+    return isStart_;
+}
+
 uint64_t CabinPlayBackEngine::GetLatency() noexcept
 {
     if (!isStart_) {

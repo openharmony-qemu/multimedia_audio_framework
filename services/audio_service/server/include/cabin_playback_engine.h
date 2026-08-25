@@ -39,6 +39,7 @@ public:
     void RemoveRenderer(const std::shared_ptr<IRendererStream> &stream) override;
 
     uint64_t GetLatency() noexcept override;
+    bool IsPlaybackEngineRunning() const noexcept override;
 
 private:
     int32_t InitSink(const AudioStreamInfo &clientStreamInfo);
