@@ -5660,7 +5660,7 @@ HWTEST_F(AudioInterruptUnitTest, DeactivateAudioSessionErrorEventTest, TestSize.
         streamsInSession1.push_back(stream);
     }
     EXPECT_NO_THROW(
-        interruptServiceTest->DeactivateAudioSessionErrorEvent(streamsInSession1, callerPid);
+        interruptServiceTest->DeactivateAudioSessionErrorEvent(callerPid);
     );
     AudioInterrupt testInterrupt2;
     testInterrupt2.pid = 1;
@@ -5673,7 +5673,7 @@ HWTEST_F(AudioInterruptUnitTest, DeactivateAudioSessionErrorEventTest, TestSize.
         streamsInSession2.push_back(stream);
     }
     EXPECT_NO_THROW(
-        interruptServiceTest->DeactivateAudioSessionErrorEvent(streamsInSession2, callerPid);
+        interruptServiceTest->DeactivateAudioSessionErrorEvent(callerPid);
     );
 }
  

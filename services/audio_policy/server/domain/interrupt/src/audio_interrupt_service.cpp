@@ -303,8 +303,7 @@ void AudioInterruptService::ActivateAudioSessionErrorEvent(const int32_t zoneId,
     }
 }
 
-void AudioInterruptService::DeactivateAudioSessionErrorEvent(
-    const std::vector<AudioInterrupt> &streamsInSession, const int32_t callerPid)
+void AudioInterruptService::DeactivateAudioSessionErrorEvent(const int32_t callerPid)
 {
     if (interruptDfx_ != nullptr) {
         interruptDfx_->DeactivateAudioSessionErrorEvent(streamsInSession, callerPid);
