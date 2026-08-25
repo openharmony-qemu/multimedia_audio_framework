@@ -48,6 +48,7 @@ public:
     int32_t RenderSinkFlush(void);
     int32_t RenderSinkStart(void);
     int32_t RenderSinkStop(void);
+    bool IsRenderInit() const;
 
     StreamManagerState GetSinkState(void);
     int32_t SetSinkState(StreamManagerState sinkState);

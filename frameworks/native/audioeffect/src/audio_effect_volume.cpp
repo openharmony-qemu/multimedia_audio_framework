@@ -31,6 +31,11 @@ AudioEffectVolume::AudioEffectVolume()
     SystemVolumeMap_ = {
         {STREAM_MUSIC, 1.0f},
     };
+    deviceTypeToSystemVolumeMap_.clear();
+    // Initialize default system volume for SPEAKER device (for enhanced routing)
+    deviceTypeToSystemVolumeMap_[DEVICE_TYPE_SPEAKER] = {
+        {STREAM_MUSIC, 0.5f},
+    };
 }
 
 AudioEffectVolume::~AudioEffectVolume()
@@ -60,6 +65,38 @@ float AudioEffectVolume::GetSystemVolume(const int32_t systemVolumeType)
     } else {
         return SystemVolumeMap_[systemVolumeType];
     }
+}
+
+void AudioEffectVolume::SetSystemVolumeWithDeviceType(const int32_t systemVolumeType, const float systemVolume,
+    DeviceType deviceType)
+{
+    std::lock_guard<std::mutex> lock(volumeMutex_);
+    AUDIO_DEBUG_LOG("deviceType: %{public}d, systemVolumeType: %{public}d, systemVolume: %{public}f",
+        deviceType, systemVolumeType, systemVolume);
+    deviceTypeToSystemVolumeMap_[deviceType][systemVolumeType] = systemVolume;
+}
+
+float AudioEffectVolume::GetSystemVolumeWithDeviceType(const int32_t systemVolumeType, DeviceType deviceType)
+{
+    std::lock_guard<std::mutex> lock(volumeMutex_);
+    // First try to find volume for specified device
+    auto deviceIt = deviceTypeToSystemVolumeMap_.find(deviceType);
+    if (deviceIt != deviceTypeToSystemVolumeMap_.end()) {
+        auto volumeIt = deviceIt->second.find(systemVolumeType);
+        if (volumeIt != deviceIt->second.end()) {
+            return volumeIt->second;
+        }
+    }
+    // Fallback to SPEAKER device default value
+    auto speakerIt = deviceTypeToSystemVolumeMap_.find(DEVICE_TYPE_SPEAKER);
+    if (speakerIt != deviceTypeToSystemVolumeMap_.end()) {
+        auto volumeIt = speakerIt->second.find(systemVolumeType);
+        if (volumeIt != speakerIt->second.end()) {
+            return volumeIt->second;
+        }
+    }
+    // Final fallback
+    return 0.5f;
 }
 
 void AudioEffectVolume::SetStreamVolume(const std::string sessionID, const float streamVolume)

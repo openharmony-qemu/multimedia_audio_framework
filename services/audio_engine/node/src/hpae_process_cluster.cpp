@@ -57,7 +57,7 @@ HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sink
         mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     }
     if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA") {
-        renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo, sinkInfo.isCollaborationEnabled);
+        renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo, sinkInfo.collaborationRouteMode);
         renderNoneEffectNode_ = nullptr;
     } else {
         renderEffectNode_ = nullptr;

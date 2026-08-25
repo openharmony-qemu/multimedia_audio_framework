@@ -1568,6 +1568,77 @@ HWTEST_F(HpaeNodeCommonTest, TransModuleInfoToHpaeSinkInfo_EmptyMacAddress, Test
     EXPECT_EQ(sinkInfo.macAddress, "");
 }
 
+/**
+ * @tc.name: EncryptMacAddress_Empty_001
+ * @tc.type: FUNC
+ * @tc.number: EncryptMacAddress_Empty_001
+ * @tc.desc: EncryptMacAddress of an empty string equals the SHA-256 hex of "".
+ */
+HWTEST_F(HpaeNodeCommonTest, EncryptMacAddress_Empty_001, TestSize.Level0)
+{
+    EXPECT_EQ(EncryptMacAddress(""),
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+}
+
+/**
+ * @tc.name: EncryptMacAddress_Abc_002
+ * @tc.type: FUNC
+ * @tc.number: EncryptMacAddress_Abc_002
+ * @tc.desc: EncryptMacAddress of "abc" equals the SHA-256 hex of "abc".
+ */
+HWTEST_F(HpaeNodeCommonTest, EncryptMacAddress_Abc_002, TestSize.Level0)
+{
+    EXPECT_EQ(EncryptMacAddress("abc"),
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+}
+
+/**
+ * @tc.name: EncryptMacAddress_Properties_003
+ * @tc.type: FUNC
+ * @tc.number: EncryptMacAddress_Properties_003
+ * @tc.desc: EncryptMacAddress output is a 64-char lowercase hex string, deterministic, and input-sensitive.
+ */
+HWTEST_F(HpaeNodeCommonTest, EncryptMacAddress_Properties_003, TestSize.Level0)
+{
+    std::string mac = "AA:BB:CC:DD:EE:FF";
+    std::string hash1 = EncryptMacAddress(mac);
+    std::string hash2 = EncryptMacAddress(mac);
+    EXPECT_EQ(hash1.size(), 64U);
+    EXPECT_EQ(hash1, hash2); // deterministic
+    EXPECT_NE(hash1, EncryptMacAddress("AA:BB:CC:DD:EE:00")); // different input -> different hash
+    // lowercase hex only
+    for (char c : hash1) {
+        EXPECT_TRUE((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));
+    }
+}
+
+/**
+ * @tc.name: StringToNum_Valid_001
+ * @tc.type: FUNC
+ * @tc.number: StringToNum_Valid_001
+ * @tc.desc: StringToNum parses valid decimal strings (positive, zero, negative, large).
+ */
+HWTEST_F(HpaeNodeCommonTest, StringToNum_Valid_001, TestSize.Level0)
+{
+    EXPECT_EQ(StringToNum("123"), 123L);
+    EXPECT_EQ(StringToNum("0"), 0L);
+    EXPECT_EQ(StringToNum("-5"), -5L);
+    EXPECT_EQ(StringToNum("9999999999"), 9999999999L);
+}
+
+/**
+ * @tc.name: StringToNum_Invalid_002
+ * @tc.type: FUNC
+ * @tc.number: StringToNum_Invalid_002
+ * @tc.desc: StringToNum returns 0 for empty/non-numeric/trailing-garbage strings.
+ */
+HWTEST_F(HpaeNodeCommonTest, StringToNum_Invalid_002, TestSize.Level0)
+{
+    EXPECT_EQ(StringToNum(""), 0L);
+    EXPECT_EQ(StringToNum("abc"), 0L);
+    EXPECT_EQ(StringToNum("12abc"), 0L);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

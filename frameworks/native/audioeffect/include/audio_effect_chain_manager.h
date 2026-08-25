@@ -155,6 +155,8 @@ public:
     uint32_t GetLatency(const std::string &sessionId);
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume);
+    int32_t SetEffectSystemVolumeWithDeviceType(const int32_t systemVolumeType, const float systemVolume,
+        DeviceType deviceType);
     int32_t SetAbsVolumeStateToEffect(const bool absVolumeState);
     void ResetInfo();  // Use for testing temporarily.
     void UpdateDefaultAudioEffect();
@@ -178,6 +180,7 @@ public:
     int32_t DeleteStreamVolume(const std::string StringSessionID);
     bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout, DeviceType deviceType);
     void UpdateEarphoneProduct(int32_t earphoneProduct);
     void SetBypassSpatializationForStereo(bool bypass);
     bool IsSpatializationEnabledForChains();
@@ -195,6 +198,10 @@ public:
         DeviceType deviceType, uint32_t renderId);
     int32_t UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled);
     int32_t UpdatePersonalizedSpatializationStateInner(const bool personalizedSpatializationEnabled);
+    bool CheckExistAudioEffectChainInner(const std::string &sceneType, const std::string &effectMode,
+        DeviceType deviceType, uint32_t renderId);
+    bool ExistAudioEffectChainWithDeviceTypeInner(const std::string &sceneType, const std::string &effectMode,
+        DeviceType deviceType, uint32_t renderId);
 
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
@@ -307,6 +314,7 @@ private:
     std::unordered_map<std::string, std::string> defaultPropertyMap_;
     std::vector<std::pair<std::string, int32_t>> sceneTypeCountList_;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
+    DeviceType spatializationDeviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     std::string deviceSink_ = "Speaker";
     std::string deviceClass_ = "";
     std::string extraSceneType_ = "0";

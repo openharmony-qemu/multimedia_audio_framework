@@ -1228,9 +1228,17 @@ std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoFor
         }
     }
 
-    if (AudioPolicyManagerFactory::GetAudioPolicyManager().
-        IsChannelLayoutSupportedForDspEffect(tempStreamProp->channelLayout_)) {
-        return tempStreamProp;
+    if (Util::IsEnhancedRoutingSupported()) {
+        DeviceType deviceType = desc->GetMainNewDeviceType();
+        if (AudioPolicyManagerFactory::GetAudioPolicyManager().
+            IsChannelLayoutSupportedForDspEffect(tempStreamProp->channelLayout_, deviceType)) {
+            return tempStreamProp;
+        }
+    } else {
+        if (AudioPolicyManagerFactory::GetAudioPolicyManager().
+            IsChannelLayoutSupportedForDspEffect(tempStreamProp->channelLayout_)) {
+            return tempStreamProp;
+        }
     }
 
     AUDIO_INFO_LOG("not support channelLayout:%{public}" PRIu64, tempStreamProp->channelLayout_);

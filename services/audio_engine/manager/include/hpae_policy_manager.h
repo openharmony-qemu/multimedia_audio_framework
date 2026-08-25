@@ -44,6 +44,8 @@ public:
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     int32_t EffectRotationUpdate(const uint32_t rotationState);
     int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume);
+    int32_t SetEffectSystemVolumeWithDeviceType(const int32_t systemVolumeType, const float systemVolume,
+        DeviceType deviceType);
     int32_t SetAbsVolumeStateToEffect(const bool absVolumeState);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
@@ -77,6 +79,7 @@ public:
     void AddStreamVolumeToEffect(const std::string stringSessionId, const float streamVolume);
     void DeleteStreamVolumeToEffect(const std::string stringSessionID);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout, DeviceType deviceType);
     int32_t UpdateCollaborativeProductId(const std::string &productId);
     int32_t UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled);
     bool IsCollaborationSupportedForStreamUsage(DeviceType deviceType, StreamUsage streamUsage);

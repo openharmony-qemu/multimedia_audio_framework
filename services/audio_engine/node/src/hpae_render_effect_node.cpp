@@ -49,13 +49,13 @@ static constexpr int32_t UPDATE_NEARLINK_COLLAB_STATE_TO_HDI_WAIT_COUNT = 2; // 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, CollaborationState isCollaborationEnabled)
+HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, CollaborationRouteMode collaborationRouteMode)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     // DEFAUT effect out format
     pcmBufferInfo_(nodeInfo.channels, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, nodeInfo.channelLayout),
     effectOutput_(pcmBufferInfo_)
 {
-    isCollaborationEnabled_ = isCollaborationEnabled;
+    collaborationRouteMode_ = collaborationRouteMode;
     if (nodeInfo.sceneType == HPAE_SCENE_DEFAULT) {
         sceneType_ = "SCENE_DEFAULT";
     } else {
@@ -66,9 +66,10 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, Collaboration
         }
         if (sceneType_ == "SCENE_COLLABORATIVE") {
             PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, CH_LAYOUT_STEREO);
-            if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
-                tempEffectBuffer_ = std::make_shared<HpaeTempEffectBuffer>(pcmBufferInfo, isCollaborationEnabled);
-            } else {
+            if (collaborationRouteMode_ == COLLABORATION_MCH_ROUTE_MODE) {
+                tempEffectBuffer_ = std::make_shared<HpaeTempEffectBuffer>(pcmBufferInfo,
+                    COLLABORATION_NEARLINK_OPEN);
+            } else if (collaborationRouteMode_ == COLLABORATION_DEFAULT_ROUTE_MODE) {
                 directOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // bt speaker
                 collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo); // default speaker
             }
@@ -78,10 +79,10 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo, Collaboration
         deviceType_ = static_cast<DeviceType>(nodeInfo.deviceType);
         renderId_ = nodeInfo.renderId;
     }
-    AUDIO_INFO_LOG("created, scene type: %{public}s, CollaborationEnabled: %{public}d",
-        sceneType_.c_str(), isCollaborationEnabled_);
+    AUDIO_INFO_LOG("created, scene type: %{public}s, collaborationRouteMode: %{public}d",
+        sceneType_.c_str(), collaborationRouteMode_);
 #ifdef ENABLE_HOOK_PCM
-    if (sceneType_ == "SCENE_COLLABORATIVE" && isCollaborationEnabled_ == COLLABORATION_BLUETOOTH_OPEN) {
+    if (sceneType_ == "SCENE_COLLABORATIVE" && collaborationRouteMode_ == COLLABORATION_DEFAULT_ROUTE_MODE) {
         directPcmDumper_ = std::make_unique<HpaePcmDumper>(
             "HpaeRenderEffectNodeDirect_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
         collaborativePcmDumper_ = std::make_unique<HpaePcmDumper>(
@@ -116,7 +117,7 @@ void HpaeRenderEffectNode::DoProcess()
 
     std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
 
-    if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN) {
+    if (collaborationRouteMode_ == COLLABORATION_MCH_ROUTE_MODE) {
         if (enableProcess_ && !preOutputs.empty() && tempEffectBuffer_) {
             SignalProcess(preOutputs);
             CHECK_AND_RETURN_LOG(effectOutput_.GetChannelCount() == static_cast<uint32_t>(CHANNEL_4),
@@ -126,7 +127,8 @@ void HpaeRenderEffectNode::DoProcess()
         }
         return;
     }
-    if (enableProcess_ && !preOutputs.empty() && directOutput_ && collaborativeOutput_) {
+    if (collaborationRouteMode_ == COLLABORATION_DEFAULT_ROUTE_MODE && enableProcess_ && !preOutputs.empty() &&
+        directOutput_ && collaborativeOutput_) {
         SignalProcess(preOutputs);
         int32_t ret = SplitCollaborativeData();
         if (ret != SUCCESS) {
@@ -250,7 +252,7 @@ int32_t HpaeRenderEffectNode::AudioRendererStart(HpaeNodeInfo &nodeInfo)
 {
     AUDIO_INFO_LOG("in");
     ModifyAudioEffectChainInfo(nodeInfo, ADD_AUDIO_EFFECT_CHAIN_INFO);
-    if (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN && tempEffectBuffer_ != nullptr) {
+    if (collaborationRouteMode_ == COLLABORATION_MCH_ROUTE_MODE && tempEffectBuffer_ != nullptr) {
         tempEffectBuffer_->SetStopRunningState(false);
         tempEffectBuffer_->SetCollabDoFade(false);
     }
@@ -440,9 +442,10 @@ void HpaeRenderEffectNode::ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo,
             info.channelLayout = nodeInfo.channelLayout;
             info.streamUsage = nodeInfo.effectInfo.streamUsage;
             info.systemVolumeType = static_cast<int32_t>(nodeInfo.effectInfo.systemVolumeType);
+            // Always set deviceType from member variable deviceType_
             if (Util::IsEnhancedRoutingSupported()) {
-                info.renderId = renderId_;
                 info.deviceType = deviceType_;
+                info.renderId = renderId_;
             }
             ret = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
             break;

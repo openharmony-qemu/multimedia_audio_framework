@@ -428,6 +428,24 @@ int32_t ProAudioServiceAdapterImpl::UpdateSpatializationState(AudioSpatializatio
     return SUCCESS;
 }
 
+int32_t ProAudioServiceAdapterImpl::UpdateDeviceSpatialEnabled(const std::string &address,
+    const AudioSpatializationState &state)
+{
+    CHECK_AND_RETURN_RET_LOG(!address.empty(), ERR_INVALID_PARAM, "address is empty");
+    return IHpaeManager::GetHpaeManager().UpdateDeviceSpatialEnabled(address, state);
+}
+
+int32_t ProAudioServiceAdapterImpl::RemoveDeviceSpatialEnabled(const std::string &address)
+{
+    CHECK_AND_RETURN_RET_LOG(!address.empty(), ERR_INVALID_PARAM, "address is empty");
+    return IHpaeManager::GetHpaeManager().RemoveDeviceSpatialEnabled(address);
+}
+
+int32_t ProAudioServiceAdapterImpl::ClearDeviceSpatialEnabled()
+{
+    return IHpaeManager::GetHpaeManager().ClearDeviceSpatialEnabled();
+}
+
 void ProAudioServiceAdapterImpl::OnReloadAudioPortCb(int32_t portId)
 {
     AUDIO_INFO_LOG("PortId: %{public}d", portId);
@@ -565,10 +583,27 @@ int32_t ProAudioServiceAdapterImpl::SetSystemVolumeToEffect(AudioStreamType stre
     return SUCCESS;
 }
 
+int32_t ProAudioServiceAdapterImpl::SetSystemVolumeToEffectWithDeviceType(AudioStreamType streamType,
+    float volume, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("streamType: %{public}d, volume: %{public}f, deviceType: %{public}d",
+        streamType, volume, deviceType);
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().SetEffectSystemVolumeWithDeviceType(streamType, volume, deviceType);
+    return SUCCESS;
+}
+
 bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
     lock_guard<mutex> lock(lock_);
     return IHpaeManager::GetHpaeManager().IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout,
+    DeviceType deviceType)
+{
+    lock_guard<mutex> lock(lock_);
+    return IHpaeManager::GetHpaeManager().IsChannelLayoutSupportedForDspEffect(channelLayout, deviceType);
 }
 
 void ProAudioServiceAdapterImpl::AddCaptureInjector(const uint32_t &sinkPortIndex,

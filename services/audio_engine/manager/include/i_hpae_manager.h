@@ -112,10 +112,16 @@ public:
         const std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList) = 0;
     virtual void SetOutputDeviceSink(int32_t device, const std::string &sinkName) = 0;
     virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;
+    virtual int32_t UpdateDeviceSpatialEnabled(const std::string &address,
+        const AudioSpatializationState &state) = 0;
+    virtual int32_t RemoveDeviceSpatialEnabled(const std::string &address) = 0;
+    virtual int32_t ClearDeviceSpatialEnabled() = 0;
     virtual int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) = 0;
     virtual int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) = 0;
     virtual int32_t EffectRotationUpdate(const uint32_t rotationState) = 0;
     virtual int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume) = 0;
+    virtual int32_t SetEffectSystemVolumeWithDeviceType(const int32_t systemVolumeType, const float systemVolume,
+        DeviceType deviceType) = 0;
     virtual int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) = 0;
     virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) = 0;
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) = 0;
@@ -149,6 +155,7 @@ public:
     virtual void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) = 0;
     virtual void DeleteStreamVolumeToEffect(const std::string stringSessionID) = 0;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
+    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout, DeviceType deviceType) = 0;
     virtual int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) = 0;
 
     // interfaces for injector

@@ -100,7 +100,8 @@ public:
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
-    int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) override;
+    int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled,
+        CollaborationRouteMode collaborationRouteMode) override;
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
@@ -237,6 +238,7 @@ private:
     std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_ = nullptr;
     std::shared_ptr<HpaeCoBufferNode> defaultCoBufferNode_ = nullptr;
     CollaborationState isCollaborationEnabled_ = COLLABORATION_CLOSE;
+    CollaborationRouteMode collaborationRouteMode_ = COLLABORATION_INVALID_ROUTE_MODE;
     int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
     std::unordered_map<uint32_t, bool> isNeedInitEffectBufferFlagMap_;
 

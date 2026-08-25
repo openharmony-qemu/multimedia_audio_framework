@@ -117,7 +117,8 @@ public:
         dfxTree_.UpdateNodeInfo(nodeId, nodeInfo);
 #endif
     }
-    virtual int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled) {return 0;};
+    virtual int32_t UpdateCollaborativeState(CollaborationState isCollaborationEnabled,
+        CollaborationRouteMode collaborationRouteMode) {return 0;};
     virtual int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) {return 0;};
     virtual int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) {return 0;};
     virtual std::string GetDeviceHDFDumpInfo() = 0;

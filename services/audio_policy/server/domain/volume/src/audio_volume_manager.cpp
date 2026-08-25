@@ -845,7 +845,12 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress,
     float volumeDbTemp = audioPolicyManager_.CalculateVolumeDbNonlinear(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP,
         sVolumeLevel);
     audioPolicyManager_.SaveSystemVolumeForEffect(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC, sVolumeLevel);
-    audioPolicyManager_.SetSystemVolumeToEffect(STREAM_MUSIC, volumeDbTemp);
+    if (Util::IsEnhancedRoutingSupported()) {
+        audioPolicyManager_.SetSystemVolumeToEffectWithDeviceType(STREAM_MUSIC, volumeDbTemp,
+            DEVICE_TYPE_BLUETOOTH_A2DP);
+    } else {
+        audioPolicyManager_.SetSystemVolumeToEffect(STREAM_MUSIC, volumeDbTemp);
+    }
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
     return SUCCESS;
 }
@@ -900,7 +905,12 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
         float volumeDbTemp = audioPolicyManager_.CalculateVolumeDbNonlinear(STREAM_MUSIC,
             DEVICE_TYPE_NEARLINK, volume.VolumeLevel());
         audioPolicyManager_.SaveSystemVolumeForEffect(DEVICE_TYPE_NEARLINK, STREAM_MUSIC, volume.VolumeLevel());
-        audioPolicyManager_.SetSystemVolumeToEffect(STREAM_MUSIC, volumeDbTemp);
+        if (Util::IsEnhancedRoutingSupported()) {
+            audioPolicyManager_.SetSystemVolumeToEffectWithDeviceType(STREAM_MUSIC, volumeDbTemp,
+                DEVICE_TYPE_NEARLINK);
+        } else {
+            audioPolicyManager_.SetSystemVolumeToEffect(STREAM_MUSIC, volumeDbTemp);
+        }
         if (volume.VolumeLevel() > audioPolicyManager_.GetSafeVolumeLevel() ||
             volume.VolumeDegree() > audioPolicyManager_.GetSafeVolumeDegree()) {
             if (internalCall) {

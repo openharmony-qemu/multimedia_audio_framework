@@ -2780,6 +2780,246 @@ HWTEST_F(HpaeManagerUnitTest, CoverageForwardingApis_001, TestSize.Level1)
     hpaeManager_->NotifyAccountsChanged();
 }
 
+// ==================== SetEffectSystemVolumeWithDeviceType Tests ====================
+
+/**
+ * @tc.name  : SetEffectSystemVolumeWithDeviceType_001
+ * @tc.type  : FUNC
+ * @tc.number: SetEffectSystemVolumeWithDeviceType_001
+ * @tc.desc  : Test SetEffectSystemVolumeWithDeviceType for SPEAKER device.
+ */
+HWTEST_F(HpaeManagerUnitTest, SetEffectSystemVolumeWithDeviceType_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    const int32_t systemVolumeType = STREAM_MUSIC;
+    const float systemVolume = 0.6f;
+    const DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : SetEffectSystemVolumeWithDeviceType_002
+ * @tc.type  : FUNC
+ * @tc.number: SetEffectSystemVolumeWithDeviceType_002
+ * @tc.desc  : Test SetEffectSystemVolumeWithDeviceType for BLUETOOTH_A2DP device.
+ */
+HWTEST_F(HpaeManagerUnitTest, SetEffectSystemVolumeWithDeviceType_002, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    const int32_t systemVolumeType = STREAM_MUSIC;
+    const float systemVolume = 0.7f;
+    const DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : SetEffectSystemVolumeWithDeviceType_003
+ * @tc.type  : FUNC
+ * @tc.number: SetEffectSystemVolumeWithDeviceType_003
+ * @tc.desc  : Test SetEffectSystemVolumeWithDeviceType for WIRED_HEADSET device.
+ */
+HWTEST_F(HpaeManagerUnitTest, SetEffectSystemVolumeWithDeviceType_003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    const int32_t systemVolumeType = STREAM_RING;
+    const float systemVolume = 0.8f;
+    const DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET;
+
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : SetEffectSystemVolumeWithDeviceType_MaxVolume_001
+ * @tc.type  : FUNC
+ * @tc.number: SetEffectSystemVolumeWithDeviceType_MaxVolume_001
+ * @tc.desc  : Test SetEffectSystemVolumeWithDeviceType with maximum volume (1.0f).
+ */
+HWTEST_F(HpaeManagerUnitTest, SetEffectSystemVolumeWithDeviceType_MaxVolume_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    const int32_t systemVolumeType = STREAM_MUSIC;
+    const float systemVolume = 1.0f;
+    const DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : SetEffectSystemVolumeWithDeviceType_MinVolume_001
+ * @tc.type  : FUNC
+ * @tc.number: SetEffectSystemVolumeWithDeviceType_MinVolume_001
+ * @tc.desc  : Test SetEffectSystemVolumeWithDeviceType with minimum volume (0.0f).
+ */
+HWTEST_F(HpaeManagerUnitTest, SetEffectSystemVolumeWithDeviceType_MinVolume_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    const int32_t systemVolumeType = STREAM_MUSIC;
+    const float systemVolume = 0.0f;
+    const DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : SetEffectSystemVolumeWithDeviceType_Multiple_001
+ * @tc.type  : FUNC
+ * @tc.number: SetEffectSystemVolumeWithDeviceType_Multiple_001
+ * @tc.desc  : Test SetEffectSystemVolumeWithDeviceType for multiple device types sequentially.
+ */
+HWTEST_F(HpaeManagerUnitTest, SetEffectSystemVolumeWithDeviceType_Multiple_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    const int32_t systemVolumeType = STREAM_MUSIC;
+
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(systemVolumeType, 0.5f,
+        DEVICE_TYPE_SPEAKER), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(systemVolumeType, 0.6f,
+        DEVICE_TYPE_BLUETOOTH_A2DP), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(systemVolumeType, 0.7f,
+        DEVICE_TYPE_WIRED_HEADSET), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : SetEffectSystemVolumeWithDeviceType_DifferentStreams_001
+ * @tc.type  : FUNC
+ * @tc.number: SetEffectSystemVolumeWithDeviceType_DifferentStreams_001
+ * @tc.desc  : Test SetEffectSystemVolumeWithDeviceType for different stream types.
+ */
+HWTEST_F(HpaeManagerUnitTest, SetEffectSystemVolumeWithDeviceType_DifferentStreams_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    EXPECT_EQ(hpaeManager_->RegisterSerivceCallback(callback), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    const DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(STREAM_MUSIC, 0.5f, deviceType), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(STREAM_RING, 0.6f, deviceType), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(STREAM_NOTIFICATION, 0.7f, deviceType), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->DeInit();
+}
+
+/**
+ * @tc.name  : SetEffectSystemVolumeWithDeviceType_WithoutInit_001
+ * @tc.type  : FUNC
+ * @tc.number: SetEffectSystemVolumeWithDeviceType_WithoutInit_001
+ * @tc.desc  : Test SetEffectSystemVolumeWithDeviceType without Init (should still succeed).
+ */
+HWTEST_F(HpaeManagerUnitTest, SetEffectSystemVolumeWithDeviceType_WithoutInit_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    // Do NOT call Init - test that the method handles this gracefully
+    const int32_t systemVolumeType = STREAM_MUSIC;
+    const float systemVolume = 0.5f;
+    const DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+
+    // The method should still succeed as it sends a request asynchronously
+    EXPECT_EQ(hpaeManager_->SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume, deviceType), SUCCESS);
+}
+
 HWTEST_F(HpaeManagerUnitTest, CoverageCallbackFailurePaths_001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
@@ -3216,4 +3456,184 @@ HWTEST_F(HpaeManagerUnitTest, UpdateSpatializationState_RefreshesAdaptiveThenByp
     EXPECT_EQ(hpaeManager_->adaptiveSpatialRenderingEnabled_, false);
     EXPECT_EQ(hpaeManager_->bypassSpatializationForStereo_, true);
 }
+
+// ==================== IsChannelLayoutSupportedForDspEffect with DeviceType Tests ====================
+
+/**
+ * @tc.name  : IsChannelLayoutSupportedForDspEffectWithDeviceType_001
+ * @tc.number: IsChannelLayoutSupportedForDspEffectWithDeviceType_001
+ * @tc.desc  : Test IsChannelLayoutSupportedForDspEffect with DeviceType for SPEAKER device.
+ */
+HWTEST_F(HpaeManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    bool ret = hpaeManager_->IsChannelLayoutSupportedForDspEffect(CH_LAYOUT_6POINT0_FRONT, DEVICE_TYPE_SPEAKER);
+    // Without proper HDI setup, this should return false
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : IsChannelLayoutSupportedForDspEffectWithDeviceType_002
+ * @tc.number: IsChannelLayoutSupportedForDspEffectWithDeviceType_002
+ * @tc.desc  : Test IsChannelLayoutSupportedForDspEffect with DeviceType for BLUETOOTH_A2DP device.
+ */
+HWTEST_F(HpaeManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_002, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    bool ret = hpaeManager_->IsChannelLayoutSupportedForDspEffect(CH_LAYOUT_STEREO, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : IsChannelLayoutSupportedForDspEffectWithDeviceType_003
+ * @tc.number: IsChannelLayoutSupportedForDspEffectWithDeviceType_003
+ * @tc.desc  : Test IsChannelLayoutSupportedForDspEffect with DeviceType for WIRED_HEADSET device.
+ */
+HWTEST_F(HpaeManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    bool ret = hpaeManager_->IsChannelLayoutSupportedForDspEffect(CH_LAYOUT_MONO, DEVICE_TYPE_WIRED_HEADSET);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : IsChannelLayoutSupportedForDspEffectWithDeviceType_004
+ * @tc.number: IsChannelLayoutSupportedForDspEffectWithDeviceType_004
+ * @tc.desc  : Test IsChannelLayoutSupportedForDspEffect with DeviceType for NEARLINK device.
+ */
+HWTEST_F(HpaeManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_004, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    bool ret = hpaeManager_->IsChannelLayoutSupportedForDspEffect(CH_LAYOUT_2POINT1, DEVICE_TYPE_NEARLINK);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : IsChannelLayoutSupportedForDspEffectWithDeviceType_Multiple_001
+ * @tc.number: IsChannelLayoutSupportedForDspEffectWithDeviceType_Multiple_001
+ * @tc.desc  : Test IsChannelLayoutSupportedForDspEffect with DeviceType for multiple channel layouts.
+ */
+HWTEST_F(HpaeManagerUnitTest, IsChannelLayoutSupportedForDspEffectWithDeviceType_Multiple_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    bool ret1 = hpaeManager_->IsChannelLayoutSupportedForDspEffect(CH_LAYOUT_MONO, deviceType);
+    bool ret2 = hpaeManager_->IsChannelLayoutSupportedForDspEffect(CH_LAYOUT_STEREO, deviceType);
+    bool ret3 = hpaeManager_->IsChannelLayoutSupportedForDspEffect(CH_LAYOUT_5POINT1, deviceType);
+    bool ret4 = hpaeManager_->IsChannelLayoutSupportedForDspEffect(CH_LAYOUT_7POINT1, deviceType);
+
+    EXPECT_EQ(ret1, false);
+    EXPECT_EQ(ret2, true);
+    EXPECT_EQ(ret3, true);
+    EXPECT_EQ(ret4, true);
+}
+
+// ==================== UpdateCollaborativeState Enhanced Routing Tests ====================
+
+/**
+ * @tc.name  : UpdateCollaborativeState_NearlinkEnhancedRouting_001
+ * @tc.number: UpdateCollaborativeState_NearlinkEnhancedRouting_001
+ * @tc.desc  : Test UpdateCollaborativeState with NEARLINK when enhanced routing is supported.
+ *            This tests the branch where IsEnhancedRoutingSupported() returns true,
+ *            causing NEARLINK_SINK_NAME to be used.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_NearlinkEnhancedRouting_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    // Test NEARLINK_OPEN with enhanced routing (uses NEARLINK_SINK_NAME)
+    CollaborationState isCollaborationEnabled = COLLABORATION_NEARLINK_OPEN;
+    ASSERT_EQ(hpaeManager_->UpdateCollaborativeState(isCollaborationEnabled), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    // Verify collaboration state was updated
+    EXPECT_EQ(hpaeManager_->isCollaborationEnabled_, COLLABORATION_NEARLINK_OPEN);
+
+    // Reset state
+    isCollaborationEnabled = COLLABORATION_CLOSE;
+    ASSERT_EQ(hpaeManager_->UpdateCollaborativeState(isCollaborationEnabled), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+/**
+ * @tc.name  : UpdateCollaborativeState_BluetoothEnhancedRouting_001
+ * @tc.number: UpdateCollaborativeState_BluetoothEnhancedRouting_001
+ * @tc.desc  : Test UpdateCollaborativeState with BLUETOOTH when enhanced routing is supported.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_BluetoothEnhancedRouting_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    // Test BLUETOOTH_OPEN (uses BT_SINK_NAME)
+    CollaborationState isCollaborationEnabled = COLLABORATION_BLUETOOTH_OPEN;
+    ASSERT_EQ(hpaeManager_->UpdateCollaborativeState(isCollaborationEnabled), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    // Verify collaboration state was updated
+    EXPECT_EQ(hpaeManager_->isCollaborationEnabled_, COLLABORATION_BLUETOOTH_OPEN);
+    EXPECT_EQ(hpaeManager_->collaborationRouteMode_, COLLABORATION_DEFAULT_ROUTE_MODE);
+
+    // Reset state
+    isCollaborationEnabled = COLLABORATION_CLOSE;
+    ASSERT_EQ(hpaeManager_->UpdateCollaborativeState(isCollaborationEnabled), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+/**
+ * @tc.name  : UpdateCollaborativeState_SwitchBetweenModes_001
+ * @tc.number: UpdateCollaborativeState_SwitchBetweenModes_001
+ * @tc.desc  : Test switching between different collaboration states.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_SwitchBetweenModes_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+
+    // Start with BLUETOOTH_OPEN
+    CollaborationState isCollaborationEnabled = COLLABORATION_BLUETOOTH_OPEN;
+    ASSERT_EQ(hpaeManager_->UpdateCollaborativeState(isCollaborationEnabled), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->isCollaborationEnabled_, COLLABORATION_BLUETOOTH_OPEN);
+
+    // Switch to NEARLINK_OPEN
+    isCollaborationEnabled = COLLABORATION_NEARLINK_OPEN;
+    ASSERT_EQ(hpaeManager_->UpdateCollaborativeState(isCollaborationEnabled), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->isCollaborationEnabled_, COLLABORATION_NEARLINK_OPEN);
+
+    // Switch back to CLOSE
+    isCollaborationEnabled = COLLABORATION_CLOSE;
+    ASSERT_EQ(hpaeManager_->UpdateCollaborativeState(isCollaborationEnabled), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->isCollaborationEnabled_, COLLABORATION_CLOSE);
+}
+
 }  // namespace

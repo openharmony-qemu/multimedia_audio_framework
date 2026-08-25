@@ -19,7 +19,6 @@
 
 
 #include <condition_variable>
-#include <map>
 #include <pthread.h>
 
 #include "accesstoken_kit.h"
@@ -200,6 +199,11 @@ public:
     int32_t SetWakeupSourceCallback(const sptr<IRemoteObject>& object) override;
 
     int32_t UpdateSpatializationState(const AudioSpatializationState& spatializationState) override;
+
+    int32_t UpdateDeviceSpatialEnabled(const std::string &address,
+        const AudioSpatializationState &state) override;
+    int32_t RemoveDeviceSpatialEnabled(const std::string &address) override;
+    int32_t ClearDeviceSpatialEnabled() override;
 
     int32_t UpdateSpatialDeviceType(int32_t spatialDeviceType) override;
 
@@ -445,7 +449,6 @@ private:
     bool CheckConfigFormat(const AudioProcessConfig &config);
     int32_t GetHapBuildApiVersion(int32_t callerUid);
 
-    // Server callbacks
     void AudioServerDied(pid_t pid, pid_t uid);
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();

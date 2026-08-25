@@ -29,6 +29,7 @@ struct A2dpReloadContext {
     std::string networkId;
     std::string sinkName;
     SourceType sourceType;
+    std::string macAddress;
 };
 
 class AudioA2dpDeviceBehavior : public IDeviceBehaviorBase {
@@ -47,8 +48,7 @@ private:
     int32_t ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
-    int32_t LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
-        std::string networkId, std::string sinkName, SourceType sourceType);
+    int32_t LoadA2dpModule(const A2dpReloadContext &context);
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, const A2dpReloadContext &context);
     AudioIOHandle ReloadOrOpenAudioPort(int32_t engineFlag, AudioModuleInfo &moduleInfo,
         uint32_t &paIndex);

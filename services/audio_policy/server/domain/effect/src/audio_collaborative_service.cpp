@@ -118,6 +118,12 @@ void AudioCollaborativeService::UpdateCurrentDevice(const AudioDeviceDescriptor 
     AUDIO_INFO_LOG("UpdateCurrentDevice Entered, seletedAudioDevice.deviceType_: %{public}d",
         selectedAudioDevice.deviceType_);
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
+    if (Util::IsEnhancedRoutingSupported()) {
+        if (!(selectedAudioDevice.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || selectedAudioDevice.deviceType_ ==
+            DEVICE_TYPE_BLUETOOTH_A2DP || selectedAudioDevice.deviceType_ == DEVICE_TYPE_NEARLINK)) {
+            return;
+        }
+    }
     
     if (selectedAudioDevice.macAddress_ != curDeviceAddress_) {
         curDeviceAddress_ = selectedAudioDevice.macAddress_;
@@ -225,9 +231,7 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
         HILOG_COMM_INFO("[UpdateCollaborativeStateReal]current collaborative enabled state changed to %{public}d "
             "for Mac address %{public}s", isCollaborativeStateEnabled_, GetEncryptAddr(curDeviceAddress_).c_str());
         UpdateCollaborativeStateToHdi(isCollaborativeStateEnabled_);
-        CollaborationState isCollaborationEnabled = isCollaborativeStateEnabled_ ?
-            COLLABORATION_BLUETOOTH_OPEN : COLLABORATION_CLOSE;
-        return audioPolicyManager_.UpdateCollaborativeState(isCollaborationEnabled);
+        return audioPolicyManager_.UpdateCollaborativeState(isCollaborativeStateEnabled_);
     }
     AUDIO_INFO_LOG("No need to real collaborative state: %{public}d", isCollaborativeStateEnabled_);
     return SUCCESS;

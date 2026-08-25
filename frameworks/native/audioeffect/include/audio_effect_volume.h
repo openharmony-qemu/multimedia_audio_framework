@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <map>
 #include <mutex>
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,8 +30,13 @@ public:
     static std::shared_ptr<AudioEffectVolume> GetInstance();
     void SetDspVolume(const float volume);
     float GetDspVolume();
+    // Original functions for non-enhanced routing
     void SetSystemVolume(const int32_t systemVolumeType, const float systemVolume);
     float GetSystemVolume(const int32_t systemVolumeType);
+    // New functions for enhanced routing with device type support
+    void SetSystemVolumeWithDeviceType(const int32_t systemVolumeType, const float systemVolume,
+        DeviceType deviceType);
+    float GetSystemVolumeWithDeviceType(const int32_t systemVolumeType, DeviceType deviceType);
     void SetStreamVolume(const std::string sessionID, float systemVolume);
     float GetStreamVolume(const std::string sessionID);
     int32_t StreamVolumeDelete(const std::string sessionID);
@@ -39,7 +45,8 @@ private:
     std::mutex volumeMutex_;
     std::map<std::string, float> SceneTypeToVolumeMap_;
     std::map<std::string, float> SessionIDToVolumeMap_;
-    std::map<int32_t, float> SystemVolumeMap_;
+    std::map<int32_t, float> SystemVolumeMap_;  // For non-enhanced routing
+    std::map<DeviceType, std::map<int32_t, float>> deviceTypeToSystemVolumeMap_;  // For enhanced routing
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

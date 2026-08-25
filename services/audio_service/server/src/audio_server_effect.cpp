@@ -115,6 +115,46 @@ int32_t AudioServer::UpdateSpatializationState(const AudioSpatializationState& s
     }
 }
 
+int32_t AudioServer::UpdateDeviceSpatialEnabled(const std::string &address,
+    const AudioSpatializationState &state)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(!address.empty(), ERR_INVALID_PARAM, "address is empty");
+
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().UpdateDeviceSpatialEnabled(address, state);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioServer::RemoveDeviceSpatialEnabled(const std::string &address)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
+        callingUid);
+    CHECK_AND_RETURN_RET_LOG(!address.empty(), ERR_INVALID_PARAM, "address is empty");
+
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().RemoveDeviceSpatialEnabled(address);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioServer::ClearDeviceSpatialEnabled()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
+
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        return HPAE::IHpaeManager::GetHpaeManager().ClearDeviceSpatialEnabled();
+    }
+    return SUCCESS;
+}
+
 int32_t AudioServer::UpdateSpatialDeviceType(int32_t spatialDeviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();

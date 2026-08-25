@@ -85,6 +85,13 @@ int32_t HpaePolicyManager::SetEffectSystemVolume(const int32_t systemVolumeType,
     return AudioEffectChainManager::GetInstance()->SetEffectSystemVolume(systemVolumeType, systemVolume);
 }
 
+int32_t HpaePolicyManager::SetEffectSystemVolumeWithDeviceType(const int32_t systemVolumeType,
+    const float systemVolume, DeviceType deviceType)
+{
+    return AudioEffectChainManager::GetInstance()->SetEffectSystemVolumeWithDeviceType(systemVolumeType,
+        systemVolume, deviceType);
+}
+
 int32_t HpaePolicyManager::SetAbsVolumeStateToEffect(const bool absVolumeState)
 {
     return AudioEffectChainManager::GetInstance()->SetAbsVolumeStateToEffect(absVolumeState);
@@ -232,6 +239,19 @@ bool HpaePolicyManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout 
             "null audioEffectChainManager", false),
         "null audioEffectChainManager");
     return audioEffectChainManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+bool HpaePolicyManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout,
+    DeviceType deviceType)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_CALL_FUNC_RETURN_RET_LOG(audioEffectChainManager != nullptr, false,
+        StreamDfxManager::GetInstance().SendAudioErrorEvent(static_cast<int32_t>(getuid()),
+        BuildErrorCode(ProblemCategory::FAULT_STATE_INCONSISTENT, OperationType::CONTROL,
+        BusinessScenario::QUERY, ERR_NULL_POINTER),
+            "null audioEffectChainManager", false),
+        "null audioEffectChainManager");
+    return audioEffectChainManager->IsChannelLayoutSupportedForDspEffect(channelLayout, deviceType);
 }
 
 int32_t HpaePolicyManager::UpdatePersonalizedHRTFBin(const int32_t &fd, const long &length)

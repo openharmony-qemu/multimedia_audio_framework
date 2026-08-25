@@ -163,10 +163,16 @@ public:
         const std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList) override;
     void SetOutputDeviceSink(int32_t device, const std::string &sinkName) override;
     int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
+    int32_t UpdateDeviceSpatialEnabled(const std::string &address,
+        const AudioSpatializationState &state) override;
+    int32_t RemoveDeviceSpatialEnabled(const std::string &address) override;
+    int32_t ClearDeviceSpatialEnabled() override;
     int32_t UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType) override;
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
     int32_t EffectRotationUpdate(const uint32_t rotationState) override;
     int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume) override;
+    int32_t SetEffectSystemVolumeWithDeviceType(const int32_t systemVolumeType, const float systemVolume,
+        DeviceType deviceType) override;
     int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray) override;
@@ -200,6 +206,7 @@ public:
     void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
     uint64_t ProcessPendingTransitionsAndGetNextDelay();
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout, DeviceType deviceType) override;
     // interfaces for injector
     void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
     void AddCaptureInjector(
@@ -375,6 +382,19 @@ private:
 
     bool bypassSpatializationForStereo_ = false;
     bool adaptiveSpatialRenderingEnabled_ = false;
+
+    // Per-device spatialization state cache, only meaningful under EnhancedRouting.
+    // Accessed solely on HpaeSignalProcessThread via SendRequest, no lock required.
+    std::unordered_map<std::string, AudioSpatializationState> deviceSpatialEnabledMap_;
+
+    // Notify effect chain of the per-device spatialization state when an output port
+    // is opened/reloaded, keyed by audioModuleInfo.macAddress. No-op for input/virtual
+    // ports, when mac is empty, or when EnhancedRouting is off.
+    void NotifySpatializationStateForPort(const AudioModuleInfo &audioModuleInfo);
+    // Pushed when deviceSpatialEnabledMap_ is updated for a mac whose output port is
+    // already open. Iterates rendererManagerMap_ to find a matching sink by macAddress.
+    void NotifySpatializationStateIfPortOpen(const std::string &encryptedAddress,
+        const AudioSpatializationState &state);
 
     std::unique_ptr<SessionEffectManager> sessionEffectManager_;
     HpaeDelayedTaskQueue delayedTaskQueue_;

@@ -20,6 +20,8 @@
 #include <string>
 #include <atomic>
 #include <unordered_map>
+#include <sstream>
+#include <iomanip>
 #include "audio_errors.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
@@ -410,9 +412,11 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
         rendererManager->SetSinkVirtualOutputNode(sinkVirtualOutputNodeMap_[sinkSourceIndex]);
     }
     rendererManager->Init(isReload);
-    if (audioModuleInfo.name == MCH_SINK_NAME) {
-        AUDIO_INFO_LOG("MCH_Speaker, UpdateCollaborativeState: %{public}d", isCollaborationEnabled_);
-        rendererManager->UpdateCollaborativeState(isCollaborationEnabled_);
+    if ((audioModuleInfo.name == MCH_SINK_NAME && collaborationRouteMode_ == COLLABORATION_MCH_ROUTE_MODE) ||
+        (audioModuleInfo.name == NEARLINK_SINK_NAME && collaborationRouteMode_ == COLLABORATION_DEFAULT_ROUTE_MODE)) {
+        AUDIO_INFO_LOG("need UpdateCollaborativeState: %{public}d, collaborationRouteMode: %{public}d",
+            isCollaborationEnabled_, collaborationRouteMode_);
+        rendererManager->UpdateCollaborativeState(isCollaborationEnabled_, collaborationRouteMode_);
     }
     AUDIO_INFO_LOG("open sink name: %{public}s end sinkIndex is %{public}u",
         GetEncryptStr(audioModuleInfo.name).c_str(), sinkSourceIndex);
@@ -565,6 +569,7 @@ uint32_t HpaeManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
     auto request = [this, audioModuleInfo]() {
         PrintAudioModuleInfo(audioModuleInfo);
         OpenAudioPortInner(audioModuleInfo);
+        NotifySpatializationStateForPort(audioModuleInfo);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -578,12 +583,14 @@ uint32_t HpaeManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo)
         (audioModuleInfo.lib != "libmodule-inner-capturer-sink.z.so")) {
             if (SafeGetMap(rendererManagerMap_, audioModuleInfo.name)) {
                 ReloadRenderManager(audioModuleInfo, true);
+                NotifySpatializationStateForPort(audioModuleInfo);
                 return;
             }
         
             AUDIO_INFO_LOG("currect device:%{public}s not exist.", GetEncryptStr(audioModuleInfo.name).c_str());
             uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
             CreateRendererManager(audioModuleInfo, sinkSourceIndex, true);
+            NotifySpatializationStateForPort(audioModuleInfo);
         } else if (audioModuleInfo.lib == "libmodule-hdi-source.z.so") {
             HpaeSourceInfo sourceInfo;
             int32_t ret = TransModuleInfoToHpaeSourceInfo(audioModuleInfo, sourceInfo);
@@ -2435,6 +2442,92 @@ int32_t HpaeManager::UpdateSpatializationState(AudioSpatializationState spatiali
     return SUCCESS;
 }
 
+int32_t HpaeManager::UpdateDeviceSpatialEnabled(const std::string &address,
+    const AudioSpatializationState &state)
+{
+    auto request = [this, address, state]() {
+        CHECK_AND_RETURN_LOG(!address.empty(), "address is empty");
+        deviceSpatialEnabledMap_[address] = state;
+        AUDIO_INFO_LOG("UpdateDeviceSpatialEnabled address: %{public}s, spatializationEnabled: %{public}d",
+            GetEncryptStr(address).c_str(), state.spatializationEnabled);
+        NotifySpatializationStateIfPortOpen(address, state);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+void HpaeManager::NotifySpatializationStateForPort(const AudioModuleInfo &audioModuleInfo)
+{
+    if (!Util::IsEnhancedRoutingSupported()) {
+        return;
+    }
+    if (audioModuleInfo.lib == "libmodule-hdi-source.z.so" ||
+        audioModuleInfo.lib == "libmodule-inner-capturer-sink.z.so") {
+        return;
+    }
+    if (audioModuleInfo.macAddress.empty()) {
+        return;
+    }
+    std::string encryptedAddress = EncryptMacAddress(audioModuleInfo.macAddress);
+    auto it = deviceSpatialEnabledMap_.find(encryptedAddress);
+    if (it == deviceSpatialEnabledMap_.end()) {
+        return;
+    }
+    AudioSpatializationState state = it->second;
+    if (state.deviceType == 0) {
+        state.deviceType = static_cast<int32_t>(StringToNum(audioModuleInfo.deviceType));
+    }
+    HpaePolicyManager::GetInstance().UpdateSpatializationState(state);
+    AUDIO_INFO_LOG("NotifySpatializationStateForPort mac: %{public}s, spatializationEnabled: %{public}d",
+        encryptedAddress.c_str(), state.spatializationEnabled);
+}
+
+void HpaeManager::NotifySpatializationStateIfPortOpen(const std::string &encryptedAddress,
+    const AudioSpatializationState &state)
+{
+    if (!Util::IsEnhancedRoutingSupported()) {
+        return;
+    }
+    CHECK_AND_RETURN_LOG(!encryptedAddress.empty(), "encryptedAddress is empty");
+    for (const auto & [sinkName, rendererManager] : rendererManagerMap_) {
+        if (rendererManager == nullptr) {
+            continue;
+        }
+        std::string portEncrypted = EncryptMacAddress(rendererManager->GetSinkInfo().macAddress);
+        if (portEncrypted == encryptedAddress) {
+            AudioSpatializationState enriched = state;
+            if (state.deviceType == 0) {
+                enriched.deviceType = rendererManager->GetSinkInfo().deviceType;
+            }
+            HpaePolicyManager::GetInstance().UpdateSpatializationState(enriched);
+            AUDIO_INFO_LOG("late UpdateDeviceSpatialEnabled pushed to effect, mac: %{public}s",
+                portEncrypted.c_str());
+            return;
+        }
+    }
+}
+
+int32_t HpaeManager::RemoveDeviceSpatialEnabled(const std::string &address)
+{
+    auto request = [this, address]() {
+        CHECK_AND_RETURN_LOG(!address.empty(), "address is empty");
+        deviceSpatialEnabledMap_.erase(address);
+        AUDIO_INFO_LOG("RemoveDeviceSpatialEnabled address: %{public}s", GetEncryptStr(address).c_str());
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::ClearDeviceSpatialEnabled()
+{
+    auto request = [this]() {
+        deviceSpatialEnabledMap_.clear();
+        AUDIO_INFO_LOG("ClearDeviceSpatialEnabled done");
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t HpaeManager::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
 {
     auto request = [spatialDeviceType]() {
@@ -2466,6 +2559,17 @@ int32_t HpaeManager::SetEffectSystemVolume(const int32_t systemVolumeType, const
 {
     auto request = [systemVolumeType, systemVolume]() {
         HpaePolicyManager::GetInstance().SetEffectSystemVolume(systemVolumeType, systemVolume);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::SetEffectSystemVolumeWithDeviceType(const int32_t systemVolumeType,
+    const float systemVolume, DeviceType deviceType)
+{
+    auto request = [systemVolumeType, systemVolume, deviceType]() {
+        HpaePolicyManager::GetInstance().SetEffectSystemVolumeWithDeviceType(systemVolumeType, systemVolume,
+            deviceType);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -2775,16 +2879,23 @@ int32_t HpaeManager::UpdateCollaborativeState(CollaborationState isCollaboration
             (isCollaborationEnabled_ == COLLABORATION_BLUETOOTH_OPEN &&
             isCollaborationEnabled == COLLABORATION_CLOSE)) {
             curCollAbSinkName = BT_SINK_NAME;
+            collaborationRouteMode_ = COLLABORATION_DEFAULT_ROUTE_MODE;
         } else if (isCollaborationEnabled == COLLABORATION_NEARLINK_OPEN ||
             (isCollaborationEnabled_ == COLLABORATION_NEARLINK_OPEN &&
             isCollaborationEnabled == COLLABORATION_CLOSE)) {
-            curCollAbSinkName = MCH_SINK_NAME;
+            if (Util::IsEnhancedRoutingSupported()) {
+                curCollAbSinkName = NEARLINK_SINK_NAME;
+                collaborationRouteMode_ = COLLABORATION_DEFAULT_ROUTE_MODE;
+            } else {
+                curCollAbSinkName = MCH_SINK_NAME;
+                collaborationRouteMode_ = COLLABORATION_MCH_ROUTE_MODE;
+            }
         }
         isCollaborationEnabled_ = isCollaborationEnabled;
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(curCollAbSinkName);
         CHECK_AND_RETURN_LOG(rendererManager != nullptr,
             "can not find sink[%{public}s] in rendererManagerMap_", curCollAbSinkName.c_str());
-        rendererManager->UpdateCollaborativeState(isCollaborationEnabled);
+        rendererManager->UpdateCollaborativeState(isCollaborationEnabled, collaborationRouteMode_);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -2837,6 +2948,11 @@ void HpaeManager::DeleteStreamVolumeToEffect(const std::string stringSessionID)
 bool HpaeManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
     return HpaePolicyManager::GetInstance().IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+bool HpaeManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout, DeviceType deviceType)
+{
+    return HpaePolicyManager::GetInstance().IsChannelLayoutSupportedForDspEffect(channelLayout, deviceType);
 }
 
 // interfaces for injector

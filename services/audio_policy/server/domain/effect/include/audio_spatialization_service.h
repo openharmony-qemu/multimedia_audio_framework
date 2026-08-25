@@ -114,6 +114,10 @@ private:
     static constexpr uint32_t MAX_DEVICE_NUM = 20;
     int32_t UpdateSpatializationStateReal(bool outputDeviceChange, std::string preDeviceAddress = "");
     int32_t UpdateSpatializationState();
+    void SyncDeviceSpatialEnabledToEngine(const std::string &address, const AudioSpatializationState &state,
+        int32_t deviceType);
+    void RemoveDeviceSpatialEnabledFromEngine(const std::string &address);
+    void ClearDeviceSpatialEnabledFromEngine();
     int32_t UpdateSpatializationSceneType();
     void UpdateSpatialDeviceType(AudioSpatialDeviceType audioSpatialDeviceType);
     void HandleSpatializationStateChange(bool outputDeviceChange);

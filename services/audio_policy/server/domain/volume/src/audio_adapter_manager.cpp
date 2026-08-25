@@ -902,7 +902,14 @@ int32_t AudioAdapterManager::SetSystemVolumeToEffect(std::shared_ptr<AudioDevice
     float volumeDbTemp = CalculateVolumeDbNonlinear(streamType, device->deviceType_, volumeLevelTemp);
     AUDIO_INFO_LOG("SetSystemVolumeToEffect streamType: %{public}d, volumeDb: %{public}f, device:%{public}s",
         streamType, volumeDbTemp, device->GetName().c_str());
-    return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volumeDbTemp);
+
+    // Use device type routing for independent device volume when enhanced routing is supported
+    if (Util::IsEnhancedRoutingSupported()) {
+        return audioServiceAdapter_->SetSystemVolumeToEffectWithDeviceType(
+            streamType, volumeDbTemp, device->deviceType_);
+    } else {
+        return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volumeDbTemp);
+    }
 }
 
 void AudioAdapterManager::SetAppAudioVolume(int32_t appUid, float volumeDb)
@@ -1887,6 +1894,27 @@ int32_t AudioAdapterManager::UpdateSpatializationState(AudioSpatializationState 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     AUDIO_INFO_LOG("AudioSpatializationService UpdateSpatializationState entered!");
     return audioServiceAdapter_->UpdateSpatializationState(spatializationState);
+}
+
+int32_t AudioAdapterManager::UpdateDeviceSpatialEnabled(const std::string &address,
+    const AudioSpatializationState &state)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    CHECK_AND_RETURN_RET_LOG(!address.empty(), ERR_INVALID_PARAM, "address is empty");
+    return audioServiceAdapter_->UpdateDeviceSpatialEnabled(address, state);
+}
+
+int32_t AudioAdapterManager::RemoveDeviceSpatialEnabled(const std::string &address)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    CHECK_AND_RETURN_RET_LOG(!address.empty(), ERR_INVALID_PARAM, "address is empty");
+    return audioServiceAdapter_->RemoveDeviceSpatialEnabled(address);
+}
+
+int32_t AudioAdapterManager::ClearDeviceSpatialEnabled()
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    return audioServiceAdapter_->ClearDeviceSpatialEnabled();
 }
 
 void AudioAdapterManager::UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
@@ -3821,6 +3849,13 @@ int32_t AudioAdapterManager::SetSystemVolumeToEffect(AudioStreamType streamType,
     return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volume);
 }
 
+int32_t AudioAdapterManager::SetSystemVolumeToEffectWithDeviceType(AudioStreamType streamType,
+    float volume, DeviceType deviceType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
+    return audioServiceAdapter_->SetSystemVolumeToEffectWithDeviceType(streamType, volume, deviceType);
+}
+
 int32_t AudioAdapterManager::StopAudioPort(std::string oldSinkName)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter_ is null");
@@ -4041,6 +4076,13 @@ bool AudioAdapterManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayou
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");
     return audioServiceAdapter_->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+bool AudioAdapterManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout,
+    DeviceType deviceType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");
+    return audioServiceAdapter_->IsChannelLayoutSupportedForDspEffect(channelLayout, deviceType);
 }
 
 bool AudioAdapterManager::IsStreamTypeInUse(AudioStreamType streamType,

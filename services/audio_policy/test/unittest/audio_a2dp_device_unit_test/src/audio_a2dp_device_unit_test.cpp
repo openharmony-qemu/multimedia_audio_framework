@@ -803,8 +803,8 @@ HWTEST_F(AudioA2dpDeviceUnitTest, DeactivateDevice_004, TestSize.Level1)
 HWTEST_F(AudioA2dpDeviceUnitTest, LoadA2dpModule_001, TestSize.Level1)
 {
     AudioStreamInfo audioStreamInfo;
-    int32_t result = a2dpDeviceBehavior_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP,
-        audioStreamInfo, "local", "a2dp_sink", SOURCE_TYPE_MIC);
+    A2dpReloadContext context = {DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo, "local", "a2dp_sink", SOURCE_TYPE_MIC};
+    int32_t result = a2dpDeviceBehavior_.LoadA2dpModule(context);
     EXPECT_NE(result, SUCCESS);
 }
 

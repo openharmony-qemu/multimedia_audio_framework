@@ -239,6 +239,14 @@ public:
     virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) NOT_SUPPORT_RET
 
     /**
+     * @brief Sync per-device spatialization state to engine (EnhancedRouting only)
+     */
+    virtual int32_t UpdateDeviceSpatialEnabled(const std::string &address,
+        const AudioSpatializationState &state) NOT_SUPPORT_RET
+    virtual int32_t RemoveDeviceSpatialEnabled(const std::string &address) NOT_SUPPORT_RET
+    virtual int32_t ClearDeviceSpatialEnabled() NOT_SUPPORT_RET
+
+    /**
      * @brief Set SetAbsVolumeStateToEffect service enabled
      *
      * @return int32_t the result, only supports proaudio for now.
@@ -251,6 +259,14 @@ public:
      * @return int32_t the result, only supports proaudio for now.
      */
     virtual int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) NOT_SUPPORT_RET
+
+    /**
+     * @brief Set system volume to effect with device type for independent device volume
+     *
+     * @return int32_t the result, only supports proaudio for now.
+     */
+    virtual int32_t SetSystemVolumeToEffectWithDeviceType(AudioStreamType streamType, float volume,
+        DeviceType deviceType) NOT_SUPPORT_RET
 
     virtual void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) = 0;
@@ -281,6 +297,8 @@ public:
      * @return {@link true} if support, {@link false} otherwise
      */
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) NOT_SUPPORT_RET
+    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout,
+        DeviceType deviceType) NOT_SUPPORT_RET
 
     /**
      * @brief update personalized SpatializationState
