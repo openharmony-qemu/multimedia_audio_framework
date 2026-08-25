@@ -855,5 +855,294 @@ HWTEST_F(AudioDeviceManagerUnitTest, HasSpecificDevicesConnected_NullptrDevice, 
 
     dm.connectedDevices_ = backup;
 }
+
+/**
+ * @tc.name  : OnXmlParsingCompleted_NegativeDevice
+ * @tc.number: OnXmlParsingCompleted_NegativeDevice_001
+ * @tc.desc  : Test OnXmlParsingCompleted parses TYPE_NEGATIVE devices correctly
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, OnXmlParsingCompleted_NegativeDevice, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    DevicePrivacyInfo negativeInfo = {};
+    negativeInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    negativeInfo.deviceCategory = BT_WATCH;
+    negativeInfo.deviceUsage = MEDIA;
+
+    std::unordered_map<AudioDevicePrivacyType, std::list<DevicePrivacyInfo>> xmlData;
+    xmlData[TYPE_NEGATIVE].push_back(negativeInfo);
+
+    dm.OnXmlParsingCompleted(xmlData);
+
+    EXPECT_FALSE(dm.negativeDeviceList_.empty());
+    EXPECT_EQ(dm.negativeDeviceList_.front().deviceType, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(dm.negativeDeviceList_.front().deviceCategory, BT_WATCH);
+}
+
+/**
+ * @tc.name  : DeviceAttrMatch_NegativeType
+ * @tc.number: DeviceAttrMatch_NegativeType_001
+ * @tc.desc  : Test DeviceAttrMatch returns true when privacyType is TYPE_NEGATIVE and device matches
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, DeviceAttrMatch_NegativeType, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    DevicePrivacyInfo negativeInfo = {};
+    negativeInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    negativeInfo.deviceCategory = BT_WATCH;
+    negativeInfo.deviceUsage = MEDIA;
+
+    dm.negativeDeviceList_.push_back(negativeInfo);
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->deviceCategory_ = BT_WATCH;
+    desc->deviceUsage_ = MEDIA;
+    desc->connectState_ = CONNECTED;
+
+    bool result = dm.DeviceAttrMatch(desc, TYPE_NEGATIVE, OUTPUT_DEVICE, MEDIA);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : GetDevicePrivacyType_ReturnNegative
+ * @tc.number: GetDevicePrivacyType_ReturnNegative_001
+ * @tc.desc  : Test GetDevicePrivacyType returns TYPE_NEGATIVE when device doesn't match privacy or public list
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, GetDevicePrivacyType_ReturnNegative, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    dm.privacyDeviceList_.clear();
+    dm.publicDeviceList_.clear();
+    dm.negativeDeviceList_.clear();
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    desc->deviceUsage_ = MEDIA;
+
+    auto result = dm.GetDevicePrivacyType(desc);
+    EXPECT_EQ(result, TYPE_NEGATIVE);
+}
+
+/**
+ * @tc.name  : RemoveCommunicationDevices_Negative
+ * @tc.number: RemoveCommunicationDevices_Negative_001
+ * @tc.desc  : Test RemoveCommunicationDevices removes negative devices correctly
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, RemoveCommunicationDevices_Negative, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->deviceUsage_ = VOICE;
+    desc->connectState_ = CONNECTED;
+
+    dm.commRenderNegativeDevices_.push_back(desc);
+    EXPECT_EQ(dm.commRenderNegativeDevices_.size(), 1);
+
+    AudioDeviceDescriptor removeDesc(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    removeDesc.macAddress_ = "00:11:22:33:44:55";
+    removeDesc.deviceUsage_ = VOICE;
+
+    dm.RemoveCommunicationDevices(removeDesc);
+    EXPECT_EQ(dm.commRenderNegativeDevices_.size(), 0);
+}
+
+/**
+ * @tc.name  : RemoveMediaDevices_Negative
+ * @tc.number: RemoveMediaDevices_Negative_001
+ * @tc.desc  : Test RemoveMediaDevices removes negative devices correctly
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, RemoveMediaDevices_Negative, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->deviceUsage_ = MEDIA;
+    desc->connectState_ = CONNECTED;
+
+    dm.mediaRenderNegativeDevices_.push_back(desc);
+    EXPECT_EQ(dm.mediaRenderNegativeDevices_.size(), 1);
+
+    AudioDeviceDescriptor removeDesc(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    removeDesc.macAddress_ = "00:11:22:33:44:55";
+    removeDesc.deviceUsage_ = MEDIA;
+
+    dm.RemoveMediaDevices(removeDesc);
+    EXPECT_EQ(dm.mediaRenderNegativeDevices_.size(), 0);
+}
+
+/**
+ * @tc.name  : RemoveCaptureDevices_Negative
+ * @tc.number: RemoveCaptureDevices_Negative_001
+ * @tc.desc  : Test RemoveCaptureDevices removes negative devices correctly
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, RemoveCaptureDevices_Negative, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, INPUT_DEVICE);
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->deviceUsage_ = MEDIA;
+    desc->connectState_ = CONNECTED;
+
+    dm.captureNegativeDevices_.push_back(desc);
+    EXPECT_EQ(dm.captureNegativeDevices_.size(), 1);
+
+    AudioDeviceDescriptor removeDesc(DEVICE_TYPE_BLUETOOTH_A2DP, INPUT_DEVICE);
+    removeDesc.macAddress_ = "00:11:22:33:44:55";
+    removeDesc.deviceUsage_ = MEDIA;
+
+    dm.RemoveCaptureDevices(removeDesc);
+    EXPECT_EQ(dm.captureNegativeDevices_.size(), 0);
+}
+
+/**
+ * @tc.name  : GetCommRenderNegativeDevices_Basic
+ * @tc.number: GetCommRenderNegativeDevices_001
+ * @tc.desc  : Test GetCommRenderNegativeDevices returns correct negative devices
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, GetCommRenderNegativeDevices_Basic, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->deviceUsage_ = VOICE;
+    desc->connectState_ = CONNECTED;
+    desc->connectTimeStamp_ = 1000;
+
+    dm.commRenderNegativeDevices_.push_back(desc);
+    auto result = dm.GetCommRenderNegativeDevices();
+
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(result[0]->deviceUsage_, VOICE);
+
+    dm.commRenderNegativeDevices_.clear();
+}
+
+/**
+ * @tc.name  : GetCommCaptureNegativeDevices_Basic
+ * @tc.number: GetCommCaptureNegativeDevices_001
+ * @tc.desc  : Test GetCommCaptureNegativeDevices returns correct negative devices
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, GetCommCaptureNegativeDevices_Basic, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, INPUT_DEVICE);
+    desc->deviceUsage_ = VOICE;
+    desc->connectState_ = CONNECTED;
+    desc->connectTimeStamp_ = 1000;
+
+    dm.commCaptureNegativeDevices_.push_back(desc);
+    auto result = dm.GetCommCaptureNegativeDevices();
+
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(result[0]->deviceRole_, INPUT_DEVICE);
+
+    dm.commCaptureNegativeDevices_.clear();
+}
+
+/**
+ * @tc.name  : GetMediaRenderNegativeDevices_Basic
+ * @tc.number: GetMediaRenderNegativeDevices_001
+ * @tc.desc  : Test GetMediaRenderNegativeDevices returns correct negative devices
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, GetMediaRenderNegativeDevices_Basic, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->deviceUsage_ = MEDIA;
+    desc->connectState_ = CONNECTED;
+    desc->connectTimeStamp_ = 1000;
+
+    dm.mediaRenderNegativeDevices_.push_back(desc);
+    auto result = dm.GetMediaRenderNegativeDevices();
+
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(result[0]->deviceUsage_, MEDIA);
+
+    dm.mediaRenderNegativeDevices_.clear();
+}
+
+/**
+ * @tc.name  : GetMediaCaptureNegativeDevices_Basic
+ * @tc.number: GetMediaCaptureNegativeDevices_001
+ * @tc.desc  : Test GetMediaCaptureNegativeDevices returns correct negative devices
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, GetMediaCaptureNegativeDevices_Basic, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, INPUT_DEVICE);
+    desc->deviceUsage_ = MEDIA;
+    desc->connectState_ = CONNECTED;
+    desc->connectTimeStamp_ = 1000;
+
+    dm.mediaCaptureNegativeDevices_.push_back(desc);
+    auto result = dm.GetMediaCaptureNegativeDevices();
+
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(result[0]->deviceUsage_, MEDIA);
+
+    dm.mediaCaptureNegativeDevices_.clear();
+}
+
+/**
+ * @tc.name  : GetCaptureNegativeDevices_Basic
+ * @tc.number: GetCaptureNegativeDevices_001
+ * @tc.desc  : Test GetCaptureNegativeDevices returns correct negative devices
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, GetCaptureNegativeDevices_Basic, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, INPUT_DEVICE);
+    desc->deviceUsage_ = MEDIA;
+    desc->connectState_ = CONNECTED;
+    desc->connectTimeStamp_ = 1000;
+
+    dm.captureNegativeDevices_.push_back(desc);
+    auto result = dm.GetCaptureNegativeDevices();
+
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(result[0]->deviceUsage_, MEDIA);
+
+    dm.captureNegativeDevices_.clear();
+}
+
+/**
+ * @tc.name  : GetCommRenderNegativeDevices_NullptrFiltered
+ * @tc.number: GetCommRenderNegativeDevices_002
+ * @tc.desc  : Test GetCommRenderNegativeDevices filters nullptr elements correctly.
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, GetCommRenderNegativeDevices_NullptrFiltered, TestSize.Level1)
+{
+    auto &dm = AudioDeviceManager::GetAudioDeviceManager();
+
+    std::shared_ptr<AudioDeviceDescriptor> nullDesc = nullptr;
+    auto desc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc->deviceUsage_ = VOICE;
+    desc->connectState_ = CONNECTED;
+
+    dm.commRenderNegativeDevices_.push_back(nullDesc);
+    dm.commRenderNegativeDevices_.push_back(desc);
+
+    auto result = dm.GetCommRenderNegativeDevices();
+
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+
+    dm.commRenderNegativeDevices_.clear();
+}
 } // namespace AudioStandard
 } // namespace OHOS
