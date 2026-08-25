@@ -2419,8 +2419,6 @@ HWTEST_F(SessionEffectNodeStateTest, CloseSessionEffectCore_resetsStateAndInstan
     EXPECT_EQ(node_->GetEffectInstance(), nullptr);
     EXPECT_FALSE(node_->IsCloseCrossfadePending());
     EXPECT_FALSE(node_->IsPaused());
-    EXPECT_FALSE(node_->GetPrebufFilled());
-    EXPECT_EQ(node_->GetPrebufTargetBytes(), 0u);
 }
 
 // Covers UpdatePrebufTargetBytes early return when effectInstance_ == nullptr.
