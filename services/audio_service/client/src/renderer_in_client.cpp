@@ -629,6 +629,9 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
         (curStreamParams_.encoding == ENCODING_AUDIOVIVID)) {
         if (bufferDesc.dataLength != 0) {
             result = Write3DADirectBuffer(bufferDesc);
+            if (result == SUCCESS) {
+                Update3DAPositionAfterWrite(bufferDesc.bufLength);
+            }
         } else {
             AUDIO_WARNING_LOG("INVALID 3DA buffer");
             usleep(WAIT_FOR_NEXT_CB);
@@ -999,6 +1002,28 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
     HandleRendererPositionChanges(writtenSize);
 
     return bufferCached ? oriBufferSize : writtenSize;
+}
+
+// 3DA direct returns from ProcessWriteInner before WriteInner, so run the post-write
+// bookkeeping here for parity with other encodings: audioWriteState_ for
+// GetAudioTimestampInfo, position notify, and mark/period callbacks.
+// Count PCM frames only (bufLength); header/meta/align are not app audio.
+void RendererInClientInner::Update3DAPositionAfterWrite(size_t pcmBytes)
+{
+    if (sizePerFrameInByte_ == 0) {
+        AUDIO_ERR_LOG("Update3DAPositionAfterWrite: sizePerFrameInByte_ is 0");
+        return;
+    }
+    AudioWriteState currentState = audioWriteState_.load();
+    uint64_t frames = pcmBytes / sizePerFrameInByte_;
+    currentState.unprocessedFramesBytes_ += frames;
+    currentState.totalBytesWrittenAfterFlush_ += frames;
+    currentState.perPeriodFrame_ = 0;
+    audioWriteState_.store(currentState);
+    if (ipcStream_ != nullptr) {
+        ipcStream_->UpdatePosition();
+    }
+    HandleRendererPositionChanges(pcmBytes);
 }
 
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
