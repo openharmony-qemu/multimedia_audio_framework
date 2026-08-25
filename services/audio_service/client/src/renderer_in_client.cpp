@@ -572,11 +572,11 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
     dst[offset] = static_cast<uint8_t>(0x3d);
     dst[offset + 1] = static_cast<uint8_t>(0xaf);
     offset += frameSize;
-    // size1: 前2字节(CPU序)=metadata 字节数，其余 0xff
+    // size1: 前2字节(CPU序)=metadata+align 字节数，其余 0xff
     if (memset_s(dst + offset, cap - offset, 0xff, frameSize) != EOK) {
         return ERR_OPERATION_FAILED;
     }
-    uint16_t metaSize = static_cast<uint16_t>(metaLen);
+    uint16_t metaSize = static_cast<uint16_t>(metaAligned);
     if (memcpy_s(dst + offset, cap - offset, &metaSize, sizeof(uint16_t)) != EOK) {
         return ERR_OPERATION_FAILED;
     }
@@ -613,7 +613,8 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
         + pcmLen / frameSize;
     clientBuffer_->SetCurWriteFrame(writePos + blockFrames, false);
 
-    AUDIO_DEBUG_LOG("3DA: built HDI frame, total=%{public}zu, blockFrames=%{public}" PRIu64, totalSize, blockFrames);
+    AUDIO_DEBUG_LOG("3DA: built HDI frame, total=%{public}zu, size1=%{public}zu, blockFrames=%{public}" PRIu64,
+        totalSize, metaAligned, blockFrames);
     return SUCCESS;
 }
 
