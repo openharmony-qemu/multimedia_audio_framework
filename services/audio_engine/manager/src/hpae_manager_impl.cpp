@@ -1087,6 +1087,12 @@ int32_t HpaeManagerImpl::SetAissEnabledByUidSync(int32_t uid, bool enabled)
     return manager_->SetAissEnabledByUidSync(uid, enabled);
 }
 
+int32_t HpaeManagerImpl::DisableAissByUidWhenStreamInactiveSync(int32_t uid)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
+    return manager_->DisableAissByUidWhenStreamInactiveSync(uid);
+}
+
 int32_t HpaeManagerImpl::SetAuxiliarySinkEnable(bool isEnabled)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET_LOG(manager_ != nullptr, ERROR,

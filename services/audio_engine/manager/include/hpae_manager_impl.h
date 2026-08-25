@@ -167,6 +167,7 @@ public:
     int32_t SetAissEnabledSync(uint32_t sessionId, bool enabled) override;
     int32_t SetVocalRatioSync(float ratio) override;
     int32_t SetAissEnabledByUidSync(int32_t uid, bool enabled) override;
+    int32_t DisableAissByUidWhenStreamInactiveSync(int32_t uid) override;
 
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
     void UpdatePersonalizedSpatializationState(const bool personalizedSpatializationEnabled) override;

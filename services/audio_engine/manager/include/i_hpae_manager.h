@@ -183,6 +183,10 @@ public:
     virtual int32_t SetAissEnabledSync(uint32_t sessionId, bool enabled) = 0;
     virtual int32_t SetVocalRatioSync(float ratio) = 0;
     virtual int32_t SetAissEnabledByUidSync(int32_t uid, bool enabled) = 0;
+    // HPAE-internal only: defer disabling AISS for uid until its bound play stream reaches a
+    // terminal state (PAUSED/STOPPED/RELEASED). Registers the deferred request or closes immediately
+    // if the stream is already terminal. Not exposed to Audio Policy IPC or app-side APIs.
+    virtual int32_t DisableAissByUidWhenStreamInactiveSync(int32_t uid) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
